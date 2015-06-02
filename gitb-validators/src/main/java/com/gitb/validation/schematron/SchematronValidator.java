@@ -11,6 +11,7 @@ import com.gitb.validation.IValidationHandler;
 import com.gitb.validation.common.AbstractValidator;
 import com.helger.schematron.ISchematronResource;
 import com.helger.schematron.xslt.SchematronResourceSCH;
+import com.helger.schematron.xslt.SchematronResourceXSLT;
 import org.kohsuke.MetaInfServices;
 import org.oclc.purl.dsdl.svrl.SchematronOutputType;
 import org.slf4j.Logger;
@@ -49,8 +50,19 @@ public class SchematronValidator extends AbstractValidator {
         SchematronOutputType svrlOutput;
 
         StringResource resource         = new StringResource(sch.toString(), sch.getSchemaLocation());
-        ISchematronResource schematron  = new SchematronResourceSCH(resource, null, new SchematronResolver());
         ByteArrayInputStream stream     = new ByteArrayInputStream(xml.serializeByDefaultEncoding());
+
+        ISchematronResource schematron;
+
+        if(sch.getSchemaLocation().endsWith(".sch")) {
+            schematron  = new SchematronResourceSCH(resource, null, new SchematronResolver());
+        }
+        else if(sch.getSchemaLocation().endsWith(".xsl")) {
+            schematron  = new SchematronResourceXSLT(resource, null, new SchematronResolver());
+        }
+        else {
+            throw new GITBEngineInternalError("Invalid schematron extension. Must be either .sch or .xsl");
+        }
 
         //apply schematron validation
         if(schematron.isValidSchematron()) {
@@ -61,7 +73,8 @@ public class SchematronValidator extends AbstractValidator {
             } catch (Exception e) {
                 throw new GITBEngineInternalError(e);
             }
-        } else{
+        }
+        else{
             throw new GITBEngineInternalError("Invalid Schematron File");
         }
 
