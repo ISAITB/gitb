@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- edited with XMLSpy v2008 sp1 (http://www.altova.com) by SRDC (EMBRACE) -->
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/" xmlns:tns="http://www.gitb.com/vs/v1/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/" xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata" name="ValidationService" targetNamespace="http://www.gitb.com/vs/v1/">
+	<types>
+		<xsd:schema>
+			<xsd:import namespace="http://www.gitb.com/vs/v1/" schemaLocation="gitb_vs.xsd"/>
+		</xsd:schema>
+	</types>
+	<message name="getModuleDefinition">
+		<part name="parameters" element="tns:GetModuleDefinitionRequest"/>
+	</message>
+	<message name="getModuleDefinitionResponse">
+		<part name="parameters" element="tns:GetModuleDefinitionResponse"/>
+	</message>
+	<message name="validate">
+		<part name="parameters" element="tns:ValidateRequest"/>
+	</message>
+	<message name="validateResponse">
+		<part name="parameters" element="tns:ValidationResponse"/>
+	</message>
+	<portType name="ValidationService">
+		<operation name="getModuleDefinition">
+			<input message="tns:getModuleDefinition"/>
+			<output message="tns:getModuleDefinitionResponse"/>
+		</operation>
+		<operation name="validate">
+			<input message="tns:validate"/>
+			<output message="tns:validateResponse"/>
+		</operation>
+	</portType>
+	<binding name="ValidationServicePortBinding" type="tns:ValidationService">
+		<soap:binding style="document" transport="http://schemas.xmlsoap.org/soap/http"/>
+		<operation name="getModuleDefinition">
+			<soap:operation soapAction=""/>
+			<input>
+				<soap:body use="literal"/>
+			</input>
+			<output>
+				<soap:body use="literal"/>
+			</output>
+		</operation>
+		<operation name="validate">
+			<soap:operation soapAction=""/>
+			<input>
+				<soap:body use="literal"/>
+			</input>
+			<output>
+				<soap:body use="literal"/>
+			</output>
+		</operation>
+	</binding>
+	<service name="ValidationService">
+		<port name="ValidationServicePort" binding="tns:ValidationServicePortBinding">
+			<soap:address location="/service/ValidationService"/>
+		</port>
+	</service>
+	<!-- to generate sources in given package -->
+	<jaxws:bindings xmlns:jaxws="http://java.sun.com/xml/ns/jaxws">
+		<jaxws:package name="com.gitb.vs">
+        </jaxws:package>
+	</jaxws:bindings>
+</definitions>

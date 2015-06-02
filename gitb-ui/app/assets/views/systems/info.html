@@ -1,0 +1,82 @@
+<div>
+    <div class="row">
+        <h4>System Information
+            <span class="tab" ng-if="systemCtrl.spinner"><i class="fa fa-spinner fa-spin"></i></span>
+        </h4>
+    </div>
+
+    <div class="row">
+
+        <div class="row">
+            <div class="form-group col-md-6">
+                <alert ng-repeat="alert in systemCtrl.alerts" type="{{alert.type}}" close="systemCtrl.closeAlert($index)">{{alert.msg}}</alert>
+            </div>
+        </div>
+
+        <!-- Show a table to non-admin because it is fancier ;) -->
+        <table class="table" ng-if="!systemCtrl.ds.isVendorAdmin">
+            <thead >
+            <tr>
+                <th class="grid-header col-md-2">Short Name</th>
+                <th class="grid-header col-md-4">Full Name</th>
+                <th class="grid-header col-md-4">Description</th>
+                <th class="grid-header col-md-2">Version</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td class="grid-row col-md-2">{{systemCtrl.system.sname}}</td>
+                <td class="grid-row col-md-4">{{systemCtrl.system.fname}}</td>
+                <td class="grid-row col-md-4">{{systemCtrl.system.description}}</td>
+                <td class="grid-row col-md-2">{{systemCtrl.system.version}}</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <form type="post" ng-if="systemCtrl.ds.isVendorAdmin">
+            <!-- Actual form components -->
+            <div class="row">
+                <div class="form-group">
+                    <div class="col-md-6">
+                        <label>System Name (Short) *</label>
+                        <input type="text" class="form-control" ng-model="sdata.sname">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <div class="col-md-6">
+                        <label>System Name (Full) *</label>
+                        <input type="text" class="form-control" ng-model="sdata.fname">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="form-group">
+                    <div class="col-md-6">
+                        <label>Description</label>
+                        <input type="text"  class="form-control" ng-model="sdata.description">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="form-group">
+                    <div class="col-md-6">
+                        <label>Version *</label>
+                        <input type="text" class="form-control" ng-model="sdata.version">
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6 modal-footer">
+                <input type="submit" value="Save changes" ng-click="systemCtrl.updateSystemProfile()" class="btn btn-info" >
+            </div>
+
+        </form>
+
+
+    </div>
+
+</div>

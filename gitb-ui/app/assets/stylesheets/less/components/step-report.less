@@ -1,0 +1,107 @@
+@import "../_common.less";
+
+.test-step-report {
+    .report-item {
+	display: block;
+	padding: 10px 15px;
+
+	&.assertion-report-item {
+	    line-height: 16px;
+	    .report-item-icon {	
+		padding: 0 4px;
+		&.info-icon {
+		    color: @success-green;
+		}
+		&.warning-icon {
+		    color: @warning-yellow;
+		}
+		&.error-icon {
+		    color: @error-red;
+		}
+	    }
+	}
+
+    }
+    .step-report {
+	&.decision-step-report {
+	    
+	}
+
+	&.messaging-step-report {
+	    .message-fragment-report {
+	    }
+	}
+
+	&.validation-step-report {
+	}
+
+	.title {
+	    padding: 8px 0;
+	}
+
+	.any-content-view {
+	    padding: 0 15px;
+	    margin: 8px 0;
+	    border: 1px solid @gray-light;
+	    border-radius: 3px;
+
+	    .content-view {
+		padding: 5px 0;
+		.simple-content-view {
+		    display: block;
+		    padding: 8px 0;
+		    border-bottom: 1px solid @gray-light;
+
+		    &:last-child {
+			border-bottom: none;
+		    }
+
+		    .name {
+		    }
+		    .value {
+			display: block;
+		    }
+		    .value-length {
+		    }
+		    .open {
+		    }
+		}
+		.string-content-view {
+		    .simple-content-view {
+			.simple-string-content-view {
+			}
+		    }
+		}
+		.uri-content-view {
+		    .simple-content-view {
+			.simple-uri-content-view {
+			}
+		    }
+		}
+		.base64-content-view {
+		    .simple-content-view {
+			.simple-base64-content-view {
+			}
+		    }
+		}
+	    }
+	}
+
+	.test-assertion-group-report {
+	    .assertion-report {
+		display: block;
+		margin-bottom: 10px;
+		&:hover {
+		    cursor: pointer;
+		}
+
+		&.warning-assertion-report {
+		    background-color: fade(@warning-yellow, 15%);
+		}
+		&.error-assertion-report {
+		    background-color: fade(@error-red, 15%);
+		}
+	    }
+	}
+    }
+}

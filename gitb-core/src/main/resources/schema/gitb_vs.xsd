@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsd:schema version="1.0" targetNamespace="http://www.gitb.com/vs/v1/"
+    xmlns="http://www.gitb.com/vs/v1/"
+	xmlns:tns="http://www.gitb.com/vs/v1/"
+    xmlns:tr="http://www.gitb.com/tr/v1/"
+    xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+    xmlns:gitb="http://www.gitb.com/core/v1/">
+
+    <xsd:import namespace="http://www.gitb.com/tr/v1/" schemaLocation="gitb_tr.xsd"/>
+    <xsd:import namespace="http://www.gitb.com/core/v1/" schemaLocation="gitb_core.xsd"/>
+
+	<xsd:element name="GetModuleDefinitionRequest" type="tns:Void" />
+	<xsd:element name="GetModuleDefinitionResponse" type="tns:GetModuleDefinitionResponse" />
+    <xsd:element name="ValidateRequest" type="tns:ValidateRequest" />
+    <xsd:element name="ValidationResponse" type="tns:ValidationResponse" />
+
+    <xsd:complexType name="Void">
+		<xsd:sequence/>
+	</xsd:complexType>
+
+	<xsd:complexType name="GetModuleDefinitionResponse">
+		<xsd:sequence>
+			<xsd:element name="module" type="gitb:ValidationModule" />
+		</xsd:sequence>
+	</xsd:complexType>
+
+    <xsd:complexType name="ValidateRequest">
+        <xsd:sequence>
+            <xsd:element name="sessionId" type="xsd:string" />
+            <xsd:element name="config" type="gitb:Configuration" minOccurs="0" maxOccurs="unbounded" />
+            <xsd:element name="input" type="gitb:AnyContent" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="ValidationResponse">
+        <xsd:sequence>
+            <xsd:element name="report" type="tr:TAR" />
+        </xsd:sequence>
+    </xsd:complexType>
+</xsd:schema>
+

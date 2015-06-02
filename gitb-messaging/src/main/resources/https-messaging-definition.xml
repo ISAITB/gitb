@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<module xmlns="http://www.gitb.com/core/v1/"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        id="HttpsMessaging" uri="urn:com:gitb:messaging:HttpsMessaging" xsi:type="MessagingModule">
+	<metadata>
+		<name>HTTPS Messaging</name>
+		<version>1.0</version>
+	</metadata>
+	<inputs>
+		<param name="http_headers" type="map" use="O"/>
+		<param name="http_body" type="binary" use="O"/>
+	</inputs>
+	<outputs>
+		<param name="http_method" type="string"/>
+        <param name="http_version" type="string"/>
+        <param name="http_uri" type="string" use="O"/>
+        <param name="http_headers" type="map" use="O"/>
+		<param name="http_body" type="binary" use="O"/>
+	</outputs>
+    <actorConfigs>
+        <param name="network.host" desc="Hostname/IP address for the actor"/>
+        <param name="network.port" desc="Port address for the actor"/>
+        <param name="http.uri" use="O" desc="Request URI for Http message">/</param>
+	</actorConfigs>
+    <receiveConfigs>
+        <param name="status.code" use="O" desc="Status code for responses" />
+    </receiveConfigs>
+    <sendConfigs>
+        <param name="http.method" desc="Http Method to use"/>
+        <param name="http.uri.extension" use="O" desc="Http URI extension for the address"/>
+        <param name="status.code" use="O" desc="Status code for responses" />
+    </sendConfigs>
+</module>

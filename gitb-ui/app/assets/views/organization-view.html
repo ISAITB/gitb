@@ -1,0 +1,148 @@
+<div ng-controller="OrganizationController as oc">
+
+    <div class="row">
+        <h4>Organization
+            <span class="tab" ng-if="oc.organizationSpinner"><i class="fa fa-spinner fa-spin"></i></span>
+        </h4>
+
+        <div class="row">
+            <div class="form-group">
+                <div class="col-md-12">
+                    <alert ng-repeat="alert in oc.alerts" type="{{alert.type}}" close="oc.closeAlert($index)">{{alert.msg}}</alert>
+                </div>
+            </div>
+        </div>
+
+        <!-- Show a table to non-admin because it is fancier ;) -->
+        <table class="table" ng-if="!oc.ds.isVendorAdmin">
+            <thead >
+            <tr>
+                <th class="grid-header col-md-4">Organization Name (Short)</th>
+                <th class="grid-header col-md-8">Organization Name (Full)</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td class="grid-row col-md-4">{{oc.ds.vendor.sname}}</td>
+                <td class="grid-row col-md-8">{{oc.ds.vendor.fname}}</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <!-- Show text inputs to admins because it is more admin style ;) -->
+        <form ng-if="oc.ds.isVendorAdmin">
+            <div class="row">
+                <div class="form-group">
+                    <div class="col-md-4">
+                        <label class="bold">Organization Name (Short):</label><br>
+                        <input type="text" class="form-control" ng-model="vdata.sname">
+                    </div>
+                    <div class="col-md-8">
+                        <label class="bold">Organization Name (Full):</label><br>
+                        <input type="text" class="form-control" ng-model="vdata.fname">
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <input type="submit" value="Save Changes" ng-click="oc.updateVendorProfile()" class="btn btn-info pull-right push-bottom" >
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="row" ng-if="!oc.ds.isVendorAdmin">
+        <!-- Some space for non-admins -->
+        <br>
+        <br>
+    </div>
+
+    <div class="row">
+        <h4>Members
+            <span class="tab" ng-if="oc.memberSpinner"><i class="fa fa-spinner fa-spin"></i></span>
+        </h4>
+
+        <table class="table">
+            <thead >
+            <tr>
+                <th class="grid-header col-md-4">Name</th>
+                <th class="grid-header col-md-6">Email</th>
+                <th class="grid-header col-md-2">Role</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr ng-repeat="user in oc.users">
+                <td class="grid-row col-md-4">{{user.name}}
+                    <span ng-if="user.id == oc.ds.user.id" class="bold">(You)</span>
+                </td>
+                <td class="grid-row col-md-6">{{user.email}}</td>
+                <td class="grid-row col-md-2">{{user.role}}</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <button type="button" class="btn btn-info pull-right" ng-if="oc.ds.isVendorAdmin" ng-click="oc.openModel()" data-toggle="modal" data-target="#addMemberModal">
+            Add Member
+        </button>
+    </div>
+
+    <!-- Popup control for adding members to organization -->
+    <div class="modal fade" id="addMemberModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title" id="myModalLabel">Member Information</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <form type="post">
+                            <div class="row">
+                                <div class="form-group">
+                                    <div class="col-md-11 col-centered">
+                                        <alert ng-repeat="alert in oc.modalAlerts" type="{{alert.type}}" close="oc.closeModalAlert($index)">{{alert.msg}}</alert>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="form-group">
+                                    <div class="col-md-11 col-centered">
+                                        <label>User Name</label>
+                                        <input type="text" class="form-control" ng-model="udata.name">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="form-group">
+                                    <div class="col-md-11 col-centered">
+                                        <label>Email</label>
+                                        <input type="email"  class="form-control" ng-model="udata.email">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="form-group">
+                                    <div class="col-md-11 col-centered">
+                                        <label>Password</label>
+                                        <input type="password" class="form-control" ng-model="udata.password" >
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+                                <input type="submit" value="Save changes" ng-click="oc.checkEmail()" class="btn btn-info" >
+                            </div>
+
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

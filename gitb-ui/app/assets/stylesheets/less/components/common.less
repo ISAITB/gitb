@@ -1,0 +1,15 @@
+@import "../_common.less";
+
+.table-directive {
+	tbody {
+		tr.table-row-directive {
+			&:hover {
+				cursor: pointer;
+				background-color: fade(@gray-light, 50%);
+			}
+			&.selected {
+				background-color: fade(@blue, 20%);
+			}
+		}
+	}
+}

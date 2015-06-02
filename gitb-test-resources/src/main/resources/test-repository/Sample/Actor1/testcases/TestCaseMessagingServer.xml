@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="TestCase1" package="IHE.XDS.Actor1.testcases" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <gitb:name>TestCaseMessagingServer</gitb:name>
+        <gitb:version>0.1</gitb:version>
+        <gitb:description>Minimal test case testing send and receive operations working with TestCaseMessagingClient</gitb:description>
+    </metadata>
+    <namespaces>
+        <ns prefix="srdc">http://www.srdc.com.tr</ns>
+    </namespaces>
+    <imports>
+        <artifact name="core_schema" type="object">gitb_core.xsd</artifact>
+	    <artifact name="tdl_schema" type="object">Sample/Actor1/artifacts/Schema1.xsd</artifact>
+	    <artifact name="testcase" type="object">Sample/Actor1/testcases/TestCase1.xml</artifact>
+	    <module name="XSDValidator" uri="urn:gitb:xsdvalidator" />
+    </imports>
+    <actors>
+        <gitb:actor id="role1" name="actor1" role="SUT" />
+        <gitb:actor id="role2" name="actor2" role="SIMULATED" />
+    </actors>
+    <variables>
+	    <var name="receive-output" type="map"/>
+	    <var name="m" type="object"/>
+    </variables>
+    <steps>
+	    <!-- use sendSampleMessage.sh in gitb-test-resources/src/main/resources to send a sample message -->
+	    <btxn from="actor1" to="actor2" txnId="t1" handler="SoapMessaging"/>
+	    <receive id="receive-output" desc="test receive message" from="actor1" to="actor2" txnId="t1"/>
+	    <etxn txnId="t1"/>
+	    <assign to="$m">$receive-output{soap_message}</assign>
+        <verify handler="XSDValidator" desc="Validate testcase against tdl schema">
+            <input name="xmldocument">$receive-output{soap_message}</input>
+            <input name="xsddocument">$tdl_schema</input>
+        </verify>
+    </steps>
+</testcase>

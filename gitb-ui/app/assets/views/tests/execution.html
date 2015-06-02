@@ -1,0 +1,70 @@
+<div class="page">
+    <div class="panel panel-default col-md-12">
+        <div class="panel-heading">
+            <h4>Execute Test</h4>
+        </div>
+        <div class="panel-body">
+            <div class="wizard-directive" wizard-directive steps="testExecutionCtrl.steps" on-next="testExecutionCtrl.onWizardNext" on-finish="testExecutionCtrl.onWizardFinish">
+                <div class="step-content select-configs">
+                    Please check your system configurations again in case of inconsistent input <br> <br>
+
+                    <div class="list-group">
+                        <div class="list-group-item endpoint" ng-repeat="endpoint in testExecutionCtrl.endpointRepresentations">
+                            <div><strong>Name: </strong>{{endpoint.name}}</div>
+                            <div><strong>Description: </strong>{{endpoint.description}}</div>
+                            <div table-directive columns="testExecutionCtrl.parameterTableColumns" data="endpoint.parameters" table-caption="'Endpoint parameters'" on-select="conformanceStatementDetailCtrl.onParameterSelect"></div>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.nextStep()" ng-if="testExecutionCtrl.isSystemConfigurationsValid(testExecutionCtrl.endpointRepresentations)">Next</button>
+                    <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.updateConfigurations()" ng-if="!testExecutionCtrl.isSystemConfigurationsValid(testExecutionCtrl.endpointRepresentations)">Update Configurations</button>
+                </div>
+                <div class="step-content select-peliminary">
+                    <div ng-repeat="simulatedConfig in testExecutionCtrl.simulatedConfigs">
+                        <p>Simulated {{simulatedConfig.actor}} Configurations <br>
+
+                        <div ng-repeat="config in simulatedConfig.configs[0].config">
+                            <label>{{config.name}}:</label>
+                            <span class="tab">{{config.value}}</span>
+                        </div>
+                    </div>
+                    <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.nextStep()">Next</button>
+                </div>
+                <div class="step-content select-execution">
+                    <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.start(testExecutionCtrl.session)">Start</button> <br> <br> <br>
+                    <div class="child col-md-12" ui-view></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="provideInputModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+	<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h4 class="modal-title" id="myModalLabel">Provide Input</h4>
+			</div>
+			<div class="modal-body">
+				<p>The server requests the following input:</p>
+
+				<div class="row">
+					<form type="post">
+						<div class="row" ng-repeat="request in requests">
+							<div class="form-group">
+								<div class="col-md-11 col-centered">
+									<label>{{request.desc}}</label>
+									<input type="text" class="form-control" ng-model="request.data">
+								</div>
+							</div>
+						</div>
+
+						<div class="modal-footer">
+							<input type="submit" value="Send" ng-click="testExecutionCtrl.provideInput()" class="btn btn-info" >
+						</div>
+					</form>
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

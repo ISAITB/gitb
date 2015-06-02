@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="PEPPOL-SenderAccessPoint-DespatchAdvice-Validation" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <gitb:name>PEPPOL-SenderAccessPoint-DespatchAdvice-Validation</gitb:name>
+        <gitb:type>CONFORMANCE</gitb:type>
+        <gitb:version>0.1</gitb:version>
+        <gitb:description>The objective of this Test Scenario is to ensure the Sender Access Point (the System Under
+            Test) can submit a conformant PEPPOL BIS 4A electronic despatch advice to a Receiver Access Point using the
+            AS2 protocol. Then submitted document is validated by UBL 2.1 schema and PEPPOL Schematron rules.
+        </gitb:description>
+    </metadata>
+    <namespaces>
+    </namespaces>
+    <imports>
+        <artifact type="schema" encoding="UTF-8" name="UBL_DespatchAdvice_Schema_File">Peppol_BIS_30A_DespatchAdvice/artifacts/UBL/maindoc/UBL-DespatchAdvice-2.1.xsd</artifact>
+        <artifact type="schema" encoding="UTF-8" name="PEPPOL_BII_CORE_DespatchAdvice_Schematron_File" >Peppol_BIS_30A_DespatchAdvice/artifacts/PEPPOL/BII CORE/BIICORE-UBL-T16-V1.0.sch</artifact>
+        <artifact type="schema" encoding="UTF-8" name="PEPPOL_BII_RULES_DespatchAdvice_Schematron_File">Peppol_BIS_30A_DespatchAdvice/artifacts/PEPPOL/BII RULES/BIIRULES-UBL-T16.sch</artifact>
+        <artifact type="schema" encoding="UTF-8" name="SBDH_Schematron_File" >Peppol_BIS_30A_DespatchAdvice/artifacts/PEPPOL/SBDH.sch</artifact>
+    </imports>
+    <actors>
+        <gitb:actor id="SenderAccessPoint" name="SenderAccessPoint" role="SUT" />
+        <gitb:actor id="ReceiverAccessPoint" name="ReceiverAccessPoint" role="SIMULATED">
+            <gitb:endpoint name="as2">
+                <gitb:config name="participant.identifier">0088:12345test</gitb:config>
+                <gitb:config name="public.key">data:application/x-x509-ca-cert;base64,LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCk1JSURPekNDQWlPZ0F3SUJBZ0lKQUtid2FLcEV3TlRLTUEwR0NTcUdTSWIzRFFFQkN3VUFNRFF4RFRBTEJnTlZCQW9NQkVkSlZFSXgNCkRUQUxCZ05WQkFzTUJFZEpWRUl4RkRBU0JnTlZCQU1NQzJkcGRHSXRaVzVuYVc1bE1CNFhEVEUwTVRJeU5ERXpNakl6TkZvWERUSTANCk1USXlNVEV6TWpJek5Gb3dOREVOTUFzR0ExVUVDZ3dFUjBsVVFqRU5NQXNHQTFVRUN3d0VSMGxVUWpFVU1CSUdBMVVFQXd3TFoybDANCllpMWxibWRwYm1Vd2dnRWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFS0FvSUJBUUNwTnVSUk1ocGQyU3ZOS3NaZS9XVHgNCm00enVYMlpjNWJ5M3pHY211endlUGRNQ25DWGsyRkFVSDY3cVM5cjVWQmE0VVNmaUI3bDFwaXlMck53WVdHUkRvNU9lV0l6NlE4MjENCi8xdjdVSHE3RmZCMExGUGNKK21Pd3JEcVMrVkwwTWpjU1c0cG9jSkhycEZ3T2JXSFRZL1I0V21XMnh3R09LVmgwT1VMVWhxUXNIRG4NCkRoQ3pGYUVXaFM4bjFsVXczR1JpcHdLTHlZdlhLOFhnTGNlRW1oK2owK2NkbUlqNGExTDRvemEvVWdCbkNxU29iK3Zvd2dDbHlabkcNClZpaEU5SzhlTEx3Q1NMbElpRCtiWFdmMFZKUExYQk5MZE5Ja1JSQzBRTzBqVDlUdUU1VEYzU2tua0E1RDBORnAwMjNBbHo3amllSTANCkQ2SkU3OFF5TlFONnk2UVJBZ01CQUFHalVEQk9NQjBHQTFVZERnUVdCQlFwQWtyeTIwaEFjdmx3KzRwb3hRQzhUSStFZ1RBZkJnTlYNCkhTTUVHREFXZ0JRcEFrcnkyMGhBY3Zsdys0cG94UUM4VEkrRWdUQU1CZ05WSFJNRUJUQURBUUgvTUEwR0NTcUdTSWIzRFFFQkN3VUENCkE0SUJBUUJTZGZtVDNFOXV2aGlFZ1ZlZmR3WGtreHFsWExRUXhmamFxVlJWelBUSExxZFZzL25CSytpUU5ocWcrNmVMY2FHUXl5RHkNCjg4dndRODVycXdPRmJaZDA1ZXNJRlhZbDBwZ2wxcFZzYjdIbU1ObUtUM1VQYXkzSERsSFg0NVpvZXhEVXB6YTRPY3JhdUVNOFlnLzUNCmk5ZENJUEMxR2lIZWJKcFl1c01WZlA3OGIrNURBeUFSckh0Y2IwRUo4ck9MeEhoNksyUzRFSEk2c3FRa0dIRXQxejRtNjZMeUsrdm4NCmtMR2FxM3k2TVdFdWZoNzhlSUNEeXlWejBEaGRJaHIxOFpIWGRwY3NIMlZPa0UzNktuV1NvMHNwRVhhNlp0UDhNcVE2MGtKZ0J0NFgNCmN1QXJLZmpJR0M2dkI2ZEUwTnpYbmdCRFBIZ01mbUhKVzAxOC82ZU4vZjBxCi0tLS0tRU5EIENFUlRJRklDQVRFLS0tLS0K</gitb:config>
+            </gitb:endpoint>
+        </gitb:actor>
+    </actors>
+    <variables>
+        <var name="as2_address" type="string" />
+
+        <!-- Participant Identifier of Sender Access Point (System Under Test). Must be retrieved
+             from SUT representative -->
+        <var name="sender_participant_identifier" type="string" />
+        <!-- Participant Identifier of Receiver Access Point (Simulated) -->
+        <var name="receiver_participant_identifier" type="string" />
+        <!-- Represents the type of document that the recipient is able to handle -->
+        <var name="document_identifier" type="string">
+            <value>urn:oasis:names:specification:ubl:schema:xsd:DespatchAdvice-2::DespatchAdvice##urn:www.cenbii.eu:transaction:biitrns016:ver1.0:extended:urn:www.peppol.eu:bis:peppol30a:ver1.0::2.1</value>
+        </var>
+        <!-- Root namespace of the document identifier  -->
+        <var name="document_identifier_ns" type="string">
+            <value>urn:oasis:names:specification:ubl:schema:xsd:DespatchAdvice-2</value>
+        </var>
+        <!-- The identifier of the process -->
+        <var name="process_identifier" type="string">
+            <value>urn:www.cenbii.eu:profile:bii30:ver2.0</value>
+        </var>
+        <!-- XML local element name of the root-element in the business message -->
+        <var name="business_message_type" type="string">
+            <value>DespatchAdvice</value>
+        </var>
+
+    </variables>
+    <steps>
+        <assign to="$as2_address">concat("https://", $SenderAccessPoint{ReceiverAccessPoint}{network.host}, ":", $SenderAccessPoint{ReceiverAccessPoint}{network.port})</assign>
+        <assign to="$receiver_participant_identifier" source="$SenderAccessPoint{ReceiverAccessPoint}{participant.identifier}" />
+        <assign to="$sender_participant_identifier"   source="$SenderAccessPoint{participant.identifier}" />
+
+        <btxn from="SenderAccessPoint" to="ReceiverAccessPoint" txnId="t1" handler="PeppolAS2Messaging"/>
+        <receive id="as2_output" desc="Send message to Receiver Access Point" from="SenderAccessPoint" to="ReceiverAccessPoint" txnId="t1" >
+            <config name="document.identifier">urn:oasis:names:specification:ubl:schema:xsd:DespatchAdvice-2::DespatchAdvice##urn:www.cenbii.eu:transaction:biitrns016:ver1.0:extended:urn:www.peppol.eu:bis:peppol30a:ver1.0::2.1</config>
+            <config name="process.identifier">urn:www.cenbii.eu:profile:bii30:ver2.0</config>
+        </receive>
+        <send id="mdn" desc="Send MDN back to Sender Access Point"  from="ReceiverAccessPoint" to="SenderAccessPoint" txnId="t1">
+            <input name="http_headers" source="$as2_output{http_headers}" />
+        </send>
+        <etxn txnId="t1"/>
+
+        <verify handler="XSDValidator" desc="Validate Despatch Advice against UBL 2.1 Despatch Advice Schema">
+            <input name="xmldocument">$as2_output{business_message}</input>
+            <input name="xsddocument" source="$UBL_DespatchAdvice_Schema_File"/>
+        </verify>
+        <verify handler="SchematronValidator" desc="Validate Despatch Advice against PEPPOL BII Core">
+            <input name="xmldocument">$as2_output{business_message}</input>
+            <input name="schematron" source="$PEPPOL_BII_CORE_DespatchAdvice_Schematron_File"/>
+        </verify>
+        <verify handler="SchematronValidator" desc="Validate Despatch Advice against PEPPOL BII Rules">
+            <input name="xmldocument">$as2_output{business_message}</input>
+            <input name="schematron" source="$PEPPOL_BII_RULES_DespatchAdvice_Schematron_File"/>
+        </verify>
+        <verify handler="SchematronValidator" desc="Validate Standard Business Document Header against OpenPEPPOL Envelope Specifications">
+            <input name="xmldocument">$as2_output{business_header}</input>
+            <input name="schematron" source="$SBDH_Schematron_File"/>
+        </verify>
+    </steps>
+</testcase>

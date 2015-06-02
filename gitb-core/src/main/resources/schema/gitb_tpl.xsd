@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsd:schema xmlns="http://www.gitb.com/tpl/v1/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:gitb="http://www.gitb.com/core/v1/" targetNamespace="http://www.gitb.com/tpl/v1/" elementFormDefault="qualified" version="1.0">
+	<xsd:import namespace="http://www.gitb.com/core/v1/" schemaLocation="gitb_core.xsd"/>
+	<xsd:element name="testcase" type="TestCase"/>
+	<xsd:complexType name="TestCase">
+		<xsd:sequence>
+			<xsd:element name="metadata" type="gitb:Metadata"/>
+			<xsd:element name="actors" type="gitb:Roles"/>
+			<xsd:element name="preliminary" type="Preliminary" minOccurs="0"/>
+			<xsd:element name="steps" type="Sequence"/>
+		</xsd:sequence>
+		<xsd:attribute name="id" type="xsd:string" use="required"/>
+	</xsd:complexType>
+	<xsd:complexType name="Sequence">
+		<xsd:complexContent>
+			<xsd:extension base="TestStep">
+				<xsd:sequence>
+					<xsd:choice maxOccurs="unbounded">
+						<xsd:element name="msg" type="MessagingStep"/>
+						<xsd:element name="decision" type="DecisionStep"/>
+						<xsd:element name="loop" type="Sequence"/>
+						<xsd:element name="flow" type="FlowStep"/>
+						<xsd:element name="verify" type="TestStep"/>
+						<xsd:element name="exit" type="ExitStep"/>
+						<xsd:element name="interact" type="UserInteractionStep"/>
+					</xsd:choice>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="TestStep">
+		<xsd:sequence>
+			<xsd:element name="desc" type="xsd:string" minOccurs="0"/>
+		</xsd:sequence>
+		<xsd:attribute name="id" type="xsd:string" use="required"/>
+	</xsd:complexType>
+	<xsd:complexType name="DecisionStep">
+		<xsd:complexContent>
+			<xsd:extension base="TestStep">
+				<xsd:sequence>
+					<xsd:element name="then" type="Sequence"/>
+					<xsd:element name="else" type="Sequence" minOccurs="0"/>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="ExitStep">
+		<xsd:complexContent>
+			<xsd:extension base="TestStep">
+				<xsd:sequence/>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="FlowStep">
+		<xsd:complexContent>
+			<xsd:extension base="TestStep">
+				<xsd:sequence>
+					<xsd:element name="thread" type="Sequence" maxOccurs="unbounded"/>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="UserInteractionStep">
+		<xsd:complexContent>
+			<xsd:extension base="TestStep">
+				<xsd:sequence>
+					<xsd:choice maxOccurs="unbounded">
+						<xsd:element name="instruct" type="Instruction"/>
+						<xsd:element name="request" type="UserRequest"/>
+					</xsd:choice>
+				</xsd:sequence>
+				<xsd:attribute name="with" type="xsd:string"/>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="Preliminary">
+		<xsd:sequence>
+			<xsd:choice maxOccurs="unbounded">
+				<xsd:element name="instruct" type="Instruction"/>
+				<xsd:element name="request" type="UserRequest"/>
+			</xsd:choice>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Instruction">
+		<xsd:complexContent>
+			<xsd:extension base="InstructionOrRequest"/>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="UserRequest">
+		<xsd:complexContent>
+			<xsd:extension base="InstructionOrRequest"/>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="InstructionOrRequest">
+		<xsd:complexContent>
+			<xsd:extension base="TestStep">
+				<xsd:attribute name="with" type="xsd:string" use="optional"/>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="MessagingStep">
+		<xsd:complexContent>
+			<xsd:extension base="TestStep">
+				<xsd:sequence>
+					<xsd:element name="from" type="xsd:string"/>
+					<xsd:element name="to" type="xsd:string"/>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+</xsd:schema>

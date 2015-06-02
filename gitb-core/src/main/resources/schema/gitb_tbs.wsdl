@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<definitions targetNamespace="http://www.gitb.com/tbs/v1/"
+             name="TestbedService"
+             xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:tns="http://www.gitb.com/tbs/v1/"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata"
+             xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl">
+    <types>
+        <xsd:schema>
+            <xsd:import namespace="http://www.gitb.com/tbs/v1/" schemaLocation="gitb_tbs.xsd"/>
+        </xsd:schema>
+    </types>
+    <message name="getTestCaseDefinitionRequest">
+        <part name="parameters" element="tns:GetTestCaseDefinitionRequest"/>
+    </message>
+    <message name="getTestCaseDefinitionResponse">
+        <part name="parameters" element="tns:GetTestCaseDefinitionResponse"/>
+    </message>
+    <message name="getActorDefinitionRequest">
+        <part name="parameters" element="tns:GetActorDefinitionRequest"/>
+    </message>
+    <message name="getActorDefinitionResponse">
+        <part name="parameters" element="tns:GetActorDefinitionResponse"/>
+    </message>
+    <message name="initiateRequest">
+        <part name="parameters" element="tns:InitiateRequest"/>
+    </message>
+    <message name="initiateResponse">
+        <part name="parameters" element="tns:InitiateResponse"/>
+    </message>
+    <message name="configureRequest">
+        <part name="parameters" element="tns:ConfigureRequest"/>
+    </message>
+    <message name="configureResponse">
+        <part name="parameters" element="tns:ConfigureResponse"/>
+    </message>
+    <message name="provideInputRequest">
+        <part name="parameters" element="tns:ProvideInputRequest"/>
+    </message>
+    <message name="provideInputResponse">
+        <part name="parameters" element="tns:Void"/>
+    </message>
+    <message name="initiatePreliminaryRequest">
+        <part name="parameters" element="tns:InitiatePreliminaryRequest"/>
+    </message>
+    <message name="initiatePreliminaryResponse">
+        <part name="parameters" element="tns:InitiatePreliminaryResponse"/>
+    </message>
+    <message name="startRequest">
+        <part name="parameters" element="tns:StartRequest"/>
+    </message>
+    <message name="startResponse">
+        <part name="parameters" element="tns:Void"/>
+    </message>
+    <message name="stopRequest">
+        <part name="parameters" element="tns:StopRequest"/>
+    </message>
+    <message name="stopResponse">
+        <part name="parameters" element="tns:Void"/>
+    </message>
+    <message name="restartRequest">
+        <part name="parameters" element="tns:RestartRequest"/>
+    </message>
+    <message name="restartResponse">
+        <part name="parameters" element="tns:Void"/>
+    </message>
+    <!--request/responses for Callbacks-->
+    <message name="updateStatusRequest">
+        <part name="parameters" element="tns:UpdateStatusRequest"/>
+    </message>
+    <message name="updateStatusResponse">
+        <part name="parameters" element="tns:Void"/>
+    </message>
+    <message name="interactWithUsersRequest">
+        <part name="parameters" element="tns:InteractWithUsersRequest"/>
+    </message>
+    <message name="interactWithUsersResponse">
+        <part name="parameters" element="tns:Void"/>
+    </message>
+    <message name="error">
+        <part name="fault" element="tns:ErrorInfo" />
+    </message>
+    <portType name="TestbedService">
+        <operation name="getTestCaseDefinition">
+            <input
+                    wsam:Action="http://www.gitb.com/tbs/v1/TestbedService/getTestCaseDefinitionRequest"
+                    message="tns:getTestCaseDefinitionRequest"/>
+            <output
+                    wsam:Action="http://www.gitb.com/tbs/v1/TestbedService/getTestCaseDefinitionResponse"
+                    message="tns:getTestCaseDefinitionResponse"/>
+            <fault message="tns:error" name="error" />
+        </operation>
+        <operation name="getActorDefinition">
+            <input
+                    wsam:Action="http://www.gitb.com/tbs/v1/TestbedService/getActorDefinitionRequest"
+                    message="tns:getActorDefinitionRequest"/>
+            <output
+                    wsam:Action="http://www.gitb.com/tbs/v1/TestbedService/getActorDefinitionResponse"
+                    message="tns:getActorDefinitionResponse"/>
+            <fault message="tns:error" name="error" />
+        </operation>
+        <operation name="initiate">
+            <input wsam:Action="http://www.gitb.com/tbs/v1/TestbedService/initiateRequest"
+                   message="tns:initiateRequest"/>
+            <output wsam:Action="http://www.gitb.com/tbs/v1/TestbedService/initiateResponse"
+                    message="tns:initiateResponse"/>
+            <fault message="tns:error" name="error" />
+        </operation>
+        <operation name="provideInput">
+            <input wsam:Action="http://www.gitb.com/tbs/v1/TestbedService/provideInputRequest"
+                   message="tns:provideInputRequest"/>
+            <output wsam:Action="http://www.gitb.com/tbs/v1/TestbedService/provideInputResponse"
+                    message="tns:provideInputResponse"/>
+            <fault message="tns:error" name="error" />
+        </operation>
+        <operation name="configure">
+            <input wsam:Action="http://www.gitb.com/tbs/v1/TestbedService/configureRequest"
+                   message="tns:configureRequest"/>
+            <output wsam:Action="http://www.gitb.com/tbs/v1/TestbedService/configureResponse"
+                    message="tns:configureResponse"/>
+            <fault message="tns:error" name="error" />
+        </operation>
+        <operation name="initiatePreliminary">
+            <input wsam:Action="http://www.gitb.com/tbs/v1/TestbedService/initiatePreliminaryRequest"
+                   message="tns:initiatePreliminaryRequest"/>
+            <output wsam:Action="http://www.gitb.com/tbs/v1/TestbedService/initiatePreliminaryResponse"
+                    message="tns:initiatePreliminaryResponse"/>
+            <fault message="tns:error" name="error" />
+        </operation>
+        <operation name="start">
+            <input wsam:Action="http://www.gitb.com/tbs/v1/TestbedService/startRequest"
+                   message="tns:startRequest"/>
+            <output wsam:Action="http://www.gitb.com/tbs/v1/TestbedService/startResponse"
+                    message="tns:startResponse"/>
+            <fault message="tns:error" name="error" />
+        </operation>
+        <operation name="stop">
+            <input wsam:Action="http://www.gitb.com/tbs/v1/TestbedService/stopRequest"
+                   message="tns:stopRequest"/>
+            <output wsam:Action="http://www.gitb.com/tbs/v1/TestbedService/stopResponse"
+                    message="tns:stopResponse"/>
+            <fault message="tns:error" name="error" />
+        </operation>
+        <operation name="restart">
+            <input wsam:Action="http://www.gitb.com/tbs/v1/TestbedService/restartRequest"
+                   message="tns:restartRequest"/>
+            <output wsam:Action="http://www.gitb.com/tbs/v1/TestbedService/restartResponse"
+                    message="tns:restartResponse"/>
+            <fault message="tns:error" name="error" />
+        </operation>
+    </portType>
+    <portType name="TestbedClient">
+        <operation name="updateStatus">
+            <input
+                    wsam:Action="http://www.gitb.com/tbs/v1/TestbedClient/updateStatusRequest"
+                    message="tns:updateStatusRequest"/>
+            <output
+                    wsam:Action="http://www.gitb.com/tbs/v1/TestbedClient/updateStatusResponse"
+                    message="tns:updateStatusResponse"/>
+        </operation>
+        <operation name="interactWithUsers">
+            <input
+                    wsam:Action="http://www.gitb.com/tbs/v1/TestbedClient/interactWithUsersRequest"
+                    message="tns:interactWithUsersRequest"/>
+            <output
+                    wsam:Action="http://www.gitb.com/tbs/v1/TestbedClient/interactWithUsersResponse"
+                    message="tns:interactWithUsersResponse"/>
+        </operation>
+    </portType>
+    <binding name="TestbedServicePortBinding" type="tns:TestbedService">
+        <wsaw:UsingAddressing required="true"/>
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http"
+                      style="document"/>
+        <operation name="getTestCaseDefinition">
+            <soap:operation soapAction=""/>
+            <input>
+                <soap:body use="literal"/>
+            </input>
+            <output>
+                <soap:body use="literal"/>
+            </output>
+            <fault name="error">
+                <soap:fault name="error" use="literal" />
+            </fault>
+        </operation>
+        <operation name="getActorDefinition">
+            <soap:operation soapAction=""/>
+            <input>
+                <soap:body use="literal"/>
+            </input>
+            <output>
+                <soap:body use="literal"/>
+            </output>
+            <fault name="error">
+                <soap:fault name="error" use="literal" />
+            </fault>
+        </operation>
+        <operation name="initiate">
+            <soap:operation soapAction=""/>
+            <input>
+                <soap:body use="literal"/>
+            </input>
+            <output>
+                <soap:body use="literal"/>
+            </output>
+            <fault name="error">
+                <soap:fault name="error" use="literal" />
+            </fault>
+        </operation>
+        <operation name="configure">
+            <soap:operation soapAction=""/>
+            <input>
+                <soap:body use="literal"/>
+            </input>
+            <output>
+                <soap:body use="literal"/>
+            </output>
+            <fault name="error">
+                <soap:fault name="error" use="literal" />
+            </fault>
+        </operation>
+        <operation name="provideInput">
+            <soap:operation soapAction=""/>
+            <input>
+                <soap:body use="literal"/>
+            </input>
+            <output>
+                <soap:body use="literal"/>
+            </output>
+            <fault name="error">
+                <soap:fault name="error" use="literal" />
+            </fault>
+        </operation>
+        <operation name="initiatePreliminary">
+            <soap:operation soapAction=""/>
+            <input>
+                <soap:body use="literal"/>
+            </input>
+            <output>
+                <soap:body use="literal"/>
+            </output>
+            <fault name="error">
+                <soap:fault name="error" use="literal" />
+            </fault>
+        </operation>
+        <operation name="start">
+            <soap:operation soapAction=""/>
+            <input>
+                <soap:body use="literal"/>
+            </input>
+            <output>
+                <soap:body use="literal"/>
+            </output>
+            <fault name="error">
+                <soap:fault name="error" use="literal" />
+            </fault>
+        </operation>
+        <operation name="stop">
+            <soap:operation soapAction=""/>
+            <input>
+                <soap:body use="literal"/>
+            </input>
+            <output>
+                <soap:body use="literal"/>
+            </output>
+            <fault name="error">
+                <soap:fault name="error" use="literal" />
+            </fault>
+        </operation>
+        <operation name="restart">
+            <soap:operation soapAction=""/>
+            <input>
+                <soap:body use="literal"/>
+            </input>
+            <output>
+                <soap:body use="literal"/>
+            </output>
+            <fault name="error">
+                <soap:fault name="error" use="literal" />
+            </fault>
+        </operation>
+    </binding>
+    <binding name="TestbedClientPortBinding" type="tns:TestbedClient">
+        <wsaw:UsingAddressing required="true"/>
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http"
+                      style="document"/>
+        <operation name="updateStatus">
+            <soap:operation soapAction=""/>
+            <input>
+                <soap:body use="literal"/>
+            </input>
+            <output>
+                <soap:body use="literal"/>
+            </output>
+        </operation>
+        <operation name="interactWithUsers">
+            <soap:operation soapAction=""/>
+            <input>
+                <soap:body use="literal"/>
+            </input>
+            <output>
+                <soap:body use="literal"/>
+            </output>
+        </operation>
+    </binding>
+
+    <service name="TestbedService">
+        <port name="TestbedServicePort" binding="tns:TestbedServicePortBinding">
+            <soap:address location="/service/TestbedService"/>
+        </port>
+    </service>
+
+    <service name="TestbedClient">
+        <port name="TestbedClientPort" binding="tns:TestbedClientPortBinding">
+            <soap:address location="/service/TestbedClient"/>
+        </port>
+    </service>
+    <!-- to generate sources in given package -->
+    <jaxws:bindings xmlns:jaxws="http://java.sun.com/xml/ns/jaxws">
+        <jaxws:package name="com.gitb.tbs">
+        </jaxws:package>
+    </jaxws:bindings>
+
+</definitions>
+

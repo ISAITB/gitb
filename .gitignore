@@ -1,0 +1,28 @@
+*.class
+*.log
+*.swp
+
+#IntelliJ IDEA specific
+.idea
+*.iml
+*.ipr
+*.iws
+
+#Play Specific
+logs
+/project/project
+/project/target
+target
+tmp
+.history
+dist
+/out
+/.idea_modules
+/.classpath
+/.project
+/.settings
+RUNNING_PID
+
+#test repository deployment folder
+test/resources/repository
+repository/status-updates

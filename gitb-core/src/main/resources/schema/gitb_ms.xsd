@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsd:schema version="1.0" targetNamespace="http://www.gitb.com/ms/v1/"
+            xmlns="http://www.gitb.com/ms/v1/"
+            xmlns:tns="http://www.gitb.com/ms/v1/"
+            xmlns:tr="http://www.gitb.com/tr/v1/"
+            xmlns:gitb="http://www.gitb.com/core/v1/"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+
+    <xsd:import namespace="http://www.gitb.com/tr/v1/" schemaLocation="gitb_tr.xsd"/>
+    <xsd:import namespace="http://www.gitb.com/core/v1/" schemaLocation="gitb_core.xsd"/>
+
+    <xsd:element name="GetModuleDefinitionRequest" type="tns:Void" />
+    <xsd:element name="GetModuleDefinitionResponse" type="tns:GetModuleDefinitionResponse" />
+    <xsd:element name="InitiateRequest" type="tns:InitiateRequest" />
+    <xsd:element name="InitiateResponse" type="tns:InitiateResponse" />
+    <xsd:element name="SendRequest" type="tns:SendRequest" />
+    <xsd:element name="SendResponse" type="tns:SendResponse" />
+    <xsd:element name="BeginTransactionRequest" type="tns:BeginTransactionRequest" />
+    <xsd:element name="BeginTransactionResponse" type="tns:Void" />
+    <xsd:element name="NotifyForMessageRequest" type="tns:NotifyForMessageRequest" />
+    <xsd:element name="NotifyForMessageResponse" type="tns:Void" />
+    <xsd:element name="EndTransactionRequest" type="tns:BasicRequest" />
+    <xsd:element name="EndTransactionResponse" type="tns:Void" />
+    <xsd:element name="FinalizeRequest" type="tns:FinalizeRequest" />
+    <xsd:element name="FinalizeResponse" type="tns:Void" />
+
+    <xsd:complexType name="Void">
+        <xsd:sequence/>
+    </xsd:complexType>
+
+    <xsd:complexType name="GetModuleDefinitionResponse">
+        <xsd:sequence>
+            <xsd:element name="module" type="gitb:MessagingModule" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="InitiateRequest">
+        <xsd:sequence>
+            <xsd:element name="actorConfiguration" type="gitb:ActorConfiguration" minOccurs="1" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="InitiateResponse">
+        <xsd:sequence>
+            <xsd:element name="sessionId" type="xsd:string" />
+            <xsd:element name="actorConfiguration" type="gitb:ActorConfiguration" minOccurs="1" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="BasicRequest">
+        <xsd:sequence>
+            <xsd:element name="sessionId" type="xsd:string" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="BeginTransactionRequest">
+        <xsd:complexContent>
+            <xsd:extension base="BasicRequest">
+                <xsd:sequence>
+                    <xsd:element name="config" type="gitb:Configuration" minOccurs="0" maxOccurs="unbounded" />
+                    <xsd:element name="from" type="xsd:string" minOccurs="0" />
+                    <xsd:element name="to" type="xsd:string" minOccurs="0" />
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="SendRequest">
+        <xsd:complexContent>
+            <xsd:extension base="BasicRequest">
+                <xsd:sequence>
+                    <xsd:element name="to" type="xsd:string"/>
+                    <xsd:element name="input" type="gitb:AnyContent" maxOccurs="unbounded" minOccurs="0"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="SendResponse">
+        <xsd:sequence>
+            <xsd:element name="report" type="tr:TAR" />
+        </xsd:sequence>
+    </xsd:complexType>
+
+    <xsd:complexType name="NotifyForMessageRequest">
+        <xsd:complexContent>
+            <xsd:extension base="BasicRequest">
+                <xsd:sequence>
+                    <xsd:element name="from" type="xsd:string" minOccurs="0" />
+                    <xsd:element name="to" type="xsd:string" minOccurs="0" />
+                    <xsd:element name="report" type="tr:TAR" />
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="FinalizeRequest">
+        <xsd:sequence>
+            <xsd:element name="sessionId" type="xsd:string" />
+        </xsd:sequence>
+    </xsd:complexType>
+</xsd:schema>
+

@@ -1,0 +1,21 @@
+@import "_common.less";
+.page.index {
+    header {
+	height: @navigation-height;
+	position: fixed !important;
+	top: 0 !important;
+	min-height: @navigation-height !important;
+
+        .logo {
+            height: @navigation-height * (3/4);
+        }
+    }
+
+    & > .child {
+	margin-top: @navigation-height;
+    }
+
+    footer {
+
+    }
+}

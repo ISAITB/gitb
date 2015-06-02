@@ -1,0 +1,37 @@
+@import "../_common.less";
+
+.editor {
+	.CodeMirror {
+		height: 500px;
+	}
+	.indicator-editor-widget {
+		font-size: 12px;
+		line-height: 16px;
+		
+		&.info-indicator-editor-widget {
+			.indicator-icon {
+				color: @success-green;
+			}
+		}
+		
+		&.warning-indicator-editor-widget {
+			.indicator-icon {
+				color: @warning-yellow;
+			}
+		}
+		
+		&.error-indicator-editor-widget {
+			.indicator-icon {
+				color: @error-red;
+			}
+		}
+
+		.indicator-icon {
+			padding: 0 8px;
+		}
+	}
+
+	.indicator-widget-line {
+		background-color: fade(#000, 10%);
+	}
+}

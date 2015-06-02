@@ -1,0 +1,37 @@
+<div class="modal-header">
+	<h4>Edit endpoint configuration</h4>
+</div>
+<div class="modal-body">
+	<div class="configuration">
+		<div class="col-12-md">
+			<strong>Name: </strong> {{editEndpointConfigurationCtrl.parameter.name}}
+		</div>
+		<div class="col-12-md">
+			<strong>Description: </strong> {{editEndpointConfigurationCtrl.parameter.desc}}
+		</div>
+		<div class="col-12-md">
+			<strong>Kind: </strong> {{editEndpointConfigurationCtrl.parameter.kind}}
+		</div>
+		<div class="col-12-md">
+			<strong>Use: </strong> {{editEndpointConfigurationCtrl.parameter.use}}
+		</div>
+		<div class="col-12-md" ng-if="!editEndpointConfigurationCtrl.isBinary">
+			<strong>Value: </strong> 
+			<input type="text" class="form-control" ng-model="editEndpointConfigurationCtrl.configuration.value">
+		</div>
+		<div class="col-12-md" ng-if="editEndpointConfigurationCtrl.isBinary">
+			<strong>Value: </strong>
+			<span ng-if="editEndpointConfigurationCtrl.isConfiugrationSet">{{editEndpointConfigurationCtrl.configuration.value.length}} bytes</span>
+			<span ng-if="!editEndpointConfigurationCtrl.isConfiugrationSet">Not set</span>
+			<p>
+				<span ng-if="editEndpointConfigurationCtrl.file != null">{{editEndpointConfigurationCtrl.file.name}} - {{editEndpointConfigurationCtrl.file.size}} bytes</span>
+				<span ng-if="editEndpointConfigurationCtrl.file == null">No file selected</span>
+				<button class="btn btn-default" ng-file-select="editEndpointConfigurationCtrl.onFileSelect($files)">Select file</button>
+			</p>
+		</div>
+	</div>
+</div>
+<div class="modal-footer">
+	<button class="btn btn-primary" ng-click="editEndpointConfigurationCtrl.save()">Save</button>
+	<button class="btn" ng-click="editEndpointConfigurationCtrl.cancel()">Cancel</button>
+</div>

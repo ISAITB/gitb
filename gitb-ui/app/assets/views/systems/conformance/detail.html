@@ -1,0 +1,53 @@
+<div class="page conformance">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h5 class="title">Conformance Statement Details</h5>
+
+			<a href="" ng-click="conformanceStatementDetailCtrl.deleteConformanceStatement()" class="btn btn-default pull-right">Delete</a>
+		</div>
+		<div class="panel-body">
+			<div class="row">
+				<div class="col-md-6">
+					<p><strong>Actor Details</strong></p>
+					<p>ID: {{conformanceStatementDetailCtrl.conformanceStatementRepr.actorId}}</p>
+					<p>Name: {{conformanceStatementDetailCtrl.conformanceStatementRepr.actorName}}</p>
+				</div>
+				<div class="col-md-6">
+					<p><strong>Domain Details</strong></p>
+					<p>Name: {{conformanceStatementDetailCtrl.domain.fname}}</p>
+					<p>Description: {{conformanceStatementDetailCtrl.domain.description}}</p>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.conformanceStatement.options.length > 0">
+		<div class="panel-heading">
+			<h5 class="title">Selected Actor Options</h5>
+		</div>
+		<div table-directive columns="conformanceStatementDetailCtrl.optionTableColumns" data="conformanceStatementDetailCtrl.conformanceStatement.options" allow-select="false"></div>
+	</div>
+	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.endpoints.length > 0">
+		<div class="panel-heading">
+			<h5 class="title">Endpoints</h5>
+		</div>
+		<div class="list-group">
+			<div class="list-group-item endpoint" ng-repeat="endpoint in conformanceStatementDetailCtrl.endpointRepresentations">
+				<div><strong>Name: </strong>{{endpoint.name}}</div>
+				<div><strong>Description: </strong>{{endpoint.description}}</div>
+				<div table-directive columns="conformanceStatementDetailCtrl.parameterTableColumns" data="endpoint.parameters" table-caption="'Endpoint parameters'" on-select="conformanceStatementDetailCtrl.onParameterSelect"></div>
+			</div>
+		</div>
+	</div>
+	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.conformanceTests.length > 0">
+		<div class="panel-heading">
+			<h5 class="title">Conformance Tests</h5>
+		</div>
+		<div table-directive columns="conformanceStatementDetailCtrl.testsTableColumns" data="conformanceStatementDetailCtrl.conformanceTests" on-select="conformanceStatementDetailCtrl.onTestSelect"></div>
+	</div>
+    <div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.interoperabilityTests.length > 0">
+        <div class="panel-heading">
+            <h5 class="title">Interoperability Tests</h5>
+        </div>
+        <div table-directive columns="conformanceStatementDetailCtrl.testsTableColumns" data="conformanceStatementDetailCtrl.interoperabilityTests" on-select="conformanceStatementDetailCtrl.onTestSelect"></div>
+    </div>
+</div>

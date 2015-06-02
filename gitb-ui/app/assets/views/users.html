@@ -1,0 +1,89 @@
+<div class="container" style="width:80%" ng-controller="UsersController as lc">
+    <!-- Default panel contents -->
+    <div class="panel-body">
+        <table class="usersTable table table-striped">
+            <thead>
+                <tr>
+                    <th class="tableHeader">ROLE</th>
+                    <th class="tableHeader">NAME</th>
+                    <th class="tableHeader">SYSTEM</th>
+                    <th class="tableHeader">EMAIL</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr ng-repeat="user in uc.users">
+                    <td class="tableBody">{{role(user.role)}}</td>
+                    <td class="tableBody">{{user.name}}</td>
+                    <td class="tableBody" ng-show="!user.edit">{{user.system}}</td>
+                    <td class="tableBody" ng-show="user.edit">
+                        <b>Available Systems</b>
+                        <div class="btn-group">
+                            <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                                {{user.system}}
+                                <span class="caret"></span>
+                            </button>
+                            <ul class="dropdown-menu" role="menu">
+                                <li ng-repeat="system in systems">
+                                    <a href="" ng-click="changeUserSystem($parent.$index,system.name)">{{system.name}}</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </td>
+                    <td class="tableBody" ng-show="!user.edit">{{user.email}}</td>
+                    <td class="tableBody" ng-show="user.edit">
+                        <input ng-model="user.email" type="text" class="form-control" placeholder="{{user.email}}">
+                    </td>
+
+                </tr>
+            </tbody>
+        </table>
+        <div class="col-md-6">
+            <button ng-if="checkadmin()" type="button" class="btn btn-primary" data-toggle="modal" data-target="#addUser">Add User</button>
+        </div>
+    </div>
+</div>
+</div>
+
+<div class="modal fade" id="addUser" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog" style="margin-top: 0px;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <br>
+                <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                <h4 class="modal-title" id="myModalLabel" style="font-weight:none;">New User Information</h4>
+            </div>
+            <div class="modal-body">
+                <br>
+                <b>Name</b>
+                <input ng-model="NewName" type="text" class="form-control" style="width:90%;">
+                <br>
+
+                <b>E-Mail</b>
+                <input ng-model="NewEmail" type="text" class="form-control" style="width:90%;">
+                <br>
+
+                <b>Password</b>
+                <input ng-model="pwd" type="password" class="form-control" style="width:90%;">
+                <br>
+                <b>Confirmation</b>
+                <input ng-model="cnf" type="password" class="form-control" style="width:90%;">
+                <br>
+                <!--b>Available Systems</b>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
+                        {{NewSystem}}
+                        <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu" role="menu">
+                        <li ng-repeat = "system in systems">
+                            <a href="" ng-click="appendSystem(system.name)">{{system.name}}</a>
+                        </li>
+                    </ul>
+                </div-->
+            </div>
+            <div class="modal-footer">
+                <button ng-disabled="!check()" type="button" class="btn btn-primary" data-dismiss="modal" ng-click="addUser()">Save changes</button>
+            </div>
+        </div>
+    </div>
+</div>

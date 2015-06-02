@@ -1,0 +1,28 @@
+class ErrorCodes
+
+    #Account Service Related Errors
+    @MISSING_PARAMS : 101
+    @INVALID_PARAM : 102
+    @INVALID_REQUEST : 103
+    @INVALID_CREDENTIALS : 104
+    @NOT_SUPPORTED_YET : 105
+    @INVALID_ACTIVATION_CODE : 108
+    @ACCOUNT_IS_SUSPENDED : 109
+    @EMAIL_EXISTS : 110
+    @NO_SUCH_USER : 111
+    @EMAIL_IS_NOT_VALID : 112
+
+    #Auth Service Related Errors
+    @INVALID_ACCESS_TOKEN : 201
+    @INVALID_REFRESH_TOKEN : 202
+    @INVALID_AUTHORIZATION_HEADER : 203
+    @AUTHORIZATION_REQUIRED : 204
+    @UNAUTHORIZED_ACCESS : 205
+
+    #System Service Related Errors
+    @SYSTEM_NOT_FOUND : 301
+
+    #General Errors
+    @GATEWAY_TIMEOUT : 401
+
+common.value('ErrorCodes', ErrorCodes)

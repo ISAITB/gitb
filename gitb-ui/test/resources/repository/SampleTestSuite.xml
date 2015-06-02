@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+	<metadata>
+		<gitb:name>Sample Test Suite</gitb:name>
+		<gitb:version>0.1</gitb:version>
+	</metadata>
+	<actors>
+		<gitb:actor id="actor1">
+			<gitb:name>actor1</gitb:name>
+			<gitb:endpoint name="soap">
+				<gitb:config name="network.host">127.0.0.1</gitb:config>
+				<gitb:config name="network.port">8080</gitb:config>
+			</gitb:endpoint>
+		</gitb:actor>
+		<gitb:actor id="actor2">
+			<gitb:name>actor2</gitb:name>
+			<gitb:endpoint name="soap">
+				<gitb:config name="network.host">127.0.0.1</gitb:config>
+				<gitb:config name="network.port">8081</gitb:config>
+			</gitb:endpoint>
+		</gitb:actor>
+	</actors>
+	<testcase id="TestCase1" />
+</testsuite>

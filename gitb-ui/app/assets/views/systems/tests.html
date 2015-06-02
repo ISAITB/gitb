@@ -1,0 +1,11 @@
+<div class="page">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Performed Tests</h4>
+        </div>
+        <!--
+        <h5 class="no-conformance-statement-defined" ng-if="conformanceStatementCtrl.conformanceStatements.length == 0">No conformance statement is present for the system...</h5>
+        -->
+        <div  ng-if="systemTestsCtrl.testResults.length > 0" table-directive columns="systemTestsCtrl.tableColumns" data="systemTestsCtrl.testResults" on-select="systemTestsCtrl.onTestSelect"></div>
+    </div>
+</div>

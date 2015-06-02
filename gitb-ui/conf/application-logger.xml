@@ -1,0 +1,31 @@
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%-5level %d{HH:mm:ss} [%thread] %logger{36} - %msg%n
+            </pattern>
+        </encoder>
+    </appender>
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+      <file>./logs/gitb.log</file>
+      <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+         <!-- daily rollover -->
+        <fileNamePattern>./logs/gitb.%d{yyyy-MM-dd}.log</fileNamePattern>
+        <!-- keep 30 days' worth of history -->
+        <maxHistory>30</maxHistory>
+      </rollingPolicy>
+      <append>true</append>
+      <encoder>
+        <pattern>%-5level %d{HH:mm:ss} [%thread] %logger{36} - %msg%n</pattern>
+      </encoder>      
+    </appender>
+    <root level="DEBUG">
+        <appender-ref ref="STDOUT" />
+    </root>
+    <logger name="scala.slick" level="INFO" />
+    <logger name="com.sun.xml" level="INFO" />
+    <logger name="org.apache" level="INFO" />
+    <logger name="javax.activation" level="INFO" />
+    <logger name="javax.xml" level="INFO" />
+    <logger name="org.eclipse" level="INFO" />
+</configuration>
+

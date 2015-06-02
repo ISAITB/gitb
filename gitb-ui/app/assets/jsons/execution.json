@@ -1,0 +1,101 @@
+[
+	{
+		"id": "1",
+		"description" : "To initiate the Simple Procurement procedure, please send the Order document",
+		"from" : "Customer",
+		"to" : "Supplier",
+		"type": "x",
+		"status": "2",
+		"result" : "3"
+	},
+
+	{
+        "id": "2",
+        "description" : "Validation of the exchanged Order document against the UBL Order 2.0 XML...",
+        "from" : "",
+        "to" : "",
+        "type": "x",
+        "status": "4",
+        "result" : "1"
+    },
+
+    {
+        "id": "2.1",
+        "description" : "Schema validation of the exchanged Order document against the UBL Order 2.0 XML...",
+        "from" : "",
+        "to" : "",
+        "type": "x",
+        "status": "4",
+        "result" : "1"
+    },
+
+    {
+        "id": "2.2",
+        "description" : "Validation of the exchanged Order document against the UBL Order 2.0 Schema...",
+        "from" : "",
+        "to" : "",
+        "type": "x",
+        "status": "3",
+        "result" : "2"
+    },
+
+    {
+        "id": "2.3",
+        "description" : "Validation of the exchanged Order document against the UBL Order 2.0 defined...",
+        "from" : "",
+        "to" : "",
+        "type": "x",
+        "status": "5",
+        "result" : "3"
+    },
+
+    {
+        "id": "2.4",
+        "description" : "The valued supplied for the 'Item name'  element in the Order document must...",
+        "from" : "",
+        "to" : "",
+        "type": "x",
+        "status": "5",
+        "result" : "3"
+    },
+
+    {
+        "id": "3",
+        "description" : "Supplier sends Order Response Simple document",
+        "from" : "Supplier",
+        "to" : "Customer",
+        "type": "x",
+        "status": "1",
+        "result" : "3"
+    },
+
+    {
+        "id": "4",
+        "description" : "Supplier sends Invoice document",
+        "from" : "Supplier",
+        "to" : "Customer",
+        "type": "x",
+        "status": "1",
+        "result" : "3"
+    },
+
+    {
+        "id": "5",
+        "description" : "PLease note that, in the meantime you have talked to (Account) Suppl...",
+        "from" : "Customer",
+        "to" : "Supplier",
+        "type": "x",
+        "status": "4",
+        "result" : "1"
+    },
+
+    {
+        "id": "6",
+        "description" : "Validation of the exchanged Application Response document against UBL 2.0...",
+        "from" : "Customer",
+        "to" : "Supplier",
+        "type": "x",
+        "status": "4",
+        "result" : "1"
+    }
+]

@@ -1,0 +1,10 @@
+<div class="page conformance">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">Conformance Statements</h4>
+			<a class="btn btn-default pull-right" ui-sref="app.systems.detail.conformance.create">Create conformance statement</a>
+		</div>
+		<h5 class="no-conformance-statement-defined" ng-if="conformanceStatementCtrl.conformanceStatements.length == 0">No conformance statement is present for the system...</h5>
+		<div  ng-if="conformanceStatementCtrl.conformanceStatements.length > 0" table-directive columns="conformanceStatementCtrl.tableColumns" data="conformanceStatementCtrl.conformanceStatementRepresentations" on-select="conformanceStatementCtrl.onConformanceStatementSelect"></div>
+	</div>
+</div>

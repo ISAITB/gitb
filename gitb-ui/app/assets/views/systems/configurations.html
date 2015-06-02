@@ -1,0 +1,41 @@
+<div>
+    <div class="row">
+        <h4>Configurations
+            <span class="tab" ng-if="systemConfigurationsCtrl.spinner"><i class="fa fa-spinner fa-spin"></i></span>
+        </h4>
+    </div>
+
+    <div class="row">
+
+        <div class="row">
+            <div class="form-group col-md-6">
+                <alert ng-repeat="alert in systemConfigurationsCtrl.alerts" type="{{alert.type}}" close="systemConfigurationsCtrl.closeAlert($index)">{{alert.msg}}</alert>
+            </div>
+        </div>
+
+        <form type="post">
+
+            <div class="row" ng-repeat="configuration in systemConfigurationsCtrl.configurations">
+                <div class="form-group">
+                    <div class="col-md-6">
+                        <label>{{configuration.name}}:</label>
+                        <span class="tab">{{configuration.desc}}</span>
+                        <input ng-if="configuration.kind == 'SIMPLE'" type="text" class="form-control" ng-model="configuration.value">
+                        <div   ng-if="configuration.kind == 'BINARY'">
+                            <input type="file" id="file" name="file" onchange="angular.element(this).scope().onFileSelect(event)"  />
+                        </div>
+                    </div>
+                </div>
+                <br> <br> <br>
+            </div>
+
+            <div class="col-md-6 modal-footer">
+                <input type="submit" value="Save Configurations" ng-click="systemConfigurationsCtrl.saveConfigurations()" class="btn btn-info" >
+            </div>
+
+        </form>
+
+
+    </div>
+
+</div>

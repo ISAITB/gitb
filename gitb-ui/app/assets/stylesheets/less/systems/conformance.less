@@ -1,0 +1,57 @@
+@import "../_common.less";
+
+.page.systems .page.conformance {
+    .panel-heading {
+	.title {
+	    display: inline-block;
+	}
+    }
+    .no-conformance-statement-defined {
+	text-align: center;
+	margin: 24px 0;
+    }
+    .conformance-statements-table {
+    }
+
+    &.create {
+        .create-conformance-statement {
+            .step-content {
+                .no-data-found {
+                    text-align: center;
+                    padding: 8px;
+                }
+            }
+        }
+    }
+}
+
+.create-conformance-statement-dialog {
+    .modal-dialog {
+	width: 700px;
+
+	.modal-content {
+	    overflow: hidden;
+
+	    .modal-header {
+		h4 {
+		    font-weight: bold;
+		    color: @gray-dark;
+		}
+	    }
+
+	    .modal-body {
+		padding: 0;
+
+		.wizard {
+		    @wizard-min-height: 300px;
+		    min-height: @wizard-min-height;
+		    .steps {
+			min-width: 210px;
+			height: @wizard-min-height;
+		    }
+		}
+	    }
+	}
+
+    }
+}

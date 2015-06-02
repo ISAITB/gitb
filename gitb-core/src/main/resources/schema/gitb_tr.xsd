@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+           targetNamespace="http://www.gitb.com/tr/v1/"
+           xmlns="http://www.gitb.com/tr/v1/"
+           xmlns:gitb="http://www.gitb.com/core/v1/"
+           elementFormDefault="qualified" 
+           attributeFormDefault="unqualified">
+
+    <xsd:import namespace="http://www.gitb.com/core/v1/" schemaLocation="gitb_core.xsd"/>
+
+    <!-- Root elements for TestCaseReport and TestStepReport-->
+    <xsd:element name="TestCaseReport" type="TestCaseReportType"/>
+    <xsd:element name="TestStepReport" type="TestStepReportType"/>
+    <!-- Represents the Testcase Report-->
+    <xsd:complexType name="TestCaseReportType">
+        <xsd:complexContent>
+            <xsd:extension base="TestStepReportType">
+                <xsd:sequence>
+                    <xsd:element name="counters" type="ValidationCounters" minOccurs="0"/>
+                    <xsd:element name="reports" type="TestStepReportType" minOccurs="0" maxOccurs="unbounded"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!-- Abstract type for Test Step Report-->
+    <xsd:complexType name="TestStepReportType" abstract="true">
+        <xsd:sequence>
+            <xsd:element name="date" type="xsd:dateTime"/>
+            <xsd:element name="result" type="TestResultType"/>
+        </xsd:sequence>
+        <xsd:attribute name="id" type="xsd:string" use="optional"/>
+    </xsd:complexType>
+    <!--Report format for Decision and Loop steps-->
+    <xsd:complexType name="DR">
+        <xsd:complexContent>
+            <xsd:extension base="TestStepReportType">
+                <xsd:sequence>
+                    <xsd:element name="decision" type="xsd:boolean"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!-- Report format for simple steps (exit, interact, flow)-->
+    <xsd:complexType name="SR">
+        <xsd:complexContent>
+            <xsd:extension base="TestStepReportType"/>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!--Report format for Messaging and Validation Steps-->
+    <xsd:complexType name="TAR">
+        <xsd:complexContent>
+            <xsd:extension base="TestStepReportType">
+                <xsd:sequence>
+                    <xsd:element name="overview" type="ValidationOverview" minOccurs="0"/>
+                    <xsd:element name="counters" type="ValidationCounters" minOccurs="0"/>
+                    <xsd:element name="context" type="gitb:AnyContent" minOccurs="0"/>
+                    <xsd:element name="reports" type="TestAssertionGroupReportsType" minOccurs="0"/>
+                </xsd:sequence>
+                <xsd:attribute name="name" type="xsd:string" use="optional"/>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!-- The Overview of Validation procedure-->
+    <xsd:complexType name="ValidationOverview">
+        <xsd:sequence>
+            <xsd:element name="profileID" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="customizationID" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="transactionID" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="validationServiceName" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="validationServiceVersion" type="xsd:string" minOccurs="0"/>
+            <xsd:element name="note" type="xsd:string" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <!-- Statistics of the Validation -->
+    <xsd:complexType name="ValidationCounters">
+        <xsd:sequence>
+            <xsd:element name="nrOfAssertions" type="xsd:integer" minOccurs="0"/>
+            <xsd:element name="nrOfErrors" type="xsd:integer" minOccurs="0"/>
+            <xsd:element name="nrOfWarnings" type="xsd:integer" minOccurs="0"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <!--Supplementary class to include either AssertionReports or AssertionGroups -->
+    <xsd:complexType name="TestAssertionGroupReportsType">
+        <xsd:choice>
+            <xsd:element name="reports" type="TAR" maxOccurs="unbounded"/>
+            <xsd:choice maxOccurs="unbounded">
+                <xsd:element name="info" type="TestAssertionReportType"/>
+                <xsd:element name="warning" type="TestAssertionReportType"/>
+                <xsd:element name="error" type="TestAssertionReportType"/>
+            </xsd:choice>
+        </xsd:choice>
+    </xsd:complexType>
+    <!-- Abstract Test Assertion Report class -->
+    <xsd:complexType name="TestAssertionReportType" abstract="true"/>
+    <!-- Base assertion report format for GITB-->
+    <xsd:complexType name="BAR">
+        <xsd:complexContent>
+            <xsd:extension base="TestAssertionReportType">
+                <xsd:all>
+                    <xsd:element name="assertionID" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="description" type="xsd:string"/>
+                    <xsd:element name="location" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="test" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="type" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="value" type="xsd:string" minOccurs="0"/>
+                </xsd:all>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <!-- Enumeration for representing the test result-->
+    <xsd:simpleType name="TestResultType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="SUCCESS"/>
+            <xsd:enumeration value="FAILURE"/>
+            <xsd:enumeration value="UNDEFINED"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+</xsd:schema>

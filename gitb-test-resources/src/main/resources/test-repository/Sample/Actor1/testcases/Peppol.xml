@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="Peppol" package="IHE.XDS.Actor1.testcases" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <gitb:name>Peppol</gitb:name>
+        <gitb:version>0.1</gitb:version>
+        <gitb:description>Peppol Access Point Test Case </gitb:description>
+    </metadata>
+    <namespaces>
+        <ns prefix="srdc">http://www.srdc.com.tr</ns>
+    </namespaces>
+    <imports>
+        <artifact type="schema" encoding="UTF-8" name="UBL_Invoice_Schema_File">Sample/Actor1/artifacts/maindoc/UBL-Invoice-2.1.xsd</artifact>
+        <artifact type="schema" encoding="UTF-8" name="UBL_Invoice_Schematron_File">Sample/Actor1/artifacts/BIICORE/BIICORE-UBL-T10.sch</artifact>
+    </imports>
+    <actors>
+        <gitb:actor id="role1" name="actor1" role="SUT" />
+        <gitb:actor id="role2" name="actor2" role="SIMULATED" />
+    </actors>
+    <!--<preliminary desc="preliminiary phase" id="preliminary">
+        <request desc="server address" with="actor2" type="string" name="network_host"/>
+        <request desc="server port" with="actor2" type="string" name="network_port"/>
+    </preliminary>-->
+    <variables>
+        <var name="receive-output" type="map"/>
+        <var name="invoice" type="object"/>
+    </variables>
+    <steps>
+        <!-- use sendSampleMessage.sh in gitb-test-resources/src/main/resources to send a sample message -->
+        <btxn from="actor1" to="actor2" txnId="t1" handler="PeppolAS2Messaging"/>
+        <receive id="receive-output" desc="Send message to Destination Access Point" from="actor1" to="actor2" txnId="t1"/>
+        <etxn txnId="t1"/>
+        <assign to="$invoice">$receive-output{business_message}</assign>
+        <verify handler="XSDValidator" desc="Validate Invoice against UBL 2.1 Invoice Schema">
+            <input name="xmldocument">$invoice</input>
+            <input name="xsddocument" source="$UBL_Invoice_Schema_File"></input>
+        </verify>
+        <verify handler="SchematronValidator" desc="Validate Invoice against Peppol BII Rules">
+            <input name="xmldocument">$invoice</input>
+            <input name="schematron" source="$UBL_Invoice_Schematron_File"></input>
+        </verify>
+    </steps>
+</testcase>

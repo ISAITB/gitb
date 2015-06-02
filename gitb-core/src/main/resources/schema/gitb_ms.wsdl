@@ -1,0 +1,208 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<definitions targetNamespace="http://www.gitb.com/ms/v1/"
+             name="MessagingService"
+             xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:tns="http://www.gitb.com/ms/v1/"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata"
+             xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl">
+    <types>
+        <xsd:schema>
+            <xsd:import namespace="http://www.gitb.com/ms/v1/" schemaLocation="gitb_ms.xsd" />
+        </xsd:schema>
+    </types>
+    <message name="getModuleDefinition">
+        <part name="parameters" element="tns:GetModuleDefinitionRequest" />
+    </message>
+    <message name="getModuleDefinitionResponse">
+        <part name="parameters" element="tns:GetModuleDefinitionResponse" />
+    </message>
+    <message name="initiate">
+        <part name="parameters" element="tns:InitiateRequest" />
+    </message>
+    <message name="initiateResponse">
+        <part name="parameters" element="tns:InitiateResponse" />
+    </message>
+    <message name="beginTransaction">
+        <part name="parameters" element="tns:BeginTransactionRequest" />
+    </message>
+    <message name="beginTransactionResponse">
+        <part name="parameters" element="tns:BeginTransactionResponse" />
+    </message>
+    <message name="send">
+        <part name="parameters" element="tns:SendRequest" />
+    </message>
+    <message name="sendResponse">
+        <part name="parameters" element="tns:SendResponse" />
+    </message>
+    <message name="endTransaction">
+        <part name="parameters" element="tns:EndTransactionRequest" />
+    </message>
+    <message name="endTransactionResponse">
+        <part name="parameters" element="tns:EndTransactionResponse" />
+    </message>
+    <message name="finalize">
+        <part name="parameters" element="tns:FinalizeRequest" />
+    </message>
+    <message name="finalizeResponse">
+        <part name="parameters" element="tns:FinalizeResponse" />
+    </message>
+
+    <message name="notifyForMessage">
+        <part name="parameters" element="tns:NotifyForMessageRequest" />
+    </message>
+    <message name="notifyForMessageResponse">
+        <part name="parameters" element="tns:NotifyForMessageResponse" />
+    </message>
+
+    <portType name="MessagingService">
+        <operation name="getModuleDefinition">
+            <input
+                    wsam:Action="http://gitb.com/MessagingService/getModuleDefinition"
+                    message="tns:getModuleDefinition" />
+            <output
+                    wsam:Action="http://gitb.com/MessagingService/getModuleDefinitionResponse"
+                    message="tns:getModuleDefinitionResponse" />
+        </operation>
+        <operation name="initiate">
+            <input
+                    wsam:Action="http://gitb.com/MessagingService/initiate"
+                    message="tns:initiate" />
+            <output
+                    wsam:Action="http://gitb.com/MessagingService/initiateResponse"
+                    message="tns:initiateResponse" />
+        </operation>
+        <operation name="send">
+            <input
+                    wsam:Action="http://gitb.com/MessagingService/send"
+                    message="tns:send" />
+            <output
+                    wsam:Action="http://gitb.com/MessagingService/sendResponse"
+                    message="tns:sendResponse" />
+        </operation>
+        <operation name="beginTransaction">
+            <input
+                    wsam:Action="http://gitb.com/MessagingService/beginTransaction"
+                    message="tns:beginTransaction" />
+            <output
+                    wsam:Action="http://gitb.com/MessagingService/beginTransactionResponse"
+                    message="tns:beginTransactionResponse" />
+        </operation>
+        <operation name="endTransaction">
+            <input
+                    wsam:Action="http://gitb.com/MessagingService/endTransaction"
+                    message="tns:endTransaction" />
+            <output
+                    wsam:Action="http://gitb.com/MessagingService/endTransactionResponse"
+                    message="tns:endTransactionResponse" />
+        </operation>
+        <operation name="finalize">
+            <input
+                    wsam:Action="http://gitb.com/MessagingService/finalize"
+                    message="tns:finalize" />
+            <output
+                    wsam:Action="http://gitb.com/MessagingService/finalizeResponse"
+                    message="tns:finalizeResponse" />
+        </operation>
+    </portType>
+    <portType name="MessagingClient">
+        <operation name="notifyForMessage">
+            <input
+                    wsam:Action="http://gitb.com/MessagingClient/notifyForMessage"
+                    message="tns:notifyForMessage" />
+            <output
+                    wsam:Action="http://gitb.com/MessagingClient/notifyForMessageResponse"
+                    message="tns:notifyForMessageResponse" />
+        </operation>
+    </portType>
+    <binding name="MessagingServicePortBinding" type="tns:MessagingService">
+        <wsaw:UsingAddressing required="true"/>
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http"
+                      style="document" />
+        <operation name="getModuleDefinition">
+            <soap:operation soapAction="" />
+            <input>
+                <soap:body use="literal" />
+            </input>
+            <output>
+                <soap:body use="literal" />
+            </output>
+        </operation>
+        <operation name="initiate">
+            <soap:operation soapAction="" />
+            <input>
+                <soap:body use="literal" />
+            </input>
+            <output>
+                <soap:body use="literal" />
+            </output>
+        </operation>
+        <operation name="send">
+            <soap:operation soapAction="" />
+            <input>
+                <soap:body use="literal" />
+            </input>
+            <output>
+                <soap:body use="literal" />
+            </output>
+        </operation>
+        <operation name="beginTransaction">
+            <soap:operation soapAction="" />
+            <input>
+                <soap:body use="literal" />
+            </input>
+            <output>
+                <soap:body use="literal" />
+            </output>
+        </operation>
+        <operation name="endTransaction">
+            <soap:operation soapAction="" />
+            <input>
+                <soap:body use="literal" />
+            </input>
+            <output>
+                <soap:body use="literal" />
+            </output>
+        </operation>
+        <operation name="finalize">
+            <soap:operation soapAction="" />
+            <input>
+                <soap:body use="literal" />
+            </input>
+            <output>
+                <soap:body use="literal" />
+            </output>
+        </operation>
+    </binding>
+    <binding name="MessagingClientPortBinding" type="tns:MessagingClient">
+        <wsaw:UsingAddressing required="true"/>
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http"
+                      style="document" />
+        <operation name="notifyForMessage">
+            <soap:operation soapAction="" />
+            <input>
+                <soap:body use="literal" />
+            </input>
+            <output>
+                <soap:body use="literal" />
+            </output>
+        </operation>
+    </binding>
+    <service name="MessagingServiceService">
+        <port name="MessagingServicePort" binding="tns:MessagingServicePortBinding">
+            <soap:address location="REPLACE_WITH_ACTUAL_URL" />
+        </port>
+    </service>
+    <service name="MessagingClientService">
+        <port name="MessagingClientPort" binding="tns:MessagingClientPortBinding">
+            <soap:address location="REPLACE_WITH_ACTUAL_URL" />
+        </port>
+    </service>
+    <!-- to generate sources in given package -->
+    <jaxws:bindings xmlns:jaxws="http://java.sun.com/xml/ns/jaxws">
+        <jaxws:package name="com.gitb.ms">
+        </jaxws:package>
+    </jaxws:bindings>
+</definitions>
+

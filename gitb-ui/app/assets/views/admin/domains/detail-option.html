@@ -1,0 +1,29 @@
+<div class="page domains detail">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">Domain details</h4>
+			<a href="" ng-click="domainDetailsCtrl.saveDomainChanges()" class="btn btn-default pull-right">Save changes</a>
+			<a href="" ng-click="domainDetailsCtrl.deleteDomain()" class="btn btn-default pull-right">Delete</a>
+		</div>
+		<div class="panel-body">
+			<div class="row">
+				<div class="col-md-10 col-md-offset-1" domain-details-form domain="domainDetailsCtrl.domain">
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">Specifications</h4>
+			<a ui-sref="app.admin.domains.detail.specifications.create" class="btn btn-default pull-right">Create specification</a>
+		</div>
+		<div table-directive columns="domainDetailsCtrl.tableColumns" data="domainDetailsCtrl.specifications" on-select="domainDetailsCtrl.onSpecificationSelect"></div>
+	</div>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">Actors</h4>
+			<a ui-sref="app.admin.domains.detail.actors.create" class="btn btn-default pull-right">Create actor</a>
+		</div>
+		<div table-directive columns="domainDetailsCtrl.actorTableColumns" data="domainDetailsCtrl.actors" on-select="domainDetailsCtrl.onActorSelect"></div>
+	</div>
+</div>

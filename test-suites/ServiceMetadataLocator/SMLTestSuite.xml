@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+	<metadata>
+		<gitb:name>ServiceMetadataLocator</gitb:name>
+		<gitb:version>0.1</gitb:version>
+	</metadata>
+	<actors>
+        <gitb:actor id="SMLClient">
+            <gitb:name>SML Client</gitb:name>
+            <gitb:desc>Sends DNS queries associated with a participant identifier to a Service Metadata Locator</gitb:desc>
+            <gitb:endpoint name="http">
+                <gitb:config name="network.host" />
+                <gitb:config name="network.port" />
+            </gitb:endpoint>
+        </gitb:actor>
+        <gitb:actor id="ServiceMetadataLocator">
+            <gitb:name>Service Metadata Locator</gitb:name>
+            <gitb:desc>A service which provides a client with the capability of discovering the Service Metadata Publisher endpoint associated with a particular participant identifier.</gitb:desc>
+            <gitb:endpoint name="http">
+                <gitb:config name="network.host" />
+                <gitb:config name="network.port" />
+            </gitb:endpoint>
+        </gitb:actor>
+	</actors>
+	<testcase id="SMLClient" />
+</testsuite>

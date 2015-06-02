@@ -1,0 +1,103 @@
+# Routes
+# This file defines all application routes (Higher priority routes first)
+#
+# Note: @controllers syntax signifies the actual controller instance, retrieved via GlobalSettings.getController().
+# ~~~~
+
+# Single endpoint for serving AngularJS
+GET     /                                   @controllers.Application.index
+OPTIONS /*all                               @controllers.Application.preFlight(all: String)
+GET     /assets/javascripts/routes          @controllers.Application.javascriptRoutes
+
+# Authentication management API
+POST    /oauth/access_token                 @controllers.AuthenticationService.access_token
+GET     /check/email                        @controllers.AuthenticationService.checkEmail
+
+# Account management API
+POST    /vendor/register                    @controllers.AccountService.registerVendor
+GET	    /vendor/profile                     @controllers.AccountService.getVendorProfile
+POST	/vendor/profile                     @controllers.AccountService.updateVendorProfile
+GET	    /vendor/users                       @controllers.AccountService.getVendorUsers
+POST	/user/register                      @controllers.AccountService.registerUser
+GET	    /user/profile                       @controllers.AccountService.getUserProfile
+POST	/user/profile                       @controllers.AccountService.updateUserProfile
+
+# System mangement API
+POST	/suts/register                      @controllers.SystemService.registerSystem
+POST	/suts/:sut_id/profile               @controllers.SystemService.updateSystemProfile(sut_id : Long)
+GET	    /suts/:sut_id                       @controllers.SystemService.getSystemProfile(sut_id : Long)
+POST	/suts/:sut_id/assign                @controllers.SystemService.assignSystemAdminOrTester(sut_id : Long)
+POST    /suts/:sut_id/conformance           @controllers.SystemService.defineConformanceStatement(sut_id : Long)
+DELETE  /suts/:sut_id/conformance           @controllers.SystemService.deleteConformanceStatement(sut_id: Long)
+GET     /suts/:sut_id/conformance           @controllers.SystemService.getConformanceStatements(sut_id : Long)
+GET	    /suts/:sut_id/conformance/actors    @controllers.SystemService.getImplementedActors(sut_id : Long)
+GET	    /suts/:sut_id/conformance/tests/results     @controllers.SystemService.getLastExecutionResultsForTestCases(sut_id : Long)
+GET	    /suts/:sut_id/conformance/results   @controllers.SystemService.getConformanceResults(sut_id : Long)
+#GET	/suts/:sut_id/configs               @controllers.SystemService.getSystemConfigurations(sut_id : Long)
+#POST	/suts/:sut_id/configs               @controllers.SystemService.updateSystemConfigurations(sut_id : Long)
+GET	    /vendor/suts                        @controllers.SystemService.getVendorSystems
+
+# Test Case management API
+GET	    /domains                            @controllers.ConformanceService.getDomains
+POST    /domains                            @controllers.ConformanceService.createDomain
+DELETE  /domains/:domain_id                 @controllers.ConformanceService.deleteDomain(domain_id: Long)
+GET	    /domains/:domain_id/specs           @controllers.ConformanceService.getDomainSpecs(domain_id : Long)
+GET	    /domains/:domain_id/actors          @controllers.ConformanceService.getDomainActors(domain_id : Long)
+GET     /specs                              @controllers.ConformanceService.getSpecs
+POST    /specs                              @controllers.ConformanceService.createSpecification
+POST    /specs/:spec_id/actors/:actor_id    @controllers.ConformanceService.addActorToSpecification(spec_id : Long, actor_id: Long)
+GET	    /specs/:spec_id/actors              @controllers.ConformanceService.getSpecActors(spec_id : Long)
+GET	    /specs/:spec_id/suites              @controllers.ConformanceService.getSpecTestSuites(spec_id : Long)
+POST    /specs/:spec_id/deploy              @controllers.ConformanceService.deployTestSuite(spec_id: Long)
+GET     /actors                             @controllers.ConformanceService.getActors
+POST    /actors                             @controllers.ConformanceService.createActor
+GET	    /actors/:actor_id/tests             @controllers.ConformanceService.getActorTestCases(actor_id : Long)
+GET     /actors/:actor_id/options           @controllers.ConformanceService.getOptionsForActor(actor_id : Long)
+GET     /actors/:actor_id/endpoints         @controllers.ConformanceService.getEndpointsForActor(actor_id : Long)
+POST    /options                            @controllers.ConformanceService.createOption
+GET     /options                            @controllers.ConformanceService.getOptions
+
+# Test Result management API
+GET	    /suts/:sut_id/conformance/:test_instance/report @controllers.TestResultService.getReportForTestInstance(sut_id:Long, test_instance:String)
+
+# Test management API
+GET	    /tests/:test_id/definition          @controllers.TestService.getTestCaseDefinition(test_id : String)
+GET	    /actors/:actor_id/definition        @controllers.TestService.getActorDefinition(actor_id : String)
+POST	/tests/:test_id/initiate            @controllers.TestService.initiate(test_id:String)
+POST	/tests/:session_id/configure        @controllers.TestService.configure(session_id:String)
+POST	/tests/:session_id/provide          @controllers.TestService.provideInput(session_id:String)
+POST	/tests/:session_id/preliminary      @controllers.TestService.initiatePreliminary(session_id:String)
+POST	/tests/:session_id/start            @controllers.TestService.start(session_id:String)
+POST	/tests/:session_id/stop             @controllers.TestService.stop(session_id:String)
+POST	/tests/:session_id/restart          @controllers.TestService.restart(session_id:String)
+GET 	/tests/sessions                     @controllers.TestService.getSessions()
+
+# WebSocket management API
+GET     /ws                                 @controllers.WebSocketService.socket
+
+# Test suite management API
+DELETE  /suite/:suite_id/undeploy           @controllers.TestSuiteService.undeployTestSuite(suite_id: Long)
+GET     /suite                              @controllers.TestSuiteService.getTestSuites()
+
+# Endpoint management API
+GET     /endpoints                          @controllers.ConformanceService.getEndpoints
+GET     /endpoints/:endpoint_id/parameters  @controllers.ConformanceService.getEndpointParameters(endpoint_id: Long)
+GET     /endpoints/:endpoint_id/config      @controllers.SystemService.getEndpointConfigurations(endpoint_id: Long)
+GET     /endpoints/config                   @controllers.SystemService.getConfigurationsWithEndpointIds()
+POST    /endpoints/:endpoint_id/config      @controllers.SystemService.saveEndpointConfiguration(endpoint_id: Long)
+
+# Report management API
+GET     /reports                            @controllers.ReportService.getTestResults
+GET     /reports/:session_id                @controllers.ReportService.getTestResultOfSession(session_id: String)
+POST    /reports/create                     @controllers.ReportService.createTestReport
+GET     /reports/:session_id/steps          @controllers.ReportService.getTestStepResults(session_id:String)
+
+# Repository file serving and management API
+GET     /repository/tests/:test_id              @controllers.RepositoryService.getTestCase(test_id:String)
+GET     /repository/tests/:test_id/definition   @controllers.RepositoryService.getTestCaseDefinition(test_id:String)
+GET     /repository/reports/*file               @controllers.RepositoryService.getTestStepReport(file)
+GET     /repository/suites/*file                @controllers.RepositoryService.getTestSuiteResource(file)
+
+# Map static resources from the /public folder to the /assets URL path
+GET     /assets/*file               controllers.Assets.at(path="/public", file)
+GET     /webjars/*file              controllers.WebJarAssets.at(file)

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<soapenv:Envelope xmlns:soapenv="http://www.w3.org/2003/05/soap-envelope" xmlns:urn="urn:my:service:types">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <urn:Message>
+         <urn:Field1>Field 1 value</urn:Field1>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+         <urn:Field2>Field 2 value</urn:Field2>
+      </urn:Message>
+   </soapenv:Body>
+</soapenv:Envelope>

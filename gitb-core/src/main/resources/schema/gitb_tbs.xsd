@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<!-- edited with XMLSpy v2008 sp1 (http://www.altova.com) by SRDC (EMBRACE) -->
+<xsd:schema xmlns="http://www.gitb.com/tbs/v1/" xmlns:tns="http://www.gitb.com/tbs/v1/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tpl="http://www.gitb.com/tpl/v1/" xmlns:tr="http://www.gitb.com/tr/v1/" xmlns:gitb="http://www.gitb.com/core/v1/" targetNamespace="http://www.gitb.com/tbs/v1/" elementFormDefault="qualified" version="1.0">
+	<!-- Go up to top module folder first, than go down to schema folder through "target" -->
+	<xsd:import namespace="http://www.gitb.com/tpl/v1/" schemaLocation="gitb_tpl.xsd"/>
+	<xsd:import namespace="http://www.gitb.com/core/v1/" schemaLocation="gitb_core.xsd"/>
+	<xsd:import namespace="http://www.gitb.com/tr/v1/" schemaLocation="gitb_tr.xsd"/>
+	<xsd:import namespace="http://www.gitb.com/tdl/v1/" schemaLocation="gitb_tdl.xsd"/>
+	<!-- TestbedService request/responses-->
+	<xsd:element name="GetTestCaseDefinitionRequest" type="tns:BasicRequest"/>
+	<xsd:element name="GetTestCaseDefinitionResponse" type="tns:GetTestCaseDefinitionResponse"/>
+	<xsd:element name="GetActorDefinitionRequest" type="tns:GetActorDefinitionRequest"/>
+	<xsd:element name="GetActorDefinitionResponse" type="tns:GetActorDefinitionResponse"/>
+	<xsd:element name="InitiateRequest" type="tns:BasicRequest"/>
+	<xsd:element name="InitiateResponse" type="tns:InitiateResponse"/>
+	<xsd:element name="ConfigureRequest" type="tns:ConfigureRequest"/>
+	<xsd:element name="ConfigureResponse" type="tns:ConfigureResponse"/>
+	<xsd:element name="ProvideInputRequest" type="tns:ProvideInputRequest"/>
+	<xsd:element name="InitiatePreliminaryRequest" type="tns:BasicCommand"/>
+	<xsd:element name="InitiatePreliminaryResponse" type="tns:Void"/>
+	<xsd:element name="StartRequest" type="tns:BasicCommand"/>
+	<xsd:element name="StopRequest" type="tns:BasicCommand"/>
+	<xsd:element name="RestartRequest" type="tns:BasicCommand"/>
+	<!--Callback request/responses-->
+	<xsd:element name="UpdateStatusRequest" type="tns:TestStepStatus"/>
+	<xsd:element name="InteractWithUsersRequest" type="tns:InteractWithUsersRequest"/>
+	<xsd:element name="Void" type="tns:Void"/>
+	<xsd:element name="ErrorInfo" type="gitb:ErrorInfo"/>
+	<xsd:complexType name="BasicRequest">
+		<xsd:sequence>
+			<xsd:element name="tcId" type="xsd:string"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="BasicCommand">
+		<xsd:sequence>
+			<xsd:element name="tcInstanceId" type="xsd:string"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="GetTestCaseDefinitionResponse">
+		<xsd:sequence>
+			<xsd:element name="testcase" type="tpl:TestCase"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="GetActorDefinitionRequest">
+		<xsd:complexContent>
+			<xsd:extension base="BasicRequest">
+				<xsd:sequence>
+					<xsd:element name="actorId" type="xsd:string"/>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="GetActorDefinitionResponse">
+		<xsd:sequence>
+			<xsd:element name="actor" type="gitb:Actor"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="InitiateResponse">
+		<xsd:sequence>
+			<xsd:element name="tcInstanceId" type="xsd:string"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="ConfigureRequest">
+		<xsd:complexContent>
+			<xsd:extension base="BasicCommand">
+				<xsd:sequence>
+					<xsd:element name="configs" type="gitb:ActorConfiguration" maxOccurs="unbounded"/>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="ConfigureResponse">
+		<xsd:sequence>
+			<xsd:element name="configs" type="SUTConfiguration" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="SUTConfiguration">
+		<xsd:sequence>
+			<xsd:element name="configs" type="gitb:ActorConfiguration" maxOccurs="unbounded"/>
+		</xsd:sequence>
+		<xsd:attribute name="actor" type="xsd:string" use="required"/>
+		<xsd:attribute name="endpoint" type="xsd:string" use="required"/>
+	</xsd:complexType>
+	<xsd:complexType name="ProvideInputRequest">
+		<xsd:complexContent>
+			<xsd:extension base="BasicCommand">
+				<xsd:sequence>
+					<xsd:element name="stepId" type="xsd:string"/>
+					<xsd:element name="input" type="UserInput" minOccurs="0" maxOccurs="unbounded"/>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="UserInput">
+		<xsd:complexContent>
+			<xsd:extension base="gitb:AnyContent">
+				<xsd:attribute name="id" type="xsd:string"/>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="UserInteractionRequest">
+		<xsd:sequence>
+			<xsd:choice maxOccurs="unbounded">
+				<xsd:element name="instruction" type="Instruction"/>
+				<xsd:element name="request" type="InputRequest"/>
+			</xsd:choice>
+		</xsd:sequence>
+		<xsd:attribute name="with" type="xsd:string" use="optional"/>
+	</xsd:complexType>
+	<xsd:complexType name="Instruction">
+		<xsd:complexContent>
+			<xsd:extension base="gitb:AnyContent">
+				<xsd:attribute name="id" type="xsd:string"/>
+				<xsd:attribute name="desc" type="xsd:string"/>
+				<xsd:attribute name="with" type="xsd:string"/>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="InputRequest">
+		<xsd:attribute name="id" type="xsd:string"/>
+		<xsd:attribute name="name" type="xsd:string"/>
+		<xsd:attribute name="desc" type="xsd:string"/>
+		<xsd:attribute name="with" type="xsd:string"/>
+		<xsd:attribute name="type" type="xsd:string" use="optional"/>
+        <xsd:attribute name="contentType" type="gitb:ValueEmbeddingEnumeration" use="optional"/>
+		<xsd:attribute name="encoding" type="xsd:string" use="optional"/>
+	</xsd:complexType>
+	<xsd:complexType name="TestStepStatus">
+		<xsd:sequence>
+			<xsd:element name="tcInstanceId" type="xsd:string"/>
+			<xsd:element name="stepId" type="xsd:string"/>
+			<xsd:element name="status" type="gitb:StepStatus"/>
+			<xsd:element name="report" type="tr:TestStepReportType" minOccurs="0"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="InteractWithUsersRequest">
+		<xsd:sequence>
+			<xsd:element name="tcInstanceid" type="xsd:string"/>
+			<xsd:element name="stepId" type="xsd:string"/>
+			<xsd:element name="interaction" type="UserInteractionRequest"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="Void">
+		<xsd:sequence/>
+	</xsd:complexType>
+</xsd:schema>

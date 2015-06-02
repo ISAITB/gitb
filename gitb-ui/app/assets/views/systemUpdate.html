@@ -1,0 +1,354 @@
+<div class="container" style="width:50%;height:90%;">
+
+<!-- System Registration Step 1 -->
+    <div id="systemUpdateStep1" class="panel" ng-show="step1">
+
+        <div class="panel-heading" style="font-weight:bold;">
+            <div class="row">
+                <div class="col-md-6" >System Update</div>
+            </div>
+        </div>
+
+        <div class="panel-body" >
+
+            <div class = "row" >
+                <div class="col-md-4 profile-first-column">
+                    System Name:
+                    <div id="label1" class="pull-right" ng-show="noFullName"> <label style="color:red;" > * </label> </div>
+                </div>
+                <div class="col-md-8">
+                    <input ng-model="systemFullName" type="text" class="form-control" placeholder="{{systemFullName}}"> </input>
+                </div>
+            </div>
+            <br>
+
+            <div class = "row" >
+                <div class="col-md-4 profile-first-column">
+                    <div id="label2" class="pull-right" ng-show="noShortName"> <label style="color:red;" > * </label> </div>
+                </div>
+                <div class="col-md-8">
+                    <input ng-model="systemShortName" type="text" class="form-control" placeholder="{{systemShortName}}" style="width:80%;"> </input>
+                </div>
+            </div>
+            <br>
+
+            <div class = "row" >
+                <div class="col-md-4 profile-first-column"> <label>Admins:</label> </div>
+                <div class="col-md-8 dropdown">
+
+                    <input get-user-input type="text"  class="form-control dropdown-toggle" data-toggle="dropdown" placeholder="Search" ng-model="search" ng-click="onMouseClicked()" >
+
+                        <ul style="width:100%;" class="dropdown-menu" role="menu" ng-show="isPopupVisible" >
+                            <li class="" get-user-dropdown ng-repeat="user in userList | filter:search | limitTo:8" user="user" on-item-clicked="onItemClicked" role="presentation" ng-click="itemClicked(user)" >      </li>
+                        </ul>
+
+                </div>
+            </div>
+             <div class = "row" >
+                <div class="col-md-4 profile-first-column">  </div>
+                <div class="col-md-8 dropdown">
+                    <p style=" font-size: small; color: cadetblue; margin-left: 10px;"> {{adminList}} </p>
+                </div>
+            </div>
+            <br>
+
+            <div class = "row" >
+                <div class="col-md-4 profile-first-column">
+                    Version:
+                    <label style="color:red;float:right;" ng-show="noVersion"> * </label>
+                </div>
+                <div class="col-md-8">
+                    <input ng-model="systemVersion" type="text" class="form-control" placeholder="{{systemVersion}}"> </input>
+                </div>
+            </div>
+            <br>
+
+            <div class = "row" >
+                <div class="col-md-4 profile-first-column"> <label>Description:</label> </div>
+                <div class="col-md-8">
+                    <input ng-model="systemDescription" type="text" class="form-control" placeholder="{{systemDescription}}"> </input>
+                </div>
+            </div>
+        </div>
+        <div class="panel-footer">
+            <div class="row">
+                <a href=""class="pull-right sysreg-button" ng-click="saveFirstStep();" style="margin-right:15px;color:#23245D;">Next</a>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- System Registration Step 1 END -->
+
+
+
+
+
+
+    <!-- System Registration Step 2 -->
+    <div id="systemUpdateStep2" class="panel " ng-show="step2" style="max-height:600px;">
+
+        <div class="panel-heading" style="font-weight:bold;">
+            <div class="row">
+                <div class="col-md-6" >System Update</div>
+            </div>
+        </div>
+
+        <div class="panel-body" >
+            <div class = "row" >
+                <div class="col-md-4 profile-first-column" ng-show="update"> Selected Domains: </div>
+                <div class="col-md-8" ng-show="update">
+                    <a href="" class="dropdown-toggle" data-toggle="dropdown" style="color:black;"> {{testDoms[indexOfDomain].domainName}}
+                        <span class="glyphicon glyphicon-chevron-down"></span>
+                    </a>
+
+
+                      <ul class="dropdown-menu" role="menu"  >
+                        <li role="presentation" ng-repeat="domItem in testDoms">
+                            <a role="menuitem" tabindex="-1" href="" ng-click="domainChange($index)">{{domItem.domainName}}</a>
+                        </li>
+
+                      </ul>
+                </div>
+                <div class="col-md-4 profile-first-column" ng-show="!update">  Domain: </div>
+                <div class="col-md-8" ng-show="!update">
+                    <p > {{testDoms[indexOfDomain].domainName}} </p>
+                </div>
+            </div>
+            <br>
+
+            <div class = "row">
+                <div class = "col-md-6 profile-first-column" ng-show="update"> Select Specification: </div>
+                <div class = "col-md-12 profile-first-column" ng-show="!update"> Select actors for each specification and options for each actor: </div>
+
+            </div>
+            <br>
+            <div class="box" ng-show="update">
+                <!--div class="row" >
+                    <a href="" ng-click="step2 = false; step3=true;"> Save </a>
+                </div-->
+                <div class="row" ng-repeat="specItem in testDoms[indexOfDomain].specifications" >
+                    <input
+                        type="checkbox"
+                        name="selectedSpecifications[]"
+                        value="{{specItem.specName}}"
+                        ng-checked="selection.indexOf(specItem.specName) > -1"
+                        ng-click="toggleSpecificationSelection(specItem)"
+                      > {{specItem.specName}} </input>
+
+                </div>
+            </div>
+
+            <div class="box" ng-show="!update">
+                <div class="row" ng-repeat="specItem in testDoms[indexOfDomain].specifications | filter:isSelected" >
+                    <a href="" ng-click="downgly = !downgly" ng-show="!downgly" style="color:#23245D;"> <span class="glyphicon glyphicon-chevron-right"> </span> {{specItem.specName}} </a>
+                    <a href="" ng-click="downgly = !downgly" ng-show="downgly"  style="color:#23245D;"> <span class="glyphicon glyphicon-chevron-down" > </span> {{specItem.specName}} </a>
+
+
+                    <div class="row" ng-show="downgly" >
+                        <div class="col-md-12">
+                            <div class="row" ng-repeat="specItemActor in specItem.actors" style="margin-left:1em;">
+                                <input
+                                    type="checkbox"
+                                    name="selectedActors[]"
+                                    value="{{specItemActor.name}}"
+                                    ng-checked="selection.indexOf(specItemActor.name) > -1"
+                                    ng-click="toggleActorSelection(specItem, specItemActor); showOpt = !showOpt;"
+                                  > {{specItemActor.name}} </input><br>
+
+                                  <div class="row" ng-repeat="specItemOption in specItemActor.options" style="margin-left:2em;" ng-show="showOpt">
+                                        <input
+                                        type="checkbox"
+                                        name="selectedOptions[]"
+                                        value="{{specItemOption.name}}"
+                                        ng-checked="selection.indexOf(specItemOption.name) > -1"
+                                        ng-click="toggleOptionSelection(specItem, specItemActor, specItemOption)"
+                                      > {{specItemOption.name}} </input>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+
+
+        </div>
+
+        <div class="panel-footer">
+            <div class="row">
+                <a href="" ng-click="update=false;" ng-show="update" style="margin-left:15px;color:#23245D;"> Back </a>
+                <a href="" ng-click="step1=true;step2=false;" ng-show="!update" style="margin-left:15px;color:#23245D;"> Back </a>
+
+                <a href="" class=" pull-right sysreg-button" ng-click="step2 = false; step3=true;" style="margin-right:15px;color:#23245D;" ng-show="!update">Next</a>
+                <a class=" pull-right sysreg-button" href="" ng-click="update=true;setDomain();" ng-show="!update" style="margin-right:15px;color:#23245D;"> Update Specification</a>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- System Registration Step 2 END -->
+
+
+
+
+
+<!-- System Registration Step 3 -->
+    <div id="systemRegistrationStep3" class="panel " ng-show="step3">
+
+        <div class="panel-heading" style="font-weight:bold;">
+            <div class="row">
+                <div class="col-md-6" >Configuration Update</div>
+            </div>
+        </div>
+
+        <div class="panel-body" >
+            <div class = "row" >
+                <div class="col-md-4 profile-first-column"> IP Adress: </div>
+                <div class="col-md-8">
+                    <input ng-model="ip" type="text" class="form-control" placeholder="{{ip}}"> </input>
+                </div>
+            </div>
+            <br>
+
+            <div class = "row" >
+                <div class="col-md-4 profile-first-column"> Port: </div>
+                <div class="col-md-8">
+                    <input ng-model="portNum" type="text" class="form-control" placeholder="{{portNum}}"> </input>
+                </div>
+            </div>
+            <br>
+
+            <div class = "row" >
+                <div class="col-md-4 profile-first-column"> Extension </div>
+                <div class="col-md-8">
+                    <input ng-model="extension" type="text" class="form-control" placeholder="{{extension}}"> </input>
+                </div>
+            </div>
+            <br>
+
+        </div>
+        <div class="panel-footer">
+            <div class="row">
+                <a href="" ng-click="step2=true;step3=false;locked=true;" style="margin-left:15px;color:#23245D;"> Back </a>
+                <a href=""class="pull-right sysreg-button" ng-click="step4 = true; step3=false; saveThirdStep();" style="margin-right:15px;color:#23245D;">Next</a>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- System Registration Step 3 END -->
+
+
+
+
+    <!-- System Registration Step 4 -->
+    <div id="systemRegistrationStep4" class="panel" ng-show="step4">
+
+        <div class="panel-heading" style="font-weight:bold;">
+            <div class="row">
+                <div class="col-md-6">The System Has Updated</div>
+            </div>
+        </div>
+
+        <div class="panel-body" >
+            <div class = "row" >
+                <div class="col-md-4 profile-first-column"> System Name: </div>
+                <div class="col-md-8">
+                    <p> {{system.fullname}} ({{system.shortname}}) </p>
+                </div>
+            </div>
+            <br>
+
+            <div class = "row" >
+                <div class="col-md-4 profile-first-column"> Owner: </div>
+                <div class="col-md-8">
+                    <p> {{system.owner}} </p>
+                </div>
+            </div>
+            <br>
+
+            <div class = "row" >
+                <div class="col-md-4 profile-first-column"> Admin: </div>
+                <div class="col-md-8">
+                   <p> {{system.admin}} </p>
+                </div>
+            </div>
+            <br>
+
+            <div class = "row" >
+                <div class="col-md-4 profile-first-column"> Version: </div>
+                <div class="col-md-8">
+                    <p> {{system.version}} </p>
+                </div>
+            </div>
+            <br>
+
+            <div class = "row" >
+                <div class="col-md-4 profile-first-column"> Description: </div>
+                <div class="col-md-8">
+                    <p> {{system.description}} </p>
+                </div>
+            </div>
+            <br>
+
+
+
+            <div class = "row" >
+                <div class="col-md-4 profile-first-column"> System Configuration: </div>
+                <div class="col-md-8">
+                    <p> {{system.ip}}:{{system.portNum}} {{system.extension}} </p>
+                </div>
+            </div>
+            <br>
+
+            <div class = "row" >
+                <div class="col-md-4 profile-first-column"> Domain: </div>
+                <div class="col-md-8">
+                   <p> {{system.domain}} </p>
+                </div>
+            </div>
+            <br>
+
+            <div class = "row" >
+                <div class="col-md-12 profile-first-column"> Specifications: </div><br>
+                <div class="col-md-12">
+
+                <div class="box" style="max-height:230px;">
+
+                    <div style=" margin-left : 1em;  width : 100%;" >
+                        <div class="row" ng-repeat="specItem in testDoms[indexOfDomain].specifications | filter:isSelected" >
+                            <p style="font-weight:bold;"> {{specItem.specName}} :</p>
+
+                            <!--label style="margin-left:5em;"> Actors : </label-->
+                            <div class="row" ng-repeat="specItemActor in specItem.actors | filter:isSelectedActors" style="margin-left:1em;">
+                                <i > <small class="glyphicon glyphicon-play"> </small> {{specItemActor.name}} </i>
+                                <br>
+                                <!--label style="margin-left:5em;">  Options :  </label-->
+
+                                <p ng-repeat="specItemOption in specItemActor.options | filter:isSelectedOptions" style="margin-left:2em;">
+                                    <small class="glyphicon glyphicon-play"> </small> {{specItemOption.name}}
+                                </p>
+                            </div>
+                        </div><br/>
+                    </div>
+
+                </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel-footer">
+            <div class="row">
+                <a href="" ng-click="step3=true;step4=false;" style="margin-left:15px;color:#23245D;"> Back </a>
+
+                <a href="#/systems" class=" pull-right sysreg-button" style="margin-right:15px;color:#23245D;" >Finish</a>
+            </div>
+        </div>
+
+
+    </div>
+    <!-- System Registration Step 4 END -->
+
+</div>

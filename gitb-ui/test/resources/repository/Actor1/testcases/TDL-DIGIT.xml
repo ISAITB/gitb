@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="TDL-DIGIT" package="IHE.XDS.Actor1.testcases" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+	<metadata>
+		<gitb:name>Basic testing of DIGIT UBL 2.0 Invoice</gitb:name>
+		<gitb:version>1.0</gitb:version>
+		<gitb:authors>Yildiray Kabak, Tuncay Namli</gitb:authors>
+		<gitb:description>In this test case an invoice XML document is checked against customized UBL 2.0 Invoice schema and then corresponding Schematron file</gitb:description>
+		<gitb:published>2014</gitb:published>
+		<gitb:lastModified>2014</gitb:lastModified>
+	</metadata>
+	<imports>
+		<artifact type="object" encoding="UTF-8" name="UBL_Customized_Invoice_Schema_File">Sample/Actor1/artifacts/UBL-Invoice-2.0.xsd</artifact>
+	</imports>
+	<actors>
+		<gitb:actor id="SUT">
+			<gitb:name>Seller</gitb:name>
+			<gitb:desc>The seller that creates the invoice</gitb:desc>
+			<gitb:endpoint name="E1">
+				<gitb:config name="C1"/>
+			</gitb:endpoint>
+		</gitb:actor>
+	</actors>
+	<variables>
+		<var type="object" name="UBL_Invoice_Document"/>
+	</variables>
+	<steps>
+		<interact desc="Request the XML message">
+			<request desc="Please enter the UBL Invoice XML" with="SUT">$UBL_Invoice_Document</request>
+		</interact>
+		<verify desc="The XSD validation is performed in this step" handler="urn:gitb:xsdvalidator">
+			<input name="xsddocument">$UBL_Customized_Invoice_Schema_File</input>
+			<input name="xmlcontent">$UBL_Invoice_Document</input>
+		</verify>
+	</steps>
+</testcase>

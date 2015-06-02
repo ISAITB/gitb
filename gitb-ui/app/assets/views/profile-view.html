@@ -1,0 +1,69 @@
+<div ng-controller="UserProfileController as pc">
+    <div class="row">
+        <h4>Profile
+            <span class="tab" ng-if="pc.spinner"><i class="fa fa-spinner fa-spin"></i></span>
+        </h4>
+    </div>
+
+    <div class="row">
+
+        <div class="row">
+            <div class="form-group">
+                <alert ng-repeat="alert in pc.alerts" type="{{alert.type}}" close="pc.closeAlert($index)">{{alert.msg}}</alert>
+            </div>
+        </div>
+
+        <table class="table">
+            <thead >
+            <tr>
+                <th class="grid-header col-md-4">Name</th>
+                <th class="grid-header col-md-6">Email</th>
+                <th class="grid-header col-md-2">Role</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr>
+                <td class="grid-row col-md-4">
+                    <span  ng-if="!pc.edit">{{data.name}}</span>
+                    <input ng-if="pc.edit" type="text" class="form-control-little" ng-model="data.name">
+                </td>
+                <td class="grid-row col-md-6">{{data.email}}</td>
+                <td class="grid-row col-md-2">{{data.role}}</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <div class="float-right">
+            <button type="button" class="btn btn-info" ng-if="!pc.edit" ng-click="pc.editProfile()">Edit Profile</button>
+            <button type="button" class="btn btn-info" ng-if="pc.edit"  ng-click="pc.cancelEdit()">Cancel</button>
+            <button type="button" class="btn btn-info" ng-if="pc.edit"  ng-click="pc.updateProfile()">Save Changes</button>
+        </div>
+    </div>
+
+
+
+    <!--
+    <form>
+        <div class="row">
+            <div class="form-group col-md-6">
+                <label class="bold">Your Name:</label>
+                <input type="text" class="form-control" ng-model="data.name">
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group col-md-6">
+                <label class="bold">Your Email Adress:</label> <br>
+                <label>{{data.email}}</label>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="form-group col-md-6">
+                <input type="submit" value="Save Changes" class="btn btn-info pull-right push-bottom" >
+            </div>
+        </div>
+    </form>
+
+    -->
+</div>
