@@ -30,4 +30,4 @@ RUNNING_PID
 
 #test repository deployment folder
 test/resources/repository
-repository/status-updates
+*/repository/status-updates/

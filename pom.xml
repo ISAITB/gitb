@@ -46,6 +46,7 @@
 	    <module>gitb-remote-modules</module>
 	    <module>gitb-test-resources</module>
 	    <module>gitb-testbed-service</module>
+        <module>gitb-validator-ihe</module>
 	    <module>gitb-validator-validex</module>
 	    <module>gitb-validators</module>
     </modules>
