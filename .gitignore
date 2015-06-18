@@ -8,6 +8,11 @@
 *.ipr
 *.iws
 
+#Eclipse specific
+.classpath
+.project
+.settings/
+
 #Play Specific
 logs
 /project/project
