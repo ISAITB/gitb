@@ -39,8 +39,8 @@ public class EndTransactionStepProcessorActor extends AbstractTestStepActor<EndT
 
 				messagingContext.removeTransaction(step.getTxnId());
 
-				// end the messaging session if no transaction is present
-				if(messagingContext.getTransactions().size() == 0) {
+				// end the messaging session if no other transaction is present
+				if(messagingContext.getTransactions().size() == 0 && !messagingContext.hasMoreTransactions()) {
 					messagingContext
 						.getHandler()
 						.endSession(messagingContext.getSessionId());

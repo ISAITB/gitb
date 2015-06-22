@@ -243,6 +243,8 @@ public class TestCaseContext {
 			}
 
 			MessagingContextBuilder builder = messagingContextBuilders.get(transactionInfo.handler);
+            builder.incrementTransactionCount();
+
 			if(fromRole.getRole() == TestRoleEnumeration.SUT
 				&& toRole.getRole() == TestRoleEnumeration.SUT) {
 				// both of them are SUTs, messaging handler acts as a proxy between them
@@ -430,11 +432,17 @@ public class TestCaseContext {
 	private static class MessagingContextBuilder {
 		private final String handler;
 		private final Map<Tuple<String>, ActorConfiguration> sutConfigurations;
+        private int transactionCount;
 
 		public MessagingContextBuilder(String handler) {
 			this.handler = handler;
 			this.sutConfigurations = new HashMap<>();
+            this.transactionCount = 0;
 		}
+
+        public void incrementTransactionCount() {
+            this.transactionCount++;
+        }
 
 		public MessagingContextBuilder addActorConfiguration(String actorIdToBeSimulated, String endpointNameToBeSimulated,
 		                                                     ActorConfiguration sutActorConfiguration) {
@@ -499,7 +507,7 @@ public class TestCaseContext {
 			}
 
 			return new MessagingContext(messagingHandler, initiateResponse.getSessionId(),
-				initiateResponse.getActorConfigurations(), new ArrayList<>(sutHandlerConfigurations.values()));
+				initiateResponse.getActorConfigurations(), new ArrayList<>(sutHandlerConfigurations.values()), transactionCount);
 		}
 
 		public String getHandler() {
