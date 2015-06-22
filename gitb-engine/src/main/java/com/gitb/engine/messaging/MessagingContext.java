@@ -30,13 +30,15 @@ public class MessagingContext {
 	private final List<ActorConfiguration> actorConfigurations;
 	private final List<SUTConfiguration> sutHandlerConfigurations;
 	private final Map<String, TransactionContext> transactions;
+    private int transactionCount; //number of different transactions that the handler is responsible for
 
-	public MessagingContext(IMessagingHandler handler, String sessionId, List<ActorConfiguration> actorConfigurations, List<SUTConfiguration> sutHandlerConfigurations) {
+	public MessagingContext(IMessagingHandler handler, String sessionId, List<ActorConfiguration> actorConfigurations, List<SUTConfiguration> sutHandlerConfigurations, int transactionCount) {
 		this.handler = handler;
 		this.sessionId = sessionId;
 		this.actorConfigurations = new CopyOnWriteArrayList<>(actorConfigurations);
 		this.sutHandlerConfigurations = new CopyOnWriteArrayList<>(sutHandlerConfigurations);
 		this.transactions = new ConcurrentHashMap<>();
+        this.transactionCount = transactionCount;
 	}
 
 	public String getSessionId() {
@@ -64,8 +66,13 @@ public class MessagingContext {
 	}
 
 	public TransactionContext removeTransaction(String transactionId) {
+        transactionCount--;
 		return transactions.remove(transactionId);
 	}
+
+    public boolean hasMoreTransactions() {
+        return transactionCount > 0;
+    }
 
 	public String getHandlerId() {
 		return handler.getModuleDefinition().getId();
