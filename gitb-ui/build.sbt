@@ -39,7 +39,7 @@ libraryDependencies ++= Seq(
 	"org.webjars" % "codemirror" % "4.8"
 )
 
-JsEngineKeys.engineType := JsEngineKeys.EngineType.Node
+//JsEngineKeys.engineType := JsEngineKeys.EngineType.Node
 
 includeFilter in (Assets, LessKeys.less) := "*.less"
 
