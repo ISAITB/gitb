@@ -32,6 +32,9 @@ public class SoapMessagingHandler extends AbstractMessagingHandler {
     public static final String SOAP_HEADER_FIELD_NAME = "soap_header";
     public static final String SOAP_BODY_FIELD_NAME = "soap_body";
     public static final String SOAP_MESSAGE_FIELD_NAME = "soap_message";
+    public static final String SOAP_CONTENT_FIELD_NAME = "soap_content";
+    public static final String SOAP_ATTACHMENTS_FIELD_NAME = "soap_attachments";
+    public static final String SOAP_ATTACHMENTS_SIZE_FIELD_NAME = "soap_attachments_size";
 
     public static final String HTTP_URI_CONFIG_NAME = HttpMessagingHandler.HTTP_URI_CONFIG_NAME;
 
