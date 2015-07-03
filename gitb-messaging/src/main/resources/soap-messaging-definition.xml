@@ -17,8 +17,8 @@
 		<param name="soap_body" type="object"/>
 		<param name="soap_message" type="object"/>
 		<param name="soap_content" type="object"/>
-		<param name="soap_attachments" type="list"/>
-		<param name="soap_attachments_size" type="number"/>
+		<param name="soap_attachments" type="map" use="O"/>
+		<param name="soap_attachments_size" type="number" use="O"/>
 	</outputs>
 	<actorConfigs>
 		<param name="network.host" desc="Hostname/IP address for the actor"/>
