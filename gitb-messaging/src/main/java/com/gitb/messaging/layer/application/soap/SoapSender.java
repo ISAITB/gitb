@@ -105,14 +105,14 @@ public class SoapSender extends HttpSender {
 		// add attachments
 		MapType attsObject = getAttachments(message);
 		if (attsObject != null) {
-		    Map<String, DataType> atts = ((Map<String, DataType>) attsObject.getValue());
-    		for (String contentId : atts.keySet()) {
-    		    ByteArrayDataSource ds = new ByteArrayDataSource(atts.get(contentId).serializeByDefaultEncoding(), "application/octet-stream");
-    		    DataHandler dh = new DataHandler(ds);
-                AttachmentPart ap = soapMessage.createAttachmentPart(dh);
-                ap.setContentId(contentId);
-                soapMessage.addAttachmentPart(ap);
-    		}
+			Map<String, DataType> atts = ((Map<String, DataType>) attsObject.getValue());
+			for (String contentId : atts.keySet()) {
+				ByteArrayDataSource ds = new ByteArrayDataSource(atts.get(contentId).serializeByDefaultEncoding(), "application/octet-stream");
+				DataHandler dh = new DataHandler(ds);
+				AttachmentPart ap = soapMessage.createAttachmentPart(dh);
+				ap.setContentId(contentId);
+				soapMessage.addAttachmentPart(ap);
+			}
 		}
 
 		return soapMessage;
@@ -125,10 +125,10 @@ public class SoapSender extends HttpSender {
 	}
 	
 	private MapType getAttachments(Message message) {
-	    MapType object = (MapType) message.getFragments().get(SoapMessagingHandler.SOAP_ATTACHMENTS_FIELD_NAME);
+		MapType object = (MapType) message.getFragments().get(SoapMessagingHandler.SOAP_ATTACHMENTS_FIELD_NAME);
 
-        return object;
-    }
+		return object;
+	}
 
 
 	private String getCharsetEncoding(List<Configuration> configurations, Message message) {
