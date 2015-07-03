@@ -49,19 +49,22 @@ public class AssignProcessor implements IProcessor {
 			    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "To expression should be a map type"));
 		    }
 
-		    DataType keyValue = variableResolver.resolveVariable(keyExpression);
-		    if(!keyValue.getType().equals(DataType.STRING_DATA_TYPE)) {
-			    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Map type key should be a string"));
-		    }
+            DataType result = exprHandler.processExpression(assign, assign.getType());
 
-		    if(assign.getType() == null) {
-			    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Type parameter for the assign operation is necessary"));
-		    }
+            if(keyExpression.startsWith("$")) { //key is also a variable reference
+                DataType keyValue = variableResolver.resolveVariable(keyExpression);
+                if(!keyValue.getType().equals(DataType.STRING_DATA_TYPE)) {
+                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Map type key should be a string"));
+                }
 
-		    DataType result = exprHandler.processExpression(assign, assign.getType());
+                if(assign.getType() == null) {
+                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Type parameter for the assign operation is necessary"));
+                }
 
-		    ((MapType)lValue).addItem((String) keyValue.getValue(), result);
-
+                ((MapType)lValue).addItem((String) keyValue.getValue(), result);
+            } else {
+                ((MapType)lValue).addItem(keyExpression, result);
+            }
 	    } else { // regular assign expression
 		    DataType lValue = variableResolver.resolveVariable(assign.getTo());
 		    //Expected return type for the expression is normally the type of lef value

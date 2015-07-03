@@ -67,6 +67,9 @@ public class DataTypeFactory {
             case DataType.BOOLEAN_DATA_TYPE:
                 data = new BooleanType();
                 break;
+            case DataType.BINARY_DATA_TYPE:
+                data = new BinaryType();
+                break;
             case DataType.NUMBER_DATA_TYPE:
                 data = new NumberType();
                 break;

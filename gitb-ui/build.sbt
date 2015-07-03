@@ -9,9 +9,9 @@ scalaVersion := "2.11.1"
 libraryDependencies ++= Seq(
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
-  "mysql" % "mysql-connector-java" % "5.1.18",
-	"com.typesafe.akka" %% "akka-actor" % "2.3.4",
-	"com.typesafe.akka" %% "akka-remote" % "2.3.4",
+  "mysql" % "mysql-connector-java" % "5.1.35",
+  "com.typesafe.akka" %% "akka-actor" % "2.3.4",
+  "com.typesafe.akka" %% "akka-remote" % "2.3.4",
   "com.typesafe.play" %% "play-slick" % "0.8.0-RC2",
   "org.slf4j" % "slf4j-nop" % "1.6.4",
   "ch.qos.logback" % "logback-classic" % "1.0.1",
@@ -28,18 +28,18 @@ libraryDependencies ++= Seq(
   "org.webjars" %% "webjars-play" % "2.3.0",
   "org.webjars" % "jquery" % "1.11.1",
   "org.webjars" % "jquery-cookie" % "1.4.0",
-	"org.webjars" % "lodash" % "2.4.1-6",
-	"org.webjars" % "bootstrap" % "3.2.0-2" exclude("org.webjars", "jquery"),
+  "org.webjars" % "lodash" % "2.4.1-6",
+  "org.webjars" % "bootstrap" % "3.2.0-2" exclude("org.webjars", "jquery"),
   "org.webjars" % "angularjs" % "1.2.16-2" exclude("org.webjars", "jquery"),
   "org.webjars" % "angular-ui-bootstrap" % "0.12.0",
-	"org.webjars" % "angular-ui-router" % "0.2.11-1",
+  "org.webjars" % "angular-ui-router" % "0.2.11-1",
   "org.webjars" % "ng-grid" % "2.0.11-2",
   "org.webjars" % "font-awesome" % "4.1.0" exclude("org.webjars", "jquery"),
   "org.webjars" % "angular-file-upload" % "1.6.12",
-	"org.webjars" % "codemirror" % "4.8"
+  "org.webjars" % "codemirror" % "4.8"
 )
 
-JsEngineKeys.engineType := JsEngineKeys.EngineType.Node
+//JsEngineKeys.engineType := JsEngineKeys.EngineType.Node
 
 includeFilter in (Assets, LessKeys.less) := "*.less"
 
