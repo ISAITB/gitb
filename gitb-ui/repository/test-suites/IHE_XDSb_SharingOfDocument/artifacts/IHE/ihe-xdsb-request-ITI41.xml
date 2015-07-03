@@ -211,7 +211,7 @@
             </rim:RegistryObjectList>
          </lcm:SubmitObjectsRequest>
          <xdsb:Document id="urn:uuid:18d13225-ba9d-47db-bb2b-53fba3a42a49">
-            <xop:Include href="cid:1.urn:uuid:18D13225BA9D47DBBB2B53FBA3A42A49"/>
+            <xop:Include href="attachment1"/>
          </xdsb:Document>
       </xdsb:ProvideAndRegisterDocumentSetRequest>
    </s:Body>

@@ -33,10 +33,8 @@
             <value name="Content-Type" type="string">multipart/related; type="application/xop+xml";</value>
         </var>
 
-        <var name="soap_attachments" type="map">
-            <value name="cid:1.urn:uuid:18D13225BA9D47DBBB2B53FBA3A42A49" type="binary" source="$DocRepo_Attachment" />
-        </var>
-
+        <var name="soap_attachments" type="map" />
+        
         <var name="soap_address" type="string" />
         
         <!-- Participant Identifier of Sender Access Point (System Under Test). Must be retrieved
@@ -47,6 +45,8 @@
 
     </variables>
     <steps>
+        <assign to="$soap_attachments{attachment1}" source="$DocRepo_Attachment" />
+
         <btxn from="DocumentSource" to="DocumentRepository" txnId="t1" handler="SoapMessaging"/>
         <send id="soap_input" desc="Provide and Register Set-b (one Document)" from="DocumentSource" to="DocumentRepository" txnId="t1">
             <input name="soap_message" source="$DocRepo_Template_out" />
