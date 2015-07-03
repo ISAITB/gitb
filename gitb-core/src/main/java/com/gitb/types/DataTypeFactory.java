@@ -85,9 +85,6 @@ public class DataTypeFactory {
             case DataType.SCHEMA_DATA_TYPE:
                 data = new SchemaType();
                 break;
-            case DataType.BINARY_DATA_TYPE:
-                data = new BinaryType();
-                break;
             default:
                 if(isContainerType(type)){
                     String containerType = parseContainerType(type);
