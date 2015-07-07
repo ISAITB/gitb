@@ -13,6 +13,7 @@ import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
 import com.gitb.messaging.utils.MessagingHandlerUtils;
 import com.gitb.utils.ConfigurationUtils;
+
 import org.kohsuke.MetaInfServices;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,9 @@ public class SoapMessagingHandler extends AbstractMessagingHandler {
     public static final String SOAP_VERSION_1_2 = "1.2";
 
     public static final String SOAP_MESSAGE_CONTENT_TYPE = "text/xml";
+    
+    public static final String HTTP_CONTENT_TYPE_HEADER = "Content-Type";
+    public static final String SOAP_START_HEADER = "<root>";
 
     public static final String MODULE_DEFINITION_XML = "/soap-messaging-definition.xml";
 
