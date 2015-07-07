@@ -29,10 +29,6 @@
         <var name="soap_output2" type="map"/>
         <var name="soap_input" type="map"/>
 
-        <var name="soap_header" type="map">
-            <value name="Content-Type" type="string">multipart/related; type="application/xop+xml";</value>
-        </var>
-
         <var name="soap_attachments" type="map" />
         
         <var name="soap_address" type="string" />
@@ -50,7 +46,6 @@
         <btxn from="DocumentSource" to="DocumentRepository" txnId="t1" handler="SoapMessaging"/>
         <send id="soap_input" desc="Provide and Register Set-b (one Document)" from="DocumentSource" to="DocumentRepository" txnId="t1">
             <input name="soap_message" source="$DocRepo_Template_out" />
-            <input name="http_headers" source="$soap_header" />
             <input name="soap_attachments" source="$soap_attachments" />
             <config name="soap.version">1.2</config>
         </send>
