@@ -72,11 +72,17 @@ public class SoapSender extends HttpSender {
 		
 		// compute Content-Type
 		String soapContentType = "start-info=\"application/soap+xml\"; start=\"" + SoapMessagingHandler.SOAP_START_HEADER + "\";";
-		String[] soapHeader = soapMessage.getMimeHeaders().getHeader(SoapMessagingHandler.HTTP_CONTENT_TYPE_HEADER);
-		if (soapMessage.countAttachments() != 0 && soapHeader != null) {
+		String[] soapHeaders = soapMessage.getMimeHeaders().getHeader(SoapMessagingHandler.HTTP_CONTENT_TYPE_HEADER);
+		if (soapMessage.countAttachments() != 0 && soapHeaders != null) {
 			// add MTOM specific Content-Type
-			soapContentType = "multipart/related; type=\"application/xop+xml\"; " 
-					+ soapHeader[0].substring(soapHeader[0].indexOf("boundary")) + "; " + soapContentType;
+			soapContentType = "multipart/related; type=\"application/xop+xml\"; " + soapContentType;
+			
+			// add boundary
+			for (String soapHeader : soapHeaders[0].split(";")) {
+				if (soapHeader.contains("boundary")) {
+					soapContentType += soapHeader + ";";
+				}
+			}
 		}
 		
 		// add Content-Type
