@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="DocumentRepository-IHE-ProvideAndRegister" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <gitb:name>DocumentRepository-IHE-ProvideAndRegister</gitb:name>
+        <gitb:type>CONFORMANCE</gitb:type>
+        <gitb:version>0.1</gitb:version>
+        <gitb:description>This test scenario tests the Document Repository. IHE XDS.b ITI-41 Provide and Register Set-b</gitb:description>
+    </metadata>
+    <namespaces>
+    </namespaces>
+    <imports>
+        <artifact type="schema" encoding="UTF-8" name="XDSb_DocumentRepository">IHE_XDSb_SharingOfDocument/artifacts/IHE/XDS/XDS.b_DocumentRepository.xsd</artifact>
+        <artifact type="object" encoding="UTF-8" name="DocRepo_Template_out">IHE_XDSb_SharingOfDocument/artifacts/IHE/ihe-xdsb-request-ITI41.xml</artifact>
+        <artifact type="object" encoding="UTF-8" name="DocRepo_Template">IHE_XDSb_SharingOfDocument/artifacts/IHE/ihe-docrepo-template.xml</artifact>
+        <artifact type="binary" encoding="UTF-8" name="DocRepo_Attachment">IHE_XDSb_SharingOfDocument/artifacts/IHE/soap-attach.txt</artifact>
+    </imports>
+    <actors>
+        <gitb:actor id="DocumentSource" name="DocumentSource" role="SIMULATED" >
+            <gitb:endpoint name="soap">
+                <gitb:config name="patient.id">9be1413171a8492^^^&amp;1.3.6.1.4.1.21367.2005.13.20.1000&amp;ISO</gitb:config>
+            </gitb:endpoint>
+        </gitb:actor>
+        <gitb:actor id="DocumentRepository" name="DocumentRepository" role="SUT" />
+        <gitb:actor id="DocumentRegistry" name="DocumentRegistry" role="SIMULATED" />
+        <gitb:actor id="DocumentConsumer" name="DocumentConsumer" role="SIMULATED" />
+    </actors>
+    <variables>
+        <var name="soap_output1" type="map"/>
+        <var name="soap_output2" type="map"/>
+        <var name="soap_input" type="map"/>
+
+        <var name="soap_attachments" type="map" />
+        
+        <var name="soap_address" type="string" />
+        
+        <!-- Participant Identifier of Sender Access Point (System Under Test). Must be retrieved
+             from SUT representative -->
+        <var name="source_patient_id" type="string" />
+        <!-- Participant Identifier of Receiver Access Point (Simulated) -->
+        <var name="repository_patient_id" type="string" />
+
+    </variables>
+    <steps>
+        <assign to="$soap_attachments{attachment1}" source="$DocRepo_Attachment" />
+
+        <btxn from="DocumentSource" to="DocumentRepository" txnId="t1" handler="SoapMessaging"/>
+        <send id="soap_input" desc="Provide and Register Set-b (one Document)" from="DocumentSource" to="DocumentRepository" txnId="t1">
+            <input name="soap_message" source="$DocRepo_Template_out" />
+            <input name="soap_attachments" source="$soap_attachments" />
+            <config name="soap.version">1.2</config>
+        </send>
+        <receive id="soap_output1" desc="Send response" from="DocumentRepository" to="DocumentSource" txnId="t1">
+            <config name="soap.version">1.2</config>
+        </receive>
+        <etxn txnId="t1"/>
+        
+        <verify handler="XSDValidator" desc="Validate first request against the XDS.b DocumentRepository Schema">
+            <input name="xmldocument">$soap_output1{soap_content}</input>
+            <input name="xsddocument" source="$XDSb_DocumentRepository"/>
+        </verify>
+    </steps>
+</testcase>

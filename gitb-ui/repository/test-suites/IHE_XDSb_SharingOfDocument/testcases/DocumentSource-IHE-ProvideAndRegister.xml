@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="DocumentSource-IHE-ProvideAndRegister" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <gitb:name>DocumentSource-IHE-ProvideAndRegister</gitb:name>
+        <gitb:type>CONFORMANCE</gitb:type>
+        <gitb:version>0.1</gitb:version>
+        <gitb:description>This test scenario tests the Document Source. IHE XDS.b ITI-41 Provide and Register Set-b</gitb:description>
+    </metadata>
+    <namespaces>
+    </namespaces>
+    <imports>
+        <artifact type="schema" encoding="UTF-8" name="XDSb_DocumentRepository">IHE_XDSb_SharingOfDocument/artifacts/IHE/XDS/XDS.b_DocumentRepository.xsd</artifact>
+        <artifact type="object" encoding="UTF-8" name="DocRepo_Template">IHE_XDSb_SharingOfDocument/artifacts/IHE/ihe-docrepo-template.xml</artifact>
+    </imports>
+    <actors>
+        <gitb:actor id="DocumentSource" name="DocumentSource" role="SUT" />
+        <gitb:actor id="DocumentRepository" name="DocumentRepository" role="SIMULATED">
+            <gitb:endpoint name="soap">
+                <gitb:config name="patient.id">9be1413171a8492^^^&amp;1.3.6.1.4.1.21367.2005.13.20.1000&amp;ISO</gitb:config>
+            </gitb:endpoint>
+        </gitb:actor>
+    </actors>
+    <variables>
+        <var name="soap_output1" type="map"/>
+        <var name="soap_output2" type="map"/>
+        <var name="soap_input1" type="map"/>
+        <var name="soap_input2" type="map"/>
+    </variables>
+    <steps>
+        <btxn from="DocumentSource" to="DocumentRepository" txnId="t2" handler="SoapMessaging"/>
+        <receive id="soap_output1" desc="Provide and Register Set-b (one Document)" from="DocumentSource" to="DocumentRepository" txnId="t2">
+            <config name="soap.version">1.2</config>
+        </receive>
+        <send id="soap_input1" desc="Send response" from="DocumentRepository" to="DocumentSource" txnId="t2">
+            <input name="soap_message" source="$DocRepo_Template" />
+            <config name="soap.version">1.2</config>
+        </send>
+        <etxn txnId="t2"/> 
+
+        <verify handler="NumberValidator" desc="Validate number of attachments received">
+            <input name="actualnumber">$soap_output1{soap_attachments_size}</input>
+            <input name="expectednumber">1</input>
+        </verify>
+
+        <verify handler="XDSMetadataValidator" desc="Validate first request with the remote IHE Gazelle XDS Metadata Validator">
+            <input name="xmldocument">$soap_output1{soap_content}</input>
+            <input name="validatorname">"IHE XDR ITI-41 Provide and Register Set-b – request"</input>
+        </verify>
+
+        <btxn from="DocumentSource" to="DocumentRepository" txnId="t1" handler="SoapMessaging"/>
+        <receive id="soap_output2" desc="Provide and Register Set-b (Two Documents)" from="DocumentSource" to="DocumentRepository" txnId="t1" >
+            <config name="soap.version">1.2</config>
+        </receive>
+        <send id="soap_input2" desc="Send response" from="DocumentRepository" to="DocumentSource" txnId="t1">
+            <input name="soap_message" source="$DocRepo_Template" />
+            <config name="soap.version">1.2</config>
+        </send>
+        <etxn txnId="t1"/>
+        
+        <verify handler="NumberValidator" desc="Validate number of attachments received">
+            <input name="actualnumber">$soap_output2{soap_attachments_size}</input>
+            <input name="expectednumber">2</input>
+        </verify>        
+
+    </steps>
+</testcase>

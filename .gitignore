@@ -8,6 +8,11 @@
 *.ipr
 *.iws
 
+#Eclipse specific
+.classpath
+.project
+.settings/
+
 #Play Specific
 logs
 /project/project
@@ -25,4 +30,4 @@ RUNNING_PID
 
 #test repository deployment folder
 test/resources/repository
-repository/status-updates
+*/repository/status-updates/
