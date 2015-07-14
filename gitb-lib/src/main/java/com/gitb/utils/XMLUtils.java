@@ -1,7 +1,8 @@
 package com.gitb.utils;
 
 import com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl;
-import org.w3c.dom.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXException;
@@ -19,7 +20,10 @@ import javax.xml.crypto.dsig.spec.C14NMethodParameterSpec;
 import javax.xml.crypto.dsig.spec.TransformParameterSpec;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.*;
-import javax.xml.transform.*;
+import javax.xml.transform.Source;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
@@ -226,8 +230,8 @@ public class XMLUtils {
 
     /**
      * Generates an XML Signature from given XML document by using Java XML Digital Signature API (JSR 105)
-     * and envelopes this signature into the same document
-     * @param doc XML DOM Document from which XML Signature is generated
+     * and envelopes this signature into the same document under a specific parent node.
+     * @param parentNode XML DOM Node under which XML Signature is generated
      * @param certificate Public certificate to get information about keystore owner
      * @param privateKey Private key to sign XML document
      * @return XML DOM Document with a generated XML signature
@@ -236,7 +240,7 @@ public class XMLUtils {
      * @throws javax.xml.crypto.MarshalException
      * @throws XMLSignatureException
      */
-    public static Document sign(Document doc, X509Certificate certificate, PrivateKey privateKey) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, javax.xml.crypto.MarshalException, XMLSignatureException {
+    public static Node sign(Node parentNode, X509Certificate certificate, PrivateKey privateKey) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, javax.xml.crypto.MarshalException, XMLSignatureException {
         // First, create the DOM XMLSignatureFactory that will be used to generate the XMLSignature
         XMLSignatureFactory fac = XMLSignatureFactory.getInstance("DOM");
 
@@ -262,7 +266,7 @@ public class XMLUtils {
 
         // Create a DOMSignContext and specify the RSA PrivateKey and
         // location of the resulting XMLSignature's parent element.
-        DOMSignContext dsc = new DOMSignContext(privateKey, doc.getDocumentElement());
+        DOMSignContext dsc = new DOMSignContext(privateKey, parentNode);
 
         // Create the XMLSignature, but don't sign it yet.
         XMLSignature signature = fac.newXMLSignature(si, ki);
@@ -270,6 +274,23 @@ public class XMLUtils {
         // Marshal, generate, and sign the enveloped signature.
         signature.sign(dsc);
 
+        return parentNode;
+    }
+
+    /**
+     * Generates an XML Signature from given XML document by using Java XML Digital Signature API (JSR 105)
+     * and envelopes this signature into the same document
+     * @param doc XML DOM Document from which XML Signature is generated
+     * @param certificate Public certificate to get information about keystore owner
+     * @param privateKey Private key to sign XML document
+     * @return XML DOM Document with a generated XML signature
+     * @throws InvalidAlgorithmParameterException
+     * @throws NoSuchAlgorithmException
+     * @throws javax.xml.crypto.MarshalException
+     * @throws XMLSignatureException
+     */
+    public static Document sign(Document doc, X509Certificate certificate, PrivateKey privateKey) throws InvalidAlgorithmParameterException, NoSuchAlgorithmException, javax.xml.crypto.MarshalException, XMLSignatureException {
+        sign(doc.getDocumentElement(), certificate, privateKey);
         return doc;
     }
 

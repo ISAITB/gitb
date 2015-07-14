@@ -62,5 +62,4 @@ assemblyMergeStrategy in assembly := {
 	case other => (assemblyMergeStrategy in assembly).value(other)
 }
 
-//check this in other operating systems
-resolvers += "Local Maven Repository" at "file://"+Path.userHome.absolutePath+"/.m2/repository"
+resolvers += Resolver.mavenLocal
