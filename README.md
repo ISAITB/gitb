@@ -3,7 +3,7 @@
 GITB PoC Testbed implementation uses Maven as a build automation and dependency management tool. This project can be built by executing the following command within the root folder of the project:
 
 ```sh
-$ mvn clean install
+$ mvn clean install -DskipTests=true
 ```
 
 This command builds and compiles all necessary files and creates a war file located in the *gitb-testbed-service/target/gitb-testbed-service-1.0-SNAPSHOT.war*
