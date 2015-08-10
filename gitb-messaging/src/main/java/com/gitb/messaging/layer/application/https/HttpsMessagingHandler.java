@@ -2,9 +2,8 @@ package com.gitb.messaging.layer.application.https;
 
 import com.gitb.core.Configuration;
 import com.gitb.core.MessagingModule;
-import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
-import com.gitb.messaging.KeyStoreFactory;
+import com.gitb.messaging.SecurityUtils;
 import com.gitb.messaging.SessionManager;
 import com.gitb.messaging.layer.AbstractMessagingHandler;
 import com.gitb.messaging.model.tcp.ITransactionListener;
@@ -13,14 +12,12 @@ import com.gitb.messaging.model.tcp.ITransactionSender;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
 import com.gitb.messaging.utils.MessagingHandlerUtils;
-import com.helger.as2lib.util.http.DoNothingTrustManager;
 import org.kohsuke.MetaInfServices;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.*;
 import java.io.IOException;
-import java.security.*;
 import java.util.List;
 
 /**
@@ -44,7 +41,8 @@ public class HttpsMessagingHandler extends AbstractMessagingHandler{
         SessionContext sessionContext = SessionManager.getInstance().getSession(sessionId);
         List<TransactionContext> transactions = sessionContext.getTransactions(transactionId);
 
-        SSLContext sslContext = createSSLContext();
+        //create an SSLContext and save it to the transaction context
+        SSLContext sslContext = SecurityUtils.createSSLContext();
 
         for(TransactionContext transactionContext : transactions) {
             transactionContext.setParameter(SSLContext.class, sslContext);
@@ -69,25 +67,5 @@ public class HttpsMessagingHandler extends AbstractMessagingHandler{
     @Override
     public MessagingModule getModuleDefinition() {
         return module;
-    }
-
-    protected SSLContext createSSLContext() {
-        SSLContext sslContext = null;
-
-        try {
-            KeyStore keyStore = KeyStoreFactory.getInstance().getKeyStore();
-
-            KeyManagerFactory kmf = KeyManagerFactory.getInstance(PKI_ALGORITHM);
-            kmf.init(keyStore, KeyStoreFactory.getInstance().getKeyStorePassword().toCharArray());
-
-            TrustManager[] trustManagers = new TrustManager [] { new DoNothingTrustManager() };
-
-            sslContext = SSLContext.getInstance(SECURE_ALGORITHM);
-            sslContext.init(kmf.getKeyManagers(), trustManagers, null);
-        } catch (Exception e) {
-            logger.error("Exception while creating SSLContext in HttpsMessagingHandler", e);
-        }
-
-        return sslContext;
     }
 }

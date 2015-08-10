@@ -35,9 +35,7 @@ public class TCPSender extends AbstractTransactionSender {
 
 		BinaryType binaryData = (BinaryType) message.getFragments().get(TCPMessagingHandler.CONTENT_MESSAGE_FIELD_NAME);
 
-		outputStream.write((byte[]) binaryData.getValue());
-
-		outputStream.flush();
+        TCPMessagingHandler.sendBytes(outputStream, (byte[]) binaryData.getValue());
 
 		logger.debug("Flushed output stream: " + socket);
 

@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+	<metadata>
+		<gitb:name>EDIInvoiceTestSuite</gitb:name>
+		<gitb:version>0.1</gitb:version>
+	</metadata>
+	<actors>
+        <gitb:actor id="EDISender">
+            <gitb:name>EDI Document Sender</gitb:name>
+            <gitb:desc>Sends EDI messages to a EDI Document Receiver over the OFTP2 protocol.</gitb:desc>
+            <gitb:endpoint name="oftp2">
+                <gitb:config name="network.host" />
+                <gitb:config name="network.port" />
+            </gitb:endpoint>
+        </gitb:actor>
+        <gitb:actor id="EDIReceiver">
+            <gitb:name>EDI Document Receiver</gitb:name>
+            <gitb:desc>Receives EDI messages from EDI Document Sender over the OFTP2 protocol and validates it</gitb:desc>
+            <gitb:endpoint name="oftp2">
+                <gitb:config name="network.host" />
+                <gitb:config name="network.port" />
+                <gitb:config name="user.code" />
+                <gitb:config name="user.pass" />
+            </gitb:endpoint>
+        </gitb:actor>
+	</actors>
+
+    <testcase id="EDI-Interoperability-Invoice" />
+    <testcase id="EDI-Receiver-Invoice" />
+    <testcase id="EDI-Receiver-Invoice-Upload" />
+    <testcase id="EDI-Sender-Invoice" />
+</testsuite>

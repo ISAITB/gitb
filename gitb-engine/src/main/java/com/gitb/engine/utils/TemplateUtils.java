@@ -4,6 +4,7 @@ import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.tdl.TestArtifact;
+import com.gitb.types.BinaryType;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
@@ -22,6 +23,13 @@ public class TemplateUtils {
 
 	public static DataType generateDataTypeFromTemplate(TestCaseScope scope, InputStream template, String type, String encoding) throws IOException {
 		byte[] content = IOUtils.toByteArray(template);
+
+        //return immediately if dealing with binary data
+        if(type.equals(DataType.BINARY_DATA_TYPE)) {
+            BinaryType binary = new BinaryType();
+            binary.setValue(content);
+            return binary;
+        }
 
 		String str = new String(content);
 

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="EDI-Sender-Invoice" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <gitb:name>EDI-Sender-Invoice</gitb:name>
+        <gitb:type>CONFORMANCE</gitb:type>
+        <gitb:version>0.1</gitb:version>
+        <gitb:description>The objective of this Test Scenario is to ensure the EDI Sender (the System Under
+            Test) can submit a conformant EDI Invoice to a EDI Receiver over the OFTP2 protocol. Then submitted
+            document is validated by EDI Validator.
+        </gitb:description>
+    </metadata>
+    <namespaces>
+    </namespaces>
+    <imports>
+    </imports>
+    <actors>
+        <gitb:actor id="EDISender" name="EDISender" role="SUT"/>
+        <gitb:actor id="EDIReceiver" name="EDIReceiver" role="SIMULATED">
+            <gitb:endpoint name="oftp2">
+                <gitb:config name="user.code">gitb-engine</gitb:config>
+                <gitb:config name="user.pass">gitbpass</gitb:config>
+            </gitb:endpoint>
+        </gitb:actor>
+    </actors>
+    <variables>
+        <var name="file_content" type="string"/>
+    </variables>
+    <steps>
+        <btxn from="EDISender" to="EDIReceiver" txnId="t1" handler="OFTP2Messaging"/>
+        <receive id="output" desc="Send message to EDI Reciver" from="EDISender" to="EDIReceiver" txnId="t1">
+        </receive>
+        <etxn txnId="t1"/>
+
+        <verify handler="EDIValidator" desc="Validate Invoice document">
+            <input name="edidocument" source="$output{file_content}"></input>
+        </verify>
+    </steps>
+</testcase>

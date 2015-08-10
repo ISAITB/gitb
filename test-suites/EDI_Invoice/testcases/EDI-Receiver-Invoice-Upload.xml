@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testcase id="EDI-Receiver-Invoice-Upload" xmlns="http://www.gitb.com/tdl/v1/" xmlns:gitb="http://www.gitb.com/core/v1/">
+    <metadata>
+        <gitb:name>EDI-Receiver-Invoice-Upload</gitb:name>
+        <gitb:type>CONFORMANCE</gitb:type>
+        <gitb:version>0.1</gitb:version>
+        <gitb:description>The objective of this Test Scenario is to ensure the EDI Receiver (the System Under
+            Test) can receive an uploaded EDI Invoice document over the OFTP2 protocol.
+        </gitb:description>
+    </metadata>
+    <namespaces>
+        <ns prefix="fn">http://www.gitb.com/fn/v1/</ns>
+    </namespaces>
+    <imports>
+    </imports>
+    <actors>
+        <gitb:actor id="EDISender" name="EDISender" role="SIMULATED"/>
+        <gitb:actor id="EDIReceiver" name="EDIReceiver" role="SUT" />
+    </actors>
+    <variables>
+        <!-- Name of the document sent -->
+        <var name="file_name" type="string" />
+        <var name="file_content" type="binary" />
+    </variables>
+    <steps>
+        <interact desc="GITB Engine needs information" with="EDIReceiver">
+            <request desc="Please upload EDI invoice document to be received:" with="EDIReceiver" contentType="BASE64">$file_content</request>
+            <request desc="Please enter the file name:" with="EDIReceiver" contentType="STRING">$file_name</request>
+        </interact>
+
+        <btxn from="EDISender" to="EDIReceiver" txnId="t1" handler="OFTP2Messaging"/>
+        <send id="message" desc="Receive Invoice message from EDI Sender"  from="EDISender" to="EDIReceiver" txnId="t1">
+            <input name="file_name" source="$file_name" />
+            <input name="file_content" source="$file_content"></input>
+        </send>
+        <etxn txnId="t1"/>
+    </steps>
+</testcase>

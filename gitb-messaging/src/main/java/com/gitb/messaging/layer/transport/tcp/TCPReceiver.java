@@ -31,23 +31,10 @@ public class TCPReceiver extends AbstractTransactionReceiver {
 
 		InputStream inputStream = socket.getInputStream();
 
-		ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-
-		int c = 0;
-
-		while(true) {
-			c = inputStream.read();
-
-			if(c == TCPMessagingHandler.TCP_STOP_CHARACTER) {
-				break;
-			}
-			byteArrayOutputStream.write(c);
-		}
-
-		logger.debug("Stop character received: " + socket);
+        byte[] data = TCPMessagingHandler.readBytes(inputStream);
 
 		BinaryType binaryData = new BinaryType();
-		binaryData.setValue(byteArrayOutputStream.toByteArray());
+		binaryData.setValue(data);
 
 		Message message = new Message();
 		message
