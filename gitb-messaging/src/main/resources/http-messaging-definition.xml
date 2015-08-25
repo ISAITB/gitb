@@ -12,8 +12,8 @@
         <param name="http_body" type="binary" use="O"/>
     </inputs>
     <outputs>
-        <param name="http_method" type="string"/>
-        <param name="http_version" type="string"/>
+        <param name="http_method" type="string" use="O"/>
+        <param name="http_version" type="string" use="O"/>
         <param name="http_path" type="string" use="O"/>
         <param name="http_headers" type="map" use="O"/>
         <param name="http_body" type="binary" use="O"/>
