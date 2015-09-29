@@ -2,8 +2,9 @@
 	<h4>Step report</h4>
 </div>
 <div class="modal-body">
-	<div test-step-report step="step" report="report"></div>
+	<div id="report" test-step-report step="step" report="report"></div>
 </div>
 <div class="modal-footer">
+    <button class="btn btn-primary" ng-click="export()">Export</button>
 	<button class="btn btn-primary" ng-click="close()">Close</button>
 </div>

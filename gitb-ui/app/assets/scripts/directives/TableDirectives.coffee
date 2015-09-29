@@ -7,7 +7,9 @@
 			onSelect: '='
 			onDeselect: '='
 			operationsVisible: '='
+			exportVisible: '='
 			onDelete: '='
+			onExport: '='
 			allowSelect: '='
 			allowMultiSelect: '='
 			tableCaption: '='
@@ -19,10 +21,11 @@
 					'<tr>'+
 						'<th ng-repeat="column in columns">{{column.title}}</th>'+
 						'<th ng-if="operationsVisible">Operation</th>'+
+						'<th ng-if="exportVisible">Export</th>'+
 					'</tr>'+
 				'</thead>'+
 				'<tbody>'+
-					'<tr class="table-row-directive" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" operations-visible="operationsVisible" on-delete="onDelete"></tr>'+
+					'<tr class="table-row-directive" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" operations-visible="operationsVisible" export-visible="exportVisible" on-delete="onDelete" on-export="onExport"></tr>'+
 				'</tbody>'+
 			'</table>'
 		replace: true
@@ -60,7 +63,9 @@
 			columns: '='
 			classes: '='
 			operationsVisible: '='
+			exportVisible: '='
 			onDelete: '='
+			onExport: '='
 		restrict: 'A'
 		template: ''+
 			'<td class="{{row.class}}" ng-repeat="row in rows">'+
@@ -73,7 +78,10 @@
 			'</td>'+
 			'<td class="operations" ng-if="operationsVisible">'+
 				'<button class="btn btn-default" ng-click="delete()"><i class="fa fa-times"></i></button>'+
-			'</td>'
+			'</td>' +
+			'<td class="operations" ng-if="exportVisible">'+
+                '<button class="btn btn-default" ng-click="export()"><i class="fa fa-file-pdf-o"></i></button>'+
+            '</td>'
 		link: (scope, element, attrs) ->
 			scope.rows = _.map scope.columns, (column)->
 				row = {}
@@ -85,5 +93,6 @@
 			scope.delete = ()=>
 				if scope.onDelete?
 					scope.onDelete(scope.data)
-				
+			scope.export = ()=>
+			    scope.onExport? scope.data
 ]

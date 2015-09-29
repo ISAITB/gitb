@@ -44,4 +44,16 @@ class ReportService
       path: jsRoutes.controllers.RepositoryService.getTestStepReport(reportPath).url
       authenticate: true
 
+  exportTestCaseReport: (session) ->
+      @RestService.get
+        path: jsRoutes.controllers.RepositoryService.exportTestCaseReport(session).url
+        authenticate: true
+        responseType: "arraybuffer"
+
+  exportTestStepReport: (reportPath) ->
+    @RestService.get
+      path: jsRoutes.controllers.RepositoryService.exportTestStepReport(reportPath).url
+      authenticate: true
+      responseType: "arraybuffer"
+
 services.service('ReportService', ReportService)

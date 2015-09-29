@@ -24,7 +24,7 @@ class RestService
                         value?
                 if !config.toJSON?
                     config.toJSON = false
-                @sendRequest(method, config.path, config.params, config.data, config.toJSON);
+                @sendRequest(method, config.path, config.params, config.data, config.toJSON, config.responseType);
             )
 
     authenticate: (config) ->
@@ -39,8 +39,8 @@ class RestService
 
         deferred.promise
 
-    sendRequest: (_method, _url, _params, _data, _toJSON) ->
-        options = @configureOptions(_method, _url, _params, _data, _toJSON)
+    sendRequest: (_method, _url, _params, _data, _toJSON, _responseType) ->
+        options = @configureOptions(_method, _url, _params, _data, _toJSON, _responseType)
         @$http(options)
         .then(
             (result) =>
@@ -50,12 +50,13 @@ class RestService
     refreshTokens: () ->
         "" #TODO: check if access token expired and refresh it, if necessary
 
-    configureOptions: (_method, _path, _params, _data, _toJSON) ->
+    configureOptions: (_method, _path, _params, _data, _toJSON, _responseType) ->
         options = { }
         options.method = _method
         options.url    = _path
         options.params = _params
         options.data   = _data
+        options.responseType = _responseType
 
         if _method == 'POST' || _method == 'PUT'
             if !_toJSON && _data

@@ -4,6 +4,7 @@ class SystemTestsController
     @$log.debug 'Constructing SystemTestsController...'
 
     @systemId = @$stateParams["id"]
+    @export = false
 
     @tableColumns = [
       {
@@ -51,8 +52,23 @@ class SystemTestsController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-  onTestSelect: (test) =>
-    @$state.go 'app.reports.presentation', {session_id: test.sessionId}
+  onTestSelect: (test, element) =>
+    if @export
+        @export = false
+    else
+        @$state.go 'app.reports.presentation', {session_id: test.sessionId}
 
+  onReportExport: (data) =>
+    @export = true
+    @ReportService.exportTestCaseReport(data.sessionId)
+    .then (stepResults) =>
+        a = window.document.createElement('a')
+        a.href = window.URL.createObjectURL(new Blob([stepResults], {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
+        a.download = 'report.docx'
+
+        document.body.appendChild(a)
+        a.click();
+
+        document.body.removeChild(a)
 
 @controllers.controller 'SystemTestsController', SystemTestsController

@@ -147,7 +147,7 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
       template: ''+
         '<div class="step-report test-assertion-step-report">'+
           '<div class="col-md-12" ng-if="report.context != null">'+
-            '<span class="title" ng-if="report.id != null"><strong>{{report.id}}:</strong></span>'+
+            #'<span class="title" ng-if="report.id != null"><strong>{{report.id}}:</strong></span>'+
             '<div any-content-view context="report.context" report="report"></div>'+
           '</div>'+
           '<div class="col-md-12 test-assertion-group-report" ng-if="report.reports != null">'+
