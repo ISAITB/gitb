@@ -9,7 +9,7 @@ import javax.xml.transform.stream.StreamSource
 import com.gitb.core.{AnyContent, StepStatus}
 import com.gitb.tbs.{ObjectFactory, TestStepStatus}
 import com.gitb.tpl.TestCase
-import com.gitb.tr.{BAR, TAR, TestStepReportType, TestResultType}
+import com.gitb.tr._
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
 import config.Configurations
 import models.{TestResultReport, TestStepResult, TestResult}
@@ -180,8 +180,6 @@ object ReportManager extends BaseManager {
   }
 
   private def generateTestStepDocument(document:XWPFDocument, report: TestStepReportType): XWPFDocument = {
-    val tar = report.asInstanceOf[TAR]
-
     var doc = document
 
     if(doc == null)
@@ -233,114 +231,136 @@ object ReportManager extends BaseManager {
 
     lineBreak(doc)
 
-    //values
-    if(tar.getContext != null && tar.getContext.getItem != null && tar.getContext.getItem.size() > 0) {
-      val values = doc.createParagraph();
-      values.setAlignment(ParagraphAlignment.LEFT);
+    if(report.isInstanceOf[TAR]) {
+      val tar = report.asInstanceOf[TAR]
 
-      val valuesText = values.createRun();
-      valuesText.setBold(true)
-      valuesText.setFontSize(12)
-      valuesText.setText("Values:")
-      valuesText.addBreak()
+      //values
+      if(tar.getContext != null && tar.getContext.getItem != null && tar.getContext.getItem.size() > 0) {
+        val values = doc.createParagraph();
+        values.setAlignment(ParagraphAlignment.LEFT);
 
-      for (item <- tar.getContext.getItem) {
-        val table = doc.createTable(1, 1);
+        val valuesText = values.createRun();
+        valuesText.setBold(true)
+        valuesText.setFontSize(12)
+        valuesText.setText("Values:")
+        valuesText.addBreak()
 
-        val width = table.getCTTbl().addNewTblPr().addNewTblW();
-        width.setType(STTblWidth.DXA);
-        width.setW(BigInteger.valueOf(9072));
+        for (item <- tar.getContext.getItem) {
+          val table = doc.createTable(1, 1);
 
-        if(item.getType == "map") {
+          val width = table.getCTTbl().addNewTblPr().addNewTblW();
+          width.setType(STTblWidth.DXA);
+          width.setW(BigInteger.valueOf(9072));
+
+          if(item.getType == "map") {
+            val p = table.getRow(0).getCell(0).getParagraphs.get(0)
+
+            val r1 = p.createRun();
+            r1.setBold(true);
+            r1.setText(item.getName);
+            r1.addBreak()
+            r1.addBreak()
+
+            println(item.getItem.size())
+
+            for(inner <- item.getItem) {
+              if(inner.getEmbeddingMethod().value() == "STRING") {
+                writeItem(p, inner, false, 1, 2)
+              }
+
+              else if(inner.getEmbeddingMethod().value() == "BASE64" || inner.getEmbeddingMethod().value() == "BASE_64"){
+                writeItem(p, inner, true, 1, 2)
+              }
+            }
+          }
+          else if(item.getEmbeddingMethod().value() == "STRING") {
+            val p = table.getRow(0).getCell(0).getParagraphs.get(0)
+            writeItem(p, item, false, 2, 0)
+          }
+
+          else if(item.getEmbeddingMethod().value() == "BASE64" || item.getEmbeddingMethod().value() == "BASE_64"){
+            val p = table.getRow(0).getCell(0).getParagraphs.get(0)
+            writeItem(p, item, true, 2, 0)
+          }
+
+          lineBreak(doc)
+        }
+      }
+
+      //assertions
+      if (tar.getReports != null && tar.getReports.getInfoOrWarningOrError.size() > 0) {
+        //empty
+        lineBreak(doc)
+
+        //assertions
+        val assertions = doc.createParagraph();
+        assertions.setAlignment(ParagraphAlignment.LEFT);
+
+        val assertionsText = assertions.createRun();
+        assertionsText.setBold(true)
+        assertionsText.setFontSize(12)
+        assertionsText.setText("Assertions:")
+        assertionsText.addBreak()
+
+        for (assertion <- tar.getReports.getInfoOrWarningOrError) {
+          val bar = assertion.getValue.asInstanceOf[BAR]
+
+          val table = doc.createTable(1, 1);
+
+          val width = table.getCTTbl().addNewTblPr().addNewTblW();
+          width.setType(STTblWidth.DXA);
+          width.setW(BigInteger.valueOf(9072));
+
           val p = table.getRow(0).getCell(0).getParagraphs.get(0)
 
           val r1 = p.createRun();
           r1.setBold(true);
-          r1.setText(item.getName);
-          r1.addBreak()
-          r1.addBreak()
+          r1.setText("Type: ");
 
-          println(item.getItem.size())
+          val r2 = p.createRun();
+          val _type = assertion.getName().getLocalPart()
+          r2.setText((_type.charAt(0) + "").toUpperCase() + _type.substring(1));
+          r2.addBreak()
 
-          for(inner <- item.getItem) {
-            if(inner.getEmbeddingMethod().value() == "STRING") {
-              writeItem(p, inner, false, 1, 2)
-            }
+          val r3 = p.createRun();
+          r3.setBold(true);
+          r3.setText("Description: ");
 
-            else if(inner.getEmbeddingMethod().value() == "BASE64" || inner.getEmbeddingMethod().value() == "BASE_64"){
-              writeItem(p, inner, true, 1, 2)
-            }
-          }
+          val r4 = p.createRun();
+          if (bar.getDescription.startsWith("\n"))
+            r4.setText(bar.getDescription().substring(1));
+          else
+            r4.setText(bar.getDescription());
+          r4.addBreak()
+
+          val r5 = p.createRun();
+          r5.setBold(true);
+          r5.setText("Test: ");
+
+          val r6 = p.createRun();
+          r6.setText(bar.getTest())
+
+          lineBreak(doc)
         }
-        else if(item.getEmbeddingMethod().value() == "STRING") {
-          val p = table.getRow(0).getCell(0).getParagraphs.get(0)
-          writeItem(p, item, false, 2, 0)
-        }
-
-        else if(item.getEmbeddingMethod().value() == "BASE64" || item.getEmbeddingMethod().value() == "BASE_64"){
-          val p = table.getRow(0).getCell(0).getParagraphs.get(0)
-          writeItem(p, item, true, 2, 0)
-        }
-
-        lineBreak(doc)
       }
     }
+    else if(report.isInstanceOf[DR]){
+      val dr = report.asInstanceOf[DR]
 
-    //assertions
-    if(tar.getReports != null && tar.getReports.getInfoOrWarningOrError.size() > 0) {
-      //empty
+      val decision = doc.createParagraph();
+      decision.setAlignment(ParagraphAlignment.LEFT);
+
+      val r1 = result.createRun();
+      r1.setBold(true)
+      r1.setFontSize(13)
+      r1.setText("Decision: ");
+
+      val r2 = result.createRun();
+      r2.setFontSize(13)
+      val value = if(dr.isDecision) "true" else "false"
+      r2.setText(value)
+
       lineBreak(doc)
-
-      //assertions
-      val assertions = doc.createParagraph();
-      assertions.setAlignment(ParagraphAlignment.LEFT);
-
-      val assertionsText = assertions.createRun();
-      assertionsText.setBold(true)
-      assertionsText.setFontSize(12)
-      assertionsText.setText("Assertions:")
-      assertionsText.addBreak()
-
-      for(assertion <- tar.getReports.getInfoOrWarningOrError) {
-        val bar = assertion.getValue.asInstanceOf[BAR]
-
-        val table = doc.createTable(1, 1);
-
-        val width = table.getCTTbl().addNewTblPr().addNewTblW();
-        width.setType(STTblWidth.DXA);
-        width.setW(BigInteger.valueOf(9072));
-
-        val p     = table.getRow(0).getCell(0).getParagraphs.get(0)
-
-        val r1 = p.createRun();
-        r1.setBold(true);
-        r1.setText("Type: ");
-
-        val r2 = p.createRun();
-        val _type = assertion.getName().getLocalPart()
-        r2.setText((_type.charAt(0) + "").toUpperCase() + _type.substring(1));
-        r2.addBreak()
-
-        val r3 = p.createRun();
-        r3.setBold(true);
-        r3.setText("Description: ");
-
-        val r4 = p.createRun();
-        if(bar.getDescription.startsWith("\n"))
-          r4.setText(bar.getDescription().substring(1));
-        else
-          r4.setText(bar.getDescription());
-        r4.addBreak()
-
-        val r5 = p.createRun();
-        r5.setBold(true);
-        r5.setText("Test: ");
-
-        val r6 = p.createRun();
-        r6.setText(bar.getTest())
-
-        lineBreak(doc)
-      }
     }
 
     doc
