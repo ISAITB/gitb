@@ -3,6 +3,7 @@ package managers
 import java.io.{StringReader, FileOutputStream, File}
 import java.math.BigInteger
 import java.text.SimpleDateFormat
+import java.util.Date
 import javax.xml.bind.JAXBElement
 import javax.xml.transform.stream.StreamSource
 
@@ -150,24 +151,130 @@ object ReportManager extends BaseManager {
     }
   }
 
-  def generateTestCaseReport(list:ListBuffer[TestStepReportType], path:String): File = {
+  def generateTestCaseReport(list:ListBuffer[TestStepReportType], path:String, testCase:Option[models.TestCase], sessionId:String): File = {
     val doc = new XWPFDocument
 
-    for(stepReport <- list) {
-      generateTestStepDocument(doc, stepReport)
+    DB.withSession { implicit session =>
+      if(testCase.isDefined) {
+        val header = doc.createParagraph();
+        header.setAlignment(ParagraphAlignment.CENTER);
 
-      //add page break
-      val paragraph = doc.createParagraph();
-      val run = paragraph.createRun()
-      run.addBreak(BreakType.PAGE)
+        val headerText = header.createRun();
+        headerText.setBold(true)
+        headerText.setFontSize(28)
+        headerText.setText("Test Case Report")
+
+        lineBreak(doc)
+        lineBreak(doc)
+
+        //test name
+        val p1 = doc.createParagraph();
+        p1.setAlignment(ParagraphAlignment.BOTH);
+
+        val r1 = p1.createRun();
+        r1.setBold(true)
+        r1.setFontSize(15)
+        r1.setText("Test Name: ");
+
+        val r2 = p1.createRun();
+        r2.setFontSize(15)
+        r2.setText(testCase.get.fullname)
+
+        lineBreak(doc)
+
+        if(testCase.get.description.isDefined) {
+          //test description
+          val p2 = doc.createParagraph();
+          p2.setAlignment(ParagraphAlignment.BOTH);
+
+          val r3 = p2.createRun();
+          r3.setBold(true)
+          r3.setFontSize(15)
+          r3.setText("Description: ");
+
+          val r4 = p2.createRun();
+          r4.setFontSize(15)
+          r4.setText(testCase.get.description.get.replace("\n", "").replace("\r", "").replaceAll("\\s+"," "))
+
+          lineBreak(doc)
+        }
+
+        val testResult = PersistenceSchema.testResults.filter(_.testSessionId === sessionId).first
+
+        //result
+        val p3 = doc.createParagraph();
+        p3.setAlignment(ParagraphAlignment.BOTH);
+
+        val r5 = p3.createRun();
+        r5.setBold(true)
+        r5.setFontSize(15)
+        r5.setText("Result: ");
+
+        val r6 = p3.createRun();
+        r6.setFontSize(15)
+        r6.setText(testResult.result)
+
+        lineBreak(doc)
+
+        //execution results
+        val start = TimeUtil.parseUTCDatetime(testResult.startTime)
+
+        val p4 = doc.createParagraph();
+        p4.setAlignment(ParagraphAlignment.BOTH);
+
+        val r7 = p4.createRun();
+        r7.setBold(true)
+        r7.setFontSize(15)
+        r7.setText("Execution Time: ");
+
+        val r8 = p4.createRun();
+        r8.setFontSize(15)
+
+        if(testResult.endTime.isDefined) {
+          val end = testResult.endTime.get
+          val difference = (TimeUtil.parseUTCDatetime(end).getTime - start.getTime) / 1000
+
+          r8.setText(testResult.startTime + " (UTC)")
+
+          lineBreak(doc)
+
+          val p5 = doc.createParagraph();
+          p5.setAlignment(ParagraphAlignment.BOTH);
+
+          val r9 = p5.createRun();
+          r9.setBold(true)
+          r9.setFontSize(15)
+          r9.setText("Duration: ");
+
+          val r10 = p5.createRun();
+          r10.setFontSize(15)
+          r10.setText(difference + " seconds")
+
+          lineBreak(doc)
+
+        } else {
+          r8.setText(testResult.startTime + " (UTC)")
+        }
+
+        doc.createParagraph().createRun().addBreak(BreakType.PAGE)
+      }
+
+      for(stepReport <- list) {
+        generateTestStepDocument(doc, stepReport)
+
+        //add page break
+        val paragraph = doc.createParagraph();
+        val run = paragraph.createRun()
+        run.addBreak(BreakType.PAGE)
+      }
+
+      val out = new FileOutputStream(path);
+      doc.write(out);
+
+      out.close()
+
+      new File(path)
     }
-
-    val out = new FileOutputStream(path);
-    doc.write(out);
-
-    out.close()
-
-    new File(path)
   }
 
   def generateTestStepReport(report: TestStepReportType, path:String): File = {
@@ -289,8 +396,6 @@ object ReportManager extends BaseManager {
 
       //assertions
       if (tar.getReports != null && tar.getReports.getInfoOrWarningOrError.size() > 0) {
-        //empty
-        lineBreak(doc)
 
         //assertions
         val assertions = doc.createParagraph();

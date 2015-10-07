@@ -60,7 +60,7 @@ class SystemTestsController
 
   onReportExport: (data) =>
     @export = true
-    @ReportService.exportTestCaseReport(data.sessionId)
+    @ReportService.exportTestCaseReport(data.sessionId, data.testName)
     .then (stepResults) =>
         a = window.document.createElement('a')
         a.href = window.URL.createObjectURL(new Blob([stepResults], {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));

@@ -16,7 +16,7 @@ import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.IOUtils
 import org.slf4j.LoggerFactory
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import controllers.util.ResponseConstructor
+import controllers.util.{Parameters, ParameterExtractor, ResponseConstructor}
 import managers.{TestSuiteManager, ReportManager, TestCaseManager}
 import play.api.Play
 import play.api.mvc._
@@ -30,6 +30,8 @@ import scala.collection.mutable.ListBuffer
 class RepositoryService extends Controller {
 	private val logger = LoggerFactory.getLogger(classOf[RepositoryService])
 	private val codec = new URLCodec()
+
+  private val TESTCASE_REPORT_NAME = "report.docx"
 
 	def getTestSuiteResource(filePath:String): Action[AnyContent] = Action {
 		implicit request =>
@@ -95,7 +97,10 @@ class RepositoryService extends Controller {
     Ok.sendFile(docx, true)
   }
 
-  def exportTestCaseReport(session: String): Action[AnyContent] = Action { implicit request =>
+  def exportTestCaseReport(): Action[AnyContent] = Action.async { implicit request =>
+    val session = ParameterExtractor.requiredQueryParameter(request, Parameters.SESSION_ID)
+    val testCaseId = ParameterExtractor.requiredQueryParameter(request, Parameters.TEST_ID)
+
     val root: String = Configurations.TEST_CASE_REPOSITORY_PATH + "/" + ReportManager.STATUS_UPDATES_PATH
 
     val application = Play.current
@@ -103,42 +108,42 @@ class RepositoryService extends Controller {
 
     logger.debug("Reading test case report ["+codec.decode(session)+"] from the file ["+folder+"]")
 
-    var response = "["
+    TestCaseManager.getTestCase(testCaseId) map { testCase =>
+      if(folder.exists()) {
+        val exportedReport = new File(folder, TESTCASE_REPORT_NAME)
 
-    if(folder.exists()) {
-      val exportedReport = new File(folder, "report.docx")
+        if(!exportedReport.exists()) {
+          var list = ListBuffer[TestStepReportType]()
 
-      if(!exportedReport.exists()) {
-        var list = ListBuffer[TestStepReportType]()
+          val stepReports = folder.list()
+            .filter(t => t.endsWith(".xml"))
+            .map(t => pad10(t.substring(0, t.indexOf(".xml")))).sortWith(_<_)
 
-        val stepReports = folder.list()
-          .filter(t => t.endsWith(".xml"))
-          .map(t => pad10(t.substring(0, t.indexOf(".xml")))).sortWith(_<_)
+          for (stepReport <- stepReports) {
+            var step = stepReport
+            if(stepReport.startsWith("0")) {
+              step = stepReport.replaceFirst("^0+(?!$)", "")
+            }
 
-        for (stepReport <- stepReports) {
-          var step = stepReport
-          if(stepReport.startsWith("0")) {
-            step = stepReport.replaceFirst("^0+(?!$)", "")
+            val file = new File(folder, step + ".xml")
+            val bytes  = Files.readAllBytes(Paths.get(file.getAbsolutePath));
+            val string = new String(bytes)
+
+            //convert string in xml format into its object representation
+            val report = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))
+            list += report.getReport
           }
 
-          val file = new File(folder, step + ".xml")
-          val bytes  = Files.readAllBytes(Paths.get(file.getAbsolutePath));
-          val string = new String(bytes)
-
-          //convert string in xml format into its object representation
-          val report = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))
-          list += report.getReport
+          ReportManager.generateTestCaseReport(list, exportedReport.getAbsolutePath, testCase, session)
         }
 
-        ReportManager.generateTestCaseReport(list, exportedReport.getAbsolutePath)
+        Ok.sendFile(
+          content = exportedReport,
+          fileName = _ => TESTCASE_REPORT_NAME
+        )
+      } else {
+        NotFound
       }
-
-      Ok.sendFile(
-        content = exportedReport,
-        fileName = _ => "report.docx"
-      )
-    } else {
-      NotFound
     }
   }
 
