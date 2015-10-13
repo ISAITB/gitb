@@ -55,6 +55,8 @@ class SystemTestsController
   onTestSelect: (test, element) =>
     if @export
         @export = false
+    else if @check
+        @check = false
     else
         @$state.go 'app.reports.presentation', {session_id: test.sessionId}
 
@@ -62,6 +64,35 @@ class SystemTestsController
     @export = true
     @ReportService.exportTestCaseReport(data.sessionId, data.testName)
     .then (stepResults) =>
+        a = window.document.createElement('a')
+        a.href = window.URL.createObjectURL(new Blob([stepResults], {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
+        a.download = 'report.docx'
+
+        document.body.appendChild(a)
+        a.click();
+
+        document.body.removeChild(a)
+
+  onCheckboxCheck: (data) =>
+    @check = true
+
+    @showExportButton = false
+
+    for result in @testResults
+        if result.checked
+            @showExportButton = true
+
+  exportSelected: () =>
+    session_ids = []
+    testcase_ids = []
+
+    for result in @testResults
+        if result.checked
+            session_ids.push(result.sessionId)
+            testcase_ids.push(result.testName)
+
+     @ReportService.exportTestCaseReports(session_ids.join(), testcase_ids.join())
+     .then (stepResults) =>
         a = window.document.createElement('a')
         a.href = window.URL.createObjectURL(new Blob([stepResults], {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
         a.download = 'report.docx'

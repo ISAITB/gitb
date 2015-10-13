@@ -2,6 +2,7 @@ package managers
 
 import java.io.{StringReader, FileOutputStream, File}
 import java.math.BigInteger
+import java.nio.file.{Paths, Files}
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.xml.bind.JAXBElement
@@ -15,6 +16,7 @@ import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
 import config.Configurations
 import models.{TestResultReport, TestStepResult, TestResult}
 import org.apache.commons.codec.binary.Base64
+import org.apache.commons.codec.net.URLCodec
 import org.apache.poi.xwpf.usermodel._
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.STTblWidth
 import org.slf4j.{LoggerFactory, Logger}
@@ -151,7 +153,36 @@ object ReportManager extends BaseManager {
     }
   }
 
-  def generateTestCaseReport(list:ListBuffer[TestStepReportType], path:String, testCase:Option[models.TestCase], sessionId:String): File = {
+  def getListOfTestSteps(folder:File): ListBuffer[TestStepReportType] = {
+    var list = ListBuffer[TestStepReportType]()
+
+    val stepReports = folder.list()
+      .filter(t => t.endsWith(".xml"))
+      .map(t => pad10(t.substring(0, t.indexOf(".xml")))).sortWith(_<_)
+
+    for (stepReport <- stepReports) {
+      var step = stepReport
+      if(stepReport.startsWith("0")) {
+        step = stepReport.replaceFirst("^0+(?!$)", "")
+      }
+
+      val file = new File(folder, step + ".xml")
+      val bytes  = Files.readAllBytes(Paths.get(file.getAbsolutePath));
+      val string = new String(bytes)
+
+      //convert string in xml format into its object representation
+      val report = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))
+      list += report.getReport
+    }
+
+    list
+  }
+
+  private def pad10(string:String): String = {
+    "0000000000".substring(string.length) + string;
+  }
+
+  def generateDetailedTestCaseReport(list:ListBuffer[TestStepReportType], path:String, testCase:Option[models.TestCase], sessionId:String): File = {
     val doc = new XWPFDocument
 
     DB.withSession { implicit session =>
@@ -260,7 +291,7 @@ object ReportManager extends BaseManager {
       }
 
       for(stepReport <- list) {
-        generateTestStepDocument(doc, stepReport)
+        generateDetailedTestStepDocument(doc, stepReport)
 
         //add page break
         val paragraph = doc.createParagraph();
@@ -277,8 +308,8 @@ object ReportManager extends BaseManager {
     }
   }
 
-  def generateTestStepReport(report: TestStepReportType, path:String): File = {
-    var doc = generateTestStepDocument(null, report)
+  def generateDetailedTestStepReport(report: TestStepReportType, path:String): File = {
+    var doc = generateDetailedTestStepDocument(null, report)
 
     val out = new FileOutputStream(path);
     doc.write(out);
@@ -286,7 +317,7 @@ object ReportManager extends BaseManager {
     new File(path)
   }
 
-  private def generateTestStepDocument(document:XWPFDocument, report: TestStepReportType): XWPFDocument = {
+  private def generateDetailedTestStepDocument(document:XWPFDocument, report: TestStepReportType): XWPFDocument = {
     var doc = document
 
     if(doc == null)
@@ -469,6 +500,161 @@ object ReportManager extends BaseManager {
     }
 
     doc
+  }
+
+  def generateTestCaseOverviewPage(doc: XWPFDocument, testCaseIds:Array[String], sessionIds:Array[String]) = {
+    DB.withSession { implicit session =>
+      val header = doc.createParagraph();
+      header.setAlignment(ParagraphAlignment.CENTER);
+
+      val headerText = header.createRun();
+      headerText.setBold(true)
+      headerText.setFontSize(28)
+      headerText.setText("Report for Selected Test Cases")
+
+      lineBreak(doc)
+      lineBreak(doc)
+
+      var a = 0;
+      // for loop execution with a range
+      for( a <- 0 to testCaseIds.length-1){
+        val testCaseId = testCaseIds(a)
+        val sessionId = sessionIds(a)
+        val testResult = PersistenceSchema.testResults.filter(_.testSessionId === sessionId).first
+
+        val p = doc.createParagraph()
+        p.setAlignment(ParagraphAlignment.LEFT)
+
+        val r1 = p.createRun();
+        r1.setBold(true)
+        r1.setFontSize(17)
+        r1.setText((a+1) + ". " + testCaseId + ": ");
+
+        val r2 = p.createRun();
+        r2.setFontSize(17)
+        r2.setText(testResult.result)
+      }
+
+      doc.createParagraph().createRun().addBreak(BreakType.PAGE)
+
+      for( a <- 0 to testCaseIds.length-1) {
+        val testCaseId = testCaseIds(a)
+        val sessionId = sessionIds(a)
+        val testResult = PersistenceSchema.testResults.filter(_.testSessionId === sessionId).first
+        val testCase = new models.TestCase(PersistenceSchema.testCases.filter(_.shortname === testCaseId).first)
+
+        generateOverviewTestCase(doc, testCaseId, sessionId, testCase, testResult, a + 1)
+      }
+
+    }
+  }
+
+  def generateOverviewTestCase(doc: XWPFDocument, testCaseId:String, sessionId:String, testCase: models.TestCase, testResult: TestResult, index:Int) = {
+    //test name
+    val p1 = doc.createParagraph();
+    p1.setAlignment(ParagraphAlignment.LEFT);
+    p1.setBorderBottom(Borders.SINGLE);
+
+    val r1 = p1.createRun();
+    r1.setBold(true)
+    r1.setFontSize(15)
+    r1.setText(index + ". " +testCaseId);
+
+    lineBreak(doc)
+
+    //test description
+    val p2 = doc.createParagraph();
+    p2.setAlignment(ParagraphAlignment.BOTH);
+
+    val r3 = p2.createRun();
+    r3.setBold(true)
+    r3.setFontSize(13)
+    r3.setText("Description: ");
+
+    val r4 = p2.createRun();
+    r4.setFontSize(13)
+    r4.setText(testCase.description.get.replace("\n", "").replace("\r", "").replaceAll("\\s+"," "))
+
+    //result
+    val p3 = doc.createParagraph();
+    p3.setAlignment(ParagraphAlignment.BOTH);
+
+    val r5 = p3.createRun();
+    r5.setBold(true)
+    r5.setFontSize(13)
+    r5.setText("Result: ");
+
+    val r6 = p3.createRun();
+    r6.setFontSize(13)
+    r6.setText(testResult.result)
+
+    //execution results
+    val start = TimeUtil.parseUTCDatetime(testResult.startTime)
+
+    val p4 = doc.createParagraph();
+    p4.setAlignment(ParagraphAlignment.BOTH);
+
+    val r7 = p4.createRun();
+    r7.setBold(true)
+    r7.setFontSize(13)
+    r7.setText("Execution Time: ");
+
+    val r8 = p4.createRun();
+    r8.setFontSize(13)
+
+    if(testResult.endTime.isDefined) {
+      val end = testResult.endTime.get
+      val difference = (TimeUtil.parseUTCDatetime(end).getTime - start.getTime) / 1000
+
+      r8.setText(testResult.startTime + " (UTC)")
+
+      val p5 = doc.createParagraph();
+      p5.setAlignment(ParagraphAlignment.BOTH);
+
+      val r9 = p5.createRun();
+      r9.setBold(true)
+      r9.setFontSize(13)
+      r9.setText("Duration: ");
+
+      val r10 = p5.createRun();
+      r10.setFontSize(13)
+      r10.setText(difference + " seconds")
+
+    } else {
+      r8.setText(testResult.startTime + " (UTC)")
+    }
+
+    lineBreak(doc)
+
+    generateOverviewTestStep(doc, sessionId)
+  }
+
+  def generateOverviewTestStep(doc: XWPFDocument, sessionId:String) = {
+    val root: String = Configurations.TEST_CASE_REPOSITORY_PATH + "/" + STATUS_UPDATES_PATH
+
+    val application = Play.current
+    val folder = new File(application.getFile(root), new URLCodec().decode(sessionId))
+
+    if(folder.exists()) {
+      val list = ReportManager.getListOfTestSteps(folder)
+
+      for(stepReport <- list) {
+        val p1 = doc.createParagraph();
+        p1.setAlignment(ParagraphAlignment.LEFT);
+
+        val r1 = p1.createRun();
+        r1.setBold(true)
+        r1.setUnderline(UnderlinePatterns.SINGLE)
+        r1.setFontSize(13)
+        r1.setText("Step " + stepReport.getId + ": ")
+
+        val r3 = p1.createRun();
+        r3.setFontSize(13)
+        r3.setText(stepReport.getResult.value())
+      }
+
+      lineBreak(doc)
+    }
   }
 
   private def writeItem(paragraph: XWPFParagraph, item: AnyContent, base64:Boolean, break1:Int, break2: Int) = {

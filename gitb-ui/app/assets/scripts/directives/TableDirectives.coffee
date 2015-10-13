@@ -8,8 +8,10 @@
 			onDeselect: '='
 			operationsVisible: '='
 			exportVisible: '='
+			checkboxEnabled: '='
 			onDelete: '='
 			onExport: '='
+			onCheck: '='
 			allowSelect: '='
 			allowMultiSelect: '='
 			tableCaption: '='
@@ -19,13 +21,14 @@
 				'<caption ng-if="tableCaptionVisible">{{tableCaption}}</caption>'+
 				'<thead>'+
 					'<tr>'+
+					    '<th ng-if="checkboxEnabled"></th>'+
 						'<th ng-repeat="column in columns">{{column.title}}</th>'+
 						'<th ng-if="operationsVisible">Operation</th>'+
 						'<th ng-if="exportVisible">Export</th>'+
 					'</tr>'+
 				'</thead>'+
 				'<tbody>'+
-					'<tr class="table-row-directive" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" operations-visible="operationsVisible" export-visible="exportVisible" on-delete="onDelete" on-export="onExport"></tr>'+
+					'<tr class="table-row-directive" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" operations-visible="operationsVisible" export-visible="exportVisible" checkbox-enabled="checkboxEnabled" on-delete="onDelete" on-export="onExport" on-check="onCheck"></tr>'+
 				'</tbody>'+
 			'</table>'
 		replace: true
@@ -64,10 +67,15 @@
 			classes: '='
 			operationsVisible: '='
 			exportVisible: '='
+			checkboxEnabled: '='
 			onDelete: '='
 			onExport: '='
+			onCheck: '='
 		restrict: 'A'
 		template: ''+
+		    '<td ng-if="checkboxEnabled">'+
+                '<input type="checkbox" ng-model="data.checked" ng-change="check()">' +
+            '</td>' +
 			'<td class="{{row.class}}" ng-repeat="row in rows">'+
 				'<div ng-if="row.boolean">'+
 					'<i class="glyphicon" ng-class="{\'glyphicon-ok\': row.data, \'glyphicon-remove\': !row.data}"></i>'+
@@ -95,4 +103,6 @@
 					scope.onDelete(scope.data)
 			scope.export = ()=>
 			    scope.onExport? scope.data
+			scope.check = () =>
+			    scope.onCheck? scope.data
 ]

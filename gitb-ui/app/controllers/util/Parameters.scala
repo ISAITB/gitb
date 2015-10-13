@@ -51,6 +51,8 @@ object Parameters {
   val ACTOR_ID   = "actor_id"
   val TEST_ID    = "test_id"
   val SESSION_ID = "session_id"
+  val TEST_IDS   = "test_ids"
+  val SESSION_IDS= "session_ids"
   val CONFIGS    = "configs"
   val CONFIG     = "config"
   val INPUTS     = "inputs"

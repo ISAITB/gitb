@@ -1,6 +1,6 @@
 package controllers
 
-import java.io.{FileInputStream, StringReader, File}
+import java.io._
 import java.nio.file.{Paths, Files}
 import java.util
 import javax.xml.transform.stream.StreamSource
@@ -13,7 +13,7 @@ import com.gitb.utils.XMLUtils
 import config.Configurations
 import models.TestCase
 import org.apache.commons.codec.net.URLCodec
-import org.apache.commons.io.IOUtils
+import org.apache.poi.xwpf.usermodel.{ParagraphAlignment, XWPFDocument}
 import org.slf4j.LoggerFactory
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import controllers.util.{Parameters, ParameterExtractor, ResponseConstructor}
@@ -87,7 +87,7 @@ class RepositoryService extends Controller {
         val step = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))
 
         //generate pdf
-        docx = ReportManager.generateTestStepReport(step.getReport, docx.getAbsolutePath)
+        docx = ReportManager.generateDetailedTestStepReport(step.getReport, docx.getAbsolutePath)
       } else {
         NotFound
       }
@@ -113,28 +113,8 @@ class RepositoryService extends Controller {
         val exportedReport = new File(folder, TESTCASE_REPORT_NAME)
 
         if(!exportedReport.exists()) {
-          var list = ListBuffer[TestStepReportType]()
-
-          val stepReports = folder.list()
-            .filter(t => t.endsWith(".xml"))
-            .map(t => pad10(t.substring(0, t.indexOf(".xml")))).sortWith(_<_)
-
-          for (stepReport <- stepReports) {
-            var step = stepReport
-            if(stepReport.startsWith("0")) {
-              step = stepReport.replaceFirst("^0+(?!$)", "")
-            }
-
-            val file = new File(folder, step + ".xml")
-            val bytes  = Files.readAllBytes(Paths.get(file.getAbsolutePath));
-            val string = new String(bytes)
-
-            //convert string in xml format into its object representation
-            val report = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))
-            list += report.getReport
-          }
-
-          ReportManager.generateTestCaseReport(list, exportedReport.getAbsolutePath, testCase, session)
+          val list = ReportManager.getListOfTestSteps(folder)
+          ReportManager.generateDetailedTestCaseReport(list, exportedReport.getAbsolutePath, testCase, session)
         }
 
         Ok.sendFile(
@@ -145,6 +125,30 @@ class RepositoryService extends Controller {
         NotFound
       }
     }
+  }
+
+  def exportTestCaseReports(): Action[AnyContent] = Action { implicit request =>
+    val sessionIdsParam  = ParameterExtractor.requiredQueryParameter(request, Parameters.SESSION_IDS)
+    val testCaseIdsParam = ParameterExtractor.requiredQueryParameter(request, Parameters.TEST_IDS)
+    val root: String = Configurations.TEST_CASE_REPOSITORY_PATH + "/" + ReportManager.STATUS_UPDATES_PATH
+    val application = Play.current
+
+    val sessionIds  = sessionIdsParam.split(",")
+    val testCaseIds = testCaseIdsParam.split(",")
+
+    val doc = new XWPFDocument
+
+    ReportManager.generateTestCaseOverviewPage(doc, testCaseIds, sessionIds)
+
+    val report = new File(application.getFile(root), System.currentTimeMillis() + ".docx")
+    val out = new FileOutputStream(report);
+    doc.write(out)
+
+    Ok.sendFile(
+      content  = report,
+      fileName = _ => TESTCASE_REPORT_NAME,
+      onClose  = () => report.delete()
+    )
   }
 
 	def getTestCase(testId:String) = Action.async {
@@ -174,7 +178,7 @@ class RepositoryService extends Controller {
 		}
 	}
 
-  private def pad10(string:String): String = {
-    "0000000000".substring(string.length) + string;
+  private def removeFile(file:File) = {
+    file.delete()
   }
 }
