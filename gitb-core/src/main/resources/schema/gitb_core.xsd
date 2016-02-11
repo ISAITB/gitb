@@ -167,7 +167,7 @@
 	<!--Representation (serialization) of a GITB value -->
 	<xsd:complexType name="AnyContent">
 		<xsd:sequence>
-			<xsd:element name="item" type="AnyContent" maxOccurs="unbounded"/>
+			<xsd:element name="item" type="AnyContent" minOccurs="0" maxOccurs="unbounded"/>
 			<xsd:element name="value" type="StringUriOrBase64Type" minOccurs="0" maxOccurs="1" />
 		</xsd:sequence>
 		<xsd:attribute name="name" type="xsd:string" use="optional"/>
