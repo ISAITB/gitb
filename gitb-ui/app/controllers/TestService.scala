@@ -1,5 +1,6 @@
 package controllers
 
+import config.Configurations
 import actors.WebSocketActor
 import jaxws.HeaderHandlerResolver
 import managers.ConformanceManager
@@ -14,7 +15,8 @@ import utils.{JsonUtil, JacksonUtil}
 
 object TestService{
   val port:TestbedService = {
-    val service: TestbedService_Service = new TestbedService_Service()
+    val backendURL: java.net.URL = new java.net.URL(Configurations.TESTBED_SERVICE_URL+"?wsdl");
+    val service: TestbedService_Service = new TestbedService_Service(backendURL)
     //add header handler resolver to add custom header element for TestbedClient service address
     val handlerResolver = new HeaderHandlerResolver()
     service.setHandlerResolver(handlerResolver)
@@ -24,6 +26,7 @@ object TestService{
   }
 
   def getTestCasePresentation(testId:String): GetTestCaseDefinitionResponse = {
+    System.setProperty("http.nonProxyHosts", "localhost|127.0.0.1|192.168.*.*")
     val request:BasicRequest = new BasicRequest
     request.setTcId(testId)
 

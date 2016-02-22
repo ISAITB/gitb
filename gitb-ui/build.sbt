@@ -1,6 +1,14 @@
+import com.github.play2war.plugin._
+
 name := """GITB"""
 
 version := "1.0-SNAPSHOT"
+
+Play2WarPlugin.play2WarSettings
+
+Play2WarKeys.servletVersion := "3.1"
+
+Play2WarKeys.targetName := Some("itbui")
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
@@ -21,7 +29,7 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.core" % "jackson-annotations" % "2.3.0",
   "com.fasterxml.jackson.module" % "jackson-module-jaxb-annotations" % "2.3.0",
   "org.mindrot"  % "jbcrypt" % "0.3m",  // For password encryption
-  "net.debasishg" %% "redisclient" % "2.13", // although this is the best one, maybe it could be changed into play-redis-plugin when sedis compiled for scala 2.11
+  "net.debasishg" %% "redisclient" % "3.0", // although this is the best one, maybe it could be changed into play-redis-plugin when sedis compiled for scala 2.11
   "org.apache.cxf" % "cxf-rt-frontend-jaxws" % "2.7.4",     //for calling jax-ws services
   "org.apache.cxf" % "cxf-rt-transports-http" % "2.7.4", //for calling jax-ws services
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % "2.7.4", //exporting jax-ws services
