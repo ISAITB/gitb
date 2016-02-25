@@ -33,11 +33,27 @@ class RepositoryService extends Controller {
 
   private val TESTCASE_REPORT_NAME = "report.docx"
 
+
+	def getTestSuitesPath(): File = {
+
+		val root: String = Configurations.TEST_CASE_REPOSITORY_PATH + "/" + TestSuiteManager.TEST_SUITES_PATH
+	    val path = new File(root);
+
+	    path
+	}
+
+	def getStatusUpdatesPath(): File = {
+
+		val root: String = Configurations.TEST_CASE_REPOSITORY_PATH + "/" + ReportManager.STATUS_UPDATES_PATH
+	    val path = new File(root);
+
+	    path
+	}
+
+
 	def getTestSuiteResource(filePath:String): Action[AnyContent] = Action {
 		implicit request =>
-			val root: String = Configurations.TEST_CASE_REPOSITORY_PATH + "/" + TestSuiteManager.TEST_SUITES_PATH
-			val application = Play.current
-			val file = new File(application.getFile(root), codec.decode(filePath))
+			val file = new File(getTestSuitesPath(), codec.decode(filePath))
 
 			logger.debug("Reading test resource ["+codec.decode(filePath)+"] definition from the file ["+file+"]")
 			if(file.exists()) {
@@ -48,10 +64,7 @@ class RepositoryService extends Controller {
 	}
 
 	def getTestStepReport(reportPath: String): Action[AnyContent] = Action { implicit request=>
-		val root: String = Configurations.TEST_CASE_REPOSITORY_PATH + "/" + ReportManager.STATUS_UPDATES_PATH
-
-		val application = Play.current
-		val file = new File(application.getFile(root), codec.decode(reportPath))
+		val file = new File(getStatusUpdatesPath(), codec.decode(reportPath))
 
 		logger.debug("Reading test step report ["+codec.decode(reportPath)+"] from the file ["+file+"]")
 
@@ -71,11 +84,8 @@ class RepositoryService extends Controller {
 	}
 
   def exportTestStepReport(reportPath: String): Action[AnyContent] = Action { implicit request=>
-    val root: String = Configurations.TEST_CASE_REPOSITORY_PATH + "/" + ReportManager.STATUS_UPDATES_PATH
-
-    val application = Play.current
-    val file = new File(application.getFile(root), codec.decode(reportPath))
-    var docx = new File(application.getFile(root), codec.decode(reportPath.replace(".xml", ".docx")))
+    val file = new File(getStatusUpdatesPath(), codec.decode(reportPath))
+    var docx = new File(getStatusUpdatesPath(), codec.decode(reportPath.replace(".xml", ".docx")))
 
     if(!docx.exists()) {
       if(file.exists()) {
@@ -101,10 +111,7 @@ class RepositoryService extends Controller {
     val session = ParameterExtractor.requiredQueryParameter(request, Parameters.SESSION_ID)
     val testCaseId = ParameterExtractor.requiredQueryParameter(request, Parameters.TEST_ID)
 
-    val root: String = Configurations.TEST_CASE_REPOSITORY_PATH + "/" + ReportManager.STATUS_UPDATES_PATH
-
-    val application = Play.current
-    val folder = new File(application.getFile(root), codec.decode(session))
+    val folder = new File(getStatusUpdatesPath(), codec.decode(session))
 
     logger.debug("Reading test case report ["+codec.decode(session)+"] from the file ["+folder+"]")
 
@@ -130,8 +137,6 @@ class RepositoryService extends Controller {
   def exportTestCaseReports(): Action[AnyContent] = Action { implicit request =>
     val sessionIdsParam  = ParameterExtractor.requiredQueryParameter(request, Parameters.SESSION_IDS)
     val testCaseIdsParam = ParameterExtractor.requiredQueryParameter(request, Parameters.TEST_IDS)
-    val root: String = Configurations.TEST_CASE_REPOSITORY_PATH + "/" + ReportManager.STATUS_UPDATES_PATH
-    val application = Play.current
 
     val sessionIds  = sessionIdsParam.split(",")
     val testCaseIds = testCaseIdsParam.split(",")
@@ -140,7 +145,7 @@ class RepositoryService extends Controller {
 
     ReportManager.generateTestCaseOverviewPage(doc, testCaseIds, sessionIds)
 
-    val report = new File(application.getFile(root), System.currentTimeMillis() + ".docx")
+    val report = new File(getStatusUpdatesPath(), System.currentTimeMillis() + ".docx")
     val out = new FileOutputStream(report);
     doc.write(out)
 
@@ -164,9 +169,7 @@ class RepositoryService extends Controller {
 	def getTestCaseDefinition(testId: String) = Action.async {
 		TestCaseManager.getTestCase(testId) map {
 			case Some(tc: TestCase) => {
-				val root = Configurations.TEST_CASE_REPOSITORY_PATH + "/" + TestSuiteManager.TEST_SUITES_PATH
-				val application = Play.current
-				val file = new File(application.getFile(root), tc.path)
+				val file = new File(getTestSuitesPath(), tc.path)
 				logger.debug("Reading test case ["+testId+"] definition from the file ["+file+"]")
 				if(file.exists()) {
 					Ok.sendFile(file, true)

@@ -7,6 +7,7 @@ import javax.xml.transform.stream.StreamSource
 import com.gitb.utils.XMLUtils
 import config.Configurations
 import managers.TestSuiteManager
+import managers.TestCaseManager
 import models._
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.slf4j.LoggerFactory
@@ -21,13 +22,26 @@ import scala.xml.XML
 object RepositoryUtils {
 	private final val logger = LoggerFactory.getLogger("RepositoryUtils")
 
-
-	val REPOSITORY_LOCATION = Configurations.TEST_CASE_REPOSITORY_PATH
-
 	private val TEST_SUITE_ELEMENT_LABEL: String = "testsuite"
 
 	private val TEST_CASE_ELEMENT_LABEL: String = "testcase"
 	private val ACTOR_ELEMENT_LABEL: String = "actor"
+
+	def getTestSuitesPath(): File = {
+
+	    val path = new File(Configurations.TEST_CASE_REPOSITORY_PATH, TestSuiteManager.TEST_SUITES_PATH);
+
+	    path
+	}
+
+	def getTestCasesPath(): File = {
+
+	    val path = new File(Configurations.TEST_CASE_REPOSITORY_PATH, TestCaseManager.TEST_CASES_PATH);
+
+	    path
+	}
+
+
 	/**
 	 * Extracts the test suite resources in the <code>file</code> into the <code>targetFolderName</code> folder.
 	 * A folder named <code>targetFolderName</code> is created if it does not exist.
@@ -36,9 +50,7 @@ object RepositoryUtils {
 	 * @return id->path maps for the test case files
 	 */
 	def extractTestSuiteFilesFromZipToFolder(targetFolderName: String, file: File): Map[String, String] = {
-		val root: String = Configurations.TEST_CASE_REPOSITORY_PATH + "/" + TestSuiteManager.TEST_SUITES_PATH
-		val application = Play.current
-		val targetFolder = new File(application.getFile(root), targetFolderName)
+		val targetFolder = new File(getTestSuitesPath(), targetFolderName)
 
     //target folder needs to be deleted due to an unknown exception thrown
     if(targetFolder.exists()){
@@ -53,9 +65,7 @@ object RepositoryUtils {
 
 
 	def undeployTestSuite(testSuiteName: String): Unit = {
-		val root: String = Configurations.TEST_CASE_REPOSITORY_PATH + "/" + TestSuiteManager.TEST_SUITES_PATH
-		val application = Play.current
-		val targetFolder = new File(application.getFile(root), testSuiteName)
+		val targetFolder = new File(getTestSuitesPath(), testSuiteName)
 
 		FileUtils.deleteDirectory(targetFolder)
 	}

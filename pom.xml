@@ -41,6 +41,7 @@
         <module>gitb-core</module>
         <module>gitb-engine</module>
         <module>gitb-lib</module>
+		<module>gitb-local-testcase-repository</module>
 	    <module>gitb-messaging</module>
 	    <module>gitb-remote-testcase-repository</module>
 	    <module>gitb-remote-modules</module>

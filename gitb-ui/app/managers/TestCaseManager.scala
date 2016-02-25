@@ -13,6 +13,9 @@ import scala.slick.driver.MySQLDriver.simple._
  * Created by serbay on 10/16/14.
  */
 object TestCaseManager extends BaseManager {
+
+	val TEST_CASES_PATH = "test-cases"
+
 	def craeteTestCase(testCase: TestCases) = {
 		Future {
 			DB.withSession { implicit session =>

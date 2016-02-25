@@ -129,7 +129,7 @@ object ReportManager extends BaseManager {
 
           //write the report into a file
           if(step.getReport != null) {
-            val file = new File(Play.current.getFile(Configurations.TEST_CASE_REPOSITORY_PATH + "/" + STATUS_UPDATES_PATH), path)
+            val file = new File(Configurations.TEST_CASE_REPOSITORY_PATH + "/" + STATUS_UPDATES_PATH, path)
             file.getParentFile.mkdirs()
             file.createNewFile()
 
@@ -632,8 +632,7 @@ object ReportManager extends BaseManager {
   def generateOverviewTestStep(doc: XWPFDocument, sessionId:String) = {
     val root: String = Configurations.TEST_CASE_REPOSITORY_PATH + "/" + STATUS_UPDATES_PATH
 
-    val application = Play.current
-    val folder = new File(application.getFile(root), new URLCodec().decode(sessionId))
+    val folder = new File(root, new URLCodec().decode(sessionId))
 
     if(folder.exists()) {
       val list = ReportManager.getListOfTestSteps(folder)

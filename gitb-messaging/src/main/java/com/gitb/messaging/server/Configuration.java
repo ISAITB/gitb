@@ -3,10 +3,7 @@ package com.gitb.messaging.server;
 import com.gitb.core.ErrorCode;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.utils.ErrorUtils;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
+import org.apache.commons.configuration.*;
 
 /**
  * Created by serbay on 9/24/14.
@@ -62,6 +59,7 @@ public class Configuration {
 		try {
 			CompositeConfiguration config = new CompositeConfiguration();
 			config.addConfiguration(new SystemConfiguration());
+			config.addConfiguration(new EnvironmentConfiguration());
 			config.addConfiguration(new PropertiesConfiguration("messaging-module.properties"));
 
 			return new Configuration(
