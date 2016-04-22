@@ -14,10 +14,7 @@ import com.gitb.utils.ConfigurationUtils;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -129,4 +126,5 @@ public class SessionManager {
 		}
 		return instance;
 	}
+
 }

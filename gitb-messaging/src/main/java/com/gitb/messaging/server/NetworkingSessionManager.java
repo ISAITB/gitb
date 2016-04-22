@@ -3,6 +3,9 @@ package com.gitb.messaging.server;
 import com.gitb.messaging.server.exceptions.ExistingSessionException;
 
 import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -44,4 +47,15 @@ public class NetworkingSessionManager {
 	public void endSession(InetAddress address) {
 		sessions.remove(address);
 	}
+
+	public List<String> getSessions() {
+		List<String> addresses = new ArrayList<String>();
+		if (sessions != null) {
+			for (InetAddress address: sessions.keySet()) {
+				addresses.add(address.getHostName());
+			}
+		}
+		return Collections.unmodifiableList(addresses);
+	}
+
 }
