@@ -151,13 +151,21 @@ object TestSuiteManager extends BaseManager {
 										.list
 
 									if(savedActor.size > 0) {
-                    logger.debug("Relating actor [" + savedActor.head.id + "] with specification [" + suite.specification + "]")
-                    PersistenceSchema.specificationHasActors.insert((suite.specification, savedActor.head.id))
 
-										tuple.copy(tuple._1, savedActor.head)
+                                        val savedSpecificationHasActors = PersistenceSchema.specificationHasActors
+                                            .filter(_.specId === suite.specification)
+                                            .filter(_.actorId === savedActor.head.id)
+                                            .list
+
+                                        if(savedSpecificationHasActors.size == 0) {
+                                            logger.debug("Relating actor [" + savedActor.head.id + "] with specification [" + suite.specification + "]")
+                                            PersistenceSchema.specificationHasActors.insert((suite.specification, savedActor.head.id))
+                                        } else {
+                                            logger.debug("Actor [" + savedActor.head.id + "] and specification [" + suite.specification + "] already related.")
+                                        }
+                                        tuple.copy(tuple._1, savedActor.head)
 									} else {
 										logger.debug("Creating actor with name [" + tuple._2.name + "] and id  [" + tuple._2.actorId + "]")
-
 										val id = PersistenceSchema.actors
 															.returning(PersistenceSchema.actors.map(_.id))
 															.insert(tuple._2)

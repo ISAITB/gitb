@@ -33,7 +33,7 @@ public class ProxyValidationHandler implements InvocationHandler {
 				List<Configuration> configurations = (List<Configuration>) args[0];
 				Map<String, DataType> inputs = (Map<String, DataType>) args[1];
 
-				return RemoteValidationModuleClient.validate(validationModule, configurations, inputs);
+				return new RemoteValidationModuleClient(validationModule).validate(configurations, inputs);
 			default:
 				throw new InvocationTargetException(new GITBEngineInternalError("Method is not found"));
 		}

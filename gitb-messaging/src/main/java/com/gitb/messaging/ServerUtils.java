@@ -42,7 +42,7 @@ public class ServerUtils {
         while (iterator.hasNext()) {
             Map.Entry pair  = (Map.Entry)iterator.next();
             String headerName  = (String) pair.getKey();
-            if(headerName.equals(header)) {
+            if(headerName.equalsIgnoreCase(header)) {
                 StringType headerType  = ((StringType) pair.getValue());
                 return (String) headerType.getValue();
             }

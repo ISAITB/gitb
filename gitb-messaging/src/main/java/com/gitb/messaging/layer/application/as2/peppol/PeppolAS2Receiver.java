@@ -305,7 +305,7 @@ public class PeppolAS2Receiver extends HttpsReceiver{
         return null;
     }
 
-    private boolean checkSBDH(Node sbdh, List<Configuration> configurations){
+    boolean checkSBDH(Node sbdh, List<Configuration> configurations){
         boolean documentIdentifierFound = false;
         boolean processIdentifierFound  = false;
 
@@ -378,7 +378,7 @@ public class PeppolAS2Receiver extends HttpsReceiver{
         return null;
     }
 
-    private void saveError(String reason, String message) {
+    void saveError(String reason, String message) {
         DispositionType dispositionType = DispositionType.createError (reason);
         transaction.setParameter(DispositionType.class, dispositionType);
         transaction.addNonCriticalError(new GITBEngineInternalError(message));

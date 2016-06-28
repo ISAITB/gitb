@@ -22,13 +22,16 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public class UDPMessagingServerWorker extends AbstractMessagingServerWorker {
     private static Logger logger = LoggerFactory.getLogger(UDPMessagingServerWorker.class);
+    private final boolean allowAllConnections;
 
     private UDPListenerThread listenerThread;
     private AtomicBoolean active;
 
-    public UDPMessagingServerWorker(int port) {
+
+    public UDPMessagingServerWorker(int port, boolean allowAllConnections) {
         super(port);
         active = new AtomicBoolean(false);
+        this.allowAllConnections = allowAllConnections;
     }
 
     public synchronized void start() {
@@ -100,7 +103,7 @@ public class UDPMessagingServerWorker extends AbstractMessagingServerWorker {
 
                     logger.debug("New message received from [" + datagramPacket.getAddress() + "]");
 
-                    UDPReceiverThread receiverThread = new UDPReceiverThread(datagramSocket, datagramPacket);
+                    UDPReceiverThread receiverThread = new UDPReceiverThread(datagramSocket, datagramPacket, allowAllConnections);
                     receiverThread.start();
                 }
             } catch (IOException e) {
@@ -120,27 +123,31 @@ public class UDPMessagingServerWorker extends AbstractMessagingServerWorker {
     private class UDPReceiverThread extends Thread {
         private final DatagramPacket datagramPacket;
         private final DatagramSocket socket;
+        private final boolean allowAllConnections;
 
-        private UDPReceiverThread(DatagramSocket socket, DatagramPacket datagramPacket) {
+        private UDPReceiverThread(DatagramSocket socket, DatagramPacket datagramPacket, boolean allowAllConnections) {
             super(UDPReceiverThread.class.getSimpleName() + ":" + socket.getInetAddress() + ":" + socket.getPort());
             this.datagramPacket = datagramPacket;
             this.socket = socket;
+            this.allowAllConnections = allowAllConnections;
         }
 
         @Override
         public void run() {
             InetAddress address = datagramPacket.getAddress();
 
-            String sessionId = networkingSessionManager.getSessionId(address);
+            String sessionId = networkingSessionManager.getSessionId(address, allowAllConnections);
 
             if (sessionId != null) {
                 SessionContext sessionContext = SessionManager.getInstance().getSession(sessionId);
 
-                TransactionContext transactionContext = sessionContext.getTransaction(address, socket.getLocalPort());
+                TransactionContext transactionContext = sessionContext.getTransaction(address, socket.getLocalPort(), allowAllConnections);
 
                 IDatagramReceiver receiver = transactionContext.getParameter(IDatagramReceiver.class);
 
                 receiver.onReceive(socket, datagramPacket);
+            } else {
+                logger.warn("No session resolved for ["+address.toString()+"]");
             }
         }
     }

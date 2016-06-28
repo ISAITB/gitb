@@ -53,22 +53,24 @@ public class DNSSender extends UDPSender {
 		message.getFragments()
 			.put(DNSMessagingHandler.DNS_ADDRESS_FIELD_NAME, address);
 
-        //check the query with the actual domain
-        String query = metadata.getQuery().getQuestion().getName().toString();
-        if(query.endsWith(".")) {
-            query = query.substring(0, query.length()-1);
-        }
+		if (!"*".equals(dnsRecord.getDomain())) {
+			//check the query with the actual domain
+			String query = metadata.getQuery().getQuestion().getName().toString();
+			if(query.endsWith(".")) {
+				query = query.substring(0, query.length()-1);
+			}
 
-        String value = domain.getValue().toString();
-        if(value.endsWith(".")) {
-            value = value.substring(0, value.length()-1);
-        }
-        if(!query.contentEquals(value)){
-            transaction.addNonCriticalError(new Exception(
-                    "Wrong DNS query \"" + metadata.getQuery().getQuestion().getName() + "\" has been sent to DNS Server. " +
-                    "It should have been \"" + domain.getValue() + "\""
-            ));
-        }
+			String value = domain.getValue().toString();
+			if(value.endsWith(".")) {
+				value = value.substring(0, value.length()-1);
+			}
+			if(!query.contentEquals(value)){
+				transaction.addNonCriticalError(new Exception(
+						"Wrong DNS query \"" + metadata.getQuery().getQuestion().getName() + "\" has been sent to DNS Server. " +
+								"It should have been \"" + domain.getValue() + "\""
+				));
+			}
+		}
 
 		if(response != null) {
 			byte[] rawOutput = response.toWire();
@@ -142,26 +144,28 @@ public class DNSSender extends UDPSender {
 	private RRset findMatchingDNSRecords(Name name) throws TextParseException, UnknownHostException {
 		DNSRecord dnsRecord = transaction.getParameter(DNSRecord.class);
 
-		Name registeredName = Name.fromString(dnsRecord.getDomain());
 		InetAddress address = null;
-
-        String registeredDomain = dnsRecord.getDomain().endsWith(".") ? dnsRecord.getDomain().substring(0, dnsRecord.getDomain().length()-1) : dnsRecord.getDomain();
-        String queryName = name.toString().endsWith(".") ? name.toString().substring(0, name.toString().length()-1) : name.toString();
-
-		if(registeredDomain.equals(queryName)) {
+		if ("*".equals(dnsRecord.getDomain())) {
+			// All incoming requests are forwarded to the session address.
 			address = InetAddress.getByName(dnsRecord.getAddress());
-			logger.debug("Found matching record for ["+name+"]: ["+address+"]");
 		} else {
-			logger.debug("Cannot find a registered DNS record for ["+name+"] asking configured DNS server");
-			try {
-				address = InetAddress.getByName(name.toString());
+			String registeredDomain = dnsRecord.getDomain().endsWith(".") ? dnsRecord.getDomain().substring(0, dnsRecord.getDomain().length()-1) : dnsRecord.getDomain();
+			String queryName = name.toString().endsWith(".") ? name.toString().substring(0, name.toString().length()-1) : name.toString();
 
-			} catch (UnknownHostException e) {
-				logger.debug("Configured DNS server could not find the domain ["+name+"]");
+			if(registeredDomain.equals(queryName)) {
+				address = InetAddress.getByName(dnsRecord.getAddress());
+				logger.debug("Found matching record for ["+name+"]: ["+address+"]");
+			} else {
+				logger.debug("Cannot find a registered DNS record for ["+name+"] asking configured DNS server");
+				try {
+					address = InetAddress.getByName(name.toString());
+
+				} catch (UnknownHostException e) {
+					logger.debug("Configured DNS server could not find the domain ["+name+"]");
+				}
 			}
 		}
-
-		if(address != null) {
+		if (address != null) {
 			Record record = new ARecord(name, DClass.IN, TTL.MAX_VALUE, address);
 			return new RRset(record);
 		} else {

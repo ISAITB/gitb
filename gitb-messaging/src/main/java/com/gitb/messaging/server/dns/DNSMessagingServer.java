@@ -18,4 +18,9 @@ public class DNSMessagingServer extends UDPMessagingServer {
 			DEFAULT_CONFIGURATION.getIpAddress(), DEFAULT_CONFIGURATION.getActorName(),
 			null, null, null));
 	}
+
+	@Override
+	protected boolean allowAllConnections() {
+		return true;
+	}
 }

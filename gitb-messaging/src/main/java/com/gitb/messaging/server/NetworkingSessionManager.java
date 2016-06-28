@@ -41,7 +41,16 @@ public class NetworkingSessionManager {
 	}
 
 	public String getSessionId(InetAddress address) {
-		return sessions.get(address);
+		return getSessionId(address, false);
+	}
+
+	public String getSessionId(InetAddress address, boolean orFirstAvailable) {
+		if (sessions.containsKey(address)) {
+			return sessions.get(address);
+		} else if (orFirstAvailable && !sessions.isEmpty()) {
+			return sessions.values().iterator().next();
+		}
+		return null;
 	}
 
 	public void endSession(InetAddress address) {
