@@ -2,6 +2,7 @@ package com.gitb.messaging.layer.application.as2.peppol;
 
 import com.gitb.core.Configuration;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.messaging.KeyStoreFactory;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.ServerUtils;
 import com.gitb.messaging.layer.application.as2.AS2MIC;
@@ -88,7 +89,13 @@ public class PeppolAS2Receiver extends HttpsReceiver{
             return message;
         }
 
-        //verify MimeBody (with user's public certificate) which is previously signed by the sender
+        try{
+            mimeBody = AS2MessagingHandler.decrypt(mimeBody, KeyStoreFactory.getInstance().getCertificate(), KeyStoreFactory.getInstance().getPrivateKey());
+        } catch (Exception e) {
+            saveError("integrity-check-failed", "An error occurred while decrypting the received message content with the test bed's certificate. " +
+                    "Please check the following error description: " + e.getMessage());
+            return message;
+        }
         try{
             mimeBody = AS2MessagingHandler.verify(mimeBody, AS2MessagingHandler.getSUTCertificate(transaction));
         } catch (Exception e) {
@@ -119,6 +126,10 @@ public class PeppolAS2Receiver extends HttpsReceiver{
         try {
             sbd = new SBDMarshaller().read (mimeBody.getInputStream());
         } catch (Exception e) {
+            saveError("unexpected-processing-error", "Failed to interpret the passed document as a Standard Business Document");
+            return message;
+        }
+        if (sbd == null) {
             saveError("unexpected-processing-error", "Failed to interpret the passed document as a Standard Business Document");
             return message;
         }
