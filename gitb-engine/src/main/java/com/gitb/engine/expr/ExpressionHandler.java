@@ -53,8 +53,13 @@ public class ExpressionHandler{
     }
 
     private DataType processExpression(String expression, String expectedReturnType)  {
-        DataType emptySource = DataTypeFactory.getInstance().create(DataType.OBJECT_DATA_TYPE);
-        return processExpression(emptySource, expression, expectedReturnType);
+        if (DataType.BINARY_DATA_TYPE.equals(expectedReturnType)) {
+            DataType result = variableResolver.resolveVariable(expression);
+            return result;
+        } else {
+            DataType emptySource = DataTypeFactory.getInstance().create(DataType.OBJECT_DATA_TYPE);
+            return processExpression(emptySource, expression, expectedReturnType);
+        }
     }
 
     /*
