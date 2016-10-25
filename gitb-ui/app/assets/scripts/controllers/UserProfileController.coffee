@@ -1,6 +1,6 @@
 class UserProfileController
 
-	constructor: (@$log, @$scope, @$location, @DataService, @AccountService, @ErrorService) ->
+	constructor: (@$log, @$scope, @$location, @DataService, @AccountService, @ErrorService, @Constants) ->
 
 		@$log.debug "Constructing UserProfileController..."
 
@@ -11,7 +11,7 @@ class UserProfileController
 		@$scope.data = {}  # create a variable in scope for holding ng-if bindings
 		@$scope.data.name  = @ds.user.name
 		@$scope.data.email = @ds.user.email
-		@$scope.data.role  = @ds.user.role
+		@$scope.data.role = @Constants.USER_ROLE_LABEL[@ds.user.role]
 
 	#cancels edit mode and reverts back the changes
 	cancelEdit: () ->

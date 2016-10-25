@@ -27,6 +27,12 @@ class Constants
 		DOMAIN_USER : 3,
 		SYSTEM_ADMIN: 4
 
+	@USER_ROLE_LABEL =
+		1 : "Administrator",
+		2 : "User",
+		3 : "Domain user",
+		4 : "Test bed administrator"
+
 	@TEST_STATUS =
 		UNKNOWN: null,
 		PROCESSING : 0,
