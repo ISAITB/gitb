@@ -57,6 +57,13 @@ GET     /actors/:actor_id/endpoints         @controllers.ConformanceService.getE
 POST    /options                            @controllers.ConformanceService.createOption
 GET     /options                            @controllers.ConformanceService.getOptions
 
+# User management API
+GET     /admins                             @controllers.UserService.getSystemAdministrators()
+GET     /users                              @controllers.UserService.getUsersByOrganization(ordId: Long)
+
+# Organization management API
+GET     /users/organizations                @controllers.OrganizationService.getOrganizations()
+
 # Test Result management API
 GET	    /suts/:sut_id/conformance/:test_instance/report @controllers.TestResultService.getReportForTestInstance(sut_id:Long, test_instance:String)
 

@@ -274,6 +274,15 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/suites/detail.html'
 				controller: 'AdminTestSuiteDetailsController'
 				controllerAs: 'adminTestSuiteDetailsCtrl'
+			'app.admin.users':
+				url: '/users'
+				abstract: true
+				template: '<div ui-view/>'
+			'app.admin.users.list':
+				url: ''
+				templateUrl: 'assets/views/admin/users/index.html'
+				controller: 'AdminUsersController'
+				controllerAs: 'adminUsersCtrl'
 
 		for state, value of states
 			$stateProvider.state state, value
