@@ -120,11 +120,6 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/systems/tests.html'
 				controller: 'SystemTestsController'
 				controllerAs: 'systemTestsCtrl'
-			'app.systems.detail.team':
-				url: '/team'
-				templateUrl: 'assets/views/systems/team.html'
-				controller: 'SystemTeamController'
-				controllerAs: 'systemTeamCtrl'
 			'app.page1':
 				url: '/page1'
 				controller: 'SystemsController'
