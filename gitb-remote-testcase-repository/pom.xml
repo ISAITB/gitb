@@ -11,6 +11,17 @@
 
 	<artifactId>gitb-remote-testcase-repository</artifactId>
 
+	<build>
+		<resources>
+			<resource>
+				<filtering>true</filtering>
+				<includes>
+					<include>**/*.properties</include>
+				</includes>
+				<directory>src/main/resources</directory>
+			</resource>
+		</resources>
+	</build>
 
 	<dependencies>
 		<dependency>
