@@ -27,6 +27,15 @@ class OrganizationController
                     else
                         a.role > b.role
                 )
+                # get label for role
+                labels = @Constants.USER_ROLE_LABEL
+                @users.forEach((e) ->
+                  e.role = labels[e.role]
+                )
+#                .map((u) ->
+#                    u.role = labels[u.role]
+#                    u
+#                )
                 #stop spinner
                 @memberSpinner = false
             ,
