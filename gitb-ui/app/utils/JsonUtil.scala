@@ -129,6 +129,20 @@ object JsonUtil {
   }
 
   /**
+   * Converts a List of Organizations into Play!'s JSON notation
+   * Does not support cross object conversion
+   * @param list List of Organizations to be convert
+   * @return JsArray
+   */
+  def jsOrganizations(list:List[Organizations]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ organization =>
+      json = json.append(jsOrganization(organization))
+    }
+    json
+  }
+
+  /**
    * Converts a System object into Play!'s JSON notation.
    * Does not support cross object conversion
    * @param system System object to be converted

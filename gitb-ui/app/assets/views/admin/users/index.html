@@ -1,0 +1,17 @@
+<div class="page users">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Administrators</h4>
+            <a ui-sref="app.admin.users.list" class="btn btn-default pull-right">Create administrator</a>
+        </div>
+        <div table-directive columns="adminUsersCtrl.adminTableColumns" data="adminUsersCtrl.administrators" on-select=""></div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Organisation users</h4>
+            <select ng-model="organization" ng-change="adminUsersCtrl.getUsersByOrganization()" ng-options="organization as organization.fname for organization in adminUsersCtrl.organizations track by organization.id"></select>
+            <a ui-sref="app.admin.users.list" class="btn btn-default pull-right">Create user</a>
+        </div>
+        <div table-directive columns="adminUsersCtrl.userTableColumns" data="adminUsersCtrl.users" on-select=""></div>
+    </div>
+</div>
