@@ -124,7 +124,7 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
       name: () => name
       editorOptions: () =>
         value: value
-        readOnly: 'nocursor'
+        readOnly: true
         lineNumbers: true
         smartIndent: false
         electricChars: false
