@@ -1,8 +1,9 @@
 <div class="clearfix modal-header">
 	<h5 class="pull-left" ng-if="isNameVisible">{{documentName}}</h5>
 	<button class="pull-right btn btn-primary" ng-click="close()">Close</button>
+	<button class="pull-right btn btn-primary" ng-click="copyToClipboard()">Copy to clipboard</button>
 </div>
 <div class="modal-body">
-	<div class="editor" editor-codemirror options="editorOptions" indicators="indicators" line-number="lineNumber">
+	<div class="editor" editor-codemirror options="editorOptions" indicators="indicators" line-number="lineNumber" ng-model="code">
 	</div>
 </div>

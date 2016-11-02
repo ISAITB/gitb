@@ -15,6 +15,15 @@ class EditorModalController
     @$scope.close = () =>
       @$modalInstance.dismiss()
 
+    @$scope.copyToClipboard = () =>
+      cm = $('.CodeMirror')[0].CodeMirror
+      cm.focus()
+      cm.execCommand "selectAll"
+      try
+        success = document.execCommand 'copy'
+      catch err
+        # Show message to user? ignore?
+
 class TestStepReportModalController
   name: 'TestStepReportModalController'
 
