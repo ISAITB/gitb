@@ -22,7 +22,6 @@ class EditorModalController
       try
         success = document.execCommand 'copy'
       catch err
-        # Show message to user? ignore?
 
 class TestStepReportModalController
   name: 'TestStepReportModalController'
