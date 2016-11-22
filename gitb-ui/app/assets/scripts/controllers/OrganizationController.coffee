@@ -21,21 +21,16 @@ class OrganizationController
         @AccountService.getVendorUsers() #call service operation
         .then(
             (data) => #success handler
+                labels = @Constants.USER_ROLE_LABEL
                 @users = data.sort((a,b)-> #sort users by their roles (priority) in descending order
                     if a.role == b.role    #if they have the same role, sort by ids
                         a.id > b.id
                     else
                         a.role > b.role
+                ).map((user) ->
+                    user.role = labels[user.role]
+                    user
                 )
-                # get label for role
-                labels = @Constants.USER_ROLE_LABEL
-                @users.forEach((e) ->
-                  e.role = labels[e.role]
-                )
-#                .map((u) ->
-#                    u.role = labels[u.role]
-#                    u
-#                )
                 #stop spinner
                 @memberSpinner = false
             ,

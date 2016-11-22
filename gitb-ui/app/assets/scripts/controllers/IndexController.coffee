@@ -37,8 +37,8 @@ class IndexController
 			)
 
 	getVendorProfile: () ->
-		@AccountService.getVendorProfile().
-		then(
+		@AccountService.getVendorProfile()
+		.then(
 			(data) =>
 				@DataService.setVendor(data)
 			,

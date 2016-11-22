@@ -33,6 +33,17 @@ class Constants
 		3 : "Domain user",
 		4 : "Test bed administrator"
 
+	@VENDOR_USER_ROLES = [
+		{
+			id: @USER_ROLE.VENDOR_ADMIN,
+			label: @USER_ROLE_LABEL[@USER_ROLE.VENDOR_ADMIN]
+		}
+		{
+			id: @USER_ROLE.VENDOR_USER,
+			label: @USER_ROLE_LABEL[@USER_ROLE.VENDOR_USER]
+		}
+	]
+
 	@TEST_STATUS =
 		UNKNOWN: null,
 		PROCESSING : 0,

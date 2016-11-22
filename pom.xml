@@ -32,20 +32,7 @@
                 <configuration>
                     <jvmArgs>-Dorg.eclipse.jetty.annotations.maxWait=180</jvmArgs>
 	                <contextXml>gitb-testbed-service/src/main/webapp/WEB-INF/jetty-context.xml</contextXml>
-					<systemProperties>
-						<systemProperty>
-							<name>logback.configurationFile</name>
-							<value>gitb-testbed-service/src/resources/logback.xml</value>
-						</systemProperty>
-					</systemProperties>
                 </configuration>
-				<dependencies>
-					<dependency>
-						<groupId>ch.qos.logback</groupId>
-						<artifactId>logback-classic</artifactId>
-						<version>1.0.0</version>
-					</dependency>
-				</dependencies>
             </plugin>
         </plugins>
     </build>

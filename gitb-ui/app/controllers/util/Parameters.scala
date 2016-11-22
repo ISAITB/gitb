@@ -24,6 +24,7 @@ object Parameters {
   val USER_NAME    = "user_name"
   val USER_EMAIL   = "user_email"
   val OLD_PASSWORD = "old_password"
+  val USER_ROLE    = "user_role"
 
   //System Service parameters
   val SYSTEM_ID    = "system_id"

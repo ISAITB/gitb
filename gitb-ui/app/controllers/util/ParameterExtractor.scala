@@ -53,6 +53,13 @@ object ParameterExtractor {
     Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort)
   }
 
+  def extractSystemAdminInfo(request:Request[AnyContent]):Users = {
+    val name = requiredBodyParameter(request, Parameters.USER_NAME)
+    val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
+    val password = requiredBodyParameter(request, Parameters.PASSWORD)
+    Users(0L, name, email, password, UserRole.SystemAdmin.id.toShort, 0L)
+  }
+
   def extractAdminInfo(request:Request[AnyContent]):Users = {
     val name = requiredBodyParameter(request, Parameters.USER_NAME)
     val email = requiredBodyParameter(request, Parameters.USER_EMAIL)

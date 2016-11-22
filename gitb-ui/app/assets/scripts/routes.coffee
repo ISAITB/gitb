@@ -276,8 +276,58 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.admin.users.list':
 				url: ''
 				templateUrl: 'assets/views/admin/users/index.html'
-				controller: 'AdminUsersController'
-				controllerAs: 'adminUsersCtrl'
+				controller: 'UserManagementController'
+				controllerAs: 'userManagementCtrl'
+			'app.admin.users.admins':
+				url: '/admin'
+				abstract: true
+				template: '<div ui-view/>'
+			'app.admin.users.admins.create':
+				url: '/create'
+				templateUrl: 'assets/views/admin/users/admin-create.html'
+				controller: 'AdminCreateController'
+				controllerAs: 'adminCreateCtrl'
+			'app.admin.users.admins.detail':
+				url: '/:id'
+				templateUrl: 'assets/views/admin/users/admin-detail.html'
+				controller: 'AdminDetailController'
+				controllerAs: 'adminDetailCtrl'
+			'app.admin.users.organizations':
+				url: '/organization'
+				abstract: true
+				template: '<div ui-view/>'
+			'app.admin.users.organizations.create':
+				url: '/create'
+				templateUrl: 'assets/views/admin/users/organization-create.html'
+				controller: 'OrganizationCreateController'
+				controllerAs: 'orgCreateCtrl'
+			'app.admin.users.organizations.detail':
+				url: '/:id'
+				template: '<div ui-view/>'
+				abstract: true
+			'app.admin.users.organizations.detail.list':
+				url: ''
+				templateUrl: 'assets/views/admin/users/organization-detail.html'
+				controller: 'OrganizationDetailController'
+				controllerAs: 'orgDetailCtrl'
+			'app.admin.users.organizations.detail.users':
+				url: '/users'
+				template: '<div ui-view/>'
+				abstract: true
+			'app.admin.users.organizations.detail.users.create':
+				url: '/create'
+				templateUrl: 'assets/views/admin/users/user-create.html'
+				controller: 'UserCreateController'
+				controllerAs: 'userCreateCtrl'
+			'app.admin.users.organizations.detail.users.detail':
+				url: '/:user_id'
+				template: '<div ui-view/>'
+				abstract: true
+			'app.admin.users.organizations.detail.users.detail.list':
+				url: ''
+				templateUrl: 'assets/views/admin/users/user-detail.html'
+				controller: 'UserDetailController'
+				controllerAs: 'userDetailCtrl'
 
 		for state, value of states
 			$stateProvider.state state, value
@@ -309,5 +359,6 @@ app.run ['$log', '$rootScope', '$state', 'AuthProvider',
 				$log.debug 'State requires login, redirecting...'
 				event.preventDefault()
 				$state.go 'app.login'
+
 		return
 ]

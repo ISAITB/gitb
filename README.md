@@ -60,11 +60,7 @@ Currently, the following roles are implemented in the project:
 * **Vendor User**: Vendor system user (tester)
 * **System Admin**: Manages the test engine, users, and repositories, creates new domains, specifications, deploys/removes test suites
 
-Unfortunately, there is no method except directly manipulating the database table to change the user roles currently. So, we have to update user roles in `Users.role` (*in the form of table.column*). The user roles are represented with the following unsigned integers in the database:
-
-* **Vendor Admin**: 1
-* **Vendor User**: 2
-* **System Admin**: 4
+System admins are created under organization with ID 0. So, a default organization with ID 0 should be available in the **gitb.organizations** table. This organization is otherwise fully hidden in the UI.
 
 ## Build & Running
 Since this application is using the [Play! Framework](http://www.playframework.com/), an executable that takes care of the build & running process exists in the application folder. To do these operations please execute the following commands in the `gitb-ui` directory:
