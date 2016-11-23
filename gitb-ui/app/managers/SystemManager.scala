@@ -274,6 +274,28 @@ object SystemManager extends BaseManager {
 		}
 	}
 
+	def deleteSystemByOrganization(orgId: Long) = Future[Unit] {
+		Future {
+			DB.withSession { implicit session =>
+				val systemIds = PersistenceSchema.systems.filter(_.owner === orgId).map(_.id).list
+
+				systemIds foreach { systemId =>
+					PersistenceSchema.configs.filter(_.system === systemId).delete
+					PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).delete
+					PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).delete
+					PersistenceSchema.systemImplementsActors.filter(_.systemId === systemId).delete
+					PersistenceSchema.systemImplementsOptions.filter(_.systemId === systemId).delete
+					PersistenceSchema.systemImplementsOptions.filter(_.systemId === systemId).delete
+
+					val testResultId = PersistenceSchema.testResults.filter(_.sutId === systemId).map(_.testSessionId).firstOption.get
+					PersistenceSchema.testStepReports.filter(_.testSessionId === testResultId).delete
+					PersistenceSchema.testResults.filter(_.testSessionId === testResultId).delete
+				}
+				PersistenceSchema.systems.filter(_.owner === orgId).delete
+			}
+		}
+	}
+
   /*def getRequiredConfigurations(endpoint:Long): Future[List[Config]] = {
     getActorsForSystem(system) map { actors =>
       DB.withSession { implicit session =>

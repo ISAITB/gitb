@@ -1,17 +1,18 @@
 <div class="page users">
+    <!-- Administrators -->
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Administrators</h4>
-            <a ui-sref="app.admin.users.list" class="btn btn-default pull-right">Create administrator</a>
+            <a ui-sref="app.admin.users.admins.create" class="btn btn-default pull-right">Create administrator</a>
         </div>
-        <div table-directive columns="adminUsersCtrl.adminTableColumns" data="adminUsersCtrl.administrators" on-select=""></div>
+        <div table-directive columns="userManagementCtrl.adminColumns" data="userManagementCtrl.admins" on-select="userManagementCtrl.adminSelect"></div>
     </div>
+    <!-- organizations -->
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h4 class="title">Organisation users</h4>
-            <select ng-model="organization" ng-change="adminUsersCtrl.getUsersByOrganization()" ng-options="organization as organization.fname for organization in adminUsersCtrl.organizations track by organization.id"></select>
-            <a ui-sref="app.admin.users.list" class="btn btn-default pull-right">Create user</a>
+            <h4 class="title">Organisations</h4>
+            <a ui-sref="app.admin.users.organizations.create" class="btn btn-default pull-right">Create organization</a>
         </div>
-        <div table-directive columns="adminUsersCtrl.userTableColumns" data="adminUsersCtrl.users" on-select=""></div>
+        <div table-directive columns="userManagementCtrl.organizationColums" data="userManagementCtrl.organizations" on-select="userManagementCtrl.organizationSelect"></div>
     </div>
 </div>

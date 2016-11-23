@@ -1,4 +1,5 @@
 import com.github.play2war.plugin._
+import play.PlayImport.PlayKeys._
 
 name := """GITB"""
 
@@ -73,3 +74,5 @@ assemblyMergeStrategy in assembly := {
 }
 
 resolvers += Resolver.mavenLocal
+
+routesImport += "extensions.Binders._"

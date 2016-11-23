@@ -1,6 +1,6 @@
 package controllers
 
-import controllers.util.ResponseConstructor
+import controllers.util.{ParameterExtractor, ResponseConstructor}
 import managers.OrganizationManager
 import org.slf4j.{LoggerFactory, Logger}
 import play.api.mvc.{Action, Controller}
@@ -14,12 +14,50 @@ class OrganizationService extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[OrganizationService])
 
   /**
-   * Gets all organizations
+   * Gets all organizations except the default organization for system administrators
    */
   def getOrganizations() = Action.async {
     OrganizationManager.getOrganizations() map { list =>
       val json: String = JsonUtil.jsOrganizations(list).toString
       ResponseConstructor.constructJsonResponse(json)
+    }
+  }
+
+  /**
+   * Gets the organization with specified id
+   */
+  def getOrganizationById(orgId: Long) = Action.async { request =>
+    OrganizationManager.getOrganizationById(orgId) map { organization =>
+      val json: String = JsonUtil.serializeOrganization(organization)
+      ResponseConstructor.constructJsonResponse(json)
+    }
+  }
+
+  /**
+   * Creates new organization
+   */
+  def createOrganization = Action.async { request =>
+    val organization = ParameterExtractor.extractOrganizationInfo(request)
+    OrganizationManager.createOrganization(organization) map { unit =>
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  /**
+   * Updates user profile
+   */
+  def updateOrganization(orgId: Long, shortName: String, fullName: String) = Action.async { request =>
+    OrganizationManager.updateOrganization(orgId, shortName, fullName) map { unit =>
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  /**
+   * Deletes organization by id
+   */
+  def deleteOrganization(orgId: Long) = Action.async { request =>
+    OrganizationManager.deleteOrganization(orgId) map { unit =>
+      ResponseConstructor.constructEmptyResponse
     }
   }
 }

@@ -50,6 +50,10 @@ object ResponseConstructor extends Results{
     "}"
   }
 
+  def constructErrorResponse(errorCode: Int, errorDesc: String):Result = {
+    Ok(constructErrorMessage(errorCode, errorDesc)).as(JSON)
+  }
+
   def constructEmptyResponse:Result = {
     Ok("")
   }
