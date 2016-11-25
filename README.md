@@ -3,8 +3,10 @@
 GITB PoC Testbed implementation uses Maven as a build automation and dependency management tool. This project can be built by executing the following command within the root folder of the project:
 
 ```sh
-$ mvn clean install -DskipTests=true
+$ mvn clean install -DskipTests=true -Denv=<environment>
 ```
+
+There are two different environments for which we can build `dev` or `docker`. `Dev` being the default and thus specifying is optional.
 
 This command builds and compiles all necessary files and creates a war file located in the *gitb-testbed-service/target/gitb-testbed-service-1.0-SNAPSHOT.war*
 
@@ -68,6 +70,9 @@ Since this application is using the [Play! Framework](http://www.playframework.c
 * `./activator clean compile` to build the application
 * `./activator run` to run the application in **debug** mode
 * `./activator clean dist` to create a standalone distribution. This command creates a zip file located under `gitb-ui/target/universal/` folder. You can unzip this file to the deployment folder. After this, there should be an executable script located in `bin/gitb-ui` path. This script can be executed directly to start the application in **production** mode.
+
+These build commands are equal for both docker and local deployment. The application config file defaults to a local deployment and is working with environment variables for the docker container.
+This way no additional steps have to be taken depending for which deployment we are building for.
 
 ## Test Suite Deployment
 Currently only users with *System Admin* roles can deploy test suites. Test suites are deployed using zip files.
