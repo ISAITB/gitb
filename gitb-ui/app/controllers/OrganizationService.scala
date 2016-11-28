@@ -1,6 +1,6 @@
 package controllers
 
-import controllers.util.{ParameterExtractor, ResponseConstructor}
+import controllers.util.{Parameters, ParameterExtractor, ResponseConstructor}
 import managers.OrganizationManager
 import org.slf4j.{LoggerFactory, Logger}
 import play.api.mvc.{Action, Controller}
@@ -36,7 +36,7 @@ class OrganizationService extends Controller {
   /**
    * Creates new organization
    */
-  def createOrganization = Action.async { request =>
+  def createOrganization() = Action.async { request =>
     val organization = ParameterExtractor.extractOrganizationInfo(request)
     OrganizationManager.createOrganization(organization) map { unit =>
       ResponseConstructor.constructEmptyResponse
@@ -46,8 +46,11 @@ class OrganizationService extends Controller {
   /**
    * Updates user profile
    */
-  def updateOrganization(orgId: Long, shortName: String, fullName: String) = Action.async { request =>
-    OrganizationManager.updateOrganization(orgId, shortName, fullName) map { unit =>
+  def updateOrganization(orgId: Long) = Action.async { request =>
+    val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_SNAME)
+    val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_FNAME)
+    val landingPageId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LANDING_PAGE_ID)
+    OrganizationManager.updateOrganization(orgId, shortName, fullName, landingPageId) map { unit =>
       ResponseConstructor.constructEmptyResponse
     }
   }

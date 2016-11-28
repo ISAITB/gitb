@@ -12,6 +12,12 @@ object Parameters {
   val EMAIL    = "email"
 	val IDS      = "ids"
   val TYPE     = "type"
+  val DESCRIPTION = "description"
+
+  // Landing page Service
+  val DEFAULT = "default_flag"
+  val CONTENT = "content"
+  val LANDING_PAGE_ID = "landing_page_id"
 
   //Authentication Service and OAuth 2.0 parameters
   val GRANT_TYPE = "grant_type"
@@ -25,6 +31,7 @@ object Parameters {
   val USER_EMAIL   = "user_email"
   val OLD_PASSWORD = "old_password"
   val USER_ROLE    = "user_role"
+  val ROLE_ID      = "role_id"
 
   //System Service parameters
   val SYSTEM_ID    = "system_id"

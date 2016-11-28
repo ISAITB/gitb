@@ -41,7 +41,11 @@ object AccountManager extends BaseManager {
 
         //4) Get Organization info
         val org = PersistenceSchema.organizations.filter(_.id === orgId).firstOption.get
-        new Organization(org, systems, admin.getOrElse(null))
+
+        //5) Get Landing Page info
+        val page = PersistenceSchema.landingPages.filter(_.id === org.landingPage).firstOption
+
+        new Organization(org, systems, admin.getOrElse(null), page.getOrElse(null))
       }
     }
   }

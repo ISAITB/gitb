@@ -15,7 +15,8 @@ object PersistenceSchema {
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
     def organizationType = column[Short]("type")
-    def * = (id, shortname, fullname, organizationType) <> (Organizations.tupled, Organizations.unapply)
+    def landingPage = column[Option[Long]] ("landing_page", O.Nullable)
+    def * = (id, shortname, fullname, organizationType, landingPage) <> (Organizations.tupled, Organizations.unapply)
   }
   //get table name etc from organizations.baseTableRow
   val organizations = TableQuery[OrganizationsTable]
@@ -299,4 +300,15 @@ object PersistenceSchema {
     //def fk2 = foreignKey("tco_fk_2", option, Options)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
   val testCaseCoversOptions = TableQuery[TestCaseCoversOptionsTable]
+
+  class LandingPagesTable(tag: Tag) extends Table[LandingPages](tag, "LandingPages") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def name = column[String]("name")
+    def description = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def content = column[String]("content")
+    def default = column[Boolean]("default_flag")
+    def * = (id, name, description, content, default) <> (LandingPages.tupled, LandingPages.unapply)
+  }
+  val landingPages = TableQuery[LandingPagesTable]
+  val insertLandingPage = (landingPages returning landingPages.map(_.id))
 }

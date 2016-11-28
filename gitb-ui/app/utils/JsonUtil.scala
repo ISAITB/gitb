@@ -123,7 +123,8 @@ object JsonUtil {
       "id"    -> organization.id,
       "sname" -> organization.shortname,
       "fname" -> organization.fullname,
-      "type"  -> organization.organizationType
+      "type"  -> organization.organizationType,
+      "landingPage" -> (if(organization.landingPage.isDefined) organization.landingPage.get else JsNull)
     )
     json
   }
@@ -563,6 +564,12 @@ object JsonUtil {
     } else{
       jOrganization = jOrganization ++ Json.obj("systems" -> JsNull)
     }
+    //
+    if(org.LandingPageObj.isDefined){
+      jOrganization = jOrganization ++ Json.obj("landingPages" -> jsLandingPage(org.LandingPageObj.get))
+    } else{
+      jOrganization = jOrganization ++ Json.obj("landingPages" -> JsNull)
+    }
     //4) Return JSON String
     jOrganization.toString
   }
@@ -595,5 +602,47 @@ object JsonUtil {
     jSystem.toString
   }
 
+  /**
+   * Converts a LandingPage object into Play!'s JSON notation.
+   * Does not support cross object conversion
+   * @param landingPage LandingPage object to be converted
+   * @return JsObject
+   */
+  def jsLandingPage(landingPage:LandingPages):JsObject = {
+    val json = Json.obj(
+      "id"    -> landingPage.id,
+      "name"  -> landingPage.name,
+      "description" -> (if(landingPage.description.isDefined) landingPage.description.get else JsNull),
+      "content"  -> landingPage.content,
+      "default" -> landingPage.default
+    )
+    json
+  }
+
+  /**
+   * Converts a List of LandingPages into Play!'s JSON notation
+   * Does not support cross object conversion
+   * @param list List of LandingPages to be convert
+   * @return JsArray
+   */
+  def jsLandingPages(list:List[LandingPages]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ landingPage =>
+      json = json.append(jsLandingPage(landingPage))
+    }
+    json
+  }
+
+  /**
+   * Converts a LandingPage object into a JSON string with its complex objects
+   * @param landingPage LandingPage object to be converted
+   * @return String
+   */
+  def serializeLandingPage(landingPage:LandingPage):String = {
+    //1) Serialize LandingPage
+    val jLandingPage:JsObject = jsLandingPage(landingPage.toCaseObject)
+    //3) Return JSON String
+    jLandingPage.toString
+  }
 
 }

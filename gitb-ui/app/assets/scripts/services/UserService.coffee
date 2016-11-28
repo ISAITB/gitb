@@ -23,15 +23,22 @@ class UserService
       authenticate: true
     })
 
-  updateSystemAdminProfile: (userId, name, role) ->
+  updateSystemAdminProfile: (userId, name) ->
     @RestService.post({
-      path: jsRoutes.controllers.UserService.updateSystemAdminProfile(userId, name).url,
+      path: jsRoutes.controllers.UserService.updateSystemAdminProfile(userId).url,
       authenticate: true
+      data: {
+        user_name: name
+      }
     })
 
   updateUserProfile: (userId, name, role) ->
     @RestService.post({
-      path: jsRoutes.controllers.UserService.updateUserProfile(userId, name, role).url,
+      path: jsRoutes.controllers.UserService.updateUserProfile(userId).url,
+      data: {
+        user_name: name
+        role_id: role
+      }
       authenticate: true
     })
 
@@ -48,11 +55,12 @@ class UserService
 
   createVendorUser: (userName, userEmail, userPassword, orgId, roleId) ->
     @RestService.post({
-      path: jsRoutes.controllers.UserService.createUser(orgId, roleId).url,
+      path: jsRoutes.controllers.UserService.createUser(orgId).url,
       data: {
         user_name: userName
         user_email: userEmail
         password: userPassword
+        role_id: roleId
       }
       authenticate: true
     })

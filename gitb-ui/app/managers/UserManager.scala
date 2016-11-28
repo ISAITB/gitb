@@ -85,16 +85,18 @@ object UserManager extends BaseManager {
   def updateUserProfile(userId: Long, name: String, roleId: Short): Future[Unit] = {
     Future {
       DB.withSession { implicit session =>
-        val user = PersistenceSchema.users.filter(_.id === userId).firstOption.get
+        val user = PersistenceSchema.users.filter(_.id === userId).firstOption
 
-        if (!name.isEmpty && name != user.name) {
-          val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name)
-          q.update(name)
-        }
+        if (user.isDefined) {
+          if (!name.isEmpty && name != user.get.name) {
+            val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name)
+            q.update(name)
+          }
 
-        if (UserRole(roleId) != UserRole(user.role)) {
-          val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.role)
-          q.update(roleId)
+          if (UserRole(roleId) != UserRole(user.get.role)) {
+            val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.role)
+            q.update(roleId)
+          }
         }
       }
     }

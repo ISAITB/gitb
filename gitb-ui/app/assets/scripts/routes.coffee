@@ -14,17 +14,27 @@ app.config ['$stateProvider', '$urlRouterProvider',
 							$log.debug 'Got user profile from the server...'
 							deferred.resolve()
 
+				getVendorProfile = () ->
+					AccountService.getVendorProfile()
+					.then (data) ->
+						DataService.setVendor(data)
+						deferred.resolve()
+
 				$log.debug 'Resolving user profile..'
 				authenticated = AuthProvider.isAuthenticated()
 
-				if authenticated && !DataService.user?
-					getUserProfile()
+				if authenticated
+					if !DataService.user?
+						getUserProfile()
+					if !DataService.vendor?
+						getVendorProfile()
 				else
 					$log.debug 'No need for user profile, user is not authenticated...'
 					deferred.resolve()
 		]
 
-		$urlRouterProvider.otherwise('/systems')
+		$urlRouterProvider.when('', '/')
+		$urlRouterProvider.otherwise('/')
 
 		states =
 			'app':
@@ -37,6 +47,12 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			# 'app.main':
 			# 	url: '/'
 			# 	templateUrl: 'assets/views/main.html'
+			'app.home':
+				url: '/'
+				templateUrl: 'assets/views/home.html'
+				controller: 'HomeController'
+				controllerAs: 'homeCtrl'
+				resolve: profile
 			'app.register':
 				url: '/register'
 				templateUrl: 'assets/views/register.html'
@@ -328,6 +344,20 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/users/user-detail.html'
 				controller: 'UserDetailController'
 				controllerAs: 'userDetailCtrl'
+			'app.admin.users.landingpages':
+				url: '/pages'
+				abstract: true
+				template: '<div ui-view/>'
+			'app.admin.users.landingpages.create':
+				url: '/create'
+				templateUrl: 'assets/views/admin/users/landing-page-create.html'
+				controller: 'LandingPageCreateController'
+				controllerAs: 'landingPageCreateCtrl'
+			'app.admin.users.landingpages.detail':
+				url: '/:id'
+				templateUrl: 'assets/views/admin/users/landing-page-detail.html'
+				controller: 'LandingPageDetailController'
+				controllerAs: 'landingPageDetailCtrl'
 
 		for state, value of states
 			$stateProvider.state state, value
@@ -344,6 +374,7 @@ app.run ['$log', '$rootScope', '$state', 'AuthProvider',
 			(state.name == 'app.settings') or
 			(state.name == 'app.profile') or
 			(state.name == 'app.users') or
+			(state.name == 'app.home') or
 			(startsWith state.name, 'app.tests') or
 			(startsWith state.name, 'app.reports') or
 			(startsWith state.name, 'app.systems') or

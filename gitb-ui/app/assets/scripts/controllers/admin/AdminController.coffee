@@ -9,6 +9,6 @@ class AdminController
 
 		if !@DataService.isSystemAdmin
 			@$log.debug 'User is not system admin, redirecting to the main page...'
-			@$state.go 'app.main'
+			@$state.go 'app.home'
 
 controllers.controller 'AdminController', AdminController
