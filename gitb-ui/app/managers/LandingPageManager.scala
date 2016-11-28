@@ -33,6 +33,23 @@ object LandingPageManager extends BaseManager {
   }
 
   /**
+   * Checks if name exists except own name (used for update)
+   */
+  def checkUniqueName(name: String, pageId: Long): Future[Boolean] = {
+    Future {
+      DB.withSession { implicit session =>
+        val page = PersistenceSchema.landingPages.filter(_.id === pageId).firstOption
+        if (page.isDefined) {
+          val firstOption = PersistenceSchema.landingPages.filter(_.id =!= pageId).filter(_.name === name).firstOption
+          !firstOption.isDefined
+        } else {
+          throw new IllegalArgumentException("Landing page with ID '" + pageId + "' not found")
+        }
+      }
+    }
+  }
+
+  /**
    * Checks if page exists
    */
   def checkLandingPageExists(pageId: Long): Future[Boolean] = {
@@ -87,7 +104,7 @@ object LandingPageManager extends BaseManager {
   def getDefaultLandingPage(): Future[LandingPage] = {
     Future {
       DB.withSession { implicit session =>
-        var page:LandingPage = null
+        var page: LandingPage = null
         val p = PersistenceSchema.landingPages.filter(_.default === true).firstOption
         if (p.isDefined) {
           page = new LandingPage(p.get)
@@ -121,10 +138,9 @@ object LandingPageManager extends BaseManager {
       DB.withSession { implicit session =>
         val landingPageOption = PersistenceSchema.landingPages.filter(_.id === pageId).firstOption
         if (landingPageOption.isDefined) {
-          val uniqueName = PersistenceSchema.landingPages.filter(_.name === name).firstOption
           val landingPage = landingPageOption.get
 
-          if (!name.isEmpty && landingPage.name != name && !uniqueName.isDefined) {
+          if (!name.isEmpty && landingPage.name != name) {
             val q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.name)
             q.update(name)
           }

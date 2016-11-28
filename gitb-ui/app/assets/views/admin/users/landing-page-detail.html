@@ -5,7 +5,7 @@
         </div>
         <div class="panel-body">
             <!-- Error messages -->
-            <div class="row col-md-10 col-md-offset-3">
+            <div class="row col-md-10 col-md-offset-1">
                 <alert ng-repeat="alert in landingPageDetailCtrl.alerts" type="{{alert.type}}" close="landingPageDetailCtrl.closeAlert($index)">{{alert.msg}}</alert>
             </div>
             <!-- landing page form -->
@@ -26,8 +26,9 @@
                     <div class="form-group">
                         <div class="col-sm-offset-3 col-sm-8">
                             <button class="btn btn-default" type="button" ng-click="landingPageDetailCtrl.cancelDetailLandingPage()">Cancel</button>
-                            <button class="btn btn-warning" type="button" ng-click="landingPageDetailCtrl.updateLandingPage()">Update</button>
-                            <button class="btn btn-danger" type="button" ng-click="landingPageDetailCtrl.deleteLandingPage()" ng-disabled="landingPageDetailCtrl.isDefault">Delete</button>
+                            <button class="btn btn-default" type="button" ng-click="landingPageDetailCtrl.updateLandingPage(false)">Update</button>
+                            <button class="btn btn-default" type="button" ng-click="landingPageDetailCtrl.updateLandingPage(true)">Copy</button>
+                            <button class="btn btn-default" type="button" ng-click="landingPageDetailCtrl.deleteLandingPage()" ng-disabled="landingPageDetailCtrl.isDefault">Delete</button>
                         </div>
                     </div>
                 </form>

@@ -272,7 +272,6 @@ class OrganizationDetailController
 
   # update and cancel detail
   updateOrganization: () =>
-    console.log @organization
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@organization.sname, "Please enter short name of the organization.") &
     @ValidationService.requireNonNull(@organization.fname, "Please enter full name of the organization.")
@@ -403,14 +402,19 @@ class UserDetailController
 class LandingPageCreateController
   name: 'LandingPageCreateController'
 
-  @$inject = ['$log', '$state', '$scope', 'WebEditorService', 'LandingPageService', 'ValidationService', 'ConfirmationDialogService', 'ErrorService']
-  constructor: (@$log, @$state, @$scope, @WebEditorService, @LandingPageService, @ValidationService, @ConfirmationDialogService, @ErrorService) ->
+  @$inject = ['$log', '$state', '$stateParams', '$scope', 'WebEditorService', 'LandingPageService', 'ValidationService', 'ConfirmationDialogService', 'ErrorService']
+  constructor: (@$log, @$state, @$stateParams, @$scope, @WebEditorService, @LandingPageService, @ValidationService, @ConfirmationDialogService, @ErrorService) ->
 
     @alerts = []
     @page = {}
-    @page.default = false
 
-    @WebEditorService.editor(300, "")
+    @initPage()
+
+  initPage: () ->
+    @page.name = @$stateParams.name
+    @page.description = @$stateParams.description
+    @page.default = false
+    @WebEditorService.editor(300, @$stateParams.content ? "")
 
   # create landing page and cancel screen
   createLandingPage: () =>
@@ -465,23 +469,36 @@ class LandingPageDetailController
       @ErrorService.showErrorMessage(error)
 
   # update and cancel detail
-  updateLandingPage: () =>
+  updateLandingPage: (copy) =>
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@page.name, "Please enter a name.")
       if !@isDefault && @page.default
         @ConfirmationDialogService.confirm("Confirm default", "You are about to change the default landing page. Are you sure?", "Yes", "No")
         .then () =>
-          @doUpdate()
+          @doUpdate(copy)
       else
-        @doUpdate()
+        @doUpdate(copy)
     @alerts = @ValidationService.getAlerts()
 
-  doUpdate: () ->
+  doUpdate: (copy) ->
     @LandingPageService.updateLandingPage(@pageId, @page.name, @page.description, tinymce.activeEditor.getContent(), @page.default)
-    .then () =>
-      @cancelDetailLandingPage()
+    .then (data) =>
+      if (data)
+        @ValidationService.pushAlert({type:'danger', msg:data.error_description})
+      else
+        if copy
+          @copyLandingPage()
+        else
+          @cancelDetailLandingPage()
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+
+  # copy landing page info in create screen
+  copyLandingPage: () ->
+    name = @page.name + " COPY"
+    description = @page.description
+    content = tinymce.activeEditor.getContent()
+    @$state.go 'app.admin.users.landingpages.create', { name : name, description : description, content : content }
 
   # delete and cancel detail
   deleteLandingPage: () =>
@@ -496,6 +513,10 @@ class LandingPageDetailController
   # cancel detail
   cancelDetailLandingPage: () =>
     @$state.go 'app.admin.users.list'
+
+  # closes alert which is displayed due to an error
+  closeAlert: (index) ->
+    @ValidationService.clearAlert(index)
 
 ####################################################################################
 
