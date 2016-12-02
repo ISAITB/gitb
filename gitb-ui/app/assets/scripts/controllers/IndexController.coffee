@@ -53,6 +53,6 @@ class IndexController
 		@$rootScope.$emit(@Events.onLogout)
 		@DataService.destroy()
 		@isAuthenticated = false
-		@redirect('/')
+		@redirect('/login')
 
 controllers.controller('IndexController', IndexController)

@@ -61,17 +61,24 @@ GET     /options                            @controllers.ConformanceService.getO
 GET     /admins/all                         @controllers.UserService.getSystemAdministrators
 POST    /admins/create                      @controllers.UserService.createSystemAdmin
 GET     /admins/:id                         @controllers.UserService.getUserById(id : Long)
-POST    /admins/:id                         @controllers.UserService.updateSystemAdminProfile(id : Long, name : String)
+POST    /admins/:id                         @controllers.UserService.updateSystemAdminProfile(id : Long)
 DELETE  /admins/:id                         @controllers.UserService.deleteSystemAdmin(id : Long)
+
+GET     /pages/default                      @controllers.LandingPageService.getDefaultLandingPage
+GET     /pages/all                          @controllers.LandingPageService.getLandingPages()
+POST    /pages/create                       @controllers.LandingPageService.createLandingPage()
+GET     /pages/:id                          @controllers.LandingPageService.getLandingPageById(id : Long)
+DELETE  /pages/:id                          @controllers.LandingPageService.deleteLandingPage(id : Long)
+POST    /pages/:id                          @controllers.LandingPageService.updateLandingPage(id : Long)
 
 GET     /organizations/all                  @controllers.OrganizationService.getOrganizations
 POST    /organizations/create               @controllers.OrganizationService.createOrganization
 GET     /organizations/users                @controllers.UserService.getUsersByOrganization(id : Long)
 GET     /organizations/:id                  @controllers.OrganizationService.getOrganizationById(id : Long)
 DELETE  /organizations/:id                  @controllers.OrganizationService.deleteOrganization(id: Long)
-POST    /organizations/:id                  @controllers.OrganizationService.updateOrganization(id : Long, sname : String, fname : String)
-POST    /organizations/:id/users/create     @controllers.UserService.createUser(id: Long, role_id: Short)
-POST    /users/:user_id                     @controllers.UserService.updateUserProfile(user_id: Long, name: String, role_id: Short)
+POST    /organizations/:id                  @controllers.OrganizationService.updateOrganization(id : Long)
+POST    /organizations/:id/users/create     @controllers.UserService.createUser(id: Long)
+POST    /users/:user_id                     @controllers.UserService.updateUserProfile(user_id: Long)
 DELETE  /users/:user_id                     @controllers.UserService.deleteVendorUser(user_id: Long)
 
 # Test Result management API

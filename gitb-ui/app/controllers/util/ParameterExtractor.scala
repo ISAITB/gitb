@@ -43,6 +43,20 @@ object ParameterExtractor {
     }
   }
 
+  def optionalLongBodyParameter(request:Request[AnyContent], parameter:String):Option[Long] = {
+    try {
+      val paramList = request.body.asFormUrlEncoded.get(parameter)
+      if(paramList.length > 0){
+        Some(paramList(0).toLong)
+      } else{
+        None
+      }
+    } catch {
+      case e:NoSuchElementException =>
+        None
+    }
+  }
+
   def extractUserId(request:Request[AnyContent]):Long = {
     request.headers.get(Parameters.USER_ID).get.toLong
   }
@@ -50,7 +64,8 @@ object ParameterExtractor {
   def extractOrganizationInfo(request:Request[AnyContent]):Organizations = {
     val vendorSname = requiredBodyParameter(request, Parameters.VENDOR_SNAME)
     val vendorFname = requiredBodyParameter(request, Parameters.VENDOR_FNAME)
-    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort)
+    val landingPageId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LANDING_PAGE_ID)
+    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, landingPageId)
   }
 
   def extractSystemAdminInfo(request:Request[AnyContent]):Users = {
@@ -127,6 +142,14 @@ object ParameterExtractor {
 		Actors(id, sname, fname, descr, domainId)
 	}
 
+  def extractLandingPageInfo(request:Request[AnyContent]):LandingPages = {
+    val name = requiredBodyParameter(request, Parameters.NAME)
+    val desc = optionalBodyParameter(request, Parameters.DESCRIPTION)
+    val content = requiredBodyParameter(request, Parameters.CONTENT)
+    val default = requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
+    LandingPages(0L, name, desc, content, default)
+  }
+
 	def extractIdsQueryParameter(request:Request[AnyContent]): Option[List[String]] = {
 		val idsStr = ParameterExtractor.optionalQueryParameter(request, Parameters.IDS)
 		val ids = idsStr match {
@@ -144,4 +167,5 @@ object ParameterExtractor {
 		}
 		ids
 	}
+
 }

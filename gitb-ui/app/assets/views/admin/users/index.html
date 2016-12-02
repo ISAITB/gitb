@@ -15,4 +15,12 @@
         </div>
         <div table-directive columns="userManagementCtrl.organizationColums" data="userManagementCtrl.organizations" on-select="userManagementCtrl.organizationSelect"></div>
     </div>
+    <!-- landing pages -->
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Landing pages</h4>
+            <a ui-sref="app.admin.users.landingpages.create" class="btn btn-default pull-right">Create landing page</a>
+        </div>
+        <div table-directive columns="userManagementCtrl.landingPagesColumns" data="userManagementCtrl.landingPages" on-select="userManagementCtrl.landingPageSelect"></div>
+    </div>
 </div>

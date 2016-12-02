@@ -41,13 +41,14 @@ object OrganizationManager extends BaseManager {
   }
 
   /**
-   * Gets user with specified id
+   * Gets organization with specified id
    */
   def getOrganizationById(orgId: Long): Future[Organization] = {
     Future {
       DB.withSession { implicit session =>
         val o = PersistenceSchema.organizations.filter(_.id === orgId).firstOption.get
-        val organization = new Organization(o)
+        val l = PersistenceSchema.landingPages.filter(_.id === o.landingPage).firstOption
+        val organization = new Organization(o, l.getOrElse(null))
         organization
       }
     }
@@ -56,16 +57,16 @@ object OrganizationManager extends BaseManager {
   /**
    * Creates new organization
    */
-  def createOrganization(organization:Organizations): Future[Unit] = {
-    Future{
+  def createOrganization(organization: Organizations): Future[Unit] = {
+    Future {
       DB.withSession { implicit session =>
         PersistenceSchema.insertOrganization += organization
       }
     }
   }
 
-  def updateOrganization(orgId: Long, shortName: String, fullName: String): Future[Unit] = {
-    Future{
+  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long]): Future[Unit] = {
+    Future {
       DB.withSession { implicit session =>
         val org = PersistenceSchema.organizations.filter(_.id === orgId).firstOption
 
@@ -79,6 +80,9 @@ object OrganizationManager extends BaseManager {
             val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.fullname)
             q.update(fullName)
           }
+
+          val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.landingPage)
+          q.update(landingPageId)
         } else {
           throw new IllegalArgumentException("Organization with ID '" + orgId + "' not found")
         }

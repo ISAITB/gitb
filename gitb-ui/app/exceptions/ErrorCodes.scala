@@ -14,6 +14,7 @@ object ErrorCodes {
   val NO_SUCH_USER:Int = 111
   val EMAIL_IS_NOT_VALID:Int = 112
   val CANNOT_DELETE:Int = 113
+  val NAME_EXISTS:Int = 114
 
   //Auth Service Related Errors
   val INVALID_ACCESS_TOKEN = 201

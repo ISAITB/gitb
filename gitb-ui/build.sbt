@@ -47,7 +47,8 @@ libraryDependencies ++= Seq(
   "org.webjars" % "ng-grid" % "2.0.11-2",
   "org.webjars" % "font-awesome" % "4.1.0" exclude("org.webjars", "jquery"),
   "org.webjars" % "angular-file-upload" % "1.6.12",
-  "org.webjars" % "codemirror" % "4.8"
+  "org.webjars" % "codemirror" % "4.8",
+  "org.webjars" % "tinymce" % "4.2.1"
 )
 
 //JsEngineKeys.engineType := JsEngineKeys.EngineType.Node

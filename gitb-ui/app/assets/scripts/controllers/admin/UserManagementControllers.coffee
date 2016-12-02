@@ -1,8 +1,8 @@
 class UserManagementController
   name: 'UserManagementController'
 
-  @$inject = ['$log', '$state', 'UserService', 'OrganizationService', 'ErrorService']
-  constructor: (@$log, @$state, @UserService, @OrganizationService, @ErrorService) ->
+  @$inject = ['$log', '$state', 'UserService', 'LandingPageService', 'OrganizationService', 'ErrorService']
+  constructor: (@$log, @$state, @UserService, @LandingPageService, @OrganizationService, @ErrorService) ->
 
     # admin table
     @adminColumns = [
@@ -28,8 +28,25 @@ class UserManagementController
       }
     ]
 
+    # landing page table
+    @landingPagesColumns = [
+      {
+        field: 'name',
+        title: 'Name'
+      }
+      {
+        field: 'description',
+        title: 'Description'
+      }
+      {
+        field: 'default',
+        title: 'Default'
+      }
+    ]
+
     @admins = []
     @organizations = []
+    @landingPages = []
 
     # get all system administrators
     @UserService.getSystemAdministrators()
@@ -45,6 +62,13 @@ class UserManagementController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+    # get all landing pages
+    @LandingPageService.getLandingPages()
+    .then (data) =>
+      @landingPages = data
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
   # detail of selected admin
   adminSelect: (admin) =>
     @$state.go 'app.admin.users.admins.detail', { id : admin.id }
@@ -52,6 +76,10 @@ class UserManagementController
   # detail of selected organization
   organizationSelect: (organization) =>
     @$state.go 'app.admin.users.organizations.detail.list', { id : organization.id }
+
+  # detail of selected landing page
+  landingPageSelect: (landingPage) =>
+    @$state.go 'app.admin.users.landingpages.detail', { id : landingPage.id }
 
 ####################################################################################
 
@@ -148,18 +176,25 @@ class AdminDetailController
 class OrganizationCreateController
   name: 'OrganizationCreateController'
 
-  @$inject = ['$log', '$state', 'ValidationService', 'OrganizationService', 'ErrorService']
-  constructor: (@$log, @$state, @ValidationService, @OrganizationService, @ErrorService) ->
+  @$inject = ['$log', '$state', 'LandingPageService', 'ValidationService', 'OrganizationService', 'ErrorService']
+  constructor: (@$log, @$state, @LandingPageService, @ValidationService, @OrganizationService, @ErrorService) ->
 
     @alerts = []
     @organization = {}
+    @landingPages = []
+
+    @LandingPageService.getLandingPages()
+    .then (data) =>
+      @landingPages = data
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
 
   # create organization and cancel screen
   createOrganization: () =>
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@organization.sname, "Please enter short name of the organization.") &
     @ValidationService.requireNonNull(@organization.fname, "Please enter full name of the organization.")
-      @OrganizationService.createOrganization @organization.sname, @organization.fname
+      @OrganizationService.createOrganization @organization.sname, @organization.fname, @organization.landingPages
       .then () =>
         @cancelCreateOrganization()
       .catch (error) =>
@@ -180,8 +215,8 @@ class OrganizationCreateController
 class OrganizationDetailController
   name: 'OrganizationDetailController'
 
-  @$inject = ['$log', '$state', '$stateParams', 'UserManagementService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'UserService', 'Constants', 'ErrorService']
-  constructor: (@$log, @$state, @$stateParams, @UserManagementService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @UserService, @Constants, @ErrorService) ->
+  @$inject = ['$log', '$state', '$stateParams', 'LandingPageService', 'UserManagementService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'UserService', 'Constants', 'ErrorService']
+  constructor: (@$log, @$state, @$stateParams, @LandingPageService, @UserManagementService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @UserService, @Constants, @ErrorService) ->
 
     @userColumns = [
       {
@@ -200,6 +235,7 @@ class OrganizationDetailController
 
     @orgId = @$stateParams.id
     @organization = {}
+    @landingPages = []
     @users = []
     @alerts = []
 
@@ -218,6 +254,12 @@ class OrganizationDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+    @LandingPageService.getLandingPages()
+    .then (data) =>
+      @landingPages = data
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
   # delete and cancel detail
   deleteOrganization: () =>
     @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this organization?", "Yes", "No")
@@ -230,10 +272,11 @@ class OrganizationDetailController
 
   # update and cancel detail
   updateOrganization: () =>
+    console.log @organization
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@organization.sname, "Please enter short name of the organization.") &
     @ValidationService.requireNonNull(@organization.fname, "Please enter full name of the organization.")
-      @OrganizationService.updateOrganization(@orgId, @organization.sname, @organization.fname)
+      @OrganizationService.updateOrganization(@orgId, @organization.sname, @organization.fname, @organization.landingPages)
       .then () =>
         @cancelDetailOrganization()
       .catch (error) =>
@@ -357,6 +400,105 @@ class UserDetailController
 
 ####################################################################################
 
+class LandingPageCreateController
+  name: 'LandingPageCreateController'
+
+  @$inject = ['$log', '$state', '$scope', 'WebEditorService', 'LandingPageService', 'ValidationService', 'ConfirmationDialogService', 'ErrorService']
+  constructor: (@$log, @$state, @$scope, @WebEditorService, @LandingPageService, @ValidationService, @ConfirmationDialogService, @ErrorService) ->
+
+    @alerts = []
+    @page = {}
+    @page.default = false
+
+    @WebEditorService.editor(300, "")
+
+  # create landing page and cancel screen
+  createLandingPage: () =>
+    @ValidationService.clearAll()
+    if @ValidationService.requireNonNull(@page.name, "Please enter a name.")
+      if @page.default
+        @ConfirmationDialogService.confirm("Confirm default", "You are about to change the default landing page. Are you sure?", "Yes", "No")
+        .then () =>
+          @doCreate()
+      else
+        @doCreate()
+    @alerts = @ValidationService.getAlerts()
+
+  doCreate: () ->
+    @LandingPageService.createLandingPage(@page.name, @page.description, tinymce.activeEditor.getContent(), @page.default)
+    .then (data) =>
+      if (data)
+        @ValidationService.pushAlert({type:'danger', msg:data.error_description})
+      else
+        @cancelCreateLandingPage()
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+  # cancel detail
+  cancelCreateLandingPage: () =>
+    @$state.go 'app.admin.users.list'
+
+  # closes alert which is displayed due to an error
+  closeAlert: (index) ->
+    @ValidationService.clearAlert(index)
+
+####################################################################################
+
+class LandingPageDetailController
+  name: 'LandingPageDetailController'
+
+  @$inject = ['$log', '$state', '$stateParams', 'WebEditorService', 'ValidationService', 'LandingPageService', 'ConfirmationDialogService', 'ErrorService']
+  constructor: (@$log, @$state, @$stateParams, @WebEditorService, @ValidationService, @LandingPageService, @ConfirmationDialogService, @ErrorService) ->
+
+    @pageId = @$stateParams.id
+    @alerts = []
+    @page = {}
+    @isDefault
+
+    # get selected landing page
+    @LandingPageService.getLandingPageById(@pageId)
+    .then (data) =>
+      @page = data
+      @isDefault = data.default
+      @WebEditorService.editor(300, data.content)
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+  # update and cancel detail
+  updateLandingPage: () =>
+    @ValidationService.clearAll()
+    if @ValidationService.requireNonNull(@page.name, "Please enter a name.")
+      if !@isDefault && @page.default
+        @ConfirmationDialogService.confirm("Confirm default", "You are about to change the default landing page. Are you sure?", "Yes", "No")
+        .then () =>
+          @doUpdate()
+      else
+        @doUpdate()
+    @alerts = @ValidationService.getAlerts()
+
+  doUpdate: () ->
+    @LandingPageService.updateLandingPage(@pageId, @page.name, @page.description, tinymce.activeEditor.getContent(), @page.default)
+    .then () =>
+      @cancelDetailLandingPage()
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+  # delete and cancel detail
+  deleteLandingPage: () =>
+    @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this landing page?", "Yes", "No")
+    .then () =>
+      @LandingPageService.deleteLandingPage(@pageId)
+      .then () =>
+        @cancelDetailLandingPage()
+      .catch (error) =>
+        @ErrorService.showErrorMessage(error)
+
+  # cancel detail
+  cancelDetailLandingPage: () =>
+    @$state.go 'app.admin.users.list'
+
+####################################################################################
+
 @ControllerUtils.register @controllers, UserManagementController
 @ControllerUtils.register @controllers, AdminCreateController
 @ControllerUtils.register @controllers, AdminDetailController
@@ -364,4 +506,5 @@ class UserDetailController
 @ControllerUtils.register @controllers, OrganizationDetailController
 @ControllerUtils.register @controllers, UserCreateController
 @ControllerUtils.register @controllers, UserDetailController
-
+@ControllerUtils.register @controllers, LandingPageCreateController
+@ControllerUtils.register @controllers, LandingPageDetailController

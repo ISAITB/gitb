@@ -60,7 +60,8 @@ class UserService extends Controller {
   /**
    * Creates new vendor user/admin
    */
-  def createUser(orgId: Long, roleId: Short) = Action.async { request =>
+  def createUser(orgId: Long) = Action.async { request =>
+    val roleId = ParameterExtractor.requiredBodyParameter(request, Parameters.ROLE_ID).toShort
     val user = UserRole(roleId) match {
       case UserRole.VendorUser => ParameterExtractor.extractUserInfo(request)
       case UserRole.VendorAdmin => ParameterExtractor.extractAdminInfo(request)
@@ -74,7 +75,8 @@ class UserService extends Controller {
   /**
    * Updates system admin profile
    */
-  def updateSystemAdminProfile(userId: Long, name: String) = Action.async { request =>
+  def updateSystemAdminProfile(userId: Long) = Action.async { request =>
+    val name = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_NAME)
     UserManager.updateSystemAdminProfile(userId, name) map { unit =>
       ResponseConstructor.constructEmptyResponse
     }
@@ -83,10 +85,12 @@ class UserService extends Controller {
   /**
    * Updates user profile
    */
-  def updateUserProfile(userId: Long,  name: String, roleId: Short) = Action.async { request =>
+  def updateUserProfile(userId: Long) = Action.async { request =>
     UserManager.isLastAdmin(userId) map { isLastAdmin =>
+      val roleId = ParameterExtractor.requiredBodyParameter(request, Parameters.ROLE_ID).toShort
+      val name = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_NAME)
       if (isLastAdmin && UserRole(roleId) == UserRole.VendorUser) {
-          ResponseConstructor.constructErrorResponse(ErrorCodes.CANNOT_DELETE, "Cannot delete the only administrator of the organization.")
+        ResponseConstructor.constructErrorResponse(ErrorCodes.CANNOT_DELETE, "Cannot delete the only administrator of the organization.")
       } else {
         UserManager.updateUserProfile(userId, name, roleId)
         ResponseConstructor.constructEmptyResponse
