@@ -33,8 +33,8 @@ public class AS4Receiver extends HttpReceiver {
     }
 
     @Override
-    public Message receive(List<Configuration> configurations) throws Exception {
-        Message received = super.receive(configurations);
+    public Message receive(List<Configuration> configurations, Message inputs) throws Exception {
+        Message received = super.receive(configurations, inputs);
         Message message = new Message();
 
         MapType headers = (MapType) received.getFragments().get(HttpMessagingHandler.HTTP_HEADERS_FIELD_NAME);

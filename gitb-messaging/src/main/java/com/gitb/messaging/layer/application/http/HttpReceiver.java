@@ -1,9 +1,9 @@
 package com.gitb.messaging.layer.application.http;
 
 import com.gitb.core.Configuration;
+import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.layer.AbstractTransactionReceiver;
-import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
 import com.gitb.types.BinaryType;
@@ -51,7 +51,7 @@ public class HttpReceiver extends AbstractTransactionReceiver {
 	}
 
 	@Override
-	public Message receive(List<Configuration> configurations) throws Exception {
+	public Message receive(List<Configuration> configurations, Message inputs) throws Exception {
         //use the socket retrieved from the transaction
         socket = getSocket();
 

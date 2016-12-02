@@ -1,37 +1,22 @@
 package com.gitb.messaging.layer.application.soap;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.util.Iterator;
-import java.util.List;
-
-import javax.xml.soap.AttachmentPart;
-import javax.xml.soap.MessageFactory;
-import javax.xml.soap.MimeHeaders;
-import javax.xml.soap.Node;
-import javax.xml.soap.SOAPBody;
-import javax.xml.soap.SOAPConstants;
-import javax.xml.soap.SOAPHeader;
-import javax.xml.soap.SOAPMessage;
-
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.gitb.core.Configuration;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.layer.application.http.HttpMessagingHandler;
 import com.gitb.messaging.layer.application.http.HttpReceiver;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
-import com.gitb.types.BinaryType;
-import com.gitb.types.DataType;
-import com.gitb.types.ListType;
-import com.gitb.types.MapType;
-import com.gitb.types.NumberType;
-import com.gitb.types.ObjectType;
-import com.gitb.types.StringType;
+import com.gitb.types.*;
 import com.gitb.utils.ConfigurationUtils;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.xml.soap.*;
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Created by serbay on 9/23/14.
@@ -45,8 +30,8 @@ public class SoapReceiver extends HttpReceiver {
 	}
 
 	@Override
-	public Message receive(List<Configuration> configurations) throws Exception {
-		Message httpMessage = super.receive(configurations);
+	public Message receive(List<Configuration> configurations, Message inputs) throws Exception {
+		Message httpMessage = super.receive(configurations, inputs);
 
 		logger.debug("Received http message");
 
@@ -153,7 +138,7 @@ public class SoapReceiver extends HttpReceiver {
 
 	/**
 	 * Extract the first element of the soapBody
-	 * 
+	 *
 	 * @param soapBody
 	 * @return
 	 */

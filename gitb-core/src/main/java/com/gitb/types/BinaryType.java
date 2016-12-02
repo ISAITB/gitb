@@ -41,4 +41,24 @@ public class BinaryType extends PrimitiveType {
     public void setValue(Object value) {
         this.content = (byte [])value;
     }
+
+    @Override
+    public StringType toStringType() {
+        return new StringType(new String(content));
+    }
+
+    @Override
+    public ObjectType toObjectType() {
+        ObjectType type = new ObjectType();
+        type.deserialize(content);
+        return type;
+    }
+
+    @Override
+    public SchemaType toSchemaType() {
+        SchemaType type = new SchemaType();
+        type.deserialize(content);
+        return type;
+    }
+
 }

@@ -14,6 +14,7 @@ import com.gitb.tdl.MessagingStep;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
+import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ConfigurationUtils;
 import com.gitb.utils.ErrorUtils;
 
@@ -190,4 +191,17 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
 
         return requiredInputs;
     }
+
+    protected Message getMessageFromBindings(List<Binding> bindings) throws IOException {
+        final IMessagingHandler messagingHandler = getMessagingContext().getHandler();
+        Message message = new Message();
+        boolean isNameBinding = BindingUtils.isNameBinding(step.getInput());
+        if(isNameBinding) {
+            setInputWithNameBinding(message, step.getInput(), getRequiredInputs(messagingHandler));
+        } else {
+            setInputWithModuleDefinition(message, step.getInput(), getRequiredInputs(messagingHandler));
+        }
+        return message;
+    }
+
 }

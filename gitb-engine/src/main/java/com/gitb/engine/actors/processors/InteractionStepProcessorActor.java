@@ -4,6 +4,7 @@ import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import akka.dispatch.Futures;
 import com.gitb.core.ErrorCode;
+import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.engine.TestbedService;
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.events.TestStepInputEventBus;
@@ -159,7 +160,9 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         for (UserInput userInput : userInputs) {
             int stepIndex = Integer.parseInt(userInput.getId());
             InstructionOrRequest targetRequest = step.getInstructOrRequest().get(stepIndex - 1);
-
+            if (DataType.STRING_DATA_TYPE.equals(userInput.getType())) {
+                userInput.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+            }
             if (targetRequest.getValue() != null && !targetRequest.getValue().equals("")) {
                 //Find the variable that the given input content is assigned(bound) to
                 String assignedVariableExpression = targetRequest.getValue();

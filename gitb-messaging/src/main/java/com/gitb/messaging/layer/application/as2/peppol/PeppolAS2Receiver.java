@@ -11,7 +11,10 @@ import com.gitb.messaging.layer.application.http.HttpMessagingHandler;
 import com.gitb.messaging.layer.application.https.HttpsReceiver;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
-import com.gitb.types.*;
+import com.gitb.types.BinaryType;
+import com.gitb.types.MapType;
+import com.gitb.types.ObjectType;
+import com.gitb.types.StringType;
 import com.gitb.utils.ConfigurationUtils;
 import com.gitb.utils.XMLUtils;
 import com.helger.as2lib.disposition.DispositionType;
@@ -20,7 +23,6 @@ import com.helger.as2lib.util.javamail.ByteArrayDataSource;
 import com.helger.commons.jaxb.validation.CollectingValidationEventHandler;
 import com.helger.commons.mime.CMimeType;
 import com.helger.peppol.sbdh.DocumentData;
-import com.helger.peppol.sbdh.read.DocumentDataReadException;
 import com.helger.peppol.sbdh.read.DocumentDataReader;
 import com.helger.ubl.EUBL21DocumentType;
 import com.helger.ubl.UBL21DocumentTypes;
@@ -41,13 +43,11 @@ import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 
 import javax.activation.DataHandler;
-import javax.mail.MessagingException;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
 import javax.xml.bind.JAXBException;
 import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
@@ -62,8 +62,8 @@ public class PeppolAS2Receiver extends HttpsReceiver{
     }
 
     @Override
-    public Message receive(List<Configuration> configurations) throws Exception {
-        Message received =  super.receive(configurations);
+    public Message receive(List<Configuration> configurations, Message inputs) throws Exception {
+        Message received =  super.receive(configurations, inputs);
 
         //extract body and headers
         MapType headers = (MapType) received.getFragments().get(HttpMessagingHandler.HTTP_HEADERS_FIELD_NAME);

@@ -53,12 +53,20 @@ public class ExpressionHandler{
     }
 
     private DataType processExpression(String expression, String expectedReturnType)  {
-        if (DataType.BINARY_DATA_TYPE.equals(expectedReturnType)) {
+        if (DataType.BINARY_DATA_TYPE.equals(expectedReturnType)
+                || DataType.isListType(expectedReturnType)) {
             DataType result = variableResolver.resolveVariable(expression);
             return result;
         } else {
-            DataType emptySource = DataTypeFactory.getInstance().create(DataType.OBJECT_DATA_TYPE);
-            return processExpression(emptySource, expression, expectedReturnType);
+            if (variableResolver.isVariableReference(expression)) {
+                // This is a pure reference to a context variable
+                DataType result = variableResolver.resolveVariable(expression);
+                return result.convertTo(expectedReturnType);
+            } else {
+                // This is a complete XPath expression
+                DataType emptySource = DataTypeFactory.getInstance().create(DataType.OBJECT_DATA_TYPE);
+                return processExpression(emptySource, expression, expectedReturnType);
+            }
         }
     }
 

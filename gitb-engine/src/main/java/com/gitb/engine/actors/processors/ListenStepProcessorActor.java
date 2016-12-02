@@ -5,7 +5,10 @@ import akka.actor.ActorRef;
 import akka.dispatch.Futures;
 import akka.dispatch.OnFailure;
 import akka.dispatch.OnSuccess;
-import com.gitb.core.*;
+import com.gitb.core.ErrorCode;
+import com.gitb.core.MessagingModule;
+import com.gitb.core.StepStatus;
+import com.gitb.core.TypedParameter;
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.messaging.MessagingContext;
@@ -17,7 +20,6 @@ import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
 import com.gitb.tdl.Listen;
-import com.gitb.tdl.Send;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.MapType;
@@ -111,6 +113,8 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
                         checkRequiredParametersAndSetDefaultValues(moduleDefinition.getReceiveConfigs().getParam(), step.getConfig());
                     }
 
+                    Message inputMessage = getMessageFromBindings(step.getInput());
+
                     MessagingReport report =
                             messagingHandler
                                     .listenMessage(
@@ -118,7 +122,8 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
                                             transactionContext.getTransactionId(),
                                             step.getFrom(),
                                             step.getTo(),
-                                            step.getConfig()
+                                            step.getConfig(),
+                                            inputMessage
                                     );
 
                     if(report != null && report.getMessage() != null) {

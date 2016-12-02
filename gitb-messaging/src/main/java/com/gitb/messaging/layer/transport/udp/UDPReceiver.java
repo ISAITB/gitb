@@ -3,7 +3,6 @@ package com.gitb.messaging.layer.transport.udp;
 import com.gitb.core.Configuration;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.layer.AbstractDatagramReceiver;
-import com.gitb.messaging.layer.transport.tcp.TCPMessagingHandler;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
 import com.gitb.types.BinaryType;
@@ -25,7 +24,7 @@ public class UDPReceiver extends AbstractDatagramReceiver {
 	}
 
 	@Override
-	public Message receive(List<Configuration> configurations) throws Exception {
+	public Message receive(List<Configuration> configurations, Message inputs) throws Exception {
 		waitUntilMessageReceived();
 
 		DatagramPacket packet = transaction.getParameter(DatagramPacket.class);

@@ -31,7 +31,11 @@ public class DataTypeUtils {
 		attachment.setName(name);
 		attachment.setType(fragment.getType());
 
-		switch (fragment.getType()) {
+		String typeToCheck = fragment.getType();
+		if (DataType.isListType(fragment.getType())) {
+			typeToCheck = DataType.LIST_DATA_TYPE;
+		}
+		switch (typeToCheck) {
 			case DataType.OBJECT_DATA_TYPE:
 			case DataType.SCHEMA_DATA_TYPE:
 			case DataType.BINARY_DATA_TYPE: {
@@ -110,7 +114,6 @@ public class DataTypeUtils {
 				break;
 			}
 			default: {
-
 				switch (anyContent.getEmbeddingMethod()) {
 					case STRING: {
 						data.deserialize(anyContent.getValue().getBytes());

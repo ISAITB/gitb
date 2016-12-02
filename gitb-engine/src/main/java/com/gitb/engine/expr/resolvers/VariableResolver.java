@@ -137,6 +137,11 @@ public class VariableResolver implements XPathVariableResolver{
 		}
 	}
 
+    public boolean isVariableReference(String variableExpression) {
+        Matcher matcher = VARIABLE_EXPRESSION_PATTERN.matcher(variableExpression);
+        return matcher.matches();
+    }
+
     /**
      * Try to convert list of other types to NodeList
      * @param list

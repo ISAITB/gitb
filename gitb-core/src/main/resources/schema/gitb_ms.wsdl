@@ -30,6 +30,12 @@
     <message name="beginTransactionResponse">
         <part name="parameters" element="tns:BeginTransactionResponse" />
     </message>
+    <message name="receive">
+        <part name="parameters" element="tns:ReceiveRequest" />
+    </message>
+    <message name="receiveResponse">
+        <part name="parameters" element="tns:ReceiveResponse" />
+    </message>
     <message name="send">
         <part name="parameters" element="tns:SendRequest" />
     </message>
@@ -72,6 +78,14 @@
             <output
                     wsam:Action="http://gitb.com/MessagingService/initiateResponse"
                     message="tns:initiateResponse" />
+        </operation>
+        <operation name="receive">
+            <input
+                    wsam:Action="http://gitb.com/MessagingService/receive"
+                    message="tns:receive" />
+            <output
+                    wsam:Action="http://gitb.com/MessagingService/receiveResponse"
+                    message="tns:receiveResponse" />
         </operation>
         <operation name="send">
             <input
@@ -130,6 +144,15 @@
             </output>
         </operation>
         <operation name="initiate">
+            <soap:operation soapAction="" />
+            <input>
+                <soap:body use="literal" />
+            </input>
+            <output>
+                <soap:body use="literal" />
+            </output>
+        </operation>
+        <operation name="receive">
             <soap:operation soapAction="" />
             <input>
                 <soap:body use="literal" />

@@ -9,7 +9,8 @@ import com.gitb.types.BinaryType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -24,7 +25,7 @@ public class TCPReceiver extends AbstractTransactionReceiver {
 	}
 
 	@Override
-	public Message receive(List<Configuration> configurations) throws Exception {
+	public Message receive(List<Configuration> configurations, Message inputs) throws Exception {
 		waitUntilMessageReceived();
 
 		logger.debug("Message received: " + socket);

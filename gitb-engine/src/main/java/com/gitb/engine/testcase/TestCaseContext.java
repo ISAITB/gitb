@@ -3,6 +3,7 @@ package com.gitb.engine.testcase;
 import com.gitb.ModuleManager;
 import com.gitb.core.*;
 import com.gitb.engine.messaging.MessagingContext;
+import com.gitb.engine.remote.messaging.RemoteMessagingModuleClient;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.model.InitiateResponse;
@@ -17,6 +18,9 @@ import com.gitb.utils.ActorUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.map.Tuple;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -265,7 +269,7 @@ public class TestCaseContext {
 		List<SUTConfiguration> handlerConfigurations = new ArrayList<>();
 
 		for(MessagingContextBuilder builder : messagingContextBuilders.values()) {
-			MessagingContext messagingContext = builder.build();
+			MessagingContext messagingContext = builder.build(sessionId);
 			handlerConfigurations.addAll(messagingContext.getSutHandlerConfigurations());
 
 			messagingContexts.put(builder.getHandler(), messagingContext);
@@ -458,10 +462,35 @@ public class TestCaseContext {
 			return this;
 		}
 
-		public MessagingContext build() {
-			ModuleManager moduleManager = ModuleManager.getInstance();
+		private boolean isURL(String handler) {
+			try {
+				new URI(handler).toURL();
+			} catch (Exception e) {
+				return false;
+			}
+			return true;
+		}
 
-			IMessagingHandler messagingHandler = moduleManager.getMessagingHandler(handler);
+		private IMessagingHandler getRemoteMessagingHandler(String handler, String sessionId) {
+			try {
+				return new RemoteMessagingModuleClient(new URI(handler).toURL(), sessionId);
+			} catch (MalformedURLException e) {
+				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an malformed URL ["+handler+"]"), e);
+			} catch (URISyntaxException e) {
+				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an invalid URI syntax ["+handler+"]"), e);
+			}
+		}
+
+		public MessagingContext build(String sessionId) {
+			IMessagingHandler messagingHandler = null;
+			if (isURL(handler)) {
+				messagingHandler = getRemoteMessagingHandler(handler, sessionId);
+			} else {
+				messagingHandler = ModuleManager.getInstance().getMessagingHandler(handler);
+			}
+			if (messagingHandler == null) {
+				throw new IllegalStateException("Validation handler for ["+handler+"] could not be resolved");
+			}
 
 			List<ActorConfiguration> configurations = new ArrayList<>(sutConfigurations.values());
 

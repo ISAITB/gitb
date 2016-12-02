@@ -5,7 +5,10 @@ import akka.actor.ActorRef;
 import akka.dispatch.Futures;
 import akka.dispatch.OnFailure;
 import akka.dispatch.OnSuccess;
-import com.gitb.core.*;
+import com.gitb.core.ErrorCode;
+import com.gitb.core.MessagingModule;
+import com.gitb.core.StepStatus;
+import com.gitb.core.TypedParameter;
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.messaging.MessagingContext;
@@ -111,12 +114,15 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 						checkRequiredParametersAndSetDefaultValues(moduleDefinition.getReceiveConfigs().getParam(), step.getConfig());
 					}
 
+					Message inputMessage = getMessageFromBindings(step.getInput());
+
 					MessagingReport report =
 						messagingHandler
 							.receiveMessage(
 								messagingContext.getSessionId(),
 								transactionContext.getTransactionId(),
-								step.getConfig()
+								step.getConfig(),
+								inputMessage
 							);
 
 					if(report != null && report.getMessage() != null) {
