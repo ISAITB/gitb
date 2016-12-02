@@ -4,7 +4,6 @@ import com.gitb.core.ActorConfiguration;
 import com.gitb.core.Configuration;
 import com.gitb.messaging.model.InitiateResponse;
 import com.gitb.tr.TestResultType;
-import com.gitb.utils.ActorUtils;
 import com.gitb.utils.ConfigurationUtils;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -13,7 +12,6 @@ import org.junit.runners.MethodSorters;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -101,7 +99,7 @@ public abstract class MessagingHandlerTest {
 
                     listenerHandler.beginTransaction(listenerSessionId, "t2", "test", "test2", new ArrayList<Configuration>());
 
-                    listenerHandler.listenMessage(listenerSessionId, "t2", "test", "test2", new ArrayList<Configuration>());
+                    listenerHandler.listenMessage(listenerSessionId, "t2", "test", "test2", new ArrayList<Configuration>(), null);
 
                     listenerHandler.endTransaction(listenerSessionId, "t2");
 
@@ -129,7 +127,7 @@ public abstract class MessagingHandlerTest {
 			}
 		}).start();
 
-		MessagingReport report = receiverHandler.receiveMessage(receiverSessionId, "t1", receiveConfigurations());
+		MessagingReport report = receiverHandler.receiveMessage(receiverSessionId, "t1", receiveConfigurations(), null);
 
 		assertNotNull(report);
 

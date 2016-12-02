@@ -55,7 +55,7 @@ public interface IMessagingHandler {
      * @param configurations
      * @return
      */
-    public MessagingReport receiveMessage(String sessionId, String transactionId, List<Configuration> configurations); // TODO remove configurations parameter if necessary
+    public MessagingReport receiveMessage(String sessionId, String transactionId, List<Configuration> configurations, Message message);
 
 
     /**
@@ -67,7 +67,7 @@ public interface IMessagingHandler {
      * @param configurations
      * @return
      */
-    public MessagingReport listenMessage(String sessionId, String transactionId, String from, String to, List<Configuration> configurations);
+    public MessagingReport listenMessage(String sessionId, String transactionId, String from, String to, List<Configuration> configurations, Message inputs);
 
     /**
      * Close the transaction (Connection)

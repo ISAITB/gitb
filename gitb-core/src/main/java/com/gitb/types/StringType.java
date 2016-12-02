@@ -68,4 +68,40 @@ public class StringType extends PrimitiveType {
     public String toString() {
         return (String) this.getValue();
     }
+
+    @Override
+    public BinaryType toBinaryType() {
+        BinaryType type = new BinaryType();
+        type.deserialize(serializeByDefaultEncoding());
+        return type;
+    }
+
+    @Override
+    public NumberType toNumberType() {
+        NumberType type = new NumberType();
+        type.setValue(data);
+        return type;
+    }
+
+    @Override
+    public BooleanType toBooleanType() {
+        BooleanType type = new BooleanType();
+        type.setValue(Boolean.valueOf(data));
+        return type;
+    }
+
+    @Override
+    public ObjectType toObjectType() {
+        ObjectType type = new ObjectType();
+        type.deserialize(serializeByDefaultEncoding());
+        return type;
+    }
+
+    @Override
+    public SchemaType toSchemaType() {
+        SchemaType type = new SchemaType();
+        type.deserialize(serializeByDefaultEncoding());
+        return type;
+    }
+
 }

@@ -15,6 +15,8 @@
     <xsd:element name="InitiateResponse" type="tns:InitiateResponse" />
     <xsd:element name="SendRequest" type="tns:SendRequest" />
     <xsd:element name="SendResponse" type="tns:SendResponse" />
+    <xsd:element name="ReceiveRequest" type="tns:ReceiveRequest" />
+    <xsd:element name="ReceiveResponse" type="tns:Void" />
     <xsd:element name="BeginTransactionRequest" type="tns:BeginTransactionRequest" />
     <xsd:element name="BeginTransactionResponse" type="tns:Void" />
     <xsd:element name="NotifyForMessageRequest" type="tns:NotifyForMessageRequest" />
@@ -70,6 +72,17 @@
             <xsd:extension base="BasicRequest">
                 <xsd:sequence>
                     <xsd:element name="to" type="xsd:string"/>
+                    <xsd:element name="input" type="gitb:AnyContent" maxOccurs="unbounded" minOccurs="0"/>
+                </xsd:sequence>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="ReceiveRequest">
+        <xsd:complexContent>
+            <xsd:extension base="BasicRequest">
+                <xsd:sequence>
+                    <xsd:element name="from" type="xsd:string"/>
                     <xsd:element name="input" type="gitb:AnyContent" maxOccurs="unbounded" minOccurs="0"/>
                 </xsd:sequence>
             </xsd:extension>

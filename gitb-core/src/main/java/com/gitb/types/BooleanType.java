@@ -56,4 +56,16 @@ public class BooleanType extends PrimitiveType {
     public void setValue(Object value) {
         this.value = (boolean) value;
     }
+
+    @Override
+    public StringType toStringType() {
+        return new StringType(Boolean.valueOf(value).toString());
+    }
+
+    @Override
+    public NumberType toNumberType() {
+        NumberType type = new NumberType();
+        type.setValue(value?1.0:0.0);
+        return type;
+    }
 }

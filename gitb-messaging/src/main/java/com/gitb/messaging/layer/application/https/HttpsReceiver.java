@@ -23,7 +23,7 @@ public class HttpsReceiver extends HttpReceiver {
     }
 
     @Override
-    public Message receive(List<Configuration> configurations) throws Exception {
+    public Message receive(List<Configuration> configurations, Message inputs) throws Exception {
         //use the socket retrieved from the transaction
         socket = getSocket();
 
@@ -39,6 +39,6 @@ public class HttpsReceiver extends HttpReceiver {
             ((SSLSocket) socket).setUseClientMode(false); //do not use client mode for handshaking since it is a server socket
         }
 
-        return super.receive(configurations);
+        return super.receive(configurations, inputs);
     }
 }

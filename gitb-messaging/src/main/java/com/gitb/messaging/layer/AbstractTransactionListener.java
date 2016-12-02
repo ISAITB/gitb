@@ -10,7 +10,6 @@ import com.gitb.messaging.model.tcp.ITransactionSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.util.List;
 
 /**
@@ -30,11 +29,11 @@ public abstract class AbstractTransactionListener implements ITransactionListene
         this.senderTransactionContext = senderTransactionContext;
     }
 
-    public Message listen(List<Configuration> configurations) throws Exception {
+    public Message listen(List<Configuration> configurations, Message inputs) throws Exception {
         ITransactionReceiver receiver = receiverTransactionContext.getParameter(ITransactionReceiver.class);
         ITransactionSender sender = senderTransactionContext.getParameter(ITransactionSender.class);
 
-        Message incomingMessage = receiver.receive(configurations);
+        Message incomingMessage = receiver.receive(configurations, inputs);
 
         logger.debug("Message received from the sender.");
 

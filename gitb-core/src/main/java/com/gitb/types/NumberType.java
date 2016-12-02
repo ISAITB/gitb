@@ -1,11 +1,6 @@
 package com.gitb.types;
 
-import org.apache.commons.io.IOUtils;
-
 import javax.xml.xpath.XPathExpression;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
 
 /**
  * Created by senan on 9/15/14.
@@ -72,5 +67,15 @@ public class NumberType extends PrimitiveType {
 
     public String stringValue() {
         return this.value.toString();
+    }
+
+    @Override
+    public StringType toStringType() {
+        return new StringType(String.valueOf(value));
+    }
+
+    @Override
+    public BooleanType toBooleanType() {
+        return new BooleanType(this.value.intValue() == 1);
     }
 }

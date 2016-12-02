@@ -28,4 +28,14 @@
         <servlet-name>TestbedService</servlet-name>
         <url-pattern>/TestbedService</url-pattern>
     </servlet-mapping>
+    <servlet>
+        <description>Messaging Client Service of GITB</description>
+        <display-name>MessagingClient</display-name>
+        <servlet-name>MessagingClient</servlet-name>
+        <servlet-class>com.sun.xml.ws.transport.http.servlet.WSServlet</servlet-class>
+    </servlet>
+    <servlet-mapping>
+        <servlet-name>MessagingClient</servlet-name>
+        <url-pattern>/MessagingClient</url-pattern>
+    </servlet-mapping>
 </web-app>

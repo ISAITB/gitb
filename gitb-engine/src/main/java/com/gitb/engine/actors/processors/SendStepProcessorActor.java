@@ -7,14 +7,13 @@ import akka.dispatch.OnFailure;
 import akka.dispatch.OnSuccess;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
-
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.events.model.ErrorStatusEvent;
-import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
@@ -22,7 +21,6 @@ import com.gitb.tdl.Send;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.MapType;
-import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
@@ -98,15 +96,7 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 				@Override
 				public TestStepReportType call() throws Exception {
 
-					Message message = new Message();
-
-					boolean isNameBinding = BindingUtils.isNameBinding(step.getInput());
-
-					if(isNameBinding) {
-						setInputWithNameBinding(message, step.getInput(), getRequiredInputs(messagingHandler));
-					} else {
-						setInputWithModuleDefinition(message, step.getInput(), getRequiredInputs(messagingHandler));
-					}
+					Message message = getMessageFromBindings(step.getInput());
 
 					MessagingReport report =
 						messagingHandler

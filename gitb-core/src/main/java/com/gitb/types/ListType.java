@@ -83,4 +83,13 @@ public class ListType extends ContainerType {
         return this.elements.size();
     }
 
+    @Override
+    public MapType toMapType() {
+        MapType map = new MapType();
+        int counter = 0;
+        for (DataType obj: elements) {
+            map.addItem(String.valueOf(counter++), obj);
+        }
+        return map;
+    }
 }

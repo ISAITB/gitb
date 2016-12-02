@@ -1,15 +1,14 @@
 package com.gitb.messaging.layer.application.dns;
 
-import com.gitb.core.ActorConfiguration;
 import com.gitb.core.Configuration;
 import com.gitb.core.MessagingModule;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
-import com.gitb.messaging.SessionManager;
 import com.gitb.messaging.layer.AbstractMessagingHandler;
-import com.gitb.messaging.model.*;
+import com.gitb.messaging.model.SessionContext;
+import com.gitb.messaging.model.TransactionContext;
 import com.gitb.messaging.model.udp.IDatagramReceiver;
 import com.gitb.messaging.model.udp.IDatagramSender;
 import com.gitb.messaging.server.IMessagingServer;
@@ -20,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.UnknownHostException;
 import java.util.List;
 
 /**
@@ -50,7 +48,7 @@ public class DNSMessagingHandler extends AbstractMessagingHandler {
 	}
 
 	@Override
-	public MessagingReport listenMessage(String sessionId, String transactionId, String from, String to, List<Configuration> configurations) {
+	public MessagingReport listenMessage(String sessionId, String transactionId, String from, String to, List<Configuration> configurations, Message inputs) {
 		throw new GITBEngineInternalError("Operation is not supported for the ["+getModuleDefinition().getId()+"]");
 	}
 

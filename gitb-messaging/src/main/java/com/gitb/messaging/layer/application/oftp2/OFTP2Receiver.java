@@ -14,8 +14,11 @@ import com.gitb.utils.ConfigurationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.net.ssl.*;
-import java.io.*;
+import javax.net.ssl.SSLSocket;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Arrays;
 import java.util.List;
@@ -35,7 +38,7 @@ public class OFTP2Receiver extends AbstractTransactionReceiver{
         super(session, transaction);
     }
 
-    public Message receive(List<Configuration> configurations) throws Exception {
+    public Message receive(List<Configuration> configurations, Message inputs) throws Exception {
         waitUntilMessageReceived();
 
         logger.debug("Connection established: " + socket);

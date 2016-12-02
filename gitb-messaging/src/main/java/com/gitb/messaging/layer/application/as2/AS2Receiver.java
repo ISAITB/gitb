@@ -6,10 +6,11 @@ import com.gitb.messaging.Message;
 import com.gitb.messaging.ServerUtils;
 import com.gitb.messaging.layer.application.http.HttpMessagingHandler;
 import com.gitb.messaging.layer.application.http.HttpReceiver;
-import com.gitb.messaging.model.tcp.ITransactionSender;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
-import com.gitb.types.*;
+import com.gitb.messaging.model.tcp.ITransactionSender;
+import com.gitb.types.BinaryType;
+import com.gitb.types.MapType;
 import com.helger.as2lib.disposition.DispositionType;
 import com.helger.as2lib.util.CAS2Header;
 import com.helger.as2lib.util.javamail.ByteArrayDataSource;
@@ -41,8 +42,8 @@ public class AS2Receiver extends HttpReceiver {
     }
 
     @Override
-    public Message receive(List<Configuration> configurations) throws Exception {
-        Message received =  super.receive(configurations);
+    public Message receive(List<Configuration> configurations, Message inputs) throws Exception {
+        Message received =  super.receive(configurations, inputs);
 
         MapType headers = (MapType) received.getFragments().get(HttpMessagingHandler.HTTP_HEADERS_FIELD_NAME);
         BinaryType body = (BinaryType) received.getFragments().get(HttpMessagingHandler.HTTP_BODY_FIELD_NAME);

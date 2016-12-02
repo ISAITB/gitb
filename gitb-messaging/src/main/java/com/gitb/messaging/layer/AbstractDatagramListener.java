@@ -29,11 +29,11 @@ public abstract class AbstractDatagramListener implements IDatagramListener {
         this.senderTransactionContext = senderTransactionContext;
     }
 
-    public Message listen(List<Configuration> configurations) throws Exception {
+    public Message listen(List<Configuration> configurations, Message inputs) throws Exception {
         IDatagramReceiver receiver = receiverTransactionContext.getParameter(IDatagramReceiver.class);
         IDatagramSender sender = senderTransactionContext.getParameter(IDatagramSender.class);
 
-        Message incomingMessage = receiver.receive(configurations);
+        Message incomingMessage = receiver.receive(configurations, inputs);
 
         logger.debug("Message received from the sender.");
 
