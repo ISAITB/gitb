@@ -353,6 +353,10 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/users/landing-page-create.html'
 				controller: 'LandingPageCreateController'
 				controllerAs: 'landingPageCreateCtrl'
+				params:
+					name: ""
+					description: ""
+					content: ""
 			'app.admin.users.landingpages.detail':
 				url: '/:id'
 				templateUrl: 'assets/views/admin/users/landing-page-detail.html'

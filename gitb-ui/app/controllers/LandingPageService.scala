@@ -73,18 +73,23 @@ class LandingPageService extends Controller {
     val content = ParameterExtractor.requiredBodyParameter(request, Parameters.CONTENT)
     val default = ParameterExtractor.requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
 
-    LandingPageManager.updateLandingPage(pageId, name, description, content, default) map { unit =>
-      ResponseConstructor.constructEmptyResponse
+    LandingPageManager.checkUniqueName(name, pageId) map { uniqueName =>
+      if (uniqueName) {
+        LandingPageManager.updateLandingPage(pageId, name, description, content, default)
+        ResponseConstructor.constructEmptyResponse
+      } else {
+        ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Landing page with '" + name + "' already exists.")
+      }
     }
   }
 
-  /**
-   * Deletes landing page with specified id
-   */
-  def deleteLandingPage(pageId: Long) = Action.async { request =>
-    LandingPageManager.deleteLandingPage(pageId) map { unit =>
-      ResponseConstructor.constructEmptyResponse
+    /**
+     * Deletes landing page with specified id
+     */
+    def deleteLandingPage(pageId: Long) = Action.async { request =>
+      LandingPageManager.deleteLandingPage(pageId) map { unit =>
+        ResponseConstructor.constructEmptyResponse
+      }
     }
-  }
 
-}
+  }

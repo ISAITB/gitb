@@ -65,8 +65,8 @@ POST    /admins/:id                         @controllers.UserService.updateSyste
 DELETE  /admins/:id                         @controllers.UserService.deleteSystemAdmin(id : Long)
 
 GET     /pages/default                      @controllers.LandingPageService.getDefaultLandingPage
-GET     /pages/all                          @controllers.LandingPageService.getLandingPages()
-POST    /pages/create                       @controllers.LandingPageService.createLandingPage()
+GET     /pages/all                          @controllers.LandingPageService.getLandingPages
+POST    /pages/create                       @controllers.LandingPageService.createLandingPage
 GET     /pages/:id                          @controllers.LandingPageService.getLandingPageById(id : Long)
 DELETE  /pages/:id                          @controllers.LandingPageService.deleteLandingPage(id : Long)
 POST    /pages/:id                          @controllers.LandingPageService.updateLandingPage(id : Long)
