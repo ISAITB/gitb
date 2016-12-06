@@ -307,15 +307,6 @@ public class PeppolAS2Receiver extends HttpsReceiver{
         return document.getFirstChild();
     }
 
-    private ObjectType getSBDH(Node sbd) {
-        //SBDH = Standard Business Document Header
-        if (sbd.getChildNodes().getLength() > 0) {
-            Node sbdh = sbd.getChildNodes().item(0);
-            return new ObjectType(sbdh);
-        }
-        return null;
-    }
-
     boolean checkSBDH(Node sbdh, List<Configuration> configurations){
         boolean documentIdentifierFound = false;
         boolean processIdentifierFound  = false;
@@ -379,14 +370,6 @@ public class PeppolAS2Receiver extends HttpsReceiver{
             }
             return false;
         }
-    }
-
-    private ObjectType getBusinessMessage(Node sbd) {
-        if (sbd.getChildNodes().getLength() > 1) {
-            Node businessMessage = sbd.getChildNodes().item(1);
-            return new ObjectType(businessMessage);
-        }
-        return null;
     }
 
     void saveError(String reason, String message) {

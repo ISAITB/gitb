@@ -36,7 +36,7 @@ import java.util.Random;
 /**
  * Created by senan on 11.11.2014.
  */
-//@MetaInfServices(IMessagingHandler.class)
+@MetaInfServices(IMessagingHandler.class)
 public class AS2MessagingHandler extends AbstractMessagingHandler{
 
     public static final String HTTP_HEADERS_FIELD_NAME = HttpMessagingHandler.HTTP_HEADERS_FIELD_NAME;
