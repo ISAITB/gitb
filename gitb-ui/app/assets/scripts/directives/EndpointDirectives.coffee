@@ -13,7 +13,7 @@
 				'<div class="form-group">'+
 					'<label class="col-sm-3 control-label" for="description">Description:</label>'+
 					'<div class="col-sm-8">'+
-						'<textarea id="description" ng-model="endpoint.desc" class="form-control"></textarea>'+
+						'<textarea id="description" ng-model="endpoint.description" class="form-control"></textarea>'+
 					'</div>'+
 				'</div>'+
 				'<div class="form-group" ng-if="showSaveButton">'+

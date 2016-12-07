@@ -144,12 +144,8 @@ object UserManager extends BaseManager {
   /**
    * Deletes all users with specified organization
    */
-  def deleteUserByOrganization(orgId: Long) = Future[Unit] {
-    Future {
-      DB.withSession { implicit session =>
-        PersistenceSchema.users.filter(_.organization === orgId).delete
-      }
-    }
+  def deleteUserByOrganization(orgId: Long)(implicit session: Session) = {
+    PersistenceSchema.users.filter(_.organization === orgId).delete
   }
 
   /**

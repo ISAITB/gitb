@@ -11,6 +11,18 @@ import scala.slick.driver.MySQLDriver.simple._
 object ConformanceManager extends BaseManager {
   def logger = LoggerFactory.getLogger("ConformanceManager")
 
+	/**
+	 * Checks if domain exists
+	 */
+	def checkDomainExists(domainId: Long): Future[Boolean] = {
+		Future {
+			DB.withSession { implicit session =>
+				val firstOption = PersistenceSchema.domains.filter(_.id === domainId).firstOption
+				firstOption.isDefined
+			}
+		}
+	}
+
   def getDomains(ids: Option[List[Long]] = None):Future[List[Domain]] = {
     Future{
       DB.withSession { implicit session =>
@@ -38,10 +50,28 @@ object ConformanceManager extends BaseManager {
 		}
 	}
 
-	def deleteDomain(domain: Long) = {
+	def updateDomain(domainId: Long, shortName: String, fullName: String, description: Option[String]) = {
 		Future {
 			DB.withSession { implicit session =>
+				val q1 = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.shortname)
+				q1.update(shortName)
 
+				val q2 = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.fullname)
+				q2.update(fullName)
+
+				val q3 = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.description)
+				q3.update(description)
+			}
+		}
+	}
+
+	def deleteDomain(domain: Long) = Future[Unit] {
+		Future {
+			DB.withTransaction { implicit session =>
+				ActorManager.deleteActorByDomain(domain)
+				SpecificationManager.deleteSpecificationByDomain(domain)
+				TransactionManager.deleteTransactionByDomain(domain)
+				PersistenceSchema.domains.filter(_.id === domain).delete
 			}
 		}
 	}

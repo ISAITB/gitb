@@ -54,8 +54,8 @@ class CreateDomainController
 class DomainDetailsController
 	name: 'DomainDetailsController'
 
-	@$inject = ['$log', '$scope', '$state', '$stateParams', 'ConformanceService', 'ErrorService']
-	constructor: (@$log, @$scope, @$state, @$stateParams, @ConformanceService, @ErrorService) ->
+	@$inject = ['$log', '$scope', '$state', '$stateParams', 'ConfirmationDialogService', 'ConformanceService', 'ErrorService']
+	constructor: (@$log, @$scope, @$state, @$stateParams, @ConfirmationDialogService, @ConformanceService, @ErrorService) ->
 		@$log.debug "Constructing #{@name}..."
 
 		@domain = {}
@@ -108,6 +108,22 @@ class DomainDetailsController
 		@ConformanceService.getActorsWithDomainId(@domainId)
 		.then (data)=>
 			@actors = data
+		.catch (error) =>
+			@ErrorService.showErrorMessage(error)
+
+	deleteDomain: () =>
+		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this domain?", "Yes", "No")
+		.then () =>
+			@ConformanceService.deleteDomain(@domainId)
+			.then () =>
+				@$state.go 'app.admin.domains.list'
+			.catch (error) =>
+				@ErrorService.showErrorMessage(error)
+
+	saveDomainChanges: () =>
+		@ConformanceService.updateDomain(@domainId, @domain.sname, @domain.fname, @domain.description)
+		.then () =>
+			@$state.go 'app.admin.domains.list'
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 

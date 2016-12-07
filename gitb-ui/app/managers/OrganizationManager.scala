@@ -96,16 +96,10 @@ object OrganizationManager extends BaseManager {
    */
   def deleteOrganization(orgId: Long) = Future[Unit] {
     Future {
-      DB.withSession { implicit session =>
-        checkOrganizationExists(orgId) map { organizationExists =>
-          if(organizationExists) {
-            PersistenceSchema.organizations.filter(_.id === orgId).delete
-            UserManager.deleteUserByOrganization(orgId)
-            SystemManager.deleteSystemByOrganization(orgId)
-          } else {
-            throw new IllegalArgumentException("Organization with ID '" + orgId + "' not found")
-          }
-        }
+      DB.withTransaction { implicit session =>
+        UserManager.deleteUserByOrganization(orgId)
+        SystemManager.deleteSystemByOrganization(orgId)
+        PersistenceSchema.organizations.filter(_.id === orgId).delete
       }
     }
   }

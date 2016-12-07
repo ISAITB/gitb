@@ -20,10 +20,21 @@ class ConformanceService
       params: params
     })
 
-  deleteDomain: (shortName) ->
+  deleteDomain: (domainId) ->
     @RestService.delete
-      path: jsRoutes.controllers.ConformanceService.deleteDomain(shortName).url
+      path: jsRoutes.controllers.ConformanceService.deleteDomain(domainId).url
       authenticate: true
+
+  updateDomain: (domainId, shortName, fullName, description) ->
+    @RestService.post({
+      path: jsRoutes.controllers.ConformanceService.updateDomain(domainId).url,
+      data: {
+        sname: shortName
+        fname: fullName
+        description: description
+      }
+      authenticate: true
+    })
   
   createDomain: (shortName, fullName, description) ->
     @RestService.post({
