@@ -25,8 +25,8 @@ class CreateActorController
 class ActorDetailsController
 	name: 'ActorDetailsController'
 	
-	@$inject = ['$log', '$scope', 'ConformanceService', '$state', '$stateParams', 'ErrorService']
-	constructor: (@$log, @$scope, @ConformanceService, @$state, @$stateParams, @ErrorService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', 'ActorService', 'ConfirmationDialogService', '$state', '$stateParams', 'ErrorService']
+	constructor: (@$log, @$scope, @ConformanceService, @ActorService, @ConfirmationDialogService, @$state, @$stateParams, @ErrorService) ->
 		@$log.debug "Constructing #{@name}"
 
 		@actor = {}
@@ -89,8 +89,24 @@ class ActorDetailsController
 				repr =
 					'id': endpoint.id
 					'name': endpoint.name
-					'desc': endpoint.desc
+					'desc': endpoint.description
 					'parameters': parameters.join ', '
+		.catch (error) =>
+			@ErrorService.showErrorMessage(error)
+
+	delete: () =>
+		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this actor?", "Yes", "No")
+		.then () =>
+			@ActorService.deleteActor(@actorId)
+			.then () =>
+				@$state.go 'app.admin.domains.detail.list', {id: @domainId}
+			.catch (error) =>
+				@ErrorService.showErrorMessage(error)
+
+	saveChanges: () =>
+		@ActorService.updateActor(@actorId, @actor.actorId, @actor.name, @actor.description)
+		.then () =>
+			@$state.go 'app.admin.domains.detail.list', {id: @domainId}
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 

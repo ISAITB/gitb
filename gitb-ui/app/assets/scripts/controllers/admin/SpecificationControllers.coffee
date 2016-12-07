@@ -21,8 +21,8 @@ class CreateSpecificationController
 class SpecificationDetailsController
 	name: 'SpecificationDetailsController'
 
-	@$inject = ['$log', '$scope', 'ConformanceService', 'TestSuiteService', '$state', '$stateParams', '$modal', 'ErrorService']
-	constructor: (@$log, @$scope, @ConformanceService, @TestSuiteService, @$state, @$stateParams, @$modal, @ErrorService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', 'TestSuiteService', 'ConfirmationDialogService', 'SpecificationService', '$state', '$stateParams', '$modal', 'ErrorService']
+	constructor: (@$log, @$scope, @ConformanceService, @TestSuiteService, @ConfirmationDialogService, @SpecificationService, @$state, @$stateParams, @$modal, @ErrorService) ->
 		@$log.debug "Constructing #{@name}"
 
 		@specification = {}
@@ -150,6 +150,22 @@ class SpecificationDetailsController
 
 	onActorSelect: (actor) =>
 		@$state.go 'app.admin.domains.detail.specifications.detail.actors.detail.list', {id: @domainId, spec_id: @specificationId, actor_id: actor.id}
+
+	deleteSpecification: () =>
+		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this specification?", "Yes", "No")
+		.then () =>
+			@SpecificationService.deleteSpecification(@specificationId)
+			.then () =>
+				@$state.go 'app.admin.domains.detail.list', {id: @domainId}
+			.catch (error) =>
+				@ErrorService.showErrorMessage(error)
+
+	saveSpecificationChanges: () =>
+		@SpecificationService.updateSpecification(@specificationId, @specification.sname, @specification.fname, @specification.urls, @specification. diagram, @specification.description, @specification.spec_type)
+		.then () =>
+			@$state.go 'app.admin.domains.detail.list', {id: @domainId}
+		.catch (error) =>
+			@ErrorService.showErrorMessage(error)
 
 class AddExistingActorsController
 	name: 'AddExistingActorsController'
