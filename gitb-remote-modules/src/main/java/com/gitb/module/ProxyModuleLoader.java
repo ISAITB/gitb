@@ -7,6 +7,7 @@ import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.module.remote.Configuration;
 import com.gitb.module.validation.ProxyValidationHandler;
+import com.gitb.processing.IProcessingHandler;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.JarUtils;
 import com.gitb.utils.XMLUtils;
@@ -18,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import javax.xml.transform.stream.StreamSource;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -92,5 +94,10 @@ public class ProxyModuleLoader implements IModuleLoader {
         } catch (Exception e) {
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Could not load proxy modules"), e);
         }
+    }
+
+    @Override
+    public List<IProcessingHandler> loadProcessingHandlers() {
+        return Collections.emptyList();
     }
 }
