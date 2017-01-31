@@ -90,6 +90,26 @@
                                     <sourceDestDir>${project.build.directory}/generated-sources/model</sourceDestDir>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>generate-ps</id>
+                                <goals>
+                                    <goal>wsimport</goal>
+                                </goals>
+                                <configuration>
+                                    <bindingFiles>
+                                        <bindingFile>${basedir}/src/main/resources/schema/binding_ps.xjb</bindingFile>
+                                    </bindingFiles>
+                                    <wsdlLocation>http://www.gitb.com/services</wsdlLocation>
+                                    <wsdlDirectory>src/main/resources/schema</wsdlDirectory>
+                                    <wsdlFiles>
+                                        <wsdlFile>gitb_ps.wsdl</wsdlFile>
+                                    </wsdlFiles>
+                                    <vmArgs>
+                                        <vmArg>-Djavax.xml.accessExternalSchema=all</vmArg>
+                                    </vmArgs>
+                                    <sourceDestDir>${project.build.directory}/generated-sources/model</sourceDestDir>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
 					<!--plugin>

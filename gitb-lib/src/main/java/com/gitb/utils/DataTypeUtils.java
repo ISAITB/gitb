@@ -60,7 +60,7 @@ public class DataTypeUtils {
 				for (int i = 0; i < listFragment.getSize(); i++) {
 					DataType item = listFragment.getItem(i);
 					AnyContent content = convertDataTypeToAnyContent(null, item);
-
+					attachment.setEmbeddingMethod(ValueEmbeddingEnumeration.valueOf(listFragment.getContainedType().toUpperCase()));
 					attachment.getItem().add(content);
 				}
 				break;

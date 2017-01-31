@@ -3,6 +3,7 @@ package com.gitb;
 import com.gitb.core.ValidationModule;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.module.IModuleLoader;
+import com.gitb.processing.IProcessingHandler;
 import com.gitb.repository.IFunctionRegistry;
 import com.gitb.repository.ITestCaseRepository;
 import com.gitb.types.DataType;
@@ -26,6 +27,7 @@ public class ModuleManager {
 	private Map<String, IValidationHandler> validationHandlers;
 	//Registered Messaging Handler Modules
     private Map<String, IMessagingHandler> messagingHandlers;
+    private Map<String, IProcessingHandler> processingHandlers;
 	//Registered Function Libraries for TDL Expression Language
     private Map<String, IFunctionRegistry> functionRegistries;
     //Registered Test Artifact Repositories
@@ -60,6 +62,9 @@ public class ModuleManager {
             for(IMessagingHandler messagingHandler : moduleLoader.loadMessagingHandlers()) {
                 messagingHandlers.put(messagingHandler.getModuleDefinition().getId(), messagingHandler);
             }
+			for(IProcessingHandler processingHandler : moduleLoader.loadProcessingHandlers()) {
+				processingHandlers.put(processingHandler.getModuleDefinition().getId(), processingHandler);
+			}
         }
         for(ITestCaseRepository testCaseRepository : ServiceLoader.load(ITestCaseRepository.class)) {
 			if(testCaseRepository.getName().equals(CoreConfiguration.TEST_CASE_REPOSITORY)) {
@@ -86,6 +91,10 @@ public class ModuleManager {
 		return validationHandlers.get(name);
 	}
 
+	public IProcessingHandler getProcessingHandler(String name) {
+		return processingHandlers.get(name);
+	}
+
 	public IFunctionRegistry getFunctionRegistry(String name) {
 		return functionRegistries.get(name);
 	}
@@ -100,6 +109,10 @@ public class ModuleManager {
 
 	public Collection<IMessagingHandler> getMessagingHandlers() {
 		return messagingHandlers.values();
+	}
+
+	public Collection<IProcessingHandler> getProcessingHandlers() {
+		return processingHandlers.values();
 	}
 
 	public Collection<IFunctionRegistry> getFunctionRegistries() {

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xsd:schema xmlns="http://www.gitb.com/ps/v1/" xmlns:tns="http://www.gitb.com/ps/v1/" xmlns:tr="http://www.gitb.com/tr/v1/" xmlns:gitb="http://www.gitb.com/core/v1/" xmlns:xsd="http://www.w3.org/2001/XMLSchema" targetNamespace="http://www.gitb.com/ps/v1/" version="1.0">
+	<xsd:import namespace="http://www.gitb.com/tr/v1/" schemaLocation="gitb_tr.xsd"/>
+	<xsd:import namespace="http://www.gitb.com/core/v1/" schemaLocation="gitb_core.xsd"/>
+	<xsd:element name="GetModuleDefinitionRequest" type="tns:Void"/>
+	<xsd:element name="GetModuleDefinitionResponse" type="tns:GetModuleDefinitionResponse"/>
+	<xsd:element name="ProcessRequest" type="tns:ProcessRequest"/>
+	<xsd:element name="ProcessResponse" type="tns:ProcessResponse"/>
+	<xsd:element name="BeginTransactionRequest" type="tns:BeginTransactionRequest"/>
+	<xsd:element name="BeginTransactionResponse" type="tns:BeginTransactionResponse"/>
+	<xsd:element name="EndTransactionRequest" type="tns:BasicRequest"/>
+	<xsd:element name="EndTransactionResponse" type="tns:Void"/>
+	<xsd:complexType name="Void">
+		<xsd:sequence/>
+	</xsd:complexType>
+	<xsd:complexType name="ProcessingOperation">
+		<xsd:sequence>
+			<xsd:element name="inputs" type="gitb:TypedParameters" minOccurs="0"/>
+			<xsd:element name="outputs" type="gitb:TypedParameters" minOccurs="0"/>
+		</xsd:sequence>
+		<xsd:attribute name="name" type="xsd:string" use="required"/>
+	</xsd:complexType>
+	<xsd:complexType name="ProcessingModule">
+		<xsd:sequence>
+			<xsd:element name="metadata" type="gitb:Metadata"/>
+			<xsd:element name="configs" type="gitb:ConfigurationParameters" minOccurs="0"/>
+			<xsd:element name="operation" type="ProcessingOperation" maxOccurs="unbounded"/>
+		</xsd:sequence>
+		<xsd:attribute name="id" type="xsd:string"/>
+		<xsd:attribute name="uri" type="xsd:string"/>
+		<xsd:attribute name="isRemote" type="xsd:boolean" default="true"/>
+		<xsd:attribute name="serviceLocation" type="xsd:string" use="optional"/>
+	</xsd:complexType>
+	<xsd:complexType name="GetModuleDefinitionResponse">
+		<xsd:sequence>
+			<xsd:element name="module" type="ProcessingModule"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="BasicRequest">
+		<xsd:sequence>
+			<xsd:element name="sessionId" type="xsd:string"/>
+		</xsd:sequence>
+	</xsd:complexType>
+	<xsd:complexType name="BeginTransactionRequest">
+		<xsd:sequence>
+			<xsd:element name="config" type="gitb:Configuration" minOccurs="0" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+    <xsd:complexType name="BeginTransactionResponse">
+        <xsd:sequence>
+            <xsd:element name="sessionId" type="xsd:string" />
+        </xsd:sequence>
+    </xsd:complexType>	<xsd:complexType name="ProcessRequest">
+		<xsd:complexContent>
+			<xsd:extension base="BasicRequest">
+				<xsd:sequence>
+					<xsd:element name="operation" type="xsd:string" minOccurs="0"/>
+					<xsd:element name="input" type="gitb:AnyContent" minOccurs="0" maxOccurs="unbounded"/>
+				</xsd:sequence>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="ProcessResponse">
+		<xsd:sequence>
+			<xsd:element name="report" type="tr:TAR"/>
+			<xsd:element name="output" type="gitb:AnyContent" minOccurs="0" maxOccurs="unbounded"/>
+		</xsd:sequence>
+	</xsd:complexType>
+</xsd:schema>

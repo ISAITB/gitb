@@ -118,6 +118,10 @@
 				<xsd:element name="verify" type="Verify"/>
 				<xsd:element name="call" type="CallStep"/>
 				<xsd:element name="interact" type="UserInteraction"/>
+				<!--Processing constructs -->
+				<xsd:element name="process" type="Process"/>
+				<xsd:element name="bptxn" type="BeginProcessingTransaction"/>
+				<xsd:element name="eptxn" type="EndProcessingTransaction"/>
 			</xsd:choice>
 		</xsd:sequence>
 	</xsd:complexType>
@@ -147,6 +151,9 @@
 	<xsd:complexType name="Send">
 		<xsd:complexContent>
 			<xsd:extension base="MessagingStep">
+				<xsd:sequence>
+					<xsd:element name="input" type="Binding" minOccurs="0" maxOccurs="unbounded"/>
+				</xsd:sequence>
 			</xsd:extension>
 		</xsd:complexContent>
 	</xsd:complexType>
@@ -298,6 +305,35 @@
 			</xsd:extension>
 		</xsd:complexContent>
 	</xsd:complexType>
+	<xsd:complexType name="BeginProcessingTransaction">
+		<xsd:complexContent>
+			<xsd:extension base="TestConstruct">
+				<xsd:sequence>
+					<xsd:element name="config" type="gitb:Configuration" minOccurs="0" maxOccurs="unbounded"/>
+				</xsd:sequence>
+				<xsd:attribute name="txnId" type="xsd:string" use="required"/>
+				<xsd:attribute name="handler" type="xsd:string" use="required"/>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="EndProcessingTransaction">
+		<xsd:complexContent>
+			<xsd:extension base="TestConstruct">
+				<xsd:attribute name="txnId" type="xsd:string" use="required"/>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
+	<xsd:complexType name="Process">
+		<xsd:complexContent>
+			<xsd:extension base="TestStep">
+				<xsd:sequence>
+					<xsd:element name="operation" type="xsd:string" minOccurs="0"/>
+					<xsd:element name="input" type="Binding" minOccurs="0" maxOccurs="unbounded"/>
+				</xsd:sequence>
+				<xsd:attribute name="txnId" type="xsd:string" use="required"/>
+			</xsd:extension>
+		</xsd:complexContent>
+	</xsd:complexType>
 	<xsd:complexType name="Instruction">
 		<xsd:complexContent>
 			<xsd:extension base="InstructionOrRequest"/>
@@ -313,7 +349,7 @@
 			<xsd:extension base="TypedBinding">
 				<xsd:attribute name="desc" type="xsd:string" use="required"/>
 				<xsd:attribute name="with" type="xsd:string" use="required"/>
-                <xsd:attribute name="contentType" type="gitb:ValueEmbeddingEnumeration" use="optional"/>
+				<xsd:attribute name="contentType" type="gitb:ValueEmbeddingEnumeration" use="optional"/>
 				<xsd:attribute name="encoding" type="xsd:string" use="optional"/>
 			</xsd:extension>
 		</xsd:complexContent>
