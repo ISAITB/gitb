@@ -106,7 +106,16 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 			request.getInput().add(attachment);
 		}
 		SendResponse response = getServiceClient().send(request);
-		return new MessagingReport(response.getReport());
+		return getMessagingReport(response.getReport());
+	}
+
+	private MessagingReport getMessagingReport(TAR tar) {
+		MessagingReport report = null;
+		if (SessionManager.getInstance().getContext(testSessionId).getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
+			Message outputMessage = getMessageFromReport(tar);
+			report = new MessagingReport(tar, outputMessage);
+		}
+		return report;
 	}
 
 	@Override
@@ -119,13 +128,8 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 			request.getInput().add(input);
 		}
 		getServiceClient().receive(request);
-		MessagingReport report = null;
 		NotifyForMessageRequest callback = CallbackManager.getInstance().waitForCallback(sessionId);
-		if (SessionManager.getInstance().getContext(testSessionId).getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
-			Message outputMessage = getMessageFromReport(callback.getReport());
-			report = new MessagingReport(callback.getReport(), outputMessage);
-		}
-		return report;
+		return getMessagingReport(callback.getReport());
 	}
 
 	private Message getMessageFromReport(TAR report) {
