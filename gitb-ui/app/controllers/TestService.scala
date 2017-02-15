@@ -1,9 +1,10 @@
 package controllers
 
+import com.gitb.tr.TestResultType
 import config.Configurations
 import actors.WebSocketActor
 import jaxws.HeaderHandlerResolver
-import managers.ConformanceManager
+import managers.{ReportManager, ConformanceManager}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 import org.slf4j.{LoggerFactory, Logger}
@@ -35,9 +36,10 @@ object TestService{
 
   def endSession(session_id:String): Future[Unit] = {
     Future {
+      ReportManager.finishTestReport(session_id, TestResultType.UNDEFINED)
+
       val request: BasicCommand = new BasicCommand
       request.setTcInstanceId(session_id)
-
       TestService.port.stop(request)
     }
   }

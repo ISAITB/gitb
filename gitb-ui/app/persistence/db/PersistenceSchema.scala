@@ -311,4 +311,13 @@ object PersistenceSchema {
   }
   val landingPages = TableQuery[LandingPagesTable]
   val insertLandingPage = (landingPages returning landingPages.map(_.id))
+
+  class SystemConfigurationsTable(tag: Tag) extends Table[SystemConfigurations](tag, "SystemConfigurations") {
+    def name = column[String]("name", O.PrimaryKey)
+    def parameter = column[Option[String]]("parameter", O.Nullable)
+    def description = column[Option[String]]("description", O.Nullable)
+    def * = (name, parameter, description) <> (SystemConfigurations.tupled, SystemConfigurations.unapply)
+  }
+  val systemConfigurations = TableQuery[SystemConfigurationsTable]
+  val insertSystemConfiguration = (systemConfigurations returning systemConfigurations.map(_.name))
 }

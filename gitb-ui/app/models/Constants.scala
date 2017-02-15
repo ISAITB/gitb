@@ -7,4 +7,7 @@ object Constants {
   // Organization constants
   val DefaultOrganizationId = 0L
 
+  // System configuration constants
+  val SessionAliveTime = "session_alive_time"
+
 }
