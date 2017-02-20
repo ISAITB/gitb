@@ -33,9 +33,9 @@
 					'<tr>'+
 					    '<th ng-if="checkboxEnabled"></th>'+
 						'<th ng-repeat="column in columns">{{column.title}}</th>'+
+						'<th ng-if="actionVisible">Action</th>'+
 						'<th ng-if="operationsVisible">Operation</th>'+
 						'<th ng-if="exportVisible">Export</th>'+
-						'<th ng-if="actionVisible">Action</th>'+
 					'</tr>'+
 				'</thead>'+
 				'<tbody>'+
@@ -110,14 +110,14 @@
 				'</div>'+
 			'</td>'+
 			'<td class="operations" ng-if="actionVisible">'+
-			'<button class="btn btn-default" ng-click="action()"><i class="fa fa-search"></i></button>'+
+				'<button class="btn btn-default" ng-click="action()"><i class="fa fa-search"></i></button>'+
 			'</td>' +
 			'<td class="operations" ng-if="operationsVisible">'+
 				'<button class="btn btn-default" ng-click="delete()"><i class="fa fa-times"></i></button>'+
 			'</td>' +
 			'<td class="operations" ng-if="exportVisible">'+
-                '<button class="btn btn-default" ng-click="export()"><i class="fa fa-file-pdf-o"></i></button>'+
-            '</td>'
+          '<button class="btn btn-default" ng-click="export()"><i class="fa fa-file-pdf-o"></i></button>'+
+      '</td>'
 		link: (scope, element, attrs) ->
 			scope.rows = _.map scope.columns, (column)->
 				row = {}

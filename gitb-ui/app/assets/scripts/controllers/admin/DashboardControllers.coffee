@@ -1,8 +1,8 @@
 class DashboardController
   name: 'DashboardController'
 
-  @$inject = ['$log', '$state', 'ReportService', 'Constants', 'PopupService', 'SpecificationService', 'ErrorService']
-  constructor: (@$log, @$state, @ReportService, @Constants, @PopupService, @SpecificationService, @ErrorService) ->
+  @$inject = ['$log', '$state', 'TestService', 'ReportService', 'Constants', 'PopupService', 'ConfirmationDialogService', 'SpecificationService', 'ErrorService']
+  constructor: (@$log, @$state, @TestService, @ReportService, @Constants, @PopupService, @ConfirmationDialogService, @SpecificationService, @ErrorService) ->
 
     # active sessions table
     @activeSessionsColumns = [
@@ -59,6 +59,7 @@ class DashboardController
     @prevDisabled = false
     @nextDisabled = false
     @action = false
+    @stop = false
 
     # get active sessions
     @ReportService.getActiveTestResults()
@@ -110,6 +111,8 @@ class DashboardController
   testSelect: (test) =>
     if @action
       @action = false
+    else if @stop
+      @stop = false
     else
       if test.domain? and test.system? and test.specification? and test.testCase? and test.testCasePath?
         data = [{label: "Domain", value: test.domain}
@@ -123,14 +126,15 @@ class DashboardController
     @action = true
     @$state.go 'app.reports.presentation', {session_id: session.session}
 
-  getSpecification: (id) ->
-    spec = {}
-    @SpecificationService.getSpecificationById(id)
-    .then (data) =>
-      spec = data
-    .catch (error) =>
-      @ErrorService.showErrorMessage(error)
-    spec
+  stopSession: (session) =>
+    @stop = true
+    @ConfirmationDialogService.confirm("Confirm delete", "Are you certain you want to terminate this session?", "Yes", "No")
+    .then () =>
+      @TestService.stop(session.session)
+      .then (data) =>
+        @$state.go @$state.current, {}, {reload: true}
+      .catch (error) =>
+        @ErrorService.showErrorMessage(error)
 
   firstPage: () =>
     if @page > 0
