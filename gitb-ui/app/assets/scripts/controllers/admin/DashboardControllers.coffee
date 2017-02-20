@@ -1,8 +1,8 @@
 class DashboardController
   name: 'DashboardController'
 
-  @$inject = ['$log', 'ReportService', 'Constants', 'PopupService', 'SpecificationService', 'ErrorService']
-  constructor: (@$log, @ReportService, @Constants, @PopupService, @SpecificationService, @ErrorService) ->
+  @$inject = ['$log', '$state', 'ReportService', 'Constants', 'PopupService', 'SpecificationService', 'ErrorService']
+  constructor: (@$log, @$state, @ReportService, @Constants, @PopupService, @SpecificationService, @ErrorService) ->
 
     # active sessions table
     @activeSessionsColumns = [
@@ -58,6 +58,7 @@ class DashboardController
     @count = 0
     @prevDisabled = false
     @nextDisabled = false
+    @action = false
 
     # get active sessions
     @ReportService.getActiveTestResults()
@@ -107,13 +108,20 @@ class DashboardController
     testCasePath: session.test?.path
 
   testSelect: (test) =>
-    if test.domain? and test.system? and test.specification? and test.testCase? and test.testCasePath?
-      data = [{label: "Domain", value: test.domain}
-        {label: "System", value: test.system}
-        {label: "Specification", value: test.specification}
-        {label: "Test case", value: test.testCase}
-        {label: "Path", value: test.testCasePath}]
-      @PopupService.show("Session #{test.session}", data)
+    if @action
+      @action = false
+    else
+      if test.domain? and test.system? and test.specification? and test.testCase? and test.testCasePath?
+        data = [{label: "Domain", value: test.domain}
+          {label: "System", value: test.system}
+          {label: "Specification", value: test.specification}
+          {label: "Test case", value: test.testCase}
+          {label: "Path", value: test.testCasePath}]
+        @PopupService.show("Session #{test.session}", data)
+
+  onAction: (session) =>
+    @action = true
+    @$state.go 'app.reports.presentation', {session_id: session.session}
 
   getSpecification: (id) ->
     spec = {}

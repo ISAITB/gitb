@@ -91,7 +91,7 @@ class SystemTestsController
             session_ids.push(result.sessionId)
             testcase_ids.push(result.testName)
 
-     @ReportService.exportTestCaseReports(session_ids.join(), testcase_ids.join())
+    @ReportService.exportTestCaseReports(session_ids.join(), testcase_ids.join())
      .then (stepResults) =>
         a = window.document.createElement('a')
         a.href = window.URL.createObjectURL(new Blob([stepResults], {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));

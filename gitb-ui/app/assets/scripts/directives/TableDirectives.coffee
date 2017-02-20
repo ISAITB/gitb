@@ -22,6 +22,8 @@
 			lastPage: '&'
 			nextDisabled: '='
 			prevDisabled: '='
+			actionVisible: '='
+			onAction: '='
 		restrict: 'AE'
 		template: ''+
 			'<div>'+
@@ -33,10 +35,11 @@
 						'<th ng-repeat="column in columns">{{column.title}}</th>'+
 						'<th ng-if="operationsVisible">Operation</th>'+
 						'<th ng-if="exportVisible">Export</th>'+
+						'<th ng-if="actionVisible">Action</th>'+
 					'</tr>'+
 				'</thead>'+
 				'<tbody>'+
-					'<tr class="table-row-directive" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" operations-visible="operationsVisible" export-visible="exportVisible" checkbox-enabled="checkboxEnabled" on-delete="onDelete" on-export="onExport" on-check="onCheck"></tr>'+
+					'<tr class="table-row-directive" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" action-visible="actionVisible" operations-visible="operationsVisible" export-visible="exportVisible" checkbox-enabled="checkboxEnabled" on-action="onAction" on-delete="onDelete" on-export="onExport" on-check="onCheck"></tr>'+
 			'</tbody>'+
 			'</table>'+
 				'<div ng-if="paginationVisible" class="text-center">'+
@@ -86,9 +89,11 @@
 			columns: '='
 			classes: '='
 			operationsVisible: '='
+			actionVisible: '='
 			exportVisible: '='
 			checkboxEnabled: '='
 			onDelete: '='
+			onAction: '='
 			onExport: '='
 			onCheck: '='
 		restrict: 'A'
@@ -104,6 +109,9 @@
 					'{{row.data}}'+
 				'</div>'+
 			'</td>'+
+			'<td class="operations" ng-if="actionVisible">'+
+			'<button class="btn btn-default" ng-click="action()"><i class="fa fa-search"></i></button>'+
+			'</td>' +
 			'<td class="operations" ng-if="operationsVisible">'+
 				'<button class="btn btn-default" ng-click="delete()"><i class="fa fa-times"></i></button>'+
 			'</td>' +
@@ -118,11 +126,13 @@
 				row.class = if classes? then classes[column.field] else column.title.toLowerCase().replace(" ", "-")
 
 				row
-			scope.delete = ()=>
+			scope.delete = () =>
 				if scope.onDelete?
 					scope.onDelete(scope.data)
-			scope.export = ()=>
+			scope.export = () =>
 			    scope.onExport? scope.data
 			scope.check = () =>
 			    scope.onCheck? scope.data
+			scope.action = () =>
+				scope.onAction? scope.data
 ]
