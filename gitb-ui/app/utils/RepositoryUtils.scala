@@ -194,7 +194,7 @@ object RepositoryUtils {
 								0l, tdlTestCase.getId, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getVersion,
 								Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
 								Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
-								None, tdlTestCase.getMetadata.getType.ordinal().toShort, null, 0l, Some(testCaseActors.mkString(","))
+								None, tdlTestCase.getMetadata.getType.ordinal().toShort, null, specification, Some(testCaseActors.mkString(","))
 							)
 					}.toList
 

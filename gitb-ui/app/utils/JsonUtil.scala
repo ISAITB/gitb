@@ -343,7 +343,8 @@ object JsonUtil {
       "description" -> (if(testCase.description.isDefined) testCase.description.get else JsNull),
       "keywords" -> (if(testCase.keywords.isDefined) testCase.keywords.get else JsNull),
       "type" -> testCase.testCaseType,
-      "targetSpec"  -> testCase.targetSpec
+      "targetSpec"  -> testCase.targetSpec,
+      "path" -> testCase.path
     )
     return json;
   }
@@ -454,6 +455,57 @@ object JsonUtil {
 		json
 	}
 
+  def jsTestResultSessionReports(list: List[TestResultSessionReport]): JsArray = {
+    var json = Json.arr()
+    list.foreach { report =>
+      json = json.append(jsTestResultReport(report))
+    }
+    json
+  }
+
+  def jsCount(count: Long): JsArray = {
+    Json.arr().append(Json.obj(
+      "count" -> count
+    ))
+  }
+
+  def jsTestResultReport(report: TestResultSessionReport): JsObject = {
+    val json = Json.obj(
+      "result" -> jsTestResult(report.testResult, false),
+      "test" ->  {
+        report.testCase match {
+          case Some(tc) => jsTestCases(tc)
+          case None => JsNull
+        }
+      },
+      "organization" -> {
+        report.organization match {
+          case Some(o) => jsOrganization(o)
+          case None => JsNull
+        }
+      },
+      "system" -> {
+        report.system match {
+          case Some(s) => jsSystem(s)
+          case None => JsNull
+        }
+      },
+      "specification" -> {
+        report.spec match {
+          case Some(s) => jsSpecification(s)
+          case None => JsNull
+        }
+      },
+      "domain" -> {
+        report.domain match {
+          case Some(d) => jsDomain(d)
+          case None => JsNull
+        }
+      }
+    )
+    json
+  }
+
 	def jsTestResultReport(report: TestResultReport): JsObject = {
 		val json = Json.obj(
 			"result" -> jsTestResult(report.testResult, false),
@@ -538,6 +590,11 @@ object JsonUtil {
     }
     //3) Return JSON String
     jUser.toString
+  }
+
+  def serializeSpecification(spec:Specification):String = {
+    var jSpec:JsObject = jsSpecification(spec.toCaseObject)
+    jSpec.toString
   }
 
   /**

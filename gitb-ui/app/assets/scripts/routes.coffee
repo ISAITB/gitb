@@ -166,6 +166,15 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				url: '/admin'
 				templateUrl: 'assets/views/admin/index.html'
 				controller: 'AdminController'
+			'app.admin.dashboard':
+				url: '/dashboard'
+				abstract: true
+				template: '<div ui-view/>'
+			'app.admin.dashboard.list':
+				url: ''
+				templateUrl: 'assets/views/admin/dashboard/index.html'
+				controller: 'DashboardController'
+				controllerAs: 'dashboardCtrl'
 			'app.admin.domains':
 				url: '/domains'
 				abstract: true

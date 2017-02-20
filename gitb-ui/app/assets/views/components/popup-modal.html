@@ -1,0 +1,17 @@
+<div class="modal-header">
+    <h3>{{controller.headerText}}</h3>
+</div>
+<div class="modal-body" style="overflow-x:auto;">
+    <form class="form-horizontal">
+        <div class="form-group" ng-repeat="obj in controller.data">
+            <label class="col-sm-3 control-label">{{obj.label}}</label>
+
+            <div class="col-sm-5">
+                <p class="form-control-static">{{obj.value}}</p>
+            </div>
+        </div>
+    </form>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-default" type="button" ng-click="close()">Close</button>
+</div>

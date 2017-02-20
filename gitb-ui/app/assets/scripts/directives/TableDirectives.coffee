@@ -15,8 +15,16 @@
 			allowSelect: '='
 			allowMultiSelect: '='
 			tableCaption: '='
+			paginationVisible: '='
+			firstPage: '&'
+			prevPage: '&'
+			nextPage: '&'
+			lastPage: '&'
+			nextDisabled: '='
+			prevDisabled: '='
 		restrict: 'AE'
 		template: ''+
+			'<div>'+
 			'<table class="table table-directive">'+
 				'<caption ng-if="tableCaptionVisible">{{tableCaption}}</caption>'+
 				'<thead>'+
@@ -29,8 +37,18 @@
 				'</thead>'+
 				'<tbody>'+
 					'<tr class="table-row-directive" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" operations-visible="operationsVisible" export-visible="exportVisible" checkbox-enabled="checkboxEnabled" on-delete="onDelete" on-export="onExport" on-check="onCheck"></tr>'+
-				'</tbody>'+
-			'</table>'
+			'</tbody>'+
+			'</table>'+
+				'<div ng-if="paginationVisible" class="text-center">'+
+					'<ul class="pagination pagination-sm">'+
+						'<li ng-class="prevDisabled ? \'disabled\' : \'\'"><a href ng-click="firstPage()">First</a></li>'+
+						'<li ng-class="prevDisabled ? \'disabled\' : \'\'"><a href ng-click="prevPage()">Previous</a></li>'+
+						'<li ng-class="nextDisabled ? \'disabled\' : \'\'"><a href ng-click="nextPage()">Next</a></li>'+
+						'<li ng-class="nextDisabled ? \'disabled\' : \'\'"><a href ng-click="lastPage()">Last</a></li>'+
+					'</ul>'+
+				'</div>'+
+			'</div>'
+
 		replace: true
 		link: (scope, element, attrs) ->
 			scope.tableCaptionVisible = scope.tableCaption?
@@ -57,6 +75,8 @@
 							scope.onSelect? row
 
 				return
+
+
 ]
 
 @directives.directive 'tableRowDirective', [

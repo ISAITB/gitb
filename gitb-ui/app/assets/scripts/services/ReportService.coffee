@@ -15,6 +15,25 @@ class ReportService
         limit: limit
       authenticate: true
 
+  getActiveTestResults: ->
+    @RestService.get
+      path: jsRoutes.controllers.ReportService.getActiveTestResults().url
+      authenticate: true
+
+  getCompletedTestResults: (page, limit) ->
+    @RestService.get
+      path: jsRoutes.controllers.ReportService.getCompletedTestResults().url
+      params:
+        page: page
+        limit: limit
+      authenticate: true
+
+  getCompletedTestResultCount: () ->
+    @RestService.get({
+      path: jsRoutes.controllers.ReportService.getCompletedTestResultCount().url,
+      authenticate: true
+    })
+
   getTestResultOfSession: (sessionId) ->
     @RestService.get({
       path: jsRoutes.controllers.ReportService.getTestResultOfSession(sessionId).url,

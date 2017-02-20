@@ -1,0 +1,16 @@
+<div class="page dashboard">
+    <!-- Active test sessions -->
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Active test sessions</h4>
+        </div>
+        <div table-directive columns="dashboardCtrl.activeSessionsColumns" data="dashboardCtrl.activeSessions" on-select="dashboardCtrl.testSelect"></div>
+    </div>
+    <!-- completed sessions -->
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Completed test sessions</h4>
+        </div>
+        <div table-directive columns="dashboardCtrl.completedSessionsColumns" data="dashboardCtrl.completedSessions" on-select="dashboardCtrl.testSelect" pagination-visible="true" first-page="dashboardCtrl.firstPage()" prev-page="dashboardCtrl.prevPage()" next-page="dashboardCtrl.nextPage()" last-page="dashboardCtrl.lastPage()" next-disabled="dashboardCtrl.nextDisabled" prev-disabled="dashboardCtrl.prevDisabled"></div>
+    </div>
+</div>

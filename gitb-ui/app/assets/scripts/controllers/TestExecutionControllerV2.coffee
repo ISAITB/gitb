@@ -218,8 +218,8 @@ class TestExecutionControllerV2
     @actor = actor.actor
 
   getInteroperabilitySessions: () ->
-    @TestService.getSessions().
-    then(
+    @TestService.getSessions()
+    .then(
       (data) =>
         @interoperabilitySessions = data
       (error) =>

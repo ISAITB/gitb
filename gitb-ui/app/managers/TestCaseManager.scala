@@ -16,7 +16,7 @@ object TestCaseManager extends BaseManager {
 
 	val TEST_CASES_PATH = "test-cases"
 
-	def craeteTestCase(testCase: TestCases) = {
+	def createTestCase(testCase: TestCases) = {
 		Future {
 			DB.withSession { implicit session =>
 				PersistenceSchema.testCases.insert(testCase)

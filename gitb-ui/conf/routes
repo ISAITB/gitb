@@ -71,6 +71,11 @@ GET     /admins/:id                         @controllers.UserService.getUserById
 POST    /admins/:id                         @controllers.UserService.updateSystemAdminProfile(id : Long)
 DELETE  /admins/:id                         @controllers.UserService.deleteSystemAdmin(id : Long)
 
+# Session management API
+GET     /dashboard/active                   @controllers.ReportService.getActiveTestResults
+GET     /dashboard/completed                @controllers.ReportService.getCompletedTestResults
+GET     /dashboard/count                    @controllers.ReportService.getCompletedTestResultCount
+
 GET     /pages/default                      @controllers.LandingPageService.getDefaultLandingPage
 GET     /pages/all                          @controllers.LandingPageService.getLandingPages
 POST    /pages/create                       @controllers.LandingPageService.createLandingPage
