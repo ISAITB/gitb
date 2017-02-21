@@ -1,8 +1,8 @@
 class DashboardController
   name: 'DashboardController'
 
-  @$inject = ['$log', '$state', 'TestService', 'ReportService', 'Constants', 'PopupService', 'ConfirmationDialogService', 'SpecificationService', 'ErrorService']
-  constructor: (@$log, @$state, @TestService, @ReportService, @Constants, @PopupService, @ConfirmationDialogService, @SpecificationService, @ErrorService) ->
+  @$inject = ['$log', '$state', 'TestService', 'ReportService', 'Constants', 'SystemConfigurationService', 'PopupService', 'ConfirmationDialogService', 'SpecificationService', 'MessageService', 'ErrorService']
+  constructor: (@$log, @$state, @TestService, @ReportService, @Constants, @SystemConfigurationService, @PopupService, @ConfirmationDialogService, @SpecificationService, @MessageService, @ErrorService) ->
 
     # active sessions table
     @activeSessionsColumns = [
@@ -60,6 +60,8 @@ class DashboardController
     @nextDisabled = false
     @action = false
     @stop = false
+    @config = {}
+    @onOff = false
 
     # get active sessions
     @ReportService.getActiveTestResults()
@@ -81,6 +83,14 @@ class DashboardController
     # set disabled status
     @setDisabledStatus()
 
+    @SystemConfigurationService.getSessionAliveTime()
+    .then (data) =>
+      @config = data
+      @config.parameter = parseInt(@config.parameter, 10)
+      @onOff = !(data.parameter? && !isNaN(data.parameter))
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
   # get completed sessions
   getCompletedTestResults: (page) =>
     @ReportService.getCompletedTestResults(page, @Constants.LIMIT)
@@ -88,6 +98,26 @@ class DashboardController
       @processRequest(data)
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+
+  # turn session alive time parameter off
+  turnOff: () =>
+    @SystemConfigurationService.updateSessionAliveTime()
+    .then (data) =>
+      @config.parameter = NaN
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+  # apply new parameter
+  apply: () =>
+    if @config.parameter? && !isNaN(@config.parameter)
+      @SystemConfigurationService.updateSessionAliveTime(@config.parameter)
+      .then () =>
+        @MessageService.showMessage("Update", "Successfully updated session alive time to #{@config.parameter}.")
+      .catch (error) =>
+        @ErrorService.showErrorMessage(error)
+    else
+      @turnOff()
+      @onOff = true
 
   # process data
   processRequest: (data) ->

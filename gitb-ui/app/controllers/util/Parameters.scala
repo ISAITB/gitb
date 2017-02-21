@@ -24,6 +24,9 @@ object Parameters {
   val GRANT_TYPE_PASSWORD = "password"
   val REFRESH_TOKEN = "refresh_token"
 
+  //System configuration parameters
+  val PARAMETER = "parameter"
+
   //Account Service parameters
   val VENDOR_SNAME = "vendor_sname"
   val VENDOR_FNAME = "vendor_fname"

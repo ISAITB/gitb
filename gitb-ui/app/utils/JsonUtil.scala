@@ -98,6 +98,15 @@ object JsonUtil {
     json
   }
 
+  def jsSystemConfiguration(sc: SystemConfigurations):JsObject = {
+    val json = Json.obj(
+      "name"    -> sc.name,
+      "parameter"  -> (if(sc.parameter.isDefined) sc.parameter.get else JsNull),
+      "description"  -> (if(sc.description.isDefined) sc.description.get else JsNull)
+    )
+    json
+  }
+
   /**
    * Converts a List of Users into Play!'s JSON notation
    * Does not support cross object conversion
@@ -590,6 +599,11 @@ object JsonUtil {
     }
     //3) Return JSON String
     jUser.toString
+  }
+
+  def serializeSystemConfig(sc:SystemConfiguration):String = {
+    var jConfig:JsObject = jsSystemConfiguration(sc.toCaseObject)
+    jConfig.toString
   }
 
   def serializeSpecification(spec:Specification):String = {

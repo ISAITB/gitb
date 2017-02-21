@@ -23,4 +23,16 @@ object SystemConfigurationManager extends BaseManager {
     }
   }
 
+  /**
+   * Set system parameter
+   */
+  def updateSystemParameter(name: String, value: Option[String] = None): Future[Unit] = {
+    Future {
+      DB.withSession { implicit session =>
+        val q = for {c <- PersistenceSchema.systemConfigurations if c.name === name} yield (c.parameter)
+        q.update(value)
+      }
+    }
+  }
+
 }

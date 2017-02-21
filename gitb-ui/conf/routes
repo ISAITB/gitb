@@ -75,6 +75,8 @@ DELETE  /admins/:id                         @controllers.UserService.deleteSyste
 GET     /dashboard/active                   @controllers.ReportService.getActiveTestResults
 GET     /dashboard/completed                @controllers.ReportService.getCompletedTestResults
 GET     /dashboard/count                    @controllers.ReportService.getCompletedTestResultCount
+GET     /dashboard/config                   @controllers.SystemConfigurationService.getSessionAliveTime
+POST    /dashboard/config                   @controllers.SystemConfigurationService.updateSessionAliveTime
 
 GET     /pages/default                      @controllers.LandingPageService.getDefaultLandingPage
 GET     /pages/all                          @controllers.LandingPageService.getLandingPages
