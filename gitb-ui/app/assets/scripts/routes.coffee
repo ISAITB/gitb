@@ -91,9 +91,9 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/test-presentation.html'
 				controller: 'TestPresentationController'
 				controllerAs: 'testPresentationCtrl'
-			'app.tutorial':
-        url: '/tutorial'
-        templateUrl: 'assets/views/tutorial.html'
+#			'app.tutorial':
+#        url: '/tutorial'
+#        templateUrl: 'assets/views/tutorial.html'
 			'app.systems':
 				url: '/systems'
 				abstract: true
