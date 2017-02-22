@@ -109,8 +109,8 @@ object ReportManager extends BaseManager {
       DB.withSession { implicit session =>
         val count = PersistenceSchema.testResults
           .filter(_.endTime.isDefined)
-          .list
           .size
+          .run
 
         count
       }
