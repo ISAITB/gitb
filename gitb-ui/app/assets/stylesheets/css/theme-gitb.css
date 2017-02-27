@@ -1,0 +1,33 @@
+.gitb section.page-top {
+    background-color: #171717;
+    border-bottom: 5px solid #CCC;
+    border-top: 5px solid #384045;
+    margin-bottom: 35px;
+    min-height: 50px;
+    padding: 0;
+    padding: 20px 0;
+    position: relative;
+    text-align: left;
+}
+
+.gitb section.page-top h2 {
+    border-bottom: 5px solid #CCC;
+    color: #FFF;
+    display: inline-block;
+    font-weight: 200;
+    margin: 0 0 -25px;
+    min-height: 37px;
+    line-height: 46px;
+    padding: 0 0 17px;
+    position: relative;
+}
+
+footer.gitb {
+    background: #121214;
+    border-top: 4px solid #1F1F1F;
+    font-size: 0.9em;
+    margin-top: 50px;
+    padding: 80px 0 0;
+    position: relative;
+    clear: both;
+}

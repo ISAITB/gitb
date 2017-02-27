@@ -1,157 +1,160 @@
-<div class="page index">
+<div ng-class="indexCtrl.theme" class="page index">
   <header>
-    <div class="navbar-collapse nav-main-collapse collapse">
-      <div class="container">
-        <img src="assets/images/gitb.png" class="logo"/>
-        <nav class="nav-main mega-menu">
-          <ul class="nav nav-pills nav-main" id="mainMenu">
-            <li>
-              <a ui-sref="app.home">Home</a>
-            </li>
-            <!--<li>-->
-              <!--<a ui-sref="app.tutorial">Tutorial</a>-->
-            <!--</li>-->
-            <li ng-if="indexCtrl.isAuthenticated">
-              <a ui-sref="app.systems.list">Systems</a>
-            </li>
-            <li ng-if="indexCtrl.DataService.isSystemAdmin">
-              <a ui-sref="app.admin.dashboard.list">Admin</a>
-            </li>
-            <!-- Login Menu Item -->
-            <li class="dropdown mega-menu-item mega-menu-signin signin" id="headerAccount" ng-cloak ng-if="!indexCtrl.isAuthenticated">
-              <a class="dropdown-toggle" ng-click="indexCtrl.redirect('/login')">
-                <i class="fa fa-user"></i> Login
-                <i class="fa fa-angle-down"></i>
-              </a>
-              <ul class="dropdown-menu">
+        <div class="navbar-collapse nav-main-collapse collapse">
+          <div class="container">
+            <img src="assets/images/{{indexCtrl.theme}}.png" class="logo"/>
+            <nav class="nav-main mega-menu">
+              <ul class="nav nav-pills nav-main" id="mainMenu">
                 <li>
-                  <div class="mega-menu-content">
-                    <div class="row">
-                      <div class="col-md-12">
-                        <!-- Login -->
-                        <div class="signin-form">
-                          <!-- include reusable login form component -->
-                          <ng-include src="'assets/views/login-form.html'"></ng-include>
+                  <a ui-sref="app.home">Home</a>
+                </li>
+                <!--<li>-->
+                  <!--<a ui-sref="app.tutorial">Tutorial</a>-->
+                <!--</li>-->
+                <li ng-if="indexCtrl.isAuthenticated">
+                  <a ui-sref="app.systems.list">Systems</a>
+                </li>
+                <li ng-if="indexCtrl.DataService.isSystemAdmin">
+                  <a ui-sref="app.admin.dashboard.list">Admin</a>
+                </li>
+                <!-- Login Menu Item -->
+                <li class="dropdown mega-menu-item mega-menu-signin signin" id="headerAccount" ng-cloak ng-if="!indexCtrl.isAuthenticated">
+                  <a class="dropdown-toggle" ng-click="indexCtrl.redirect('/login')">
+                    <i class="fa fa-user"></i> Login
+                    <i class="fa fa-angle-down"></i>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li>
+                      <div class="mega-menu-content">
+                        <div class="row">
+                          <div class="col-md-12">
+                            <!-- Login -->
+                            <div class="signin-form">
+                              <!-- include reusable login form component -->
+                              <ng-include src="'assets/views/login-form.html'"></ng-include>
 
-                          <p class="sign-up-info">Forgot password? <a href="#" id="headerRecover">Recover!</a> </p>
-                          <p class="sign-up-info">Don't have an account yet? <a ui-sref="app.register" id="headerSignUp">Register!</a></p>
+                              <p class="sign-up-info">Forgot password? <a href="#" id="headerRecover">Recover!</a> </p>
+                              <p class="sign-up-info">Don't have an account yet? <a ui-sref="app.register" id="headerSignUp">Register!</a></p>
 
+                            </div>
+                            <!-- Register -->
+                            <div class="signup-form">
+                              <!-- include reusable register form component -->
+                              <ng-include src="'assets/views/register-form.html'"></ng-include>
+
+                              <p class="log-in-info">Already have an account? <a href="#" id="headerSignIn">Log In!</a></p>
+                            </div>
+                            <!-- Reset Password -->
+                            <div class="recover-form">
+                              <!-- include reusable reset form component -->
+                              <ng-include src="'assets/views/recover-form.html'"></ng-include>
+
+                              <p class="log-in-info">Already have an account? <a href="#" id="headerRecoverCancel">Log In!</a></p>
+                            </div>
+
+                          </div>
                         </div>
-                        <!-- Register -->
-                        <div class="signup-form">
-                          <!-- include reusable register form component -->
-                          <ng-include src="'assets/views/register-form.html'"></ng-include>
-
-                          <p class="log-in-info">Already have an account? <a href="#" id="headerSignIn">Log In!</a></p>
-                        </div>
-                        <!-- Reset Password -->
-                        <div class="recover-form">
-                          <!-- include reusable reset form component -->
-                          <ng-include src="'assets/views/recover-form.html'"></ng-include>
-
-                          <p class="log-in-info">Already have an account? <a href="#" id="headerRecoverCancel">Log In!</a></p>
-                        </div>
-
                       </div>
-                    </div>
-                  </div>
+                    </li>
+                  </ul>
+                </li>
+                <!-- User menu item, show when authenticated -->
+                <li class="dropdown mega-menu-item mega-menu-signin signin logged" id="headerAccount" ng-cloak ng-if="indexCtrl.isAuthenticated">
+                  <a class="dropdown-toggle" ng-click="indexCtrl.redirect('/settings')">
+                    <i class="fa fa-user"></i> {{indexCtrl.DataService.user.name}}
+                    <i class="fa fa-angle-down"></i>
+                  </a>
+                  <ul class="dropdown-menu">
+                    <li>
+                      <div class="mega-menu-content">
+                        <div class="row">
+                          <div class="col-md-8">
+                            <div class="user-avatar">
+                              <!-- <div class="img-thumbnail"> -->
+                              <!--   <img src="assets/images/clients/client.jpg" alt=""> -->
+                              <!-- </div> -->
+                              <p><strong>{{indexCtrl.DataService.user.name}}</strong><!-- <span>CEO & Founder - Okler</span> --></p>
+                            </div>
+                          </div>
+                          <div class="col-md-4">
+                            <ul class="list-account-options">
+                              <li>
+                                <a class="pointer" ng-click="indexCtrl.redirect('/settings')">Settings</a>
+                              </li>
+                              <li>
+                                <a class="pointer" ng-click="indexCtrl.logout()">Log Out</a>
+                              </li>
+                            </ul>
+                          </div>
+                        </div>
+                      </div>
+                    </li>
+                  </ul>
                 </li>
               </ul>
-            </li>
-            <!-- User menu item, show when authenticated -->
-            <li class="dropdown mega-menu-item mega-menu-signin signin logged" id="headerAccount" ng-cloak ng-if="indexCtrl.isAuthenticated">
-              <a class="dropdown-toggle" ng-click="indexCtrl.redirect('/settings')">
-                <i class="fa fa-user"></i> {{indexCtrl.DataService.user.name}}
-                <i class="fa fa-angle-down"></i>
-              </a>
-              <ul class="dropdown-menu">
-                <li>
-                  <div class="mega-menu-content">
-                    <div class="row">
-                      <div class="col-md-8">
-                        <div class="user-avatar">
-                          <!-- <div class="img-thumbnail"> -->
-                          <!--   <img src="assets/images/clients/client.jpg" alt=""> -->
-                          <!-- </div> -->
-                          <p><strong>{{indexCtrl.DataService.user.name}}</strong><!-- <span>CEO & Founder - Okler</span> --></p>
-                        </div>
-                      </div>
-                      <div class="col-md-4">
-                        <ul class="list-account-options">
-                          <li>
-                            <a class="pointer" ng-click="indexCtrl.redirect('/settings')">Settings</a>
-                          </li>
-                          <li>
-                            <a class="pointer" ng-click="indexCtrl.logout()">Log Out</a>
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </div>
-                </li>
-              </ul>
-            </li>
-          </ul>
-        </nav>
-      </div>
-    </div>
+            </nav>
+          </div>
+        </div>
   </header>
 
   <div class="child" ui-view>
   </div>
 
-  <footer>
-    <!-- <div class="container"> -->
-    <!--   <div class="row"> -->
-    <!--     <div class="footer-ribon"> -->
-    <!--       <span>About SRDC</span> -->
-    <!--     </div> -->
-    <!--     <div class="col-md-3"> -->
-    <!--       <div > -->
-    <!--         <a href="http://www.srdc.com.tr" target="_blank" class="logo"> -->
-    <!--           <img class="img-responsive" src="assets/images/srdc-logo.png"> -->
-    <!--         </a> -->
-    <!--       </div> -->
-    <!--     </div> -->
-    <!--     <div class="col-md-4"> -->
-    <!--       <h4>Who are we?</h4> -->
-    <!--       <p>SRDC Software Research & Development and Consultancy Limited is founded by a professional team of engineers directed by Prof. Dr. Asuman Dogac in <a href="http://www.odtuteknokent.com.tr">Technopolis</a>, located at <a href="http://www.metu.edu.tr">Middle East Technical University</a>. SRDC Ltd. is a spin-off of METU-SRDC</p> -->
-    <!--     </div> -->
-    <!--     <div class="col-md-5"> -->
-    <!--       <div class="contact-details"> -->
-    <!--         <h4>Contact Us</h4> -->
-    <!--         <ul class="contact"> -->
-    <!--           <li><p><i class="fa fa-map-marker"></i> <strong>Address:</strong> SRDC Ltd. ODTU Teknokent, Silikon Blok, Kat:1 No:16 06800, Ankara, Turkey </p></li> -->
-    <!--           <li><p><i class="fa fa-phone"></i> <strong>Phone:</strong> +90 (312) 2101393</p></li> -->
-    <!--           <li><p><i class="fa fa-envelope"></i> <strong>Email:</strong> <a href="mailto:srdc@@srdc.com.tr">srdc@@srdc.com.tr</a></p></li> -->
-    <!--         </ul> -->
-    <!--       </div> -->
-    <!--     </div> -->
-    <!--   </div> -->
-    <!-- </div> -->
-    <!-- <div class="footer-copyright"> -->
-    <!--   <div class="container"> -->
-    <!--     <div class="row"> -->
-    <!--       <div class="col-md-1"> -->
-    <!--         <a href="index.html" class="logo"> -->
-    <!--           <img alt="Porto Website Template" class="img-responsive" src="assets/images/logo-footer.png"> -->
-    <!--         </a> -->
-    <!--       </div> -->
-    <!--       <div class="col-md-7"> -->
-    <!--         <p>© Copyright 2014. All Rights Reserved.</p> -->
-    <!--       </div> -->
-    <!--       <div class="col-md-4"> -->
-    <!--         <nav id="sub-menu"> -->
-    <!--           <ul> -->
-    <!--             <li><a href="contact-us.html">Pricing</a></li> -->
-    <!--             <li><a href="page-faq.html">Help</a></li> -->
-    <!--             <li><a href="sitemap.html">Privacy</a></li> -->
-    <!--             <li><a href="sitemap.html">Terms</a></li> -->
-    <!--           </ul> -->
-    <!--         </nav> -->
-    <!--       </div> -->
-    <!--     </div> -->
-    <!--   </div> -->
-    <!-- </div> -->
+  <footer ng-class="indexCtrl.theme">
+    <div ng-if="indexCtrl.theme != 'gitb'" class="container">
+        <img src="assets/images/gitb.png" class="img-responsive center-block"/>
+    </div>
+     <!--<div class="container">-->
+       <!--<div class="row">-->
+         <!--<div class="footer-ribon">-->
+           <!--<span>About SRDC</span>-->
+         <!--</div>-->
+         <!--<div class="col-md-3">-->
+           <!--<div>-->
+             <!--<a href="http://www.srdc.com.tr" target="_blank" class="logo">-->
+               <!--<img class="img-responsive" src="assets/images/srdc-logo.png">-->
+             <!--</a>-->
+           <!--</div>-->
+         <!--</div>-->
+         <!--<div class="col-md-4">-->
+           <!--<h4>Who are we?</h4>-->
+           <!--<p>SRDC Software Research & Development and Consultancy Limited is founded by a professional team of engineers directed by Prof. Dr. Asuman Dogac in <a href="http://www.odtuteknokent.com.tr">Technopolis</a>, located at <a href="http://www.metu.edu.tr">Middle East Technical University</a>. SRDC Ltd. is a spin-off of METU-SRDC</p>-->
+         <!--</div>-->
+         <!--<div class="col-md-5">-->
+           <!--<div class="contact-details">-->
+             <!--<h4>Contact Us</h4>-->
+             <!--<ul class="contact">-->
+               <!--<li><p><i class="fa fa-map-marker"></i> <strong>Address:</strong> SRDC Ltd. ODTU Teknokent, Silikon Blok, Kat:1 No:16 06800, Ankara, Turkey </p></li>-->
+               <!--<li><p><i class="fa fa-phone"></i> <strong>Phone:</strong> +90 (312) 2101393</p></li>-->
+               <!--<li><p><i class="fa fa-envelope"></i> <strong>Email:</strong> <a href="mailto:srdc@@srdc.com.tr">srdc@@srdc.com.tr</a></p></li>-->
+             <!--</ul>-->
+           <!--</div>-->
+         <!--</div>-->
+       <!--</div>-->
+     <!--</div>-->
+     <!--<div class="footer-copyright">-->
+       <!--<div class="container">-->
+         <!--<div class="row">-->
+           <!--<div class="col-md-1">-->
+             <!--<a href="index.html" class="logo">-->
+               <!--<img alt="Porto Website Template" class="img-responsive" src="assets/images/logo-footer.png">-->
+             <!--</a>-->
+           <!--</div>-->
+           <!--<div class="col-md-7">-->
+             <!--<p>© Copyright 2014. All Rights Reserved.</p>-->
+           <!--</div>-->
+           <!--<div class="col-md-4">-->
+             <!--<nav id="sub-menu">-->
+               <!--<ul>-->
+                 <!--<li><a href="contact-us.html">Pricing</a></li>-->
+                 <!--<li><a href="page-faq.html">Help</a></li>-->
+                 <!--<li><a href="sitemap.html">Privacy</a></li>-->
+                 <!--<li><a href="sitemap.html">Terms</a></li>-->
+               <!--</ul>-->
+             <!--</nav>-->
+           <!--</div>-->
+         <!--</div>-->
+       <!--</div>-->
+     <!--</div>-->
   </footer>
 </div>

@@ -38,6 +38,12 @@ class SystemConfigurationService extends Controller {
     }
   }
 
+  def getTheme = Action { request =>
+    val env = sys.env.get(Constants.EnvironmentTheme)
+    val json: String = JsonUtil.jsEnvironmentVariable(Constants.EnvironmentTheme, parseTheme(env.getOrElse(Constants.DefaultTheme))).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
   /**
    * Gets the system configuration with specified name
    */
@@ -50,6 +56,10 @@ class SystemConfigurationService extends Controller {
 
   private def isPositiveInt(value: String): Boolean = {
     value.matches("^[1-9]\\d*$")
+  }
+
+  private def parseTheme(theme: String): String = {
+    if (theme == Constants.EcTheme) theme else Constants.DefaultTheme
   }
 
 }

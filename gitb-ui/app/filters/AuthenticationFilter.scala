@@ -88,7 +88,8 @@ class AuthenticationFilter extends Filter {
       request.path.startsWith("/assets/") ||
       request.path.startsWith("/webjars/") ||
       request.path.startsWith("/template/") ||
-	    request.path.startsWith("/repository/")
+	    request.path.startsWith("/repository/") ||
+	    request.path.startsWith("/dashboard/theme")
   }
 	
 	def requiresSystemAdminAccess(request:RequestHeader): Boolean = {

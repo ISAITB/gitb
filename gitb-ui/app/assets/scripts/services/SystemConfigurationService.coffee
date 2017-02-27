@@ -5,11 +5,24 @@ class SystemConfigurationService
 
   constructor: (@$log, @RestService) ->
 
+    @theme
+
   getSessionAliveTime: () ->
     @RestService.get({
       path: jsRoutes.controllers.SystemConfigurationService.getSessionAliveTime().url,
       authenticate: true
     })
+
+  getTheme: () ->
+    @theme
+
+  resolveTheme: () ->
+    @RestService.get({
+      path: jsRoutes.controllers.SystemConfigurationService.getTheme().url,
+      authenticate: false
+    })
+    .then (data) =>
+      @theme = data.theme
 
   updateSessionAliveTime: (value) ->
     data = {}

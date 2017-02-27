@@ -2,15 +2,17 @@ class IndexController
 	@$inject = [
 		'$log', '$scope', '$rootScope', '$location', 
 		'AuthProvider', 'DataService', 'AccountService', 
-		'Events', 'Constants', 'ErrorService'
+		'Events', 'Constants', 'SystemConfigurationService', 'ErrorService'
 	]
 	constructor: (@$log, @$scope, @$rootScope, @$location,
-		@AuthProvider, @DataService, @AccountService, @Events, @Constants, @ErrorService) ->
+		@AuthProvider, @DataService, @AccountService, @Events, @Constants, @SystemConfigurationService, @ErrorService) ->
 
 		@$log.debug "Constructing MainController..."
 
 		@isAuthenticated = @AuthProvider.isAuthenticated()
 		@$log.debug "isAuthenticated: #{@isAuthenticated}"
+
+		@theme = @SystemConfigurationService.getTheme()
 
 		if @isAuthenticated
 			@getUserProfile()

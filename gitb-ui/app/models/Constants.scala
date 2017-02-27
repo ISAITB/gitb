@@ -10,4 +10,9 @@ object Constants {
   // System configuration constants
   val SessionAliveTime = "session_alive_time"
 
+  // env variables
+  val EnvironmentTheme = "theme"
+  val DefaultTheme = "gitb"
+  val EcTheme = "ec"
+
 }

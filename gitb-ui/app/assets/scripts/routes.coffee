@@ -33,6 +33,13 @@ app.config ['$stateProvider', '$urlRouterProvider',
 					deferred.resolve()
 		]
 
+		theme = [
+			'SystemConfigurationService',
+			(SystemConfigurationService)->
+
+				SystemConfigurationService.resolveTheme()
+		]
+
 		$urlRouterProvider.when('', '/')
 		$urlRouterProvider.otherwise('/')
 
@@ -43,7 +50,9 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				controller: 'IndexController'
 				controllerAs: 'indexCtrl'
 				abstract: true
-				resolve: profile
+				resolve:
+					profile: profile
+					theme: theme
 			# 'app.main':
 			# 	url: '/'
 			# 	templateUrl: 'assets/views/main.html'
@@ -377,8 +386,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 		return
 ]
 
-app.run ['$log', '$rootScope', '$state', 'AuthProvider',
-	($log, $rootScope, $state, AuthProvider) ->
+app.run ['$log', '$rootScope', '$state', 'AuthProvider', 'SystemConfigurationService',
+	($log, $rootScope, $state, AuthProvider, SystemConfigurationService) ->
 
 		startsWith = (str, prefix) ->
 			(str.indexOf prefix) == 0
