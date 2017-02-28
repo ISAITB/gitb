@@ -13,6 +13,7 @@ class TestExecutionControllerV2
     @$scope.interactions  = []
     @selectedInteroperabilitySession = null
     @isOwner = false
+    @endpointRepresentations = []
 
     @$scope.$on '$destroy', () =>
       if @ws? and @session?
@@ -75,7 +76,18 @@ class TestExecutionControllerV2
     @getTestCaseDefinition(@testId)
     @getActorDefinition(@actorId)
 
-  nextStep: () =>
+  skipScreen: () ->
+    if @isSystemConfigurationsValid @endpointRepresentations
+      @nextStep(1)
+
+  nextStep: (step) =>
+    if Number(step?) == 1 && !@isInteroperabilityTesting
+      @next()
+      @next()
+    else
+      @next()
+
+  next: () ->
     @$scope.$broadcast 'wizard-directive:next'
 
   onWizardNext: (step) =>
@@ -192,6 +204,7 @@ class TestExecutionControllerV2
     .then(
       (data) =>
         @actor = data.actorId
+        @skipScreen()
       ,
       (error) =>
         @ErrorService.showErrorMessage(error).result

@@ -40,6 +40,38 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				SystemConfigurationService.resolveTheme()
 		]
 
+		system = [
+			'$q', 'DataService', 'SystemService'
+			($q, DataService, SystemService)->
+				deferred = $q.defer()
+
+				if DataService.isVendorUser
+					SystemService.getSystems()
+					.then (data) ->
+						if data.length == 1
+							deferred.reject {redirectTo: 'app.systems.detail.conformance.list', params: {id: data[0].id}}
+						else
+							deferred.resolve()
+
+				deferred.promise;
+		]
+
+		conformance = [
+			'$q', '$stateParams', 'DataService', 'SystemService'
+			($q, $stateParams, DataService, SystemService)->
+				deferred = $q.defer()
+
+				if DataService.isVendorUser
+					SystemService.getConformanceStatements $stateParams.id
+					.then (data) ->
+						if data.length == 1
+							deferred.reject {redirectTo: 'app.systems.detail.conformance.detail', params: {id: $stateParams.id, actor_id: data[0].actor.id, specId: data[0].specification.id}}
+						else
+							deferred.resolve()
+
+				deferred.promise;
+		]
+
 		$urlRouterProvider.when('', '/')
 		$urlRouterProvider.otherwise('/')
 
@@ -112,6 +144,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/systems/list.html'
 				controller: 'SystemsController'
 				controllerAs: 'systemsCtrl'
+				resolve: system
 			'app.systems.detail':
 				url: '/:id'
 				templateUrl: 'assets/views/systems/detail.html'
@@ -130,6 +163,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/systems/conformance/index.html'
 				controller: 'ConformanceStatementController'
 				controllerAs: 'conformanceStatementCtrl'
+				resolve: conformance
 			'app.systems.detail.conformance.detail':
 				url: '/detail/:actor_id?specId'
 				templateUrl: 'assets/views/systems/conformance/detail.html'
@@ -386,8 +420,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 		return
 ]
 
-app.run ['$log', '$rootScope', '$state', 'AuthProvider', 'SystemConfigurationService',
-	($log, $rootScope, $state, AuthProvider, SystemConfigurationService) ->
+app.run ['$log', '$rootScope', '$state', 'AuthProvider',
+	($log, $rootScope, $state, AuthProvider) ->
 
 		startsWith = (str, prefix) ->
 			(str.indexOf prefix) == 0
@@ -412,6 +446,13 @@ app.run ['$log', '$rootScope', '$state', 'AuthProvider', 'SystemConfigurationSer
 				$log.debug 'State requires login, redirecting...'
 				event.preventDefault()
 				$state.go 'app.login'
+
+		$rootScope.$on '$stateChangeError', (event, toState, toParams, fromState, fromParams, error) ->
+			if error.redirectTo?
+				if error.params?
+					$state.go error.redirectTo, error.params
+				else
+					$state.go error.redirectTo
 
 		return
 ]
