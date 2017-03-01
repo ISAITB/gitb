@@ -193,6 +193,16 @@ object ReportManager extends BaseManager {
     }
   }
 
+  def setEndTimeNow(sessionId: String): Future[Unit] = {
+    Future {
+      DB.withSession {
+        implicit session =>
+          val q = for { t <- PersistenceSchema.testResults if t.testSessionId === sessionId } yield (t.endTime)
+          q.update(Some(TimeUtil.getCurrentTime()))
+      }
+    }
+  }
+
   def createTestStepReport(sessionId: String, step: TestStepStatus): Future[Unit] = {
     Future {
       DB.withSession {

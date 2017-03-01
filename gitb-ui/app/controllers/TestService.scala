@@ -36,11 +36,11 @@ object TestService{
 
   def endSession(session_id:String): Future[Unit] = {
     Future {
-      ReportManager.finishTestReport(session_id, TestResultType.UNDEFINED)
-
       val request: BasicCommand = new BasicCommand
       request.setTcInstanceId(session_id)
       TestService.port.stop(request)
+
+      ReportManager.setEndTimeNow(session_id)
     }
   }
 }

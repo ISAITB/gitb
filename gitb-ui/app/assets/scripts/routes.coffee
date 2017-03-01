@@ -52,8 +52,10 @@ app.config ['$stateProvider', '$urlRouterProvider',
 							deferred.reject {redirectTo: 'app.systems.detail.conformance.list', params: {id: data[0].id}}
 						else
 							deferred.resolve()
+				else
+					deferred.resolve()
 
-				deferred.promise;
+				deferred.promise
 		]
 
 		conformance = [
@@ -68,8 +70,10 @@ app.config ['$stateProvider', '$urlRouterProvider',
 							deferred.reject {redirectTo: 'app.systems.detail.conformance.detail', params: {id: $stateParams.id, actor_id: data[0].actor.id, specId: data[0].specification.id}}
 						else
 							deferred.resolve()
+				else
+					deferred.resolve()
 
-				deferred.promise;
+				deferred.promise
 		]
 
 		$urlRouterProvider.when('', '/')
