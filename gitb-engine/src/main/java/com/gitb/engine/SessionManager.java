@@ -31,6 +31,14 @@ public class SessionManager {
 		return instance;
 	}
 
+	public boolean exists(String sessionId) {
+		return contexts.containsKey(sessionId);
+	}
+
+	public boolean notExists(String sessionId) {
+		return !exists(sessionId);
+	}
+
     /**
      * Create a new testcase execution session
      * @param testCaseId
@@ -64,8 +72,7 @@ public class SessionManager {
 
 	public void endSession(String sessionId) {
 		TestCaseContext testCaseContext = contexts.remove(sessionId);
-
-		testCaseContext.destroy();
+		if (testCaseContext != null) testCaseContext.destroy();
 	}
 
 	public void destroy() {

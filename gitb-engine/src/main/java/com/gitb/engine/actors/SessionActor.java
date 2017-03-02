@@ -107,101 +107,103 @@ public class SessionActor extends Actor {
         TestCaseContext context = SessionManager
                 .getInstance()
                 .getContext(getSessionId());
-        switch (context.getCurrentState()) {
-            case IDLE:
-                /**
-                 * Handle the configuration of test execution (given configuration list for each SUT actor)
-                 */
-                if (message instanceof ConfigureCommand) {
-	                try {
-		                List<SUTConfiguration> sutConfigurations = context.configure(((ConfigureCommand) message).getActorConfigurations());
-		                getSender().tell(sutConfigurations, self());
+        if (context != null) {
+            switch (context.getCurrentState()) {
+                case IDLE:
+                    /**
+                     * Handle the configuration of test execution (given configuration list for each SUT actor)
+                     */
+                    if (message instanceof ConfigureCommand) {
+                        try {
+                            List<SUTConfiguration> sutConfigurations = context.configure(((ConfigureCommand) message).getActorConfigurations());
+                            getSender().tell(sutConfigurations, self());
 
-		                if(context.getTestCase().getPreliminary() != null) {
-			                context.setCurrentState(TestCaseContext.TestCaseStateEnum.CONFIGURATION);
-		                } else {
-			                context.setCurrentState(TestCaseContext.TestCaseStateEnum.READY);
-		                }
-	                } catch (Exception e) {
-		                getSender().tell(e, self());
-	                }
-                } else {
-                    unexpectedCommand(message, context);
-                }
-                break;
-            case CONFIGURATION:
-                /**
-                 * Initiate the preliminary phase for this execution
-                 */
-                if (message instanceof InitiatePreliminaryCommand) {
-                    for (ActorRef actorRef : getContext().getChildren()) {
-                        actorRef.tell(message, self());
+                            if (context.getTestCase().getPreliminary() != null) {
+                                context.setCurrentState(TestCaseContext.TestCaseStateEnum.CONFIGURATION);
+                            } else {
+                                context.setCurrentState(TestCaseContext.TestCaseStateEnum.READY);
+                            }
+                        } catch (Exception e) {
+                            getSender().tell(e, self());
+                        }
+                    } else {
+                        unexpectedCommand(message, context);
                     }
-                    context.setCurrentState(TestCaseContext.TestCaseStateEnum.PRELIMINARY);
-                } else {
-                    unexpectedCommand(message, context);
-                }
-                break;
-            case PRELIMINARY:
-                if (message instanceof TestStepStatusEvent) {
-                    TestStepStatusEvent event = (TestStepStatusEvent) message;
-                    if (event.getStepId().equals(TestCaseProcessorActor.PRELIMINARY_STEP_ID) && event.getStatus() == StepStatus.COMPLETED) {
-                        context.setCurrentState(TestCaseContext.TestCaseStateEnum.READY);
+                    break;
+                case CONFIGURATION:
+                    /**
+                     * Initiate the preliminary phase for this execution
+                     */
+                    if (message instanceof InitiatePreliminaryCommand) {
+                        for (ActorRef actorRef : getContext().getChildren()) {
+                            actorRef.tell(message, self());
+                        }
+                        context.setCurrentState(TestCaseContext.TestCaseStateEnum.PRELIMINARY);
+                    } else {
+                        unexpectedCommand(message, context);
                     }
-                    TestbedService
-                            .updateStatus(event.getSessionId(), event.getStepId(), event.getStatus(), event.getReport());
-                } else {
-                    unexpectedCommand(message, context);
-                }
-                break;
-            case READY:
-                if (message instanceof StartCommand) {
-                    ActorRef child = getContext()
-                            .getChild(TestCaseProcessorActor.NAME);
-                    child.tell(message, self());
-                    context.setCurrentState(TestCaseContext.TestCaseStateEnum.EXECUTION);
-                } else if(message instanceof StopCommand) {
-	                ActorRef child = getContext()
-		                .getChild(TestCaseProcessorActor.NAME);
-	                child.tell(message, self());
-	                context.destroy();
-	                context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPED);
-                } else {
-                    unexpectedCommand(message, context);
-                }
-                break;
-            case EXECUTION:
-                if (message instanceof TestStepStatusEvent) {
-	                TestStepStatusEvent event = (TestStepStatusEvent) message;
+                    break;
+                case PRELIMINARY:
+                    if (message instanceof TestStepStatusEvent) {
+                        TestStepStatusEvent event = (TestStepStatusEvent) message;
+                        if (event.getStepId().equals(TestCaseProcessorActor.PRELIMINARY_STEP_ID) && event.getStatus() == StepStatus.COMPLETED) {
+                            context.setCurrentState(TestCaseContext.TestCaseStateEnum.READY);
+                        }
+                        TestbedService
+                                .updateStatus(event.getSessionId(), event.getStepId(), event.getStatus(), event.getReport());
+                    } else {
+                        unexpectedCommand(message, context);
+                    }
+                    break;
+                case READY:
+                    if (message instanceof StartCommand) {
+                        ActorRef child = getContext()
+                                .getChild(TestCaseProcessorActor.NAME);
+                        child.tell(message, self());
+                        context.setCurrentState(TestCaseContext.TestCaseStateEnum.EXECUTION);
+                    } else if (message instanceof StopCommand) {
+                        ActorRef child = getContext()
+                                .getChild(TestCaseProcessorActor.NAME);
+                        child.tell(message, self());
+                        context.destroy();
+                        context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPED);
+                    } else {
+                        unexpectedCommand(message, context);
+                    }
+                    break;
+                case EXECUTION:
+                    if (message instanceof TestStepStatusEvent) {
+                        TestStepStatusEvent event = (TestStepStatusEvent) message;
 
-	                if(event.getStepId().equals(TestCaseProcessorActor.TEST_CASE_STEP_ID)
-		                && (event.getStatus() == StepStatus.COMPLETED || event.getStatus() == StepStatus.ERROR)) {
-		                context.destroy();
-		                context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPED);
-	                }
+                        if (event.getStepId().equals(TestCaseProcessorActor.TEST_CASE_STEP_ID)
+                                && (event.getStatus() == StepStatus.COMPLETED || event.getStatus() == StepStatus.ERROR)) {
+                            context.destroy();
+                            context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPED);
+                        }
 
-	                sendStatusUpdate(event);
-                } else if (message instanceof StopCommand) {
-                    ActorRef child = getContext()
-                            .getChild(TestCaseProcessorActor.NAME);
-                    child.tell(message, self());
-	                context.destroy();
-	                context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPED);
-                } else {
-                    unexpectedCommand(message, context);
-                }
-                break;
-            case STOPPED:
-                if (message instanceof RestartCommand) {
-                    ActorRef child = getContext()
-                            .getChild(TestCaseProcessorActor.NAME);
-                    child.tell(message, self());
-                } else if(message instanceof TestStepStatusEvent) {
-	                ignoredStatusUpdate(message);
-                } else {
-                    unexpectedCommand(message, context);
-                }
-                break;
+                        sendStatusUpdate(event);
+                    } else if (message instanceof StopCommand) {
+                        ActorRef child = getContext()
+                                .getChild(TestCaseProcessorActor.NAME);
+                        child.tell(message, self());
+                        context.destroy();
+                        context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPED);
+                    } else {
+                        unexpectedCommand(message, context);
+                    }
+                    break;
+                case STOPPED:
+                    if (message instanceof RestartCommand) {
+                        ActorRef child = getContext()
+                                .getChild(TestCaseProcessorActor.NAME);
+                        child.tell(message, self());
+                    } else if (message instanceof TestStepStatusEvent) {
+                        ignoredStatusUpdate(message);
+                    } else {
+                        unexpectedCommand(message, context);
+                    }
+                    break;
+            }
         }
     }
 

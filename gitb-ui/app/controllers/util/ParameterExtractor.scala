@@ -2,6 +2,7 @@ package controllers.util
 
 import models._
 import models.Enums._
+import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
 import exceptions.{ErrorCodes, InvalidRequestException}
 
@@ -72,21 +73,21 @@ object ParameterExtractor {
     val name = requiredBodyParameter(request, Parameters.USER_NAME)
     val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
     val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, password, UserRole.SystemAdmin.id.toShort, 0L)
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), UserRole.SystemAdmin.id.toShort, 0L)
   }
 
   def extractAdminInfo(request:Request[AnyContent]):Users = {
     val name = requiredBodyParameter(request, Parameters.USER_NAME)
     val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
     val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, password, UserRole.VendorAdmin.id.toShort, 0L)
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), UserRole.VendorAdmin.id.toShort, 0L)
   }
 
   def extractUserInfo(request:Request[AnyContent]):Users = {
     val name = requiredBodyParameter(request, Parameters.USER_NAME)
     val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
     val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, password, UserRole.VendorUser.id.toShort, 0L)
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), UserRole.VendorUser.id.toShort, 0L)
   }
 
   def extractSystemInfo(request:Request[AnyContent]):Systems = {

@@ -1,6 +1,5 @@
 package controllers
 
-import com.gitb.tr.TestResultType
 import config.Configurations
 import actors.WebSocketActor
 import jaxws.HeaderHandlerResolver

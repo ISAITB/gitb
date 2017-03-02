@@ -94,7 +94,7 @@ object ReportManager extends BaseManager {
       DB.withSession { implicit session =>
         val testResults = PersistenceSchema.testResults
           .filter(_.endTime.isDefined)
-          .sortBy(_.startTime.desc)
+          .sortBy(_.endTime.desc)
           .drop(page * limit)
           .take(limit)
           .list

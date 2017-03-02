@@ -4,13 +4,13 @@
 	<!--General Metadata element to describe the metadata of artifacts-->
 	<xsd:simpleType name="ID">
 		<xsd:restriction base="xsd:string">
-			<xsd:pattern value="[a-zA-Z0-9_]"/>
+			<xsd:pattern value="[a-zA-Z0-9_]+"/>
 		</xsd:restriction>
 	</xsd:simpleType>
 	<xsd:complexType name="Metadata">
 		<xsd:sequence>
 			<xsd:element name="name" type="xsd:string"/>
-            <xsd:element name="type" type="TestCaseType"/>
+            <xsd:element name="type" type="TestCaseType" minOccurs="0"/>
 			<xsd:element name="version" type="xsd:string"/>
 			<xsd:element name="authors" type="xsd:string" minOccurs="0"/>
 			<xsd:element name="description" type="xsd:string" minOccurs="0"/>

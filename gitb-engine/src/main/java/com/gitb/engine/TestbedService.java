@@ -181,14 +181,16 @@ public class TestbedService {
 			+ sessionId
 			+ " ) ");
 
-		TestEngine
-			.getInstance()
-			.getEngineActorSystem()
-			.getActorSystem()
-			.actorSelection(SessionActor.getPath(sessionId))
-			.tell(new StopCommand(sessionId), ActorRef.noSender());
+		if (SessionManager.getInstance().exists(sessionId)) {
+			TestEngine
+					.getInstance()
+					.getEngineActorSystem()
+					.getActorSystem()
+					.actorSelection(SessionActor.getPath(sessionId))
+					.tell(new StopCommand(sessionId), ActorRef.noSender());
 
-		SessionManager.getInstance().endSession(sessionId);
+			SessionManager.getInstance().endSession(sessionId);
+		}
 	}
 
 	/**

@@ -1,6 +1,7 @@
 package persistence
 
 import managers.BaseManager
+import org.mindrot.jbcrypt.BCrypt
 import play.api.Play.current
 import scala.slick.driver.MySQLDriver.simple._
 import play.api.libs.concurrent.Execution.Implicits._
@@ -28,17 +29,8 @@ object AuthManager extends BaseManager {
   def checkUserByEmail(email:String, passwd:String):Future[Option[Users]] = {
     Future{
       DB.withSession { implicit session:Session =>
-        val query = PersistenceSchema.users.filter(_.email === email).filter(_.password === passwd)
-        query.firstOption
-      }
-    }
-  }
-
-  def checkUserByUserId(userId:Long, passwd:String):Future[Option[Users]] = {
-    Future{
-      DB.withSession { implicit session:Session =>
-        val query = PersistenceSchema.users.filter(_.id === userId).filter(_.password === passwd)
-        query.firstOption
+        val query = PersistenceSchema.users.filter(_.email === email).firstOption
+        if (query.isDefined && BCrypt.checkpw(passwd, query.get.password)) query else None
       }
     }
   }

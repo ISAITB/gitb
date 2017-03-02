@@ -62,6 +62,7 @@ class DashboardController
     @stop = false
     @config = {}
     @onOff = false
+    @prevParameter
 
     # get active sessions
     @ReportService.getActiveTestResults()
@@ -87,6 +88,7 @@ class DashboardController
     .then (data) =>
       @config = data
       @config.parameter = parseInt(@config.parameter, 10)
+      @prevParameter = @config.parameter
       @onOff = !(data.parameter? && !isNaN(data.parameter))
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
@@ -112,7 +114,8 @@ class DashboardController
     if @config.parameter? && !isNaN(@config.parameter)
       @SystemConfigurationService.updateSessionAliveTime(@config.parameter)
       .then () =>
-        @MessageService.showMessage("Update", "Successfully updated session alive time to #{@config.parameter}.")
+        @prevParameter = @config.parameter
+        @MessageService.showMessage("Update successful", "Maximum session alive time set to #{@config.parameter} seconds.")
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
     else
@@ -144,9 +147,8 @@ class DashboardController
     else if @stop
       @stop = false
     else
-      if test.domain? and test.system? and test.specification? and test.testCase? and test.testCasePath?
+      if test.domain? and test.specification? and test.testCase? and test.testCasePath?
         data = [{label: "Domain", value: test.domain}
-          {label: "System", value: test.system}
           {label: "Specification", value: test.specification}
           {label: "Test case", value: test.testCase}
           {label: "Path", value: test.testCasePath}]
