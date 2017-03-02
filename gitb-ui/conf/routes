@@ -86,6 +86,13 @@ GET     /pages/:id                          @controllers.LandingPageService.getL
 DELETE  /pages/:id                          @controllers.LandingPageService.deleteLandingPage(id : Long)
 POST    /pages/:id                          @controllers.LandingPageService.updateLandingPage(id : Long)
 
+GET     /notices/default                    @controllers.LegalNoticeService.getDefaultLegalNotice
+GET     /notices/all                        @controllers.LegalNoticeService.getLegalNotices
+POST    /notices/create                     @controllers.LegalNoticeService.createLegalNotice
+GET     /notices/:id                        @controllers.LegalNoticeService.getLegalNoticeById(id : Long)
+DELETE  /notices/:id                        @controllers.LegalNoticeService.deleteLegalNotice(id : Long)
+POST    /notices/:id                        @controllers.LegalNoticeService.updateLegalNotice(id : Long)
+
 GET     /organizations/all                  @controllers.OrganizationService.getOrganizations
 POST    /organizations/create               @controllers.OrganizationService.createOrganization
 GET     /organizations/users                @controllers.UserService.getUsersByOrganization(id : Long)

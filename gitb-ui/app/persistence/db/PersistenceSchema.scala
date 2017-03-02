@@ -16,7 +16,8 @@ object PersistenceSchema {
     def fullname = column[String]("fname")
     def organizationType = column[Short]("type")
     def landingPage = column[Option[Long]] ("landing_page", O.Nullable)
-    def * = (id, shortname, fullname, organizationType, landingPage) <> (Organizations.tupled, Organizations.unapply)
+    def legalNotice = column[Option[Long]] ("legal_notice", O.Nullable)
+    def * = (id, shortname, fullname, organizationType, landingPage, legalNotice) <> (Organizations.tupled, Organizations.unapply)
   }
   //get table name etc from organizations.baseTableRow
   val organizations = TableQuery[OrganizationsTable]
@@ -320,4 +321,15 @@ object PersistenceSchema {
   }
   val systemConfigurations = TableQuery[SystemConfigurationsTable]
   val insertSystemConfiguration = (systemConfigurations returning systemConfigurations.map(_.name))
+
+  class LegalNoticesTable(tag: Tag) extends Table[LegalNotices](tag, "LegalNotices") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def name = column[String]("name")
+    def description = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def content = column[String]("content")
+    def default = column[Boolean]("default_flag")
+    def * = (id, name, description, content, default) <> (LegalNotices.tupled, LegalNotices.unapply)
+  }
+  val legalNotices = TableQuery[LegalNoticesTable]
+  val insertLegalNotice = (legalNotices returning legalNotices.map(_.id))
 }

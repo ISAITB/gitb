@@ -101,9 +101,17 @@
   </div>
 
   <footer ng-class="indexCtrl.theme">
-    <div ng-if="indexCtrl.theme != 'gitb'" class="container">
-        <img src="assets/images/gitb.png" class="img-responsive center-block"/>
+
+    <div class="container">
+      <div ng-if="indexCtrl.theme != 'gitb'">
+        <img src="assets/images/gitb.png" class="img-responsive pull-right"/>
+      </div>
+      <!--<div class="text-center">-->
+        <a href ng-click="indexCtrl.onLegalNotice()">Legal notice</a>
+      <!--</div>-->
     </div>
+
+
      <!--<div class="container">-->
        <!--<div class="row">-->
          <!--<div class="footer-ribon">-->

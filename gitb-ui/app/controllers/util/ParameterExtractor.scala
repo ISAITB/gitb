@@ -66,7 +66,8 @@ object ParameterExtractor {
     val vendorSname = requiredBodyParameter(request, Parameters.VENDOR_SNAME)
     val vendorFname = requiredBodyParameter(request, Parameters.VENDOR_FNAME)
     val landingPageId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LANDING_PAGE_ID)
-    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, landingPageId)
+    val legalNoticeId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LEGAL_NOTICE_ID)
+    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, landingPageId, legalNoticeId)
   }
 
   def extractSystemAdminInfo(request:Request[AnyContent]):Users = {
@@ -149,6 +150,14 @@ object ParameterExtractor {
     val content = requiredBodyParameter(request, Parameters.CONTENT)
     val default = requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
     LandingPages(0L, name, desc, content, default)
+  }
+
+  def extractLegalNoticeInfo(request:Request[AnyContent]):LegalNotices = {
+    val name = requiredBodyParameter(request, Parameters.NAME)
+    val desc = optionalBodyParameter(request, Parameters.DESCRIPTION)
+    val content = requiredBodyParameter(request, Parameters.CONTENT)
+    val default = requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
+    LegalNotices(0L, name, desc, content, default)
   }
 
 	def extractIdsQueryParameter(request:Request[AnyContent]): Option[List[String]] = {

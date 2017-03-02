@@ -24,8 +24,12 @@ footer.ec {
     background-color: #0065a2;
     border-top: 4px solid #074A8B;
     font-size: 0.9em;
-    margin-top: 50px;
-    padding: 80px 0 0;
+    /*margin-top: 10px;*/
+    /*padding: 80px 0 0;*/
     position: relative;
     clear: both;
+}
+
+footer.ec img {
+    zoom: 75%;
 }

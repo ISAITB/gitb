@@ -20,8 +20,7 @@ class SystemConfigurationService
     @RestService.get({
       path: jsRoutes.controllers.SystemConfigurationService.getTheme().url,
       authenticate: false
-    })
-    .then (data) =>
+    }).then (data) =>
       @theme = data.theme
 
   updateSessionAliveTime: (value) ->

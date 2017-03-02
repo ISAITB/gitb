@@ -40,7 +40,7 @@ class SystemConfigurationService extends Controller {
 
   def getTheme = Action { request =>
     val env = sys.env.get(Constants.EnvironmentTheme)
-    val json: String = JsonUtil.jsEnvironmentVariable(Constants.EnvironmentTheme, parseTheme(env.getOrElse(Constants.DefaultTheme))).toString()
+    val json: String = JsonUtil.jsEnvironmentVariable("theme", parseTheme(env.getOrElse(Constants.DefaultTheme))).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 

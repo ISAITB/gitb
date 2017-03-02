@@ -418,6 +418,24 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/users/landing-page-detail.html'
 				controller: 'LandingPageDetailController'
 				controllerAs: 'landingPageDetailCtrl'
+			'app.admin.users.legalnotices':
+				url: '/notices'
+				abstract: true
+				template: '<div ui-view/>'
+			'app.admin.users.legalnotices.create':
+				url: '/create'
+				templateUrl: 'assets/views/admin/users/legal-notice-create.html'
+				controller: 'LegalNoticeCreateController'
+				controllerAs: 'LegalNoticeCreateCtrl'
+				params:
+					name: ""
+					description: ""
+					content: ""
+			'app.admin.users.legalnotices.detail':
+				url: '/:id'
+				templateUrl: 'assets/views/admin/users/legal-notice-detail.html'
+				controller: 'LegalNoticeDetailController'
+				controllerAs: 'legalNoticeDetailCtrl'
 
 		for state, value of states
 			$stateProvider.state state, value

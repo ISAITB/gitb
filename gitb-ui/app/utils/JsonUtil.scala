@@ -139,7 +139,8 @@ object JsonUtil {
       "sname" -> organization.shortname,
       "fname" -> organization.fullname,
       "type"  -> organization.organizationType,
-      "landingPage" -> (if(organization.landingPage.isDefined) organization.landingPage.get else JsNull)
+      "landingPage" -> (if(organization.landingPage.isDefined) organization.landingPage.get else JsNull),
+      "legalNotice" -> (if(organization.legalNotice.isDefined) organization.legalNotice.get else JsNull)
     )
     json
   }
@@ -642,10 +643,16 @@ object JsonUtil {
       jOrganization = jOrganization ++ Json.obj("systems" -> JsNull)
     }
     //
-    if(org.LandingPageObj.isDefined){
-      jOrganization = jOrganization ++ Json.obj("landingPages" -> jsLandingPage(org.LandingPageObj.get))
+    if(org.landingPageObj.isDefined){
+      jOrganization = jOrganization ++ Json.obj("landingPages" -> jsLandingPage(org.landingPageObj.get))
     } else{
       jOrganization = jOrganization ++ Json.obj("landingPages" -> JsNull)
+    }
+    //
+    if(org.legalNoticeObj.isDefined){
+      jOrganization = jOrganization ++ Json.obj("legalNotices" -> jsLegalNotice(org.legalNoticeObj.get))
+    } else{
+      jOrganization = jOrganization ++ Json.obj("legalNotices" -> JsNull)
     }
     //4) Return JSON String
     jOrganization.toString
@@ -697,6 +704,23 @@ object JsonUtil {
   }
 
   /**
+   * Converts a LandingPage object into Play!'s JSON notation.
+   * Does not support cross object conversion
+   * @param landingPage LandingPage object to be converted
+   * @return JsObject
+   */
+  def jsLegalNotice(legalNotice:LegalNotices):JsObject = {
+    val json = Json.obj(
+      "id"    -> legalNotice.id,
+      "name"  -> legalNotice.name,
+      "description" -> (if(legalNotice.description.isDefined) legalNotice.description.get else JsNull),
+      "content"  -> legalNotice.content,
+      "default" -> legalNotice.default
+    )
+    json
+  }
+
+  /**
    * Converts a List of LandingPages into Play!'s JSON notation
    * Does not support cross object conversion
    * @param list List of LandingPages to be convert
@@ -711,6 +735,20 @@ object JsonUtil {
   }
 
   /**
+   * Converts a List of LegalNotices into Play!'s JSON notation
+   * Does not support cross object conversion
+   * @param list List of LegalNotices to be convert
+   * @return JsArray
+   */
+  def jsLegalNotices(list:List[LegalNotices]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ ln =>
+      json = json.append(jsLegalNotice(ln))
+    }
+    json
+  }
+
+  /**
    * Converts a LandingPage object into a JSON string with its complex objects
    * @param landingPage LandingPage object to be converted
    * @return String
@@ -718,6 +756,18 @@ object JsonUtil {
   def serializeLandingPage(landingPage:LandingPage):String = {
     //1) Serialize LandingPage
     val jLandingPage:JsObject = jsLandingPage(landingPage.toCaseObject)
+    //3) Return JSON String
+    jLandingPage.toString
+  }
+
+  /**
+   * Converts a LegalNotice object into a JSON string with its complex objects
+   * @param landingPage LegalNotice object to be converted
+   * @return String
+   */
+  def serializeLegalNotice(legalNotice:LegalNotice):String = {
+    //1) Serialize LandingPage
+    val jLandingPage:JsObject = jsLegalNotice(legalNotice.toCaseObject)
     //3) Return JSON String
     jLandingPage.toString
   }

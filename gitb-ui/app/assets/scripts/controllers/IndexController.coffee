@@ -1,11 +1,11 @@
 class IndexController
 	@$inject = [
-		'$log', '$scope', '$rootScope', '$location', 
+		'$log', '$sce', '$scope', '$rootScope', '$location',
 		'AuthProvider', 'DataService', 'AccountService', 
-		'Events', 'Constants', 'SystemConfigurationService', 'ErrorService'
+		'Events', 'Constants', 'SystemConfigurationService', 'LegalNoticeService', 'HtmlService', 'ErrorService'
 	]
-	constructor: (@$log, @$scope, @$rootScope, @$location,
-		@AuthProvider, @DataService, @AccountService, @Events, @Constants, @SystemConfigurationService, @ErrorService) ->
+	constructor: (@$log, @$sce, @$scope, @$rootScope, @$location,
+		@AuthProvider, @DataService, @AccountService, @Events, @Constants, @SystemConfigurationService, @LegalNoticeService, @HtmlService, @ErrorService) ->
 
 		@$log.debug "Constructing MainController..."
 
@@ -56,5 +56,19 @@ class IndexController
 		@DataService.destroy()
 		@isAuthenticated = false
 		@redirect('/login')
+
+	onLegalNotice: () ->
+		vendor = @DataService.vendor
+		if vendor? && vendor.legalNotices?
+			html = @$sce.trustAsHtml(vendor.legalNotices.content)
+			@showLegalNotice(html)
+		else
+			@LegalNoticeService.getDefaultLegalNotice()
+			.then (data) =>
+				html = @$sce.trustAsHtml(data.content) if data?
+				@showLegalNotice(html)
+
+	showLegalNotice: (html) ->
+		@HtmlService.showHtml("Legal Notice", html)
 
 controllers.controller('IndexController', IndexController)

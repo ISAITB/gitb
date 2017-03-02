@@ -50,7 +50,8 @@ class OrganizationService extends Controller {
     val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_SNAME)
     val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_FNAME)
     val landingPageId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LANDING_PAGE_ID)
-    OrganizationManager.updateOrganization(orgId, shortName, fullName, landingPageId) map { unit =>
+    val legalNoticeId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LEGAL_NOTICE_ID)
+    OrganizationManager.updateOrganization(orgId, shortName, fullName, landingPageId, legalNoticeId) map { unit =>
       ResponseConstructor.constructEmptyResponse
     }
   }
