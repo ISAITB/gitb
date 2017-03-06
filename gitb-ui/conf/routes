@@ -9,6 +9,9 @@ GET     /                                   @controllers.Application.index
 OPTIONS /*all                               @controllers.Application.preFlight(all: String)
 GET     /assets/javascripts/routes          @controllers.Application.javascriptRoutes
 
+# Theme API
+GET     /theme/css                          @controllers.SystemConfigurationService.getCssForTheme
+
 # Authentication management API
 POST    /oauth/access_token                 @controllers.AuthenticationService.access_token
 GET     /check/email                        @controllers.AuthenticationService.checkEmail
@@ -77,7 +80,6 @@ GET     /dashboard/completed                @controllers.ReportService.getComple
 GET     /dashboard/count                    @controllers.ReportService.getCompletedTestResultCount
 GET     /dashboard/config                   @controllers.SystemConfigurationService.getSessionAliveTime
 POST    /dashboard/config                   @controllers.SystemConfigurationService.updateSessionAliveTime
-GET     /dashboard/theme                    @controllers.SystemConfigurationService.getTheme
 
 GET     /pages/default                      @controllers.LandingPageService.getDefaultLandingPage
 GET     /pages/all                          @controllers.LandingPageService.getLandingPages

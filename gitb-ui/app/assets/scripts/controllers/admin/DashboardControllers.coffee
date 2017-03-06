@@ -95,7 +95,7 @@ class DashboardController
 
   # get completed sessions
   getCompletedTestResults: (page) =>
-    @ReportService.getCompletedTestResults(page, @Constants.LIMIT)
+    @ReportService.getCompletedTestResults(page, @Constants.TABLE_PAGE_SIZE)
     .then (data) =>
       @processRequest(data)
     .catch (error) =>
@@ -180,12 +180,12 @@ class DashboardController
       @setDisabledStatus()
 
   nextPage: () =>
-    if (@page + 1) * @Constants.LIMIT < @count
+    if (@page + 1) * @Constants.TABLE_PAGE_SIZE < @count
       @getCompletedTestResults(++@page)
       @setDisabledStatus()
 
   lastPage: () =>
-    @page = Math.floor(@count / @Constants.LIMIT) # floor because paging is 0 based
+    @page = Math.floor(@count / @Constants.TABLE_PAGE_SIZE) # floor because paging is 0 based
     @getCompletedTestResults(@page)
     @setDisabledStatus()
 
@@ -193,7 +193,7 @@ class DashboardController
     if @page == 0 # first page
       @nextDisabled = false
       @prevDisabled = true
-    else if @page == Math.floor(@count / @Constants.LIMIT) # last page
+    else if @page == Math.floor(@count / @Constants.TABLE_PAGE_SIZE) # last page
       @nextDisabled = true
       @prevDisabled = false
     else # pages in between

@@ -3,12 +3,15 @@ package controllers
 import controllers.util.{Parameters, ParameterExtractor, ResponseConstructor}
 import exceptions.ErrorCodes
 import managers.SystemConfigurationManager
+import org.apache.commons.io.IOUtils
 import org.slf4j.{LoggerFactory, Logger}
+import play.api.Play
 import play.api.mvc.{Action, Controller}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import utils.JsonUtil
 import models.Constants
-
+import java.io.InputStream
+import play.api.Play.current
 import scala.concurrent.Future
 
 class SystemConfigurationService extends Controller {
@@ -38,10 +41,9 @@ class SystemConfigurationService extends Controller {
     }
   }
 
-  def getTheme = Action { request =>
+  def getCssForTheme = Action { request =>
     val env = sys.env.get(Constants.EnvironmentTheme)
-    val json: String = JsonUtil.jsEnvironmentVariable("theme", parseTheme(env.getOrElse(Constants.DefaultTheme))).toString()
-    ResponseConstructor.constructJsonResponse(json)
+    ResponseConstructor.constructCssResponse(parseTheme(env))
   }
 
   /**
@@ -58,8 +60,16 @@ class SystemConfigurationService extends Controller {
     value.matches("^[1-9]\\d*$")
   }
 
-  private def parseTheme(theme: String): String = {
-    if (theme == Constants.EcTheme) theme else Constants.DefaultTheme
+  private def parseTheme(theme: Option[String]): String = {
+    if (theme.isDefined && theme.get == Constants.EcTheme) {
+      IOUtils.toString(getInputStream("public/stylesheets/css/theme-ec.css"))
+    } else {
+      IOUtils.toString(getInputStream("public/stylesheets/css/theme-gitb.css"))
+    }
+  }
+
+  private def getInputStream(path: String): InputStream = {
+    Play.classloader.getResourceAsStream(path)
   }
 
 }

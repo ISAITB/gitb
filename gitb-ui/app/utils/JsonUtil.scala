@@ -9,13 +9,6 @@ import scala.util.parsing.json.JSONObject
 
 object JsonUtil {
 
-  def jsEnvironmentVariable(name: String, value: String): JsObject = {
-    val json = Json.obj(
-      name -> value
-    )
-    json
-  }
-
 	def jsTestSuite(suite: TestSuites): JsObject = {
     val json = Json.obj(
       "id"                -> suite.id,

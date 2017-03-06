@@ -33,13 +33,6 @@ app.config ['$stateProvider', '$urlRouterProvider',
 					deferred.resolve()
 		]
 
-		theme = [
-			'SystemConfigurationService',
-			(SystemConfigurationService)->
-
-				SystemConfigurationService.resolveTheme()
-		]
-
 		system = [
 			'$q', 'DataService', 'SystemService'
 			($q, DataService, SystemService)->
@@ -88,7 +81,6 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				abstract: true
 				resolve:
 					profile: profile
-					theme: theme
 			# 'app.main':
 			# 	url: '/'
 			# 	templateUrl: 'assets/views/main.html'

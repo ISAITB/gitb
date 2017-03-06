@@ -72,7 +72,10 @@ public class SessionManager {
 
 	public void endSession(String sessionId) {
 		TestCaseContext testCaseContext = contexts.remove(sessionId);
-		if (testCaseContext != null) testCaseContext.destroy();
+
+		if (testCaseContext != null) {
+			testCaseContext.destroy();
+		}
 	}
 
 	public void destroy() {

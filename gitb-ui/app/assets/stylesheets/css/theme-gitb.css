@@ -1,4 +1,8 @@
-.gitb section.page-top {
+#nav-logo {
+    content: url("/assets/images/gitb.png");
+}
+
+section.page-top {
     background-color: #171717;
     border-bottom: 5px solid #CCC;
     border-top: 5px solid #384045;
@@ -10,7 +14,7 @@
     text-align: left;
 }
 
-.gitb section.page-top h2 {
+section.page-top h2 {
     border-bottom: 5px solid #CCC;
     color: #FFF;
     display: inline-block;
@@ -22,12 +26,14 @@
     position: relative;
 }
 
-footer.gitb {
+section.page-top h2 {
+    border-bottom-color: #0088cc;
+}
+
+footer {
     background: #121214;
     border-top: 4px solid #1F1F1F;
     font-size: 0.9em;
-    /*margin-top: 50px;*/
-    /*padding: 80px 0 0;*/
     position: relative;
     clear: both;
 }
