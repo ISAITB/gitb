@@ -1,6 +1,7 @@
 class Constants
 
 	@TABLE_PAGE_SIZE = 10
+	@DEFAULT_LOGO = '/assets/images/gitb.png'
 
 	@TOKEN_COOKIE_EXPIRE: 180 # 6 months
 	@ACCESS_TOKEN_COOKIE_KEY : 'tat'

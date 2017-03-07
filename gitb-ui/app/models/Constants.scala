@@ -14,5 +14,8 @@ object Constants {
   val EnvironmentTheme = "THEME"
   val DefaultTheme = "gitb"
   val EcTheme = "ec"
+  val ImagePath = "/assets/images/"
+  val EcLogo = ImagePath + "ec.png"
+  val GitbLogo = ImagePath + "gitb.png"
 
 }

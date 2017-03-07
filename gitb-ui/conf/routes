@@ -11,6 +11,8 @@ GET     /assets/javascripts/routes          @controllers.Application.javascriptR
 
 # Theme API
 GET     /theme/css                          @controllers.SystemConfigurationService.getCssForTheme
+GET     /theme/logo                         @controllers.SystemConfigurationService.getLogo
+GET     /theme/footer                       @controllers.SystemConfigurationService.getFooterLogo
 
 # Authentication management API
 POST    /oauth/access_token                 @controllers.AuthenticationService.access_token

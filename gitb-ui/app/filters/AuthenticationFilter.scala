@@ -85,6 +85,8 @@ class AuthenticationFilter extends Filter {
       request.path.equals("/vendor/register") ||
       request.path.equals("/check/email") ||
       request.path.equals("/theme/css") ||
+      request.path.equals("/theme/logo") ||
+      request.path.equals("/theme/footer") ||
       request.path.equals("/notices/default") ||
       //public assets
       request.path.startsWith("/assets/") ||

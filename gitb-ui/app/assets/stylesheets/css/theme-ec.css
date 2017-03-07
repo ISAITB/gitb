@@ -1,7 +1,3 @@
-#nav-logo {
-    content: url("/assets/images/ec.png");
-}
-
 section.page-top {
     background-color: #0065a2;
     border-bottom: 5px solid #074A8B;
@@ -34,8 +30,5 @@ footer {
 
 footer img {
     zoom: 75%;
-}
-
-#footer-logo {
-    content: url("/assets/images/gitb.png");
+    -moz-transform: scale(0.5);
 }
