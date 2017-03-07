@@ -2,7 +2,7 @@
   <header>
         <div class="navbar-collapse nav-main-collapse collapse">
           <div class="container">
-            <img id="nav-logo" class="logo"/>
+            <img ng-src="{{indexCtrl.logo}}" class="logo"/>
             <nav class="nav-main mega-menu">
               <ul class="nav nav-pills nav-main" id="mainMenu">
                 <li>
@@ -102,7 +102,7 @@
 
   <footer>
     <div class="container">
-      <img id="footer-logo" class="img-responsive pull-left"/>
+      <img ng-src="{{indexCtrl.footer}}" class="img-responsive pull-left"/>
       <a href class="pull-right" ng-click="indexCtrl.onLegalNotice()">Legal notice</a>
     </div>
      <!--<div class="container">-->

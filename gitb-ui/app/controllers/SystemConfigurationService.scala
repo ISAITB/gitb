@@ -46,6 +46,16 @@ class SystemConfigurationService extends Controller {
     ResponseConstructor.constructCssResponse(parseTheme(env))
   }
 
+  def getLogo = Action { request =>
+    val env = sys.env.get(Constants.EnvironmentTheme)
+    ResponseConstructor.constructStringResponse(parseLogo(env))
+  }
+
+  def getFooterLogo = Action { request =>
+    val env = sys.env.get(Constants.EnvironmentTheme)
+    ResponseConstructor.constructStringResponse(parseFooterLogo(env))
+  }
+
   /**
    * Gets the system configuration with specified name
    */
@@ -70,6 +80,22 @@ class SystemConfigurationService extends Controller {
 
   private def getInputStream(path: String): InputStream = {
     Play.classloader.getResourceAsStream(path)
+  }
+
+  private def parseLogo(theme: Option[String]): String = {
+    if (theme.isDefined && theme.get == Constants.EcTheme) {
+      Constants.EcLogo
+    } else {
+      Constants.GitbLogo
+    }
+  }
+
+  private def parseFooterLogo(theme: Option[String]): String = {
+    if (theme.isDefined && theme.get == Constants.EcTheme) {
+      Constants.GitbLogo
+    } else {
+      ""
+    }
   }
 
 }
