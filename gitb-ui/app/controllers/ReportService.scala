@@ -4,6 +4,7 @@ import com.gitb.tpl.ObjectFactory
 import com.gitb.utils.XMLUtils
 import controllers.util.{Parameters, ParameterExtractor, ResponseConstructor}
 import managers.ReportManager
+import models.TestResultSessionReport
 import org.slf4j.{LoggerFactory, Logger}
 import play.api.mvc._
 import utils.JsonUtil
@@ -14,19 +15,22 @@ import play.api.libs.concurrent.Execution.Implicits.defaultContext
 /**
  * Created by senan on 04.12.2014.
  */
-class ReportService extends Controller{
+class ReportService extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ReportService])
+
+  val defaultPage = 0L
+  val defaultLimit = 10L
 
   def getTestResults = Action.async { request =>
     val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
-	  val limit = ParameterExtractor.optionalQueryParameter(request, Parameters.LIMIT) match {
-		  case Some(limitStr) => Some(limitStr.toLong)
-			case None => None
-	  }
-	  val page = ParameterExtractor.optionalQueryParameter(request, Parameters.PAGE) match {
-		  case Some(pageStr) => Some(pageStr.toLong)
-			case None => None
-	  }
+    val limit = ParameterExtractor.optionalQueryParameter(request, Parameters.LIMIT) match {
+      case Some(limitStr) => Some(limitStr.toLong)
+      case None => None
+    }
+    val page = ParameterExtractor.optionalQueryParameter(request, Parameters.PAGE) match {
+      case Some(pageStr) => Some(pageStr.toLong)
+      case None => None
+    }
 
     ReportManager.getTestResults(systemId, page, limit) map { testResultReports =>
       val json = JsonUtil.jsTestResultReports(testResultReports).toString()
@@ -34,8 +38,42 @@ class ReportService extends Controller{
     }
   }
 
-  def getTestResultOfSession(sessionId:String) = Action.async { request =>
-      ReportManager.getTestResultOfSession(sessionId) map { response =>
+  def getActiveTestResults = Action.async { request =>
+    ReportManager.getActiveTestResults map { testResultReports =>
+      val json = JsonUtil.jsTestResultSessionReports(testResultReports).toString()
+      ResponseConstructor.constructJsonResponse(json)
+    }
+  }
+
+  def getCompletedTestResults = Action.async { request =>
+    val limit = getLimitOrDefault(ParameterExtractor.optionalQueryParameter(request, Parameters.LIMIT))
+    val page = getPageOrDefault(ParameterExtractor.optionalQueryParameter(request, Parameters.PAGE))
+
+    ReportManager.getCompletedTestResults(page, limit) map { testResultReports =>
+      val json = JsonUtil.jsTestResultSessionReports(testResultReports).toString()
+      ResponseConstructor.constructJsonResponse(json)
+    }
+  }
+
+  def getCompletedTestResultCount = Action.async { request =>
+    ReportManager.getCompletedTestResultCount map { count =>
+      val json = JsonUtil.jsCount(count).toString()
+      ResponseConstructor.constructJsonResponse(json)
+    }
+  }
+
+  private def getPageOrDefault(_page: Option[String] = None) = _page match {
+    case Some(p) => p.toLong
+    case None => defaultPage
+  }
+
+  private def getLimitOrDefault(_limit: Option[String] = None) = _limit match {
+    case Some(l) => l.toLong
+    case None => defaultLimit
+  }
+
+  def getTestResultOfSession(sessionId: String) = Action.async { request =>
+    ReportManager.getTestResultOfSession(sessionId) map { response =>
       val json = JsonUtil.jsTestResult(response, true).toString()
       ResponseConstructor.constructJsonResponse(json)
     }
@@ -43,9 +81,9 @@ class ReportService extends Controller{
 
   def createTestReport() = Action.async { request =>
     val sessionId = ParameterExtractor.requiredBodyParameter(request, Parameters.SESSION_ID)
-    val systemId  = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
-    val actorId   = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
-    val testId    = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_ID)
+    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    val testId = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_ID)
 
     Future {
       val response = TestService.getTestCasePresentation(testId)
@@ -57,8 +95,8 @@ class ReportService extends Controller{
     }
   }
 
-  def getTestStepResults(sessionId:String) = Action.async { request =>
-    ReportManager.getTestStepResults(sessionId) map {testStepResults =>
+  def getTestStepResults(sessionId: String) = Action.async { request =>
+    ReportManager.getTestStepResults(sessionId) map { testStepResults =>
       val json = JsonUtil.jsTestStepResults(testStepResults).toString()
       ResponseConstructor.constructJsonResponse(json)
     }

@@ -7,6 +7,7 @@ object TimeUtil {
 
   val MS_IN_A_DAY = 24 * 60 * 60 * 1000
   val MS_IN_AN_HOUR = 60 * 60 * 1000
+  val MS_IN_A_SECOND = 1000
 
   val formatUTC = {
     val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
@@ -73,15 +74,21 @@ object TimeUtil {
   }
 
   def getTimeDifferenceInDays(timestamp:String):Int = {
-    val d = formatUTC.parse(timestamp)
-    val curr = Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTime()
-    ((curr.getTime() - d.getTime()) / MS_IN_A_DAY).toInt
+    getTimeDifference(timestamp) / MS_IN_A_DAY
   }
 
   def getTimeDifferenceInHours(timestamp:String):Int = {
+    getTimeDifference(timestamp) / MS_IN_AN_HOUR
+  }
+
+  def getTimeDifferenceInSeconds(timestamp:String):Int = {
+    getTimeDifference(timestamp) / MS_IN_A_SECOND
+  }
+
+  def getTimeDifference(timestamp:String):Int = {
     val d = formatUTC.parse(timestamp)
     val curr = Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTime()
-    ((curr.getTime() - d.getTime()) / MS_IN_AN_HOUR).toInt
+    (curr.getTime() - d.getTime()).toInt
   }
 
 }

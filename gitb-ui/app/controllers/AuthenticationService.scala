@@ -20,7 +20,7 @@ class AuthenticationService extends Controller{
         val email  = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL)
         val passwd = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD)
 
-        AuthManager.checkUserByEmail(email, passwd) flatMap{ result =>
+        AuthManager.checkUserByEmail(email, passwd) flatMap { result =>
           //user found
           if(result.isDefined){
             AuthManager.generateTokens(result.get.id) map{ tokens =>

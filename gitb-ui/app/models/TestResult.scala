@@ -30,3 +30,5 @@ case class TestResult(
 }
 
 case class TestResultReport(testResult:TestResult, testCase: Option[TestCases], actor: Option[Actors])
+
+case class TestResultSessionReport(testResult:TestResult, testCase: Option[TestCases], organization: Option[Organizations], system: Option[Systems], spec: Option[Specifications], domain: Option[Domain])

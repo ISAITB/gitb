@@ -9,6 +9,9 @@ GET     /                                   @controllers.Application.index
 OPTIONS /*all                               @controllers.Application.preFlight(all: String)
 GET     /assets/javascripts/routes          @controllers.Application.javascriptRoutes
 
+# Theme API
+GET     /theme/css                          @controllers.SystemConfigurationService.getCssForTheme
+
 # Authentication management API
 POST    /oauth/access_token                 @controllers.AuthenticationService.access_token
 GET     /check/email                        @controllers.AuthenticationService.checkEmail
@@ -71,12 +74,26 @@ GET     /admins/:id                         @controllers.UserService.getUserById
 POST    /admins/:id                         @controllers.UserService.updateSystemAdminProfile(id : Long)
 DELETE  /admins/:id                         @controllers.UserService.deleteSystemAdmin(id : Long)
 
+# Session management API
+GET     /dashboard/active                   @controllers.ReportService.getActiveTestResults
+GET     /dashboard/completed                @controllers.ReportService.getCompletedTestResults
+GET     /dashboard/count                    @controllers.ReportService.getCompletedTestResultCount
+GET     /dashboard/config                   @controllers.SystemConfigurationService.getSessionAliveTime
+POST    /dashboard/config                   @controllers.SystemConfigurationService.updateSessionAliveTime
+
 GET     /pages/default                      @controllers.LandingPageService.getDefaultLandingPage
 GET     /pages/all                          @controllers.LandingPageService.getLandingPages
 POST    /pages/create                       @controllers.LandingPageService.createLandingPage
 GET     /pages/:id                          @controllers.LandingPageService.getLandingPageById(id : Long)
 DELETE  /pages/:id                          @controllers.LandingPageService.deleteLandingPage(id : Long)
 POST    /pages/:id                          @controllers.LandingPageService.updateLandingPage(id : Long)
+
+GET     /notices/default                    @controllers.LegalNoticeService.getDefaultLegalNotice
+GET     /notices/all                        @controllers.LegalNoticeService.getLegalNotices
+POST    /notices/create                     @controllers.LegalNoticeService.createLegalNotice
+GET     /notices/:id                        @controllers.LegalNoticeService.getLegalNoticeById(id : Long)
+DELETE  /notices/:id                        @controllers.LegalNoticeService.deleteLegalNotice(id : Long)
+POST    /notices/:id                        @controllers.LegalNoticeService.updateLegalNotice(id : Long)
 
 GET     /organizations/all                  @controllers.OrganizationService.getOrganizations
 POST    /organizations/create               @controllers.OrganizationService.createOrganization

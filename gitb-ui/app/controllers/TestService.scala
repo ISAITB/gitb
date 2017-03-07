@@ -3,7 +3,7 @@ package controllers
 import config.Configurations
 import actors.WebSocketActor
 import jaxws.HeaderHandlerResolver
-import managers.ConformanceManager
+import managers.{ReportManager, ConformanceManager}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 
 import org.slf4j.{LoggerFactory, Logger}
@@ -37,8 +37,9 @@ object TestService{
     Future {
       val request: BasicCommand = new BasicCommand
       request.setTcInstanceId(session_id)
-
       TestService.port.stop(request)
+
+      ReportManager.setEndTimeNow(session_id)
     }
   }
 }

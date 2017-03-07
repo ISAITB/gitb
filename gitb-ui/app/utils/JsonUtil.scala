@@ -9,7 +9,6 @@ import scala.util.parsing.json.JSONObject
 
 object JsonUtil {
 
-
 	def jsTestSuite(suite: TestSuites): JsObject = {
     val json = Json.obj(
       "id"                -> suite.id,
@@ -98,6 +97,15 @@ object JsonUtil {
     json
   }
 
+  def jsSystemConfiguration(sc: SystemConfigurations):JsObject = {
+    val json = Json.obj(
+      "name"    -> sc.name,
+      "parameter"  -> (if(sc.parameter.isDefined) sc.parameter.get else JsNull),
+      "description"  -> (if(sc.description.isDefined) sc.description.get else JsNull)
+    )
+    json
+  }
+
   /**
    * Converts a List of Users into Play!'s JSON notation
    * Does not support cross object conversion
@@ -124,7 +132,8 @@ object JsonUtil {
       "sname" -> organization.shortname,
       "fname" -> organization.fullname,
       "type"  -> organization.organizationType,
-      "landingPage" -> (if(organization.landingPage.isDefined) organization.landingPage.get else JsNull)
+      "landingPage" -> (if(organization.landingPage.isDefined) organization.landingPage.get else JsNull),
+      "legalNotice" -> (if(organization.legalNotice.isDefined) organization.legalNotice.get else JsNull)
     )
     json
   }
@@ -343,7 +352,8 @@ object JsonUtil {
       "description" -> (if(testCase.description.isDefined) testCase.description.get else JsNull),
       "keywords" -> (if(testCase.keywords.isDefined) testCase.keywords.get else JsNull),
       "type" -> testCase.testCaseType,
-      "targetSpec"  -> testCase.targetSpec
+      "targetSpec"  -> testCase.targetSpec,
+      "path" -> testCase.path
     )
     return json;
   }
@@ -454,6 +464,57 @@ object JsonUtil {
 		json
 	}
 
+  def jsTestResultSessionReports(list: List[TestResultSessionReport]): JsArray = {
+    var json = Json.arr()
+    list.foreach { report =>
+      json = json.append(jsTestResultReport(report))
+    }
+    json
+  }
+
+  def jsCount(count: Long): JsArray = {
+    Json.arr().append(Json.obj(
+      "count" -> count
+    ))
+  }
+
+  def jsTestResultReport(report: TestResultSessionReport): JsObject = {
+    val json = Json.obj(
+      "result" -> jsTestResult(report.testResult, false),
+      "test" ->  {
+        report.testCase match {
+          case Some(tc) => jsTestCases(tc)
+          case None => JsNull
+        }
+      },
+      "organization" -> {
+        report.organization match {
+          case Some(o) => jsOrganization(o)
+          case None => JsNull
+        }
+      },
+      "system" -> {
+        report.system match {
+          case Some(s) => jsSystem(s)
+          case None => JsNull
+        }
+      },
+      "specification" -> {
+        report.spec match {
+          case Some(s) => jsSpecification(s)
+          case None => JsNull
+        }
+      },
+      "domain" -> {
+        report.domain match {
+          case Some(d) => jsDomain(d)
+          case None => JsNull
+        }
+      }
+    )
+    json
+  }
+
 	def jsTestResultReport(report: TestResultReport): JsObject = {
 		val json = Json.obj(
 			"result" -> jsTestResult(report.testResult, false),
@@ -540,6 +601,16 @@ object JsonUtil {
     jUser.toString
   }
 
+  def serializeSystemConfig(sc:SystemConfiguration):String = {
+    var jConfig:JsObject = jsSystemConfiguration(sc.toCaseObject)
+    jConfig.toString
+  }
+
+  def serializeSpecification(spec:Specification):String = {
+    var jSpec:JsObject = jsSpecification(spec.toCaseObject)
+    jSpec.toString
+  }
+
   /**
    * Converts an Organization object into a JSON string with its complex objects
    * @param org Organization object to be converted
@@ -565,10 +636,16 @@ object JsonUtil {
       jOrganization = jOrganization ++ Json.obj("systems" -> JsNull)
     }
     //
-    if(org.LandingPageObj.isDefined){
-      jOrganization = jOrganization ++ Json.obj("landingPages" -> jsLandingPage(org.LandingPageObj.get))
+    if(org.landingPageObj.isDefined){
+      jOrganization = jOrganization ++ Json.obj("landingPages" -> jsLandingPage(org.landingPageObj.get))
     } else{
       jOrganization = jOrganization ++ Json.obj("landingPages" -> JsNull)
+    }
+    //
+    if(org.legalNoticeObj.isDefined){
+      jOrganization = jOrganization ++ Json.obj("legalNotices" -> jsLegalNotice(org.legalNoticeObj.get))
+    } else{
+      jOrganization = jOrganization ++ Json.obj("legalNotices" -> JsNull)
     }
     //4) Return JSON String
     jOrganization.toString
@@ -620,6 +697,23 @@ object JsonUtil {
   }
 
   /**
+   * Converts a LandingPage object into Play!'s JSON notation.
+   * Does not support cross object conversion
+   * @param landingPage LandingPage object to be converted
+   * @return JsObject
+   */
+  def jsLegalNotice(legalNotice:LegalNotices):JsObject = {
+    val json = Json.obj(
+      "id"    -> legalNotice.id,
+      "name"  -> legalNotice.name,
+      "description" -> (if(legalNotice.description.isDefined) legalNotice.description.get else JsNull),
+      "content"  -> legalNotice.content,
+      "default" -> legalNotice.default
+    )
+    json
+  }
+
+  /**
    * Converts a List of LandingPages into Play!'s JSON notation
    * Does not support cross object conversion
    * @param list List of LandingPages to be convert
@@ -634,6 +728,20 @@ object JsonUtil {
   }
 
   /**
+   * Converts a List of LegalNotices into Play!'s JSON notation
+   * Does not support cross object conversion
+   * @param list List of LegalNotices to be convert
+   * @return JsArray
+   */
+  def jsLegalNotices(list:List[LegalNotices]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ ln =>
+      json = json.append(jsLegalNotice(ln))
+    }
+    json
+  }
+
+  /**
    * Converts a LandingPage object into a JSON string with its complex objects
    * @param landingPage LandingPage object to be converted
    * @return String
@@ -641,6 +749,18 @@ object JsonUtil {
   def serializeLandingPage(landingPage:LandingPage):String = {
     //1) Serialize LandingPage
     val jLandingPage:JsObject = jsLandingPage(landingPage.toCaseObject)
+    //3) Return JSON String
+    jLandingPage.toString
+  }
+
+  /**
+   * Converts a LegalNotice object into a JSON string with its complex objects
+   * @param landingPage LegalNotice object to be converted
+   * @return String
+   */
+  def serializeLegalNotice(legalNotice:LegalNotice):String = {
+    //1) Serialize LandingPage
+    val jLandingPage:JsObject = jsLegalNotice(legalNotice.toCaseObject)
     //3) Return JSON String
     jLandingPage.toString
   }

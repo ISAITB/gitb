@@ -13,6 +13,7 @@ class TestExecutionControllerV2
     @$scope.interactions  = []
     @selectedInteroperabilitySession = null
     @isOwner = false
+    @endpointRepresentations = []
 
     @$scope.$on '$destroy', () =>
       if @ws? and @session?
@@ -75,7 +76,18 @@ class TestExecutionControllerV2
     @getTestCaseDefinition(@testId)
     @getActorDefinition(@actorId)
 
-  nextStep: () =>
+  skipScreen: () ->
+    if @isSystemConfigurationsValid @endpointRepresentations
+      @nextStep(1)
+
+  nextStep: (step) =>
+    if Number(step?) == 1 && !@isInteroperabilityTesting
+      @next()
+      @next()
+    else
+      @next()
+
+  next: () ->
     @$scope.$broadcast 'wizard-directive:next'
 
   onWizardNext: (step) =>
@@ -105,19 +117,20 @@ class TestExecutionControllerV2
         .then (endpoints) =>
           @endpoints = endpoints
         .then () =>
-          endpointIds = _.map @endpoints, (endpoint) -> endpoint.id
-          @SystemService.getConfigurationsWithEndpointIds(endpointIds, @systemId)
-        .then (configurations) =>
-          @configurations = configurations
-          @constructEndpointRepresentations()
+          if @endpoints?.length > 0
+            endpointIds = _.map @endpoints, (endpoint) -> endpoint.id
+            @SystemService.getConfigurationsWithEndpointIds(endpointIds, @systemId)
+            .then (configurations) =>
+              @configurations = configurations
+              @constructEndpointRepresentations()
 
-          @$log.debug @endpointRepresentations
+              @$log.debug @endpointRepresentations
 
-          for configuration in @configurations
-            endpoint = @getEndpointForId(configuration.endpoint)
-            for parameter in endpoint.parameters
-              if parameter.id == configuration.parameter
-                parameter.value = configuration.value
+              for configuration in @configurations
+                endpoint = @getEndpointForId(configuration.endpoint)
+                for parameter in endpoint.parameters
+                  if parameter.id == configuration.parameter
+                    parameter.value = configuration.value
         .catch (error) =>
           @ErrorService.showErrorMessage(error).result.then () =>
             @$state.go @$state.current, {}, {reload: true}
@@ -191,6 +204,7 @@ class TestExecutionControllerV2
     .then(
       (data) =>
         @actor = data.actorId
+        @skipScreen()
       ,
       (error) =>
         @ErrorService.showErrorMessage(error).result
@@ -218,8 +232,8 @@ class TestExecutionControllerV2
     @actor = actor.actor
 
   getInteroperabilitySessions: () ->
-    @TestService.getSessions().
-    then(
+    @TestService.getSessions()
+    .then(
       (data) =>
         @interoperabilitySessions = data
       (error) =>
@@ -376,24 +390,25 @@ class TestExecutionControllerV2
     )
 
   createActorConfigurations: (configs) ->
-    #TODO cover all endpoints
-    endpoint = @endpoints[0]
+    if @endpoints?.length > 0
+      #TODO cover all endpoints
+      endpoint = @endpoints[0]
 
-    configurations = {
-      actor: endpoint.actor.actorId,
-      endpoint: endpoint.name,
-      config: []
-    }
+      configurations = {
+        actor: endpoint.actor.actorId,
+        endpoint: endpoint.name,
+        config: []
+      }
 
-    for config in endpoint.parameters
-      configurations.config.push({
-        name: config.name,
-        value: config.value
-      })
+      for config in endpoint.parameters
+        configurations.config.push({
+          name: config.name,
+          value: config.value
+        })
 
-    @$log.debug angular.toJson(configurations)
+      @$log.debug angular.toJson(configurations)
 
-    configurations
+      configurations
 
 
   onopen: (msg) =>

@@ -1,7 +1,7 @@
 class TestPresentationController
 
-	@$inject = ['$log', '$scope', '$modal','$state', '$stateParams', 'Constants', 'ReportService', 'ErrorService']
-	constructor: (@$log, @$scope, @$modal, @$state, @$stateParams, @Constants, @ReportService, @ErrorService) ->
+	@$inject = ['$log', '$scope', '$window', '$modal','$state', '$stateParams', 'Constants', 'ReportService', 'ErrorService']
+	constructor: (@$log, @$scope, @$window, @$modal, @$state, @$stateParams, @Constants, @ReportService, @ErrorService) ->
 		@$log.debug "Constructing TestPresentationController..."
 
 		@selectedIndices = {}
@@ -91,5 +91,8 @@ class TestPresentationController
 
 	select: (stepId, index) ->
 		@selectedIndices[stepId] = index
+
+	back: () ->
+		@$window.history.back();
 
 controllers.controller('TestPresentationController', TestPresentationController)

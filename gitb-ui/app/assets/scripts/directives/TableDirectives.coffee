@@ -15,22 +15,43 @@
 			allowSelect: '='
 			allowMultiSelect: '='
 			tableCaption: '='
+			paginationVisible: '='
+			firstPage: '&'
+			prevPage: '&'
+			nextPage: '&'
+			lastPage: '&'
+			nextDisabled: '='
+			prevDisabled: '='
+			actionVisible: '='
+			onAction: '='
 		restrict: 'AE'
 		template: ''+
+			'<div>'+
 			'<table class="table table-directive">'+
 				'<caption ng-if="tableCaptionVisible">{{tableCaption}}</caption>'+
 				'<thead>'+
 					'<tr>'+
 					    '<th ng-if="checkboxEnabled"></th>'+
 						'<th ng-repeat="column in columns">{{column.title}}</th>'+
+						'<th ng-if="actionVisible">Action</th>'+
 						'<th ng-if="operationsVisible">Operation</th>'+
 						'<th ng-if="exportVisible">Export</th>'+
 					'</tr>'+
 				'</thead>'+
 				'<tbody>'+
-					'<tr class="table-row-directive" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" operations-visible="operationsVisible" export-visible="exportVisible" checkbox-enabled="checkboxEnabled" on-delete="onDelete" on-export="onExport" on-check="onCheck"></tr>'+
-				'</tbody>'+
-			'</table>'
+					'<tr class="table-row-directive" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" action-visible="actionVisible" operations-visible="operationsVisible" export-visible="exportVisible" checkbox-enabled="checkboxEnabled" on-action="onAction" on-delete="onDelete" on-export="onExport" on-check="onCheck"></tr>'+
+			'</tbody>'+
+			'</table>'+
+				'<div ng-if="paginationVisible" class="text-center">'+
+					'<ul class="pagination pagination-sm">'+
+						'<li ng-class="prevDisabled ? \'disabled\' : \'\'"><a href ng-click="firstPage()">First</a></li>'+
+						'<li ng-class="prevDisabled ? \'disabled\' : \'\'"><a href ng-click="prevPage()">Previous</a></li>'+
+						'<li ng-class="nextDisabled ? \'disabled\' : \'\'"><a href ng-click="nextPage()">Next</a></li>'+
+						'<li ng-class="nextDisabled ? \'disabled\' : \'\'"><a href ng-click="lastPage()">Last</a></li>'+
+					'</ul>'+
+				'</div>'+
+			'</div>'
+
 		replace: true
 		link: (scope, element, attrs) ->
 			scope.tableCaptionVisible = scope.tableCaption?
@@ -57,6 +78,8 @@
 							scope.onSelect? row
 
 				return
+
+
 ]
 
 @directives.directive 'tableRowDirective', [
@@ -66,9 +89,11 @@
 			columns: '='
 			classes: '='
 			operationsVisible: '='
+			actionVisible: '='
 			exportVisible: '='
 			checkboxEnabled: '='
 			onDelete: '='
+			onAction: '='
 			onExport: '='
 			onCheck: '='
 		restrict: 'A'
@@ -84,12 +109,15 @@
 					'{{row.data}}'+
 				'</div>'+
 			'</td>'+
+			'<td class="operations" ng-if="actionVisible">'+
+				'<button class="btn btn-default" ng-click="action()"><i class="fa fa-search"></i></button>'+
+			'</td>' +
 			'<td class="operations" ng-if="operationsVisible">'+
 				'<button class="btn btn-default" ng-click="delete()"><i class="fa fa-times"></i></button>'+
 			'</td>' +
 			'<td class="operations" ng-if="exportVisible">'+
-                '<button class="btn btn-default" ng-click="export()"><i class="fa fa-file-pdf-o"></i></button>'+
-            '</td>'
+          '<button class="btn btn-default" ng-click="export()"><i class="fa fa-file-pdf-o"></i></button>'+
+      '</td>'
 		link: (scope, element, attrs) ->
 			scope.rows = _.map scope.columns, (column)->
 				row = {}
@@ -98,11 +126,13 @@
 				row.class = if classes? then classes[column.field] else column.title.toLowerCase().replace(" ", "-")
 
 				row
-			scope.delete = ()=>
+			scope.delete = () =>
 				if scope.onDelete?
 					scope.onDelete(scope.data)
-			scope.export = ()=>
+			scope.export = () =>
 			    scope.onExport? scope.data
 			scope.check = () =>
 			    scope.onCheck? scope.data
+			scope.action = () =>
+				scope.onAction? scope.data
 ]

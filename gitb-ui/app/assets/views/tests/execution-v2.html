@@ -16,7 +16,7 @@
                         </div>
                     </div>
 
-                    <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.nextStep()" ng-if="testExecutionCtrl.isSystemConfigurationsValid(testExecutionCtrl.endpointRepresentations)" ng-disabled="testExecutionCtrl.testcase == null || testExecutionCtrl.actor == null">Next</button>
+                    <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.nextStep(1)" ng-if="testExecutionCtrl.isSystemConfigurationsValid(testExecutionCtrl.endpointRepresentations)" ng-disabled="testExecutionCtrl.testcase == null || testExecutionCtrl.actor == null">Next</button>
                     <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.updateConfigurations()" ng-if="!testExecutionCtrl.isSystemConfigurationsValid(testExecutionCtrl.endpointRepresentations)">Update Configurations</button>
                 </div>
                 <div class="step-content select-participants" ng-if="testExecutionCtrl.isInteroperabilityTesting">

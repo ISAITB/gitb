@@ -1,5 +1,7 @@
 class Constants
 
+	@TABLE_PAGE_SIZE = 10
+
 	@TOKEN_COOKIE_EXPIRE: 180 # 6 months
 	@ACCESS_TOKEN_COOKIE_KEY : 'tat'
 	@REFRESH_TOKEN_COOKIE_KEY: 'trt'

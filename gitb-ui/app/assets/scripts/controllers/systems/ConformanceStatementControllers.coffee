@@ -369,14 +369,15 @@ class ConformanceStatementDetailController
     .then (endpoints) =>
       @endpoints = endpoints
     .then () =>
-      endpointIds = _.map @endpoints, (endpoint) -> endpoint.id
-      @SystemService.getConfigurationsWithEndpointIds(endpointIds, @systemId)
-    .then (configurations) =>
-      @configurations = configurations
-    .then () =>
-      @constructEndpointRepresentations()
-    .catch (error) =>
-      @ErrorService.showErrorMessage(error)
+      if @endpoints?.length > 0
+        endpointIds = _.map @endpoints, (endpoint) -> endpoint.id
+        @SystemService.getConfigurationsWithEndpointIds(endpointIds, @systemId)
+        .then (configurations) =>
+          @configurations = configurations
+        .then () =>
+          @constructEndpointRepresentations()
+        .catch (error) =>
+          @ErrorService.showErrorMessage(error)
 
   constructEndpointRepresentations: () =>
     @endpointRepresentations = _.map @endpoints, (endpoint) =>

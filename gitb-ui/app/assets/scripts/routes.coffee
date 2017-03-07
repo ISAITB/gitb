@@ -33,6 +33,42 @@ app.config ['$stateProvider', '$urlRouterProvider',
 					deferred.resolve()
 		]
 
+		system = [
+			'$q', 'DataService', 'SystemService'
+			($q, DataService, SystemService)->
+				deferred = $q.defer()
+
+				if DataService.isVendorUser
+					SystemService.getSystems()
+					.then (data) ->
+						if data.length == 1
+							deferred.reject {redirectTo: 'app.systems.detail.conformance.list', params: {id: data[0].id}}
+						else
+							deferred.resolve()
+				else
+					deferred.resolve()
+
+				deferred.promise
+		]
+
+		conformance = [
+			'$q', '$stateParams', 'DataService', 'SystemService'
+			($q, $stateParams, DataService, SystemService)->
+				deferred = $q.defer()
+
+				if DataService.isVendorUser
+					SystemService.getConformanceStatements $stateParams.id
+					.then (data) ->
+						if data.length == 1
+							deferred.reject {redirectTo: 'app.systems.detail.conformance.detail', params: {id: $stateParams.id, actor_id: data[0].actor.id, specId: data[0].specification.id}}
+						else
+							deferred.resolve()
+				else
+					deferred.resolve()
+
+				deferred.promise
+		]
+
 		$urlRouterProvider.when('', '/')
 		$urlRouterProvider.otherwise('/')
 
@@ -43,7 +79,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				controller: 'IndexController'
 				controllerAs: 'indexCtrl'
 				abstract: true
-				resolve: profile
+				resolve:
+					profile: profile
 			# 'app.main':
 			# 	url: '/'
 			# 	templateUrl: 'assets/views/main.html'
@@ -91,9 +128,9 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/test-presentation.html'
 				controller: 'TestPresentationController'
 				controllerAs: 'testPresentationCtrl'
-			'app.tutorial':
-        url: '/tutorial'
-        templateUrl: 'assets/views/tutorial.html'
+#			'app.tutorial':
+#        url: '/tutorial'
+#        templateUrl: 'assets/views/tutorial.html'
 			'app.systems':
 				url: '/systems'
 				abstract: true
@@ -103,6 +140,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/systems/list.html'
 				controller: 'SystemsController'
 				controllerAs: 'systemsCtrl'
+				resolve: system
 			'app.systems.detail':
 				url: '/:id'
 				templateUrl: 'assets/views/systems/detail.html'
@@ -121,6 +159,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/systems/conformance/index.html'
 				controller: 'ConformanceStatementController'
 				controllerAs: 'conformanceStatementCtrl'
+				resolve: conformance
 			'app.systems.detail.conformance.detail':
 				url: '/detail/:actor_id?specId'
 				templateUrl: 'assets/views/systems/conformance/detail.html'
@@ -166,6 +205,15 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				url: '/admin'
 				templateUrl: 'assets/views/admin/index.html'
 				controller: 'AdminController'
+			'app.admin.dashboard':
+				url: '/dashboard'
+				abstract: true
+				template: '<div ui-view/>'
+			'app.admin.dashboard.list':
+				url: ''
+				templateUrl: 'assets/views/admin/dashboard/index.html'
+				controller: 'DashboardController'
+				controllerAs: 'dashboardCtrl'
 			'app.admin.domains':
 				url: '/domains'
 				abstract: true
@@ -362,6 +410,24 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/users/landing-page-detail.html'
 				controller: 'LandingPageDetailController'
 				controllerAs: 'landingPageDetailCtrl'
+			'app.admin.users.legalnotices':
+				url: '/notices'
+				abstract: true
+				template: '<div ui-view/>'
+			'app.admin.users.legalnotices.create':
+				url: '/create'
+				templateUrl: 'assets/views/admin/users/legal-notice-create.html'
+				controller: 'LegalNoticeCreateController'
+				controllerAs: 'LegalNoticeCreateCtrl'
+				params:
+					name: ""
+					description: ""
+					content: ""
+			'app.admin.users.legalnotices.detail':
+				url: '/:id'
+				templateUrl: 'assets/views/admin/users/legal-notice-detail.html'
+				controller: 'LegalNoticeDetailController'
+				controllerAs: 'legalNoticeDetailCtrl'
 
 		for state, value of states
 			$stateProvider.state state, value
@@ -394,6 +460,13 @@ app.run ['$log', '$rootScope', '$state', 'AuthProvider',
 				$log.debug 'State requires login, redirecting...'
 				event.preventDefault()
 				$state.go 'app.login'
+
+		$rootScope.$on '$stateChangeError', (event, toState, toParams, fromState, fromParams, error) ->
+			if error.redirectTo?
+				if error.params?
+					$state.go error.redirectTo, error.params
+				else
+					$state.go error.redirectTo
 
 		return
 ]

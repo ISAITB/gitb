@@ -18,11 +18,15 @@ object Parameters {
   val DEFAULT = "default_flag"
   val CONTENT = "content"
   val LANDING_PAGE_ID = "landing_page_id"
+  val LEGAL_NOTICE_ID = "legal_notice_id"
 
   //Authentication Service and OAuth 2.0 parameters
   val GRANT_TYPE = "grant_type"
   val GRANT_TYPE_PASSWORD = "password"
   val REFRESH_TOKEN = "refresh_token"
+
+  //System configuration parameters
+  val PARAMETER = "parameter"
 
   //Account Service parameters
   val VENDOR_SNAME = "vendor_sname"
