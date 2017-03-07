@@ -450,13 +450,15 @@ public class TestCaseContext {
 
 		public MessagingContextBuilder addActorConfiguration(String actorIdToBeSimulated, String endpointNameToBeSimulated,
 		                                                     ActorConfiguration sutActorConfiguration) {
-			Tuple<String> actorTuple = new Tuple<>(new String[]{
-				actorIdToBeSimulated, endpointNameToBeSimulated,
-				sutActorConfiguration.getActor(), sutActorConfiguration.getEndpoint()
-			});
+			if (endpointNameToBeSimulated != null && sutActorConfiguration != null) {
+				Tuple<String> actorTuple = new Tuple<>(new String[]{
+						actorIdToBeSimulated, endpointNameToBeSimulated,
+						sutActorConfiguration.getActor(), sutActorConfiguration.getEndpoint()
+				});
 
-			if(!sutConfigurations.containsKey(actorTuple)) {
-				sutConfigurations.put(actorTuple, sutActorConfiguration);
+				if(!sutConfigurations.containsKey(actorTuple)) {
+					sutConfigurations.put(actorTuple, sutActorConfiguration);
+				}
 			}
 
 			return this;
@@ -493,46 +495,46 @@ public class TestCaseContext {
 			}
 
 			List<ActorConfiguration> configurations = new ArrayList<>(sutConfigurations.values());
-
-			InitiateResponse initiateResponse = messagingHandler.initiate(configurations);
-
-			for(Map.Entry<Tuple<String>, ActorConfiguration> entry : sutConfigurations.entrySet()) {
-				ActorConfiguration simulatedActor = ActorUtils.getActorConfiguration(initiateResponse.getActorConfigurations(), entry.getValue().getActor(), entry.getValue().getEndpoint());
-
-				Tuple<String> actorTuple = entry.getKey();
-				String actorIdToBeSimulated = actorTuple.getContents()[0];
-				String endpointNameToBeSimulated = actorTuple.getContents()[1];
-
-				simulatedActor.setActor(actorIdToBeSimulated);
-				simulatedActor.setEndpoint(endpointNameToBeSimulated);
-			}
-
 			Map<Tuple<String>, SUTConfiguration> sutHandlerConfigurations = new HashMap<>();
 
-			for(Map.Entry<Tuple<String>, ActorConfiguration> entry : sutConfigurations.entrySet()) {
-				Tuple<String> concatenatedActorTuple = entry.getKey();
+			InitiateResponse initiateResponse = messagingHandler.initiate(configurations);
+			if (!configurations.isEmpty()) {
+				for(Map.Entry<Tuple<String>, ActorConfiguration> entry : sutConfigurations.entrySet()) {
+					ActorConfiguration simulatedActor = ActorUtils.getActorConfiguration(initiateResponse.getActorConfigurations(), entry.getValue().getActor(), entry.getValue().getEndpoint());
 
-				String actorIdToBeSimulated = concatenatedActorTuple.getContents()[0];
-				String endpointNameToBeSimulated = concatenatedActorTuple.getContents()[1];
+					Tuple<String> actorTuple = entry.getKey();
+					String actorIdToBeSimulated = actorTuple.getContents()[0];
+					String endpointNameToBeSimulated = actorTuple.getContents()[1];
 
-				String sutActorId = concatenatedActorTuple.getContents()[2];
-				String sutEndpointName = concatenatedActorTuple.getContents()[3];
-
-				ActorConfiguration simulatedActor = ActorUtils.getActorConfiguration(initiateResponse.getActorConfigurations(), actorIdToBeSimulated, endpointNameToBeSimulated);
-
-				Tuple<String> sutActorTuple = new Tuple<>(new String[] {sutActorId, sutEndpointName});
-
-				if(!sutHandlerConfigurations.containsKey(sutActorTuple)) {
-					SUTConfiguration sutHandlerConfiguration = new SUTConfiguration();
-					sutHandlerConfiguration.setActor(sutActorId);
-					sutHandlerConfiguration.setEndpoint(sutEndpointName);
-
-					sutHandlerConfigurations.put(sutActorTuple, sutHandlerConfiguration);
+					simulatedActor.setActor(actorIdToBeSimulated);
+					simulatedActor.setEndpoint(endpointNameToBeSimulated);
 				}
 
-				SUTConfiguration sutHandlerConfiguration = sutHandlerConfigurations.get(sutActorTuple);
+				for(Map.Entry<Tuple<String>, ActorConfiguration> entry : sutConfigurations.entrySet()) {
+					Tuple<String> concatenatedActorTuple = entry.getKey();
 
-				sutHandlerConfiguration.getConfigs().add(simulatedActor);
+					String actorIdToBeSimulated = concatenatedActorTuple.getContents()[0];
+					String endpointNameToBeSimulated = concatenatedActorTuple.getContents()[1];
+
+					String sutActorId = concatenatedActorTuple.getContents()[2];
+					String sutEndpointName = concatenatedActorTuple.getContents()[3];
+
+					ActorConfiguration simulatedActor = ActorUtils.getActorConfiguration(initiateResponse.getActorConfigurations(), actorIdToBeSimulated, endpointNameToBeSimulated);
+
+					Tuple<String> sutActorTuple = new Tuple<>(new String[] {sutActorId, sutEndpointName});
+
+					if(!sutHandlerConfigurations.containsKey(sutActorTuple)) {
+						SUTConfiguration sutHandlerConfiguration = new SUTConfiguration();
+						sutHandlerConfiguration.setActor(sutActorId);
+						sutHandlerConfiguration.setEndpoint(sutEndpointName);
+
+						sutHandlerConfigurations.put(sutActorTuple, sutHandlerConfiguration);
+					}
+
+					SUTConfiguration sutHandlerConfiguration = sutHandlerConfigurations.get(sutActorTuple);
+
+					sutHandlerConfiguration.getConfigs().add(simulatedActor);
+				}
 			}
 
 			return new MessagingContext(messagingHandler, initiateResponse.getSessionId(),
