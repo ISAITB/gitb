@@ -1535,8 +1535,10 @@ div.page-not-found-main {
 
 /* Footer */
 footer {
-	margin-top: 10px;
+	margin-top: 50px;
 	height: 60px;
+	position: relative;
+	clear: both;
 }
 
 footer a {
