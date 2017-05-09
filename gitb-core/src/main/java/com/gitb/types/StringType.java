@@ -58,9 +58,6 @@ public class StringType extends PrimitiveType {
 
     @Override
     public void setValue(Object value) {
-        if(!(value instanceof String)){
-            //TODO throw exception
-        }
         this.data = (String) value;
     }
 
