@@ -475,7 +475,10 @@ class TestExecutionControllerV2
       @$scope.$apply () =>
         @$scope.interactions.push(interaction)
 
-    $('#provideInputModal').modal('toggle');
+    $('#provideInputModal').modal({
+        keyboard: false,
+        backdrop: 'static'
+    }, 'toggle');
 
   updateStatus: (step, stepId, status, report) =>
     console.log stepId, status

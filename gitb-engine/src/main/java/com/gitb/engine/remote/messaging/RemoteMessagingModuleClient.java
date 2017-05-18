@@ -15,12 +15,14 @@ import com.gitb.types.*;
 import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.lang.StringUtils;
 
 import javax.xml.ws.soap.AddressingFeature;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Map;
 
@@ -178,7 +180,11 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 			if (ValueEmbeddingEnumeration.BASE_64.equals(content.getEmbeddingMethod())) {
 				type.deserialize(Base64.decodeBase64(content.getValue()));
 			} else if (ValueEmbeddingEnumeration.STRING.equals(content.getEmbeddingMethod())) {
-				type.deserialize(content.getValue().getBytes());
+				if (StringUtils.isBlank(content.getEncoding())) {
+					type.deserialize(content.getValue().getBytes(), Charset.defaultCharset().toString());
+				} else {
+					type.deserialize(content.getValue().getBytes(Charset.forName(content.getEncoding())), content.getEncoding());
+				}
 			} else {
 				throw new IllegalStateException("Only base64 and string embedding supported for object types");
 			}
