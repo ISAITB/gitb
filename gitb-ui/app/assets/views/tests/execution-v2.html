@@ -4,7 +4,7 @@
             <h4>Execute Test</h4>
         </div>
         <div class="panel-body">
-            <div class="wizard-directive" wizard-directive steps="testExecutionCtrl.steps" on-next="testExecutionCtrl.onWizardNext" on-finish="testExecutionCtrl.onWizardFinish">
+            <div class="wizard-directive" wizard-directive steps="testExecutionCtrl.steps" trigger-next="testExecutionCtrl.nextStep" on-before="testExecutionCtrl.onWizardBefore" on-next="testExecutionCtrl.onWizardNext" on-finish="testExecutionCtrl.onWizardFinish">
                 <div class="step-content select-configs">
                     Please check your system configurations again in case of inconsistent input <br> <br>
 
@@ -16,7 +16,7 @@
                         </div>
                     </div>
 
-                    <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.nextStep(1)" ng-if="testExecutionCtrl.isSystemConfigurationsValid(testExecutionCtrl.endpointRepresentations)" ng-disabled="testExecutionCtrl.testcase == null || testExecutionCtrl.actor == null">Next</button>
+                    <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.nextStep()" ng-if="testExecutionCtrl.isSystemConfigurationsValid(testExecutionCtrl.endpointRepresentations)" ng-disabled="testExecutionCtrl.testcase == null || testExecutionCtrl.actor == null">Next</button>
                     <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.updateConfigurations()" ng-if="!testExecutionCtrl.isSystemConfigurationsValid(testExecutionCtrl.endpointRepresentations)">Update Configurations</button>
                 </div>
                 <div class="step-content select-participants" ng-if="testExecutionCtrl.isInteroperabilityTesting">
@@ -58,7 +58,7 @@
                             </li>
                         </ul>
                     </div>
-                    <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.nextStep()">Next</button>
+                    <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.nextStep()" ng-show="testExecutionCtrl.showNextForPreliminaryStep">Next</button>
                 </div>
                 <div class="step-content select-execution">
                     <div ng-if="!testExecutionCtrl.started">

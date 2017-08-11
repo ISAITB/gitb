@@ -2,8 +2,10 @@
 	()->
 		scope:
 			steps: '='
+			onBefore: '='
 			onNext: '='
 			onFinish: '='
+			triggerNext: '='
 		restrict: 'A'
 		transclude: true
 		template: ''+
@@ -51,6 +53,9 @@
 			scope.$on 'wizard-directive:next', ()=>
 				scope.next()
 
+			scope.$on 'wizard-directive:start', ()=>
+				showStepContent (findActiveIndex())
+
 			scope.next = (step)->
 				activeIndex = findActiveIndex()
 				if step?
@@ -79,11 +84,14 @@
 				stepContents = element.find '.step-contents .step-content'
 				oldActiveContent = element.find '.step-contents .step-content.active'
 				oldActiveContent.removeClass 'active'
+				showStep = scope.onBefore scope.current
 
-				newActiveContent = angular.element (stepContents[index])
-				newActiveContent.addClass 'active'
+				if showStep
+					newActiveContent = angular.element (stepContents[index])
+					newActiveContent.addClass 'active'
+				else
+					scope.triggerNext()
 
 				return
 
-			showStepContent (findActiveIndex())
 ]

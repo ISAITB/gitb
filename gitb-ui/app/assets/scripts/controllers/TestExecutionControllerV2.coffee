@@ -13,7 +13,7 @@ class TestExecutionControllerV2
     @$scope.interactions  = []
     @selectedInteroperabilitySession = null
     @isOwner = false
-    @endpointRepresentations = []
+    @ready	 = false
 
     @$scope.$on '$destroy', () =>
       if @ws? and @session?
@@ -76,18 +76,7 @@ class TestExecutionControllerV2
     @getTestCaseDefinition(@testId)
     @getActorDefinition(@actorId)
 
-  skipScreen: () ->
-    if @isSystemConfigurationsValid @endpointRepresentations
-      @nextStep(1)
-
-  nextStep: (step) =>
-    if Number(step?) == 1 && !@isInteroperabilityTesting
-      @next()
-      @next()
-    else
-      @next()
-
-  next: () ->
+  nextStep: () =>
     @$scope.$broadcast 'wizard-directive:next'
 
   onWizardNext: (step) =>
@@ -101,6 +90,14 @@ class TestExecutionControllerV2
   onWizardFinish: () =>
     @$log.debug "xxx"
 
+  onWizardBefore: (step) =>
+    if step.id == 1
+      !@isSystemConfigurationsValid(@endpointRepresentations)
+    else if step.id == 2
+      true
+    else
+      true
+
   onFileSelect: (request, files) =>
     request.file = _.head files
     if request.file?
@@ -109,6 +106,12 @@ class TestExecutionControllerV2
       reader.onload = (event) =>
         request.data = event.target.result
 
+  checkReady: ()->
+    @ready = @endpointsLoaded && @configurationsLoaded && @actorLoaded
+    if @ready
+      @$scope.$broadcast 'wizard-directive:start'
+    @ready
+
   updateConfigurations: ()->
     @$state.go 'app.systems.detail.conformance.detail', {id: @systemId, actor_id: @actorId, specId:@specId}
 
@@ -116,6 +119,8 @@ class TestExecutionControllerV2
     @ConformanceService.getEndpointsForActor actorId
         .then (endpoints) =>
           @endpoints = endpoints
+          @endpointsLoaded = true
+          @checkReady()
         .then () =>
           if @endpoints?.length > 0
             endpointIds = _.map @endpoints, (endpoint) -> endpoint.id
@@ -123,6 +128,8 @@ class TestExecutionControllerV2
             .then (configurations) =>
               @configurations = configurations
               @constructEndpointRepresentations()
+              @configurationsLoaded = true
+              @checkReady()
 
               @$log.debug @endpointRepresentations
 
@@ -131,6 +138,10 @@ class TestExecutionControllerV2
                 for parameter in endpoint.parameters
                   if parameter.id == configuration.parameter
                     parameter.value = configuration.value
+          else
+            @configurationsLoaded = true
+            @checkReady()
+
         .catch (error) =>
           @ErrorService.showErrorMessage(error).result.then () =>
             @$state.go @$state.current, {}, {reload: true}
@@ -181,6 +192,7 @@ class TestExecutionControllerV2
         #@$log.debug angular.toJson(data)
         @$scope.steps = @testcase.steps
         @$scope.actorInfo = @testcase.actors.actor
+        @testCaseLoaded = true
 
         @isInteroperabilityTesting = @testcase.metadata.type == @Constants.TEST_CASE_TYPE.INTEROPERABILITY
         if @isInteroperabilityTesting
@@ -204,7 +216,8 @@ class TestExecutionControllerV2
     .then(
       (data) =>
         @actor = data.actorId
-        @skipScreen()
+        @actorLoaded = true
+        @checkReady()
       ,
       (error) =>
         @ErrorService.showErrorMessage(error).result
@@ -304,6 +317,12 @@ class TestExecutionControllerV2
 
         if @testcase.preliminary?
           @initiatePreliminary(@session)
+          @showNextForPreliminaryStep = true
+        else
+          if !(@simulatedConfigs && @simulatedConfigs.length > 0)
+            @nextStep()
+          else
+            @showNextForPreliminaryStep = true
       ,
       (error) =>
         @ErrorService.showErrorMessage(error).result.then () =>
@@ -481,7 +500,6 @@ class TestExecutionControllerV2
     }, 'toggle');
 
   updateStatus: (step, stepId, status, report) =>
-    console.log stepId, status
 
     endsWith = (str, suffix) ->
       str.indexOf suffix, (str.length - suffix.length) != -1
