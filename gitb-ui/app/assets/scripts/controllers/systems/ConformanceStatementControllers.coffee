@@ -154,6 +154,9 @@ class CreateConformanceStatementController
     else
       true
 
+  onWizardBefore: (step) =>
+    true
+
   onWizardFinish: () =>
     @saveConformanceStatement()
     .then () =>
@@ -191,6 +194,7 @@ class CreateConformanceStatementController
     .then(
       (data) =>
         @domains = data
+        @$scope.$broadcast 'wizard-directive:start'
       ,
       (error) =>
         @ErrorService.showErrorMessage(error)

@@ -6,6 +6,8 @@
     <div class="panel-body">
       <div class="create-conformance-statement wizard-directive"
            wizard-directive steps="createConformanceStatementCtrl.steps"
+		   triggerNext="createConformanceStatementCtrl.nextStep"
+		   on-before="createConformanceStatementCtrl.onWizardBefore"
            on-next="createConformanceStatementCtrl.onWizardNext"
            on-finish="createConformanceStatementCtrl.onWizardFinish">
 	<div class="step-content select-domain">

@@ -6,6 +6,7 @@ import com.gitb.messaging.model.TransactionContext;
 import com.gitb.utils.XMLUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.util.List;
@@ -30,6 +31,11 @@ public class NonValidatingPeppolAS2Receiver extends PeppolAS2Receiver {
             return false;
         }
         return true;
+    }
+
+    @Override
+    protected void validateBusinessDocument(Element businessMessageNode) {
+        // Do nothing - This is to be handled in test cases.
     }
 
 }
