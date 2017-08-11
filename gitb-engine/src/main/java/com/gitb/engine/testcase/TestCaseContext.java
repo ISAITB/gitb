@@ -451,7 +451,7 @@ public class TestCaseContext {
 
 		public MessagingContextBuilder addActorConfiguration(String actorIdToBeSimulated, String endpointNameToBeSimulated,
 		                                                     ActorConfiguration sutActorConfiguration) {
-			if (endpointNameToBeSimulated != null && sutActorConfiguration != null) {
+			if (sutActorConfiguration != null) {
 				Tuple<String> actorTuple = new Tuple<>(new String[]{
 						actorIdToBeSimulated, endpointNameToBeSimulated,
 						sutActorConfiguration.getActor(), sutActorConfiguration.getEndpoint()
