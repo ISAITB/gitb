@@ -1,9 +1,8 @@
 class EndpointDetailsController
-	name: 'EndpointDetailsController'
 
 	@$inject = ['$log', '$scope', 'ConformanceService', 'EndPointService', 'ConfirmationDialogService', '$state', '$stateParams']
 	constructor: (@$log, @$scope, @ConformanceService, @EndPointService, @ConfirmationDialogService, @$state, @$stateParams) ->
-		@$log.debug "Constructing #{@name}"
+		@$log.debug "Constructing EndpointDetailsController"
 		@endpointId = @$stateParams.endpoint_id
 		@actorId = @$stateParams.actor_id
 		@domainId = @$stateParams.id
@@ -49,4 +48,4 @@ class EndpointDetailsController
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
-@ControllerUtils.register @controllers, EndpointDetailsController
+@controllers.controller 'EndpointDetailsController', EndpointDetailsController

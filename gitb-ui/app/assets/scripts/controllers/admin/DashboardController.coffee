@@ -1,5 +1,4 @@
 class DashboardController
-  name: 'DashboardController'
 
   @$inject = ['$log', '$state', 'TestService', 'ReportService', 'Constants', 'SystemConfigurationService', 'PopupService', 'ConfirmationDialogService', 'SpecificationService', 'MessageService', 'ErrorService']
   constructor: (@$log, @$state, @TestService, @ReportService, @Constants, @SystemConfigurationService, @PopupService, @ConfirmationDialogService, @SpecificationService, @MessageService, @ErrorService) ->
@@ -200,4 +199,4 @@ class DashboardController
       @nextDisabled = false
       @prevDisabled = false
 
-@ControllerUtils.register @controllers, DashboardController
+@controllers.controller 'DashboardController', DashboardController

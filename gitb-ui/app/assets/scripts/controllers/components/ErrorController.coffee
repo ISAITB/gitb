@@ -1,5 +1,4 @@
 class ErrorController
-  name: 'ErrorController'
 
   @$inject = ['$scope', '$log', '$modalInstance', 'error']
 
@@ -11,4 +10,5 @@ class ErrorController
     @$scope.close = () =>
       @$modalInstance.close()
 
-@ControllerUtils.register @controllers, ErrorController
+@controllers.controller 'ErrorController', ErrorController
+

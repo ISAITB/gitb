@@ -1,62 +1,8 @@
-class AdminDomainsController
-	name: 'AdminDomainsController'
-
-	@$inject = ['$log', '$scope', '$state', 'ConformanceService', 'ErrorService']
-	constructor: (@$log, @$scope, @$state, @ConformanceService, @ErrorService) ->
-		@$log.debug "Constructing #{@name}..."
-
-		@tableColumns = [
-			{
-				field: 'sname',
-				title: 'Short Name'
-			}
-			{
-				field: 'fname',
-				title: 'Full Name'
-			}
-			{
-				field: 'description',
-				title: 'Description'
-			}
-		]
-
-		@domains = []
-		@getDomains()
-
-	getDomains: () ->
-		@ConformanceService.getDomains()
-			.then (data) =>
-				@domains = data
-			.catch (error) =>
-				@ErrorService.showErrorMessage(error)
-
-	onDomainSelect: (domain)=>
-		@$state.go 'app.admin.domains.detail.list', {id: domain.id}
-
-class CreateDomainController
-	name: 'CreateDomainController'
-
-	@$inject = ['$log', '$scope', 'ConformanceService', '$state', 'ErrorService']
-	constructor: (@$log, @$scope, @ConformanceService, @$state, @ErrorService) ->
-		@$log.debug "Constructing #{@name}..."
-
-		@domain = {}
-
-	createDomain: () =>
-		if @domain.sname?.length > 0 and
-		@domain.fname?.length > 0
-			@ConformanceService.createDomain @domain.sname, @domain.fname, @domain.description
-				.then () =>
-					@$state.go 'app.admin.domains.list'
-				.catch (error) =>
-					@ErrorService.showErrorMessage(error)
-
 class DomainDetailsController
-	name: 'DomainDetailsController'
 
 	@$inject = ['$log', '$scope', '$state', '$stateParams', 'ConfirmationDialogService', 'ConformanceService', 'ErrorService']
 	constructor: (@$log, @$scope, @$state, @$stateParams, @ConfirmationDialogService, @ConformanceService, @ErrorService) ->
-		@$log.debug "Constructing #{@name}..."
+		@$log.debug "Constructing DomainDetailsController..."
 
 		@domain = {}
 		@specifications = []
@@ -95,7 +41,7 @@ class DomainDetailsController
 
 		@ConformanceService.getDomains([@domainId])
 		.then (data) =>
-			@domain = _.head data 
+			@domain = _.head data
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
@@ -133,6 +79,4 @@ class DomainDetailsController
 	onActorSelect: (actor) =>
 		@$state.go 'app.admin.domains.detail.actors.detail.list', {id: @domainId, actor_id: actor.id}
 
-@ControllerUtils.register @controllers, DomainDetailsController
-@ControllerUtils.register @controllers, AdminDomainsController
-@ControllerUtils.register @controllers, CreateDomainController
+@controllers.controller 'DomainDetailsController', DomainDetailsController

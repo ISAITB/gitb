@@ -1,5 +1,4 @@
 class HtmlController
-  name: 'HtmlController'
 
   @$inject = ['$log', '$modalInstance', '$scope', 'headerText', 'html']
   constructor: (@$log, @$modalInstance, @$scope, @headerText, @html) ->
@@ -7,4 +6,4 @@ class HtmlController
     @$scope.close = () =>
       @$modalInstance.dismiss()
 
-@ControllerUtils.register @controllers, HtmlController
+@controllers.controller 'HtmlController', HtmlController
