@@ -9,10 +9,11 @@ import com.gitb.tdl.Expression;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.utils.ErrorUtils;
-import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
-import com.sun.org.apache.xpath.internal.jaxp.XPathImpl;
 
-import javax.xml.xpath.*;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 /**
  * Created by senan on 9/5/14.
@@ -116,11 +117,11 @@ public class ExpressionHandler{
     private XPathExpression createXPathExpression(String expression) {
         try {
             //create an XPath processor
-            XPathImpl xPath = (XPathImpl) new XPathFactoryImpl().newXPath();
-            //set namespace context and resolvers
+            XPathFactory factory = new net.sf.saxon.xpath.XPathFactoryImpl();
+            factory.setXPathFunctionResolver(functionResolver);
+            factory.setXPathVariableResolver(variableResolver);
+            XPath xPath = new net.sf.saxon.xpath.XPathFactoryImpl().newXPath();
             xPath.setNamespaceContext(namespaceContext);
-            xPath.setXPathVariableResolver(variableResolver);
-            xPath.setXPathFunctionResolver(functionResolver);
             //compile the expression and return it
             return xPath.compile(expression);
         }catch (XPathExpressionException e){

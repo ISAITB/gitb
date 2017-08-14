@@ -101,7 +101,7 @@ extractRelatedIndicators = (name, report) ->
 
     location = extractLocationInfo assertionReport.value.location
 
-    return name? && location? && location.name == name
+    return name? && location? && location.name.toLowerCase() == name.toLowerCase()
 
   indicators = _.map relatedAssertionReports, (assertionReport) ->
     location = extractLocationInfo assertionReport.value.location
@@ -297,7 +297,7 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
 
             scope.$on 'assertion-report.open', (event, assertionReport) =>
               location = extractLocationInfo assertionReport.value.location
-              if location? && location.name? && location.name == scope.context.name
+              if location? && location.name? && scope.context.name? && location.name.toLowerCase() == scope.context.name.toLowerCase()
                 scope.open location.line
 
             scope.open = (lineNumber) =>
