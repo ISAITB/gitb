@@ -1,29 +1,8 @@
-class CreateSpecificationController
-	name: 'CreateSpecificationController'
-
-	@$inject = ['$log', '$scope', 'ConformanceService', '$state', '$stateParams', 'ErrorService']
-	constructor: (@$log, @$scope, @ConformanceService, @$state, @$stateParams, @ErrorService) ->
-		@$log.debug "Constructing #{@name}"
-
-		@specification = {}
-
-	createSpecification: ()=>
-		if @specification.sname? and	@specification.sname?
-
-			domainId = @$stateParams.id
-
-			@ConformanceService.createSpecification @specification.sname, @specification.fname, @specification.urls, @specification.diagram, @specification.description, @specification.spec_type, domainId
-			.then () =>
-				@$state.go 'app.admin.domains.detail.list'
-			.catch (error) =>
-				@ErrorService.showErrorMessage(error)
-
 class SpecificationDetailsController
-	name: 'SpecificationDetailsController'
 
 	@$inject = ['$log', '$scope', 'ConformanceService', 'TestSuiteService', 'ConfirmationDialogService', 'SpecificationService', '$state', '$stateParams', '$modal', 'ErrorService']
 	constructor: (@$log, @$scope, @ConformanceService, @TestSuiteService, @ConfirmationDialogService, @SpecificationService, @$state, @$stateParams, @$modal, @ErrorService) ->
-		@$log.debug "Constructing #{@name}"
+		@$log.debug "Constructing SpecificationDetailsController"
 
 		@specification = {}
 		@actors = []
@@ -82,7 +61,7 @@ class SpecificationDetailsController
 
 		@ConformanceService.getSpecificationsWithIds([@specificationId])
 		.then (data) =>
-			@specification = _.head data 
+			@specification = _.head data
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
@@ -128,7 +107,7 @@ class SpecificationDetailsController
 				options =
 					templateUrl: 'assets/views/admin/domains/add-existing-actors.html'
 					controller: 'AddExistingActorsController as addExistingActorsCtrl'
-					resolve: 
+					resolve:
 						specification: () =>	@specification
 						existingActors: () => @actors
 						domainActors: () => domainActors
@@ -167,50 +146,4 @@ class SpecificationDetailsController
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
-class AddExistingActorsController
-	name: 'AddExistingActorsController'
-	@$inject = ['$scope', '$log', '$q', 'ConformanceService', '$modalInstance', 'specification', 'existingActors', 'domainActors', 'ErrorService']
-
-	constructor: (@$scope, @$log, @$q, @ConformanceService, @$modalInstance, @specification, @existingActors, @domainActors, @ErrorService) ->
-		@$log.debug "Constructing #{@name}"
-
-		@actorTableColumns = [
-			{
-				field: 'actorId',
-				title: 'ID'
-			}
-			{
-				field: 'name',
-				title: 'Name'
-			}
-			{
-				field: 'description',
-				title: 'Description'
-			}
-		]
-
-		@selectedActors = []
-
-	onActorSelect: (actor) =>
-		@selectedActors.push actor
-
-	onActorDeselect: (actor) =>
-		_.remove @selectedActors, (a)->
-			actor.id == a.id
-
-	save: () =>
-		promises = _.map @selectedActors, (actor) =>
-			@ConformanceService.addActorToSpecification @specification.id, actor.id
-
-		@$q.all promises
-		.then ()=>
-			@$modalInstance.close @selectedActors
-		.catch (error)=>
-			@$modalInstance.dismiss error
-
-	cancel: () =>
-		@$modalInstance.dismiss()
-
-@ControllerUtils.register @controllers, AddExistingActorsController
-@ControllerUtils.register @controllers, SpecificationDetailsController
-@ControllerUtils.register @controllers, CreateSpecificationController
+@controllers.controller 'SpecificationDetailsController', SpecificationDetailsController

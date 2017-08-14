@@ -1,9 +1,8 @@
 class AdminTestSuitesController
-	name: 'AdminTestSuitesController'
 
 	@$inject = ['$log', '$scope', '$state', 'TestSuiteService', 'ConformanceService', 'ErrorService']
 	constructor: (@$log, @$scope, @$state, @TestSuiteService, @ConformanceService, @ErrorService) ->
-		@$log.debug "Constructing #{@name}..."
+		@$log.debug "Constructing AdminTestSuitesController..."
 
 		@tableColumns = [
 			{
@@ -58,13 +57,5 @@ class AdminTestSuitesController
 	onTestSuiteSelect: (testSuite)=>
 		@$state.go 'app.admin.suites.detail', {id: testSuite.id}
 
-class AdminTestSuiteDetailsController
-	name: 'AdminTestSuiteDetailsController'
 
-	@$inject = ['$log', '$scope', '$state', 'TestSuiteService', 'ConformanceService']
-	constructor: (@$log, @$scope, @$state, @TestSuiteService, @ConformanceService) ->
-		@$log.debug "Constructing #{@name}..."
-		
-		
-@ControllerUtils.register @controllers, AdminTestSuiteDetailsController
-@ControllerUtils.register @controllers, AdminTestSuitesController
+@controllers.controller 'AdminTestSuitesController', AdminTestSuitesController

@@ -1,9 +1,8 @@
 class CreateOptionController
-	name: 'CreateOptionController'
 
 	@$inject = ['$log', '$scope', 'ConformanceService', '$state', '$stateParams', 'ErrorService']
 	constructor: (@$log, @$scope, @ConformanceService, @$state, @$stateParams, @ErrorServices) ->
-		@$log.debug "Constructing #{@name}..."
+		@$log.debug "Constructing CreateOptionController..."
 
 		@option = {}
 
@@ -18,4 +17,4 @@ class CreateOptionController
 				.catch (error) =>
 					@ErrorService.showErrorMessage(error)
 
-@ControllerUtils.register @controllers, CreateOptionController
+@controllers.controller 'CreateOptionController', CreateOptionController
