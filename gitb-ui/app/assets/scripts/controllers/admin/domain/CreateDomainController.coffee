@@ -1,35 +1,19 @@
 class CreateDomainController
+	name: 'CreateDomainController'
 
-	@$inject = ['$log', '$scope', '$state', 'ConformanceService', 'ErrorService']
-	constructor: (@$log, @$scope, @$state, @ConformanceService, @ErrorService) ->
-		@$log.debug "Constructing CreateDomainController..."
+	@$inject = ['$log', '$scope', 'ConformanceService', '$state', 'ErrorService']
+	constructor: (@$log, @$scope, @ConformanceService, @$state, @ErrorService) ->
+		@$log.debug "Constructing #{@name}..."
 
-		@tableColumns = [
-			{
-				field: 'sname',
-				title: 'Short Name'
-			}
-			{
-				field: 'fname',
-				title: 'Full Name'
-			}
-			{
-				field: 'description',
-				title: 'Description'
-			}
-		]
+		@domain = {}
 
-		@domains = []
-		@getDomains()
-
-	getDomains: () ->
-		@ConformanceService.getDomains()
-			.then (data) =>
-				@domains = data
-			.catch (error) =>
-				@ErrorService.showErrorMessage(error)
-
-	onDomainSelect: (domain)=>
-		@$state.go 'app.admin.domains.detail.list', {id: domain.id}
+	createDomain: () =>
+		if @domain.sname?.length > 0 and
+		@domain.fname?.length > 0
+			@ConformanceService.createDomain @domain.sname, @domain.fname, @domain.description
+				.then () =>
+					@$state.go 'app.admin.domains.list'
+				.catch (error) =>
+					@ErrorService.showErrorMessage(error)
 
 @controllers.controller 'CreateDomainController', CreateDomainController
