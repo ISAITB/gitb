@@ -9,6 +9,7 @@ import com.gitb.tdl.Expression;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.utils.ErrorUtils;
+import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
@@ -54,20 +55,14 @@ public class ExpressionHandler{
     }
 
     private DataType processExpression(String expression, String expectedReturnType)  {
-        if (DataType.BINARY_DATA_TYPE.equals(expectedReturnType)
-                || DataType.isListType(expectedReturnType)) {
+        if (variableResolver.isVariableReference(expression)) {
+            // This is a pure reference to a context variable
             DataType result = variableResolver.resolveVariable(expression);
-            return result;
+            return result.convertTo(expectedReturnType);
         } else {
-            if (variableResolver.isVariableReference(expression)) {
-                // This is a pure reference to a context variable
-                DataType result = variableResolver.resolveVariable(expression);
-                return result.convertTo(expectedReturnType);
-            } else {
-                // This is a complete XPath expression
-                DataType emptySource = DataTypeFactory.getInstance().create(DataType.OBJECT_DATA_TYPE);
-                return processExpression(emptySource, expression, expectedReturnType);
-            }
+            // This is a complete XPath expression
+            DataType emptySource = DataTypeFactory.getInstance().create(DataType.OBJECT_DATA_TYPE);
+            return processExpression(emptySource, expression, expectedReturnType);
         }
     }
 
@@ -117,10 +112,10 @@ public class ExpressionHandler{
     private XPathExpression createXPathExpression(String expression) {
         try {
             //create an XPath processor
-            XPathFactory factory = new net.sf.saxon.xpath.XPathFactoryImpl();
+            XPathFactory factory = new XPathFactoryImpl();
             factory.setXPathFunctionResolver(functionResolver);
             factory.setXPathVariableResolver(variableResolver);
-            XPath xPath = new net.sf.saxon.xpath.XPathFactoryImpl().newXPath();
+            XPath xPath = factory.newXPath();
             xPath.setNamespaceContext(namespaceContext);
             //compile the expression and return it
             return xPath.compile(expression);
