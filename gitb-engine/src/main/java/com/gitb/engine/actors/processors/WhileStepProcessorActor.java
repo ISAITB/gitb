@@ -87,9 +87,7 @@ public class WhileStepProcessorActor extends AbstractIterationStepActor<WhileSte
 	private boolean loop(int iteration) throws Exception {
 		checkIteration(iteration);
 
-		boolean condition = (boolean) expressionHandler
-			.processExpression(step.getCond(), DataType.BOOLEAN_DATA_TYPE)
-			.getValue();
+		boolean condition = (boolean) expressionHandler.processExpression(step.getCond(), DataType.BOOLEAN_DATA_TYPE).getValue();
 
 		if(condition) {
 			ActorRef iterationActor = SequenceProcessorActor.create(getContext(), step.getDo(), scope, stepId + ITERATION_OPENING_TAG + (iteration + 1) + ITERATION_CLOSING_TAG);
