@@ -3,6 +3,7 @@ package com.gitb.engine.testcase;
 import com.gitb.ModuleManager;
 import com.gitb.core.*;
 import com.gitb.engine.messaging.MessagingContext;
+import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.remote.messaging.RemoteMessagingModuleClient;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
@@ -57,6 +58,11 @@ public class TestCaseContext {
      * MessagingContext for each handler used in the TestCase
      */
     private final Map<String, MessagingContext> messagingContexts;
+
+	/**
+	 * ProcessingContext for the processing transactions (for each transaction)
+	 */
+	private final Map<String, ProcessingContext> processingContexts;
 
     /**
      * Roles defined in the TestCase
@@ -113,11 +119,13 @@ public class TestCaseContext {
         this.sutConfigurations = new ConcurrentHashMap<>();
         this.sutHandlerConfigurations = new ConcurrentHashMap<>();
         this.messagingContexts = new ConcurrentHashMap<>();
+		this.processingContexts = new ConcurrentHashMap<>();
         this.scope = new TestCaseScope(this);
 
         processVariables();
 
         actorRoles = new HashMap<>();
+
         // Initialize configuration lists for SutHandlerConfigurations
         for(TestRole role : this.testCase.getActors().getActor()) {
             actorRoles.put(role.getId(), role);
@@ -433,6 +441,18 @@ public class TestCaseContext {
     public Collection<MessagingContext> getMessagingContexts() {
         return messagingContexts.values();
     }
+
+	public void addProcessingContext(String txId, ProcessingContext ctx) {
+		processingContexts.put(txId, ctx);
+	}
+
+	public ProcessingContext getProcessingContext(String txId) {
+		return processingContexts.get(txId);
+	}
+
+	public void removeProcessingContext(String txId) {
+		processingContexts.remove(txId);
+	}
 
 	private static class MessagingContextBuilder {
 		private final String handler;

@@ -54,10 +54,18 @@ public abstract class AbstractProcessingStepProcessorActor<T extends Process> ex
         for (Binding binding : input) {
             TypedParameter parameter = getParam(params, binding.getName());
             requiredParams.remove(parameter);
-            DataType data = getDataType(parameter.getType(), binding);
+            DataType data = getInputValue(parameter.getType(), binding);
             processingData.getData().put(binding.getName(), data);
         }
         setDefaultValuesForRequiredParameters(processingData, requiredParams);
+    }
+
+    protected DataType getInputValue(String type, Binding input) {
+        Expression expression = new Expression();
+        expression.setSource(input.getSource());
+        expression.setValue(input.getValue());
+
+        return expressionHandler.processExpression(expression, type);
     }
 
     protected void setInputWithModuleDefinition(ProcessingData processingData, List<Binding> input, String operation, IProcessingHandler handler) {
@@ -66,7 +74,7 @@ public abstract class AbstractProcessingStepProcessorActor<T extends Process> ex
         for (int i = 0; i < params.size(); i++) {
             TypedParameter parameter = params.get(i);
             requiredParams.remove(parameter);
-            DataType data = getDataType(parameter.getType(), input.get(i));
+            DataType data = getInputValue(parameter.getType(), input.get(i));
             processingData.getData().put(parameter.getName(), data);
         }
         setDefaultValuesForRequiredParameters(processingData, requiredParams);
@@ -81,24 +89,6 @@ public abstract class AbstractProcessingStepProcessorActor<T extends Process> ex
                 processingData.getData().put(param.getName(), defaultValue);
             }
         }
-    }
-
-    protected DataType getDataType(String type, Binding binding) {
-        DataType dataType;
-        if (VariableResolver.isVariableExpression(binding.getValue())) {
-            if (variableResolver.isVariableReference(binding.getValue())) {
-                dataType = variableResolver.resolveVariable(binding.getValue());
-            } else {
-                Expression expression = new Expression();
-                expression.setSource(binding.getSource());
-                expression.setValue(binding.getValue());
-                dataType = expressionHandler.processExpression(expression, type);
-            }
-        } else {
-            dataType = DataTypeFactory.getInstance().create(type);
-            dataType.setValue(binding.getValue());
-        }
-        return dataType;
     }
 
     protected TypedParameter getParam(List<TypedParameter> parameters, String name) {

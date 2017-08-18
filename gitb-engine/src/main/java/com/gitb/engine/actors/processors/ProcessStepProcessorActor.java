@@ -7,37 +7,19 @@ import akka.dispatch.OnFailure;
 import akka.dispatch.OnSuccess;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
-import com.gitb.core.TypedParameter;
-import com.gitb.core.TypedParameters;
-import com.gitb.core.UsageEnumeration;
 import com.gitb.engine.events.model.ErrorStatusEvent;
-import com.gitb.engine.expr.ExpressionHandler;
-import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.processing.ProcessingContext;
-import com.gitb.engine.processing.ProcessingManager;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.processing.IProcessingHandler;
-import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
-import com.gitb.ps.ProcessingOperation;
-import com.gitb.tdl.Binding;
-import com.gitb.tdl.Expression;
 import com.gitb.tdl.Process;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
-import com.gitb.types.DataType;
-import com.gitb.types.DataTypeFactory;
-import com.gitb.types.MapType;
-import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 
 public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorActor<Process> {
@@ -88,7 +70,7 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
     protected void start() throws Exception {
         processing();
 
-        final ProcessingContext context = ProcessingManager.INSTANCE.getProcessingContext(step.getTxnId());
+        final ProcessingContext context = this.scope.getContext().getProcessingContext(step.getTxnId());
 
         future = Futures.future(new Callable<TestStepReportType>() {
             @Override

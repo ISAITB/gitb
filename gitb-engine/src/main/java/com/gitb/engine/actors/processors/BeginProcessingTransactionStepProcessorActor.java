@@ -3,7 +3,6 @@ package com.gitb.engine.actors.processors;
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import com.gitb.engine.processing.ProcessingContext;
-import com.gitb.engine.processing.ProcessingManager;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.tdl.BeginProcessingTransaction;
 
@@ -31,7 +30,7 @@ public class BeginProcessingTransactionStepProcessorActor extends AbstractTestSt
         ProcessingContext context = new ProcessingContext(step.getHandler());
         String session = context.getHandler().beginTransaction(step.getConfig());
         context.setSession(session);
-        ProcessingManager.INSTANCE.setTransaction(step.getTxnId(), context);
+        this.scope.getContext().addProcessingContext(step.getTxnId(), context);
 
         completed();
     }
