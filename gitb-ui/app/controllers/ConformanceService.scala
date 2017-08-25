@@ -76,7 +76,7 @@ class ConformanceService extends Controller {
    */
   def getSpecTestSuites(spec_id: Long) = Action.async {
     TestSuiteManager.getTestSuitesWithSpecificationId(spec_id) map { testSuites =>
-      val json = JsonUtil.jsTestSuites(testSuites).toString()
+      val json = JsonUtil.jsTestSuitesList(testSuites).toString()
       ResponseConstructor.constructJsonResponse(json)
     }
   }
@@ -223,6 +223,16 @@ class ConformanceService extends Controller {
       case None => Future {
         ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + Parameters.FILE + "] parameter is missing.")
       }
+    }
+  }
+
+  def getActorTestSuites(actorId: Long) = Action.async { request =>
+    val specId = ParameterExtractor.requiredQueryParameter(request, Parameters.SPEC).toLong
+    val testCaseType = ParameterExtractor.requiredQueryParameter(request, Parameters.TYPE).toShort
+
+    TestSuiteManager.getTestSuitesBySpecificationAndActorAndTestCaseType(specId, actorId, testCaseType) map { list =>
+      val json: String = JsonUtil.jsTestSuiteList(list).toString
+      ResponseConstructor.constructJsonResponse(json)
     }
   }
 

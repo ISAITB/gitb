@@ -151,5 +151,11 @@ class SystemService
       params:
         ids: actorIds.join ','
 
+  getLastExecutionResultsForTestSuite: (system, testSuiteId, testCaseIds) ->
+      @RestService.get
+        path: jsRoutes.controllers.SystemService.getLastExecutionResultsForTestSuite(system).url
+        params:
+          id: testSuiteId,
+          ids: testCaseIds.join ','
 
 services.service('SystemService', SystemService)

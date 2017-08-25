@@ -25,7 +25,7 @@ class TestSuiteService extends Controller {
 		val testSuiteIds = ParameterExtractor.extractLongIdsQueryParameter(request)
 
 		TestSuiteManager.getTestSuites(testSuiteIds) map { testSuites =>
-			val json = JsonUtil.jsTestSuites(testSuites).toString()
+			val json = JsonUtil.jsTestSuitesList(testSuites).toString()
 			ResponseConstructor.constructJsonResponse(json)
 		}
 	}

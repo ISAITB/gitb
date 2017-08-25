@@ -10,11 +10,11 @@ class ConformanceStatementDetailController
     @conformanceStatement = null
     @conformanceStatementRepr = null
     @domain = null
-    @conformanceTests = []
-    @interoperabilityTests = []
     @endpoints = []
     @endpointRepresentations = []
     @configurations = []
+    @testSuites = []
+    @runTestClicked = false
 
     @parameterTableColumns = [
       {
@@ -50,70 +50,29 @@ class ConformanceStatementDetailController
       }
     ]
 
-    @testsTableColumns = [
-      {
-        field: 'sname'
-        title: 'Short Name'
-      }
-      {
-        field: 'fname'
-        title: 'Full Name'
-      }
-      {
-        field: 'description'
-        title: 'Description'
-      }
-      {
-        field: 'result'
-        title: 'Last Result'
-      }
-    ]
-
     @initalizeFields()
 
   initalizeFields: () =>
+    @ConformanceService.getActorTestSuites @specId, @actorId, @Constants.TEST_CASE_TYPE.CONFORMANCE
+    .then (data) =>
+      for testSuite in data
+        testCaseIds = _.map testSuite.testCases, (testCase) -> testCase.id
+        if testCaseIds.length > 0
+           @SystemService.getLastExecutionResultsForTestSuite @systemId, testSuite.id, testCaseIds
+           .then (result) =>
+               ts = _.find data, (ts) =>
+                 `ts.id == result.id`
+               for id, result of result.testCases
+                 tc = _.find ts.testCases, (tc) =>
+                   `tc.id == id`
+                 tc.result = result
+               @determineTestSuiteResult(ts)
+      @testSuites = data
+
     @SystemService.getConformanceStatements @systemId, @specId, @actorId
     .then (data) =>
       @conformanceStatement = _.head data
       @constructConformanceStatementRepresentation @conformanceStatement
-    .then () =>
-      @ConformanceService.getDomains  [@conformanceStatement.actor.domain]
-      .then (data) =>
-        @domain = _.head data
-    .then () =>
-      optionIds = []
-      if @conformanceStatement.options? and @conformanceStatement.options.length > 0
-        optionIds = _.map @conformanceStatement.options, (o) => o.id
-
-      #get conformance tests
-      @ConformanceService.getTestCases @actorId, @specId, optionIds, @Constants.TEST_CASE_TYPE.CONFORMANCE
-      .then (data) =>
-        testCaseIds = _.map data, (testCase) -> testCase.id
-
-        if testCaseIds.length > 0
-          @SystemService.getLastExecutionResultsForTestCases @systemId, testCaseIds
-          .then (results) =>
-            for id, result of results
-              test = _.find data, (test) =>
-                `test.id == id`
-              if test?
-                test.result = result
-            @conformanceTests = data
-
-      #get interoperability tests
-      @ConformanceService.getTestCases @actorId, @specId, optionIds, @Constants.TEST_CASE_TYPE.INTEROPERABILITY
-        .then (data) =>
-          testCaseIds = _.map data, (testCase) -> testCase.id
-
-          if testCaseIds.length > 0
-            @SystemService.getLastExecutionResultsForTestCases @systemId, testCaseIds
-            .then (results) =>
-              for id, result of results
-                test = _.find data, (test) =>
-                  `test.id == id`
-                if test?
-                  test.result = result
-              @interoperabilityTests = data
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -131,6 +90,16 @@ class ConformanceStatementDetailController
         .catch (error) =>
           @ErrorService.showErrorMessage(error)
 
+  determineTestSuiteResult: (testSuite) =>
+     overallResult = @Constants.TEST_CASE_RESULT.SUCCESS
+     for testCase, i in testSuite.testCases
+       if testCase.result == @Constants.TEST_CASE_RESULT.FAILURE
+         overallResult = @Constants.TEST_CASE_RESULT.FAILURE
+         break
+       if testCase.result == @Constants.TEST_CASE_RESULT.UNDEFINED
+         overallResult = @Constants.TEST_CASE_RESULT.UNDEFINED
+     testSuite.result = overallResult
+
   constructEndpointRepresentations: () =>
     @endpointRepresentations = _.map @endpoints, (endpoint) =>
         name: endpoint.name
@@ -144,8 +113,17 @@ class ConformanceStatementDetailController
               configuration.value?
           repr
 
+  onExpand: (testSuite) =>
+    testSuite.expanded = !testSuite.expanded if !@runTestClicked
+    @runTestClicked = false
+
   onTestSelect: (test) =>
     @$state.go 'app.tests.execution', {test_id: test.sname, systemId: @systemId, actorId: @conformanceStatementRepr.id, specId:@specId}
+
+  onTestSuiteSelect: (testSuite) =>
+    # This function remains empty at the moment but it makes sense to keep it,
+    # as in the future we will not only be able to run individual test cases but
+    # also test suites (which contain test cases).
 
   constructConformanceStatementRepresentation: (conformanceStatement) =>
     @conformanceStatementRepr =

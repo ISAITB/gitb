@@ -38,16 +38,60 @@
 			</div>
 		</div>
 	</div>
-	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.conformanceTests.length > 0">
+
+	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.testSuites.length > 0">
 		<div class="panel-heading">
 			<h5 class="title">Conformance Tests</h5>
 		</div>
-		<div table-directive columns="conformanceStatementDetailCtrl.testsTableColumns" data="conformanceStatementDetailCtrl.conformanceTests" on-select="conformanceStatementDetailCtrl.onTestSelect"></div>
+		<div>
+			<table class="table table-directive">
+				<thead>
+				<tr>
+					<th width="1%">Name</th>
+					<th>Description</th>
+					<th width="10%">Result</th>
+					<th width="10%"></th>
+				</tr>
+				</thead>
+				<!-- test suites and their test cases -->
+				<tbody ng-if="conformanceStatementDetailCtrl.testSuites.length > 1">
+				<tr ng-repeat-start="testSuite in conformanceStatementDetailCtrl.testSuites"
+					ng-click="conformanceStatementDetailCtrl.onExpand(testSuite)"
+					class="row-hover">
+					<td>{{testSuite.sname}}</td>
+					<td>{{testSuite.description}}</td>
+					<td>{{testSuite.result}}</td>
+					<td>
+						<!--<button class="btn btn-default"-->
+						<!--ng-click="conformanceStatementDetailCtrl.onTestSuiteSelect(testSuite)"><i-->
+						<!--class="fa fa-play"></i></button>-->
+					</td>
+				</tr>
+				<tr ng-if="testSuite.expanded" ng-repeat-end ng-repeat="testCase in testSuite.testCases">
+					<td>{{testCase.sname}}</td>
+					<td>{{testCase.description}}</td>
+					<td>{{testCase.result}}</td>
+					<td>
+						<button class="btn btn-default"
+								ng-click="conformanceStatementDetailCtrl.onTestSelect(testCase)"><i
+								class="fa fa-play"></i></button>
+					</td>
+				</tr>
+				</tbody>
+				<!-- test cases -->
+				<tbody ng-if="conformanceStatementDetailCtrl.testSuites.length == 1">
+				<tr ng-repeat="testCase in conformanceStatementDetailCtrl.testSuites[0].testCases">
+					<td>{{testCase.sname}}</td>
+					<td>{{testCase.description}}</td>
+					<td>{{testCase.result}}</td>
+					<td>
+						<button class="btn btn-default"
+								ng-click="conformanceStatementDetailCtrl.onTestSelect(testCase)"><i
+								class="fa fa-play"></i></button>
+					</td>
+				</tr>
+				</tbody>
+			</table>
+		</div>
 	</div>
-    <div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.interoperabilityTests.length > 0">
-        <div class="panel-heading">
-            <h5 class="title">Interoperability Tests</h5>
-        </div>
-        <div table-directive columns="conformanceStatementDetailCtrl.testsTableColumns" data="conformanceStatementDetailCtrl.interoperabilityTests" on-select="conformanceStatementDetailCtrl.onTestSelect"></div>
-    </div>
 </div>

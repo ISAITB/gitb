@@ -125,6 +125,17 @@ class SystemService extends Controller{
 		}
 	}
 
+  def getLastExecutionResultsForTestSuite(sut_id:Long) = Action.async { request =>
+    val testCaseIdsParam = ParameterExtractor.requiredQueryParameter(request, Parameters.IDS)
+    val testCaseIds = testCaseIdsParam.split(",").map(_.toLong).toList
+    val testSuiteId = ParameterExtractor.requiredQueryParameter(request, Parameters.ID).toLong
+
+    TestCaseManager.getLastExecutionResultsForTestCases(sut_id, testCaseIds) map { results =>
+      val json = JsonUtil.jsTestResultStatuses(testSuiteId, testCaseIds, results).toString()
+      ResponseConstructor.constructJsonResponse(json)
+    }
+  }
+
 	def getImplementedActors(sut_id:Long) = Action.async { request =>
 		SystemManager.getImplementedActors(sut_id) map { actors =>
 			val json:String = JsonUtil.jsActors(actors).toString()

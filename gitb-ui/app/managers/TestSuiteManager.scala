@@ -256,4 +256,36 @@ object TestSuiteManager extends BaseManager {
 			}
 		}
 	}
+
+	def getTestSuitesBySpecificationAndActorAndTestCaseType(specificationId: Long, actorId: Long, testCaseType: Short): Future[List[TestSuite]] = {
+		Future {
+			DB.withSession { implicit session =>
+				val testSuiteIds = PersistenceSchema.testSuiteHasActors
+					.filter(_.actor === actorId)
+					.map(_.testsuite)
+					.list
+
+				val testSuites = PersistenceSchema.testSuites
+					.filter(_.id inSet testSuiteIds)
+					.filter(_.specification === specificationId)
+					.list
+
+				testSuites map { testSuite =>
+					val testCaseId = PersistenceSchema.testSuiteHasTestCases
+						.filter(_.testsuite === testSuite.id)
+						.map(_.testcase)
+						.firstOption
+						.get
+
+					val testCases = PersistenceSchema.testCases
+						.filter(_.id === testCaseId)
+						.filter(_.testCaseType === testCaseType)
+						.list
+
+					new TestSuite(testSuite, testCases)
+				}
+			}
+		}
+	}
+
 }
