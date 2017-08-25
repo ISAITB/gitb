@@ -47,6 +47,22 @@ object TestSuiteManager extends BaseManager {
 		}
 	}
 
+	def getTestSuitesWithTestCases(): Future[List[TestSuite]] = {
+		Future {
+			DB.withSession { implicit session =>
+				val testSuites = PersistenceSchema.testSuites.list
+
+				testSuites map {
+					ts:TestSuites =>
+						val testCaseIds = PersistenceSchema.testSuiteHasTestCases.filter(_.testsuite === ts.id).map(_.testcase).list
+						val testCases = PersistenceSchema.testCases.filter(_.id inSet testCaseIds).list
+
+						new TestSuite(ts, testCases)
+				}
+			}
+		}
+	}
+
 	def undeployTestSuite(testSuiteId: Long): Future[Unit] = {
 		Future {
 			DB.withSession { implicit session =>

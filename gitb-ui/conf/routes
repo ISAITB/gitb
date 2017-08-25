@@ -79,11 +79,14 @@ POST    /admins/:id                         @controllers.UserService.updateSyste
 DELETE  /admins/:id                         @controllers.UserService.deleteSystemAdmin(id : Long)
 
 # Session management API
+GET     /dashboard/tests                    @controllers.RepositoryService.getTestCases
+GET     /dashboard/systems                  @controllers.SystemService.getSystems
 GET     /dashboard/active                   @controllers.ReportService.getActiveTestResults
-GET     /dashboard/completed                @controllers.ReportService.getCompletedTestResults
-GET     /dashboard/count                    @controllers.ReportService.getCompletedTestResultCount
+GET     /dashboard/finished                 @controllers.ReportService.getFinishedTestResults
+GET     /dashboard/count                    @controllers.ReportService.getFinishedTestResultsCount
 GET     /dashboard/config                   @controllers.SystemConfigurationService.getSessionAliveTime
 POST    /dashboard/config                   @controllers.SystemConfigurationService.updateSessionAliveTime
+GET     /dashboard/suites                   @controllers.TestSuiteService.getTestSuitesWithTestCases
 
 GET     /pages/default                      @controllers.LandingPageService.getDefaultLandingPage
 GET     /pages/all                          @controllers.LandingPageService.getLandingPages

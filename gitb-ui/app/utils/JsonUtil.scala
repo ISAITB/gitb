@@ -182,7 +182,8 @@ object JsonUtil {
       "sname" -> system.shortname,
       "fname" -> system.fullname,
       "description" -> (if(system.description.isDefined) system.description.get else JsNull),
-      "version" -> system.version
+      "version" -> system.version,
+      "owner" -> system.owner
     )
     json
   }
@@ -467,8 +468,8 @@ object JsonUtil {
       "actorId"   -> testResult.actorId,
       "testId"    -> testResult.testCaseId,
       "result"    -> testResult.result,
-      "startTime" -> testResult.startTime,
-      "endTime"   -> testResult.endTime,
+      "startTime" -> TimeUtil.serializeTimestamp(testResult.startTime),
+      "endTime"   -> (if(testResult.endTime.isDefined) TimeUtil.serializeTimestamp(testResult.endTime.get) else JsNull),
       "tpl"       -> (if(returnTPL) testResult.tpl else JsNull)
     )
     json

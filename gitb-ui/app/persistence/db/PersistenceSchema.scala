@@ -1,7 +1,8 @@
 package persistence.db
 
 import models._
-import java.sql.Blob
+import java.sql.{Blob, Timestamp}
+
 import scala.slick.driver.MySQLDriver.simple._
 
 object PersistenceSchema {
@@ -184,8 +185,8 @@ object PersistenceSchema {
 	  def actorId = column[Long]("actor_id")
 	  def testcaseId = column[Long]("testcase_id")
 	  def result = column[String]("result")
-	  def startTime = column[String]("start_time")
-	  def endTime = column[Option[String]]("end_time", O.Nullable)
+	  def startTime = column[Timestamp]("start_time")
+	  def endTime = column[Option[Timestamp]]("end_time", O.Nullable, O.DBType("TIMESTAMP"))
 	  def tpl = column[String]("tpl", O.DBType("BLOB"))
 	  def sutVersion = column[Option[String]]("sut_version", O.Nullable) // TODO
     def * = (testSessionId, sutId, actorId, testcaseId, result, startTime, endTime, sutVersion, tpl) <> (TestResult.tupled, TestResult.unapply)

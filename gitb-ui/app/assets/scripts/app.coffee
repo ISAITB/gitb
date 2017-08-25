@@ -4,6 +4,8 @@ dependencies = [
 	'ngGrid'
 	'ui.bootstrap'
 	'ui.bootstrap.modal'
+	'ngSanitize'
+	'ngAnimate'
 	'ui.bootstrap.dropdown'
 	'app.common'
 	'app.models'
@@ -14,6 +16,8 @@ dependencies = [
 	'app.filters'
 	'ui.router'
 	'angularFileUpload'
+	'isteven-multi-select'
+	'daterangepicker'
 ]
 
 @app = angular.module 'app', dependencies

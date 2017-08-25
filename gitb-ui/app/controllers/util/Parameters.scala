@@ -5,6 +5,23 @@ object Parameters {
   val USER_ID = "GITB-USER-ID"
   val ID      = "id"
 
+  //Dashboard filter parameters
+  val DOMAIN_IDS = "domain_ids"
+  val SPEC_IDS = "specification_ids"
+  val TEST_SUITE_IDS = "test_suite_ids"
+  val TEST_CASE_IDS = "test_case_ids"
+  val ORG_IDS = "organization_ids"
+  val SYSTEM_IDS = "system_ids"
+  val RESULTS = "results"
+  val START_TIME_BEGIN = "start_time_begin"
+  val START_TIME_END = "start_time_end"
+  val END_TIME_BEGIN = "end_time_begin"
+  val END_TIME_END = "end_time_end"
+
+  //Dashboard sorting
+  val SORT_COLUMN = "sort_column"
+  val SORT_ORDER = "sort_order"
+
   //Some common parameters
   val USERNAME = "username"
   val PASSWORD = "password"

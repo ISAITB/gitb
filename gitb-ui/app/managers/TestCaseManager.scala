@@ -24,7 +24,6 @@ object TestCaseManager extends BaseManager {
 		}
 	}
 
-
 	def getTestCase(testCaseId:String) = {
 		Future {
 			DB.withSession { implicit session =>
@@ -87,6 +86,23 @@ object TestCaseManager extends BaseManager {
 
 					testCaseResult
 				}
+			}
+		}
+	}
+
+	def getTestCases(ids: Option[List[Long]]): Future[List[TestCases]] = {
+		Future {
+			DB.withSession { implicit session =>
+				val q = ids match {
+					case Some(idList) => {
+						PersistenceSchema.testCases
+							.filter(_.id inSet idList)
+					}
+					case None => {
+						PersistenceSchema.testCases
+					}
+				}
+				q.list
 			}
 		}
 	}

@@ -1645,3 +1645,7 @@ div.conformance tr.row-hover {
 div.conformance tr.row-hover:hover {
     background-color: #F2F2F2;
 }
+
+table th.sortable {
+    cursor: pointer;
+}

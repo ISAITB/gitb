@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import javax.xml.bind.JAXBElement
 import javax.xml.transform.stream.StreamSource
+import java.sql.Timestamp
 
 import com.gitb.core.{AnyContent, StepStatus}
 import com.gitb.tbs.{ObjectFactory, TestStepStatus}
@@ -31,8 +32,8 @@ import utils.{JacksonUtil, TimeUtil}
 import scala.collection.JavaConversions._
 
 /**
- * Created by senan on 03.12.2014.
- */
+  * Created by senan on 03.12.2014.
+  */
 object ReportManager extends BaseManager {
 
   val logger: Logger = LoggerFactory.getLogger("ReportManager")
@@ -76,45 +77,160 @@ object ReportManager extends BaseManager {
     }
   }
 
-  def getActiveTestResults: Future[List[TestResultSessionReport]] = {
+
+  def getActiveTestResults(domainIds: Option[List[Long]],
+                           specIds: Option[List[Long]],
+                           testSuiteIds: Option[List[Long]],
+                           testCaseIds: Option[List[Long]],
+                           organizationIds: Option[List[Long]],
+                           systemIds: Option[List[Long]],
+                           startTimeBegin: Option[String],
+                           startTimeEnd: Option[String],
+                           sortColumn: Option[String],
+                           sortOrder: Option[String]): Future[List[TestResultSessionReport]] = {
     Future {
       DB.withSession { implicit session =>
-        val testResults = PersistenceSchema.testResults
-          .filter(_.endTime.isEmpty)
-          .sortBy(_.startTime.desc)
-          .list
+        val query = getTestResultQuery(domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, None, startTimeBegin, startTimeEnd, None, None, sortColumn, sortOrder, true)
+        val testResults = query.list
 
-        getTestResultSessionReports(testResults)
+        testResults map { case (tr, tc, org, sys, spec, domain, testSuiteHasTestCase, testSuite) =>
+          TestResultSessionReport(tr, Some(tc), Some(org), Some(sys), Some(spec), Some(domain))
+        }
       }
     }
   }
 
-  def getCompletedTestResults(page: Long, limit: Long): Future[List[TestResultSessionReport]] = {
+  def getFinishedTestResultsCount(domainIds: Option[List[Long]],
+                                  specIds: Option[List[Long]],
+                                  testSuiteIds: Option[List[Long]],
+                                  testCaseIds: Option[List[Long]],
+                                  organizationIds: Option[List[Long]],
+                                  systemIds: Option[List[Long]],
+                                  results: Option[List[String]],
+                                  startTimeBegin: Option[String],
+                                  startTimeEnd: Option[String],
+                                  endTimeBegin: Option[String],
+                                  endTimeEnd: Option[String]): Future[Long] = {
     Future {
       DB.withSession { implicit session =>
-        val testResults = PersistenceSchema.testResults
-          .filter(_.endTime.isDefined)
-          .sortBy(_.endTime.desc)
-          .drop(page * limit)
-          .take(limit)
-          .list
-
-        getTestResultSessionReports(testResults)
+        val testResults = getTestResultQuery(domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, None, None, false)
+        testResults.size.run
       }
     }
   }
 
-  def getCompletedTestResultCount: Future[Long] = {
+  def getFinishedTestResults(page: Long,
+                             limit: Long,
+                             domainIds: Option[List[Long]],
+                             specIds: Option[List[Long]],
+                             testSuiteIds: Option[List[Long]],
+                             testCaseIds: Option[List[Long]],
+                             organizationIds: Option[List[Long]],
+                             systemIds: Option[List[Long]],
+                             results: Option[List[String]],
+                             startTimeBegin: Option[String],
+                             startTimeEnd: Option[String],
+                             endTimeBegin: Option[String],
+                             endTimeEnd: Option[String],
+                             sortColumn: Option[String],
+                             sortOrder: Option[String]): Future[List[TestResultSessionReport]] = {
     Future {
       DB.withSession { implicit session =>
-        val count = PersistenceSchema.testResults
-          .filter(_.endTime.isDefined)
-          .size
-          .run
+        val query = getTestResultQuery(domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder, false)
+        val testResults = query.drop((page - 1) * limit).take(limit).list
 
-        count
+        testResults map { case (tr, tc, org, sys, spec, domain, testSuiteHasTestCase, testSuite) =>
+          TestResultSessionReport(tr, Some(tc), Some(org), Some(sys), Some(spec), Some(domain))
+        }
       }
     }
+  }
+
+  private def getTestResultQuery(domainIds: Option[List[Long]],
+                                 specIds: Option[List[Long]],
+                                 testSuiteIds: Option[List[Long]],
+                                 testCaseIds: Option[List[Long]],
+                                 organizationIds: Option[List[Long]],
+                                 systemIds: Option[List[Long]],
+                                 results: Option[List[String]],
+                                 startTimeBegin: Option[String],
+                                 startTimeEnd: Option[String],
+                                 endTimeBegin: Option[String],
+                                 endTimeEnd: Option[String],
+                                 sortColumn: Option[String],
+                                 sortOrder: Option[String],
+                                 active: Boolean)(implicit session: Session) = {
+
+    var query = for {
+      testResult <- PersistenceSchema.testResults
+      system <- PersistenceSchema.systems if system.id === testResult.sutId
+      organization <- PersistenceSchema.organizations if organization.id === system.owner
+      testCase <- PersistenceSchema.testCases if testCase.id === testResult.testcaseId
+      specification <- PersistenceSchema.specifications if specification.id === testCase.targetSpec
+      domain <- PersistenceSchema.domains if domain.id === specification.domain
+      testSuiteHasTestCase <- PersistenceSchema.testSuiteHasTestCases if testCase.id === testSuiteHasTestCase.testcase
+      testSuite <- PersistenceSchema.testSuites if testSuiteHasTestCase.testsuite === testSuite.id
+    } yield (testResult, testCase, organization, system, specification, domain, testSuiteHasTestCase, testSuite)
+
+
+    query = query.filter { result =>
+      List(
+        domainIds.map(result._6.id inSet _),
+        specIds.map(result._5.id inSet _),
+        testCaseIds.map(result._2.id inSet _),
+        organizationIds.map(result._3.id inSet _),
+        systemIds.map(result._4.id inSet _),
+        results.map(result._1.result inSet _),
+        testSuiteIds.map(result._8.id inSet _)
+      ).collect({ case Some(criteria) => criteria }).reduceLeftOption(_ || _).getOrElse(true: Column[Boolean])
+    }
+
+    if (startTimeBegin.isDefined && startTimeEnd.isDefined) {
+      val start = TimeUtil.parseTimestamp(startTimeBegin.get)
+      val end = TimeUtil.parseTimestamp(startTimeEnd.get)
+
+      query = query.filter(_._1.startTime >= start).filter(_._1.startTime <= end)
+    }
+
+    if (endTimeBegin.isDefined && endTimeEnd.isDefined) {
+      val start = TimeUtil.parseTimestamp(endTimeBegin.get)
+      val end = TimeUtil.parseTimestamp(endTimeEnd.get)
+
+      query = query.filter(_._1.endTime >= start).filter(_._1.endTime <= end)
+    }
+
+    if (active) {
+      query = query.filter(_._1.endTime.isEmpty)
+    } else {
+      query = query.filter(_._1.endTime.isDefined)
+    }
+
+    if (sortColumn.isDefined && sortOrder.isDefined) {
+      if (sortOrder.get == "asc") {
+        query = sortColumn.get match {
+          case "session" => query.sortBy(_._1.testSessionId)
+          case "startTime" => query.sortBy(_._1.startTime)
+          case "endTime" => query.sortBy(_._1.endTime)
+          case "organization" => query.sortBy(_._3.fullname)
+          case "system" => query.sortBy(_._4.shortname)
+          case "result" => query.sortBy(_._1.result)
+          case _ => query
+        }
+      }
+      if (sortOrder.get == "desc") {
+        query = sortColumn.get match {
+          case "session" => query.sortBy(_._1.testSessionId.desc)
+          case "startTime" => query.sortBy(_._1.startTime.desc)
+          case "endTime" => query.sortBy(_._1.endTime.desc)
+          case "organization" => query.sortBy(_._3.fullname.desc)
+          case "system" => query.sortBy(_._4.shortname.desc)
+          case "result" => query.sortBy(_._1.result.desc)
+          case _ => query
+        }
+      }
+    }
+
+    query
   }
 
   private def getTestResultSessionReports(testResults: List[TestResult])(implicit session: Session) = testResults map { testResult =>
@@ -162,7 +278,7 @@ object ReportManager extends BaseManager {
       DB.withSession {
         implicit session =>
           val initialStatus = TestResultType.UNDEFINED.value()
-          val startTime = TimeUtil.getCurrentTime()
+          val startTime = TimeUtil.getCurrentTimestamp()
 
           val testCaseId = {
             val testCaseOptionId = PersistenceSchema.testCases
@@ -188,7 +304,7 @@ object ReportManager extends BaseManager {
           val q = for {
             t <- PersistenceSchema.testResults if t.testSessionId === sessionId
           } yield (t.result, t.endTime)
-          q.update(status.value(), Some(TimeUtil.getCurrentTime()))
+          q.update(status.value(), Some(TimeUtil.getCurrentTimestamp()))
       }
     }
   }
@@ -197,8 +313,8 @@ object ReportManager extends BaseManager {
     Future {
       DB.withSession {
         implicit session =>
-          val q = for { t <- PersistenceSchema.testResults if t.testSessionId === sessionId } yield (t.endTime)
-          q.update(Some(TimeUtil.getCurrentTime()))
+          val q = for {t <- PersistenceSchema.testResults if t.testSessionId === sessionId} yield (t.endTime)
+          q.update(Some(TimeUtil.getCurrentTimestamp()))
       }
     }
   }
@@ -240,7 +356,7 @@ object ReportManager extends BaseManager {
   }
 
   def getListOfTestSteps(folder: File): ListBuffer[TestStepReportType] = {
-    var list = ListBuffer[TestStepReportType] ()
+    var list = ListBuffer[TestStepReportType]()
 
     val stepReports = folder.list()
       .filter(t => t.endsWith(".xml"))
@@ -264,7 +380,9 @@ object ReportManager extends BaseManager {
     list
   }
 
-  private def pad10(string: String): String = {
+  private def pad10(string: String): String
+
+  = {
     "0000000000".substring(string.length) + string;
   }
 
@@ -335,7 +453,7 @@ object ReportManager extends BaseManager {
           lineBreak(doc)
 
           //execution results
-          val start = TimeUtil.parseUTCDatetime(testResult.startTime)
+          val start = testResult.startTime
 
           val p4 = doc.createParagraph();
           p4.setAlignment(ParagraphAlignment.BOTH);
@@ -350,7 +468,7 @@ object ReportManager extends BaseManager {
 
           if (testResult.endTime.isDefined) {
             val end = testResult.endTime.get
-            val difference = (TimeUtil.parseUTCDatetime(end).getTime - start.getTime) / 1000
+            val difference = (end.getTime - start.getTime) / 1000
 
             r8.setText(testResult.startTime + " (UTC)")
 
@@ -404,7 +522,9 @@ object ReportManager extends BaseManager {
     new File(path)
   }
 
-  private def generateDetailedTestStepDocument(document: XWPFDocument, report: TestStepReportType): XWPFDocument = {
+  private def generateDetailedTestStepDocument(document: XWPFDocument, report: TestStepReportType): XWPFDocument
+
+  = {
     var doc = document
 
     if (doc == null)
@@ -677,7 +797,7 @@ object ReportManager extends BaseManager {
     r6.setText(testResult.result)
 
     //execution results
-    val start = TimeUtil.parseUTCDatetime(testResult.startTime)
+    val start = testResult.startTime
 
     val p4 = doc.createParagraph();
     p4.setAlignment(ParagraphAlignment.BOTH);
@@ -692,7 +812,7 @@ object ReportManager extends BaseManager {
 
     if (testResult.endTime.isDefined) {
       val end = testResult.endTime.get
-      val difference = (TimeUtil.parseUTCDatetime(end).getTime - start.getTime) / 1000
+      val difference = (end.getTime() - start.getTime()) / 1000
 
       r8.setText(testResult.startTime + " (UTC)")
 
@@ -744,7 +864,9 @@ object ReportManager extends BaseManager {
     }
   }
 
-  private def writeItem(paragraph: XWPFParagraph, item: AnyContent, base64: Boolean, break1: Int, break2: Int) = {
+  private def writeItem(paragraph: XWPFParagraph, item: AnyContent, base64: Boolean, break1: Int, break2: Int)
+
+  = {
     val r1 = paragraph.createRun();
     r1.setBold(true);
     r1.setText(item.getName);
@@ -765,7 +887,9 @@ object ReportManager extends BaseManager {
     }
   }
 
-  private def lineBreak(doc: XWPFDocument) = {
+  private def lineBreak(doc: XWPFDocument)
+
+  = {
     val empty = doc.createParagraph();
     val emptyText = empty.createRun();
     emptyText.setText("\n")

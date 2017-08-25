@@ -211,4 +211,14 @@ class SystemService extends Controller{
       ResponseConstructor.constructJsonResponse(json)
     }
   }
+
+  def getSystems() = Action.async { request =>
+    val systemIds = ParameterExtractor.extractLongIdsQueryParameter(request)
+
+    SystemManager.getSystems(systemIds) map { systems =>
+      val json = JsonUtil.jsSystems(systems).toString()
+      ResponseConstructor.constructJsonResponse(json)
+    }
+  }
+
 }

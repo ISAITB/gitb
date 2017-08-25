@@ -29,4 +29,12 @@ class TestSuiteService extends Controller {
 			ResponseConstructor.constructJsonResponse(json)
 		}
 	}
+
+	def getTestSuitesWithTestCases() = Action.async { request =>
+		TestSuiteManager.getTestSuitesWithTestCases() map { testSuites =>
+			val json = JsonUtil.jsTestSuiteList(testSuites).toString()
+			ResponseConstructor.constructJsonResponse(json)
+		}
+	}
+
 }
