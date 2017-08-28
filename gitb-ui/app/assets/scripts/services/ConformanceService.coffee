@@ -192,6 +192,15 @@ class ConformanceService
       path: jsRoutes.controllers.ConformanceService.getSpecTestSuites(specificationId).url
       authenticate: true
 
+  getActorTestSuites: (specId, actorId, type) ->
+    params = {
+      spec: specId,
+      type: type
+    }
 
+    @RestService.get
+      path: jsRoutes.controllers.ConformanceService.getActorTestSuites(actorId).url
+      authenticate: true
+      params: params
 
 services.service('ConformanceService', ConformanceService)

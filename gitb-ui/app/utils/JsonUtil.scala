@@ -25,7 +25,7 @@ object JsonUtil {
     json
   }
 
-  def jsTestSuites(list: List[TestSuites]) = {
+  def jsTestSuitesList(list: List[TestSuites]) = {
     var json = Json.arr()
     list.foreach { testSuite =>
       json = json.append(jsTestSuite(testSuite))
@@ -33,7 +33,25 @@ object JsonUtil {
     json
   }
 
-	def jsEndpoint(endpoint: Endpoint) = {
+  def jsTestSuite(testSuite: TestSuite): JsObject = {
+    var jTestSuite: JsObject = jsTestSuite(testSuite.toCaseObject)
+    if (testSuite.testCases.isDefined) {
+      jTestSuite = jTestSuite ++ Json.obj("testCases" -> jsTestCasesList(testSuite.testCases.get))
+    } else {
+      jTestSuite = jTestSuite ++ Json.obj("testCases" -> JsNull)
+    }
+    jTestSuite
+  }
+
+  def jsTestSuiteList(testSuites: List[TestSuite]): JsArray = {
+    var json = Json.arr()
+    testSuites.foreach { testSuite =>
+      json = json.append(jsTestSuite(testSuite))
+    }
+    json
+  }
+
+  def jsEndpoint(endpoint: Endpoint) = {
 		val json = Json.obj(
 			"id" -> endpoint.id,
 			"name" -> endpoint.name,
@@ -575,15 +593,23 @@ object JsonUtil {
     json
   }
 
-	def jsTestResultStatuses(testCaseIds: List[Long], testResultStatuses: List[TestResultStatus.Value]): JsObject = {
-		val zippedResults = testCaseIds.zip(testResultStatuses)
-		var json = Json.obj()
-		zippedResults.foreach { pair =>
-			val (testCaseId, testResultStatus) = pair
-			json = json + (testCaseId.toString, JsString(testResultStatus.toString))
-		}
-		json
-	}
+  def jsTestResultStatuses(testCaseIds: List[Long], testResultStatuses: List[TestResultStatus.Value]): JsObject = {
+    val zippedResults = testCaseIds.zip(testResultStatuses)
+    var json = Json.obj()
+    zippedResults.foreach { pair =>
+      val (testCaseId, testResultStatus) = pair
+      json = json + (testCaseId.toString, JsString(testResultStatus.toString))
+    }
+    json
+  }
+
+  def jsTestResultStatuses(testSuiteId: Long, testCaseIds: List[Long], testResultStatuses: List[TestResultStatus.Value]): JsObject = {
+    val json = Json.obj(
+      "id"    -> testSuiteId,
+      "testCases" -> jsTestResultStatuses(testCaseIds, testResultStatuses)
+    )
+    json
+  }
 
   /**
    * Converts a User object into a JSON string with its complex objects

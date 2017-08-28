@@ -1636,3 +1636,12 @@ a.scroll-to-top.visible {
 	filter: alpha(opacity=75);
 	opacity: 0.75;
 }
+
+div.conformance tr.row-hover {
+    background-color: #F5F5F5;
+    cursor: pointer;
+}
+
+div.conformance tr.row-hover:hover {
+    background-color: #F2F2F2;
+}

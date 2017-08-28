@@ -67,6 +67,11 @@ class Constants
 		ADD: 2
 		DELETE: 3
 
+	@TEST_CASE_RESULT =
+		SUCCESS : "SUCCESS"
+		FAILURE : "FAILURE"
+		UNDEFINED : "UNDEFINED"
+
 	@EMAIL_REGEX: /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 	@DATA_URL_REGEX: /^data:.+\/(.+);base64,(.*)$/
 
