@@ -181,6 +181,15 @@ class RepositoryService extends Controller {
 		}
 	}
 
+  def getTestCases() = Action.async { request =>
+    val testCaseIds = ParameterExtractor.extractLongIdsQueryParameter(request)
+
+    TestCaseManager.getTestCases(testCaseIds) map { testCases =>
+      val json = JsonUtil.jsTestCasesList(testCases).toString()
+      ResponseConstructor.constructJsonResponse(json)
+    }
+  }
+
   private def removeFile(file:File) = {
     file.delete()
   }

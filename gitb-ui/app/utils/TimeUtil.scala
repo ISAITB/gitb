@@ -1,7 +1,8 @@
 package utils
 
+import java.sql.Timestamp
 import java.text.SimpleDateFormat
-import java.util.{Date, Calendar, TimeZone}
+import java.util.{Calendar, Date, TimeZone}
 
 object TimeUtil {
 
@@ -9,14 +10,32 @@ object TimeUtil {
   val MS_IN_AN_HOUR = 60 * 60 * 1000
   val MS_IN_A_SECOND = 1000
 
+  val formatTimestamp = {
+    val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    format
+  }
+
   val formatUTC = {
     val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     format.setTimeZone(TimeZone.getTimeZone("UTC"))
     format
   }
+
   val formatDate = {
     val format = new SimpleDateFormat("yyyy-MM-dd")
     format
+  }
+
+  def parseTimestamp(timestamp:String): Timestamp = {
+    new Timestamp(formatTimestamp.parse(timestamp).getTime())
+  }
+
+  def serializeTimestamp(timestamp:Timestamp): String = {
+    formatTimestamp.format(timestamp)
+  }
+
+  def getCurrentTimestamp(): Timestamp = {
+    new Timestamp(System.currentTimeMillis)
   }
 
   def getCurrentTime():String = {
@@ -35,10 +54,6 @@ object TimeUtil {
 
   def serializeDate(date:Date):String = {
     formatDate.format(date)
-  }
-
-  def parseUTCDatetime(datetime:String): Date = {
-    formatUTC.parse(datetime)
   }
 
   def parseDate(date:String): Date = {
@@ -83,6 +98,10 @@ object TimeUtil {
 
   def getTimeDifferenceInSeconds(timestamp:String):Int = {
     getTimeDifference(timestamp) / MS_IN_A_SECOND
+  }
+
+  def getTimeDifferenceInSeconds(timestamp:Timestamp):Int = {
+    (getCurrentTimestamp().getTime - timestamp.getTime).toInt / MS_IN_A_SECOND
   }
 
   def getTimeDifference(timestamp:String):Int = {

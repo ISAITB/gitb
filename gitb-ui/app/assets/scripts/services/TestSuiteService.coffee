@@ -21,5 +21,9 @@ class TestSuiteService
 				path: jsRoutes.controllers.TestSuiteService.getTestSuites().url
 				authenticate: true
 
+	getTestSuitesWithTestCases: () ->
+		@RestService.get
+			path: jsRoutes.controllers.TestSuiteService.getTestSuitesWithTestCases().url
+			authenticate: true
 
 services.service('TestSuiteService', TestSuiteService)

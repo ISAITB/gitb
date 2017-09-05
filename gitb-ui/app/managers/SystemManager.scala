@@ -294,6 +294,23 @@ object SystemManager extends BaseManager {
 	  PersistenceSchema.systems.filter(_.owner === orgId).delete
 	}
 
+  def getSystems(ids: Option[List[Long]]): Future[List[Systems]] = {
+    Future {
+      DB.withSession { implicit session =>
+        val q = ids match {
+          case Some(idList) => {
+            PersistenceSchema.systems
+              .filter(_.id inSet idList)
+          }
+          case None => {
+            PersistenceSchema.systems
+          }
+        }
+        q.list
+      }
+    }
+  }
+
   /*def getRequiredConfigurations(endpoint:Long): Future[List[Config]] = {
     getActorsForSystem(system) map { actors =>
       DB.withSession { implicit session =>

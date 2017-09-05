@@ -158,4 +158,14 @@ class SystemService
           id: testSuiteId,
           ids: testCaseIds.join ','
 
+  getSystems: (systemIds) ->
+    params = {}
+    if ids? and systemIds.length > 0
+        params.ids = systemIds.join ','
+
+    @RestService.get
+      path: jsRoutes.controllers.SystemService.getSystems().url
+      authenticate: true
+      params: params
+
 services.service('SystemService', SystemService)

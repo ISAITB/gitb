@@ -1,87 +1,183 @@
 class DashboardController
 
-  @$inject = ['$log', '$state', 'TestService', 'ReportService', 'Constants', 'SystemConfigurationService', 'PopupService', 'ConfirmationDialogService', 'SpecificationService', 'MessageService', 'ErrorService']
-  constructor: (@$log, @$state, @TestService, @ReportService, @Constants, @SystemConfigurationService, @PopupService, @ConfirmationDialogService, @SpecificationService, @MessageService, @ErrorService) ->
+  @$inject = ['$log', '$state', 'TestService', 'ReportService', 'Constants', 'SystemConfigurationService', 'PopupService', 'ConfirmationDialogService', 'SpecificationService', 'MessageService', 'ConformanceService', 'TestSuiteService', 'OrganizationService', 'SystemService', 'ErrorService']
+  constructor: (@$log, @$state, @TestService, @ReportService, @Constants, @SystemConfigurationService, @PopupService, @ConfirmationDialogService, @SpecificationService, @MessageService, @ConformanceService, @TestSuiteService, @OrganizationService, @SystemService, @ErrorService) ->
 
-    # active sessions table
-    @activeSessionsColumns = [
+    @activeTestsColumns = [
       {
         field: 'session',
-        title: 'Session'
+        title: 'Session',
+        sortable: true
       }
       {
-        field: 'start',
-        title: 'Start time (UTC)'
+        field: 'startTime',
+        title: 'Start time',
+        sortable: true
+        order: 'asc'
       }
       {
         field: 'organization',
-        title: 'Organization'
+        title: 'Organization',
+        sortable: true
       }
       {
         field: 'system',
-        title: 'System'
+        title: 'System',
+        sortable: true
       }
     ]
 
-    # completed test sessions
-    @completedSessionsColumns = [
+    @completedTestsColumns = [
       {
         field: 'session',
-        title: 'Session'
+        title: 'Session',
+        sortable: true
       }
       {
-        field: 'start',
-        title: 'Start time (UTC)'
+        field: 'startTime',
+        title: 'Start time',
+        sortable: true
       }
       {
-        field: 'end',
-        title: 'End time (UTC)'
+        field: 'endTime',
+        title: 'End time',
+        sortable: true,
+        order: 'desc'
       }
       {
         field: 'organization',
-        title: 'Organization'
+        title: 'Organization',
+        sortable: true
       }
       {
         field: 'system',
-        title: 'System'
+        title: 'System',
+        sortable: true
       }
       {
         field: 'result',
-        title: 'Result'
+        title: 'Result',
+        sortable: true
       }
     ]
 
-    @activeSessions = []
-    @completedSessions = []
-    @page = 0
-    @count = 0
-    @prevDisabled = false
-    @nextDisabled = false
+    @activeTests = []
+
+    @completedTests = []
+    @completedTestsTotalCount = 0
+
+    @activeSortOrder = "asc"
+    @activeSortColumn = "startTime"
+
+    @completedSortOrder = "desc"
+    @completedSortColumn = "endTime"
+
+    @currentPage = 1;
+    @isPreviousPageDisabled = false
+    @isNextPageDisabled = false
+
     @action = false
     @stop = false
     @config = {}
     @onOff = false
-    @prevParameter
+    @prevParameter = null
+    @showFilters = false
 
-    # get active sessions
-    @ReportService.getActiveTestResults()
+    @translation =
+      selectAll       : ""
+      selectNone      : ""
+      reset           : ""
+      search          : "Search..."
+      nothingSelected : "All"
+
+    @filters =
+      domain :
+        all : []
+        filter : []
+        selection : []
+      specification :
+        all : []
+        filter : []
+        selection : []
+      testSuite :
+        all : []
+        filter : []
+        selection : []
+      testCase :
+        all : []
+        filter : []
+        selection : []
+      organization :
+        all : []
+        filter : []
+        selection : []
+      system :
+        all : []
+        filter : []
+        selection : []
+      result :
+        all : []
+        filter : []
+        selection : []
+
+    @startTime = {}
+    @endTime = {}
+
+    @startTimeOptions =
+      eventHandlers:
+        'apply.daterangepicker': @applyTimeFilter
+        'cancel.daterangepicker': @cancelTimeFilter
+
+    @endTimeOptions =
+      eventHandlers:
+        'apply.daterangepicker': @applyTimeFilter
+        'cancel.daterangepicker': @cancelTimeFilter
+
+    @ConformanceService.getDomains()
     .then (data) =>
-      for session in data
-        @activeSessions.push(@getSession(session))
+      @filters.domain.all = data
+      @filters.domain.filter = data
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-    # get active sessions
-    @ReportService.getCompletedTestResultCount()
+    @ConformanceService.getSpecificationsWithIds()
     .then (data) =>
-      @count = data[0].count
+      @filters.specification.all = data
+      @filters.specification.filter = data
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-    # get completed sessions
-    @getCompletedTestResults(@page)
-    # set disabled status
-    @setDisabledStatus()
+    @ReportService.getTestCases()
+    .then (data) =>
+      @filters.testCase.all = data
+      @filters.testCase.filter = data
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+    @TestSuiteService.getTestSuitesWithTestCases()
+    .then (data) =>
+      @filters.testSuite.all = data
+      @filters.testSuite.filter = data
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+    @OrganizationService.getOrganizations()
+    .then (data) =>
+      @filters.organization.all = data
+      @filters.organization.filter = data
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+    @SystemService.getSystems()
+    .then (data) =>
+      @filters.system.all = data
+      @filters.system.filter = data
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+    @getAllResults()
+    @goFirstPage()
+    @getActiveTests()
 
     @SystemConfigurationService.getSessionAliveTime()
     .then (data) =>
@@ -92,66 +188,186 @@ class DashboardController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-  # get completed sessions
-  getCompletedTestResults: (page) =>
-    @ReportService.getCompletedTestResults(page, @Constants.TABLE_PAGE_SIZE)
+  showFilter: () =>
+    @showFilters = true
+
+  clearFilter: () =>
+    @showFilters = false
+    @filters.domain.filter = @filters.domain.all
+    @filters.specification.filter = @filters.specification.all
+    @filters.testSuite.filter = @filters.testSuite.all
+    @filters.testCase.filter = @filters.testCase.all
+    @filters.organization.filter = @filters.organization.all
+    @filters.system.filter = @filters.system.all
+    @filters.result.filter = @filters.result.all
+    @clearTickedProperty @filters.domain.filter
+    @clearTickedProperty @filters.specification.filter
+    @clearTickedProperty @filters.testSuite.filter
+    @clearTickedProperty @filters.testCase.filter
+    @clearTickedProperty @filters.organization.filter
+    @clearTickedProperty @filters.system.filter
+    @clearTickedProperty @filters.result.filter
+    @filters.domain.selection = []
+    @filters.specification.selection = []
+    @filters.testSuite.selection = []
+    @filters.testCase.selection = []
+    @filters.organization.selection = []
+    @filters.system.selection = []
+    @filters.result.selection = []
+    @startTime = {}
+    @endTime = {}
+    @goFirstPage()
+    @getActiveTests()
+
+  clearTickedProperty: (selection) ->
+    for s, i in selection
+      s.ticked = false
+
+  getActiveTests: () ->
+    specIds = _.map @filters.specification.selection, (s) -> s.id
+    testSuiteIds = _.map @filters.testSuite.selection, (s) -> s.id
+    testCaseIds = _.map @filters.testCase.selection, (s) -> s.id
+    organizationIds = _.map @filters.organization.selection, (s) -> s.id
+    systemIds = _.map @filters.system.selection, (s) -> s.id
+    domainIds = _.map @filters.domain.selection, (s) -> s.id
+    startTimeBegin = @startTime.startDate?.format('YYYY-MM-DD HH:mm:ss')
+    startTimeEnd = @startTime.endDate?.format('YYYY-MM-DD HH:mm:ss')
+
+    @ReportService.getActiveTestResults(specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, @activeSortColumn, @activeSortOrder)
     .then (data) =>
-      @processRequest(data)
+      testResultMapper = @newTestResult
+      @activeTests = _.map data, (testResult) -> testResultMapper(testResult)
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-  # turn session alive time parameter off
-  turnOff: () =>
-    @SystemConfigurationService.updateSessionAliveTime()
+  updateFilter: (changedFilter, updateFilter, matchFunction) ->
+    result = []
+    if @filters[changedFilter].selection.length > 0
+      for s, i in @filters[changedFilter].selection
+        for v, i in @filters[updateFilter].all
+          if matchFunction(s, v)
+            found = _.find @filters[updateFilter].filter, (f) =>
+              `f.id == v.id`
+            v.ticked = if found?.ticked? then found.ticked else false
+            result.push v
+    else
+      result = @filters[updateFilter].all
+    @filters[updateFilter].filter = result
+
+  domainClicked: (domain) =>
+    @updateFilter 'domain', 'specification', (s, v) -> `s.id == v.domain`
+    @updateFilter 'specification', 'testSuite', (s, v) -> `s.id == v.specification`
+    @updateFilter 'testSuite', 'testCase', (s, v) -> v.id in (_.map s.testCases, (testCase) -> testCase.id)
+    @goFirstPage()
+    @getActiveTests()
+
+  specificationClicked: (spec) =>
+    @updateFilter 'specification', 'testSuite', (s, v) -> `s.id == v.specification`
+    @updateFilter 'testSuite', 'testCase', (s, v) -> v.id in (_.map s.testCases, (testCase) -> testCase.id)
+    @goFirstPage()
+    @getActiveTests()
+
+  testSuiteClicked: (testSuite) =>
+    @updateFilter 'testSuite', 'testCase', (s, v) -> v.id in (_.map s.testCases, (testCase) -> testCase.id)
+    @goFirstPage()
+    @getActiveTests()
+
+  testCaseClicked: (testCase) =>
+    @goFirstPage()
+    @getActiveTests()
+
+  organizationClicked: (organization) =>
+    @updateFilter 'organization', 'system', (s, v) -> `s.id == v.owner`
+    @goFirstPage()
+    @getActiveTests()
+
+  systemClicked: (system) =>
+    @goFirstPage()
+    @getActiveTests()
+
+  resultClicked: (result) =>
+    @goFirstPage()
+
+  applyTimeFilter: (ev, picker) =>
+    @goFirstPage()
+    @getActiveTests()
+
+  cancelTimeFilter: (ev, picker) =>
+    @startTime = {}
+    @startTime = {}
+    @endTime = {}
+    @endTime = {}
+    @goFirstPage()
+    @getActiveTests()
+
+  getAllResults: () ->
+    for k, v of @Constants.TEST_CASE_RESULT
+      result = {result: v}
+      @filters.result.all.push result
+      @filters.result.filter.push result
+
+  getTotalTestCount: () ->
+    specIds = _.map @filters.specification.selection, (s) -> s.id
+    testSuiteIds = _.map @filters.testSuite.selection, (s) -> s.id
+    testCaseIds = _.map @filters.testCase.selection, (s) -> s.id
+    organizationIds = _.map @filters.organization.selection, (s) -> s.id
+    systemIds = _.map @filters.system.selection, (s) -> s.id
+    domainIds = _.map @filters.domain.selection, (s) -> s.id
+    results = _.map @filters.result.selection, (s) -> s.result
+    startTimeBegin = @startTime.startDate?.format('YYYY-MM-DD HH:mm:ss')
+    startTimeEnd = @startTime.endDate?.format('YYYY-MM-DD HH:mm:ss')
+    endTimeBegin = @endTime.startDate?.format('YYYY-MM-DD HH:mm:ss')
+    endTimeEnd = @endTime.endDate?.format('YYYY-MM-DD HH:mm:ss')
+
+    @ReportService.getCompletedTestResultsCount(specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd)
     .then (data) =>
-      @config.parameter = NaN
+      @completedTestsTotalCount = data[0].count
+    .then () =>
+      @updatePagination()
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-  # apply new parameter
-  apply: () =>
-    if @config.parameter? && !isNaN(@config.parameter)
-      @SystemConfigurationService.updateSessionAliveTime(@config.parameter)
-      .then () =>
-        @prevParameter = @config.parameter
-        @MessageService.showMessage("Update successful", "Maximum session alive time set to #{@config.parameter} seconds.")
-      .catch (error) =>
-        @ErrorService.showErrorMessage(error)
-    else
-      @turnOff()
-      @onOff = true
+  getCompletedTests: () =>
+    specIds = _.map @filters.specification.selection, (s) -> s.id
+    testSuiteIds = _.map @filters.testSuite.selection, (s) -> s.id
+    testCaseIds = _.map @filters.testCase.selection, (s) -> s.id
+    organizationIds = _.map @filters.organization.selection, (s) -> s.id
+    systemIds = _.map @filters.system.selection, (s) -> s.id
+    domainIds = _.map @filters.domain.selection, (s) -> s.id
+    results = _.map @filters.result.selection, (s) -> s.result
+    startTimeBegin = @startTime.startDate?.format('YYYY-MM-DD HH:mm:ss')
+    startTimeEnd = @startTime.endDate?.format('YYYY-MM-DD HH:mm:ss')
+    endTimeBegin = @endTime.startDate?.format('YYYY-MM-DD HH:mm:ss')
+    endTimeEnd = @endTime.endDate?.format('YYYY-MM-DD HH:mm:ss')
 
-  # process data
-  processRequest: (data) ->
-    @completedSessions = []
-    for session in data
-      @completedSessions.push(@getSession(session))
+    @ReportService.getCompletedTestResults(@currentPage, @Constants.TABLE_PAGE_SIZE, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, @completedSortColumn, @completedSortOrder)
+    .then (data) =>
+      testResultMapper = @newTestResult
+      @completedTests = _.map data, (t) -> testResultMapper(t)
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
 
-  # map session to match table columns
-  getSession: (session) ->
-    session: session.result.sessionId
-    start: session.result.startTime
-    end: session.result.endTime
-    organization: session.organization?.fname
-    system: session.system?.fname
-    result: session.result.result
-    domain: session.domain?.sname
-    specification: session.specification?.sname
-    testCase: session.test?.sname
-    testCasePath: session.test?.path
+  newTestResult: (testResult) ->
+    session: testResult.result.sessionId
+    startTime: testResult.result.startTime
+    endTime: testResult.result.endTime
+    organization: testResult.organization?.fname
+    system: testResult.system?.fname
+    result: testResult.result.result
+    domain: testResult.domain?.sname
+    specification: testResult.specification?.sname
+    testCase: testResult.test?.sname
+    testCasePath: testResult.test?.path
 
-  testSelect: (test) =>
-    if @action
-      @action = false
-    else if @stop
-      @stop = false
-    else
-      if test.domain? and test.specification? and test.testCase? and test.testCasePath?
-        data = [{label: "Domain", value: test.domain}
-          {label: "Specification", value: test.specification}
-          {label: "Test case", value: test.testCase}
-          {label: "Path", value: test.testCasePath}]
-        @PopupService.show("Session #{test.session}", data)
+  sortActiveSessions: (column) =>
+    @activeSortColumn = column.field
+    @activeSortOrder = column.order
+    @getActiveTests()
+
+  sortCompletedSessions: (column) =>
+    @completedSortColumn = column.field
+    @completedSortOrder = column.order
+    @goPage()
 
   onAction: (session) =>
     @action = true
@@ -167,36 +383,68 @@ class DashboardController
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
 
-  firstPage: () =>
-    if @page > 0
-      @page = 0
-      @getCompletedTestResults(@page)
-      @setDisabledStatus()
+  goFirstPage: () =>
+    @currentPage = 1
+    @goPage()
 
-  prevPage: () =>
-    if @page > 0
-      @getCompletedTestResults(--@page)
-      @setDisabledStatus()
+  goPreviousPage: () =>
+    @currentPage -= 1
+    @goPage()
 
-  nextPage: () =>
-    if (@page + 1) * @Constants.TABLE_PAGE_SIZE < @count
-      @getCompletedTestResults(++@page)
-      @setDisabledStatus()
+  goNextPage: () =>
+    @currentPage += 1
+    @goPage()
 
-  lastPage: () =>
-    @page = Math.floor(@count / @Constants.TABLE_PAGE_SIZE) # floor because paging is 0 based
-    @getCompletedTestResults(@page)
-    @setDisabledStatus()
+  goLastPage: () =>
+    @currentPage = Math.ceil(@completedTestsTotalCount / @Constants.TABLE_PAGE_SIZE)
+    @goPage()
 
-  setDisabledStatus: () ->
-    if @page == 0 # first page
-      @nextDisabled = false
-      @prevDisabled = true
-    else if @page == Math.floor(@count / @Constants.TABLE_PAGE_SIZE) # last page
-      @nextDisabled = true
-      @prevDisabled = false
-    else # pages in between
-      @nextDisabled = false
-      @prevDisabled = false
+  goPage: () ->
+    @getCompletedTests()
+    @getTotalTestCount()
+
+  updatePagination: () ->
+    if @currentPage == 1
+      @isNextPageDisabled = @completedTestsTotalCount <= @Constants.TABLE_PAGE_SIZE
+      @isPreviousPageDisabled = true
+    else if @currentPage == Math.ceil(@completedTestsTotalCount / @Constants.TABLE_PAGE_SIZE)
+      @isNextPageDisabled = true
+      @isPreviousPageDisabled = false
+    else
+      @isNextPageDisabled = false
+      @isPreviousPageDisabled = false
+
+  turnOff: () =>
+    @SystemConfigurationService.updateSessionAliveTime()
+    .then (data) =>
+      @prevParameter = NaN
+      @config.parameter = NaN
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+  apply: () =>
+    if @config.parameter? && !isNaN(@config.parameter)
+      @SystemConfigurationService.updateSessionAliveTime(@config.parameter)
+      .then () =>
+        @prevParameter = @config.parameter
+        @MessageService.showMessage("Update successful", "Maximum session alive time set to #{@config.parameter} seconds.")
+      .catch (error) =>
+        @ErrorService.showErrorMessage(error)
+    else
+      @turnOff()
+      @onOff = true
+
+  testSelect: (test) =>
+    if @action
+      @action = false
+    else if @stop
+      @stop = false
+    else
+      if test.domain? and test.specification? and test.testCase? and test.testCasePath?
+        data = [{label: "Domain", value: test.domain}
+          {label: "Specification", value: test.specification}
+          {label: "Test case", value: test.testCase}
+          {label: "Path", value: test.testCasePath}]
+        @PopupService.show("Session #{test.session}", data)
 
 @controllers.controller 'DashboardController', DashboardController

@@ -24,6 +24,7 @@
 			prevDisabled: '='
 			actionVisible: '='
 			onAction: '='
+			onSort: '='
 		restrict: 'AE'
 		template: ''+
 			'<div>'+
@@ -32,7 +33,11 @@
 				'<thead>'+
 					'<tr>'+
 					    '<th ng-if="checkboxEnabled"></th>'+
-						'<th ng-repeat="column in columns">{{column.title}}</th>'+
+						'<th ng-class="{sortable: column.sortable}" ng-repeat="column in columns" ng-click="!column.sortable || headerColumnClicked(column)">'+
+						    '{{column.title}} '+
+						    '<i ng-if="column.order == \'asc\'" class="fa fa-caret-down"></i>'+
+						    '<i ng-if="column.order == \'desc\'" class="fa fa-caret-up"></i>'+
+						'</th>'+
 						'<th ng-if="actionVisible">Action</th>'+
 						'<th ng-if="operationsVisible">Operation</th>'+
 						'<th ng-if="exportVisible">Export</th>'+
@@ -40,7 +45,7 @@
 				'</thead>'+
 				'<tbody>'+
 					'<tr class="table-row-directive" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" action-visible="actionVisible" operations-visible="operationsVisible" export-visible="exportVisible" checkbox-enabled="checkboxEnabled" on-action="onAction" on-delete="onDelete" on-export="onExport" on-check="onCheck"></tr>'+
-			'</tbody>'+
+				'</tbody>'+
 			'</table>'+
 				'<div ng-if="paginationVisible" class="text-center">'+
 					'<ul class="pagination pagination-sm">'+
@@ -54,6 +59,18 @@
 
 		replace: true
 		link: (scope, element, attrs) ->
+			scope.headerColumnClicked = (column) =>
+				for col, i in scope.columns
+					if col.field == column.field
+						if !col.order?
+							col.order = 'asc'
+						else if col.order == 'asc'
+							col.order = 'desc'
+						else
+							col.order = 'asc'
+					else
+						col.order = null
+				scope.onSort? column
 			scope.tableCaptionVisible = scope.tableCaption?
 			scope.select = (selectedIndex)->
 				rows = element.find 'tbody tr.table-row-directive'
@@ -78,8 +95,6 @@
 							scope.onSelect? row
 
 				return
-
-
 ]
 
 @directives.directive 'tableRowDirective', [

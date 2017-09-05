@@ -1,33 +1,161 @@
 <div class="page dashboard">
-    <!-- Active test sessions -->
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Filters</h4>
+            <div class="btn-group btn-toggle pull-right">
+                <button ng-disabled="dashboardCtrl.showFilters"
+                        ng-class="{true: 'btn btn-primary active', false : 'btn btn-default'}[dashboardCtrl.showFilters]"
+                        ng-click="dashboardCtrl.showFilter()">
+                    APPLY
+                </button>
+                <button ng-disabled="!dashboardCtrl.showFilters"
+                        ng-class="{true: 'btn btn-default', false : 'btn btn-primary active'}[dashboardCtrl.showFilters]"
+                        ng-click="dashboardCtrl.clearFilter()">
+                    CLEAR
+                </button>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table" ng-if="dashboardCtrl.showFilters">
+                <thead>
+                <tr class="active">
+                    <th class="col-md-1">Domain</th>
+                    <th class="col-md-1">Specification</th>
+                    <th class="col-md-1">Test Suite</th>
+                    <th class="col-md-1">Test Case</th>
+                    <th class="col-md-1">Organization</th>
+                    <th class="col-md-1">System</th>
+                    <th class="col-md-2">Result</th>
+                    <th class="col-md-2">Start time</th>
+                    <th class="col-md-2">End time</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td>
+                        <div isteven-multi-select input-model="dashboardCtrl.filters.domain.filter"
+                             output-model="dashboardCtrl.filters.domain.selection" button-label="sname"
+                             item-label="sname"
+                             tick-property="ticked" max-labels="0" max-height="250px"
+                             translation="dashboardCtrl.translation"
+                             helper-elements="filter" search-property="sname" output-properties="id"
+                             on-item-click="dashboardCtrl.domainClicked(data)"></div>
+                    </td>
+                    <td>
+                        <div isteven-multi-select input-model="dashboardCtrl.filters.specification.filter"
+                             output-model="dashboardCtrl.filters.specification.selection" button-label="sname"
+                             item-label="sname"
+                             tick-property="ticked" max-labels="0" max-height="250px"
+                             translation="dashboardCtrl.translation"
+                             helper-elements="filter" search-property="sname"
+                             output-properties="id" on-item-click="dashboardCtrl.specificationClicked(data)"></div>
+                    </td>
+                    <td>
+                        <div isteven-multi-select input-model="dashboardCtrl.filters.testSuite.filter"
+                             output-model="dashboardCtrl.filters.testSuite.selection" button-label="sname"
+                             item-label="sname"
+                             tick-property="ticked" max-labels="0" max-height="250px"
+                             translation="dashboardCtrl.translation"
+                             helper-elements="filter" search-property="sname" output-properties="id testCases"
+                             on-item-click="dashboardCtrl.testSuiteClicked(data)"></div>
+                    </td>
+                    <td>
+                        <div isteven-multi-select input-model="dashboardCtrl.filters.testCase.filter"
+                             output-model="dashboardCtrl.filters.testCase.selection" button-label="sname"
+                             item-label="sname"
+                             tick-property="ticked" max-labels="0" max-height="250px"
+                             translation="dashboardCtrl.translation"
+                             helper-elements="filter" search-property="sname" output-properties="id"
+                             on-item-click="dashboardCtrl.testCaseClicked(data)"></div>
+                    </td>
+                    <td>
+                        <div isteven-multi-select input-model="dashboardCtrl.filters.organization.filter"
+                             output-model="dashboardCtrl.filters.organization.selection" button-label="sname"
+                             item-label="sname"
+                             tick-property="ticked" max-labels="0" max-height="250px"
+                             translation="dashboardCtrl.translation"
+                             helper-elements="filter" search-property="sname"
+                             output-properties="id" on-item-click="dashboardCtrl.organizationClicked(data)"></div>
+                    </td>
+                    <td>
+                        <div isteven-multi-select input-model="dashboardCtrl.filters.system.filter"
+                             output-model="dashboardCtrl.filters.system.selection" button-label="sname"
+                             item-label="sname"
+                             tick-property="ticked" max-labels="0" max-height="250px"
+                             translation="dashboardCtrl.translation"
+                             helper-elements="filter" search-property="sname" output-properties="id"
+                             on-item-click="dashboardCtrl.systemClicked(data)"></div>
+                    </td>
+                    <td>
+                        <div isteven-multi-select input-model="dashboardCtrl.filters.result.filter"
+                             output-model="dashboardCtrl.filters.result.selection" button-label="result"
+                             item-label="result"
+                             tick-property="ticked" max-labels="0" max-height="250px"
+                             translation="dashboardCtrl.translation"
+                             helper-elements="filter" search-property="result" output-properties="result"
+                             on-item-click="dashboardCtrl.resultClicked(data)"></div>
+                    </td>
+                    <td>
+                        <input date-range-picker class="form-control date-picker" type="text"
+                               ng-model="dashboardCtrl.startTime" options="dashboardCtrl.startTimeOptions"
+                               clearable="true">
+                    </td>
+                    <td>
+                        <input date-range-picker class="form-control date-picker" type="text"
+                               ng-model="dashboardCtrl.endTime" options="dashboardCtrl.endTimeOptions" clearable="true">
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Active test sessions</h4>
         </div>
-        <div table-directive columns="dashboardCtrl.activeSessionsColumns" data="dashboardCtrl.activeSessions" on-select="dashboardCtrl.testSelect" action-visible="true" on-action="dashboardCtrl.onAction" operations-visible="true" on-delete="dashboardCtrl.stopSession"></div>
+        <div table-directive columns="dashboardCtrl.activeTestsColumns" data="dashboardCtrl.activeTests"
+             on-select="dashboardCtrl.testSelect" action-visible="true" on-action="dashboardCtrl.onAction"
+             on-sort="dashboardCtrl.sortActiveSessions"
+             operations-visible="true" on-delete="dashboardCtrl.stopSession"></div>
     </div>
     <!-- completed sessions -->
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Completed test sessions</h4>
         </div>
-        <div table-directive columns="dashboardCtrl.completedSessionsColumns" data="dashboardCtrl.completedSessions" on-select="dashboardCtrl.testSelect" action-visible="true" on-action="dashboardCtrl.onAction" pagination-visible="true" first-page="dashboardCtrl.firstPage()" prev-page="dashboardCtrl.prevPage()" next-page="dashboardCtrl.nextPage()" last-page="dashboardCtrl.lastPage()" next-disabled="dashboardCtrl.nextDisabled" prev-disabled="dashboardCtrl.prevDisabled"></div>
+        <div table-directive columns="dashboardCtrl.completedTestsColumns" data="dashboardCtrl.completedTests"
+             on-select="dashboardCtrl.testSelect" action-visible="true" on-action="dashboardCtrl.onAction"
+             pagination-visible="true" first-page="dashboardCtrl.goFirstPage()"
+             prev-page="dashboardCtrl.goPreviousPage()" on-sort="dashboardCtrl.sortCompletedSessions"
+             next-page="dashboardCtrl.goNextPage()" last-page="dashboardCtrl.goLastPage()"
+             next-disabled="dashboardCtrl.isNextPageDisabled"
+             prev-disabled="dashboardCtrl.isPreviousPageDisabled"></div>
     </div>
     <!-- configuration -->
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Automatically terminate idle sessions</h4>
             <div class="btn-group btn-toggle pull-right">
-                <button ng-disabled="!dashboardCtrl.onOff" ng-class="{true: 'btn btn-primary active', false : 'btn btn-default'}[!dashboardCtrl.onOff]" ng-click="dashboardCtrl.onOff ? (dashboardCtrl.onOff = !dashboardCtrl.onOff) : ''">ON</button>
-                <button ng-disabled="dashboardCtrl.onOff" ng-class="{true: 'btn btn-default', false : 'btn btn-primary active'}[!dashboardCtrl.onOff]" ng-click="!dashboardCtrl.onOff ? (dashboardCtrl.onOff = !dashboardCtrl.onOff) : ''; dashboardCtrl.turnOff()">OFF</button>
+                <button ng-disabled="!dashboardCtrl.onOff"
+                        ng-class="{true: 'btn btn-primary active', false : 'btn btn-default'}[!dashboardCtrl.onOff]"
+                        ng-click="dashboardCtrl.onOff ? (dashboardCtrl.onOff = !dashboardCtrl.onOff) : ''">ON
+                </button>
+                <button ng-disabled="dashboardCtrl.onOff"
+                        ng-class="{true: 'btn btn-default', false : 'btn btn-primary active'}[!dashboardCtrl.onOff]"
+                        ng-click="!dashboardCtrl.onOff ? (dashboardCtrl.onOff = !dashboardCtrl.onOff) : ''; dashboardCtrl.turnOff()">
+                    OFF
+                </button>
             </div>
         </div>
         <!-- configuration form -->
         <form ng-if="!dashboardCtrl.onOff" class="form-inline" ng-submit="dashboardCtrl.apply()">
             <div class="form-group">
-                <input type="number" min="1" ng-model="dashboardCtrl.config.parameter" class="form-control" id="parameter" placeholder="Seconds">
+                <input type="number" min="1" ng-model="dashboardCtrl.config.parameter" class="form-control"
+                       id="parameter" placeholder="Seconds">
             </div>
-            <button type="submit" class="btn btn-default" ng-disabled="dashboardCtrl.prevParameter == dashboardCtrl.config.parameter">Apply</button>
+            <button type="submit" class="btn btn-default"
+                    ng-disabled="dashboardCtrl.prevParameter == dashboardCtrl.config.parameter">Apply
+            </button>
         </form>
     </div>
 </div>

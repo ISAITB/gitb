@@ -1,8 +1,11 @@
 package models
 
+import java.sql.Timestamp
+
 /**
  * Show the result of conformance test for a specific test case for a vendor
- * @param sessionId
+  *
+  * @param sessionId
  * @param systemId
  * @param actorId
  * @param testCaseId
@@ -18,8 +21,8 @@ case class TestResult(
                        actorId:Long,
                        testCaseId:Long,
                        result:String,
-                       startTime:String,
-                       endTime:Option[String],
+                       startTime:Timestamp,
+                       endTime:Option[Timestamp],
                        sutVersion:Option[String],
                        tpl:String
                       )
