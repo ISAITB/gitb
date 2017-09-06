@@ -491,10 +491,11 @@ object JsonUtil {
     json
   }
 
-  def jsCount(count: Long): JsArray = {
-    Json.arr().append(Json.obj(
-      "count" -> count
-    ))
+  def jsCount(count: Long): JsObject = {
+    val json = Json.obj(
+      "count"    -> count
+    )
+    json
   }
 
   def jsTestResultReport(report: TestResultSessionReport): JsObject = {
