@@ -72,7 +72,7 @@ class DashboardController
     @completedSortOrder = "desc"
     @completedSortColumn = "endTime"
 
-    @currentPage = 1;
+    @currentPage = 1
     @isPreviousPageDisabled = false
     @isNextPageDisabled = false
 
@@ -124,14 +124,18 @@ class DashboardController
     @endTime = {}
 
     @startTimeOptions =
+      locale:
+        format: "DD-MM-YYYY"
       eventHandlers:
-        'apply.daterangepicker': @applyTimeFilter
-        'cancel.daterangepicker': @cancelTimeFilter
+        'apply.daterangepicker': @applyTimeFiltering
+        'cancel.daterangepicker': @clearStartTimeFiltering
 
     @endTimeOptions =
+      locale:
+        format: "DD-MM-YYYY"
       eventHandlers:
-        'apply.daterangepicker': @applyTimeFilter
-        'cancel.daterangepicker': @cancelTimeFilter
+        'apply.daterangepicker': @applyTimeFiltering
+        'cancel.daterangepicker': @clearEndTimeFiltering
 
     @ConformanceService.getDomains()
     .then (data) =>
@@ -230,8 +234,8 @@ class DashboardController
     organizationIds = _.map @filters.organization.selection, (s) -> s.id
     systemIds = _.map @filters.system.selection, (s) -> s.id
     domainIds = _.map @filters.domain.selection, (s) -> s.id
-    startTimeBegin = @startTime.startDate?.format('YYYY-MM-DD HH:mm:ss')
-    startTimeEnd = @startTime.endDate?.format('YYYY-MM-DD HH:mm:ss')
+    startTimeBegin = @startTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
+    startTimeEnd = @startTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
 
     @ReportService.getActiveTestResults(specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, @activeSortColumn, @activeSortOrder)
     .then (data) =>
@@ -288,17 +292,21 @@ class DashboardController
   resultClicked: (result) =>
     @goFirstPage()
 
-  applyTimeFilter: (ev, picker) =>
+  applyTimeFiltering: (ev, picker) =>
     @goFirstPage()
     @getActiveTests()
 
-  cancelTimeFilter: (ev, picker) =>
-    @startTime = {}
-    @startTime = {}
-    @endTime = {}
-    @endTime = {}
+  clearTimeFiltering: (time) =>
+    time.endDate = null
+    time.startDate = null
     @goFirstPage()
     @getActiveTests()
+
+  clearStartTimeFiltering: (ev, picker) =>
+    @clearTimeFiltering @startTime
+
+  clearEndTimeFiltering: (ev, picker) =>
+    @clearTimeFiltering @endTime
 
   getAllResults: () ->
     for k, v of @Constants.TEST_CASE_RESULT
@@ -314,14 +322,14 @@ class DashboardController
     systemIds = _.map @filters.system.selection, (s) -> s.id
     domainIds = _.map @filters.domain.selection, (s) -> s.id
     results = _.map @filters.result.selection, (s) -> s.result
-    startTimeBegin = @startTime.startDate?.format('YYYY-MM-DD HH:mm:ss')
-    startTimeEnd = @startTime.endDate?.format('YYYY-MM-DD HH:mm:ss')
-    endTimeBegin = @endTime.startDate?.format('YYYY-MM-DD HH:mm:ss')
-    endTimeEnd = @endTime.endDate?.format('YYYY-MM-DD HH:mm:ss')
+    startTimeBegin = @startTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
+    startTimeEnd = @startTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
+    endTimeBegin = @endTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
+    endTimeEnd = @endTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
 
     @ReportService.getCompletedTestResultsCount(specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd)
     .then (data) =>
-      @completedTestsTotalCount = data[0].count
+      @completedTestsTotalCount = data.count
     .then () =>
       @updatePagination()
     .catch (error) =>
@@ -335,10 +343,10 @@ class DashboardController
     systemIds = _.map @filters.system.selection, (s) -> s.id
     domainIds = _.map @filters.domain.selection, (s) -> s.id
     results = _.map @filters.result.selection, (s) -> s.result
-    startTimeBegin = @startTime.startDate?.format('YYYY-MM-DD HH:mm:ss')
-    startTimeEnd = @startTime.endDate?.format('YYYY-MM-DD HH:mm:ss')
-    endTimeBegin = @endTime.startDate?.format('YYYY-MM-DD HH:mm:ss')
-    endTimeEnd = @endTime.endDate?.format('YYYY-MM-DD HH:mm:ss')
+    startTimeBegin = @startTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
+    startTimeEnd = @startTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
+    endTimeBegin = @endTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
+    endTimeEnd = @endTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
 
     @ReportService.getCompletedTestResults(@currentPage, @Constants.TABLE_PAGE_SIZE, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, @completedSortColumn, @completedSortOrder)
     .then (data) =>

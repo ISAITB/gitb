@@ -40,43 +40,49 @@ object ReportManager extends BaseManager {
 
   val STATUS_UPDATES_PATH: String = "status-updates"
 
-  def getTestResults(systemId: Long, _page: Option[Long] = None, _limit: Option[Long] = None): Future[List[TestResultReport]] = {
+  def getTestResults(page: Long,
+                     limit: Long,
+                     systemId: Long,
+                     domainIds: Option[List[Long]],
+                     specIds: Option[List[Long]],
+                     testSuiteIds: Option[List[Long]],
+                     testCaseIds: Option[List[Long]],
+                     results: Option[List[String]],
+                     startTimeBegin: Option[String],
+                     startTimeEnd: Option[String],
+                     endTimeBegin: Option[String],
+                     endTimeEnd: Option[String],
+                     sortColumn: Option[String],
+                     sortOrder: Option[String]): Future[List[TestResultReport]] = {
     Future {
       DB.withSession { implicit session =>
-        val page = _page match {
-          case Some(p) => p
-          case None => 0l
-        }
+        val query = getTestResultQuery(domainIds, specIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
+        val testResults = query.filter(_._4.id === systemId).drop((page - 1) * limit).take(limit).list
 
-        val limit = _limit match {
-          case Some(l) => l
-          case None => 100
-        }
-
-        logger.debug("Returning last executed test results for page: [" + page + "] and limit: [" + limit + "]")
-
-        val testResults = PersistenceSchema.testResults
-          .filter(_.sutId === systemId)
-          .drop(page * limit)
-          .take(limit)
-          .sortBy(_.startTime.desc)
-          .list
-
-        testResults map { testResult =>
-          val testCase = PersistenceSchema.testCases
-            .filter(_.id === testResult.testCaseId)
-            .firstOption
-
-          val actor = PersistenceSchema.actors
-            .filter(_.id === testResult.actorId)
-            .firstOption
-
-          TestResultReport(testResult, testCase, actor)
+        testResults map { case (tr, tc, org, sys, spec, domain, tshtc, ts, actor) =>
+          TestResultReport(tr, Some(tc), Some(actor))
         }
       }
     }
   }
 
+  def getTestResultsCount(systemId: Long,
+                          domainIds: Option[List[Long]],
+                          specIds: Option[List[Long]],
+                          testSuiteIds: Option[List[Long]],
+                          testCaseIds: Option[List[Long]],
+                          results: Option[List[String]],
+                          startTimeBegin: Option[String],
+                          startTimeEnd: Option[String],
+                          endTimeBegin: Option[String],
+                          endTimeEnd: Option[String]): Future[Long] = {
+    Future {
+      DB.withSession { implicit session =>
+        val query = getTestResultQuery(domainIds, specIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, None, None)
+        query.filter(_._4.id === systemId).size.run
+      }
+    }
+  }
 
   def getActiveTestResults(domainIds: Option[List[Long]],
                            specIds: Option[List[Long]],
@@ -90,10 +96,10 @@ object ReportManager extends BaseManager {
                            sortOrder: Option[String]): Future[List[TestResultSessionReport]] = {
     Future {
       DB.withSession { implicit session =>
-        val query = getTestResultQuery(domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, None, startTimeBegin, startTimeEnd, None, None, sortColumn, sortOrder, true)
-        val testResults = query.list
+        val query = getTestResultQuery(domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, None, startTimeBegin, startTimeEnd, None, None, sortColumn, sortOrder)
+        val testResults = query.filter(_._1.endTime.isEmpty).list
 
-        testResults map { case (tr, tc, org, sys, spec, domain, testSuiteHasTestCase, testSuite) =>
+        testResults map { case (tr, tc, org, sys, spec, domain, tshtc, ts, actor) =>
           TestResultSessionReport(tr, Some(tc), Some(org), Some(sys), Some(spec), Some(domain))
         }
       }
@@ -113,8 +119,8 @@ object ReportManager extends BaseManager {
                                   endTimeEnd: Option[String]): Future[Long] = {
     Future {
       DB.withSession { implicit session =>
-        val testResults = getTestResultQuery(domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, None, None, false)
-        testResults.size.run
+        val testResults = getTestResultQuery(domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, None, None)
+        testResults.filter(_._1.endTime.isDefined).size.run
       }
     }
   }
@@ -136,10 +142,10 @@ object ReportManager extends BaseManager {
                              sortOrder: Option[String]): Future[List[TestResultSessionReport]] = {
     Future {
       DB.withSession { implicit session =>
-        val query = getTestResultQuery(domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder, false)
-        val testResults = query.drop((page - 1) * limit).take(limit).list
+        val query = getTestResultQuery(domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
+        val testResults = query.filter(_._1.endTime.isDefined).drop((page - 1) * limit).take(limit).list
 
-        testResults map { case (tr, tc, org, sys, spec, domain, testSuiteHasTestCase, testSuite) =>
+        testResults map { case (tr, tc, org, sys, spec, domain, tshtc, ts, actor) =>
           TestResultSessionReport(tr, Some(tc), Some(org), Some(sys), Some(spec), Some(domain))
         }
       }
@@ -158,8 +164,7 @@ object ReportManager extends BaseManager {
                                  endTimeBegin: Option[String],
                                  endTimeEnd: Option[String],
                                  sortColumn: Option[String],
-                                 sortOrder: Option[String],
-                                 active: Boolean)(implicit session: Session) = {
+                                 sortOrder: Option[String])(implicit session: Session) = {
 
     var query = for {
       testResult <- PersistenceSchema.testResults
@@ -170,19 +175,42 @@ object ReportManager extends BaseManager {
       domain <- PersistenceSchema.domains if domain.id === specification.domain
       testSuiteHasTestCase <- PersistenceSchema.testSuiteHasTestCases if testCase.id === testSuiteHasTestCase.testcase
       testSuite <- PersistenceSchema.testSuites if testSuiteHasTestCase.testsuite === testSuite.id
-    } yield (testResult, testCase, organization, system, specification, domain, testSuiteHasTestCase, testSuite)
+      actor <- PersistenceSchema.actors if actor.id === testResult.actorId
+    } yield (testResult, testCase, organization, system, specification, domain, testSuiteHasTestCase, testSuite, actor)
 
+    query = domainIds match {
+      case Some(ids) => query.filter(_._6.id inSet ids)
+      case None => query
+    }
 
-    query = query.filter { result =>
-      List(
-        domainIds.map(result._6.id inSet _),
-        specIds.map(result._5.id inSet _),
-        testCaseIds.map(result._2.id inSet _),
-        organizationIds.map(result._3.id inSet _),
-        systemIds.map(result._4.id inSet _),
-        results.map(result._1.result inSet _),
-        testSuiteIds.map(result._8.id inSet _)
-      ).collect({ case Some(criteria) => criteria }).reduceLeftOption(_ || _).getOrElse(true: Column[Boolean])
+    query = specIds match {
+      case Some(ids) => query.filter(_._5.id inSet ids)
+      case None => query
+    }
+
+    query = testCaseIds match {
+      case Some(ids) => query.filter(_._2.id inSet ids)
+      case None => query
+    }
+
+    query = organizationIds match {
+      case Some(ids) => query.filter(_._3.id inSet ids)
+      case None => query
+    }
+
+    query = systemIds match {
+      case Some(ids) => query.filter(_._4.id inSet ids)
+      case None => query
+    }
+
+    query = results match {
+      case Some(s) => query.filter(_._1.result inSet s)
+      case None => query
+    }
+
+    query = testSuiteIds match {
+      case Some(ids) => query.filter(_._8.id inSet ids)
+      case None => query
     }
 
     if (startTimeBegin.isDefined && startTimeEnd.isDefined) {
@@ -199,12 +227,6 @@ object ReportManager extends BaseManager {
       query = query.filter(_._1.endTime >= start).filter(_._1.endTime <= end)
     }
 
-    if (active) {
-      query = query.filter(_._1.endTime.isEmpty)
-    } else {
-      query = query.filter(_._1.endTime.isDefined)
-    }
-
     if (sortColumn.isDefined && sortOrder.isDefined) {
       if (sortOrder.get == "asc") {
         query = sortColumn.get match {
@@ -214,6 +236,8 @@ object ReportManager extends BaseManager {
           case "organization" => query.sortBy(_._3.fullname)
           case "system" => query.sortBy(_._4.shortname)
           case "result" => query.sortBy(_._1.result)
+          case "testCase" => query.sortBy(_._2.shortname)
+          case "actorName" => query.sortBy(_._9.name)
           case _ => query
         }
       }
@@ -225,6 +249,8 @@ object ReportManager extends BaseManager {
           case "organization" => query.sortBy(_._3.fullname.desc)
           case "system" => query.sortBy(_._4.shortname.desc)
           case "result" => query.sortBy(_._1.result.desc)
+          case "testCase" => query.sortBy(_._2.shortname.desc)
+          case "actorName" => query.sortBy(_._9.name.desc)
           case _ => query
         }
       }

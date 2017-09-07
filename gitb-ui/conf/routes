@@ -143,6 +143,7 @@ POST    /endpoints/:endpoint_id/config      @controllers.SystemService.saveEndpo
 
 # Report management API
 GET     /reports                            @controllers.ReportService.getTestResults
+GET     /reports/count                      @controllers.ReportService.getTestResultsCount
 GET     /reports/:session_id                @controllers.ReportService.getTestResultOfSession(session_id: String)
 POST    /reports/create                     @controllers.ReportService.createTestReport
 GET     /reports/:session_id/steps          @controllers.ReportService.getTestStepResults(session_id:String)

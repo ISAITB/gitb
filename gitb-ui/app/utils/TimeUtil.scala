@@ -10,11 +10,6 @@ object TimeUtil {
   val MS_IN_AN_HOUR = 60 * 60 * 1000
   val MS_IN_A_SECOND = 1000
 
-  val formatTimestamp = {
-    val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-    format
-  }
-
   val formatUTC = {
     val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     format.setTimeZone(TimeZone.getTimeZone("UTC"))
@@ -26,12 +21,12 @@ object TimeUtil {
     format
   }
 
-  def parseTimestamp(timestamp:String): Timestamp = {
-    new Timestamp(formatTimestamp.parse(timestamp).getTime())
+  def serializeTimestamp(t:Timestamp): String = {
+    new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(new Date(t.getTime))
   }
 
-  def serializeTimestamp(timestamp:Timestamp): String = {
-    formatTimestamp.format(timestamp)
+  def parseTimestamp(timestamp:String): Timestamp = {
+    new Timestamp(new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").parse(timestamp).getTime())
   }
 
   def getCurrentTimestamp(): Timestamp = {

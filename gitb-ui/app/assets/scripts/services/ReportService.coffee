@@ -6,14 +6,93 @@ class ReportService
   constructor: (@$log, @RestService) ->
     @$log.debug "Constructing ReportService..."
 
-  getTestResults: (systemId, page, limit) ->
-    @RestService.get
-      path: jsRoutes.controllers.ReportService.getTestResults().url
-      params:
+  getTestResults: (systemId, page, limit, specIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder) ->
+    params = {
         system_id: systemId
         page: page
         limit: limit
+    }
+
+    if specIds? and specIds.length > 0
+      params.specification_ids = specIds.join ','
+
+    if testSuiteIds? and testSuiteIds.length > 0
+      params.test_suite_ids = testSuiteIds.join ','
+
+    if testCaseIds? and testCaseIds.length > 0
+      params.test_case_ids = testCaseIds.join ','
+
+    if domainIds? and domainIds.length > 0
+      params.domain_ids = domainIds.join ','
+
+    if results? and results.length > 0
+      params.results = results.join ','
+
+    if startTimeBegin
+      params.start_time_begin = startTimeBegin
+
+    if startTimeEnd
+      params.start_time_end = startTimeEnd
+
+    if endTimeBegin
+      params.end_time_begin = endTimeBegin
+
+    if endTimeEnd
+      params.end_time_end = endTimeEnd
+
+    if startTimeEnd
+      params.start_time_end = startTimeEnd
+
+    if sortColumn
+      params.sort_column = sortColumn
+
+    if sortOrder
+      params.sort_order = sortOrder
+
+    @RestService.get
+      path: jsRoutes.controllers.ReportService.getTestResults().url
       authenticate: true
+      params: params
+
+  getTestResultsCount: (systemId, specIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd) ->
+    params = {
+        system_id: systemId
+    }
+
+    if specIds? and specIds.length > 0
+      params.specification_ids = specIds.join ','
+
+    if testSuiteIds? and testSuiteIds.length > 0
+      params.test_suite_ids = testSuiteIds.join ','
+
+    if testCaseIds? and testCaseIds.length > 0
+      params.test_case_ids = testCaseIds.join ','
+
+    if domainIds? and domainIds.length > 0
+      params.domain_ids = domainIds.join ','
+
+    if results? and results.length > 0
+      params.results = results.join ','
+
+    if startTimeBegin
+      params.start_time_begin = startTimeBegin
+
+    if startTimeEnd
+      params.start_time_end = startTimeEnd
+
+    if endTimeBegin
+      params.end_time_begin = endTimeBegin
+
+    if endTimeEnd
+      params.end_time_end = endTimeEnd
+
+    if startTimeEnd
+      params.start_time_end = startTimeEnd
+
+    @RestService.get
+      path: jsRoutes.controllers.ReportService.getTestResultsCount().url
+      authenticate: true
+      params: params
 
   getActiveTestResults: (specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, sortColumn, sortOrder) ->
     params = {}
