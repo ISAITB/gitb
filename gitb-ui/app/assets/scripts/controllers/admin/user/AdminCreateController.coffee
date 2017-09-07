@@ -1,7 +1,7 @@
 class AdminCreateController
 
-  @$inject = ['$log', '$state', 'UserService', 'ValidationService', 'AuthService', 'ErrorService']
-  constructor: (@$log, @$state, @UserService, @ValidationService, @AuthService, @ErrorService) ->
+  @$inject = ['$log', '$state', 'UserService', 'ValidationService', 'AuthService', 'Constants', 'ErrorService']
+  constructor: (@$log, @$state, @UserService, @ValidationService, @AuthService, @Constants, @ErrorService) ->
 
     @alerts = []
     @user = {}
@@ -15,7 +15,7 @@ class AdminCreateController
       @AuthService.checkEmail(@user.email)
       .then (data) =>
         if (data.available)
-          @UserService.createSystemAdmin(@user.name, @user.email, @user.password)
+          @UserService.createSystemAdmin(@user.name, @user.email, @user.password, @Constants.DEFAULT_COMMUNITY_ID)
           .then () =>
            @cancelCreateAdmin()
           .catch (error) =>

@@ -27,6 +27,17 @@ class SystemService extends Controller{
       ResponseConstructor.constructEmptyResponse
     }
   }
+
+  def registerSystemWithOrganization = Action.async { request =>
+    Future{
+      val system:Systems = ParameterExtractor.extractSystemWithOrganizationInfo(request)
+
+      SystemManager.registerSystem(system)
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+
   /**
    * Updates the profile of a system
    */
@@ -199,6 +210,14 @@ class SystemService extends Controller{
 			}
 		}
 	}
+
+  def getSystemsByOrganization() = Action.async { request =>
+    val orgId = ParameterExtractor.requiredQueryParameter(request, Parameters.ORGANIZATION_ID).toLong
+    SystemManager.getSystemsByOrganization(orgId) map { list =>
+      val json:String = JsonUtil.jsSystems(list).toString
+      ResponseConstructor.constructJsonResponse(json)
+    }
+  }
 
   /**
    * Get the SUTs registered for the authenticated vendor

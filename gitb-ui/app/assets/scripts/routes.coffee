@@ -1,8 +1,8 @@
 app.config ['$stateProvider', '$urlRouterProvider',
 	($stateProvider, $urlRouterProvider) ->
 		profile = [
-			'$q', '$log', '$state', 'AuthProvider', 'AccountService', 'DataService',
-			($q, $log, $state, AuthProvider, AccountService, DataService)->
+			'$q', '$log', '$state', 'AuthProvider', 'AccountService', 'DataService', 'CommunityService',
+			($q, $log, $state, AuthProvider, AccountService, DataService, CommunityService)->
 				deferred = $q.defer()
 
 				getUserProfile = ()->
@@ -10,7 +10,6 @@ app.config ['$stateProvider', '$urlRouterProvider',
 					AccountService.getUserProfile()
 						.then (data)->
 							DataService.setUser(data)
-
 							$log.debug 'Got user profile from the server...'
 							deferred.resolve()
 
@@ -18,6 +17,12 @@ app.config ['$stateProvider', '$urlRouterProvider',
 					AccountService.getVendorProfile()
 					.then (data) ->
 						DataService.setVendor(data)
+						deferred.resolve()
+
+				getUserCommunity = () ->
+					CommunityService.getUserCommunity()
+					.then (data) ->
+						DataService.setCommunity(data)
 						deferred.resolve()
 
 				$log.debug 'Resolving user profile..'
@@ -28,6 +33,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 						getUserProfile()
 					if !DataService.vendor?
 						getVendorProfile()
+					if !DataService.community?
+						getUserCommunity()
 				else
 					$log.debug 'No need for user profile, user is not authenticated...'
 					deferred.resolve()
@@ -39,7 +46,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				deferred = $q.defer()
 
 				if DataService.isVendorUser
-					SystemService.getSystems()
+					SystemService.getSystemsByOrganization(DataService.vendor.id)
 					.then (data) ->
 						if data.length == 1
 							deferred.reject {redirectTo: 'app.systems.detail.conformance.list', params: {id: data[0].id}}
@@ -135,6 +142,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				url: '/systems'
 				abstract: true
 				templateUrl: 'assets/views/systems/index.html'
+				controller: 'SystemsTitleController'
+				controllerAs: 'systemsTitleCtrl'
 			'app.systems.list':
 				url: ''
 				templateUrl: 'assets/views/systems/list.html'
@@ -144,6 +153,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.systems.detail':
 				url: '/:id'
 				templateUrl: 'assets/views/systems/detail.html'
+				controller: 'SystemNavigationController'
+				controllerAs: 'systemNavigationCtrl'
 				abstract: true
 			'app.systems.detail.info':
 				url: ''
@@ -205,6 +216,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				url: '/admin'
 				templateUrl: 'assets/views/admin/index.html'
 				controller: 'AdminController'
+				controllerAs: 'adminCtrl'
 			'app.admin.dashboard':
 				url: '/dashboard'
 				abstract: true
@@ -356,75 +368,99 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/users/admin-detail.html'
 				controller: 'AdminDetailController'
 				controllerAs: 'adminDetailCtrl'
-			'app.admin.users.organizations':
+			'app.admin.users.communities':
+				url: '/community'
+				abstract: true
+				template: '<div ui-view/>'
+			'app.admin.users.communities.create':
+				url: '/create'
+				templateUrl: 'assets/views/admin/users/community-create.html'
+				controller: 'CommunityCreateController'
+				controllerAs: 'communityCreateCtrl'
+			'app.admin.users.communities.detail':
+				url: '/:community_id'
+				abstract: true
+				template: '<div ui-view/>'
+			'app.admin.users.communities.detail.list':
+				url: ''
+				templateUrl: 'assets/views/admin/users/community-detail.html'
+				controller: 'CommunityDetailController'
+				controllerAs: 'communityDetailCtrl'
+			'app.admin.users.communities.detail.admins':
+				url: '/admin'
+				abstract: true
+				template: '<div ui-view/>'
+			'app.admin.users.communities.detail.admins.create':
+				url: '/create'
+				templateUrl: 'assets/views/admin/users/community-admin-create.html'
+				controller: 'CommunityAdminCreateController'
+				controllerAs: 'communityAdminCreateCtrl'
+			'app.admin.users.communities.detail.admins.detail':
+				url: '/:admin_id'
+				templateUrl: 'assets/views/admin/users/community-admin-detail.html'
+				controller: 'CommunityAdminDetailController'
+				controllerAs: 'communityAdminDetailCtrl'
+			'app.admin.users.communities.detail.organizations':
 				url: '/organization'
 				abstract: true
 				template: '<div ui-view/>'
-			'app.admin.users.organizations.create':
+			'app.admin.users.communities.detail.organizations.create':
 				url: '/create'
 				templateUrl: 'assets/views/admin/users/organization-create.html'
 				controller: 'OrganizationCreateController'
 				controllerAs: 'orgCreateCtrl'
-			'app.admin.users.organizations.detail':
-				url: '/:id'
+			'app.admin.users.communities.detail.organizations.detail':
+				url: '/:org_id'
 				template: '<div ui-view/>'
 				abstract: true
-			'app.admin.users.organizations.detail.list':
+			'app.admin.users.communities.detail.organizations.detail.list':
 				url: ''
 				templateUrl: 'assets/views/admin/users/organization-detail.html'
 				controller: 'OrganizationDetailController'
 				controllerAs: 'orgDetailCtrl'
-			'app.admin.users.organizations.detail.users':
+			'app.admin.users.communities.detail.organizations.detail.users':
 				url: '/users'
 				template: '<div ui-view/>'
 				abstract: true
-			'app.admin.users.organizations.detail.users.create':
+			'app.admin.users.communities.detail.organizations.detail.users.create':
 				url: '/create'
 				templateUrl: 'assets/views/admin/users/user-create.html'
 				controller: 'UserCreateController'
 				controllerAs: 'userCreateCtrl'
-			'app.admin.users.organizations.detail.users.detail':
+			'app.admin.users.communities.detail.organizations.detail.users.detail':
 				url: '/:user_id'
 				template: '<div ui-view/>'
 				abstract: true
-			'app.admin.users.organizations.detail.users.detail.list':
+			'app.admin.users.communities.detail.organizations.detail.users.detail.list':
 				url: ''
 				templateUrl: 'assets/views/admin/users/user-detail.html'
 				controller: 'UserDetailController'
 				controllerAs: 'userDetailCtrl'
-			'app.admin.users.landingpages':
+			'app.admin.users.communities.detail.landingpages':
 				url: '/pages'
 				abstract: true
 				template: '<div ui-view/>'
-			'app.admin.users.landingpages.create':
-				url: '/create'
+			'app.admin.users.communities.detail.landingpages.create':
+				url: '/create?name&description&content'
 				templateUrl: 'assets/views/admin/users/landing-page-create.html'
 				controller: 'LandingPageCreateController'
 				controllerAs: 'landingPageCreateCtrl'
-				params:
-					name: ""
-					description: ""
-					content: ""
-			'app.admin.users.landingpages.detail':
-				url: '/:id'
+			'app.admin.users.communities.detail.landingpages.detail':
+				url: '/:page_id'
 				templateUrl: 'assets/views/admin/users/landing-page-detail.html'
 				controller: 'LandingPageDetailController'
 				controllerAs: 'landingPageDetailCtrl'
-			'app.admin.users.legalnotices':
+			'app.admin.users.communities.detail.legalnotices':
 				url: '/notices'
 				abstract: true
 				template: '<div ui-view/>'
-			'app.admin.users.legalnotices.create':
-				url: '/create'
+			'app.admin.users.communities.detail.legalnotices.create':
+				url: '/create?name&description&content'
 				templateUrl: 'assets/views/admin/users/legal-notice-create.html'
 				controller: 'LegalNoticeCreateController'
 				controllerAs: 'LegalNoticeCreateCtrl'
-				params:
-					name: ""
-					description: ""
-					content: ""
-			'app.admin.users.legalnotices.detail':
-				url: '/:id'
+			'app.admin.users.communities.detail.legalnotices.detail':
+				url: '/:notice_id'
 				templateUrl: 'assets/views/admin/users/legal-notice-detail.html'
 				controller: 'LegalNoticeDetailController'
 				controllerAs: 'legalNoticeDetailCtrl'

@@ -34,6 +34,16 @@ class OrganizationService extends Controller {
   }
 
   /**
+   * Gets the organizations with specified community
+   */
+  def getOrganizationsByCommunity(communityId: Long) = Action.async { request =>
+    OrganizationManager.getOrganizationsByCommunity(communityId) map { list =>
+      val json: String = JsonUtil.jsOrganizations(list).toString
+      ResponseConstructor.constructJsonResponse(json)
+    }
+  }
+
+  /**
    * Creates new organization
    */
   def createOrganization() = Action.async { request =>
@@ -44,7 +54,7 @@ class OrganizationService extends Controller {
   }
 
   /**
-   * Updates user profile
+   * Updates organization
    */
   def updateOrganization(orgId: Long) = Action.async { request =>
     val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_SNAME)

@@ -34,7 +34,19 @@ object OrganizationManager extends BaseManager {
     Future {
       DB.withSession { implicit session =>
         //1) Get all organizations except the default organization for system administrators
-        val organizations = PersistenceSchema.organizations.filter(_.id =!= Constants.DefaultOrganizationId).list
+        val organizations = PersistenceSchema.organizations.list
+        organizations
+      }
+    }
+  }
+
+  /**
+   * Gets organizations with specified community
+   */
+  def getOrganizationsByCommunity(communityId: Long): Future[List[Organizations]] = {
+    Future {
+      DB.withSession { implicit session =>
+        val organizations = PersistenceSchema.organizations.filter(_.shortname =!= Constants.AdminOrganizationName).filter(_.community === communityId).list
         organizations
       }
     }
@@ -89,6 +101,19 @@ object OrganizationManager extends BaseManager {
         }
 
       }
+    }
+  }
+
+  /**
+   * Deletes organization by community
+   */
+  def deleteOrganizationByCommunity(communityId: Long)(implicit session: Session) = {
+    val list = PersistenceSchema.organizations.filter(_.community === communityId).list
+
+    list foreach { org =>
+      UserManager.deleteUserByOrganization(org.id)
+      SystemManager.deleteSystemByOrganization(org.id)
+      PersistenceSchema.organizations.filter(_.community === communityId).delete
     }
   }
 

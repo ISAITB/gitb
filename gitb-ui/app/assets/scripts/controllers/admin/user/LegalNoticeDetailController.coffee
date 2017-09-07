@@ -3,12 +3,12 @@ class LegalNoticeDetailController
   @$inject = ['$log', '$state', '$stateParams', 'WebEditorService', 'ValidationService', 'LegalNoticeService', 'ConfirmationDialogService', 'ErrorService']
   constructor: (@$log, @$state, @$stateParams, @WebEditorService, @ValidationService, @LegalNoticeService, @ConfirmationDialogService, @ErrorService) ->
 
-    @noticeId = @$stateParams.id
+    @communityId = @$stateParams.community_id
+    @noticeId = @$stateParams.notice_id
     @alerts = []
     @notice = {}
     @isDefault
 
-    # get selected legal notice
     @LegalNoticeService.getLegalNoticeById(@noticeId)
     .then (data) =>
       @notice = data
@@ -30,7 +30,7 @@ class LegalNoticeDetailController
     @alerts = @ValidationService.getAlerts()
 
   doUpdate: (copy) ->
-    @LegalNoticeService.updateLegalNotice(@noticeId, @notice.name, @notice.description, tinymce.activeEditor.getContent(), @notice.default)
+    @LegalNoticeService.updateLegalNotice(@noticeId, @notice.name, @notice.description, tinymce.activeEditor.getContent(), @notice.default, @communityId)
     .then (data) =>
       if (data)
         @ValidationService.pushAlert({type:'danger', msg:data.error_description})
@@ -47,7 +47,7 @@ class LegalNoticeDetailController
     name = @notice.name + " COPY"
     description = @notice.description
     content = tinymce.activeEditor.getContent()
-    @$state.go 'app.admin.users.legalnotices.create', { name : name, description : description, content : content }
+    @$state.go 'app.admin.users.communities.detail.legalnotices.create', { name : name, description : description, content : content }
 
   # delete and cancel detail
   deleteLegalNotice: () =>
@@ -59,11 +59,9 @@ class LegalNoticeDetailController
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
 
-  # cancel detail
   cancelDetailLegalNotice: () =>
-    @$state.go 'app.admin.users.list'
+    @$state.go 'app.admin.users.communities.detail.list', { community_id : @communityId }
 
-  # closes alert which is displayed due to an error
   closeAlert: (index) ->
     @ValidationService.clearAlert(index)
 

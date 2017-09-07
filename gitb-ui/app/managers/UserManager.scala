@@ -12,6 +12,7 @@ import persistence.db.PersistenceSchema
 import org.slf4j.LoggerFactory
 
 import scala.concurrent.Future
+import org.mindrot.jbcrypt.BCrypt
 
 /**
  * Created by VWYNGAET on 25/10/2016.
@@ -20,6 +21,20 @@ object UserManager extends BaseManager {
   def logger = LoggerFactory.getLogger("UserManager")
 
   def getSystemAdministrators(): Future[List[Users]] = getUsersByRole(UserRole.SystemAdmin)
+
+  /**
+    * Gets all community administrators of the given community
+    */
+  def getCommunityAdministrators(communityId:Long): Future[List[Users]] = {
+    Future {
+      DB.withSession { implicit session =>
+        val community = PersistenceSchema.communities.filter(_.id === communityId).firstOption.get
+        val organizations = PersistenceSchema.organizations.filter(_.community === communityId).map(_.id).list
+        val users = PersistenceSchema.users.filter(_.organization inSet organizations).filter(_.role === UserRole.CommunityAdmin.id.toShort).list
+        users
+      }
+    }
+  }
 
   /**
    * Gets all users with specified role
@@ -39,7 +54,7 @@ object UserManager extends BaseManager {
   def getUsersByOrganization(orgId: Long): Future[List[Users]] = {
     Future {
       DB.withSession { implicit session =>
-        val users = PersistenceSchema.users.filter(_.organization === orgId).list
+        val users = PersistenceSchema.users.filter(_.organization === orgId).filter(x => x.role === UserRole.VendorUser.id.toShort || x.role === UserRole.VendorAdmin.id.toShort).list
         users
       }
     }
@@ -80,6 +95,26 @@ object UserManager extends BaseManager {
   }
 
   /**
+   * Updates community admin profile of given user
+   */
+  def updateCommunityAdminProfile(userId: Long, name: String): Future[Unit] = {
+    Future {
+      DB.withSession { implicit session =>
+        AccountManager.checkUserRole(userId, UserRole.CommunityAdmin) map { userExists =>
+          if (userExists) {
+            val user = PersistenceSchema.users.filter(_.id === userId).firstOption.get
+
+            if (!name.isEmpty && name != user.name) {
+              val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name)
+              q.update(name)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  /**
    * Updates user profile of given user
    */
   def updateUserProfile(userId: Long, name: String, roleId: Short): Future[Unit] = {
@@ -102,13 +137,14 @@ object UserManager extends BaseManager {
     }
   }
 
-  /*
+  /**
    * Create system admin
    */
-  def createSystemAdmin(user: Users): Future[Unit] = {
+  def createAdmin(user: Users, communityId: Long): Future[Unit] = {
     Future {
       DB.withSession { implicit session =>
-        PersistenceSchema.insertUser += user
+        val o = PersistenceSchema.organizations.filter(_.community === communityId).filter(_.adminOrganization === true).firstOption.get
+        PersistenceSchema.insertUser += user.withOrganizationId(o.id)
       }
     }
   }

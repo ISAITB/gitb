@@ -1,6 +1,6 @@
 class SystemsController
 
-	constructor:(@$log, @$location, @$scope, @SystemService, @ErrorService) ->
+	constructor:(@$log, @$location, @$scope, @$state, @$window, @DataService, @SystemService, @ErrorService) ->
 		@$log.debug "Constructing SystemsController"
 
 		@systems  = []       # systems of the organization
@@ -8,13 +8,14 @@ class SystemsController
 		@modalAlerts   = []    # alerts to be displayed within modals
 		@$scope.sdata  = {}    # bindings for new user
 		@systemSpinner = false # spinner to be displayed for new system operations
+		@organization = JSON.parse(@$window.localStorage['organization'])
 
 		#initially get the registered Systems of the vendor
 		@getSystems()
 
 	getSystems: () ->
 		@systemSpinner = true #start spinner
-		@SystemService.getSystems()
+		@SystemService.getSystemsByOrganization(@organization.id)
 		.then(
 			(data) =>
 				@systems = data
@@ -48,8 +49,8 @@ class SystemsController
 	registerSystem: () ->
 		if @checkForm()
 			@systemSpinner = true #start spinner
-			@SystemService.registerSystem(@$scope.sdata.sname, @$scope.sdata.fname,
-										  @$scope.sdata.description, @$scope.sdata.version)
+			@SystemService.registerSystemWithOrganization(@$scope.sdata.sname, @$scope.sdata.fname,
+										  @$scope.sdata.description, @$scope.sdata.version, @organization.id)
 			.then(
 				(data) =>
 					@getSystems() # get the list of systems again
@@ -75,5 +76,8 @@ class SystemsController
 
 	redirect: (address, systemId) ->
 		@$location.path(address + "/" + systemId)
+
+	back: () ->
+		@$state.go 'app.admin.users.communities.detail.organizations.detail.list', { community_id : JSON.parse(@$window.localStorage['community']).id, org_id : @organization.id }
 
 controllers.controller('SystemsController', SystemsController)

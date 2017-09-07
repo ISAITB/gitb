@@ -1,7 +1,7 @@
 class CreateConformanceStatementController
 
-  @$inject = ['$log', '$location', '$q', '$scope', '$state', '$stateParams', 'ConformanceService', 'SystemService', 'ErrorService']
-  constructor:(@$log, @$location, @$q, @$scope, @$state, @$stateParams, @ConformanceService, @SystemService, @ErrorService) ->
+  @$inject = ['$log', '$location', '$q', '$window', '$scope', '$state', '$stateParams', 'ConformanceService', 'SystemService', 'ErrorService']
+  constructor:(@$log, @$location, @$q, @$window, @$scope, @$state, @$stateParams, @ConformanceService, @SystemService, @ErrorService) ->
     @$log.debug "Constructing CreateConformanceStatementController"
 
     @alerts = []
@@ -67,6 +67,9 @@ class CreateConformanceStatementController
       }
     ]
 
+    @community = JSON.parse(@$window.localStorage['community'])
+    @domainId = if @community.domainId? then [ @community.domainId ] else []
+
     @getDomains()
 
   onWizardNext: (step) =>
@@ -129,7 +132,7 @@ class CreateConformanceStatementController
   getDomains: () ->
     @domains = []
 
-    @ConformanceService.getDomains()
+    @ConformanceService.getDomains(@domainId)
     .then(
       (data) =>
         @domains = data

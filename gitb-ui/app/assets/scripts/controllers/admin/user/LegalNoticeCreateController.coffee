@@ -3,18 +3,19 @@ class LegalNoticeCreateController
   @$inject = ['$log', '$state', '$stateParams', '$scope', 'WebEditorService', 'LegalNoticeService', 'ValidationService', 'ConfirmationDialogService', 'ErrorService']
   constructor: (@$log, @$state, @$stateParams, @$scope, @WebEditorService, @LegalNoticeService, @ValidationService, @ConfirmationDialogService, @ErrorService) ->
 
+    @communityId = @$stateParams.community_id
+
     @alerts = []
     @notice = {}
 
-    @initNotice()
+    @initialize()
 
-  initNotice: () ->
+  initialize: () ->
     @notice.name = @$stateParams.name
     @notice.description = @$stateParams.description
     @notice.default = false
     @WebEditorService.editor(300, @$stateParams.content ? "")
 
-  # create legal notice and cancel screen
   createLegalNotice: () =>
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@notice.name, "Please enter a name.")
@@ -27,7 +28,7 @@ class LegalNoticeCreateController
     @alerts = @ValidationService.getAlerts()
 
   doCreate: () ->
-    @LegalNoticeService.createLegalNotice(@notice.name, @notice.description, tinymce.activeEditor.getContent(), @notice.default)
+    @LegalNoticeService.createLegalNotice(@notice.name, @notice.description, tinymce.activeEditor.getContent(), @notice.default, @communityId)
     .then (data) =>
       if (data)
         @ValidationService.pushAlert({type:'danger', msg:data.error_description})
@@ -36,13 +37,10 @@ class LegalNoticeCreateController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-  # cancel detail
   cancelCreateLegalNotice: () =>
-    @$state.go 'app.admin.users.list'
+    @$state.go 'app.admin.users.communities.detail.list', { community_id : @communityId }
 
-  # closes alert which is displayed due to an error
   closeAlert: (index) ->
     @ValidationService.clearAlert(index)
-
 
 @controllers.controller 'LegalNoticeCreateController', LegalNoticeCreateController

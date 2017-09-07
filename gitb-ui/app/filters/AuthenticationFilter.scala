@@ -43,8 +43,8 @@ class AuthenticationFilter extends Filter {
             //check if requested service requires admin access
 	          if(requiresSystemAdminAccess(requestHeader)) {
 		          next(customRequestHeader)
-	          } else if(requiresVendorAdminAccess(requestHeader)){
-              AccountManager.isVendorAdmin(userId) flatMap { isAdmin =>
+	          } else if(requiresAdminAccess(requestHeader)){
+              AccountManager.isAdmin(userId) flatMap { isAdmin =>
                 if(isAdmin){
                   //has access, execute service
                   next(customRequestHeader)
@@ -105,7 +105,7 @@ class AuthenticationFilter extends Filter {
       (request.path.matches("/suite/\\d*/undeploy") && request.method.equals("DELETE"))
 	}
 
-  def requiresVendorAdminAccess(request:RequestHeader):Boolean = {
+  def requiresAdminAccess(request:RequestHeader):Boolean = {
     (request.path.equals("/vendor/profile") && request.method.equals("POST")) ||
       request.path.equals("/user/register") ||
       request.path.equals("/suts/register") ||

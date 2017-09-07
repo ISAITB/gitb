@@ -100,7 +100,7 @@ class OrganizationController
                     @spinner = false
             )
         else
-            @$scope.udata.password = '' # clear password everytime the form is not valid
+            @$scope.udata.password = '' # clear password every time the form is not valid
 
 	#call remote operation to register user
     addMember: () ->

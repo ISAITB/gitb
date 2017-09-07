@@ -287,14 +287,13 @@ object TestSuiteManager extends BaseManager {
 					.list
 
 				testSuites map { testSuite =>
-					val testCaseId = PersistenceSchema.testSuiteHasTestCases
+					val testCaseIds = PersistenceSchema.testSuiteHasTestCases
 						.filter(_.testsuite === testSuite.id)
 						.map(_.testcase)
-						.firstOption
-						.get
+						.list
 
 					val testCases = PersistenceSchema.testCases
-						.filter(_.id === testCaseId)
+						.filter(_.id inSet testCaseIds)
 						.filter(_.testCaseType === testCaseType)
 						.list
 

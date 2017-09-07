@@ -17,10 +17,17 @@ class OrganizationService
       authenticate: true
     })
 
-  createOrganization: (shortName, fullName, landingPage, legalNotice) ->
+  getOrganizationsByCommunity: (communityId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.OrganizationService.getOrganizationsByCommunity(communityId).url,
+      authenticate: true
+    })
+
+  createOrganization: (shortName, fullName, landingPage, legalNotice, communityId) ->
     data = {
       vendor_sname: shortName,
       vendor_fname: fullName,
+      community_id: communityId
     }
 
     if landingPage?

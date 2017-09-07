@@ -19,27 +19,29 @@
             <table class="table" ng-if="dashboardCtrl.showFilters">
                 <thead>
                 <tr>
-                    <th class="col-md-1">Domain</th>
+                    <th class="col-md-1" ng-if="dashboardCtrl.DataService.isSystemAdmin || (dashboardCtrl.DataService.isCommunityAdmin && dashboardCtrl.DataService.community.domain === null)">Domain</th>
                     <th class="col-md-1">Specification</th>
                     <th class="col-md-1">Test Suite</th>
                     <th class="col-md-1">Test Case</th>
+                    <th class="col-md-1" ng-if="!dashboardCtrl.DataService.isCommunityAdmin">Community</th>
                     <th class="col-md-1">Organization</th>
                     <th class="col-md-1">System</th>
-                    <th class="col-md-2">Result</th>
+                    <th class="col-md-1">Result</th>
                     <th class="col-md-2">Start time</th>
                     <th class="col-md-2">End time</th>
                 </tr>
                 </thead>
                 <tbody>
                 <tr>
-                    <td>
+                    <td ng-if="dashboardCtrl.DataService.isSystemAdmin || (dashboardCtrl.DataService.isCommunityAdmin && dashboardCtrl.DataService.community.domain === null)">
                         <div isteven-multi-select input-model="dashboardCtrl.filters.domain.filter"
                              output-model="dashboardCtrl.filters.domain.selection" button-label="sname"
                              item-label="sname"
                              tick-property="ticked" max-labels="0" max-height="250px"
                              translation="dashboardCtrl.translation"
                              helper-elements="filter" search-property="sname" output-properties="id"
-                             on-item-click="dashboardCtrl.domainClicked(data)"></div>
+                             on-item-click="dashboardCtrl.domainClicked(data)"
+                             is-disabled="dashboardCtrl.domainDisabled"></div>
                     </td>
                     <td>
                         <div isteven-multi-select input-model="dashboardCtrl.filters.specification.filter"
@@ -67,6 +69,16 @@
                              translation="dashboardCtrl.translation"
                              helper-elements="filter" search-property="sname" output-properties="id"
                              on-item-click="dashboardCtrl.testCaseClicked(data)"></div>
+                    </td>
+                    <td ng-if="!dashboardCtrl.DataService.isCommunityAdmin">
+                        <div isteven-multi-select input-model="dashboardCtrl.filters.community.filter"
+                             output-model="dashboardCtrl.filters.community.selection" button-label="sname"
+                             item-label="sname"
+                             tick-property="ticked" max-labels="0" max-height="250px"
+                             translation="dashboardCtrl.translation"
+                             helper-elements="filter" search-property="sname" output-properties="id"
+                             on-item-click="dashboardCtrl.communityClicked(data)"
+                             is-disabled="dashboardCtrl.DataService.isCommunityAdmin"></div>
                     </td>
                     <td>
                         <div isteven-multi-select input-model="dashboardCtrl.filters.organization.filter"
@@ -112,6 +124,7 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Active test sessions</h4>
+            <button class="btn btn-default pull-right" ng-click="dashboardCtrl.exportActiveSessionsToCsv()">Export CSV</button>
         </div>
         <div table-directive columns="dashboardCtrl.activeTestsColumns" data="dashboardCtrl.activeTests"
              on-select="dashboardCtrl.testSelect" action-visible="true" on-action="dashboardCtrl.onAction"
@@ -122,6 +135,7 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Completed test sessions</h4>
+            <button class="btn btn-default pull-right" ng-click="dashboardCtrl.exportCompletedSessionsToCsv()">Export CSV</button>
         </div>
         <div table-directive columns="dashboardCtrl.completedTestsColumns" data="dashboardCtrl.completedTests"
              on-select="dashboardCtrl.testSelect" action-visible="true" on-action="dashboardCtrl.onAction"
@@ -132,7 +146,7 @@
              prev-disabled="dashboardCtrl.isPreviousPageDisabled"></div>
     </div>
     <!-- configuration -->
-    <div class="panel panel-default">
+    <div class="panel panel-default" ng-if="dashboardCtrl.DataService.isSystemAdmin">
         <div class="panel-heading">
             <h4 class="title">Automatically terminate idle sessions</h4>
             <div class="btn-group btn-toggle pull-right">

@@ -11,6 +11,8 @@ class Constants
 
 	@END_OF_TEST_STEP: "-1"
 
+	@DEFAULT_COMMUNITY_ID = 0
+
 	@TEST_ROLE =
 	    SUT: "SUT"
 	    SIMULATED: "SIMULATED"
@@ -28,13 +30,15 @@ class Constants
 		VENDOR_ADMIN: 1,
 		VENDOR_USER : 2,
 		DOMAIN_USER : 3,
-		SYSTEM_ADMIN: 4
+		SYSTEM_ADMIN: 4,
+		COMMUNITY_ADMIN: 5,
 
 	@USER_ROLE_LABEL =
 		1 : "Administrator",
 		2 : "User",
 		3 : "Domain user",
-		4 : "Test bed administrator"
+		4 : "Test bed administrator",
+		5 : "Community administrator"
 
 	@VENDOR_USER_ROLES = [
 		{

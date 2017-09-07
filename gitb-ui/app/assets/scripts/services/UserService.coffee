@@ -11,6 +11,15 @@ class UserService
       authenticate: true
     })
 
+  getCommunityAdministrators: (communityId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.UserService.getCommunityAdministrators().url,
+      authenticate: true
+      params: {
+        community_id: communityId
+      }
+    })
+
   getUsersByOrganization: (orgId) ->
     @RestService.get({
       path: jsRoutes.controllers.UserService.getUsersByOrganization(orgId).url,
@@ -32,6 +41,15 @@ class UserService
       }
     })
 
+  updateCommunityAdminProfile: (userId, name) ->
+    @RestService.post({
+      path: jsRoutes.controllers.UserService.updateCommunityAdminProfile(userId).url,
+      authenticate: true
+      data: {
+        user_name: name
+      }
+    })
+
   updateUserProfile: (userId, name, role) ->
     @RestService.post({
       path: jsRoutes.controllers.UserService.updateUserProfile(userId).url,
@@ -42,13 +60,26 @@ class UserService
       authenticate: true
     })
 
-  createSystemAdmin: (userName, userEmail, userPassword) ->
+  createSystemAdmin: (userName, userEmail, userPassword, communityId) ->
     @RestService.post({
       path: jsRoutes.controllers.UserService.createSystemAdmin().url,
       data: {
         user_name: userName,
         user_email: userEmail,
         password: userPassword
+        community_id: communityId
+      }
+      authenticate: true
+    })
+
+  createCommunityAdmin: (userName, userEmail, userPassword, communityId) ->
+    @RestService.post({
+      path: jsRoutes.controllers.UserService.createCommunityAdmin().url,
+      data: {
+        user_name: userName,
+        user_email: userEmail,
+        password: userPassword,
+        community_id: communityId
       }
       authenticate: true
     })
@@ -65,9 +96,9 @@ class UserService
       authenticate: true
     })
 
-  deleteSystemAdmin: (userId) ->
+  deleteAdmin: (userId) ->
     @RestService.delete
-      path: jsRoutes.controllers.UserService.deleteSystemAdmin(userId).url
+      path: jsRoutes.controllers.UserService.deleteAdmin(userId).url
 
   deleteVendorUser: (userId) ->
     @RestService.delete

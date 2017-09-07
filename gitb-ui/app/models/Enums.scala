@@ -9,7 +9,7 @@ object Enums {
 
   object UserRole extends Enumeration(1) {
     type UserRole = Value
-    val VendorAdmin, VendorUser, DomainUser, SystemAdmin = Value
+    val VendorAdmin, VendorUser, DomainUser, SystemAdmin, CommunityAdmin = Value
   }
 
   object SpecificationType extends Enumeration(1) {

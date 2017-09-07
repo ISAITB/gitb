@@ -3,7 +3,7 @@ class UserCreateController
   @$inject = ['$log', '$state', '$stateParams', 'ValidationService', 'UserService', 'Constants', 'AuthService', 'ErrorService']
   constructor: (@$log, @$state, @$stateParams, @ValidationService, @UserService, @Constants, @AuthService, @ErrorService) ->
 
-    @orgId = @$stateParams.id
+    @orgId = @$stateParams.org_id
     @alerts = []
     @user = {}
 
@@ -31,7 +31,7 @@ class UserCreateController
 
   # cancel create
   cancelCreateUser: () =>
-    @$state.go 'app.admin.users.organizations.detail.list', { id : @orgId }
+    @$state.go 'app.admin.users.communities.detail.organizations.detail.list', { id : @orgId }
 
   # closes alert which is displayed due to an error
   closeAlert: (index) ->

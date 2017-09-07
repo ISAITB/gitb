@@ -7,28 +7,12 @@
         </div>
         <div table-directive columns="userManagementCtrl.adminColumns" data="userManagementCtrl.admins" on-select="userManagementCtrl.adminSelect"></div>
     </div>
-    <!-- organizations -->
+    <!-- communities -->
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h4 class="title">Organisations</h4>
-            <a ui-sref="app.admin.users.organizations.create" class="btn btn-default pull-right">Create organization</a>
+            <h4 class="title">Communities</h4>
+            <a ui-sref="app.admin.users.communities.create" class="btn btn-default pull-right">Create community</a>
         </div>
-        <div table-directive columns="userManagementCtrl.organizationColums" data="userManagementCtrl.organizations" on-select="userManagementCtrl.organizationSelect"></div>
-    </div>
-    <!-- landing pages -->
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h4 class="title">Landing pages</h4>
-            <a ui-sref="app.admin.users.landingpages.create" class="btn btn-default pull-right">Create landing page</a>
-        </div>
-        <div table-directive columns="userManagementCtrl.landingPagesColumns" data="userManagementCtrl.landingPages" on-select="userManagementCtrl.landingPageSelect"></div>
-    </div>
-    <!-- legal notices -->
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h4 class="title">Legal notices</h4>
-            <a ui-sref="app.admin.users.legalnotices.create" class="btn btn-default pull-right">Create legal notice</a>
-        </div>
-        <div table-directive columns="userManagementCtrl.legalNoticesColumns" data="userManagementCtrl.legalNotices" on-select="userManagementCtrl.legalNoticeSelect"></div>
+        <div table-directive columns="userManagementCtrl.communityColumns" data="userManagementCtrl.communities" on-select="userManagementCtrl.communitySelect"></div>
     </div>
 </div>

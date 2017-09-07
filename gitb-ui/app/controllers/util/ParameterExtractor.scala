@@ -65,9 +65,17 @@ object ParameterExtractor {
   def extractOrganizationInfo(request:Request[AnyContent]):Organizations = {
     val vendorSname = requiredBodyParameter(request, Parameters.VENDOR_SNAME)
     val vendorFname = requiredBodyParameter(request, Parameters.VENDOR_FNAME)
+    val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
     val landingPageId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LANDING_PAGE_ID)
     val legalNoticeId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LEGAL_NOTICE_ID)
-    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, landingPageId, legalNoticeId)
+    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, false, landingPageId, legalNoticeId, communityId)
+  }
+
+  def extractCommunityInfo(request:Request[AnyContent]):Communities = {
+    val sname = requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
+    val fname = requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
+    val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
+    Communities(0L, sname, fname, domainId)
   }
 
   def extractSystemAdminInfo(request:Request[AnyContent]):Users = {
@@ -75,6 +83,13 @@ object ParameterExtractor {
     val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
     val password = requiredBodyParameter(request, Parameters.PASSWORD)
     Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), UserRole.SystemAdmin.id.toShort, 0L)
+  }
+
+  def extractCommunityAdminInfo(request:Request[AnyContent]):Users = {
+    val name = requiredBodyParameter(request, Parameters.USER_NAME)
+    val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
+    val password = requiredBodyParameter(request, Parameters.PASSWORD)
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), UserRole.CommunityAdmin.id.toShort, 0L)
   }
 
   def extractAdminInfo(request:Request[AnyContent]):Users = {
@@ -97,6 +112,15 @@ object ParameterExtractor {
     val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_DESC)
     val version:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_VERSION)
     Systems(0L, sname, fname, descr, version, 0L)
+  }
+
+  def extractSystemWithOrganizationInfo(request:Request[AnyContent]):Systems = {
+    val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_SNAME)
+    val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_FNAME)
+    val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_DESC)
+    val version:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_VERSION)
+    val owner:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.ORGANIZATION_ID).toLong
+    Systems(0L, sname, fname, descr, version, owner)
   }
 
 	def extractDomain(request:Request[AnyContent]):Domain = {
@@ -149,7 +173,8 @@ object ParameterExtractor {
     val desc = optionalBodyParameter(request, Parameters.DESCRIPTION)
     val content = requiredBodyParameter(request, Parameters.CONTENT)
     val default = requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
-    LandingPages(0L, name, desc, content, default)
+    val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    LandingPages(0L, name, desc, content, default, communityId)
   }
 
   def extractLegalNoticeInfo(request:Request[AnyContent]):LegalNotices = {
@@ -157,7 +182,8 @@ object ParameterExtractor {
     val desc = optionalBodyParameter(request, Parameters.DESCRIPTION)
     val content = requiredBodyParameter(request, Parameters.CONTENT)
     val default = requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
-    LegalNotices(0L, name, desc, content, default)
+    val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    LegalNotices(0L, name, desc, content, default, communityId)
   }
 
 	def extractIdsQueryParameter(request:Request[AnyContent]): Option[List[String]] = {

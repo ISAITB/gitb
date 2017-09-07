@@ -3,12 +3,12 @@ class LandingPageDetailController
   @$inject = ['$log', '$state', '$stateParams', 'WebEditorService', 'ValidationService', 'LandingPageService', 'ConfirmationDialogService', 'ErrorService']
   constructor: (@$log, @$state, @$stateParams, @WebEditorService, @ValidationService, @LandingPageService, @ConfirmationDialogService, @ErrorService) ->
 
-    @pageId = @$stateParams.id
+    @communityId = @$stateParams.community_id
+    @pageId = @$stateParams.page_id
     @alerts = []
     @page = {}
     @isDefault
 
-    # get selected landing page
     @LandingPageService.getLandingPageById(@pageId)
     .then (data) =>
       @page = data
@@ -17,7 +17,6 @@ class LandingPageDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-  # update and cancel detail
   updateLandingPage: (copy) =>
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@page.name, "Please enter a name.")
@@ -30,7 +29,7 @@ class LandingPageDetailController
     @alerts = @ValidationService.getAlerts()
 
   doUpdate: (copy) ->
-    @LandingPageService.updateLandingPage(@pageId, @page.name, @page.description, tinymce.activeEditor.getContent(), @page.default)
+    @LandingPageService.updateLandingPage(@pageId, @page.name, @page.description, tinymce.activeEditor.getContent(), @page.default, @communityId)
     .then (data) =>
       if (data)
         @ValidationService.pushAlert({type:'danger', msg:data.error_description})
@@ -42,14 +41,12 @@ class LandingPageDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-  # copy landing page info in create screen
   copyLandingPage: () ->
     name = @page.name + " COPY"
     description = @page.description
     content = tinymce.activeEditor.getContent()
-    @$state.go 'app.admin.users.landingpages.create', { name : name, description : description, content : content }
+    @$state.go 'app.admin.users.communities.detail.landingpages.create', { name : name, description : description, content : content }
 
-  # delete and cancel detail
   deleteLandingPage: () =>
     @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this landing page?", "Yes", "No")
     .then () =>
@@ -59,13 +56,10 @@ class LandingPageDetailController
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
 
-  # cancel detail
   cancelDetailLandingPage: () =>
-    @$state.go 'app.admin.users.list'
+    @$state.go 'app.admin.users.communities.detail.list', { community_id : @communityId }
 
-  # closes alert which is displayed due to an error
   closeAlert: (index) ->
     @ValidationService.clearAlert(index)
-
 
 @controllers.controller 'LandingPageDetailController', LandingPageDetailController

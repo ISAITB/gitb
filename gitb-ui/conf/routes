@@ -25,6 +25,7 @@ POST	/vendor/profile                     @controllers.AccountService.updateVendo
 GET	    /vendor/users                       @controllers.AccountService.getVendorUsers
 POST	/user/register                      @controllers.AccountService.registerUser
 GET	    /user/profile                       @controllers.AccountService.getUserProfile
+GET	    /user/community                     @controllers.CommunityService.getUserCommunity
 POST	/user/profile                       @controllers.AccountService.updateUserProfile
 
 # System mangement API
@@ -42,9 +43,12 @@ GET	    /suts/:sut_id/conformance/results   @controllers.SystemService.getConfor
 #GET	/suts/:sut_id/configs               @controllers.SystemService.getSystemConfigurations(sut_id : Long)
 #POST	/suts/:sut_id/configs               @controllers.SystemService.updateSystemConfigurations(sut_id : Long)
 GET	    /vendor/suts                        @controllers.SystemService.getVendorSystems
+GET	    /vendor/systems                     @controllers.SystemService.getSystemsByOrganization
+POST	/vendor/systems/register            @controllers.SystemService.registerSystemWithOrganization
 
 # Test Case management API
 GET	    /domains                            @controllers.ConformanceService.getDomains
+GET	    /domains/community                  @controllers.ConformanceService.getCommunityDomain
 POST    /domains                            @controllers.ConformanceService.createDomain
 DELETE  /domains/:domain_id                 @controllers.ConformanceService.deleteDomain(domain_id: Long)
 POST    /domains/:domain_id                 @controllers.ConformanceService.updateDomain(domain_id: Long)
@@ -76,7 +80,7 @@ GET     /admins/all                         @controllers.UserService.getSystemAd
 POST    /admins/create                      @controllers.UserService.createSystemAdmin
 GET     /admins/:id                         @controllers.UserService.getUserById(id : Long)
 POST    /admins/:id                         @controllers.UserService.updateSystemAdminProfile(id : Long)
-DELETE  /admins/:id                         @controllers.UserService.deleteSystemAdmin(id : Long)
+DELETE  /admins/:id                         @controllers.UserService.deleteAdmin(id : Long)
 
 # Session management API
 GET     /dashboard/tests                    @controllers.RepositoryService.getTestCases
@@ -88,16 +92,12 @@ GET     /dashboard/config                   @controllers.SystemConfigurationServ
 POST    /dashboard/config                   @controllers.SystemConfigurationService.updateSessionAliveTime
 GET     /dashboard/suites                   @controllers.TestSuiteService.getTestSuitesWithTestCases
 
-GET     /pages/default                      @controllers.LandingPageService.getDefaultLandingPage
-GET     /pages/all                          @controllers.LandingPageService.getLandingPages
-POST    /pages/create                       @controllers.LandingPageService.createLandingPage
+GET     /pages/default                      @controllers.LandingPageService.getCommunityDefaultLandingPage
 GET     /pages/:id                          @controllers.LandingPageService.getLandingPageById(id : Long)
 DELETE  /pages/:id                          @controllers.LandingPageService.deleteLandingPage(id : Long)
 POST    /pages/:id                          @controllers.LandingPageService.updateLandingPage(id : Long)
 
-GET     /notices/default                    @controllers.LegalNoticeService.getDefaultLegalNotice
-GET     /notices/all                        @controllers.LegalNoticeService.getLegalNotices
-POST    /notices/create                     @controllers.LegalNoticeService.createLegalNotice
+GET     /notices/default                    @controllers.LegalNoticeService.getCommunityDefaultLegalNotice
 GET     /notices/:id                        @controllers.LegalNoticeService.getLegalNoticeById(id : Long)
 DELETE  /notices/:id                        @controllers.LegalNoticeService.deleteLegalNotice(id : Long)
 POST    /notices/:id                        @controllers.LegalNoticeService.updateLegalNotice(id : Long)
@@ -105,12 +105,27 @@ POST    /notices/:id                        @controllers.LegalNoticeService.upda
 GET     /organizations/all                  @controllers.OrganizationService.getOrganizations
 POST    /organizations/create               @controllers.OrganizationService.createOrganization
 GET     /organizations/users                @controllers.UserService.getUsersByOrganization(id : Long)
-GET     /organizations/:id                  @controllers.OrganizationService.getOrganizationById(id : Long)
+GET     /organizations/:org_id              @controllers.OrganizationService.getOrganizationById(org_id : Long)
 DELETE  /organizations/:id                  @controllers.OrganizationService.deleteOrganization(id: Long)
 POST    /organizations/:id                  @controllers.OrganizationService.updateOrganization(id : Long)
 POST    /organizations/:id/users/create     @controllers.UserService.createUser(id: Long)
 POST    /users/:user_id                     @controllers.UserService.updateUserProfile(user_id: Long)
 DELETE  /users/:user_id                     @controllers.UserService.deleteVendorUser(user_id: Long)
+
+GET     /communities/all                    @controllers.CommunityService.getCommunities
+POST    /communities/create                 @controllers.CommunityService.createCommunity
+GET     /communities/:id                    @controllers.CommunityService.getCommunityById(id : Long)
+POST    /communities/:id                    @controllers.CommunityService.updateCommunity(id : Long)
+DELETE  /communities/:id                    @controllers.CommunityService.deleteCommunity(id: Long)
+GET     /communities/organizations/:id      @controllers.OrganizationService.getOrganizationsByCommunity(id: Long)
+GET     /communities/pages/:id              @controllers.LandingPageService.getLandingPagesByCommunity(id: Long)
+POST    /communities/pages/create           @controllers.LandingPageService.createLandingPage
+GET     /communities/notices/:id            @controllers.LegalNoticeService.getLegalNoticesByCommunity(id: Long)
+POST    /communities/notices/create         @controllers.LegalNoticeService.createLegalNotice
+GET     /communities/admins/all             @controllers.UserService.getCommunityAdministrators
+POST    /communities/admins/create          @controllers.UserService.createCommunityAdmin
+POST    /communities/admins/create          @controllers.UserService.createCommunityAdmin
+POST    /communities/admins/:id             @controllers.UserService.updateCommunityAdminProfile(id : Long)
 
 # Test Result management API
 GET	    /suts/:sut_id/conformance/:test_instance/report @controllers.TestResultService.getReportForTestInstance(sut_id:Long, test_instance:String)

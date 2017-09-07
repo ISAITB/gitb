@@ -35,6 +35,14 @@ object SystemManager extends BaseManager {
     }
   }
 
+  def registerSystem(system: Systems): Future[Unit] = {
+    Future {
+      DB.withSession { implicit session =>
+        PersistenceSchema.insertSystem += system
+      }
+    }
+  }
+
   def updateSystemProfile(systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String]): Future[Unit] = {
     Future {
       DB.withSession { implicit session =>
@@ -82,6 +90,15 @@ object SystemManager extends BaseManager {
         //4) Merge all info and return
         val system: models.System = new models.System(s, o, admins)
         system
+      }
+    }
+  }
+
+  def getSystemsByOrganization(orgId: Long): Future[List[Systems]] = {
+    Future {
+      DB.withSession { implicit session =>
+        val systems = PersistenceSchema.systems.filter(_.owner === orgId).list
+        systems
       }
     }
   }

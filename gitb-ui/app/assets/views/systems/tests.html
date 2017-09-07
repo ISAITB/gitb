@@ -20,10 +20,10 @@
             <table class="table">
                 <thead>
                 <tr>
-                    <th class="col-md-2">Test Suite</th>
-                    <th class="col-md-2">Test Case</th>
+                    <th ng-if="systemTestsCtrl.community.domainId == undefined" class="col-md-2">Domain</th>
                     <th class="col-md-2">Specification</th>
-                    <th class="col-md-1">Domain</th>
+                    <th class="col-md-2">Test Suite</th>
+                    <th class="col-md-1">Test Case</th>
                     <th class="col-md-1">Result</th>
                     <th class="col-md-2">Start time</th>
                     <th class="col-md-2">End time</th>
@@ -31,6 +31,38 @@
                 </thead>
                 <tbody>
                 <tr>
+                    <td ng-if="systemTestsCtrl.community.domainId == undefined">
+                        <div isteven-multi-select
+                             input-model="systemTestsCtrl.filtering.domain.filter"
+                             output-model="systemTestsCtrl.filtering.domain.selection"
+                             button-label="sname"
+                             item-label="sname"
+                             tick-property="ticked"
+                             max-labels="0"
+                             max-height="250px"
+                             translation="systemTestsCtrl.translation"
+                             helper-elements="filter"
+                             search-property="sname"
+                             output-properties="id"
+                             on-item-click="systemTestsCtrl.domainTicked(data)">
+                        </div>
+                    </td>
+                    <td>
+                        <div isteven-multi-select
+                             input-model="systemTestsCtrl.filtering.specification.filter"
+                             output-model="systemTestsCtrl.filtering.specification.selection"
+                             button-label="sname"
+                             item-label="sname"
+                             tick-property="ticked"
+                             max-labels="0"
+                             max-height="250px"
+                             translation="systemTestsCtrl.translation"
+                             helper-elements="filter"
+                             search-property="sname"
+                             output-properties="id"
+                             on-item-click="systemTestsCtrl.specificationTicked(data)">
+                        </div>
+                    </td>
                     <td>
                         <div isteven-multi-select
                              input-model="systemTestsCtrl.filtering.testSuite.filter"
@@ -43,7 +75,7 @@
                              translation="systemTestsCtrl.translation"
                              helper-elements="filter"
                              search-property="sname"
-                             output-properties="id testCase"
+                             output-properties="id testCases"
                              on-item-click="systemTestsCtrl.testSuiteTicked(data)">
                         </div>
                     </td>
@@ -65,38 +97,6 @@
                     </td>
                     <td>
                         <div isteven-multi-select
-                             input-model="systemTestsCtrl.filtering.specification.filter"
-                             output-model="systemTestsCtrl.filtering.specification.selection"
-                             button-label="sname"
-                             item-label="sname"
-                             tick-property="ticked"
-                             max-labels="0"
-                             max-height="250px"
-                             translation="systemTestsCtrl.translation"
-                             helper-elements="filter"
-                             search-property="sname"
-                             output-properties="id"
-                             on-item-click="systemTestsCtrl.specificationTicked(data)">
-                        </div>
-                    </td>
-                    <td>
-                        <div isteven-multi-select
-                             input-model="systemTestsCtrl.filtering.domain.filter"
-                             output-model="systemTestsCtrl.filtering.domain.selection"
-                             button-label="sname"
-                             item-label="sname"
-                             tick-property="ticked"
-                             max-labels="0"
-                             max-height="250px"
-                             translation="systemTestsCtrl.translation"
-                             helper-elements="filter"
-                             search-property="sname"
-                             output-properties="id"
-                             on-item-click="systemTestsCtrl.domainTicked(data)">
-                        </div>
-                    </td>
-                    <td>
-                        <div isteven-multi-select
                              input-model="systemTestsCtrl.filtering.result.filter"
                              output-model="systemTestsCtrl.filtering.result.selection"
                              button-label="result"
@@ -108,7 +108,7 @@
                              helper-elements="filter"
                              search-property="result"
                              output-properties="result"
-                             on-item-click="systemTestsCtrl.domainTicked(data)">
+                             on-item-click="systemTestsCtrl.resultClicked(data)">
                         </div>
                     </td>
                     <td>
@@ -130,9 +130,10 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Performed Tests</h4>
-            <button class="btn btn-primary pull-right" ng-if="systemTestsCtrl.showExportButton"
-                    ng-click="systemTestsCtrl.exportSelected()">Export Selected
-            </button>
+            <div class="btn-toolbar pull-right">
+                <button class="btn btn-default" ng-if="systemTestsCtrl.showExportButton" ng-click="systemTestsCtrl.exportSelected()">Export Selected</button>
+                <button class="btn btn-default" ng-click="systemTestsCtrl.exportToCsv()">Export CSV</button>
+            </div>
         </div>
         <!--
         <h5 class="no-conformance-statement-defined" ng-if="conformanceStatementCtrl.conformanceStatements.length == 0">No conformance statement is present for the system...</h5>
