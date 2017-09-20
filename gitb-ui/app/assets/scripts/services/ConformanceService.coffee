@@ -11,13 +11,22 @@ class ConformanceService
   getDomains: (ids) ->
     params = {}
 
-    if ids?
+    if ids? and ids.length > 0
       params['ids'] = ids.join ","
 
     @RestService.get({
       path: jsRoutes.controllers.ConformanceService.getDomains().url,
       authenticate: true
       params: params
+    })
+
+  getCommunityDomain: (communityId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.ConformanceService.getCommunityDomain().url,
+      authenticate: true
+      params: {
+        community_id: communityId
+      }
     })
 
   deleteDomain: (domainId) ->

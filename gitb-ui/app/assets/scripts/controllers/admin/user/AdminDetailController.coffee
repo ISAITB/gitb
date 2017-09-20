@@ -33,7 +33,7 @@ class AdminDetailController
   deleteAdmin: () =>
     @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this administrator?", "Yes", "No")
     .then () =>
-      @UserService.deleteSystemAdmin(@userId)
+      @UserService.deleteAdmin(@userId)
       .then (data) =>
         @cancelDetailAdmin()
       .catch (error) =>

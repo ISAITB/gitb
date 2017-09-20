@@ -3,7 +3,7 @@ class UserDetailController
   @$inject = ['$log', '$state', '$stateParams', 'ValidationService', 'UserManagementService', 'ConfirmationDialogService', 'UserService', 'Constants', 'ErrorService']
   constructor: (@$log, @$state, @$stateParams,  @ValidationService, @UserManagementService, @ConfirmationDialogService, @UserService, @Constants, @ErrorService) ->
 
-    @orgId = @$stateParams.id
+    @orgId = @$stateParams.org_id
     @userId = @$stateParams.user_id
     @alerts = []
     @user = {}
@@ -49,7 +49,7 @@ class UserDetailController
 
   # cancel detail
   cancelDetailUser: () =>
-    @$state.go 'app.admin.users.organizations.detail.list', { id : @orgId }
+    @$state.go 'app.admin.users.communities.detail.organizations.detail.list', { org_id : @orgId }
 
   # closes alert which is displayed due to an error
   closeAlert: (index) ->

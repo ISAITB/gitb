@@ -6,6 +6,7 @@ package models
 object Constants {
   // Organization constants
   val DefaultOrganizationId = 0L
+  val AdminOrganizationName = "Admin Organization"
 
   // System configuration constants
   val SessionAliveTime = "session_alive_time"

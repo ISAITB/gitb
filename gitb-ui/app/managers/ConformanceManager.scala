@@ -41,6 +41,20 @@ object ConformanceManager extends BaseManager {
     }
   }
 
+	def getCommunityDomain(communityId: Long): Future[Domain] = {
+		Future {
+			DB.withSession { implicit session =>
+				val community = PersistenceSchema.communities.filter(_.id === communityId).firstOption.get
+
+				val domain = community.domain match {
+					case Some(d) => PersistenceSchema.domains.filter(_.id === d).firstOption.get
+					case None => null
+				}
+				domain
+			}
+		}
+	}
+
 	def createDomain(domain:Domain) = {
 		Future {
 			DB.withSession { implicit session =>

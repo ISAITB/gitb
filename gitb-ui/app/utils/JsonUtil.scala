@@ -151,7 +151,9 @@ object JsonUtil {
       "fname" -> organization.fullname,
       "type"  -> organization.organizationType,
       "landingPage" -> (if(organization.landingPage.isDefined) organization.landingPage.get else JsNull),
-      "legalNotice" -> (if(organization.legalNotice.isDefined) organization.legalNotice.get else JsNull)
+      "legalNotice" -> (if(organization.legalNotice.isDefined) organization.legalNotice.get else JsNull),
+      "community" -> organization.community,
+      "adminOrganization" -> organization.adminOrganization
     )
     json
   }
@@ -200,6 +202,34 @@ object JsonUtil {
       json = json.append(jsSystem(system))
     }
     json
+  }
+
+  def jsCommunities(list:List[Communities]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ community =>
+      json = json.append(jsCommunity(community))
+    }
+    json
+  }
+
+  def jsCommunity(community:Communities):JsObject = {
+    val json = Json.obj(
+      "id"    -> community.id,
+      "sname" -> community.shortname,
+      "fname" -> community.fullname,
+      "domainId" -> community.domain
+    )
+    json
+  }
+
+  def serializeCommunity(community:Community):String = {
+    var jCommunity:JsObject = jsCommunity(community.toCaseObject)
+    if(community.domain.isDefined){
+      jCommunity = jCommunity ++ Json.obj("domain" -> jsDomain(community.domain.get))
+    } else{
+      jCommunity = jCommunity ++ Json.obj("domain" -> JsNull)
+    }
+    jCommunity.toString
   }
 
   /**
@@ -530,6 +560,12 @@ object JsonUtil {
           case Some(d) => jsDomain(d)
           case None => JsNull
         }
+      },
+      "testSuite" -> {
+        report.testSuite match {
+          case Some(t) => jsTestSuite(t)
+          case None => JsNull
+        }
       }
     )
     json
@@ -675,6 +711,12 @@ object JsonUtil {
     } else{
       jOrganization = jOrganization ++ Json.obj("legalNotices" -> JsNull)
     }
+    //
+    if(org.community.isDefined){
+      jOrganization = jOrganization ++ Json.obj("communities" -> jsCommunity(org.community.get))
+    } else{
+      jOrganization = jOrganization ++ Json.obj("communities" -> JsNull)
+    }
     //4) Return JSON String
     jOrganization.toString
   }
@@ -776,7 +818,11 @@ object JsonUtil {
    */
   def serializeLandingPage(landingPage:LandingPage):String = {
     //1) Serialize LandingPage
-    val jLandingPage:JsObject = jsLandingPage(landingPage.toCaseObject)
+    val exists = landingPage != null
+    var jLandingPage:JsObject =  jsExists(exists)
+    if (exists) {
+      jLandingPage = jLandingPage ++ jsLandingPage(landingPage.toCaseObject)
+    }
     //3) Return JSON String
     jLandingPage.toString
   }
@@ -788,9 +834,20 @@ object JsonUtil {
    */
   def serializeLegalNotice(legalNotice:LegalNotice):String = {
     //1) Serialize LandingPage
-    val jLandingPage:JsObject = jsLegalNotice(legalNotice.toCaseObject)
+    val exists = legalNotice != null
+    var jLegalNotice:JsObject = jsExists(exists)
+    if (exists) {
+      jLegalNotice = jLegalNotice ++ jsLegalNotice(legalNotice.toCaseObject)
+    }
     //3) Return JSON String
-    jLandingPage.toString
+    jLegalNotice.toString
+  }
+
+  def jsExists(bool:Boolean):JsObject = {
+    val json = Json.obj(
+      "exists" -> bool
+    )
+    json
   }
 
 }

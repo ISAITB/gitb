@@ -3,12 +3,14 @@ class LandingPageCreateController
   @$inject = ['$log', '$state', '$stateParams', '$scope', 'WebEditorService', 'LandingPageService', 'ValidationService', 'ConfirmationDialogService', 'ErrorService']
   constructor: (@$log, @$state, @$stateParams, @$scope, @WebEditorService, @LandingPageService, @ValidationService, @ConfirmationDialogService, @ErrorService) ->
 
+    @communityId = @$stateParams.community_id
+
     @alerts = []
     @page = {}
 
-    @initPage()
+    @initialize()
 
-  initPage: () ->
+  initialize: () ->
     @page.name = @$stateParams.name
     @page.description = @$stateParams.description
     @page.default = false
@@ -27,7 +29,7 @@ class LandingPageCreateController
     @alerts = @ValidationService.getAlerts()
 
   doCreate: () ->
-    @LandingPageService.createLandingPage(@page.name, @page.description, tinymce.activeEditor.getContent(), @page.default)
+    @LandingPageService.createLandingPage(@page.name, @page.description, tinymce.activeEditor.getContent(), @page.default, @communityId)
     .then (data) =>
       if (data)
         @ValidationService.pushAlert({type:'danger', msg:data.error_description})
@@ -36,11 +38,9 @@ class LandingPageCreateController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-  # cancel detail
   cancelCreateLandingPage: () =>
-    @$state.go 'app.admin.users.list'
+    @$state.go 'app.admin.users.communities.detail.list', { community_id : @communityId }
 
-  # closes alert which is displayed due to an error
   closeAlert: (index) ->
     @ValidationService.clearAlert(index)
 

@@ -13,66 +13,37 @@ object LegalNoticeManager extends BaseManager {
   def logger = LoggerFactory.getLogger("LegalNoticeManager")
 
   /**
+   * Gets all legal notices for the specified community
+   */
+  def getLegalNoticesByCommunity(communityId: Long): Future[List[LegalNotices]] = {
+    Future {
+      DB.withSession { implicit session =>
+        val legalNotices = PersistenceSchema.legalNotices.filter(_.community === communityId).list
+        legalNotices
+      }
+    }
+  }
+
+  /**
    * Checks if name exists
    */
-  def checkUniqueName(name: String): Future[Boolean] = {
+  def checkUniqueName(name: String, communityId: Long): Future[Boolean] = {
     Future {
       DB.withSession { implicit session =>
-        val firstOption = PersistenceSchema.legalNotices.filter(_.name === name).firstOption
-        !firstOption.isDefined
+        val firstOption = PersistenceSchema.legalNotices.filter(_.community === communityId).filter(_.name === name).firstOption
+        firstOption.isEmpty
       }
     }
   }
 
   /**
-   * Checks if name exists except own name (used for update)
-   */
-  def checkUniqueName(name: String, noticeId: Long): Future[Boolean] = {
+    * Checks if a legal notice with given name exists for the given community
+    */
+  def checkUniqueName(noticeId: Long, name: String, communityId: Long): Future[Boolean] = {
     Future {
       DB.withSession { implicit session =>
-        val page = PersistenceSchema.legalNotices.filter(_.id === noticeId).firstOption
-        if (page.isDefined) {
-          val firstOption = PersistenceSchema.legalNotices.filter(_.id =!= noticeId).filter(_.name === name).firstOption
-          !firstOption.isDefined
-        } else {
-          throw new IllegalArgumentException("Legal notice with ID '" + noticeId + "' not found")
-        }
-      }
-    }
-  }
-
-  /**
-   * Checks if legal notice exists
-   */
-  def checkLegalNoticeExists(noticeId: Long): Future[Boolean] = {
-    Future {
-      DB.withSession { implicit session =>
-        val firstOption = PersistenceSchema.legalNotices.filter(_.id === noticeId).firstOption
-        firstOption.isDefined
-      }
-    }
-  }
-
-  /**
-   * Checks if default legal notice exists
-   */
-  def checkDefaultLegalNoticeExists(): Future[Boolean] = {
-    Future {
-      DB.withSession { implicit session =>
-        val firstOption = PersistenceSchema.legalNotices.filter(_.default === true).firstOption
-        firstOption.isDefined
-      }
-    }
-  }
-
-  /**
-   * Gets all legal notices
-   */
-  def getLegalNotices(): Future[List[LegalNotices]] = {
-    Future {
-      DB.withSession { implicit session =>
-        val pages = PersistenceSchema.legalNotices.list
-        pages
+        val firstOption = PersistenceSchema.legalNotices.filter(_.community === communityId).filter(_.id =!= noticeId).filter(_.name === name).firstOption
+        firstOption.isEmpty
       }
     }
   }
@@ -91,29 +62,13 @@ object LegalNoticeManager extends BaseManager {
   }
 
   /**
-   * Gets the default legal notice
-   */
-  def getDefaultLegalNotice(): Future[LegalNotice] = {
-    Future {
-      DB.withSession { implicit session =>
-        var notice: LegalNotice = null
-        val ln = PersistenceSchema.legalNotices.filter(_.default === true).firstOption
-        if (ln.isDefined) {
-          notice = new LegalNotice(ln.get)
-        }
-        notice
-      }
-    }
-  }
-
-  /**
    * Creates new legal notice
    */
   def createLegalNotice(legalNotice: LegalNotices): Future[Unit] = {
     Future {
       DB.withSession { implicit session =>
         if (legalNotice.default) {
-          val q = for {l <- PersistenceSchema.legalNotices if l.default === true} yield (l.default)
+          val q = for {l <- PersistenceSchema.legalNotices if l.default === true && l.community === legalNotice.community} yield (l.default)
           q.update(false)
         }
 
@@ -125,7 +80,7 @@ object LegalNoticeManager extends BaseManager {
   /**
    * Updates legal notice
    */
-  def updateLegalNotice(noticeId: Long, name: String, description: Option[String], content: String, default: Boolean): Future[Unit] = {
+  def updateLegalNotice(noticeId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long): Future[Unit] = {
     Future {
       DB.withSession { implicit session =>
         val legalNoticeOption = PersistenceSchema.legalNotices.filter(_.id === noticeId).firstOption
@@ -143,7 +98,7 @@ object LegalNoticeManager extends BaseManager {
           }
 
           if (!legalNotice.default && default) {
-            var q = for {l <- PersistenceSchema.legalNotices if l.default === true} yield (l.default)
+            var q = for {l <- PersistenceSchema.legalNotices if l.default === true && l.community === communityId} yield (l.default)
             q.update(false)
 
             q = for {l <- PersistenceSchema.legalNotices if l.id === noticeId} yield (l.default)
@@ -163,9 +118,30 @@ object LegalNoticeManager extends BaseManager {
   def deleteLegalNotice(pageId: Long) = Future[Unit] {
     Future {
       DB.withSession { implicit session =>
-        PersistenceSchema.legalNotices.filter(_.id === pageId).filter(_.default === false).delete
+        PersistenceSchema.legalNotices.filter(_.id === pageId).delete
       }
     }
+  }
+
+
+  /**
+   * Gets the default legal notice for given community
+   */
+  def getCommunityDefaultLegalNotice(communityId: Long): Future[LegalNotice] = {
+    Future {
+      DB.withSession { implicit session =>
+        val n = PersistenceSchema.legalNotices.filter(_.community === communityId).filter(_.default === true).firstOption
+        val defaultLegalNotice = n match {
+          case Some(n) => new LegalNotice(n)
+          case None => null
+        }
+        defaultLegalNotice
+      }
+    }
+  }
+
+  def deleteLegalNoticeByCommunity(communityId: Long)(implicit session: Session) = {
+    PersistenceSchema.legalNotices.filter(_.community === communityId).delete
   }
 
 }

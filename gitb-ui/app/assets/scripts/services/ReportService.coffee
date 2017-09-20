@@ -13,6 +13,9 @@ class ReportService
         limit: limit
     }
 
+    if communityIds? and communityIds.length > 0
+      params.community_ids = communityIds.join ','
+
     if specIds? and specIds.length > 0
       params.specification_ids = specIds.join ','
 
@@ -59,6 +62,9 @@ class ReportService
         system_id: systemId
     }
 
+    if communityIds? and communityIds.length > 0
+      params.community_ids = communityIds.join ','
+
     if specIds? and specIds.length > 0
       params.specification_ids = specIds.join ','
 
@@ -94,8 +100,11 @@ class ReportService
       authenticate: true
       params: params
 
-  getActiveTestResults: (specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, sortColumn, sortOrder) ->
+  getActiveTestResults: (communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, sortColumn, sortOrder) ->
     params = {}
+
+    if communityIds? and communityIds.length > 0
+      params.community_ids = communityIds.join ','
 
     if specIds? and specIds.length > 0
       params.specification_ids = specIds.join ','
@@ -131,20 +140,6 @@ class ReportService
       path: jsRoutes.controllers.ReportService.getActiveTestResults().url
       authenticate: true
       params: params
-
-  getCompletedTestResults: (page, limit) ->
-    @RestService.get
-      path: jsRoutes.controllers.ReportService.getCompletedTestResults().url
-      params:
-        page: page
-        limit: limit
-      authenticate: true
-
-  getCompletedTestResultCount: () ->
-    @RestService.get({
-      path: jsRoutes.controllers.ReportService.getCompletedTestResultCount().url,
-      authenticate: true
-    })
 
   getTestResultOfSession: (sessionId) ->
     @RestService.get({
@@ -209,11 +204,14 @@ class ReportService
       authenticate: true
       params: params
 
-  getCompletedTestResults: (page, limit, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder) ->
+  getCompletedTestResults: (page, limit, communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder) ->
     params = {
         page: page
         limit: limit
     }
+
+    if communityIds? and communityIds.length > 0
+      params.community_ids = communityIds.join ','
 
     if specIds? and specIds.length > 0
       params.specification_ids = specIds.join ','
@@ -262,8 +260,11 @@ class ReportService
       authenticate: true
       params: params
 
-  getCompletedTestResultsCount: (specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd) ->
+  getCompletedTestResultsCount: (communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd) ->
     params = {}
+
+    if communityIds? and communityIds.length > 0
+      params.community_ids = communityIds.join ','
 
     if specIds? and specIds.length > 0
       params.specification_ids = specIds.join ','

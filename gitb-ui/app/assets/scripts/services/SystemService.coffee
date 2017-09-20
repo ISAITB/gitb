@@ -19,10 +19,19 @@ class SystemService
       path: "/assets/jsons/testsuites.json"
     })
 
-  getSystems: () ->
+  getVendorSystems: () ->
     @RestService.get({
       path: jsRoutes.controllers.SystemService.getVendorSystems().url,
       authenticate: true
+    })
+
+  getSystemsByOrganization: (orgId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.SystemService.getSystemsByOrganization().url,
+      authenticate: true,
+      params: {
+        organization_id: orgId
+      }
     })
 
   getSystem:(systemId) ->
@@ -61,6 +70,23 @@ class SystemService
 
     @RestService.post({
       path: jsRoutes.controllers.SystemService.registerSystem().url,
+      data: data,
+      authenticate: true
+    })
+
+  registerSystemWithOrganization:(sname, fname, description, version, orgId) ->
+    data = {
+      system_sname: sname,
+      system_fname: fname,
+      system_version: version
+      organization_id: orgId
+    }
+
+    if description?
+      data.system_description = description
+
+    @RestService.post({
+      path: jsRoutes.controllers.SystemService.registerSystemWithOrganization().url,
       data: data,
       authenticate: true
     })
@@ -160,7 +186,7 @@ class SystemService
 
   getSystems: (systemIds) ->
     params = {}
-    if ids? and systemIds.length > 0
+    if systemIds? and systemIds.length > 0
         params.ids = systemIds.join ','
 
     @RestService.get

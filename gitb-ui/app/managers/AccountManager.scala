@@ -49,7 +49,10 @@ object AccountManager extends BaseManager {
         //6) Get Legal Notice info
         val ln = PersistenceSchema.legalNotices.filter(_.id === org.legalNotice).firstOption
 
-        new Organization(org, systems, admin.getOrElse(null), page.getOrElse(null), ln.getOrElse(null))
+        //7) Get Community info
+        val c = PersistenceSchema.communities.filter(_.id === org.community).firstOption
+
+        new Organization(org, systems, admin.getOrElse(null), page.getOrElse(null), ln.getOrElse(null), c)
       }
     }
   }
@@ -139,16 +142,18 @@ object AccountManager extends BaseManager {
     }
   }
 
+  def isAdmin(userId: Long) = checkUserRole(userId, UserRole.VendorAdmin, UserRole.SystemAdmin, UserRole.CommunityAdmin)
+
   def isVendorAdmin(userId: Long) = checkUserRole(userId, UserRole.VendorAdmin)
 
   def isSystemAdmin(userId: Long) = checkUserRole(userId, UserRole.SystemAdmin)
 
-  def checkUserRole(userId: Long, role: UserRole): Future[Boolean] = {
+  def checkUserRole(userId: Long, roles: UserRole*): Future[Boolean] = {
     Future {
       DB.withSession { implicit session =>
         val option = PersistenceSchema.users.filter(_.id === userId).firstOption
 
-        option.isDefined && option.get.role == role.id.toShort
+        option.isDefined && (roles.map(r => r.id.toShort) contains option.get.role)
       }
     }
   }

@@ -12,9 +12,9 @@
                   <!--<a ui-sref="app.tutorial">Tutorial</a>-->
                 <!--</li>-->
                 <li ng-if="indexCtrl.isAuthenticated">
-                  <a ui-sref="app.systems.list">Tests</a>
+                  <a class="pointer" ng-click="indexCtrl.onTestsClick()">Tests</a>
                 </li>
-                <li ng-if="indexCtrl.DataService.isSystemAdmin">
+                <li ng-if="indexCtrl.DataService.isSystemAdmin || indexCtrl.DataService.isCommunityAdmin">
                   <a ui-sref="app.admin.dashboard.list">Admin</a>
                 </li>
                 <!-- Login Menu Item -->

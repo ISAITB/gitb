@@ -11,14 +11,26 @@ object PersistenceSchema {
    *** Primary Tables ***
    **********************/
 
+  class CommunitiesTable(tag: Tag) extends Table[Communities](tag, "Communities") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def shortname = column[String]("sname")
+    def fullname = column[String]("fname")
+    def domain = column[Option[Long]] ("domain", O.Nullable)
+    def * = (id, shortname, fullname, domain) <> (Communities.tupled, Communities.unapply)
+  }
+  val communities = TableQuery[CommunitiesTable]
+  val insertCommunity = (communities returning communities.map(_.id))
+
   class OrganizationsTable(tag: Tag) extends Table[Organizations](tag, "Organizations") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
     def organizationType = column[Short]("type")
+    def adminOrganization = column[Boolean]("admin_organization")
     def landingPage = column[Option[Long]] ("landing_page", O.Nullable)
     def legalNotice = column[Option[Long]] ("legal_notice", O.Nullable)
-    def * = (id, shortname, fullname, organizationType, landingPage, legalNotice) <> (Organizations.tupled, Organizations.unapply)
+    def community = column[Long] ("community")
+    def * = (id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, community) <> (Organizations.tupled, Organizations.unapply)
   }
   //get table name etc from organizations.baseTableRow
   val organizations = TableQuery[OrganizationsTable]
@@ -309,7 +321,8 @@ object PersistenceSchema {
     def description = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
     def content = column[String]("content")
     def default = column[Boolean]("default_flag")
-    def * = (id, name, description, content, default) <> (LandingPages.tupled, LandingPages.unapply)
+    def community = column[Long]("community")
+    def * = (id, name, description, content, default, community) <> (LandingPages.tupled, LandingPages.unapply)
   }
   val landingPages = TableQuery[LandingPagesTable]
   val insertLandingPage = (landingPages returning landingPages.map(_.id))
@@ -329,7 +342,8 @@ object PersistenceSchema {
     def description = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
     def content = column[String]("content")
     def default = column[Boolean]("default_flag")
-    def * = (id, name, description, content, default) <> (LegalNotices.tupled, LegalNotices.unapply)
+    def community = column[Long]("community")
+    def * = (id, name, description, content, default, community) <> (LegalNotices.tupled, LegalNotices.unapply)
   }
   val legalNotices = TableQuery[LegalNoticesTable]
   val insertLegalNotice = (legalNotices returning legalNotices.map(_.id))

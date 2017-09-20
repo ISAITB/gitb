@@ -1,15 +1,16 @@
 package controllers
 
-import controllers.util.{Parameters, ParameterExtractor, ResponseConstructor}
+import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
 import managers.{OrganizationManager, UserManager}
 import models.Enums.UserRole
-import org.slf4j.{LoggerFactory, Logger}
+import org.slf4j.{Logger, LoggerFactory}
+import utils.JsonUtil
 import play.api.mvc.{Action, Controller}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import utils.JsonUtil
-import exceptions.{InvalidAuthorizationException, ErrorCodes, NotFoundException}
+import exceptions.{ErrorCodes, InvalidAuthorizationException, NotFoundException}
 
 import scala.concurrent.Future
+import org.mindrot.jbcrypt.BCrypt
 
 /**
  * Created by VWYNGAET on 25/10/2016.
@@ -22,6 +23,17 @@ class UserService extends Controller {
    */
   def getSystemAdministrators() = Action.async {
     UserManager.getSystemAdministrators() map { list =>
+      val json: String = JsonUtil.jsUsers(list).toString
+      ResponseConstructor.constructJsonResponse(json)
+    }
+  }
+
+  /**
+   * Gets community administrator users
+   */
+  def getCommunityAdministrators() = Action.async { request =>
+    val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
+    UserManager.getCommunityAdministrators(communityId) map { list =>
       val json: String = JsonUtil.jsUsers(list).toString
       ResponseConstructor.constructJsonResponse(json)
     }
@@ -52,7 +64,19 @@ class UserService extends Controller {
    */
   def createSystemAdmin = Action.async { request =>
     val user = ParameterExtractor.extractSystemAdminInfo(request)
-    UserManager.createSystemAdmin(user) map { unit =>
+    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    UserManager.createAdmin(user, communityId) map { unit =>
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  /**
+    * Creates new community administrator
+    */
+  def createCommunityAdmin = Action.async { request =>
+    val user = ParameterExtractor.extractCommunityAdminInfo(request)
+    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    UserManager.createAdmin(user, communityId) map { unit =>
       ResponseConstructor.constructEmptyResponse
     }
   }
@@ -83,6 +107,16 @@ class UserService extends Controller {
   }
 
   /**
+    * Updates community admin profile
+    */
+  def updateCommunityAdminProfile(userId: Long) = Action.async { request =>
+    val name = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_NAME)
+    UserManager.updateCommunityAdminProfile(userId, name) map { unit =>
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  /**
    * Updates user profile
    */
   def updateUserProfile(userId: Long) = Action.async { request =>
@@ -101,7 +135,7 @@ class UserService extends Controller {
   /**
    * Deletes system administrator with specified id
    */
-  def deleteSystemAdmin(userId: Long) = Action.async { request =>
+  def deleteAdmin(userId: Long) = Action.async { request =>
     val authUserId = ParameterExtractor.extractUserId(request)
     if (authUserId == userId) {
       Future {

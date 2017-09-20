@@ -1,10 +1,10 @@
 class IndexController
 	@$inject = [
-		'$log', '$sce', '$scope', '$rootScope', '$location',
+		'$log', '$sce', '$scope', '$rootScope', '$location', '$state', '$window'
 		'AuthProvider', 'SystemConfigurationService', 'DataService', 'AccountService',
 		'Events', 'Constants', 'LegalNoticeService', 'HtmlService', 'ErrorService'
 	]
-	constructor: (@$log, @$sce, @$scope, @$rootScope, @$location,
+	constructor: (@$log, @$sce, @$scope, @$rootScope, @$location, @$state, @$window,
 		@AuthProvider, @SystemConfigurationService, @DataService, @AccountService, @Events, @Constants,@LegalNoticeService, @HtmlService, @ErrorService) ->
 
 		@$log.debug "Constructing MainController..."
@@ -74,12 +74,29 @@ class IndexController
 			html = @$sce.trustAsHtml(vendor.legalNotices.content)
 			@showLegalNotice(html)
 		else
-			@LegalNoticeService.getDefaultLegalNotice()
-			.then (data) =>
-				html = @$sce.trustAsHtml(data.content) if data?
-				@showLegalNotice(html)
+		    @LegalNoticeService.getCommunityDefaultLegalNotice(vendor.community)
+            .then (data) =>
+              if data.exists == true
+                html = @$sce.trustAsHtml(data.content)
+                @showLegalNotice(html)
+              else
+                if vendor.community != @Constants.DEFAULT_COMMUNITY_ID
+                  @LegalNoticeService.getCommunityDefaultLegalNotice(@Constants.DEFAULT_COMMUNITY_ID)
+                  .then (data) =>
+                    if data.exists == true
+                      html = @$sce.trustAsHtml(data.content)
+                      @showLegalNotice(html)
+                  .catch (error) =>
+                    @ErrorService.showErrorMessage(error)
+            .catch (error) =>
+              @ErrorService.showErrorMessage(error)
 
 	showLegalNotice: (html) ->
 		@HtmlService.showHtml("Legal Notice", html)
+
+	onTestsClick: () ->
+		@$window.localStorage['organization'] = angular.toJson @DataService.vendor
+		@$window.localStorage['community'] = angular.toJson @DataService.community
+		@$state.go 'app.systems.list'
 
 controllers.controller('IndexController', IndexController)

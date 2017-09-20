@@ -6,6 +6,7 @@ object Parameters {
   val ID      = "id"
 
   //Dashboard filter parameters
+  val COMMUNITY_IDS = "community_ids"
   val DOMAIN_IDS = "domain_ids"
   val SPEC_IDS = "specification_ids"
   val TEST_SUITE_IDS = "test_suite_ids"
@@ -53,6 +54,7 @@ object Parameters {
   val OLD_PASSWORD = "old_password"
   val USER_ROLE    = "user_role"
   val ROLE_ID      = "role_id"
+  val ORGANIZATION_ID = "organization_id"
 
   //System Service parameters
   val SYSTEM_ID    = "system_id"
@@ -75,6 +77,11 @@ object Parameters {
 	val SPEC_TYPE = "spec_type"
 	val DOMAIN_ID = "domain_id"
 	val SPECIFICATION_ID = "spec_id"
+
+  //Community Service parameters
+  val COMMUNITY_ID = "community_id"
+  val COMMUNITY_SNAME = "community_sname"
+  val COMMUNITY_FNAME = "community_fname"
 
   //TestService parameters
   val ACTOR_ID   = "actor_id"

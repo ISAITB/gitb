@@ -12,12 +12,27 @@ class LegalNoticeService extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[LegalNoticeService])
 
   /**
-   * Gets all legal notices
+   * Gets all legal notices for the specified community
    */
-  def getLegalNotices() = Action.async {
-    LegalNoticeManager.getLegalNotices() map { list =>
+  def getLegalNoticesByCommunity(communityId: Long) = Action.async {
+    LegalNoticeManager.getLegalNoticesByCommunity(communityId) map { list =>
       val json: String = JsonUtil.jsLegalNotices(list).toString
       ResponseConstructor.constructJsonResponse(json)
+    }
+  }
+
+  /**
+   * Creates new legal notice
+   */
+  def createLegalNotice() = Action.async { request =>
+    val legalNotice = ParameterExtractor.extractLegalNoticeInfo(request)
+    LegalNoticeManager.checkUniqueName(legalNotice.name, legalNotice.community) map { uniqueName =>
+      if (uniqueName) {
+        LegalNoticeManager.createLegalNotice(legalNotice)
+        ResponseConstructor.constructEmptyResponse
+      } else {
+        ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Legal notice with '" + legalNotice.name + "' already exists.")
+      }
     }
   }
 
@@ -32,35 +47,6 @@ class LegalNoticeService extends Controller {
   }
 
   /**
-   * Gets the default legal notice
-   */
-  def getDefaultLegalNotice() = Action.async { request =>
-    LegalNoticeManager.getDefaultLegalNotice() map { ln =>
-      if (ln != null) {
-        val json: String = JsonUtil.serializeLegalNotice(ln)
-        ResponseConstructor.constructJsonResponse(json)
-      } else {
-        ResponseConstructor.constructEmptyResponse
-      }
-    }
-  }
-
-  /**
-   * Creates new legal notice
-   */
-  def createLegalNotice() = Action.async { request =>
-    val ln = ParameterExtractor.extractLegalNoticeInfo(request)
-    LegalNoticeManager.checkUniqueName(ln.name) map { uniqueName =>
-      if (uniqueName) {
-        LegalNoticeManager.createLegalNotice(ln)
-        ResponseConstructor.constructEmptyResponse
-      } else {
-        ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Legal notice with '" + ln.name + "' already exists.")
-      }
-    }
-  }
-
-  /**
    * Updates legal notice
    */
   def updateLegalNotice(noticeId: Long) = Action.async { request =>
@@ -68,13 +54,14 @@ class LegalNoticeService extends Controller {
     val description = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
     val content = ParameterExtractor.requiredBodyParameter(request, Parameters.CONTENT)
     val default = ParameterExtractor.requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
+    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
 
-    LegalNoticeManager.checkUniqueName(name, noticeId) map { uniqueName =>
+    LegalNoticeManager.checkUniqueName(noticeId, name, communityId) map { uniqueName =>
       if (uniqueName) {
-        LegalNoticeManager.updateLegalNotice(noticeId, name, description, content, default)
+        LegalNoticeManager.updateLegalNotice(noticeId, name, description, content, default, communityId)
         ResponseConstructor.constructEmptyResponse
       } else {
-        ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Landing page with '" + name + "' already exists.")
+        ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Legal notice with '" + name + "' already exists.")
       }
     }
   }
@@ -87,5 +74,17 @@ class LegalNoticeService extends Controller {
       ResponseConstructor.constructEmptyResponse
     }
   }
+
+  /**
+    * Gets the default landing page for given community
+    */
+  def getCommunityDefaultLegalNotice() = Action.async { request =>
+    val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
+    LegalNoticeManager.getCommunityDefaultLegalNotice(communityId) map { legalNotice =>
+      val json: String = JsonUtil.serializeLegalNotice(legalNotice)
+      ResponseConstructor.constructJsonResponse(json)
+    }
+  }
+
 
 }

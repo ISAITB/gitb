@@ -7,7 +7,6 @@ import managers.ReportManager
 import models.TestResultSessionReport
 import org.slf4j.{LoggerFactory, Logger}
 import play.api.mvc._
-/*import utils.JsonUtil*/
 
 import scala.concurrent.Future
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -24,10 +23,10 @@ class ReportService extends Controller {
   val defaultLimit = 10L
 
   def getTestResults = Action.async { request =>
-    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
     val page = getPageOrDefault(ParameterExtractor.optionalQueryParameter(request, Parameters.PAGE))
     val limit = getLimitOrDefault(ParameterExtractor.optionalQueryParameter(request, Parameters.LIMIT))
     val domainIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.DOMAIN_IDS)
+    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
     val specIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SPEC_IDS)
     val testSuiteIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.TEST_SUITE_IDS)
     val testCaseIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.TEST_CASE_IDS)
@@ -64,6 +63,7 @@ class ReportService extends Controller {
   }
 
   def getActiveTestResults = Action.async { request =>
+    val communityIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.COMMUNITY_IDS)
     val domainIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.DOMAIN_IDS)
     val specIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SPEC_IDS)
     val testSuiteIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.TEST_SUITE_IDS)
@@ -75,13 +75,14 @@ class ReportService extends Controller {
     val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
 
-    ReportManager.getActiveTestResults(domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, startTimeBegin, startTimeEnd, sortColumn, sortOrder) map { testResultReports =>
+    ReportManager.getActiveTestResults(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, startTimeBegin, startTimeEnd, sortColumn, sortOrder) map { testResultReports =>
       val json = JsonUtil.jsTestResultSessionReports(testResultReports).toString()
       ResponseConstructor.constructJsonResponse(json)
     }
   }
 
   def getFinishedTestResultsCount = Action.async { request =>
+    val communityIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.COMMUNITY_IDS)
     val domainIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.DOMAIN_IDS)
     val specIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SPEC_IDS)
     val testSuiteIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.TEST_SUITE_IDS)
@@ -94,7 +95,7 @@ class ReportService extends Controller {
     val endTimeBegin = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_BEGIN)
     val endTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_END)
 
-    ReportManager.getFinishedTestResultsCount(domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd) map { count =>
+    ReportManager.getFinishedTestResultsCount(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd) map { count =>
       val json = JsonUtil.jsCount(count).toString()
       ResponseConstructor.constructJsonResponse(json)
     }
@@ -103,6 +104,7 @@ class ReportService extends Controller {
   def getFinishedTestResults = Action.async { request =>
     val page = getPageOrDefault(ParameterExtractor.optionalQueryParameter(request, Parameters.PAGE))
     val limit = getLimitOrDefault(ParameterExtractor.optionalQueryParameter(request, Parameters.LIMIT))
+    val communityIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.COMMUNITY_IDS)
     val domainIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.DOMAIN_IDS)
     val specIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SPEC_IDS)
     val testSuiteIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.TEST_SUITE_IDS)
@@ -117,7 +119,7 @@ class ReportService extends Controller {
     val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
 
-    ReportManager.getFinishedTestResults(page, limit, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder) map { testResultReports =>
+    ReportManager.getFinishedTestResults(page, limit, communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder) map { testResultReports =>
       val json = JsonUtil.jsTestResultSessionReports(testResultReports).toString()
       ResponseConstructor.constructJsonResponse(json)
     }

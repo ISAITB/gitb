@@ -1,6 +1,6 @@
 class SystemTestsController
-  @$inject = ['$log', '$scope', '$stateParams', '$state', '$modal', 'ReportService', 'Constants', 'TestSuiteService', 'ConformanceService', 'ErrorService']
-  constructor: (@$log, @$scope, @$stateParams, @$state, @$modal, @ReportService, @Constants, @TestSuiteService, @ConformanceService, @ErrorService)->
+  @$inject = ['$log', '$q', '$scope', '$stateParams', '$state', '$modal', 'CommunityService', '$window', 'ReportService', 'Constants', 'TestSuiteService', 'ConformanceService', 'ErrorService']
+  constructor: (@$log, @$q, @$scope, @$stateParams, @$state, @$modal, @CommunityService, @$window, @ReportService, @Constants, @TestSuiteService, @ConformanceService, @ErrorService)->
     @$log.debug 'Constructing SystemTestsController...'
 
     @systemId = @$stateParams["id"]
@@ -36,6 +36,9 @@ class SystemTestsController
         sortable: true
       }
     ]
+
+    @organization = JSON.parse(@$window.localStorage['organization'])
+    @community = JSON.parse(@$window.localStorage['community'])
 
     @currentPage = 1
     @testResultsCount = null
@@ -94,45 +97,118 @@ class SystemTestsController
         filter : []
         selection : []
 
-    @getAllDomains()
-    @getAllSpecifications()
-    @getAllTestSuites()
-    @getAllTestCases()
-    @getAllTestResults()
-    @getTestResults()
-    @getTestResultsCount()
+    d1 = @getAllDomains()
+    d2 = @getAllSpecifications()
+    d3 = @getAllTestSuites()
+    d4 = @getAllTestCases()
+    d5 = @getAllTestResults()
+
+    @$q.all([d1, d2, d3, d4, d5])
+    .then () =>
+      @resetFilters(false)
+      @queryDatabase()
+
+  resetFilters: (keepTick) ->
+    @setDomainFilter()
+    @setSpecificationFilter(@filtering.domain.filter, [], keepTick)
+    @setTestSuiteFilter(@filtering.specification.filter, [], keepTick)
+    @setTestCaseFilter(@filtering.testSuite.filter, [], keepTick)
+
+  setDomainFilter: () ->
+    if @community.domainId?
+      id = @community.domainId
+      @filtering.domain.filter = _.map(_.filter(@filtering.domain.all, (d) => `d.id == id`), _.clone)
+      @filtering.domain.filter[0].ticked = true
+      @filtering.domain.selection = _.map(@filtering.domain.filter, _.clone)
+    else
+      @filtering.domain.filter = _.map(@filtering.domain.all, _.clone)
+
+  setSpecificationFilter: (selection1, selection2, keepTick) ->
+    selection = if selection1? and selection1.length > 0 then selection1 else selection2
+    copy = _.map(@filtering.specification.filter, _.clone)
+    @filtering.specification.filter = _.map((_.filter @filtering.specification.all, (s) => (_.contains (_.map selection, (d) => d.id), s.domain)), _.clone)
+    @keepTickedProperty(copy, @filtering.specification.filter) if keepTick
+
+    for i in [@filtering.specification.selection.length - 1..0] by -1
+      some = @filtering.specification.selection[i]
+      found = _.find @filtering.specification.filter, (s) => `s.id == some.id`
+      if (!found?)
+        @filtering.specification.selection.splice(i, 1)
+
+  setTestSuiteFilter: (selection1, selection2, keepTick) ->
+    selection = if selection1? and selection1.length > 0 then selection1 else selection2
+    copy = _.map(@filtering.testSuite.filter, _.clone)
+    @filtering.testSuite.filter = _.map((_.filter @filtering.testSuite.all, (t) => (_.contains (_.map selection, (s) => s.id), t.specification)), _.clone)
+    @keepTickedProperty(copy, @filtering.testSuite.filter) if keepTick
+
+    for i in [@filtering.testSuite.selection.length - 1..0] by -1
+      some = @filtering.testSuite.selection[i]
+      found = _.find @filtering.testSuite.filter, (s) => `s.id == some.id`
+      if (!found?)
+        @filtering.testSuite.selection.splice(i, 1)
+
+  setTestCaseFilter: (selection1, selection2, keepTick) ->
+    selection = if selection1? and selection1.length > 0 then selection1 else selection2
+    copy = _.map(@filtering.testCase.filter, _.clone)
+    result = []
+    for s, i in selection
+      for t, i in s.testCases
+        found = _.find @filtering.testCase.all, (c) => `c.id == t.id`
+        result.push found
+    @filtering.testCase.filter = _.map(result, _.clone)
+    @keepTickedProperty(copy, @filtering.testCase.filter) if keepTick
+
+    for i in [@filtering.testCase.selection.length - 1..0] by -1
+      some = @filtering.testCase.selection[i]
+      found = _.find @filtering.testCase.filter, (s) => `s.id == some.id`
+      if (!found?)
+        @filtering.testCase.selection.splice(i, 1)
+
+  keepTickedProperty: (oldArr, newArr) ->
+    if oldArr? and oldArr.length > 0
+      for o, i in newArr
+        n = _.find oldArr, (s) => `s.id == o.id`
+        o.ticked = if n?.ticked? then n.ticked else false
 
   getAllDomains: () ->
+    d = @$q.defer()
     @ConformanceService.getDomains()
     .then (data) =>
       @filtering.domain.all = data
-      @filtering.domain.filter = JSON.parse(JSON.stringify(data))
+      d.resolve()
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+    d.promise
 
   getAllSpecifications: () ->
+    d = @$q.defer()
     @ConformanceService.getSpecificationsWithIds()
     .then (data) =>
-      @filtering.specification.all = data
-      @filtering.specification.filter = JSON.parse(JSON.stringify(data))
+       @filtering.specification.all = data
+       d.resolve()
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+    d.promise
 
   getAllTestCases: () ->
+    d = @$q.defer()
     @ReportService.getTestCases()
     .then (data) =>
-      @filtering.testCase.all = data
-      @filtering.testCase.filter = JSON.parse(JSON.stringify(data))
+       @filtering.testCase.all = data
+       d.resolve()
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+    d.promise
 
   getAllTestSuites: () ->
+    d = @$q.defer()
     @TestSuiteService.getTestSuitesWithTestCases()
     .then (data) =>
-      @filtering.testSuite.all = data
-      @filtering.testSuite.filter = JSON.parse(JSON.stringify(data))
+       @filtering.testSuite.all = data
+       d.resolve()
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+    d.promise
 
   getAllTestResults: () ->
     for k, v of @Constants.TEST_CASE_RESULT
@@ -189,11 +265,8 @@ class SystemTestsController
   clearFiltering: () =>
     @showFiltering = false
 
-    @filtering.domain.filter = JSON.parse(JSON.stringify(@filtering.domain.all))
-    @filtering.specification.filter = JSON.parse(JSON.stringify(@filtering.specification.all))
-    @filtering.testSuite.filter = JSON.parse(JSON.stringify(@filtering.testSuite.all))
-    @filtering.testCase.filter = JSON.parse(JSON.stringify(@filtering.testCase.all))
-    @filtering.result.filter = JSON.parse(JSON.stringify(@filtering.result.all))
+    @startTime = {}
+    @endTime = {}
 
     @filtering.domain.selection = []
     @filtering.specification.selection = []
@@ -201,9 +274,7 @@ class SystemTestsController
     @filtering.testCase.selection = []
     @filtering.result.selection = []
 
-    @startTime = {}
-    @endTime = {}
-
+    @resetFilters(false)
     @queryDatabase()
 
   applyFiltering: () =>
@@ -260,43 +331,32 @@ class SystemTestsController
       @hasPreviousPage = true
 
   domainTicked: (domain) =>
-    @updateFilteringOptions 'domain', 'specification', (s, v) -> `s.id == v.domain`
-    @updateFilteringOptions 'specification', 'testSuite', (s, v) -> `s.id == v.specification`
-    @updateFilteringOptions 'testSuite', 'testCase', (s, v) -> v.id in (_.map s.testCases, (testCase) -> testCase.id)
+    @setSpecificationFilter(@filtering.domain.selection, @filtering.domain.filter, true)
+    @setTestSuiteFilter(@filtering.specification.selection, @filtering.specification.filter, true)
+    @setTestCaseFilter(@filtering.testSuite.selection, @filtering.testSuite.filter, true)
     @queryDatabase()
 
   specificationTicked: (spec) =>
-    @updateFilteringOptions 'specification', 'testSuite', (s, v) -> `s.id == v.specification`
-    @updateFilteringOptions 'testSuite', 'testCase', (s, v) -> v.id in (_.map s.testCases, (testCase) -> testCase.id)
+    @setTestSuiteFilter(@filtering.specification.selection, @filtering.specification.filter, true)
+    @setTestCaseFilter(@filtering.testSuite.selection, @filtering.testSuite.filter, true)
     @queryDatabase()
 
   testSuiteTicked: (testSuite) =>
-    @updateFilteringOptions 'testSuite', 'testCase', (s, v) -> v.id in (_.map s.testCases, (testCase) -> testCase.id)
+    @setTestCaseFilter(@filtering.testSuite.selection, @filtering.testSuite.filter, true)
     @queryDatabase()
 
   testCaseTicked: (testCase) =>
     @queryDatabase()
 
-  organizationTicked: (organization) =>
-    @updateFilteringOptions 'organization', 'system', (s, v) -> `s.id == v.owner`
-    @queryDatabase()
-
   resultClicked: (result) =>
     @queryDatabase()
 
-  updateFilteringOptions: (changedFilter, filterToUpdate, matches) ->
+  removeFromSelection: (parent, childSelection, matcherFunction) ->
     result = []
-    if @filtering[changedFilter].selection.length > 0
-      for s, i in @filtering[changedFilter].selection
-        for v, i in @filtering[filterToUpdate].all
-          if matches(s, v)
-            found = _.find @filtering[filterToUpdate].filter, (f) =>
-              `f.id == v.id`
-            v.ticked = if found?.ticked? then found.ticked else false
-            result.push v
-    else
-      result = @filtering[filterToUpdate].all
-    @filtering[filterToUpdate].filter = result
+    for o, i in childSelection
+      if (matcherFunction(parent, o) == false)
+        result.push o
+    childSelection = result
 
   onTestSelect: (test, element) =>
     if @export
@@ -346,6 +406,50 @@ class SystemTestsController
         document.body.appendChild(a)
         a.click();
 
+        document.body.removeChild(a)
+
+  exportToCsv: () =>
+    specIds = _.map @filtering.specification.selection, (s) -> s.id
+    testSuiteIds = _.map @filtering.testSuite.selection, (s) -> s.id
+    testCaseIds = _.map @filtering.testCase.selection, (s) -> s.id
+    domainIds = _.map @filtering.domain.selection, (s) -> s.id
+    results = _.map @filtering.result.selection, (s) -> s.result
+    startTimeBegin = @startTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
+    startTimeEnd = @startTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
+    endTimeBegin = @endTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
+    endTimeEnd = @endTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
+
+    @ReportService.getTestResults(@systemId, 1, 10000, specIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, @sortColumn, @sortOrder)
+    .then (testResultReports) =>
+      resultReportsCollection = _ testResultReports
+      resultReportsCollection = resultReportsCollection
+                    .map (report) ->
+                      transformedObject =
+                        testCase: if report.test? then report.test.sname else '-'
+                        actorName: if report.actor? then report.actor.name else '-'
+                        startTime: report.result.startTime
+                        endTime: if report.result.endTime? then report.result.endTime else '-'
+                        result: report.result.result
+                        sessionId: report.result.sessionId
+                      transformedObject
+
+      if resultReportsCollection.value().length > 0
+        csv = "data:text/csv;charset=utf-8,"
+        for o, i in resultReportsCollection.value()
+          line = ""
+          idx = 0
+          for k, v of o
+            if idx++ != 0
+              line += ","
+            line += v
+          csv += if i < resultReportsCollection.value().length then line + "\n" else line
+
+        encodedUri = encodeURI csv
+        a = window.document.createElement('a')
+        a.setAttribute "href", encodedUri
+        a.setAttribute "download", "export.csv"
+        document.body.appendChild(a)
+        a.click()
         document.body.removeChild(a)
 
 @controllers.controller 'SystemTestsController', SystemTestsController

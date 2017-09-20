@@ -10,10 +10,7 @@
 		<div class="alert alert-danger" >
 			<span class="tab" ng-if="systemsCtrl.systemSpinner"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>
 			<span class="tab" ng-if="!systemsCtrl.systemSpinner"> <i class="fa fa-exclamation-triangle fa-lg fa-fw"></i></span>
-			You do not have any systems registered. In order to test one,
-			<a  ng-click="systemsCtrl.closeAlerts()" data-toggle="modal" data-target="#addSystemModal">
-				register your system
-			</a>
+			No systems are currently registered.
 		</div>
 	</div>
 
@@ -34,7 +31,7 @@
 			</div>
 		</div>
 	</div>
-
+	<button ng-if="systemsCtrl.organization.id != systemsCtrl.DataService.vendor.id" class="btn btn-default pull-right" type="button" ng-click="systemsCtrl.back()">Back</button>
 
 	<!-- Popup control for adding members to organization -->
 	<div class="modal fade" id="addSystemModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">

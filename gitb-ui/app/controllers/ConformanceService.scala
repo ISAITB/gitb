@@ -28,6 +28,21 @@ class ConformanceService extends Controller {
   }
 
   /**
+   * Gets the domain of the given community
+   */
+  def getCommunityDomain = Action.async { request =>
+   val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
+    ConformanceManager.getCommunityDomain(communityId) map { domain =>
+      if (domain != null) {
+        val json = JsonUtil.jsDomain(domain).toString()
+        ResponseConstructor.constructJsonResponse(json)
+      } else {
+        ResponseConstructor.constructEmptyResponse
+      }
+    }
+  }
+
+  /**
    * Gets the list of specifications
    */
   def getSpecs = Action.async { request =>

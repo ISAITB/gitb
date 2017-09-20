@@ -1,7 +1,7 @@
 class OrganizationDetailController
 
-  @$inject = ['$log', '$state', '$stateParams', 'LandingPageService', 'LegalNoticeService', 'UserManagementService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'UserService', 'Constants', 'ErrorService']
-  constructor: (@$log, @$state, @$stateParams, @LandingPageService, @LegalNoticeService, @UserManagementService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @UserService, @Constants, @ErrorService) ->
+  @$inject = ['$log', '$state', '$stateParams', '$window', 'LandingPageService', 'LegalNoticeService', 'UserManagementService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'UserService', 'ErrorService']
+  constructor: (@$log, @$state, @$stateParams, @$window, @LandingPageService, @LegalNoticeService, @UserManagementService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @UserService, @ErrorService) ->
 
     @userColumns = [
       {
@@ -18,7 +18,8 @@ class OrganizationDetailController
       }
     ]
 
-    @orgId = @$stateParams.id
+    @orgId = @$stateParams.org_id
+    @communityId = @$stateParams.community_id
     @organization = {}
     @landingPages = []
     @legalNotices = []
@@ -40,13 +41,13 @@ class OrganizationDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-    @LandingPageService.getLandingPages()
+    @LandingPageService.getLandingPagesByCommunity(@communityId)
     .then (data) =>
       @landingPages = data
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-    @LegalNoticeService.getLegalNotices()
+    @LegalNoticeService.getLegalNoticesByCommunity(@communityId)
     .then (data) =>
       @legalNotices = data
     .catch (error) =>
@@ -77,15 +78,18 @@ class OrganizationDetailController
 
   # detail of selected organization
   userSelect: (user) =>
-    @$state.go 'app.admin.users.organizations.detail.users.detail.list', { user_id : user.id }
+    @$state.go 'app.admin.users.communities.detail.organizations.detail.users.detail.list', { user_id : user.id }
 
   # cancel detail
   cancelDetailOrganization: () =>
-    @$state.go 'app.admin.users.list'
+    @$state.go 'app.admin.users.communities.detail.list', { community_id : @communityId }
 
   # closes alert which is displayed due to an error
   closeAlert: (index) ->
     @ValidationService.clearAlert(index)
 
+  manageOrganizationTests: () =>
+    @$window.localStorage['organization'] = angular.toJson @organization
+    @$state.go 'app.systems.list'
 
 @controllers.controller 'OrganizationDetailController', OrganizationDetailController

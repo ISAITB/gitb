@@ -35,8 +35,8 @@
 					    '<th ng-if="checkboxEnabled"></th>'+
 						'<th ng-class="{sortable: column.sortable}" ng-repeat="column in columns" ng-click="!column.sortable || headerColumnClicked(column)">'+
 						    '{{column.title}} '+
-						    '<i ng-if="column.order == \'asc\'" class="fa fa-caret-down"></i>'+
-						    '<i ng-if="column.order == \'desc\'" class="fa fa-caret-up"></i>'+
+						    '<i ng-if="column.order == \'desc\'" class="fa fa-caret-down"></i>'+
+						    '<i ng-if="column.order == \'asc\'" class="fa fa-caret-up"></i>'+
 						'</th>'+
 						'<th ng-if="actionVisible">Action</th>'+
 						'<th ng-if="operationsVisible">Operation</th>'+

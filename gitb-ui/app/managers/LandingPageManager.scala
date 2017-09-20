@@ -21,73 +21,47 @@ object LandingPageManager extends BaseManager {
   def logger = LoggerFactory.getLogger("landingPageManager")
 
   /**
-   * Checks if name exists
+   * Gets all landing pages for the specified community
    */
-  def checkUniqueName(name: String): Future[Boolean] = {
+  def getLandingPagesByCommunity(communityId: Long): Future[List[LandingPages]] = {
     Future {
       DB.withSession { implicit session =>
-        val firstOption = PersistenceSchema.landingPages.filter(_.name === name).firstOption
-        !firstOption.isDefined
-      }
-    }
-  }
-
-  /**
-   * Checks if name exists except own name (used for update)
-   */
-  def checkUniqueName(name: String, pageId: Long): Future[Boolean] = {
-    Future {
-      DB.withSession { implicit session =>
-        val page = PersistenceSchema.landingPages.filter(_.id === pageId).firstOption
-        if (page.isDefined) {
-          val firstOption = PersistenceSchema.landingPages.filter(_.id =!= pageId).filter(_.name === name).firstOption
-          !firstOption.isDefined
-        } else {
-          throw new IllegalArgumentException("Landing page with ID '" + pageId + "' not found")
-        }
-      }
-    }
-  }
-
-  /**
-   * Checks if page exists
-   */
-  def checkLandingPageExists(pageId: Long): Future[Boolean] = {
-    Future {
-      DB.withSession { implicit session =>
-        val firstOption = PersistenceSchema.landingPages.filter(_.id === pageId).firstOption
-        firstOption.isDefined
-      }
-    }
-  }
-
-  /**
-   * Checks if page exists
-   */
-  def checkDefaultLandingPageExists(): Future[Boolean] = {
-    Future {
-      DB.withSession { implicit session =>
-        val firstOption = PersistenceSchema.landingPages.filter(_.default === true).firstOption
-        firstOption.isDefined
-      }
-    }
-  }
-
-  /**
-   * Gets all landing pages
-   */
-  def getLandingPages(): Future[List[LandingPages]] = {
-    Future {
-      DB.withSession { implicit session =>
-        val pages = PersistenceSchema.landingPages.list
+        val pages = PersistenceSchema.landingPages.filter(_.community === communityId).list
         pages
       }
     }
   }
 
   /**
-   * Gets landing page with specified id
+   * Checks if a landing page with given name exists for the given community
    */
+  def checkUniqueName(name: String, communityId: Long): Future[Boolean] = {
+    Future {
+      DB.withSession { implicit session =>
+        val firstOption = PersistenceSchema.landingPages.filter(_.community === communityId).filter(_.name === name).firstOption
+        firstOption.isEmpty
+      }
+    }
+  }
+
+  /**
+    * Creates new landing page
+    */
+  def createLandingPage(landingPage: LandingPages): Future[Unit] = {
+    Future {
+      DB.withSession { implicit session =>
+        if (landingPage.default) {
+          val q = for {l <- PersistenceSchema.landingPages if l.default === true && l.community === landingPage.community} yield (l.default)
+          q.update(false)
+        }
+        PersistenceSchema.insertLandingPage += landingPage
+      }
+    }
+  }
+
+  /**
+    * Gets landing page with specified id
+    */
   def getLandingPageById(pageId: Long): Future[LandingPage] = {
     Future {
       DB.withSession { implicit session =>
@@ -99,33 +73,13 @@ object LandingPageManager extends BaseManager {
   }
 
   /**
-   * Gets the default landing page
+   * Checks if a landing page with given name exists for the given community
    */
-  def getDefaultLandingPage(): Future[LandingPage] = {
+  def checkUniqueName(pageId: Long, name: String, communityId: Long): Future[Boolean] = {
     Future {
       DB.withSession { implicit session =>
-        var page: LandingPage = null
-        val p = PersistenceSchema.landingPages.filter(_.default === true).firstOption
-        if (p.isDefined) {
-          page = new LandingPage(p.get)
-        }
-        page
-      }
-    }
-  }
-
-  /**
-   * Creates new landing page
-   */
-  def createLandingPage(landingPage: LandingPages): Future[Unit] = {
-    Future {
-      DB.withSession { implicit session =>
-        if (landingPage.default) {
-          val q = for {l <- PersistenceSchema.landingPages if l.default === true} yield (l.default)
-          q.update(false)
-        }
-
-        PersistenceSchema.insertLandingPage += landingPage
+        val firstOption = PersistenceSchema.landingPages.filter(_.community === communityId).filter(_.id =!= pageId).filter(_.name === name).firstOption
+        firstOption.isEmpty
       }
     }
   }
@@ -133,7 +87,7 @@ object LandingPageManager extends BaseManager {
   /**
    * Updates landing page
    */
-  def updateLandingPage(pageId: Long, name: String, description: Option[String], content: String, default: Boolean): Future[Unit] = {
+  def updateLandingPage(pageId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long): Future[Unit] = {
     Future {
       DB.withSession { implicit session =>
         val landingPageOption = PersistenceSchema.landingPages.filter(_.id === pageId).firstOption
@@ -151,7 +105,7 @@ object LandingPageManager extends BaseManager {
           }
 
           if (!landingPage.default && default) {
-            var q = for {l <- PersistenceSchema.landingPages if l.default === true} yield (l.default)
+            var q = for {l <- PersistenceSchema.landingPages if l.default === true && l.community === communityId} yield (l.default)
             q.update(false)
 
             q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.default)
@@ -171,9 +125,29 @@ object LandingPageManager extends BaseManager {
   def deleteLandingPage(pageId: Long) = Future[Unit] {
     Future {
       DB.withSession { implicit session =>
-        PersistenceSchema.landingPages.filter(_.id === pageId).filter(_.default === false).delete
+        PersistenceSchema.landingPages.filter(_.id === pageId).delete
       }
     }
+  }
+
+  /**
+    * Gets the default landing page for given community
+    */
+  def getCommunityDefaultLandingPage(communityId: Long): Future[LandingPage] = {
+    Future {
+      DB.withSession { implicit session =>
+        val p = PersistenceSchema.landingPages.filter(_.community === communityId).filter(_.default === true).firstOption
+        val defaultPage = p match {
+          case Some(p) => new LandingPage(p)
+          case None => null
+        }
+        defaultPage
+      }
+    }
+  }
+
+  def deleteLandingPageByCommunity(communityId: Long)(implicit session: Session) = {
+    PersistenceSchema.landingPages.filter(_.community === communityId).delete
   }
 
 }

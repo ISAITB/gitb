@@ -12,8 +12,10 @@ class DataService
 	destroy: () ->
 		@user = undefined
 		@vendor = undefined
+		@community = undefined
 		@isSystemAdmin = false
 		@isVendorUser = false
+		@isCommunityAdmin = false
 		@isDomainUser = false
 
 	setUser: (user) ->
@@ -23,8 +25,12 @@ class DataService
 		@isVendorUser  = (@user.role == @Constants.USER_ROLE.VENDOR_USER)
 		@isDomainUser  = (@user.role == @Constants.USER_DOMAIN_USER)
 		@isSystemAdmin = (@user.role == @Constants.USER_ROLE.SYSTEM_ADMIN)
+		@isCommunityAdmin = (@user.role == @Constants.USER_ROLE.COMMUNITY_ADMIN)
 
 	setVendor: (vendor) ->
 		@vendor = vendor
+
+	setCommunity: (community) ->
+		@community = community
 
 services.service('DataService', DataService)
