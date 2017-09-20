@@ -419,7 +419,7 @@ class SystemTestsController
     endTimeBegin = @endTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
     endTimeEnd = @endTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
 
-    @ReportService.getTestResults(@systemId, 1, 10000, specIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, @sortColumn, @sortOrder)
+    @ReportService.getTestResults(@systemId, 1, 1000000, specIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, @sortColumn, @sortOrder)
     .then (testResultReports) =>
       resultReportsCollection = _ testResultReports
       resultReportsCollection = resultReportsCollection
@@ -435,6 +435,7 @@ class SystemTestsController
 
       if resultReportsCollection.value().length > 0
         csv = "data:text/csv;charset=utf-8,"
+        csv += ["Test case", "Actor", "Start time", "End time", "Result", "Session"].toString() + "\n"
         for o, i in resultReportsCollection.value()
           line = ""
           idx = 0

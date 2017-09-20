@@ -587,6 +587,7 @@ class DashboardController
         @PopupService.show("Session #{test.session}", data)
 
   exportCompletedSessionsToCsv: () =>
+    communityIds = _.map @filters.community.selection, (s) -> s.id
     specIds = _.map @filters.specification.selection, (s) -> s.id
     testSuiteIds = _.map @filters.testSuite.selection, (s) -> s.id
     testCaseIds = _.map @filters.testCase.selection, (s) -> s.id
@@ -599,14 +600,15 @@ class DashboardController
     endTimeBegin = @endTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
     endTimeEnd = @endTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
 
-    @ReportService.getCompletedTestResults(1, 10000, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, @completedSortColumn, @completedSortOrder)
+    @ReportService.getCompletedTestResults(1, 1000000, communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, @completedSortColumn, @completedSortOrder)
     .then (data) =>
       testResultMapper = @newTestResult
       tests = _.map data, (t) -> testResultMapper(t)
 
-      @exportAsCsv(tests)
+      @exportAsCsv(["Session", "Start time", "End time", "Organization", "System", "Result", "Domain", "Specification", "Test case", "Test suite"], tests)
 
   exportActiveSessionsToCsv: () =>
+    communityIds = _.map @filters.community.selection, (s) -> s.id
     specIds = _.map @filters.specification.selection, (s) -> s.id
     testSuiteIds = _.map @filters.testSuite.selection, (s) -> s.id
     testCaseIds = _.map @filters.testCase.selection, (s) -> s.id
@@ -616,16 +618,17 @@ class DashboardController
     startTimeBegin = @startTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
     startTimeEnd = @startTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
 
-    @ReportService.getActiveTestResults(specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, @activeSortColumn, @activeSortOrder)
+    @ReportService.getActiveTestResults(communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, @activeSortColumn, @activeSortOrder)
     .then (data) =>
       testResultMapper = @newTestResult
       tests = _.map data, (testResult) -> testResultMapper(testResult)
 
-      @exportAsCsv(tests)
+      @exportAsCsv(["Session", "Start time", "End time", "Organization", "System", "Result", "Domain", "Specification", "Test case", "Test suite"], tests)
 
-  exportAsCsv: (data) ->
+  exportAsCsv: (header, data) ->
     if data.length > 0
       csv = "data:text/csv;charset=utf-8,"
+      csv += header.toString() + "\n"
       for o, i in data
         line = ""
         idx = 0

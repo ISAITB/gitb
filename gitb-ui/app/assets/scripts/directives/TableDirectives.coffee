@@ -49,10 +49,10 @@
 			'</table>'+
 				'<div ng-if="paginationVisible" class="text-center">'+
 					'<ul class="pagination pagination-sm">'+
-						'<li ng-class="prevDisabled ? \'disabled\' : \'\'"><a href ng-click="firstPage()">First</a></li>'+
-						'<li ng-class="prevDisabled ? \'disabled\' : \'\'"><a href ng-click="prevPage()">Previous</a></li>'+
-						'<li ng-class="nextDisabled ? \'disabled\' : \'\'"><a href ng-click="nextPage()">Next</a></li>'+
-						'<li ng-class="nextDisabled ? \'disabled\' : \'\'"><a href ng-click="lastPage()">Last</a></li>'+
+						'<li ng-class="prevDisabled ? \'disabled\' : \'\'"><a href ng-click="doFirstPage()">First</a></li>'+
+						'<li ng-class="prevDisabled ? \'disabled\' : \'\'"><a href ng-click="doPrevPage()">Previous</a></li>'+
+						'<li ng-class="nextDisabled ? \'disabled\' : \'\'"><a href ng-click="doNextPage()">Next</a></li>'+
+						'<li ng-class="nextDisabled ? \'disabled\' : \'\'"><a href ng-click="doLastPage()">Last</a></li>'+
 					'</ul>'+
 				'</div>'+
 			'</div>'
@@ -72,6 +72,26 @@
 						col.order = null
 				scope.onSort? column
 			scope.tableCaptionVisible = scope.tableCaption?
+			scope.doFirstPage = () =>
+				if scope.prevDisabled
+					false
+				else
+					scope.firstPage()
+			scope.doPrevPage = () =>
+				if scope.prevDisabled
+					false
+				else
+					scope.prevPage()
+			scope.doNextPage = () =>
+				if scope.nextDisabled
+					false
+				else
+					scope.nextPage()
+			scope.doLastPage = () =>
+				if scope.nextDisabled
+					false
+				else
+					scope.lastPage()
 			scope.select = (selectedIndex)->
 				rows = element.find 'tbody tr.table-row-directive'
 				row = scope.data[selectedIndex]
