@@ -1,17 +1,17 @@
 package persistence
 
+import exceptions._
 import managers.BaseManager
 import models.Enums.UserRole.UserRole
+import models.Enums._
+import models._
 import org.mindrot.jbcrypt.BCrypt
-import scala.slick.driver.MySQLDriver.simple._
+import org.slf4j.LoggerFactory
+import persistence.db.PersistenceSchema
 import play.api.libs.concurrent.Execution.Implicits._
 
-import models._
-import models.Enums._
-import exceptions._
 import scala.concurrent.Future
-import persistence.db.PersistenceSchema
-import org.slf4j.LoggerFactory
+import scala.slick.driver.MySQLDriver.simple._
 
 object AccountManager extends BaseManager {
   def logger = LoggerFactory.getLogger("AccountManager")
@@ -120,6 +120,7 @@ object AccountManager extends BaseManager {
           if (user.isDefined && BCrypt.checkpw(oldpassword.get, user.get.password)) {
             //2.1.1) password correct, replace it with the new one
             val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.password)
+            q.update(BCrypt.hashpw(password.get, BCrypt.gensalt()))
           } else {
             //2.1.2) incorrect password => send Invalid Credentials error
             throw InvalidAuthorizationException(ErrorCodes.INVALID_CREDENTIALS, "Invalid credentials")
