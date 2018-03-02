@@ -24,7 +24,7 @@ class RestService
                         value?
                 if !config.toJSON?
                     config.toJSON = false
-                @sendRequest(method, config.path, config.params, config.data, config.toJSON, config.responseType);
+                @sendRequest(method, config.path.substring(1), config.params, config.data, config.toJSON, config.responseType);
             )
 
     authenticate: (config) ->
