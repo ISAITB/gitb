@@ -1,0 +1,5 @@
+/.metadata
+/.classpath
+/bin/
+/src/main/**/*.jasper
+.project

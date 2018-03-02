@@ -54,5 +54,6 @@
         <module>gitb-validator-ihe</module>
         <module>gitb-validator-validex</module>
         <module>gitb-validators</module>
+        <module>gitb-reports</module>
     </modules>
 </project>
