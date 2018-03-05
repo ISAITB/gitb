@@ -627,8 +627,7 @@ class DashboardController
 
   exportAsCsv: (header, data) ->
     if data.length > 0
-      csv = "data:text/csv;charset=utf-8,"
-      csv += header.toString() + "\n"
+      csv = header.toString() + "\n"
       for o, i in data
         line = ""
         idx = 0
@@ -637,13 +636,7 @@ class DashboardController
             line += ","
           line += v
         csv += if i < data.length then line + "\n" else line
-
-      encodedUri = encodeURI csv
-      a = window.document.createElement('a')
-      a.setAttribute "href", encodedUri
-      a.setAttribute "download", "export.csv"
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
+      blobData = new Blob([csv], {type: 'text/csv'});
+      saveAs(blobData, "export.csv");
 
 @controllers.controller 'DashboardController', DashboardController

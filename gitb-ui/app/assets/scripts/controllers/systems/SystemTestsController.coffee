@@ -370,14 +370,8 @@ class SystemTestsController
     @export = true
     @ReportService.exportTestCaseReport(data.sessionId, data.testCase)
     .then (stepResults) =>
-        a = window.document.createElement('a')
-        a.href = window.URL.createObjectURL(new Blob([stepResults], {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
-        a.download = 'report.docx'
-
-        document.body.appendChild(a)
-        a.click();
-
-        document.body.removeChild(a)
+        blobData = new Blob([stepResults], {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+        saveAs(blobData, "report.docx");
 
   onCheckboxCheck: (data) =>
     @check = true
@@ -399,14 +393,8 @@ class SystemTestsController
 
     @ReportService.exportTestCaseReports(session_ids.join(), testcase_ids.join())
      .then (stepResults) =>
-        a = window.document.createElement('a')
-        a.href = window.URL.createObjectURL(new Blob([stepResults], {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
-        a.download = 'report.docx'
-
-        document.body.appendChild(a)
-        a.click();
-
-        document.body.removeChild(a)
+        blobData = new Blob([stepResults], {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+        saveAs(blobData, "report.docx");
 
   exportToCsv: () =>
     specIds = _.map @filtering.specification.selection, (s) -> s.id
@@ -434,8 +422,7 @@ class SystemTestsController
                       transformedObject
 
       if resultReportsCollection.value().length > 0
-        csv = "data:text/csv;charset=utf-8,"
-        csv += ["Test case", "Actor", "Start time", "End time", "Result", "Session"].toString() + "\n"
+        csv = ["Test case", "Actor", "Start time", "End time", "Result", "Session"].toString() + "\n"
         for o, i in resultReportsCollection.value()
           line = ""
           idx = 0
@@ -444,13 +431,7 @@ class SystemTestsController
               line += ","
             line += v
           csv += if i < resultReportsCollection.value().length then line + "\n" else line
-
-        encodedUri = encodeURI csv
-        a = window.document.createElement('a')
-        a.setAttribute "href", encodedUri
-        a.setAttribute "download", "export.csv"
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
+          blobData = new Blob([csv], {type: 'text/csv'});
+          saveAs(blobData, "export.csv");
 
 @controllers.controller 'SystemTestsController', SystemTestsController
