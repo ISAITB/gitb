@@ -7,17 +7,19 @@ class TestStepReportModalController
 
     @$scope.step = step
     @$scope.report = report
+    @$scope.exportDisabled = false
 
     @$scope.export = () =>
-        @ReportService.exportTestStepReport(step.report.path)
+        @$scope.exportDisabled = true
+        pathForReport = step.report.path
+        if !pathForReport?
+          pathForReport = step.report.tcInstanceId + '/' + step.id + '.xml'
+        @ReportService.exportTestStepReport(pathForReport)
             .then (data) =>
-                a = window.document.createElement('a')
-                a.href = window.URL.createObjectURL(new Blob([data], {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'}));
-                a.download = report.id + ".docx"
-
-                document.body.appendChild(a)
-                a.click();
-                document.body.removeChild(a)
+                # blobData = new Blob([data], {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+                @$scope.exportDisabled = false
+                blobData = new Blob([data], {type: 'application/pdf'});
+                saveAs(blobData, "report.pdf");
 
     @$scope.close = () =>
       @$modalInstance.dismiss()

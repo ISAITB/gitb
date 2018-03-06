@@ -485,6 +485,8 @@ class TestExecutionControllerV2
         status = response.status
         report = response.report
         step   = @findNodeWithStepId @$scope.steps, stepId
+        if report?
+          report.tcInstanceId = response.tcInstanceId
         @updateStatus(step, stepId, status, report)
 
   interact: (interactions, stepId) ->

@@ -1,28 +1,22 @@
 package controllers
 
 import java.io._
-import java.nio.file.{Paths, Files}
-import java.util
+import java.nio.file.{Files, Path, Paths}
 import javax.xml.transform.stream.StreamSource
 
-
-
 import com.gitb.tbs.TestStepStatus
-import com.gitb.tr.TestStepReportType
 import com.gitb.utils.XMLUtils
+import com.gitb.reports.ReportGenerator
 import config.Configurations
+import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
+import managers.{ReportManager, TestCaseManager, TestSuiteManager}
 import models.TestCase
 import org.apache.commons.codec.net.URLCodec
-import org.apache.poi.xwpf.usermodel.{ParagraphAlignment, XWPFDocument}
+import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.slf4j.LoggerFactory
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import controllers.util.{Parameters, ParameterExtractor, ResponseConstructor}
-import managers.{TestSuiteManager, ReportManager, TestCaseManager}
-import play.api.Play
 import play.api.mvc._
 import utils.{JacksonUtil, JsonUtil}
-
-import scala.collection.mutable.ListBuffer
 
 /**
  * Created by serbay on 10/16/14.
@@ -30,9 +24,10 @@ import scala.collection.mutable.ListBuffer
 class RepositoryService extends Controller {
 	private val logger = LoggerFactory.getLogger(classOf[RepositoryService])
 	private val codec = new URLCodec()
+  private val generator = new ReportGenerator()
 
   private val TESTCASE_REPORT_NAME = "report.docx"
-
+  private val TESTCASE_STEP_REPORT_NAME = "step.docx"
 
 	def getTestSuitesPath(): File = {
 
@@ -85,26 +80,31 @@ class RepositoryService extends Controller {
 
   def exportTestStepReport(reportPath: String): Action[AnyContent] = Action { implicit request=>
     val file = new File(getStatusUpdatesPath(), codec.decode(reportPath))
-    var docx = new File(getStatusUpdatesPath(), codec.decode(reportPath.replace(".xml", ".docx")))
+    val pdf = new File(getStatusUpdatesPath(), codec.decode(reportPath.replace(".xml", ".pdf")))
 
-    if(!docx.exists()) {
-      if(file.exists()) {
-        //read file into a string
-        val bytes  = Files.readAllBytes(Paths.get(file.getAbsolutePath));
-        val string = new String(bytes)
-
-        //convert string in xml format into its object representation
-        val step = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))
-
-        //generate pdf
-        docx = ReportManager.generateDetailedTestStepReport(step.getReport, docx.getAbsolutePath)
+    if (!pdf.exists()) {
+      if (file.exists()) {
+        try {
+          val fis = Files.newInputStream(file.toPath)
+          val fos = Files.newOutputStream(pdf.toPath)
+          try
+            generator.writeTestStepStatusReport(fis, "Test step report", fos)
+          catch {
+            case e: Exception =>
+              throw new IllegalStateException("Unable to generate PDF report", e)
+          } finally {
+            if (fis != null) fis.close()
+            if (fos != null) fos.close()
+          }
+        }
       } else {
         NotFound
       }
     }
-
-    println(docx.getAbsolutePath)
-    Ok.sendFile(docx, true)
+    Ok.sendFile(
+      content = pdf,
+      fileName = _ => TESTCASE_STEP_REPORT_NAME
+    )
   }
 
   def exportTestCaseReport(): Action[AnyContent] = Action.async { implicit request =>

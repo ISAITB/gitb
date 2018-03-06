@@ -18,6 +18,7 @@ scalaVersion := "2.11.1"
 libraryDependencies ++= Seq(
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
+  "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
   "mysql" % "mysql-connector-java" % "5.1.35",
   "com.typesafe.akka" %% "akka-actor" % "2.3.4",
   "com.typesafe.akka" %% "akka-remote" % "2.3.4",

@@ -94,38 +94,50 @@
 				<textFieldExpression><![CDATA["Result:"]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="280" y="50" width="70" height="20" uuid="3b2a54af-c87b-4528-845f-11b241f31688"/>
+				<reportElement x="280" y="50" width="70" height="20" uuid="3b2a54af-c87b-4528-845f-11b241f31688">
+					<printWhenExpression><![CDATA[$P{errorCount} != null]]></printWhenExpression>
+				</reportElement>
 				<textElement verticalAlignment="Middle">
 					<font isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA["Errors:"]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="280" y="90" width="70" height="20" uuid="e12608a0-c7f6-4b03-971f-208ec78b8fdb"/>
+				<reportElement x="280" y="90" width="70" height="20" uuid="e12608a0-c7f6-4b03-971f-208ec78b8fdb">
+					<printWhenExpression><![CDATA[$P{messageCount} != null]]></printWhenExpression>
+				</reportElement>
 				<textElement verticalAlignment="Middle">
 					<font isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA["Messages:"]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="280" y="70" width="70" height="20" uuid="e314b196-2b1b-4755-963d-27f7b69301e7"/>
+				<reportElement x="280" y="70" width="70" height="20" uuid="e314b196-2b1b-4755-963d-27f7b69301e7">
+					<printWhenExpression><![CDATA[$P{warningCount} != null]]></printWhenExpression>
+				</reportElement>
 				<textElement verticalAlignment="Middle">
 					<font isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA["Warnings:"]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="350" y="50" width="170" height="20" uuid="50635e19-0471-4c2b-acb9-31142d82104b"/>
+				<reportElement x="350" y="50" width="170" height="20" uuid="50635e19-0471-4c2b-acb9-31142d82104b">
+					<printWhenExpression><![CDATA[$P{errorCount} != null]]></printWhenExpression>
+				</reportElement>
 				<textElement verticalAlignment="Middle"/>
 				<textFieldExpression><![CDATA[$P{errorCount}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="350" y="70" width="170" height="20" uuid="50eb959c-4333-4fa9-9ec3-ba155d138c1d"/>
+				<reportElement x="350" y="70" width="170" height="20" uuid="50eb959c-4333-4fa9-9ec3-ba155d138c1d">
+					<printWhenExpression><![CDATA[$P{warningCount} != null]]></printWhenExpression>
+				</reportElement>
 				<textElement verticalAlignment="Middle"/>
 				<textFieldExpression><![CDATA[$P{warningCount}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="350" y="90" width="170" height="20" uuid="00075c2b-c341-4655-88a9-d01beba5f0fc"/>
+				<reportElement x="350" y="90" width="170" height="20" uuid="00075c2b-c341-4655-88a9-d01beba5f0fc">
+					<printWhenExpression><![CDATA[$P{messageCount} != null]]></printWhenExpression>
+				</reportElement>
 				<textElement verticalAlignment="Middle"/>
 				<textFieldExpression><![CDATA[$P{messageCount}]]></textFieldExpression>
 			</textField>
@@ -157,6 +169,7 @@
 			</textField>
 		</band>
 		<band height="123">
+			<printWhenExpression><![CDATA[$P{reportItems} != null]]></printWhenExpression>
 			<textField>
 				<reportElement x="20" y="10" width="760" height="30" uuid="c52cbd65-ceb2-4642-94b8-555518394b78">
 					<printWhenExpression><![CDATA[$P{reportItems} != null]]></printWhenExpression>
@@ -175,7 +188,7 @@
 				<reportElement x="20" y="50" width="752" height="65" uuid="c497a39f-422f-4fdc-afa4-19cc371337d7">
 					<printWhenExpression><![CDATA[$P{reportItems} != null]]></printWhenExpression>
 				</reportElement>
-				<jr:list xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
+				<jr:list xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd" printOrder="Vertical">
 					<datasetRun subDataset="Dataset1" uuid="cd65171e-29d5-4b84-9d2a-090f72a8762d">
 						<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.data.JRBeanCollectionDataSource($P{reportItems})]]></dataSourceExpression>
 					</datasetRun>
@@ -189,9 +202,7 @@
 						</textField>
 						<image>
 							<reportElement x="13" y="5" width="15" height="15" uuid="341261d9-6352-46d2-a4bf-36aabf94217d"/>
-							<imageExpression><![CDATA["error".equals($F{level})?"reports/images/error.png":("warning".equals($F{level})?"reports/images/warning.png":"reports/images/info.png")
-
-]]></imageExpression>
+							<imageExpression><![CDATA["error".equals($F{level})?"reports/images/error.png":("warning".equals($F{level})?"reports/images/warning.png":"reports/images/info.png")]]></imageExpression>
 						</image>
 						<textField isStretchWithOverflow="true">
 							<reportElement style="itemStyle" positionType="Float" x="10" y="21" width="730" height="19" uuid="09292200-f190-43ec-8781-aa3c3d39d35c"/>
@@ -212,6 +223,7 @@
 			</componentElement>
 		</band>
 		<band height="131">
+			<printWhenExpression><![CDATA[$P{contextItems} != null]]></printWhenExpression>
 			<textField>
 				<reportElement x="20" y="10" width="760" height="30" uuid="29eefc92-1769-4458-bf74-9e79ae6b2fab">
 					<printWhenExpression><![CDATA[$P{contextItems} != null]]></printWhenExpression>
@@ -230,7 +242,7 @@
 				<reportElement x="20" y="50" width="753" height="70" uuid="46aa9096-7356-4780-8909-8f4158f11a76">
 					<printWhenExpression><![CDATA[$P{contextItems} != null]]></printWhenExpression>
 				</reportElement>
-				<jr:list xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd">
+				<jr:list xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd" printOrder="Vertical">
 					<datasetRun subDataset="Dataset2" uuid="124cbc51-d152-47c6-8068-6bfa46a97b35">
 						<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.data.JRBeanCollectionDataSource($P{contextItems})]]></dataSourceExpression>
 					</datasetRun>
