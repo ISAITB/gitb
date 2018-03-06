@@ -1,13 +1,12 @@
 package managers
 
 import java.io.{File, FileOutputStream, StringReader}
-import java.math.BigInteger
 import java.nio.file.{Files, Path, Paths}
 import java.text.SimpleDateFormat
 import java.util.Date
 import javax.xml.transform.stream.StreamSource
 
-import com.gitb.core.{AnyContent, StepStatus}
+import com.gitb.core.StepStatus
 import com.gitb.reports.ReportGenerator
 import com.gitb.reports.dto.TestCaseOverview
 import com.gitb.tbs.{ObjectFactory, TestStepStatus}
@@ -16,10 +15,6 @@ import com.gitb.tr._
 import com.gitb.utils.XMLUtils
 import config.Configurations
 import models._
-import org.apache.commons.codec.binary.Base64
-import org.apache.commons.codec.net.URLCodec
-import org.apache.poi.xwpf.usermodel._
-import org.openxmlformats.schemas.wordprocessingml.x2006.main.STTblWidth
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.libs.concurrent.Execution.Implicits._
@@ -327,6 +322,32 @@ object ReportManager extends BaseManager {
     }
   }
 
+  def getPathForTestSession(sessionId: String, isExpected: Boolean): Path = {
+    DB.withSession {
+      implicit session =>
+        val testResult = PersistenceSchema.testResults.filter(_.testSessionId === sessionId).first
+        val startTime = testResult.startTime.toLocalDateTime()
+        val path = Paths.get(
+          Configurations.TEST_CASE_REPOSITORY_PATH,
+          STATUS_UPDATES_PATH,
+          String.valueOf(startTime.getYear),
+          String.valueOf(startTime.getMonthValue),
+          String.valueOf(startTime.getDayOfMonth),
+          sessionId
+        );
+        if (isExpected && !Files.exists(path)) {
+          // For backwards compatibility. Lookup session folder directly under status-updates folder
+          Paths.get(
+            Configurations.TEST_CASE_REPOSITORY_PATH,
+            STATUS_UPDATES_PATH,
+            sessionId
+          )
+        } else {
+          path
+        }
+    }
+  }
+
   def createTestStepReport(sessionId: String, step: TestStepStatus): Future[Unit] = {
     Future {
       DB.withSession {
@@ -334,11 +355,12 @@ object ReportManager extends BaseManager {
           //save status reports only when step is concluded with either COMPLETED or ERROR state
           if (step.getReport != null && (step.getStatus == StepStatus.COMPLETED || step.getStatus == StepStatus.ERROR)) {
             step.getReport.setId(step.getStepId)
-            val path = sessionId + "/" + step.getStepId + ".xml"
+
+            val path = step.getStepId + ".xml"
 
             //write the report into a file
             if (step.getReport != null) {
-              val file = new File(Configurations.TEST_CASE_REPOSITORY_PATH + "/" + STATUS_UPDATES_PATH, path)
+              val file = new File(getPathForTestSession(sessionId, false).toFile, path)
               file.getParentFile.mkdirs()
               file.createNewFile()
 
@@ -469,189 +491,4 @@ object ReportManager extends BaseManager {
     reportPath
   }
 
-  def generateTestCaseOverviewPage(doc: XWPFDocument, testCaseIds: Array[String], sessionIds: Array[String]) = {
-    DB.withSession {
-      implicit session =>
-        val header = doc.createParagraph();
-        header.setAlignment(ParagraphAlignment.CENTER);
-
-        val headerText = header.createRun();
-        headerText.setBold(true)
-        headerText.setFontSize(28)
-        headerText.setText("Report for Selected Test Cases")
-
-        lineBreak(doc)
-        lineBreak(doc)
-
-        var a = 0;
-        // for loop execution with a range
-        for (a <- 0 to testCaseIds.length - 1) {
-          val testCaseId = testCaseIds(a)
-          val sessionId = sessionIds(a)
-          val testResult = PersistenceSchema.testResults.filter(_.testSessionId === sessionId).first
-
-          val p = doc.createParagraph()
-          p.setAlignment(ParagraphAlignment.LEFT)
-
-          val r1 = p.createRun();
-          r1.setBold(true)
-          r1.setFontSize(17)
-          r1.setText((a + 1) + ". " + testCaseId + ": ");
-
-          val r2 = p.createRun();
-          r2.setFontSize(17)
-          r2.setText(testResult.result)
-        }
-
-        doc.createParagraph().createRun().addBreak(BreakType.PAGE)
-
-        for (a <- 0 to testCaseIds.length - 1) {
-          val testCaseId = testCaseIds(a)
-          val sessionId = sessionIds(a)
-          val testResult = PersistenceSchema.testResults.filter(_.testSessionId === sessionId).first
-          val testCase = new models.TestCase(PersistenceSchema.testCases.filter(_.shortname === testCaseId).first)
-
-          generateOverviewTestCase(doc, testCaseId, sessionId, testCase, testResult, a + 1)
-        }
-
-    }
-  }
-
-  def generateOverviewTestCase(doc: XWPFDocument, testCaseId: String, sessionId: String, testCase: models.TestCase, testResult: TestResult, index: Int) = {
-    //test name
-    val p1 = doc.createParagraph();
-    p1.setAlignment(ParagraphAlignment.LEFT);
-    p1.setBorderBottom(Borders.SINGLE);
-
-    val r1 = p1.createRun();
-    r1.setBold(true)
-    r1.setFontSize(15)
-    r1.setText(index + ". " + testCaseId);
-
-    lineBreak(doc)
-
-    //test description
-    val p2 = doc.createParagraph();
-    p2.setAlignment(ParagraphAlignment.BOTH);
-
-    val r3 = p2.createRun();
-    r3.setBold(true)
-    r3.setFontSize(13)
-    r3.setText("Description: ");
-
-    val r4 = p2.createRun();
-    r4.setFontSize(13)
-    r4.setText(testCase.description.get.replace("\n", "").replace("\r", "").replaceAll("\\s+", " "))
-
-    //result
-    val p3 = doc.createParagraph();
-    p3.setAlignment(ParagraphAlignment.BOTH);
-
-    val r5 = p3.createRun();
-    r5.setBold(true)
-    r5.setFontSize(13)
-    r5.setText("Result: ");
-
-    val r6 = p3.createRun();
-    r6.setFontSize(13)
-    r6.setText(testResult.result)
-
-    //execution results
-    val start = testResult.startTime
-
-    val p4 = doc.createParagraph();
-    p4.setAlignment(ParagraphAlignment.BOTH);
-
-    val r7 = p4.createRun();
-    r7.setBold(true)
-    r7.setFontSize(13)
-    r7.setText("Execution Time: ");
-
-    val r8 = p4.createRun();
-    r8.setFontSize(13)
-
-    if (testResult.endTime.isDefined) {
-      val end = testResult.endTime.get
-      val difference = (end.getTime() - start.getTime()) / 1000
-
-      r8.setText(testResult.startTime + " (Server time)")
-
-      val p5 = doc.createParagraph();
-      p5.setAlignment(ParagraphAlignment.BOTH);
-
-      val r9 = p5.createRun();
-      r9.setBold(true)
-      r9.setFontSize(13)
-      r9.setText("Duration: ");
-
-      val r10 = p5.createRun();
-      r10.setFontSize(13)
-      r10.setText(difference + " seconds")
-
-    } else {
-      r8.setText(testResult.startTime + " (Server time)")
-    }
-
-    lineBreak(doc)
-
-    generateOverviewTestStep(doc, sessionId)
-  }
-
-  def generateOverviewTestStep(doc: XWPFDocument, sessionId: String) = {
-    val root: String = Configurations.TEST_CASE_REPOSITORY_PATH + "/" + STATUS_UPDATES_PATH
-
-    val folder = new File(root, new URLCodec().decode(sessionId))
-
-    if (folder.exists()) {
-      val list = ReportManager.getListOfTestSteps(folder)
-
-      for (stepReport <- list) {
-        val p1 = doc.createParagraph();
-        p1.setAlignment(ParagraphAlignment.LEFT);
-
-        val r1 = p1.createRun();
-        r1.setBold(true)
-        r1.setUnderline(UnderlinePatterns.SINGLE)
-        r1.setFontSize(13)
-        r1.setText("Step " + stepReport.getId + ": ")
-
-        val r3 = p1.createRun();
-        r3.setFontSize(13)
-        r3.setText(stepReport.getResult.value())
-      }
-
-      lineBreak(doc)
-    }
-  }
-
-  private def writeItem(paragraph: XWPFParagraph, item: AnyContent, base64: Boolean, break1: Int, break2: Int)
-
-  = {
-    val r1 = paragraph.createRun();
-    r1.setBold(true);
-    r1.setText(item.getName);
-    var i = 0;
-    for (i <- 1 to break1) {
-      r1.addBreak()
-    }
-
-    val r2 = paragraph.createRun();
-    if (base64) {
-      r2.setText(new String(Base64.decodeBase64(item.getValue.getBytes)));
-    } else {
-      r2.setText(item.getValue);
-    }
-
-    for (i <- 1 to break2) {
-      r2.addBreak()
-    }
-  }
-
-  private def lineBreak(doc: XWPFDocument)
-
-  = {
-    val empty = doc.createParagraph();
-    val emptyText = empty.createRun();
-    emptyText.setText("\n")
-  }
 }

@@ -11,6 +11,7 @@ import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
 import managers.{ReportManager, TestCaseManager, TestSuiteManager}
 import models.TestCase
 import org.apache.commons.codec.net.URLCodec
+import org.apache.commons.lang.StringUtils
 import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.slf4j.LoggerFactory
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -35,15 +36,6 @@ class RepositoryService extends Controller {
 	    path
 	}
 
-	def getStatusUpdatesPath(): File = {
-
-		val root: String = Configurations.TEST_CASE_REPOSITORY_PATH + "/" + ReportManager.STATUS_UPDATES_PATH
-	    val path = new File(root);
-
-	    path
-	}
-
-
 	def getTestSuiteResource(filePath:String): Action[AnyContent] = Action {
 		implicit request =>
 			val file = new File(getTestSuitesPath(), codec.decode(filePath))
@@ -57,9 +49,12 @@ class RepositoryService extends Controller {
 	}
 
 	def getTestStepReport(reportPath: String): Action[AnyContent] = Action { implicit request=>
-		val file = new File(getStatusUpdatesPath(), codec.decode(reportPath))
+//    34888315-6781-4d74-a677-8f9001a02cb8/4.xml
+    val pathParts = StringUtils.split(codec.decode(reportPath), "/")
+		val sessionFolder = ReportManager.getPathForTestSession(pathParts(0), true).toFile
+    val file = new File(sessionFolder, pathParts(1))
 
-		logger.debug("Reading test step report ["+codec.decode(reportPath)+"] from the file ["+file+"]")
+    logger.debug("Reading test step report ["+codec.decode(reportPath)+"] from the file ["+file+"]")
 
 		if(file.exists()) {
       //read file incto a string
@@ -77,8 +72,11 @@ class RepositoryService extends Controller {
 	}
 
   def exportTestStepReport(reportPath: String): Action[AnyContent] = Action { implicit request=>
-    val file = new File(getStatusUpdatesPath(), codec.decode(reportPath))
-    val pdf = new File(getStatusUpdatesPath(), codec.decode(reportPath.replace(".xml", ".pdf")))
+    //    34888315-6781-4d74-a677-8f9001a02cb8/4.xml
+    val pathParts = StringUtils.split(codec.decode(reportPath), "/")
+    val sessionFolder = ReportManager.getPathForTestSession(pathParts(0), true).toFile
+    val file = new File(sessionFolder, pathParts(1))
+    val pdf = new File(sessionFolder, pathParts(1).toLowerCase().replace(".xml", ".pdf"))
 
     if (!pdf.exists()) {
       if (file.exists()) {
@@ -97,7 +95,7 @@ class RepositoryService extends Controller {
     val session = ParameterExtractor.requiredQueryParameter(request, Parameters.SESSION_ID)
     val testCaseId = ParameterExtractor.requiredQueryParameter(request, Parameters.TEST_ID)
 
-    val folder = new File(getStatusUpdatesPath(), codec.decode(session))
+    val folder = ReportManager.getPathForTestSession(codec.decode(session), true).toFile
 
     logger.debug("Reading test case report ["+codec.decode(session)+"] from the file ["+folder+"]")
 
@@ -121,25 +119,7 @@ class RepositoryService extends Controller {
   }
 
   def exportTestCaseReports(): Action[AnyContent] = Action { implicit request =>
-    val sessionIdsParam  = ParameterExtractor.requiredQueryParameter(request, Parameters.SESSION_IDS)
-    val testCaseIdsParam = ParameterExtractor.requiredQueryParameter(request, Parameters.TEST_IDS)
-
-    val sessionIds  = sessionIdsParam.split(",")
-    val testCaseIds = testCaseIdsParam.split(",")
-
-    val doc = new XWPFDocument
-
-    ReportManager.generateTestCaseOverviewPage(doc, testCaseIds, sessionIds)
-
-    val report = new File(getStatusUpdatesPath(), System.currentTimeMillis() + ".docx")
-    val out = new FileOutputStream(report);
-    doc.write(out)
-
-    Ok.sendFile(
-      content  = report,
-      fileName = _ => TESTCASE_REPORT_NAME,
-      onClose  = () => report.delete()
-    )
+    NotFound
   }
 
 	def getTestCase(testId:String) = Action.async {
