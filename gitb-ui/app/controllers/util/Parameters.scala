@@ -86,6 +86,7 @@ object Parameters {
   //TestService parameters
   val ACTOR_ID   = "actor_id"
   val TEST_ID    = "test_id"
+  val INCLUDE_CONTEXT = "include_context"
   val SESSION_ID = "session_id"
   val TEST_IDS   = "test_ids"
   val SESSION_IDS= "session_ids"

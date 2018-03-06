@@ -1,12 +1,11 @@
 package controllers
 
 import java.io._
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Paths}
 import javax.xml.transform.stream.StreamSource
 
 import com.gitb.tbs.TestStepStatus
 import com.gitb.utils.XMLUtils
-import com.gitb.reports.ReportGenerator
 import config.Configurations
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
 import managers.{ReportManager, TestCaseManager, TestSuiteManager}
@@ -24,10 +23,9 @@ import utils.{JacksonUtil, JsonUtil}
 class RepositoryService extends Controller {
 	private val logger = LoggerFactory.getLogger(classOf[RepositoryService])
 	private val codec = new URLCodec()
-  private val generator = new ReportGenerator()
 
-  private val TESTCASE_REPORT_NAME = "report.docx"
-  private val TESTCASE_STEP_REPORT_NAME = "step.docx"
+  private val TESTCASE_REPORT_NAME = "report.pdf"
+  private val TESTCASE_STEP_REPORT_NAME = "step.pdf"
 
 	def getTestSuitesPath(): File = {
 
@@ -84,19 +82,7 @@ class RepositoryService extends Controller {
 
     if (!pdf.exists()) {
       if (file.exists()) {
-        try {
-          val fis = Files.newInputStream(file.toPath)
-          val fos = Files.newOutputStream(pdf.toPath)
-          try
-            generator.writeTestStepStatusReport(fis, "Test step report", fos)
-          catch {
-            case e: Exception =>
-              throw new IllegalStateException("Unable to generate PDF report", e)
-          } finally {
-            if (fis != null) fis.close()
-            if (fos != null) fos.close()
-          }
-        }
+        ReportManager.generateTestStepReport(file.toPath, pdf.toPath)
       } else {
         NotFound
       }
@@ -121,7 +107,7 @@ class RepositoryService extends Controller {
 
         if(!exportedReport.exists()) {
           val list = ReportManager.getListOfTestSteps(folder)
-          ReportManager.generateDetailedTestCaseReport(list, exportedReport.getAbsolutePath, testCase, session)
+          ReportManager.generateDetailedTestCaseReport(list, exportedReport.getAbsolutePath, testCase, session, false)
         }
 
         Ok.sendFile(

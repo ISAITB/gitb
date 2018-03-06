@@ -1,35 +1,33 @@
 package managers
 
-import java.io.{StringReader, FileOutputStream, File}
+import java.io.{File, FileOutputStream, StringReader}
 import java.math.BigInteger
-import java.nio.file.{Paths, Files}
+import java.nio.file.{Files, Path, Paths}
 import java.text.SimpleDateFormat
 import java.util.Date
-import javax.xml.bind.JAXBElement
 import javax.xml.transform.stream.StreamSource
-import java.sql.Timestamp
 
 import com.gitb.core.{AnyContent, StepStatus}
+import com.gitb.reports.ReportGenerator
+import com.gitb.reports.dto.TestCaseOverview
 import com.gitb.tbs.{ObjectFactory, TestStepStatus}
 import com.gitb.tpl.TestCase
 import com.gitb.tr._
-import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
+import com.gitb.utils.XMLUtils
 import config.Configurations
 import models._
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.net.URLCodec
 import org.apache.poi.xwpf.usermodel._
 import org.openxmlformats.schemas.wordprocessingml.x2006.main.STTblWidth
-import org.slf4j.{LoggerFactory, Logger}
+import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
-import play.api.Play
-
 import play.api.libs.concurrent.Execution.Implicits._
+import utils.{JacksonUtil, TimeUtil}
+
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 import scala.slick.driver.MySQLDriver.simple._
-import utils.{JacksonUtil, TimeUtil}
-import scala.collection.JavaConversions._
 
 /**
   * Created by senan on 03.12.2014.
@@ -39,6 +37,7 @@ object ReportManager extends BaseManager {
   val logger: Logger = LoggerFactory.getLogger("ReportManager")
 
   val STATUS_UPDATES_PATH: String = "status-updates"
+  private val generator = new ReportGenerator()
 
   def getTestResults(page: Long,
                      limit: Long,
@@ -395,327 +394,79 @@ object ReportManager extends BaseManager {
     "0000000000".substring(string.length) + string;
   }
 
-  def generateDetailedTestCaseReport(list: ListBuffer[TestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String): File = {
-    val doc = new XWPFDocument
+  def generateTestStepReport(xmlFile: Path, pdfReport: Path): Path = {
+    val fis = Files.newInputStream(xmlFile)
+    val fos = Files.newOutputStream(pdfReport)
+    try {
+      generator.writeTestStepStatusReport(fis, "Test step report", fos, true)
+      fos.flush()
+    } catch {
+      case e: Exception =>
+        throw new IllegalStateException("Unable to generate PDF report", e)
+    } finally {
+      if (fis != null) fis.close()
+      if (fos != null) fos.close()
+    }
+    pdfReport
+  }
 
+  def generateDetailedTestCaseReport(list: ListBuffer[TestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String, addContext: Boolean): Path = {
+    val reportPath = Paths.get(path)
+    val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
     DB.withSession {
       implicit session =>
         if (testCase.isDefined) {
-          val header = doc.createParagraph();
-          header.setAlignment(ParagraphAlignment.CENTER);
-
-          val headerText = header.createRun();
-          headerText.setBold(true)
-          headerText.setFontSize(28)
-          headerText.setText("Test Case Report")
-
-          lineBreak(doc)
-          lineBreak(doc)
-
-          //test name
-          val p1 = doc.createParagraph();
-          p1.setAlignment(ParagraphAlignment.BOTH);
-
-          val r1 = p1.createRun();
-          r1.setBold(true)
-          r1.setFontSize(15)
-          r1.setText("Test Name: ");
-
-          val r2 = p1.createRun();
-          r2.setFontSize(15)
-          r2.setText(testCase.get.fullname)
-
-          lineBreak(doc)
-
+          val overview = new TestCaseOverview()
+          overview.setTitle("Test Case Report")
+          // Test name
+          overview.setTestName(testCase.get.fullname)
           if (testCase.get.description.isDefined) {
-            //test description
-            val p2 = doc.createParagraph();
-            p2.setAlignment(ParagraphAlignment.BOTH);
-
-            val r3 = p2.createRun();
-            r3.setBold(true)
-            r3.setFontSize(15)
-            r3.setText("Description: ");
-
-            val r4 = p2.createRun();
-            r4.setFontSize(15)
-            r4.setText(testCase.get.description.get.replace("\n", "").replace("\r", "").replaceAll("\\s+", " "))
-
-            lineBreak(doc)
+            // Test description
+            overview.setTestDescription(testCase.get.description.get);
           }
-
+          // Result
           val testResult = PersistenceSchema.testResults.filter(_.testSessionId === sessionId).first
-
-          //result
-          val p3 = doc.createParagraph();
-          p3.setAlignment(ParagraphAlignment.BOTH);
-
-          val r5 = p3.createRun();
-          r5.setBold(true)
-          r5.setFontSize(15)
-          r5.setText("Result: ");
-
-          val r6 = p3.createRun();
-          r6.setFontSize(15)
-          r6.setText(testResult.result)
-
-          lineBreak(doc)
-
-          //execution results
+          overview.setReportResult(testResult.result)
+          // Start time
           val start = testResult.startTime
-
-          val p4 = doc.createParagraph();
-          p4.setAlignment(ParagraphAlignment.BOTH);
-
-          val r7 = p4.createRun();
-          r7.setBold(true)
-          r7.setFontSize(15)
-          r7.setText("Execution Time: ");
-
-          val r8 = p4.createRun();
-          r8.setFontSize(15)
-
+          overview.setStartTime(sdf.format(new Date(testResult.startTime.getTime)));
+          // End time
           if (testResult.endTime.isDefined) {
             val end = testResult.endTime.get
-            val difference = (end.getTime - start.getTime) / 1000
-
-            r8.setText(testResult.startTime + " (Server time)")
-
-            lineBreak(doc)
-
-            val p5 = doc.createParagraph();
-            p5.setAlignment(ParagraphAlignment.BOTH);
-
-            val r9 = p5.createRun();
-            r9.setBold(true)
-            r9.setFontSize(15)
-            r9.setText("Duration: ");
-
-            val r10 = p5.createRun();
-            r10.setFontSize(15)
-            r10.setText(difference + " seconds")
-
-            lineBreak(doc)
-
-          } else {
-            r8.setText(testResult.startTime + " (Server time)")
+            overview.setEndTime(sdf.format(new Date(end.getTime)))
+          }
+          // System
+          val system = PersistenceSchema.systems.filter(_.id === testResult.systemId).first
+          overview.setSystem(system.fullname)
+          // Organisation
+          val organisation = PersistenceSchema.organizations.filter(_.id === system.owner).first
+          overview.setOrganisation(organisation.fullname)
+          // Actor
+          val actor = PersistenceSchema.actors.filter(_.id === testResult.actorId).first
+          overview.setTestActor(actor.name)
+          // Specification
+          val specification = PersistenceSchema.specifications.filter(_.id === testCase.get.targetSpec).first
+          overview.setTestSpecification(specification.fullname)
+          // Domain
+          val domain = PersistenceSchema.domains.filter(_.id === specification.domain).first
+          overview.setTestDomain(domain.fullname)
+          for (stepReport <- list) {
+            overview.getSteps().add(generator.fromTestStepReportType(stepReport, "Step " + stepReport.getId, addContext))
           }
 
-          doc.createParagraph().createRun().addBreak(BreakType.PAGE)
+          val fos = Files.newOutputStream(reportPath)
+          try {
+            generator.writeTestCaseOverviewReport(overview, fos)
+            fos.flush()
+          } catch {
+            case e: Exception =>
+              throw new IllegalStateException("Unable to generate PDF report", e)
+          } finally {
+            if (fos != null) fos.close()
+          }
         }
-
-        for (stepReport <- list) {
-          generateDetailedTestStepDocument(doc, stepReport)
-
-          //add page break
-          val paragraph = doc.createParagraph();
-          val run = paragraph.createRun()
-          run.addBreak(BreakType.PAGE)
-        }
-
-        val out = new FileOutputStream(path);
-        doc.write(out);
-
-        out.close()
-
-        new File(path)
     }
-  }
-
-  def generateDetailedTestStepReport(report: TestStepReportType, path: String): File = {
-    var doc = generateDetailedTestStepDocument(null, report)
-
-    val out = new FileOutputStream(path);
-    doc.write(out);
-
-    new File(path)
-  }
-
-  private def generateDetailedTestStepDocument(document: XWPFDocument, report: TestStepReportType): XWPFDocument
-
-  = {
-    var doc = document
-
-    if (doc == null)
-      doc = new XWPFDocument()
-
-    //header
-    val header = doc.createParagraph();
-    header.setAlignment(ParagraphAlignment.LEFT);
-    header.setBorderBottom(Borders.SINGLE);
-
-    val headerText = header.createRun();
-    headerText.setBold(true)
-    headerText.setFontSize(18)
-    headerText.setText("Step " + report.getId + "")
-
-    //empty
-    lineBreak(doc)
-
-    //result
-    val result = doc.createParagraph();
-    result.setAlignment(ParagraphAlignment.LEFT);
-
-    val r1 = result.createRun();
-    r1.setBold(true)
-    r1.setFontSize(13)
-    r1.setText("Result: ");
-
-    val r2 = result.createRun();
-    r2.setFontSize(13)
-    r2.setText(report.getResult.value())
-
-    lineBreak(doc)
-
-    //time
-    val time = doc.createParagraph();
-    time.setAlignment(ParagraphAlignment.LEFT);
-
-    val r3 = time.createRun();
-    r3.setBold(true)
-    r3.setFontSize(12)
-    r3.setText("Time: ");
-
-    val r4 = time.createRun();
-    r4.setFontSize(12)
-    val calendar = report.getDate.toGregorianCalendar();
-    val formatter = new SimpleDateFormat("yyyy-MM-dd hh:mm")
-    formatter.setTimeZone(calendar.getTimeZone());
-    r4.setText(formatter.format(calendar.getTime()))
-
-    lineBreak(doc)
-
-    if (report.isInstanceOf[TAR]) {
-      val tar = report.asInstanceOf[TAR]
-
-      //values
-      if (tar.getContext != null && tar.getContext.getItem != null && tar.getContext.getItem.size() > 0) {
-        val values = doc.createParagraph();
-        values.setAlignment(ParagraphAlignment.LEFT);
-
-        val valuesText = values.createRun();
-        valuesText.setBold(true)
-        valuesText.setFontSize(12)
-        valuesText.setText("Values:")
-        valuesText.addBreak()
-
-        for (item <- tar.getContext.getItem) {
-          val table = doc.createTable(1, 1);
-
-          val width = table.getCTTbl().addNewTblPr().addNewTblW();
-          width.setType(STTblWidth.DXA);
-          width.setW(BigInteger.valueOf(9072));
-
-          if (item.getType == "map") {
-            val p = table.getRow(0).getCell(0).getParagraphs.get(0)
-
-            val r1 = p.createRun();
-            r1.setBold(true);
-            r1.setText(item.getName);
-            r1.addBreak()
-            r1.addBreak()
-
-            println(item.getItem.size())
-
-            for (inner <- item.getItem) {
-              if (inner.getEmbeddingMethod().value() == "STRING") {
-                writeItem(p, inner, false, 1, 2)
-              }
-
-              else if (inner.getEmbeddingMethod().value() == "BASE64" || inner.getEmbeddingMethod().value() == "BASE_64") {
-                writeItem(p, inner, true, 1, 2)
-              }
-            }
-          }
-          else if (item.getEmbeddingMethod().value() == "STRING") {
-            val p = table.getRow(0).getCell(0).getParagraphs.get(0)
-            writeItem(p, item, false, 2, 0)
-          }
-
-          else if (item.getEmbeddingMethod().value() == "BASE64" || item.getEmbeddingMethod().value() == "BASE_64") {
-            val p = table.getRow(0).getCell(0).getParagraphs.get(0)
-            writeItem(p, item, true, 2, 0)
-          }
-
-          lineBreak(doc)
-        }
-      }
-
-      //assertions
-      if (tar.getReports != null && tar.getReports.getInfoOrWarningOrError.size() > 0) {
-
-        //assertions
-        val assertions = doc.createParagraph();
-        assertions.setAlignment(ParagraphAlignment.LEFT);
-
-        val assertionsText = assertions.createRun();
-        assertionsText.setBold(true)
-        assertionsText.setFontSize(12)
-        assertionsText.setText("Assertions:")
-        assertionsText.addBreak()
-
-        for (assertion <- tar.getReports.getInfoOrWarningOrError) {
-          val bar = assertion.getValue.asInstanceOf[BAR]
-
-          val table = doc.createTable(1, 1);
-
-          val width = table.getCTTbl().addNewTblPr().addNewTblW();
-          width.setType(STTblWidth.DXA);
-          width.setW(BigInteger.valueOf(9072));
-
-          val p = table.getRow(0).getCell(0).getParagraphs.get(0)
-
-          val r1 = p.createRun();
-          r1.setBold(true);
-          r1.setText("Type: ");
-
-          val r2 = p.createRun();
-          val _type = assertion.getName().getLocalPart()
-          r2.setText((_type.charAt(0) + "").toUpperCase() + _type.substring(1));
-          r2.addBreak()
-
-          val r3 = p.createRun();
-          r3.setBold(true);
-          r3.setText("Description: ");
-
-          val r4 = p.createRun();
-          if (bar.getDescription.startsWith("\n"))
-            r4.setText(bar.getDescription().substring(1));
-          else
-            r4.setText(bar.getDescription());
-          r4.addBreak()
-
-          val r5 = p.createRun();
-          r5.setBold(true);
-          r5.setText("Test: ");
-
-          val r6 = p.createRun();
-          r6.setText(bar.getTest())
-
-          lineBreak(doc)
-        }
-      }
-    }
-    else if (report.isInstanceOf[DR]) {
-      val dr = report.asInstanceOf[DR]
-
-      val decision = doc.createParagraph();
-      decision.setAlignment(ParagraphAlignment.LEFT);
-
-      val r1 = result.createRun();
-      r1.setBold(true)
-      r1.setFontSize(13)
-      r1.setText("Decision: ");
-
-      val r2 = result.createRun();
-      r2.setFontSize(13)
-      val value = if (dr.isDecision) "true" else "false"
-      r2.setText(value)
-
-      lineBreak(doc)
-    }
-
-    doc
+    reportPath
   }
 
   def generateTestCaseOverviewPage(doc: XWPFDocument, testCaseIds: Array[String], sessionIds: Array[String]) = {

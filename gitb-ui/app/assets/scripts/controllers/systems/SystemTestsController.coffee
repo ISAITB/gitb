@@ -370,8 +370,8 @@ class SystemTestsController
     @export = true
     @ReportService.exportTestCaseReport(data.sessionId, data.testCase)
     .then (stepResults) =>
-        blobData = new Blob([stepResults], {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
-        saveAs(blobData, "report.docx");
+        blobData = new Blob([stepResults], {type: 'application/pdf'});
+        saveAs(blobData, "report.pdf");
 
   onCheckboxCheck: (data) =>
     @check = true

@@ -131,7 +131,6 @@
         <div class="panel-heading">
             <h4 class="title">Performed Tests</h4>
             <div class="btn-toolbar pull-right">
-                <button class="btn btn-default" ng-if="systemTestsCtrl.showExportButton" ng-click="systemTestsCtrl.exportSelected()">Export Selected</button>
                 <button class="btn btn-default" ng-click="systemTestsCtrl.exportToCsv()">Export CSV</button>
             </div>
         </div>
@@ -144,7 +143,7 @@
              on-select="systemTestsCtrl.onTestSelect"
              export-visible="true"
              on-export="systemTestsCtrl.onReportExport"
-             checkbox-enabled="true"
+             checkbox-enabled="false"
              on-check="systemTestsCtrl.onCheckboxCheck"
              on-sort="systemTestsCtrl.sortTestResults"
              pagination-visible="true"
