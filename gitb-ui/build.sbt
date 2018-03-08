@@ -52,6 +52,8 @@ libraryDependencies ++= Seq(
   "org.webjars" % "tinymce" % "4.2.1"
 )
 
+libraryDependencies += "com.github.tototoshi" %% "play-flyway" % "1.2.2"
+
 //JsEngineKeys.engineType := JsEngineKeys.EngineType.Node
 
 includeFilter in (Assets, LessKeys.less) := "*.less"
