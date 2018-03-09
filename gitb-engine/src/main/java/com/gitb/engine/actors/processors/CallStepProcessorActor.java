@@ -197,8 +197,8 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 
 		// find the scriptlet in repositories
 		ITestCaseRepository repository = ModuleManager.getInstance().getTestCaseRepository();
-		if(repository.isScriptletAvailable(step.getPath())) {
-			return repository.getScriptlet(step.getPath());
+		if(repository.isScriptletAvailable(testCase.getId(), step.getPath())) {
+			return repository.getScriptlet(testCase.getId(), step.getPath());
 		}
 		throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet definition ["+ step.getPath()+"] cannot be found"));
 	}

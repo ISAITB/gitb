@@ -118,7 +118,7 @@ class ConformanceStatementDetailController
     @runTestClicked = false
 
   onTestSelect: (test) =>
-    @$state.go 'app.tests.execution', {test_id: test.sname, systemId: @systemId, actorId: @conformanceStatementRepr.id, specId:@specId}
+    @$state.go 'app.tests.execution', {test_id: test.id, systemId: @systemId, actorId: @conformanceStatementRepr.id, specId:@specId}
 
   onTestSuiteSelect: (testSuite) =>
     # This function remains empty at the moment but it makes sense to keep it,

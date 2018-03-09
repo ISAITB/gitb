@@ -8,15 +8,18 @@ import com.gitb.tbs.TestStepStatus
 import com.gitb.utils.XMLUtils
 import config.Configurations
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
-import managers.{ReportManager, TestCaseManager, TestSuiteManager}
+import managers.TestSuiteManager.DB
+import managers.{ReportManager, SpecificationManager, TestCaseManager, TestSuiteManager}
 import models.TestCase
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.lang.StringUtils
-import org.apache.poi.xwpf.usermodel.XWPFDocument
 import org.slf4j.LoggerFactory
+import persistence.db.PersistenceSchema
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc._
-import utils.{JacksonUtil, JsonUtil}
+import utils.{JacksonUtil, JsonUtil, RepositoryUtils}
+
+import scala.slick.driver.MySQLDriver.simple._
 
 /**
  * Created by serbay on 10/16/14.
@@ -28,18 +31,10 @@ class RepositoryService extends Controller {
   private val TESTCASE_REPORT_NAME = "report.pdf"
   private val TESTCASE_STEP_REPORT_NAME = "step.pdf"
 
-	def getTestSuitesPath(): File = {
-
-		val root: String = Configurations.TEST_CASE_REPOSITORY_PATH + "/" + TestSuiteManager.TEST_SUITES_PATH
-	    val path = new File(root);
-
-	    path
-	}
-
-	def getTestSuiteResource(filePath:String): Action[AnyContent] = Action {
+	def getTestSuiteResource(testId: String, filePath:String): Action[AnyContent] = Action {
 		implicit request =>
-			val file = new File(getTestSuitesPath(), codec.decode(filePath))
-
+      val testCase = TestCaseManager.getTestCaseForId(testId).get
+      val file = RepositoryUtils.getTestSuitesResource(testCase.targetSpec, codec.decode(filePath))
 			logger.debug("Reading test resource ["+codec.decode(filePath)+"] definition from the file ["+file+"]")
 			if(file.exists()) {
 				Ok.sendFile(file, true)
@@ -135,12 +130,12 @@ class RepositoryService extends Controller {
 	def getTestCaseDefinition(testId: String) = Action.async {
 		TestCaseManager.getTestCase(testId) map {
 			case Some(tc: TestCase) => {
-				val file = new File(getTestSuitesPath(), tc.path)
+        val file = RepositoryUtils.getTestSuitesResource(tc.targetSpec, tc.path)
 				logger.debug("Reading test case ["+testId+"] definition from the file ["+file+"]")
-				if(file.exists()) {
-					Ok.sendFile(file, true)
+        if(file.exists()) {
+          Ok.sendFile(file, true)
 				} else {
-					NotFound
+          NotFound
 				}
 			}
 			case _ => NotFound

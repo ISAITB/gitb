@@ -1,18 +1,20 @@
 package utils
 
 import java.io.{File, FileOutputStream}
+import java.nio.file.Paths
 import java.util.zip.{ZipEntry, ZipFile}
 import javax.xml.transform.stream.StreamSource
 
 import com.gitb.utils.XMLUtils
 import config.Configurations
-import managers.TestSuiteManager
-import managers.TestCaseManager
+import managers.{SpecificationManager, TestSuiteManager}
+import managers.TestSuiteManager.DB
 import models._
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.slf4j.LoggerFactory
-import play.api.Play
+import persistence.db.PersistenceSchema
 
+//import scala.slick.driver.MySQLDriver.simple._
 import scala.collection.JavaConverters._
 import scala.xml.XML
 
@@ -27,20 +29,43 @@ object RepositoryUtils {
 	private val TEST_CASE_ELEMENT_LABEL: String = "testcase"
 	private val ACTOR_ELEMENT_LABEL: String = "actor"
 
-	def getTestSuitesPath(): File = {
-
-	    val path = new File(Configurations.TEST_CASE_REPOSITORY_PATH, TestSuiteManager.TEST_SUITES_PATH);
-
-	    path
+	def getTestSuitesRootFolder(): File = {
+		val path = Paths.get(
+			Configurations.TEST_CASE_REPOSITORY_PATH,
+			TestSuiteManager.TEST_SUITES_PATH
+		)
+		path.toFile
 	}
 
-	def getTestCasesPath(): File = {
-
-	    val path = new File(Configurations.TEST_CASE_REPOSITORY_PATH, TestCaseManager.TEST_CASES_PATH);
-
-	    path
+	def getDomainTestSuitesPath(domainId: Long): File = {
+		val path = Paths.get(
+			getTestSuitesRootFolder().getAbsolutePath,
+			String.valueOf(domainId)
+		)
+		path.toFile
 	}
 
+	def getTestSuitesPath(domainId: Long, specificationId: Long): File = {
+		val path = Paths.get(
+			getDomainTestSuitesPath(domainId).getAbsolutePath,
+			String.valueOf(specificationId)
+		)
+		path.toFile
+	}
+
+	def getTestSuitesPath(specificationId: Long): File = {
+		val spec = SpecificationManager.getSpecificationById(specificationId)
+		getTestSuitesPath(spec.domain, spec.id)
+	}
+
+	def getTestSuitesResource(specificationId: Long, resourcePath: String): File = {
+		var file = new File(RepositoryUtils.getTestSuitesPath(specificationId), resourcePath)
+		if(!file.exists()) {
+			// Backwards compatibility: Lookup directly under the test-suites folder
+			file = new File(RepositoryUtils.getTestSuitesRootFolder(), resourcePath)
+		}
+		file
+	}
 
 	/**
 	 * Extracts the test suite resources in the <code>file</code> into the <code>targetFolderName</code> folder.
@@ -49,8 +74,8 @@ object RepositoryUtils {
 	 * @param file
 	 * @return id->path maps for the test case files
 	 */
-	def extractTestSuiteFilesFromZipToFolder(targetFolderName: String, file: File): Map[String, String] = {
-		val targetFolder = new File(getTestSuitesPath(), targetFolderName)
+	def extractTestSuiteFilesFromZipToFolder(specification: Long, targetFolderName: String, file: File): Map[String, String] = {
+		val targetFolder = new File(getTestSuitesPath(specification), targetFolderName)
 
     //target folder needs to be deleted due to an unknown exception thrown
     if(targetFolder.exists()){
@@ -63,10 +88,18 @@ object RepositoryUtils {
 		extractTestSuiteFilesFromZipToFolder(targetFolder, file)
 	}
 
+	def deleteDomainTestSuiteFolder(domainId: Long): Unit = {
+		val targetFolder = getDomainTestSuitesPath(domainId)
+		FileUtils.deleteDirectory(targetFolder)
+	}
 
-	def undeployTestSuite(testSuiteName: String): Unit = {
-		val targetFolder = new File(getTestSuitesPath(), testSuiteName)
+	def deleteSpecificationTestSuiteFolder(specificationId: Long): Unit = {
+		val targetFolder = getTestSuitesPath(specificationId)
+		FileUtils.deleteDirectory(targetFolder)
+	}
 
+	def undeployTestSuite(specificationId: Long, testSuiteName: String): Unit = {
+		val targetFolder = RepositoryUtils.getTestSuitesResource(specificationId, testSuiteName)
 		FileUtils.deleteDirectory(targetFolder)
 	}
 

@@ -49,6 +49,8 @@ public class SessionManager {
 		String sessionId = UUID.randomUUID().toString();
 		//Load the tdl:TestCase definition
         TestCase testCase = TestCaseManager.getTestCaseDescription(testCaseId);
+        // Ensure we replace the text ID with the internal fully unique ID
+		testCase.setId(testCaseId);
         //Create the test case context
 		TestCaseContext testCaseContext = new TestCaseContext(testCase, sessionId);
         //Put the context into the map

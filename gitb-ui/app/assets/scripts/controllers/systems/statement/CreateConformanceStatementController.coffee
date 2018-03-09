@@ -339,7 +339,7 @@ class ConformanceStatementDetailController
           repr
 
   onTestSelect: (test) =>
-    @$state.go 'app.tests.execution', {test_id: test.sname, systemId: @systemId, actorId: @conformanceStatementRepr.id, specId:@specId}
+    @$state.go 'app.tests.execution', {test_id: test.id, systemId: @systemId, actorId: @conformanceStatementRepr.id, specId:@specId}
 
   constructConformanceStatementRepresentation: (conformanceStatement) =>
     @conformanceStatementRepr =

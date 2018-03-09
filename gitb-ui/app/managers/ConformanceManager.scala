@@ -4,6 +4,7 @@ import models._
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.libs.concurrent.Execution.Implicits._
+import utils.RepositoryUtils
 
 import scala.concurrent.Future
 import scala.slick.driver.MySQLDriver.simple._
@@ -86,6 +87,7 @@ object ConformanceManager extends BaseManager {
 				SpecificationManager.deleteSpecificationByDomain(domain)
 				TransactionManager.deleteTransactionByDomain(domain)
 				PersistenceSchema.domains.filter(_.id === domain).delete
+				RepositoryUtils.deleteDomainTestSuiteFolder(domain)
 			}
 		}
 	}

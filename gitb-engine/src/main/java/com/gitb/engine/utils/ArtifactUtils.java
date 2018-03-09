@@ -26,11 +26,11 @@ public class ArtifactUtils {
 		}
 		ITestCaseRepository testCaseRepository = ModuleManager.getInstance().getTestCaseRepository();
 
-		if(testCaseRepository == null || !testCaseRepository.isTestArtifactAvailable(artifact.getValue())) {
+		if(testCaseRepository == null || !testCaseRepository.isTestArtifactAvailable(context.getTestCase().getId(), artifact.getValue())) {
 			return null;
 		}
 
-		InputStream inputStream = testCaseRepository.getTestArtifact(artifact.getValue());
+		InputStream inputStream = testCaseRepository.getTestArtifact(context.getTestCase().getId(), artifact.getValue());
 
 		DataType data = TemplateUtils.generateDataTypeFromTemplate(scope, inputStream, artifact.getType(), artifact.getEncoding());
 

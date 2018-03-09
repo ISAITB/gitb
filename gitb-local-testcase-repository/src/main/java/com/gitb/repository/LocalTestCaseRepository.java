@@ -35,14 +35,14 @@ public class LocalTestCaseRepository implements ITestCaseRepository {
 
     @Override
     public boolean isTestCaseAvailable(String testCaseId) {
-        return isTestResourceAvailable(testCaseId, true);
+        return isTestResourceAvailable(testCaseId, testCaseId, true);
     }
 
     @Override
     public TestCase getTestCase(String testCaseId) {
         if(isTestCaseAvailable(testCaseId)){
             try {
-                File resource = getTestResource(testCaseId, true);
+                File resource = getTestResource(testCaseId, testCaseId, true);
                 return XMLUtils.unmarshal(TestCase.class, new StreamSource(resource));
             } catch (Exception e) {
                 logger.error("Exception when unmarshalling the test case with id ["+testCaseId+"]", e);
@@ -52,34 +52,16 @@ public class LocalTestCaseRepository implements ITestCaseRepository {
         return null;
     }
 
-    @Override
-    public boolean isTestSuiteAvailable(String testSuiteId) {
-        return isTestResourceAvailable(testSuiteId, false);
-    }
-
-    @Override
-    public TestSuite getTestSuite(String testSuiteId) {
-        if(isTestSuiteAvailable(testSuiteId)){
-            try {
-                File resource = getTestResource(testSuiteId, false);
-                return XMLUtils.unmarshal(TestSuite.class, new StreamSource(resource));
-            } catch (Exception e) {
-	            logger.error("Exception when unmarshalling the test suite with id ["+testSuiteId+"]", e);
-            }
-        }
-        return null;
-    }
-
 	@Override
-	public boolean isScriptletAvailable(String scriptletId) {
-        return isTestResourceAvailable(scriptletId, false);
+	public boolean isScriptletAvailable(String testCaseId, String scriptletId) {
+        return isTestResourceAvailable(testCaseId, scriptletId, false);
 	}
 
 	@Override
-	public Scriptlet getScriptlet(String scriptletId) {
-        if(isScriptletAvailable(scriptletId)){
+	public Scriptlet getScriptlet(String testCaseId, String scriptletId) {
+        if(isScriptletAvailable(testCaseId, scriptletId)){
             try {
-                File resource = getTestResource(scriptletId, false);
+                File resource = getTestResource(testCaseId, scriptletId, false);
                 return XMLUtils.unmarshal(Scriptlet.class, new StreamSource(resource));
             } catch (Exception e) {
 	            logger.error("Exception when unmarshalling the scriptlet with id ["+scriptletId+"]", e);
@@ -89,7 +71,7 @@ public class LocalTestCaseRepository implements ITestCaseRepository {
 	}
 
     @Override
-    public InputStream getTestArtifact(String pathToResource) {
+    public InputStream getTestArtifact(String testCaseId, String pathToResource) {
         try {
             String path = configuration.getRepositoryLocation() + pathToResource;
             File artifact = new File( path );
@@ -103,7 +85,7 @@ public class LocalTestCaseRepository implements ITestCaseRepository {
     }
 
 	@Override
-	public boolean isTestArtifactAvailable(String pathToResource) {
+	public boolean isTestArtifactAvailable(String testCaseId, String pathToResource) {
 		String path = configuration.getRepositoryLocation() + pathToResource;
 
 		File artifact = new File(path);
@@ -116,7 +98,7 @@ public class LocalTestCaseRepository implements ITestCaseRepository {
      * @return Reference to a file with given resourceId
      * @throws URISyntaxException
      */
-    private File getTestResource(String resourceId, boolean testCase) {
+    private File getTestResource(String testCaseId, String resourceId, boolean testCase) {
         //here we guarantee that the resource is an XML file
         String path;
         if (testCase) {
@@ -133,8 +115,8 @@ public class LocalTestCaseRepository implements ITestCaseRepository {
      * @param resourceId Id of the resource
      * @return Boolean indicating the existence of the resource
      */
-    private boolean isTestResourceAvailable(String resourceId, boolean testCase) {
-        File resource = getTestResource(resourceId, testCase);
+    private boolean isTestResourceAvailable(String testCaseId, String resourceId, boolean testCase) {
+        File resource = getTestResource(testCaseId, resourceId, testCase);
         return resource.exists();
     }
 

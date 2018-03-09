@@ -1,8 +1,10 @@
 package managers
 
+import models.Specifications
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.libs.concurrent.Execution.Implicits._
+import utils.RepositoryUtils
 
 import scala.concurrent.Future
 import scala.slick.driver.MySQLDriver.simple._
@@ -37,12 +39,20 @@ object SpecificationManager extends BaseManager {
     }
   }
 
+  def getSpecificationById(specId: Long): Specifications = {
+    DB.withSession { implicit session =>
+      val spec = PersistenceSchema.specifications.filter(_.id === specId).firstOption.get
+      spec
+    }
+  }
+
   def delete(specId: Long)(implicit session: Session) = {
     PersistenceSchema.specificationHasActors.filter(_.specId === specId).delete
     val ids = PersistenceSchema.testSuites.filter(_.specification === specId).map(_.id).list
     ids foreach { id =>
       TestSuiteManager.undeployTestSuite(id)
     }
+    RepositoryUtils.deleteSpecificationTestSuiteFolder(specId)
     PersistenceSchema.specifications.filter(_.id === specId).delete
   }
 

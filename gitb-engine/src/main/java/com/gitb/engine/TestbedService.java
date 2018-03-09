@@ -2,7 +2,6 @@ package com.gitb.engine;
 
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import com.gitb.core.Actor;
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
@@ -41,22 +40,6 @@ public class TestbedService {
 			+ " ) ");
 
 		return TestCaseManager.getTestCasePresentation(testCaseId);
-	}
-
-	/**
-	 * Return the Actor Definition (required configuration parameters) given the TestSuite.id and the Actor.id
-	 *
-	 * @param testSuiteId
-	 * @param actorId
-	 * @return
-	 */
-	public static Actor getActorDefinition(String testSuiteId, String actorId) {
-		logger.debug("getActorDefinition"
-			+ " ( "
-			+ actorId
-			+ " ) ");
-
-		return TestCaseManager.getActorDescription(testSuiteId, actorId);
 	}
 
 	/**

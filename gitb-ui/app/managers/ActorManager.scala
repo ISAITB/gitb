@@ -1,7 +1,5 @@
 package managers
 
-import managers.ConformanceManager._
-import models._
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.libs.concurrent.Execution.Implicits._

@@ -24,11 +24,23 @@ object TestCaseManager extends BaseManager {
 		}
 	}
 
+	def getTestCaseForId(testCaseId:String) = {
+		DB.withSession { implicit session =>
+			try {
+				val tc = PersistenceSchema.testCases.filter(_.id === testCaseId.toLong).first
+				Some(new TestCase(tc))
+			}
+			catch {
+				case e: Exception => None
+			}
+		}
+	}
+
 	def getTestCase(testCaseId:String) = {
 		Future {
 			DB.withSession { implicit session =>
 				try {
-					val tc = PersistenceSchema.testCases.filter(_.shortname === testCaseId).first
+					val tc = PersistenceSchema.testCases.filter(_.id === testCaseId.toLong).first
 
 					Some(new TestCase(tc))
 				}

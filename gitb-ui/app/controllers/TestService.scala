@@ -63,23 +63,11 @@ class TestService extends Controller{
    */
   def getActorDefinition(actor_id:String) = Action.async {
     ConformanceManager.getActorDefinition(actor_id.toLong) map { actor =>
-    val json = JsonUtil.jsActor(actor).toString()
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
-    /*  Used to get definition from TestbedService
-    Future {
-      val request: GetActorDefinitionRequest = new GetActorDefinitionRequest
-      request.setActorId(actor_id)
-
-      TestService.port.getActorDefinition(request)
-    } map { response =>
-      val json = JacksonUtil.serializeActorPresentation(response.getActor)
-      logger.debug("[Actor] " + json)
+      val json = JsonUtil.jsActor(actor).toString()
       ResponseConstructor.constructJsonResponse(json)
     }
-    */
   }
+
   /**
    * Initiates the test case
    */

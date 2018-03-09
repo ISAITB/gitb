@@ -366,8 +366,8 @@ public class TestCaseContext {
 
 	            // find the scriptlet in repositories
 	            ITestCaseRepository repository = ModuleManager.getInstance().getTestCaseRepository();
-	            if(repository.isScriptletAvailable(((CallStep) step).getPath())) {
-		            scriptlet = repository.getScriptlet(((CallStep) step).getPath());
+	            if(repository.isScriptletAvailable(getTestCase().getId(), ((CallStep) step).getPath())) {
+		            scriptlet = repository.getScriptlet(getTestCase().getId(), ((CallStep) step).getPath());
 	            }
 
 	            if(scriptlet != null) {

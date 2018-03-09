@@ -3,7 +3,7 @@ package com.gitb.engine;
 import com.gitb.tpl.TestCase;
 import org.junit.Test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * Created by serbay on 10/15/14.

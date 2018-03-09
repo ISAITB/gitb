@@ -19,9 +19,11 @@ public class XSDResolver implements LSResourceResolver {
      * Path to the folder that contains root resource (i.e. and XSD schema or Schematron file, etc)
      */
     private String resource;
+    private String testCaseId;
 
-    public XSDResolver(String path) {
+    public XSDResolver(String testCaseId, String path) {
         this.resource = path;
+        this.testCaseId = testCaseId;
     }
 
     @Override
@@ -40,7 +42,7 @@ public class XSDResolver implements LSResourceResolver {
 
         artifactPath = parentFolder + systemId;
 
-        InputStream resource  = repository.getTestArtifact(artifactPath);
+        InputStream resource  = repository.getTestArtifact(testCaseId, artifactPath);
         if(resource != null) {
             // the "/" prevents the system to add the path where mvn command executed.
             return new Input(publicId, systemId, "/" + artifactPath, resource);

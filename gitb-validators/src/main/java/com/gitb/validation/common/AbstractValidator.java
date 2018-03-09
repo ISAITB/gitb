@@ -14,10 +14,19 @@ import java.io.InputStream;
 public abstract class AbstractValidator implements IValidationHandler {
 
     protected ValidationModule validatorDefinition;
+    private String testCaseId;
 
     @Override
     public ValidationModule getModuleDefinition() {
         return this.validatorDefinition;
+    }
+
+    public String getTestCaseId() {
+        return testCaseId;
+    }
+
+    public void setTestCaseId(String testCaseId) {
+        this.testCaseId = testCaseId;
     }
 
     protected static ValidationModule readModuleDefinition(String fileName) {

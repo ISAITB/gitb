@@ -63,10 +63,10 @@ public class SchematronValidator extends AbstractValidator {
         ISchematronResource schematron;
 
         if(sch.getSchemaLocation().endsWith(".sch")) {
-            schematron  = new SchematronResourceSCH(resource, null, new SchematronResolver());
+            schematron  = new SchematronResourceSCH(resource, null, new SchematronResolver(getTestCaseId()));
         }
         else if(sch.getSchemaLocation().endsWith(".xsl")) {
-            schematron  = new SchematronResourceXSLT(resource, null, new SchematronResolver());
+            schematron  = new SchematronResourceXSLT(resource, null, new SchematronResolver(getTestCaseId()));
         }
         else {
             throw new GITBEngineInternalError("Invalid schematron extension. Must be either .sch or .xsl");

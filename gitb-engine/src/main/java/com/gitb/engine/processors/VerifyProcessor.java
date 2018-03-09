@@ -1,10 +1,10 @@
 package com.gitb.engine.processors;
 
+import com.gitb.ModuleManager;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.TestModule;
 import com.gitb.core.TypedParameter;
 import com.gitb.core.UsageEnumeration;
-import com.gitb.ModuleManager;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -18,8 +18,7 @@ import com.gitb.types.DataType;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.validation.IValidationHandler;
-import com.gitb.vs.ValidationService_Service;
-import com.helger.commons.url.URLValidator;
+import com.gitb.validation.common.AbstractValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,6 +51,10 @@ public class VerifyProcessor implements IProcessor {
 			validator = getRemoteValidator(verify.getHandler());
 		} else {
 			validator = ModuleManager.getInstance().getValidationHandler(verify.getHandler());
+			// This is a local validator.
+			if (validator instanceof AbstractValidator) {
+				((AbstractValidator)validator).setTestCaseId(scope.getContext().getTestCase().getId());
+			}
 		}
 		if (validator == null) {
 			throw new IllegalStateException("Validation handler for ["+verify.getHandler()+"] could not be resolved");

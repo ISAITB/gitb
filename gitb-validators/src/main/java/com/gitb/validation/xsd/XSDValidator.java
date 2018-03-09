@@ -63,7 +63,7 @@ public class XSDValidator extends AbstractValidator {
         //resolve schema
         SchemaFactory schemaFactory = SchemaFactory.newInstance(SCHEMA_LANGUAGE);
         schemaFactory.setErrorHandler(handler);
-        schemaFactory.setResourceResolver(new XSDResolver(xsd.getSchemaLocation()));
+        schemaFactory.setResourceResolver(new XSDResolver(getTestCaseId(), xsd.getSchemaLocation()));
         Schema schema;
         try {
             schema = schemaFactory.newSchema(new DOMSource((Node)xsd.getValue()));
