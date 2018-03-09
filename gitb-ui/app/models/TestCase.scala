@@ -17,6 +17,11 @@ case class TestCases(
 											targetOptions: Option[String] = None
 	                    ) {
 
+	def withPath(path: String): TestCases = {
+		TestCases(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate,
+			this.modificationDate, this.description, this.keywords, this.testCaseType, path, this.targetSpec, this.targetActors, this.targetOptions)
+	}
+
 	def withTargets(spec: Long, targetActors: Option[String] = None, targetOptions:Option[String] = None): TestCases = {
 		TestCases(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate,
 			this.modificationDate, this.description, this.keywords, this.testCaseType, this.path, targetSpec, targetActors, targetOptions)
