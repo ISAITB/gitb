@@ -276,26 +276,13 @@ object ReportManager extends BaseManager {
     }
   }
 
-  def createTestReport(sessionId: String, systemId: Long, testCaseName: String, actorId: Long, presentation: String): Future[Unit] = {
+  def createTestReport(sessionId: String, systemId: Long, testId: String, actorId: Long, presentation: String): Future[Unit] = {
     Future {
       DB.withSession {
         implicit session =>
           val initialStatus = TestResultType.UNDEFINED.value()
           val startTime = TimeUtil.getCurrentTimestamp()
-
-          val testCaseId = {
-            val testCaseOptionId = PersistenceSchema.testCases
-              .filter(_.shortname === testCaseName)
-              .map(_.id)
-              .firstOption
-
-            testCaseOptionId match {
-              case Some(id) => id
-              case None => -1
-            }
-          }
-
-          PersistenceSchema.testResults.insert(TestResult(sessionId, systemId, actorId, testCaseId, initialStatus, startTime, None, None, presentation))
+          PersistenceSchema.testResults.insert(TestResult(sessionId, systemId, actorId, testId.toLong, initialStatus, startTime, None, None, presentation))
       }
     }
   }
