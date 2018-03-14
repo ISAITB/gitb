@@ -88,9 +88,6 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				abstract: true
 				resolve:
 					profile: profile
-			# 'app.main':
-			# 	url: '/'
-			# 	templateUrl: 'assets/views/main.html'
 			'app.home':
 				url: '/'
 				templateUrl: 'assets/views/home.html'
@@ -106,24 +103,15 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.recover':
 				url: '/recover'
 				templateUrl: 'assets/views/recover.html'
-			#'app.report':
-			#	url: '/report'
-			#	templateUrl: 'assets/views/report.html'
 			'app.tests':
 				url: '/tests'
 				abstract: true
 				templateUrl: 'assets/views/tests/index.html'
 			'app.tests.execution':
 				url: '/:test_id?systemId&actorId&specId'
-				templateUrl: 'assets/views/tests/execution-v2.html' #'assets/views/tests/execution.html'
-				#abstract:true
-				controller: 'TestExecutionControllerV2' #'TestExecutionController'
+				templateUrl: 'assets/views/tests/execution-v2.html'
+				controller: 'TestExecutionControllerV2'
 				controllerAs: 'testExecutionCtrl'
-			#'app.tests.execution.presentation':
-				#url: ''
-				#templateUrl: 'assets/views/test-presentation.html'
-				#controller: 'TestPresentationController'
-				#controllerAs: 'testPresentationCtrl'
 			'app.reports':
 				url: '/reports/:session_id'
 				templateUrl: 'assets/views/result.html'
@@ -135,9 +123,6 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/test-presentation.html'
 				controller: 'TestPresentationController'
 				controllerAs: 'testPresentationCtrl'
-#			'app.tutorial':
-#        url: '/tutorial'
-#        templateUrl: 'assets/views/tutorial.html'
 			'app.systems':
 				url: '/systems'
 				abstract: true
@@ -249,52 +234,6 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/domains/detail.html'
 				controller: 'DomainDetailsController'
 				controllerAs: 'domainDetailsCtrl'
-			'app.admin.domains.detail.actors':
-				url: '/actors'
-				template: '<div ui-view/>'
-				abstract: true
-			'app.admin.domains.detail.actors.create':
-				url: '/create'
-				templateUrl: 'assets/views/admin/domains/create-actor.html'
-				controller: 'CreateActorController'
-				controllerAs: 'createActorCtrl'
-			'app.admin.domains.detail.actors.detail':
-				url: '/:actor_id'
-				template: '<div ui-view/>'
-				abstract: true
-			'app.admin.domains.detail.actors.detail.list':
-				url: ''
-				templateUrl: 'assets/views/admin/domains/detail-actor.html'
-				controller: 'ActorDetailsController'
-				controllerAs: 'actorDetailsCtrl'
-			'app.admin.domains.detail.actors.detail.endpoints':
-				url: '/endpoints'
-				template: '<div ui-view/>'
-				abstract: true
-			'app.admin.domains.detail.actors.detail.endpoints.create':
-				url: '/create'
-				templateUrl: 'assets/views/admin/domains/create-endpoint.html'
-				controller: 'CreateEndpointController'
-				controllerAs: 'createEndpointCtrl'
-			'app.admin.domains.detail.actors.detail.endpoints.detail':
-				url: '/:endpoint_id'
-				templateUrl: 'assets/views/admin/domains/detail-endpoint.html'
-				controller: 'EndpointDetailsController'
-				controllerAs: 'endpointDetailsCtrl'
-			'app.admin.domains.detail.actors.detail.options':
-				url: '/options'
-				template: '<div ui-view/>'
-				abstract: true
-			'app.admin.domains.detail.actors.detail.options.create':
-				url: '/create'
-				templateUrl: 'assets/views/admin/domains/create-option.html'
-				controller: 'CreateOptionController'
-				controllerAs: 'createOptionCtrl'
-			'app.admin.domains.detail.actors.detail.options.detail':
-				url: '/:option_id'
-				templateUrl: 'assets/views/admin/domains/detail-option.html'
-				controller: 'OptionDetailsController'
-				controllerAs: 'optionDetailsCtrl'
 			'app.admin.domains.detail.specifications':
 				url: '/specifications'
 				template: '<div ui-view/>'
@@ -331,6 +270,34 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/domains/detail-actor.html'
 				controller: 'ActorDetailsController'
 				controllerAs: 'actorDetailsCtrl'
+			'app.admin.domains.detail.specifications.detail.actors.detail.endpoints':
+				url: '/endpoints'
+				template: '<div ui-view/>'
+				abstract: true
+			'app.admin.domains.detail.specifications.detail.actors.detail.endpoints.create':
+				url: '/create'
+				templateUrl: 'assets/views/admin/domains/create-endpoint.html'
+				controller: 'CreateEndpointController'
+				controllerAs: 'createEndpointCtrl'
+			'app.admin.domains.detail.specifications.detail.actors.detail.endpoints.detail':
+				url: '/:endpoint_id'
+				templateUrl: 'assets/views/admin/domains/detail-endpoint.html'
+				controller: 'EndpointDetailsController'
+				controllerAs: 'endpointDetailsCtrl'
+			'app.admin.domains.detail.actors.detail.options':
+				url: '/options'
+				template: '<div ui-view/>'
+				abstract: true
+			'app.admin.domains.detail.actors.detail.options.create':
+				url: '/create'
+				templateUrl: 'assets/views/admin/domains/create-option.html'
+				controller: 'CreateOptionController'
+				controllerAs: 'createOptionCtrl'
+			'app.admin.domains.detail.actors.detail.options.detail':
+				url: '/:option_id'
+				templateUrl: 'assets/views/admin/domains/detail-option.html'
+				controller: 'OptionDetailsController'
+				controllerAs: 'optionDetailsCtrl'
 			'app.admin.suites':
 				url: '/suites'
 				abstract: true

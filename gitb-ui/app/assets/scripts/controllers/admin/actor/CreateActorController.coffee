@@ -14,11 +14,11 @@ class CreateActorController
 		@actor.name?.length > 0
 			@ConformanceService.createActor @actor.actorId, @actor.name, @actor.description, @domainId, @specificationId
 				.then () =>
-					if @specificationId?
-						@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: @specificationId}
-					else
-						@$state.go 'app.admin.domains.detail.list', {id: @domainId}
+					@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: @specificationId}
 				.catch (error) =>
 					@ErrorService.showErrorMessage(error)
+
+	cancel: () =>
+		@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: @specificationId}
 
 @controllers.controller 'CreateActorController', CreateActorController

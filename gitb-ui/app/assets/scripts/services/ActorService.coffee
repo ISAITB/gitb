@@ -10,13 +10,15 @@ class ActorService
       path: jsRoutes.controllers.ActorService.deleteActor(actorId).url
       authenticate: true
 
-  updateActor: (domainId, shortName, fullName, description) ->
+  updateActor: (id, actorId, name, description, domainId, specificationId) ->
     @RestService.post({
-      path: jsRoutes.controllers.ActorService.updateActor(domainId).url,
+      path: jsRoutes.controllers.ActorService.updateActor(id).url,
       data: {
-        sname: shortName
-        fname: fullName
+        actor_id: actorId
+        name: name
         description: description
+        domain_id: domainId
+        spec_id: specificationId
       }
       authenticate: true
     })

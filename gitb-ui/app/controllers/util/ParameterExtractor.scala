@@ -161,12 +161,36 @@ object ParameterExtractor {
       case Some(i) => i.toLong
       case _ => 0l
     }
-		val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
-		val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
-		val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+		val actorId:String = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID)
+		val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
+		val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
 		val domainId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
-		Actors(id, sname, fname, descr, domainId)
+		Actors(id, actorId, name, description, domainId)
 	}
+
+  def extractEndpoint(request:Request[AnyContent]):Endpoints = {
+    val id:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ID) match {
+      case Some(i) => i.toLong
+      case _ => 0l
+    }
+    val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
+    val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+    val actorId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    Endpoints(id, name, desc, actorId)
+  }
+
+  def extractParameter(request:Request[AnyContent]):models.Parameters = {
+      val id:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ID) match {
+      case Some(i) => i.toLong
+      case _ => 0l
+    }
+    val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
+    val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+    val use:String = ParameterExtractor.requiredBodyParameter(request, Parameters.USE)
+    val kind:String = ParameterExtractor.requiredBodyParameter(request, Parameters.KIND)
+    val endpointId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.ENDPOINT_ID).toLong
+    models.Parameters(id, name, desc, use, kind, endpointId)
+  }
 
   def extractLandingPageInfo(request:Request[AnyContent]):LandingPages = {
     val name = requiredBodyParameter(request, Parameters.NAME)

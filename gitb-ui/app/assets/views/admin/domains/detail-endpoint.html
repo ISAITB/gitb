@@ -14,6 +14,7 @@
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h4 class="title">Parameters</h4>
+			<a href="" ng-click="endpointDetailsCtrl.addParameter()" class="btn btn-default pull-right">Create parameter</a>
 		</div>
 		<div table-directive columns="endpointDetailsCtrl.parameterTableColumns" data="endpointDetailsCtrl.endpoint.parameters" on-select="endpointDetailsCtrl.onParameterSelect"></div>
 	</div>

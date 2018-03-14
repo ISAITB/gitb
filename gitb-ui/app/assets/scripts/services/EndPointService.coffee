@@ -10,12 +10,13 @@ class EndPointService
       path: jsRoutes.controllers.EndPointService.deleteEndPoint(endPointId).url
       authenticate: true
 
-  updateEndPoint: (endPointId, name, description) ->
+  updateEndPoint: (endPointId, name, description, actorId) ->
     @RestService.post({
       path: jsRoutes.controllers.EndPointService.updateEndPoint(endPointId).url,
       data: {
         name: name
         description: description
+        actor_id: actorId
       }
       authenticate: true
     })

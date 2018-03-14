@@ -47,13 +47,20 @@ object SpecificationManager extends BaseManager {
   }
 
   def delete(specId: Long)(implicit session: Session) = {
-    PersistenceSchema.specificationHasActors.filter(_.specId === specId).delete
-    val ids = PersistenceSchema.testSuites.filter(_.specification === specId).map(_.id).list
-    ids foreach { id =>
-      TestSuiteManager.undeployTestSuite(id)
+    DB.withTransaction { implicit session =>
+      // Delete also actors from the domain (they are now linked only to specifications
+      val actorIds = PersistenceSchema.specificationHasActors.filter(_.specId === specId).map(_.actorId).list
+      actorIds foreach { id =>
+        ActorManager.deleteActor(id)
+      }
+      PersistenceSchema.specificationHasActors.filter(_.specId === specId).delete
+      val ids = PersistenceSchema.testSuites.filter(_.specification === specId).map(_.id).list
+      ids foreach { id =>
+        TestSuiteManager.undeployTestSuite(id)
+      }
+      RepositoryUtils.deleteSpecificationTestSuiteFolder(specId)
+      PersistenceSchema.specifications.filter(_.id === specId).delete
     }
-    RepositoryUtils.deleteSpecificationTestSuiteFolder(specId)
-    PersistenceSchema.specifications.filter(_.id === specId).delete
   }
 
   def updateSpecification(specId: Long, sname: String, fname: String, urls: Option[String], diagram: Option[String], descr: Option[String], specificationType: Option[Short]) = {
