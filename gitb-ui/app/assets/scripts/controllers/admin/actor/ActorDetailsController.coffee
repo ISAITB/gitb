@@ -10,6 +10,7 @@ class ActorDetailsController
 		@endpointRepresentations = []
 
 		@domainId = @$stateParams.id
+		@specificationId = @$stateParams.spec_id
 		@actorId = @$stateParams.actor_id
 
 		@optionTableColumns = [
@@ -74,19 +75,19 @@ class ActorDetailsController
 		.then () =>
 			@ActorService.deleteActor(@actorId)
 			.then () =>
-				@$state.go 'app.admin.domains.detail.list', {id: @domainId}
+				@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: @specificationId}
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 
 	saveChanges: () =>
-		@ActorService.updateActor(@actorId, @actor.actorId, @actor.name, @actor.description)
+		@ActorService.updateActor(@actorId, @actor.actorId, @actor.name, @actor.description, @domainId, @specificationId)
 		.then () =>
-			@$state.go 'app.admin.domains.detail.list', {id: @domainId}
+			@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: @specificationId}
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
 	onEndpointSelect: (endpoint) =>
-		@$state.go 'app.admin.domains.detail.actors.detail.endpoints.detail', {id: @domainId, actor_id: @actorId, endpoint_id: endpoint.id}
+		@$state.go 'app.admin.domains.detail.specifications.detail.actors.detail.endpoints.detail', {id: @domainId, spec_id: @specificationId, actor_id: @actorId, endpoint_id: endpoint.id}
 
 
 @controllers.controller 'ActorDetailsController', ActorDetailsController
