@@ -15,10 +15,9 @@ class TestSuiteService extends Controller {
 
 	private final val logger: Logger = LoggerFactory.getLogger(classOf[TestSuiteService])
 
-	def undeployTestSuite(testSuiteId: Long) = Action.async {
-		TestSuiteManager.undeployTestSuite(testSuiteId) map { unit =>
-			ResponseConstructor.constructEmptyResponse
-		}
+	def undeployTestSuite(testSuiteId: Long) = Action.apply {
+		TestSuiteManager.undeployTestSuite(testSuiteId)
+		ResponseConstructor.constructEmptyResponse
 	}
 
 	def getTestSuites() = Action.async { request =>
