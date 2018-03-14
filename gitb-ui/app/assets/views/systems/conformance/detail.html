@@ -2,21 +2,23 @@
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h5 class="title">Conformance Statement Details</h5>
-
 			<a href="" ng-click="conformanceStatementDetailCtrl.deleteConformanceStatement()" class="btn btn-default pull-right">Delete</a>
 		</div>
 		<div class="panel-body">
-			<div class="row">
-				<div class="col-md-6">
-					<p><strong>Actor Details</strong></p>
-					<p>ID: {{conformanceStatementDetailCtrl.conformanceStatementRepr.actorId}}</p>
-					<p>Name: {{conformanceStatementDetailCtrl.conformanceStatementRepr.actorName}}</p>
-				</div>
-				<div class="col-md-6">
-					<p><strong>Domain Details</strong></p>
-					<p>Name: {{conformanceStatementDetailCtrl.domain.fname}}</p>
-					<p>Description: {{conformanceStatementDetailCtrl.domain.description}}</p>
-				</div>
+			<div class="row row-display-first">
+				<div class="col-md-2"><strong>Domain</strong></div>
+				<div class="col-md-10">{{conformanceStatementDetailCtrl.domain.fname}}</div>
+				<div class="col-md-10 col-md-offset-2 row-display-inner" ng-if="conformanceStatementDetailCtrl.domain.description">{{conformanceStatementDetailCtrl.domain.description}}</div>
+			</div>
+			<div class="row row-display">
+				<div class="col-md-2"><strong>Specification</strong></div>
+				<div class="col-md-10">{{conformanceStatementDetailCtrl.specification.fname}}</div>
+				<div class="col-md-10 col-md-offset-2 row-display-inner" ng-if="conformanceStatementDetailCtrl.specification.description">{{conformanceStatementDetailCtrl.specification.description}}</div>
+			</div>
+			<div class="row row-display-last">
+				<div class="col-md-2"><strong>Actor</strong></div>
+				<div class="col-md-10">{{conformanceStatementDetailCtrl.conformanceStatementRepr.actorName}}</div>
+				<div class="col-md-10 col-md-offset-2 row-display-inner" ng-if="conformanceStatementDetailCtrl.conformanceStatementRepr.actorDescription">{{conformanceStatementDetailCtrl.conformanceStatementRepr.actorDescription}}</div>
 			</div>
 		</div>
 	</div>

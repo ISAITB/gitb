@@ -1,7 +1,7 @@
 class ConformanceStatementDetailController
 
-  @$inject = ['$log', '$scope', '$state', '$stateParams', '$modal', 'SystemService', 'ConformanceService', 'ErrorService', 'Constants']
-  constructor: (@$log, @$scope, @$state, @$stateParams, @$modal, @SystemService, @ConformanceService, @ErrorService, @Constants) ->
+  @$inject = ['$log', '$scope', '$state', '$stateParams', '$modal', 'SystemService', 'ConformanceService', 'ErrorService', 'Constants', 'ConfirmationDialogService']
+  constructor: (@$log, @$scope, @$state, @$stateParams, @$modal, @SystemService, @ConformanceService, @ErrorService, @Constants, @ConfirmationDialogService) ->
     @$log.debug "Constructing ConformanceStatementDetailController"
 
     @systemId = @$stateParams['id']
@@ -10,6 +10,7 @@ class ConformanceStatementDetailController
     @conformanceStatement = null
     @conformanceStatementRepr = null
     @domain = null
+    @specification = null
     @endpoints = []
     @endpointRepresentations = []
     @configurations = []
@@ -73,6 +74,18 @@ class ConformanceStatementDetailController
     .then (data) =>
       @conformanceStatement = _.head data
       @constructConformanceStatementRepresentation @conformanceStatement
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+    @ConformanceService.getDomainForSpecification @specId
+    .then (data) =>
+      @domain = data
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+    @ConformanceService.getSpecificationsWithIds([@specId])
+    .then (data) =>
+      @specification = _.head data
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -172,11 +185,13 @@ class ConformanceStatementDetailController
       @constructEndpointRepresentations()
 
   deleteConformanceStatement: () ->
-    @SystemService.deleteConformanceStatement(@systemId, [@actorId])
+    @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this conformance statement?", "Yes", "No")
     .then () =>
-        @$state.go("app.systems.detail.conformance.list", {id: @systemId})
-    .catch (error) =>
-        @ErrorService.showErrorMessage(error)
+      @SystemService.deleteConformanceStatement(@systemId, [@actorId])
+      .then () =>
+          @$state.go("app.systems.detail.conformance.list", {id: @systemId})
+      .catch (error) =>
+          @ErrorService.showErrorMessage(error)
 
 class EditEndpointConfigurationController
   name: 'EditEndpointConfigurationController'

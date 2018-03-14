@@ -24,6 +24,19 @@ object ConformanceManager extends BaseManager {
 		}
 	}
 
+	def getDomainOfSpecification(specificationId: Long ): Domain = {
+		DB.withSession { implicit session =>
+			var query = for {
+				domain <- PersistenceSchema.domains
+				specification <- PersistenceSchema.specifications if specification.domain === domain.id
+			} yield (domain, specification)
+			val result = query
+				.filter(_._2.id === specificationId)
+				.firstOption
+			result.get._1
+		}
+	}
+
   def getDomains(ids: Option[List[Long]] = None):Future[List[Domain]] = {
     Future{
       DB.withSession { implicit session =>
@@ -128,16 +141,11 @@ object ConformanceManager extends BaseManager {
 		}
 	}
 
-	def createActor(actor: Actors, specificationId:Option[Long] = None) = {
-		Future {
-			DB.withSession { implicit session =>
-				PersistenceSchema.actors.insert(actor)
-
-				if(specificationId.isDefined) {
-					PersistenceSchema.specificationHasActors.insert(specificationId.get, actor.id)
-				}
-				Unit
-			}
+	def createActor(actor: Actors, specificationId: Long) = {
+		DB.withSession { implicit session =>
+			val savedActorId = PersistenceSchema.actors.returning(PersistenceSchema.actors.map(_.id)).insert(actor)
+			PersistenceSchema.specificationHasActors.insert(specificationId, savedActorId)
+			savedActorId
 		}
 	}
 
@@ -167,23 +175,18 @@ object ConformanceManager extends BaseManager {
 		}
 	}
 
-  def getActorsWithSpecificationId(spec:Long):Future[List[Actors]] = {
-    Future{
-      DB.withSession { implicit session =>
-        var actors: List[Actors] = List()
-
-        //1) Get the names of the actors of given specification
-        val actorIds = PersistenceSchema.specificationHasActors.filter(_.specId === spec).map(_.actorId).list
-
-        //2) Iterate over all actor names and get their rows
-        actorIds.foreach{ actorId =>
-          val actor = PersistenceSchema.actors.filter(_.id === actorId).firstOption.get
-          actors ::= actor
-        }
-
-        actors
-      }
-    }
+  def getActorsWithSpecificationId(spec:Long): List[Actors] = {
+		DB.withSession { implicit session =>
+			var actors: List[Actors] = List()
+			var query = for {
+				actor <- PersistenceSchema.actors
+				specificationHasActors <- PersistenceSchema.specificationHasActors if specificationHasActors.actorId === actor.id
+			} yield (actor, specificationHasActors)
+			query.filter(_._2.specId === spec).list.foreach{ result =>
+				actors ::= result._1
+			}
+			actors
+		}
   }
 
   def getActorDefinition(actorId:Long):Future[Actors] = {
