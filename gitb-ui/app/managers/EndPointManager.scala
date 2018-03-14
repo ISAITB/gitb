@@ -10,15 +10,22 @@ import scala.slick.driver.MySQLDriver.simple._
 object EndPointManager extends BaseManager {
   def logger = LoggerFactory.getLogger("EndPointManager")
 
-  /**
-   * Checks if actor exists
-   */
-  def checkEndPointExists(endPointId: Long): Future[Boolean] = {
-    Future {
-      DB.withSession { implicit session =>
-        val firstOption = PersistenceSchema.endpoints.filter(_.id === endPointId).firstOption
-        firstOption.isDefined
+  def createEndpoint(endpoint: models.Endpoints) = {
+    DB.withSession { implicit session =>
+      PersistenceSchema.endpoints.returning(PersistenceSchema.endpoints.map(_.id)).insert(endpoint)
+    }
+  }
+
+  def checkEndPointExistsForActor(endPointName: String, actorId: Long, otherThanId: Option[Long]): Boolean = {
+    DB.withSession { implicit session =>
+      var endpointQuery = PersistenceSchema.endpoints
+        .filter(_.name === endPointName)
+        .filter(_.actor === actorId)
+      if (otherThanId.isDefined) {
+        endpointQuery = endpointQuery.filter(_.id =!= otherThanId.get)
       }
+      val endpoint = endpointQuery.firstOption
+      endpoint.isDefined
     }
   }
 
@@ -29,11 +36,9 @@ object EndPointManager extends BaseManager {
     }
   }
 
-  def deleteEndPoint(endPointId: Long) = Future[Unit] {
-    Future {
-      DB.withTransaction { implicit session =>
-        delete(endPointId)
-      }
+  def deleteEndPoint(endPointId: Long) = {
+    DB.withTransaction { implicit session =>
+      delete(endPointId)
     }
   }
 

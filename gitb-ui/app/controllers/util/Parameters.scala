@@ -31,6 +31,8 @@ object Parameters {
 	val IDS      = "ids"
   val TYPE     = "type"
   val DESCRIPTION = "description"
+  val USE = "use"
+  val KIND = "kind"
 
   // Landing page Service
   val DEFAULT = "default_flag"
@@ -77,6 +79,8 @@ object Parameters {
 	val SPEC_TYPE = "spec_type"
 	val DOMAIN_ID = "domain_id"
 	val SPECIFICATION_ID = "spec_id"
+  val PENDING_TEST_SUITE_ID = "pending_id"
+  val PENDING_TEST_SUITE_ACTION = "pending_action"
 
   //Community Service parameters
   val COMMUNITY_ID = "community_id"
@@ -85,6 +89,7 @@ object Parameters {
 
   //TestService parameters
   val ACTOR_ID   = "actor_id"
+  val ENDPOINT_ID   = "endpoint_id"
   val TEST_ID    = "test_id"
   val INCLUDE_CONTEXT = "include_context"
   val SESSION_ID = "session_id"

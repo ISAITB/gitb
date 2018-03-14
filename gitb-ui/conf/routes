@@ -47,6 +47,7 @@ GET	    /vendor/systems                     @controllers.SystemService.getSystem
 POST	/vendor/systems/register            @controllers.SystemService.registerSystemWithOrganization
 
 # Test Case management API
+GET	    /specDomain                         @controllers.ConformanceService.getDomainOfSpecification(spec_id: Long)
 GET	    /domains                            @controllers.ConformanceService.getDomains
 GET	    /domains/community                  @controllers.ConformanceService.getCommunityDomain
 POST    /domains                            @controllers.ConformanceService.createDomain
@@ -60,6 +61,7 @@ POST    /specs/:spec_id/actors/:actor_id    @controllers.ConformanceService.addA
 GET	    /specs/:spec_id/actors              @controllers.ConformanceService.getSpecActors(spec_id : Long)
 GET	    /specs/:spec_id/suites              @controllers.ConformanceService.getSpecTestSuites(spec_id : Long)
 POST    /specs/:spec_id/deploy              @controllers.ConformanceService.deployTestSuite(spec_id: Long)
+POST    /specs/:spec_id/deploy/resolve      @controllers.ConformanceService.resolvePendingTestSuite(spec_id: Long)
 DELETE  /specs/:spec_id                     @controllers.SpecificationService.deleteSpecification(spec_id: Long)
 POST    /specs/:spec_id                     @controllers.SpecificationService.updateSpecification(spec_id: Long)
 GET     /actors                             @controllers.ConformanceService.getActors
@@ -70,8 +72,12 @@ GET	    /actors/:actor_id/tests             @controllers.ConformanceService.getA
 GET	    /actors/:actor_id/suites            @controllers.ConformanceService.getActorTestSuites(actor_id : Long)
 GET     /actors/:actor_id/options           @controllers.ConformanceService.getOptionsForActor(actor_id : Long)
 GET     /actors/:actor_id/endpoints         @controllers.ConformanceService.getEndpointsForActor(actor_id : Long)
+POST    /endpoints                          @controllers.ConformanceService.createEndpoint
 DELETE  /endpoints/:endpoint_id             @controllers.EndPointService.deleteEndPoint(endpoint_id : Long)
 POST    /endpoints/:endpoint_id             @controllers.EndPointService.updateEndPoint(endpoint_id : Long)
+POST    /parameters                         @controllers.ConformanceService.createParameter
+DELETE  /parameters/:parameter_id           @controllers.ParameterService.deleteParameter(parameter_id : Long)
+POST    /parameters/:parameter_id           @controllers.ParameterService.updateParameter(parameter_id : Long)
 POST    /options                            @controllers.ConformanceService.createOption
 GET     /options                            @controllers.ConformanceService.getOptions
 

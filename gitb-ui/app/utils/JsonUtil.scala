@@ -1,12 +1,11 @@
 package utils
 
-import exceptions.{ErrorCodes, InvalidRequestException}
+import java.util
+
 import models.Enums.TestResultStatus
 import models._
 import play.api.libs.json._
-
-import scala.util.parsing.json.JSONObject
-
+import scala.collection.JavaConverters._
 object JsonUtil {
 
 	def jsTestSuite(suite: TestSuites): JsObject = {
@@ -769,7 +768,7 @@ object JsonUtil {
   /**
    * Converts a LandingPage object into Play!'s JSON notation.
    * Does not support cross object conversion
-   * @param landingPage LandingPage object to be converted
+   * @param legalNotice LandingPage object to be converted
    * @return JsObject
    */
   def jsLegalNotice(legalNotice:LegalNotices):JsObject = {
@@ -829,7 +828,7 @@ object JsonUtil {
 
   /**
    * Converts a LegalNotice object into a JSON string with its complex objects
-   * @param landingPage LegalNotice object to be converted
+   * @param legalNotice LegalNotice object to be converted
    * @return String
    */
   def serializeLegalNotice(legalNotice:LegalNotice):String = {
@@ -846,6 +845,33 @@ object JsonUtil {
   def jsExists(bool:Boolean):JsObject = {
     val json = Json.obj(
       "exists" -> bool
+    )
+    json
+  }
+
+  def jsTestSuiteUploadItemResult(item: TestSuiteUploadItemResult):JsObject = {
+    val json = Json.obj(
+      "name" -> item.itemName,
+      "type" -> item.itemType,
+      "action" -> item.actionType
+    )
+    json
+  }
+
+  def jsTestSuiteUploadItemResults(items: util.ArrayList[TestSuiteUploadItemResult]):JsArray = {
+    var json = Json.arr()
+    for (item <- items.asScala) {
+      json = json.append(jsTestSuiteUploadItemResult(item))
+    }
+    json
+  }
+
+  def jsTestSuiteUploadResult(result: TestSuiteUploadResult):JsObject = {
+    val json = Json.obj(
+      "success"    -> result.success,
+      "errorInformation"  -> result.errorInformation,
+      "pendingFolderId"  -> result.pendingTestSuiteFolderName,
+      "items" -> jsTestSuiteUploadItemResults(result.items)
     )
     json
   }

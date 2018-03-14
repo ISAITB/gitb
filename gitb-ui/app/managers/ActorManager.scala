@@ -13,12 +13,20 @@ object ActorManager extends BaseManager {
   /**
    * Checks if actor exists
    */
-  def checkActorExists(actorId: Long): Future[Boolean] = {
-    Future {
-      DB.withSession { implicit session =>
-        val firstOption = PersistenceSchema.actors.filter(_.id === actorId).firstOption
-        firstOption.isDefined
+  def checkActorExistsInSpecification(actorId: String, specificationId: Long, otherThanId: Option[Long]): Boolean = {
+    DB.withSession { implicit session =>
+      var query = for {
+        actor <- PersistenceSchema.actors
+        specificationHasActors <- PersistenceSchema.specificationHasActors if specificationHasActors.actorId === actor.id
+      } yield (actor, specificationHasActors)
+      query = query
+        .filter(_._1.actorId === actorId)
+        .filter(_._2.specId === specificationId)
+      if (otherThanId.isDefined) {
+        query = query.filter(_._1.id =!= otherThanId.get)
       }
+      val actor = query.firstOption
+      actor.isDefined
     }
   }
 
@@ -29,15 +37,13 @@ object ActorManager extends BaseManager {
     }
   }
 
-  def deleteActor(actorId: Long) = Future[Unit] {
-    Future {
-      DB.withTransaction { implicit session =>
-        delete(actorId)
-      }
+  def deleteActor(actorId: Long) = {
+    DB.withTransaction { implicit session =>
+      delete(actorId)
     }
   }
 
-  def delete(actorId: Long)(implicit session: Session) = {
+  private def delete(actorId: Long)(implicit session: Session) = {
     PersistenceSchema.testCaseHasActors.filter(_.actor === actorId).delete
     PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete
     PersistenceSchema.systemImplementsActors.filter(_.actorId === actorId).delete
@@ -50,18 +56,17 @@ object ActorManager extends BaseManager {
     PersistenceSchema.actors.filter(_.id === actorId).delete
   }
 
-  def updateActor(actorId: Long, shortName: String, fullName: String, description: Option[String]) = {
-    Future {
-      DB.withSession { implicit session =>
-        val q1 = for {a <- PersistenceSchema.actors if a.id === actorId} yield (a.actorId)
-        q1.update(shortName)
+  def updateActor(id: Long, actorId: String, name: String, description: Option[String]) = {
+    DB.withSession { implicit session =>
+      val q1 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.name)
+      q1.update(name)
 
-        val q2 = for {a <- PersistenceSchema.actors if a.id === actorId} yield (a.name)
-        q2.update(shortName)
+      val q2 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.desc)
+      q2.update(description)
 
-        val q3 = for {a <- PersistenceSchema.actors if a.id === actorId} yield (a.desc)
-        q3.update(description)
-      }
+      val q3 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.actorId)
+      q3.update(actorId)
+
     }
   }
 

@@ -1,9 +1,10 @@
 package managers
 
+import java.util
+
 import models.Enums.TestResultStatus
 import models.{TestCase, TestCases}
 import persistence.db.PersistenceSchema
-import play.api.Play.current
 import play.api.libs.concurrent.Execution.Implicits._
 
 import scala.concurrent.Future
@@ -33,6 +34,24 @@ object TestCaseManager extends BaseManager {
 			catch {
 				case e: Exception => None
 			}
+		}
+	}
+
+	def getTestCasesOfTestSuite(testSuiteId: Long): util.List[TestCases] = {
+		DB.withSession { implicit session =>
+			var query = for {
+				testCase <- PersistenceSchema.testCases
+				testSuiteHasTestCases <- PersistenceSchema.testSuiteHasTestCases if testSuiteHasTestCases.testcase === testCase.id
+			} yield (testCase, testSuiteHasTestCases)
+			val results = query
+				.filter(_._2.testsuite === testSuiteId)
+				.list
+
+			var testCases = new util.ArrayList[TestCases]()
+			for (result <- results) {
+				testCases.add(result._1)
+			}
+			testCases
 		}
 	}
 
@@ -144,4 +163,53 @@ object TestCaseManager extends BaseManager {
 				new TestCase(tc, actors, options)
 		}
 	}
+
+	def updateTestCase(testCaseId: Long, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String) =  {
+		Future {
+			DB.withSession { implicit session =>
+
+				val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname)
+				q1.update(shortName)
+
+				val q2 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.fullname)
+				q2.update(fullName)
+
+				val q3 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.version)
+				q3.update(version)
+
+				val q4 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.authors)
+				q4.update(authors)
+
+				val q5 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.description)
+				q5.update(description)
+
+				val q6 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.keywords)
+				q6.update(keywords)
+
+				val q7 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.testCaseType)
+				q7.update(testCaseType)
+
+				val q8 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.path)
+				q8.update(path)
+
+			}
+		}
+	}
+
+	def delete(testCaseId: Long): Unit = {
+		DB.withTransaction { implicit session =>
+			removeActorLinksForTestCase(testCaseId)
+			PersistenceSchema.testSuiteHasTestCases.filter(_.testcase === testCaseId).delete
+			PersistenceSchema.testCases.filter(_.id === testCaseId).delete
+		}
+	}
+
+	def removeActorLinksForTestCase(testCaseId: Long): Unit = {
+		DB.withSession { implicit session =>
+			PersistenceSchema.testCaseHasActors
+				.filter(_.testcase === testCaseId)
+				.delete
+		}
+	}
+
 }

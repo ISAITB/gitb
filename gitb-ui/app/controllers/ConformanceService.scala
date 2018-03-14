@@ -1,14 +1,18 @@
 package controllers
 
-import exceptions.{NotFoundException, ErrorCodes}
+import java.nio.file.Paths
+import javax.xml.ws.Endpoint
+
+import exceptions.{ErrorCodes, NotFoundException}
 import org.apache.commons.lang.RandomStringUtils
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-
-import org.slf4j.{LoggerFactory, Logger}
+import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
-import managers.{SystemManager, TestSuiteManager, TestCaseManager, ConformanceManager}
+import managers._
 import utils.JsonUtil
-import controllers.util.{Parameters, ParameterExtractor, ResponseConstructor}
+import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
+import models.Enums.TestSuiteReplacementChoice
+import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 
 import scala.concurrent.Future
 import scala.reflect.io.File
@@ -25,6 +29,11 @@ class ConformanceService extends Controller {
       val json = JsonUtil.jsDomains(result).toString()
       ResponseConstructor.constructJsonResponse(json)
     }
+  }
+
+  def getDomainOfSpecification(specId: Long) = Action.apply { request =>
+    val json = JsonUtil.jsDomain(ConformanceManager.getDomainOfSpecification(specId)).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
@@ -77,11 +86,10 @@ class ConformanceService extends Controller {
   /**
    * Gets actors defined  for the spec
    */
-  def getSpecActors(spec_id: Long) = Action.async {
-    ConformanceManager.getActorsWithSpecificationId(spec_id) map { actors =>
-      val json = JsonUtil.jsActors(actors).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    }
+  def getSpecActors(spec_id: Long) = Action.apply {
+    val actors = ConformanceManager.getActorsWithSpecificationId(spec_id)
+    val json = JsonUtil.jsActors(actors).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
@@ -152,20 +160,39 @@ class ConformanceService extends Controller {
     }
   }
 
-  def createActor() = Action.async { request =>
+  def createActor() = Action.apply { request =>
     val actor = ParameterExtractor.extractActor(request)
-    val specificationId = ParameterExtractor.optionalBodyParameter(request, Parameters.SPECIFICATION_ID) match {
-      case Some(str) => Some(str.toLong)
-      case _ => None
+    val specificationId = ParameterExtractor.requiredBodyParameter(request, Parameters.SPECIFICATION_ID).toLong
+    if (ActorManager.checkActorExistsInSpecification(actor.actorId, specificationId, None)) {
+      ResponseConstructor.constructBadRequestResponse(500, "An actor with this ID already exists in the specification")
+    } else {
+      ConformanceManager.createActor(actor, specificationId)
+      ResponseConstructor.constructEmptyResponse
     }
-    ConformanceManager.createActor(actor, specificationId) map { unit =>
+  }
+
+  def createEndpoint() = Action.apply { request =>
+    val endpoint = ParameterExtractor.extractEndpoint(request)
+    if (EndPointManager.checkEndPointExistsForActor(endpoint.name, endpoint.actor, None)) {
+      ResponseConstructor.constructBadRequestResponse(500, "An endpoint with this name already exists for the actor")
+    } else{
+      EndPointManager.createEndpoint(endpoint)
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  def createParameter() = Action.apply { request =>
+    val parameter = ParameterExtractor.extractParameter(request)
+    if (ParameterManager.checkParameterExistsForEndpoint(parameter.name, parameter.endpoint, None)) {
+      ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the endpoint")
+    } else{
+      ParameterManager.createParameter(parameter)
       ResponseConstructor.constructEmptyResponse
     }
   }
 
   def createSpecification() = Action.async { request =>
     val specification = ParameterExtractor.extractSpecification(request)
-
     ConformanceManager.createSpecifications(specification) map (_ => ResponseConstructor.constructEmptyResponse)
   }
 
@@ -188,6 +215,15 @@ class ConformanceService extends Controller {
 
     ConformanceManager.getEndpoints(ids) map { endpoints =>
       val json = JsonUtil.jsEndpoints(endpoints).toString()
+      ResponseConstructor.constructJsonResponse(json)
+    }
+  }
+
+  def getParameters = Action.async { request =>
+    val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
+
+    ConformanceManager.getParameters(ids) map { parameters =>
+      val json = JsonUtil.jsParameters(parameters).toString()
       ResponseConstructor.constructJsonResponse(json)
     }
   }
@@ -219,25 +255,42 @@ class ConformanceService extends Controller {
     }
   }
 
-  def deployTestSuite(specification_id: Long) = Action.async(parse.multipartFormData) { request =>
+  def resolvePendingTestSuite(specification_id: Long) = Action.apply { request =>
+    val pendingFolderId = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_TEST_SUITE_ID)
+    val pendingActionStr = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_TEST_SUITE_ACTION)
+    var pendingAction: TestSuiteReplacementChoice = null
+    if ("keep".equals(pendingActionStr)) {
+      pendingAction = TestSuiteReplacementChoice.KEEP_TEST_HISTORY
+    } else if ("drop".equals(pendingActionStr)) {
+      pendingAction = TestSuiteReplacementChoice.DROP_TEST_HISTORY
+    } else {
+      // Cancel
+      pendingAction = TestSuiteReplacementChoice.CANCEL
+    }
+    val result = TestSuiteManager.applyPendingTestSuiteAction(specification_id, pendingFolderId, pendingAction)
+    val json = JsonUtil.jsTestSuiteUploadResult(result).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def deployTestSuite(specification_id: Long) = Action.apply(parse.multipartFormData) { request =>
     request.body.file(Parameters.FILE) match {
-      case Some(testSuite) => {
-        import java.io.File
-        val file = new File("/tmp/" + RandomStringUtils.random(10, false, true) + "/" + testSuite.filename)
-        file.getParentFile.mkdirs()
-        testSuite.ref.moveTo(file)
-        val name = testSuite.filename
-        val contentType = testSuite.contentType
-
-        logger.debug("Test suite file uploaded - filename: [" + name + "] content type: [" + contentType + "]")
-
-        TestSuiteManager.deployTestSuiteFromZipFile(specification_id, file) map { unit =>
-          ResponseConstructor.constructEmptyResponse
-        }
-      }
-      case None => Future {
-        ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + Parameters.FILE + "] parameter is missing.")
-      }
+    case Some(testSuite) => {
+      val file = Paths.get(
+        TestSuiteManager.getTempFolder().getAbsolutePath,
+        RandomStringUtils.random(10, false, true),
+        testSuite.filename
+      ).toFile()
+      file.getParentFile.mkdirs()
+      testSuite.ref.moveTo(file)
+      val name = testSuite.filename
+      val contentType = testSuite.contentType
+      logger.debug("Test suite file uploaded - filename: [" + name + "] content type: [" + contentType + "]")
+      val result = TestSuiteManager.deployTestSuiteFromZipFile(specification_id, file)
+      val json = JsonUtil.jsTestSuiteUploadResult(result).toString()
+      ResponseConstructor.constructJsonResponse(json)
+    }
+    case None =>
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + Parameters.FILE + "] parameter is missing.")
     }
   }
 

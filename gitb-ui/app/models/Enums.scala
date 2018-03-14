@@ -1,6 +1,5 @@
 package models
 
-
 object Enums {
   object OrganizationType extends Enumeration(1) {
     type OrganizationType = Value
@@ -42,4 +41,12 @@ object Enums {
 		val SUCCESS = Value("SUCCESS")
 		val FAILURE = Value("FAILURE")
 	}
+
+  object TestSuiteReplacementChoice extends Enumeration {
+    type TestSuiteReplacementChoice = Value
+    val KEEP_TEST_HISTORY = Value(0)
+    val DROP_TEST_HISTORY = Value(1)
+    val CANCEL = Value(2)
+  }
+
 }

@@ -1,0 +1,16 @@
+<div class="modal-header">
+	<h4>Test suite exists</h4>
+</div>
+<div class="modal-body">
+	A test suite with the provided name already exists for this specification. Please select how you want to replace this:
+	<ul>
+		<li><b>Keep history:</b> Replace the existing test suite but keep the existing conformance testing results. Select this if you are making a minor change that does not invalidate existing tests.</li>
+		<li><b>Drop history:</b> Replace the existing test suite and remove existing conformance testing results. Previous results can still be retrieved but don't count towards organisations' conformance statements.</li>
+		<li><b>Cancel:</b> Keep the existing test suite without making any changes.</li>
+	</ul>
+</div>
+<div class="modal-footer">
+    <button class="btn btn-primary" ng-click="keepHistory()" ng-disabled="actionPending"><span class="tab" ng-if="actionKeepPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Keep history</button>
+    <button class="btn btn-primary" ng-click="dropHistory()" ng-disabled="actionPending"><span class="tab" ng-if="actionDropPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Drop history</button>
+	<button class="btn btn-primary" ng-click="cancel()" ng-disabled="actionPending"><span class="tab" ng-if="actionCancelPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Cancel</button>
+</div>

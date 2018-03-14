@@ -1,7 +1,7 @@
 class SpecificationDetailsController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', 'TestSuiteService', 'ConfirmationDialogService', 'SpecificationService', '$state', '$stateParams', '$modal', 'ErrorService']
-	constructor: (@$log, @$scope, @ConformanceService, @TestSuiteService, @ConfirmationDialogService, @SpecificationService, @$state, @$stateParams, @$modal, @ErrorService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', 'TestSuiteService', 'ConfirmationDialogService', 'SpecificationService', '$state', '$stateParams', '$modal', 'PopupService', 'ErrorService']
+	constructor: (@$log, @$scope, @ConformanceService, @TestSuiteService, @ConfirmationDialogService, @SpecificationService, @$state, @$stateParams, @$modal, @PopupService, @ErrorService) ->
 		@$log.debug "Constructing SpecificationDetailsController"
 
 		@specification = {}
@@ -28,11 +28,7 @@ class SpecificationDetailsController
 		@testSuiteTableColumns = [
 			{
 				field: 'sname',
-				title: 'Short Name'
-			}
-			{
-				field: 'fname',
-				title: 'Full Name'
+				title: 'Name'
 			}
 			{
 				field: 'description',
@@ -79,21 +75,97 @@ class SpecificationDetailsController
 
 	onFileSelect: (files) =>
 		@$log.debug "Test suite zip files is selected to deploy: ", files
-
 		if files.length > 0
 			@ConformanceService.deployTestSuite @specificationId, files[0]
 			.progress (event) =>
 				@$log.debug "File upload: " + (100.0 * event.loaded / event.total) + " percent uploaded."
-			.success () =>
-				@$state.go(@$state.$current, null, { reload: true });
+			.then (result) => 
+				if (result && result.data)
+					if (result.data.success)
+						@showTestSuiteUploadResult(result.data)
+						@$state.go(@$state.$current, null, { reload: true });
+					else if (result.data.pendingFolderId && result.data.pendingFolderId.length > 0)
+						# Pending 
+						modalOptions =
+							templateUrl: 'assets/views/components/test-suite-upload-pending-modal.html'
+							controller: 'TestSuiteUploadPendingModalController as TestSuiteUploadPendingModalController'
+							resolve:
+								specificationId: () => @specificationId
+								pendingFolderId: () => result.data.pendingFolderId
+							size: 'lg'
+						modalInstance = @$modal.open(modalOptions)
+						modalInstance.result.then((pendingResolutionData) => 
+							# Closed
+							@showTestSuiteUploadResult(pendingResolutionData)
+							@$state.go(@$state.$current, null, { reload: true });
+						, () => 
+							# Dismissed
+							@ConformanceService.resolvePendingTestSuite(@$scope.specificationId, result.data.pendingFolderId, 'cancel')
+						)
+					else
+						error = { 
+							statusText: "Upload error",
+							data: {error_description: "En error occurred while processing the test suite: "+result.data.errorInformation}
+						}
+						@ErrorService.showErrorMessage(error)
+				else
+					@ErrorService.showErrorMessage("En error occurred while processing the test suite: Response was empty")
+
+	showTestSuiteUploadResult: (result) =>
+		if (result.success)
+			collect = (item, data) => 
+				getAction = (itemAction) -> 
+					if (itemAction == "update") 
+						"(updated)"
+					else if (itemAction == "add") 
+						"(added)"
+					else if (itemAction == "unchanged") 
+						"(unchanged)"
+					else 
+						"(deleted)"
+
+				getIndex = (itemType) -> 
+					if (itemType == 'testSuite') 
+						0
+					else if (itemType == 'testCase') 
+						1
+					else if (itemType == 'actor') 
+						2
+					else if (itemType == 'endpoint') 
+						3
+					else 
+						4
+				append = (currentVal, newVal) ->
+					if (!currentVal) 
+						newVal
+					else
+						currentVal + ", " + newVal
+				data[getIndex(item.type)].value = append(data[getIndex(item.type)].value, item.name+" "+getAction(item.action))
+			data = [
+				{label: "Test suite:"}, 
+				{label: "Test cases:"},
+				{label: "Actors:"},
+				{label: "Endpoints:"},
+				{label: "Parameters:"}
+			]
+			collect item, data for item in result.items
+			@PopupService.show("Test suite upload overview", data)
+		else
+			data = []
+			data.push {
+				label: "Error:",
+				value: result.errorInformation
+			}
+			@PopupService.show("Test suite upload failed", data)
 
 	onTestSuiteDelete: (data) =>
-		@$log.debug "Removing test suite ", data.id, data.sname
-		@TestSuiteService.undeployTestSuite data.id
+		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this test suite?", "Yes", "No")
 		.then () =>
-			@$state.go(@$state.$current, null, { reload: true });
-		.catch (error) =>
-			@ErrorService.showErrorMessage(error)
+			@TestSuiteService.undeployTestSuite data.id
+			.then () =>
+				@$state.go(@$state.$current, null, { reload: true });
+			.catch (error) =>
+				@ErrorService.showErrorMessage(error)
 
 	addExistingActors: () =>
 		@ConformanceService.getActorsWithDomainId(@specification.domain)

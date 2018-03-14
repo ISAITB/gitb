@@ -8,11 +8,9 @@ import javax.xml.transform.stream.StreamSource
 import com.gitb.utils.XMLUtils
 import config.Configurations
 import managers.{SpecificationManager, TestSuiteManager}
-import managers.TestSuiteManager.DB
 import models._
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.slf4j.LoggerFactory
-import persistence.db.PersistenceSchema
 
 //import scala.slick.driver.MySQLDriver.simple._
 import scala.collection.JavaConverters._
@@ -24,10 +22,10 @@ import scala.xml.XML
 object RepositoryUtils {
 	private final val logger = LoggerFactory.getLogger("RepositoryUtils")
 
-	private val TEST_SUITE_ELEMENT_LABEL: String = "testsuite"
+	private final val TEST_SUITE_ELEMENT_LABEL: String = "testsuite"
 
-	private val TEST_CASE_ELEMENT_LABEL: String = "testcase"
-	private val ACTOR_ELEMENT_LABEL: String = "actor"
+	private final val TEST_CASE_ELEMENT_LABEL: String = "testcase"
+	private final val ACTOR_ELEMENT_LABEL: String = "actor"
 
 	def getTestSuitesRootFolder(): File = {
 		val path = Paths.get(
@@ -70,13 +68,11 @@ object RepositoryUtils {
 	/**
 	 * Extracts the test suite resources in the <code>file</code> into the <code>targetFolderName</code> folder.
 	 * A folder named <code>targetFolderName</code> is created if it does not exist.
-	 * @param targetFolderName
-	 * @param file
+	 * @param targetFolder
+	 * @param tempFolder
 	 * @return id->path maps for the test case files
 	 */
-	def extractTestSuiteFilesFromZipToFolder(specification: Long, targetFolderName: String, file: File): Map[String, String] = {
-		val targetFolder = new File(getTestSuitesPath(specification), targetFolderName)
-
+	def extractTestSuiteFilesFromZipToFolder(specification: Long, targetFolder: File, tempFolder: File): Map[String, String] = {
     //target folder needs to be deleted due to an unknown exception thrown
     if(targetFolder.exists()){
       FileUtils.forceDelete(targetFolder);
@@ -85,7 +81,7 @@ object RepositoryUtils {
     logger.info("Creating folder ["+targetFolder+"]")
     targetFolder.mkdirs()
 
-		extractTestSuiteFilesFromZipToFolder(targetFolder, file)
+		extractTestSuiteFilesFromZipToFolder(targetFolder, tempFolder)
 	}
 
 	def deleteDomainTestSuiteFolder(domainId: Long): Unit = {
@@ -125,38 +121,41 @@ object RepositoryUtils {
 		}
 
 		val zip = new ZipFile(file)
+		try {
+			zip.entries().asScala.foreach {
+				zipEntry =>
+					val newFile = new File(targetFolder, zipEntry.getName)
 
-		zip.entries().asScala.foreach {
-			zipEntry =>
-				val newFile = new File(targetFolder, zipEntry.getName)
+					if(zipEntry.isDirectory) {
+						logger.info("Creating folder ["+newFile+"]")
+						newFile.mkdirs()
+					} else {
+						if(!newFile.exists) {
+							newFile.getParentFile.mkdirs()
+							newFile.createNewFile()
+							logger.info("Creating new file ["+newFile+"]")
 
-				if(zipEntry.isDirectory) {
-          logger.info("Creating folder ["+newFile+"]")
-					newFile.mkdirs()
-        } else {
-          if(!newFile.exists) {
-            newFile.getParentFile.mkdirs()
-            newFile.createNewFile()
-            logger.info("Creating new file ["+newFile+"]")
+							if(isTestCase(zip, zipEntry)) {
+								val testCase: com.gitb.tdl.TestCase = getTestCase(zip, zipEntry)
 
-						if(isTestCase(zip, zipEntry)) {
-							val testCase: com.gitb.tdl.TestCase = getTestCase(zip, zipEntry)
+								logger.info("File ["+newFile+"] is a test case file")
 
-              logger.info("File ["+newFile+"] is a test case file")
+								testCasePaths.update(testCase.getId, targetFolder.getParentFile.toURI.relativize(newFile.toURI).getPath)
+							}
 
-              testCasePaths.update(testCase.getId, targetFolder.getParentFile.toURI.relativize(newFile.toURI).getPath)
-            }
+							val fos = new FileOutputStream(newFile, false)
 
-            val fos = new FileOutputStream(newFile, false)
+							fos.write(IOUtils.toByteArray(zip.getInputStream(zipEntry)))
 
-            fos.write(IOUtils.toByteArray(zip.getInputStream(zipEntry)))
-
-            fos.close()
-            logger.info("Wrote ["+newFile+"]")
-          } else {
-            logger.info("File ["+newFile+"] is already exist")
-          }
-				}
+							fos.close()
+							logger.info("Wrote ["+newFile+"]")
+						} else {
+							logger.info("File ["+newFile+"] is already exist")
+						}
+					}
+			}
+		} finally {
+			zip.close()
 		}
 
 		testCasePaths.toMap
@@ -169,73 +168,68 @@ object RepositoryUtils {
 		logger.debug("Trying to extract test suite from the file ["+file+"] - file exists: ["+file.exists+"]")
 
 		if(file.exists) {
-			val zip = new ZipFile(file)
+			var zip: ZipFile = null
+			try {
+				zip = new ZipFile(file)
+				logger.debug("Zip file entries: " + zip.entries().asScala.map((entry) => entry.getName).mkString(", "))
+				val testSuiteEntries = zip.entries().asScala.filter(isTestSuite(zip, _))
+				if(testSuiteEntries.hasNext) {
+					val tdlTestCases = zip.entries().asScala.filter(isTestCase(zip, _)).map(getTestCase(zip, _)).toList
+					val testSuiteEntry = testSuiteEntries.next()
+					logger.info("Test suite ["+testSuiteEntry.getName+"] has test cases ["+tdlTestCases.map(_.getId)+"]")
+					val testSuite = {
+						val tdlTestSuite: com.gitb.tdl.TestSuite = getTestSuite(zip, testSuiteEntry)
+						val name: String = tdlTestSuite.getMetadata.getName
+						val version: String = tdlTestSuite.getMetadata.getVersion
+						val authors: String = tdlTestSuite.getMetadata.getAuthors
+						val originalDate: String = tdlTestSuite.getMetadata.getPublished
+						val modificationDate: String = tdlTestSuite.getMetadata.getLastModified
+						val description: String = tdlTestSuite.getMetadata.getDescription
+						val tdlActors = tdlTestSuite.getActors.getActor.asScala
+						val tdlTestCaseEntries = tdlTestSuite.getTestcase.asScala
 
-			logger.debug("Zip file entries: " + zip.entries().asScala.map((entry) => entry.getName).mkString(", "))
+						logger.info("Test suite has tdlActors ["+tdlActors.map(_.getId)+"]")
+						logger.info("Test suite has tdlTestCases ["+tdlTestCaseEntries.map(_.getId)+"]")
 
-			val testSuiteEntries = zip.entries().asScala.filter(isTestSuite(zip, _))
+						val caseObject = TestSuites(0l, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification)
+						val actors = tdlActors.map { tdlActor =>
+							val endpoints = tdlActor.getEndpoint.asScala.map { tdlEndpoint => // construct actor endpoints
+								val parameters = tdlEndpoint.getConfig.asScala
+									.map((tdlParameter) => Parameters(0l, tdlParameter.getName, Option(tdlParameter.getDesc), tdlParameter.getUse.value(), tdlParameter.getKind.value(), 0l))
+									.toList
+								new Endpoint(Endpoints(0l, tdlEndpoint.getName, Option(tdlEndpoint.getDesc), 0l), parameters)
+							}.toList
 
-			if(testSuiteEntries.hasNext) {
-
-				val tdlTestCases = zip.entries().asScala.filter(isTestCase(zip, _)).map(getTestCase(zip, _)).toList
-
-				val testSuiteEntry = testSuiteEntries.next()
-
-        logger.info("Test suite ["+testSuiteEntry.getName+"] has test cases ["+tdlTestCases.map(_.getId)+"]")
-
-				val testSuite = {
-					val tdlTestSuite: com.gitb.tdl.TestSuite = getTestSuite(zip, testSuiteEntry)
-
-					val name: String = tdlTestSuite.getMetadata.getName
-					val version: String = tdlTestSuite.getMetadata.getVersion
-					val authors: String = tdlTestSuite.getMetadata.getAuthors
-					val originalDate: String = tdlTestSuite.getMetadata.getPublished
-					val modificationDate: String = tdlTestSuite.getMetadata.getLastModified
-					val description: String = tdlTestSuite.getMetadata.getDescription
-
-					val tdlActors = tdlTestSuite.getActors.getActor.asScala
-					val tdlTestCaseEntries = tdlTestSuite.getTestcase.asScala
-
-          logger.info("Test suite has tdlActors ["+tdlActors.map(_.getId)+"]")
-          logger.info("Test suite has tdlTestCases ["+tdlTestCaseEntries.map(_.getId)+"]")
-
-					val caseObject = TestSuites(0l, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification)
-
-					val actors = tdlActors.map { tdlActor =>
-
-						val endpoints = tdlActor.getEndpoint.asScala.map { tdlEndpoint => // construct actor endpoints
-							val parameters = tdlEndpoint.getConfig.asScala
-								.map((tdlParameter) => Parameters(0l, tdlParameter.getName, Option(tdlParameter.getDesc), tdlParameter.getUse.value(), tdlParameter.getKind.value(), 0l))
-								.toList
-							new Endpoint(Endpoints(0l, tdlEndpoint.getName, Option(tdlEndpoint.getDesc), 0l), parameters)
+							new Actor(Actors(0l, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), 0l), endpoints)
 						}.toList
 
-						new Actor(Actors(0l, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), 0l), endpoints)
-					}.toList
+						val testCases = tdlTestCaseEntries.map {
+							entry =>
+								logger.debug("Searching for the test case ["+entry.getId+"]")
+								val tdlTestCase = tdlTestCases.find(_.getId == entry.getId).get
 
-					val testCases = tdlTestCaseEntries.map {
-						entry =>
-              logger.debug("Searching for the test case ["+entry.getId+"]")
-							val tdlTestCase = tdlTestCases.find(_.getId == entry.getId).get
+								logger.debug("Test case ["+tdlTestCase.getId+"] has actors ["+tdlTestCase.getActors.getActor.asScala.map(_.getId).mkString(",")+"]")
+								val testCaseActors = actors.filter { actor =>
+									tdlTestCase.getActors.getActor.asScala.exists((role) => role.getName == actor.actorId)
+								} map(_.actorId)
 
-							logger.debug("Test case ["+tdlTestCase.getId+"] has actors ["+tdlTestCase.getActors.getActor.asScala.map(_.getId).mkString(",")+"]")
-							val testCaseActors = actors.filter { actor =>
-								tdlTestCase.getActors.getActor.asScala.exists((role) => role.getName == actor.actorId)
-							} map(_.actorId)
-
-							TestCases(
-								0l, tdlTestCase.getId, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getVersion,
-								Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
-								Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
-								None, tdlTestCase.getMetadata.getType.ordinal().toShort, null, specification, Some(testCaseActors.mkString(","))
-							)
-					}.toList
-
-					new TestSuite(caseObject, Some(actors), Some(testCases))
+								TestCases(
+									0l, tdlTestCase.getId, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getVersion,
+									Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
+									Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
+									None, tdlTestCase.getMetadata.getType.ordinal().toShort, null, specification, Some(testCaseActors.mkString(","))
+								)
+						}.toList
+						new TestSuite(caseObject, Some(actors), Some(testCases))
+					}
+					result = Some(testSuite)
 				}
-
-				result = Some(testSuite)
+			} finally {
+				if (zip != null) {
+					zip.close()
+				}
 			}
+
 		}
 
 		result

@@ -20,6 +20,12 @@ class ConformanceService
       params: params
     })
 
+  getDomainForSpecification: (specId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.ConformanceService.getDomainOfSpecification(specId).url,
+      authenticate: true
+    })
+
   getCommunityDomain: (communityId) ->
     @RestService.get({
       path: jsRoutes.controllers.ConformanceService.getCommunityDomain().url,
@@ -65,14 +71,36 @@ class ConformanceService
         description: description
         actor: actor
     })
-  
+
+  createEndpoint: (name, description, actor) ->
+    @RestService.post({
+      path: jsRoutes.controllers.ConformanceService.createEndpoint().url
+      authenticate: true
+      data:
+        name: name
+        description: description
+        actor_id: actor
+    })
+
+  createParameter: (name, description, use, kind, endpointId) ->
+    @RestService.post({
+      path: jsRoutes.controllers.ConformanceService.createParameter().url
+      authenticate: true
+      data:
+        name: name
+        description: description
+        use: use
+        kind: kind
+        endpoint_id: endpointId
+    })
+
   createActor: (shortName, fullName, description, domainId, specificationId) ->
     @RestService.post({
       path: jsRoutes.controllers.ConformanceService.createActor().url
       authenticate: true
       data:
-        sname: shortName
-        fname: fullName
+        actor_id: shortName
+        name: fullName
         description: description
         domain_id: domainId
         spec_id: specificationId
@@ -195,6 +223,16 @@ class ConformanceService
       @$upload.upload options
     else
       null
+
+  resolvePendingTestSuite: (specificationId, pendingFolderId, action) ->
+    @RestService.post({
+      path: jsRoutes.controllers.ConformanceService.resolvePendingTestSuite(specificationId).url,
+      authenticate: true
+      data: {
+        pending_id: pendingFolderId
+        pending_action: action
+      }
+    })
 
   getTestSuites: (specificationId) ->
     @RestService.get
