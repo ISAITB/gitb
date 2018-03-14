@@ -103,7 +103,7 @@ object TestCaseManager extends BaseManager {
 					val testCaseResult = {
 						val testCaseResultStr = PersistenceSchema.testResults
 							.filter(_.sutId === sutId)
-							.filter(_.testcaseId === testCaseId)
+							.filter(_.testCaseId === testCaseId)
 							.filter(_.endTime isDefined)
 							.sortBy(_.endTime.desc)
 							.map(_.result)
@@ -166,7 +166,7 @@ object TestCaseManager extends BaseManager {
 
 	def updateTestCase(testCaseId: Long, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String) =  {
 		Future {
-			DB.withSession { implicit session =>
+			DB.withTransaction { implicit session =>
 
 				val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname)
 				q1.update(shortName)
@@ -192,12 +192,14 @@ object TestCaseManager extends BaseManager {
 				val q8 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.path)
 				q8.update(path)
 
+				TestResultManager.updateForUpdatedTestCase(testCaseId, shortName)
 			}
 		}
 	}
 
 	def delete(testCaseId: Long): Unit = {
 		DB.withTransaction { implicit session =>
+			TestResultManager.updateForDeletedTestCase(testCaseId)
 			removeActorLinksForTestCase(testCaseId)
 			PersistenceSchema.testSuiteHasTestCases.filter(_.testcase === testCaseId).delete
 			PersistenceSchema.testCases.filter(_.id === testCaseId).delete

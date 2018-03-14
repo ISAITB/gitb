@@ -1,16 +1,13 @@
 package managers
 
-import akka.dispatch.Futures
-import models.Enums.TestResultStatus
-import play.api.Play.current
-import scala.slick.driver.MySQLDriver.simple._
+import models.Enums._
+import models._
+import org.slf4j.LoggerFactory
+import persistence.db._
 import play.api.libs.concurrent.Execution.Implicits._
 
-import models._
-import models.Enums._
-import org.slf4j.LoggerFactory
 import scala.concurrent.Future
-import persistence.db._
+import scala.slick.driver.MySQLDriver.simple._
 
 object CommunityManager extends BaseManager {
   def logger = LoggerFactory.getLogger("CommunityManager")
@@ -32,6 +29,12 @@ object CommunityManager extends BaseManager {
         }
         q.list
       }
+    }
+  }
+
+  def getById(id: Long): Option[Communities] = {
+    DB.withSession { implicit session =>
+      PersistenceSchema.communities.filter(_.id === id).firstOption
     }
   }
 
@@ -81,27 +84,27 @@ object CommunityManager extends BaseManager {
   /**
    * Update community
    */
-  def updateCommunity(communityId: Long, shortName: String, fullName: String, domainId: Option[Long]): Future[Unit] = {
-    Future {
-      DB.withSession { implicit session =>
-        val community = PersistenceSchema.communities.filter(_.id === communityId).firstOption
+  def updateCommunity(communityId: Long, shortName: String, fullName: String, domainId: Option[Long]) = {
+    DB.withTransaction { implicit session =>
+      val community = PersistenceSchema.communities.filter(_.id === communityId).firstOption
 
-        if (community.isDefined) {
-          if (!shortName.isEmpty && community.get.shortname != shortName) {
-            val q = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.shortname)
-            q.update(shortName)
-          }
+      if (community.isDefined) {
+        if (!shortName.isEmpty && community.get.shortname != shortName) {
+          val q = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.shortname)
+          q.update(shortName)
 
-          if (!fullName.isEmpty && community.get.fullname != fullName) {
-            val q = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.fullname)
-            q.update(fullName)
-          }
-
-          val q = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.domain)
-          q.update(domainId)
-        } else {
-          throw new IllegalArgumentException("Community with ID '" + communityId + "' not found")
+          TestResultManager.updateForUpdatedCommunity(communityId, shortName)
         }
+
+        if (!fullName.isEmpty && community.get.fullname != fullName) {
+          val q = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.fullname)
+          q.update(fullName)
+        }
+
+        val q = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.domain)
+        q.update(domainId)
+      } else {
+        throw new IllegalArgumentException("Community with ID '" + communityId + "' not found")
       }
     }
   }
@@ -109,14 +112,13 @@ object CommunityManager extends BaseManager {
   /**
    * Deletes the community with specified id
    */
-  def deleteCommunity(communityId: Long) = Future[Unit] {
-    Future {
-      DB.withTransaction { implicit session =>
-        OrganizationManager.deleteOrganizationByCommunity(communityId)
-        LandingPageManager.deleteLandingPageByCommunity(communityId)
-        LegalNoticeManager.deleteLegalNoticeByCommunity(communityId)
-        PersistenceSchema.communities.filter(_.id === communityId).delete
-      }
+  def deleteCommunity(communityId: Long) {
+    DB.withTransaction { implicit session =>
+      OrganizationManager.deleteOrganizationByCommunity(communityId)
+      LandingPageManager.deleteLandingPageByCommunity(communityId)
+      LegalNoticeManager.deleteLegalNoticeByCommunity(communityId)
+      TestResultManager.updateForDeletedCommunity(communityId)
+      PersistenceSchema.communities.filter(_.id === communityId).delete
     }
   }
 

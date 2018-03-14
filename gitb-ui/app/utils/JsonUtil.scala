@@ -493,26 +493,27 @@ object JsonUtil {
   def jsTestResult(testResult:TestResult, returnTPL:Boolean):JsObject = {
     val json = Json.obj(
       "sessionId" -> testResult.sessionId,
-      "systemId"  -> testResult.systemId,
-      "actorId"   -> testResult.actorId,
-      "testId"    -> testResult.testCaseId,
+      "systemId"  -> (if (testResult.systemId.isDefined) testResult.systemId else JsNull),
+      "actorId"   -> (if (testResult.actorId.isDefined) testResult.actorId else JsNull),
+      "testId"    -> (if (testResult.testCaseId.isDefined) testResult.testCaseId else JsNull),
       "result"    -> testResult.result,
       "startTime" -> TimeUtil.serializeTimestamp(testResult.startTime),
       "endTime"   -> (if(testResult.endTime.isDefined) TimeUtil.serializeTimestamp(testResult.endTime.get) else JsNull),
-      "tpl"       -> (if(returnTPL) testResult.tpl else JsNull)
+      "tpl"       -> (if(returnTPL) testResult.tpl else JsNull),
+      "obsolete"  -> (if (testResult.testSuiteId.isDefined && testResult.testCaseId.isDefined && testResult.systemId.isDefined && testResult.organizationId.isDefined && testResult.communityId.isDefined && testResult.domainId.isDefined && testResult.specificationId.isDefined && testResult.actorId.isDefined) false else true)
     )
     json
   }
 
-	def jsTestResultReports(list: List[TestResultReport]): JsArray = {
-		var json = Json.arr()
-		list.foreach { report =>
-			json = json.append(jsTestResultReport(report))
-		}
-		json
-	}
+  def jsTestResultReports(list: List[TestResult]): JsArray = {
+    var json = Json.arr()
+    list.foreach { report =>
+      json = json.append(jsTestResultReport(report))
+    }
+    json
+  }
 
-  def jsTestResultSessionReports(list: List[TestResultSessionReport]): JsArray = {
+  def jsTestResultSessionReports(list: List[TestResult]): JsArray = {
     var json = Json.arr()
     list.foreach { report =>
       json = json.append(jsTestResultReport(report))
@@ -527,67 +528,59 @@ object JsonUtil {
     json
   }
 
-  def jsTestResultReport(report: TestResultSessionReport): JsObject = {
+  def jsTestResultReport(result: TestResult): JsObject = {
     val json = Json.obj(
-      "result" -> jsTestResult(report.testResult, false),
+      "result" -> jsTestResult(result, false),
       "test" ->  {
-        report.testCase match {
-          case Some(tc) => jsTestCases(tc)
-          case None => JsNull
-        }
+        Json.obj(
+          "id"      -> (if (result.testCaseId.isDefined) result.testCaseId.get else JsNull),
+          "sname"   -> (if (result.testCase.isDefined) result.testCase.get else JsNull)
+        )
       },
       "organization" -> {
-        report.organization match {
-          case Some(o) => jsOrganization(o)
-          case None => JsNull
-        }
+        Json.obj(
+          "id"    -> (if (result.organizationId.isDefined) result.organizationId.get else JsNull),
+          "sname" -> (if (result.organization.isDefined) result.organization.get else JsNull),
+          "community" -> (if (result.communityId.isDefined) result.communityId.get else JsNull)
+        )
       },
       "system" -> {
-        report.system match {
-          case Some(s) => jsSystem(s)
-          case None => JsNull
-        }
+        Json.obj(
+          "id"    -> (if (result.systemId.isDefined) result.systemId.get else JsNull),
+          "sname" -> (if (result.system.isDefined) result.system.get else JsNull),
+          "owner" -> (if (result.organizationId.isDefined) result.organizationId.get else JsNull)
+        )
+      },
+      "actor" -> {
+        Json.obj(
+          "id" -> result.actorId,
+          "name"   -> result.actor,
+          "domain"  -> result.domainId
+        )
       },
       "specification" -> {
-        report.spec match {
-          case Some(s) => jsSpecification(s)
-          case None => JsNull
-        }
+        Json.obj(
+          "id"      -> (if (result.specificationId.isDefined) result.specificationId.get else JsNull),
+          "sname"   -> (if (result.specification.isDefined) result.specification.get else JsNull),
+          "domain"  -> (if (result.domainId.isDefined) result.domainId.get else JsNull)
+        )
       },
       "domain" -> {
-        report.domain match {
-          case Some(d) => jsDomain(d)
-          case None => JsNull
-        }
+        Json.obj(
+          "id" -> (if (result.domainId.isDefined) result.domainId.get else JsNull),
+          "sname" -> (if (result.domain.isDefined) result.domain.get else JsNull)
+        )
       },
       "testSuite" -> {
-        report.testSuite match {
-          case Some(t) => jsTestSuite(t)
-          case None => JsNull
-        }
+        Json.obj(
+          "id"                -> (if (result.testSuiteId.isDefined) result.testSuiteId.get else JsNull),
+          "sname"             -> (if (result.testSuite.isDefined) result.testSuite.get else JsNull),
+          "specification"     -> (if (result.specificationId.isDefined) result.specificationId.get else JsNull)
+        )
       }
     )
     json
   }
-
-	def jsTestResultReport(report: TestResultReport): JsObject = {
-		val json = Json.obj(
-			"result" -> jsTestResult(report.testResult, false),
-			"test" -> {
-				report.testCase match {
-					case Some(tc) => jsTestCases(tc)
-					case None => JsNull
-				}
-			},
-			"actor" -> {
-				report.actor match {
-					case Some(actor) => jsActor(actor)
-					case None => JsNull
-				}
-			}
-		)
-		json
-	}
 
   /**
    * Converts a List of TestResults into Play!'s JSON notation

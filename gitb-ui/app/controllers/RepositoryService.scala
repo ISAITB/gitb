@@ -6,20 +6,15 @@ import javax.xml.transform.stream.StreamSource
 
 import com.gitb.tbs.TestStepStatus
 import com.gitb.utils.XMLUtils
-import config.Configurations
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
-import managers.TestSuiteManager.DB
-import managers.{ReportManager, SpecificationManager, TestCaseManager, TestSuiteManager}
+import managers.{ReportManager, TestCaseManager}
 import models.TestCase
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.lang.StringUtils
 import org.slf4j.LoggerFactory
-import persistence.db.PersistenceSchema
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc._
 import utils.{JacksonUtil, JsonUtil, RepositoryUtils}
-
-import scala.slick.driver.MySQLDriver.simple._
 
 /**
  * Created by serbay on 10/16/14.
@@ -43,11 +38,18 @@ class RepositoryService extends Controller {
 			}
 	}
 
-	def getTestStepReport(reportPath: String): Action[AnyContent] = Action { implicit request=>
+	def getTestStepReport(sessionId: String, reportPath: String): Action[AnyContent] = Action { implicit request=>
 //    34888315-6781-4d74-a677-8f9001a02cb8/4.xml
-    val pathParts = StringUtils.split(codec.decode(reportPath), "/")
-		val sessionFolder = ReportManager.getPathForTestSession(pathParts(0), true).toFile
-    val file = new File(sessionFolder, pathParts(1))
+		val sessionFolder = ReportManager.getPathForTestSession(sessionId, true).toFile
+    var path: String = null
+    if (reportPath.startsWith(sessionId)) {
+      // Backwards compatibility.
+      val pathParts = StringUtils.split(codec.decode(reportPath), "/")
+      path = pathParts(1)
+    } else {
+      path = reportPath
+    }
+    val file = new File(sessionFolder, path)
 
     logger.debug("Reading test step report ["+codec.decode(reportPath)+"] from the file ["+file+"]")
 
@@ -66,12 +68,19 @@ class RepositoryService extends Controller {
 		}
 	}
 
-  def exportTestStepReport(reportPath: String): Action[AnyContent] = Action { implicit request=>
+  def exportTestStepReport(sessionId: String, reportPath: String): Action[AnyContent] = Action { implicit request=>
     //    34888315-6781-4d74-a677-8f9001a02cb8/4.xml
-    val pathParts = StringUtils.split(codec.decode(reportPath), "/")
-    val sessionFolder = ReportManager.getPathForTestSession(pathParts(0), true).toFile
-    val file = new File(sessionFolder, pathParts(1))
-    val pdf = new File(sessionFolder, pathParts(1).toLowerCase().replace(".xml", ".pdf"))
+    var path: String = null
+    if (reportPath.startsWith(sessionId)) {
+      // Backwards compatibility.
+      val pathParts = StringUtils.split(codec.decode(reportPath), "/")
+      path = pathParts(1)
+    } else {
+      path = reportPath
+    }
+    val sessionFolder = ReportManager.getPathForTestSession(sessionId, true).toFile
+    val file = new File(sessionFolder, path)
+    val pdf = new File(sessionFolder, path.toLowerCase().replace(".xml", ".pdf"))
 
     if (!pdf.exists()) {
       if (file.exists()) {

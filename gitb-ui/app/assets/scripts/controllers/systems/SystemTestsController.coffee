@@ -10,7 +10,7 @@ class SystemTestsController
 
     @tableColumns = [
       {
-        field: 'testCase'
+        field: 'testCaseName'
         title: 'Test case'
         sortable: true
       }
@@ -232,12 +232,14 @@ class SystemTestsController
       resultReportsCollection = resultReportsCollection
                     .map (report) ->
                       transformedObject =
-                        testCase: if report.test? then report.test.sname else '-'
+                        testCaseId: if report.test? then report.test.id else '-'
+                        testCaseName: if report.test? then report.test.sname else '-'
                         actorName: if report.actor? then report.actor.name else '-'
                         startTime: report.result.startTime
                         endTime: if report.result.endTime? then report.result.endTime else '-'
                         result: report.result.result
                         sessionId: report.result.sessionId
+                        obsolete: report.result.obsolete
                       transformedObject
       @testResults = resultReportsCollection.value()
     .catch (error) =>
@@ -366,9 +368,15 @@ class SystemTestsController
     else
         @$state.go 'app.reports.presentation', {session_id: test.sessionId}
 
+  rowStyle: (row) => 
+    if row.obsolete
+      "test-result-obsolete"
+    else  
+      ""
+
   onReportExport: (data) =>
     @export = true
-    @ReportService.exportTestCaseReport(data.sessionId, data.testCase)
+    @ReportService.exportTestCaseReport(data.sessionId, data.testCaseId)
     .then (stepResults) =>
         blobData = new Blob([stepResults], {type: 'application/pdf'});
         saveAs(blobData, "report.pdf");
@@ -419,19 +427,21 @@ class SystemTestsController
                         endTime: if report.result.endTime? then report.result.endTime else '-'
                         result: report.result.result
                         sessionId: report.result.sessionId
-                      transformedObject
+                        obsolete: report.result.obsolete
 
+                      transformedObject
       if resultReportsCollection.value().length > 0
-        csv = ["Test case", "Actor", "Start time", "End time", "Result", "Session"].toString() + "\n"
+        csv = ["Test case", "Actor", "Start time", "End time", "Result", "Session", "Obsolete"].toString() + "\n"
         for o, i in resultReportsCollection.value()
           line = ""
           idx = 0
           for k, v of o
             if idx++ != 0
               line += ","
-            line += v
+            if (v?)
+              line += v
           csv += if i < resultReportsCollection.value().length then line + "\n" else line
-          blobData = new Blob([csv], {type: 'text/csv'});
-          saveAs(blobData, "export.csv");
+        blobData = new Blob([csv], {type: 'text/csv'});
+        saveAs(blobData, "export.csv");
 
 @controllers.controller 'SystemTestsController', SystemTestsController

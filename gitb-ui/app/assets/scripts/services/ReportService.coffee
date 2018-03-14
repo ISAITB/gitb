@@ -165,9 +165,9 @@ class ReportService
       authenticate: true
     })
 
-  getTestStepReport: (reportPath) ->
+  getTestStepReport: (session, reportPath) ->
     @RestService.get
-      path: jsRoutes.controllers.RepositoryService.getTestStepReport(reportPath).url
+      path: jsRoutes.controllers.RepositoryService.getTestStepReport(session, reportPath).url
       authenticate: true
 
   exportTestCaseReport: (session, testName) ->
@@ -188,9 +188,9 @@ class ReportService
           authenticate: true
           responseType: "arraybuffer"
 
-  exportTestStepReport: (reportPath) ->
+  exportTestStepReport: (sessionId, reportPath) ->
     @RestService.get
-      path: jsRoutes.controllers.RepositoryService.exportTestStepReport(reportPath).url
+      path: jsRoutes.controllers.RepositoryService.exportTestStepReport(sessionId, reportPath).url
       authenticate: true
       responseType: "arraybuffer"
 

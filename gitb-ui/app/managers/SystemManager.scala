@@ -1,15 +1,13 @@
 package managers
 
-import akka.dispatch.Futures
 import models.Enums.TestResultStatus
-import play.api.Play.current
-import scala.slick.driver.MySQLDriver.simple._
-import play.api.libs.concurrent.Execution.Implicits._
-
 import models._
 import org.slf4j.LoggerFactory
-import scala.concurrent.Future
 import persistence.db._
+import play.api.libs.concurrent.Execution.Implicits._
+
+import scala.concurrent.Future
+import scala.slick.driver.MySQLDriver.simple._
 
 object SystemManager extends BaseManager {
   def logger = LoggerFactory.getLogger("SystemManager")
@@ -45,11 +43,13 @@ object SystemManager extends BaseManager {
 
   def updateSystemProfile(systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String]): Future[Unit] = {
     Future {
-      DB.withSession { implicit session =>
+      DB.withTransaction { implicit session =>
         //update short name of the system
         if (sname.isDefined) {
           val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield (s.shortname)
           q.update(sname.get)
+
+          TestResultManager.updateForUpdatedSystem(systemId, sname.get)
         }
         //update full name of the system
         if (fname.isDefined) {
@@ -183,7 +183,7 @@ object SystemManager extends BaseManager {
           val testCaseResults = testCaseIds map { testCaseId =>
             val lastResult = {
               val result = PersistenceSchema.testResults
-                .filter(_.testcaseId === testCaseId)
+                .filter(_.testCaseId === testCaseId)
                 .filter(_.endTime isDefined)
                 .sortBy(_.endTime.desc)
                 .map(_.result)
@@ -291,25 +291,26 @@ object SystemManager extends BaseManager {
     }
   }
 
-  def deleteSystemByOrganization(orgId: Long)(implicit session: Session) = {
-	  val systemIds = PersistenceSchema.systems.filter(_.owner === orgId).map(_.id).list
-
-		systemIds foreach { systemId =>
-      PersistenceSchema.configs.filter(_.system === systemId).delete
-      PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).delete
-      PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).delete
-      PersistenceSchema.systemImplementsActors.filter(_.systemId === systemId).delete
-      PersistenceSchema.systemImplementsOptions.filter(_.systemId === systemId).delete
-
-      val testResultId = PersistenceSchema.testResults.filter(_.sutId === systemId).map(_.testSessionId).firstOption
-      if (testResultId.isDefined) {
-        PersistenceSchema.testStepReports.filter(_.testSessionId === testResultId.get).delete
-        PersistenceSchema.testResults.filter(_.testSessionId === testResultId.get).delete
+  def deleteSystemByOrganization(orgId: Long) = {
+    DB.withTransaction { implicit session =>
+      val systemIds = PersistenceSchema.systems.filter(_.owner === orgId).map(_.id).list
+      systemIds foreach { systemId =>
+        TestResultManager.updateForDeletedSystem(systemId)
+        PersistenceSchema.configs.filter(_.system === systemId).delete
+        PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).delete
+        PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).delete
+        PersistenceSchema.systemImplementsActors.filter(_.systemId === systemId).delete
+        PersistenceSchema.systemImplementsOptions.filter(_.systemId === systemId).delete
       }
-		}
-
-	  PersistenceSchema.systems.filter(_.owner === orgId).delete
+      PersistenceSchema.systems.filter(_.owner === orgId).delete
+    }
 	}
+
+  def getSystemById(id: Long): Option[Systems] = {
+    DB.withSession { implicit session =>
+      PersistenceSchema.systems.filter(_.id === id).firstOption
+    }
+  }
 
   def getSystems(ids: Option[List[Long]]): Future[List[Systems]] = {
     Future {

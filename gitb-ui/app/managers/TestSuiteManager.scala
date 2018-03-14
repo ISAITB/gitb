@@ -99,6 +99,9 @@ object TestSuiteManager extends BaseManager {
 
 	def undeployTestSuite(testSuiteId: Long): Unit = {
 		DB.withTransaction { implicit session =>
+
+      TestResultManager.updateForDeletedTestSuite(testSuiteId)
+
 			val testCases =
 				PersistenceSchema.testSuiteHasTestCases
 					.filter(_.testsuite === testSuiteId)
@@ -256,18 +259,6 @@ object TestSuiteManager extends BaseManager {
 		}
 	}
 
-	private def updateActorInDb(actorId: Long, newData: Actors): Unit = {
-		DB.withTransaction { implicit session =>
-
-			val q1 = for {a <- PersistenceSchema.actors if a.id === actorId} yield (a.name)
-			q1.update(newData.name)
-
-			val q2 = for {a <- PersistenceSchema.actors if a.id === actorId} yield (a.desc)
-			q2.update(newData.description)
-
-		}
-	}
-
 	private def updateTestSuiteInDb(testSuiteId: Long, newData: TestSuites): Unit = {
 		DB.withTransaction { implicit session =>
 
@@ -289,6 +280,7 @@ object TestSuiteManager extends BaseManager {
 			val q7 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.description)
 			q7.update(newData.description)
 
+      TestResultManager.updateForUpdatedTestSuite(testSuiteId, newData.shortname)
 		}
 	}
 
@@ -384,7 +376,7 @@ object TestSuiteManager extends BaseManager {
 						if (isActorReference(actorToSave) || theSameActor(savedActor.head._1, actorToSave)) {
 							result.add(new TestSuiteUploadItemResult(savedActor.head._1.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED))
 						} else {
-							updateActorInDb(savedActor.head._1.id, actorToSave)
+              ActorManager.updateActor(savedActor.head._1.id, actorToSave.actorId, actorToSave.name, actorToSave.description)
 							result.add(new TestSuiteUploadItemResult(savedActor.head._1.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE))
 						}
 						savedActorId = savedActor.head._1.id

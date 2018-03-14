@@ -2,13 +2,10 @@ package controllers
 
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
 import managers.CommunityManager
-
-import org.slf4j.{LoggerFactory, Logger}
-import play.api.mvc.{Action, Controller}
+import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.mvc.{Action, Controller}
 import utils.JsonUtil
-
-import scala.concurrent.Future
 
 class CommunityService extends Controller{
   private final val logger: Logger = LoggerFactory.getLogger(classOf[CommunityService])
@@ -48,22 +45,20 @@ class CommunityService extends Controller{
   /**
    * Updates community
    */
-  def updateCommunity(communityId: Long) = Action.async { request =>
+  def updateCommunity(communityId: Long) = Action.apply { request =>
     val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
     val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
     val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    CommunityManager.updateCommunity(communityId, shortName, fullName, domainId) map { unit =>
-      ResponseConstructor.constructEmptyResponse
-    }
+    CommunityManager.updateCommunity(communityId, shortName, fullName, domainId)
+    ResponseConstructor.constructEmptyResponse
   }
 
   /**
    * Deletes the community with specified id
    */
-  def deleteCommunity(communityId: Long) = Action.async { request =>
-    CommunityManager.deleteCommunity(communityId) map { unit =>
-      ResponseConstructor.constructEmptyResponse
-    }
+  def deleteCommunity(communityId: Long) = Action.apply { request =>
+    CommunityManager.deleteCommunity(communityId)
+    ResponseConstructor.constructEmptyResponse
   }
 
   /**

@@ -490,13 +490,14 @@ class DashboardController
     session: testResult.result.sessionId
     startTime: testResult.result.startTime
     endTime: testResult.result.endTime
-    organization: testResult.organization?.fname
-    system: testResult.system?.fname
+    organization: testResult.organization?.sname
+    system: testResult.system?.sname
     result: testResult.result.result
     domain: testResult.domain?.sname
     specification: testResult.specification?.sname
     testCase: testResult.test?.sname
     testSuite: testResult.testSuite?.sname
+    obsolete: testResult.result.obsolete
 
   sortActiveSessions: (column) =>
     @activeSortColumn = column.field
@@ -579,7 +580,7 @@ class DashboardController
     else if @stop
       @stop = false
     else
-      if test.domain? and test.specification? and test.testCase? and test.testSuite?
+      # if test.domain? and test.specification? and test.testCase? and test.testSuite?
         data = [{label: "Domain", value: test.domain}
           {label: "Specification", value: test.specification}
           {label: "Test case", value: test.testCase}
@@ -605,7 +606,7 @@ class DashboardController
       testResultMapper = @newTestResult
       tests = _.map data, (t) -> testResultMapper(t)
 
-      @exportAsCsv(["Session", "Start time", "End time", "Organization", "System", "Result", "Domain", "Specification", "Test case", "Test suite"], tests)
+      @exportAsCsv(["Session", "Start time", "End time", "Organization", "System", "Result", "Domain", "Specification", "Test case", "Test suite", "Obsolete"], tests)
 
   exportActiveSessionsToCsv: () =>
     communityIds = _.map @filters.community.selection, (s) -> s.id
@@ -625,6 +626,12 @@ class DashboardController
 
       @exportAsCsv(["Session", "Start time", "End time", "Organization", "System", "Result", "Domain", "Specification", "Test case", "Test suite"], tests)
 
+  rowStyle: (row) => 
+    if row.obsolete
+      "test-result-obsolete"
+    else  
+      ""
+
   exportAsCsv: (header, data) ->
     if data.length > 0
       csv = header.toString() + "\n"
@@ -634,7 +641,8 @@ class DashboardController
         for k, v of o
           if idx++ != 0
             line += ","
-          line += v
+          if (v?)
+            line += v
         csv += if i < data.length then line + "\n" else line
       blobData = new Blob([csv], {type: 'text/csv'});
       saveAs(blobData, "export.csv");

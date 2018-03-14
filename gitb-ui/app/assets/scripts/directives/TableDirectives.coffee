@@ -6,6 +6,7 @@
 			data: '='
 			onSelect: '='
 			onDeselect: '='
+			rowStyle: '='
 			operationsVisible: '='
 			exportVisible: '='
 			checkboxEnabled: '='
@@ -44,7 +45,7 @@
 					'</tr>'+
 				'</thead>'+
 				'<tbody>'+
-					'<tr class="table-row-directive" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" action-visible="actionVisible" operations-visible="operationsVisible" export-visible="exportVisible" checkbox-enabled="checkboxEnabled" on-action="onAction" on-delete="onDelete" on-export="onExport" on-check="onCheck"></tr>'+
+					'<tr class="table-row-directive" ng-class="rowClass($index)" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" action-visible="actionVisible" operations-visible="operationsVisible" export-visible="exportVisible" checkbox-enabled="checkboxEnabled" on-action="onAction" on-delete="onDelete" on-export="onExport" on-check="onCheck"></tr>'+
 				'</tbody>'+
 			'</table>'+
 				'<div ng-if="paginationVisible" class="text-center">'+
@@ -92,6 +93,14 @@
 					false
 				else
 					scope.lastPage()
+			scope.rowClass = (selectedIndex) =>
+				if scope.rowStyle
+					rows = element.find 'tbody tr.table-row-directive'
+					row = scope.data[selectedIndex]
+					scope.rowStyle row
+				else
+					""
+				
 			scope.select = (selectedIndex)->
 				rows = element.find 'tbody tr.table-row-directive'
 				row = scope.data[selectedIndex]

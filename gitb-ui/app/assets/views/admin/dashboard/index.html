@@ -129,7 +129,7 @@
         <div table-directive columns="dashboardCtrl.activeTestsColumns" data="dashboardCtrl.activeTests"
              on-select="dashboardCtrl.testSelect" action-visible="true" on-action="dashboardCtrl.onAction"
              on-sort="dashboardCtrl.sortActiveSessions"
-             operations-visible="true" on-delete="dashboardCtrl.stopSession"></div>
+             operations-visible="true" on-delete="dashboardCtrl.stopSession" row-style="dashboardCtrl.rowStyle"></div>
     </div>
     <!-- completed sessions -->
     <div class="panel panel-default">
@@ -143,7 +143,8 @@
              prev-page="dashboardCtrl.goPreviousPage()" on-sort="dashboardCtrl.sortCompletedSessions"
              next-page="dashboardCtrl.goNextPage()" last-page="dashboardCtrl.goLastPage()"
              next-disabled="dashboardCtrl.isNextPageDisabled"
-             prev-disabled="dashboardCtrl.isPreviousPageDisabled"></div>
+             prev-disabled="dashboardCtrl.isPreviousPageDisabled"
+             row-style="dashboardCtrl.rowStyle"></div>
     </div>
     <!-- configuration -->
     <div class="panel panel-default" ng-if="dashboardCtrl.DataService.isSystemAdmin">

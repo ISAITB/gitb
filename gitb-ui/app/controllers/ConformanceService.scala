@@ -1,21 +1,17 @@
 package controllers
 
 import java.nio.file.Paths
-import javax.xml.ws.Endpoint
 
-import exceptions.{ErrorCodes, NotFoundException}
-import org.apache.commons.lang.RandomStringUtils
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import org.slf4j.{Logger, LoggerFactory}
-import play.api.mvc._
-import managers._
-import utils.JsonUtil
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
+import exceptions.{ErrorCodes, NotFoundException}
+import managers._
 import models.Enums.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
-
-import scala.concurrent.Future
-import scala.reflect.io.File
+import org.apache.commons.lang.RandomStringUtils
+import org.slf4j.{Logger, LoggerFactory}
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.mvc._
+import utils.JsonUtil
 
 class ConformanceService extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ConformanceService])
@@ -243,10 +239,9 @@ class ConformanceService extends Controller {
     }
   }
 
-  def deleteDomain(domain_id: Long) = Action.async {
-    ConformanceManager.deleteDomain(domain_id) map { unit =>
-      ResponseConstructor.constructEmptyResponse
-    }
+  def deleteDomain(domain_id: Long) = Action.apply {
+    ConformanceManager.deleteDomain(domain_id)
+    ResponseConstructor.constructEmptyResponse
   }
 
   def addActorToSpecification(specification_id: Long, actor_id: Long) = Action.async {

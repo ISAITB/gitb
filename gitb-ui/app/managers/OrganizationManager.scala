@@ -52,6 +52,12 @@ object OrganizationManager extends BaseManager {
     }
   }
 
+  def getById(id: Long): Option[Organizations] = {
+    DB.withSession { implicit session =>
+      PersistenceSchema.organizations.filter(_.id === id).firstOption
+    }
+  }
+
   /**
    * Gets organization with specified id
    */
@@ -80,13 +86,15 @@ object OrganizationManager extends BaseManager {
 
   def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long]): Future[Unit] = {
     Future {
-      DB.withSession { implicit session =>
+      DB.withTransaction { implicit session =>
         val org = PersistenceSchema.organizations.filter(_.id === orgId).firstOption
 
         if (org.isDefined) {
           if (!shortName.isEmpty && org.get.shortname != shortName) {
             val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname)
             q.update(shortName)
+
+            TestResultManager.updateForUpdatedOrganisation(orgId, shortName)
           }
 
           if (!fullName.isEmpty && org.get.fullname != fullName) {
@@ -108,25 +116,26 @@ object OrganizationManager extends BaseManager {
    * Deletes organization by community
    */
   def deleteOrganizationByCommunity(communityId: Long)(implicit session: Session) = {
-    val list = PersistenceSchema.organizations.filter(_.community === communityId).list
-
-    list foreach { org =>
-      UserManager.deleteUserByOrganization(org.id)
-      SystemManager.deleteSystemByOrganization(org.id)
-      PersistenceSchema.organizations.filter(_.community === communityId).delete
+    DB.withTransaction { implicit session =>
+      val list = PersistenceSchema.organizations.filter(_.community === communityId).list
+      list foreach { org =>
+        UserManager.deleteUserByOrganization(org.id)
+        SystemManager.deleteSystemByOrganization(org.id)
+        PersistenceSchema.organizations.filter(_.community === communityId).delete
+        TestResultManager.updateForDeletedOrganisationByCommunityId(communityId)
+      }
     }
   }
 
   /**
    * Deletes organization with specified id
    */
-  def deleteOrganization(orgId: Long) = Future[Unit] {
-    Future {
-      DB.withTransaction { implicit session =>
-        UserManager.deleteUserByOrganization(orgId)
-        SystemManager.deleteSystemByOrganization(orgId)
-        PersistenceSchema.organizations.filter(_.id === orgId).delete
-      }
+  def deleteOrganization(orgId: Long) {
+    DB.withTransaction { implicit session =>
+      TestResultManager.updateForDeletedOrganisation(orgId)
+      UserManager.deleteUserByOrganization(orgId)
+      SystemManager.deleteSystemByOrganization(orgId)
+      PersistenceSchema.organizations.filter(_.id === orgId).delete
     }
   }
 

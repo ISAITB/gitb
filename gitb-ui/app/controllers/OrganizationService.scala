@@ -1,10 +1,10 @@
 package controllers
 
-import controllers.util.{Parameters, ParameterExtractor, ResponseConstructor}
+import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
 import managers.OrganizationManager
-import org.slf4j.{LoggerFactory, Logger}
-import play.api.mvc.{Action, Controller}
+import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.mvc.{Action, Controller}
 import utils.JsonUtil
 
 /**
@@ -69,9 +69,8 @@ class OrganizationService extends Controller {
   /**
    * Deletes organization by id
    */
-  def deleteOrganization(orgId: Long) = Action.async { request =>
-    OrganizationManager.deleteOrganization(orgId) map { unit =>
-      ResponseConstructor.constructEmptyResponse
-    }
+  def deleteOrganization(orgId: Long) = Action.apply { request =>
+    OrganizationManager.deleteOrganization(orgId)
+    ResponseConstructor.constructEmptyResponse
   }
 }

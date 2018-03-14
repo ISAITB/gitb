@@ -287,6 +287,7 @@ extractSteps = (s) =>
               resolve:
                 step: () => scope.message
                 report: () => report
+                sessionId: () => scope.message.report.tcInstanceId
               size: 'lg'
 
             $modal.open modalOptions

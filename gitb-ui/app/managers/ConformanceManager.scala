@@ -79,29 +79,28 @@ object ConformanceManager extends BaseManager {
 	}
 
 	def updateDomain(domainId: Long, shortName: String, fullName: String, description: Option[String]) = {
-		Future {
-			DB.withSession { implicit session =>
-				val q1 = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.shortname)
-				q1.update(shortName)
+		DB.withTransaction { implicit session =>
+			val q1 = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.shortname)
+			q1.update(shortName)
 
-				val q2 = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.fullname)
-				q2.update(fullName)
+			val q2 = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.fullname)
+			q2.update(fullName)
 
-				val q3 = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.description)
-				q3.update(description)
-			}
+			val q3 = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.description)
+			q3.update(description)
+
+			TestResultManager.updateForUpdatedDomain(domainId, shortName)
 		}
 	}
 
-	def deleteDomain(domain: Long) = Future[Unit] {
-		Future {
-			DB.withTransaction { implicit session =>
-				ActorManager.deleteActorByDomain(domain)
-				SpecificationManager.deleteSpecificationByDomain(domain)
-				TransactionManager.deleteTransactionByDomain(domain)
-				PersistenceSchema.domains.filter(_.id === domain).delete
-				RepositoryUtils.deleteDomainTestSuiteFolder(domain)
-			}
+	def deleteDomain(domain: Long) {
+		DB.withTransaction { implicit session =>
+			ActorManager.deleteActorByDomain(domain)
+			SpecificationManager.deleteSpecificationByDomain(domain)
+			TransactionManager.deleteTransactionByDomain(domain)
+			TestResultManager.updateForDeletedDomain(domain)
+			PersistenceSchema.domains.filter(_.id === domain).delete
+			RepositoryUtils.deleteDomainTestSuiteFolder(domain)
 		}
 	}
 
@@ -294,6 +293,12 @@ object ConformanceManager extends BaseManager {
 				}
 				options
 			}
+		}
+	}
+
+	def getById(id: Long): Option[Domain] = {
+		DB.withSession { implicit session =>
+			PersistenceSchema.domains.filter(_.id === id).firstOption
 		}
 	}
 

@@ -170,13 +170,13 @@ POST    /reports/create                     @controllers.ReportService.createTes
 GET     /reports/:session_id/steps          @controllers.ReportService.getTestStepResults(session_id:String)
 
 # Repository file serving and management API
-GET     /repository/tests/:test_id              @controllers.RepositoryService.getTestCase(test_id:String)
-GET     /repository/tests/:test_id/definition   @controllers.RepositoryService.getTestCaseDefinition(test_id:String)
-GET     /repository/reports/teststep/*file      @controllers.RepositoryService.getTestStepReport(file)
-GET     /repository/export/testcase             @controllers.RepositoryService.exportTestCaseReport
-GET     /repository/export/testcases            @controllers.RepositoryService.exportTestCaseReports
-GET     /repository/export/teststep/*path       @controllers.RepositoryService.exportTestStepReport(path)
-GET     /repository/resource/:test_id/*file     @controllers.RepositoryService.getTestSuiteResource(test_id: String, file: String)
+GET     /repository/tests/:test_id                          @controllers.RepositoryService.getTestCase(test_id:String)
+GET     /repository/tests/:test_id/definition               @controllers.RepositoryService.getTestCaseDefinition(test_id:String)
+GET     /repository/reports/teststep/:session_id/*file      @controllers.RepositoryService.getTestStepReport(session_id: String, file)
+GET     /repository/export/testcase                         @controllers.RepositoryService.exportTestCaseReport
+GET     /repository/export/testcases                        @controllers.RepositoryService.exportTestCaseReports
+GET     /repository/export/teststep/:session_id/*path       @controllers.RepositoryService.exportTestStepReport(session_id: String, path)
+GET     /repository/resource/:test_id/*file                 @controllers.RepositoryService.getTestSuiteResource(test_id: String, file: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
