@@ -5,8 +5,18 @@ class DashboardController
 
     @activeTestsColumns = [
       {
-        field: 'session',
-        title: 'Session',
+        field: 'specification',
+        title: 'Specification',
+        sortable: true
+      }
+      {
+        field: 'actor',
+        title: 'Actor',
+        sortable: true
+      }
+      {
+        field: 'testCase',
+        title: 'Test case',
         sortable: true
       }
       {
@@ -29,8 +39,18 @@ class DashboardController
 
     @completedTestsColumns = [
       {
-        field: 'session',
-        title: 'Session',
+        field: 'specification',
+        title: 'Specification',
+        sortable: true
+      }
+      {
+        field: 'actor',
+        title: 'Actor',
+        sortable: true
+      }
+      {
+        field: 'testCase',
+        title: 'Test case',
         sortable: true
       }
       {
@@ -488,15 +508,16 @@ class DashboardController
 
   newTestResult: (testResult) ->
     session: testResult.result.sessionId
-    startTime: testResult.result.startTime
-    endTime: testResult.result.endTime
-    organization: testResult.organization?.sname
-    system: testResult.system?.sname
-    result: testResult.result.result
     domain: testResult.domain?.sname
     specification: testResult.specification?.sname
-    testCase: testResult.test?.sname
+    actor: testResult.actor?.name
     testSuite: testResult.testSuite?.sname
+    testCase: testResult.test?.sname
+    organization: testResult.organization?.sname
+    system: testResult.system?.sname
+    startTime: testResult.result.startTime
+    endTime: testResult.result.endTime
+    result: testResult.result.result
     obsolete: testResult.result.obsolete
 
   sortActiveSessions: (column) =>
@@ -581,10 +602,13 @@ class DashboardController
       @stop = false
     else
       # if test.domain? and test.specification? and test.testCase? and test.testSuite?
-        data = [{label: "Domain", value: test.domain}
+        data = [
+          {label: "Domain", value: test.domain}
+          {label: "Actor", value: test.actor}
           {label: "Specification", value: test.specification}
+          {label: "Test suite", value: test.testSuite}
           {label: "Test case", value: test.testCase}
-          {label: "Test suite", value: test.testSuite}]
+        ]
         @PopupService.show("Session #{test.session}", data)
 
   exportCompletedSessionsToCsv: () =>
@@ -606,7 +630,7 @@ class DashboardController
       testResultMapper = @newTestResult
       tests = _.map data, (t) -> testResultMapper(t)
 
-      @exportAsCsv(["Session", "Start time", "End time", "Organization", "System", "Result", "Domain", "Specification", "Test case", "Test suite", "Obsolete"], tests)
+      @exportAsCsv(["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organization", "System", "Start time", "End time", "Result", "Obsolete"], tests)
 
   exportActiveSessionsToCsv: () =>
     communityIds = _.map @filters.community.selection, (s) -> s.id
@@ -624,7 +648,7 @@ class DashboardController
       testResultMapper = @newTestResult
       tests = _.map data, (testResult) -> testResultMapper(testResult)
 
-      @exportAsCsv(["Session", "Start time", "End time", "Organization", "System", "Result", "Domain", "Specification", "Test case", "Test suite"], tests)
+      @exportAsCsv(["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organization", "System", "Start time", "End time", "Result", "Obsolete"], tests)
 
   rowStyle: (row) => 
     if row.obsolete

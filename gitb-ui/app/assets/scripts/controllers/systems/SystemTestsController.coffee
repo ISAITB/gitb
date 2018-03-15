@@ -10,13 +10,18 @@ class SystemTestsController
 
     @tableColumns = [
       {
-        field: 'testCaseName'
-        title: 'Test case'
+        field: 'specification'
+        title: 'Specification'
         sortable: true
       }
       {
         field: 'actorName'
         title: 'Actor'
+        sortable: true
+      }
+      {
+        field: 'testCaseName'
+        title: 'Test case'
         sortable: true
       }
       {
@@ -233,6 +238,7 @@ class SystemTestsController
                     .map (report) ->
                       transformedObject =
                         testCaseId: if report.test? then report.test.id else '-'
+                        specification: if report.test? then report.specification.sname else '-'
                         testCaseName: if report.test? then report.test.sname else '-'
                         actorName: if report.actor? then report.actor.name else '-'
                         startTime: report.result.startTime
@@ -421,8 +427,11 @@ class SystemTestsController
       resultReportsCollection = resultReportsCollection
                     .map (report) ->
                       transformedObject =
-                        testCase: if report.test? then report.test.sname else '-'
+                        domain: if report.domain? then report.domain.sname else '-'
+                        specification: if report.specification? then report.specification.sname else '-'
                         actorName: if report.actor? then report.actor.name else '-'
+                        testSuite: if report.testSuite? then report.testSuite.sname else '-'
+                        testCase: if report.test? then report.test.sname else '-'
                         startTime: report.result.startTime
                         endTime: if report.result.endTime? then report.result.endTime else '-'
                         result: report.result.result
@@ -431,7 +440,7 @@ class SystemTestsController
 
                       transformedObject
       if resultReportsCollection.value().length > 0
-        csv = ["Test case", "Actor", "Start time", "End time", "Result", "Session", "Obsolete"].toString() + "\n"
+        csv = ["Domain", "Specification", "Actor", "Test suite", "Test case", "Start time", "End time", "Result", "Session", "Obsolete"].toString() + "\n"
         for o, i in resultReportsCollection.value()
           line = ""
           idx = 0

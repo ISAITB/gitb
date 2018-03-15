@@ -216,6 +216,7 @@ object ReportManager extends BaseManager {
     if (sortColumn.isDefined && sortOrder.isDefined) {
       if (sortOrder.get == "asc") {
         query = sortColumn.get match {
+          case "specification" => query.sortBy(_.specification)
           case "session" => query.sortBy(_.testSessionId)
           case "startTime" => query.sortBy(_.startTime)
           case "endTime" => query.sortBy(_.endTime)
@@ -229,6 +230,7 @@ object ReportManager extends BaseManager {
       }
       if (sortOrder.get == "desc") {
         query = sortColumn.get match {
+          case "specification" => query.sortBy(_.specification)
           case "session" => query.sortBy(_.testSessionId.desc)
           case "startTime" => query.sortBy(_.startTime.desc)
           case "endTime" => query.sortBy(_.endTime.desc)

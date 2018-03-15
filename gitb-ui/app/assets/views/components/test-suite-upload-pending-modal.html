@@ -1,13 +1,27 @@
 <div class="modal-header">
-	<h4>Test suite exists</h4>
+	<h4>Choose how to replace existing test suite</h4>
 </div>
 <div class="modal-body">
-	A test suite with the provided name already exists for this specification. Please select how you want to replace this:
-	<ul>
-		<li><b>Keep history:</b> Replace the existing test suite but keep the existing conformance testing results. Select this if you are making a minor change that does not invalidate existing tests.</li>
-		<li><b>Drop history:</b> Replace the existing test suite and remove existing conformance testing results. Previous results can still be retrieved but don't count towards organisations' conformance statements.</li>
-		<li><b>Cancel:</b> Keep the existing test suite without making any changes.</li>
-	</ul>
+	<form class="form-horizontal">
+		<div class="form-group">
+			<label class="col-sm-3 control-label">Keep history</label>
+			<div class="col-sm-8">
+				<p class="form-control-static">Replace and keep the existing conformance testing results</p>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-3 control-label">Drop history</label>
+			<div class="col-sm-8">
+				<p class="form-control-static">Replace and make existing conformance testing results obsolete</p>
+			</div>
+		</div>
+		<div class="form-group">
+			<label class="col-sm-3 control-label">Cancel</label>
+			<div class="col-sm-8">
+				<p class="form-control-static">Keep the existing test suite without changes</p>
+			</div>
+		</div>
+	</form>
 </div>
 <div class="modal-footer">
     <button class="btn btn-primary" ng-click="keepHistory()" ng-disabled="actionPending"><span class="tab" ng-if="actionKeepPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Keep history</button>
