@@ -8,13 +8,11 @@ class CreateConformanceStatementController
     @domains = []
     @specs  = []
     @actors = []
-    @options = []
     @test   = []
     @systemId    = @$stateParams["id"]
     @selectedDomain = null
     @selectedSpec  = null
     @selectedActors = []
-    @selectedOptions = []
 
     @tableColumns = [
       {
@@ -30,8 +28,6 @@ class CreateConformanceStatementController
         title: 'Description'
       }
     ]
-
-    @optionTableColumns = @tableColumns.concat [{field: 'actor', title: 'Actor'}]
 
     @actorTableColumns = [
       {
@@ -61,10 +57,6 @@ class CreateConformanceStatementController
         id: 3
         title: 'Select Actors'
       }
-      {
-        id: 4
-        title: 'Select Options'
-      }
     ]
 
     @community = JSON.parse(@$window.localStorage['community'])
@@ -87,12 +79,9 @@ class CreateConformanceStatementController
         false
     else if step.id == 3
       if @selectedActors.length > 0
-        @getOptions @selectedActors
         true
       else
         false
-    else if step.id == 4
-      true
     else
       true
 
@@ -118,13 +107,6 @@ class CreateConformanceStatementController
   onActorDeselect: (actor) =>
     _.remove @selectedActors, (a)->
       actor.id == a.id
-
-  onOptionSelect: (option) =>
-    @selectedOptions.push option
-
-  onOptionDeselect: (option) =>
-    _.remove @selectedOptions, (a)->
-      option.id == a.id
 
   nextStep: () =>
     @$scope.$broadcast 'wizard-directive:next'
@@ -168,26 +150,9 @@ class CreateConformanceStatementController
         @ErrorService.showErrorMessage(error)
     )
 
-  getOptions: (actors) ->
-    @options = []
-
-    ids = _.map @selectedActors, (actor) ->
-      actor.id
-
-    if ids.length > 0
-      @ConformanceService.getOptions ids
-      .then (result)=>
-        @options = result
-      .catch (error) =>
-        @ErrorService.showErrorMessage(error)
-
   saveConformanceStatement: () ->
     promises = _.map @selectedActors, (actor)=>
-      options = _.filter @selectedOptions, (option) ->
-        option.actor == actor.id
-      optionIds = _.map options, (option) ->
-        option.id
-      @SystemService.defineConformanceStatement @systemId, @selectedSpec, actor.id, optionIds
+      @SystemService.defineConformanceStatement @systemId, @selectedSpec, actor.id, []
 
     @$q.all promises
 
