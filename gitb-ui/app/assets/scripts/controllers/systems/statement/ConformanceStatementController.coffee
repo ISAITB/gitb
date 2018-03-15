@@ -9,20 +9,16 @@ class ConformanceStatementController
 
     @tableColumns = [
       {
-        field: 'actorId'
-        title: 'Actor ID'
+        field: 'domainFull'
+        title: 'Domain'
       }
       {
-        field: 'actorName'
-        title: 'Actor Name'
-      }
-      {
-        field: 'options'
-        title: 'Options'
-      }
-      {
-        field: 'specification'
+        field: 'specificationFull'
         title: 'Specification'
+      }
+      {
+        field: 'actorFull'
+        title: 'Actor'
       }
       {
         field: 'results'
@@ -39,20 +35,16 @@ class ConformanceStatementController
     .then (conformanceStatements) =>
       @conformanceStatements = conformanceStatements
       @conformanceStatementRepresentations = _.map conformanceStatements, (conformanceStatement) ->
-
-        options = null
-        if conformanceStatement.options? and conformanceStatement.options.length > 0
-          optionNames = _.map conformanceStatement.options, (option) ->
-            option.sname
-          options = optionNames.join ', '
-
         transformedObject =
-          id: conformanceStatement.actor.id
-          actorId: conformanceStatement.actor.actorId
-          actorName: conformanceStatement.actor.name
-          specification: conformanceStatement.specification.fname
-          specificationId: conformanceStatement.specification.id
-          options: options
+          id: conformanceStatement.actorId
+          actor: conformanceStatement.actor
+          actorFull: conformanceStatement.actorFull
+          specificationId: conformanceStatement.specificationId
+          specification: conformanceStatement.specification
+          specificationFull: conformanceStatement.specificationFull
+          domainId: conformanceStatement.domainId
+          domain: conformanceStatement.domain
+          domainFull: conformanceStatement.domainFull
           results: "#{conformanceStatement.results.completed}/#{conformanceStatement.results.total} PASSED"
 
   onConformanceStatementSelect: (conformanceStatementRepresentation) =>

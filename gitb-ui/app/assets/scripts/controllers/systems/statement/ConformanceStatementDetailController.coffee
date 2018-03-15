@@ -7,8 +7,7 @@ class ConformanceStatementDetailController
     @systemId = @$stateParams['id']
     @actorId = @$stateParams['actor_id']
     @specId  = @$stateParams['specId']
-    @conformanceStatement = null
-    @conformanceStatementRepr = null
+    @actor = null
     @domain = null
     @specification = null
     @endpoints = []
@@ -70,10 +69,9 @@ class ConformanceStatementDetailController
                @determineTestSuiteResult(ts)
       @testSuites = data
 
-    @SystemService.getConformanceStatements @systemId, @specId, @actorId
+    @ConformanceService.getActorsWithIds [@actorId]
     .then (data) =>
-      @conformanceStatement = _.head data
-      @constructConformanceStatementRepresentation @conformanceStatement
+      @actor = _.head data
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -131,20 +129,12 @@ class ConformanceStatementDetailController
     @runTestClicked = false
 
   onTestSelect: (test) =>
-    @$state.go 'app.tests.execution', {test_id: test.id, systemId: @systemId, actorId: @conformanceStatementRepr.id, specId:@specId}
+    @$state.go 'app.tests.execution', {test_id: test.id, systemId: @systemId, actorId: @actorId, specId:@specId}
 
   onTestSuiteSelect: (testSuite) =>
     # This function remains empty at the moment but it makes sense to keep it,
     # as in the future we will not only be able to run individual test cases but
     # also test suites (which contain test cases).
-
-  constructConformanceStatementRepresentation: (conformanceStatement) =>
-    @conformanceStatementRepr =
-      id: conformanceStatement.actor.id
-      actorId: conformanceStatement.actor.actorId
-      actorName: conformanceStatement.actor.name
-      actorDescription: conformanceStatement.actor.description
-      options: if conformanceStatement.options? conformanceStatement.options.length > 0 then (_.map conformanceStatement.options, (o) -> o.sname).join ', ' else '-'
 
   onParameterSelect: (parameter) =>
     @$log.debug "Editing parameter: ", parameter

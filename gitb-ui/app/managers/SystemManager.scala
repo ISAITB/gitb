@@ -1,11 +1,14 @@
 package managers
 
+import java.util
+
 import models.Enums.TestResultStatus
-import models._
+import models.{ConformanceStatementSet, _}
 import org.slf4j.LoggerFactory
 import persistence.db._
 import play.api.libs.concurrent.Execution.Implicits._
 
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 import scala.slick.driver.MySQLDriver.simple._
 
@@ -128,82 +131,69 @@ object SystemManager extends BaseManager {
     }
   }
 
-  def getConformanceStatements(systemId: Long, spec: Option[String], actor: Option[String]): Future[List[ConformanceStatement]] = {
-    Future {
-      DB.withSession { implicit session =>
-        var implementedRows = PersistenceSchema.systemImplementsActors.filter(_.systemId === systemId)
-
-        if (spec.isDefined && actor.isDefined) {
-          implementedRows = implementedRows
-            .filter(_.specId === spec.get.toLong)
-            .filter(_.actorId === actor.get.toLong)
-        }
-
-        val implementedActorIds = implementedRows.map(_.actorId).list.distinct
-        val implementedActors = implementedActorIds.map((actorId) => PersistenceSchema.actors.filter(_.id === actorId).first)
-
-        val implementedOptionIds = PersistenceSchema.systemImplementsOptions.filter(_.systemId === systemId).map(_.optionId).list.distinct
-        val implementedOptions = implementedOptionIds.map((optionId) => PersistenceSchema.options.filter(_.id === optionId).first)
-
-        val implementedActorTestCaseIds =
-          if (spec.isDefined)
-            PersistenceSchema.testCaseHasActors.filter(_.specification === spec.get.toLong).filter(_.actor inSet implementedActorIds).list
-          else
-            PersistenceSchema.testCaseHasActors.filter(_.actor inSet implementedActorIds).list
-        val implementedOptionTestCaseIds = PersistenceSchema.testCaseCoversOptions.filter(_.option inSet implementedOptionIds).list
-
-        val implementedSpecificationIds = implementedRows.map(_.specId).list.distinct
-        val implementedSpecifications = PersistenceSchema.specifications.filter(_.id inSet implementedSpecificationIds).list
-
-
-        val actorIdTestCaseMap = implementedActorTestCaseIds.groupBy(_._2) //group by specifications
-      val optionIdTestCaseMap = implementedOptionTestCaseIds.groupBy(_._2)
-
-        implementedRows.list.map { entry: (Long, Long, Long) =>
-          val (systemId, specificationId, actorId) = entry
-
-          val actor = implementedActors.filter(_.id == actorId).head
-          val specification = implementedSpecifications.filter(_.id == specificationId).head
-
-          val actorOptions = implementedOptions.filter(_.actor == actor.id)
-          //remember we grouped by specifications
-          val actorTestCaseIds = actorIdTestCaseMap.get(specificationId) match {
-            case Some(ids) => ids.map(_._1)
-            case None => List()
-          }
-          val optionTestCaseIds = actorOptions.map({ (option) =>
-            optionIdTestCaseMap.get(option.id) match {
-              case Some(ids) => ids.map(_._1)
-              case None => List()
-            }
-          }).flatten
-
-          val testCaseIds = (actorTestCaseIds ++ optionTestCaseIds).distinct
-
-          val testCaseResults = testCaseIds map { testCaseId =>
-            val lastResult = {
-              val result = PersistenceSchema.testResults
-                .filter(_.testCaseId === testCaseId)
-                .filter(_.endTime isDefined)
-                .sortBy(_.endTime.desc)
-                .map(_.result)
-                .firstOption
-
-              result match {
-                case None => TestResultStatus.UNDEFINED
-                case Some(resultStr) => TestResultStatus.withName(resultStr)
-              }
-            }
-
-            lastResult
-          }
-
-          val total = testCaseIds.length
-          val completed = testCaseResults.count(_ == TestResultStatus.SUCCESS)
-
-          ConformanceStatement(actor, specification, actorOptions, TestResults(completed, total))
-        }
+  def getConformanceStatements(systemId: Long, spec: Option[String], actor: Option[String]): Future[List[ConformanceStatement]] = Future {
+    DB.withSession { implicit session =>
+      var query = for {
+        systemImplementsActors <- PersistenceSchema.systemImplementsActors
+        specificationHasActors <- PersistenceSchema.specificationHasActors if specificationHasActors.actorId === systemImplementsActors.actorId
+        specifications <- PersistenceSchema.specifications if specifications.id === specificationHasActors.specId
+        testCaseHasActors <- PersistenceSchema.testCaseHasActors if specificationHasActors.actorId === testCaseHasActors.actor
+        actors <- PersistenceSchema.actors if actors.id === specificationHasActors.actorId
+        domains <- PersistenceSchema.domains if domains.id === actors.domain
+        testCases <- PersistenceSchema.testCases if testCases.id === testCaseHasActors.testcase
+      } yield (systemImplementsActors, specificationHasActors, testCaseHasActors, actors, domains, specifications, testCases)
+      query = query.filter(_._1.systemId === systemId)
+      if (spec.isDefined && actor.isDefined) {
+        query = query
+          .filter(_._2.specId === spec.get.toLong)
+          .filter(_._2.actorId === actor.get.toLong)
       }
+      val results = query.list
+
+      // data: [0] Domain ID, [1] Domain name, [2] Specification ID, [3] Specification name, [4] Actor name, [5] Test case IDs
+      val statementMap: util.Map[Long, ConformanceStatementSet] = new util.TreeMap[Long, ConformanceStatementSet]
+      results.foreach { result =>
+        var data = statementMap.get(result._4.id)
+        if (data == null) {
+          data = new ConformanceStatementSet(
+            result._5.id, result._5.shortname, result._5.fullname,
+            result._4.id, result._4.actorId, result._4.name,
+            result._6.id, result._6.shortname, result._6.fullname,
+            new util.HashSet[Long]())
+          statementMap.put(result._4.id, data)
+        }
+        data.testCaseIds.add(result._7.id)
+      }
+
+      val conformanceStatements = new ListBuffer[ConformanceStatement]
+
+      import scala.collection.JavaConversions._
+      for (entry <- statementMap.entrySet) {
+        var completed = 0
+        for (testCaseId <- entry.getValue.testCaseIds) {
+          val lastResult = {
+            val result = PersistenceSchema.testResults
+              .filter(_.testCaseId === testCaseId)
+              .filter(_.endTime isDefined)
+              .sortBy(_.endTime.desc)
+              .map(_.result)
+              .firstOption
+            result match {
+              case None => TestResultStatus.UNDEFINED
+              case Some(resultStr) => TestResultStatus.withName(resultStr)
+            }
+          }
+          if (lastResult == TestResultStatus.SUCCESS) {
+            completed += 1
+          }
+        }
+        conformanceStatements.add(ConformanceStatement(
+          entry.getValue.domainId, entry.getValue.domainName, entry.getValue.domainNameFull,
+          entry.getValue.actorId, entry.getValue.actorName, entry.getValue.actorFull,
+          entry.getValue.specificationId, entry.getValue.specificationName, entry.getValue.specificationNameFull,
+          completed, entry.getValue.testCaseIds.size()))
+      }
+      conformanceStatements.toList
     }
   }
 

@@ -322,12 +322,18 @@ object JsonUtil {
 
 	def jsConformanceStatement(conformanceStatement: ConformanceStatement): JsObject = {
 		val json = Json.obj(
-			"actor" -> jsActor(conformanceStatement.actor),
-      "specification" -> jsSpecification(conformanceStatement.specification),
-			"options" -> jsOptions(conformanceStatement.options),
+      "domainId" -> conformanceStatement.domainId,
+      "domain" -> conformanceStatement.domainName,
+      "domainFull" -> conformanceStatement.domainNameFull,
+      "actorId" -> conformanceStatement.actorId,
+			"actor" -> conformanceStatement.actorName,
+      "actorFull" -> conformanceStatement.actorFull,
+      "specificationId" -> conformanceStatement.specificationId,
+      "specification" -> conformanceStatement.specificationName,
+      "specificationFull" -> conformanceStatement.specificationNameFull,
 			"results" -> Json.obj(
-				"total" -> conformanceStatement.results.total,
-				"completed" -> conformanceStatement.results.completed
+				"total" -> conformanceStatement.totalTests,
+				"completed" -> conformanceStatement.completedTests
 			)
 		)
 		json
