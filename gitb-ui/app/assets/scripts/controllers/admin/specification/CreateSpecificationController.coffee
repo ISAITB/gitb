@@ -17,4 +17,8 @@ class CreateSpecificationController
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 
+	cancel: () =>
+		@$state.go 'app.admin.domains.detail.list', {id: @$stateParams.id}
+
+
 @controllers.controller 'CreateSpecificationController', CreateSpecificationController

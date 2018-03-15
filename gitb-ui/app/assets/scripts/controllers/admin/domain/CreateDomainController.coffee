@@ -16,4 +16,7 @@ class CreateDomainController
 				.catch (error) =>
 					@ErrorService.showErrorMessage(error)
 
+	cancel: () =>
+		@$state.go 'app.admin.domains.list'
+
 @controllers.controller 'CreateDomainController', CreateDomainController
