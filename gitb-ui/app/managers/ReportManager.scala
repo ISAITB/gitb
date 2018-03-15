@@ -422,55 +422,69 @@ object ReportManager extends BaseManager {
     val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
     DB.withSession {
       implicit session =>
+        val overview = new TestCaseOverview()
+        overview.setTitle("Test Case Report")
+        // Result
+        val testResult = PersistenceSchema.testResults.filter(_.testSessionId === sessionId).first
+        overview.setReportResult(testResult.result)
+        // Start time
+        val start = testResult.startTime
+        overview.setStartTime(sdf.format(new Date(start.getTime)));
+        // End time
+        if (testResult.endTime.isDefined) {
+          val end = testResult.endTime.get
+          overview.setEndTime(sdf.format(new Date(end.getTime)))
+        }
+        if (testResult.testCase.isDefined) {
+          overview.setTestName(testResult.testCase.get)
+        } else {
+          overview.setTestName("-")
+        }
+        if (testResult.system.isDefined) {
+          overview.setSystem(testResult.system.get)
+        } else {
+          overview.setSystem("-")
+        }
+        if (testResult.organization.isDefined) {
+          overview.setOrganisation(testResult.organization.get)
+        } else {
+          overview.setOrganisation("-")
+        }
+        if (testResult.actor.isDefined) {
+          overview.setTestActor(testResult.actor.get)
+        } else {
+          overview.setTestActor("-")
+        }
+        if (testResult.specification.isDefined) {
+          overview.setTestSpecification(testResult.specification.get)
+        } else {
+          overview.setTestSpecification("-")
+        }
+        if (testResult.domain.isDefined) {
+          overview.setTestDomain(testResult.domain.get)
+        } else {
+          overview.setTestDomain("-")
+        }
         if (testCase.isDefined) {
-          val overview = new TestCaseOverview()
-          overview.setTitle("Test Case Report")
-          // Test name
-          overview.setTestName(testCase.get.fullname)
           if (testCase.get.description.isDefined) {
-            // Test description
             overview.setTestDescription(testCase.get.description.get);
           }
-          // Result
-          val testResult = PersistenceSchema.testResults.filter(_.testSessionId === sessionId).first
-          overview.setReportResult(testResult.result)
-          // Start time
-          val start = testResult.startTime
-          overview.setStartTime(sdf.format(new Date(testResult.startTime.getTime)));
-          // End time
-          if (testResult.endTime.isDefined) {
-            val end = testResult.endTime.get
-            overview.setEndTime(sdf.format(new Date(end.getTime)))
-          }
-          // System
-          val system = PersistenceSchema.systems.filter(_.id === testResult.systemId).first
-          overview.setSystem(system.fullname)
-          // Organisation
-          val organisation = PersistenceSchema.organizations.filter(_.id === system.owner).first
-          overview.setOrganisation(organisation.fullname)
-          // Actor
-          val actor = PersistenceSchema.actors.filter(_.id === testResult.actorId).first
-          overview.setTestActor(actor.name)
-          // Specification
-          val specification = PersistenceSchema.specifications.filter(_.id === testCase.get.targetSpec).first
-          overview.setTestSpecification(specification.fullname)
-          // Domain
-          val domain = PersistenceSchema.domains.filter(_.id === specification.domain).first
-          overview.setTestDomain(domain.fullname)
-          for (stepReport <- list) {
-            overview.getSteps().add(generator.fromTestStepReportType(stepReport, "Step " + stepReport.getId, addContext))
-          }
-
-          val fos = Files.newOutputStream(reportPath)
-          try {
-            generator.writeTestCaseOverviewReport(overview, fos)
-            fos.flush()
-          } catch {
-            case e: Exception =>
-              throw new IllegalStateException("Unable to generate PDF report", e)
-          } finally {
-            if (fos != null) fos.close()
-          }
+        } else {
+          // This is a deleted test case - get data as possible from TestResult
+          overview.setTestDescription("-")
+        }
+        for (stepReport <- list) {
+          overview.getSteps().add(generator.fromTestStepReportType(stepReport, "Step " + stepReport.getId, addContext))
+        }
+        val fos = Files.newOutputStream(reportPath)
+        try {
+          generator.writeTestCaseOverviewReport(overview, fos)
+          fos.flush()
+        } catch {
+          case e: Exception =>
+            throw new IllegalStateException("Unable to generate PDF report", e)
+        } finally {
+          if (fos != null) fos.close()
         }
     }
     reportPath
