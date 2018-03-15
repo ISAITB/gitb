@@ -1,16 +1,12 @@
-<div class="container">
-    <div class="row">
-        <div class="col-md-3">
-            <aside class="sidebar">
-                <ul class="nav nav-list primary push-bottom">
-                    <li ui-sref-active="active"><a ui-sref="app.systems.detail.conformance.list">Conformance Statement</a></li>
-                    <li ui-sref-active="active"><a ui-sref="app.systems.detail.info">System Information</a></li>
-                    <li ui-sref-active="active"><a ui-sref="app.systems.detail.tests">Performed Tests</a></li>
-                    <li ng-if="!(systemNavigationCtrl.count <= 1 && systemNavigationCtrl.DataService.isVendorUser)" class="nav-divider"></li>
-                    <li ng-if="!(systemNavigationCtrl.count <= 1 && systemNavigationCtrl.DataService.isVendorUser)"><a ui-sref="app.systems.list">Systems</a></li>
-                </ul>
-            </aside>
-        </div>
-        <div class="child col-md-9" ui-view></div>
-    </div>
+<div class="col-md-2">
+    <aside class="sidebar">
+        <ul class="nav nav-list primary push-bottom">
+            <li ui-sref-active="active"><a ui-sref="app.systems.detail.conformance.list">Conformance Statement</a></li>
+            <li ui-sref-active="active"><a ui-sref="app.systems.detail.info">System Information</a></li>
+            <li ui-sref-active="active"><a ui-sref="app.systems.detail.tests">Performed Tests</a></li>
+            <li ng-if="!(systemNavigationCtrl.count <= 1 && systemNavigationCtrl.DataService.isVendorUser)" class="nav-divider"></li>
+            <li ng-if="!(systemNavigationCtrl.count <= 1 && systemNavigationCtrl.DataService.isVendorUser)"><a ui-sref="app.systems.list">Systems</a></li>
+        </ul>
+    </aside>
 </div>
+<div class="child col-md-10" ui-view></div>
