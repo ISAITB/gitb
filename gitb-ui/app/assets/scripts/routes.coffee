@@ -67,7 +67,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 					SystemService.getConformanceStatements $stateParams.id
 					.then (data) ->
 						if data.length == 1
-							deferred.reject {redirectTo: 'app.systems.detail.conformance.detail', params: {id: $stateParams.id, actor_id: data[0].actor.id, specId: data[0].specification.id}}
+							deferred.reject {redirectTo: 'app.systems.detail.conformance.detail', params: {id: $stateParams.id, actor_id: data[0].actorId, specId: data[0].specificationId}}
 						else
 							deferred.resolve()
 				else

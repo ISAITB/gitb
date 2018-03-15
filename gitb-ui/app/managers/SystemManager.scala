@@ -174,6 +174,7 @@ object SystemManager extends BaseManager {
           val lastResult = {
             val result = PersistenceSchema.testResults
               .filter(_.testCaseId === testCaseId)
+              .filter(_.sutId === systemId)
               .filter(_.endTime isDefined)
               .sortBy(_.endTime.desc)
               .map(_.result)
