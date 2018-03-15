@@ -1,21 +1,23 @@
 import config.Configurations
 import jaxws.TestbedService
 import javax.xml.ws.Endpoint
+
 import filters._
-import managers.{TestResultManager, SystemConfigurationManager}
+import managers.{SystemConfigurationManager, TestResultManager, TestSuiteManager}
 import models.Constants
 import controllers.TestService
-
+import org.apache.commons.io.FileUtils
 import persistence.db.PersistenceLayer
 import utils.TimeUtil
-import scala.concurrent.duration.DurationInt
 
+import scala.concurrent.duration.DurationInt
 import play.api.Application
 import play.api.GlobalSettings
 import play.api.Logger
 import play.api.libs.concurrent.Akka
 import play.api.mvc._
 import play.api.Play.current
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object Global extends WithFilters(new CorsFilter,
@@ -49,8 +51,9 @@ with GlobalSettings {
     //start TestbedClient service
     TestbedService.endpoint = Endpoint.publish(Configurations.TESTBED_CLIENT_URL, new TestbedService());
 
-    // start idle session task
-    destroyIdleSessions
+    // start tasks
+    destroyIdleSessions()
+    cleanupPendingTestSuiteUploads()
     Logger.info("Application has started")
   }
 
@@ -66,20 +69,32 @@ with GlobalSettings {
   /**
    * Scheduled job that kills idle sessions
    */
-  def destroyIdleSessions = {
+  def destroyIdleSessions() = {
     Akka.system.scheduler.schedule(1.days, 1.days) {
-      SystemConfigurationManager.getSystemConfiguration(Constants.SessionAliveTime) map { config =>
-        val aliveTime = config.parameter
-        if (aliveTime.isDefined) {
-          TestResultManager.getRunningTestResults map { list =>
-            list.foreach { result =>
-              val difference = TimeUtil.getTimeDifferenceInSeconds(result.startTime)
-              if (difference >= aliveTime.get.toInt) {
-                val sessionId = result.sessionId
-                TestService.endSession(sessionId)
-                Logger.info("Stopped idle session [" + sessionId + "]")
-              }
-            }
+      val config = SystemConfigurationManager.getSystemConfiguration(Constants.SessionAliveTime)
+      val aliveTime = config.parameter
+      if (aliveTime.isDefined) {
+        val list = TestResultManager.getRunningTestResults
+        list.foreach { result =>
+          val difference = TimeUtil.getTimeDifferenceInSeconds(result.startTime)
+          if (difference >= aliveTime.get.toInt) {
+            val sessionId = result.sessionId
+            TestService.endSession(sessionId)
+            Logger.info("Stopped idle session [" + sessionId + "]")
+          }
+        }
+      }
+    }
+  }
+
+  def cleanupPendingTestSuiteUploads() = {
+    Akka.system.scheduler.schedule(1.hours, 1.hours) {
+      val pendingFolder = TestSuiteManager.getPendingFolder
+      if (pendingFolder.exists() && pendingFolder.isDirectory) {
+        for (file <- pendingFolder.listFiles()) {
+          if (file.lastModified() + 3600000 < System.currentTimeMillis) {
+            // Delete pending test suite folders that were created min 1 hour ago
+            FileUtils.deleteDirectory(file)
           }
         }
       }

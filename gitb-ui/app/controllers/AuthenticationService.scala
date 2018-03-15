@@ -12,7 +12,7 @@ class AuthenticationService extends Controller{
   /**
    * OAuth2.0 request (Resource Owner Password Credentials Grant) for getting or refreshing access token
    */
-  def access_token = Action.async { request =>
+  def access_token = Action.apply { request =>
     val grantType = ParameterExtractor.requiredBodyParameter(request, Parameters.GRANT_TYPE)
     grantType match {
       //if user wants access_token, check his credentials first, then give one if they are valid
@@ -20,26 +20,23 @@ class AuthenticationService extends Controller{
         val email  = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL)
         val passwd = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD)
 
-        AuthManager.checkUserByEmail(email, passwd) flatMap { result =>
-          //user found
-          if(result.isDefined){
-            AuthManager.generateTokens(result.get.id) map{ tokens =>
-              ResponseConstructor.constructOauthResponse(tokens)
-            }
-          }
-          //no user with given credentials
-          else{
-            throw InvalidAuthorizationException(ErrorCodes.INVALID_CREDENTIALS, "Invalid credentials")
-          }
+        val result = AuthManager.checkUserByEmail(email, passwd)
+        //user found
+        if(result.isDefined){
+          val tokens = AuthManager.generateTokens(result.get.id)
+          ResponseConstructor.constructOauthResponse(tokens)
+        }
+        //no user with given credentials
+        else{
+          throw InvalidAuthorizationException(ErrorCodes.INVALID_CREDENTIALS, "Invalid credentials")
         }
 
       //if user wants to refresh his access_token, check his refresh token first, then give new one
       case Parameters.REFRESH_TOKEN =>
         val refreshToken  = ParameterExtractor.requiredBodyParameter(request, Parameters.REFRESH_TOKEN)
 
-        AuthManager.refreshTokens(refreshToken) map{ tokens =>
-          ResponseConstructor.constructOauthResponse(tokens)
-        }
+        val tokens = AuthManager.refreshTokens(refreshToken)
+        ResponseConstructor.constructOauthResponse(tokens)
 
       //Invalid grant type
       case _ =>
@@ -49,11 +46,9 @@ class AuthenticationService extends Controller{
   /**
    * Check email availability
    */
-  def checkEmail = Action.async { request =>
+  def checkEmail = Action.apply { request =>
     val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
-    val future = AuthManager.checkEmailAvailability(email)
-    future map { isAvailable =>
-      ResponseConstructor.constructAvailabilityResponse(isAvailable)
-    }
+    val isAvailable = AuthManager.checkEmailAvailability(email)
+    ResponseConstructor.constructAvailabilityResponse(isAvailable)
   }
 }

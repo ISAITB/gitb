@@ -1,17 +1,14 @@
 package controllers
 
-import config.Configurations
 import actors.WebSocketActor
-import jaxws.HeaderHandlerResolver
-import managers.{ReportManager, ConformanceManager}
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-
-import org.slf4j.{LoggerFactory, Logger}
-import play.api.mvc._
 import com.gitb.tbs._
-import scala.concurrent.Future
+import config.Configurations
 import controllers.util._
-import utils.{JsonUtil, JacksonUtil}
+import jaxws.HeaderHandlerResolver
+import managers.{ConformanceManager, ReportManager}
+import org.slf4j.{Logger, LoggerFactory}
+import play.api.mvc._
+import utils.{JacksonUtil, JsonUtil}
 
 object TestService{
   val port:TestbedService = {
@@ -33,14 +30,12 @@ object TestService{
     TestService.port.getTestCaseDefinition(request)
   }
 
-  def endSession(session_id:String): Future[Unit] = {
-    Future {
-      val request: BasicCommand = new BasicCommand
-      request.setTcInstanceId(session_id)
-      TestService.port.stop(request)
+  def endSession(session_id:String) = {
+    val request: BasicCommand = new BasicCommand
+    request.setTcInstanceId(session_id)
+    TestService.port.stop(request)
 
-      ReportManager.setEndTimeNow(session_id)
-    }
+    ReportManager.setEndTimeNow(session_id)
   }
 }
 
@@ -50,121 +45,100 @@ class TestService extends Controller{
   /**
    * Gets the test case definition for a specific test
    */
-  def getTestCaseDefinition(test_id:String) = Action.async {
-    Future {
-      val response = TestService.getTestCasePresentation(test_id)
-      val json = JacksonUtil.serializeTestCasePresentation(response.getTestcase)
-      logger.debug("[TestCase] " + json)
-      ResponseConstructor.constructJsonResponse(json)
-    }
+  def getTestCaseDefinition(test_id:String) = Action.apply {
+    val response = TestService.getTestCasePresentation(test_id)
+    val json = JacksonUtil.serializeTestCasePresentation(response.getTestcase)
+    logger.debug("[TestCase] " + json)
+    ResponseConstructor.constructJsonResponse(json)
   }
   /**
    * Gets the definition for a actor test
    */
-  def getActorDefinition(actor_id:String) = Action.async {
-    ConformanceManager.getActorDefinition(actor_id.toLong) map { actor =>
-      val json = JsonUtil.jsActor(actor).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    }
+  def getActorDefinition(actor_id:String) = Action.apply {
+    val actor = ConformanceManager.getActorDefinition(actor_id.toLong)
+    val json = JsonUtil.jsActor(actor).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
    * Initiates the test case
    */
-  def initiate(test_id:String) = Action.async {
-    Future {
-      val request: BasicRequest = new BasicRequest
-      request.setTcId(test_id)
+  def initiate(test_id:String) = Action.apply {
+    val request: BasicRequest = new BasicRequest
+    request.setTcId(test_id)
 
-      TestService.port.initiate(request)
-    }  map { response =>
-      ResponseConstructor.constructStringResponse(response.getTcInstanceId)
-    }
+    val response = TestService.port.initiate(request)
+    ResponseConstructor.constructStringResponse(response.getTcInstanceId)
   }
   /**
    * Sends the required data on preliminary steps
    */
-  def configure(session_id:String) = Action.async { request =>
+  def configure(session_id:String) = Action.apply { request =>
     val configs = ParameterExtractor.requiredBodyParameter(request, Parameters.CONFIGS)
 
-    Future {
-      val request: ConfigureRequest = new ConfigureRequest
-      request.setTcInstanceId(session_id)
-      request.getConfigs.addAll(JacksonUtil.parseActorConfigurations(configs))
+    val cRequest: ConfigureRequest = new ConfigureRequest
+    cRequest.setTcInstanceId(session_id)
+    cRequest.getConfigs.addAll(JacksonUtil.parseActorConfigurations(configs))
 
-      TestService.port.configure(request)
-    } map { response =>
-      val json = JacksonUtil.serializeConfigureResponse(response)
-      ResponseConstructor.constructJsonResponse(json)
-    }
+    val response = TestService.port.configure(cRequest)
+    val json = JacksonUtil.serializeConfigureResponse(response)
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
    * Sends inputs to the TestbedService
    */
-  def provideInput(session_id:String) = Action.async { request =>
+  def provideInput(session_id:String) = Action.apply { request =>
     val inputs = ParameterExtractor.requiredBodyParameter(request, Parameters.INPUTS)
     val step   = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_STEP)
 
-    Future {
-      val request: ProvideInputRequest = new ProvideInputRequest
-      request.setTcInstanceId(session_id)
-      request.setStepId(step)
-      request.getInput.addAll(JacksonUtil.parseUserInputs(inputs))
+    val pRequest: ProvideInputRequest = new ProvideInputRequest
+    pRequest.setTcInstanceId(session_id)
+    pRequest.setStepId(step)
+    pRequest.getInput.addAll(JacksonUtil.parseUserInputs(inputs))
 
-      TestService.port.provideInput(request)
-    } map { response =>
-      ResponseConstructor.constructEmptyResponse
-    }
+    val response = TestService.port.provideInput(pRequest)
+    ResponseConstructor.constructEmptyResponse
   }
 
   /**
    * Starts the preliminary phase if test case description has one
    */
-  def initiatePreliminary(session_id:String) = Action.async { request =>
-    Future {
-      val request:BasicCommand = new BasicCommand
-      request.setTcInstanceId(session_id)
+  def initiatePreliminary(session_id:String) = Action.apply { request =>
+    val bRequest:BasicCommand = new BasicCommand
+    bRequest.setTcInstanceId(session_id)
 
-      TestService.port.initiatePreliminary(request)
-    } map { response =>
-      ResponseConstructor.constructEmptyResponse
-    }
+    TestService.port.initiatePreliminary(bRequest)
+    ResponseConstructor.constructEmptyResponse
 
   }
   /**
    * Starts the test case
    */
-  def start(session_id:String) = Action.async {
-    Future {
-      val request: BasicCommand = new BasicCommand
-      request.setTcInstanceId(session_id)
+  def start(session_id:String) = Action.apply {
+    val bRequest: BasicCommand = new BasicCommand
+    bRequest.setTcInstanceId(session_id)
 
-      TestService.port.start(request)
-    } map { response =>
-      ResponseConstructor.constructEmptyResponse
-    }
+    TestService.port.start(bRequest)
+    ResponseConstructor.constructEmptyResponse
   }
+
   /**
    * Stops the test case
    */
-  def stop(session_id:String) = Action.async {
-    TestService.endSession(session_id) map { response =>
-      ResponseConstructor.constructEmptyResponse
-    }
+  def stop(session_id:String) = Action.apply {
+    TestService.endSession(session_id)
+    ResponseConstructor.constructEmptyResponse
   }
   /**
    * Restarts the test case with same preliminary data
    */
-  def restart(session_id:String) = Action.async {
-    Future {
-      val request: BasicCommand = new BasicCommand
-      request.setTcInstanceId(session_id)
+  def restart(session_id:String) = Action.apply {
+    val bRequest: BasicCommand = new BasicCommand
+    bRequest.setTcInstanceId(session_id)
 
-      TestService.port.restart(request)
-    } map { response =>
-      ResponseConstructor.constructEmptyResponse
-    }
+    TestService.port.restart(bRequest)
+    ResponseConstructor.constructEmptyResponse
   }
 
   /**

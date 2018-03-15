@@ -1,18 +1,17 @@
 package controllers
 
-import controllers.util.{Parameters, ParameterExtractor, ResponseConstructor}
+import java.io.InputStream
+
+import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
 import managers.SystemConfigurationManager
-import org.apache.commons.io.IOUtils
-import org.slf4j.{LoggerFactory, Logger}
-import play.api.Play
-import play.api.mvc.{Action, Controller}
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import utils.JsonUtil
 import models.Constants
-import java.io.InputStream
+import org.apache.commons.io.IOUtils
+import org.slf4j.{Logger, LoggerFactory}
+import play.api.Play
 import play.api.Play.current
-import scala.concurrent.Future
+import play.api.mvc.{Action, Controller}
+import utils.JsonUtil
 
 class SystemConfigurationService extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemConfigurationService])
@@ -27,17 +26,14 @@ class SystemConfigurationService extends Controller {
   /**
    * Update system configuration
    */
-  def updateSessionAliveTime = Action.async { request =>
+  def updateSessionAliveTime = Action.apply { request =>
     val value = ParameterExtractor.optionalBodyParameter(request, Parameters.PARAMETER)
 
     if (value.isDefined && !isPositiveInt(value.get)) {
-      Future {
-        ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_PARAM, "Value should be a positive integer.")
-      }
+      ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_PARAM, "Value should be a positive integer.")
     } else {
-      SystemConfigurationManager.updateSystemParameter(Constants.SessionAliveTime, value) map { unit =>
-        ResponseConstructor.constructEmptyResponse
-      }
+      SystemConfigurationManager.updateSystemParameter(Constants.SessionAliveTime, value)
+      ResponseConstructor.constructEmptyResponse
     }
   }
 
@@ -59,11 +55,10 @@ class SystemConfigurationService extends Controller {
   /**
    * Gets the system configuration with specified name
    */
-  private def getSystemConfiguration(name: String) = Action.async { request =>
-    SystemConfigurationManager.getSystemConfiguration(name) map { config =>
-      val json: String = JsonUtil.serializeSystemConfig(config)
-      ResponseConstructor.constructJsonResponse(json)
-    }
+  private def getSystemConfiguration(name: String) = Action.apply { request =>
+    val config = SystemConfigurationManager.getSystemConfiguration(name)
+    val json: String = JsonUtil.serializeSystemConfig(config)
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   private def isPositiveInt(value: String): Boolean = {

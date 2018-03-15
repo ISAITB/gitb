@@ -14,76 +14,70 @@ class LegalNoticeService extends Controller {
   /**
    * Gets all legal notices for the specified community
    */
-  def getLegalNoticesByCommunity(communityId: Long) = Action.async {
-    LegalNoticeManager.getLegalNoticesByCommunity(communityId) map { list =>
-      val json: String = JsonUtil.jsLegalNotices(list).toString
-      ResponseConstructor.constructJsonResponse(json)
-    }
+  def getLegalNoticesByCommunity(communityId: Long) = Action.apply {
+    val list = LegalNoticeManager.getLegalNoticesByCommunity(communityId)
+    val json: String = JsonUtil.jsLegalNotices(list).toString
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
    * Creates new legal notice
    */
-  def createLegalNotice() = Action.async { request =>
+  def createLegalNotice() = Action.apply { request =>
     val legalNotice = ParameterExtractor.extractLegalNoticeInfo(request)
-    LegalNoticeManager.checkUniqueName(legalNotice.name, legalNotice.community) map { uniqueName =>
-      if (uniqueName) {
-        LegalNoticeManager.createLegalNotice(legalNotice)
-        ResponseConstructor.constructEmptyResponse
-      } else {
-        ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Legal notice with '" + legalNotice.name + "' already exists.")
-      }
+    val uniqueName = LegalNoticeManager.checkUniqueName(legalNotice.name, legalNotice.community)
+    if (uniqueName) {
+      LegalNoticeManager.createLegalNotice(legalNotice)
+      ResponseConstructor.constructEmptyResponse
+    } else {
+      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Legal notice with '" + legalNotice.name + "' already exists.")
     }
   }
 
   /**
    * Gets the legal notice with specified id
    */
-  def getLegalNoticeById(noticeId: Long) = Action.async { request =>
-    LegalNoticeManager.getLegalNoticeById(noticeId) map { ln =>
-      val json: String = JsonUtil.serializeLegalNotice(ln)
-      ResponseConstructor.constructJsonResponse(json)
-    }
+  def getLegalNoticeById(noticeId: Long) = Action.apply { request =>
+    val ln = LegalNoticeManager.getLegalNoticeById(noticeId)
+    val json: String = JsonUtil.serializeLegalNotice(ln)
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
    * Updates legal notice
    */
-  def updateLegalNotice(noticeId: Long) = Action.async { request =>
+  def updateLegalNotice(noticeId: Long) = Action.apply { request =>
     val name = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
     val description = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
     val content = ParameterExtractor.requiredBodyParameter(request, Parameters.CONTENT)
     val default = ParameterExtractor.requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
     val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
 
-    LegalNoticeManager.checkUniqueName(noticeId, name, communityId) map { uniqueName =>
-      if (uniqueName) {
-        LegalNoticeManager.updateLegalNotice(noticeId, name, description, content, default, communityId)
-        ResponseConstructor.constructEmptyResponse
-      } else {
-        ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Legal notice with '" + name + "' already exists.")
-      }
+    val uniqueName = LegalNoticeManager.checkUniqueName(noticeId, name, communityId)
+    if (uniqueName) {
+      LegalNoticeManager.updateLegalNotice(noticeId, name, description, content, default, communityId)
+      ResponseConstructor.constructEmptyResponse
+    } else {
+      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Legal notice with '" + name + "' already exists.")
     }
   }
 
   /**
    * Deletes legal notice with specified id
    */
-  def deleteLegalNotice(noticeId: Long) = Action.async { request =>
-    LegalNoticeManager.deleteLegalNotice(noticeId) map { unit =>
-      ResponseConstructor.constructEmptyResponse
-    }
+  def deleteLegalNotice(noticeId: Long) = Action.apply { request =>
+    LegalNoticeManager.deleteLegalNotice(noticeId)
+    ResponseConstructor.constructEmptyResponse
   }
 
   /**
     * Gets the default landing page for given community
     */
-  def getCommunityDefaultLegalNotice() = Action.async { request =>
+  def getCommunityDefaultLegalNotice() = Action.apply { request =>
     val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
-    LegalNoticeManager.getCommunityDefaultLegalNotice(communityId) map { legalNotice =>
-      val json: String = JsonUtil.serializeLegalNotice(legalNotice)
-      ResponseConstructor.constructJsonResponse(json)
-    }
+    val legalNotice = LegalNoticeManager.getCommunityDefaultLegalNotice(communityId)
+    val json: String = JsonUtil.serializeLegalNotice(legalNotice)
+    ResponseConstructor.constructJsonResponse(json)
   }
 
 

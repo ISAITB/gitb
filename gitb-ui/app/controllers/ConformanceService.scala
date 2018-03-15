@@ -19,12 +19,11 @@ class ConformanceService extends Controller {
   /**
    * Gets the list of domains
    */
-  def getDomains = Action.async { request =>
+  def getDomains = Action.apply { request =>
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
-    ConformanceManager.getDomains(ids) map { result =>
-      val json = JsonUtil.jsDomains(result).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    }
+    val result = ConformanceManager.getDomains(ids)
+    val json = JsonUtil.jsDomains(result).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   def getDomainOfSpecification(specId: Long) = Action.apply { request =>
@@ -35,48 +34,44 @@ class ConformanceService extends Controller {
   /**
    * Gets the domain of the given community
    */
-  def getCommunityDomain = Action.async { request =>
+  def getCommunityDomain = Action.apply { request =>
    val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
-    ConformanceManager.getCommunityDomain(communityId) map { domain =>
-      if (domain != null) {
-        val json = JsonUtil.jsDomain(domain).toString()
-        ResponseConstructor.constructJsonResponse(json)
-      } else {
-        ResponseConstructor.constructEmptyResponse
-      }
+    val domain = ConformanceManager.getCommunityDomain(communityId)
+    if (domain != null) {
+      val json = JsonUtil.jsDomain(domain).toString()
+      ResponseConstructor.constructJsonResponse(json)
+    } else {
+      ResponseConstructor.constructEmptyResponse
     }
   }
 
   /**
    * Gets the list of specifications
    */
-  def getSpecs = Action.async { request =>
+  def getSpecs = Action.apply { request =>
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
-    ConformanceManager.getSpecifications(ids) map { result =>
-      val json = JsonUtil.jsSpecifications(result).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    }
+    val result = ConformanceManager.getSpecifications(ids)
+    val json = JsonUtil.jsSpecifications(result).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
    * Gets the list of specifications
    */
-  def getActors = Action.async { request =>
+  def getActors = Action.apply { request =>
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
-    ConformanceManager.getActors(ids) map { result =>
-      val json = JsonUtil.jsActors(result).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    }
+    val result = ConformanceManager.getActors(ids)
+    val json = JsonUtil.jsActors(result).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
    * Gets the specifications that are defined/tested in the platform
    */
-  def getDomainSpecs(domain_id: Long) = Action.async {
-    ConformanceManager.getSpecifications(domain_id) map { specs =>
-      val json = JsonUtil.jsSpecifications(specs).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    }
+  def getDomainSpecs(domain_id: Long) = Action.apply {
+    val specs = ConformanceManager.getSpecifications(domain_id)
+    val json = JsonUtil.jsSpecifications(specs).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
@@ -93,27 +88,25 @@ class ConformanceService extends Controller {
    * @param spec_id
    * @return
    */
-  def getSpecTestSuites(spec_id: Long) = Action.async {
-    TestSuiteManager.getTestSuitesWithSpecificationId(spec_id) map { testSuites =>
-      val json = JsonUtil.jsTestSuitesList(testSuites).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    }
+  def getSpecTestSuites(spec_id: Long) = Action.apply {
+    val testSuites = TestSuiteManager.getTestSuitesWithSpecificationId(spec_id)
+    val json = JsonUtil.jsTestSuitesList(testSuites).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
    * Gets actors defined  for the domain
    */
-  def getDomainActors(domainId: Long) = Action.async {
-    ConformanceManager.getActorsWithDomainId(domainId) map { actors =>
-      val json = JsonUtil.jsActors(actors).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    }
+  def getDomainActors(domainId: Long) = Action.apply {
+    val actors = ConformanceManager.getActorsWithDomainId(domainId)
+    val json = JsonUtil.jsActors(actors).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
    * Gets test cases defined  for the actor
    */
-  def getActorTestCases(actor_id: Long) = Action.async { request =>
+  def getActorTestCases(actor_id: Long) = Action.apply { request =>
     val optionIds = ParameterExtractor.optionalQueryParameter(request, Parameters.OPTIONS) match {
       case Some(ids) => Some(ids.split(",").map(_.toLong).toList)
       case None => None
@@ -121,39 +114,35 @@ class ConformanceService extends Controller {
     val spec = ParameterExtractor.requiredQueryParameter(request, Parameters.SPEC).toLong
     val testCaseType = ParameterExtractor.requiredQueryParameter(request, Parameters.TYPE).toShort
 
-    TestCaseManager.getTestCases(actor_id, spec, optionIds, testCaseType) map { testCases =>
-      val json = JsonUtil.jsTestCaseList(testCases).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    }
+    val testCases = TestCaseManager.getTestCases(actor_id, spec, optionIds, testCaseType)
+    val json = JsonUtil.jsTestCaseList(testCases).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
-  def createDomain() = Action.async { request =>
+  def createDomain() = Action.apply { request =>
     val domain = ParameterExtractor.extractDomain(request)
-    ConformanceManager.createDomain(domain) map { unit =>
+    ConformanceManager.createDomain(domain)
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def updateDomain(domainId: Long) = Action.apply { request =>
+    val domainExists = ConformanceManager.checkDomainExists(domainId)
+    if(domainExists) {
+      val shortName:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
+      val fullName:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
+      val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+
+      ConformanceManager.updateDomain(domainId, shortName, fullName, description)
       ResponseConstructor.constructEmptyResponse
+    } else{
+      throw new NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, "Domain with ID '" + domainId + "' not found")
     }
   }
 
-  def updateDomain(domainId: Long) = Action.async { request =>
-    ConformanceManager.checkDomainExists(domainId) map { domainExists =>
-      if(domainExists) {
-        val shortName:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
-        val fullName:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
-        val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-
-        ConformanceManager.updateDomain(domainId, shortName, fullName, description)
-        ResponseConstructor.constructEmptyResponse
-      } else{
-        throw new NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, "Domain with ID '" + domainId + "' not found")
-      }
-    }
-  }
-
-  def createOption() = Action.async { request =>
+  def createOption() = Action.apply { request =>
     val option = ParameterExtractor.extractOption(request)
-    ConformanceManager.createOption(option) map { unit =>
-      ResponseConstructor.constructEmptyResponse
-    }
+    ConformanceManager.createOption(option)
+    ResponseConstructor.constructEmptyResponse
   }
 
   def createActor() = Action.apply { request =>
@@ -187,56 +176,51 @@ class ConformanceService extends Controller {
     }
   }
 
-  def createSpecification() = Action.async { request =>
+  def createSpecification() = Action.apply { request =>
     val specification = ParameterExtractor.extractSpecification(request)
-    ConformanceManager.createSpecifications(specification) map (_ => ResponseConstructor.constructEmptyResponse)
+    ConformanceManager.createSpecifications(specification)
+    ResponseConstructor.constructEmptyResponse
   }
 
-  def getOptionsForActor(actorId: Long) = Action.async { request =>
-    ConformanceManager.getOptionsForActor(actorId) map { options =>
-      val json = JsonUtil.jsOptions(options).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    }
+  def getOptionsForActor(actorId: Long) = Action.apply { request =>
+    val options = ConformanceManager.getOptionsForActor(actorId)
+    val json = JsonUtil.jsOptions(options).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
-  def getEndpointsForActor(actorId: Long) = Action.async {
-    ConformanceManager.getEndpointsForActor(actorId) map { endpoints =>
-      val json = JsonUtil.jsEndpoints(endpoints).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    }
+  def getEndpointsForActor(actorId: Long) = Action.apply {
+    val endpoints = ConformanceManager.getEndpointsForActor(actorId)
+    val json = JsonUtil.jsEndpoints(endpoints).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
-  def getEndpoints = Action.async { request =>
+  def getEndpoints = Action.apply { request =>
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
 
-    ConformanceManager.getEndpoints(ids) map { endpoints =>
-      val json = JsonUtil.jsEndpoints(endpoints).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    }
+    val endpoints = ConformanceManager.getEndpoints(ids)
+    val json = JsonUtil.jsEndpoints(endpoints).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
-  def getParameters = Action.async { request =>
+  def getParameters = Action.apply { request =>
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
 
-    ConformanceManager.getParameters(ids) map { parameters =>
-      val json = JsonUtil.jsParameters(parameters).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    }
+    val parameters = ConformanceManager.getParameters(ids)
+    val json = JsonUtil.jsParameters(parameters).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
-  def getEndpointParameters(endpointId: Long) = Action.async {
-    ConformanceManager.getEndpointParameters(endpointId) map { parameters =>
-      val json = JsonUtil.jsParameters(parameters).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    }
+  def getEndpointParameters(endpointId: Long) = Action.apply {
+    val parameters = ConformanceManager.getEndpointParameters(endpointId)
+    val json = JsonUtil.jsParameters(parameters).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
-  def getOptions = Action.async { request =>
+  def getOptions = Action.apply { request =>
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
-    ConformanceManager.getOptions(ids) map { options =>
-      val json = JsonUtil.jsOptions(options).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    }
+    val options = ConformanceManager.getOptions(ids)
+    val json = JsonUtil.jsOptions(options).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   def deleteDomain(domain_id: Long) = Action.apply {
@@ -244,10 +228,9 @@ class ConformanceService extends Controller {
     ResponseConstructor.constructEmptyResponse
   }
 
-  def addActorToSpecification(specification_id: Long, actor_id: Long) = Action.async {
-    ConformanceManager.relateActorWithSpecification(actor_id, specification_id) map { unit =>
-      ResponseConstructor.constructEmptyResponse
-    }
+  def addActorToSpecification(specification_id: Long, actor_id: Long) = Action.apply {
+    ConformanceManager.relateActorWithSpecification(actor_id, specification_id)
+    ResponseConstructor.constructEmptyResponse
   }
 
   def resolvePendingTestSuite(specification_id: Long) = Action.apply { request =>
@@ -289,14 +272,13 @@ class ConformanceService extends Controller {
     }
   }
 
-  def getActorTestSuites(actorId: Long) = Action.async { request =>
+  def getActorTestSuites(actorId: Long) = Action.apply { request =>
     val specId = ParameterExtractor.requiredQueryParameter(request, Parameters.SPEC).toLong
     val testCaseType = ParameterExtractor.requiredQueryParameter(request, Parameters.TYPE).toShort
 
-    TestSuiteManager.getTestSuitesBySpecificationAndActorAndTestCaseType(specId, actorId, testCaseType) map { list =>
-      val json: String = JsonUtil.jsTestSuiteList(list).toString
-      ResponseConstructor.constructJsonResponse(json)
-    }
+    val list = TestSuiteManager.getTestSuitesBySpecificationAndActorAndTestCaseType(specId, actorId, testCaseType)
+    val json: String = JsonUtil.jsTestSuiteList(list).toString
+    ResponseConstructor.constructJsonResponse(json)
   }
 
 }

@@ -10,12 +10,10 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.ObjectUtils
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
-import play.api.libs.concurrent.Execution.Implicits._
 import utils.RepositoryUtils
 import utils.RepositoryUtils.getTestSuitesPath
 
 import scala.collection.JavaConversions._
-import scala.concurrent.Future
 import scala.slick.driver.MySQLDriver.simple._
 
 
@@ -28,30 +26,26 @@ object TestSuiteManager extends BaseManager {
 
 	private final val logger: Logger = LoggerFactory.getLogger("TestSuiteManager")
 
-	def getTestSuitesWithSpecificationId(specification: Long): Future[List[TestSuites]] = {
-		Future {
-			DB.withSession { implicit session =>
-				PersistenceSchema.testSuites
-					.filter(_.specification === specification)
-					.list
-			}
+	def getTestSuitesWithSpecificationId(specification: Long): List[TestSuites] = {
+		DB.withSession { implicit session =>
+			PersistenceSchema.testSuites
+				.filter(_.specification === specification)
+				.list
 		}
 	}
 
-	def getTestSuites(ids: Option[List[Long]]): Future[List[TestSuites]] = {
-		Future {
-			DB.withSession { implicit session =>
-				val q = ids match {
-					case Some(idList) => {
-						PersistenceSchema.testSuites
-							.filter(_.id inSet idList)
-					}
-					case None => {
-						PersistenceSchema.testSuites
-					}
+	def getTestSuites(ids: Option[List[Long]]): List[TestSuites] = {
+		DB.withSession { implicit session =>
+			val q = ids match {
+				case Some(idList) => {
+					PersistenceSchema.testSuites
+						.filter(_.id inSet idList)
 				}
-				q.list
+				case None => {
+					PersistenceSchema.testSuites
+				}
 			}
+			q.list
 		}
 	}
 
@@ -65,18 +59,16 @@ object TestSuiteManager extends BaseManager {
 		}
 	}
 
-	def getTestSuitesWithTestCases(): Future[List[TestSuite]] = {
-		Future {
-			DB.withSession { implicit session =>
-				val testSuites = PersistenceSchema.testSuites.list
+	def getTestSuitesWithTestCases(): List[TestSuite] = {
+		DB.withSession { implicit session =>
+			val testSuites = PersistenceSchema.testSuites.list
 
-				testSuites map {
-					ts:TestSuites =>
-						val testCaseIds = PersistenceSchema.testSuiteHasTestCases.filter(_.testsuite === ts.id).map(_.testcase).list
-						val testCases = PersistenceSchema.testCases.filter(_.id inSet testCaseIds).list
+			testSuites map {
+				ts:TestSuites =>
+					val testCaseIds = PersistenceSchema.testSuiteHasTestCases.filter(_.testsuite === ts.id).map(_.testcase).list
+					val testCases = PersistenceSchema.testCases.filter(_.id inSet testCaseIds).list
 
-						new TestSuite(ts, testCases)
-				}
+					new TestSuite(ts, testCases)
 			}
 		}
 	}
@@ -526,32 +518,30 @@ object TestSuiteManager extends BaseManager {
 		}
 	}
 
-	def getTestSuitesBySpecificationAndActorAndTestCaseType(specificationId: Long, actorId: Long, testCaseType: Short): Future[List[TestSuite]] = {
-		Future {
-			DB.withSession { implicit session =>
-				val testSuiteIds = PersistenceSchema.testSuiteHasActors
-					.filter(_.actor === actorId)
-					.map(_.testsuite)
+	def getTestSuitesBySpecificationAndActorAndTestCaseType(specificationId: Long, actorId: Long, testCaseType: Short): List[TestSuite] = {
+		DB.withSession { implicit session =>
+			val testSuiteIds = PersistenceSchema.testSuiteHasActors
+				.filter(_.actor === actorId)
+				.map(_.testsuite)
+				.list
+
+			val testSuites = PersistenceSchema.testSuites
+				.filter(_.id inSet testSuiteIds)
+				.filter(_.specification === specificationId)
+				.list
+
+			testSuites map { testSuite =>
+				val testCaseIds = PersistenceSchema.testSuiteHasTestCases
+					.filter(_.testsuite === testSuite.id)
+					.map(_.testcase)
 					.list
 
-				val testSuites = PersistenceSchema.testSuites
-					.filter(_.id inSet testSuiteIds)
-					.filter(_.specification === specificationId)
+				val testCases = PersistenceSchema.testCases
+					.filter(_.id inSet testCaseIds)
+					.filter(_.testCaseType === testCaseType)
 					.list
 
-				testSuites map { testSuite =>
-					val testCaseIds = PersistenceSchema.testSuiteHasTestCases
-						.filter(_.testsuite === testSuite.id)
-						.map(_.testcase)
-						.list
-
-					val testCases = PersistenceSchema.testCases
-						.filter(_.id inSet testCaseIds)
-						.filter(_.testCaseType === testCaseType)
-						.list
-
-					new TestSuite(testSuite, testCases)
-				}
+				new TestSuite(testSuite, testCases)
 			}
 		}
 	}

@@ -16,54 +16,49 @@ class OrganizationService extends Controller {
   /**
    * Gets all organizations except the default organization for system administrators
    */
-  def getOrganizations() = Action.async {
-    OrganizationManager.getOrganizations() map { list =>
-      val json: String = JsonUtil.jsOrganizations(list).toString
-      ResponseConstructor.constructJsonResponse(json)
-    }
+  def getOrganizations() = Action.apply {
+    val list = OrganizationManager.getOrganizations()
+    val json: String = JsonUtil.jsOrganizations(list).toString
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
    * Gets the organization with specified id
    */
-  def getOrganizationById(orgId: Long) = Action.async { request =>
-    OrganizationManager.getOrganizationById(orgId) map { organization =>
-      val json: String = JsonUtil.serializeOrganization(organization)
-      ResponseConstructor.constructJsonResponse(json)
-    }
+  def getOrganizationById(orgId: Long) = Action.apply { request =>
+    val organization = OrganizationManager.getOrganizationById(orgId)
+    val json: String = JsonUtil.serializeOrganization(organization)
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
    * Gets the organizations with specified community
    */
-  def getOrganizationsByCommunity(communityId: Long) = Action.async { request =>
-    OrganizationManager.getOrganizationsByCommunity(communityId) map { list =>
-      val json: String = JsonUtil.jsOrganizations(list).toString
-      ResponseConstructor.constructJsonResponse(json)
-    }
+  def getOrganizationsByCommunity(communityId: Long) = Action.apply { request =>
+    val list = OrganizationManager.getOrganizationsByCommunity(communityId)
+    val json: String = JsonUtil.jsOrganizations(list).toString
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
    * Creates new organization
    */
-  def createOrganization() = Action.async { request =>
+  def createOrganization() = Action.apply { request =>
     val organization = ParameterExtractor.extractOrganizationInfo(request)
-    OrganizationManager.createOrganization(organization) map { unit =>
-      ResponseConstructor.constructEmptyResponse
-    }
+    OrganizationManager.createOrganization(organization)
+    ResponseConstructor.constructEmptyResponse
   }
 
   /**
    * Updates organization
    */
-  def updateOrganization(orgId: Long) = Action.async { request =>
+  def updateOrganization(orgId: Long) = Action.apply { request =>
     val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_SNAME)
     val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_FNAME)
     val landingPageId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LANDING_PAGE_ID)
     val legalNoticeId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LEGAL_NOTICE_ID)
-    OrganizationManager.updateOrganization(orgId, shortName, fullName, landingPageId, legalNoticeId) map { unit =>
-      ResponseConstructor.constructEmptyResponse
-    }
+    OrganizationManager.updateOrganization(orgId, shortName, fullName, landingPageId, legalNoticeId)
+    ResponseConstructor.constructEmptyResponse
   }
 
   /**

@@ -1,64 +1,54 @@
 package persistence
 
-import managers.BaseManager
-import org.mindrot.jbcrypt.BCrypt
-import play.api.Play.current
-import scala.slick.driver.MySQLDriver.simple._
-import play.api.libs.concurrent.Execution.Implicits._
-
-import scala.concurrent.Future
-import persistence.db._
-import models.{Users, Token}
-import org.apache.commons.lang.RandomStringUtils
-import persistence.cache.TokenCache
-import org.slf4j.LoggerFactory
 import config.Configurations
+import managers.BaseManager
+import models.{Token, Users}
+import org.apache.commons.lang.RandomStringUtils
+import org.mindrot.jbcrypt.BCrypt
+import org.slf4j.LoggerFactory
+import persistence.cache.TokenCache
+import persistence.db._
+
+import scala.slick.driver.MySQLDriver.simple._
 
 object AuthManager extends BaseManager {
   def logger = LoggerFactory.getLogger("AuthManager")
 
-  def checkEmailAvailability(email:String):Future[Boolean] = {
-    Future{
-      DB.withSession { implicit session:Session =>
-        val q = PersistenceSchema.users.filter(_.email === email)
-        !q.firstOption.isDefined
-      }
+  def checkEmailAvailability(email:String): Boolean = {
+    DB.withSession { implicit session:Session =>
+      val q = PersistenceSchema.users.filter(_.email === email)
+      !q.firstOption.isDefined
     }
   }
 
-  def checkUserByEmail(email:String, passwd:String):Future[Option[Users]] = {
-    Future{
-      DB.withSession { implicit session:Session =>
-        val query = PersistenceSchema.users.filter(_.email === email).firstOption
-        if (query.isDefined && BCrypt.checkpw(passwd, query.get.password)) query else None
-      }
+  def checkUserByEmail(email:String, passwd:String): Option[Users] = {
+    DB.withSession { implicit session:Session =>
+      val query = PersistenceSchema.users.filter(_.email === email).firstOption
+      if (query.isDefined && BCrypt.checkpw(passwd, query.get.password)) query else None
     }
   }
 
-  def generateTokens(userId:Long):Future[Token] = {
+  def generateTokens(userId:Long): Token = {
     //1) Create access and refresh tokens
     val access_token  = RandomStringUtils.randomAlphanumeric(Configurations.TOKEN_LENGTH)
     val refresh_token = RandomStringUtils.randomAlphanumeric(Configurations.TOKEN_LENGTH)
     val tokens = Token(access_token, refresh_token)
 
     //2) Persist new access & refresh token information
-    TokenCache.saveOAuthTokens(userId, tokens) map { unit => //return tokens when they are saved
-      tokens
-    }
+    TokenCache.saveOAuthTokens(userId, tokens)
+    tokens
   }
 
-  def refreshTokens(refreshToken:String):Future[Token] = {
+  def refreshTokens(refreshToken:String): Token = {
     //1) Check if refresh token exists
-    TokenCache.checkRefreshToken(refreshToken) flatMap { userId =>
+    val userId = TokenCache.checkRefreshToken(refreshToken)
 
-      //2) If so, generate new tokens
-      AuthManager.generateTokens(userId) map { tokens =>
+    //2) If so, generate new tokens
+    val tokens = AuthManager.generateTokens(userId)
 
-        //3) Delete the old ones and return the new
-        TokenCache.deleteRefreshToken(refreshToken)
-        tokens
-      }
-    }
+    //3) Delete the old ones and return the new
+    TokenCache.deleteRefreshToken(refreshToken)
+    tokens
   }
 
 }

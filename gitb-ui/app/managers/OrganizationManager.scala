@@ -1,13 +1,10 @@
 package managers
 
-import scala.slick.driver.MySQLDriver.simple._
-import play.api.libs.concurrent.Execution.Implicits._
-
 import models._
-import persistence.db.PersistenceSchema
 import org.slf4j.LoggerFactory
+import persistence.db.PersistenceSchema
 
-import scala.concurrent.Future
+import scala.slick.driver.MySQLDriver.simple._
 
 /**
  * Created by VWYNGAET on 26/10/2016.
@@ -18,37 +15,31 @@ object OrganizationManager extends BaseManager {
   /**
    * Checks if organization exists (ignoring the default)
    */
-  def checkOrganizationExists(orgId: Long): Future[Boolean] = {
-    Future {
-      DB.withSession { implicit session =>
-        val firstOption = PersistenceSchema.organizations.filter(_.id =!= Constants.DefaultOrganizationId).filter(_.id === orgId).firstOption
-        firstOption.isDefined
-      }
+  def checkOrganizationExists(orgId: Long): Boolean = {
+    DB.withSession { implicit session =>
+      val firstOption = PersistenceSchema.organizations.filter(_.id =!= Constants.DefaultOrganizationId).filter(_.id === orgId).firstOption
+      firstOption.isDefined
     }
   }
 
   /**
    * Gets all organizations
    */
-  def getOrganizations(): Future[List[Organizations]] = {
-    Future {
-      DB.withSession { implicit session =>
-        //1) Get all organizations except the default organization for system administrators
-        val organizations = PersistenceSchema.organizations.list
-        organizations
-      }
+  def getOrganizations(): List[Organizations] = {
+    DB.withSession { implicit session =>
+      //1) Get all organizations except the default organization for system administrators
+      val organizations = PersistenceSchema.organizations.list
+      organizations
     }
   }
 
   /**
    * Gets organizations with specified community
    */
-  def getOrganizationsByCommunity(communityId: Long): Future[List[Organizations]] = {
-    Future {
-      DB.withSession { implicit session =>
-        val organizations = PersistenceSchema.organizations.filter(_.shortname =!= Constants.AdminOrganizationName).filter(_.community === communityId).list
-        organizations
-      }
+  def getOrganizationsByCommunity(communityId: Long): List[Organizations] = {
+    DB.withSession { implicit session =>
+      val organizations = PersistenceSchema.organizations.filter(_.shortname =!= Constants.AdminOrganizationName).filter(_.community === communityId).list
+      organizations
     }
   }
 
@@ -61,54 +52,48 @@ object OrganizationManager extends BaseManager {
   /**
    * Gets organization with specified id
    */
-  def getOrganizationById(orgId: Long): Future[Organization] = {
-    Future {
-      DB.withSession { implicit session =>
-        val o = PersistenceSchema.organizations.filter(_.id === orgId).firstOption.get
-        val l = PersistenceSchema.landingPages.filter(_.id === o.landingPage).firstOption
-        val n = PersistenceSchema.legalNotices.filter(_.id === o.legalNotice).firstOption
-        val organization = new Organization(o, l.getOrElse(null), n.getOrElse(null))
-        organization
-      }
+  def getOrganizationById(orgId: Long): Organization = {
+    DB.withSession { implicit session =>
+      val o = PersistenceSchema.organizations.filter(_.id === orgId).firstOption.get
+      val l = PersistenceSchema.landingPages.filter(_.id === o.landingPage).firstOption
+      val n = PersistenceSchema.legalNotices.filter(_.id === o.legalNotice).firstOption
+      val organization = new Organization(o, l.getOrElse(null), n.getOrElse(null))
+      organization
     }
   }
 
   /**
    * Creates new organization
    */
-  def createOrganization(organization: Organizations): Future[Unit] = {
-    Future {
-      DB.withSession { implicit session =>
-        PersistenceSchema.insertOrganization += organization
-      }
+  def createOrganization(organization: Organizations) = {
+    DB.withTransaction { implicit session =>
+      PersistenceSchema.insertOrganization += organization
     }
   }
 
-  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long]): Future[Unit] = {
-    Future {
-      DB.withTransaction { implicit session =>
-        val org = PersistenceSchema.organizations.filter(_.id === orgId).firstOption
+  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long]) = {
+    DB.withTransaction { implicit session =>
+      val org = PersistenceSchema.organizations.filter(_.id === orgId).firstOption
 
-        if (org.isDefined) {
-          if (!shortName.isEmpty && org.get.shortname != shortName) {
-            val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname)
-            q.update(shortName)
+      if (org.isDefined) {
+        if (!shortName.isEmpty && org.get.shortname != shortName) {
+          val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname)
+          q.update(shortName)
 
-            TestResultManager.updateForUpdatedOrganisation(orgId, shortName)
-          }
-
-          if (!fullName.isEmpty && org.get.fullname != fullName) {
-            val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.fullname)
-            q.update(fullName)
-          }
-
-          val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.landingPage, o.legalNotice)
-          q.update(landingPageId, legalNoticeId)
-        } else {
-          throw new IllegalArgumentException("Organization with ID '" + orgId + "' not found")
+          TestResultManager.updateForUpdatedOrganisation(orgId, shortName)
         }
 
+        if (!fullName.isEmpty && org.get.fullname != fullName) {
+          val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.fullname)
+          q.update(fullName)
+        }
+
+        val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.landingPage, o.legalNotice)
+        q.update(landingPageId, legalNoticeId)
+      } else {
+        throw new IllegalArgumentException("Organization with ID '" + orgId + "' not found")
       }
+
     }
   }
 

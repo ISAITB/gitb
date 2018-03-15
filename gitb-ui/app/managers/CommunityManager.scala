@@ -4,9 +4,7 @@ import models.Enums._
 import models._
 import org.slf4j.LoggerFactory
 import persistence.db._
-import play.api.libs.concurrent.Execution.Implicits._
 
-import scala.concurrent.Future
 import scala.slick.driver.MySQLDriver.simple._
 
 object CommunityManager extends BaseManager {
@@ -15,20 +13,18 @@ object CommunityManager extends BaseManager {
   /**
    * Gets all communities with given ids or all if none specified
    */
-  def getCommunities(ids: Option[List[Long]]): Future[List[Communities]] = {
-    Future {
-      DB.withSession { implicit session =>
-        val q = ids match {
-          case Some(idList) => {
-            PersistenceSchema.communities
-              .filter(_.id inSet idList)
-          }
-          case None => {
-            PersistenceSchema.communities
-          }
+  def getCommunities(ids: Option[List[Long]]): List[Communities] = {
+    DB.withSession { implicit session =>
+      val q = ids match {
+        case Some(idList) => {
+          PersistenceSchema.communities
+            .filter(_.id inSet idList)
         }
-        q.list
+        case None => {
+          PersistenceSchema.communities
+        }
       }
+      q.list
     }
   }
 
@@ -41,43 +37,37 @@ object CommunityManager extends BaseManager {
   /**
    * Gets the user community
    */
-  def getUserCommunity(userId: Long): Future[Community] = {
-    Future {
-      DB.withSession { implicit session =>
-        val u = PersistenceSchema.users.filter(_.id === userId).firstOption.get
-        val o = PersistenceSchema.organizations.filter(_.id === u.organization).firstOption.get
-        val c = PersistenceSchema.communities.filter(_.id === o.community).firstOption.get
-        val d = PersistenceSchema.domains.filter(_.id === c.domain).firstOption
-        val community = new Community(c, d)
-        community
-      }
+  def getUserCommunity(userId: Long): Community = {
+    DB.withSession { implicit session =>
+      val u = PersistenceSchema.users.filter(_.id === userId).firstOption.get
+      val o = PersistenceSchema.organizations.filter(_.id === u.organization).firstOption.get
+      val c = PersistenceSchema.communities.filter(_.id === o.community).firstOption.get
+      val d = PersistenceSchema.domains.filter(_.id === c.domain).firstOption
+      val community = new Community(c, d)
+      community
     }
   }
 
   /**
    *  Creates new community
    */
-  def createCommunity(community: Communities): Future[Unit] = {
-    Future {
-      DB.withSession { implicit session =>
-        val communityId = PersistenceSchema.insertCommunity += community
-        val adminOrganization = Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, true, None, None, communityId)
-        PersistenceSchema.insertOrganization += adminOrganization
-      }
+  def createCommunity(community: Communities) = {
+    DB.withTransaction { implicit session =>
+      val communityId = PersistenceSchema.insertCommunity += community
+      val adminOrganization = Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, true, None, None, communityId)
+      PersistenceSchema.insertOrganization += adminOrganization
     }
   }
 
   /**
     * Gets community with specified id
     */
-  def getCommunityById(communityId: Long): Future[Community] = {
-    Future {
-      DB.withSession { implicit session =>
-        val c = PersistenceSchema.communities.filter(_.id === communityId).firstOption.get
-        val d = PersistenceSchema.domains.filter(_.id === c.domain).firstOption
-        val community = new Community(c, d)
-        community
-      }
+  def getCommunityById(communityId: Long): Community = {
+    DB.withSession { implicit session =>
+      val c = PersistenceSchema.communities.filter(_.id === communityId).firstOption.get
+      val d = PersistenceSchema.domains.filter(_.id === c.domain).firstOption
+      val community = new Community(c, d)
+      community
     }
   }
 

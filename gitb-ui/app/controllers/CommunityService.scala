@@ -13,33 +13,30 @@ class CommunityService extends Controller{
   /**
    * Gets all communities with given ids or all if none specified
    */
-  def getCommunities() = Action.async { request =>
+  def getCommunities() = Action.apply { request =>
     val communityIds = ParameterExtractor.extractLongIdsQueryParameter(request)
 
-    CommunityManager.getCommunities(communityIds) map { communities =>
-      val json = JsonUtil.jsCommunities(communities).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    }
+    val communities = CommunityManager.getCommunities(communityIds)
+    val json = JsonUtil.jsCommunities(communities).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
    * Creates new community
    */
-  def createCommunity() = Action.async { request =>
+  def createCommunity() = Action.apply { request =>
     val community = ParameterExtractor.extractCommunityInfo(request)
-    CommunityManager.createCommunity(community) map { unit =>
-      ResponseConstructor.constructEmptyResponse
-    }
+    CommunityManager.createCommunity(community)
+    ResponseConstructor.constructEmptyResponse
   }
 
   /**
    * Gets the community with specified id
    */
-  def getCommunityById(communityId: Long) = Action.async { request =>
-    CommunityManager.getCommunityById(communityId) map { community =>
-      val json: String = JsonUtil.serializeCommunity(community)
-      ResponseConstructor.constructJsonResponse(json)
-    }
+  def getCommunityById(communityId: Long) = Action.apply { request =>
+    val community = CommunityManager.getCommunityById(communityId)
+    val json: String = JsonUtil.serializeCommunity(community)
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
@@ -64,13 +61,12 @@ class CommunityService extends Controller{
   /**
     * Returns the community of the authenticated user
     */
-  def getUserCommunity = Action.async { request =>
+  def getUserCommunity = Action.apply { request =>
     val userId = ParameterExtractor.extractUserId(request)
 
-    CommunityManager.getUserCommunity(userId) map { community =>
-      val json:String = JsonUtil.serializeCommunity(community)
-      ResponseConstructor.constructJsonResponse(json)
-    }
+    val community = CommunityManager.getUserCommunity(userId)
+    val json:String = JsonUtil.serializeCommunity(community)
+    ResponseConstructor.constructJsonResponse(json)
   }
 
 }

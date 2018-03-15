@@ -17,11 +17,9 @@ import config.Configurations
 import models._
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
-import play.api.libs.concurrent.Execution.Implicits._
 import utils.{JacksonUtil, TimeUtil}
 
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.Future
 import scala.slick.driver.MySQLDriver.simple._
 
 /**
@@ -47,13 +45,11 @@ object ReportManager extends BaseManager {
                      endTimeBegin: Option[String],
                      endTimeEnd: Option[String],
                      sortColumn: Option[String],
-                     sortOrder: Option[String]): Future[List[TestResult]] = {
-    Future {
-      DB.withSession { implicit session =>
-        val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
-        val testResults = query.filter(_.sutId === systemId).drop((page - 1) * limit).take(limit).list
-        testResults
-      }
+                     sortOrder: Option[String]): List[TestResult] = {
+    DB.withSession { implicit session =>
+      val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
+      val testResults = query.filter(_.sutId === systemId).drop((page - 1) * limit).take(limit).list
+      testResults
     }
   }
 
@@ -66,12 +62,10 @@ object ReportManager extends BaseManager {
                           startTimeBegin: Option[String],
                           startTimeEnd: Option[String],
                           endTimeBegin: Option[String],
-                          endTimeEnd: Option[String]): Future[Long] = {
-    Future {
-      DB.withSession { implicit session =>
-        val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, None, None)
-        query.filter(_.sutId === systemId).size.run
-      }
+                          endTimeEnd: Option[String]): Long = {
+    DB.withSession { implicit session =>
+      val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, None, None)
+      query.filter(_.sutId === systemId).size.run
     }
   }
 
@@ -85,13 +79,11 @@ object ReportManager extends BaseManager {
                            startTimeBegin: Option[String],
                            startTimeEnd: Option[String],
                            sortColumn: Option[String],
-                           sortOrder: Option[String]): Future[List[TestResult]] = {
-    Future {
-      DB.withSession { implicit session =>
-        val query = getTestResultQuery(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, None, startTimeBegin, startTimeEnd, None, None, sortColumn, sortOrder)
-        val testResults = query.filter(_.endTime.isEmpty).list
-        testResults
-      }
+                           sortOrder: Option[String]): List[TestResult] = {
+    DB.withSession { implicit session =>
+      val query = getTestResultQuery(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, None, startTimeBegin, startTimeEnd, None, None, sortColumn, sortOrder)
+      val testResults = query.filter(_.endTime.isEmpty).list
+      testResults
     }
   }
 
@@ -106,12 +98,10 @@ object ReportManager extends BaseManager {
                                   startTimeBegin: Option[String],
                                   startTimeEnd: Option[String],
                                   endTimeBegin: Option[String],
-                                  endTimeEnd: Option[String]): Future[Long] = {
-    Future {
-      DB.withSession { implicit session =>
-        val testResults = getTestResultQuery(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, None, None)
-        testResults.filter(_.endTime.isDefined).size.run
-      }
+                                  endTimeEnd: Option[String]): Long = {
+    DB.withSession { implicit session =>
+      val testResults = getTestResultQuery(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, None, None)
+      testResults.filter(_.endTime.isDefined).size.run
     }
   }
 
@@ -130,13 +120,11 @@ object ReportManager extends BaseManager {
                              endTimeBegin: Option[String],
                              endTimeEnd: Option[String],
                              sortColumn: Option[String],
-                             sortOrder: Option[String]): Future[List[TestResult]] = {
-    Future {
-      DB.withSession { implicit session =>
-        val query = getTestResultQuery(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
-        val testResults = query.filter(_.endTime.isDefined).drop((page - 1) * limit).take(limit).list
-        testResults
-      }
+                             sortOrder: Option[String]): List[TestResult] = {
+    DB.withSession { implicit session =>
+      val query = getTestResultQuery(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
+      val testResults = query.filter(_.endTime.isDefined).drop((page - 1) * limit).take(limit).list
+      testResults
     }
   }
 
@@ -247,62 +235,54 @@ object ReportManager extends BaseManager {
     query
   }
 
-  def getTestResultOfSession(sessionId: String): Future[TestResult] = {
-    Future {
-      DB.withSession {
-        implicit session =>
-          val testResult = PersistenceSchema.testResults.filter(_.testSessionId === sessionId).first
-          val xml = testResult.tpl
-          val testcase = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(xml)))
-          val json = JacksonUtil.serializeTestCasePresentation(testcase)
-          testResult.withPresentation(json)
-      }
+  def getTestResultOfSession(sessionId: String): TestResult = {
+    DB.withSession {
+      implicit session =>
+        val testResult = PersistenceSchema.testResults.filter(_.testSessionId === sessionId).first
+        val xml = testResult.tpl
+        val testcase = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(xml)))
+        val json = JacksonUtil.serializeTestCasePresentation(testcase)
+        testResult.withPresentation(json)
     }
   }
 
-  def createTestReport(sessionId: String, systemId: Long, testId: String, actorId: Long, presentation: String): Future[Unit] = {
-    Future {
-      DB.withSession {
-        implicit session =>
-          val initialStatus = TestResultType.UNDEFINED.value()
-          val startTime = TimeUtil.getCurrentTimestamp()
-          val system = SystemManager.getSystemById(systemId).get
-          val organisation = OrganizationManager.getById(system.owner).get
-          val community = CommunityManager.getById(organisation.community).get
-          val testCase = TestCaseManager.getTestCaseForId(testId).get
-          val testSuite = TestSuiteManager.getTestSuiteOfTestCase(testCase.id)
-          val actor = ActorManager.getById(actorId).get
-          val specification = SpecificationManager.getSpecificationOfActor(actor.id)
-          val domain = ConformanceManager.getById(specification.domain).get
+  def createTestReport(sessionId: String, systemId: Long, testId: String, actorId: Long, presentation: String) = {
+    DB.withSession {
+      implicit session =>
+        val initialStatus = TestResultType.UNDEFINED.value()
+        val startTime = TimeUtil.getCurrentTimestamp()
+        val system = SystemManager.getSystemById(systemId).get
+        val organisation = OrganizationManager.getById(system.owner).get
+        val community = CommunityManager.getById(organisation.community).get
+        val testCase = TestCaseManager.getTestCaseForId(testId).get
+        val testSuite = TestSuiteManager.getTestSuiteOfTestCase(testCase.id)
+        val actor = ActorManager.getById(actorId).get
+        val specification = SpecificationManager.getSpecificationOfActor(actor.id)
+        val domain = ConformanceManager.getById(specification.domain).get
 
-          PersistenceSchema.testResults.insert(TestResult(
-            sessionId, Some(systemId), Some(system.shortname), Some(organisation.id), Some(organisation.shortname),
-            Some(community.id), Some(community.shortname), Some(testCase.id), Some(testCase.shortname), Some(testSuite.id), Some(testSuite.shortname),
-            Some(actor.id), Some(actor.name), Some(specification.id), Some(specification.shortname), Some(domain.id), Some(domain.shortname),
-            initialStatus, startTime, None, presentation))
-      }
+        PersistenceSchema.testResults.insert(TestResult(
+          sessionId, Some(systemId), Some(system.shortname), Some(organisation.id), Some(organisation.shortname),
+          Some(community.id), Some(community.shortname), Some(testCase.id), Some(testCase.shortname), Some(testSuite.id), Some(testSuite.shortname),
+          Some(actor.id), Some(actor.name), Some(specification.id), Some(specification.shortname), Some(domain.id), Some(domain.shortname),
+          initialStatus, startTime, None, presentation))
     }
   }
 
-  def finishTestReport(sessionId: String, status: TestResultType): Future[Unit] = {
-    Future {
-      DB.withSession {
-        implicit session =>
-          val q = for {
-            t <- PersistenceSchema.testResults if t.testSessionId === sessionId
-          } yield (t.result, t.endTime)
-          q.update(status.value(), Some(TimeUtil.getCurrentTimestamp()))
-      }
+  def finishTestReport(sessionId: String, status: TestResultType) = {
+    DB.withTransaction {
+      implicit session =>
+        val q = for {
+          t <- PersistenceSchema.testResults if t.testSessionId === sessionId
+        } yield (t.result, t.endTime)
+        q.update(status.value(), Some(TimeUtil.getCurrentTimestamp()))
     }
   }
 
-  def setEndTimeNow(sessionId: String): Future[Unit] = {
-    Future {
-      DB.withSession {
-        implicit session =>
-          val q = for {t <- PersistenceSchema.testResults if t.testSessionId === sessionId} yield (t.endTime)
-          q.update(Some(TimeUtil.getCurrentTimestamp()))
-      }
+  def setEndTimeNow(sessionId: String) = {
+    DB.withTransaction {
+      implicit session =>
+        val q = for {t <- PersistenceSchema.testResults if t.testSessionId === sessionId} yield (t.endTime)
+        q.update(Some(TimeUtil.getCurrentTimestamp()))
     }
   }
 
@@ -332,41 +312,37 @@ object ReportManager extends BaseManager {
     }
   }
 
-  def createTestStepReport(sessionId: String, step: TestStepStatus): Future[Unit] = {
-    Future {
-      DB.withSession {
-        implicit session =>
-          //save status reports only when step is concluded with either COMPLETED or ERROR state
-          if (step.getReport != null && (step.getStatus == StepStatus.COMPLETED || step.getStatus == StepStatus.ERROR)) {
-            step.getReport.setId(step.getStepId)
+  def createTestStepReport(sessionId: String, step: TestStepStatus) = {
+    DB.withSession {
+      implicit session =>
+        //save status reports only when step is concluded with either COMPLETED or ERROR state
+        if (step.getReport != null && (step.getStatus == StepStatus.COMPLETED || step.getStatus == StepStatus.ERROR)) {
+          step.getReport.setId(step.getStepId)
 
 
-            val path = step.getStepId + ".xml"
+          val path = step.getStepId + ".xml"
 
-            //write the report into a file
-            if (step.getReport != null) {
-              val file = new File(getPathForTestSession(sessionId, false).toFile, path)
-              file.getParentFile.mkdirs()
-              file.createNewFile()
+          //write the report into a file
+          if (step.getReport != null) {
+            val file = new File(getPathForTestSession(sessionId, false).toFile, path)
+            file.getParentFile.mkdirs()
+            file.createNewFile()
 
-              val stream = new FileOutputStream(file)
-              stream.write(XMLUtils.marshalToString(new ObjectFactory().createUpdateStatusRequest(step)).getBytes)
-              stream.close()
-            }
-            //save the path of the report file to the DB
-            val result = TestStepResult(sessionId, step.getStepId, step.getStatus.ordinal().toShort, path)
-            PersistenceSchema.testStepReports.insert(result)
+            val stream = new FileOutputStream(file)
+            stream.write(XMLUtils.marshalToString(new ObjectFactory().createUpdateStatusRequest(step)).getBytes)
+            stream.close()
           }
-      }
+          //save the path of the report file to the DB
+          val result = TestStepResult(sessionId, step.getStepId, step.getStatus.ordinal().toShort, path)
+          PersistenceSchema.testStepReports.insert(result)
+        }
     }
   }
 
-  def getTestStepResults(sessionId: String): Future[List[TestStepResult]] = {
-    Future {
-      DB.withSession {
-        implicit session =>
-          PersistenceSchema.testStepReports.filter(_.testSessionId === sessionId).list
-      }
+  def getTestStepResults(sessionId: String): List[TestStepResult] = {
+    DB.withSession {
+      implicit session =>
+        PersistenceSchema.testStepReports.filter(_.testSessionId === sessionId).list
     }
   }
 

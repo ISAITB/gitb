@@ -33,32 +33,30 @@ class AuthenticationFilter extends Filter {
         if(list.length == 2){
           val accessToken = list(1)
           //check if access token exists for any user
-          TokenCache.checkAccessToken(accessToken) flatMap { userId =>
-            //a workaround of customizing request headers to add our userId data, so that controllers can process it
-            val map = requestHeader.headers.toMap + ( Parameters.USER_ID -> Seq("" + userId) )
-            val headers:Seq[(String, Seq[String])] = map.toSeq
-            val customHeaders = new CustomizableHeaders(headers)
-            val customRequestHeader = requestHeader.copy(headers = customHeaders)
+          val userId = TokenCache.checkAccessToken(accessToken)
+          //a workaround of customizing request headers to add our userId data, so that controllers can process it
+          val map = requestHeader.headers.toMap + ( Parameters.USER_ID -> Seq("" + userId) )
+          val headers:Seq[(String, Seq[String])] = map.toSeq
+          val customHeaders = new CustomizableHeaders(headers)
+          val customRequestHeader = requestHeader.copy(headers = customHeaders)
 
-            //check if requested service requires admin access
-	          if(requiresSystemAdminAccess(requestHeader)) {
-		          next(customRequestHeader)
-	          } else if(requiresAdminAccess(requestHeader)){
-              AccountManager.isAdmin(userId) flatMap { isAdmin =>
-                if(isAdmin){
-                  //has access, execute service
-                  next(customRequestHeader)
-                } else{
-                  //admin access required, send error response
-                  Future{
-                    ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.UNAUTHORIZED_ACCESS, "Requires admin access")
-                  }
-                }
-              }
-            } else{
-              //no admin access required, execute service
+          //check if requested service requires admin access
+          if(requiresSystemAdminAccess(requestHeader)) {
+            next(customRequestHeader)
+          } else if(requiresAdminAccess(requestHeader)){
+            val isAdmin = AccountManager.isAdmin(userId)
+            if(isAdmin){
+              //has access, execute service
               next(customRequestHeader)
+            } else{
+              //admin access required, send error response
+              Future{
+                ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.UNAUTHORIZED_ACCESS, "Requires admin access")
+              }
             }
+          } else{
+            //no admin access required, execute service
+            next(customRequestHeader)
           }
         }
         else{

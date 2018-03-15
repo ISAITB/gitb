@@ -1,11 +1,8 @@
 package managers
 
-import managers.EndPointManager.DB
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
-import play.api.libs.concurrent.Execution.Implicits._
 
-import scala.concurrent.Future
 import scala.slick.driver.MySQLDriver.simple._
 
 object ParameterManager extends BaseManager {
@@ -37,11 +34,9 @@ object ParameterManager extends BaseManager {
     }
   }
 
-  def deleteParameter(parameterId: Long) = Future[Unit] {
-    Future {
-      DB.withTransaction { implicit session =>
-        delete(parameterId)
-      }
+  def deleteParameter(parameterId: Long) = {
+    DB.withTransaction { implicit session =>
+      delete(parameterId)
     }
   }
 
@@ -50,23 +45,21 @@ object ParameterManager extends BaseManager {
     PersistenceSchema.configs.filter(_.parameter === parameterId).delete
   }
 
-  def updateParameter(parameterId: Long, name: String, description: Option[String], use: String, kind: String) =  {
-    Future {
-      DB.withSession { implicit session =>
+  def updateParameter(parameterId: Long, name: String, description: Option[String], use: String, kind: String) = {
+    DB.withTransaction { implicit session =>
 
-        val q1 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.desc)
-        q1.update(description)
+      val q1 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.desc)
+      q1.update(description)
 
-        val q2 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.use)
-        q2.update(use)
+      val q2 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.use)
+      q2.update(use)
 
-        val q3 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.kind)
-        q3.update(kind)
+      val q3 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.kind)
+      q3.update(kind)
 
-        val q4 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.name)
-        q4.update(name)
+      val q4 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.name)
+      q4.update(name)
 
-      }
     }
   }
 

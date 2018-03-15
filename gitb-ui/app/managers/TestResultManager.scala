@@ -3,9 +3,7 @@ package managers
 import models._
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
-import play.api.libs.concurrent.Execution.Implicits._
 
-import scala.concurrent.Future
 import scala.slick.driver.MySQLDriver.simple._
 
 object TestResultManager extends BaseManager {
@@ -14,12 +12,10 @@ object TestResultManager extends BaseManager {
   /**
    * Gets all running test results
    */
-  def getRunningTestResults: Future[List[TestResult]] = {
-    Future {
-      DB.withSession { implicit session =>
-        val results = PersistenceSchema.testResults.filter(_.endTime.isEmpty).list
-        results
-      }
+  def getRunningTestResults: List[TestResult] = {
+    DB.withSession { implicit session =>
+      val results = PersistenceSchema.testResults.filter(_.endTime.isEmpty).list
+      results
     }
   }
 

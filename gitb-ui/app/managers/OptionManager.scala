@@ -1,12 +1,8 @@
 package managers
 
-import managers.ConformanceManager._
-import models._
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
-import play.api.libs.concurrent.Execution.Implicits._
 
-import scala.concurrent.Future
 import scala.slick.driver.MySQLDriver.simple._
 
 object OptionManager extends BaseManager {
@@ -19,11 +15,9 @@ object OptionManager extends BaseManager {
     }
   }
 
-  def deleteOption(optionId: Long) = Future[Unit] {
-    Future {
-      DB.withTransaction { implicit session =>
-        delete(optionId)
-      }
+  def deleteOption(optionId: Long) = {
+    DB.withTransaction { implicit session =>
+      delete(optionId)
     }
   }
 

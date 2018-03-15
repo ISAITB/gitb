@@ -3,10 +3,8 @@ package managers
 import models.Specifications
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
-import play.api.libs.concurrent.Execution.Implicits._
 import utils.RepositoryUtils
 
-import scala.concurrent.Future
 import scala.slick.driver.MySQLDriver.simple._
 
 object SpecificationManager extends BaseManager {
@@ -15,12 +13,10 @@ object SpecificationManager extends BaseManager {
   /**
    * Checks if domain exists
    */
-  def checkSpecifiationExists(specId: Long): Future[Boolean] = {
-    Future {
-      DB.withSession { implicit session =>
-        val firstOption = PersistenceSchema.specifications.filter(_.id === specId).firstOption
-        firstOption.isDefined
-      }
+  def checkSpecifiationExists(specId: Long): Boolean = {
+    DB.withSession { implicit session =>
+      val firstOption = PersistenceSchema.specifications.filter(_.id === specId).firstOption
+      firstOption.isDefined
     }
   }
 
@@ -31,11 +27,9 @@ object SpecificationManager extends BaseManager {
     }
   }
 
-  def deleteSpecification(specId: Long) = Future[Unit] {
-    Future {
-      DB.withTransaction { implicit session =>
-        delete(specId)
-      }
+  def deleteSpecification(specId: Long) = {
+    DB.withTransaction { implicit session =>
+      delete(specId)
     }
   }
 
@@ -65,28 +59,26 @@ object SpecificationManager extends BaseManager {
   }
 
   def updateSpecification(specId: Long, sname: String, fname: String, urls: Option[String], diagram: Option[String], descr: Option[String], specificationType: Option[Short]) = {
-    Future {
-      DB.withTransaction { implicit session =>
-        val q1 = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.shortname)
-        q1.update(sname)
+    DB.withTransaction { implicit session =>
+      val q1 = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.shortname)
+      q1.update(sname)
 
-        val q2 = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.fullname)
-        q2.update(fname)
+      val q2 = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.fullname)
+      q2.update(fname)
 
-        val q3 = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.urls)
-        q3.update(urls)
+      val q3 = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.urls)
+      q3.update(urls)
 
-        val q4 = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.diagram)
-        q4.update(diagram)
+      val q4 = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.diagram)
+      q4.update(diagram)
 
-        val q5 = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.description)
-        q5.update(descr)
+      val q5 = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.description)
+      q5.update(descr)
 
-        val q6 = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.stype)
-        q6.update(specificationType.get)
+      val q6 = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.stype)
+      q6.update(specificationType.get)
 
-        TestResultManager.updateForUpdatedSpecification(specId, sname)
-      }
+      TestResultManager.updateForUpdatedSpecification(specId, sname)
     }
   }
 

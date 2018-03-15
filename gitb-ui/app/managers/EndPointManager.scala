@@ -2,9 +2,7 @@ package managers
 
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
-import play.api.libs.concurrent.Execution.Implicits._
 
-import scala.concurrent.Future
 import scala.slick.driver.MySQLDriver.simple._
 
 object EndPointManager extends BaseManager {
@@ -51,14 +49,12 @@ object EndPointManager extends BaseManager {
   }
 
   def updateEndPoint(endPointId: Long, name: String, description: Option[String]) =  {
-    Future {
-      DB.withSession { implicit session =>
-        val q1 = for {e <- PersistenceSchema.endpoints if e.id === endPointId} yield (e.name)
-        q1.update(name)
+    DB.withSession { implicit session =>
+      val q1 = for {e <- PersistenceSchema.endpoints if e.id === endPointId} yield (e.name)
+      q1.update(name)
 
-        val q2 = for {e <- PersistenceSchema.endpoints if e.id === endPointId} yield (e.desc)
-        q2.update(description)
-      }
+      val q2 = for {e <- PersistenceSchema.endpoints if e.id === endPointId} yield (e.desc)
+      q2.update(description)
     }
   }
 
