@@ -127,7 +127,7 @@
             <button class="btn btn-default pull-right" ng-click="dashboardCtrl.exportActiveSessionsToCsv()">Export CSV</button>
         </div>
         <div table-directive columns="dashboardCtrl.activeTestsColumns" data="dashboardCtrl.activeTests"
-             on-select="dashboardCtrl.testSelect" action-visible="true" on-action="dashboardCtrl.onAction"
+             on-select="dashboardCtrl.testSelect" action-visible="true" action-icon="'fa-search'" on-action="dashboardCtrl.onAction"
              on-sort="dashboardCtrl.sortActiveSessions"
              operations-visible="true" on-delete="dashboardCtrl.stopSession" row-style="dashboardCtrl.rowStyle"></div>
     </div>
@@ -138,7 +138,7 @@
             <button class="btn btn-default pull-right" ng-click="dashboardCtrl.exportCompletedSessionsToCsv()">Export CSV</button>
         </div>
         <div table-directive columns="dashboardCtrl.completedTestsColumns" data="dashboardCtrl.completedTests"
-             on-select="dashboardCtrl.testSelect" action-visible="true" on-action="dashboardCtrl.onAction"
+             on-select="dashboardCtrl.testSelect" action-visible="true" action-icon="'fa-search'" on-action="dashboardCtrl.onAction"
              pagination-visible="true" first-page="dashboardCtrl.goFirstPage()"
              prev-page="dashboardCtrl.goPreviousPage()" on-sort="dashboardCtrl.sortCompletedSessions"
              next-page="dashboardCtrl.goNextPage()" last-page="dashboardCtrl.goLastPage()"

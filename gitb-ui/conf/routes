@@ -29,9 +29,9 @@ GET	    /user/community                     @controllers.CommunityService.getUse
 POST	/user/profile                       @controllers.AccountService.updateUserProfile
 
 # System mangement API
-POST	/suts/register                      @controllers.SystemService.registerSystem
 POST	/suts/:sut_id/profile               @controllers.SystemService.updateSystemProfile(sut_id : Long)
 GET	    /suts/:sut_id                       @controllers.SystemService.getSystemProfile(sut_id : Long)
+DELETE  /suts/:sut_id                       @controllers.SystemService.deleteSystem(sut_id : Long)
 POST	/suts/:sut_id/assign                @controllers.SystemService.assignSystemAdminOrTester(sut_id : Long)
 POST    /suts/:sut_id/conformance           @controllers.SystemService.defineConformanceStatement(sut_id : Long)
 DELETE  /suts/:sut_id/conformance           @controllers.SystemService.deleteConformanceStatement(sut_id: Long)

@@ -40,9 +40,8 @@ class SystemService
       authenticate: true
     })
 
-  updateSystem:(systemId, sname, fname, description, version) ->
+  updateSystem:(systemId, sname, fname, description, version, organisationId) ->
     data = {}
-
     if sname?
       data.system_sname = sname
     if fname?
@@ -51,25 +50,10 @@ class SystemService
       data.system_description = description
     if version?
       data.system_version = version
+    data.organization_id = organisationId
 
     @RestService.post({
       path: jsRoutes.controllers.SystemService.updateSystemProfile(systemId).url,
-      data: data,
-      authenticate: true
-    })
-
-  registerSystem:(sname, fname, description, version) ->
-    data = {
-      system_sname: sname,
-      system_fname: fname,
-      system_version: version
-    }
-
-    if description?
-      data.system_description = description
-
-    @RestService.post({
-      path: jsRoutes.controllers.SystemService.registerSystem().url,
       data: data,
       authenticate: true
     })
@@ -176,6 +160,12 @@ class SystemService
       path: jsRoutes.controllers.SystemService.deleteConformanceStatement(system).url
       params:
         ids: actorIds.join ','
+
+  deleteSystem: (systemId, organisationId) ->
+    @RestService.delete
+      path: jsRoutes.controllers.SystemService.deleteSystem(systemId).url
+      params: 
+        organization_id: organisationId
 
   getLastExecutionResultsForTestSuite: (system, testSuiteId, testCaseIds) ->
       @RestService.get

@@ -258,18 +258,24 @@ object SystemManager extends BaseManager {
     }
   }
 
+  def deleteSystem(systemId: Long) = {
+    DB.withTransaction { implicit session =>
+      TestResultManager.updateForDeletedSystem(systemId)
+      PersistenceSchema.configs.filter(_.system === systemId).delete
+      PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).delete
+      PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).delete
+      PersistenceSchema.systemImplementsActors.filter(_.systemId === systemId).delete
+      PersistenceSchema.systemImplementsOptions.filter(_.systemId === systemId).delete
+      PersistenceSchema.systems.filter(_.id === systemId).delete
+    }
+  }
+
   def deleteSystemByOrganization(orgId: Long) = {
     DB.withTransaction { implicit session =>
       val systemIds = PersistenceSchema.systems.filter(_.owner === orgId).map(_.id).list
       systemIds foreach { systemId =>
-        TestResultManager.updateForDeletedSystem(systemId)
-        PersistenceSchema.configs.filter(_.system === systemId).delete
-        PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).delete
-        PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).delete
-        PersistenceSchema.systemImplementsActors.filter(_.systemId === systemId).delete
-        PersistenceSchema.systemImplementsOptions.filter(_.systemId === systemId).delete
+        deleteSystem(systemId)
       }
-      PersistenceSchema.systems.filter(_.owner === orgId).delete
     }
 	}
 

@@ -11,22 +11,22 @@ import utils.JsonUtil
 class SystemService extends Controller{
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemService])
 
-  /**
-   * Register a system for the authenticated vendor
-   */
-  def registerSystem = Action.apply { request =>
-    val adminId:Long = ParameterExtractor.extractUserId(request)
-    val system:Systems = ParameterExtractor.extractSystemInfo(request)
-
-    SystemManager.registerSystem(adminId, system)
-    ResponseConstructor.constructEmptyResponse
+  def deleteSystem(systemId:Long) = Action.apply { request =>
+    val organisationId = ParameterExtractor.requiredQueryParameter(request, Parameters.ORGANIZATION_ID).toLong
+    SystemManager.deleteSystem(systemId)
+    // Return updated list of systems
+    val systems = SystemManager.getSystemsByOrganization(organisationId)
+    val json = JsonUtil.jsSystems(systems).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   def registerSystemWithOrganization = Action.apply { request =>
     val system:Systems = ParameterExtractor.extractSystemWithOrganizationInfo(request)
-
     SystemManager.registerSystem(system)
-    ResponseConstructor.constructEmptyResponse
+    // Return updated list of systems
+    val systems = SystemManager.getSystemsByOrganization(system.owner)
+    val json = JsonUtil.jsSystems(systems).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
 
 
@@ -40,9 +40,12 @@ class SystemService extends Controller{
       val fname:Option[String]   = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_FNAME)
       val descr:Option[String]   = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_DESC)
       val version:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_VERSION)
-
+      val organisationId = ParameterExtractor.requiredBodyParameter(request, Parameters.ORGANIZATION_ID).toLong
       SystemManager.updateSystemProfile(sut_id, sname, fname, descr, version)
-      ResponseConstructor.constructEmptyResponse
+      // Return updated list of systems
+      val systems = SystemManager.getSystemsByOrganization(organisationId)
+      val json = JsonUtil.jsSystems(systems).toString()
+      ResponseConstructor.constructJsonResponse(json)
     } else{
       throw new NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, "System with ID '" + sut_id + "' not found")
     }

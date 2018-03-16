@@ -25,6 +25,7 @@
 			prevDisabled: '='
 			actionVisible: '='
 			onAction: '='
+			actionIcon: '='
 			onSort: '='
 		restrict: 'AE'
 		template: ''+
@@ -45,7 +46,7 @@
 					'</tr>'+
 				'</thead>'+
 				'<tbody>'+
-					'<tr class="table-row-directive" ng-class="rowClass($index)" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" action-visible="actionVisible" operations-visible="operationsVisible" export-visible="exportVisible" checkbox-enabled="checkboxEnabled" on-action="onAction" on-delete="onDelete" on-export="onExport" on-check="onCheck"></tr>'+
+					'<tr class="table-row-directive" ng-class="rowClass($index)" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" action-visible="actionVisible" action-icon="actionIcon" operations-visible="operationsVisible" export-visible="exportVisible" checkbox-enabled="checkboxEnabled" on-action="onAction" on-delete="onDelete" on-export="onExport" on-check="onCheck"></tr>'+
 				'</tbody>'+
 			'</table>'+
 				'<div ng-if="paginationVisible" class="text-center">'+
@@ -73,6 +74,7 @@
 						col.order = null
 				scope.onSort? column
 			scope.tableCaptionVisible = scope.tableCaption?
+
 			scope.doFirstPage = () =>
 				if scope.prevDisabled
 					false
@@ -138,6 +140,7 @@
 			checkboxEnabled: '='
 			onDelete: '='
 			onAction: '='
+			actionIcon: '='
 			onExport: '='
 			onCheck: '='
 		restrict: 'A'
@@ -154,7 +157,7 @@
 				'</div>'+
 			'</td>'+
 			'<td class="operations" ng-if="actionVisible">'+
-				'<button class="btn btn-default" ng-click="action()"><i class="fa fa-search"></i></button>'+
+				'<button class="btn btn-default" ng-click="action()"><i class="fa {{actionIcon}}"></i></button>'+
 			'</td>' +
 			'<td class="operations" ng-if="operationsVisible">'+
 				'<button class="btn btn-default" ng-click="delete()"><i class="fa fa-times"></i></button>'+
