@@ -6,6 +6,7 @@ import models.Enums.TestResultStatus
 import models.{TestCase, TestCases}
 import persistence.db.PersistenceSchema
 
+import scala.collection.mutable.ListBuffer
 import scala.slick.driver.MySQLDriver.simple._
 
 /**
@@ -108,6 +109,26 @@ object TestCaseManager extends BaseManager {
 
 				testCaseResult
 			}
+		}
+	}
+
+	def getTestCasesHavingActors(actorIds: List[Long]): util.HashMap[Long, ListBuffer[TestCases]] = {
+		DB.withSession { implicit session =>
+			var query = for {
+					testCaseHasActors <- PersistenceSchema.testCaseHasActors
+					testCases <- PersistenceSchema.testCases if testCases.id === testCaseHasActors.testcase
+			} yield (testCaseHasActors, testCases)
+			query = query.filter(_._1.actor inSet actorIds)
+
+			val results = query.list
+			val testCaseSet = new util.HashMap[Long, ListBuffer[TestCases]]()
+			results.foreach { result =>
+				if (!testCaseSet.containsKey(result._1._3)) {
+					testCaseSet.put(result._1._3, ListBuffer[TestCases]())
+				}
+				testCaseSet.get(result._1._3) += result._2
+			}
+			testCaseSet
 		}
 	}
 

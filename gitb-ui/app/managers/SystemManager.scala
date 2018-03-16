@@ -119,11 +119,9 @@ object SystemManager extends BaseManager {
         systemImplementsActors <- PersistenceSchema.systemImplementsActors
         specificationHasActors <- PersistenceSchema.specificationHasActors if specificationHasActors.actorId === systemImplementsActors.actorId
         specifications <- PersistenceSchema.specifications if specifications.id === specificationHasActors.specId
-        testCaseHasActors <- PersistenceSchema.testCaseHasActors if specificationHasActors.actorId === testCaseHasActors.actor
         actors <- PersistenceSchema.actors if actors.id === specificationHasActors.actorId
         domains <- PersistenceSchema.domains if domains.id === actors.domain
-        testCases <- PersistenceSchema.testCases if testCases.id === testCaseHasActors.testcase
-      } yield (systemImplementsActors, specificationHasActors, testCaseHasActors, actors, domains, specifications, testCases)
+      } yield (systemImplementsActors, specificationHasActors, actors, domains, specifications)
       query = query.filter(_._1.systemId === systemId)
       if (spec.isDefined && actor.isDefined) {
         query = query
@@ -132,19 +130,29 @@ object SystemManager extends BaseManager {
       }
       val results = query.list
 
-      // data: [0] Domain ID, [1] Domain name, [2] Specification ID, [3] Specification name, [4] Actor name, [5] Test case IDs
+      // Map of actor ID to conformance statement
       val statementMap: util.Map[Long, ConformanceStatementSet] = new util.TreeMap[Long, ConformanceStatementSet]
       results.foreach { result =>
-        var data = statementMap.get(result._4.id)
+        var data = statementMap.get(result._3.id)
         if (data == null) {
           data = new ConformanceStatementSet(
+            result._4.id, result._4.shortname, result._4.fullname,
+            result._3.id, result._3.actorId, result._3.name,
             result._5.id, result._5.shortname, result._5.fullname,
-            result._4.id, result._4.actorId, result._4.name,
-            result._6.id, result._6.shortname, result._6.fullname,
             new util.HashSet[Long]())
-          statementMap.put(result._4.id, data)
+          statementMap.put(result._3.id, data)
         }
-        data.testCaseIds.add(result._7.id)
+      }
+
+      // Collect test cases per actor
+      if (!statementMap.isEmpty) {
+        import scala.collection.JavaConversions._
+        val testCasesForActors = TestCaseManager.getTestCasesHavingActors(statementMap.keySet().toList)
+        testCasesForActors.foreach { entry =>
+          entry._2.foreach { testCase =>
+            statementMap.get(entry._1).testCaseIds.add(testCase.id)
+          }
+        }
       }
 
       val conformanceStatements = new ListBuffer[ConformanceStatement]

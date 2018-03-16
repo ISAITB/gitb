@@ -9,6 +9,12 @@ import scala.slick.driver.MySQLDriver.simple._
 object TestResultManager extends BaseManager {
   def logger = LoggerFactory.getLogger("TestResultManager")
 
+  def getTestResultForSession(sessionId: String): Option[TestResult] = {
+    DB.withSession { implicit session =>
+      PersistenceSchema.testResults.filter(_.testSessionId === sessionId).firstOption
+    }
+  }
+
   /**
    * Gets all running test results
    */
