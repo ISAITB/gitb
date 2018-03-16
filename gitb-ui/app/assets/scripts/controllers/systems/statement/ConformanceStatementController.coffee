@@ -1,7 +1,7 @@
 class ConformanceStatementController
 
-  @$inject = ['$log', '$scope', '$stateParams', '$state', '$modal', 'ConformanceService', 'SystemService', 'ErrorService']
-  constructor: (@$log, @$scope, @$stateParams, @$state, @$modal, @ConformanceService, @SystemService, @ErrorService)->
+  @$inject = ['$log', '$scope', '$stateParams', '$state', '$modal', 'ConformanceService', 'SystemService', 'ErrorService', 'DataService']
+  constructor: (@$log, @$scope, @$stateParams, @$state, @$modal, @ConformanceService, @SystemService, @ErrorService, @DataService)->
     @$log.debug "Constructing ConformanceStatementController"
 
     @conformanceStatements = []
@@ -50,5 +50,7 @@ class ConformanceStatementController
   onConformanceStatementSelect: (conformanceStatementRepresentation) =>
     @$state.go 'app.systems.detail.conformance.detail', {actor_id: conformanceStatementRepresentation.id, specId: conformanceStatementRepresentation.specificationId}
 
+  showCreate: () =>
+    !@DataService.isVendorUser
 
 @controllers.controller 'ConformanceStatementController', ConformanceStatementController
