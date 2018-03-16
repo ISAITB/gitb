@@ -270,31 +270,39 @@
 							</graphicElement>
 						</rectangle>
 						<textField>
-							<reportElement x="10" y="61" width="70" height="20" uuid="2eff57f6-bf34-4b6d-a4a0-e6c385dd921b"/>
+							<reportElement positionType="Float" x="10" y="81" width="70" height="20" uuid="2eff57f6-bf34-4b6d-a4a0-e6c385dd921b">
+								<printWhenExpression><![CDATA[$F{reportDate} != null]]></printWhenExpression>
+							</reportElement>
 							<textElement verticalAlignment="Middle">
 								<font isBold="true"/>
 							</textElement>
 							<textFieldExpression><![CDATA["Time:"]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement x="10" y="81" width="70" height="20" uuid="c78a00d0-9f65-43d9-868e-b5b6a78bc4db"/>
+							<reportElement positionType="Float" x="10" y="61" width="70" height="20" uuid="c78a00d0-9f65-43d9-868e-b5b6a78bc4db">
+								<printWhenExpression><![CDATA[$F{reportResult} != null]]></printWhenExpression>
+							</reportElement>
 							<textElement verticalAlignment="Middle">
 								<font isBold="true"/>
 							</textElement>
 							<textFieldExpression><![CDATA["Result:"]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement x="80" y="81" width="190" height="20" uuid="4dceda92-6fe2-4303-a86f-674a41d9c035"/>
+							<reportElement positionType="Float" x="80" y="61" width="190" height="20" uuid="4dceda92-6fe2-4303-a86f-674a41d9c035">
+								<printWhenExpression><![CDATA[$F{reportResult} != null]]></printWhenExpression>
+							</reportElement>
 							<textElement verticalAlignment="Middle"/>
 							<textFieldExpression><![CDATA[$F{reportResult}]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement x="80" y="61" width="190" height="20" uuid="e932876a-0acd-4325-b700-cd27121b32bc"/>
+							<reportElement positionType="Float" x="80" y="81" width="190" height="20" uuid="e932876a-0acd-4325-b700-cd27121b32bc">
+								<printWhenExpression><![CDATA[$F{reportDate} != null]]></printWhenExpression>
+							</reportElement>
 							<textElement verticalAlignment="Middle"/>
 							<textFieldExpression><![CDATA[$F{reportDate}]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement x="270" y="61" width="70" height="20" uuid="6530e463-20dc-40bc-a64b-a744ab2018f9">
+							<reportElement positionType="Float" x="270" y="61" width="70" height="20" uuid="6530e463-20dc-40bc-a64b-a744ab2018f9">
 								<printWhenExpression><![CDATA[$F{errorCount} != null]]></printWhenExpression>
 							</reportElement>
 							<textElement verticalAlignment="Middle">
@@ -303,7 +311,7 @@
 							<textFieldExpression><![CDATA["Errors:"]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement x="270" y="81" width="70" height="20" uuid="888c5397-ab5c-4a04-ad2a-a5f878368629">
+							<reportElement positionType="Float" x="270" y="81" width="70" height="20" uuid="888c5397-ab5c-4a04-ad2a-a5f878368629">
 								<printWhenExpression><![CDATA[$F{warningCount} != null]]></printWhenExpression>
 							</reportElement>
 							<textElement verticalAlignment="Middle">
@@ -312,7 +320,7 @@
 							<textFieldExpression><![CDATA["Warnings:"]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement x="270" y="101" width="70" height="20" uuid="77f1775c-f309-4d18-83b9-d34fab506751">
+							<reportElement positionType="Float" x="270" y="101" width="70" height="20" uuid="77f1775c-f309-4d18-83b9-d34fab506751">
 								<printWhenExpression><![CDATA[$F{messageCount} != null]]></printWhenExpression>
 							</reportElement>
 							<textElement verticalAlignment="Middle">
@@ -321,28 +329,28 @@
 							<textFieldExpression><![CDATA["Messages:"]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement x="340" y="101" width="170" height="20" uuid="b3aaef10-0f93-4cff-8091-4510751e4905">
+							<reportElement positionType="Float" x="340" y="101" width="170" height="20" uuid="b3aaef10-0f93-4cff-8091-4510751e4905">
 								<printWhenExpression><![CDATA[$F{messageCount} != null]]></printWhenExpression>
 							</reportElement>
 							<textElement verticalAlignment="Middle"/>
 							<textFieldExpression><![CDATA[$F{messageCount}]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement x="340" y="81" width="170" height="20" uuid="b7688d5d-7a0a-427c-86bf-b73339d7a6d3">
+							<reportElement positionType="Float" x="340" y="81" width="170" height="20" uuid="b7688d5d-7a0a-427c-86bf-b73339d7a6d3">
 								<printWhenExpression><![CDATA[$F{warningCount} != null]]></printWhenExpression>
 							</reportElement>
 							<textElement verticalAlignment="Middle"/>
 							<textFieldExpression><![CDATA[$F{warningCount}]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement x="340" y="61" width="170" height="20" uuid="a98dc781-a9a5-4cb3-9406-a4c991d26e9e">
+							<reportElement positionType="Float" x="340" y="61" width="170" height="20" uuid="a98dc781-a9a5-4cb3-9406-a4c991d26e9e">
 								<printWhenExpression><![CDATA[$F{errorCount} != null]]></printWhenExpression>
 							</reportElement>
 							<textElement verticalAlignment="Middle"/>
 							<textFieldExpression><![CDATA[$F{errorCount}]]></textFieldExpression>
 						</textField>
 						<line>
-							<reportElement x="11" y="41" width="752" height="1" uuid="d9dd6ecf-30c6-43ec-ab95-a75face7b750"/>
+							<reportElement positionType="Float" x="11" y="41" width="752" height="1" uuid="d9dd6ecf-30c6-43ec-ab95-a75face7b750"/>
 						</line>
 						<textField>
 							<reportElement positionType="Float" x="10" y="130" width="760" height="30" uuid="deec2519-05d0-4558-b48a-1ec351f6c1ff">
@@ -433,7 +441,7 @@
 								</jr:listContents>
 							</jr:list>
 						</componentElement>
-						<textField>
+						<textField isStretchWithOverflow="true">
 							<reportElement x="10" y="10" width="760" height="30" uuid="489ae026-e9e2-47f7-839d-b0b6c84093fc"/>
 							<textElement>
 								<font size="20"/>

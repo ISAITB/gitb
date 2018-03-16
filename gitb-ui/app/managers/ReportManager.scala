@@ -15,6 +15,7 @@ import com.gitb.tr._
 import com.gitb.utils.XMLUtils
 import config.Configurations
 import models._
+import org.apache.commons.lang.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import utils.{JacksonUtil, TimeUtil}
@@ -301,11 +302,17 @@ object ReportManager extends BaseManager {
         );
         if (isExpected && !Files.exists(path)) {
           // For backwards compatibility. Lookup session folder directly under status-updates folder
-          Paths.get(
+          val otherPath = Paths.get(
             Configurations.TEST_CASE_REPOSITORY_PATH,
             STATUS_UPDATES_PATH,
             sessionId
           )
+          if (Files.exists(otherPath)) {
+            otherPath
+          } else {
+            // This is for test sessions that have no report.
+            path
+          }
         } else {
           path
         }
@@ -346,28 +353,32 @@ object ReportManager extends BaseManager {
     }
   }
 
-  def getListOfTestSteps(folder: File): ListBuffer[TestStepReportType] = {
-    var list = ListBuffer[TestStepReportType]()
+  def getListOfTestSteps(testPresentation: TestCase, folder: File): ListBuffer[TitledTestStepReportType] = {
+    var list = ListBuffer[TitledTestStepReportType]()
 
-    val stepReports = folder.list()
-      .filter(t => t.endsWith(".xml"))
-      .map(t => pad10(t.substring(0, t.indexOf(".xml")))).sortWith(_ < _)
-
-    for (stepReport <- stepReports) {
-      var step = stepReport
-      if (stepReport.startsWith("0")) {
-        step = stepReport.replaceFirst("^0+(?!$)", "")
+    import scala.collection.JavaConversions._
+    for (testStep <- testPresentation.getSteps.getSteps) {
+      val stepReport = new TitledTestStepReportType()
+      if (StringUtils.isBlank(testStep.getDesc)) {
+        stepReport.setTitle("Step " + testStep.getId)
+      } else {
+        stepReport.setTitle("Step " + testStep.getId + ": " + testStep.getDesc)
       }
-
-      val file = new File(folder, step + ".xml")
-      val bytes = Files.readAllBytes(Paths.get(file.getAbsolutePath));
-      val string = new String(bytes)
-
-      //convert string in xml format into its object representation
-      val report = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))
-      list += report.getReport
+      val reportFile = new File(folder, testStep.getId + ".xml")
+      if (reportFile.exists()) {
+        val bytes = Files.readAllBytes(Paths.get(reportFile.getAbsolutePath));
+        val string = new String(bytes)
+        //convert string in xml format into its object representation
+        val report = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))
+        stepReport.setWrapped(report.getReport)
+      } else {
+        // Report not found.
+        val report = new SR()
+        report.setResult(TestResultType.UNDEFINED)
+        stepReport.setWrapped(report)
+      }
+      list += stepReport
     }
-
     list
   }
 
@@ -393,7 +404,7 @@ object ReportManager extends BaseManager {
     pdfReport
   }
 
-  def generateDetailedTestCaseReport(list: ListBuffer[TestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String, addContext: Boolean): Path = {
+  def generateDetailedTestCaseReport(list: ListBuffer[TitledTestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String, addContext: Boolean): Path = {
     val reportPath = Paths.get(path)
     val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
     DB.withSession {
@@ -450,8 +461,10 @@ object ReportManager extends BaseManager {
           overview.setTestDescription("-")
         }
         for (stepReport <- list) {
-          overview.getSteps().add(generator.fromTestStepReportType(stepReport, "Step " + stepReport.getId, addContext))
+          overview.getSteps().add(generator.fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, addContext))
         }
+        // Needed if no reports have been received.
+        Files.createDirectories(reportPath.getParent)
         val fos = Files.newOutputStream(reportPath)
         try {
           generator.writeTestCaseOverviewReport(overview, fos)

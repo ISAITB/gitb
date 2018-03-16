@@ -5,9 +5,10 @@ import java.nio.file.{Files, Paths}
 import javax.xml.transform.stream.StreamSource
 
 import com.gitb.tbs.TestStepStatus
+import com.gitb.tpl.TestCase
 import com.gitb.utils.XMLUtils
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
-import managers.{ReportManager, TestCaseManager}
+import managers.{ReportManager, TestCaseManager, TestResultManager}
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.lang.StringUtils
 import org.slf4j.LoggerFactory
@@ -101,15 +102,15 @@ class RepositoryService extends Controller {
 
     logger.debug("Reading test case report ["+codec.decode(session)+"] from the file ["+folder+"]")
 
-    val testCase = TestCaseManager.getTestCase(testCaseId)
-    if(folder.exists()) {
+    val testResult = TestResultManager.getTestResultForSession(session)
+    if (testResult.isDefined) {
+      val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get.tpl)))
+      val testCase = TestCaseManager.getTestCase(testCaseId)
       val exportedReport = new File(folder, TESTCASE_REPORT_NAME)
-
-      if(!exportedReport.exists()) {
-        val list = ReportManager.getListOfTestSteps(folder)
+      if (!exportedReport.exists()) {
+        val list = ReportManager.getListOfTestSteps(testcasePresentation, folder)
         ReportManager.generateDetailedTestCaseReport(list, exportedReport.getAbsolutePath, testCase, session, false)
       }
-
       Ok.sendFile(
         content = exportedReport,
         fileName = _ => TESTCASE_REPORT_NAME
