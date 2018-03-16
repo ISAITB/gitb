@@ -15,11 +15,11 @@
 		<div class="col-12-md">
 			<strong>Use: </strong> {{editEndpointConfigurationCtrl.parameter.use}}
 		</div>
-		<div class="col-12-md" ng-if="!editEndpointConfigurationCtrl.isBinary">
+		<div class="col-12-md" ng-if="editEndpointConfigurationCtrl.canEdit() && !editEndpointConfigurationCtrl.isBinary">
 			<strong>Value: </strong> 
 			<input type="text" class="form-control" ng-model="editEndpointConfigurationCtrl.configuration.value">
 		</div>
-		<div class="col-12-md" ng-if="editEndpointConfigurationCtrl.isBinary">
+		<div class="col-12-md" ng-if="editEndpointConfigurationCtrl.canEdit() && editEndpointConfigurationCtrl.isBinary">
 			<strong>Value: </strong>
 			<span ng-if="editEndpointConfigurationCtrl.isConfiugrationSet">{{editEndpointConfigurationCtrl.configuration.value.length}} bytes</span>
 			<span ng-if="!editEndpointConfigurationCtrl.isConfiugrationSet">Not set</span>
@@ -29,9 +29,18 @@
 				<button class="btn btn-default" ng-file-select="editEndpointConfigurationCtrl.onFileSelect($files)">Select file</button>
 			</p>
 		</div>
+		<div class="col-12-md" ng-if="!editEndpointConfigurationCtrl.canEdit() && !editEndpointConfigurationCtrl.isBinary">
+			<strong>Value: </strong>
+			<span>{{editEndpointConfigurationCtrl.configuration.value}}</span>
+		</div>
+		<div class="col-12-md" ng-if="editEndpointConfigurationCtrl.canEdit() && editEndpointConfigurationCtrl.isBinary">
+			<strong>Value: </strong>
+			<span ng-if="editEndpointConfigurationCtrl.isConfiugrationSet">{{editEndpointConfigurationCtrl.configuration.value.length}} bytes</span>
+			<span ng-if="!editEndpointConfigurationCtrl.isConfiugrationSet">Not set</span>
+		</div>
 	</div>
 </div>
 <div class="modal-footer">
-	<button class="btn btn-primary" ng-click="editEndpointConfigurationCtrl.save()">Save</button>
-	<button class="btn" ng-click="editEndpointConfigurationCtrl.cancel()">Cancel</button>
+	<button class="btn btn-primary" ng-click="editEndpointConfigurationCtrl.save()" ng-if="editEndpointConfigurationCtrl.canEdit()">Save</button>
+	<button class="btn btn-default" ng-click="editEndpointConfigurationCtrl.cancel()">Cancel</button>
 </div>

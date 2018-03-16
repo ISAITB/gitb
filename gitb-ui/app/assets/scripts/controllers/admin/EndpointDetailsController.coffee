@@ -59,7 +59,6 @@ class EndpointDetailsController
 			@ConformanceService.createParameter parameter.name, parameter.description, parameter.use, parameter.kind, @endpointId
 				.then () =>
 					@$state.go(@$state.$current, null, { reload: true });
-					# @$state.go 'app.admin.domains.detail.specifications.detail.actors.detail.endpoints.detail', {id: @domainId, spec_id: @specificationId, actor_id: @actorId, endpoint_id: endpoint.id}
 				.catch (error) =>
 					@ErrorService.showErrorMessage(error)
 		)

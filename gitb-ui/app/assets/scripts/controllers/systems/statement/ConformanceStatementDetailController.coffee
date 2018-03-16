@@ -1,7 +1,7 @@
 class ConformanceStatementDetailController
 
-  @$inject = ['$log', '$scope', '$state', '$stateParams', '$modal', 'SystemService', 'ConformanceService', 'ErrorService', 'Constants', 'ConfirmationDialogService']
-  constructor: (@$log, @$scope, @$state, @$stateParams, @$modal, @SystemService, @ConformanceService, @ErrorService, @Constants, @ConfirmationDialogService) ->
+  @$inject = ['$log', '$scope', '$state', '$stateParams', '$modal', 'SystemService', 'ConformanceService', 'ErrorService', 'Constants', 'ConfirmationDialogService', 'DataService']
+  constructor: (@$log, @$scope, @$state, @$stateParams, @$modal, @SystemService, @ConformanceService, @ErrorService, @Constants, @ConfirmationDialogService, @DataService) ->
     @$log.debug "Constructing ConformanceStatementDetailController"
 
     @systemId = @$stateParams['id']
@@ -114,7 +114,7 @@ class ConformanceStatementDetailController
   constructEndpointRepresentations: () =>
     @endpointRepresentations = _.map @endpoints, (endpoint) =>
         name: endpoint.name
-        desc: endpoint.desc
+        description: endpoint.description
         id: endpoint.id
         parameters: _.map endpoint.parameters, (parameter) =>
           repr = _.cloneDeep parameter
@@ -238,6 +238,5 @@ class EditEndpointConfigurationController
         reader.onerror = (event) =>
           @$log.error "An error occurred while reading the file: ", @file, event
           @$modalInstance.dismiss event
-
 
 @controllers.controller 'ConformanceStatementDetailController', ConformanceStatementDetailController

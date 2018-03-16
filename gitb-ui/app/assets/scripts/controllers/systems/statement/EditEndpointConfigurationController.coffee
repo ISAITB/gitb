@@ -1,7 +1,7 @@
 class EditEndpointConfigurationController
 
-  @$inject = ['$log', '$window', 'SystemService', 'Constants', '$modalInstance', 'systemId', 'endpoint', 'parameter', 'configuration']
-  constructor: (@$log, @$window, @SystemService, @Constants, @$modalInstance, @systemId, @endpoint, @parameter, @oldConfiguration) ->
+  @$inject = ['$log', '$window', 'SystemService', 'DataService', 'Constants', '$modalInstance', 'systemId', 'endpoint', 'parameter', 'configuration']
+  constructor: (@$log, @$window, @SystemService, @DataService, @Constants, @$modalInstance, @systemId, @endpoint, @parameter, @oldConfiguration) ->
     @$log.debug "Constructing EditEndpointConfigurationController"
     @file = null
 
@@ -53,5 +53,7 @@ class EditEndpointConfigurationController
           @$log.error "An error occurred while reading the file: ", @file, event
           @$modalInstance.dismiss event
 
+  canEdit: () =>
+    !@DataService.isVendorUser
 
 @controllers.controller 'EditEndpointConfigurationController', EditEndpointConfigurationController
