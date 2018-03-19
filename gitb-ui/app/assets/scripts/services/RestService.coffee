@@ -1,5 +1,6 @@
 class RestService
 
+    @$inject = ['$http', '$q', '$log', 'AuthProvider']
     constructor: (@$http, @$q, @$log, @AuthProvider) ->
         @$log.debug "Constructing RestService..."
 

@@ -1,5 +1,6 @@
 class TabController
 
+    @$inject = ['$log']
     constructor: (@$log) ->
         @$log.debug "Constructing TabController..."
 

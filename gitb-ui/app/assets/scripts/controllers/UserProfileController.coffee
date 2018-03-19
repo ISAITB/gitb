@@ -1,5 +1,6 @@
 class UserProfileController
 
+	@$inject = ['$log', '$scope', '$location', 'DataService', 'AccountService', 'ErrorService', 'Constants']
 	constructor: (@$log, @$scope, @$location, @DataService, @AccountService, @ErrorService, @Constants) ->
 
 		@$log.debug "Constructing UserProfileController..."

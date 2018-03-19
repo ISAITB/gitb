@@ -1,5 +1,6 @@
 class SystemNavigationController
 
+	@$inject = ['$log', '$scope', '$stateParams', '$state', 'SystemService', 'DataService']
 	constructor: (@$log, @$scope, @$stateParams, @$state, @SystemService, @DataService)->
 
 		@count = 0

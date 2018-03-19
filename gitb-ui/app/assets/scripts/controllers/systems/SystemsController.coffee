@@ -1,5 +1,5 @@
 class SystemsController
-
+	@$inject = ['$log', '$scope', '$state', '$window', 'SystemService', 'ErrorService', '$modal', 'DataService', '$location']
 	constructor: (@$log, @$scope, @$state, @$window, @SystemService, @ErrorService, @$modal, @DataService, @$location) ->
 		@$log.debug "Constructing SystemsController"
 		@systems  = []       # systems of the organization

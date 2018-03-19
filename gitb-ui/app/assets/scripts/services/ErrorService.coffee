@@ -1,6 +1,7 @@
 # Provides a wrapper service for WebSockets
 class ErrorService
 
+  @$inject = ['$log', '$modal', 'Constants']
   constructor: (@$log, @$modal, @Constants) ->
     @$log.debug "Constructing ErrorService"
 

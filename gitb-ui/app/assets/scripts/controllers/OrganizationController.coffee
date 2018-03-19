@@ -1,5 +1,6 @@
 class OrganizationController
 
+    @$inject = ['$log', '$scope', '$location', '$modal', 'DataService', 'AccountService', 'AuthService', 'ErrorService', 'Constants']
     constructor: (@$log, @$scope, @$location, @$modal, @DataService, @AccountService, @AuthService, @ErrorService, @Constants) ->
         @$log.debug 'Constructing OrganizationController'
 

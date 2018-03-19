@@ -1,9 +1,7 @@
 class AuthService
 
-   # @headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
-   # @defaultConfig = { headers: @headers }
-
-    constructor: (@$log, @$http, @$q, @RestService) ->
+    @$inject = ['$log', 'RestService']
+    constructor: (@$log, @RestService) ->
         @$log.debug "Constructing AuthService..."
 
     access_token: (email, password) ->

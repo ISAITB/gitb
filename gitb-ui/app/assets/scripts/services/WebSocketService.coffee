@@ -1,6 +1,7 @@
 # Provides a wrapper service for WebSockets
 class WebSocketService
 
+	@$inject = ['$log', 'Constants']
 	constructor: (@$log, @Constants) ->
 		@$log.debug "Constructing WebSocketService"
 

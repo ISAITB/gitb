@@ -3,6 +3,7 @@ class AccountService
     @headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
     @defaultConfig = { headers: @headers }
 
+    @$inject = ['$log', '$http', '$q', 'RestService']
     constructor: (@$log, @$http, @$q, @RestService) ->
         @$log.debug "Constructing AccountService..."
 
