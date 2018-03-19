@@ -17,6 +17,9 @@ ALTER TABLE `testresults` MODIFY `actor_id` bigint(20);
 ALTER TABLE `testresults` MODIFY `sut_id` bigint(20);
 ALTER TABLE `testresults` MODIFY `testcase_id` bigint(20);
 
+update `testresults` set `sut_id` = null where `sut_id` not in (select `id` from `systems`);
+update `testresults` set `actor_id` = null where `actor_id` not in (select `id` from `actors`);
+update `testresults` set `testcase_id` = null where `testcase_id` not in (select `id` from `testcases`);
 update `testresults` set `organization_id` = (select `owner` from `systems` where `systems`.`id` = `testresults`.`sut_id`);
 update `testresults` set `community_id` = (select `community` from `organizations` where `organizations`.`id` = `testresults`.`organization_id`);
 update `testresults` set `testsuite_id` = (select `testsuite` from `testsuitehastestcases` where `testsuitehastestcases`.`testcase` = `testresults`.`testcase_id`);
@@ -39,6 +42,7 @@ ALTER TABLE `testresults` ADD CONSTRAINT `tr_fk_domain` FOREIGN KEY (`domain_id`
 ALTER TABLE `testresults` ADD CONSTRAINT `tr_fk_specification` FOREIGN KEY (`specification_id`) REFERENCES `specifications`(`id`);
 ALTER TABLE `testresults` ADD CONSTRAINT `tr_fk_testsuite` FOREIGN KEY (`testsuite_id`) REFERENCES `testsuites`(`id`);
 ALTER TABLE `testresults` ADD CONSTRAINT `tr_fk_actor` FOREIGN KEY (`actor_id`) REFERENCES `actors`(`id`);
+ALTER TABLE `testresults` ADD CONSTRAINT `tr_fk_testcase` FOREIGN KEY (`testcase_id`) REFERENCES `testcases`(`id`);
 
 CREATE INDEX `tr_idx_sut` on `testresults`(`sut_id`);
 CREATE INDEX `tr_idx_organization` on `testresults`(`organization_id`);
