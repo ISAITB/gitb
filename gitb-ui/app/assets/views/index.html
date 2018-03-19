@@ -102,60 +102,14 @@
 
   <footer>
     <div class="container">
-      <img ng-src="{{indexCtrl.footer}}" class="img-responsive pull-left"/>
-      <a href class="pull-right" ng-click="indexCtrl.onLegalNotice()">Legal notice</a>
+        <div class="row">
+          <div class="col-md-6">
+            <img ng-src="{{indexCtrl.footer}}" class="img-responsive pull-left"/>
+          </div>
+          <div class="col-md-6 version-div">
+            <span class="pull-right"><a href ng-click="indexCtrl.onLegalNotice()">Legal notice</a><span class="version-text"> | </span><span class="version-text">{{indexCtrl.version}}</span></span>
+          </div>
+      </div>
     </div>
-     <!--<div class="container">-->
-       <!--<div class="row">-->
-         <!--<div class="footer-ribon">-->
-           <!--<span>About SRDC</span>-->
-         <!--</div>-->
-         <!--<div class="col-md-3">-->
-           <!--<div>-->
-             <!--<a href="http://www.srdc.com.tr" target="_blank" class="logo">-->
-               <!--<img class="img-responsive" src="assets/images/srdc-logo.png">-->
-             <!--</a>-->
-           <!--</div>-->
-         <!--</div>-->
-         <!--<div class="col-md-4">-->
-           <!--<h4>Who are we?</h4>-->
-           <!--<p>SRDC Software Research & Development and Consultancy Limited is founded by a professional team of engineers directed by Prof. Dr. Asuman Dogac in <a href="http://www.odtuteknokent.com.tr">Technopolis</a>, located at <a href="http://www.metu.edu.tr">Middle East Technical University</a>. SRDC Ltd. is a spin-off of METU-SRDC</p>-->
-         <!--</div>-->
-         <!--<div class="col-md-5">-->
-           <!--<div class="contact-details">-->
-             <!--<h4>Contact Us</h4>-->
-             <!--<ul class="contact">-->
-               <!--<li><p><i class="fa fa-map-marker"></i> <strong>Address:</strong> SRDC Ltd. ODTU Teknokent, Silikon Blok, Kat:1 No:16 06800, Ankara, Turkey </p></li>-->
-               <!--<li><p><i class="fa fa-phone"></i> <strong>Phone:</strong> +90 (312) 2101393</p></li>-->
-               <!--<li><p><i class="fa fa-envelope"></i> <strong>Email:</strong> <a href="mailto:srdc@@srdc.com.tr">srdc@@srdc.com.tr</a></p></li>-->
-             <!--</ul>-->
-           <!--</div>-->
-         <!--</div>-->
-       <!--</div>-->
-     <!--</div>-->
-     <!--<div class="footer-copyright">-->
-       <!--<div class="container">-->
-         <!--<div class="row">-->
-           <!--<div class="col-md-1">-->
-             <!--<a href="index.html" class="logo">-->
-               <!--<img alt="Porto Website Template" class="img-responsive" src="assets/images/logo-footer.png">-->
-             <!--</a>-->
-           <!--</div>-->
-           <!--<div class="col-md-7">-->
-             <!--<p>© Copyright 2014. All Rights Reserved.</p>-->
-           <!--</div>-->
-           <!--<div class="col-md-4">-->
-             <!--<nav id="sub-menu">-->
-               <!--<ul>-->
-                 <!--<li><a href="contact-us.html">Pricing</a></li>-->
-                 <!--<li><a href="page-faq.html">Help</a></li>-->
-                 <!--<li><a href="sitemap.html">Privacy</a></li>-->
-                 <!--<li><a href="sitemap.html">Terms</a></li>-->
-               <!--</ul>-->
-             <!--</nav>-->
-           <!--</div>-->
-         <!--</div>-->
-       <!--</div>-->
-     <!--</div>-->
   </footer>
 </div>

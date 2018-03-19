@@ -14,6 +14,7 @@ class IndexController
 
 		@logo
 		@footer
+		@version = @Constants.VERSION
 
 		@SystemConfigurationService.getLogo()
 		.then (data) =>
