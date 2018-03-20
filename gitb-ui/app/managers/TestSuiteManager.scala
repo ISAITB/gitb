@@ -104,28 +104,16 @@ object TestSuiteManager extends BaseManager {
 					.filter(_.id === testSuiteId)
 					.firstOption.get
 
-			PersistenceSchema.testSuites
-				.filter(_.id === testSuiteId)
-				.delete
-
 			PersistenceSchema.testSuiteHasActors
 				.filter(_.testsuite === testSuiteId)
 				.delete
 
-			PersistenceSchema.testSuiteHasTestCases
-				.filter(_.testsuite === testSuiteId)
-				.delete
+			testCases.foreach { testCase =>
+				TestCaseManager.delete(testCase)
+			}
 
-			PersistenceSchema.testCases
-				.filter(_.id inSet testCases)
-				.delete
-
-			PersistenceSchema.testCaseCoversOptions
-				.filter(_.testcase inSet testCases)
-				.delete
-
-			PersistenceSchema.testCaseHasActors
-				.filter(_.testcase inSet testCases)
+			PersistenceSchema.testSuites
+				.filter(_.id === testSuiteId)
 				.delete
 
 			RepositoryUtils.undeployTestSuite(testSuite.specification, testSuite.shortname)

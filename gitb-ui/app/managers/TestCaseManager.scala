@@ -208,6 +208,7 @@ object TestCaseManager extends BaseManager {
 		DB.withTransaction { implicit session =>
 			TestResultManager.updateForDeletedTestCase(testCaseId)
 			removeActorLinksForTestCase(testCaseId)
+			PersistenceSchema.testCaseCoversOptions.filter(_.testcase === testCaseId).delete
 			PersistenceSchema.testSuiteHasTestCases.filter(_.testcase === testCaseId).delete
 			PersistenceSchema.testCases.filter(_.id === testCaseId).delete
 		}
