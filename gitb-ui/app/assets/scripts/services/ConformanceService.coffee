@@ -218,7 +218,7 @@ class ConformanceService
   deployTestSuite: (specificationId, file) ->
     if file?
       options =
-        url: jsRoutes.controllers.ConformanceService.deployTestSuite(specificationId).url
+        url: jsRoutes.controllers.ConformanceService.deployTestSuite(specificationId).url.substring(1)
         file: file
       @$upload.upload options
     else
