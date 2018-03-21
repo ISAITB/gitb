@@ -18,7 +18,7 @@
         <param name="network.host" desc="Hostname/IP address for the actor"/>
         <param name="network.port" desc="Port address for the actor"/>
         <param name="public.key" desc="Public key/certificate to verify actor data" />
-        <param name="as2.name" desc="AS2 Identifier for the actor" />
+        <param name="as2.name" use="O" desc="AS2 Identifier for the actor" />
         <param name="http.uri" use="O" desc="Request URI for Http message">/</param>
     </actorConfigs>
     <receiveConfigs>

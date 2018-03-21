@@ -1,7 +1,8 @@
 package persistence.db
 
 import models._
-import java.sql.Blob
+import java.sql.{Blob, Timestamp}
+
 import scala.slick.driver.MySQLDriver.simple._
 
 object PersistenceSchema {
@@ -10,12 +11,26 @@ object PersistenceSchema {
    *** Primary Tables ***
    **********************/
 
+  class CommunitiesTable(tag: Tag) extends Table[Communities](tag, "Communities") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def shortname = column[String]("sname")
+    def fullname = column[String]("fname")
+    def domain = column[Option[Long]] ("domain", O.Nullable)
+    def * = (id, shortname, fullname, domain) <> (Communities.tupled, Communities.unapply)
+  }
+  val communities = TableQuery[CommunitiesTable]
+  val insertCommunity = (communities returning communities.map(_.id))
+
   class OrganizationsTable(tag: Tag) extends Table[Organizations](tag, "Organizations") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
     def organizationType = column[Short]("type")
-    def * = (id, shortname, fullname, organizationType) <> (Organizations.tupled, Organizations.unapply)
+    def adminOrganization = column[Boolean]("admin_organization")
+    def landingPage = column[Option[Long]] ("landing_page", O.Nullable)
+    def legalNotice = column[Option[Long]] ("legal_notice", O.Nullable)
+    def community = column[Long] ("community")
+    def * = (id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, community) <> (Organizations.tupled, Organizations.unapply)
   }
   //get table name etc from organizations.baseTableRow
   val organizations = TableQuery[OrganizationsTable]
@@ -178,15 +193,27 @@ object PersistenceSchema {
 
   class TestResultsTable(tag: Tag) extends Table[TestResult](tag, "TestResults") {
     def testSessionId = column[String]("test_session_id", O.PrimaryKey)
-	  def sutId = column[Long]("sut_id")
-	  def actorId = column[Long]("actor_id")
-	  def testcaseId = column[Long]("testcase_id")
+	  def sutId = column[Option[Long]]("sut_id")
+    def sut = column[Option[String]]("sut")
+    def organizationId = column[Option[Long]]("organization_id")
+    def organization = column[Option[String]]("organization")
+    def communityId = column[Option[Long]]("community_id")
+    def community = column[Option[String]]("community")
+    def testCaseId = column[Option[Long]]("testcase_id")
+    def testCase = column[Option[String]]("testcase")
+    def testSuiteId = column[Option[Long]]("testsuite_id")
+    def testSuite = column[Option[String]]("testsuite")
+    def actorId = column[Option[Long]]("actor_id")
+    def actor = column[Option[String]]("actor")
+    def specificationId = column[Option[Long]]("specification_id")
+    def specification = column[Option[String]]("specification")
+    def domainId = column[Option[Long]]("domain_id")
+    def domain = column[Option[String]]("domain")
 	  def result = column[String]("result")
-	  def startTime = column[String]("start_time")
-	  def endTime = column[Option[String]]("end_time", O.Nullable)
+	  def startTime = column[Timestamp]("start_time")
+	  def endTime = column[Option[Timestamp]]("end_time", O.Nullable, O.DBType("TIMESTAMP"))
 	  def tpl = column[String]("tpl", O.DBType("BLOB"))
-	  def sutVersion = column[Option[String]]("sut_version", O.Nullable) // TODO
-    def * = (testSessionId, sutId, actorId, testcaseId, result, startTime, endTime, sutVersion, tpl) <> (TestResult.tupled, TestResult.unapply)
+    def * = (testSessionId, sutId, sut, organizationId, organization, communityId, community, testCaseId, testCase, testSuiteId, testSuite, actorId, actor, specificationId, specification, domainId, domain, result, startTime, endTime, tpl) <> (TestResult.tupled, TestResult.unapply)
     //def fk1 = foreignKey("tr_fk_1", sutId, Systems)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
     //def fk2 = foreignKey("tr_fk_2", testcase, TestCases)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
     //def fk3 = foreignKey("tr_fk_3", sutVersion, Systems)(_.version, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
@@ -299,4 +326,37 @@ object PersistenceSchema {
     //def fk2 = foreignKey("tco_fk_2", option, Options)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
   val testCaseCoversOptions = TableQuery[TestCaseCoversOptionsTable]
+
+  class LandingPagesTable(tag: Tag) extends Table[LandingPages](tag, "LandingPages") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def name = column[String]("name")
+    def description = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def content = column[String]("content")
+    def default = column[Boolean]("default_flag")
+    def community = column[Long]("community")
+    def * = (id, name, description, content, default, community) <> (LandingPages.tupled, LandingPages.unapply)
+  }
+  val landingPages = TableQuery[LandingPagesTable]
+  val insertLandingPage = (landingPages returning landingPages.map(_.id))
+
+  class SystemConfigurationsTable(tag: Tag) extends Table[SystemConfigurations](tag, "SystemConfigurations") {
+    def name = column[String]("name", O.PrimaryKey)
+    def parameter = column[Option[String]]("parameter", O.Nullable)
+    def description = column[Option[String]]("description", O.Nullable)
+    def * = (name, parameter, description) <> (SystemConfigurations.tupled, SystemConfigurations.unapply)
+  }
+  val systemConfigurations = TableQuery[SystemConfigurationsTable]
+  val insertSystemConfiguration = (systemConfigurations returning systemConfigurations.map(_.name))
+
+  class LegalNoticesTable(tag: Tag) extends Table[LegalNotices](tag, "LegalNotices") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def name = column[String]("name")
+    def description = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def content = column[String]("content")
+    def default = column[Boolean]("default_flag")
+    def community = column[Long]("community")
+    def * = (id, name, description, content, default, community) <> (LegalNotices.tupled, LegalNotices.unapply)
+  }
+  val legalNotices = TableQuery[LegalNoticesTable]
+  val insertLegalNotice = (legalNotices returning legalNotices.map(_.id))
 }

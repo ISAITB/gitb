@@ -79,15 +79,20 @@ public class PeppolAS2MessagingHandler extends HttpsMessagingHandler{
         return new PeppolAS2Listener(sessionContext, receiverTransactionContext, senderTransactionContext);
     }
 
+    protected boolean validateMetadata() {
+        return true;
+    }
+
     @Override
     protected void validateActorConfigurations(List<ActorConfiguration> actorConfigurations) {
         super.validateActorConfigurations(actorConfigurations);
-
-        for (ActorConfiguration actorConfiguration : actorConfigurations) {
-            Configuration participantIdentifierConfig = ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), PARTICIPANT_IDENTIFIER_CONFIG_NAME);
-            String participantIdentifier = participantIdentifierConfig.getValue();
-            if(!validateParticipantIdentifier(participantIdentifier)) {
-                throw new GITBEngineInternalError("Invalid participant identifier [" + participantIdentifier + "]");
+        if (validateMetadata()) {
+            for (ActorConfiguration actorConfiguration : actorConfigurations) {
+                Configuration participantIdentifierConfig = ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), PARTICIPANT_IDENTIFIER_CONFIG_NAME);
+                String participantIdentifier = participantIdentifierConfig.getValue();
+                if(!validateParticipantIdentifier(participantIdentifier)) {
+                    throw new GITBEngineInternalError("Invalid participant identifier [" + participantIdentifier + "]");
+                }
             }
         }
     }
@@ -95,22 +100,23 @@ public class PeppolAS2MessagingHandler extends HttpsMessagingHandler{
     @Override
     protected void validateReceiveConfigurations(List<Configuration> configurations) {
         super.validateReceiveConfigurations(configurations);
-
-        //validate document identifier
-        Configuration documentIdentifierConfiguration = ConfigurationUtils.getConfiguration(configurations, DOCUMENT_IDENTIFIER_CONFIG_NAME);
-        if(documentIdentifierConfiguration != null) { //may be null if receiving mdn, not business message
-            String documentIdentifier = documentIdentifierConfiguration.getValue();
-            if (!validateDocumentIdentifier(documentIdentifier)) {
-                throw new GITBEngineInternalError("Invalid document identifier [" + documentIdentifier + "]");
+        if (validateMetadata()) {
+            //validate document identifier
+            Configuration documentIdentifierConfiguration = ConfigurationUtils.getConfiguration(configurations, DOCUMENT_IDENTIFIER_CONFIG_NAME);
+            if(documentIdentifierConfiguration != null) { //may be null if receiving mdn, not business message
+                String documentIdentifier = documentIdentifierConfiguration.getValue();
+                if (!validateDocumentIdentifier(documentIdentifier)) {
+                    throw new GITBEngineInternalError("Invalid document identifier [" + documentIdentifier + "]");
+                }
             }
-        }
 
-        //validate process identifier
-        Configuration processIdentifierConfiguration = ConfigurationUtils.getConfiguration(configurations, PROCESS_IDENTIFIER_CONFIG_NAME);
-        if(processIdentifierConfiguration != null) { //may be null if receiving mdn, not business message
-            String processIdentifier = processIdentifierConfiguration.getValue();
-            if(!validateProcessIdentifier(processIdentifier)){
-                throw new GITBEngineInternalError("Invalid process identifier [" + processIdentifier + "]");
+            //validate process identifier
+            Configuration processIdentifierConfiguration = ConfigurationUtils.getConfiguration(configurations, PROCESS_IDENTIFIER_CONFIG_NAME);
+            if(processIdentifierConfiguration != null) { //may be null if receiving mdn, not business message
+                String processIdentifier = processIdentifierConfiguration.getValue();
+                if(!validateProcessIdentifier(processIdentifier)){
+                    throw new GITBEngineInternalError("Invalid process identifier [" + processIdentifier + "]");
+                }
             }
         }
     }

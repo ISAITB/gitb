@@ -1,5 +1,6 @@
 class Page1Controller
 
+    @$inject = ['$log', '$scope', '$location', 'SystemService']
     constructor: (@$log, @$scope, @$location, @SystemService) ->
         @$log.debug "Constructing Page1Controller..."
 

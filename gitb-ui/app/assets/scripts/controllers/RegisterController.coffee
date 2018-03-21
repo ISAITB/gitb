@@ -1,5 +1,6 @@
 class RegisterController
 
+    @$inject = ['$log', '$scope', '$rootScope', 'AccountService', 'AuthService', 'ErrorService', 'Events', 'Constants']
     constructor: (@$log, @$scope, @$rootScope, @AccountService, @AuthService, @ErrorService, @Events, @Constants) ->
         @$log.debug "Constructing RegisterController..."
 

@@ -1,5 +1,6 @@
 class RecoverController
 
+    @$inject = ['$log', '$scope', '$location', 'Constants']
     constructor: (@$log, @$scope, @$location, @Constants) ->
         @$log.debug "Constructing RecoverController..."
 

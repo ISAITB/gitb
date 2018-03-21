@@ -60,4 +60,5 @@ providers.run ['$log', '$rootScope', '$location', '$cookieStore', 'AuthProvider'
 			$log.debug "handling logout event..."
 			$.removeCookie(atKey, { path: '/' })
 			authProvider.deauthenticate()
+			$location.path('/login')
 ]

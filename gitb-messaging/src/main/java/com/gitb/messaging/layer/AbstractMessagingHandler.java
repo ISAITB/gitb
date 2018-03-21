@@ -129,7 +129,7 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
     }
 
     @Override
-    public MessagingReport receiveMessage(String sessionId, String transactionId, List<Configuration> configurations) {
+    public MessagingReport receiveMessage(String sessionId, String transactionId, List<Configuration> configurations, Message inputs) {
         SessionManager sessionManager = SessionManager.getInstance();
 
         SessionContext sessionContext = sessionManager.getSession(sessionId);
@@ -151,9 +151,9 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
 
 	        Message message;
 	        if(transactionReceiver != null) {
-		        message = transactionReceiver.receive(configurations);
+		        message = transactionReceiver.receive(configurations, inputs);
 	        } else if(datagramReceiver != null) {
-		        message = datagramReceiver.receive(configurations);
+		        message = datagramReceiver.receive(configurations, inputs);
 	        } else {
                 throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "No receivers are defined for ["+getModuleDefinition().getId()+"]"));
 	        }
@@ -174,7 +174,7 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
     }
 
     @Override
-    public MessagingReport listenMessage(String sessionId, String transactionId, String from, String to, List<Configuration> configurations) {
+    public MessagingReport listenMessage(String sessionId, String transactionId, String from, String to, List<Configuration> configurations, Message inputs) {
         SessionManager sessionManager = SessionManager.getInstance();
 
         SessionContext sessionContext = sessionManager.getSession(sessionId);
@@ -225,7 +225,7 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
         }
 
         try {
-            incomingMessage = listener.listen(configurations);
+            incomingMessage = listener.listen(configurations, inputs);
         } catch (Exception e) {
             if(e instanceof GITBEngineInternalError) {
                 return onError((GITBEngineInternalError) e);

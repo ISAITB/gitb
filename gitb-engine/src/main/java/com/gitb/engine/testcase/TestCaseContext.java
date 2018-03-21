@@ -3,6 +3,8 @@ package com.gitb.engine.testcase;
 import com.gitb.ModuleManager;
 import com.gitb.core.*;
 import com.gitb.engine.messaging.MessagingContext;
+import com.gitb.engine.processing.ProcessingContext;
+import com.gitb.engine.remote.messaging.RemoteMessagingModuleClient;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.model.InitiateResponse;
@@ -17,6 +19,9 @@ import com.gitb.utils.ActorUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.map.Tuple;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -53,6 +58,11 @@ public class TestCaseContext {
      * MessagingContext for each handler used in the TestCase
      */
     private final Map<String, MessagingContext> messagingContexts;
+
+	/**
+	 * ProcessingContext for the processing transactions (for each transaction)
+	 */
+	private final Map<String, ProcessingContext> processingContexts;
 
     /**
      * Roles defined in the TestCase
@@ -109,11 +119,13 @@ public class TestCaseContext {
         this.sutConfigurations = new ConcurrentHashMap<>();
         this.sutHandlerConfigurations = new ConcurrentHashMap<>();
         this.messagingContexts = new ConcurrentHashMap<>();
+		this.processingContexts = new ConcurrentHashMap<>();
         this.scope = new TestCaseScope(this);
 
         processVariables();
 
         actorRoles = new HashMap<>();
+
         // Initialize configuration lists for SutHandlerConfigurations
         for(TestRole role : this.testCase.getActors().getActor()) {
             actorRoles.put(role.getId(), role);
@@ -257,15 +269,16 @@ public class TestCaseContext {
 				// just one of them is SUT, messaging handler acts as the simulated actor
 				builder.addActorConfiguration(transactionInfo.fromActorId, transactionInfo.fromEndpointName, ActorUtils.getActorConfiguration(configurations, transactionInfo.toActorId, transactionInfo.toEndpointName));
 			} else {
-				// both of them are simulated actors, invalid test case
-				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Both actors can not be simulated actors in a messaging transaction."));
+				// both of them are simulated actors
+				builder.addActorConfiguration(transactionInfo.toActorId, transactionInfo.toEndpointName, ActorUtils.getActorConfiguration(configurations, transactionInfo.fromActorId, transactionInfo.fromEndpointName))
+						.addActorConfiguration(transactionInfo.fromActorId, transactionInfo.fromEndpointName, ActorUtils.getActorConfiguration(configurations, transactionInfo.toActorId, transactionInfo.toEndpointName));
 			}
 		}
 
 		List<SUTConfiguration> handlerConfigurations = new ArrayList<>();
 
 		for(MessagingContextBuilder builder : messagingContextBuilders.values()) {
-			MessagingContext messagingContext = builder.build();
+			MessagingContext messagingContext = builder.build(sessionId);
 			handlerConfigurations.addAll(messagingContext.getSutHandlerConfigurations());
 
 			messagingContexts.put(builder.getHandler(), messagingContext);
@@ -353,8 +366,8 @@ public class TestCaseContext {
 
 	            // find the scriptlet in repositories
 	            ITestCaseRepository repository = ModuleManager.getInstance().getTestCaseRepository();
-	            if(repository.isScriptletAvailable(((CallStep) step).getPath())) {
-		            scriptlet = repository.getScriptlet(((CallStep) step).getPath());
+	            if(repository.isScriptletAvailable(getTestCase().getId(), ((CallStep) step).getPath())) {
+		            scriptlet = repository.getScriptlet(getTestCase().getId(), ((CallStep) step).getPath());
 	            }
 
 	            if(scriptlet != null) {
@@ -429,6 +442,18 @@ public class TestCaseContext {
         return messagingContexts.values();
     }
 
+	public void addProcessingContext(String txId, ProcessingContext ctx) {
+		processingContexts.put(txId, ctx);
+	}
+
+	public ProcessingContext getProcessingContext(String txId) {
+		return processingContexts.get(txId);
+	}
+
+	public void removeProcessingContext(String txId) {
+		processingContexts.remove(txId);
+	}
+
 	private static class MessagingContextBuilder {
 		private final String handler;
 		private final Map<Tuple<String>, ActorConfiguration> sutConfigurations;
@@ -446,64 +471,91 @@ public class TestCaseContext {
 
 		public MessagingContextBuilder addActorConfiguration(String actorIdToBeSimulated, String endpointNameToBeSimulated,
 		                                                     ActorConfiguration sutActorConfiguration) {
-			Tuple<String> actorTuple = new Tuple<>(new String[]{
-				actorIdToBeSimulated, endpointNameToBeSimulated,
-				sutActorConfiguration.getActor(), sutActorConfiguration.getEndpoint()
-			});
+			if (sutActorConfiguration != null) {
+				Tuple<String> actorTuple = new Tuple<>(new String[]{
+						actorIdToBeSimulated, endpointNameToBeSimulated,
+						sutActorConfiguration.getActor(), sutActorConfiguration.getEndpoint()
+				});
 
-			if(!sutConfigurations.containsKey(actorTuple)) {
-				sutConfigurations.put(actorTuple, sutActorConfiguration);
+				if(!sutConfigurations.containsKey(actorTuple)) {
+					sutConfigurations.put(actorTuple, sutActorConfiguration);
+				}
 			}
 
 			return this;
 		}
 
-		public MessagingContext build() {
-			ModuleManager moduleManager = ModuleManager.getInstance();
+		private boolean isURL(String handler) {
+			try {
+				new URI(handler).toURL();
+			} catch (Exception e) {
+				return false;
+			}
+			return true;
+		}
 
-			IMessagingHandler messagingHandler = moduleManager.getMessagingHandler(handler);
+		private IMessagingHandler getRemoteMessagingHandler(String handler, String sessionId) {
+			try {
+				return new RemoteMessagingModuleClient(new URI(handler).toURL(), sessionId);
+			} catch (MalformedURLException e) {
+				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an malformed URL ["+handler+"]"), e);
+			} catch (URISyntaxException e) {
+				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an invalid URI syntax ["+handler+"]"), e);
+			}
+		}
 
-			List<ActorConfiguration> configurations = new ArrayList<>(sutConfigurations.values());
-
-			InitiateResponse initiateResponse = messagingHandler.initiate(configurations);
-
-			for(Map.Entry<Tuple<String>, ActorConfiguration> entry : sutConfigurations.entrySet()) {
-				ActorConfiguration simulatedActor = ActorUtils.getActorConfiguration(initiateResponse.getActorConfigurations(), entry.getValue().getActor(), entry.getValue().getEndpoint());
-
-				Tuple<String> actorTuple = entry.getKey();
-				String actorIdToBeSimulated = actorTuple.getContents()[0];
-				String endpointNameToBeSimulated = actorTuple.getContents()[1];
-
-				simulatedActor.setActor(actorIdToBeSimulated);
-				simulatedActor.setEndpoint(endpointNameToBeSimulated);
+		public MessagingContext build(String sessionId) {
+			IMessagingHandler messagingHandler = null;
+			if (isURL(handler)) {
+				messagingHandler = getRemoteMessagingHandler(handler, sessionId);
+			} else {
+				messagingHandler = ModuleManager.getInstance().getMessagingHandler(handler);
+			}
+			if (messagingHandler == null) {
+				throw new IllegalStateException("Validation handler for ["+handler+"] could not be resolved");
 			}
 
+			List<ActorConfiguration> configurations = new ArrayList<>(sutConfigurations.values());
 			Map<Tuple<String>, SUTConfiguration> sutHandlerConfigurations = new HashMap<>();
 
-			for(Map.Entry<Tuple<String>, ActorConfiguration> entry : sutConfigurations.entrySet()) {
-				Tuple<String> concatenatedActorTuple = entry.getKey();
+			InitiateResponse initiateResponse = messagingHandler.initiate(configurations);
+			if (!configurations.isEmpty()) {
+				for(Map.Entry<Tuple<String>, ActorConfiguration> entry : sutConfigurations.entrySet()) {
+					ActorConfiguration simulatedActor = ActorUtils.getActorConfiguration(initiateResponse.getActorConfigurations(), entry.getValue().getActor(), entry.getValue().getEndpoint());
 
-				String actorIdToBeSimulated = concatenatedActorTuple.getContents()[0];
-				String endpointNameToBeSimulated = concatenatedActorTuple.getContents()[1];
+					Tuple<String> actorTuple = entry.getKey();
+					String actorIdToBeSimulated = actorTuple.getContents()[0];
+					String endpointNameToBeSimulated = actorTuple.getContents()[1];
 
-				String sutActorId = concatenatedActorTuple.getContents()[2];
-				String sutEndpointName = concatenatedActorTuple.getContents()[3];
-
-				ActorConfiguration simulatedActor = ActorUtils.getActorConfiguration(initiateResponse.getActorConfigurations(), actorIdToBeSimulated, endpointNameToBeSimulated);
-
-				Tuple<String> sutActorTuple = new Tuple<>(new String[] {sutActorId, sutEndpointName});
-
-				if(!sutHandlerConfigurations.containsKey(sutActorTuple)) {
-					SUTConfiguration sutHandlerConfiguration = new SUTConfiguration();
-					sutHandlerConfiguration.setActor(sutActorId);
-					sutHandlerConfiguration.setEndpoint(sutEndpointName);
-
-					sutHandlerConfigurations.put(sutActorTuple, sutHandlerConfiguration);
+					simulatedActor.setActor(actorIdToBeSimulated);
+					simulatedActor.setEndpoint(endpointNameToBeSimulated);
 				}
 
-				SUTConfiguration sutHandlerConfiguration = sutHandlerConfigurations.get(sutActorTuple);
+				for(Map.Entry<Tuple<String>, ActorConfiguration> entry : sutConfigurations.entrySet()) {
+					Tuple<String> concatenatedActorTuple = entry.getKey();
 
-				sutHandlerConfiguration.getConfigs().add(simulatedActor);
+					String actorIdToBeSimulated = concatenatedActorTuple.getContents()[0];
+					String endpointNameToBeSimulated = concatenatedActorTuple.getContents()[1];
+
+					String sutActorId = concatenatedActorTuple.getContents()[2];
+					String sutEndpointName = concatenatedActorTuple.getContents()[3];
+
+					ActorConfiguration simulatedActor = ActorUtils.getActorConfiguration(initiateResponse.getActorConfigurations(), actorIdToBeSimulated, endpointNameToBeSimulated);
+
+					Tuple<String> sutActorTuple = new Tuple<>(new String[] {sutActorId, sutEndpointName});
+
+					if(!sutHandlerConfigurations.containsKey(sutActorTuple)) {
+						SUTConfiguration sutHandlerConfiguration = new SUTConfiguration();
+						sutHandlerConfiguration.setActor(sutActorId);
+						sutHandlerConfiguration.setEndpoint(sutEndpointName);
+
+						sutHandlerConfigurations.put(sutActorTuple, sutHandlerConfiguration);
+					}
+
+					SUTConfiguration sutHandlerConfiguration = sutHandlerConfigurations.get(sutActorTuple);
+
+					sutHandlerConfiguration.getConfigs().add(simulatedActor);
+				}
 			}
 
 			return new MessagingContext(messagingHandler, initiateResponse.getSessionId(),

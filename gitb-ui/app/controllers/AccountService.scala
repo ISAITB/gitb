@@ -15,82 +15,77 @@ class AccountService extends Controller{
   /**
    * Registers a vendor and an administrator for vendor to the system
    */
-  def registerVendor = Action.async { request =>
+  def registerVendor = Action.apply { request =>
     val organization = ParameterExtractor.extractOrganizationInfo(request)
     val admin = ParameterExtractor.extractAdminInfo(request)
 
-    AccountManager.registerVendor(organization, admin) map { unit =>
-      ResponseConstructor.constructEmptyResponse
-    }
+    AccountManager.registerVendor(organization, admin)
+    ResponseConstructor.constructEmptyResponse
   }
   /**
    * Gets the company profile for the authenticated user
    */
-  def getVendorProfile = Action.async { request =>
+  def getVendorProfile = Action.apply { request =>
     val userId = ParameterExtractor.extractUserId(request)
 
-    AccountManager.getVendorProfile(userId) map { organization =>
-      val json:String = JsonUtil.serializeOrganization(organization)
-      ResponseConstructor.constructJsonResponse(json)
-    }
+    val organization = AccountManager.getVendorProfile(userId)
+    val json:String = JsonUtil.serializeOrganization(organization)
+    ResponseConstructor.constructJsonResponse(json)
   }
+
   /**
    * Updates the company profile
    */
-  def updateVendorProfile = Action.async { request =>
+  def updateVendorProfile = Action.apply { request =>
     val adminId = ParameterExtractor.extractUserId(request)
     val vendor_sname = ParameterExtractor.optionalBodyParameter(request, Parameters.VENDOR_SNAME)
     val vendor_fname = ParameterExtractor.optionalBodyParameter(request, Parameters.VENDOR_FNAME)
 
-    AccountManager.updateVendorProfile(adminId, vendor_sname, vendor_fname) map { unit =>
-      ResponseConstructor.constructEmptyResponse
-    }
+    AccountManager.updateVendorProfile(adminId, vendor_sname, vendor_fname)
+    ResponseConstructor.constructEmptyResponse
   }
   /**
    * Gets the all users for the vendor
    */
-  def getVendorUsers = Action.async { request =>
+  def getVendorUsers = Action.apply { request =>
     val userId = ParameterExtractor.extractUserId(request)
 
-    AccountManager.getVendorUsers(userId) map { list =>
-      val json:String = JsonUtil.jsUsers(list).toString
-      ResponseConstructor.constructJsonResponse(json)
-    }
+    val list = AccountManager.getVendorUsers(userId)
+    val json:String = JsonUtil.jsUsers(list).toString
+    ResponseConstructor.constructJsonResponse(json)
   }
+
   /**
    * The authenticated admin registers new user for the organization
    */
-  def registerUser = Action.async { request =>
+  def registerUser = Action.apply { request =>
     val adminId = ParameterExtractor.extractUserId(request)
     val user = ParameterExtractor.extractUserInfo(request)
 
-    AccountManager.registerUser(adminId, user) map { unit =>
-      ResponseConstructor.constructEmptyResponse
-    }
+    AccountManager.registerUser(adminId, user)
+    ResponseConstructor.constructEmptyResponse
   }
   /**
    * Returns the user profile of the authenticated user
    */
-  def getUserProfile = Action.async { request =>
+  def getUserProfile = Action.apply { request =>
     val userId = ParameterExtractor.extractUserId(request)
 
-    AccountManager.getUserProfile(userId) map { user =>
-      val json:String = JsonUtil.serializeUser(user)
-      ResponseConstructor.constructJsonResponse(json)
-    }
+    val user = AccountManager.getUserProfile(userId)
+    val json:String = JsonUtil.serializeUser(user)
+    ResponseConstructor.constructJsonResponse(json)
   }
   /**
    * Updates the user profile of the authenticated user
    */
-  def updateUserProfile = Action.async { request =>
+  def updateUserProfile = Action.apply { request =>
     val userId:Long = ParameterExtractor.extractUserId(request)
     val name:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.USER_NAME)
     val passwd:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.PASSWORD)
     val oldPasswd:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.OLD_PASSWORD)
 
-    AccountManager.updateUserProfile(userId, name, passwd, oldPasswd) map { unit =>
-      ResponseConstructor.constructEmptyResponse
-    }
+    AccountManager.updateUserProfile(userId, name, passwd, oldPasswd)
+    ResponseConstructor.constructEmptyResponse
   }
 
 }

@@ -1,14 +1,12 @@
 package utils
 
-import exceptions.{ErrorCodes, InvalidRequestException}
+import java.util
+
 import models.Enums.TestResultStatus
 import models._
 import play.api.libs.json._
-
-import scala.util.parsing.json.JSONObject
-
+import scala.collection.JavaConverters._
 object JsonUtil {
-
 
 	def jsTestSuite(suite: TestSuites): JsObject = {
     val json = Json.obj(
@@ -26,7 +24,7 @@ object JsonUtil {
     json
   }
 
-  def jsTestSuites(list: List[TestSuites]) = {
+  def jsTestSuitesList(list: List[TestSuites]) = {
     var json = Json.arr()
     list.foreach { testSuite =>
       json = json.append(jsTestSuite(testSuite))
@@ -34,7 +32,25 @@ object JsonUtil {
     json
   }
 
-	def jsEndpoint(endpoint: Endpoint) = {
+  def jsTestSuite(testSuite: TestSuite): JsObject = {
+    var jTestSuite: JsObject = jsTestSuite(testSuite.toCaseObject)
+    if (testSuite.testCases.isDefined) {
+      jTestSuite = jTestSuite ++ Json.obj("testCases" -> jsTestCasesList(testSuite.testCases.get))
+    } else {
+      jTestSuite = jTestSuite ++ Json.obj("testCases" -> JsNull)
+    }
+    jTestSuite
+  }
+
+  def jsTestSuiteList(testSuites: List[TestSuite]): JsArray = {
+    var json = Json.arr()
+    testSuites.foreach { testSuite =>
+      json = json.append(jsTestSuite(testSuite))
+    }
+    json
+  }
+
+  def jsEndpoint(endpoint: Endpoint) = {
 		val json = Json.obj(
 			"id" -> endpoint.id,
 			"name" -> endpoint.name,
@@ -98,6 +114,15 @@ object JsonUtil {
     json
   }
 
+  def jsSystemConfiguration(sc: SystemConfigurations):JsObject = {
+    val json = Json.obj(
+      "name"    -> sc.name,
+      "parameter"  -> (if(sc.parameter.isDefined) sc.parameter.get else JsNull),
+      "description"  -> (if(sc.description.isDefined) sc.description.get else JsNull)
+    )
+    json
+  }
+
   /**
    * Converts a List of Users into Play!'s JSON notation
    * Does not support cross object conversion
@@ -123,8 +148,26 @@ object JsonUtil {
       "id"    -> organization.id,
       "sname" -> organization.shortname,
       "fname" -> organization.fullname,
-      "type"  -> organization.organizationType
+      "type"  -> organization.organizationType,
+      "landingPage" -> (if(organization.landingPage.isDefined) organization.landingPage.get else JsNull),
+      "legalNotice" -> (if(organization.legalNotice.isDefined) organization.legalNotice.get else JsNull),
+      "community" -> organization.community,
+      "adminOrganization" -> organization.adminOrganization
     )
+    json
+  }
+
+  /**
+   * Converts a List of Organizations into Play!'s JSON notation
+   * Does not support cross object conversion
+   * @param list List of Organizations to be convert
+   * @return JsArray
+   */
+  def jsOrganizations(list:List[Organizations]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ organization =>
+      json = json.append(jsOrganization(organization))
+    }
     json
   }
 
@@ -140,7 +183,8 @@ object JsonUtil {
       "sname" -> system.shortname,
       "fname" -> system.fullname,
       "description" -> (if(system.description.isDefined) system.description.get else JsNull),
-      "version" -> system.version
+      "version" -> system.version,
+      "owner" -> system.owner
     )
     json
   }
@@ -157,6 +201,34 @@ object JsonUtil {
       json = json.append(jsSystem(system))
     }
     json
+  }
+
+  def jsCommunities(list:List[Communities]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ community =>
+      json = json.append(jsCommunity(community))
+    }
+    json
+  }
+
+  def jsCommunity(community:Communities):JsObject = {
+    val json = Json.obj(
+      "id"    -> community.id,
+      "sname" -> community.shortname,
+      "fname" -> community.fullname,
+      "domainId" -> community.domain
+    )
+    json
+  }
+
+  def serializeCommunity(community:Community):String = {
+    var jCommunity:JsObject = jsCommunity(community.toCaseObject)
+    if(community.domain.isDefined){
+      jCommunity = jCommunity ++ Json.obj("domain" -> jsDomain(community.domain.get))
+    } else{
+      jCommunity = jCommunity ++ Json.obj("domain" -> JsNull)
+    }
+    jCommunity.toString
   }
 
   /**
@@ -250,12 +322,18 @@ object JsonUtil {
 
 	def jsConformanceStatement(conformanceStatement: ConformanceStatement): JsObject = {
 		val json = Json.obj(
-			"actor" -> jsActor(conformanceStatement.actor),
-      "specification" -> jsSpecification(conformanceStatement.specification),
-			"options" -> jsOptions(conformanceStatement.options),
+      "domainId" -> conformanceStatement.domainId,
+      "domain" -> conformanceStatement.domainName,
+      "domainFull" -> conformanceStatement.domainNameFull,
+      "actorId" -> conformanceStatement.actorId,
+			"actor" -> conformanceStatement.actorName,
+      "actorFull" -> conformanceStatement.actorFull,
+      "specificationId" -> conformanceStatement.specificationId,
+      "specification" -> conformanceStatement.specificationName,
+      "specificationFull" -> conformanceStatement.specificationNameFull,
 			"results" -> Json.obj(
-				"total" -> conformanceStatement.results.total,
-				"completed" -> conformanceStatement.results.completed
+				"total" -> conformanceStatement.totalTests,
+				"completed" -> conformanceStatement.completedTests
 			)
 		)
 		json
@@ -328,7 +406,8 @@ object JsonUtil {
       "description" -> (if(testCase.description.isDefined) testCase.description.get else JsNull),
       "keywords" -> (if(testCase.keywords.isDefined) testCase.keywords.get else JsNull),
       "type" -> testCase.testCaseType,
-      "targetSpec"  -> testCase.targetSpec
+      "targetSpec"  -> testCase.targetSpec,
+      "path" -> testCase.path
     )
     return json;
   }
@@ -420,43 +499,94 @@ object JsonUtil {
   def jsTestResult(testResult:TestResult, returnTPL:Boolean):JsObject = {
     val json = Json.obj(
       "sessionId" -> testResult.sessionId,
-      "systemId"  -> testResult.systemId,
-      "actorId"   -> testResult.actorId,
-      "testId"    -> testResult.testCaseId,
+      "systemId"  -> (if (testResult.systemId.isDefined) testResult.systemId else JsNull),
+      "actorId"   -> (if (testResult.actorId.isDefined) testResult.actorId else JsNull),
+      "testId"    -> (if (testResult.testCaseId.isDefined) testResult.testCaseId else JsNull),
       "result"    -> testResult.result,
-      "startTime" -> testResult.startTime,
-      "endTime"   -> testResult.endTime,
-      "tpl"       -> (if(returnTPL) testResult.tpl else JsNull)
+      "startTime" -> TimeUtil.serializeTimestamp(testResult.startTime),
+      "endTime"   -> (if(testResult.endTime.isDefined) TimeUtil.serializeTimestamp(testResult.endTime.get) else JsNull),
+      "tpl"       -> (if(returnTPL) testResult.tpl else JsNull),
+      "obsolete"  -> (if (testResult.testSuiteId.isDefined && testResult.testCaseId.isDefined && testResult.systemId.isDefined && testResult.organizationId.isDefined && testResult.communityId.isDefined && testResult.domainId.isDefined && testResult.specificationId.isDefined && testResult.actorId.isDefined) false else true)
     )
     json
   }
 
-	def jsTestResultReports(list: List[TestResultReport]): JsArray = {
-		var json = Json.arr()
-		list.foreach { report =>
-			json = json.append(jsTestResultReport(report))
-		}
-		json
-	}
+  def jsTestResultReports(list: List[TestResult]): JsArray = {
+    var json = Json.arr()
+    list.foreach { report =>
+      json = json.append(jsTestResultReport(report))
+    }
+    json
+  }
 
-	def jsTestResultReport(report: TestResultReport): JsObject = {
-		val json = Json.obj(
-			"result" -> jsTestResult(report.testResult, false),
-			"test" -> {
-				report.testCase match {
-					case Some(tc) => jsTestCases(tc)
-					case None => JsNull
-				}
-			},
-			"actor" -> {
-				report.actor match {
-					case Some(actor) => jsActor(actor)
-					case None => JsNull
-				}
-			}
-		)
-		json
-	}
+  def jsTestResultSessionReports(list: List[TestResult]): JsArray = {
+    var json = Json.arr()
+    list.foreach { report =>
+      json = json.append(jsTestResultReport(report))
+    }
+    json
+  }
+
+  def jsCount(count: Long): JsObject = {
+    val json = Json.obj(
+      "count"    -> count
+    )
+    json
+  }
+
+  def jsTestResultReport(result: TestResult): JsObject = {
+    val json = Json.obj(
+      "result" -> jsTestResult(result, false),
+      "test" ->  {
+        Json.obj(
+          "id"      -> (if (result.testCaseId.isDefined) result.testCaseId.get else JsNull),
+          "sname"   -> (if (result.testCase.isDefined) result.testCase.get else JsNull)
+        )
+      },
+      "organization" -> {
+        Json.obj(
+          "id"    -> (if (result.organizationId.isDefined) result.organizationId.get else JsNull),
+          "sname" -> (if (result.organization.isDefined) result.organization.get else JsNull),
+          "community" -> (if (result.communityId.isDefined) result.communityId.get else JsNull)
+        )
+      },
+      "system" -> {
+        Json.obj(
+          "id"    -> (if (result.systemId.isDefined) result.systemId.get else JsNull),
+          "sname" -> (if (result.system.isDefined) result.system.get else JsNull),
+          "owner" -> (if (result.organizationId.isDefined) result.organizationId.get else JsNull)
+        )
+      },
+      "actor" -> {
+        Json.obj(
+          "id" -> result.actorId,
+          "name"   -> result.actor,
+          "domain"  -> result.domainId
+        )
+      },
+      "specification" -> {
+        Json.obj(
+          "id"      -> (if (result.specificationId.isDefined) result.specificationId.get else JsNull),
+          "sname"   -> (if (result.specification.isDefined) result.specification.get else JsNull),
+          "domain"  -> (if (result.domainId.isDefined) result.domainId.get else JsNull)
+        )
+      },
+      "domain" -> {
+        Json.obj(
+          "id" -> (if (result.domainId.isDefined) result.domainId.get else JsNull),
+          "sname" -> (if (result.domain.isDefined) result.domain.get else JsNull)
+        )
+      },
+      "testSuite" -> {
+        Json.obj(
+          "id"                -> (if (result.testSuiteId.isDefined) result.testSuiteId.get else JsNull),
+          "sname"             -> (if (result.testSuite.isDefined) result.testSuite.get else JsNull),
+          "specification"     -> (if (result.specificationId.isDefined) result.specificationId.get else JsNull)
+        )
+      }
+    )
+    json
+  }
 
   /**
    * Converts a List of TestResults into Play!'s JSON notation
@@ -499,15 +629,23 @@ object JsonUtil {
     json
   }
 
-	def jsTestResultStatuses(testCaseIds: List[Long], testResultStatuses: List[TestResultStatus.Value]): JsObject = {
-		val zippedResults = testCaseIds.zip(testResultStatuses)
-		var json = Json.obj()
-		zippedResults.foreach { pair =>
-			val (testCaseId, testResultStatus) = pair
-			json = json + (testCaseId.toString, JsString(testResultStatus.toString))
-		}
-		json
-	}
+  def jsTestResultStatuses(testCaseIds: List[Long], testResultStatuses: List[TestResultStatus.Value]): JsObject = {
+    val zippedResults = testCaseIds.zip(testResultStatuses)
+    var json = Json.obj()
+    zippedResults.foreach { pair =>
+      val (testCaseId, testResultStatus) = pair
+      json = json + (testCaseId.toString, JsString(testResultStatus.toString))
+    }
+    json
+  }
+
+  def jsTestResultStatuses(testSuiteId: Long, testCaseIds: List[Long], testResultStatuses: List[TestResultStatus.Value]): JsObject = {
+    val json = Json.obj(
+      "id"    -> testSuiteId,
+      "testCases" -> jsTestResultStatuses(testCaseIds, testResultStatuses)
+    )
+    json
+  }
 
   /**
    * Converts a User object into a JSON string with its complex objects
@@ -523,6 +661,16 @@ object JsonUtil {
     }
     //3) Return JSON String
     jUser.toString
+  }
+
+  def serializeSystemConfig(sc:SystemConfiguration):String = {
+    var jConfig:JsObject = jsSystemConfiguration(sc.toCaseObject)
+    jConfig.toString
+  }
+
+  def serializeSpecification(spec:Specification):String = {
+    var jSpec:JsObject = jsSpecification(spec.toCaseObject)
+    jSpec.toString
   }
 
   /**
@@ -548,6 +696,24 @@ object JsonUtil {
       jOrganization = jOrganization ++ Json.obj("systems" -> jsSystems)
     } else{
       jOrganization = jOrganization ++ Json.obj("systems" -> JsNull)
+    }
+    //
+    if(org.landingPageObj.isDefined){
+      jOrganization = jOrganization ++ Json.obj("landingPages" -> jsLandingPage(org.landingPageObj.get))
+    } else{
+      jOrganization = jOrganization ++ Json.obj("landingPages" -> JsNull)
+    }
+    //
+    if(org.legalNoticeObj.isDefined){
+      jOrganization = jOrganization ++ Json.obj("legalNotices" -> jsLegalNotice(org.legalNoticeObj.get))
+    } else{
+      jOrganization = jOrganization ++ Json.obj("legalNotices" -> JsNull)
+    }
+    //
+    if(org.community.isDefined){
+      jOrganization = jOrganization ++ Json.obj("communities" -> jsCommunity(org.community.get))
+    } else{
+      jOrganization = jOrganization ++ Json.obj("communities" -> JsNull)
     }
     //4) Return JSON String
     jOrganization.toString
@@ -581,5 +747,132 @@ object JsonUtil {
     jSystem.toString
   }
 
+  /**
+   * Converts a LandingPage object into Play!'s JSON notation.
+   * Does not support cross object conversion
+   * @param landingPage LandingPage object to be converted
+   * @return JsObject
+   */
+  def jsLandingPage(landingPage:LandingPages):JsObject = {
+    val json = Json.obj(
+      "id"    -> landingPage.id,
+      "name"  -> landingPage.name,
+      "description" -> (if(landingPage.description.isDefined) landingPage.description.get else JsNull),
+      "content"  -> landingPage.content,
+      "default" -> landingPage.default
+    )
+    json
+  }
+
+  /**
+   * Converts a LandingPage object into Play!'s JSON notation.
+   * Does not support cross object conversion
+   * @param legalNotice LandingPage object to be converted
+   * @return JsObject
+   */
+  def jsLegalNotice(legalNotice:LegalNotices):JsObject = {
+    val json = Json.obj(
+      "id"    -> legalNotice.id,
+      "name"  -> legalNotice.name,
+      "description" -> (if(legalNotice.description.isDefined) legalNotice.description.get else JsNull),
+      "content"  -> legalNotice.content,
+      "default" -> legalNotice.default
+    )
+    json
+  }
+
+  /**
+   * Converts a List of LandingPages into Play!'s JSON notation
+   * Does not support cross object conversion
+   * @param list List of LandingPages to be convert
+   * @return JsArray
+   */
+  def jsLandingPages(list:List[LandingPages]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ landingPage =>
+      json = json.append(jsLandingPage(landingPage))
+    }
+    json
+  }
+
+  /**
+   * Converts a List of LegalNotices into Play!'s JSON notation
+   * Does not support cross object conversion
+   * @param list List of LegalNotices to be convert
+   * @return JsArray
+   */
+  def jsLegalNotices(list:List[LegalNotices]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ ln =>
+      json = json.append(jsLegalNotice(ln))
+    }
+    json
+  }
+
+  /**
+   * Converts a LandingPage object into a JSON string with its complex objects
+   * @param landingPage LandingPage object to be converted
+   * @return String
+   */
+  def serializeLandingPage(landingPage:LandingPage):String = {
+    //1) Serialize LandingPage
+    val exists = landingPage != null
+    var jLandingPage:JsObject =  jsExists(exists)
+    if (exists) {
+      jLandingPage = jLandingPage ++ jsLandingPage(landingPage.toCaseObject)
+    }
+    //3) Return JSON String
+    jLandingPage.toString
+  }
+
+  /**
+   * Converts a LegalNotice object into a JSON string with its complex objects
+   * @param legalNotice LegalNotice object to be converted
+   * @return String
+   */
+  def serializeLegalNotice(legalNotice:LegalNotice):String = {
+    //1) Serialize LandingPage
+    val exists = legalNotice != null
+    var jLegalNotice:JsObject = jsExists(exists)
+    if (exists) {
+      jLegalNotice = jLegalNotice ++ jsLegalNotice(legalNotice.toCaseObject)
+    }
+    //3) Return JSON String
+    jLegalNotice.toString
+  }
+
+  def jsExists(bool:Boolean):JsObject = {
+    val json = Json.obj(
+      "exists" -> bool
+    )
+    json
+  }
+
+  def jsTestSuiteUploadItemResult(item: TestSuiteUploadItemResult):JsObject = {
+    val json = Json.obj(
+      "name" -> item.itemName,
+      "type" -> item.itemType,
+      "action" -> item.actionType
+    )
+    json
+  }
+
+  def jsTestSuiteUploadItemResults(items: util.ArrayList[TestSuiteUploadItemResult]):JsArray = {
+    var json = Json.arr()
+    for (item <- items.asScala) {
+      json = json.append(jsTestSuiteUploadItemResult(item))
+    }
+    json
+  }
+
+  def jsTestSuiteUploadResult(result: TestSuiteUploadResult):JsObject = {
+    val json = Json.obj(
+      "success"    -> result.success,
+      "errorInformation"  -> result.errorInformation,
+      "pendingFolderId"  -> result.pendingTestSuiteFolderName,
+      "items" -> jsTestSuiteUploadItemResults(result.items)
+    )
+    json
+  }
 
 }

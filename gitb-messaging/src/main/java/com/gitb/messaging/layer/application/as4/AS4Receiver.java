@@ -10,8 +10,11 @@ import com.gitb.types.BinaryType;
 import com.gitb.types.MapType;
 import com.gitb.types.ObjectType;
 import com.gitb.types.StringType;
+import org.apache.commons.io.IOUtils;
 
+import javax.mail.BodyPart;
 import javax.mail.internet.MimeBodyPart;
+import javax.mail.internet.MimeMultipart;
 import javax.xml.soap.SOAPBody;
 import javax.xml.soap.SOAPElement;
 import javax.xml.soap.SOAPHeader;
@@ -30,8 +33,8 @@ public class AS4Receiver extends HttpReceiver {
     }
 
     @Override
-    public Message receive(List<Configuration> configurations) throws Exception {
-        Message received = super.receive(configurations);
+    public Message receive(List<Configuration> configurations, Message inputs) throws Exception {
+        Message received = super.receive(configurations, inputs);
         Message message = new Message();
 
         MapType headers = (MapType) received.getFragments().get(HttpMessagingHandler.HTTP_HEADERS_FIELD_NAME);
@@ -39,16 +42,30 @@ public class AS4Receiver extends HttpReceiver {
 
         // Put data into a MimeBody
         MimeBodyPart mimeBody = AS4MessagingHandler.createMimeBody(headers, body);
-
         StringType as4MessageID = null;
         ObjectType businessMessage = null;
         SOAPMessage soapMessage = AS4MessagingHandler.getSoapEnvelope(mimeBody);
         if(soapMessage != null) {
-            // Capture entire business message.
-            businessMessage = getBusinessMessage(soapMessage.getSOAPBody());
             // Capture message ID.
             as4MessageID = getMessageID(soapMessage.getSOAPHeader());
         }
+        // Capture entire business message.
+        if (mimeBody.getContent() instanceof MimeMultipart) {
+            MimeMultipart multipartContent = ((MimeMultipart)mimeBody.getContent());
+            if (multipartContent.getCount() == 1) {
+                // This has to be in the SOAP envelope.
+                businessMessage = getBusinessMessage(soapMessage.getSOAPBody());
+            } else {
+                // This is attached.
+                BodyPart payloadPart = multipartContent.getBodyPart(1);
+                byte[] payloadBytes = IOUtils.toByteArray(payloadPart.getInputStream());
+                businessMessage = new ObjectType();
+                businessMessage.deserialize(payloadBytes);
+            }
+        } else {
+            throw new IllegalStateException("Not a multipart message");
+        }
+
         //convert MimeBody into a DataType
         BinaryType rawMessage = AS4MessagingHandler.getRawMessage(mimeBody);
 

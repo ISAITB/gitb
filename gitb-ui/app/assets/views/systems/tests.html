@@ -1,18 +1,159 @@
-<div class="page">
+<div class="page tests">
 
-    <div ng-if="systemTestsCtrl.showExportButton">
-        <button class="btn btn-primary pull-right" ng-click="systemTestsCtrl.exportSelected()">Export Selected</button>
-        <br>
-        <br>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Filters</h4>
+            <div class="btn-group pull-right">
+                <button ng-disabled="systemTestsCtrl.showFiltering"
+                        ng-class="{true: 'btn btn-primary active', false : 'btn btn-default'}[systemTestsCtrl.showFiltering]"
+                        ng-click="systemTestsCtrl.applyFiltering()">
+                    APPLY
+                </button>
+                <button ng-disabled="!systemTestsCtrl.showFiltering"
+                        ng-class="{true: 'btn btn-default', false : 'btn btn-primary active'}[systemTestsCtrl.showFiltering]"
+                        ng-click="systemTestsCtrl.clearFiltering()">
+                    CLEAR
+                </button>
+            </div>
+        </div>
+        <div class="table-responsive" ng-if="systemTestsCtrl.showFiltering">
+            <table class="table">
+                <thead>
+                <tr>
+                    <th ng-if="systemTestsCtrl.community.domainId == undefined" class="col-md-2">Domain</th>
+                    <th class="col-md-2">Specification</th>
+                    <th class="col-md-2">Test Suite</th>
+                    <th class="col-md-1">Test Case</th>
+                    <th class="col-md-1">Result</th>
+                    <th class="col-md-2">Start time</th>
+                    <th class="col-md-2">End time</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td ng-if="systemTestsCtrl.community.domainId == undefined">
+                        <div isteven-multi-select
+                             input-model="systemTestsCtrl.filtering.domain.filter"
+                             output-model="systemTestsCtrl.filtering.domain.selection"
+                             button-label="sname"
+                             item-label="sname"
+                             tick-property="ticked"
+                             max-labels="0"
+                             max-height="250px"
+                             translation="systemTestsCtrl.translation"
+                             helper-elements="filter"
+                             search-property="sname"
+                             output-properties="id"
+                             on-item-click="systemTestsCtrl.domainTicked(data)">
+                        </div>
+                    </td>
+                    <td>
+                        <div isteven-multi-select
+                             input-model="systemTestsCtrl.filtering.specification.filter"
+                             output-model="systemTestsCtrl.filtering.specification.selection"
+                             button-label="sname"
+                             item-label="sname"
+                             tick-property="ticked"
+                             max-labels="0"
+                             max-height="250px"
+                             translation="systemTestsCtrl.translation"
+                             helper-elements="filter"
+                             search-property="sname"
+                             output-properties="id"
+                             on-item-click="systemTestsCtrl.specificationTicked(data)">
+                        </div>
+                    </td>
+                    <td>
+                        <div isteven-multi-select
+                             input-model="systemTestsCtrl.filtering.testSuite.filter"
+                             output-model="systemTestsCtrl.filtering.testSuite.selection"
+                             button-label="sname"
+                             item-label="sname"
+                             tick-property="ticked"
+                             max-labels="0"
+                             max-height="250px"
+                             translation="systemTestsCtrl.translation"
+                             helper-elements="filter"
+                             search-property="sname"
+                             output-properties="id testCases"
+                             on-item-click="systemTestsCtrl.testSuiteTicked(data)">
+                        </div>
+                    </td>
+                    <td>
+                        <div isteven-multi-select
+                             input-model="systemTestsCtrl.filtering.testCase.filter"
+                             output-model="systemTestsCtrl.filtering.testCase.selection"
+                             button-label="sname"
+                             item-label="sname"
+                             tick-property="ticked"
+                             max-labels="0"
+                             max-height="250px"
+                             translation="systemTestsCtrl.translation"
+                             helper-elements="filter"
+                             search-property="sname"
+                             output-properties="id"
+                             on-item-click="systemTestsCtrl.testCaseTicked(data)">
+                        </div>
+                    </td>
+                    <td>
+                        <div isteven-multi-select
+                             input-model="systemTestsCtrl.filtering.result.filter"
+                             output-model="systemTestsCtrl.filtering.result.selection"
+                             button-label="result"
+                             item-label="result"
+                             tick-property="ticked"
+                             max-labels="0"
+                             max-height="250px"
+                             translation="systemTestsCtrl.translation"
+                             helper-elements="filter"
+                             search-property="result"
+                             output-properties="result"
+                             on-item-click="systemTestsCtrl.resultClicked(data)">
+                        </div>
+                    </td>
+                    <td>
+                        <input date-range-picker class="form-control date-picker" type="text"
+                               ng-model="systemTestsCtrl.startTime" options="systemTestsCtrl.startTimeOptions"
+                               clearable="true">
+                    </td>
+                    <td>
+                        <input date-range-picker class="form-control date-picker" type="text"
+                               ng-model="systemTestsCtrl.endTime" options="systemTestsCtrl.endTimeOptions"
+                               clearable="true">
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Performed Tests</h4>
+            <div class="btn-toolbar pull-right">
+                <button class="btn btn-default" ng-click="systemTestsCtrl.exportToCsv()">Export CSV</button>
+            </div>
         </div>
         <!--
         <h5 class="no-conformance-statement-defined" ng-if="conformanceStatementCtrl.conformanceStatements.length == 0">No conformance statement is present for the system...</h5>
         -->
-        <div  ng-if="systemTestsCtrl.testResults.length > 0" table-directive columns="systemTestsCtrl.tableColumns" data="systemTestsCtrl.testResults" on-select="systemTestsCtrl.onTestSelect" export-visible="true" on-export="systemTestsCtrl.onReportExport" checkbox-enabled="true" on-check="systemTestsCtrl.onCheckboxCheck" ></div>
+        <div ng-if="systemTestsCtrl.testResults.length > 0" table-directive
+             columns="systemTestsCtrl.tableColumns"
+             data="systemTestsCtrl.testResults"
+             on-select="systemTestsCtrl.onTestSelect"
+             row-style="systemTestsCtrl.rowStyle"
+             export-visible="true"
+             on-export="systemTestsCtrl.onReportExport"
+             checkbox-enabled="false"
+             on-check="systemTestsCtrl.onCheckboxCheck"
+             on-sort="systemTestsCtrl.sortTestResults"
+             pagination-visible="true"
+             first-page="systemTestsCtrl.navigateFirstPage()"
+             prev-page="systemTestsCtrl.navigatePreviousPage()"
+             next-page="systemTestsCtrl.navigateNextPage()"
+             last-page="systemTestsCtrl.navigateLastPage()"
+             next-disabled="!systemTestsCtrl.hasNextPage"
+             prev-disabled="!systemTestsCtrl.hasPreviousPage">
+        </div>
     </div>
 </div>

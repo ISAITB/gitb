@@ -1470,18 +1470,6 @@ div.home-concept span.cloud {
 }
 
 /* Page Top */
-section.page-top {
-	background-color: #171717;
-	border-bottom: 5px solid #CCC;
-	border-top: 5px solid #384045;
-	margin-bottom: 35px;
-	min-height: 50px;
-	padding: 0;
-	padding: 20px 0;
-	position: relative;
-	text-align: left;
-}
-
 section.page-top ul.breadcrumb {
 	background: none;
 	margin: -3px 0 0;
@@ -1490,18 +1478,6 @@ section.page-top ul.breadcrumb {
 
 section.page-top ul.breadcrumb > li {
 	text-shadow: none;
-}
-
-section.page-top h2 {
-	border-bottom: 5px solid #CCC;
-	color: #FFF;
-	display: inline-block;
-	font-weight: 200;
-	margin: 0 0 -25px;
-	min-height: 37px;
-	line-height: 46px;
-	padding: 0 0 17px;
-	position: relative;
 }
 
 /* Page Top Custom - Create your Own */
@@ -1559,275 +1535,19 @@ div.page-not-found-main {
 
 /* Footer */
 footer {
-	background: #121214;
-	border-top: 4px solid #1F1F1F;
-	font-size: 0.9em;
 	margin-top: 50px;
-	padding: 80px 0 0;
+	height: 60px;
 	position: relative;
 	clear: both;
 }
 
-footer div.footer-ribon {
-	background: #999;
-	position: absolute;
-	margin: -100px 0 0 22px;
-	padding: 10px 20px 6px 20px;
-}
-
-footer div.footer-ribon:before {
-	border-right: 10px solid #646464;
-	border-top: 16px solid transparent;
-	content: "";
-	display: block;
-	height: 0;
-	left: -10px;
-	position: absolute;
-	top: 0;
-	width: 7px;
-}
-
-footer div.footer-ribon span {
-	color: #FFF;
-	font-family: "Shadows Into Light", cursive;
-	font-size: 1.6em;
-}
-
-footer div.container div.row > div {
-	margin-bottom: 25px;
-}
-
-footer div.container input:focus {
-	-moz-box-shadow: none;
-	-webkit-box-shadow: none;
-	box-shadow: none;
-}
-
-/* Newsletter */
-footer div.newsletter form {
-	width: 100%;
-	max-width: 262px;
-}
-
-footer div.newsletter form input.form-control {
-	height: 34px;
-	padding: 6px 12px;
-}
-
-/* Twitter */
-footer a.twitter-account {
-	color: #FFF;
-	display: block;
-	font-size: 0.9em;
-	margin: -15px 0 5px;
-	filter: alpha(opacity=55);
-	opacity: 0.55;
-}
-
-footer a.twitter-account:hover {
-	filter: alpha(opacity=100);
-	opacity: 1;
-}
-
-footer div.twitter .icon {
-	clear: both;
-	font-size: 1.5em;
-	position: relative;
-	top: 3px;
-}
-
-footer div.twitter a.time {
-	color: #999;
-	display: block;
-	font-size: 0.9em;
-	padding-top: 3px;
-	margin-bottom: 20px;
-}
-
-footer div.twitter a.time:last-child {
-	margin-bottom: 0;
-}
-
-footer div.twitter ul {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-}
-
-/* Contact */
-footer ul.contact {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-}
-
-footer ul.contact i {
-	display: block;
-	float: left;
-	font-size: 1.2em;
-	margin: 7px 8px 10px 0;
-	position: relative;
-	text-align: center;
-	top: -2px;
-	width: 16px;
-}
-
-footer ul.contact i.icon-envelope {
-	font-size: 1em;
-	top: 0;
-}
-
-footer ul.contact p {
-	margin-bottom: 10px;
-}
-
-/* Footer Logo */
-footer a.logo {
-	display: block;
-}
-
-footer a.logo.push-bottom {
-	margin-bottom: 12px;
-}
-
-footer form {
-	filter: alpha(opacity=85);
-	opacity: 0.85;
-}
-
-footer h1,
-footer h2,
-footer h3,
-footer h4,
 footer a {
-	color: #FFF !important;
-}
-
-footer h5 {
-	color: #CCC !important;
+	color: #FFF;
+	margin-top: 20px;
 }
 
 footer a:hover {
-	color: #CCC;
-}
-
-footer h4 {
-	font-size: 1.8em;
-	font-weight: 200;
-	text-shadow: 1px 1px 1px #000;
-}
-
-/* Copyright */
-div.footer-copyright {
-	background: #0C0C0C;
-	border-top: 4px solid #111;
-	margin-top: 40px;
-	padding: 30px 0 10px;
-}
-
-div.footer-copyright nav {
-	float: right;
-}
-
-div.footer-copyright nav ul {
-	list-style: none;
-	margin: 0;
-	padding: 0;
-}
-
-div.footer-copyright nav ul li {
-	border-left: 1px solid #505050;
-	display: inline-block;
-	line-height: 12px;
-	margin: 0;
-	padding: 0 8px;
-}
-
-div.footer-copyright nav ul li:first-child {
-	border: medium none;
-	padding-left: 0;
-}
-
-div.footer-copyright p {
-	color: #555;
-	margin: 0;
-	padding: 0;
-}
-
-footer div.alert a {
-	color: #222 !important;
-}
-
-footer div.alert a:hover {
-	color: #666 !important;
-}
-
-footer span.phone {
 	color: #FFF;
-	font-size: 26px;
-	font-weight: bold;
-	display: block;
-	padding-bottom: 15px;
-	margin-top: -5px;
-}
-
-footer.short {
-	padding-top: 50px;
-}
-
-footer.short div.footer-copyright {
-	background: transparent;
-	border: 0;
-	padding-top: 0;
-	margin-top: 0;
-}
-
-footer ul.nav-list.primary > li a {
-	border-bottom: 1px solid rgba(255,255,255,0.1);
-	line-height: 20px;
-	padding-bottom: 11px;
-}
-
-footer ul.nav-list.primary > li:last-child a {
-	border-bottom: 0;
-}
-
-footer ul.nav-list.primary > li a:hover {
-	background-color: rgba(255,255,255,0.05);
-}
-
-footer ul.recent-work li {
-	float: left;
-	width: 30%;
-	margin: 10px 3% 0 0;
-}
-
-footer ul.recent-work li a.thumb-info {
-	float: left;
-	display: inline-block;
-}
-
-footer ul.recent-work img {
-	width: 100%;
-	filter: url("data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\'><filter id=\'grayscale\'><feColorMatrix type=\'matrix\' values=\'0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0.3333 0.3333 0.3333 0 0 0 0 0 1 0\'/></filter></svg>#grayscale");
-	filter: gray;
-	-webkit-filter: grayscale(100%);
-}
-
-footer ul.recent-work li:hover img {
-	-moz-transform: none;
-	-ms-transform: none;
-	-o-transform: none;
-	-webkit-transform: none;
-	transform: none;
-}
-
-footer a.view-more-recent-work {
-	padding: 12px;
-}
-
-footer ul.list.icons li {
-	margin-bottom: 5px;
 }
 
 /* Boxed Layout */
@@ -1915,4 +1635,17 @@ a.scroll-to-top:hover {
 a.scroll-to-top.visible {
 	filter: alpha(opacity=75);
 	opacity: 0.75;
+}
+
+div.conformance tr.row-hover {
+    background-color: #F5F5F5;
+    cursor: pointer;
+}
+
+div.conformance tr.row-hover:hover {
+    background-color: #F2F2F2;
+}
+
+table th.sortable {
+    cursor: pointer;
 }

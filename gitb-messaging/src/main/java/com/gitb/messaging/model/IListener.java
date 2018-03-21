@@ -3,7 +3,6 @@ package com.gitb.messaging.model;
 import com.gitb.core.Configuration;
 import com.gitb.messaging.Message;
 
-import javax.xml.parsers.ParserConfigurationException;
 import java.util.List;
 
 /**
@@ -33,5 +32,5 @@ public interface IListener {
      * @return
      * @throws Exception
      */
-    public Message listen(List<com.gitb.core.Configuration> configurations) throws Exception;
+    public Message listen(List<com.gitb.core.Configuration> configurations, Message inputs) throws Exception;
 }

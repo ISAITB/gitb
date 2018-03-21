@@ -5,6 +5,24 @@ object Parameters {
   val USER_ID = "GITB-USER-ID"
   val ID      = "id"
 
+  //Dashboard filter parameters
+  val COMMUNITY_IDS = "community_ids"
+  val DOMAIN_IDS = "domain_ids"
+  val SPEC_IDS = "specification_ids"
+  val TEST_SUITE_IDS = "test_suite_ids"
+  val TEST_CASE_IDS = "test_case_ids"
+  val ORG_IDS = "organization_ids"
+  val SYSTEM_IDS = "system_ids"
+  val RESULTS = "results"
+  val START_TIME_BEGIN = "start_time_begin"
+  val START_TIME_END = "start_time_end"
+  val END_TIME_BEGIN = "end_time_begin"
+  val END_TIME_END = "end_time_end"
+
+  //Dashboard sorting
+  val SORT_COLUMN = "sort_column"
+  val SORT_ORDER = "sort_order"
+
   //Some common parameters
   val USERNAME = "username"
   val PASSWORD = "password"
@@ -12,11 +30,23 @@ object Parameters {
   val EMAIL    = "email"
 	val IDS      = "ids"
   val TYPE     = "type"
+  val DESCRIPTION = "description"
+  val USE = "use"
+  val KIND = "kind"
+
+  // Landing page Service
+  val DEFAULT = "default_flag"
+  val CONTENT = "content"
+  val LANDING_PAGE_ID = "landing_page_id"
+  val LEGAL_NOTICE_ID = "legal_notice_id"
 
   //Authentication Service and OAuth 2.0 parameters
   val GRANT_TYPE = "grant_type"
   val GRANT_TYPE_PASSWORD = "password"
   val REFRESH_TOKEN = "refresh_token"
+
+  //System configuration parameters
+  val PARAMETER = "parameter"
 
   //Account Service parameters
   val VENDOR_SNAME = "vendor_sname"
@@ -24,6 +54,9 @@ object Parameters {
   val USER_NAME    = "user_name"
   val USER_EMAIL   = "user_email"
   val OLD_PASSWORD = "old_password"
+  val USER_ROLE    = "user_role"
+  val ROLE_ID      = "role_id"
+  val ORGANIZATION_ID = "organization_id"
 
   //System Service parameters
   val SYSTEM_ID    = "system_id"
@@ -46,10 +79,19 @@ object Parameters {
 	val SPEC_TYPE = "spec_type"
 	val DOMAIN_ID = "domain_id"
 	val SPECIFICATION_ID = "spec_id"
+  val PENDING_TEST_SUITE_ID = "pending_id"
+  val PENDING_TEST_SUITE_ACTION = "pending_action"
+
+  //Community Service parameters
+  val COMMUNITY_ID = "community_id"
+  val COMMUNITY_SNAME = "community_sname"
+  val COMMUNITY_FNAME = "community_fname"
 
   //TestService parameters
   val ACTOR_ID   = "actor_id"
+  val ENDPOINT_ID   = "endpoint_id"
   val TEST_ID    = "test_id"
+  val INCLUDE_CONTEXT = "include_context"
   val SESSION_ID = "session_id"
   val TEST_IDS   = "test_ids"
   val SESSION_IDS= "session_ids"

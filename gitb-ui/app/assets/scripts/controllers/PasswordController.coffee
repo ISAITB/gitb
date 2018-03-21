@@ -1,5 +1,6 @@
 class PasswordController
 
+    @$inject = ['$log', '$scope', '$location', 'AccountService', 'ErrorService', 'ErrorCodes']
     constructor: (@$log, @$scope, @$location, @AccountService, @ErrorService, @ErrorCodes) ->
         @$log.debug 'Constructing PasswordController'
 

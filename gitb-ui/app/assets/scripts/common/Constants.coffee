@@ -1,5 +1,8 @@
 class Constants
 
+	@TABLE_PAGE_SIZE = 10
+	@DEFAULT_LOGO = '/assets/images/gitb.png'
+
 	@TOKEN_COOKIE_EXPIRE: 180 # 6 months
 	@ACCESS_TOKEN_COOKIE_KEY : 'tat'
 	@REFRESH_TOKEN_COOKIE_KEY: 'trt'
@@ -7,6 +10,8 @@ class Constants
 	@SECONDS_IN_DAY: 86400
 
 	@END_OF_TEST_STEP: "-1"
+
+	@DEFAULT_COMMUNITY_ID = 0
 
 	@TEST_ROLE =
 	    SUT: "SUT"
@@ -25,7 +30,26 @@ class Constants
 		VENDOR_ADMIN: 1,
 		VENDOR_USER : 2,
 		DOMAIN_USER : 3,
-		SYSTEM_ADMIN: 4
+		SYSTEM_ADMIN: 4,
+		COMMUNITY_ADMIN: 5,
+
+	@USER_ROLE_LABEL =
+		1 : "Administrator",
+		2 : "User",
+		3 : "Domain user",
+		4 : "Test bed administrator",
+		5 : "Community administrator"
+
+	@VENDOR_USER_ROLES = [
+		{
+			id: @USER_ROLE.VENDOR_ADMIN,
+			label: @USER_ROLE_LABEL[@USER_ROLE.VENDOR_ADMIN]
+		}
+		{
+			id: @USER_ROLE.VENDOR_USER,
+			label: @USER_ROLE_LABEL[@USER_ROLE.VENDOR_USER]
+		}
+	]
 
 	@TEST_STATUS =
 		UNKNOWN: null,
@@ -47,7 +71,14 @@ class Constants
 		ADD: 2
 		DELETE: 3
 
+	@TEST_CASE_RESULT =
+		SUCCESS : "SUCCESS"
+		FAILURE : "FAILURE"
+		UNDEFINED : "UNDEFINED"
+
 	@EMAIL_REGEX: /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 	@DATA_URL_REGEX: /^data:.+\/(.+);base64,(.*)$/
+
+	@VERSION = "v1.2.0"
 
 common.value('Constants', Constants)

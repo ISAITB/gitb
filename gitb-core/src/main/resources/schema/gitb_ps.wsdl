@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<definitions targetNamespace="http://www.gitb.com/ps/v1/"
+             name="ProcessingService"
+             xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:tns="http://www.gitb.com/ps/v1/"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata"
+             xmlns:wsaw="http://www.w3.org/2006/05/addressing/wsdl">
+    <types>
+        <xsd:schema>
+            <xsd:import namespace="http://www.gitb.com/ps/v1/" schemaLocation="gitb_ps.xsd" />
+        </xsd:schema>
+    </types>
+    <message name="getModuleDefinition">
+        <part name="parameters" element="tns:GetModuleDefinitionRequest" />
+    </message>
+    <message name="getModuleDefinitionResponse">
+        <part name="parameters" element="tns:GetModuleDefinitionResponse" />
+    </message>
+    <message name="beginTransaction">
+        <part name="parameters" element="tns:BeginTransactionRequest" />
+    </message>
+    <message name="beginTransactionResponse">
+        <part name="parameters" element="tns:BeginTransactionResponse" />
+    </message>
+    <message name="process">
+        <part name="parameters" element="tns:ProcessRequest" />
+    </message>
+    <message name="processResponse">
+        <part name="parameters" element="tns:ProcessResponse" />
+    </message>
+    <message name="endTransaction">
+        <part name="parameters" element="tns:EndTransactionRequest" />
+    </message>
+    <message name="endTransactionResponse">
+        <part name="parameters" element="tns:EndTransactionResponse" />
+    </message>
+    <portType name="ProcessingService">
+        <operation name="getModuleDefinition">
+            <input
+                    wsam:Action="http://gitb.com/ProcessingService/getModuleDefinition"
+                    message="tns:getModuleDefinition" />
+            <output
+                    wsam:Action="http://gitb.com/ProcessingService/getModuleDefinitionResponse"
+                    message="tns:getModuleDefinitionResponse" />
+        </operation>
+        <operation name="process">
+            <input
+                    wsam:Action="http://gitb.com/ProcessingService/process"
+                    message="tns:process" />
+            <output
+                    wsam:Action="http://gitb.com/ProcessingService/processResponse"
+                    message="tns:processResponse" />
+        </operation>
+        <operation name="beginTransaction">
+            <input
+                    wsam:Action="http://gitb.com/ProcessingService/beginTransaction"
+                    message="tns:beginTransaction" />
+            <output
+                    wsam:Action="http://gitb.com/ProcessingService/beginTransactionResponse"
+                    message="tns:beginTransactionResponse" />
+        </operation>
+        <operation name="endTransaction">
+            <input
+                    wsam:Action="http://gitb.com/ProcessingService/endTransaction"
+                    message="tns:endTransaction" />
+            <output
+                    wsam:Action="http://gitb.com/ProcessingService/endTransactionResponse"
+                    message="tns:endTransactionResponse" />
+        </operation>
+    </portType>
+    <binding name="ProcessingServicePortBinding" type="tns:ProcessingService">
+        <wsaw:UsingAddressing required="true"/>
+        <soap:binding transport="http://schemas.xmlsoap.org/soap/http"
+                      style="document" />
+        <operation name="getModuleDefinition">
+            <soap:operation soapAction="" />
+            <input>
+                <soap:body use="literal" />
+            </input>
+            <output>
+                <soap:body use="literal" />
+            </output>
+        </operation>
+        <operation name="process">
+            <soap:operation soapAction="" />
+            <input>
+                <soap:body use="literal" />
+            </input>
+            <output>
+                <soap:body use="literal" />
+            </output>
+        </operation>
+        <operation name="beginTransaction">
+            <soap:operation soapAction="" />
+            <input>
+                <soap:body use="literal" />
+            </input>
+            <output>
+                <soap:body use="literal" />
+            </output>
+        </operation>
+        <operation name="endTransaction">
+            <soap:operation soapAction="" />
+            <input>
+                <soap:body use="literal" />
+            </input>
+            <output>
+                <soap:body use="literal" />
+            </output>
+        </operation>
+    </binding>
+    <service name="ProcessingServiceService">
+        <port name="ProcessingServicePort" binding="tns:ProcessingServicePortBinding">
+            <soap:address location="REPLACE_WITH_ACTUAL_URL" />
+        </port>
+    </service>
+    <!-- to generate sources in given package -->
+    <jaxws:bindings xmlns:jaxws="http://java.sun.com/xml/ns/jaxws">
+        <jaxws:package name="com.gitb.ps">
+        </jaxws:package>
+    </jaxws:bindings>
+</definitions>
+

@@ -9,6 +9,11 @@ GET     /                                   @controllers.Application.index
 OPTIONS /*all                               @controllers.Application.preFlight(all: String)
 GET     /assets/javascripts/routes          @controllers.Application.javascriptRoutes
 
+# Theme API
+GET     /theme/css                          @controllers.SystemConfigurationService.getCssForTheme
+GET     /theme/logo                         @controllers.SystemConfigurationService.getLogo
+GET     /theme/footer                       @controllers.SystemConfigurationService.getFooterLogo
+
 # Authentication management API
 POST    /oauth/access_token                 @controllers.AuthenticationService.access_token
 GET     /check/email                        @controllers.AuthenticationService.checkEmail
@@ -20,27 +25,34 @@ POST	/vendor/profile                     @controllers.AccountService.updateVendo
 GET	    /vendor/users                       @controllers.AccountService.getVendorUsers
 POST	/user/register                      @controllers.AccountService.registerUser
 GET	    /user/profile                       @controllers.AccountService.getUserProfile
+GET	    /user/community                     @controllers.CommunityService.getUserCommunity
 POST	/user/profile                       @controllers.AccountService.updateUserProfile
 
 # System mangement API
-POST	/suts/register                      @controllers.SystemService.registerSystem
 POST	/suts/:sut_id/profile               @controllers.SystemService.updateSystemProfile(sut_id : Long)
 GET	    /suts/:sut_id                       @controllers.SystemService.getSystemProfile(sut_id : Long)
+DELETE  /suts/:sut_id                       @controllers.SystemService.deleteSystem(sut_id : Long)
 POST	/suts/:sut_id/assign                @controllers.SystemService.assignSystemAdminOrTester(sut_id : Long)
 POST    /suts/:sut_id/conformance           @controllers.SystemService.defineConformanceStatement(sut_id : Long)
 DELETE  /suts/:sut_id/conformance           @controllers.SystemService.deleteConformanceStatement(sut_id: Long)
 GET     /suts/:sut_id/conformance           @controllers.SystemService.getConformanceStatements(sut_id : Long)
 GET	    /suts/:sut_id/conformance/actors    @controllers.SystemService.getImplementedActors(sut_id : Long)
 GET	    /suts/:sut_id/conformance/tests/results     @controllers.SystemService.getLastExecutionResultsForTestCases(sut_id : Long)
+GET	    /suts/:sut_id/conformance/suites/results     @controllers.SystemService.getLastExecutionResultsForTestSuite(sut_id : Long)
 GET	    /suts/:sut_id/conformance/results   @controllers.SystemService.getConformanceResults(sut_id : Long)
 #GET	/suts/:sut_id/configs               @controllers.SystemService.getSystemConfigurations(sut_id : Long)
 #POST	/suts/:sut_id/configs               @controllers.SystemService.updateSystemConfigurations(sut_id : Long)
 GET	    /vendor/suts                        @controllers.SystemService.getVendorSystems
+GET	    /vendor/systems                     @controllers.SystemService.getSystemsByOrganization
+POST	/vendor/systems/register            @controllers.SystemService.registerSystemWithOrganization
 
 # Test Case management API
+GET	    /specDomain                         @controllers.ConformanceService.getDomainOfSpecification(spec_id: Long)
 GET	    /domains                            @controllers.ConformanceService.getDomains
+GET	    /domains/community                  @controllers.ConformanceService.getCommunityDomain
 POST    /domains                            @controllers.ConformanceService.createDomain
 DELETE  /domains/:domain_id                 @controllers.ConformanceService.deleteDomain(domain_id: Long)
+POST    /domains/:domain_id                 @controllers.ConformanceService.updateDomain(domain_id: Long)
 GET	    /domains/:domain_id/specs           @controllers.ConformanceService.getDomainSpecs(domain_id : Long)
 GET	    /domains/:domain_id/actors          @controllers.ConformanceService.getDomainActors(domain_id : Long)
 GET     /specs                              @controllers.ConformanceService.getSpecs
@@ -49,13 +61,77 @@ POST    /specs/:spec_id/actors/:actor_id    @controllers.ConformanceService.addA
 GET	    /specs/:spec_id/actors              @controllers.ConformanceService.getSpecActors(spec_id : Long)
 GET	    /specs/:spec_id/suites              @controllers.ConformanceService.getSpecTestSuites(spec_id : Long)
 POST    /specs/:spec_id/deploy              @controllers.ConformanceService.deployTestSuite(spec_id: Long)
+POST    /specs/:spec_id/deploy/resolve      @controllers.ConformanceService.resolvePendingTestSuite(spec_id: Long)
+DELETE  /specs/:spec_id                     @controllers.SpecificationService.deleteSpecification(spec_id: Long)
+POST    /specs/:spec_id                     @controllers.SpecificationService.updateSpecification(spec_id: Long)
 GET     /actors                             @controllers.ConformanceService.getActors
 POST    /actors                             @controllers.ConformanceService.createActor
+DELETE  /actors/:actor_id                   @controllers.ActorService.deleteActor(actor_id : Long)
+POST    /actors/:actor_id                   @controllers.ActorService.updateActor(actor_id : Long)
 GET	    /actors/:actor_id/tests             @controllers.ConformanceService.getActorTestCases(actor_id : Long)
+GET	    /actors/:actor_id/suites            @controllers.ConformanceService.getActorTestSuites(actor_id : Long)
 GET     /actors/:actor_id/options           @controllers.ConformanceService.getOptionsForActor(actor_id : Long)
 GET     /actors/:actor_id/endpoints         @controllers.ConformanceService.getEndpointsForActor(actor_id : Long)
+POST    /endpoints                          @controllers.ConformanceService.createEndpoint
+DELETE  /endpoints/:endpoint_id             @controllers.EndPointService.deleteEndPoint(endpoint_id : Long)
+POST    /endpoints/:endpoint_id             @controllers.EndPointService.updateEndPoint(endpoint_id : Long)
+POST    /parameters                         @controllers.ConformanceService.createParameter
+DELETE  /parameters/:parameter_id           @controllers.ParameterService.deleteParameter(parameter_id : Long)
+POST    /parameters/:parameter_id           @controllers.ParameterService.updateParameter(parameter_id : Long)
 POST    /options                            @controllers.ConformanceService.createOption
 GET     /options                            @controllers.ConformanceService.getOptions
+
+# User management API
+GET     /admins/all                         @controllers.UserService.getSystemAdministrators
+POST    /admins/create                      @controllers.UserService.createSystemAdmin
+GET     /admins/:id                         @controllers.UserService.getUserById(id : Long)
+POST    /admins/:id                         @controllers.UserService.updateSystemAdminProfile(id : Long)
+DELETE  /admins/:id                         @controllers.UserService.deleteAdmin(id : Long)
+
+# Session management API
+GET     /dashboard/tests                    @controllers.RepositoryService.getTestCases
+GET     /dashboard/systems                  @controllers.SystemService.getSystems
+GET     /dashboard/active                   @controllers.ReportService.getActiveTestResults
+GET     /dashboard/finished                 @controllers.ReportService.getFinishedTestResults
+GET     /dashboard/count                    @controllers.ReportService.getFinishedTestResultsCount
+GET     /dashboard/config                   @controllers.SystemConfigurationService.getSessionAliveTime
+POST    /dashboard/config                   @controllers.SystemConfigurationService.updateSessionAliveTime
+GET     /dashboard/suites                   @controllers.TestSuiteService.getTestSuitesWithTestCases
+
+GET     /pages/default                      @controllers.LandingPageService.getCommunityDefaultLandingPage
+GET     /pages/:id                          @controllers.LandingPageService.getLandingPageById(id : Long)
+DELETE  /pages/:id                          @controllers.LandingPageService.deleteLandingPage(id : Long)
+POST    /pages/:id                          @controllers.LandingPageService.updateLandingPage(id : Long)
+
+GET     /notices/default                    @controllers.LegalNoticeService.getCommunityDefaultLegalNotice
+GET     /notices/:id                        @controllers.LegalNoticeService.getLegalNoticeById(id : Long)
+DELETE  /notices/:id                        @controllers.LegalNoticeService.deleteLegalNotice(id : Long)
+POST    /notices/:id                        @controllers.LegalNoticeService.updateLegalNotice(id : Long)
+
+GET     /organizations/all                  @controllers.OrganizationService.getOrganizations
+POST    /organizations/create               @controllers.OrganizationService.createOrganization
+GET     /organizations/users                @controllers.UserService.getUsersByOrganization(id : Long)
+GET     /organizations/:org_id              @controllers.OrganizationService.getOrganizationById(org_id : Long)
+DELETE  /organizations/:id                  @controllers.OrganizationService.deleteOrganization(id: Long)
+POST    /organizations/:id                  @controllers.OrganizationService.updateOrganization(id : Long)
+POST    /organizations/:id/users/create     @controllers.UserService.createUser(id: Long)
+POST    /users/:user_id                     @controllers.UserService.updateUserProfile(user_id: Long)
+DELETE  /users/:user_id                     @controllers.UserService.deleteVendorUser(user_id: Long)
+
+GET     /communities/all                    @controllers.CommunityService.getCommunities
+POST    /communities/create                 @controllers.CommunityService.createCommunity
+GET     /communities/:id                    @controllers.CommunityService.getCommunityById(id : Long)
+POST    /communities/:id                    @controllers.CommunityService.updateCommunity(id : Long)
+DELETE  /communities/:id                    @controllers.CommunityService.deleteCommunity(id: Long)
+GET     /communities/organizations/:id      @controllers.OrganizationService.getOrganizationsByCommunity(id: Long)
+GET     /communities/pages/:id              @controllers.LandingPageService.getLandingPagesByCommunity(id: Long)
+POST    /communities/pages/create           @controllers.LandingPageService.createLandingPage
+GET     /communities/notices/:id            @controllers.LegalNoticeService.getLegalNoticesByCommunity(id: Long)
+POST    /communities/notices/create         @controllers.LegalNoticeService.createLegalNotice
+GET     /communities/admins/all             @controllers.UserService.getCommunityAdministrators
+POST    /communities/admins/create          @controllers.UserService.createCommunityAdmin
+POST    /communities/admins/create          @controllers.UserService.createCommunityAdmin
+POST    /communities/admins/:id             @controllers.UserService.updateCommunityAdminProfile(id : Long)
 
 # Test Result management API
 GET	    /suts/:sut_id/conformance/:test_instance/report @controllers.TestResultService.getReportForTestInstance(sut_id:Long, test_instance:String)
@@ -88,18 +164,19 @@ POST    /endpoints/:endpoint_id/config      @controllers.SystemService.saveEndpo
 
 # Report management API
 GET     /reports                            @controllers.ReportService.getTestResults
+GET     /reports/count                      @controllers.ReportService.getTestResultsCount
 GET     /reports/:session_id                @controllers.ReportService.getTestResultOfSession(session_id: String)
 POST    /reports/create                     @controllers.ReportService.createTestReport
 GET     /reports/:session_id/steps          @controllers.ReportService.getTestStepResults(session_id:String)
 
 # Repository file serving and management API
-GET     /repository/tests/:test_id              @controllers.RepositoryService.getTestCase(test_id:String)
-GET     /repository/tests/:test_id/definition   @controllers.RepositoryService.getTestCaseDefinition(test_id:String)
-GET     /repository/reports/teststep/*file      @controllers.RepositoryService.getTestStepReport(file)
-GET     /repository/export/testcase             @controllers.RepositoryService.exportTestCaseReport
-GET     /repository/export/testcases            @controllers.RepositoryService.exportTestCaseReports
-GET     /repository/export/teststep/*path       @controllers.RepositoryService.exportTestStepReport(path)
-GET     /repository/suites/*file                @controllers.RepositoryService.getTestSuiteResource(file)
+GET     /repository/tests/:test_id                          @controllers.RepositoryService.getTestCase(test_id:String)
+GET     /repository/tests/:test_id/definition               @controllers.RepositoryService.getTestCaseDefinition(test_id:String)
+GET     /repository/reports/teststep/:session_id/*file      @controllers.RepositoryService.getTestStepReport(session_id: String, file)
+GET     /repository/export/testcase                         @controllers.RepositoryService.exportTestCaseReport
+GET     /repository/export/testcases                        @controllers.RepositoryService.exportTestCaseReports
+GET     /repository/export/teststep/:session_id/*path       @controllers.RepositoryService.exportTestStepReport(session_id: String, path)
+GET     /repository/resource/:test_id/*file                 @controllers.RepositoryService.getTestSuiteResource(test_id: String, file: String)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

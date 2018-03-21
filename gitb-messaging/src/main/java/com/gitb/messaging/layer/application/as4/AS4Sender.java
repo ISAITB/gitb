@@ -42,6 +42,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.security.cert.X509Certificate;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Class used to respond to AS4 messages.
@@ -262,13 +263,50 @@ public class AS4Sender extends HttpSender {
 
     @Override
     public Message send(List<Configuration> configurations, Message message) throws Exception {
+        // Create a static response.
+        createResponse(configurations, message);
         // Send AS4 message to reference implementation.
-        sendAS4MessageToReferenceImplementation(configurations, message);
+//        sendAS4MessageToReferenceImplementation(configurations, message);
         // Get message from backend Domibus application.
-        downloadMessageFromReferenceImplementation(configurations, message);
+//        downloadMessageFromReferenceImplementation(configurations, message);
         // Return response.
         super.send(configurations, message);
         return message;
+    }
+
+    private void createResponse(List<Configuration> configurations, Message message) throws Exception {
+        // Prepare what is needed for the validation.
+        MapType as4CommunicationData = (MapType) message.getFragments().get(AS4MessagingHandler.AS4_COMMUNICATION_DATA_FIELD_NAME);
+        ObjectType businessMessage = (ObjectType) as4CommunicationData.getItem(AS4MessagingHandler.BUSINESS_MESSAGE_FIELD_NAME);
+        as4CommunicationData.addItem(AS4MessagingHandler.DOMIBUS_RESPONSE_PAYLOAD_FIELD_NAME, businessMessage);
+        // Prepare response.
+        StringType messageId = (StringType) as4CommunicationData.getItem(AS4MessagingHandler.AS4_MESSAGE_ID_FIELD_NAME);
+        configurations.add(ConfigurationUtils.constructConfiguration(HttpMessagingHandler.HTTP_METHOD_CONFIG_NAME, AS4MessagingHandler.HTTP_METHOD));
+        MapType headers = new MapType();
+        headers.addItem(AS4MessagingHandler.HTTP_CONTENT_TYPE_HEADER, new StringType("multipart/related; boundary=\"MIMEBoundary_1d5880c5bcf86729c6f20940b70bfe27c34c48942aa3f352\"; type=\"text/xml\"; start=\"<0.ed5880c5bcf86729c6f20940b70bfe27c34c48942aa3f352@apache.org>\""));
+        BinaryType responseMessageContent = new BinaryType();
+        byte[] responseBytes = getResponseString(messageId.toString()).getBytes();
+        responseMessageContent.setValue(responseBytes);
+        // Get SOAP envelope.
+        MimeBodyPart mimeBody = new MimeBodyPart();
+        mimeBody.setDataHandler(new DataHandler(new ByteArrayDataSource(responseBytes, "text/xml; charset=UTF-8", null)));
+        message.getFragments().put(HttpMessagingHandler.HTTP_BODY_FIELD_NAME, responseMessageContent);
+        message.getFragments().put(HttpMessagingHandler.HTTP_HEADERS_FIELD_NAME, headers);
+    }
+
+    private String getResponseString(String refToMessageId) {
+        String messageId = UUID.randomUUID().toString()+"@gitb.eu";
+        String createdTimestamp = "2016-10-28T07:17:49.310Z";
+        String expiresTimestamp = "2016-10-28T07:22:49.310Z";
+        return "--MIMEBoundary_1d5880c5bcf86729c6f20940b70bfe27c34c48942aa3f352\n" +
+                "Content-Type: text/xml; charset=UTF-8\n" +
+                "Content-Transfer-Encoding: binary\n" +
+                "Content-ID: <0.ed5880c5bcf86729c6f20940b70bfe27c34c48942aa3f352@apache.org>\n" +
+                "\n" +
+                "<?xml version='1.0' encoding='UTF-8'?><soapenv:Envelope xmlns:soapenv=\"http://schemas.xmlsoap.org/soap/envelope/\" xmlns:eb=\"http://docs.oasis-open.org/ebxml-msg/ebms/v3.0/ns/core/200704/\"><soapenv:Header><wsse:Security xmlns:wsse=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-secext-1.0.xsd\" xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\" soapenv:mustUnderstand=\"1\"><wsu:Timestamp wsu:Id=\"TS-34\"><wsu:Created>"+createdTimestamp+"</wsu:Created><wsu:Expires>"+expiresTimestamp+"</wsu:Expires></wsu:Timestamp><ds:Signature xmlns:ds=\"http://www.w3.org/2000/09/xmldsig#\" Id=\"SIG-36\"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"><ec:InclusiveNamespaces xmlns:ec=\"http://www.w3.org/2001/10/xml-exc-c14n#\" PrefixList=\"eb soapenv\"/></ds:CanonicalizationMethod><ds:SignatureMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#rsa-sha1\"/><ds:Reference URI=\"#Id-1704570686\"><ds:Transforms><ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"><ec:InclusiveNamespaces xmlns:ec=\"http://www.w3.org/2001/10/xml-exc-c14n#\" PrefixList=\"eb\"/></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><ds:DigestValue>wFh2qcmbZy8kdxv4Qj7J/VvFpxE=</ds:DigestValue></ds:Reference><ds:Reference URI=\"#id-35\"><ds:Transforms><ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"><ec:InclusiveNamespaces xmlns:ec=\"http://www.w3.org/2001/10/xml-exc-c14n#\" PrefixList=\"\"/></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><ds:DigestValue>rgThrlLDSh19CNWnEfGQjn4fTbw=</ds:DigestValue></ds:Reference><ds:Reference URI=\"#TS-34\"><ds:Transforms><ds:Transform Algorithm=\"http://www.w3.org/2001/10/xml-exc-c14n#\"><ec:InclusiveNamespaces xmlns:ec=\"http://www.w3.org/2001/10/xml-exc-c14n#\" PrefixList=\"wsse eb soapenv\"/></ds:Transform></ds:Transforms><ds:DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><ds:DigestValue>J2uZtzoR6cbhZDaqnQOC+xALDwQ=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>CQ/eBFgT4ZluFDqWvQ6+MHlNluc0TZxHbXKyHsTDfTYN3Ndy2Fl0HewiJGANSq4/Tjsk4O3wmI50\n" +
+                "lfpWIIe+MbtyVDEbJ07J78Lgz2b7gIPDZXP2bPXc4XCyD7EiiEjhL9SPG0hu6RxEF2hyZm9SLg3B\n" +
+                "RpDuCSDmM6g4JTp5vXU=</ds:SignatureValue><ds:KeyInfo Id=\"KI-46FF51A5546410B03E147763906931835\"><wsse:SecurityTokenReference wsu:Id=\"STR-46FF51A5546410B03E147763906931836\"><wsse:KeyIdentifier EncodingType=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-soap-message-security-1.0#Base64Binary\" ValueType=\"http://docs.oasis-open.org/wss/oasis-wss-soap-message-security-1.1#ThumbprintSHA1\">sStZboI/2ZzDDNWKgZ1hU4QzXpQ=</wsse:KeyIdentifier></wsse:SecurityTokenReference></ds:KeyInfo></ds:Signature></wsse:Security><eb:Messaging xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\" soapenv:mustUnderstand=\"1\" wsu:Id=\"id-35\"><eb:SignalMessage><eb:MessageInfo><eb:Timestamp>2016-10-28T07:17:48</eb:Timestamp><eb:MessageId>"+messageId+"</eb:MessageId><eb:RefToMessageId>"+refToMessageId+"</eb:RefToMessageId></eb:MessageInfo><eb:Receipt><ebbp:NonRepudiationInformation xmlns:ebbp=\"http://docs.oasis-open.org/ebxml-bp/ebbp-2.0\"><ebbp:MessagePartNRInformation><Reference xmlns=\"http://www.w3.org/2000/09/xmldsig#\" URI=\"\"><Transforms><Transform Algorithm=\"http://www.w3.org/2000/09/xmldsig#enveloped-signature\"/></Transforms><DigestMethod Algorithm=\"http://www.w3.org/2000/09/xmldsig#sha1\"/><DigestValue>0YcVdxJaJ+mXABS+rVwLcYZ7gKA=</DigestValue></Reference></ebbp:MessagePartNRInformation></ebbp:NonRepudiationInformation></eb:Receipt></eb:SignalMessage></eb:Messaging></soapenv:Header><soapenv:Body xmlns:wsu=\"http://docs.oasis-open.org/wss/2004/01/oasis-200401-wss-wssecurity-utility-1.0.xsd\" wsu:Id=\"Id-1704570686\"/></soapenv:Envelope>\n" +
+                "--MIMEBoundary_1d5880c5bcf86729c6f20940b70bfe27c34c48942aa3f352--\n";
     }
 
 }

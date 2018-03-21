@@ -1,0 +1,34 @@
+section.page-top {
+    background-color: #0065a2;
+    border-bottom: 5px solid #074A8B;
+    margin-bottom: 35px;
+    min-height: 50px;
+    padding: 0;
+    padding: 20px 0;
+    position: relative;
+    text-align: left;
+}
+
+section.page-top h2 {
+    color: #FFF;
+    display: inline-block;
+    font-weight: 200;
+    margin: 0 0 -25px;
+    min-height: 37px;
+    line-height: 46px;
+    padding: 0 0 17px;
+    position: relative;
+}
+
+footer {
+    background-color: #0065a2;
+    border-top: 4px solid #074A8B;
+    font-size: 0.9em;
+    position: relative;
+    clear: both;
+}
+
+footer img {
+    zoom: 75%;
+    -moz-transform: scale(0.5);
+}

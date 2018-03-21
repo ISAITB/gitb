@@ -3,6 +3,7 @@ class SystemService
   @headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
   @defaultConfig = { headers: @headers }
 
+  @$inject = ['$log', 'RestService']
   constructor: (@$log, @RestService) ->
     @$log.debug "Constructing SystemService..."
 
@@ -19,10 +20,19 @@ class SystemService
       path: "/assets/jsons/testsuites.json"
     })
 
-  getSystems: () ->
+  getVendorSystems: () ->
     @RestService.get({
       path: jsRoutes.controllers.SystemService.getVendorSystems().url,
       authenticate: true
+    })
+
+  getSystemsByOrganization: (orgId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.SystemService.getSystemsByOrganization().url,
+      authenticate: true,
+      params: {
+        organization_id: orgId
+      }
     })
 
   getSystem:(systemId) ->
@@ -31,9 +41,8 @@ class SystemService
       authenticate: true
     })
 
-  updateSystem:(systemId, sname, fname, description, version) ->
+  updateSystem:(systemId, sname, fname, description, version, organisationId) ->
     data = {}
-
     if sname?
       data.system_sname = sname
     if fname?
@@ -42,6 +51,7 @@ class SystemService
       data.system_description = description
     if version?
       data.system_version = version
+    data.organization_id = organisationId
 
     @RestService.post({
       path: jsRoutes.controllers.SystemService.updateSystemProfile(systemId).url,
@@ -49,18 +59,19 @@ class SystemService
       authenticate: true
     })
 
-  registerSystem:(sname, fname, description, version) ->
+  registerSystemWithOrganization:(sname, fname, description, version, orgId) ->
     data = {
       system_sname: sname,
       system_fname: fname,
       system_version: version
+      organization_id: orgId
     }
 
     if description?
       data.system_description = description
 
     @RestService.post({
-      path: jsRoutes.controllers.SystemService.registerSystem().url,
+      path: jsRoutes.controllers.SystemService.registerSystemWithOrganization().url,
       data: data,
       authenticate: true
     })
@@ -151,5 +162,27 @@ class SystemService
       params:
         ids: actorIds.join ','
 
+  deleteSystem: (systemId, organisationId) ->
+    @RestService.delete
+      path: jsRoutes.controllers.SystemService.deleteSystem(systemId).url
+      params: 
+        organization_id: organisationId
+
+  getLastExecutionResultsForTestSuite: (system, testSuiteId, testCaseIds) ->
+      @RestService.get
+        path: jsRoutes.controllers.SystemService.getLastExecutionResultsForTestSuite(system).url
+        params:
+          id: testSuiteId,
+          ids: testCaseIds.join ','
+
+  getSystems: (systemIds) ->
+    params = {}
+    if systemIds? and systemIds.length > 0
+        params.ids = systemIds.join ','
+
+    @RestService.get
+      path: jsRoutes.controllers.SystemService.getSystems().url
+      authenticate: true
+      params: params
 
 services.service('SystemService', SystemService)

@@ -54,10 +54,12 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
                 .getInstance()
                 .getContext(sessionId);
 
-        testCase = context.getTestCase();
-	    if(testCase.getPreliminary() != null) {
-		    preliminaryProcessorActor = InteractionStepProcessorActor.create(InteractionStepProcessorActor.class, getContext(), testCase.getPreliminary(), context.getScope(), PRELIMINARY_STEP_ID);
-	    }
+        if (context != null) {
+            testCase = context.getTestCase();
+            if (testCase.getPreliminary() != null) {
+                preliminaryProcessorActor = InteractionStepProcessorActor.create(InteractionStepProcessorActor.class, getContext(), testCase.getPreliminary(), context.getScope(), PRELIMINARY_STEP_ID);
+            }
+        }
     }
 
     @Override

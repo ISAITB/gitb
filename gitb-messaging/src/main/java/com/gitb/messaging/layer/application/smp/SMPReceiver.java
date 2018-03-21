@@ -4,13 +4,9 @@ import com.gitb.core.Configuration;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.layer.application.http.HttpMessagingHandler;
 import com.gitb.messaging.layer.application.http.HttpReceiver;
-import com.gitb.messaging.model.tcp.ITransactionSender;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
 import com.gitb.types.MapType;
-import com.gitb.types.StringType;
-import org.apache.http.impl.DefaultBHttpServerConnection;
-import org.apache.http.protocol.HTTP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,8 +23,8 @@ public class SMPReceiver extends HttpReceiver {
     }
 
     @Override
-    public Message receive(List<Configuration> configurations) throws Exception {
-        Message received =  super.receive(configurations); //ignore received message
+    public Message receive(List<Configuration> configurations, Message inputs) throws Exception {
+        Message received =  super.receive(configurations, inputs); //ignore received message
 
         //construct response message
         MapType headers = (MapType) received.getFragments().get(HttpMessagingHandler.HTTP_HEADERS_FIELD_NAME);

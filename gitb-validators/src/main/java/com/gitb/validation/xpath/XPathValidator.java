@@ -36,7 +36,14 @@ public class XPathValidator extends AbstractValidator {
 
     @Override
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
-        ObjectType content    = (ObjectType) inputs.get(CONTENT_ARGUMENT_NAME);
+        ObjectType contentToProcess;
+        DataType content = (DataType) inputs.get(CONTENT_ARGUMENT_NAME);
+        if (content instanceof BinaryType) {
+            contentToProcess = new ObjectType();
+            contentToProcess.deserialize((byte[])content.getValue());
+        } else {
+            contentToProcess = (ObjectType) inputs.get(CONTENT_ARGUMENT_NAME);
+        }
         StringType expression = (StringType) inputs.get(XPATH_ARGUMENT_NAME);
 
         //compile xpath expression
@@ -49,10 +56,10 @@ public class XPathValidator extends AbstractValidator {
         }
 
         //process xpath
-        BooleanType result = (BooleanType) content.processXPath(xPathExpr, DataType.BOOLEAN_DATA_TYPE);
+        BooleanType result = (BooleanType) contentToProcess.processXPath(xPathExpr, DataType.BOOLEAN_DATA_TYPE);
 
         //return report
-        XPathReportHandler handler = new XPathReportHandler(content, expression, result);
+        XPathReportHandler handler = new XPathReportHandler(contentToProcess, expression, result);
         return handler.createReport();
     }
 }

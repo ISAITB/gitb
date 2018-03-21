@@ -31,43 +31,55 @@ public class DataTypeUtils {
 		attachment.setName(name);
 		attachment.setType(fragment.getType());
 
-		switch (fragment.getType()) {
+		String typeToCheck = fragment.getType();
+		if (DataType.isListType(fragment.getType())) {
+			typeToCheck = DataType.LIST_DATA_TYPE;
+		}
+		switch (typeToCheck) {
 			case DataType.OBJECT_DATA_TYPE:
 			case DataType.SCHEMA_DATA_TYPE:
 			case DataType.BINARY_DATA_TYPE: {
-				byte[] value = Base64.encodeBase64(fragment.serializeByDefaultEncoding());
-
 				attachment.setEmbeddingMethod(ValueEmbeddingEnumeration.BASE_64);
-				attachment.setValue(new String(value));
+				if (fragment.getValue() == null) {
+					attachment.setValue(null);
+				} else {
+					byte[] value = Base64.encodeBase64(fragment.serializeByDefaultEncoding());
+					attachment.setValue(new String(value));
+				}
 				break;
 			}
 			case DataType.BOOLEAN_DATA_TYPE:
 			case DataType.NUMBER_DATA_TYPE:
 			case DataType.STRING_DATA_TYPE: {
-				byte[] value = fragment.serializeByDefaultEncoding();
-
-				attachment.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
-				attachment.setValue(new String(value));
+				if (fragment.getValue() == null) {
+					attachment.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+					attachment.setValue(null);
+				} else {
+					byte[] value = fragment.serializeByDefaultEncoding();
+					attachment.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
+					attachment.setValue(new String(value));
+				}
 				break;
 			}
 			case DataType.LIST_DATA_TYPE: {
-				ListType listFragment = (ListType) fragment;
-
-				for (int i = 0; i < listFragment.getSize(); i++) {
-					DataType item = listFragment.getItem(i);
-					AnyContent content = convertDataTypeToAnyContent(null, item);
-
-					attachment.getItem().add(content);
+				if (fragment.getValue() != null) {
+					ListType listFragment = (ListType) fragment;
+					for (int i = 0; i < listFragment.getSize(); i++) {
+						DataType item = listFragment.getItem(i);
+						AnyContent content = convertDataTypeToAnyContent(null, item);
+						attachment.setEmbeddingMethod(ValueEmbeddingEnumeration.valueOf(listFragment.getContainedType().toUpperCase()));
+						attachment.getItem().add(content);
+					}
 				}
 				break;
 			}
 			case DataType.MAP_DATA_TYPE:
-				Map<String, DataType> values = (Map<String, DataType>) ((MapType)fragment).getValue();
-
-				for (Map.Entry<String, DataType> entry : values.entrySet()) {
-					AnyContent content = convertDataTypeToAnyContent(entry.getKey(), entry.getValue());
-
-					attachment.getItem().add(content);
+				if (fragment.getValue() != null) {
+					Map<String, DataType> values = (Map<String, DataType>) ((MapType)fragment).getValue();
+					for (Map.Entry<String, DataType> entry : values.entrySet()) {
+						AnyContent content = convertDataTypeToAnyContent(entry.getKey(), entry.getValue());
+						attachment.getItem().add(content);
+					}
 				}
 				break;
 		}
@@ -110,10 +122,13 @@ public class DataTypeUtils {
 				break;
 			}
 			default: {
-
 				switch (anyContent.getEmbeddingMethod()) {
 					case STRING: {
-						data.deserialize(anyContent.getValue().getBytes());
+						if (anyContent.getValue() == null) {
+							data.setValue(null);
+						} else {
+							data.deserialize(anyContent.getValue().getBytes());
+						}
 						break;
 					}
 					case BASE_64: {

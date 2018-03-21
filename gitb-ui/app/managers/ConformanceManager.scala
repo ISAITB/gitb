@@ -3,248 +3,260 @@ package managers
 import models._
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
-import play.api.libs.concurrent.Execution.Implicits._
+import utils.RepositoryUtils
 
-import scala.concurrent.Future
 import scala.slick.driver.MySQLDriver.simple._
 
 object ConformanceManager extends BaseManager {
   def logger = LoggerFactory.getLogger("ConformanceManager")
 
-  def getDomains(ids: Option[List[Long]] = None):Future[List[Domain]] = {
-    Future{
-      DB.withSession { implicit session =>
-        val domains = {
-	        val q = PersistenceSchema.domains
+	/**
+	 * Checks if domain exists
+	 */
+	def checkDomainExists(domainId: Long): Boolean = {
+		DB.withSession { implicit session =>
+			val firstOption = PersistenceSchema.domains.filter(_.id === domainId).firstOption
+			firstOption.isDefined
+		}
+	}
 
-	        val q2 = ids match {
-	          case Some(list) => q.filter(_.id inSet list)
-	          case None => q
-	        }
+	def getDomainOfSpecification(specificationId: Long ): Domain = {
+		DB.withSession { implicit session =>
+			var query = for {
+				domain <- PersistenceSchema.domains
+				specification <- PersistenceSchema.specifications if specification.domain === domain.id
+			} yield (domain, specification)
+			val result = query
+				.filter(_._2.id === specificationId)
+				.firstOption
+			result.get._1
+		}
+	}
 
-		      q2.list
-        }
-        domains
-      }
-    }
+  def getDomains(ids: Option[List[Long]] = None):List[Domain] = {
+		DB.withSession { implicit session =>
+			val domains = {
+				val q = PersistenceSchema.domains
+
+				val q2 = ids match {
+					case Some(list) => q.filter(_.id inSet list)
+					case None => q
+				}
+
+				q2.list
+			}
+			domains
+		}
   }
 
+	def getCommunityDomain(communityId: Long): Domain = {
+		DB.withSession { implicit session =>
+			val community = PersistenceSchema.communities.filter(_.id === communityId).firstOption.get
+
+			val domain = community.domain match {
+				case Some(d) => PersistenceSchema.domains.filter(_.id === d).firstOption.get
+				case None => null
+			}
+			domain
+		}
+	}
+
 	def createDomain(domain:Domain) = {
-		Future {
-			DB.withSession { implicit session =>
-				PersistenceSchema.domains.insert(domain)
-				Unit
-			}
+		DB.withSession { implicit session =>
+			PersistenceSchema.domains.insert(domain)
 		}
 	}
 
-	def deleteDomain(domain: Long) = {
-		Future {
-			DB.withSession { implicit session =>
+	def updateDomain(domainId: Long, shortName: String, fullName: String, description: Option[String]) = {
+		DB.withTransaction { implicit session =>
+			val q1 = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.shortname)
+			q1.update(shortName)
 
-			}
+			val q2 = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.fullname)
+			q2.update(fullName)
+
+			val q3 = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.description)
+			q3.update(description)
+
+			TestResultManager.updateForUpdatedDomain(domainId, shortName)
 		}
 	}
 
-	def getSpecifications(ids: Option[List[Long]] = None): Future[List[Specifications]] = {
-		Future {
-			DB.withSession { implicit session =>
-				val specs = {
-					val q = PersistenceSchema.specifications
+	def deleteDomain(domain: Long) {
+		DB.withTransaction { implicit session =>
+			ActorManager.deleteActorByDomain(domain)
+			SpecificationManager.deleteSpecificationByDomain(domain)
+			TransactionManager.deleteTransactionByDomain(domain)
+			TestResultManager.updateForDeletedDomain(domain)
+			PersistenceSchema.domains.filter(_.id === domain).delete
+			RepositoryUtils.deleteDomainTestSuiteFolder(domain)
+		}
+	}
 
-					val q2 = ids match {
-					  case Some(list) => q.filter(_.id inSet list)
-					  case None => q
-					}
+	def getSpecifications(ids: Option[List[Long]] = None): List[Specifications] = {
+		DB.withSession { implicit session =>
+			val specs = {
+				val q = PersistenceSchema.specifications
 
-					q2.list
+				val q2 = ids match {
+					case Some(list) => q.filter(_.id inSet list)
+					case None => q
 				}
-				specs
+
+				q2.list
 			}
+			specs
 		}
 	}
 
-  def getSpecifications(domain:Long):Future[List[Specifications]] = {
-    Future{
-      DB.withSession { implicit session =>
-        val specs = PersistenceSchema.specifications.filter(_.domain === domain).list
-        specs
-      }
+  def getSpecifications(domain:Long): List[Specifications] = {
+		DB.withSession { implicit session =>
+			val specs = PersistenceSchema.specifications.filter(_.domain === domain).list
+			specs
     }
   }
 
 	def createSpecifications(specification: Specifications) = {
-		Future {
-			DB.withSession { implicit session =>
-				PersistenceSchema.specifications.insert(specification)
-				Unit
-			}
+		DB.withTransaction { implicit session =>
+			PersistenceSchema.specifications.insert(specification)
 		}
 	}
 
-	def createActor(actor: Actors, specificationId:Option[Long] = None) = {
-		Future {
-			DB.withSession { implicit session =>
-				PersistenceSchema.actors.insert(actor)
+	def createActor(actor: Actors, specificationId: Long) = {
+		DB.withSession { implicit session =>
+			val savedActorId = PersistenceSchema.actors.returning(PersistenceSchema.actors.map(_.id)).insert(actor)
+			PersistenceSchema.specificationHasActors.insert(specificationId, savedActorId)
+			savedActorId
+		}
+	}
 
-				if(specificationId.isDefined) {
-					PersistenceSchema.specificationHasActors.insert(specificationId.get, actor.id)
+  def getActors(ids:Option[List[Long]]): List[Actors] = {
+		DB.withSession { implicit session =>
+			val actors = {
+				val q = PersistenceSchema.actors
+
+				val q2 = ids match {
+					case Some(list) => q.filter(_.id inSet list)
+					case None => q
 				}
-				Unit
+
+				q2.list
 			}
+			actors
 		}
-	}
-
-  def getActors(ids:Option[List[Long]]):Future[List[Actors]] = {
-    Future{
-      DB.withSession { implicit session =>
-	      val actors = {
-		      val q = PersistenceSchema.actors
-		      
-		      val q2 = ids match {
-		        case Some(list) => q.filter(_.id inSet list)
-		        case None => q
-		      }
-
-		      q2.list
-	      }
-	      actors
-      }
-    }
   }
 	
-	def getActorsWithDomainId(domainId: Long): Future[List[Actors]] = {
-		Future {
-			DB.withSession { implicit session =>
-				PersistenceSchema.actors.filter(_.domain === domainId).list
-			}
+	def getActorsWithDomainId(domainId: Long): List[Actors] = {
+		DB.withSession { implicit session =>
+			PersistenceSchema.actors.filter(_.domain === domainId).list
 		}
 	}
 
-  def getActorsWithSpecificationId(spec:Long):Future[List[Actors]] = {
-    Future{
-      DB.withSession { implicit session =>
-        var actors: List[Actors] = List()
-
-        //1) Get the names of the actors of given specification
-        val actorIds = PersistenceSchema.specificationHasActors.filter(_.specId === spec).map(_.actorId).list
-
-        //2) Iterate over all actor names and get their rows
-        actorIds.foreach{ actorId =>
-          val actor = PersistenceSchema.actors.filter(_.id === actorId).firstOption.get
-          actors ::= actor
-        }
-
-        actors
-      }
-    }
-  }
-
-  def getActorDefinition(actorId:Long):Future[Actors] = {
-    Future{
-      DB.withSession { implicit  session =>
-        PersistenceSchema.actors.filter(_.id === actorId).firstOption.get
-      }
-    }
-  }
-
-	def relateActorWithSpecification(actorId: Long, specificationId: Long): Future[Unit] = {
-		Future {
-			DB.withSession { implicit session =>
-				PersistenceSchema.specificationHasActors.insert(specificationId, actorId)
-				Unit
+  def getActorsWithSpecificationId(spec:Long): List[Actors] = {
+		DB.withSession { implicit session =>
+			var actors: List[Actors] = List()
+			var query = for {
+				actor <- PersistenceSchema.actors
+				specificationHasActors <- PersistenceSchema.specificationHasActors if specificationHasActors.actorId === actor.id
+			} yield (actor, specificationHasActors)
+			query.filter(_._2.specId === spec).list.foreach{ result =>
+				actors ::= result._1
 			}
+			actors
+		}
+  }
+
+  def getActorDefinition(actorId:Long): Actors = {
+		DB.withSession { implicit  session =>
+			PersistenceSchema.actors.filter(_.id === actorId).firstOption.get
+		}
+  }
+
+	def relateActorWithSpecification(actorId: Long, specificationId: Long) = {
+		DB.withTransaction { implicit session =>
+			PersistenceSchema.specificationHasActors.insert(specificationId, actorId)
 		}
 	}
 
 	def createOption(option:Options) = {
-		Future {
-			DB.withSession { implicit session =>
-				PersistenceSchema.options.insert(option)
-				Unit
+		DB.withSession { implicit session =>
+			PersistenceSchema.options.insert(option)
+		}
+	}
+
+	def getOptionsForActor(actorId:Long): List[Options] = {
+		DB.withSession { implicit session =>
+			PersistenceSchema.options.filter(_.actor === actorId).list
+		}
+	}
+
+	def getEndpointsForActor(actorId: Long): List[Endpoint] = {
+		DB.withSession { implicit session =>
+			val caseObjects = PersistenceSchema.endpoints.filter(_.actor === actorId).list
+			caseObjects map { caseObject =>
+				val actor = PersistenceSchema.actors.filter(_.id === caseObject.actor).first
+				val parameters = PersistenceSchema.parameters.filter(_.endpoint === caseObject.id).list
+
+				new Endpoint(caseObject, actor, parameters)
 			}
 		}
 	}
 
-	def getOptionsForActor(actorId:Long): Future[List[Options]] = {
-		Future {
-			DB.withSession { implicit session =>
-				PersistenceSchema.options.filter(_.actor === actorId).list
-			}
-		}
-	}
-
-	def getEndpointsForActor(actorId: Long): Future[List[Endpoint]] = {
-		Future {
-			DB.withSession { implicit session =>
-				val caseObjects = PersistenceSchema.endpoints.filter(_.actor === actorId).list
-				caseObjects map { caseObject =>
-					val actor = PersistenceSchema.actors.filter(_.id === caseObject.actor).first
-					val parameters = PersistenceSchema.parameters.filter(_.endpoint === caseObject.id).list
-
-					new Endpoint(caseObject, actor, parameters)
-				}
-			}
-		}
-	}
-
-	def getEndpoints(ids: Option[List[Long]]): Future[List[Endpoint]] = {
-		Future {
-			DB.withSession { implicit session =>
-				val caseObjects = {
-					val q = ids match {
-						case Some(list) => PersistenceSchema.endpoints.filter(_.id inSet list)
-						case None => PersistenceSchema.endpoints
-					}
-
-					q.list
-				}
-				caseObjects map { caseObject =>
-					val actor = PersistenceSchema.actors.filter(_.id === caseObject.actor).first
-					val parameters = PersistenceSchema.parameters.filter(_.endpoint === caseObject.id).list
-
-					new Endpoint(caseObject, actor, parameters)
-				}
-			}
-		}
-	}
-
-	def getParameters(ids: Option[List[Long]]): Future[List[models.Parameters]] = {
-		Future {
-			DB.withSession { implicit session =>
+	def getEndpoints(ids: Option[List[Long]]): List[Endpoint] = {
+		DB.withSession { implicit session =>
+			val caseObjects = {
 				val q = ids match {
-					case Some(ids) => PersistenceSchema.parameters.filter(_.id inSet ids)
-					case None => PersistenceSchema.parameters
+					case Some(list) => PersistenceSchema.endpoints.filter(_.id inSet list)
+					case None => PersistenceSchema.endpoints
 				}
 
 				q.list
 			}
-		}
-	}
+			caseObjects map { caseObject =>
+				val actor = PersistenceSchema.actors.filter(_.id === caseObject.actor).first
+				val parameters = PersistenceSchema.parameters.filter(_.endpoint === caseObject.id).list
 
-	def getEndpointParameters(endpointId: Long): Future[List[models.Parameters]] = {
-		Future {
-			DB.withSession { implicit session =>
-				PersistenceSchema.parameters.filter(_.endpoint === endpointId).list
+				new Endpoint(caseObject, actor, parameters)
 			}
 		}
 	}
 
-	def getOptions(ids:Option[List[Long]]): Future[List[Options]] = {
-		Future {
-			DB.withSession { implicit session =>
-				val options = {
-					val q = PersistenceSchema.options
+	def getParameters(ids: Option[List[Long]]): List[models.Parameters] = {
+		DB.withSession { implicit session =>
+			val q = ids match {
+				case Some(ids) => PersistenceSchema.parameters.filter(_.id inSet ids)
+				case None => PersistenceSchema.parameters
+			}
 
-					val q2 = ids match {
-					  case Some(s) => q.filter(_.actor inSet s)
-					  case None => q
-					}
+			q.list
+		}
+	}
 
-					q2.list
+	def getEndpointParameters(endpointId: Long): List[models.Parameters] = {
+		DB.withSession { implicit session =>
+			PersistenceSchema.parameters.filter(_.endpoint === endpointId).list
+		}
+	}
+
+	def getOptions(ids:Option[List[Long]]): List[Options] = {
+		DB.withSession { implicit session =>
+			val options = {
+				val q = PersistenceSchema.options
+
+				val q2 = ids match {
+					case Some(s) => q.filter(_.actor inSet s)
+					case None => q
 				}
-				options
+
+				q2.list
 			}
+			options
+		}
+	}
+
+	def getById(id: Long): Option[Domain] = {
+		DB.withSession { implicit session =>
+			PersistenceSchema.domains.filter(_.id === id).firstOption
 		}
 	}
 

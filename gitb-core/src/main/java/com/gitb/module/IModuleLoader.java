@@ -3,6 +3,7 @@ package com.gitb.module;
 import com.gitb.core.MessagingModule;
 import com.gitb.core.ValidationModule;
 import com.gitb.messaging.IMessagingHandler;
+import com.gitb.processing.IProcessingHandler;
 import com.gitb.validation.IValidationHandler;
 
 import java.util.List;
@@ -13,4 +14,5 @@ import java.util.List;
 public interface IModuleLoader {
 	public List<IValidationHandler> loadValidationHandlers();
 	public List<IMessagingHandler> loadMessagingHandlers();
+	public List<IProcessingHandler> loadProcessingHandlers();
 }

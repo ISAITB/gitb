@@ -6,6 +6,8 @@
     <div class="panel-body">
       <div class="create-conformance-statement wizard-directive"
            wizard-directive steps="createConformanceStatementCtrl.steps"
+		   triggerNext="createConformanceStatementCtrl.nextStep"
+		   on-before="createConformanceStatementCtrl.onWizardBefore"
            on-next="createConformanceStatementCtrl.onWizardNext"
            on-finish="createConformanceStatementCtrl.onWizardFinish">
 	<div class="step-content select-domain">
@@ -31,19 +33,6 @@
                allow-multi-select="true"></div>
           <div class="no-data-found" ng-if="createConformanceStatementCtrl.actors.length == 0">
             <span>There are no actors defined for this specification.</span>
-          </div>
-	  <button class="btn btn-primary pull-right"
-                  ng-click="createConformanceStatementCtrl.nextStep()">Next</button>
-	</div>
-	<div class="step-content select-options">
-	  <div ng-if="createConformanceStatementCtrl.options.length"
-               table-directive columns="createConformanceStatementCtrl.optionTableColumns"
-               data="createConformanceStatementCtrl.options"
-               on-select="createConformanceStatementCtrl.onOptionSelect"
-               on-deselect="createConformanceStatementCtrl.onOptionDeselect"
-               allow-multi-select="true"></div>
-          <div class="no-data-found" ng-if="createConformanceStatementCtrl.options.length == 0">
-            <span>There are no options defined for this actor.</span>
           </div>
 	  <button class="btn btn-primary pull-right"
                   ng-click="createConformanceStatementCtrl.nextStep()">Finish</button>

@@ -1,10 +1,11 @@
 class TestPresentationController
 
-	@$inject = ['$log', '$scope', '$modal','$state', '$stateParams', 'Constants', 'ReportService', 'ErrorService']
-	constructor: (@$log, @$scope, @$modal, @$state, @$stateParams, @Constants, @ReportService, @ErrorService) ->
+	@$inject = ['$log', '$scope', '$window', '$modal','$state', '$stateParams', 'Constants', 'ReportService', 'ErrorService']
+	constructor: (@$log, @$scope, @$window, @$modal, @$state, @$stateParams, @Constants, @ReportService, @ErrorService) ->
 		@$log.debug "Constructing TestPresentationController..."
 
 		@selectedIndices = {}
+		@sessionId = @$stateParams.session_id
 		@iconClassForStatus(0)
 
 	iconClassForStatus:(status) ->
@@ -67,13 +68,14 @@ class TestPresentationController
 				resolve:
 					step: () => step
 					report: () => report
+					sessionId: () => @sessionId
 				size: 'lg'
 
 			@$modal.open modalOptions
 
 		if step.report?
 			if step.report.path?
-				@ReportService.getTestStepReport escape(step.report.path) #paths like 6[2].1.xml must be escaped
+				@ReportService.getTestStepReport(@sessionId, escape(step.report.path)) #paths like 6[2].1.xml must be escaped
 				.then (report) =>
 					showTestStepReportModal report
 				.catch (error) =>
@@ -91,5 +93,8 @@ class TestPresentationController
 
 	select: (stepId, index) ->
 		@selectedIndices[stepId] = index
+
+	back: () ->
+		@$window.history.back();
 
 controllers.controller('TestPresentationController', TestPresentationController)

@@ -7,45 +7,73 @@ import com.gitb.types.DataType;
 import com.gitb.types.ListType;
 import com.gitb.types.MapType;
 import com.gitb.utils.ErrorUtils;
-import com.gitb.vs.ValidateRequest;
-import com.gitb.vs.ValidationResponse;
-import com.gitb.vs.ValidationService_Service;
+import com.gitb.validation.IValidationHandler;
+import com.gitb.vs.*;
+import com.gitb.vs.Void;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.Charsets;
 
+import java.net.MalformedURLException;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Created by serbay.
  */
-public class RemoteValidationModuleClient {
-	public static TestStepReportType validate(ValidationModule validationModule, List<Configuration> configurations, Map<String, DataType> inputs) {
-		if(validationModule.isIsRemote()) {
-			ValidationService_Service serviceClient;
+public class RemoteValidationModuleClient implements IValidationHandler {
 
-			try {
-				serviceClient = new ValidationService_Service(new URI(validationModule.getServiceLocation()).toURL());
-			} catch (Exception e) {
-				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote service client could not be constructed. Please check 'serviceLocation' field."), e);
-			}
+	private URL serviceURL;
+	private ValidationModule validationModule;
 
-			ValidateRequest validateRequest = new ValidateRequest();
+	public RemoteValidationModuleClient(URL serviceURL) {
+		this.serviceURL = serviceURL;
+	}
 
-			validateRequest.getConfig().addAll(configurations);
-			for(Map.Entry<String, DataType> input : inputs.entrySet()) {
+	public RemoteValidationModuleClient(ValidationModule validationModule) {
+		this.validationModule = validationModule;
+	}
 
-				validateRequest.getInput()
-					.add(createContentFromDataType(input.getKey(), input.getValue()));
-			}
-
-			ValidationResponse response = serviceClient.getValidationServicePort().validate(validateRequest);
-
-			return response.getReport();
-		} else {
-			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Local validation modules should be invoked via their own implementations"));
+	@Override
+	public ValidationModule getModuleDefinition() {
+		if (validationModule == null) {
+			validationModule = getServiceClient().getModuleDefinition(new Void()).getModule();
 		}
+		return validationModule;
+	}
+
+	@Override
+	public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
+		ValidateRequest validateRequest = new ValidateRequest();
+		validateRequest.getConfig().addAll(configurations);
+		for(Map.Entry<String, DataType> input: inputs.entrySet()) {
+			validateRequest.getInput().add(createContentFromDataType(input.getKey(), input.getValue()));
+		}
+		ValidationResponse response = getServiceClient().validate(validateRequest);
+		return response.getReport();
+	}
+
+	private URL getServiceURL() {
+		if (serviceURL == null) {
+			if (validationModule == null) {
+				throw new IllegalStateException("Remote validation module found but with no URL or ValidationModule definition");
+			} else {
+				try {
+					serviceURL = new URI(validationModule.getServiceLocation()).toURL();
+				} catch (MalformedURLException e) {
+					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found named ["+validationModule.getId()+"] with an malformed URL ["+validationModule.getServiceLocation()+"]"), e);
+				} catch (URISyntaxException e) {
+					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found named ["+validationModule.getId()+"] with an invalid URI syntax ["+validationModule.getServiceLocation()+"]"), e);
+				}
+			}
+		}
+		return serviceURL;
+	}
+
+	private ValidationService getServiceClient() {
+		return new ValidationService_Service(getServiceURL()).getValidationServicePort();
 	}
 
 	private static AnyContent createContentFromDataType(String name, DataType data) {
@@ -107,4 +135,5 @@ public class RemoteValidationModuleClient {
 				return new String(data.serializeByDefaultEncoding());
 		}
 	}
+
 }

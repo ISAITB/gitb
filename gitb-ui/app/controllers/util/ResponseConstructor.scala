@@ -50,12 +50,20 @@ object ResponseConstructor extends Results{
     "}"
   }
 
+  def constructErrorResponse(errorCode: Int, errorDesc: String):Result = {
+    Ok(constructErrorMessage(errorCode, errorDesc)).as(JSON)
+  }
+
   def constructEmptyResponse:Result = {
     Ok("")
   }
 
   def constructStringResponse(string:String): Result = {
     Ok(string)
+  }
+
+  def constructCssResponse(string:String): Result = {
+    Ok(string).withHeaders(CONTENT_TYPE -> "text/css")
   }
 
   def constructJsonResponse(json:String):Result = {
@@ -74,4 +82,5 @@ object ResponseConstructor extends Results{
       "\"refresh_token\":\"" + tokens.refresh_token + "\"," +
       "\"registered\":true}").as(JSON)
   }
+
 }

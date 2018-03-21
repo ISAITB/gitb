@@ -1,7 +1,6 @@
 package com.gitb.messaging.layer.application.dns;
 
 import com.gitb.core.Configuration;
-import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.layer.transport.udp.UDPMessagingHandler;
 import com.gitb.messaging.layer.transport.udp.UDPReceiver;
@@ -14,12 +13,7 @@ import com.gitb.types.StringType;
 import com.gitb.utils.ConfigurationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xbill.DNS.*;
 
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.List;
 
 /**
@@ -34,8 +28,8 @@ public class DNSReceiver extends UDPReceiver {
 	}
 
 	@Override
-	public Message receive(List<Configuration> configurations) throws Exception {
-		Message udpMessage = super.receive(configurations);
+	public Message receive(List<Configuration> configurations, Message inputs) throws Exception {
+		Message udpMessage = super.receive(configurations, inputs);
 
 		logger.debug("Received a message.");
 
@@ -66,7 +60,7 @@ public class DNSReceiver extends UDPReceiver {
 		message.getFragments()
 			.put(DNSMessagingHandler.DNS_DOMAIN_CONFIG_NAME, domain);
 
-		
+
 		return message;
 	}
 

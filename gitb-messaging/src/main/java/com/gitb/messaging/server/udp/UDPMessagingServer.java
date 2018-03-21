@@ -62,7 +62,7 @@ public class UDPMessagingServer implements IMessagingServer {
     }
 
     private UDPMessagingServerWorker listen(int port) throws IOException {
-        UDPMessagingServerWorker worker = new UDPMessagingServerWorker(port);
+        UDPMessagingServerWorker worker = new UDPMessagingServerWorker(port, allowAllConnections());
 
         workers.put(port, worker);
 
@@ -94,5 +94,9 @@ public class UDPMessagingServer implements IMessagingServer {
         Configuration defaultConfiguration = Configuration.defaultConfiguration();
 
         return getInstance(defaultConfiguration);
+    }
+
+    protected boolean allowAllConnections() {
+        return false;
     }
 }

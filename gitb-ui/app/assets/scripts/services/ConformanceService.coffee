@@ -11,7 +11,7 @@ class ConformanceService
   getDomains: (ids) ->
     params = {}
 
-    if ids?
+    if ids? and ids.length > 0
       params['ids'] = ids.join ","
 
     @RestService.get({
@@ -20,10 +20,36 @@ class ConformanceService
       params: params
     })
 
-  deleteDomain: (shortName) ->
-    @RestService.delete
-      path: jsRoutes.controllers.ConformanceService.deleteDomain(shortName).url
+  getDomainForSpecification: (specId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.ConformanceService.getDomainOfSpecification(specId).url,
       authenticate: true
+    })
+
+  getCommunityDomain: (communityId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.ConformanceService.getCommunityDomain().url,
+      authenticate: true
+      params: {
+        community_id: communityId
+      }
+    })
+
+  deleteDomain: (domainId) ->
+    @RestService.delete
+      path: jsRoutes.controllers.ConformanceService.deleteDomain(domainId).url
+      authenticate: true
+
+  updateDomain: (domainId, shortName, fullName, description) ->
+    @RestService.post({
+      path: jsRoutes.controllers.ConformanceService.updateDomain(domainId).url,
+      data: {
+        sname: shortName
+        fname: fullName
+        description: description
+      }
+      authenticate: true
+    })
   
   createDomain: (shortName, fullName, description) ->
     @RestService.post({
@@ -45,14 +71,36 @@ class ConformanceService
         description: description
         actor: actor
     })
-  
+
+  createEndpoint: (name, description, actor) ->
+    @RestService.post({
+      path: jsRoutes.controllers.ConformanceService.createEndpoint().url
+      authenticate: true
+      data:
+        name: name
+        description: description
+        actor_id: actor
+    })
+
+  createParameter: (name, description, use, kind, endpointId) ->
+    @RestService.post({
+      path: jsRoutes.controllers.ConformanceService.createParameter().url
+      authenticate: true
+      data:
+        name: name
+        description: description
+        use: use
+        kind: kind
+        endpoint_id: endpointId
+    })
+
   createActor: (shortName, fullName, description, domainId, specificationId) ->
     @RestService.post({
       path: jsRoutes.controllers.ConformanceService.createActor().url
       authenticate: true
       data:
-        sname: shortName
-        fname: fullName
+        actor_id: shortName
+        name: fullName
         description: description
         domain_id: domainId
         spec_id: specificationId
@@ -170,17 +218,36 @@ class ConformanceService
   deployTestSuite: (specificationId, file) ->
     if file?
       options =
-        url: jsRoutes.controllers.ConformanceService.deployTestSuite(specificationId).url
+        url: jsRoutes.controllers.ConformanceService.deployTestSuite(specificationId).url.substring(1)
         file: file
       @$upload.upload options
     else
       null
+
+  resolvePendingTestSuite: (specificationId, pendingFolderId, action) ->
+    @RestService.post({
+      path: jsRoutes.controllers.ConformanceService.resolvePendingTestSuite(specificationId).url,
+      authenticate: true
+      data: {
+        pending_id: pendingFolderId
+        pending_action: action
+      }
+    })
 
   getTestSuites: (specificationId) ->
     @RestService.get
       path: jsRoutes.controllers.ConformanceService.getSpecTestSuites(specificationId).url
       authenticate: true
 
+  getActorTestSuites: (specId, actorId, type) ->
+    params = {
+      spec: specId,
+      type: type
+    }
 
+    @RestService.get
+      path: jsRoutes.controllers.ConformanceService.getActorTestSuites(actorId).url
+      authenticate: true
+      params: params
 
 services.service('ConformanceService', ConformanceService)

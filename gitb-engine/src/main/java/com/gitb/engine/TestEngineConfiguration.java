@@ -1,9 +1,6 @@
 package com.gitb.engine;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
+import org.apache.commons.configuration.*;
 
 /**
  * Created by serbay on 9/8/14.
@@ -12,6 +9,7 @@ import org.apache.commons.configuration.SystemConfiguration;
 public class TestEngineConfiguration {
 
 	public static int ITERATION_LIMIT;
+	public static String MESSAGING_CALLBACK_URL;
 
     /**
      * Load the configurations from the configuration files
@@ -20,12 +18,13 @@ public class TestEngineConfiguration {
 		try {
 			CompositeConfiguration config = new CompositeConfiguration();
 			config.addConfiguration(new SystemConfiguration());
+			config.addConfiguration(new EnvironmentConfiguration());
 			config.addConfiguration(new PropertiesConfiguration("engine-module.properties"));
 
 			ITERATION_LIMIT = config.getInt("gitb.engine.iteration-limit", 1000);
-			// TODO load configuration parameters
+			MESSAGING_CALLBACK_URL = config.getString("gitb.messaging.callbackURL");
 		} catch (ConfigurationException e) {
-			e.printStackTrace();
+			throw new IllegalStateException("Error loading configuration", e);
 		}
 
 	}

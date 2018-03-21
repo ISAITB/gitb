@@ -1,15 +1,12 @@
 package com.gitb.tbs.impl;
 
-import com.gitb.core.Actor;
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.ErrorCode;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tbs.*;
 import com.gitb.tbs.Error;
 import com.gitb.tbs.Void;
-import com.gitb.tbs.TestbedService;
 import com.gitb.tpl.TestCase;
-import com.gitb.tr.SR;
 import com.gitb.utils.ErrorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +17,6 @@ import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
 import javax.xml.ws.WebServiceContext;
 import javax.xml.ws.soap.Addressing;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -57,22 +53,7 @@ public class TestbedServiceImpl implements TestbedService {
 
     @Override
     public GetActorDefinitionResponse getActorDefinition(@WebParam(name = "GetActorDefinitionRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") GetActorDefinitionRequest parameters) throws Error {
-        try {
-            String testCaseId = parameters.getTcId();
-            String actorId = parameters.getActorId();
-            //Call the real TestbedService
-            Actor actor = com.gitb.engine.TestbedService.getActorDefinition(testCaseId, actorId);
-            //Construct Response
-            GetActorDefinitionResponse response = new GetActorDefinitionResponse();
-            response.setActor(actor);
-            return response;
-        } catch (GITBEngineInternalError e) {
-            logger.error("An error occurred", e);
-            throw new Error(e.getMessage(), e.getErrorInfo());
-        } catch (Exception e) {
-            logger.error("An error occurred", e);
-            throw new Error("An error occurred.", ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR), e);
-        }
+        throw new IllegalStateException("This call is deprecated");
     }
 
     @Override

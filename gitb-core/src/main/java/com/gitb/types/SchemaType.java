@@ -17,4 +17,11 @@ public class SchemaType extends ObjectType{
     public String getType() {
         return DataType.SCHEMA_DATA_TYPE;
     }
+
+    @Override
+    public ObjectType toObjectType() {
+        ObjectType type = new ObjectType();
+        type.setValue(getValue());
+        return type;
+    }
 }

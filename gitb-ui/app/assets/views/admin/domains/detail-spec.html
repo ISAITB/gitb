@@ -14,7 +14,7 @@
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h4 class="title">Test suites</h4>
-			<button class="btn btn-default pull-right" ng-file-select="specDetailsCtrl.onFileSelect($files)" accept="application/zip">Deploy test suite</button>
+			<button class="btn btn-default pull-right" ng-file-select="specDetailsCtrl.onFileSelect($files)" accept="application/zip" onclick="this.value = null">Deploy test suite</button>
 		</div>
 		<div table-directive columns="specDetailsCtrl.testSuiteTableColumns" data="specDetailsCtrl.testSuites" operations-visible="true" on-delete="specDetailsCtrl.onTestSuiteDelete"></div>
 	</div>
@@ -22,7 +22,6 @@
 		<div class="panel-heading">
 			<h4 class="title">Actors</h4>
 			<a ui-sref="app.admin.domains.detail.specifications.detail.actors.create" class="btn btn-default pull-right">Create actor</a>
-			<a ng-click="specDetailsCtrl.addExistingActors()" class="btn btn-default pull-right">Add existing actors</a>
 		</div>
 		<div table-directive columns="specDetailsCtrl.actorTableColumns" data="specDetailsCtrl.actors" on-select="specDetailsCtrl.onActorSelect"></div>
 	</div>

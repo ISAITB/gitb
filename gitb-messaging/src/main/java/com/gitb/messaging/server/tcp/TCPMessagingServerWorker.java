@@ -80,6 +80,10 @@ public class TCPMessagingServerWorker extends AbstractMessagingServerWorker {
 
                     completedTransactions.add(socket);
                 }
+            } else {
+                StringBuilder failedConnectionInfo = new StringBuilder();
+                failedConnectionInfo.append("Received ["+address.getHostName()+"] but expected "+networkingSessionManager.getSessions());
+                logger.warn(failedConnectionInfo.toString());
             }
         }
 

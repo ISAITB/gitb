@@ -1,18 +1,8 @@
 package com.gitb.types;
 
-import com.gitb.tdl.Binding;
-import com.gitb.tdl.TypedBinding;
-import com.gitb.tdl.Variable;
-
-import javax.xml.crypto.Data;
 import javax.xml.xpath.XPathExpression;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Created by tuncay on 9/2/14.
@@ -53,4 +43,68 @@ public abstract class DataType {
     public abstract Object getValue();
 
     public abstract void setValue(Object value);
+
+    public static boolean isListType(String typeDefinition) {
+        return typeDefinition.startsWith(LIST_DATA_TYPE+CONTAINER_TYPE_PARENTHESIS[0]) && typeDefinition.endsWith(CONTAINER_TYPE_PARENTHESIS[1]);
+    }
+
+    public DataType convertTo(String targetType) {
+        if (this.getType().equals(targetType)) {
+            return this;
+        }
+        switch (targetType) {
+            case (DataType.BOOLEAN_DATA_TYPE):
+                return toBooleanType();
+            case (DataType.NUMBER_DATA_TYPE):
+                return toNumberType();
+            case (DataType.STRING_DATA_TYPE):
+                return toStringType();
+            case (DataType.BINARY_DATA_TYPE):
+                return toBinaryType();
+            case (DataType.LIST_DATA_TYPE):
+                return toListType();
+            case (DataType.SCHEMA_DATA_TYPE):
+                return toSchemaType();
+            case (DataType.OBJECT_DATA_TYPE):
+                return toObjectType();
+            case (DataType.MAP_DATA_TYPE):
+                return toMapType();
+            default:
+                throw new IllegalArgumentException("Unknown target conversion type ["+targetType+"]");
+        }
+
+    }
+
+    public BooleanType toBooleanType() {
+        throw new IllegalArgumentException("Conversion from ["+this.getType()+"] to ["+BOOLEAN_DATA_TYPE+"] not supported");
+    }
+
+    public NumberType toNumberType() {
+        throw new IllegalArgumentException("Conversion from ["+this.getType()+"] to ["+NUMBER_DATA_TYPE+"] not supported");
+    }
+
+    public StringType toStringType() {
+        throw new IllegalArgumentException("Conversion from ["+this.getType()+"] to ["+STRING_DATA_TYPE+"] not supported");
+    }
+
+    public BinaryType toBinaryType() {
+        throw new IllegalArgumentException("Conversion from ["+this.getType()+"] to ["+BINARY_DATA_TYPE+"] not supported");
+    }
+
+    public ListType toListType() {
+        throw new IllegalArgumentException("Conversion from ["+this.getType()+"] to ["+LIST_DATA_TYPE+"] not supported");
+    }
+
+    public MapType toMapType() {
+        throw new IllegalArgumentException("Conversion from ["+this.getType()+"] to ["+MAP_DATA_TYPE+"] not supported");
+    }
+
+    public SchemaType toSchemaType() {
+        throw new IllegalArgumentException("Conversion from ["+this.getType()+"] to ["+SCHEMA_DATA_TYPE+"] not supported");
+    }
+
+    public ObjectType toObjectType() {
+        throw new IllegalArgumentException("Conversion from ["+this.getType()+"] to ["+OBJECT_DATA_TYPE+"] not supported");
+    }
+
 }

@@ -1,21 +1,36 @@
 package utils
 
+import java.sql.Timestamp
 import java.text.SimpleDateFormat
-import java.util.{Date, Calendar, TimeZone}
+import java.util.{Calendar, Date, TimeZone}
 
 object TimeUtil {
 
   val MS_IN_A_DAY = 24 * 60 * 60 * 1000
   val MS_IN_AN_HOUR = 60 * 60 * 1000
+  val MS_IN_A_SECOND = 1000
 
   val formatUTC = {
     val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
     format.setTimeZone(TimeZone.getTimeZone("UTC"))
     format
   }
+
   val formatDate = {
     val format = new SimpleDateFormat("yyyy-MM-dd")
     format
+  }
+
+  def serializeTimestamp(t:Timestamp): String = {
+    new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(new Date(t.getTime))
+  }
+
+  def parseTimestamp(timestamp:String): Timestamp = {
+    new Timestamp(new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").parse(timestamp).getTime())
+  }
+
+  def getCurrentTimestamp(): Timestamp = {
+    new Timestamp(System.currentTimeMillis)
   }
 
   def getCurrentTime():String = {
@@ -34,10 +49,6 @@ object TimeUtil {
 
   def serializeDate(date:Date):String = {
     formatDate.format(date)
-  }
-
-  def parseUTCDatetime(datetime:String): Date = {
-    formatUTC.parse(datetime)
   }
 
   def parseDate(date:String): Date = {
@@ -73,15 +84,25 @@ object TimeUtil {
   }
 
   def getTimeDifferenceInDays(timestamp:String):Int = {
-    val d = formatUTC.parse(timestamp)
-    val curr = Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTime()
-    ((curr.getTime() - d.getTime()) / MS_IN_A_DAY).toInt
+    getTimeDifference(timestamp) / MS_IN_A_DAY
   }
 
   def getTimeDifferenceInHours(timestamp:String):Int = {
+    getTimeDifference(timestamp) / MS_IN_AN_HOUR
+  }
+
+  def getTimeDifferenceInSeconds(timestamp:String):Int = {
+    getTimeDifference(timestamp) / MS_IN_A_SECOND
+  }
+
+  def getTimeDifferenceInSeconds(timestamp:Timestamp):Int = {
+    (getCurrentTimestamp().getTime - timestamp.getTime).toInt / MS_IN_A_SECOND
+  }
+
+  def getTimeDifference(timestamp:String):Int = {
     val d = formatUTC.parse(timestamp)
     val curr = Calendar.getInstance(TimeZone.getTimeZone("UTC")).getTime()
-    ((curr.getTime() - d.getTime()) / MS_IN_AN_HOUR).toInt
+    (curr.getTime() - d.getTime()).toInt
   }
 
 }

@@ -10,9 +10,11 @@ import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.utils.ErrorUtils;
 import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
-import com.sun.org.apache.xpath.internal.jaxp.XPathImpl;
 
-import javax.xml.xpath.*;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
+import javax.xml.xpath.XPathFactory;
 
 /**
  * Created by senan on 9/5/14.
@@ -53,8 +55,15 @@ public class ExpressionHandler{
     }
 
     private DataType processExpression(String expression, String expectedReturnType)  {
-        DataType emptySource = DataTypeFactory.getInstance().create(DataType.OBJECT_DATA_TYPE);
-        return processExpression(emptySource, expression, expectedReturnType);
+        if (variableResolver.isVariableReference(expression)) {
+            // This is a pure reference to a context variable
+            DataType result = variableResolver.resolveVariable(expression);
+            return result.convertTo(expectedReturnType);
+        } else {
+            // This is a complete XPath expression
+            DataType emptySource = DataTypeFactory.getInstance().create(DataType.OBJECT_DATA_TYPE);
+            return processExpression(emptySource, expression, expectedReturnType);
+        }
     }
 
     /*
@@ -103,11 +112,11 @@ public class ExpressionHandler{
     private XPathExpression createXPathExpression(String expression) {
         try {
             //create an XPath processor
-            XPathImpl xPath = (XPathImpl) new XPathFactoryImpl().newXPath();
-            //set namespace context and resolvers
+            XPathFactory factory = new XPathFactoryImpl();
+            factory.setXPathFunctionResolver(functionResolver);
+            factory.setXPathVariableResolver(variableResolver);
+            XPath xPath = factory.newXPath();
             xPath.setNamespaceContext(namespaceContext);
-            xPath.setXPathVariableResolver(variableResolver);
-            xPath.setXPathFunctionResolver(functionResolver);
             //compile the expression and return it
             return xPath.compile(expression);
         }catch (XPathExpressionException e){

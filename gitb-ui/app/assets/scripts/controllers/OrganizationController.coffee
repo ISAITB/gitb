@@ -1,5 +1,6 @@
 class OrganizationController
 
+    @$inject = ['$log', '$scope', '$location', '$modal', 'DataService', 'AccountService', 'AuthService', 'ErrorService', 'Constants']
     constructor: (@$log, @$scope, @$location, @$modal, @DataService, @AccountService, @AuthService, @ErrorService, @Constants) ->
         @$log.debug 'Constructing OrganizationController'
 
@@ -21,11 +22,15 @@ class OrganizationController
         @AccountService.getVendorUsers() #call service operation
         .then(
             (data) => #success handler
+                labels = @Constants.USER_ROLE_LABEL
                 @users = data.sort((a,b)-> #sort users by their roles (priority) in descending order
                     if a.role == b.role    #if they have the same role, sort by ids
                         a.id > b.id
                     else
                         a.role > b.role
+                ).map((user) ->
+                    user.role = labels[user.role]
+                    user
                 )
                 #stop spinner
                 @memberSpinner = false
@@ -96,7 +101,7 @@ class OrganizationController
                     @spinner = false
             )
         else
-            @$scope.udata.password = '' # clear password everytime the form is not valid
+            @$scope.udata.password = '' # clear password every time the form is not valid
 
 	#call remote operation to register user
     addMember: () ->

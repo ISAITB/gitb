@@ -51,6 +51,10 @@ class TestSuite(
 			actors, testCases, testSuite.specification)
 	}
 
+	def this(testSuite: TestSuites, testCases: List[TestCases]) = {
+		this(testSuite, None, Some(testCases))
+	}
+
 	def this(testSuite: TestSuites) = {
 		this(testSuite, None, None)
 	}

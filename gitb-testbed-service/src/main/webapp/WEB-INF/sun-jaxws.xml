@@ -4,4 +4,7 @@
     <endpoint name="TestbedService"
               implementation="com.gitb.tbs.impl.TestbedServiceImpl"
               url-pattern="/TestbedService" />
+    <endpoint name="MessagingClient"
+              implementation="com.gitb.engine.remote.messaging.MessagingClientImpl"
+              url-pattern="/MessagingClient" />
 </endpoints>

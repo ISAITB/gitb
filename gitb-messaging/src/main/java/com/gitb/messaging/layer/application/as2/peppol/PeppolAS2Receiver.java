@@ -2,6 +2,7 @@ package com.gitb.messaging.layer.application.as2.peppol;
 
 import com.gitb.core.Configuration;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.messaging.KeyStoreFactory;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.ServerUtils;
 import com.gitb.messaging.layer.application.as2.AS2MIC;
@@ -10,7 +11,10 @@ import com.gitb.messaging.layer.application.http.HttpMessagingHandler;
 import com.gitb.messaging.layer.application.https.HttpsReceiver;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
-import com.gitb.types.*;
+import com.gitb.types.BinaryType;
+import com.gitb.types.MapType;
+import com.gitb.types.ObjectType;
+import com.gitb.types.StringType;
 import com.gitb.utils.ConfigurationUtils;
 import com.gitb.utils.XMLUtils;
 import com.helger.as2lib.disposition.DispositionType;
@@ -19,7 +23,6 @@ import com.helger.as2lib.util.javamail.ByteArrayDataSource;
 import com.helger.commons.jaxb.validation.CollectingValidationEventHandler;
 import com.helger.commons.mime.CMimeType;
 import com.helger.peppol.sbdh.DocumentData;
-import com.helger.peppol.sbdh.read.DocumentDataReadException;
 import com.helger.peppol.sbdh.read.DocumentDataReader;
 import com.helger.ubl.EUBL21DocumentType;
 import com.helger.ubl.UBL21DocumentTypes;
@@ -34,20 +37,14 @@ import org.unece.cefact.namespaces.sbdh.ObjectFactory;
 import org.unece.cefact.namespaces.sbdh.SBDMarshaller;
 import org.unece.cefact.namespaces.sbdh.StandardBusinessDocument;
 import org.unece.cefact.namespaces.sbdh.StandardBusinessDocumentHeader;
-import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-import org.xml.sax.InputSource;
 
 import javax.activation.DataHandler;
-import javax.mail.MessagingException;
 import javax.mail.internet.ContentType;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
 import javax.xml.bind.JAXBException;
-import javax.xml.parsers.DocumentBuilderFactory;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 
 /**
@@ -61,8 +58,8 @@ public class PeppolAS2Receiver extends HttpsReceiver{
     }
 
     @Override
-    public Message receive(List<Configuration> configurations) throws Exception {
-        Message received =  super.receive(configurations);
+    public Message receive(List<Configuration> configurations, Message inputs) throws Exception {
+        Message received =  super.receive(configurations, inputs);
 
         //extract body and headers
         MapType headers = (MapType) received.getFragments().get(HttpMessagingHandler.HTTP_HEADERS_FIELD_NAME);
@@ -88,7 +85,13 @@ public class PeppolAS2Receiver extends HttpsReceiver{
             return message;
         }
 
-        //verify MimeBody (with user's public certificate) which is previously signed by the sender
+        try{
+            mimeBody = AS2MessagingHandler.decrypt(mimeBody, KeyStoreFactory.getInstance().getCertificate(), KeyStoreFactory.getInstance().getPrivateKey());
+        } catch (Exception e) {
+            saveError("integrity-check-failed", "An error occurred while decrypting the received message content with the test bed's certificate. " +
+                    "Please check the following error description: " + e.getMessage());
+            return message;
+        }
         try{
             mimeBody = AS2MessagingHandler.verify(mimeBody, AS2MessagingHandler.getSUTCertificate(transaction));
         } catch (Exception e) {
@@ -122,6 +125,10 @@ public class PeppolAS2Receiver extends HttpsReceiver{
             saveError("unexpected-processing-error", "Failed to interpret the passed document as a Standard Business Document");
             return message;
         }
+        if (sbd == null) {
+            saveError("unexpected-processing-error", "Failed to interpret the passed document as a Standard Business Document");
+            return message;
+        }
 
         //create StandardBusinessDocumentHeader
         StandardBusinessDocumentHeader sbdh = sbd.getStandardBusinessDocumentHeader();
@@ -143,29 +150,9 @@ public class PeppolAS2Receiver extends HttpsReceiver{
         //create Business Message, i.e, Invoice, Order, etc
         Element businessMessageNode;
         try {
-            DocumentData documentData = new DocumentDataReader().extractData (sbd);
-            businessMessageNode = documentData.getBusinessMessage ();
-
-            // Try to determine the UBL document type from the namespace URI
-            EUBL21DocumentType documentType = UBL21DocumentTypes.getDocumentTypeOfNamespace(businessMessageNode.getNamespaceURI());
-            if(documentType == null) {
-                saveError("unexpected-processing-error", "The business message is not a supported UBL 2.1 document");
-                return message;
-            }
-
-            //Validate UBL document
-            final CollectingValidationEventHandler handler = new CollectingValidationEventHandler ();
-            final Object ublDocument = UBL21Marshaller.readUBLDocument(businessMessageNode,
-                    documentType.getImplementationClass(), handler);
-
-            if(ublDocument == null) {
-                saveError("unexpected-processing-error", "Failed to read the UBL document as " +
-                        documentType.name () + ":\n" +
-                        handler.getResourceErrors ().getAllResourceErrors ().toString ());
-                return message;
-            }
+            businessMessageNode = getBusinessMessageNode(sbd);
         } catch (Exception e) {
-            saveError("unexpected-processing-error", "Invalid business message.");
+            saveError("unexpected-processing-error", e.getMessage());
             return message;
         }
 
@@ -190,6 +177,36 @@ public class PeppolAS2Receiver extends HttpsReceiver{
 
         transaction.setParameter(DispositionType.class, DispositionType.createSuccess());
         return message;
+    }
+
+    protected void validateBusinessDocument(Element businessMessageNode) {
+        // Try to determine the UBL document type from the namespace URI
+        EUBL21DocumentType documentType = UBL21DocumentTypes.getDocumentTypeOfNamespace(businessMessageNode.getNamespaceURI());
+        if(documentType == null) {
+            String msg = "The business message is not a supported UBL 2.1 document";
+            saveError("unexpected-processing-error", msg);
+            throw new IllegalStateException(msg);
+        }
+
+        //Validate UBL document
+        final CollectingValidationEventHandler handler = new CollectingValidationEventHandler ();
+        final Object ublDocument = UBL21Marshaller.readUBLDocument(businessMessageNode, documentType.getImplementationClass(), handler);
+
+        if(ublDocument == null) {
+            String msg = "Failed to read the UBL document as " +
+                    documentType.name () + ":\n" +
+                    handler.getResourceErrors ().getAllResourceErrors ().toString ();
+            saveError("unexpected-processing-error", msg);
+            throw new IllegalStateException(msg);
+        }
+    }
+
+    protected Element getBusinessMessageNode(StandardBusinessDocument sbd) throws Exception {
+        Element businessMessageNode;
+        DocumentData documentData = new DocumentDataReader().extractData (sbd);
+        businessMessageNode = documentData.getBusinessMessage ();
+        validateBusinessDocument(businessMessageNode);
+        return businessMessageNode;
     }
 
     private void processMDN(MimeBodyPart mimeBody) throws Exception{
@@ -275,37 +292,7 @@ public class PeppolAS2Receiver extends HttpsReceiver{
         return mimeBody;
     }
 
-    private Node getBusinessDocument(MimeBodyPart mimeBody){
-        InputStream businessDocument = null;
-        try {
-            businessDocument = mimeBody.getInputStream();
-        } catch (Exception e) {
-            saveError("unexpected-processing-error", "An error occurred while extracting business message from MIME content. " +
-                    "Please check the following error description: " + e.getMessage());
-            return null;
-        }
-        InputSource source = new InputSource(businessDocument);
-        Document document;
-        try {
-            document = DocumentBuilderFactory.newInstance().newDocumentBuilder().parse(source);
-        } catch (Exception e) {
-            saveError("unexpected-processing-error", "An error occurred while parsing business message. " +
-                    "Please check the following error description: " + e.getMessage());
-            return null;
-        }
-        return document.getFirstChild();
-    }
-
-    private ObjectType getSBDH(Node sbd) {
-        //SBDH = Standard Business Document Header
-        if (sbd.getChildNodes().getLength() > 0) {
-            Node sbdh = sbd.getChildNodes().item(0);
-            return new ObjectType(sbdh);
-        }
-        return null;
-    }
-
-    private boolean checkSBDH(Node sbdh, List<Configuration> configurations){
+    boolean checkSBDH(Node sbdh, List<Configuration> configurations){
         boolean documentIdentifierFound = false;
         boolean processIdentifierFound  = false;
 
@@ -370,15 +357,7 @@ public class PeppolAS2Receiver extends HttpsReceiver{
         }
     }
 
-    private ObjectType getBusinessMessage(Node sbd) {
-        if (sbd.getChildNodes().getLength() > 1) {
-            Node businessMessage = sbd.getChildNodes().item(1);
-            return new ObjectType(businessMessage);
-        }
-        return null;
-    }
-
-    private void saveError(String reason, String message) {
+    void saveError(String reason, String message) {
         DispositionType dispositionType = DispositionType.createError (reason);
         transaction.setParameter(DispositionType.class, dispositionType);
         transaction.addNonCriticalError(new GITBEngineInternalError(message));

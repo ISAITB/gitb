@@ -2,6 +2,7 @@ package controllers.util
 
 import models._
 import models.Enums._
+import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
 import exceptions.{ErrorCodes, InvalidRequestException}
 
@@ -43,6 +44,20 @@ object ParameterExtractor {
     }
   }
 
+  def optionalLongBodyParameter(request:Request[AnyContent], parameter:String):Option[Long] = {
+    try {
+      val paramList = request.body.asFormUrlEncoded.get(parameter)
+      if(paramList.length > 0){
+        Some(paramList(0).toLong)
+      } else{
+        None
+      }
+    } catch {
+      case e:NoSuchElementException =>
+        None
+    }
+  }
+
   def extractUserId(request:Request[AnyContent]):Long = {
     request.headers.get(Parameters.USER_ID).get.toLong
   }
@@ -50,21 +65,45 @@ object ParameterExtractor {
   def extractOrganizationInfo(request:Request[AnyContent]):Organizations = {
     val vendorSname = requiredBodyParameter(request, Parameters.VENDOR_SNAME)
     val vendorFname = requiredBodyParameter(request, Parameters.VENDOR_FNAME)
-    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort)
+    val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val landingPageId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LANDING_PAGE_ID)
+    val legalNoticeId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LEGAL_NOTICE_ID)
+    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, false, landingPageId, legalNoticeId, communityId)
+  }
+
+  def extractCommunityInfo(request:Request[AnyContent]):Communities = {
+    val sname = requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
+    val fname = requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
+    val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
+    Communities(0L, sname, fname, domainId)
+  }
+
+  def extractSystemAdminInfo(request:Request[AnyContent]):Users = {
+    val name = requiredBodyParameter(request, Parameters.USER_NAME)
+    val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
+    val password = requiredBodyParameter(request, Parameters.PASSWORD)
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), UserRole.SystemAdmin.id.toShort, 0L)
+  }
+
+  def extractCommunityAdminInfo(request:Request[AnyContent]):Users = {
+    val name = requiredBodyParameter(request, Parameters.USER_NAME)
+    val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
+    val password = requiredBodyParameter(request, Parameters.PASSWORD)
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), UserRole.CommunityAdmin.id.toShort, 0L)
   }
 
   def extractAdminInfo(request:Request[AnyContent]):Users = {
     val name = requiredBodyParameter(request, Parameters.USER_NAME)
     val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
     val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, password, UserRole.VendorAdmin.id.toShort, 0L)
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), UserRole.VendorAdmin.id.toShort, 0L)
   }
 
   def extractUserInfo(request:Request[AnyContent]):Users = {
     val name = requiredBodyParameter(request, Parameters.USER_NAME)
     val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
     val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, password, UserRole.VendorUser.id.toShort, 0L)
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), UserRole.VendorUser.id.toShort, 0L)
   }
 
   def extractSystemInfo(request:Request[AnyContent]):Systems = {
@@ -73,6 +112,15 @@ object ParameterExtractor {
     val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_DESC)
     val version:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_VERSION)
     Systems(0L, sname, fname, descr, version, 0L)
+  }
+
+  def extractSystemWithOrganizationInfo(request:Request[AnyContent]):Systems = {
+    val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_SNAME)
+    val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_FNAME)
+    val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_DESC)
+    val version:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_VERSION)
+    val owner:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.ORGANIZATION_ID).toLong
+    Systems(0L, sname, fname, descr, version, owner)
   }
 
 	def extractDomain(request:Request[AnyContent]):Domain = {
@@ -113,12 +161,54 @@ object ParameterExtractor {
       case Some(i) => i.toLong
       case _ => 0l
     }
-		val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
-		val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
-		val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+		val actorId:String = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID)
+		val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
+		val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
 		val domainId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
-		Actors(id, sname, fname, descr, domainId)
+		Actors(id, actorId, name, description, domainId)
 	}
+
+  def extractEndpoint(request:Request[AnyContent]):Endpoints = {
+    val id:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ID) match {
+      case Some(i) => i.toLong
+      case _ => 0l
+    }
+    val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
+    val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+    val actorId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    Endpoints(id, name, desc, actorId)
+  }
+
+  def extractParameter(request:Request[AnyContent]):models.Parameters = {
+      val id:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ID) match {
+      case Some(i) => i.toLong
+      case _ => 0l
+    }
+    val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
+    val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+    val use:String = ParameterExtractor.requiredBodyParameter(request, Parameters.USE)
+    val kind:String = ParameterExtractor.requiredBodyParameter(request, Parameters.KIND)
+    val endpointId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.ENDPOINT_ID).toLong
+    models.Parameters(id, name, desc, use, kind, endpointId)
+  }
+
+  def extractLandingPageInfo(request:Request[AnyContent]):LandingPages = {
+    val name = requiredBodyParameter(request, Parameters.NAME)
+    val desc = optionalBodyParameter(request, Parameters.DESCRIPTION)
+    val content = requiredBodyParameter(request, Parameters.CONTENT)
+    val default = requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
+    val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    LandingPages(0L, name, desc, content, default, communityId)
+  }
+
+  def extractLegalNoticeInfo(request:Request[AnyContent]):LegalNotices = {
+    val name = requiredBodyParameter(request, Parameters.NAME)
+    val desc = optionalBodyParameter(request, Parameters.DESCRIPTION)
+    val content = requiredBodyParameter(request, Parameters.CONTENT)
+    val default = requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
+    val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    LegalNotices(0L, name, desc, content, default, communityId)
+  }
 
 	def extractIdsQueryParameter(request:Request[AnyContent]): Option[List[String]] = {
 		val idsStr = ParameterExtractor.optionalQueryParameter(request, Parameters.IDS)
@@ -137,4 +227,23 @@ object ParameterExtractor {
 		}
 		ids
 	}
+
+  def optionalListQueryParameter(request:Request[AnyContent],parameter:String): Option[List[String]] = {
+    val listStr = ParameterExtractor.optionalQueryParameter(request, parameter)
+    val list = listStr match {
+      case Some(str) => Some(str.split(",").toList)
+      case None => None
+    }
+    list
+  }
+
+  def optionalLongListQueryParameter(request:Request[AnyContent],parameter:String): Option[List[Long]] = {
+    val listStr = ParameterExtractor.optionalQueryParameter(request, parameter)
+    val list = listStr match {
+      case Some(str) => Some(str.split(",").map(_.toLong).toList)
+      case None => None
+    }
+    list
+  }
+
 }

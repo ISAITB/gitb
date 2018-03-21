@@ -1,9 +1,9 @@
 package filters
 
 import play.api.mvc._
-import play.api.http.HeaderNames._
+import play.api.http.HeaderNames.{ACCESS_CONTROL_ALLOW_ORIGIN, PRAGMA, _}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import org.slf4j.{LoggerFactory, Logger}
+import org.slf4j.{Logger, LoggerFactory}
 
 object CorsFilter {
   def origin = "*"
@@ -18,7 +18,10 @@ class CorsFilter extends EssentialFilter {
     def apply(requestHeader: RequestHeader) = {
       next(requestHeader).map { result =>
         result.withHeaders(
-          ACCESS_CONTROL_ALLOW_ORIGIN   -> CorsFilter.origin
+          ACCESS_CONTROL_ALLOW_ORIGIN   -> CorsFilter.origin,
+          PRAGMA -> "no-cache",
+          EXPIRES -> "-1",
+          CACHE_CONTROL -> "no-cache"
         )
       }
     }

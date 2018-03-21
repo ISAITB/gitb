@@ -3,6 +3,7 @@ package com.gitb.validation.xsd;
 import com.gitb.core.Configuration;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tr.TestStepReportType;
+import com.gitb.types.BinaryType;
 import com.gitb.types.DataType;
 import com.gitb.types.ObjectType;
 import com.gitb.types.SchemaType;
@@ -43,11 +44,18 @@ public class XSDValidator extends AbstractValidator {
     @Override
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
         //get inputs
-        ObjectType content = (ObjectType) inputs.get(CONTENT_ARGUMENT_NAME);
+        ObjectType contentToProcess;
+        DataType content = (DataType) inputs.get(CONTENT_ARGUMENT_NAME);
+        if (content instanceof BinaryType) {
+            contentToProcess = new ObjectType();
+            contentToProcess.deserialize((byte[])content.getValue());
+        } else {
+            contentToProcess = (ObjectType) inputs.get(CONTENT_ARGUMENT_NAME);
+        }
         SchemaType xsd     = (SchemaType) inputs.get(SCHEMA_ARGUMENT_NAME);
 
         //create error handler
-        XSDReportHandler handler = new XSDReportHandler(content, xsd);
+        XSDReportHandler handler = new XSDReportHandler(contentToProcess, xsd);
 
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
@@ -55,7 +63,7 @@ public class XSDValidator extends AbstractValidator {
         //resolve schema
         SchemaFactory schemaFactory = SchemaFactory.newInstance(SCHEMA_LANGUAGE);
         schemaFactory.setErrorHandler(handler);
-        schemaFactory.setResourceResolver(new XSDResolver(xsd.getSchemaLocation()));
+        schemaFactory.setResourceResolver(new XSDResolver(getTestCaseId(), xsd.getSchemaLocation()));
         Schema schema;
         try {
             schema = schemaFactory.newSchema(new DOMSource((Node)xsd.getValue()));
@@ -70,7 +78,7 @@ public class XSDValidator extends AbstractValidator {
         try {
             //Use a StreamSource rather than a DomSource below,
             //to be able to get the line & column number of possible errors
-            StreamSource source = new StreamSource(new ByteArrayInputStream(content.toString().getBytes()));
+            StreamSource source = new StreamSource(new ByteArrayInputStream(contentToProcess.toString().getBytes()));
             validator.validate(source);
         } catch (Exception e) {
             throw new GITBEngineInternalError(e);

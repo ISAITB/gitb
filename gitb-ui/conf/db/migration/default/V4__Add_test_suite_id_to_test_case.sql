@@ -1,0 +1,1 @@
+DROP INDEX `tc_sn_vsn_idx` ON `testcases`;

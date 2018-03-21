@@ -3,10 +3,14 @@
 		<div class="container">
 			<div class="row">
 				<div class="col-md-12">
-					<h2>Systems</h2>
+					<h2>Tests {{systemsTitleCtrl.DataService.isSystemAdmin || systemsTitleCtrl.DataService.isCommunityAdmin ? '- ' + systemsTitleCtrl.organization.sname : ''}}</h2>
 				</div>
 			</div>
 		</div>
 	</section>
-	<div class="child col-md-12" ui-view></div>
+	<div class="container-fluid">
+		<div class="row">
+			<div class="child col-md-12 system-container-div" ui-view></div>
+		</div>
+	</div>
 </div>

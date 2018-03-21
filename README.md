@@ -3,8 +3,10 @@
 GITB PoC Testbed implementation uses Maven as a build automation and dependency management tool. This project can be built by executing the following command within the root folder of the project:
 
 ```sh
-$ mvn clean install -DskipTests=true
+$ mvn clean install -DskipTests=true -Denv=<environment>
 ```
+
+There are two different environments for which we can build `dev` or `docker`. `Dev` being the default and thus specifying is optional.
 
 This command builds and compiles all necessary files and creates a war file located in the *gitb-testbed-service/target/gitb-testbed-service-1.0-SNAPSHOT.war*
 
@@ -60,11 +62,7 @@ Currently, the following roles are implemented in the project:
 * **Vendor User**: Vendor system user (tester)
 * **System Admin**: Manages the test engine, users, and repositories, creates new domains, specifications, deploys/removes test suites
 
-Unfortunately, there is no method except directly manipulating the database table to change the user roles currently. So, we have to update user roles in `Users.role` (*in the form of table.column*). The user roles are represented with the following unsigned integers in the database:
-
-* **Vendor Admin**: 1
-* **Vendor User**: 2
-* **System Admin**: 4
+System admins are created under organization with ID 0. So, a default organization with ID 0 should be available in the **gitb.organizations** table. This organization is otherwise fully hidden in the UI.
 
 ## Build & Running
 Since this application is using the [Play! Framework](http://www.playframework.com/), an executable that takes care of the build & running process exists in the application folder. To do these operations please execute the following commands in the `gitb-ui` directory:
@@ -72,6 +70,9 @@ Since this application is using the [Play! Framework](http://www.playframework.c
 * `./activator clean compile` to build the application
 * `./activator run` to run the application in **debug** mode
 * `./activator clean dist` to create a standalone distribution. This command creates a zip file located under `gitb-ui/target/universal/` folder. You can unzip this file to the deployment folder. After this, there should be an executable script located in `bin/gitb-ui` path. This script can be executed directly to start the application in **production** mode.
+
+These build commands are equal for both docker and local deployment. The application config file defaults to a local deployment and is working with environment variables for the docker container.
+This way no additional steps have to be taken depending for which deployment we are building for.
 
 ## Test Suite Deployment
 Currently only users with *System Admin* roles can deploy test suites. Test suites are deployed using zip files.

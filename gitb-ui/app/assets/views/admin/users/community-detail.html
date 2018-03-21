@@ -1,0 +1,58 @@
+<div class="page users detail">
+    <div class="panel panel-default" ng-if="communityDetailCtrl.DataService.isSystemAdmin">
+        <div class="panel-heading">
+            <h4 class="title">Community detail</h4>
+        </div>
+        <div class="panel-body">
+            <!-- Error messages -->
+            <div class="row col-md-10 col-md-offset-1">
+                <alert ng-repeat="alert in communityDetailCtrl.alerts" type="{{alert.type}}" close="communityDetailCtrl.closeAlert($index)">{{alert.msg}}</alert>
+            </div>
+
+            <div class="row">
+                <div class="col-md-10 col-md-offset-1" tb-community-form tb-community="communityDetailCtrl.community" tb-domains="communityDetailCtrl.domains"></div>
+            </div>
+            <div class="row col-md-10 col-md-offset-3">
+                <div class="btn-toolbar">
+                    <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.cancelCommunityDetail()">Cancel</button>
+                    <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.updateCommunity()">Update</button>
+                    <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.deleteCommunity()" ng-disabled="communityDetailCtrl.isDefaultCommunity()">Delete</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Administrators -->
+    <div class="panel panel-default" ng-if="communityDetailCtrl.communityId != communityDetailCtrl.Constants.DEFAULT_COMMUNITY_ID">
+        <div class="panel-heading">
+            <h4 class="title">Community administrators</h4>
+            <a ui-sref="app.admin.users.communities.detail.admins.create" class="btn btn-default pull-right">Create community administrator</a>
+        </div>
+        <div table-directive columns="communityDetailCtrl.adminColumns" data="communityDetailCtrl.admins" on-select="communityDetailCtrl.adminSelect"></div>
+    </div>
+    <!-- organizations -->
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Organisations</h4>
+            <a ui-sref="app.admin.users.communities.detail.organizations.create" class="btn btn-default pull-right">Create organization</a>
+        </div>
+        <div table-directive columns="communityDetailCtrl.organizationColumns" data="communityDetailCtrl.organizations" on-select="communityDetailCtrl.organizationSelect"></div>
+    </div>
+    <!-- landing pages -->
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Landing pages</h4>
+            <a ui-sref="app.admin.users.communities.detail.landingpages.create" class="btn btn-default pull-right">Create landing page</a>
+            <a  ng-hide="communityDetailCtrl.communityId == 0" ng-disabled="communityDetailCtrl.testBedLandingPage == undefined" ui-sref="app.admin.users.communities.detail.landingpages.create({name : communityDetailCtrl.testBedLandingPage.name, description : communityDetailCtrl.testBedLandingPage.description, content: communityDetailCtrl.testBedLandingPage.content})" class="btn btn-default pull-right">Copy Test Bed landing page</a>
+        </div>
+        <div table-directive columns="communityDetailCtrl.landingPagesColumns" data="communityDetailCtrl.landingPages" on-select="communityDetailCtrl.landingPageSelect"></div>
+    </div>
+     <!--legal notices -->
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Legal notices</h4>
+            <a ui-sref="app.admin.users.communities.detail.legalnotices.create" class="btn btn-default pull-right">Create legal notice</a>
+            <a ng-hide="communityDetailCtrl.communityId == 0" ng-disabled="communityDetailCtrl.testBedLegalNotice == undefined" ui-sref="app.admin.users.communities.detail.legalnotices.create({name : communityDetailCtrl.testBedLegalNotice.name, description : communityDetailCtrl.testBedLegalNotice.description, content: communityDetailCtrl.testBedLegalNotice.content})" class="btn btn-default pull-right">Copy Test bed legal notice</a>
+        </div>
+        <div table-directive columns="communityDetailCtrl.legalNoticesColumns" data="communityDetailCtrl.legalNotices" on-select="communityDetailCtrl.legalNoticeSelect"></div>
+    </div>
+</div>

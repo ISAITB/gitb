@@ -1,90 +1,149 @@
 package managers
 
+import java.util
+
 import models.Enums.TestResultStatus
 import models.{TestCase, TestCases}
 import persistence.db.PersistenceSchema
-import play.api.Play.current
-import play.api.libs.concurrent.Execution.Implicits._
 
-import scala.concurrent.Future
+import scala.collection.mutable.ListBuffer
 import scala.slick.driver.MySQLDriver.simple._
 
 /**
  * Created by serbay on 10/16/14.
  */
 object TestCaseManager extends BaseManager {
-	def craeteTestCase(testCase: TestCases) = {
-		Future {
-			DB.withSession { implicit session =>
-				PersistenceSchema.testCases.insert(testCase)
+
+	val TEST_CASES_PATH = "test-cases"
+
+	def createTestCase(testCase: TestCases) = {
+		DB.withSession { implicit session =>
+			PersistenceSchema.testCases.insert(testCase)
+		}
+	}
+
+	def getTestCaseForId(testCaseId:String) = {
+		DB.withSession { implicit session =>
+			try {
+				val tc = PersistenceSchema.testCases.filter(_.id === testCaseId.toLong).first
+				Some(new TestCase(tc))
+			}
+			catch {
+				case e: Exception => None
 			}
 		}
 	}
 
+	def getTestCasesOfTestSuite(testSuiteId: Long): util.List[TestCases] = {
+		DB.withSession { implicit session =>
+			var query = for {
+				testCase <- PersistenceSchema.testCases
+				testSuiteHasTestCases <- PersistenceSchema.testSuiteHasTestCases if testSuiteHasTestCases.testcase === testCase.id
+			} yield (testCase, testSuiteHasTestCases)
+			val results = query
+				.filter(_._2.testsuite === testSuiteId)
+				.list
+
+			var testCases = new util.ArrayList[TestCases]()
+			for (result <- results) {
+				testCases.add(result._1)
+			}
+			testCases
+		}
+	}
 
 	def getTestCase(testCaseId:String) = {
-		Future {
-			DB.withSession { implicit session =>
-				try {
-					val tc = PersistenceSchema.testCases.filter(_.shortname === testCaseId).first
+		DB.withSession { implicit session =>
+			try {
+				val tc = PersistenceSchema.testCases.filter(_.id === testCaseId.toLong).first
 
-					Some(new TestCase(tc))
-				}
-				catch {
-					case e: Exception => None
-				}
+				Some(new TestCase(tc))
+			}
+			catch {
+				case e: Exception => None
 			}
 		}
 	}
 
-	def getTestCases(actor:Long, spec:Long, optionIds: Option[List[Long]], testCaseType:Short) : Future[List[TestCase]] = {
-		Future{
-			DB.withSession { implicit session =>
-				val actorTestCaseTuples = PersistenceSchema.testCaseHasActors
-                              .filter(_.specification === spec)
-															.filter(_.actor === actor)
-                              .map(_.testcase)
-															.list
+	def getTestCases(actor:Long, spec:Long, optionIds: Option[List[Long]], testCaseType:Short) : List[TestCase] = {
+		DB.withSession { implicit session =>
+			val actorTestCaseTuples = PersistenceSchema.testCaseHasActors
+														.filter(_.specification === spec)
+														.filter(_.actor === actor)
+														.map(_.testcase)
+														.list
 
-				val optionTestCaseTuples = optionIds match {
-					case Some(ids) => PersistenceSchema.testCaseCoversOptions
-															.filter(_.option inSet ids)
-                              .map(_.testcase)
-															.list
-					case None => List()
-				}
-
-				val ids = actorTestCaseTuples union optionTestCaseTuples
-
-				val testCases = PersistenceSchema.testCases.filter(_.id inSet ids).filter(_.testCaseType === testCaseType).list
-
-				toTestCaseList(testCases)
+			val optionTestCaseTuples = optionIds match {
+				case Some(ids) => PersistenceSchema.testCaseCoversOptions
+														.filter(_.option inSet ids)
+														.map(_.testcase)
+														.list
+				case None => List()
 			}
+
+			val ids = actorTestCaseTuples union optionTestCaseTuples
+
+			val testCases = PersistenceSchema.testCases.filter(_.id inSet ids).filter(_.testCaseType === testCaseType).list
+
+			toTestCaseList(testCases)
 		}
 	}
 
 	def getLastExecutionResultsForTestCases(sutId: Long, testCaseIds: List[Long]) = {
-		Future {
-			DB.withSession { implicit session =>
-				testCaseIds map { testCaseId =>
-					val testCaseResult = {
-						val testCaseResultStr = PersistenceSchema.testResults
-							.filter(_.sutId === sutId)
-							.filter(_.testcaseId === testCaseId)
-							.filter(_.endTime isDefined)
-							.sortBy(_.endTime.desc)
-							.map(_.result)
-							.firstOption
+		DB.withSession { implicit session =>
+			testCaseIds map { testCaseId =>
+				val testCaseResult = {
+					val testCaseResultStr = PersistenceSchema.testResults
+						.filter(_.sutId === sutId)
+						.filter(_.testCaseId === testCaseId)
+						.filter(_.endTime isDefined)
+						.sortBy(_.endTime.desc)
+						.map(_.result)
+						.firstOption
 
-						testCaseResultStr match {
-							case Some(result) => TestResultStatus.withName(result)
-							case None => TestResultStatus.UNDEFINED
-						}
+					testCaseResultStr match {
+						case Some(result) => TestResultStatus.withName(result)
+						case None => TestResultStatus.UNDEFINED
 					}
+				}
 
-					testCaseResult
+				testCaseResult
+			}
+		}
+	}
+
+	def getTestCasesHavingActors(actorIds: List[Long]): util.HashMap[Long, ListBuffer[TestCases]] = {
+		DB.withSession { implicit session =>
+			var query = for {
+					testCaseHasActors <- PersistenceSchema.testCaseHasActors
+					testCases <- PersistenceSchema.testCases if testCases.id === testCaseHasActors.testcase
+			} yield (testCaseHasActors, testCases)
+			query = query.filter(_._1.actor inSet actorIds)
+
+			val results = query.list
+			val testCaseSet = new util.HashMap[Long, ListBuffer[TestCases]]()
+			results.foreach { result =>
+				if (!testCaseSet.containsKey(result._1._3)) {
+					testCaseSet.put(result._1._3, ListBuffer[TestCases]())
+				}
+				testCaseSet.get(result._1._3) += result._2
+			}
+			testCaseSet
+		}
+	}
+
+	def getTestCases(ids: Option[List[Long]]): List[TestCases] = {
+		DB.withSession { implicit session =>
+			val q = ids match {
+				case Some(idList) => {
+					PersistenceSchema.testCases
+						.filter(_.id inSet idList)
+				}
+				case None => {
+					PersistenceSchema.testCases
 				}
 			}
+			q.list
 		}
 	}
 
@@ -113,4 +172,54 @@ object TestCaseManager extends BaseManager {
 				new TestCase(tc, actors, options)
 		}
 	}
+
+	def updateTestCase(testCaseId: Long, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String) = {
+		DB.withTransaction { implicit session =>
+
+			val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname)
+			q1.update(shortName)
+
+			val q2 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.fullname)
+			q2.update(fullName)
+
+			val q3 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.version)
+			q3.update(version)
+
+			val q4 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.authors)
+			q4.update(authors)
+
+			val q5 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.description)
+			q5.update(description)
+
+			val q6 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.keywords)
+			q6.update(keywords)
+
+			val q7 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.testCaseType)
+			q7.update(testCaseType)
+
+			val q8 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.path)
+			q8.update(path)
+
+			TestResultManager.updateForUpdatedTestCase(testCaseId, shortName)
+		}
+	}
+
+	def delete(testCaseId: Long): Unit = {
+		DB.withTransaction { implicit session =>
+			TestResultManager.updateForDeletedTestCase(testCaseId)
+			removeActorLinksForTestCase(testCaseId)
+			PersistenceSchema.testCaseCoversOptions.filter(_.testcase === testCaseId).delete
+			PersistenceSchema.testSuiteHasTestCases.filter(_.testcase === testCaseId).delete
+			PersistenceSchema.testCases.filter(_.id === testCaseId).delete
+		}
+	}
+
+	def removeActorLinksForTestCase(testCaseId: Long): Unit = {
+		DB.withSession { implicit session =>
+			PersistenceSchema.testCaseHasActors
+				.filter(_.testcase === testCaseId)
+				.delete
+		}
+	}
+
 }

@@ -101,7 +101,7 @@ extractRelatedIndicators = (name, report) ->
 
     location = extractLocationInfo assertionReport.value.location
 
-    return name? && location? && location.name == name
+    return name? && location? && location.name.toLowerCase() == name.toLowerCase()
 
   indicators = _.map relatedAssertionReports, (assertionReport) ->
     location = extractLocationInfo assertionReport.value.location
@@ -124,7 +124,7 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
       name: () => name
       editorOptions: () =>
         value: value
-        readOnly: 'nocursor'
+        readOnly: true
         lineNumbers: true
         smartIndent: false
         electricChars: false
@@ -170,50 +170,6 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
 
     directive
 ]
-#
-# @directives.directive 'tarSubStepReport', ['$log'
-#   ($log) ->
-#
-#     $log.debug 'Constructing tar-step-report with the report'
-#
-#     directive =
-#       scope:
-#         report: '='
-#       restrict: 'A'
-#       replace: true
-#       template: ''+
-#         '<div class="tar-sub-step-report">'+
-#           '<div class="step-report test-assertion-step-report clearfix" ng-if="hasSimpleContext">'+
-#             '<div class="col-md-12" ng-if="report.context != null">'+
-#               '<span class="title"><strong>{{report.id}}:</strong></span>'+
-#               '<div any-content-view context="report.context"></div>'+
-#             '</div>'+
-#             '<div class="col-md-12 test-assertion-group-report" ng-if="report.reports != null">'+
-#               '<div class="assertion-reports" ng-if="report.reports.assertionReports != null && report.reports.assertionReports.length > 0">'+
-#                 '<span class="title"><strong>Reports: </strong></span>'+
-#                 '<div>'+
-#                   '<a href="" ng-repeat="assertionReport in report.reports.assertionReports" ng-click="openAssertionReport(assertionReport)" test-assertion-report assertion-report="assertionReport"></a>'+
-#                 '</div>'+
-#               '</div>'+
-#             '</div>'+
-#           '</div>'+
-#           '<div class="step-report test-assertion-report" ng-if="!hasSimpleContext">'+
-#             '<span class="title"><strong>{{report.id}}:</strong></span>'+
-#             '<a href="" class="open">Open</a>'+
-#           '</div>'+
-#         '</div>'
-#       link: (scope, element, attrs) =>
-#         scope.openAssertionReport = (assertionReport) =>
-#           scope.$broadcast 'assertion-report.open', assertionReport # open asssertion report event to be handled by the corresponding content view
-#
-#         if scope.report.context? &&
-#         scope.report.context.item? &&
-#         scope.report.context.item.length > 1
-#           scope.hasSimpleContext = false
-#         else
-#           scope.hasSimpleContext = true
-#     directive
-# ]
 
 @directives.directive 'testAssertionReport', ['$log',
   ($log) ->
@@ -297,7 +253,7 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
 
             scope.$on 'assertion-report.open', (event, assertionReport) =>
               location = extractLocationInfo assertionReport.value.location
-              if location? && location.name? && location.name == scope.context.name
+              if location? && location.name? && scope.context.name? && location.name.toLowerCase() == scope.context.name.toLowerCase()
                 scope.open location.line
 
             scope.open = (lineNumber) =>

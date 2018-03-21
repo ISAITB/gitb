@@ -23,11 +23,11 @@ public class RemoteTestCaseRepositoryTest {
 
 	@Test
 	public void testResourceAvailablity() {
-		assertTrue(repository.isTestArtifactAvailable(AVAILABLE_RESOURCE_ID));
-		assertFalse(repository.isTestArtifactAvailable(NULL_RESOURCE_ID));
+		assertTrue(repository.isTestArtifactAvailable("", AVAILABLE_RESOURCE_ID));
+		assertFalse(repository.isTestArtifactAvailable("", NULL_RESOURCE_ID));
 
-		assertNotNull(repository.getTestArtifact(AVAILABLE_RESOURCE_ID));
-		assertNull(repository.getTestArtifact(NULL_RESOURCE_ID));
+		assertNotNull(repository.getTestArtifact("", AVAILABLE_RESOURCE_ID));
+		assertNull(repository.getTestArtifact("", NULL_RESOURCE_ID));
 	}
 
 	@Test

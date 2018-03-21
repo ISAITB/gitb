@@ -2,21 +2,23 @@
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h5 class="title">Conformance Statement Details</h5>
-
 			<a href="" ng-click="conformanceStatementDetailCtrl.deleteConformanceStatement()" class="btn btn-default pull-right">Delete</a>
 		</div>
 		<div class="panel-body">
-			<div class="row">
-				<div class="col-md-6">
-					<p><strong>Actor Details</strong></p>
-					<p>ID: {{conformanceStatementDetailCtrl.conformanceStatementRepr.actorId}}</p>
-					<p>Name: {{conformanceStatementDetailCtrl.conformanceStatementRepr.actorName}}</p>
-				</div>
-				<div class="col-md-6">
-					<p><strong>Domain Details</strong></p>
-					<p>Name: {{conformanceStatementDetailCtrl.domain.fname}}</p>
-					<p>Description: {{conformanceStatementDetailCtrl.domain.description}}</p>
-				</div>
+			<div class="row row-display-first">
+				<div class="col-md-2"><strong>Domain</strong></div>
+				<div class="col-md-10">{{conformanceStatementDetailCtrl.domain.fname}}</div>
+				<div class="col-md-10 col-md-offset-2 row-display-inner" ng-if="conformanceStatementDetailCtrl.domain.description">{{conformanceStatementDetailCtrl.domain.description}}</div>
+			</div>
+			<div class="row row-display">
+				<div class="col-md-2"><strong>Specification</strong></div>
+				<div class="col-md-10">{{conformanceStatementDetailCtrl.specification.fname}}</div>
+				<div class="col-md-10 col-md-offset-2 row-display-inner" ng-if="conformanceStatementDetailCtrl.specification.description">{{conformanceStatementDetailCtrl.specification.description}}</div>
+			</div>
+			<div class="row row-display-last">
+				<div class="col-md-2"><strong>Actor</strong></div>
+				<div class="col-md-10">{{conformanceStatementDetailCtrl.actor.name}}</div>
+				<div class="col-md-10 col-md-offset-2 row-display-inner" ng-if="conformanceStatementDetailCtrl.actor.description">{{conformanceStatementDetailCtrl.actor.description}}</div>
 			</div>
 		</div>
 	</div>
@@ -38,16 +40,60 @@
 			</div>
 		</div>
 	</div>
-	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.conformanceTests.length > 0">
+
+	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.testSuites.length > 0">
 		<div class="panel-heading">
 			<h5 class="title">Conformance Tests</h5>
 		</div>
-		<div table-directive columns="conformanceStatementDetailCtrl.testsTableColumns" data="conformanceStatementDetailCtrl.conformanceTests" on-select="conformanceStatementDetailCtrl.onTestSelect"></div>
+		<div>
+			<table class="table table-directive">
+				<thead>
+				<tr>
+					<th width="1%">Name</th>
+					<th>Description</th>
+					<th width="10%">Result</th>
+					<th width="10%"></th>
+				</tr>
+				</thead>
+				<!-- test suites and their test cases -->
+				<tbody ng-if="conformanceStatementDetailCtrl.testSuites.length > 1">
+				<tr ng-repeat-start="testSuite in conformanceStatementDetailCtrl.testSuites"
+					ng-click="conformanceStatementDetailCtrl.onExpand(testSuite)"
+					class="row-hover">
+					<td>{{testSuite.sname}}</td>
+					<td>{{testSuite.description}}</td>
+					<td>{{testSuite.result}}</td>
+					<td>
+						<!--<button class="btn btn-default"-->
+						<!--ng-click="conformanceStatementDetailCtrl.onTestSuiteSelect(testSuite)"><i-->
+						<!--class="fa fa-play"></i></button>-->
+					</td>
+				</tr>
+				<tr ng-if="testSuite.expanded" ng-repeat-end ng-repeat="testCase in testSuite.testCases">
+					<td>{{testCase.sname}}</td>
+					<td>{{testCase.description}}</td>
+					<td>{{testCase.result}}</td>
+					<td>
+						<button class="btn btn-default"
+								ng-click="conformanceStatementDetailCtrl.onTestSelect(testCase)"><i
+								class="fa fa-play"></i></button>
+					</td>
+				</tr>
+				</tbody>
+				<!-- test cases -->
+				<tbody ng-if="conformanceStatementDetailCtrl.testSuites.length == 1">
+				<tr ng-repeat="testCase in conformanceStatementDetailCtrl.testSuites[0].testCases">
+					<td>{{testCase.sname}}</td>
+					<td>{{testCase.description}}</td>
+					<td>{{testCase.result}}</td>
+					<td>
+						<button class="btn btn-default"
+								ng-click="conformanceStatementDetailCtrl.onTestSelect(testCase)"><i
+								class="fa fa-play"></i></button>
+					</td>
+				</tr>
+				</tbody>
+			</table>
+		</div>
 	</div>
-    <div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.interoperabilityTests.length > 0">
-        <div class="panel-heading">
-            <h5 class="title">Interoperability Tests</h5>
-        </div>
-        <div table-directive columns="conformanceStatementDetailCtrl.testsTableColumns" data="conformanceStatementDetailCtrl.interoperabilityTests" on-select="conformanceStatementDetailCtrl.onTestSelect"></div>
-    </div>
 </div>

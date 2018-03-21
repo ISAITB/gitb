@@ -1,23 +1,24 @@
 class UsersController
 
-	constructor: (@$log, @$location, @AuthProvider, @AccountService, @DataService) ->
-		@$log.debug "Constructing UsersController..."
+    @$inject = ['$log', '$location', 'AuthProvider', 'AccountService', 'DataService']
+    constructor: (@$log, @$location, @AuthProvider, @AccountService, @DataService) ->
+        @$log.debug "Constructing UsersController..."
 
-		if !@AuthProvider.isAuthenticated()
+        if !@AuthProvider.isAuthenticated()
             @$location.path('/login')
 
-		@users = []
+        @users = []
 
-		@getVendorUsers()
+        @getVendorUsers()
 
-	getVendorUsers: () ->
-		@AccountService.getVendorUsers()
-		.then(
-			(data) =>
-				@users = data
-			,
-			(error) =>
-				@ErrorService.showErrorMessage(error)
-		)
+    getVendorUsers: () ->
+        @AccountService.getVendorUsers()
+        .then(
+            (data) =>
+                @users = data
+            ,
+            (error) =>
+                @ErrorService.showErrorMessage(error)
+        )
 
 controllers.controller('UsersController', UsersController)

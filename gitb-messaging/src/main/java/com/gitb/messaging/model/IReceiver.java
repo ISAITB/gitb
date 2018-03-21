@@ -9,7 +9,7 @@ import java.util.List;
  * Created by serbay.
  */
 public interface IReceiver {
-	public Message receive(List<Configuration> configurations) throws Exception;
+	public Message receive(List<Configuration> configurations, Message inputs) throws Exception;
 	public void onError(Exception cause);
 	public void onEnd() throws Exception;
 }

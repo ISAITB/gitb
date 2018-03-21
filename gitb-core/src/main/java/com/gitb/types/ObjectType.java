@@ -2,6 +2,7 @@ package com.gitb.types;
 
 import com.gitb.core.ErrorCode;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.utils.BomStrippingReader;
 import com.gitb.utils.ErrorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +19,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.*;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
-import javax.xml.xpath.*;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
+import javax.xml.xpath.XPathExpressionException;
 import java.io.*;
 
 /**
@@ -56,7 +59,7 @@ public class ObjectType extends DataType {
             //Evaluate the expression with the expected type
             Object object = expression.evaluate(this.value, type);
             //If return type is primitive directly set the value (Java types matches)
-            if(result instanceof PrimitiveType){
+            if (result instanceof PrimitiveType){
                 result.setValue(object);
             }
             //If return type is a list type, cast each Node in the NodeList to the contained type
@@ -99,7 +102,7 @@ public class ObjectType extends DataType {
 
     @Override
     public void deserialize(byte[] content, String encoding) {
-        InputSource inputSource = new InputSource(new ByteArrayInputStream(content));
+        InputSource inputSource = new InputSource(new BomStrippingReader(new ByteArrayInputStream(content)));
         inputSource.setEncoding(encoding);
         deserialize(inputSource);
     }
@@ -238,4 +241,24 @@ public class ObjectType extends DataType {
                     return XPathConstants.NODE;
         }
     }
+
+    @Override
+    public StringType toStringType() {
+        return new StringType(new String(serializeByDefaultEncoding()));
+    }
+
+    @Override
+    public BinaryType toBinaryType() {
+        BinaryType type = new BinaryType();
+        type.setValue(serializeByDefaultEncoding());
+        return type;
+    }
+
+    @Override
+    public SchemaType toSchemaType() {
+        SchemaType type = new SchemaType();
+        type.setValue(getValue());
+        return type;
+    }
+
 }

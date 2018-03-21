@@ -31,6 +31,14 @@ public class SessionManager {
 		return instance;
 	}
 
+	public boolean exists(String sessionId) {
+		return contexts.containsKey(sessionId);
+	}
+
+	public boolean notExists(String sessionId) {
+		return !exists(sessionId);
+	}
+
     /**
      * Create a new testcase execution session
      * @param testCaseId
@@ -41,6 +49,8 @@ public class SessionManager {
 		String sessionId = UUID.randomUUID().toString();
 		//Load the tdl:TestCase definition
         TestCase testCase = TestCaseManager.getTestCaseDescription(testCaseId);
+        // Ensure we replace the text ID with the internal fully unique ID
+		testCase.setId(testCaseId);
         //Create the test case context
 		TestCaseContext testCaseContext = new TestCaseContext(testCase, sessionId);
         //Put the context into the map
@@ -65,7 +75,9 @@ public class SessionManager {
 	public void endSession(String sessionId) {
 		TestCaseContext testCaseContext = contexts.remove(sessionId);
 
-		testCaseContext.destroy();
+		if (testCaseContext != null) {
+			testCaseContext.destroy();
+		}
 	}
 
 	public void destroy() {

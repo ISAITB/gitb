@@ -1,6 +1,15 @@
+import com.github.play2war.plugin._
+import play.PlayImport.PlayKeys._
+
 name := """GITB"""
 
 version := "1.0-SNAPSHOT"
+
+Play2WarPlugin.play2WarSettings
+
+Play2WarKeys.servletVersion := "3.1"
+
+Play2WarKeys.targetName := Some("itbui")
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
@@ -9,6 +18,7 @@ scalaVersion := "2.11.1"
 libraryDependencies ++= Seq(
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
+  "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
   "mysql" % "mysql-connector-java" % "5.1.35",
   "com.typesafe.akka" %% "akka-actor" % "2.3.4",
   "com.typesafe.akka" %% "akka-remote" % "2.3.4",
@@ -21,12 +31,10 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.core" % "jackson-annotations" % "2.3.0",
   "com.fasterxml.jackson.module" % "jackson-module-jaxb-annotations" % "2.3.0",
   "org.mindrot"  % "jbcrypt" % "0.3m",  // For password encryption
-  "net.debasishg" %% "redisclient" % "2.13", // although this is the best one, maybe it could be changed into play-redis-plugin when sedis compiled for scala 2.11
+  "net.debasishg" %% "redisclient" % "3.0", // although this is the best one, maybe it could be changed into play-redis-plugin when sedis compiled for scala 2.11
   "org.apache.cxf" % "cxf-rt-frontend-jaxws" % "2.7.4",     //for calling jax-ws services
   "org.apache.cxf" % "cxf-rt-transports-http" % "2.7.4", //for calling jax-ws services
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % "2.7.4", //exporting jax-ws services
-  "org.apache.poi" % "poi" % "3.9",
-  "org.apache.poi" % "poi-ooxml" % "3.9",
   "org.webjars" %% "webjars-play" % "2.3.0",
   "org.webjars" % "jquery" % "1.11.1",
   "org.webjars" % "jquery-cookie" % "1.4.0",
@@ -38,8 +46,11 @@ libraryDependencies ++= Seq(
   "org.webjars" % "ng-grid" % "2.0.11-2",
   "org.webjars" % "font-awesome" % "4.1.0" exclude("org.webjars", "jquery"),
   "org.webjars" % "angular-file-upload" % "1.6.12",
-  "org.webjars" % "codemirror" % "4.8"
+  "org.webjars" % "codemirror" % "4.8",
+  "org.webjars" % "tinymce" % "4.2.1"
 )
+
+libraryDependencies += "com.github.tototoshi" %% "play-flyway" % "1.2.2"
 
 //JsEngineKeys.engineType := JsEngineKeys.EngineType.Node
 
@@ -65,3 +76,5 @@ assemblyMergeStrategy in assembly := {
 }
 
 resolvers += Resolver.mavenLocal
+
+routesImport += "extensions.Binders._"

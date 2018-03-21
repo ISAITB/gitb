@@ -5,11 +5,12 @@ import com.gitb.core.Configuration;
 import com.gitb.messaging.KeyStoreFactory;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.ServerUtils;
+import com.gitb.messaging.layer.application.as2.peppol.PeppolAS2MessagingHandler;
 import com.gitb.messaging.layer.application.http.HttpMessagingHandler;
 import com.gitb.messaging.layer.application.http.HttpSender;
-import com.gitb.messaging.model.tcp.ITransactionReceiver;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
+import com.gitb.messaging.model.tcp.ITransactionReceiver;
 import com.gitb.types.BinaryType;
 import com.gitb.types.MapType;
 import com.gitb.types.StringType;
@@ -23,7 +24,6 @@ import com.helger.commons.mime.CMimeType;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.DefaultBHttpClientConnection;
 import org.apache.http.impl.DefaultBHttpServerConnection;
-import org.apache.http.message.BasicHttpResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,6 +32,7 @@ import javax.mail.MessagingException;
 import javax.mail.internet.InternetHeaders;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMultipart;
+import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 import java.util.List;
 
@@ -77,7 +78,7 @@ public class AS2Sender extends HttpSender {
         super.send(configurations, message);
 
         //receive MDN (Message Disposition Notification) and perform necessary checks
-        receiveMDN(MIC);
+//        receiveMDN(MIC);
 
         return message;
     }
@@ -96,7 +97,7 @@ public class AS2Sender extends HttpSender {
         return payload;
     }
 
-    private MapType getHeaders(MimeBodyPart mimeBodyPart) throws MessagingException {
+    private MapType getHeaders(MimeBodyPart mimeBodyPart) throws Exception {
         MapType headers = new MapType();
 
         headers.addItem(CAS2Header.HEADER_CONNECTION, new StringType(CAS2Header.DEFAULT_CONNECTION));
@@ -146,8 +147,9 @@ public class AS2Sender extends HttpSender {
                 .add(ConfigurationUtils.constructConfiguration(HttpMessagingHandler.HTTP_METHOD_CONFIG_NAME, AS2MessagingHandler.HTTP_METHOD));
 
         //get sender and send MDN
-        BasicHttpResponse response = createHttpResponse(actorConfiguration.getConfig(), message);
-        //***sendHttpResponse(connection, response);
+//        BasicHttpResponse response = createHttpResponse(actorConfiguration.getConfig(), message);
+
+        super.send(actorConfiguration.getConfig(), message);
     }
 
     private MimeBodyPart createMDNMimeBody(String MIC, MapType headers) throws MessagingException {
@@ -210,10 +212,17 @@ public class AS2Sender extends HttpSender {
         return headers;
     }
 
-    private String getAS2To() {
+    private String getAS2To() throws Exception {
+        String to;
         ActorConfiguration actorConfiguration = transaction.getWith();
         Configuration as2To = ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), AS2MessagingHandler.AS2_NAME_CONFIG_NAME);
-        return as2To.getValue();
+        if (as2To == null) {
+            X509Certificate certificate = AS2MessagingHandler.getSUTCertificate(transaction);
+            to = PeppolAS2MessagingHandler.getCN(certificate);
+        } else {
+            to = as2To.getValue();
+        }
+        return to;
     }
 
     private String getRecipient() {

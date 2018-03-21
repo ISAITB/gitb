@@ -1,13 +1,14 @@
 package com.gitb.engine.processors;
 
+import com.gitb.ModuleManager;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.TestModule;
 import com.gitb.core.TypedParameter;
 import com.gitb.core.UsageEnumeration;
-import com.gitb.ModuleManager;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.module.validation.RemoteValidationModuleClient;
 import com.gitb.tdl.Binding;
 import com.gitb.tdl.Verify;
 import com.gitb.tr.TestResultType;
@@ -17,9 +18,13 @@ import com.gitb.types.DataType;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.validation.IValidationHandler;
+import com.gitb.validation.common.AbstractValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,7 +45,20 @@ public class VerifyProcessor implements IProcessor {
 	public TestStepReportType process(Object object) throws Exception {
 		Verify verify = (Verify) object;
 		//Get the Validator Module from its name
-		IValidationHandler validator = ModuleManager.getInstance().getValidationHandler(verify.getHandler());
+
+		IValidationHandler validator;
+		if (isURL(verify.getHandler())) {
+			validator = getRemoteValidator(verify.getHandler());
+		} else {
+			validator = ModuleManager.getInstance().getValidationHandler(verify.getHandler());
+			// This is a local validator.
+			if (validator instanceof AbstractValidator) {
+				((AbstractValidator)validator).setTestCaseId(scope.getContext().getTestCase().getId());
+			}
+		}
+		if (validator == null) {
+			throw new IllegalStateException("Validation handler for ["+verify.getHandler()+"] could not be resolved");
+		}
 		ExpressionHandler exprHandler = new ExpressionHandler(scope);
 		TestModule validatorDefinition = validator.getModuleDefinition();
 
@@ -91,6 +109,25 @@ public class VerifyProcessor implements IProcessor {
             }
         }
 		return report;
+	}
+
+	private boolean isURL(String handler) {
+		try {
+			new URI(handler).toURL();
+		} catch (Exception e) {
+			return false;
+		}
+		return true;
+	}
+
+	private IValidationHandler getRemoteValidator(String handler) {
+		try {
+			return new RemoteValidationModuleClient(new URI(handler).toURL());
+		} catch (MalformedURLException e) {
+			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an malformed URL ["+handler+"]"), e);
+		} catch (URISyntaxException e) {
+			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an invalid URI syntax ["+handler+"]"), e);
+		}
 	}
 
 	private HashMap<String, TypedParameter> constructExpectedParameterMap(TestModule moduleDefinition) {

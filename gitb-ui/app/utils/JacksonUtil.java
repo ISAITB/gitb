@@ -5,26 +5,17 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 import com.gitb.core.Actor;
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.StepStatus;
-import com.gitb.tbs.*;
-import com.gitb.tpl.Instruction;
 import com.gitb.core.TestCaseType;
-import com.gitb.tbs.ConfigureResponse;
-import com.gitb.tbs.InteractWithUsersRequest;
-import com.gitb.tbs.TestStepStatus;
-import com.gitb.tbs.UserInput;
-import com.gitb.tr.*;
+import com.gitb.tbs.*;
 import com.gitb.tpl.*;
-import com.gitb.tr.TestStepReportType;
-import com.gitb.tr.TAR;
-import com.gitb.tr.TestAssertionGroupReportsType;
-import com.gitb.tr.TestAssertionReportType;
+import com.gitb.tpl.Instruction;
+import com.gitb.tr.*;
 
 import javax.xml.bind.JAXBElement;
 import java.io.IOException;
@@ -41,9 +32,9 @@ public class JacksonUtil {
     static {
         mapper = new ObjectMapper();
 
-	    mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+        mapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
         mapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
-	    mapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm"));
+        mapper.setDateFormat(new SimpleDateFormat("yyyy-MM-dd HH:mm"));
 
         //register JAXBAnnotation module
         JaxbAnnotationModule module = new JaxbAnnotationModule();
@@ -53,11 +44,16 @@ public class JacksonUtil {
         SimpleModule customSerializersModule = new SimpleModule("CustomSerializersModule", new Version(1, 0, 0, null));
         customSerializersModule.addSerializer(StepStatus.class, new StatusSerializer());
         customSerializersModule.addSerializer(TestAssertionGroupReportsType.class, new TestAssertionGroupReportsTypeSerializer());
-	    customSerializersModule.addSerializer(TestStepReportType.class, new TestStepReportTypeSerializer());
-	    customSerializersModule.addSerializer(TestStep.class, new TestStepPresentationSerializer());
+        customSerializersModule.addSerializer(TestStepReportType.class, new TestStepReportTypeSerializer());
+        customSerializersModule.addSerializer(TestStep.class, new TestStepPresentationSerializer());
         customSerializersModule.addSerializer(InteractWithUsersRequest.class, new InteractWithUsersRequestSerializer());
         customSerializersModule.addSerializer(TestCaseType.class, new TestCaseTypeSerializer());
-	    mapper.registerModule(customSerializersModule);
+        customSerializersModule.addSerializer(Preliminary.class, new PreliminarySerializer());
+        mapper.registerModule(customSerializersModule);
+    }
+
+    public static String serializeAny(Object obj) throws JsonProcessingException {
+        return mapper.writeValueAsString(obj);
     }
 
     public static String serializeTestCasePresentation(TestCase testCase) throws JsonProcessingException {
@@ -112,61 +108,84 @@ public class JacksonUtil {
         }
     }
 
-	private static class TestStepReportTypeSerializer extends JsonSerializer<TestStepReportType> {
+    private static class PreliminarySerializer extends JsonSerializer<Preliminary> {
 
-		@Override
-		public void serialize(TestStepReportType testStepReport, JsonGenerator json, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
-			json.writeStartObject();
-			if(testStepReport instanceof TAR) {
-				TAR tar = (TAR) testStepReport;
-				json.writeStringField("name", tar.getName());
-				json.writeObjectField("overview", tar.getOverview());
-				json.writeObjectField("counters", tar.getCounters());
-				json.writeObjectField("context", tar.getContext());
-				json.writeObjectField("reports", tar.getReports());
-				json.writeStringField("type", "TAR");
+        @Override
+        public void serialize(Preliminary value, JsonGenerator json, SerializerProvider provider) throws IOException, JsonProcessingException {
+            json.writeStartObject();
+            json.writeArrayFieldStart("interactions");
+            for (InstructionOrRequest item: value.getInstructOrRequest()) {
+                json.writeStartObject();
+                if (item instanceof Instruction) {
+                    json.writeStringField("type", "instruction");
+                } else {
+                    json.writeStringField("type", "request");
+                }
+                json.writeStringField("desc", item.getDesc());
+                json.writeStringField("with", item.getWith());
+                json.writeStringField("id", item.getId());
+                json.writeEndObject();
+            }
+            json.writeEndArray();
+            json.writeEndObject();
+        }
+    }
 
-			} else if(testStepReport instanceof DR) {
-				DR decisionReport = (DR) testStepReport;
-				json.writeStringField("type", "DR");
-				json.writeBooleanField("decision", decisionReport.isDecision());
-			} else {
-				json.writeStringField("type", "SR");
-			}
+    private static class TestStepReportTypeSerializer extends JsonSerializer<TestStepReportType> {
+
+        @Override
+        public void serialize(TestStepReportType testStepReport, JsonGenerator json, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+            json.writeStartObject();
+            if(testStepReport instanceof TAR) {
+                TAR tar = (TAR) testStepReport;
+                json.writeStringField("name", tar.getName());
+                json.writeObjectField("overview", tar.getOverview());
+                json.writeObjectField("counters", tar.getCounters());
+                json.writeObjectField("context", tar.getContext());
+                json.writeObjectField("reports", tar.getReports());
+                json.writeStringField("type", "TAR");
+
+            } else if(testStepReport instanceof DR) {
+                DR decisionReport = (DR) testStepReport;
+                json.writeStringField("type", "DR");
+                json.writeBooleanField("decision", decisionReport.isDecision());
+            } else {
+                json.writeStringField("type", "SR");
+            }
             if(testStepReport.getDate() != null) {
                 json.writeObjectField("date", testStepReport.getDate());
             }
             if (testStepReport.getResult() != null) {
-				json.writeStringField("result", testStepReport.getResult().value());
-			}
+                json.writeStringField("result", testStepReport.getResult().value());
+            }
             json.writeStringField("id", testStepReport.getId());
 
-			json.writeEndObject();
-		}
-	}
+            json.writeEndObject();
+        }
+    }
 
-	private static class TestAssertionGroupReportsTypeSerializer extends JsonSerializer<TestAssertionGroupReportsType> {
+    private static class TestAssertionGroupReportsTypeSerializer extends JsonSerializer<TestAssertionGroupReportsType> {
 
-		@Override
-		public void serialize(TestAssertionGroupReportsType testAssertionGroupReportsType, JsonGenerator json, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
-			json.writeStartObject();
-			json.writeArrayFieldStart("reports");
-			for(TAR tar : testAssertionGroupReportsType.getReports()) {
-				json.writeObject(tar);
-			}
-			json.writeEndArray();
-			json.writeArrayFieldStart("assertionReports");
+        @Override
+        public void serialize(TestAssertionGroupReportsType testAssertionGroupReportsType, JsonGenerator json, SerializerProvider serializerProvider) throws IOException, JsonProcessingException {
+            json.writeStartObject();
+            json.writeArrayFieldStart("reports");
+            for(TAR tar : testAssertionGroupReportsType.getReports()) {
+                json.writeObject(tar);
+            }
+            json.writeEndArray();
+            json.writeArrayFieldStart("assertionReports");
 //			json.writeStartArray();
-			for (JAXBElement<TestAssertionReportType> element: testAssertionGroupReportsType.getInfoOrWarningOrError()) {
-				json.writeStartObject();
-				json.writeStringField("type", element.getName().getLocalPart());
-				json.writeObjectField("value", element.getValue());
-				json.writeEndObject();
-			}
-			json.writeEndArray();
-			json.writeEndObject();
-		}
-	}
+            for (JAXBElement<TestAssertionReportType> element: testAssertionGroupReportsType.getInfoOrWarningOrError()) {
+                json.writeStartObject();
+                json.writeStringField("type", element.getName().getLocalPart());
+                json.writeObjectField("value", element.getValue());
+                json.writeEndObject();
+            }
+            json.writeEndArray();
+            json.writeEndObject();
+        }
+    }
 
     private static class InteractWithUsersRequestSerializer extends JsonSerializer<InteractWithUsersRequest> {
 

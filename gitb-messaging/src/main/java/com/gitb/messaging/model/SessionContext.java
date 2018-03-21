@@ -188,17 +188,26 @@ public class SessionContext {
         return null;
     }
 
+    public TransactionContext getTransaction(InetAddress address, int incomingPort) {
+        return getTransaction(address, incomingPort, false);
+    }
+
     /**
      * Get the transaction with the given ip address
      * @param address IP address
      * @return Transaction with the actor that has the given ip address.
      * @throws UnknownHostException
      */
-    public TransactionContext getTransaction(InetAddress address, int incomingPort) {
+    public TransactionContext getTransaction(InetAddress address, int incomingPort, boolean orFirstAvailable) {
         TransactionContext lastAwaitingTransaction = null;
+        TransactionContext firstAvailableTransaction = null;
         try {
             for (List<TransactionContext> transactions : transactionMappings.values()) {
                 for(TransactionContext transactionContext : transactions) {
+                    if (firstAvailableTransaction == null) {
+                        firstAvailableTransaction = transactionContext;
+                    }
+
                     Configuration ipAddressConfig = ConfigurationUtils.getConfiguration(transactionContext.getWith().getConfig(), ServerUtils.IP_ADDRESS_CONFIG_NAME);
 
                     InetAddress actorAddress = null;
@@ -229,6 +238,9 @@ public class SessionContext {
             }
         } catch (UnknownHostException e) {
             logger.error("An error occurred while trying to find the transaction coming from [" + address + "] and binded to ["+incomingPort+"] port.", e);
+        }
+        if (lastAwaitingTransaction == null && orFirstAvailable && firstAvailableTransaction != null) {
+            lastAwaitingTransaction = firstAvailableTransaction;
         }
 
         return lastAwaitingTransaction;

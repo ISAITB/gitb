@@ -1,79 +1,95 @@
 class SystemsController
-
-	constructor:(@$log, @$location, @$scope, @SystemService, @ErrorService) ->
+	@$inject = ['$log', '$scope', '$state', '$window', 'SystemService', 'ErrorService', '$modal', 'DataService', '$location']
+	constructor: (@$log, @$scope, @$state, @$window, @SystemService, @ErrorService, @$modal, @DataService, @$location) ->
 		@$log.debug "Constructing SystemsController"
-
 		@systems  = []       # systems of the organization
 		@alerts   = []       # alerts to be displayed
 		@modalAlerts   = []    # alerts to be displayed within modals
 		@$scope.sdata  = {}    # bindings for new user
 		@systemSpinner = false # spinner to be displayed for new system operations
-
+		@organization = JSON.parse(@$window.localStorage['organization'])
+		@$scope.editing = false
+		@tableColumns = [
+			{
+				field: 'sname',
+				title: 'Short Name'
+			}
+			{
+				field: 'fname',
+				title: 'Full Name'
+			}
+			{
+				field: 'description',
+				title: 'Description'
+			}
+			{
+				field: 'version',
+				title: 'Version'
+			}
+		]
 		#initially get the registered Systems of the vendor
 		@getSystems()
 
 	getSystems: () ->
-		@systemSpinner = true #start spinner
-		@SystemService.getSystems()
+		@SystemService.getSystemsByOrganization(@organization.id)
 		.then(
 			(data) =>
 				@systems = data
-				@$log.debug angular.toJson(@systems)
-				#stop spinner
-				@systemSpinner = false
 			,
 			(error) =>
 				@ErrorService.showErrorMessage(error)
-				#stop spinner
-				@systemSpinner = false
 		)
 
-	checkForm: () ->
-		@closeAlerts()
-		valid = true
-
-		if @$scope.sdata.sname == undefined || @$scope.sdata.sname == ''
-			@modalAlerts.push({type:'danger', msg:"You have to enter the short name of your system."})
-			valid = false
-		else if @$scope.sdata.fname == undefined || @$scope.sdata.fname == ''
-			 @modalAlerts.push({type:'danger', msg:"You have to enter the full name of your system."})
-			 valid = false
-		else if @$scope.sdata.version == undefined || @$scope.sdata.version == ''
-			 @modalAlerts.push({type:'danger', msg:"You have to enter the version of your system."})
-			 valid = false
-
-		valid
-
-
-	registerSystem: () ->
-		if @checkForm()
-			@systemSpinner = true #start spinner
-			@SystemService.registerSystem(@$scope.sdata.sname, @$scope.sdata.fname,
-										  @$scope.sdata.description, @$scope.sdata.version)
-			.then(
-				(data) =>
-					@getSystems() # get the list of systems again
-				,
-				(error) =>
-					@ErrorService.showErrorMessage(error)
-					#stop spinner
-					@systemSpinner = false
+	createSystem: () =>
+		modalOptions =
+			templateUrl: 'assets/views/systems/create-edit-system-modal.html'
+			controller: 'CreateEditSystemController as systemCtrl'
+			resolve: 
+				system: () => {}
+				organisationId: () => @organization.id
+			size: 'lg'
+		modalInstance = @$modal.open(modalOptions)
+		modalInstance.result
+			.then((result) => 
+				@systems = result
 			)
-			#close modal when we are done
-			$('#addSystemModal').modal('hide')
-			return true
 
-	closeAlert: (index) ->
-		@alerts.splice(index, 1)
+	onSystemSelect: (system) =>
+		if !@$scope.editing
+			@$state.go 'app.systems.detail.conformance.list', { id : system.id }
 
-	closeModalAlert: (index) ->
-		@modalAlerts.splice(index, 1)
+	onSystemEdit: (system) =>
+		@$scope.editing = true
+		modalOptions =
+			templateUrl: 'assets/views/systems/create-edit-system-modal.html'
+			controller: 'CreateEditSystemController as systemCtrl'
+			resolve: 
+				system: () => system
+				organisationId: () => @organization.id
+			size: 'lg'
+		modalInstance = @$modal.open(modalOptions)
+		modalInstance.result
+			.then((result) => 
+				@$scope.editing = false
+				@systems = result
+			, () => 
+				# Dismissed
+				@$scope.editing = false
+			)
 
-	closeAlerts: () ->
-		@alerts = []
-		@modalAlerts = []
+	showBack: () =>
+		@organization? && @DataService.vendor? && @organization.id != @DataService.vendor.id
+
+	showAction: () =>
+		!@DataService.isVendorUser
+
+	showCreate: () =>
+		!@DataService.isVendorUser
 
 	redirect: (address, systemId) ->
 		@$location.path(address + "/" + systemId)
 
-controllers.controller('SystemsController', SystemsController)
+	back: () ->
+		@$state.go 'app.admin.users.communities.detail.organizations.detail.list', { community_id : JSON.parse(@$window.localStorage['community']).id, org_id : @organization.id }
+
+@controllers.controller('SystemsController', SystemsController)

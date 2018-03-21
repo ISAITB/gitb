@@ -33,32 +33,30 @@ class AuthenticationFilter extends Filter {
         if(list.length == 2){
           val accessToken = list(1)
           //check if access token exists for any user
-          TokenCache.checkAccessToken(accessToken) flatMap { userId =>
-            //a workaround of customizing request headers to add our userId data, so that controllers can process it
-            val map = requestHeader.headers.toMap + ( Parameters.USER_ID -> Seq("" + userId) )
-            val headers:Seq[(String, Seq[String])] = map.toSeq
-            val customHeaders = new CustomizableHeaders(headers)
-            val customRequestHeader = requestHeader.copy(headers = customHeaders)
+          val userId = TokenCache.checkAccessToken(accessToken)
+          //a workaround of customizing request headers to add our userId data, so that controllers can process it
+          val map = requestHeader.headers.toMap + ( Parameters.USER_ID -> Seq("" + userId) )
+          val headers:Seq[(String, Seq[String])] = map.toSeq
+          val customHeaders = new CustomizableHeaders(headers)
+          val customRequestHeader = requestHeader.copy(headers = customHeaders)
 
-            //check if requested service requires admin access
-	          if(requiresSystemAdminAccess(requestHeader)) {
-		          next(customRequestHeader)
-	          } else if(requiresVendorAdminAccess(requestHeader)){
-              AccountManager.isVendorAdmin(userId) flatMap { isAdmin =>
-                if(isAdmin){
-                  //has access, execute service
-                  next(customRequestHeader)
-                } else{
-                  //admin access required, send error response
-                  Future{
-                    ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.UNAUTHORIZED_ACCESS, "Requires admin access")
-                  }
-                }
-              }
-            } else{
-              //no admin access required, execute service
+          //check if requested service requires admin access
+          if(requiresSystemAdminAccess(requestHeader)) {
+            next(customRequestHeader)
+          } else if(requiresAdminAccess(requestHeader)){
+            val isAdmin = AccountManager.isAdmin(userId)
+            if(isAdmin){
+              //has access, execute service
               next(customRequestHeader)
+            } else{
+              //admin access required, send error response
+              Future{
+                ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.UNAUTHORIZED_ACCESS, "Requires admin access")
+              }
             }
+          } else{
+            //no admin access required, execute service
+            next(customRequestHeader)
           }
         }
         else{
@@ -84,6 +82,10 @@ class AuthenticationFilter extends Filter {
       request.path.equals("/oauth/access_token") ||
       request.path.equals("/vendor/register") ||
       request.path.equals("/check/email") ||
+      request.path.equals("/theme/css") ||
+      request.path.equals("/theme/logo") ||
+      request.path.equals("/theme/footer") ||
+      request.path.equals("/notices/default") ||
       //public assets
       request.path.startsWith("/assets/") ||
       request.path.startsWith("/webjars/") ||
@@ -101,7 +103,7 @@ class AuthenticationFilter extends Filter {
       (request.path.matches("/suite/\\d*/undeploy") && request.method.equals("DELETE"))
 	}
 
-  def requiresVendorAdminAccess(request:RequestHeader):Boolean = {
+  def requiresAdminAccess(request:RequestHeader):Boolean = {
     (request.path.equals("/vendor/profile") && request.method.equals("POST")) ||
       request.path.equals("/user/register") ||
       request.path.equals("/suts/register") ||

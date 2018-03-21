@@ -15,18 +15,23 @@ class TestSuiteService extends Controller {
 
 	private final val logger: Logger = LoggerFactory.getLogger(classOf[TestSuiteService])
 
-	def undeployTestSuite(testSuiteId: Long) = Action.async {
-		TestSuiteManager.undeployTestSuite(testSuiteId) map { unit =>
-			ResponseConstructor.constructEmptyResponse
-		}
+	def undeployTestSuite(testSuiteId: Long) = Action.apply {
+		TestSuiteManager.undeployTestSuite(testSuiteId)
+		ResponseConstructor.constructEmptyResponse
 	}
 
-	def getTestSuites() = Action.async { request =>
+	def getTestSuites() = Action.apply { request =>
 		val testSuiteIds = ParameterExtractor.extractLongIdsQueryParameter(request)
 
-		TestSuiteManager.getTestSuites(testSuiteIds) map { testSuites =>
-			val json = JsonUtil.jsTestSuites(testSuites).toString()
-			ResponseConstructor.constructJsonResponse(json)
-		}
+		val testSuites = TestSuiteManager.getTestSuites(testSuiteIds)
+		val json = JsonUtil.jsTestSuitesList(testSuites).toString()
+		ResponseConstructor.constructJsonResponse(json)
 	}
+
+	def getTestSuitesWithTestCases() = Action.apply { request =>
+		val testSuites = TestSuiteManager.getTestSuitesWithTestCases()
+		val json = JsonUtil.jsTestSuiteList(testSuites).toString()
+		ResponseConstructor.constructJsonResponse(json)
+	}
+
 }

@@ -1,4 +1,5 @@
 class SystemController
+	@$inject = ['$log', '$location', '$scope', '$stateParams', 'DataService', 'SystemService', 'ErrorService', 'Constants']
 	constructor:(@$log, @$location, @$scope, @$stateParams, @DataService, @SystemService, @ErrorService, @Constants) ->
 		@$log.debug "Constructing SystemController"
 

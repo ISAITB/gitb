@@ -26,7 +26,7 @@ public class TCPMessagingServer implements IMessagingServer {
     // port -> listener thread map
     private Map<Integer, IMessagingServerWorker> workers;
 
-    protected TCPMessagingServer(Configuration configuration) throws IOException {
+    public TCPMessagingServer(Configuration configuration) throws IOException {
         this.configuration = configuration;
         this.workers = new ConcurrentHashMap<>();
     }
@@ -37,7 +37,7 @@ public class TCPMessagingServer implements IMessagingServer {
      * @throws IOException
      */
     public synchronized IMessagingServerWorker listenNextAvailablePort() {
-        for (int port = configuration.getStart(); port < configuration.getEnd(); port++) {
+        for (int port = configuration.getStart(); port <= configuration.getEnd(); port++) {
             if(!workers.containsKey(port)) {
 	            TCPMessagingServerWorker worker = null;
 	            try {
