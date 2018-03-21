@@ -3,6 +3,7 @@ class EndPointService
   @headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
   @defaultConfig = {headers: @headers}
 
+  @$inject = ['$log', 'RestService']
   constructor: (@$log, @RestService) ->
 
   deleteEndPoint: (endPointId) ->
