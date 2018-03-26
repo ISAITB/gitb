@@ -174,6 +174,9 @@ class ConformanceStatementDetailController
 
       @constructEndpointRepresentations()
 
+  canDelete: () =>
+    !@DataService.isVendorUser
+
   deleteConformanceStatement: () ->
     @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this conformance statement?", "Yes", "No")
     .then () =>

@@ -2,7 +2,7 @@
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h5 class="title">Conformance Statement Details</h5>
-			<a href="" ng-click="conformanceStatementDetailCtrl.deleteConformanceStatement()" class="btn btn-default pull-right">Delete</a>
+			<a href="" ng-click="conformanceStatementDetailCtrl.deleteConformanceStatement()" class="btn btn-default pull-right" ng-if="conformanceStatementDetailCtrl.canDelete()">Delete</a>
 		</div>
 		<div class="panel-body">
 			<div class="row row-display-first">
