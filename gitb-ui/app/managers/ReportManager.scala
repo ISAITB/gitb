@@ -3,6 +3,7 @@ package managers
 import java.io.{File, FileOutputStream, StringReader}
 import java.nio.file.{Files, Path, Paths}
 import java.text.SimpleDateFormat
+import java.time.LocalDateTime
 import java.util.Date
 import javax.xml.transform.stream.StreamSource
 
@@ -290,8 +291,14 @@ object ReportManager extends BaseManager {
   def getPathForTestSession(sessionId: String, isExpected: Boolean): Path = {
     DB.withSession {
       implicit session =>
-        val testResult = PersistenceSchema.testResults.filter(_.testSessionId === sessionId).first
-        val startTime = testResult.startTime.toLocalDateTime()
+        val testResult = PersistenceSchema.testResults.filter(_.testSessionId === sessionId).firstOption
+        var startTime: LocalDateTime = null
+        if (testResult.isDefined) {
+          startTime = testResult.get.startTime.toLocalDateTime()
+        } else {
+          // We have no DB entry only in the case of preliminary steps.
+          startTime = LocalDateTime.now()
+        }
         val path = Paths.get(
           Configurations.TEST_CASE_REPOSITORY_PATH,
           STATUS_UPDATES_PATH,
