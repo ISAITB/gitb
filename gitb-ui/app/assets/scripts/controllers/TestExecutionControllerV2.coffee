@@ -98,14 +98,6 @@ class TestExecutionControllerV2
     else
       true
 
-  onFileSelect: (request, files) =>
-    request.file = _.head files
-    if request.file?
-      reader = new FileReader()
-      reader.readAsDataURL request.file
-      reader.onload = (event) =>
-        request.data = event.target.result
-
   checkReady: ()->
     @ready = @endpointsLoaded && @configurationsLoaded && @actorLoaded
     if @ready
@@ -180,9 +172,6 @@ class TestExecutionControllerV2
         _endpoint = endpoint
         break;
     _endpoint
-
-  isConfigurationDataURL: (configuration) ->
-    @Constants.DATA_URL_REGEX.test(configuration)
 
   getTestCaseDefinition: (testCase) ->
     @TestService.getTestCaseDefinition(testCase)
@@ -329,31 +318,6 @@ class TestExecutionControllerV2
           @$state.go @$state.current, {}, {reload: true}
     )
 
-  provideInput: () ->
-    @closeInteractionModal()
-    inputs = []
-    for interaction in @$scope.interactions
-      if interaction.type == "request"
-        inputs.push({
-          id: interaction.id,
-          name:  interaction.name
-          value: interaction.data
-          type:  interaction.variableType,
-          embeddingMethod: interaction.contentType
-        })
-
-    @TestService.provideInput(@session, @$scope.interactionStepId, inputs)
-    .then(
-      (data) =>
-        @$log.debug data
-      ,
-      (error) =>
-        @ErrorService.showErrorMessage(error).result.then () =>
-          @$state.go @$state.current, {}, {reload: true}
-    )
-    @$scope.interactionStepId = null
-    @$scope.interactions = []
-
   initiatePreliminary: (session) ->
     @TestService.initiatePreliminary(session)
     .then(
@@ -496,10 +460,24 @@ class TestExecutionControllerV2
       @$scope.$apply () =>
         @$scope.interactions.push(interaction)
 
-    $('#provideInputModal').modal({
-        keyboard: false,
-        backdrop: 'static'
-    }, 'toggle');
+    modalOptions =
+      templateUrl: 'assets/views/tests/provide-input-modal.html'
+      controller: 'ProvideInputModalController as controller'
+      keyboard: false,
+      backdrop: 'static'      
+      resolve: 
+        interactions: () => @$scope.interactions
+        session: () => @session
+        interactionStepId: () => @$scope.interactionStepId
+
+    modalInstance = @$modal.open(modalOptions)
+    modalInstance.result.then((result) => 
+        @$scope.interactionStepId = null
+        @$scope.interactions = []
+        if (!result.success)
+          @ErrorService.showErrorMessage(result.error).result.then () =>
+          @$state.go @$state.current, {}, {reload: true}
+    )
 
   updateStatus: (step, stepId, status, report) =>
 
@@ -631,16 +609,5 @@ class TestExecutionControllerV2
           return parentOrCurrentNode
 
     return null
-
-  closeInteractionModal: () ->
-    $('#provideInputModal').modal('toggle')
-    return ;
-
-  interactionNeedsInput: () ->
-    for interaction in @$scope.interactions
-      if interaction.type == "request"
-        return true
-    return false
-
 
 controllers.controller('TestExecutionControllerV2', TestExecutionControllerV2)

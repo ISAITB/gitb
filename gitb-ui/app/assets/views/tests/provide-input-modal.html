@@ -1,0 +1,35 @@
+<div class="modal-header">
+	<h4 class="modal-title" id="myModalLabel">Server Interaction</h4>
+</div>
+<div class="modal-body">
+	<div class="row">
+		<form type="post">
+			<div class="row" ng-repeat="interaction in interactions">
+				<div class="form-group">
+					<div class="col-md-11 col-centered" >
+						<label>{{interaction.desc}}</label>
+						<!-- request interaction: server asks operator to send inputs -->
+						<div ng-if="interaction.type == 'request'">
+							<input type="text" class="form-control" ng-model="interaction.data" ng-if="interaction.contentType != 'BASE64'" >
+							<div ng-if="interaction.contentType == 'BASE64'">
+								<span ng-if="interaction.file != null">{{interaction.file.name}} - {{interaction.file.size}} bytes</span>
+								<span ng-if="interaction.file == null">No file selected</span>
+								<button class="btn btn-default" ng-file-select="onFileSelect(interaction, $files)">Select file</button>
+							</div>
+						</div>
+						<!-- instruction interaction: server shows a message -->
+						<div ng-if="interaction.type == 'instruction' && interaction.value != null">
+							<span class="tab" ng-if="isConfigurationDataURL(interaction.value)"><a download='{{interaction.name}}' href="{{interaction.value}}">Download</a></span>
+							<!-- configuration parameter is a string -->
+							<span class="tab" ng-if="!isConfigurationDataURL(interaction.value)">{{interaction.value}}</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>
+<div class="modal-footer">
+	<input type="button" value="Send"  ng-if="interactionNeedsInput()"  ng-click="hideInput()" class="btn btn-info" >
+	<input type="button" value="Close" ng-if="!interactionNeedsInput()" ng-click="hideInput()" class="btn btn-info" >
+</div>
