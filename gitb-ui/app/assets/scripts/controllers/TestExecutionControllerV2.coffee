@@ -74,7 +74,6 @@ class TestExecutionControllerV2
     @getEndpointConfigurations(@actorId)
 
     @getTestCaseDefinition(@testId)
-    @getActorDefinition(@actorId)
 
   nextStep: () =>
     @$scope.$broadcast 'wizard-directive:next'
@@ -178,39 +177,54 @@ class TestExecutionControllerV2
     .then(
       (data) =>
         @testcase = data
-        #@$log.debug angular.toJson(data)
-        @$scope.steps = @testcase.steps
-        @$scope.actorInfo = @testcase.actors.actor
-        @testCaseLoaded = true
+        @TestService.getActorDefinitions(@specId).then((data) =>
 
-        @isInteroperabilityTesting = @testcase.metadata.type == @Constants.TEST_CASE_TYPE.INTEROPERABILITY
-        if @isInteroperabilityTesting
-          @steps.splice(1, 0, {id:2, title:"Participants" })
-          @steps[2].id = 3
-          @steps[3].id = 4
+          @$scope.actorInfo = @testcase.actors.actor
+          for domainActorData in data
+            if (domainActorData.id == @actorId)
+              @actor = domainActorData.actorId
+            for testCaseActorData in @$scope.actorInfo
+              if (testCaseActorData.id == domainActorData.actorId)
+                if (!(testCaseActorData.name?))
+                  testCaseActorData.name = domainActorData.name
+                break
 
-          @getInteroperabilitySessions()
+          @actorLoaded = true
+          @testCaseLoaded = true
+          @$scope.steps = @testcase.steps
 
-        for testCaseActor in @$scope.actorInfo
-          if testCaseActor.role == @Constants.TEST_ROLE.SUT
-            @actorConfigurations[testCaseActor.id] = null
+          @isInteroperabilityTesting = @testcase.metadata.type == @Constants.TEST_CASE_TYPE.INTEROPERABILITY
+          if @isInteroperabilityTesting
+            @steps.splice(1, 0, {id:2, title:"Participants" })
+            @steps[2].id = 3
+            @steps[3].id = 4
+
+            @getInteroperabilitySessions()
+
+          for testCaseActor in @$scope.actorInfo
+            if testCaseActor.role == @Constants.TEST_ROLE.SUT
+              @actorConfigurations[testCaseActor.id] = null
+          @checkReady()
+        ,
+        (error) =>
+          @ErrorService.showErrorMessage(error).result
+        )
       ,
       (error) =>
         @ErrorService.showErrorMessage(error).result.then () =>
           @$state.go @$state.current, {}, {reload: true}
     )
 
-  getActorDefinition: (actorId) ->
-    @TestService.getActorDefinition(actorId)
-    .then(
-      (data) =>
-        @actor = data.actorId
-        @actorLoaded = true
-        @checkReady()
-      ,
-      (error) =>
-        @ErrorService.showErrorMessage(error).result
-    )
+  getActorName: (actorId) ->
+    actorName = actorId
+    for info in @$scope.actorInfo
+      if actorId == info.id
+        if info.name?
+          actorName = info.name
+        else
+          actorName = info.id
+        break
+    actorName
 
   generateStepIdMap: (steps) =>
     _.forEach steps, (step) =>

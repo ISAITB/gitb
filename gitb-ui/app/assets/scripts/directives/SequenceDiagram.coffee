@@ -1,38 +1,47 @@
 TEST_ENGINE_ACTOR = 'Test Engine'
 TESTER_ACTOR = 'Operator'
 
-getTesterNameForActor = (actor) ->
-  actor + ' - ' + TESTER_ACTOR
+getTesterNameForActor = (actor, actorInfo) ->
+  actorName = actor + ' - ' + TESTER_ACTOR
+  for info in actorInfo
+    if actor == info.id
+      if info.name?
+        actorName = info.name + ' - ' + TESTER_ACTOR
+      else
+        actorName = info.id + ' - ' + TESTER_ACTOR
+      break
+  actorName
 
-extractActors = (messages) =>
+extractActors = (messages, actorInfo) =>
   collection = _ messages
   collection = collection.map (message) ->
     if message.from? && message.to?
       [message.from, message.to]
     else if message.type == 'loop'
-      extractActors message.steps
+      extractActors(message.steps, actorInfo)
     else if message.type == 'decision'
-      _then = extractActors message.then
-      _else = extractActors message.else
+      _then = extractActors(message.then, actorInfo)
+      _else = extractActors(message.else, actorInfo)
 
       _then.concat _else
     else if message.type == 'flow'
-      _.map message.threads, extractActors
+      for thread in message.threads
+        extractActors(thread, actorInfo)
     else if message.type == 'exit'
       [TEST_ENGINE_ACTOR, TEST_ENGINE_ACTOR]
     else if message.type == 'interact'
       instructions = _.filter message.interactions, (interaction) -> interaction.type == 'instruction'
       requests = _.filter message.interactions, (interaction) -> interaction.type == 'request'
 
-      instructionActors = _.map instructions, (instruction) -> [(getTesterNameForActor instruction.with), instruction.with]
-      requestActors = _.map requests, (request) -> [(getTesterNameForActor request.with), TEST_ENGINE_ACTOR]
+      instructionActors = _.map instructions, (instruction) -> [(getTesterNameForActor(instruction.with, actorInfo)), instruction.with]
+      requestActors = _.map requests, (request) -> [(getTesterNameForActor(request.with, actorInfo)), TEST_ENGINE_ACTOR]
 
       instructionActors.concat requestActors
     else
       []
   collection.flatten().unique().value()
 
-extractSteps = (s) =>
+extractSteps = (s, actorInfo) =>
   stepFilter = (step) ->
     step.type == 'msg' ||
       step.type == 'verify' ||
@@ -43,31 +52,32 @@ extractSteps = (s) =>
         (_.filter step.then, stepFilter).length + (_.filter step.else, stepFilter).length > 0) ||
       (step.type == 'flow' && (_.filter step.threads, ((thread) -> (_.filter thread, stepFilter).length > 0)).length > 0)
   steps = _.filter s, stepFilter
-  steps = _.map steps, (step) ->
+  processStep = (step, actorInfo) ->
     step.level = (step.id.split '.').length
     if step.type == 'verify' || step.type == 'exit'
       step.from = TEST_ENGINE_ACTOR
       step.to = TEST_ENGINE_ACTOR
     else if step.type == 'loop'
-      step.steps = extractSteps step.steps
+      step.steps = extractSteps(step.steps, actorInfo)
     else if step.type == 'decision'
-      step.then = extractSteps step.then
-      step.else = extractSteps step.else
+      step.then = extractSteps(step.then, actorInfo)
+      step.else = extractSteps(step.else, actorInfo)
     else if step.type == 'flow'
-      step.threads = _.map step.threads, extractSteps
+      for thread in  step.threads
+        extractSteps(thread, actorInfo)
     else if step.type == 'interact'
       #step.from = TEST_ENGINE_ACTOR
       #step.to = TESTER_ACTOR
-      _.forEach step.interactions, (interaction) =>
+      for interaction in step.interactions
         if interaction.type == 'request'
-          interaction.from = getTesterNameForActor interaction.with
+          interaction.from = getTesterNameForActor(interaction.with, actorInfo)
           interaction.to = TEST_ENGINE_ACTOR
         else
-          interaction.from = getTesterNameForActor interaction.with
+          interaction.from = getTesterNameForActor(interaction.with, actorInfo)
           interaction.to = interaction.with
-
     step
-  steps
+  for step in steps
+    processStep(step, actorInfo)
 
 @directives.directive 'seqDiagram', () =>
   scope:
@@ -165,8 +175,8 @@ extractSteps = (s) =>
     scope.$watch 'steps', (newValue) =>
       steps = newValue
       if steps?
-        scope.messages = extractSteps steps
-        scope.actors = extractActors scope.messages
+        scope.messages = extractSteps(steps, scope.actorInfo)
+        scope.actors = extractActors(scope.messages, scope.actorInfo)
 
         setStepIndexes scope.messages
 
@@ -184,14 +194,17 @@ extractSteps = (s) =>
     '</div>'
   link: (scope, element, attrs) ->
     for info in scope.actorInfo
-      if scope.actor == info.name
-        scope.actor = scope.actor + " (" + info.role + ")"
-
+      if scope.actor == info.id
+        if info.name?
+          scope.actor = info.name + " (" + info.role + ")"
+        else
+          scope.actor = info.id + " (" + info.role + ")"
 
 @directives.directive 'seqDiagramMessage', ['RecursionHelper', 'ReportService', 'Constants', '$modal', '$timeout',
   (RecursionHelper, ReportService, Constants, $modal, $timeout) =>
     scope:
       message: '='
+      actorInfo: '='
     restrict: 'A'
     replace: true
     template: ''+
@@ -322,7 +335,7 @@ extractSteps = (s) =>
               _.forEach (_.zip message.threads, iteration.threads), (threadPair) ->
                 applyStatusesAndReportsToChildSteps threadPair[0], threadPair[1]
 
-          scope.message.sequences[iterationIndex].steps = extractSteps scope.message.sequences[iterationIndex].steps
+          scope.message.sequences[iterationIndex].steps = extractSteps(scope.message.sequences[iterationIndex].steps, scope.actorInfo)
           setStatusesAndReports scope.message, scope.message.sequences[iterationIndex]
 
           scope.message.status = scope.message.sequences[iterationIndex].status

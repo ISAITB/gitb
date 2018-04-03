@@ -1,12 +1,5 @@
 package managers
 
-import models._
-import org.slf4j.LoggerFactory
-import persistence.db.PersistenceSchema
-import utils.RepositoryUtils
-
-import scala.slick.driver.MySQLDriver.simple._
-
 object ConformanceManager extends BaseManager {
   def logger = LoggerFactory.getLogger("ConformanceManager")
 
@@ -166,9 +159,9 @@ object ConformanceManager extends BaseManager {
 		}
   }
 
-  def getActorDefinition(actorId:Long): Actors = {
-		DB.withSession { implicit  session =>
-			PersistenceSchema.actors.filter(_.id === actorId).firstOption.get
+  def getActorDefinition(ids:List[Long]): List[Actors] = {
+		DB.withSession { implicit session =>
+			PersistenceSchema.actors.filter(_.id inSet ids).list
 		}
   }
 

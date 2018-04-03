@@ -42,10 +42,10 @@
                 </div>
                 <div class="step-content select-peliminary">
                     <div ng-repeat="simulatedConfig in testExecutionCtrl.simulatedConfigs">
-                        <p>Simulated configurations for {{simulatedConfig.actor}}</p>
+                        <p>Simulated configurations for {{testExecutionCtrl.getActorName(simulatedConfig.actor)}}</p>
                         <ul ng-repeat="config in simulatedConfig.configs">
                             <li>
-                                <label>{{config.actor}}</label>
+                                <label>{{testExecutionCtrl.getActorName(config.actor)}}</label>
                                 <ul ng-repeat="parameter in config.config">
                                     <li>
                                         <span>{{parameter.name}}:</span>

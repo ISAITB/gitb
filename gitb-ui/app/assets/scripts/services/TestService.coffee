@@ -14,10 +14,12 @@ class TestService
             authenticate: true
         })
 
-    getActorDefinition: (actor) ->
+    getActorDefinitions: (specificationId) ->
         @RestService.get({
-            path: jsRoutes.controllers.TestService.getActorDefinition(actor).url,
+            path: jsRoutes.controllers.TestService.getActorDefinitions().url,
             authenticate: true
+            params:
+                spec_id: specificationId
         })
 
     initiate: (testCase) ->

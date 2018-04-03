@@ -138,7 +138,7 @@ GET	    /suts/:sut_id/conformance/:test_instance/report @controllers.TestResultS
 
 # Test management API
 GET	    /tests/:test_id/definition          @controllers.TestService.getTestCaseDefinition(test_id : String)
-GET	    /actors/:actor_id/definition        @controllers.TestService.getActorDefinition(actor_id : String)
+GET	    /actors/definition                  @controllers.TestService.getActorDefinitions()
 POST	/tests/:test_id/initiate            @controllers.TestService.initiate(test_id:String)
 POST	/tests/:session_id/configure        @controllers.TestService.configure(session_id:String)
 POST	/tests/:session_id/provide          @controllers.TestService.provideInput(session_id:String)
