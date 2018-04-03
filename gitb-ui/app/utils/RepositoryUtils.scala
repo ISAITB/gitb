@@ -211,7 +211,7 @@ object RepositoryUtils {
 
 								logger.debug("Test case ["+tdlTestCase.getId+"] has actors ["+tdlTestCase.getActors.getActor.asScala.map(_.getId).mkString(",")+"]")
 								val testCaseActors = actors.filter { actor =>
-									tdlTestCase.getActors.getActor.asScala.exists((role) => role.getName == actor.actorId)
+									tdlTestCase.getActors.getActor.asScala.exists((role) => role.getId == actor.actorId)
 								} map(_.actorId)
 
 								var testCaseType = TestCaseType.CONFORMANCE;
