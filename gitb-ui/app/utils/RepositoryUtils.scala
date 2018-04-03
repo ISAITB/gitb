@@ -5,6 +5,7 @@ import java.nio.file.Paths
 import java.util.zip.{ZipEntry, ZipFile}
 import javax.xml.transform.stream.StreamSource
 
+import com.gitb.core.TestCaseType
 import com.gitb.utils.XMLUtils
 import config.Configurations
 import managers.{SpecificationManager, TestSuiteManager}
@@ -213,11 +214,15 @@ object RepositoryUtils {
 									tdlTestCase.getActors.getActor.asScala.exists((role) => role.getName == actor.actorId)
 								} map(_.actorId)
 
+								var testCaseType = TestCaseType.CONFORMANCE;
+								if (Option(tdlTestCase.getMetadata.getType).isDefined) {
+									testCaseType = tdlTestCase.getMetadata.getType
+								}
 								TestCases(
 									0l, tdlTestCase.getId, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getVersion,
 									Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
 									Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
-									None, tdlTestCase.getMetadata.getType.ordinal().toShort, null, specification, Some(testCaseActors.mkString(","))
+									None, testCaseType.ordinal().toShort, null, specification, Some(testCaseActors.mkString(","))
 								)
 						}.toList
 						new TestSuite(caseObject, Some(actors), Some(testCases))
