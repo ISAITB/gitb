@@ -10,6 +10,7 @@ import com.gitb.utils.XMLUtils
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
 import managers.{ReportManager, TestCaseManager, TestResultManager}
 import org.apache.commons.codec.net.URLCodec
+import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.StringUtils
 import org.slf4j.LoggerFactory
 import play.api.mvc._
@@ -22,7 +23,6 @@ class RepositoryService extends Controller {
 	private val logger = LoggerFactory.getLogger(classOf[RepositoryService])
 	private val codec = new URLCodec()
 
-  private val TESTCASE_REPORT_NAME = "report.pdf"
   private val TESTCASE_STEP_REPORT_NAME = "step.pdf"
 
 	def getTestSuiteResource(testId: String, filePath:String): Action[AnyContent] = Action {
@@ -48,6 +48,7 @@ class RepositoryService extends Controller {
     } else {
       path = reportPath
     }
+    path = codec.decode(path)
     val file = new File(sessionFolder, path)
 
     logger.debug("Reading test step report ["+codec.decode(reportPath)+"] from the file ["+file+"]")
@@ -77,6 +78,7 @@ class RepositoryService extends Controller {
     } else {
       path = reportPath
     }
+    path = codec.decode(path)
     val sessionFolder = ReportManager.getPathForTestSession(sessionId, true).toFile
     val file = new File(sessionFolder, path)
     val pdf = new File(sessionFolder, path.toLowerCase().replace(".xml", ".pdf"))
@@ -104,16 +106,24 @@ class RepositoryService extends Controller {
 
     val testResult = TestResultManager.getTestResultForSession(session)
     if (testResult.isDefined) {
+
+      var exportedReport: File = null
+      if (testResult.get.endTime.isEmpty) {
+        // This name will be unique to ensure that a report generated for a pending session never gets cached.
+        exportedReport = new File(folder, "report_" + System.currentTimeMillis() + ".pdf")
+        FileUtils.forceDeleteOnExit(exportedReport)
+      } else {
+        exportedReport = new File(folder, "report.pdf")
+      }
       val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get.tpl)))
       val testCase = TestCaseManager.getTestCase(testCaseId)
-      val exportedReport = new File(folder, TESTCASE_REPORT_NAME)
       if (!exportedReport.exists()) {
         val list = ReportManager.getListOfTestSteps(testcasePresentation, folder)
         ReportManager.generateDetailedTestCaseReport(list, exportedReport.getAbsolutePath, testCase, session, false)
       }
       Ok.sendFile(
         content = exportedReport,
-        fileName = _ => TESTCASE_REPORT_NAME
+        fileName = _ => exportedReport.getName
       )
     } else {
       NotFound

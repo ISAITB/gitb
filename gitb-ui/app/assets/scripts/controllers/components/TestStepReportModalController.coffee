@@ -15,9 +15,8 @@ class TestStepReportModalController
         pathForReport = step.report.path
         if !pathForReport?
           pathForReport = step.id + '.xml'
-        @ReportService.exportTestStepReport(@$scope.sessionId, pathForReport)
+        @ReportService.exportTestStepReport(@$scope.sessionId, escape(pathForReport))
             .then (data) =>
-                # blobData = new Blob([data], {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
                 @$scope.exportDisabled = false
                 blobData = new Blob([data], {type: 'application/pdf'});
                 saveAs(blobData, "report.pdf");

@@ -11,7 +11,7 @@ import com.gitb.core.StepStatus
 import com.gitb.reports.ReportGenerator
 import com.gitb.reports.dto.TestCaseOverview
 import com.gitb.tbs.{ObjectFactory, TestStepStatus}
-import com.gitb.tpl.TestCase
+import com.gitb.tpl.{DecisionStep, FlowStep, TestCase, TestStep}
 import com.gitb.tr._
 import com.gitb.utils.XMLUtils
 import config.Configurations
@@ -360,32 +360,44 @@ object ReportManager extends BaseManager {
     }
   }
 
-  def getListOfTestSteps(testPresentation: TestCase, folder: File): ListBuffer[TitledTestStepReportType] = {
-    var list = ListBuffer[TitledTestStepReportType]()
-
-    import scala.collection.JavaConversions._
-    for (testStep <- testPresentation.getSteps.getSteps) {
+  def collectStepReports(testStep: TestStep, collectedSteps: ListBuffer[TitledTestStepReportType], folder: File): Unit = {
+    val reportFile = new File(folder, testStep.getId + ".xml")
+    if (reportFile.exists()) {
       val stepReport = new TitledTestStepReportType()
       if (StringUtils.isBlank(testStep.getDesc)) {
         stepReport.setTitle("Step " + testStep.getId)
       } else {
         stepReport.setTitle("Step " + testStep.getId + ": " + testStep.getDesc)
       }
-      val reportFile = new File(folder, testStep.getId + ".xml")
-      if (reportFile.exists()) {
-        val bytes = Files.readAllBytes(Paths.get(reportFile.getAbsolutePath));
-        val string = new String(bytes)
-        //convert string in xml format into its object representation
-        val report = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))
-        stepReport.setWrapped(report.getReport)
-      } else {
-        // Report not found.
-        val report = new SR()
-        report.setResult(TestResultType.UNDEFINED)
-        stepReport.setWrapped(report)
-      }
-      list += stepReport
+      val bytes = Files.readAllBytes(Paths.get(reportFile.getAbsolutePath));
+      val string = new String(bytes)
+      //convert string in xml format into its object representation
+      val report = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))
+      stepReport.setWrapped(report.getReport)
+      collectedSteps += stepReport
+      // Process child steps as well if applicable
     }
+    if (testStep.isInstanceOf[DecisionStep]) {
+      collectStepReportsForSequence(testStep.asInstanceOf[DecisionStep].getThen, collectedSteps, folder)
+      collectStepReportsForSequence(testStep.asInstanceOf[DecisionStep].getElse, collectedSteps, folder)
+    } else if (testStep.isInstanceOf[FlowStep]) {
+      import scala.collection.JavaConversions._
+      for (thread <- testStep.asInstanceOf[FlowStep].getThread) {
+        collectStepReportsForSequence(thread, collectedSteps, folder)
+      }
+    }
+  }
+
+  def collectStepReportsForSequence(testStepSequence: com.gitb.tpl.Sequence, collectedSteps: ListBuffer[TitledTestStepReportType], folder: File): Unit = {
+    import scala.collection.JavaConversions._
+    for (testStep <- testStepSequence.getSteps) {
+      collectStepReports(testStep, collectedSteps, folder)
+    }
+  }
+
+  def getListOfTestSteps(testPresentation: TestCase, folder: File): ListBuffer[TitledTestStepReportType] = {
+    var list = ListBuffer[TitledTestStepReportType]()
+    collectStepReportsForSequence(testPresentation.getSteps, list, folder)
     list
   }
 
