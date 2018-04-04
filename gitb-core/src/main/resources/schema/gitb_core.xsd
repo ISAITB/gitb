@@ -36,7 +36,7 @@
 		<xsd:sequence>
 			<xsd:element name="name" type="xsd:string"/>
 			<xsd:element name="desc" type="xsd:string" minOccurs="0"/>
-			<xsd:element name="endpoint" type="Endpoint" maxOccurs="unbounded"/>
+			<xsd:element name="endpoint" type="Endpoint" minOccurs="0" maxOccurs="unbounded"/>
 		</xsd:sequence>
 		<xsd:attribute name="id" type="ID" use="required"/>
 	</xsd:complexType>
