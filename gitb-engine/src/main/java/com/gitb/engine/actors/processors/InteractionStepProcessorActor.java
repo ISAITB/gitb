@@ -24,6 +24,7 @@ import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
 import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,6 +66,10 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 userInteractionRequest.setWith(step.getWith());
                 int childStepId = 1;
                 for (InstructionOrRequest instructionOrRequest : instructionAndRequests) {
+                    if (StringUtils.isBlank(instructionOrRequest.getType())) {
+                        // Consider "string" as the default type if not specified
+                        instructionOrRequest.setType(DataType.STRING_DATA_TYPE);
+                    }
                     //At least one of 'with's must be specified in test description
                     if(userInteractionRequest.getWith() == null && instructionOrRequest.getWith() == null) {
                         throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "At least one of 'with's should be specified in UserInteraction step"));
@@ -72,6 +77,10 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     //If it is an instruction
                     if (instructionOrRequest instanceof com.gitb.tdl.Instruction) {
                         userInteractionRequest.getInstructionOrRequest().add(processInstruction(instructionOrRequest, "" + childStepId));
+                        // If no expression is specified consider it an empty expression.
+                        if (StringUtils.isBlank(instructionOrRequest.getValue())) {
+                            instructionOrRequest.setValue("");
+                        }
                     }
                     //If it is a request
                     else {
