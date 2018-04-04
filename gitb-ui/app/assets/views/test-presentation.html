@@ -1,4 +1,5 @@
 <div ng-include="'testSteps'"></div>
+<button class="btn btn-default pull-right" type="button" ng-click="testPresentationCtrl.back()">Back</button>
 <script type="text/ng-template" id="testSteps">
 
     <div ng-repeat="step in steps" ng-switch on="step.type" style='margin-top:10px;' ng-class="testPresentationCtrl.divClassForStatus(step.status)">
@@ -134,5 +135,4 @@
             </div>
         </div>
     </div>
-    <button class="btn btn-default pull-right" type="button" ng-click="testPresentationCtrl.back()">Back</button>
 </script>
