@@ -1,5 +1,12 @@
 package managers
 
+import models._
+import org.slf4j.LoggerFactory
+import persistence.db.PersistenceSchema
+import utils.RepositoryUtils
+
+import scala.slick.driver.MySQLDriver.simple._
+
 object ConformanceManager extends BaseManager {
   def logger = LoggerFactory.getLogger("ConformanceManager")
 
