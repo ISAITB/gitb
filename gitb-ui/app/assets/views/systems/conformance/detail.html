@@ -42,8 +42,9 @@
 	</div>
 
 	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.testSuites.length > 0">
-		<div class="panel-heading">
+		<div class="panel-heading panel-heading-tests">
 			<h5 class="title">Conformance Tests</h5>
+			<button class="btn btn-primary pull-right" ng-if="conformanceStatementDetailCtrl.testSuites.length == 1 && conformanceStatementDetailCtrl.testSuites[0].testCases.length > 1" ng-click="conformanceStatementDetailCtrl.onTestSuiteSelect()"><i class="fa fa-play"></i></button>			
 		</div>
 		<div>
 			<table class="table table-directive">
@@ -64,9 +65,7 @@
 					<td>{{testSuite.description}}</td>
 					<td>{{testSuite.result}}</td>
 					<td>
-						<!--<button class="btn btn-default"-->
-						<!--ng-click="conformanceStatementDetailCtrl.onTestSuiteSelect(testSuite)"><i-->
-						<!--class="fa fa-play"></i></button>-->
+						<button class="btn btn-primary pull-right" ng-click="conformanceStatementDetailCtrl.onTestSuiteSelect(testSuite)"><i class="fa fa-play"></i></button>
 					</td>
 				</tr>
 				<tr ng-if="testSuite.expanded" ng-repeat-end ng-repeat="testCase in testSuite.testCases">
@@ -74,9 +73,7 @@
 					<td>{{testCase.description}}</td>
 					<td>{{testCase.result}}</td>
 					<td>
-						<button class="btn btn-default"
-								ng-click="conformanceStatementDetailCtrl.onTestSelect(testCase)"><i
-								class="fa fa-play"></i></button>
+						<button class="btn btn-primary pull-right" ng-click="conformanceStatementDetailCtrl.onTestSelect(testCase)"><i class="fa fa-play"></i></button>
 					</td>
 				</tr>
 				</tbody>
@@ -87,9 +84,7 @@
 					<td>{{testCase.description}}</td>
 					<td>{{testCase.result}}</td>
 					<td>
-						<button class="btn btn-default"
-								ng-click="conformanceStatementDetailCtrl.onTestSelect(testCase)"><i
-								class="fa fa-play"></i></button>
+						<button class="btn btn-primary pull-right" ng-click="conformanceStatementDetailCtrl.onTestSelect(testCase)"><i class="fa fa-play"></i></button>
 					</td>
 				</tr>
 				</tbody>

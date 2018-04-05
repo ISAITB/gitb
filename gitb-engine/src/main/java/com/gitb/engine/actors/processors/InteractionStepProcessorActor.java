@@ -76,11 +76,11 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     }
                     //If it is an instruction
                     if (instructionOrRequest instanceof com.gitb.tdl.Instruction) {
-                        userInteractionRequest.getInstructionOrRequest().add(processInstruction(instructionOrRequest, "" + childStepId));
                         // If no expression is specified consider it an empty expression.
                         if (StringUtils.isBlank(instructionOrRequest.getValue())) {
-                            instructionOrRequest.setValue("");
+                            instructionOrRequest.setValue("''");
                         }
+                        userInteractionRequest.getInstructionOrRequest().add(processInstruction(instructionOrRequest, "" + childStepId));
                     }
                     //If it is a request
                     else {

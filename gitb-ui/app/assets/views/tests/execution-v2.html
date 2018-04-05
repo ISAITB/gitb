@@ -1,51 +1,54 @@
-<div class="page" xmlns="http://www.w3.org/1999/html">
-    <div class="panel panel-default col-md-12">
+<div class="page conformance">
+    <div class="panel panel-default">
         <div class="panel-heading">
-            <h4>Execute Test</h4>
+            <h4 class="title">Test cases to execute</h4>
+            <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.nextStep()" ng-if="testExecutionCtrl.wizardStep == 1 && testExecutionCtrl.isSystemConfigurationsValid(testExecutionCtrl.endpointRepresentations)" ng-disabled="testExecutionCtrl.testcase == null || testExecutionCtrl.actor == null">Next</button>
+            <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.nextStep()" ng-if="testExecutionCtrl.wizardStep == 2">Next</button>
+            <button class="btn btn-primary pull-right" ng-if="testExecutionCtrl.wizardStep == 3 && !testExecutionCtrl.started && !testExecutionCtrl.startAutomatically && testExecutionCtrl.reload" ng-click="testExecutionCtrl.reinitialise()">Reset</button>
+            <button class="btn btn-primary pull-right" ng-if="testExecutionCtrl.wizardStep == 3 && testExecutionCtrl.firstTestStarted && !testExecutionCtrl.reload && testExecutionCtrl.testsToExecute.length > 1" ng-click="testExecutionCtrl.stopAll()">Stop All</button>
+            <button class="btn btn-primary pull-right" ng-if="testExecutionCtrl.wizardStep == 3 && testExecutionCtrl.testsToExecute.length == 1 && !testExecutionCtrl.started && !testExecutionCtrl.startAutomatically && !testExecutionCtrl.reload" ng-click="testExecutionCtrl.start(testExecutionCtrl.session)">Start</button>
+            <button class="btn btn-primary pull-right" ng-if="testExecutionCtrl.wizardStep == 3 && testExecutionCtrl.testsToExecute.length == 1 && testExecutionCtrl.started" ng-click="testExecutionCtrl.stop(testExecutionCtrl.session)">Stop</button>
         </div>
         <div class="panel-body">
-            <div class="wizard-directive" wizard-directive steps="testExecutionCtrl.steps" trigger-next="testExecutionCtrl.nextStep" on-before="testExecutionCtrl.onWizardBefore" on-next="testExecutionCtrl.onWizardNext" on-finish="testExecutionCtrl.onWizardFinish">
-                <div class="step-content select-configs">
-                    Please check your system configurations again in case of inconsistent input <br> <br>
-
-                    <div class="list-group">
-                        <div class="list-group-item endpoint" ng-repeat="endpoint in testExecutionCtrl.endpointRepresentations">
-                            <div><strong>Name: </strong>{{endpoint.name}}</div>
-                            <div><strong>Description: </strong>{{endpoint.description}}</div>
-                            <div table-directive columns="testExecutionCtrl.parameterTableColumns" data="endpoint.parameters" table-caption="'Endpoint parameters'" on-select="conformanceStatementDetailCtrl.onParameterSelect"></div>
-                        </div>
-                    </div>
-
-                    <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.nextStep()" ng-if="testExecutionCtrl.isSystemConfigurationsValid(testExecutionCtrl.endpointRepresentations)" ng-disabled="testExecutionCtrl.testcase == null || testExecutionCtrl.actor == null">Next</button>
-                    <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.updateConfigurations()" ng-if="!testExecutionCtrl.isSystemConfigurationsValid(testExecutionCtrl.endpointRepresentations)">Update Configurations</button>
+            <div class="test-case-list-table">
+                <table class="table test-case-table">
+                    <thead>
+                        <tr>
+                            <th width="10%">Name</th>
+                            <th>Description</th>
+                            <th class="td-centered" width="1%">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="testCase in testExecutionCtrl.testsToExecute" ng-click="testExecutionCtrl.viewTestCase(testCase)" ng-class="testExecutionCtrl.tableRowClass(testCase)">
+                            <td>{{testCase.sname}}</td>
+                            <td>{{testCase.description}}</td>
+                            <td class="td-centered"><i class="fa testsuite-progress-icon" ng-class="testExecutionCtrl.progressIcon(testCase.id)"></i></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="panel panel-default" ng-if="testExecutionCtrl.wizardStep == 1">
+                <div class="panel-heading">
+                    <h5 class="title">Test [{{testExecutionCtrl.currentTest.sname}}] - Required configuration missing</h5>
                 </div>
-                <div class="step-content select-participants" ng-if="testExecutionCtrl.isInteroperabilityTesting">
-
-                    <div class="panel panel-default">
-                        <div class="panel-heading">
-                            <a id="createSession" class="btn btn-default pull-right" ng-click="testExecutionCtrl.createInteroperabilitySession()">Create New</a>
-                            <span class="tab pull-right" />
-                            <a id="joinSession" class="btn btn-default pull-right" ng-disabled="testExecutionCtrl.actor == null" ng-click="testExecutionCtrl.join()">Join</a>
-                            <h4 class="title">Existing Sessions</h4>
-
-                        </div>
-                        <h5 class="no-session-found" ng-if="testExecutionCtrl.interoperabilitySessions.length == 0">No existing interoperability test sessions...</h5>
-                        <div ng-if="testExecutionCtrl.interoperabilitySessions.length > 0" table-directive columns="testExecutionCtrl.sessionTableColumns" data="testExecutionCtrl.interoperabilitySessions" on-select="testExecutionCtrl.onSessionSelect"></div>
+                <diV class="panel-body">
+                    <div class="endpoint" ng-repeat="endpoint in testExecutionCtrl.endpointRepresentations">
+                        <div><strong>Name: </strong>{{endpoint.name}}</div>
+                        <div style="padding-bottom:10px"><strong>Description: </strong>{{endpoint.description}}</div>
+                        <div table-directive columns="testExecutionCtrl.parameterTableColumns" data="endpoint.parameters" on-select="conformanceStatementDetailCtrl.onParameterSelect"></div>
                     </div>
-
-                    <div class="panel panel-default" ng-if="testExecutionCtrl.availableActors.length >= 0">
-                        <div class="panel-heading">
-                            <h4 class="title">Available Actors</h4>
-                        </div>
-                        <div ng-if="testExecutionCtrl.availableActors.length > 0" table-directive columns="testExecutionCtrl.actorTableColumns" data="testExecutionCtrl.availableActors" on-select="testExecutionCtrl.onActorSelect"></div>
-                    </div>
+                </diV>
+            </div>
+            <div class="panel panel-default" ng-if="testExecutionCtrl.wizardStep == 2">
+                <div class="panel-heading">
+                    <h5 class="title">Test [{{testExecutionCtrl.currentTest.sname}}] - Preliminary phase</h5>
                 </div>
-                <div class="step-content select-peliminary">
+                <div class="panel-body">
                     <div ng-repeat="simulatedConfig in testExecutionCtrl.simulatedConfigs">
                         <p>Simulated configurations for {{testExecutionCtrl.getActorName(simulatedConfig.actor)}}</p>
                         <ul ng-repeat="config in simulatedConfig.configs">
-                            <li>
-                                <label>{{testExecutionCtrl.getActorName(config.actor)}}</label>
+                            <li><label>{{testExecutionCtrl.getActorName(config.actor)}}</label>
                                 <ul ng-repeat="parameter in config.config">
                                     <li>
                                         <span>{{parameter.name}}:</span>
@@ -58,20 +61,23 @@
                             </li>
                         </ul>
                     </div>
-                    <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.nextStep()" ng-show="testExecutionCtrl.showNextForPreliminaryStep">Next</button>
-                </div>
-                <div class="step-content select-execution">
-                    <div ng-if="!testExecutionCtrl.started">
-                        <button class="btn btn-primary pull-right"  ng-click="testExecutionCtrl.start(testExecutionCtrl.session)">Start</button>
-                        <br> <br> <br>
-                    </div>
-                    <div ng-if="testExecutionCtrl.started">
-                        <button class="btn btn-primary pull-right"  ng-click="testExecutionCtrl.stop(testExecutionCtrl.session)">Stop</button>
-                        <br> <br> <br>
-                    </div>
-                    <div class="child" seq-diagram steps="steps" actor-info="actorInfo"></div>
                 </div>
             </div>
+            <div ng-repeat="test in testExecutionCtrl.testsToExecute" ng-if="testExecutionCtrl.wizardStep == 3">
+                <div class="panel panel-default select-execution" ng-show="test.id == testExecutionCtrl.visibleTest.id">
+                    <div class="panel-heading">
+                        <h5 class="title">Test [{{test.sname}}] - Execution</h5>
+                        <button class="btn btn-primary pull-right" ng-if="testExecutionCtrl.testsToExecute.length > 1 && !testExecutionCtrl.started && !testExecutionCtrl.startAutomatically && !testExecutionCtrl.reload" ng-click="testExecutionCtrl.start(testExecutionCtrl.session)">Start</button>
+                        <button class="btn btn-primary pull-right" ng-if="testExecutionCtrl.testsToExecute.length > 1 && testExecutionCtrl.started && test.id == testExecutionCtrl.currentTest.id" ng-click="testExecutionCtrl.stop(testExecutionCtrl.session)">Stop</button>
+                    </div>
+                    <div class="panel-body">
+                        <div class="child" seq-diagram steps-of-tests="stepsOfTests" test="{{test.id}}" actor-info-of-tests="actorInfoOfTests"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-footer">
+            <button class="btn btn-default" ng-disabled="testExecutionCtrl.backDisabled()" ng-click="testExecutionCtrl.back()">Back</button>
         </div>
     </div>
 </div>

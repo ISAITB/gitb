@@ -1,5 +1,10 @@
 @import "../_common.less";
 
+@processing-color: #03A9F4;
+@error-color: #D32F2F;
+@completed-color: #4CAF50;
+@basic-color: #777;
+
 .table-directive {
   	padding:0; margin:0;
 	tbody {
@@ -43,4 +48,60 @@
 .system-container-div {
 	padding-right: 0px;
 	padding-left: 0px;
+}
+
+.panel-heading-tests {
+	padding: 10px 9px 10px 15px;
+}
+
+.testsuite-progress-icon {
+	font-size: 24px;
+}
+
+.test-case-pending {
+	visibility: hidden;
+}
+.test-case-ready {
+	color: @basic-color;
+}
+.test-case-stopped {
+	color: @basic-color;
+}
+.test-case-running {
+	color: @processing-color;
+}
+.test-case-error {
+	color: @error-color;
+}
+.test-case-success {
+	color: @completed-color;
+}
+
+.select-execution {
+	.panel-body {
+		min-height: 220px;
+	}
+}
+
+.test-case-list-table {
+	padding-bottom: 20px;
+}
+
+.td-centered {
+	text-align: center;
+}
+
+.test-case-table {
+	padding:0; margin:0;
+	tbody {
+		tr.clickable-row {
+			&:hover {
+				cursor: pointer;
+				background-color: fade(@gray-light, 50%);
+			}
+		}
+		tr.selected-row {
+			background-color: fade(@blue, 20%);
+		}
+	}	
 }

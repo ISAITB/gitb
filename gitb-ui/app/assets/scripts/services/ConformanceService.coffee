@@ -250,4 +250,18 @@ class ConformanceService
       authenticate: true
       params: params
 
+  getTestSuiteTestCase: (testCaseId) ->
+    @RestService.get
+      path: jsRoutes.controllers.ConformanceService.getTestSuiteTestCase(testCaseId).url
+      authenticate: true
+
+  getTestSuiteTestCases: (testSuiteId, type) ->
+    params = {
+      type: type
+    }
+    @RestService.get
+      path: jsRoutes.controllers.ConformanceService.getTestSuiteTestCases(testSuiteId).url
+      authenticate: true
+      params: params
+
 services.service('ConformanceService', ConformanceService)

@@ -42,7 +42,7 @@ libraryDependencies ++= Seq(
   "org.webjars" % "bootstrap" % "3.2.0-2" exclude("org.webjars", "jquery"),
   "org.webjars" % "angularjs" % "1.2.16-2" exclude("org.webjars", "jquery"),
   "org.webjars" % "angular-ui-bootstrap" % "0.12.0",
-  "org.webjars" % "angular-ui-router" % "0.2.11-1",
+  "org.webjars" % "angular-ui-router" % "0.2.18",
   "org.webjars" % "ng-grid" % "2.0.11-2",
   "org.webjars" % "font-awesome" % "4.1.0" exclude("org.webjars", "jquery"),
   "org.webjars" % "angular-file-upload" % "1.6.12",

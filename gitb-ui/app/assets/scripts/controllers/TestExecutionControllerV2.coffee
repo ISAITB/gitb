@@ -1,20 +1,52 @@
 class TestExecutionControllerV2
-  @$inject = ['$log', '$scope', '$location', '$modal', '$state', '$stateParams', 'Constants', 'TestService', 'SystemService', 'ConformanceService', 'WebSocketService', 'ReportService', 'ErrorService']
-  constructor: (@$log, @$scope, @$location, @$modal, @$state, @$stateParams, @Constants, @TestService, @SystemService, @ConformanceService, @WebSocketService, @ReportService, @ErrorService) ->
-    @$log.debug "Constructing TestExecutionController..."
+  @$inject = ['$log', '$scope', '$location', '$modal', '$state', '$stateParams', 'Constants', 'TestService', 'SystemService', 'ConformanceService', 'WebSocketService', 'ReportService', 'ErrorService', 'DataService', '$q', '$timeout', '$interval']
+  constructor: (@$log, @$scope, @$location, @$modal, @$state, @$stateParams, @Constants, @TestService, @SystemService, @ConformanceService, @WebSocketService, @ReportService, @ErrorService, @DataService, @$q, @$timeout, @$interval) ->
+    @testsToExecute = @DataService.tests
+    if (!@testsToExecute?)
+      # We lost our state following a refresh - recreate state.
+      testSuiteId = @$stateParams['testSuiteId']
+      if (testSuiteId?)
+        @ConformanceService.getTestSuiteTestCases(testSuiteId, @Constants.TEST_CASE_TYPE.CONFORMANCE)
+          .then(
+            (data) =>
+              # There will always be one test suite returned
+              @testsToExecute = data
+              @initialiseState()
+            (error) =>
+              @ErrorService.showErrorMessage(error)
+          )
+      else
+        testCaseId = @$stateParams['testCaseId']
+        @ConformanceService.getTestSuiteTestCase(testCaseId)
+          .then(
+            (data) =>
+              # There will always be one test suite returned
+              @testsToExecute = [data]
+              @initialiseState()
+            (error) =>
+              @ErrorService.showErrorMessage(error)
+          )
+    else 
+      @initialiseState()
 
-    @testId   = @$stateParams['test_id']
-    @systemId = @$stateParams['systemId']
-    @actorId  = @$stateParams['actorId']
-    @specId   = @$stateParams['specId']
+  initialiseState: () =>
+    @systemId = parseInt(@$stateParams['systemId'], 10)
+    @actorId  = parseInt(@$stateParams['actorId'], 10)
+    @specId   = parseInt(@$stateParams['specId'], 10)
     @started	= false #test started or not
+    @firstTestStarted	= false
     @reload	  = false
+    @startAutomatically	  = false
     @actorConfigurations = {}
     @$scope.interactions  = []
     @selectedInteroperabilitySession = null
     @isOwner = false
-    @ready	 = false
-
+    @wizardStep = 0
+    @intervalSet = false
+    @progressIcons = {}
+    @testCaseStatus = {}
+    @$scope.stepsOfTests = {}
+    @$scope.actorInfoOfTests = {}
     @$scope.$on '$destroy', () =>
       if @ws? and @session?
         @$log.debug 'Closing websocket in $destroy event handler'
@@ -22,7 +54,6 @@ class TestExecutionControllerV2
         @ws.close()
 
       return
-
     @parameterTableColumns = [
       {
         field: 'name'
@@ -41,77 +72,164 @@ class TestExecutionControllerV2
         title: 'Configured'
       }
     ]
-
     @sessionTableColumns = [
       {
         title:'Session'
         field:'session'
       }
     ]
-
     @actorTableColumns = [
       {
         title:'Actor'
         field:'actor'
       }
     ]
+    @stopped = false
+    @currentTestIndex = 0
+    @currentTest = @testsToExecute[@currentTestIndex]
+    @visibleTest = @currentTest
+    for test in @testsToExecute
+      @updateTestCaseStatus(test.id, @Constants.TEST_CASE_STATUS.PENDING)
+      @$scope.stepsOfTests[test.id] = {}
+      @$scope.actorInfoOfTests[test.id] = {}
 
-    @steps = [
-      {
-        id: 1
-        title: 'System Configurations'
-      }
-      {
-        id: 2
-        title: 'Initiate Preliminary'
-      }
-      {
-        id: 3
-        title: 'Execute Test'
-      }
-    ]
-
+    @endpointsLoaded = @$q.defer()
+    @configurationsLoaded = @$q.defer()
+    @testCaseLoaded = @$q.defer()
+    @$q.all(@endpointsLoaded.promise, @configurationsLoaded.promise, @testCaseLoaded.promise).then(() =>
+      # Start the wizard
+      @nextStep()
+    )
     @getEndpointConfigurations(@actorId)
+    @getTestCaseDefinition(@currentTest.id)
 
-    @getTestCaseDefinition(@testId)
+  stopAll: () =>
+    @stopped = true
+    if (@session?)
+      @stop(@session)
+    @started = false 
+    @startAutomatically = false
+    @reload = true
 
-  nextStep: () =>
-    @$scope.$broadcast 'wizard-directive:next'
-
-  onWizardNext: (step) =>
-    if step.id == 1
-      if !@isInteroperabilityTesting
-        @initiate(@testId)
-      true
+  tableRowClass: (testCase) =>
+    if (@isTestCaseClickable(testCase))
+      "clickable-row"
+    else if (testCase.id == @visibleTest.id && @testsToExecute.length > 1)
+      "selected-row"
     else
-      true
+      ""
 
-  onWizardFinish: () =>
-    @$log.debug "xxx"
+  isTestCaseClickable: (testCase) =>
+    testCase.id != @visibleTest.id && @testCaseStatus[testCase.id] != @Constants.TEST_CASE_STATUS.PENDING
 
-  onWizardBefore: (step) =>
-    if step.id == 1
-      !@isSystemConfigurationsValid(@endpointRepresentations)
-    else if step.id == 2
-      true
+  viewTestCase: (testCase) =>
+    if (@isTestCaseClickable(testCase))
+      @visibleTest = testCase
+
+  updateTestCaseStatus: (testId, status) =>
+    @testCaseStatus[testId] = status
+    if (status == @Constants.TEST_CASE_STATUS.PROCESSING)
+      @progressIcons[testId] = "fa-gear fa-spin test-case-running"
+    else if (status == @Constants.TEST_CASE_STATUS.READY)
+      @progressIcons[testId] = "fa-gear test-case-ready"
+    else if (status == @Constants.TEST_CASE_STATUS.PENDING)
+      @progressIcons[testId] = "fa-gear test-case-pending"
+    else if (status == @Constants.TEST_CASE_STATUS.ERROR)
+      @progressIcons[testId] = "fa-times-circle test-case-error"
+    else if (status == @Constants.TEST_CASE_STATUS.COMPLETED)
+      @progressIcons[testId] = "fa-check-circle test-case-success"
+    else if (status == @Constants.TEST_CASE_STATUS.STOPPED)
+      @progressIcons[testId] = "fa-gear test-case-stopped"
     else
-      true
+      @progressIcons[testId] = "fa-gear test-case-pending"
 
-  checkReady: ()->
-    @ready = @endpointsLoaded && @configurationsLoaded && @actorLoaded
-    if @ready
-      @$scope.$broadcast 'wizard-directive:start'
-    @ready
+  progressIcon: (testCaseId) =>
+    @progressIcons[testCaseId]
 
-  updateConfigurations: ()->
-    @$state.go 'app.systems.detail.conformance.detail', {id: @systemId, actor_id: @actorId, specId:@specId}
+  runInitiateStep:() =>
+    @updateTestCaseStatus(@currentTest.id, @Constants.TEST_CASE_STATUS.READY)
+    initiateFinished = @$q.defer()
+    @initiate(@currentTest.id, initiateFinished)
+    initiateFinished.promise.then(() =>
+      configsDiffer = true
+      if (@currentSimulatedConfigs?)
+        configsDiffer = @configsDifferent(@currentSimulatedConfigs, @simulatedConfigs)        
+      else
+        @currentSimulatedConfigs = @simulatedConfigs
+      if (@simulatedConfigs && @simulatedConfigs.length > 0 && configsDiffer)
+        @wizardStep = 2
+      else
+        @wizardStep = 3
+        if (@startAutomatically)
+          @start(@session)
+    )
+
+  configsDifferent: (previous, current) =>
+    for c1 in previous
+      delete c1["$$hashKey"]
+      for c2 in c1.configs
+        delete c2["$$hashKey"]
+        for c3 in c2.config
+          delete c3["$$hashKey"]
+    configStr1 = JSON.stringify(previous)
+    configStr2 = JSON.stringify(current)
+    console.log "HERE"
+    !(configStr1 == configStr2)
+
+  nextStep: (stepToConsider) =>
+    if (!@stopped)
+      if (!stepToConsider?)
+        stepToConsider = @wizardStep
+      if (stepToConsider == 0)
+        # Before starting
+        if (!@isSystemConfigurationsValid(@endpointRepresentations))
+          @wizardStep = 1
+        else 
+          @runInitiateStep()
+      else if (stepToConsider == 1)
+        @runInitiateStep()
+      else if (stepToConsider == 2)
+        @wizardStep = 3
+        if (@startAutomatically)
+          @start(@session)
+      else if (@wizardStep == 3)
+        # We are running the next test case
+        @startNextTest()
+
+  startNextTest: () =>
+    if (@currentTestIndex + 1 < @testsToExecute.length)
+      @currentTestIndex += 1
+      @currentTest = @testsToExecute[@currentTestIndex]
+      @visibleTest = @currentTest
+      @startAutomatically = true
+      @testCaseLoaded = @$q.defer()
+      @getTestCaseDefinition(@currentTest.id)
+      @testCaseLoaded.promise.then(() =>
+        @nextStep(1)
+      )
+    else
+      @startAutomatically = false
+      @started = false 
+      @reload = true
+
+  testCaseFinished: (result) =>
+    if (result == "SUCCESS")
+      @updateTestCaseStatus(@currentTest.id, @Constants.TEST_CASE_STATUS.COMPLETED)
+    else if (result == "FAILURE")
+      @updateTestCaseStatus(@currentTest.id, @Constants.TEST_CASE_STATUS.ERROR)
+    else
+      @updateTestCaseStatus(@currentTest.id, @Constants.TEST_CASE_STATUS.STOPPED)
+    if (@currentTestIndex + 1 < @testsToExecute.length)
+      @$timeout(() => 
+        @nextStep()
+      , 1000)
+    else
+      @nextStep()
 
   getEndpointConfigurations :(actorId)->
     @ConformanceService.getEndpointsForActor actorId
         .then (endpoints) =>
           @endpoints = endpoints
-          @endpointsLoaded = true
-          @checkReady()
         .then () =>
           if @endpoints?.length > 0
             endpointIds = _.map @endpoints, (endpoint) -> endpoint.id
@@ -119,19 +237,17 @@ class TestExecutionControllerV2
             .then (configurations) =>
               @configurations = configurations
               @constructEndpointRepresentations()
-              @configurationsLoaded = true
-              @checkReady()
-
-              @$log.debug @endpointRepresentations
+              @configurationsLoaded.resolve()
 
               for configuration in @configurations
                 endpoint = @getEndpointForId(configuration.endpoint)
                 for parameter in endpoint.parameters
                   if parameter.id == configuration.parameter
                     parameter.value = configuration.value
+              @endpointsLoaded.resolve()
           else
-            @configurationsLoaded = true
-            @checkReady()
+            @endpointsLoaded.resolve()
+            @configurationsLoaded.resolve()
 
         .catch (error) =>
           @ErrorService.showErrorMessage(error).result.then () =>
@@ -172,39 +288,41 @@ class TestExecutionControllerV2
         break;
     _endpoint
 
-  getTestCaseDefinition: (testCase) ->
-    @TestService.getTestCaseDefinition(testCase)
+  getTestCaseDefinition: (testCaseToLookup) ->
+    @TestService.getTestCaseDefinition(testCaseToLookup)
     .then(
       (data) =>
-        @testcase = data
+        testcase = data
+        if (testcase.preliminary?)
+          @currentTest["preliminary"] = testcase.preliminary
+        
         @TestService.getActorDefinitions(@specId).then((data) =>
-
-          @$scope.actorInfo = @testcase.actors.actor
+          @$scope.actorInfoOfTests[testCaseToLookup] = testcase.actors.actor
           for domainActorData in data
             if (domainActorData.id == @actorId)
               @actor = domainActorData.actorId
-            for testCaseActorData in @$scope.actorInfo
+            for testCaseActorData in @$scope.actorInfoOfTests[testCaseToLookup]
               if (testCaseActorData.id == domainActorData.actorId)
                 if (!(testCaseActorData.name?))
                   testCaseActorData.name = domainActorData.name
                 break
 
-          @actorLoaded = true
-          @testCaseLoaded = true
-          @$scope.steps = @testcase.steps
+          @$scope.stepsOfTests[testCaseToLookup] = testcase.steps
+          @$scope.$broadcast('sequence:testLoaded', testCaseToLookup)
+          # @$scope.steps = testcase.steps
+          @testCaseLoaded.resolve()
 
-          @isInteroperabilityTesting = @testcase.metadata.type == @Constants.TEST_CASE_TYPE.INTEROPERABILITY
+          @isInteroperabilityTesting = testcase.metadata.type == @Constants.TEST_CASE_TYPE.INTEROPERABILITY
           if @isInteroperabilityTesting
-            @steps.splice(1, 0, {id:2, title:"Participants" })
-            @steps[2].id = 3
-            @steps[3].id = 4
+            @$scope.stepsOfTests[testCaseToLookup].splice(1, 0, {id:2, title:"Participants" })
+            @$scope.stepsOfTests[testCaseToLookup].id = 3
+            @$scope.stepsOfTests[testCaseToLookup].id = 4
 
             @getInteroperabilitySessions()
 
-          for testCaseActor in @$scope.actorInfo
+          for testCaseActor in @$scope.actorInfoOfTests[testCaseToLookup]
             if testCaseActor.role == @Constants.TEST_ROLE.SUT
               @actorConfigurations[testCaseActor.id] = null
-          @checkReady()
         ,
         (error) =>
           @ErrorService.showErrorMessage(error).result
@@ -217,7 +335,7 @@ class TestExecutionControllerV2
 
   getActorName: (actorId) ->
     actorName = actorId
-    for info in @$scope.actorInfo
+    for info in @$scope.actorInfoOfTests[@currentTest.id]
       if actorId == info.id
         if info.name?
           actorName = info.name
@@ -225,27 +343,6 @@ class TestExecutionControllerV2
           actorName = info.id
         break
     actorName
-
-  generateStepIdMap: (steps) =>
-    _.forEach steps, (step) =>
-      @stepsMap[step.id] = step
-
-      if step.type == 'decision'
-        @generateStepsMap step.then
-        @generateStepsMap step.else
-      else if step.type == 'loop'
-        @generateStepsMap step.steps
-
-  onSessionSelect: (session) =>
-    @selectedSession = session.session
-    @availableActors = []
-    for testCaseActor in @$scope.actorInfo
-      found = _.find session.actors, (unavailableActor) => unavailableActor == testCaseActor.id
-      if !found? #actor not found, so it is available
-        @availableActors.push({actor: testCaseActor.id})
-
-  onActorSelect: (actor) =>
-    @actor = actor.actor
 
   getInteroperabilitySessions: () ->
     @TestService.getSessions()
@@ -272,9 +369,16 @@ class TestExecutionControllerV2
     $("#joinSession").attr("disabled", true)
 
     @isOwner = true
-    @initiate(@testId)
+    @initiate(@currentTest.id)
 
-  initiate: (testCase) ->
+  initiate: (testCase, initiateFinished) ->
+    @socketOpen = @$q.defer()
+    @socketOpen.promise.then(() =>
+      if (!@intervalSet)
+        @intervalSet = true
+        @$interval(@processNextMessage, 100, false)
+
+    )
     @TestService.initiate(testCase)
     .then(
       (data) =>
@@ -285,7 +389,8 @@ class TestExecutionControllerV2
         #if actor configurations list contains null values, that means other actors of interoperability
         #testing did not send their configurations yet. WON'T happen in Conformance Testing
         if !_.contains(list, null)
-          @configure(@session, list)
+          configureFinished = @$q.defer()
+          @configure(@session, list, configureFinished)
 
         #create a WebSocket when a new session is initiated
         @ws = @WebSocketService.createWebSocket({
@@ -295,13 +400,16 @@ class TestExecutionControllerV2
             onmessage : @onmessage
           }
         })
+        configureFinished.promise.then(() => 
+          initiateFinished.resolve()
+        )
       ,
       (error) =>
         @ErrorService.showErrorMessage(error).result.then () =>
           @$state.go @$state.current, {}, {reload: true}
     )
 
-  configure: (session, configs) ->
+  configure: (session, configs, configureFinished) ->
     @TestService.configure(session, configs)
     .then(
       (data) =>
@@ -318,22 +426,44 @@ class TestExecutionControllerV2
           }
           @ws.send(angular.toJson(msg))
 
-        if @testcase.preliminary?
-          @initiatePreliminary(@session)
-          @showNextForPreliminaryStep = true
+        if @currentTest.preliminary?
+          @startAutomatically = false
+          @initiatePreliminary(@session, configureFinished)
         else
-          if !(@simulatedConfigs && @simulatedConfigs.length > 0)
-            @nextStep()
-          else
-            @showNextForPreliminaryStep = true
+          configureFinished.resolve()
       ,
       (error) =>
         @ErrorService.showErrorMessage(error).result.then () =>
           @$state.go @$state.current, {}, {reload: true}
     )
 
-  initiatePreliminary: (session) ->
+  initiatePreliminary: (session, configureFinished) ->
     @TestService.initiatePreliminary(session)
+    .then(
+      (data) =>
+        configureFinished.resolve()
+      ,
+      (error) =>
+        @ErrorService.showErrorMessage(error).result.then () =>
+          @$state.go @$state.current, {}, {reload: true}
+    )
+
+  backDisabled: () ->
+    false
+
+  back: () ->
+    @$state.go 'app.systems.detail.conformance.detail', {actor_id: @actorId, specId: @specId, id: @systemId}
+
+  reinitialise: () =>
+    @$state.go @$state.current, {}, {reload: true}
+
+  start: (session) ->
+    @updateTestCaseStatus(@currentTest.id, @Constants.TEST_CASE_STATUS.PROCESSING)
+    @started = true
+    @firstTestStarted = true
+    @startAutomatically = true
+    @ReportService.createTestReport(session, @systemId, @actorId, @currentTest.id)
+    @TestService.start(session)
     .then(
       (data) =>
         @$log.debug data
@@ -343,32 +473,16 @@ class TestExecutionControllerV2
           @$state.go @$state.current, {}, {reload: true}
     )
 
-  start: (session) ->
-    if @reload
-      @$log.debug 'reloading...'
-      @$state.go @$state.current, {}, {reload: true}
-    else
-      @started = true
-      @ReportService.createTestReport(session, @systemId, @actorId, @testId)
-      @TestService.start(session)
-      .then(
-        (data) =>
-          @$log.debug data
-        ,
-        (error) =>
-          @ErrorService.showErrorMessage(error).result.then () =>
-            @$state.go @$state.current, {}, {reload: true}
-      )
-
-  stop: (session) ->
-    @reload = true
+  stop: (session) =>
     @started = false
     @TestService.stop(session)
     .then(
       (data) =>
-        @ws.close()
+        if (@ws?)
+          @ws.close()
         @session = null
         @ws = null
+        @testCaseFinished()
       ,
       (error) =>
         @ErrorService.showErrorMessage(error).result.then () =>
@@ -410,13 +524,11 @@ class TestExecutionControllerV2
 
   onopen: (msg) =>
     @$log.debug "WebSocket created."
-
     testType = -1
     if @isInteroperabilityTesting
       testType = @Constants.TEST_CASE_TYPE.INTEROPERABILITY
     else
       testType = @Constants.TEST_CASE_TYPE.CONFORMANCE
-
     #register client
     msg = {
       command: @Constants.WEB_SOCKET_COMMAND.REGISTER
@@ -424,27 +536,33 @@ class TestExecutionControllerV2
       actorId:   @actor
       type: testType
     }
-
     if !@isOwner
       msg.configurations = @createActorConfigurations(@configurations)
 
     @ws.send(angular.toJson(msg))
+    @socketOpen.resolve()
 
   onclose: (msg) =>
     @$log.debug "WebSocket closed."
 
   onmessage: (msg) =>
+    if (!@messagesToProcess?)
+      @messagesToProcess = []
+    @messagesToProcess.push(msg)
+
+  processNextMessage: () =>
+    if (@messagesToProcess? && @messagesToProcess.length > 0)
+      msg = @messagesToProcess.shift()
+      @processMessage(msg)
+
+  processMessage: (msg) =>
     response = angular.fromJson(msg.data)
-    #@$log.debug msg.data
-
     stepId = response.stepId
-
     if response.interactions? #interactWithUsers
         @interact(response.interactions, stepId)
     else if response.notify?
       if response.notify.simulatedConfigs?
-        @$scope.$apply () =>
-          @simulatedConfigs = response.notify.simulatedConfigs
+        @simulatedConfigs = response.notify.simulatedConfigs
     else if response.configuration? #actorConfigurations for interoperability testing
       if @isOwner
         @actorConfigurations[response.configuration.actor] = response.configuration
@@ -455,24 +573,18 @@ class TestExecutionControllerV2
     else  #updateStatus
       if stepId == @Constants.END_OF_TEST_STEP
         @$log.debug "END OF THE TEST"
-        @$scope.$apply () =>
-          @started = false
-          @reload  = true
-          return ;
+        @started = false
+        @testCaseFinished(response.report.result)
       else
         status = response.status
         report = response.report
-        step   = @findNodeWithStepId @$scope.steps, stepId
+        step   = @findNodeWithStepId @$scope.stepsOfTests[@currentTest.id], stepId
         if report?
           report.tcInstanceId = response.tcInstanceId
         @updateStatus(step, stepId, status, report)
 
-  interact: (interactions, stepId) ->
-    @$scope.interactionStepId = stepId
-    for interaction in interactions
-
-      @$scope.$apply () =>
-        @$scope.interactions.push(interaction)
+  interact: (interactions, stepId) =>
+    sessionForModal = @session
 
     modalOptions =
       templateUrl: 'assets/views/tests/provide-input-modal.html'
@@ -480,17 +592,15 @@ class TestExecutionControllerV2
       keyboard: false,
       backdrop: 'static'      
       resolve: 
-        interactions: () => @$scope.interactions
-        session: () => @session
-        interactionStepId: () => @$scope.interactionStepId
+        interactions: () => interactions
+        session: () => sessionForModal
+        interactionStepId: () => stepId
 
     modalInstance = @$modal.open(modalOptions)
     modalInstance.result.then((result) => 
-        @$scope.interactionStepId = null
-        @$scope.interactions = []
-        if (!result.success)
-          @ErrorService.showErrorMessage(result.error).result.then () =>
-          @$state.go @$state.current, {}, {reload: true}
+      if (!result.success)
+        @ErrorService.showErrorMessage(result.error).result.then () =>
+        @$state.go @$state.current, {}, {reload: true}
     )
 
   updateStatus: (step, stepId, status, report) =>
@@ -563,10 +673,8 @@ class TestExecutionControllerV2
       current.status != @Constants.TEST_STATUS.COMPLETED &&
       current.status != @Constants.TEST_STATUS.ERROR &&
       current.status != @Constants.TEST_STATUS.SKIPPED
-        @$scope.$apply () =>
-          console.debug 'Setting the status for ', current, status
-          current.status = status
-          current.report = report
+        current.status = status
+        current.report = report
 
   isParent: (id, parentId) ->
     periodIndex = id.indexOf '.', parentId.length

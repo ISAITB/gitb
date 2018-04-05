@@ -59,6 +59,14 @@ class Constants
 		ERROR : 3,
 		COMPLETED: 4
 
+	@TEST_CASE_STATUS =
+		READY : 0,
+		PROCESSING : 1,
+		PENDING : 2,
+		ERROR : 3,
+		COMPLETED: 4
+		STOPPED: 5
+
 	@TEST_RESULT =
 		SUCCESS: 1,
 		FAIL: 2,

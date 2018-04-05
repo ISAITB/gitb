@@ -7,6 +7,9 @@ import play.api.libs.json._
 import org.slf4j.{LoggerFactory, Logger}
 
 object WebSocketActor {
+
+  private final val logger = LoggerFactory.getLogger("WebSocketActor")
+
   //references to all the connection handling actors
   //[sessionId -> [actorId -> Actor]]
   private var webSockets = Map[String, Map[String, ActorRef]]()
@@ -16,16 +19,28 @@ object WebSocketActor {
    * Broadcasts given msg (in Json) to all clients with the given session
    */
   def broadcast(sessionId:String, msg:String) = {
-    if(webSockets.get(sessionId).isDefined) {
+    var attempts = 0
+    while (attempts < 10 && !broadcastMessage(sessionId, msg)) {
+      attempts += 1
+      logger.warn("Unable to send message ["+msg+"] for session ["+sessionId+"] - attempt " + attempts)
+      Thread.sleep(1000)
+    }
+  }
+
+  def broadcastMessage(sessionId:String, msg:String):Boolean = {
+    if (webSockets.get(sessionId).isDefined) {
       webSockets.get(sessionId).get.foreach {
         case (actorId, out) =>
           //send message to each ActorRef of the same session ID
           out ! msg
       }
+      true
+    } else {
+      false
     }
   }
 
-  /**
+    /**
    * Pushes given msg (in Json) to the given actor with given session
    */
   def push(sessionId:String, actorId:String, msg:String) = {

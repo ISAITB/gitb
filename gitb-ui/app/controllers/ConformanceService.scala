@@ -281,4 +281,18 @@ class ConformanceService extends Controller {
     ResponseConstructor.constructJsonResponse(json)
   }
 
+  def getTestSuiteTestCases(testSuiteId: Long) = Action.apply { request =>
+    val testCaseType = ParameterExtractor.requiredQueryParameter(request, Parameters.TYPE).toShort
+    val list = TestCaseManager.getTestCasesOfTestSuite(testSuiteId, Some(testCaseType))
+    import scala.collection.JavaConversions._
+    val json: String = JsonUtil.jsTestCasesList(list.toList).toString
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def getTestSuiteTestCase(testCaseId: Long) = Action.apply { request =>
+    val testCase = TestCaseManager.getTestCase(testCaseId.toString()).get
+    val json: String = JsonUtil.jsTestCase(testCase).toString
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
 }

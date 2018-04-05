@@ -81,8 +81,9 @@ extractSteps = (s, actorInfo) =>
 
 @directives.directive 'seqDiagram', () =>
   scope:
-    steps: '='
-    actorInfo: '='
+    stepsOfTests: '='
+    test: '@'
+    actorInfoOfTests: '='
   restrict: 'A'
   replace: true
   template: ''+
@@ -98,6 +99,19 @@ extractSteps = (s, actorInfo) =>
       '</div>'+
     '</div>'
   link: (scope, element, attrs) ->
+
+    scope.$on 'sequence:testLoaded', (event, loadedTestId) =>
+      if (loadedTestId+"" == scope.test+"")
+        updateState()
+
+    updateState = () =>
+      steps = scope.stepsOfTests[scope.test]
+      scope.actorInfo = scope.actorInfoOfTests[scope.test]
+      if steps?
+        scope.messages = extractSteps(steps, scope.actorInfo)
+        scope.actors = extractActors(scope.messages, scope.actorInfo)
+
+        setStepIndexes scope.messages
 
     setIndexes = (message) =>
       message.fromIndex = _.indexOf scope.actors, message.from
@@ -172,13 +186,8 @@ extractSteps = (s, actorInfo) =>
 
     scope.messages = []
     scope.actors = []
-    scope.$watch 'steps', (newValue) =>
-      steps = newValue
-      if steps?
-        scope.messages = extractSteps(steps, scope.actorInfo)
-        scope.actors = extractActors(scope.messages, scope.actorInfo)
 
-        setStepIndexes scope.messages
+    updateState()
 
 
 @directives.directive 'seqDiagramActor', ()->

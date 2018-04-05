@@ -434,7 +434,7 @@ object TestSuiteManager extends BaseManager {
 				val existingTestCaseMap = new util.HashMap[String, java.lang.Long]()
 				if (existingSuite != null) {
 					// This is an update - check for existing test cases.
-					for (existingTestCase <- TestCaseManager.getTestCasesOfTestSuite(savedTestSuiteId)) {
+					for (existingTestCase <- TestCaseManager.getTestCasesOfTestSuite(savedTestSuiteId, None)) {
 						existingTestCaseMap.put(existingTestCase.shortname, existingTestCase.id)
 					}
 				}
@@ -503,6 +503,32 @@ object TestSuiteManager extends BaseManager {
 					throw e
 				}
       }
+		}
+	}
+
+	def getTestSuiteTestCase(testSuiteId: Long, testCaseType: Short): List[TestCases] = {
+		DB.withSession { implicit session =>
+			val testCaseIds = PersistenceSchema.testSuiteHasTestCases
+				.filter(_.testsuite === testSuiteId)
+				.map(_.testcase)
+				.list
+			var testCaseQuery = PersistenceSchema.testCases
+				.filter(_.id inSet testCaseIds)
+			val testCases = testCaseQuery.list
+			testCases
+		}
+	}
+
+	def getTestSuiteTestCases(testSuiteId: Long, testCaseType: Short): List[TestCases] = {
+		DB.withSession { implicit session =>
+			val testCaseIds = PersistenceSchema.testSuiteHasTestCases
+				.filter(_.testsuite === testSuiteId)
+				.map(_.testcase)
+				.list
+			var testCaseQuery = PersistenceSchema.testCases
+				.filter(_.id inSet testCaseIds)
+			val testCases = testCaseQuery.list
+			testCases
 		}
 	}
 

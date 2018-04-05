@@ -6,11 +6,12 @@
 			onNext: '='
 			onFinish: '='
 			triggerNext: '='
+			showTitle: '@'
 		restrict: 'A'
 		transclude: true
 		template: ''+
 			'<div class="wizard-directive">'+
-				'<div class="steps">'+
+				'<div class="steps" ng-if="showTitle">'+
 					'<div class="steps-row">'+
 						'<div class="step" '+
 							'ng-repeat="step in steps" '+

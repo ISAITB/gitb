@@ -129,12 +129,17 @@ class ConformanceStatementDetailController
     @runTestClicked = false
 
   onTestSelect: (test) =>
-    @$state.go 'app.tests.execution', {test_id: test.id, systemId: @systemId, actorId: @actorId, specId:@specId}
+    @DataService.setTestsToExecute [test]
+    @$state.go 'app.tests.execution', {systemId: @systemId, actorId: @actorId, specId:@specId, testCaseId: test.id}
 
   onTestSuiteSelect: (testSuite) =>
-    # This function remains empty at the moment but it makes sense to keep it,
-    # as in the future we will not only be able to run individual test cases but
-    # also test suites (which contain test cases).
+    if (!testSuite?)
+      testSuite = @testSuites[0]
+    testsToExecute = []
+    for testCase in testSuite.testCases
+      testsToExecute.push testCase
+    @DataService.setTestsToExecute testsToExecute
+    @$state.go 'app.tests.execution', {systemId: @systemId, actorId: @actorId, specId:@specId, testSuiteId: testSuite.id}
 
   onParameterSelect: (parameter) =>
     @$log.debug "Editing parameter: ", parameter

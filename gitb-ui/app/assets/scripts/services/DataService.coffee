@@ -33,4 +33,7 @@ class DataService
 	setCommunity: (community) ->
 		@community = community
 
+	setTestsToExecute: (tests) ->
+		@tests = tests
+
 services.service('DataService', DataService)

@@ -108,7 +108,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				abstract: true
 				templateUrl: 'assets/views/tests/index.html'
 			'app.tests.execution':
-				url: '/:test_id?systemId&actorId&specId'
+				url: '/:systemId?actorId&specId&testCaseId&testSuiteId'
 				templateUrl: 'assets/views/tests/execution-v2.html'
 				controller: 'TestExecutionControllerV2'
 				controllerAs: 'testExecutionCtrl'

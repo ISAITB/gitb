@@ -34,15 +34,18 @@ object TestCaseManager extends BaseManager {
 		}
 	}
 
-	def getTestCasesOfTestSuite(testSuiteId: Long): util.List[TestCases] = {
+	def getTestCasesOfTestSuite(testSuiteId: Long, testCaseType: Option[Short]): util.List[TestCases] = {
 		DB.withSession { implicit session =>
 			var query = for {
 				testCase <- PersistenceSchema.testCases
 				testSuiteHasTestCases <- PersistenceSchema.testSuiteHasTestCases if testSuiteHasTestCases.testcase === testCase.id
 			} yield (testCase, testSuiteHasTestCases)
-			val results = query
+			query = query
 				.filter(_._2.testsuite === testSuiteId)
-				.list
+			if (testCaseType.isDefined)
+				query = query
+					.filter(_._1.testCaseType === testCaseType.get)
+			val results = query.list
 
 			var testCases = new util.ArrayList[TestCases]()
 			for (result <- results) {

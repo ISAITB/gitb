@@ -70,6 +70,8 @@ DELETE  /actors/:actor_id                   @controllers.ActorService.deleteActo
 POST    /actors/:actor_id                   @controllers.ActorService.updateActor(actor_id : Long)
 GET	    /actors/:actor_id/tests             @controllers.ConformanceService.getActorTestCases(actor_id : Long)
 GET	    /actors/:actor_id/suites            @controllers.ConformanceService.getActorTestSuites(actor_id : Long)
+GET	    /testsuites/:testSuiteId/testcases  @controllers.ConformanceService.getTestSuiteTestCases(testSuiteId : Long)
+GET	    /testcases/:testCaseId              @controllers.ConformanceService.getTestSuiteTestCase(testCaseId : Long)
 GET     /actors/:actor_id/options           @controllers.ConformanceService.getOptionsForActor(actor_id : Long)
 GET     /actors/:actor_id/endpoints         @controllers.ConformanceService.getEndpointsForActor(actor_id : Long)
 POST    /endpoints                          @controllers.ConformanceService.createEndpoint
