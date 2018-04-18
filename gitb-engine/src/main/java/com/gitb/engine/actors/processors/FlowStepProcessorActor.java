@@ -86,9 +86,9 @@ public class FlowStepProcessorActor extends AbstractTestStepActor<FlowStep> {
 
 				if(remainingChildren == 0) {
 					if(childrenHasError) {
-						completed();
-					} else {
 						childrenHasError();
+					} else {
+						completed();
 					}
 				}
 		}
