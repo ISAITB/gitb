@@ -137,6 +137,18 @@ public class VariableResolver implements XPathVariableResolver{
 		}
 	}
 
+    public StringType resolveVariableAsString(String variableExpression) {
+        return (StringType)resolveVariable(variableExpression).convertTo(DataType.STRING_DATA_TYPE);
+    }
+
+    public BooleanType resolveVariableAsBoolean(String variableExpression) {
+        return (BooleanType)resolveVariable(variableExpression).convertTo(DataType.BOOLEAN_DATA_TYPE);
+    }
+
+    public NumberType resolveVariableAsNumber(String variableExpression) {
+        return (NumberType)resolveVariable(variableExpression).convertTo(DataType.NUMBER_DATA_TYPE);
+    }
+
     public boolean isVariableReference(String variableExpression) {
         Matcher matcher = VARIABLE_EXPRESSION_PATTERN.matcher(variableExpression);
         return matcher.matches();

@@ -224,17 +224,21 @@ public class TestCaseContext {
 
 			List<ActorConfiguration> actorSUTConfigurations = sutHandlerConfigurations.get(new Tuple<>(new String[] {actorConfiguration.getActor(), actorConfiguration.getEndpoint()}));
 
-			for(ActorConfiguration sutConfiguration : actorSUTConfigurations) {
-				MapType sutConfigurationMap = (MapType) factory.create(DataType.MAP_DATA_TYPE);
+			if (actorSUTConfigurations != null) {
+				for(ActorConfiguration sutConfiguration : actorSUTConfigurations) {
+					if (sutConfiguration != null) {
+						MapType sutConfigurationMap = (MapType) factory.create(DataType.MAP_DATA_TYPE);
 
-				for(Configuration configuration : sutConfiguration.getConfig()) {
-					StringType configurationValue = (StringType) factory.create(DataType.STRING_DATA_TYPE);
-					configurationValue.setValue(configuration.getValue());
+						for(Configuration configuration : sutConfiguration.getConfig()) {
+							StringType configurationValue = (StringType) factory.create(DataType.STRING_DATA_TYPE);
+							configurationValue.setValue(configuration.getValue());
 
-					sutConfigurationMap.addItem(configuration.getName(), configurationValue);
+							sutConfigurationMap.addItem(configuration.getName(), configurationValue);
+						}
+
+						map.addItem(sutConfiguration.getActor(), sutConfigurationMap);
+					}
 				}
-
-				map.addItem(sutConfiguration.getActor(), sutConfigurationMap);
 			}
 
 			variable.setValue(map);
@@ -414,6 +418,7 @@ public class TestCaseContext {
 	private void destroyMessagingContexts() {
 		for(MessagingContext messagingContext:messagingContexts.values()){
 			messagingContext.getHandler().endSession(messagingContext.getSessionId());
+            messagingContext.cleanup();
 		}
 		messagingContexts.clear();
 	}
@@ -522,13 +527,14 @@ public class TestCaseContext {
 			if (!configurations.isEmpty()) {
 				for(Map.Entry<Tuple<String>, ActorConfiguration> entry : sutConfigurations.entrySet()) {
 					ActorConfiguration simulatedActor = ActorUtils.getActorConfiguration(initiateResponse.getActorConfigurations(), entry.getValue().getActor(), entry.getValue().getEndpoint());
+					if (simulatedActor != null) {
+						Tuple<String> actorTuple = entry.getKey();
+						String actorIdToBeSimulated = actorTuple.getContents()[0];
+						String endpointNameToBeSimulated = actorTuple.getContents()[1];
 
-					Tuple<String> actorTuple = entry.getKey();
-					String actorIdToBeSimulated = actorTuple.getContents()[0];
-					String endpointNameToBeSimulated = actorTuple.getContents()[1];
-
-					simulatedActor.setActor(actorIdToBeSimulated);
-					simulatedActor.setEndpoint(endpointNameToBeSimulated);
+						simulatedActor.setActor(actorIdToBeSimulated);
+						simulatedActor.setEndpoint(endpointNameToBeSimulated);
+					}
 				}
 
 				for(Map.Entry<Tuple<String>, ActorConfiguration> entry : sutConfigurations.entrySet()) {
@@ -541,20 +547,21 @@ public class TestCaseContext {
 					String sutEndpointName = concatenatedActorTuple.getContents()[3];
 
 					ActorConfiguration simulatedActor = ActorUtils.getActorConfiguration(initiateResponse.getActorConfigurations(), actorIdToBeSimulated, endpointNameToBeSimulated);
+					if (simulatedActor != null) {
+						Tuple<String> sutActorTuple = new Tuple<>(new String[] {sutActorId, sutEndpointName});
 
-					Tuple<String> sutActorTuple = new Tuple<>(new String[] {sutActorId, sutEndpointName});
+						if(!sutHandlerConfigurations.containsKey(sutActorTuple)) {
+							SUTConfiguration sutHandlerConfiguration = new SUTConfiguration();
+							sutHandlerConfiguration.setActor(sutActorId);
+							sutHandlerConfiguration.setEndpoint(sutEndpointName);
 
-					if(!sutHandlerConfigurations.containsKey(sutActorTuple)) {
-						SUTConfiguration sutHandlerConfiguration = new SUTConfiguration();
-						sutHandlerConfiguration.setActor(sutActorId);
-						sutHandlerConfiguration.setEndpoint(sutEndpointName);
+							sutHandlerConfigurations.put(sutActorTuple, sutHandlerConfiguration);
+						}
 
-						sutHandlerConfigurations.put(sutActorTuple, sutHandlerConfiguration);
+						SUTConfiguration sutHandlerConfiguration = sutHandlerConfigurations.get(sutActorTuple);
+
+						sutHandlerConfiguration.getConfigs().add(simulatedActor);
 					}
-
-					SUTConfiguration sutHandlerConfiguration = sutHandlerConfigurations.get(sutActorTuple);
-
-					sutHandlerConfiguration.getConfigs().add(simulatedActor);
 				}
 			}
 

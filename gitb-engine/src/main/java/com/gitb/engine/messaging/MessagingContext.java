@@ -4,6 +4,7 @@ import com.gitb.core.ActorConfiguration;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.tbs.SUTConfiguration;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,7 @@ public class MessagingContext {
 	private final List<ActorConfiguration> actorConfigurations;
 	private final List<SUTConfiguration> sutHandlerConfigurations;
 	private final Map<String, TransactionContext> transactions;
+	private final List<Thread> messagingThreads;
     private int transactionCount; //number of different transactions that the handler is responsible for
 
 	public MessagingContext(IMessagingHandler handler, String sessionId, List<ActorConfiguration> actorConfigurations, List<SUTConfiguration> sutHandlerConfigurations, int transactionCount) {
@@ -39,6 +41,7 @@ public class MessagingContext {
 		this.sutHandlerConfigurations = new CopyOnWriteArrayList<>(sutHandlerConfigurations);
 		this.transactions = new ConcurrentHashMap<>();
         this.transactionCount = transactionCount;
+        this.messagingThreads = new ArrayList<>();
 	}
 
 	public String getSessionId() {
@@ -80,5 +83,17 @@ public class MessagingContext {
 
 	public List<SUTConfiguration> getSutHandlerConfigurations() {
 		return sutHandlerConfigurations;
+	}
+
+	public List<Thread> getMessagingThreads() {
+		return messagingThreads;
+	}
+
+	public void cleanup() {
+		for (Thread thread: messagingThreads) {
+			if (thread.isAlive() && !thread.isInterrupted()) {
+				thread.interrupt();
+			}
+		}
 	}
 }

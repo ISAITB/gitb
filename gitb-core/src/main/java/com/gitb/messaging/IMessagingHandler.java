@@ -55,7 +55,7 @@ public interface IMessagingHandler {
      * @param configurations
      * @return
      */
-    public MessagingReport receiveMessage(String sessionId, String transactionId, List<Configuration> configurations, Message message);
+    public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, List<Configuration> configurations, Message message, List<Thread> messagingThreads);
 
 
     /**

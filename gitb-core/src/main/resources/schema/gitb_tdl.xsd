@@ -163,6 +163,9 @@
 				<xsd:sequence>
 					<xsd:element name="output" type="Binding" minOccurs="0" maxOccurs="unbounded"/>
 				</xsd:sequence>
+				<xsd:attribute name="timeout" type="gitb:NumberOrVariable"/>
+				<xsd:attribute name="timeoutFlag" type="gitb:StringOrVariable"/>
+				<xsd:attribute name="timeoutIsError" type="gitb:BooleanOrVariable" default="false"/>
 			</xsd:extension>
 		</xsd:complexContent>
 	</xsd:complexType>

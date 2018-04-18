@@ -1,5 +1,6 @@
 package com.gitb.engine.remote.messaging;
 
+import com.gitb.messaging.CallbackManager;
 import com.gitb.ms.MessagingClient;
 import com.gitb.ms.NotifyForMessageRequest;
 import com.gitb.ms.Void;

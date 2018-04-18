@@ -82,6 +82,7 @@
         <xsd:complexContent>
             <xsd:extension base="BasicRequest">
                 <xsd:sequence>
+                    <xsd:element name="callId" type="xsd:string"/>
                     <xsd:element name="from" type="xsd:string"/>
                     <xsd:element name="input" type="gitb:AnyContent" maxOccurs="unbounded" minOccurs="0"/>
                 </xsd:sequence>
@@ -99,6 +100,7 @@
         <xsd:complexContent>
             <xsd:extension base="BasicRequest">
                 <xsd:sequence>
+                    <xsd:element name="callId" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="from" type="xsd:string" minOccurs="0" />
                     <xsd:element name="to" type="xsd:string" minOccurs="0" />
                     <xsd:element name="report" type="tr:TAR" />

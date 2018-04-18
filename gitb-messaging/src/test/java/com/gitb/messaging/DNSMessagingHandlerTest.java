@@ -78,7 +78,7 @@ public class DNSMessagingHandlerTest {
 			}
 		}).start();
 
-		MessagingReport report = handler.receiveMessage(response.getSessionId(), "t1", dnsConfigurations, null);
+		MessagingReport report = handler.receiveMessage(response.getSessionId(), "t1", "c1", dnsConfigurations, null);
 
 		assertNotNull(report.getReport());
 		//assertTrue(report.getReport().getResult() == TestResultType.SUCCESS);

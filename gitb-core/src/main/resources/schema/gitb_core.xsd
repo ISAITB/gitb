@@ -155,6 +155,24 @@
 			<xsd:enumeration value="O"/>
 		</xsd:restriction>
 	</xsd:simpleType>
+	<!-- Restriction for a number that can also be a variable reference -->
+	<xsd:simpleType name="NumberOrVariable">
+		<xsd:restriction base="xsd:string">
+			<xsd:pattern value="(\$[a-zA-Z][a-zA-Z\-_0-9]*(\{[\$\{\}a-zA-Z\-\._0-9]*\})?)|(\d+)"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<!-- Restriction for a string that can also be a variable reference -->
+	<xsd:simpleType name="StringOrVariable">
+		<xsd:restriction base="xsd:string">
+			<xsd:pattern value="(\$[a-zA-Z][a-zA-Z\-_0-9]*(\{[\$\{\}a-zA-Z\-\._0-9]*\})?)|(\S+)"/>
+		</xsd:restriction>
+	</xsd:simpleType>
+	<!-- Restriction for a boolean that can also be a variable reference -->
+	<xsd:simpleType name="BooleanOrVariable">
+		<xsd:restriction base="xsd:string">
+			<xsd:pattern value="(\$[a-zA-Z][a-zA-Z\-_0-9]*(\{[\$\{\}a-zA-Z\-\._0-9]*\})?)|(true)|(TRUE)|(false)|(FALSE)"/>
+		</xsd:restriction>
+	</xsd:simpleType>
 	<!-- Enumeration for usage indicator-->
 	<xsd:simpleType name="ConfigurationType">
 		<xsd:restriction base="xsd:string">

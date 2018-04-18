@@ -2,10 +2,7 @@ package com.gitb.messaging.layer;
 
 import com.gitb.core.*;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.messaging.IMessagingHandler;
-import com.gitb.messaging.Message;
-import com.gitb.messaging.MessagingReport;
-import com.gitb.messaging.SessionManager;
+import com.gitb.messaging.*;
 import com.gitb.messaging.model.*;
 import com.gitb.messaging.model.tcp.ITransactionListener;
 import com.gitb.messaging.model.tcp.ITransactionReceiver;
@@ -129,48 +126,11 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
     }
 
     @Override
-    public MessagingReport receiveMessage(String sessionId, String transactionId, List<Configuration> configurations, Message inputs) {
-        SessionManager sessionManager = SessionManager.getInstance();
-
-        SessionContext sessionContext = sessionManager.getSession(sessionId);
-        List<TransactionContext> transactions = sessionContext.getTransactions(transactionId);
-
-        if(transactions.size() == 0) {
-            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Messages can not be received before creating transactions"));
-        } else if(transactions.size() == 2) {
-            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "'receive' command functionality is not available between 2 SUTs, please take a look at 'listen' command"));
-        }
-
-        TransactionContext transactionContext = transactions.get(0);
-
-        try {
-	        validateReceiveConfigurations(configurations);
-
-            ITransactionReceiver transactionReceiver = transactionContext.getParameter(ITransactionReceiver.class);
-	        IDatagramReceiver datagramReceiver = transactionContext.getParameter(IDatagramReceiver.class);
-
-	        Message message;
-	        if(transactionReceiver != null) {
-		        message = transactionReceiver.receive(configurations, inputs);
-	        } else if(datagramReceiver != null) {
-		        message = datagramReceiver.receive(configurations, inputs);
-	        } else {
-                throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "No receivers are defined for ["+getModuleDefinition().getId()+"]"));
-	        }
-
-	        validateOutputs(message);
-
-            Collection<Exception> nonCriticalErrors = transactionContext.getNonCriticalErrors();
-            if(!nonCriticalErrors.isEmpty()) {
-                return onError(message, nonCriticalErrors);
-            } else {
-                return onSuccess(message);
-            }
-        } catch (Exception e) {
-            return onError(new GITBEngineInternalError(e));
-        } finally {
-            transactionContext.clearNonCriticalErrors();
-        }
+    public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, List<Configuration> configurations, Message inputs, List<Thread> messagingThreads) {
+        Thread receiveThread = new Thread(new ReceiveRunner(sessionId, transactionId, callId, configurations, inputs, this));
+        messagingThreads.add(receiveThread);
+        receiveThread.start();
+        return CallbackManager.getInstance().waitForCallback(sessionId, callId);
     }
 
     @Override
@@ -379,17 +339,84 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
         }
 	}
 
-	protected MessagingReport onError(GITBEngineInternalError error) {
+    protected MessagingReport onError(GITBEngineInternalError error) {
         logger.error("An error occurred", error);
-		return MessagingHandlerUtils.generateErrorReport(error);
-	}
+        return MessagingHandlerUtils.generateErrorReport(error);
+    }
 
     protected MessagingReport onError(Message message, Collection<Exception> nonCriticalErrors) {
         return MessagingHandlerUtils.generateErrorReport(message, nonCriticalErrors);
     }
 
-	protected MessagingReport onSuccess(Message message) {
-		return MessagingHandlerUtils.generateSuccessReport(message);
-	}
+    protected MessagingReport onSuccess(Message message) {
+        return MessagingHandlerUtils.generateSuccessReport(message);
+    }
+
+	static class ReceiveRunner implements Runnable {
+
+        private final String sessionId;
+        private final AbstractMessagingHandler handler;
+	    private final String transactionId;
+	    private final List<Configuration> configurations;
+	    private final Message inputs;
+        private final String callId;
+
+        ReceiveRunner(String sessionId, String transactionId, String callId, List<Configuration> configurations, Message inputs, AbstractMessagingHandler handler) {
+            this.handler = handler;
+            this.transactionId = transactionId;
+            this.configurations = configurations;
+            this.inputs = inputs;
+            this.sessionId = sessionId;
+            this.callId = callId;
+        }
+
+        private MessagingReport doReceiveMessage(String transactionId, List<Configuration> configurations, Message inputs) {
+            SessionManager sessionManager = SessionManager.getInstance();
+            SessionContext sessionContext = sessionManager.getSession(sessionId);
+            List<TransactionContext> transactions = sessionContext.getTransactions(transactionId);
+
+            if(transactions.size() == 0) {
+                throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Messages can not be received before creating transactions"));
+            } else if(transactions.size() == 2) {
+                throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "'receive' command functionality is not available between 2 SUTs, please take a look at 'listen' command"));
+            }
+            TransactionContext transactionContext = transactions.get(0);
+
+            try {
+                handler.validateReceiveConfigurations(configurations);
+
+                ITransactionReceiver transactionReceiver = transactionContext.getParameter(ITransactionReceiver.class);
+                IDatagramReceiver datagramReceiver = transactionContext.getParameter(IDatagramReceiver.class);
+
+                Message message;
+                if(transactionReceiver != null) {
+                    message = transactionReceiver.receive(configurations, inputs);
+                } else if(datagramReceiver != null) {
+                    message = datagramReceiver.receive(configurations, inputs);
+                } else {
+                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "No receivers are defined for ["+handler.getModuleDefinition().getId()+"]"));
+                }
+
+                handler.validateOutputs(message);
+
+                Collection<Exception> nonCriticalErrors = transactionContext.getNonCriticalErrors();
+                if(!nonCriticalErrors.isEmpty()) {
+                    return handler.onError(message, nonCriticalErrors);
+                } else {
+                    return handler.onSuccess(message);
+                }
+            } catch (Exception e) {
+                return handler.onError(new GITBEngineInternalError(e));
+            } finally {
+                transactionContext.clearNonCriticalErrors();
+            }
+        }
+
+        @Override
+        public void run() {
+            MessagingReport report = doReceiveMessage(transactionId, configurations, inputs);
+            CallbackManager.getInstance().callbackReceived(sessionId, callId, report);
+        }
+    }
 
 }
