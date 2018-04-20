@@ -127,7 +127,7 @@ public abstract class MessagingHandlerTest {
 			}
 		}).start();
 
-		MessagingReport report = receiverHandler.receiveMessage(receiverSessionId, "t1", "c1", receiveConfigurations(), null);
+		MessagingReport report = receiverHandler.receiveMessage(receiverSessionId, "t1", "c1", receiveConfigurations(), null, null);
 
 		assertNotNull(report);
 

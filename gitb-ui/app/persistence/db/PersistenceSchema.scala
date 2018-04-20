@@ -122,6 +122,17 @@ object PersistenceSchema {
 	}
 	val parameters = TableQuery[ParametersTable]
 
+  class DomainParametersTable(tag: Tag) extends Table[models.DomainParameter] (tag, "DomainParameters") {
+    def id    = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def name  = column[String]("name")
+    def desc  = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def kind  = column[String]("kind")
+    def value = column[String]("value", O.DBType("BLOB"))
+    def domain = column[Long]("domain")
+    def * = (id, name, desc, kind, value, domain) <> (models.DomainParameter.tupled, models.DomainParameter.unapply)
+  }
+  val domainParameters = TableQuery[DomainParametersTable]
+
   class ConfigurationsTable(tag:Tag) extends Table[Config] (tag, "Configurations") {
     def system = column[Long] ("system")
 	  def parameter = column[Long]("parameter")

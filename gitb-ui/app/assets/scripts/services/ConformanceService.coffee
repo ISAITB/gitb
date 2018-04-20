@@ -149,6 +149,46 @@ class ConformanceService
       authenticate: true
     })
 
+  getDomainParameters: (domainId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.ConformanceService.getDomainParameters(domainId).url,
+      authenticate: true
+    })
+
+  updateDomainParameter: (domainParameterId, domainParameterName, domainParameterDescription, domainParameterValue, domainParameterKind, domainId) ->
+    params = {
+      name: domainParameterName,
+      desc: domainParameterDescription,
+      kind: domainParameterKind,
+      value: domainParameterValue
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.ConformanceService.updateDomainParameter(domainId, domainParameterId).url,
+      authenticate: true,
+      data:
+        config: angular.toJson params
+    })
+
+  createDomainParameter: (domainParameterName, domainParameterDescription, domainParameterValue, domainParameterKind, domainId) ->
+    params = {
+      name: domainParameterName,
+      desc: domainParameterDescription,
+      kind: domainParameterKind,
+      value: domainParameterValue
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.ConformanceService.createDomainParameter(domainId).url,
+      authenticate: true,
+      data:
+        config: angular.toJson params
+    })
+
+  deleteDomainParameter: (domainParameterId, domainId) ->
+    @RestService.delete({
+      path: jsRoutes.controllers.ConformanceService.deleteDomainParameter(domainId, domainParameterId).url,
+      authenticate: true
+    })
+
   getActorsWithSpecificationId: (specId) ->
     @RestService.get({
       path: jsRoutes.controllers.ConformanceService.getSpecActors(specId).url,

@@ -19,6 +19,7 @@ import com.gitb.utils.ErrorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -68,13 +69,13 @@ public class TestbedService {
 	 * Save the configurations for the given actors
 	 *
 	 * @param sessionId
-	 * @param actorConfigurations
+	 * @param allConfigurations
 	 */
-	public static List<SUTConfiguration> configure(String sessionId, List<ActorConfiguration> actorConfigurations) {
+	public static List<SUTConfiguration> configure(String sessionId, List<ActorConfiguration> allConfigurations) {
 		logger.debug("configure"
 			+ " ( "
 			+ sessionId + " , "
-			+ "actors - " + actorConfigurations.size()
+			+ "actors - " + allConfigurations.size()
 			+ " ) ");
 
 		//Find the Processor for the session
@@ -89,10 +90,22 @@ public class TestbedService {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_SESSION, "Could not find session [" + sessionId + "]..."));
 		}
 
+		List<ActorConfiguration> actorConfigurations = new ArrayList<>();
+		ActorConfiguration domainConfiguration = null;
+		if (allConfigurations != null) {
+			for (ActorConfiguration configuration: allConfigurations) {
+				if ("com.gitb.DOMAIN".equals(configuration.getActor())) {
+					domainConfiguration = configuration;
+				} else {
+					actorConfigurations.add(configuration);
+				}
+			}
+		}
+
 		try {
 			ActorRef sessionActor = ActorUtils.getIdentity(actorSystem, SessionActor.getPath(sessionId));
 			//Call the configure command
-			Object response = ActorUtils.askBlocking(sessionActor, new ConfigureCommand(sessionId, actorConfigurations));
+			Object response = ActorUtils.askBlocking(sessionActor, new ConfigureCommand(sessionId, actorConfigurations, domainConfiguration));
 			return (List<SUTConfiguration>) response;
 		} catch (GITBEngineInternalError e) {
 			throw e;

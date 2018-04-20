@@ -1,11 +1,13 @@
 package controllers
 
 import actors.WebSocketActor
+import com.gitb.core.{ActorConfiguration, Configuration}
 import com.gitb.tbs._
 import config.Configurations
 import controllers.util._
 import jaxws.HeaderHandlerResolver
-import managers.{ConformanceManager, ReportManager}
+import managers.{ConformanceManager, ReportManager, TestResultManager}
+import models.Constants
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import utils.{JacksonUtil, JsonUtil}
@@ -75,11 +77,27 @@ class TestService extends Controller{
    * Sends the required data on preliminary steps
    */
   def configure(session_id:String) = Action.apply { request =>
+    val specId = ParameterExtractor.requiredQueryParameter(request, Parameters.SPECIFICATION_ID).toLong
     val configs = ParameterExtractor.requiredBodyParameter(request, Parameters.CONFIGS)
 
     val cRequest: ConfigureRequest = new ConfigureRequest
     cRequest.setTcInstanceId(session_id)
     cRequest.getConfigs.addAll(JacksonUtil.parseActorConfigurations(configs))
+
+    val domainId = ConformanceManager.getSpecifications(Some(List(specId)))(0).domain
+    val parameters = ConformanceManager.getDomainParameters(domainId)
+    if (!parameters.isEmpty) {
+      val domainConfiguration = new ActorConfiguration()
+      domainConfiguration.setActor(Constants.domainConfigurationName)
+      domainConfiguration.setEndpoint(Constants.domainConfigurationName)
+      parameters.foreach { parameter =>
+        val config = new Configuration()
+        config.setName(parameter.name)
+        config.setValue(parameter.value)
+        domainConfiguration.getConfig.add(config)
+      }
+      cRequest.getConfigs.add(domainConfiguration)
+    }
 
     val response = TestService.port.configure(cRequest)
     val json = JacksonUtil.serializeConfigureResponse(response)

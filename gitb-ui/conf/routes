@@ -82,6 +82,11 @@ DELETE  /parameters/:parameter_id           @controllers.ParameterService.delete
 POST    /parameters/:parameter_id           @controllers.ParameterService.updateParameter(parameter_id : Long)
 POST    /options                            @controllers.ConformanceService.createOption
 GET     /options                            @controllers.ConformanceService.getOptions
+GET     /domains/:domain_id/parameters                          @controllers.ConformanceService.getDomainParameters(domain_id : Long)
+GET     /domains/:domain_id/parameters/:domain_parameter_id     @controllers.ConformanceService.getDomainParameter(domain_id : Long, domain_parameter_id : Long)
+POST    /domains/:domain_id/parameters                          @controllers.ConformanceService.createDomainParameter(domain_id : Long)
+DELETE  /domains/:domain_id/parameters/:domain_parameter_id     @controllers.ConformanceService.deleteDomainParameter(domain_id : Long, domain_parameter_id : Long)
+POST    /domains/:domain_id/parameters/:domain_parameter_id     @controllers.ConformanceService.updateDomainParameter(domain_id : Long, domain_parameter_id : Long)
 
 # User management API
 GET     /admins/all                         @controllers.UserService.getSystemAdministrators

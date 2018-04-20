@@ -19,4 +19,5 @@ object Constants {
   val EcLogo = ImagePath + "ec.png"
   val GitbLogo = ImagePath + "gitb.png"
 
+  val domainConfigurationName = "com.gitb.DOMAIN"
 }

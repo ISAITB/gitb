@@ -246,6 +246,25 @@ object JsonUtil {
     json
   }
 
+  def jsDomainParameters(list:List[DomainParameter]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ parameter =>
+      json = json.append(jsDomainParameter(parameter))
+    }
+    json
+  }
+
+  def jsDomainParameter(domainParameter:DomainParameter):JsObject = {
+    val json = Json.obj(
+      "id" -> domainParameter.id,
+      "name" -> domainParameter.name,
+      "description" -> domainParameter.desc,
+      "kind" -> domainParameter.kind,
+      "value" -> domainParameter.value
+    )
+    json
+  }
+
   /**
    * Converts a List of Domains into Play!'s JSON notation
    * @param list List of Domains to be converted
@@ -386,6 +405,22 @@ object JsonUtil {
 	    (jsonConfig \ "parameter").as[Long],
 	    (jsonConfig \ "endpoint").as[Long],
 	    (jsonConfig \ "value").as[String]
+    )
+  }
+
+  def parseJsDomainParameter(json:String, domainParameterId: Option[Long], domainId: Long): DomainParameter = {
+    val jsonConfig = Json.parse(json).as[JsObject]
+    var idToUse = 0L
+    if (domainParameterId.isDefined) {
+      idToUse = domainParameterId.get
+    }
+    DomainParameter(
+      idToUse,
+      (jsonConfig \ "name").as[String],
+      (jsonConfig \ "desc").as[Option[String]],
+      (jsonConfig \ "kind").as[String],
+      (jsonConfig \ "value").as[String],
+      domainId
     )
   }
 

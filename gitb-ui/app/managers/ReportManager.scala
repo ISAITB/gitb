@@ -331,24 +331,27 @@ object ReportManager extends BaseManager {
       implicit session =>
         //save status reports only when step is concluded with either COMPLETED or ERROR state
         if (step.getReport != null && (step.getStatus == StepStatus.COMPLETED || step.getStatus == StepStatus.ERROR)) {
-          step.getReport.setId(step.getStepId)
+          // Check to see if we have already recorded this to avoid potential concurrency errors popping up that
+          // would just lead to unique constraint errors.
+          if (!TestResultManager.getTestResultForSession(sessionId).isDefined) {
+            step.getReport.setId(step.getStepId)
 
+            val path = step.getStepId + ".xml"
 
-          val path = step.getStepId + ".xml"
+            //write the report into a file
+            if (step.getReport != null) {
+              val file = new File(getPathForTestSession(sessionId, false).toFile, path)
+              file.getParentFile.mkdirs()
+              file.createNewFile()
 
-          //write the report into a file
-          if (step.getReport != null) {
-            val file = new File(getPathForTestSession(sessionId, false).toFile, path)
-            file.getParentFile.mkdirs()
-            file.createNewFile()
-
-            val stream = new FileOutputStream(file)
-            stream.write(XMLUtils.marshalToString(new ObjectFactory().createUpdateStatusRequest(step)).getBytes)
-            stream.close()
+              val stream = new FileOutputStream(file)
+              stream.write(XMLUtils.marshalToString(new ObjectFactory().createUpdateStatusRequest(step)).getBytes)
+              stream.close()
+            }
+            //save the path of the report file to the DB
+            val result = TestStepResult(sessionId, step.getStepId, step.getStatus.ordinal().toShort, path)
+            PersistenceSchema.testStepReports.insert(result)
           }
-          //save the path of the report file to the DB
-          val result = TestStepResult(sessionId, step.getStepId, step.getStatus.ordinal().toShort, path)
-          PersistenceSchema.testStepReports.insert(result)
         }
     }
   }

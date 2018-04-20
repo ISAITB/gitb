@@ -58,7 +58,6 @@ class CreateEditSystemController
 							@$scope.deletePending = false
 							@ErrorService.showErrorMessage(error)
 						)
-					console.log 'delete'
 
 		@$scope.cancel = () =>
 			@$modalInstance.dismiss()

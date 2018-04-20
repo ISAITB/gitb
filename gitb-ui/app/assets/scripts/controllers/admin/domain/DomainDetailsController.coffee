@@ -1,12 +1,12 @@
 class DomainDetailsController
 
-	@$inject = ['$log', '$scope', '$state', '$stateParams', 'ConfirmationDialogService', 'ConformanceService', 'ErrorService']
-	constructor: (@$log, @$scope, @$state, @$stateParams, @ConfirmationDialogService, @ConformanceService, @ErrorService) ->
+	@$inject = ['$log', '$scope', '$state', '$stateParams', 'ConfirmationDialogService', 'ConformanceService', 'ErrorService', '$modal']
+	constructor: (@$log, @$scope, @$state, @$stateParams, @ConfirmationDialogService, @ConformanceService, @ErrorService, @$modal) ->
 		@$log.debug "Constructing DomainDetailsController..."
 
 		@domain = {}
 		@specifications = []
-		@actors = []
+		@domainParameters = []
 		@domainId = @$stateParams.id
 
 		@tableColumns = [
@@ -24,11 +24,7 @@ class DomainDetailsController
 			}
 		]
 
-		@actorTableColumns = [
-			{
-				field: 'actorId',
-				title: 'ID'
-			}
+		@parameterTableColumns = [
 			{
 				field: 'name',
 				title: 'Name'
@@ -36,6 +32,10 @@ class DomainDetailsController
 			{
 				field: 'description',
 				title: 'Description'
+			}
+			{
+				field: 'value',
+				title: 'Value'
 			}
 		]
 
@@ -51,9 +51,9 @@ class DomainDetailsController
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
-		@ConformanceService.getActorsWithDomainId(@domainId)
+		@ConformanceService.getDomainParameters(@domainId)
 		.then (data)=>
-			@actors = data
+			@domainParameters = data
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
@@ -76,7 +76,32 @@ class DomainDetailsController
 	onSpecificationSelect: (specification) =>
 		@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: specification.id}
 
-	onActorSelect: (actor) =>
-		@$state.go 'app.admin.domains.detail.actors.detail.list', {id: @domainId, actor_id: actor.id}
+	onDomainParameterSelect: (domainParameter) =>
+		modalOptions =
+			templateUrl: 'assets/views/admin/domains/create-edit-domain-parameter-modal.html'
+			controller: 'CreateEditDomainParameterController as parameterCtrl'
+			resolve: 
+				domainParameter: () => domainParameter
+				domainId: () => @domain.id
+			size: 'lg'
+		modalInstance = @$modal.open(modalOptions)
+		modalInstance.result
+			.then((result) => 
+				@$state.go @$state.current, {}, {reload: true}
+			)
+
+	createDomainParameter: () =>
+		modalOptions =
+			templateUrl: 'assets/views/admin/domains/create-edit-domain-parameter-modal.html'
+			controller: 'CreateEditDomainParameterController as parameterCtrl'
+			resolve: 
+				domainParameter: () => {}
+				domainId: () => @domain.id
+			size: 'lg'
+		modalInstance = @$modal.open(modalOptions)
+		modalInstance.result
+			.then((result) => 
+				@$state.go @$state.current, {}, {reload: true}
+			)
 
 @controllers.controller 'DomainDetailsController', DomainDetailsController

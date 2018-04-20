@@ -67,6 +67,66 @@ object ConformanceManager extends BaseManager {
 		}
 	}
 
+	def createDomainParameter(parameter:DomainParameter) = {
+		DB.withTransaction { implicit session =>
+			PersistenceSchema.domainParameters.insert(parameter)
+		}
+	}
+
+	def updateDomainParameter(parameterId: Long, name: String, description: Option[String], kind: String, value: String) = {
+		DB.withTransaction { implicit session =>
+
+			val q1 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.name)
+			q1.update(name)
+
+			val q2 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.desc)
+			q2.update(description)
+
+			val q3 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.kind)
+			q3.update(kind)
+
+			val q4 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.value)
+			q4.update(value)
+
+		}
+	}
+
+	def deleteDomainParameter(domainParameter: Long) = {
+		DB.withTransaction { implicit session =>
+			PersistenceSchema.domainParameters.filter(_.id === domainParameter).delete
+		}
+	}
+
+	def getDomainParameter(domainParameterId: Long) = {
+		DB.withSession { implicit session =>
+			PersistenceSchema.domainParameters.filter(_.id === domainParameterId).first
+		}
+	}
+
+	def getDomainParameters(domainId: Long) = {
+		DB.withSession { implicit session =>
+			PersistenceSchema.domainParameters.filter(_.domain === domainId).list
+		}
+	}
+
+	def deleteDomainParameterByDomain(domainId: Long) = {
+		DB.withTransaction { implicit session =>
+			val ids = PersistenceSchema.domainParameters.filter(_.domain === domainId).map(_.id).list
+			ids foreach { id =>
+				deleteDomainParameter(id)
+			}
+		}
+	}
+
+	def getDomainParameterByDomainAndName(domainId: Long, name: String) = {
+		DB.withSession { implicit session =>
+			PersistenceSchema.domainParameters
+				.filter(_.domain === domainId)
+				.filter(_.name === name)
+				.firstOption
+		}
+	}
+
 	def updateDomain(domainId: Long, shortName: String, fullName: String, description: Option[String]) = {
 		DB.withTransaction { implicit session =>
 			val q1 = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.shortname)

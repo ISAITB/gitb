@@ -410,7 +410,7 @@ class TestExecutionControllerV2
     )
 
   configure: (session, configs, configureFinished) ->
-    @TestService.configure(session, configs)
+    @TestService.configure(@specId, session, configs)
     .then(
       (data) =>
         @simulatedConfigs = data.configs

@@ -295,4 +295,46 @@ class ConformanceService extends Controller {
     ResponseConstructor.constructJsonResponse(json)
   }
 
+  def getDomainParameters(domainId: Long) = Action.apply { request =>
+    val result = ConformanceManager.getDomainParameters(domainId)
+    val json = JsonUtil.jsDomainParameters(result).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def getDomainParameter(domainId: Long, domainParameterId: Long) = Action.apply { request =>
+    val result = ConformanceManager.getDomainParameter(domainParameterId)
+    val json = JsonUtil.jsDomainParameter(result).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def createDomainParameter(domainId: Long) = Action.apply { request =>
+    val jsDomainParameter = ParameterExtractor.requiredBodyParameter(request, Parameters.CONFIG)
+    val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, None, domainId)
+    if (ConformanceManager.getDomainParameterByDomainAndName(domainId, domainParameter.name).isDefined) {
+      ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the domain")
+    } else {
+      ConformanceManager.createDomainParameter(domainParameter)
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  def deleteDomainParameter(domainId: Long, domainParameterId: Long) = Action.apply {
+    ConformanceManager.deleteDomainParameter(domainParameterId)
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def updateDomainParameter(domainId: Long, domainParameterId: Long) = Action.apply { request =>
+    val jsDomainParameter = ParameterExtractor.requiredBodyParameter(request, Parameters.CONFIG)
+    val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, Some(domainParameterId), domainId)
+
+    val existingDomainParameter = ConformanceManager.getDomainParameterByDomainAndName(domainId, domainParameter.name)
+    if (existingDomainParameter.isDefined && (existingDomainParameter.get.id != domainParameterId)) {
+      ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the domain")
+    } else {
+      ConformanceManager.updateDomainParameter(domainParameterId, domainParameter.name, domainParameter.desc, domainParameter.kind, domainParameter.value)
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+
 }

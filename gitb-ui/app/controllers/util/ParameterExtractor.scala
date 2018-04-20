@@ -1,10 +1,10 @@
 package controllers.util
 
-import models._
+import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
+import models._
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
-import exceptions.{ErrorCodes, InvalidRequestException}
 
 object ParameterExtractor {
 
