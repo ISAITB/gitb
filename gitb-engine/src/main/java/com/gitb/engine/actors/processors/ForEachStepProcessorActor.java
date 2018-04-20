@@ -6,6 +6,7 @@ import com.gitb.core.StepStatus;
 import com.gitb.engine.commands.interaction.StartCommand;
 import com.gitb.engine.commands.interaction.StopCommand;
 import com.gitb.engine.events.model.StatusEvent;
+import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.tdl.ForEachStep;
 import com.gitb.types.NumberType;
@@ -56,7 +57,6 @@ public class ForEachStepProcessorActor extends AbstractIterationStepActor<ForEac
 
 	@Override
 	protected void handleStatusEvent(StatusEvent event) throws Exception {
-//		super.handleStatusEvent(event);
 		StepStatus status = event.getStatus();
 
 		switch (status) {
@@ -77,13 +77,16 @@ public class ForEachStepProcessorActor extends AbstractIterationStepActor<ForEac
 	private boolean loop() throws Exception {
 		checkIteration(iteration);
 
-		if(iteration < step.getEnd().intValue() - step.getStart().intValue()) {
+		BigInteger endValue = getNumber(step.getEnd());
+		BigInteger startValue = getNumber(step.getStart());
+
+		if(iteration < endValue.intValue() - startValue.intValue()) {
 			TestCaseScope.ScopedVariable counter = childScope
 				.getVariable(step.getCounter());
 
 			NumberType val = (NumberType) counter.getValue();
 
-			val.setValue((double)(step.getStart().intValue()+iteration));
+			val.setValue((double)(startValue.intValue()+iteration));
 
 			ActorRef child = SequenceProcessorActor.create(getContext(), step.getDo(), childScope, stepId + ITERATION_OPENING_TAG + (iteration + 1) + ITERATION_CLOSING_TAG);
 			child.tell(new StartCommand(scope.getContext().getSessionId()), self());
@@ -95,11 +98,23 @@ public class ForEachStepProcessorActor extends AbstractIterationStepActor<ForEac
 		}
 	}
 
+	private BigInteger getNumber(String expression) {
+		VariableResolver resolver = new VariableResolver(scope);
+		BigInteger number = BigInteger.valueOf(0L);
+		if (resolver.isVariableReference(expression)) {
+			number = BigInteger.valueOf(resolver.resolveVariableAsNumber(expression).longValue());
+		} else {
+			number = BigInteger.valueOf(Long.parseLong(expression));
+		}
+		return number;
+	}
+
 	private TestCaseScope createChildScope() {
 		TestCaseScope childScope = scope.createChildScope();
 
 		NumberType start = new NumberType();
-		BigInteger startValue = step.getStart();
+
+		BigInteger startValue = getNumber(step.getStart());
 		start.setValue(startValue.doubleValue());
 
 		childScope
