@@ -236,9 +236,9 @@
 				<xsd:sequence>
 					<xsd:element name="do" type="Sequence"/>
 				</xsd:sequence>
-				<xsd:attribute name="counter" type="xsd:string" use="optional" default="i"/>
-				<xsd:attribute name="start" type="xsd:integer" use="optional" default="0"/>
-				<xsd:attribute name="end" type="xsd:integer" use="required"/>
+				<xsd:attribute name="counter" type="xsd:string" default="i"/>
+				<xsd:attribute name="start" type="gitb:NumberOrVariable" default="0"/>
+				<xsd:attribute name="end" type="gitb:NumberOrVariable" use="required"/>
 			</xsd:extension>
 		</xsd:complexContent>
 	</xsd:complexType>
@@ -352,7 +352,7 @@
 			<xsd:extension base="TypedBinding">
 				<xsd:attribute name="desc" type="xsd:string" use="required"/>
 				<xsd:attribute name="with" type="xsd:string" use="required"/>
-				<xsd:attribute name="contentType" type="gitb:ValueEmbeddingEnumeration" use="optional"/>
+				<xsd:attribute name="contentType" type="gitb:ValueEmbeddingEnumeration" default="STRING"/>
 				<xsd:attribute name="encoding" type="xsd:string" use="optional"/>
 			</xsd:extension>
 		</xsd:complexContent>
