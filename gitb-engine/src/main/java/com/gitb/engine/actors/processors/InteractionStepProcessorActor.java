@@ -137,6 +137,9 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         inputRequest.setDesc(instructionCommand.getDesc());
         inputRequest.setName(instructionCommand.getValue()); //name is provided from value node
         inputRequest.setContentType(instructionCommand.getContentType());
+        if (instructionCommand.getContentType() == null) {
+            inputRequest.setContentType(ValueEmbeddingEnumeration.STRING);
+        }
         if (instructionCommand.getValue() != null && !instructionCommand.getValue().equals("")) {
             String assignedVariableExpression = instructionCommand.getValue();
             VariableResolver variableResolver = new VariableResolver(scope);
