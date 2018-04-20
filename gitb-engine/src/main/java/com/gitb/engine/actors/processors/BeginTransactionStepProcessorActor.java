@@ -2,6 +2,7 @@ package com.gitb.engine.actors.processors;
 
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
+import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
 import com.gitb.engine.testcase.TestCaseScope;
@@ -27,7 +28,13 @@ public class BeginTransactionStepProcessorActor extends AbstractTestStepActor<Be
 	protected void start() throws Exception {
 		processing();
 
-        MessagingContext messagingContext = scope.getContext().getMessagingContext(step.getHandler());
+		String handlerIdentifier = step.getHandler();
+		VariableResolver resolver = new VariableResolver(scope);
+		if (resolver.isVariableReference(handlerIdentifier)) {
+			handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
+		}
+
+        MessagingContext messagingContext = scope.getContext().getMessagingContext(handlerIdentifier);
         String messagingSessionId = messagingContext.getSessionId();
 
         messagingContext

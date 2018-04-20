@@ -2,6 +2,7 @@ package com.gitb.engine.testcase;
 
 import com.gitb.ModuleManager;
 import com.gitb.core.*;
+import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.remote.messaging.RemoteMessagingModuleClient;
@@ -153,7 +154,19 @@ public class TestCaseContext {
      * @param configurations SUT configurations
      * @return Simulated actor configurations for each (actorId, endpointName) tuple
      */
-    public List<SUTConfiguration> configure(List<ActorConfiguration> configurations){
+    public List<SUTConfiguration> configure(List<ActorConfiguration> configurations, ActorConfiguration domainConfiguration){
+
+		if (domainConfiguration != null) {
+			DataTypeFactory factory = DataTypeFactory.getInstance();
+			TestCaseScope.ScopedVariable variable = scope.createVariable("DOMAIN");
+			MapType map = (MapType) factory.create(DataType.MAP_DATA_TYPE);
+			for(Configuration configuration : domainConfiguration.getConfig()) {
+				StringType configurationValue = (StringType) factory.create(DataType.STRING_DATA_TYPE);
+				configurationValue.setValue(configuration.getValue());
+				map.addItem(configuration.getName(), configurationValue);
+			}
+			variable.setValue(map);
+		}
 
 	    for(ActorConfiguration actorConfiguration : configurations) {
 		    Tuple<String> actorIdEndpointTupleKey = new Tuple<>(new String[] {actorConfiguration.getActor(), actorConfiguration.getEndpoint()});
@@ -345,7 +358,12 @@ public class TestCaseContext {
 	            String toActorId = ActorUtils.extractActorId(beginTransactionStep.getTo());
 	            String toEndpoint = ActorUtils.extractEndpointName(beginTransactionStep.getTo());
 
-                transactions.add(new TransactionInfo(fromActorId, fromEndpoint, toActorId, toEndpoint, beginTransactionStep.getHandler()));
+				String handlerIdentifier = beginTransactionStep.getHandler();
+				VariableResolver resolver = new VariableResolver(scope);
+				if (resolver.isVariableReference(handlerIdentifier)) {
+					handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
+				}
+                transactions.add(new TransactionInfo(fromActorId, fromEndpoint, toActorId, toEndpoint, handlerIdentifier));
             } else if (step instanceof IfStep) {
 	            transactions.addAll(createTransactionInfo(((IfStep) step).getThen()));
 	            transactions.addAll(createTransactionInfo(((IfStep) step).getElse()));

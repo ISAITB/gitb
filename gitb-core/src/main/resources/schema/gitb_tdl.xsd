@@ -188,7 +188,7 @@
 				<xsd:attribute name="from" type="xsd:string" use="required"/>
 				<xsd:attribute name="to" type="xsd:string" use="required"/>
 				<xsd:attribute name="txnId" type="xsd:string" use="required"/>
-				<xsd:attribute name="handler" type="xsd:string" use="required"/>
+				<xsd:attribute name="handler" type="gitb:StringOrVariable" use="required"/>
 			</xsd:extension>
 		</xsd:complexContent>
 	</xsd:complexType>
@@ -280,7 +280,7 @@
 					<xsd:element name="config" type="gitb:Configuration" minOccurs="0" maxOccurs="unbounded"/>
 					<xsd:element name="input" type="Binding" maxOccurs="unbounded"/>
 				</xsd:sequence>
-				<xsd:attribute name="handler" type="xsd:string" use="required"/>
+				<xsd:attribute name="handler" type="gitb:StringOrVariable" use="required"/>
 			</xsd:extension>
 		</xsd:complexContent>
 	</xsd:complexType>
@@ -315,7 +315,7 @@
 					<xsd:element name="config" type="gitb:Configuration" minOccurs="0" maxOccurs="unbounded"/>
 				</xsd:sequence>
 				<xsd:attribute name="txnId" type="xsd:string" use="required"/>
-				<xsd:attribute name="handler" type="xsd:string" use="required"/>
+				<xsd:attribute name="handler" type="gitb:StringOrVariable" use="required"/>
 			</xsd:extension>
 		</xsd:complexContent>
 	</xsd:complexType>

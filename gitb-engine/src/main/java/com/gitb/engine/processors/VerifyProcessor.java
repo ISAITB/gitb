@@ -6,6 +6,7 @@ import com.gitb.core.TestModule;
 import com.gitb.core.TypedParameter;
 import com.gitb.core.UsageEnumeration;
 import com.gitb.engine.expr.ExpressionHandler;
+import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.module.validation.RemoteValidationModuleClient;
@@ -47,17 +48,24 @@ public class VerifyProcessor implements IProcessor {
 		//Get the Validator Module from its name
 
 		IValidationHandler validator;
-		if (isURL(verify.getHandler())) {
-			validator = getRemoteValidator(verify.getHandler());
+
+		String handlerIdentifier = verify.getHandler();
+		VariableResolver resolver = new VariableResolver(scope);
+		if (resolver.isVariableReference(handlerIdentifier)) {
+			handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
+		}
+
+		if (isURL(handlerIdentifier)) {
+			validator = getRemoteValidator(handlerIdentifier);
 		} else {
-			validator = ModuleManager.getInstance().getValidationHandler(verify.getHandler());
+			validator = ModuleManager.getInstance().getValidationHandler(handlerIdentifier);
 			// This is a local validator.
 			if (validator instanceof AbstractValidator) {
 				((AbstractValidator)validator).setTestCaseId(scope.getContext().getTestCase().getId());
 			}
 		}
 		if (validator == null) {
-			throw new IllegalStateException("Validation handler for ["+verify.getHandler()+"] could not be resolved");
+			throw new IllegalStateException("Validation handler for ["+handlerIdentifier+"] could not be resolved");
 		}
 		ExpressionHandler exprHandler = new ExpressionHandler(scope);
 		TestModule validatorDefinition = validator.getModuleDefinition();
@@ -74,7 +82,7 @@ public class VerifyProcessor implements IProcessor {
 			for (Binding inputExpression : inputExpressions) {
 				TypedParameter expectedParam = expectedParamsMap.get(inputExpression.getName());
 				if (expectedParam == null) {
-					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid parameter for the handler [" + verify.getHandler() + "]"));
+					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid parameter for the handler [" + handlerIdentifier + "]"));
 				}
 				//Evaluate Expression
 				DataType result = exprHandler.processExpression(inputExpression, expectedParam.getType());

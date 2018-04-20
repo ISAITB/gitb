@@ -2,6 +2,7 @@ package com.gitb.engine.actors.processors;
 
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
+import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.tdl.BeginProcessingTransaction;
@@ -27,7 +28,13 @@ public class BeginProcessingTransactionStepProcessorActor extends AbstractTestSt
     protected void start() throws Exception {
         processing();
 
-        ProcessingContext context = new ProcessingContext(step.getHandler());
+        String handlerIdentifier = step.getHandler();
+        VariableResolver resolver = new VariableResolver(scope);
+        if (resolver.isVariableReference(handlerIdentifier)) {
+            handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
+        }
+
+        ProcessingContext context = new ProcessingContext(handlerIdentifier);
         String session = context.getHandler().beginTransaction(step.getConfig());
         context.setSession(session);
         this.scope.getContext().addProcessingContext(step.getTxnId(), context);
