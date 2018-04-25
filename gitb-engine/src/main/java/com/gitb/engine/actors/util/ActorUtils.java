@@ -15,7 +15,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ActorUtils {
 	public static Object askBlocking(ActorRef ref, Object message) throws Exception {
-		Timeout t = Timeout.durationToTimeout(FiniteDuration.apply(10, TimeUnit.SECONDS));
+		Timeout t = Timeout.durationToTimeout(FiniteDuration.apply(30, TimeUnit.SECONDS));
 
 		AskableActorRef askRef = new AskableActorRef(ref);
 
@@ -34,7 +34,7 @@ public class ActorUtils {
 
 		ActorSelection sel = system.actorSelection(path);
 
-		Timeout t = Timeout.apply(10, TimeUnit.SECONDS);
+		Timeout t = Timeout.apply(30, TimeUnit.SECONDS);
 
 		AskableActorSelection asker = new AskableActorSelection(sel);
 
