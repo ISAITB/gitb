@@ -8,8 +8,9 @@ import com.gitb.core.UsageEnumeration;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.module.validation.RemoteValidationModuleClient;
+import com.gitb.engine.remote.validation.RemoteValidationModuleClient;
 import com.gitb.tdl.Binding;
 import com.gitb.tdl.Verify;
 import com.gitb.tr.TestResultType;
@@ -29,6 +30,7 @@ import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Created by senan on 9/12/14.
@@ -56,7 +58,7 @@ public class VerifyProcessor implements IProcessor {
 		}
 
 		if (isURL(handlerIdentifier)) {
-			validator = getRemoteValidator(handlerIdentifier);
+			validator = getRemoteValidator(handlerIdentifier, TestCaseUtils.getStepProperties(verify.getProperty(), resolver));
 		} else {
 			validator = ModuleManager.getInstance().getValidationHandler(handlerIdentifier);
 			// This is a local validator.
@@ -128,9 +130,9 @@ public class VerifyProcessor implements IProcessor {
 		return true;
 	}
 
-	private IValidationHandler getRemoteValidator(String handler) {
+	private IValidationHandler getRemoteValidator(String handler, Properties connectionProperties) {
 		try {
-			return new RemoteValidationModuleClient(new URI(handler).toURL());
+			return new RemoteValidationModuleClient(new URI(handler).toURL(), connectionProperties);
 		} catch (MalformedURLException e) {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an malformed URL ["+handler+"]"), e);
 		} catch (URISyntaxException e) {

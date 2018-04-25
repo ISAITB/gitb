@@ -1,17 +1,13 @@
 package com.gitb.module.validation;
 
-import com.gitb.core.Configuration;
 import com.gitb.core.ValidationModule;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.types.DataType;
 import com.gitb.validation.IValidationHandler;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Created by serbay.
@@ -30,10 +26,7 @@ public class ProxyValidationHandler implements InvocationHandler {
 			case "getModuleDefinition":
 				return validationModule;
 			case "validate":
-				List<Configuration> configurations = (List<Configuration>) args[0];
-				Map<String, DataType> inputs = (Map<String, DataType>) args[1];
-
-				return new RemoteValidationModuleClient(validationModule).validate(configurations, inputs);
+				throw new IllegalStateException("This handler loading approach is deprecated!");
 			default:
 				throw new InvocationTargetException(new GITBEngineInternalError("Method is not found"));
 		}

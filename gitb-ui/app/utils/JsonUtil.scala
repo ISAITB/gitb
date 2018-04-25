@@ -255,14 +255,25 @@ object JsonUtil {
   }
 
   def jsDomainParameter(domainParameter:DomainParameter):JsObject = {
-    val json = Json.obj(
-      "id" -> domainParameter.id,
-      "name" -> domainParameter.name,
-      "description" -> domainParameter.desc,
-      "kind" -> domainParameter.kind,
-      "value" -> domainParameter.value
-    )
-    json
+    if (domainParameter.kind == "HIDDEN") {
+      val json = Json.obj(
+        "id" -> domainParameter.id,
+        "name" -> domainParameter.name,
+        "description" -> domainParameter.desc,
+        "kind" -> domainParameter.kind,
+        "value" -> ""
+      )
+      json
+    } else {
+      val json = Json.obj(
+        "id" -> domainParameter.id,
+        "name" -> domainParameter.name,
+        "description" -> domainParameter.desc,
+        "kind" -> domainParameter.kind,
+        "value" -> domainParameter.value
+      )
+      json
+    }
   }
 
   /**
@@ -419,7 +430,7 @@ object JsonUtil {
       (jsonConfig \ "name").as[String],
       (jsonConfig \ "desc").as[Option[String]],
       (jsonConfig \ "kind").as[String],
-      (jsonConfig \ "value").as[String],
+      (jsonConfig \ "value").as[Option[String]],
       domainId
     )
   }

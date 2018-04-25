@@ -6,6 +6,7 @@ import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.remote.messaging.RemoteMessagingModuleClient;
+import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.model.InitiateResponse;
@@ -268,7 +269,7 @@ public class TestCaseContext {
 			TestRole toRole = actorRoles.get(transactionInfo.toActorId);
 
 			if(!messagingContextBuilders.containsKey(transactionInfo.handler)) {
-				messagingContextBuilders.put(transactionInfo.handler, new MessagingContextBuilder(transactionInfo.handler));
+				messagingContextBuilders.put(transactionInfo.handler, new MessagingContextBuilder(transactionInfo));
 			}
 
 			MessagingContextBuilder builder = messagingContextBuilders.get(transactionInfo.handler);
@@ -346,6 +347,7 @@ public class TestCaseContext {
      */
     private List<TransactionInfo> createTransactionInfo(Sequence sequence) {
         List<TransactionInfo> transactions = new ArrayList<>();
+		VariableResolver resolver = new VariableResolver(scope);
         for(Object step : sequence.getSteps()) {
             if(step instanceof Sequence) {
                 transactions.addAll(createTransactionInfo((Sequence) step));
@@ -359,11 +361,11 @@ public class TestCaseContext {
 	            String toEndpoint = ActorUtils.extractEndpointName(beginTransactionStep.getTo());
 
 				String handlerIdentifier = beginTransactionStep.getHandler();
-				VariableResolver resolver = new VariableResolver(scope);
 				if (resolver.isVariableReference(handlerIdentifier)) {
 					handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
 				}
-                transactions.add(new TransactionInfo(fromActorId, fromEndpoint, toActorId, toEndpoint, handlerIdentifier));
+
+                transactions.add(new TransactionInfo(fromActorId, fromEndpoint, toActorId, toEndpoint, handlerIdentifier, TestCaseUtils.getStepProperties(beginTransactionStep.getProperty(), resolver)));
             } else if (step instanceof IfStep) {
 	            transactions.addAll(createTransactionInfo(((IfStep) step).getThen()));
 	            transactions.addAll(createTransactionInfo(((IfStep) step).getElse()));
@@ -478,12 +480,12 @@ public class TestCaseContext {
 	}
 
 	private static class MessagingContextBuilder {
-		private final String handler;
+		private final TransactionInfo transactionInfo;
 		private final Map<Tuple<String>, ActorConfiguration> sutConfigurations;
         private int transactionCount;
 
-		public MessagingContextBuilder(String handler) {
-			this.handler = handler;
+		public MessagingContextBuilder(TransactionInfo transactionInfo) {
+			this.transactionInfo = transactionInfo;
 			this.sutConfigurations = new HashMap<>();
             this.transactionCount = 0;
 		}
@@ -517,25 +519,25 @@ public class TestCaseContext {
 			return true;
 		}
 
-		private IMessagingHandler getRemoteMessagingHandler(String handler, String sessionId) {
+		private IMessagingHandler getRemoteMessagingHandler(TransactionInfo transactionInfo, String sessionId) {
 			try {
-				return new RemoteMessagingModuleClient(new URI(handler).toURL(), sessionId);
+				return new RemoteMessagingModuleClient(new URI(transactionInfo.handler).toURL(), transactionInfo.properties, sessionId);
 			} catch (MalformedURLException e) {
-				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an malformed URL ["+handler+"]"), e);
+				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an malformed URL ["+transactionInfo.handler+"]"), e);
 			} catch (URISyntaxException e) {
-				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an invalid URI syntax ["+handler+"]"), e);
+				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an invalid URI syntax ["+transactionInfo.handler+"]"), e);
 			}
 		}
 
 		public MessagingContext build(String sessionId) {
-			IMessagingHandler messagingHandler = null;
-			if (isURL(handler)) {
-				messagingHandler = getRemoteMessagingHandler(handler, sessionId);
+			IMessagingHandler messagingHandler;
+			if (isURL(transactionInfo.handler)) {
+				messagingHandler = getRemoteMessagingHandler(transactionInfo, sessionId);
 			} else {
-				messagingHandler = ModuleManager.getInstance().getMessagingHandler(handler);
+				messagingHandler = ModuleManager.getInstance().getMessagingHandler(transactionInfo.handler);
 			}
 			if (messagingHandler == null) {
-				throw new IllegalStateException("Validation handler for ["+handler+"] could not be resolved");
+				throw new IllegalStateException("Validation handler for ["+transactionInfo.handler+"] could not be resolved");
 			}
 
 			List<ActorConfiguration> configurations = new ArrayList<>(sutConfigurations.values());
@@ -588,7 +590,7 @@ public class TestCaseContext {
 		}
 
 		public String getHandler() {
-			return handler;
+			return transactionInfo.handler;
 		}
 	}
 
@@ -600,13 +602,15 @@ public class TestCaseContext {
 	    public final String toEndpointName;
 
 	    public final String handler;
+	    public final Properties properties;
 
-        public TransactionInfo(String fromActorId, String fromEndpointName, String toActorId, String toEndpointName, String handler) {
+        public TransactionInfo(String fromActorId, String fromEndpointName, String toActorId, String toEndpointName, String handler, Properties properties) {
 	        this.fromActorId = fromActorId;
 	        this.fromEndpointName = fromEndpointName;
 	        this.toActorId = toActorId;
 	        this.toEndpointName = toEndpointName;
 	        this.handler = handler;
+	        this.properties = properties;
         }
     }
 }

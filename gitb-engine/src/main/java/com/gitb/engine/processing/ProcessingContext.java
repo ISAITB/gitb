@@ -10,14 +10,15 @@ import com.gitb.utils.ErrorUtils;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Properties;
 
 public final class ProcessingContext {
 
     private IProcessingHandler handler;
     private String session;
 
-    public ProcessingContext(String handler) {
-        this.handler = resolveHandler(handler);
+    public ProcessingContext(String handler, Properties transactionProperties) {
+        this.handler = resolveHandler(handler, transactionProperties);
     }
 
     public void setSession(String session) {
@@ -41,17 +42,17 @@ public final class ProcessingContext {
         return true;
     }
 
-    private IProcessingHandler resolveHandler(String handler) {
+    private IProcessingHandler resolveHandler(String handler, Properties transactionProperties) {
         if (isURL(handler)) {
-            return getRemoteProcessor(handler);
+            return getRemoteProcessor(handler, transactionProperties);
         } else {
             return ModuleManager.getInstance().getProcessingHandler(handler);
         }
     }
 
-    private IProcessingHandler getRemoteProcessor(String handler) {
+    private IProcessingHandler getRemoteProcessor(String handler, Properties transactionProperties) {
         try {
-            return new RemoteProcessingModuleClient(new URI(handler).toURL());
+            return new RemoteProcessingModuleClient(new URI(handler).toURL(), transactionProperties);
         } catch (MalformedURLException e) {
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote processing module found with an malformed URL [" + handler + "]"), e);
         } catch (URISyntaxException e) {

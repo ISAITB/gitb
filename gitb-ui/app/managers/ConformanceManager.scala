@@ -73,7 +73,7 @@ object ConformanceManager extends BaseManager {
 		}
 	}
 
-	def updateDomainParameter(parameterId: Long, name: String, description: Option[String], kind: String, value: String) = {
+	def updateDomainParameter(parameterId: Long, name: String, description: Option[String], kind: String, value: Option[String]) = {
 		DB.withTransaction { implicit session =>
 
 			val q1 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.name)
@@ -85,8 +85,11 @@ object ConformanceManager extends BaseManager {
 			val q3 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.kind)
 			q3.update(kind)
 
-			val q4 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.value)
-			q4.update(value)
+			if (value.isDefined) {
+				// If there is no value provided this means that we don't want to update this
+				val q4 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.value)
+				q4.update(value)
+			}
 
 		}
 	}

@@ -1,6 +1,8 @@
-package com.gitb.module.validation;
+package com.gitb.engine.remote.validation;
 
 import com.gitb.core.*;
+import com.gitb.engine.remote.RemoteCallContext;
+import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.DataType;
@@ -8,7 +10,9 @@ import com.gitb.types.ListType;
 import com.gitb.types.MapType;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.validation.IValidationHandler;
-import com.gitb.vs.*;
+import com.gitb.vs.ValidateRequest;
+import com.gitb.vs.ValidationResponse;
+import com.gitb.vs.ValidationService;
 import com.gitb.vs.Void;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.Charsets;
@@ -19,6 +23,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.function.Supplier;
 
 /**
  * Created by serbay.
@@ -27,19 +33,26 @@ public class RemoteValidationModuleClient implements IValidationHandler {
 
 	private URL serviceURL;
 	private ValidationModule validationModule;
+	private final Properties connectionProperties;
 
-	public RemoteValidationModuleClient(URL serviceURL) {
+	public RemoteValidationModuleClient(URL serviceURL, Properties connectionProperties) {
 		this.serviceURL = serviceURL;
+		this.connectionProperties = connectionProperties;
 	}
 
-	public RemoteValidationModuleClient(ValidationModule validationModule) {
-		this.validationModule = validationModule;
+	private <T> T call(Supplier<T> supplier) {
+		try {
+			RemoteCallContext.setCallProperties(connectionProperties);
+			return supplier.get();
+		} finally {
+			RemoteCallContext.clearCallProperties();
+		}
 	}
 
 	@Override
 	public ValidationModule getModuleDefinition() {
 		if (validationModule == null) {
-			validationModule = getServiceClient().getModuleDefinition(new Void()).getModule();
+			validationModule = call(() -> getServiceClient().getModuleDefinition(new Void()).getModule());
 		}
 		return validationModule;
 	}
@@ -51,7 +64,7 @@ public class RemoteValidationModuleClient implements IValidationHandler {
 		for(Map.Entry<String, DataType> input: inputs.entrySet()) {
 			validateRequest.getInput().add(createContentFromDataType(input.getKey(), input.getValue()));
 		}
-		ValidationResponse response = getServiceClient().validate(validateRequest);
+		ValidationResponse response = call(() -> getServiceClient().validate(validateRequest));
 		return response.getReport();
 	}
 
@@ -73,7 +86,8 @@ public class RemoteValidationModuleClient implements IValidationHandler {
 	}
 
 	private ValidationService getServiceClient() {
-		return new ValidationService_Service(getServiceURL()).getValidationServicePort();
+		TestCaseUtils.prepareRemoteServiceLookup(connectionProperties);
+		return new ValidationServiceClient(getServiceURL()).getValidationServicePort();
 	}
 
 	private static AnyContent createContentFromDataType(String name, DataType data) {

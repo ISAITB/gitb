@@ -93,7 +93,7 @@ class TestService extends Controller{
       parameters.foreach { parameter =>
         val config = new Configuration()
         config.setName(parameter.name)
-        config.setValue(parameter.value)
+        config.setValue(parameter.value.get)
         domainConfiguration.getConfig.add(config)
       }
       cRequest.getConfigs.add(domainConfiguration)

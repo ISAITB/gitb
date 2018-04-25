@@ -5,6 +5,7 @@ import akka.actor.ActorRef;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.tdl.BeginProcessingTransaction;
 
 public class BeginProcessingTransactionStepProcessorActor extends AbstractTestStepActor<BeginProcessingTransaction> {
@@ -34,7 +35,7 @@ public class BeginProcessingTransactionStepProcessorActor extends AbstractTestSt
             handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
         }
 
-        ProcessingContext context = new ProcessingContext(handlerIdentifier);
+        ProcessingContext context = new ProcessingContext(handlerIdentifier, TestCaseUtils.getStepProperties(step.getProperty(), resolver));
         String session = context.getHandler().beginTransaction(step.getConfig());
         context.setSession(session);
         this.scope.getContext().addProcessingContext(step.getTxnId(), context);

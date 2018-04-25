@@ -34,7 +34,7 @@ class DomainDetailsController
 				title: 'Description'
 			}
 			{
-				field: 'value',
+				field: 'valueToShow',
 				title: 'Value'
 			}
 		]
@@ -53,7 +53,13 @@ class DomainDetailsController
 
 		@ConformanceService.getDomainParameters(@domainId)
 		.then (data)=>
-			@domainParameters = data
+			@domainParameters = []
+			for parameter in data
+				if (parameter.kind == 'HIDDEN')
+					parameter.valueToShow = "*****"
+				else 
+					parameter.valueToShow = parameter.value
+				@domainParameters.push(parameter)
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 

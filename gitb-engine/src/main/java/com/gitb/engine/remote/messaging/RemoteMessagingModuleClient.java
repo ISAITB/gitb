@@ -1,6 +1,8 @@
 package com.gitb.engine.remote.messaging;
 
 import com.gitb.core.*;
+import com.gitb.engine.remote.RemoteCallContext;
+import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.CallbackManager;
 import com.gitb.messaging.IMessagingHandler;
@@ -21,6 +23,8 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.function.Supplier;
 
 /**
  * Created by serbay.
@@ -30,10 +34,12 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 	private final String testSessionId;
 	private URL serviceURL;
 	private MessagingModule messagingModule;
+	private final Properties transactionProperties;
 
-	public RemoteMessagingModuleClient(URL serviceURL, String sessionId) {
+	public RemoteMessagingModuleClient(URL serviceURL, Properties transactionProperties, String sessionId) {
 		this.serviceURL = serviceURL;
 		this.testSessionId = sessionId;
+		this.transactionProperties = transactionProperties;
 	}
 
 	private URL getServiceURL() {
@@ -54,24 +60,23 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 	}
 
 	private MessagingService getServiceClient() {
+		TestCaseUtils.prepareRemoteServiceLookup(transactionProperties);
 		return new MessagingServiceClient(getServiceURL()).getMessagingServicePort(new AddressingFeature(true));
 	}
 
-	private static ValueEmbeddingEnumeration getValueEmbeddingMethod(String dataType) {
-		switch (dataType) {
-			case DataType.OBJECT_DATA_TYPE:
-			case DataType.BINARY_DATA_TYPE:
-			case DataType.SCHEMA_DATA_TYPE:
-				return ValueEmbeddingEnumeration.BASE_64;
-			default:
-				return ValueEmbeddingEnumeration.STRING;
+	private <T> T call(Supplier<T> supplier) {
+		try {
+			RemoteCallContext.setCallProperties(transactionProperties);
+			return supplier.get();
+		} finally {
+			RemoteCallContext.clearCallProperties();
 		}
 	}
 
 	@Override
 	public MessagingModule getModuleDefinition() {
 		if (messagingModule == null) {
-			messagingModule = getServiceClient().getModuleDefinition(new Void()).getModule();
+			messagingModule = call(() -> getServiceClient().getModuleDefinition(new Void()).getModule());
 		}
 		return messagingModule;
 	}
@@ -80,7 +85,7 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 	public InitiateResponse initiate(List<ActorConfiguration> actorConfigurations) {
         InitiateRequest request = new InitiateRequest();
         request.getActorConfiguration().addAll(actorConfigurations);
-        com.gitb.ms.InitiateResponse wsResponse = getServiceClient().initiate(request);
+		com.gitb.ms.InitiateResponse wsResponse = call(() -> getServiceClient().initiate(request));
         InitiateResponse response = new InitiateResponse(wsResponse.getSessionId(), wsResponse.getActorConfiguration());
 		return response;
 	}
@@ -92,7 +97,7 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
         request.setFrom(from);
         request.setTo(to);
         request.getConfig().addAll(configurations);
-        getServiceClient().beginTransaction(request);
+        call(() -> getServiceClient().beginTransaction(request));
 	}
 
 	@Override
@@ -103,7 +108,7 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 			AnyContent attachment = DataTypeUtils.convertDataTypeToAnyContent(fragmentEntry.getKey(), fragmentEntry.getValue());
 			request.getInput().add(attachment);
 		}
-		SendResponse response = getServiceClient().send(request);
+		SendResponse response = call(() -> getServiceClient().send(request));
 		return MessagingHandlerUtils.getMessagingReport(response.getReport());
 	}
 
@@ -117,7 +122,7 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 			AnyContent input = DataTypeUtils.convertDataTypeToAnyContent(fragmentEntry.getKey(), fragmentEntry.getValue());
 			request.getInput().add(input);
 		}
-		getServiceClient().receive(request);
+		call(() -> getServiceClient().receive(request));
 		return CallbackManager.getInstance().waitForCallback(sessionId, callId);
 	}
 
@@ -131,7 +136,7 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 	public void endTransaction(String sessionId, String transactionId) {
         BasicRequest request = new BasicRequest();
         request.setSessionId(sessionId);
-        getServiceClient().endTransaction(request);
+        call(() -> getServiceClient().endTransaction(request));
 	}
 
 	@Override
@@ -139,7 +144,7 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 		try {
 			FinalizeRequest request = new FinalizeRequest();
 			request.setSessionId(sessionId);
-			getServiceClient().finalize(request);
+			call(() -> getServiceClient().finalize(request));
 		} finally {
 			CallbackManager.getInstance().sessionEnded(sessionId);
 		}

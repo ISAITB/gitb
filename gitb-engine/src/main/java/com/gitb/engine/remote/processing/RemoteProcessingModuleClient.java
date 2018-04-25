@@ -4,26 +4,15 @@ import com.gitb.core.AnyContent;
 import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.ValueEmbeddingEnumeration;
+import com.gitb.engine.remote.RemoteCallContext;
+import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.processing.IProcessingHandler;
 import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
-import com.gitb.ps.BasicRequest;
-import com.gitb.ps.BeginTransactionRequest;
-import com.gitb.ps.ProcessRequest;
-import com.gitb.ps.ProcessResponse;
-import com.gitb.ps.ProcessingModule;
-import com.gitb.ps.ProcessingService;
-import com.gitb.ps.ProcessingServiceService;
+import com.gitb.ps.*;
 import com.gitb.ps.Void;
-import com.gitb.types.BinaryType;
-import com.gitb.types.BooleanType;
-import com.gitb.types.DataType;
-import com.gitb.types.ListType;
-import com.gitb.types.MapType;
-import com.gitb.types.NumberType;
-import com.gitb.types.ObjectType;
-import com.gitb.types.StringType;
+import com.gitb.types.*;
 import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.codec.binary.Base64;
@@ -35,24 +24,33 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.function.Supplier;
 
 public class RemoteProcessingModuleClient implements IProcessingHandler {
 
     private URL serviceURL;
     private ProcessingModule processingModule;
+    private final Properties transactionProperties;
 
-    public RemoteProcessingModuleClient(URL serviceURL) {
+    public RemoteProcessingModuleClient(URL serviceURL, Properties transactionProperties) {
         this.serviceURL = serviceURL;
+        this.transactionProperties = transactionProperties;
     }
 
-    public RemoteProcessingModuleClient(ProcessingModule processingModule) {
-        this.processingModule = processingModule;
+    private <T> T call(Supplier<T> supplier) {
+        try {
+            RemoteCallContext.setCallProperties(transactionProperties);
+            return supplier.get();
+        } finally {
+            RemoteCallContext.clearCallProperties();
+        }
     }
 
     @Override
     public ProcessingModule getModuleDefinition() {
         if (processingModule == null) {
-            processingModule = getServiceClient().getModuleDefinition(new Void()).getModule();
+            processingModule = call(() -> getServiceClient().getModuleDefinition(new Void()).getModule());
         }
         return processingModule;
     }
@@ -61,7 +59,7 @@ public class RemoteProcessingModuleClient implements IProcessingHandler {
     public String beginTransaction(List<Configuration> config) {
         BeginTransactionRequest transactionRequest = new BeginTransactionRequest();
         transactionRequest.getConfig().addAll(config);
-        return getServiceClient().beginTransaction(transactionRequest).getSessionId();
+        return call(() -> getServiceClient().beginTransaction(transactionRequest).getSessionId());
     }
 
     @Override
@@ -70,7 +68,7 @@ public class RemoteProcessingModuleClient implements IProcessingHandler {
         processRequest.setSessionId(session);
         processRequest.setOperation(operation);
         processRequest.getInput().addAll(getInput(data));
-        ProcessResponse processResponse = getServiceClient().process(processRequest);
+        ProcessResponse processResponse = call(() -> getServiceClient().process(processRequest));
         return new ProcessingReport(processResponse.getReport(), getOutput(processResponse.getOutput()));
     }
 
@@ -95,11 +93,12 @@ public class RemoteProcessingModuleClient implements IProcessingHandler {
     public void endTransaction(String session) {
         BasicRequest basicRequest = new BasicRequest();
         basicRequest.setSessionId(session);
-        getServiceClient().endTransaction(basicRequest);
+        call(() -> getServiceClient().endTransaction(basicRequest));
     }
 
     private ProcessingService getServiceClient() {
-        return new ProcessingServiceService(getServiceURL()).getProcessingServicePort();
+        TestCaseUtils.prepareRemoteServiceLookup(transactionProperties);
+        return new ProcessingServiceClient(getServiceURL()).getProcessingServicePort();
     }
 
     private URL getServiceURL() {

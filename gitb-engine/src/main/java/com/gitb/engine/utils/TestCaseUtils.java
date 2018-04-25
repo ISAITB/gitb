@@ -1,5 +1,9 @@
 package com.gitb.engine.utils;
 
+import com.gitb.core.Configuration;
+import com.gitb.engine.PropertyConstants;
+import com.gitb.engine.expr.resolvers.VariableResolver;
+import com.gitb.engine.remote.RemoteCallContext;
 import com.gitb.tdl.*;
 import com.gitb.tdl.Instruction;
 import com.gitb.tdl.UserRequest;
@@ -12,6 +16,12 @@ import com.gitb.tpl.ObjectFactory;
 import com.gitb.tpl.Sequence;
 import com.gitb.tpl.TestCase;
 import com.gitb.tpl.TestStep;
+import org.apache.commons.lang.StringUtils;
+
+import java.net.Authenticator;
+import java.net.PasswordAuthentication;
+import java.util.List;
+import java.util.Properties;
 
 /**
  * Created by senan on 10/13/14.
@@ -29,6 +39,41 @@ public class TestCaseUtils {
     private static final String FALSE =  "[F]";
     private static final String ITERATION_OPENING_TAG = "[";
     private static final String ITERATION_CLOSING_TAG = "]";
+
+    public static Properties getStepProperties(List<Configuration> properties, VariableResolver resolver) {
+        Properties result = new Properties();
+        if (properties != null && !properties.isEmpty()) {
+            for (Configuration config: properties) {
+                String value = config.getValue();
+                if (resolver.isVariableReference(value)) {
+                    value = resolver.resolveVariableAsString(value).toString();
+                }
+                result.setProperty(config.getName(), value);
+            }
+        }
+        return result;
+    }
+
+    public static void prepareRemoteServiceLookup(Properties stepProperties) {
+        if (stepProperties != null && !StringUtils.isBlank(stepProperties.getProperty(PropertyConstants.AUTH_BASIC_USERNAME))) {
+            /*
+            The configuration specifies that we have basic authentication. To allow this to go through even if
+            the WSDL is protected we use a thread-safe (via ThreadLocal) authenticator. This is because the
+            new MessagingServiceClient(getServiceURL()) call results in a call to the WSDL (that needs authentication).
+             */
+            Authenticator.setDefault(new Authenticator() {
+                @Override
+                protected PasswordAuthentication getPasswordAuthentication() {
+                    Properties callProperties = RemoteCallContext.getCallProperties();
+                    String username = callProperties.getProperty(PropertyConstants.AUTH_BASIC_USERNAME);
+                    String password = callProperties.getProperty(PropertyConstants.AUTH_BASIC_PASSWORD);
+                    return new PasswordAuthentication(
+                            username,
+                            password.toCharArray());
+                }
+            });
+        }
+    }
 
     public static TestCase convertTestCase(com.gitb.tdl.TestCase description) {
         TestCase presentation = new TestCase();
