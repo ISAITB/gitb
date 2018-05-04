@@ -9,6 +9,9 @@ class UserCreateController
 
     @roleCreateChoices = @Constants.VENDOR_USER_ROLES
 
+  saveDisabled: () =>
+    !(@user.name? && @user.password? && @user.cpassword? && @user.email? && @user.role?)
+
   # create user and cancel screen
   createUser: () =>
     @ValidationService.clearAll()

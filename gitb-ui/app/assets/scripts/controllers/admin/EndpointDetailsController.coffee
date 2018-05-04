@@ -49,6 +49,12 @@ class EndpointDetailsController
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
+	saveDisabled: () =>
+		!(@endpoint?.name?)
+
+	back: () =>
+		@$state.go 'app.admin.domains.detail.specifications.detail.actors.detail.list', {id: @domainId, spec_id: @specificationId, actor_id: @actorId}
+
 	addParameter: () =>
 		modalOptions =
 			templateUrl: 'assets/views/admin/domains/create-parameter-modal.html'

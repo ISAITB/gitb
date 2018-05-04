@@ -114,6 +114,9 @@ class CommunityDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+  saveDisabled: () =>
+    !(@community?.sname? && @community?.fname?)
+
   updateCommunity: () =>
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@community.sname, "Please enter short name of the community.") &

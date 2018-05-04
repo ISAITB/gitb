@@ -157,13 +157,13 @@
 				'</div>'+
 			'</td>'+
 			'<td class="operations" ng-if="actionVisible">'+
-				'<button class="btn btn-default" ng-click="action()"><i class="fa {{actionIcon}}"></i></button>'+
+				'<button class="btn btn-default" ng-click="action(); $event.stopPropagation();"><i class="fa {{actionIcon}}"></i></button>'+
 			'</td>' +
 			'<td class="operations" ng-if="operationsVisible">'+
-				'<button class="btn btn-default" ng-click="delete()"><i class="fa fa-times"></i></button>'+
+				'<button class="btn btn-default" ng-click="delete(); $event.stopPropagation();"><i class="fa fa-times"></i></button>'+
 			'</td>' +
 			'<td class="operations" ng-if="exportVisible">'+
-          '<button class="btn btn-default" ng-click="export()"><i class="fa fa-file-pdf-o"></i></button>'+
+          '<button ng-if="!data.hideExportButton" class="btn btn-default" ng-click="export(); $event.stopPropagation();" ng-disabled="data.disableExportButton"><i ng-class="exportClass()"></i></button>'+
       '</td>'
 		link: (scope, element, attrs) ->
 			scope.rows = _.map scope.columns, (column)->
@@ -178,6 +178,12 @@
 					scope.onDelete(scope.data)
 			scope.export = () =>
 			    scope.onExport? scope.data
+			scope.exportClass = () =>
+				if (scope.data.disableExportButton)
+					"fa fa-spinner fa-spin fa-lg fa-fw"
+				else
+					"fa fa-file-pdf-o"
+
 			scope.check = () =>
 			    scope.onCheck? scope.data
 			scope.action = () =>

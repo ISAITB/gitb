@@ -14,10 +14,10 @@
             </div>
             <div class="row col-md-10 col-md-offset-3">
                 <div class="btn-toolbar">
-                    <button class="btn btn-default" type="button" ng-click="orgDetailCtrl.cancelDetailOrganization()">Cancel</button>
-                    <button class="btn btn-default" type="button" ng-click="orgDetailCtrl.updateOrganization()">Update</button>
+                    <button class="btn btn-default" type="button" ng-click="orgDetailCtrl.updateOrganization()" ng-disabled="orgDetailCtrl.saveDisabled()">Update</button>
                     <button class="btn btn-default" type="button" ng-click="orgDetailCtrl.deleteOrganization()">Delete</button>
                     <button class="btn btn-default" type="button" ng-click="orgDetailCtrl.manageOrganizationTests()">Manage Tests</button>
+                    <button class="btn btn-default" type="button" ng-click="orgDetailCtrl.cancelDetailOrganization()">Back</button>
                 </div>
             </div>
         </div>

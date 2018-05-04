@@ -2,8 +2,11 @@
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h4 class="title">Actor details</h4>
-			<a href="" ng-click="actorDetailsCtrl.saveChanges()" class="btn btn-default pull-right">Save changes</a>
-			<a href="" ng-click="actorDetailsCtrl.delete()" class="btn btn-default pull-right">Delete</a>
+			<div class="pull-right">
+				<button ng-click="actorDetailsCtrl.saveChanges()" class="btn btn-default" ng-disabled="actorDetailsCtrl.saveDisabled()">Save changes</button>
+				<button ng-click="actorDetailsCtrl.delete()" class="btn btn-default">Delete</button>
+				<button ng-click="actorDetailsCtrl.back()" class="btn btn-default">Back</button>
+			</div>
 		</div>
 		<div class="panel-body">
 			<div class="row">

@@ -2,8 +2,11 @@
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h4 class="title">Endpoint details</h4>
-			<a href="" ng-click="endpointDetailsCtrl.saveChanges()" class="btn btn-default pull-right">Save changes</a>
-			<a href="" ng-click="endpointDetailsCtrl.delete()" class="btn btn-default pull-right">Delete</a>
+			<div class="pull-right">
+				<button ng-click="endpointDetailsCtrl.saveChanges()" class="btn btn-default" ng-disabled="endpointDetailsCtrl.saveDisabled()">Save changes</button>
+				<button ng-click="endpointDetailsCtrl.delete()" class="btn btn-default">Delete</button>
+				<button ng-click="endpointDetailsCtrl.back()" class="btn btn-default">Back</button>
+			</div>
 		</div>
 		<div class="panel-body">
 			<div class="row">

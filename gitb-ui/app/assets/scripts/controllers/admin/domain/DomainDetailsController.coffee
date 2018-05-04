@@ -72,12 +72,18 @@ class DomainDetailsController
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 
+	saveDisabled: () =>
+		!(@domain?.sname? && @domain?.fname?)
+
 	saveDomainChanges: () =>
 		@ConformanceService.updateDomain(@domainId, @domain.sname, @domain.fname, @domain.description)
 		.then () =>
 			@$state.go 'app.admin.domains.list'
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
+
+	back: () =>
+		@$state.go 'app.admin.domains.list'
 
 	onSpecificationSelect: (specification) =>
 		@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: specification.id}

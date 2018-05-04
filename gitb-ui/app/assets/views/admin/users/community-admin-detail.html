@@ -12,9 +12,9 @@
             <div class="col-md-10 col-md-offset-1" tb-user-form tb-user="communityAdminDetailCtrl.user" tb-new="false" tb-admin="true"></div>
             <div class="row col-md-10 col-md-offset-3">
                 <div class="btn-toolbar">
-                    <button class="btn btn-default" type="button" ng-click="communityAdminDetailCtrl.cancelDetailAdmin()">Cancel</button>
-                    <button class="btn btn-default" type="button" ng-click="communityAdminDetailCtrl.updateAdmin()">Update</button>
+                    <button class="btn btn-default" type="button" ng-click="communityAdminDetailCtrl.updateAdmin()" ng-disabled="communityAdminDetailCtrl.saveDisabled()">Update</button>
                     <button class="btn btn-default" type="button" ng-click="communityAdminDetailCtrl.deleteAdmin()" ng-disabled="communityAdminDetailCtrl.disableDeleteButton">Delete</button>
+                    <button class="btn btn-default" type="button" ng-click="communityAdminDetailCtrl.cancelDetailAdmin()">Back</button>
                 </div>
             </div>
         </div>

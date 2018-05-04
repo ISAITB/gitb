@@ -25,10 +25,10 @@
                     </div>
                     <div class="form-group">
                         <div class="col-sm-offset-3 col-sm-8">
-                            <button class="btn btn-default" type="button" ng-click="legalNoticeDetailCtrl.cancelDetailLegalNotice()">Cancel</button>
-                            <button class="btn btn-default" type="button" ng-click="legalNoticeDetailCtrl.updateLegalNotice(false)">Update</button>
+                            <button class="btn btn-default" type="button" ng-click="legalNoticeDetailCtrl.updateLegalNotice(false)" ng-disabled="legalNoticeDetailCtrl.saveDisabled()">Update</button>
                             <button class="btn btn-default" type="button" ng-click="legalNoticeDetailCtrl.updateLegalNotice(true)">Copy</button>
                             <button class="btn btn-default" type="button" ng-click="legalNoticeDetailCtrl.deleteLegalNotice()">Delete</button>
+                            <button class="btn btn-default" type="button" ng-click="legalNoticeDetailCtrl.cancelDetailLegalNotice()">Back</button>
                         </div>
                     </div>
                 </form>

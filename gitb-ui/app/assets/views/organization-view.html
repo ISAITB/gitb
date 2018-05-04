@@ -43,10 +43,9 @@
                     </div>
                 </div>
             </div>
-
-            <div class="row">
+            <div class="row" style="padding-top:10px">
                 <div class="col-md-12">
-                    <input type="submit" value="Save Changes" ng-click="oc.updateVendorProfile()" class="btn btn-info pull-right push-bottom" >
+                    <input type="submit" value="Save Changes" ng-click="oc.updateVendorProfile()" class="btn btn-default pull-left push-bottom" >
                 </div>
             </div>
         </form>
@@ -82,7 +81,7 @@
             </tbody>
         </table>
 
-        <button type="button" class="btn btn-info pull-right" ng-if="oc.ds.isVendorAdmin" ng-click="oc.openModel()" data-toggle="modal" data-target="#addMemberModal">
+        <button type="button" class="btn btn-default pull-left" ng-if="oc.ds.isVendorAdmin" ng-click="oc.openModel()" data-toggle="modal" data-target="#addMemberModal">
             Add Member
         </button>
     </div>
@@ -134,8 +133,8 @@
                             </div>
 
                             <div class="modal-footer">
-                                <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                                <input type="submit" value="Save changes" ng-click="oc.checkEmail()" class="btn btn-info" >
+                                    <input type="submit" value="Save changes" ng-click="oc.checkEmail()" class="btn btn-default" >
+                                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
                             </div>
 
                         </form>

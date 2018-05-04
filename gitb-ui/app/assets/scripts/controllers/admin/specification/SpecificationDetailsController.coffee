@@ -218,4 +218,10 @@ class SpecificationDetailsController
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
+	saveDisabled: () =>
+		!(@specification?.sname? && @specification?.fname?)
+
+	back: () =>
+		@$state.go 'app.admin.domains.detail.list', {id: @domainId}
+
 @controllers.controller 'SpecificationDetailsController', SpecificationDetailsController

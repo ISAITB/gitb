@@ -130,16 +130,6 @@ i.icon-featured {
 section.video blockquote i.icon-quote-left {
   color: #0088cc;
 }
-.panel-heading a {
-  color: #0088cc;
-}
-header {
-  /* Single Menu */
-  /* Header Darken Top Border */
-  /* Header Version 4 */
-  /* Header Flat Menu */
-  /* Mega Menu */
-}
 header nav ul.nav-main ul.dropdown-menu,
 header nav ul.nav-main li.dropdown.open a.dropdown-toggle,
 header nav ul.nav-main li.active a,

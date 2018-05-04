@@ -6,6 +6,7 @@
 			showCancelButton: '='
 			onSubmit: '='
 			onCancel: '='
+			saveDisabled: '='
 		template: ''+
 			'<form class="form-horizontal" ng-submit="submit()">'+
 				'<div class="form-group">'+
@@ -46,11 +47,11 @@
 					'</div>'+
 				'</div>'+
 				'<div class="form-group" ng-if="showSaveButton">'+
-					'<div class="col-sm-offset-3 col-sm-1">'+
-						'<button class="btn btn-default" type="submit">Save</button>'+
-					'</div>'+
-					'<div class="col-sm-7" ng-if="showCancelButton">'+
-						'<button class="btn btn-default" ng-click="onCancel()" type="button">Cancel</button>'+
+					'<div class="col-sm-offset-3 col-sm-10">'+
+						'<div class="btn-toolbar">'+
+							'<button class="btn btn-default" type="submit" ng-disabled="saveDisabled()">Save</button>'+
+							'<button class="btn btn-default" ng-if="showCancelButton" ng-click="onCancel()" type="button">Cancel</button>'+
+						'</div>'+
 					'</div>'+
 				'</div>'+
 			'</form>'

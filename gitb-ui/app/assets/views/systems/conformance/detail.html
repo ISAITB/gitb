@@ -3,7 +3,7 @@
 		<div class="panel-heading">
 			<h5 class="title">Conformance Statement Details</h5>
 			<div class="pull-right">
-				<button class="btn btn-default" ng-click="conformanceStatementDetailCtrl.onExportConformanceStatement()">Download report</button>
+				<button class="btn btn-default" ng-click="conformanceStatementDetailCtrl.onExportConformanceStatement()" ng-disabled="conformanceStatementDetailCtrl.exportPending"><span class="tab" ng-if="conformanceStatementDetailCtrl.exportPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Download report</button>
 				<button class="btn btn-default" ng-if="conformanceStatementDetailCtrl.canDelete()" ng-click="conformanceStatementDetailCtrl.deleteConformanceStatement()">Delete statement</button>
 			</div>
 		</div>
@@ -50,7 +50,7 @@
 			<button class="btn btn-primary pull-right" ng-if="conformanceStatementDetailCtrl.testSuites.length == 1 && conformanceStatementDetailCtrl.testSuites[0].testCases.length > 1" ng-click="conformanceStatementDetailCtrl.onTestSuiteSelect()"><i class="fa fa-play"></i></button>			
 		</div>
 		<div>
-			<table class="table table-directive test-cases">
+			<table id="system-tests-execution" class="table table-directive test-cases">
 				<thead>
 				<tr>
 					<th width="1%">Name</th>

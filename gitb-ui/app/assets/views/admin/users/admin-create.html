@@ -14,7 +14,7 @@
                     <div class="col-md-10 col-md-offset-1" tb-user-form tb-new="true" tb-admin="true" tb-user="adminCreateCtrl.user"></div>
                     <div class="row col-md-10 col-md-offset-3">
                         <div class="btn-toolbar">
-                            <button class="btn btn-primary" type="button" ng-click="adminCreateCtrl.createAdmin()">Save</button>
+                            <button class="btn btn-default" type="button" ng-click="adminCreateCtrl.createAdmin()" ng-disabled="adminCreateCtrl.saveDisabled()">Save</button>
                             <button class="btn btn-default" type="button" ng-click="adminCreateCtrl.cancelCreateAdmin()">Cancel</button>
                         </div>
                     </div>

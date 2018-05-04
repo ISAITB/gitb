@@ -16,8 +16,8 @@
                         </div>
                     </div>
 
-                    <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.nextStep()" ng-if="testExecutionCtrl.isSystemConfigurationsValid(testExecutionCtrl.endpointRepresentations)">Next</button>
-                    <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.updateConfigurations()" ng-if="!testExecutionCtrl.isSystemConfigurationsValid(testExecutionCtrl.endpointRepresentations)">Update Configurations</button>
+                    <button class="btn btn-default pull-right" ng-click="testExecutionCtrl.nextStep()" ng-if="testExecutionCtrl.isSystemConfigurationsValid(testExecutionCtrl.endpointRepresentations)">Next</button>
+                    <button class="btn btn-default pull-right" ng-click="testExecutionCtrl.updateConfigurations()" ng-if="!testExecutionCtrl.isSystemConfigurationsValid(testExecutionCtrl.endpointRepresentations)">Update Configurations</button>
                 </div>
                 <div class="step-content select-peliminary">
                     <div ng-repeat="simulatedConfig in testExecutionCtrl.simulatedConfigs">
@@ -28,10 +28,10 @@
                             <span class="tab">{{config.value}}</span>
                         </div>
                     </div>
-                    <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.nextStep()">Next</button>
+                    <button class="btn btn-default pull-right" ng-click="testExecutionCtrl.nextStep()">Next</button>
                 </div>
                 <div class="step-content select-execution">
-                    <button class="btn btn-primary pull-right" ng-click="testExecutionCtrl.start(testExecutionCtrl.session)">Start</button> <br> <br> <br>
+                    <button class="btn btn-default pull-right" ng-click="testExecutionCtrl.start(testExecutionCtrl.session)">Start</button> <br> <br> <br>
                     <div class="child col-md-12" ui-view></div>
                 </div>
             </div>
@@ -60,7 +60,7 @@
 						</div>
 
 						<div class="modal-footer">
-							<input type="submit" value="Send" ng-click="testExecutionCtrl.provideInput()" class="btn btn-info" >
+							<input type="submit" value="Send" ng-click="testExecutionCtrl.provideInput()" class="btn btn-default" >
 						</div>
 					</form>
 				</div>

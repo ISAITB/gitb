@@ -17,6 +17,9 @@ class AdminDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+  saveDisabled: () =>
+    !(@user.name?)
+
   # update and cancel detail
   updateAdmin: () =>
     @ValidationService.clearAll()

@@ -2,9 +2,9 @@
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h4 class="title">Systems</h4>
-			<a href="" ng-click="systemsCtrl.createSystem()" class="btn btn-default pull-right" ng-if="systemsCtrl.showCreate()">Create system</a>
+			<button ng-click="systemsCtrl.createSystem()" class="btn btn-default pull-right" ng-if="systemsCtrl.showCreate()">Create system</button>
 		</div>
-		<div table-directive columns="systemsCtrl.tableColumns" data="systemsCtrl.systems" action-visible="systemsCtrl.showAction()" action-icon="'fa-pencil'" on-action="systemsCtrl.onSystemEdit" on-select="systemsCtrl.onSystemSelect"></div>
+		<div id="systems-table" table-directive columns="systemsCtrl.tableColumns" data="systemsCtrl.systems" action-visible="systemsCtrl.showAction()" action-icon="'fa-pencil'" on-action="systemsCtrl.onSystemEdit" on-select="systemsCtrl.onSystemSelect"></div>
 	</div>
 	<button ng-if="systemsCtrl.showBack()" class="btn btn-default pull-left" type="button" ng-click="systemsCtrl.back()">Back</button>
 </div>

@@ -18,6 +18,9 @@ class UserDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+  saveDisabled: () =>
+    !(@user.name? && @user.role?)
+
   # update and cancel detail
   updateUser: () =>
     @ValidationService.clearAll()

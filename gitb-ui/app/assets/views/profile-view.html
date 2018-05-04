@@ -33,37 +33,10 @@
             </tbody>
         </table>
 
-        <div class="float-right">
-            <button type="button" class="btn btn-info" ng-if="!pc.edit" ng-click="pc.editProfile()">Edit Profile</button>
-            <button type="button" class="btn btn-info" ng-if="pc.edit"  ng-click="pc.cancelEdit()">Cancel</button>
-            <button type="button" class="btn btn-info" ng-if="pc.edit"  ng-click="pc.updateProfile()">Save Changes</button>
+        <div class="float-left">
+            <button type="button" class="btn btn-default" ng-if="!pc.edit" ng-click="pc.editProfile()">Edit Profile</button>
+            <button type="button" class="btn btn-default" ng-if="pc.edit"  ng-click="pc.updateProfile()">Save Changes</button>
+            <button type="button" class="btn btn-default" ng-if="pc.edit"  ng-click="pc.cancelEdit()">Cancel</button>
         </div>
     </div>
-
-
-
-    <!--
-    <form>
-        <div class="row">
-            <div class="form-group col-md-6">
-                <label class="bold">Your Name:</label>
-                <input type="text" class="form-control" ng-model="data.name">
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="form-group col-md-6">
-                <label class="bold">Your Email Adress:</label> <br>
-                <label>{{data.email}}</label>
-            </div>
-        </div>
-
-        <div class="row">
-            <div class="form-group col-md-6">
-                <input type="submit" value="Save Changes" class="btn btn-info pull-right push-bottom" >
-            </div>
-        </div>
-    </form>
-
-    -->
 </div>

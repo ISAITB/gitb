@@ -16,7 +16,7 @@
             </p>
         </div>
         <div class="col-md-1">
-            <button type="button" class="btn btn-info pull-right " ng-click="pc.redirect('/execution')">Send</button>
+            <button type="button" class="btn btn-default pull-right " ng-click="pc.redirect('/execution')">Send</button>
         </div>
     </div>
 
@@ -55,10 +55,7 @@
                     <td class="grid-row-center" style="vertical-align:middle;">{{config.to}}</td>
                     <td class="grid-row-center" style="vertical-align:middle;">{{config.type}}</td>
                     <td class="grid-row-center">
-                        <!--
-                        <button type="button" class="btn btn-info col-centered" ng-click="pc.clickHandler(config)">Edit</button>
-                        -->
-                        <button class="btn btn-info col-centered" data-toggle="modal" data-target="#myModal">
+                        <button class="btn btn-default col-centered" data-toggle="modal" data-target="#myModal">
                             Edit
                         </button>
                     </td>
@@ -86,9 +83,6 @@
                     <td class="grid-row" style="vertical-align:middle;">{{data.description}}</td>
                     <td class="grid-row-center">
                         <input type="text" value="{{data.value}}"  class="form-control" ng-model="data.value" >
-                       <!--
-                        <button type="button" class="btn btn-info col-centered" ng-click="pc.clickHandler(data)">Edit</button>
-                        -->
                     </td>
                 </tr>
             </tbody>
@@ -192,7 +186,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary">Save changes</button>
+                <button type="button" class="btn btn-default">Save changes</button>
             </div>
         </div>
     </div>

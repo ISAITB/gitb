@@ -17,6 +17,9 @@ class LegalNoticeDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+  saveDisabled: () =>
+    !(@notice?.name?)
+
   # update and cancel detail
   updateLegalNotice: (copy) =>
     @ValidationService.clearAll()

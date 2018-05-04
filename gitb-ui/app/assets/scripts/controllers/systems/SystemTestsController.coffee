@@ -246,6 +246,7 @@ class SystemTestsController
                         result: report.result.result
                         sessionId: report.result.sessionId
                         obsolete: report.result.obsolete
+                        hideExportButton: report.result.obsolete
                       transformedObject
       @testResults = resultReportsCollection.value()
     .catch (error) =>
@@ -381,11 +382,14 @@ class SystemTestsController
       ""
 
   onReportExport: (data) =>
-    @export = true
-    @ReportService.exportTestCaseReport(data.sessionId, data.testCaseId)
-    .then (stepResults) =>
-        blobData = new Blob([stepResults], {type: 'application/pdf'});
-        saveAs(blobData, "report.pdf");
+    if (!data.obsolete)
+      @export = true
+      @ReportService.exportTestCaseReport(data.sessionId, data.testCaseId)
+      .then (stepResults) =>
+          blobData = new Blob([stepResults], {type: 'application/pdf'});
+          saveAs(blobData, "report.pdf");
+      .catch (error) =>
+          @ErrorService.showErrorMessage(error)
 
   onCheckboxCheck: (data) =>
     @check = true

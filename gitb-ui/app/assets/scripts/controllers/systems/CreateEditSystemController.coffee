@@ -14,8 +14,11 @@ class CreateEditSystemController
 		else 
 			@$scope.title = 'Create system'
 	
+		@$scope.saveEnabled = () =>
+			@$scope.system.sname? && @$scope.system.fname? && @$scope.system.version?
+
 		@$scope.save = () =>
-			if @$scope.system.sname? && @$scope.system.fname? && @$scope.system.version?
+			if @$scope.saveEnabled()
 				@$scope.pending = true
 				@$scope.savePending = true
 				if @$scope.system.id?

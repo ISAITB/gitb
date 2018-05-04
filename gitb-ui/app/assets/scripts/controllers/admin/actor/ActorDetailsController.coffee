@@ -86,6 +86,12 @@ class ActorDetailsController
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
+	back: () =>
+		@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: @specificationId}
+
+	saveDisabled: () =>
+		!(@actor?.actorId? && @actor?.name?)
+
 	onEndpointSelect: (endpoint) =>
 		@$state.go 'app.admin.domains.detail.specifications.detail.actors.detail.endpoints.detail', {id: @domainId, spec_id: @specificationId, actor_id: @actorId, endpoint_id: endpoint.id}
 

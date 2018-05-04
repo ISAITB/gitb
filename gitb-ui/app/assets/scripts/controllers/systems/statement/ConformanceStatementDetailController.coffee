@@ -198,17 +198,26 @@ class ConformanceStatementDetailController
           @ErrorService.showErrorMessage(error)
 
   onExportConformanceStatement: () =>
+    @exportPending = true
     choice = @ConfirmationDialogService.confirm("Report options", "Would you like to include the detailed test step results per test session?", "Yes, include step results", "No, summary only", true)
     choice.then(() => 
       @ReportService.exportConformanceStatementReport(@actorId, @systemId, true)
       .then (data) =>
           blobData = new Blob([data], {type: 'application/pdf'});
           saveAs(blobData, "conformance_report.pdf");
+          @exportPending = false
+      .catch (error) =>
+        @ErrorService.showErrorMessage(error)
+        @exportPending = false
     , () => 
       @ReportService.exportConformanceStatementReport(@actorId, @systemId, false)
       .then (data) =>
           blobData = new Blob([data], {type: 'application/pdf'});
           saveAs(blobData, "conformance_report.pdf");
+          @exportPending = false
+      .catch (error) =>
+        @ErrorService.showErrorMessage(error)
+        @exportPending = false
     )
 
 class EditEndpointConfigurationController

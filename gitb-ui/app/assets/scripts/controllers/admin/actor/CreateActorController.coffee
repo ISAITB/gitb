@@ -9,9 +9,11 @@ class CreateActorController
 
 		@actor = {}
 
+	saveDisabled: () =>
+		!(@actor.actorId?.length > 0 and @actor.name?.length > 0)
+
 	createActor: () =>
-		if @actor.actorId?.length > 0 and
-		@actor.name?.length > 0
+		if !@saveDisabled()
 			@ConformanceService.createActor @actor.actorId, @actor.name, @actor.description, @domainId, @specificationId
 				.then () =>
 					@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: @specificationId}

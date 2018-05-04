@@ -7,9 +7,11 @@ class CreateDomainController
 
 		@domain = {}
 
+	saveDisabled: () =>
+		!(@domain.sname?.length > 0 and @domain.fname?.length > 0)
+
 	createDomain: () =>
-		if @domain.sname?.length > 0 and
-		@domain.fname?.length > 0
+		if !@saveDisabled()
 			@ConformanceService.createDomain @domain.sname, @domain.fname, @domain.description
 				.then () =>
 					@$state.go 'app.admin.domains.list'

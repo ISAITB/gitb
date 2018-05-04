@@ -10,7 +10,7 @@ class ConfirmationDialogController
       @$modalInstance.dismiss()
 
     @$scope.okClass = () =>
-      "btn btn-primary"
+      "btn btn-default"
 
     @$scope.cancelClass = () =>
       if (@sameStyles?)

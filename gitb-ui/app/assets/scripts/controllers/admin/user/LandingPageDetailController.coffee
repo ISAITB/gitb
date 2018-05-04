@@ -17,6 +17,9 @@ class LandingPageDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+  saveDisabled: () =>
+    !(@page?.name?)
+
   updateLandingPage: (copy) =>
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@page.name, "Please enter a name.")

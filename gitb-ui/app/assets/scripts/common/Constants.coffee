@@ -87,6 +87,6 @@ class Constants
 	@EMAIL_REGEX: /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 	@DATA_URL_REGEX: /^data:.+\/(.+);base64,(.*)$/
 
-	@VERSION = "v1.2.0"
+	@VERSION = "v1.3.0"
 
 common.value('Constants', Constants)

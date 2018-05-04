@@ -7,8 +7,11 @@ class CreateEndpointController
 		@actorId = @$stateParams.actor_id
 		@endpoint = {}
 
+	saveDisabled: () =>
+		!(@endpoint.name?.length > 0)
+
 	createEndpoint: () =>
-		if @endpoint.name?.length > 0
+		if !@saveDisabled()
 			@ConformanceService.createEndpoint @endpoint.name, @endpoint.description, @actorId
 				.then () =>
 					@$state.go 'app.admin.domains.detail.specifications.detail.actors.detail.list', {id: @domainId, spec_id: @specificationId, actor_id: @actorId}

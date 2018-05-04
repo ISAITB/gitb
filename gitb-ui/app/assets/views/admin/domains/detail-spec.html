@@ -2,8 +2,11 @@
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h4 class="title">Specification details</h4>
-			<a href="" ng-click="specDetailsCtrl.saveSpecificationChanges()" class="btn btn-default pull-right">Save changes</a>
-			<a href="" ng-click="specDetailsCtrl.deleteSpecification()" class="btn btn-default pull-right">Delete</a>
+			<div class="pull-right">
+				<button ng-click="specDetailsCtrl.saveSpecificationChanges()" class="btn btn-default" ng-disabled="specDetailsCtrl.saveDisabled()">Save changes</button>
+				<button ng-click="specDetailsCtrl.deleteSpecification()" class="btn btn-default">Delete</button>
+				<button ng-click="specDetailsCtrl.back()" class="btn btn-default">Back</button>
+			</div>
 		</div>
 		<div class="panel-body">
 			<div class="row">
@@ -16,7 +19,7 @@
 			<h4 class="title">Test suites</h4>
 			<button class="btn btn-default pull-right" ng-file-select="specDetailsCtrl.onFileSelect($files)" accept="application/zip" onclick="this.value = null">Deploy test suite</button>
 		</div>
-		<div table-directive columns="specDetailsCtrl.testSuiteTableColumns" data="specDetailsCtrl.testSuites" operations-visible="true" on-delete="specDetailsCtrl.onTestSuiteDelete"></div>
+		<div table-directive id="test-suites-table" columns="specDetailsCtrl.testSuiteTableColumns" data="specDetailsCtrl.testSuites" operations-visible="true" on-delete="specDetailsCtrl.onTestSuiteDelete"></div>
 	</div>
 	<div class="panel panel-default">
 		<div class="panel-heading">

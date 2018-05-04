@@ -17,6 +17,9 @@ class CommunityAdminDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+  saveDisabled: () =>
+    !(@user.name?)
+
   updateAdmin: () =>
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@user.name, "Please enter a name.")

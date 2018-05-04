@@ -22,6 +22,9 @@ class OrganizationCreateController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+  saveDisabled: () =>
+    !(@organization?.sname? && @organization?.fname?)
+
   # create organization and cancel screen
   createOrganization: () =>
     @ValidationService.clearAll()

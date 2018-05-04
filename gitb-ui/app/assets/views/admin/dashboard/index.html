@@ -126,7 +126,7 @@
             <h4 class="title">Active test sessions</h4>
             <button class="btn btn-default pull-right" ng-click="dashboardCtrl.exportActiveSessionsToCsv()">Export CSV</button>
         </div>
-        <div table-directive columns="dashboardCtrl.activeTestsColumns" data="dashboardCtrl.activeTests"
+        <div id="dashboard-table-active" table-directive columns="dashboardCtrl.activeTestsColumns" data="dashboardCtrl.activeTests"
              on-select="dashboardCtrl.testSelect" action-visible="true" action-icon="'fa-search'" on-action="dashboardCtrl.onAction"
              on-sort="dashboardCtrl.sortActiveSessions"
              operations-visible="true" on-delete="dashboardCtrl.stopSession" row-style="dashboardCtrl.rowStyle"></div>
@@ -137,7 +137,7 @@
             <h4 class="title">Completed test sessions</h4>
             <button class="btn btn-default pull-right" ng-click="dashboardCtrl.exportCompletedSessionsToCsv()">Export CSV</button>
         </div>
-        <div table-directive columns="dashboardCtrl.completedTestsColumns" data="dashboardCtrl.completedTests"
+        <div id="dashboard-table" table-directive columns="dashboardCtrl.completedTestsColumns" data="dashboardCtrl.completedTests"
              on-select="dashboardCtrl.testSelect" action-visible="true" action-icon="'fa-search'" on-action="dashboardCtrl.onAction"
              pagination-visible="true" first-page="dashboardCtrl.goFirstPage()"
              prev-page="dashboardCtrl.goPreviousPage()" on-sort="dashboardCtrl.sortCompletedSessions"

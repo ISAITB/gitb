@@ -16,6 +16,9 @@ class LegalNoticeCreateController
     @notice.default = false
     @WebEditorService.editor(300, @$stateParams.content ? "")
 
+  saveDisabled: () =>
+    !(@notice?.name?)
+
   createLegalNotice: () =>
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@notice.name, "Please enter a name.")

@@ -6,11 +6,12 @@ class CreateSpecificationController
 
 		@specification = {}
 
+	saveDisabled: () =>
+		!(@specification?.sname? and @specification?.fname?)
+
 	createSpecification: ()=>
-		if @specification.sname? and	@specification.sname?
-
+		if !@saveDisabled()
 			domainId = @$stateParams.id
-
 			@ConformanceService.createSpecification @specification.sname, @specification.fname, @specification.urls, @specification.diagram, @specification.description, @specification.spec_type, domainId
 			.then () =>
 				@$state.go 'app.admin.domains.detail.list'

@@ -15,9 +15,9 @@
 					<ul class="nav nav-list primary push-bottom">
 						<li><a ui-sref="app.admin.dashboard.list">Session Dashboard</a></li>
 						<li><a ui-sref="app.admin.conformance.list">Conformance Dashboard</a></li>
-						<li><a ui-sref="app.admin.domains.list">Domains</a></li>
-						<li ng-if="adminCtrl.DataService.isSystemAdmin"><a ui-sref="app.admin.users.list">Users</a></li>
-						<li ng-if="adminCtrl.DataService.isCommunityAdmin"><a ui-sref="app.admin.users.communities.detail.list({community_id: adminCtrl.communityId})">Community</a></li>
+						<li><a ui-sref="app.admin.domains.list">Domain Management</a></li>
+						<li ng-if="adminCtrl.DataService.isSystemAdmin"><a ui-sref="app.admin.users.list">User Management</a></li>
+						<li ng-if="adminCtrl.DataService.isCommunityAdmin"><a ui-sref="app.admin.users.communities.detail.list({community_id: adminCtrl.communityId})">Community Management</a></li>
 					</ul>
 				</aside>
 			</div>

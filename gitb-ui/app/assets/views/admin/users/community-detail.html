@@ -14,9 +14,9 @@
             </div>
             <div class="row col-md-10 col-md-offset-3">
                 <div class="btn-toolbar">
-                    <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.cancelCommunityDetail()">Cancel</button>
-                    <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.updateCommunity()">Update</button>
+                    <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.updateCommunity()" ng-disabled="communityDetailCtrl.saveDisabled()">Update</button>
                     <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.deleteCommunity()" ng-disabled="communityDetailCtrl.isDefaultCommunity()">Delete</button>
+                    <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.cancelCommunityDetail()">Back</button>
                 </div>
             </div>
         </div>

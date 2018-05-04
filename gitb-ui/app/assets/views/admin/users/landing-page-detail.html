@@ -25,10 +25,10 @@
                     </div>
                     <div class="form-group">
                         <div class="col-sm-offset-3 col-sm-8">
-                            <button class="btn btn-default" type="button" ng-click="landingPageDetailCtrl.cancelDetailLandingPage()">Cancel</button>
-                            <button class="btn btn-default" type="button" ng-click="landingPageDetailCtrl.updateLandingPage(false)">Update</button>
+                            <button class="btn btn-default" type="button" ng-click="landingPageDetailCtrl.updateLandingPage(false)" ng-disabled="landingPageDetailCtrl.saveDisabled()">Update</button>
                             <button class="btn btn-default" type="button" ng-click="landingPageDetailCtrl.updateLandingPage(true)">Copy</button>
                             <button class="btn btn-default" type="button" ng-click="landingPageDetailCtrl.deleteLandingPage()">Delete</button>
+                            <button class="btn btn-default" type="button" ng-click="landingPageDetailCtrl.cancelDetailLandingPage()">Back</button>
                         </div>
                     </div>
                 </form>

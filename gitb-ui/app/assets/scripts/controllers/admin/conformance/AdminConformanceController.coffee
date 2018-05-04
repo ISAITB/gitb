@@ -329,17 +329,21 @@ class AdminConformanceController
 			saveAs(blobData, "export.csv");
 
 	onExportConformanceStatement: (statement) =>
-		choice = @ConfirmationDialogService.confirm("Export options", "Include detailed test case step results in report?", "Yes", "No")
+		choice = @ConfirmationDialogService.confirm("Report options", "Would you like to include the detailed test step results per test session?", "Yes, include step results", "No, summary only", true)
 		choice.then(() => 
 			@ReportService.exportConformanceStatementReport(statement.actorId, statement.systemId, true)
 			.then (data) =>
 					blobData = new Blob([data], {type: 'application/pdf'});
 					saveAs(blobData, "conformance_report.pdf");
+			.catch (error) =>
+				@ErrorService.showErrorMessage(error)
 		, () => 
 			@ReportService.exportConformanceStatementReport(statement.actorId, statement.systemId, false)
 			.then (data) =>
 					blobData = new Blob([data], {type: 'application/pdf'});
 					saveAs(blobData, "conformance_report.pdf");
+			.catch (error) =>
+				@ErrorService.showErrorMessage(error)
 		)
 
 	onExportTestCase: (statement, testCase) =>

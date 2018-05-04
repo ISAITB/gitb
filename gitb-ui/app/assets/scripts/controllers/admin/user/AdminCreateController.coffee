@@ -6,6 +6,9 @@ class AdminCreateController
     @alerts = []
     @user = {}
 
+  saveDisabled: () =>
+    !(@user.name? && @user.password? && @user.cpassword? && @user.email?)
+
   # create system administrator and cancel screen
   createAdmin: () =>
     @ValidationService.clearAll()

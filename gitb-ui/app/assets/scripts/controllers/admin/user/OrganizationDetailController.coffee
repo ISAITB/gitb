@@ -63,6 +63,9 @@ class OrganizationDetailController
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
 
+  saveDisabled: () =>
+    !(@organization?.sname? && @organization?.fname?)
+
   # update and cancel detail
   updateOrganization: () =>
     @ValidationService.clearAll()

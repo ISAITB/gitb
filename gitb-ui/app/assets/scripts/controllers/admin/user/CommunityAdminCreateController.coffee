@@ -8,6 +8,9 @@ class CommunityAdminCreateController
     @alerts = []
     @user = {}
 
+  saveDisabled: () =>
+    !(@user.name? && @user.password? && @user.cpassword? && @user.email?)
+
   createAdmin: () =>
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@user.name, "Please enter a name.") &

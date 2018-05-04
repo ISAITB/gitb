@@ -1,8 +1,8 @@
 class TestStepReportModalController
 
-  @$inject = ['$scope', '$log', '$modalInstance', 'step', 'report', 'ReportService', 'sessionId']
+  @$inject = ['$scope', '$log', '$modalInstance', 'step', 'report', 'ReportService', 'sessionId', 'ErrorService']
 
-  constructor: (@$scope, @$log, @$modalInstance, step, report, @ReportService, sessionId) ->
+  constructor: (@$scope, @$log, @$modalInstance, step, report, @ReportService, sessionId, @ErrorService) ->
     @$log.debug "Constructing TestStepReportModalController"
 
     @$scope.step = step
@@ -20,6 +20,8 @@ class TestStepReportModalController
                 @$scope.exportDisabled = false
                 blobData = new Blob([data], {type: 'application/pdf'});
                 saveAs(blobData, "report.pdf");
+            .catch (error) =>
+                @ErrorService.showErrorMessage(error)
 
     @$scope.close = () =>
       @$modalInstance.dismiss()

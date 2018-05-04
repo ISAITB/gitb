@@ -16,6 +16,9 @@ class LandingPageCreateController
     @page.default = false
     @WebEditorService.editor(300, @$stateParams.content ? "")
 
+  saveDisabled: () =>
+    !(@page?.name?)
+
   # create landing page and cancel screen
   createLandingPage: () =>
     @ValidationService.clearAll()
