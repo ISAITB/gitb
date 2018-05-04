@@ -16,7 +16,7 @@ class ParameterService extends Controller {
     if (ParameterManager.checkParameterExistsForEndpoint(parameter.name, parameter.endpoint, Some(parameterId))) {
       ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the endpoint")
     } else{
-      ParameterManager.updateParameter(parameterId, parameter.name, parameter.desc, parameter.use, parameter.kind)
+      ParameterManager.updateParameterWrapper(parameterId, parameter.name, parameter.desc, parameter.use, parameter.kind)
       ResponseConstructor.constructEmptyResponse
     }
   }

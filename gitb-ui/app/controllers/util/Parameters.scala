@@ -81,6 +81,8 @@ object Parameters {
 	val SPECIFICATION_ID = "spec_id"
   val PENDING_TEST_SUITE_ID = "pending_id"
   val PENDING_TEST_SUITE_ACTION = "pending_action"
+  val FULL = "full"
+  val TESTS = "tests"
 
   //Community Service parameters
   val COMMUNITY_ID = "community_id"
@@ -89,6 +91,7 @@ object Parameters {
 
   //TestService parameters
   val ACTOR_ID   = "actor_id"
+  val ACTOR_IDS   = "actor_ids"
   val ENDPOINT_ID   = "endpoint_id"
   val TEST_ID    = "test_id"
   val INCLUDE_CONTEXT = "include_context"

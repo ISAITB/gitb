@@ -2,7 +2,10 @@
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h5 class="title">Conformance Statement Details</h5>
-			<a href="" ng-click="conformanceStatementDetailCtrl.deleteConformanceStatement()" class="btn btn-default pull-right" ng-if="conformanceStatementDetailCtrl.canDelete()">Delete</a>
+			<div class="pull-right">
+				<button class="btn btn-default" ng-click="conformanceStatementDetailCtrl.onExportConformanceStatement()">Download report</button>
+				<button class="btn btn-default" ng-if="conformanceStatementDetailCtrl.canDelete()" ng-click="conformanceStatementDetailCtrl.deleteConformanceStatement()">Delete statement</button>
+			</div>
 		</div>
 		<div class="panel-body">
 			<div class="row row-display-first">
@@ -47,7 +50,7 @@
 			<button class="btn btn-primary pull-right" ng-if="conformanceStatementDetailCtrl.testSuites.length == 1 && conformanceStatementDetailCtrl.testSuites[0].testCases.length > 1" ng-click="conformanceStatementDetailCtrl.onTestSuiteSelect()"><i class="fa fa-play"></i></button>			
 		</div>
 		<div>
-			<table class="table table-directive">
+			<table class="table table-directive test-cases">
 				<thead>
 				<tr>
 					<th width="1%">Name</th>

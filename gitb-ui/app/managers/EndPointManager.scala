@@ -8,10 +8,14 @@ import scala.slick.driver.MySQLDriver.simple._
 object EndPointManager extends BaseManager {
   def logger = LoggerFactory.getLogger("EndPointManager")
 
-  def createEndpoint(endpoint: models.Endpoints) = {
-    DB.withSession { implicit session =>
-      PersistenceSchema.endpoints.returning(PersistenceSchema.endpoints.map(_.id)).insert(endpoint)
+  def createEndpointWrapper(endpoint: models.Endpoints) = {
+    DB.withTransaction { implicit session =>
+      createEndpoint(endpoint)
     }
+  }
+
+  def createEndpoint(endpoint: models.Endpoints)(implicit session: Session) = {
+    PersistenceSchema.endpoints.returning(PersistenceSchema.endpoints.map(_.id)).insert(endpoint)
   }
 
   def checkEndPointExistsForActor(endPointName: String, actorId: Long, otherThanId: Option[Long]): Boolean = {
@@ -48,14 +52,18 @@ object EndPointManager extends BaseManager {
     PersistenceSchema.endpoints.filter(_.id === endPointId).delete
   }
 
-  def updateEndPoint(endPointId: Long, name: String, description: Option[String]) =  {
-    DB.withSession { implicit session =>
-      val q1 = for {e <- PersistenceSchema.endpoints if e.id === endPointId} yield (e.name)
-      q1.update(name)
-
-      val q2 = for {e <- PersistenceSchema.endpoints if e.id === endPointId} yield (e.desc)
-      q2.update(description)
+  def updateEndPointWrapper(endPointId: Long, name: String, description: Option[String]) =  {
+    DB.withTransaction { implicit session =>
+      updateEndPoint(endPointId, name, description)
     }
+  }
+
+  def updateEndPoint(endPointId: Long, name: String, description: Option[String])(implicit session: Session) =  {
+    val q1 = for {e <- PersistenceSchema.endpoints if e.id === endPointId} yield (e.name)
+    q1.update(name)
+
+    val q2 = for {e <- PersistenceSchema.endpoints if e.id === endPointId} yield (e.desc)
+    q2.update(description)
   }
 
 }

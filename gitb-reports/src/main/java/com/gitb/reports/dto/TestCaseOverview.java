@@ -18,7 +18,26 @@ public class TestCaseOverview {
     private String reportResult;
     private String startTime;
     private String endTime;
+    private String testSuiteName;
+    private String subReportRoot;
+    private String id;
     private List<Report> steps = new ArrayList<>();
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public String getSubReportRoot() {
+        return subReportRoot;
+    }
+
+    public void setSubReportRoot(String subReportRoot) {
+        this.subReportRoot = subReportRoot;
+    }
 
     public String getOrganisation() {
         return organisation;
@@ -114,5 +133,13 @@ public class TestCaseOverview {
 
     public void setEndTime(String endTime) {
         this.endTime = endTime;
+    }
+
+    public String getTestSuiteName() {
+        return testSuiteName;
+    }
+
+    public void setTestSuiteName(String testSuiteName) {
+        this.testSuiteName = testSuiteName;
     }
 }

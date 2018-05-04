@@ -13,7 +13,7 @@ class SystemService extends Controller{
 
   def deleteSystem(systemId:Long) = Action.apply { request =>
     val organisationId = ParameterExtractor.requiredQueryParameter(request, Parameters.ORGANIZATION_ID).toLong
-    SystemManager.deleteSystem(systemId)
+    SystemManager.deleteSystemWrapper(systemId)
     // Return updated list of systems
     val systems = SystemManager.getSystemsByOrganization(organisationId)
     val json = JsonUtil.jsSystems(systems).toString()

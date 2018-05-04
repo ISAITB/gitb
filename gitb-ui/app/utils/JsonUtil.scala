@@ -5,6 +5,8 @@ import java.util
 import models.Enums.TestResultStatus
 import models._
 import play.api.libs.json._
+import play.libs.F.Tuple
+
 import scala.collection.JavaConverters._
 object JsonUtil {
 
@@ -917,6 +919,60 @@ object JsonUtil {
       "errorInformation"  -> result.errorInformation,
       "pendingFolderId"  -> result.pendingTestSuiteFolderName,
       "items" -> jsTestSuiteUploadItemResults(result.items)
+    )
+    json
+  }
+
+  def jsConformanceResultList(list: List[(ConformanceResult, TestCases, TestSuites)]): JsArray = {
+    var json = Json.arr()
+    list.foreach{ info =>
+      json = json.append(jsConformanceResult(info))
+    }
+    json
+  }
+
+  def jsConformanceResult(listItem: (ConformanceResult, TestCases, TestSuites)): JsObject = {
+    val json = Json.obj(
+      "testSuiteId"    -> listItem._1.testsuite,
+      "testSuiteName"    -> listItem._3.shortname,
+      "testSuiteDescription"    -> listItem._3.description,
+      "testCaseId"    -> listItem._1.testcase,
+      "testCaseName"    -> listItem._2.shortname,
+      "testCaseDescription"    -> listItem._2.description,
+      "result"    -> listItem._1.result,
+      "sessionId"    -> listItem._1.testsession
+    )
+    json
+  }
+
+  def jsConformanceResultFullList(list: List[ConformanceStatementFull]): JsArray = {
+    var json = Json.arr()
+    list.foreach{ info =>
+      json = json.append(jsConformanceResultFull(info))
+    }
+    json
+  }
+
+  def jsConformanceResultFull(item: ConformanceStatementFull): JsObject = {
+    val json = Json.obj(
+      "communityId"    -> item.communityId,
+      "communityName"    -> item.communityName,
+      "organizationId"    -> item.organizationId,
+      "organizationName"    -> item.organizationName,
+      "systemId"    -> item.systemId,
+      "systemName"    -> item.systemName,
+      "domainId"    -> item.domainId,
+      "domainName"    -> item.domainName,
+      "specId"    -> item.specificationId,
+      "specName"    -> item.specificationName,
+      "actorId"    -> item.actorId,
+      "actorName"    -> item.actorName,
+      "testSuiteName" -> item.testSuiteName,
+      "testCaseName" -> item.testCaseName,
+      "testCaseDescription" -> item.testCaseDescription,
+      "total"    -> item.totalTests,
+      "completed"    -> item.completedTests,
+      "result" -> item.result
     )
     json
   }

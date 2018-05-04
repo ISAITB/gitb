@@ -20,6 +20,15 @@ object ParameterExtractor {
     param
   }
 
+  def optionalLongQueryParameter(request:Request[AnyContent], parameter:String):Option[Long] = {
+    val param = request.getQueryString(parameter)
+    if (param.isDefined) {
+      Some(param.get.toLong)
+    } else {
+      None
+    }
+  }
+
   def requiredBodyParameter(request:Request[AnyContent], parameter:String):String = {
     try {
       val param = request.body.asFormUrlEncoded.get(parameter)(0)

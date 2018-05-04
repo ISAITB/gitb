@@ -220,6 +220,15 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/domains/index.html'
 				controller: 'AdminDomainsController'
 				controllerAs: 'adminDomainsCtrl'
+			'app.admin.conformance':
+				url: '/conformance'
+				abstract: true
+				template: '<div ui-view/>'
+			'app.admin.conformance.list':
+				url: ''
+				templateUrl: 'assets/views/admin/conformance/index.html'
+				controller: 'AdminConformanceController'
+				controllerAs: 'adminConformanceCtrl'
 			'app.admin.domains.create':
 				url: '/create'
 				templateUrl: 'assets/views/admin/domains/create.html'

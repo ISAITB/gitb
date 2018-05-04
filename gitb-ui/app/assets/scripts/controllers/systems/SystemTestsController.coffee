@@ -448,7 +448,7 @@ class SystemTestsController
             if idx++ != 0
               line += ","
             if (v?)
-              line += v
+              line += String(v).replace /,/, " "
           csv += if i < resultReportsCollection.value().length then line + "\n" else line
         blobData = new Blob([csv], {type: 'text/csv'});
         saveAs(blobData, "export.csv");

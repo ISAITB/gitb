@@ -16,7 +16,7 @@ class TestSuiteService extends Controller {
 	private final val logger: Logger = LoggerFactory.getLogger(classOf[TestSuiteService])
 
 	def undeployTestSuite(testSuiteId: Long) = Action.apply {
-		TestSuiteManager.undeployTestSuite(testSuiteId)
+		TestSuiteManager.undeployTestSuiteWrapper(testSuiteId)
 		ResponseConstructor.constructEmptyResponse
 	}
 

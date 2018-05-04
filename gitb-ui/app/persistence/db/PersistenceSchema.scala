@@ -133,6 +133,19 @@ object PersistenceSchema {
   }
   val domainParameters = TableQuery[DomainParametersTable]
 
+  class ConformanceResultsTable(tag: Tag) extends Table[models.ConformanceResult] (tag, "ConformanceResults") {
+    def id    = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def sut  = column[Long]("sut_id")
+    def spec  = column[Long]("spec_id")
+    def actor  = column[Long]("actor_id")
+    def testsuite  = column[Long]("test_suite_id")
+    def testcase  = column[Long]("test_case_id")
+    def result  = column[String]("result")
+    def testsession = column[Option[String]]("test_session_id")
+    def * = (id, sut, spec, actor, testsuite, testcase, result, testsession) <> (models.ConformanceResult.tupled, models.ConformanceResult.unapply)
+  }
+  val conformanceResults = TableQuery[ConformanceResultsTable]
+
   class ConfigurationsTable(tag:Tag) extends Table[Config] (tag, "Configurations") {
     def system = column[Long] ("system")
 	  def parameter = column[Long]("parameter")

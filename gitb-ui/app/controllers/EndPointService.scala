@@ -21,7 +21,7 @@ class EndPointService extends Controller {
     if (EndPointManager.checkEndPointExistsForActor(name, actorId, Some(endPointId))) {
       ResponseConstructor.constructBadRequestResponse(500, "An endpoint with this name already exists for the actor")
     } else{
-      EndPointManager.updateEndPoint(endPointId, name, description)
+      EndPointManager.updateEndPointWrapper(endPointId, name, description)
       ResponseConstructor.constructEmptyResponse
     }
   }

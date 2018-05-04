@@ -5,11 +5,11 @@ import java.nio.file.Paths
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.{ErrorCodes, NotFoundException}
 import managers._
+import models.ConformanceStatementFull
 import models.Enums.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import org.apache.commons.lang.RandomStringUtils
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc._
 import utils.JsonUtil
 
@@ -161,7 +161,7 @@ class ConformanceService extends Controller {
     if (EndPointManager.checkEndPointExistsForActor(endpoint.name, endpoint.actor, None)) {
       ResponseConstructor.constructBadRequestResponse(500, "An endpoint with this name already exists for the actor")
     } else{
-      EndPointManager.createEndpoint(endpoint)
+      EndPointManager.createEndpointWrapper(endpoint)
       ResponseConstructor.constructEmptyResponse
     }
   }
@@ -171,7 +171,7 @@ class ConformanceService extends Controller {
     if (ParameterManager.checkParameterExistsForEndpoint(parameter.name, parameter.endpoint, None)) {
       ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the endpoint")
     } else{
-      ParameterManager.createParameter(parameter)
+      ParameterManager.createParameterWrapper(parameter)
       ResponseConstructor.constructEmptyResponse
     }
   }
@@ -272,18 +272,21 @@ class ConformanceService extends Controller {
     }
   }
 
-  def getActorTestSuites(actorId: Long) = Action.apply { request =>
-    val specId = ParameterExtractor.requiredQueryParameter(request, Parameters.SPEC).toLong
-    val testCaseType = ParameterExtractor.requiredQueryParameter(request, Parameters.TYPE).toShort
+  def getConformanceStatus(actorId: Long, sutId: Long) = Action.apply { request =>
+    val results = ConformanceManager.getConformanceStatus(actorId, sutId, None)
+    val json: String = JsonUtil.jsConformanceResultList(results).toString
+    ResponseConstructor.constructJsonResponse(json)
+  }
 
-    val list = TestSuiteManager.getTestSuitesBySpecificationAndActorAndTestCaseType(specId, actorId, testCaseType)
-    val json: String = JsonUtil.jsTestSuiteList(list).toString
+  def getConformanceStatusForTestSuite(actorId: Long, sutId: Long, testSuite: Long) = Action.apply { request =>
+    val results = ConformanceManager.getConformanceStatus(actorId, sutId, Some(testSuite))
+    val json: String = JsonUtil.jsConformanceResultList(results).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getTestSuiteTestCases(testSuiteId: Long) = Action.apply { request =>
     val testCaseType = ParameterExtractor.requiredQueryParameter(request, Parameters.TYPE).toShort
-    val list = TestCaseManager.getTestCasesOfTestSuite(testSuiteId, Some(testCaseType))
+    val list = TestCaseManager.getTestCasesOfTestSuiteWrapper(testSuiteId, Some(testCaseType))
     import scala.collection.JavaConversions._
     val json: String = JsonUtil.jsTestCasesList(list.toList).toString
     ResponseConstructor.constructJsonResponse(json)
@@ -319,7 +322,7 @@ class ConformanceService extends Controller {
   }
 
   def deleteDomainParameter(domainId: Long, domainParameterId: Long) = Action.apply {
-    ConformanceManager.deleteDomainParameter(domainParameterId)
+    ConformanceManager.deleteDomainParameterWrapper(domainParameterId)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -336,5 +339,22 @@ class ConformanceService extends Controller {
     }
   }
 
+  def getConformanceOverview() = Action.apply { request =>
+    val fullResults = ParameterExtractor.requiredQueryParameter(request, Parameters.FULL).toBoolean
+    val domainIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.DOMAIN_IDS)
+    val specIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SPEC_IDS)
+    val communityIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.COMMUNITY_IDS)
+    val organizationIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.ORG_IDS)
+    val systemIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SYSTEM_IDS)
+    val actorIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.ACTOR_IDS)
+    var results: List[ConformanceStatementFull] = null
+    if (fullResults) {
+      results = ConformanceManager.getConformanceStatementsFull(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds)
+    } else {
+      results = ConformanceManager.getConformanceStatements(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds)
+    }
+    val json = JsonUtil.jsConformanceResultFullList(results).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
 
 }

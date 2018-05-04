@@ -4,21 +4,24 @@ import java.io.{File, FileOutputStream, StringReader}
 import java.nio.file.{Files, Path, Paths}
 import java.text.SimpleDateFormat
 import java.time.LocalDateTime
+import java.util
 import java.util.Date
 import javax.xml.transform.stream.StreamSource
 
 import com.gitb.core.StepStatus
 import com.gitb.reports.ReportGenerator
-import com.gitb.reports.dto.TestCaseOverview
+import com.gitb.reports.dto.{ConformanceStatementOverview, TestCaseOverview}
 import com.gitb.tbs.{ObjectFactory, TestStepStatus}
 import com.gitb.tpl.{DecisionStep, FlowStep, TestCase, TestStep}
 import com.gitb.tr._
 import com.gitb.utils.XMLUtils
 import config.Configurations
+import models.Enums.TestResultStatus
 import models._
 import org.apache.commons.lang.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
+import persistence.db.PersistenceSchema.TestResultsTable
 import utils.{JacksonUtil, TimeUtil}
 
 import scala.collection.mutable.ListBuffer
@@ -249,7 +252,7 @@ object ReportManager extends BaseManager {
   }
 
   def createTestReport(sessionId: String, systemId: Long, testId: String, actorId: Long, presentation: String) = {
-    DB.withSession {
+    DB.withTransaction {
       implicit session =>
         val initialStatus = TestResultType.UNDEFINED.value()
         val startTime = TimeUtil.getCurrentTimestamp()
@@ -267,6 +270,10 @@ object ReportManager extends BaseManager {
           Some(community.id), Some(community.shortname), Some(testCase.id), Some(testCase.shortname), Some(testSuite.id), Some(testSuite.shortname),
           Some(actor.id), Some(actor.name), Some(specification.id), Some(specification.shortname), Some(domain.id), Some(domain.shortname),
           initialStatus, startTime, None, presentation))
+
+        // Update also the conformance results for the system
+        val q1 = for {c <- PersistenceSchema.conformanceResults if c.sut === systemId && c.testcase === testCase.id} yield (c.testsession)
+        q1.update(Some(sessionId))
     }
   }
 
@@ -277,6 +284,10 @@ object ReportManager extends BaseManager {
           t <- PersistenceSchema.testResults if t.testSessionId === sessionId
         } yield (t.result, t.endTime)
         q.update(status.value(), Some(TimeUtil.getCurrentTimestamp()))
+
+        // Update also the conformance results for the system
+        val q1 = for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield (c.result)
+        q1.update(status.value())
     }
   }
 
@@ -288,52 +299,65 @@ object ReportManager extends BaseManager {
     }
   }
 
-  def getPathForTestSession(sessionId: String, isExpected: Boolean): Path = {
-    DB.withSession {
-      implicit session =>
-        val testResult = PersistenceSchema.testResults.filter(_.testSessionId === sessionId).firstOption
-        var startTime: LocalDateTime = null
-        if (testResult.isDefined) {
-          startTime = testResult.get.startTime.toLocalDateTime()
-        } else {
-          // We have no DB entry only in the case of preliminary steps.
-          startTime = LocalDateTime.now()
-        }
-        val path = Paths.get(
-          Configurations.TEST_CASE_REPOSITORY_PATH,
-          STATUS_UPDATES_PATH,
-          String.valueOf(startTime.getYear),
-          String.valueOf(startTime.getMonthValue),
-          String.valueOf(startTime.getDayOfMonth),
-          sessionId
-        );
-        if (isExpected && !Files.exists(path)) {
-          // For backwards compatibility. Lookup session folder directly under status-updates folder
-          val otherPath = Paths.get(
-            Configurations.TEST_CASE_REPOSITORY_PATH,
-            STATUS_UPDATES_PATH,
-            sessionId
-          )
-          if (Files.exists(otherPath)) {
-            otherPath
-          } else {
-            // This is for test sessions that have no report.
-            path
-          }
-        } else {
-          path
-        }
+  def getPathForTestSessionWrapper(sessionId: String, isExpected: Boolean): Path = {
+    DB.withSession { implicit session =>
+      getPathForTestSession(sessionId, isExpected)
     }
   }
 
+  def getTempFolderPath(): Path = {
+    val path = Paths.get("/tmp/reports")
+    path
+  }
+
+  def getPathForTestSessionObj(testResult: Option[TestResultsTable#TableElementType], isExpected: Boolean)(implicit session: Session): Path = {
+    var startTime: LocalDateTime = null
+    if (testResult.isDefined) {
+      startTime = testResult.get.startTime.toLocalDateTime()
+    } else {
+      // We have no DB entry only in the case of preliminary steps.
+      startTime = LocalDateTime.now()
+    }
+    val path = Paths.get(
+      Configurations.TEST_CASE_REPOSITORY_PATH,
+      STATUS_UPDATES_PATH,
+      String.valueOf(startTime.getYear),
+      String.valueOf(startTime.getMonthValue),
+      String.valueOf(startTime.getDayOfMonth),
+      testResult.get.sessionId
+    )
+    if (isExpected && !Files.exists(path)) {
+      // For backwards compatibility. Lookup session folder directly under status-updates folder
+      val otherPath = Paths.get(
+        Configurations.TEST_CASE_REPOSITORY_PATH,
+        STATUS_UPDATES_PATH,
+        testResult.get.sessionId
+      )
+      if (Files.exists(otherPath)) {
+        otherPath
+      } else {
+        // This is for test sessions that have no report.
+        path
+      }
+    } else {
+      path
+    }
+  }
+
+  def getPathForTestSession(sessionId: String, isExpected: Boolean)(implicit session: Session): Path = {
+    val testResult = PersistenceSchema.testResults.filter(_.testSessionId === sessionId).firstOption
+    getPathForTestSessionObj(testResult, isExpected)
+  }
+
   def createTestStepReport(sessionId: String, step: TestStepStatus) = {
-    DB.withSession {
+    DB.withTransaction {
       implicit session =>
         //save status reports only when step is concluded with either COMPLETED or ERROR state
         if (step.getReport != null && (step.getStatus == StepStatus.COMPLETED || step.getStatus == StepStatus.ERROR)) {
           // Check to see if we have already recorded this to avoid potential concurrency errors popping up that
           // would just lead to unique constraint errors.
-          if (!TestResultManager.getTestResultForSession(sessionId).isDefined) {
+          val existingTestStepReport = PersistenceSchema.testStepReports.filter(_.testSessionId === sessionId).filter(_.testStepId === step.getStepId).firstOption
+          if (existingTestStepReport.isEmpty) {
             step.getReport.setId(step.getStepId)
 
             val path = step.getStepId + ".xml"
@@ -399,15 +423,9 @@ object ReportManager extends BaseManager {
   }
 
   def getListOfTestSteps(testPresentation: TestCase, folder: File): ListBuffer[TitledTestStepReportType] = {
-    var list = ListBuffer[TitledTestStepReportType]()
+    val list = ListBuffer[TitledTestStepReportType]()
     collectStepReportsForSequence(testPresentation.getSteps, list, folder)
     list
-  }
-
-  private def pad10(string: String): String
-
-  = {
-    "0000000000".substring(string.length) + string;
   }
 
   def generateTestStepReport(xmlFile: Path, pdfReport: Path): Path = {
@@ -476,20 +494,105 @@ object ReportManager extends BaseManager {
         }
         if (testCase.isDefined) {
           if (testCase.get.description.isDefined) {
-            overview.setTestDescription(testCase.get.description.get);
+            overview.setTestDescription(testCase.get.description.get)
           }
         } else {
           // This is a deleted test case - get data as possible from TestResult
           overview.setTestDescription("-")
         }
         for (stepReport <- list) {
-          overview.getSteps().add(generator.fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, addContext))
+          overview.getSteps.add(generator.fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, addContext))
+        }
+        if (overview.getSteps.isEmpty) {
+          overview.setSteps(null)
         }
         // Needed if no reports have been received.
         Files.createDirectories(reportPath.getParent)
         val fos = Files.newOutputStream(reportPath)
         try {
           generator.writeTestCaseOverviewReport(overview, fos)
+          fos.flush()
+        } catch {
+          case e: Exception =>
+            throw new IllegalStateException("Unable to generate PDF report", e)
+        } finally {
+          if (fos != null) fos.close()
+        }
+    }
+    reportPath
+  }
+
+  def generateConformanceStatementReport(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long): Path = {
+    val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
+    DB.withSession {
+      implicit session =>
+        val overview = new ConformanceStatementOverview()
+        val conformanceInfo = ConformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)))
+
+        overview.setIncludeTestCases(addTestCases)
+        overview.setTitle("Conformance Statement Report")
+        overview.setTestDomain(conformanceInfo.head.domainNameFull)
+        overview.setTestSpecification(conformanceInfo.head.specificationNameFull)
+        overview.setTestActor(conformanceInfo.head.actorFull)
+        overview.setOrganisation(conformanceInfo.head.organizationName)
+        overview.setSystem(conformanceInfo.head.systemName)
+        overview.setTestCases(new util.ArrayList[TestCaseOverview]())
+
+        var totalTests = 0L
+        var completedTests = 0L
+        var index = 1
+        conformanceInfo.foreach { info =>
+          totalTests += 1
+          if (TestResultStatus.withName(info.result.get) == TestResultStatus.SUCCESS) {
+            completedTests += 1
+          }
+          val testCaseOverview = new TestCaseOverview()
+          testCaseOverview.setId(index.toString)
+          testCaseOverview.setTestSuiteName(info.testSuiteName.get)
+          testCaseOverview.setTestName(info.testCaseName.get)
+          if (info.testCaseDescription.isDefined) {
+            testCaseOverview.setTestDescription(info.testCaseDescription.get)
+          } else {
+            testCaseOverview.setTestDescription("-")
+          }
+          testCaseOverview.setReportResult(info.result.get)
+
+          if (addTestCases) {
+            testCaseOverview.setTitle("Test Case Report #" + index)
+            testCaseOverview.setOrganisation(info.organizationName)
+            testCaseOverview.setSystem(info.systemName)
+            testCaseOverview.setTestDomain(info.domainNameFull)
+            testCaseOverview.setTestSpecification(info.specificationNameFull)
+            testCaseOverview.setTestActor(info.actorFull)
+            if (info.sessionId.isDefined) {
+              val testResult = PersistenceSchema.testResults.filter(_.testSessionId === info.sessionId.get).first
+              testCaseOverview.setStartTime(sdf.format(new Date(testResult.startTime.getTime)))
+              if (testResult.endTime.isDefined) {
+                testCaseOverview.setEndTime(sdf.format(new Date(testResult.endTime.get.getTime)))
+              }
+              val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.tpl)))
+              val folder = getPathForTestSessionObj(Some(testResult), true).toFile
+              val list = ReportManager.getListOfTestSteps(testcasePresentation, folder)
+              for (stepReport <- list) {
+                testCaseOverview.getSteps.add(generator.fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, false))
+              }
+              if (testCaseOverview.getSteps.isEmpty) {
+                testCaseOverview.setSteps(null)
+              }
+            } else {
+              testCaseOverview.setStartTime("-")
+              testCaseOverview.setEndTime("-")
+              testCaseOverview.setSteps(null)
+            }
+          }
+          overview.getTestCases.add(testCaseOverview)
+          index += 1
+        }
+        overview.setTestStatus(completedTests+" / "+totalTests+" PASSED")
+        Files.createDirectories(reportPath.getParent)
+        val fos = Files.newOutputStream(reportPath)
+        try {
+          generator.writeConformanceStatementOverviewReport(overview, fos)
           fos.flush()
         } catch {
           case e: Exception =>

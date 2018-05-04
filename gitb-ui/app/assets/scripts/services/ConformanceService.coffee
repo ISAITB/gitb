@@ -279,28 +279,37 @@ class ConformanceService
       path: jsRoutes.controllers.ConformanceService.getSpecTestSuites(specificationId).url
       authenticate: true
 
-  getActorTestSuites: (specId, actorId, type) ->
-    params = {
-      spec: specId,
-      type: type
-    }
-
+  getConformanceStatus: (actorId, sutId) ->
     @RestService.get
-      path: jsRoutes.controllers.ConformanceService.getActorTestSuites(actorId).url
+      path: jsRoutes.controllers.ConformanceService.getConformanceStatus(actorId, sutId).url
       authenticate: true
-      params: params
+
+  getConformanceStatusForTestSuite: (actorId, sutId, testSuiteId) ->
+    @RestService.get
+      path: jsRoutes.controllers.ConformanceService.getConformanceStatusForTestSuite(actorId, sutId, testSuiteId).url
+      authenticate: true
 
   getTestSuiteTestCase: (testCaseId) ->
     @RestService.get
       path: jsRoutes.controllers.ConformanceService.getTestSuiteTestCase(testCaseId).url
       authenticate: true
 
-  getTestSuiteTestCases: (testSuiteId, type) ->
-    params = {
-      type: type
-    }
+  getConformanceOverview: (domainIds, specIds, communityIds, organizationIds, systemIds, fullResults) ->
+    params = {}
+    params.full = fullResults
+    if domainIds? and domainIds.length > 0
+      params.domain_ids = domainIds.join ','
+    if specIds? and specIds.length > 0
+      params.specification_ids = specIds.join ','
+    if communityIds? and communityIds.length > 0
+      params.community_ids = communityIds.join ','
+    if organizationIds? and organizationIds.length > 0
+      params.organization_ids = organizationIds.join ','
+    if systemIds? and systemIds.length > 0
+      params.system_ids = systemIds.join ','
+
     @RestService.get
-      path: jsRoutes.controllers.ConformanceService.getTestSuiteTestCases(testSuiteId).url
+      path: jsRoutes.controllers.ConformanceService.getConformanceOverview().url
       authenticate: true
       params: params
 

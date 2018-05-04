@@ -2,6 +2,15 @@
 <!-- Created with Jaspersoft Studio version 6.5.1.final using JasperReports Library version 6.5.1  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="TAR" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="32c3bb60-28b6-431c-90a2-6d105676246d">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="One Empty Record"/>
+	<style name="titleStyle" mode="Opaque" backcolor="#EDEDED" radius="0">
+		<pen lineStyle="Solid" lineColor="#000000"/>
+		<box>
+			<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+			<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+			<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+			<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+		</box>
+	</style>
 	<style name="itemStyle" mode="Opaque" backcolor="#FFFFFF">
 		<conditionalStyle>
 			<conditionExpression><![CDATA["error".equals($F{level})]]></conditionExpression>
@@ -56,9 +65,10 @@
 	<title>
 		<band height="68" splitType="Stretch">
 			<textField>
-				<reportElement x="20" y="10" width="760" height="44" uuid="809e0e7f-de0d-49a8-9f74-af8cca3039c8"/>
+				<reportElement style="titleStyle" x="20" y="10" width="760" height="44" uuid="809e0e7f-de0d-49a8-9f74-af8cca3039c8"/>
 				<textElement verticalAlignment="Middle">
 					<font size="26"/>
+					<paragraph leftIndent="10" rightIndent="10"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{title}]]></textFieldExpression>
 			</textField>

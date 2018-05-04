@@ -1,7 +1,7 @@
 class ConformanceStatementDetailController
 
-  @$inject = ['$log', '$scope', '$state', '$stateParams', '$modal', 'SystemService', 'ConformanceService', 'ErrorService', 'Constants', 'ConfirmationDialogService', 'DataService']
-  constructor: (@$log, @$scope, @$state, @$stateParams, @$modal, @SystemService, @ConformanceService, @ErrorService, @Constants, @ConfirmationDialogService, @DataService) ->
+  @$inject = ['$log', '$scope', '$state', '$stateParams', '$modal', 'SystemService', 'ConformanceService', 'ErrorService', 'Constants', 'ConfirmationDialogService', 'DataService', 'ReportService']
+  constructor: (@$log, @$scope, @$state, @$stateParams, @$modal, @SystemService, @ConformanceService, @ErrorService, @Constants, @ConfirmationDialogService, @DataService, @ReportService) ->
     @$log.debug "Constructing ConformanceStatementDetailController"
 
     @systemId = @$stateParams['id']
@@ -53,21 +53,37 @@ class ConformanceStatementDetailController
     @initalizeFields()
 
   initalizeFields: () =>
-    @ConformanceService.getActorTestSuites @specId, @actorId, @Constants.TEST_CASE_TYPE.CONFORMANCE
+    @ConformanceService.getConformanceStatus(@actorId, @systemId)
     .then (data) =>
-      for testSuite in data
-        testCaseIds = _.map testSuite.testCases, (testCase) -> testCase.id
-        if testCaseIds.length > 0
-           @SystemService.getLastExecutionResultsForTestSuite @systemId, testSuite.id, testCaseIds
-           .then (result) =>
-               ts = _.find data, (ts) =>
-                 `ts.id == result.id`
-               for id, result of result.testCases
-                 tc = _.find ts.testCases, (tc) =>
-                   `tc.id == id`
-                 tc.result = result
-               @determineTestSuiteResult(ts)
-      @testSuites = data
+      testSuiteResults = []
+      testSuiteIds = []
+      testSuiteData = {}
+      for result in data
+        testCase = {}
+        testCase.id = result.testCaseId
+        testCase.sname = result.testCaseName
+        testCase.description = result.testCaseDescription
+        testCase.result = result.result
+        if (!testSuiteData[result.testSuiteId]?)
+          currentTestSuite = {}
+          testSuiteIds.push(result.testSuiteId)
+          currentTestSuite.id = result.testSuiteId
+          currentTestSuite.sname = result.testSuiteName
+          currentTestSuite.description = result.testSuiteDescription
+          currentTestSuite.result = result.result
+          currentTestSuite.testCases = []
+          testSuiteData[result.testSuiteId] = currentTestSuite
+        else
+          if (testSuiteData[result.testSuiteId].result == @Constants.TEST_CASE_RESULT.SUCCESS)
+            if testCase.result == @Constants.TEST_CASE_RESULT.FAILURE || testCase.result == @Constants.TEST_CASE_RESULT.UNDEFINED
+              testSuiteData[result.testSuiteId].result = testCase.result
+          else if (testSuiteData[result.testSuiteId].result == @Constants.TEST_CASE_RESULT.UNDEFINED)
+            if testCase.result == @Constants.TEST_CASE_RESULT.FAILURE
+              testSuiteData[result.testSuiteId].result = @Constants.TEST_CASE_RESULT.FAILURE
+        testSuiteData[result.testSuiteId].testCases.push(testCase)
+      for testSuiteId in testSuiteIds
+        testSuiteResults.push(testSuiteData[testSuiteId])
+      @testSuites = testSuiteResults
 
     @ConformanceService.getActorsWithIds [@actorId]
     .then (data) =>
@@ -100,16 +116,6 @@ class ConformanceStatementDetailController
           @constructEndpointRepresentations()
         .catch (error) =>
           @ErrorService.showErrorMessage(error)
-
-  determineTestSuiteResult: (testSuite) =>
-     overallResult = @Constants.TEST_CASE_RESULT.SUCCESS
-     for testCase, i in testSuite.testCases
-       if testCase.result == @Constants.TEST_CASE_RESULT.FAILURE
-         overallResult = @Constants.TEST_CASE_RESULT.FAILURE
-         break
-       if testCase.result == @Constants.TEST_CASE_RESULT.UNDEFINED
-         overallResult = @Constants.TEST_CASE_RESULT.UNDEFINED
-     testSuite.result = overallResult
 
   constructEndpointRepresentations: () =>
     @endpointRepresentations = _.map @endpoints, (endpoint) =>
@@ -190,6 +196,20 @@ class ConformanceStatementDetailController
           @$state.go("app.systems.detail.conformance.list", {id: @systemId})
       .catch (error) =>
           @ErrorService.showErrorMessage(error)
+
+  onExportConformanceStatement: () =>
+    choice = @ConfirmationDialogService.confirm("Report options", "Would you like to include the detailed test step results per test session?", "Yes, include step results", "No, summary only", true)
+    choice.then(() => 
+      @ReportService.exportConformanceStatementReport(@actorId, @systemId, true)
+      .then (data) =>
+          blobData = new Blob([data], {type: 'application/pdf'});
+          saveAs(blobData, "conformance_report.pdf");
+    , () => 
+      @ReportService.exportConformanceStatementReport(@actorId, @systemId, false)
+      .then (data) =>
+          blobData = new Blob([data], {type: 'application/pdf'});
+          saveAs(blobData, "conformance_report.pdf");
+    )
 
 class EditEndpointConfigurationController
   name: 'EditEndpointConfigurationController'

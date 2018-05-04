@@ -17,49 +17,56 @@ object TestCaseManager extends BaseManager {
 	val TEST_CASES_PATH = "test-cases"
 
 	def createTestCase(testCase: TestCases) = {
-		DB.withSession { implicit session =>
+		DB.withTransaction { implicit session =>
 			PersistenceSchema.testCases.insert(testCase)
 		}
 	}
 
-	def getTestCaseForId(testCaseId:String) = {
-		DB.withSession { implicit session =>
-			try {
-				val tc = PersistenceSchema.testCases.filter(_.id === testCaseId.toLong).first
-				Some(new TestCase(tc))
-			}
-			catch {
-				case e: Exception => None
-			}
+	def getTestCaseForIdWrapper(testCaseId:String) = {
+		DB.withTransaction { implicit session =>
+			getTestCaseForId(testCaseId)
 		}
 	}
 
-	def getTestCasesOfTestSuite(testSuiteId: Long, testCaseType: Option[Short]): util.List[TestCases] = {
-		DB.withSession { implicit session =>
-			var query = for {
-				testCase <- PersistenceSchema.testCases
-				testSuiteHasTestCases <- PersistenceSchema.testSuiteHasTestCases if testSuiteHasTestCases.testcase === testCase.id
-			} yield (testCase, testSuiteHasTestCases)
-			query = query
-				.filter(_._2.testsuite === testSuiteId)
-			if (testCaseType.isDefined)
-				query = query
-					.filter(_._1.testCaseType === testCaseType.get)
-			val results = query.list
-
-			var testCases = new util.ArrayList[TestCases]()
-			for (result <- results) {
-				testCases.add(result._1)
-			}
-			testCases
+	def getTestCaseForId(testCaseId:String)(implicit session: Session) = {
+		try {
+			val tc = PersistenceSchema.testCases.filter(_.id === testCaseId.toLong).first
+			Some(new TestCase(tc))
 		}
+		catch {
+			case e: Exception => None
+		}
+	}
+
+	def getTestCasesOfTestSuiteWrapper(testSuiteId: Long, testCaseType: Option[Short]): util.List[TestCases] = {
+		DB.withSession { implicit session =>
+			getTestCasesOfTestSuite(testSuiteId, testCaseType)
+		}
+	}
+
+	def getTestCasesOfTestSuite(testSuiteId: Long, testCaseType: Option[Short])(implicit session: Session): util.List[TestCases] = {
+		var query = for {
+			testCase <- PersistenceSchema.testCases
+			testSuiteHasTestCases <- PersistenceSchema.testSuiteHasTestCases if testSuiteHasTestCases.testcase === testCase.id
+		} yield (testCase, testSuiteHasTestCases)
+		query = query
+			.filter(_._2.testsuite === testSuiteId)
+		if (testCaseType.isDefined)
+			query = query
+				.filter(_._1.testCaseType === testCaseType.get)
+		val results = query.list
+
+		val testCases = new util.ArrayList[TestCases]()
+		for (result <- results) {
+			testCases.add(result._1)
+		}
+		testCases
 	}
 
 	def getTestCase(testCaseId:String) = {
 		DB.withSession { implicit session =>
 			try {
 				val tc = PersistenceSchema.testCases.filter(_.id === testCaseId.toLong).first
-
 				Some(new TestCase(tc))
 			}
 			catch {
@@ -176,53 +183,60 @@ object TestCaseManager extends BaseManager {
 		}
 	}
 
-	def updateTestCase(testCaseId: Long, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String) = {
-		DB.withTransaction { implicit session =>
+	def updateTestCase(testCaseId: Long, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String)(implicit session: Session) = {
+		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname)
+		q1.update(shortName)
 
-			val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname)
-			q1.update(shortName)
+		val q2 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.fullname)
+		q2.update(fullName)
 
-			val q2 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.fullname)
-			q2.update(fullName)
+		val q3 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.version)
+		q3.update(version)
 
-			val q3 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.version)
-			q3.update(version)
+		val q4 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.authors)
+		q4.update(authors)
 
-			val q4 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.authors)
-			q4.update(authors)
+		val q5 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.description)
+		q5.update(description)
 
-			val q5 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.description)
-			q5.update(description)
+		val q6 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.keywords)
+		q6.update(keywords)
 
-			val q6 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.keywords)
-			q6.update(keywords)
+		val q7 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.testCaseType)
+		q7.update(testCaseType)
 
-			val q7 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.testCaseType)
-			q7.update(testCaseType)
+		val q8 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.path)
+		q8.update(path)
 
-			val q8 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.path)
-			q8.update(path)
-
-			TestResultManager.updateForUpdatedTestCase(testCaseId, shortName)
-		}
+		TestResultManager.updateForUpdatedTestCase(testCaseId, shortName)
 	}
 
-	def delete(testCaseId: Long): Unit = {
-		DB.withTransaction { implicit session =>
-			TestResultManager.updateForDeletedTestCase(testCaseId)
-			removeActorLinksForTestCase(testCaseId)
-			PersistenceSchema.testCaseCoversOptions.filter(_.testcase === testCaseId).delete
-			PersistenceSchema.testSuiteHasTestCases.filter(_.testcase === testCaseId).delete
-			PersistenceSchema.testCases.filter(_.id === testCaseId).delete
-		}
+	def delete(testCaseId: Long)(implicit session: Session): Unit = {
+		delete(testCaseId, false)
 	}
 
-	def removeActorLinksForTestCase(testCaseId: Long): Unit = {
-		DB.withSession { implicit session =>
-			PersistenceSchema.testCaseHasActors
-				.filter(_.testcase === testCaseId)
-				.delete
+	def delete(testCaseId: Long, skipConformanceResult: Boolean)(implicit session: Session): Unit = {
+		TestResultManager.updateForDeletedTestCase(testCaseId)
+		removeActorLinksForTestCase(testCaseId)
+		PersistenceSchema.testCaseCoversOptions.filter(_.testcase === testCaseId).delete
+		PersistenceSchema.testSuiteHasTestCases.filter(_.testcase === testCaseId).delete
+		if (!skipConformanceResult) {
+			PersistenceSchema.conformanceResults.filter(_.testcase === testCaseId).delete
 		}
+		PersistenceSchema.testCases.filter(_.id === testCaseId).delete
+	}
+
+	def removeActorLinksForTestCase(testCaseId: Long)(implicit session: Session): Unit = {
+		PersistenceSchema.testCaseHasActors
+			.filter(_.testcase === testCaseId)
+			.delete
+	}
+
+	def removeActorLinkForTestCase(testCaseId: Long, actorId: Long)(implicit session: Session): Unit = {
+		PersistenceSchema.testCaseHasActors
+			.filter(_.testcase === testCaseId)
+			.filter(_.actor === actorId)
+			.delete
 	}
 
 }

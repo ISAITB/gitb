@@ -6,11 +6,19 @@ class TestExecutionControllerV2
       # We lost our state following a refresh - recreate state.
       testSuiteId = @$stateParams['testSuiteId']
       if (testSuiteId?)
-        @ConformanceService.getTestSuiteTestCases(testSuiteId, @Constants.TEST_CASE_TYPE.CONFORMANCE)
-          .then(
-            (data) =>
+        actorId = @$stateParams['actorId']
+        systemId = @$stateParams['systemId']
+        @ConformanceService.getConformanceStatusForTestSuite(actorId, systemId, testSuiteId)
+          .then((data) =>
               # There will always be one test suite returned
-              @testsToExecute = data
+              tests = []
+              for result in data
+                testCase = {}
+                testCase.id = result.testCaseId
+                testCase.sname = result.testCaseName
+                testCase.description = result.testCaseDescription
+                tests.push(testCase)
+              @testsToExecute = tests
               @initialiseState()
             (error) =>
               @ErrorService.showErrorMessage(error)

@@ -3,7 +3,7 @@ package managers
 import java.util
 
 import models.Enums.TestResultStatus
-import models.{ConformanceStatementSet, _}
+import models.{ConformanceResult, ConformanceStatement, _}
 import org.slf4j.LoggerFactory
 import persistence.db._
 
@@ -110,90 +110,85 @@ object SystemManager extends BaseManager {
         case Some(optionIds) => optionIds foreach ((optionId) => PersistenceSchema.systemImplementsOptions.insert((system, optionId)))
         case _ =>
       }
+      // Load any existing test results for the system and actor.
+      val existingResults = PersistenceSchema.testResults.filter(_.sutId === system).filter(_.actorId === actor).filter(_.testCaseId.isDefined).list
+      val existingResultsMap = new util.HashMap[Long, (String, String)]
+      existingResults.foreach { existingResult =>
+        existingResultsMap.put(existingResult.testCaseId.get, (existingResult.sessionId, existingResult.result))
+      }
+      var query = for {
+        testCaseHasActors <- PersistenceSchema.testCaseHasActors
+        testSuiteHasTestCases <- PersistenceSchema.testSuiteHasTestCases if testSuiteHasTestCases.testcase === testCaseHasActors.testcase
+      } yield (testCaseHasActors, testSuiteHasTestCases)
+      val conformanceInfo = query.filter(_._1.actor === actor).list
+      conformanceInfo.foreach { conformanceInfoEntry =>
+        val testCase = conformanceInfoEntry._1._1
+        val testSuite = conformanceInfoEntry._2._1
+        var result = TestResultStatus.UNDEFINED
+        var sessionId: Option[String] = None
+        if (existingResultsMap.containsKey(testCase)) {
+          val existingData = existingResultsMap.get(testCase)
+          sessionId = Some(existingData._1)
+          result = TestResultStatus.withName(existingData._2)
+        }
+        PersistenceSchema.conformanceResults.insert(ConformanceResult(0L, system, spec, actor, testSuite, testCase, result.toString, sessionId))
+      }
     }
   }
 
   def getConformanceStatements(systemId: Long, spec: Option[String], actor: Option[String]): List[ConformanceStatement] = {
     DB.withSession { implicit session =>
       var query = for {
-        systemImplementsActors <- PersistenceSchema.systemImplementsActors
-        specificationHasActors <- PersistenceSchema.specificationHasActors if specificationHasActors.actorId === systemImplementsActors.actorId
-        specifications <- PersistenceSchema.specifications if specifications.id === specificationHasActors.specId
-        actors <- PersistenceSchema.actors if actors.id === specificationHasActors.actorId
+        conformanceResults <- PersistenceSchema.conformanceResults
+        specifications <- PersistenceSchema.specifications if specifications.id === conformanceResults.spec
+        actors <- PersistenceSchema.actors if actors.id === conformanceResults.actor
         domains <- PersistenceSchema.domains if domains.id === actors.domain
-      } yield (systemImplementsActors, specificationHasActors, actors, domains, specifications)
-      query = query.filter(_._1.systemId === systemId)
+      } yield (conformanceResults, specifications, actors, domains)
+      query = query.filter(_._1.sut === systemId)
       if (spec.isDefined && actor.isDefined) {
         query = query
-          .filter(_._2.specId === spec.get.toLong)
-          .filter(_._2.actorId === actor.get.toLong)
+          .filter(_._1.spec === spec.get.toLong)
+          .filter(_._1.actor === actor.get.toLong)
       }
-      val results = query.list
+      query = query.sortBy(x => (x._4.fullname, x._2.fullname, x._3.name))
 
-      // Map of actor ID to conformance statement
-      val statementMap: util.Map[Long, ConformanceStatementSet] = new util.TreeMap[Long, ConformanceStatementSet]
+      val results = query.list
+      val conformanceMap = new util.LinkedHashMap[Long, ConformanceStatement]
       results.foreach { result =>
-        var data = statementMap.get(result._3.id)
-        if (data == null) {
-          data = new ConformanceStatementSet(
+        var conformanceStatement = conformanceMap.get(result._1.actor)
+        if (conformanceStatement == null) {
+          conformanceStatement = ConformanceStatement(
             result._4.id, result._4.shortname, result._4.fullname,
             result._3.id, result._3.actorId, result._3.name,
-            result._5.id, result._5.shortname, result._5.fullname,
-            new util.HashSet[Long]())
-          statementMap.put(result._3.id, data)
+            result._2.id, result._2.shortname, result._2.fullname,
+            0L, 0L)
+          conformanceMap.put(result._1.actor, conformanceStatement)
+        }
+        conformanceStatement.totalTests += 1
+        if (TestResultStatus.withName(result._1.result) == TestResultStatus.SUCCESS) {
+          conformanceStatement.completedTests += 1
         }
       }
-
-      // Collect test cases per actor
-      if (!statementMap.isEmpty) {
-        import scala.collection.JavaConversions._
-        val testCasesForActors = TestCaseManager.getTestCasesHavingActors(statementMap.keySet().toList)
-        testCasesForActors.foreach { entry =>
-          entry._2.foreach { testCase =>
-            statementMap.get(entry._1).testCaseIds.add(testCase.id)
-          }
-        }
-      }
-
-      val conformanceStatements = new ListBuffer[ConformanceStatement]
-
+      var statements = new ListBuffer[ConformanceStatement]
       import scala.collection.JavaConversions._
-      for (entry <- statementMap.entrySet) {
-        var completed = 0
-        for (testCaseId <- entry.getValue.testCaseIds) {
-          val lastResult = {
-            val result = PersistenceSchema.testResults
-              .filter(_.testCaseId === testCaseId)
-              .filter(_.sutId === systemId)
-              .filter(_.endTime isDefined)
-              .sortBy(_.endTime.desc)
-              .map(_.result)
-              .firstOption
-            result match {
-              case None => TestResultStatus.UNDEFINED
-              case Some(resultStr) => TestResultStatus.withName(resultStr)
-            }
-          }
-          if (lastResult == TestResultStatus.SUCCESS) {
-            completed += 1
-          }
-        }
-        conformanceStatements.add(ConformanceStatement(
-          entry.getValue.domainId, entry.getValue.domainName, entry.getValue.domainNameFull,
-          entry.getValue.actorId, entry.getValue.actorName, entry.getValue.actorFull,
-          entry.getValue.specificationId, entry.getValue.specificationName, entry.getValue.specificationNameFull,
-          completed, entry.getValue.testCaseIds.size()))
+      for (conformanceEntry <- conformanceMap) {
+        statements += conformanceEntry._2
       }
-      conformanceStatements.toList
+      statements.toList
     }
   }
 
   def deleteConformanceStatments(systemId: Long, actorIds: List[Long]) = {
-    DB.withSession { implicit session =>
+    DB.withTransaction { implicit session =>
       actorIds foreach { actorId =>
         PersistenceSchema.systemImplementsActors
           .filter(_.systemId === systemId)
           .filter(_.actorId === actorId)
+          .delete
+
+        PersistenceSchema.conformanceResults
+          .filter(_.actor === actorId)
+          .filter(_.sut === systemId)
           .delete
 
         val optionIds = PersistenceSchema.options
@@ -211,19 +206,16 @@ object SystemManager extends BaseManager {
 	}
 
   def getImplementedActors(system: Long): List[Actors] = {
-    val ids = getActorsForSystem(system)
     DB.withSession { implicit session =>
+      val ids = getActorsForSystem(system)
       PersistenceSchema.actors.filter(_.id inSet ids).list
     }
   }
 
-  private def getActorsForSystem(system: Long): List[Long] = {
-    DB.withSession { implicit session =>
-      //1) Get actors that the system implements
-      val actors = PersistenceSchema.systemImplementsActors.filter(_.systemId === system).map(_.actorId).list
-
-      actors
-    }
+  private def getActorsForSystem(system: Long)(implicit session: Session): List[Long] = {
+    //1) Get actors that the system implements
+    val actors = PersistenceSchema.systemImplementsActors.filter(_.systemId === system).map(_.actorId).list
+    actors
   }
 
   def getEndpointConfigurations(endpoint: Long, system: Long): List[Config] = {
@@ -258,31 +250,32 @@ object SystemManager extends BaseManager {
     }
   }
 
-  def deleteSystem(systemId: Long) = {
+  def deleteSystemWrapper(systemId: Long) = {
     DB.withTransaction { implicit session =>
-      TestResultManager.updateForDeletedSystem(systemId)
-      PersistenceSchema.configs.filter(_.system === systemId).delete
-      PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).delete
-      PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).delete
-      PersistenceSchema.systemImplementsActors.filter(_.systemId === systemId).delete
-      PersistenceSchema.systemImplementsOptions.filter(_.systemId === systemId).delete
-      PersistenceSchema.systems.filter(_.id === systemId).delete
+      deleteSystem(systemId)
     }
   }
 
-  def deleteSystemByOrganization(orgId: Long) = {
-    DB.withTransaction { implicit session =>
-      val systemIds = PersistenceSchema.systems.filter(_.owner === orgId).map(_.id).list
-      systemIds foreach { systemId =>
-        deleteSystem(systemId)
-      }
+  def deleteSystem(systemId: Long)(implicit session: Session) = {
+    TestResultManager.updateForDeletedSystem(systemId)
+    PersistenceSchema.configs.filter(_.system === systemId).delete
+    PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).delete
+    PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).delete
+    PersistenceSchema.systemImplementsActors.filter(_.systemId === systemId).delete
+    PersistenceSchema.systemImplementsOptions.filter(_.systemId === systemId).delete
+    PersistenceSchema.conformanceResults.filter(_.sut === systemId).delete
+    PersistenceSchema.systems.filter(_.id === systemId).delete
+  }
+
+  def deleteSystemByOrganization(orgId: Long)(implicit session: Session) = {
+    val systemIds = PersistenceSchema.systems.filter(_.owner === orgId).map(_.id).list
+    systemIds foreach { systemId =>
+      deleteSystem(systemId)
     }
 	}
 
-  def getSystemById(id: Long): Option[Systems] = {
-    DB.withSession { implicit session =>
-      PersistenceSchema.systems.filter(_.id === id).firstOption
-    }
+  def getSystemById(id: Long)(implicit session: Session): Option[Systems] = {
+    PersistenceSchema.systems.filter(_.id === id).firstOption
   }
 
   def getSystems(ids: Option[List[Long]]): List[Systems] = {

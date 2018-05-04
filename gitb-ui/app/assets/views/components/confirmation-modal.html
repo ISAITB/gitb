@@ -5,6 +5,6 @@
     <p>{{controller.bodyText}}</p>
 </div>
 <div class="modal-footer">
-    <button class="btn btn-primary" type="button" ng-click="ok()">{{controller.actionButtonText}}</button>
-    <button class="btn btn-default" type="button" ng-click="cancel()">{{controller.closeButtonText}}</button>
+    <button ng-class="okClass()" type="button" ng-click="ok()">{{controller.actionButtonText}}</button>
+    <button ng-class="cancelClass()" type="button" ng-click="cancel()">{{controller.closeButtonText}}</button>
 </div>

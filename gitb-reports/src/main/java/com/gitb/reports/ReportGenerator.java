@@ -2,6 +2,7 @@ package com.gitb.reports;
 
 import com.gitb.core.AnyContent;
 import com.gitb.core.ValueEmbeddingEnumeration;
+import com.gitb.reports.dto.ConformanceStatementOverview;
 import com.gitb.reports.dto.TestCaseOverview;
 import com.gitb.reports.dto.tar.ContextItem;
 import com.gitb.reports.dto.tar.Report;
@@ -20,9 +21,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.text.SimpleDateFormat;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class ReportGenerator {
 
@@ -163,7 +162,8 @@ public class ReportGenerator {
     public <T extends TestStepReportType> Report fromTestStepReportType(T reportType, String title, boolean addContext) {
         Report report = new Report();
         if (reportType.getDate() != null) {
-            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss 'Z'");
+            sdf.setTimeZone(TimeZone.getDefault());
             report.setReportDate(sdf.format(reportType.getDate().toGregorianCalendar().getTime()));
         }
         report.setReportResult(reportType.getResult().value());
@@ -215,7 +215,40 @@ public class ReportGenerator {
         return report;
     }
 
+    public void writeConformanceStatementOverviewReport(ConformanceStatementOverview overview, OutputStream outputStream) {
+        if (overview.getReportDate() == null) {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+            overview.setReportDate(sdf.format(new Date()));
+        }
+        if (overview.getTestCases() != null) {
+            for (TestCaseOverview tc: overview.getTestCases()) {
+                if (tc.getSubReportRoot() == null) {
+                    tc.setSubReportRoot("reports/");
+                }
+            }
+        }
+        try {
+            Map<String, Object> parameters = new HashMap<>();
+            parameters.put("title", overview.getTitle());
+            parameters.put("organisation", overview.getOrganisation());
+            parameters.put("system", overview.getSystem());
+            parameters.put("testDomain", overview.getTestDomain());
+            parameters.put("testSpecification", overview.getTestSpecification());
+            parameters.put("testActor", overview.getTestActor());
+            parameters.put("testStatus", overview.getTestStatus());
+            parameters.put("reportDate", overview.getReportDate());
+            parameters.put("testCases", overview.getTestCases());
+            parameters.put("includeTestCases", overview.getIncludeTestCases());
+            writeClasspathReport("reports/ConformanceStatementOverview.jasper", parameters, outputStream);
+        } catch (Exception e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
     public void writeTestCaseOverviewReport(TestCaseOverview testCaseOverview, OutputStream outputStream) {
+        if (testCaseOverview.getSubReportRoot() == null) {
+            testCaseOverview.setSubReportRoot("reports/");
+        }
         try {
             Map<String, Object> parameters = new HashMap<>();
             parameters.put("title", testCaseOverview.getTitle());

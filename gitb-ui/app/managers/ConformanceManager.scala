@@ -1,10 +1,14 @@
 package managers
 
+import java.util
+
+import models.Enums.TestResultStatus
 import models._
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import utils.RepositoryUtils
 
+import scala.collection.mutable.ListBuffer
 import scala.slick.driver.MySQLDriver.simple._
 
 object ConformanceManager extends BaseManager {
@@ -94,10 +98,14 @@ object ConformanceManager extends BaseManager {
 		}
 	}
 
-	def deleteDomainParameter(domainParameter: Long) = {
+	def deleteDomainParameterWrapper(domainParameter: Long) = {
 		DB.withTransaction { implicit session =>
-			PersistenceSchema.domainParameters.filter(_.id === domainParameter).delete
+			deleteDomainParameter(domainParameter)
 		}
+	}
+
+	def deleteDomainParameter(domainParameter: Long)(implicit session: Session) = {
+		PersistenceSchema.domainParameters.filter(_.id === domainParameter).delete
 	}
 
 	def getDomainParameter(domainParameterId: Long) = {
@@ -109,15 +117,6 @@ object ConformanceManager extends BaseManager {
 	def getDomainParameters(domainId: Long) = {
 		DB.withSession { implicit session =>
 			PersistenceSchema.domainParameters.filter(_.domain === domainId).list
-		}
-	}
-
-	def deleteDomainParameterByDomain(domainId: Long) = {
-		DB.withTransaction { implicit session =>
-			val ids = PersistenceSchema.domainParameters.filter(_.domain === domainId).map(_.id).list
-			ids foreach { id =>
-				deleteDomainParameter(id)
-			}
 		}
 	}
 
@@ -229,12 +228,6 @@ object ConformanceManager extends BaseManager {
 		}
   }
 
-  def getActorDefinition(ids:List[Long]): List[Actors] = {
-		DB.withSession { implicit session =>
-			PersistenceSchema.actors.filter(_.id inSet ids).list
-		}
-  }
-
 	def relateActorWithSpecification(actorId: Long, specificationId: Long) = {
 		DB.withTransaction { implicit session =>
 			PersistenceSchema.specificationHasActors.insert(specificationId, actorId)
@@ -317,9 +310,137 @@ object ConformanceManager extends BaseManager {
 		}
 	}
 
-	def getById(id: Long): Option[Domain] = {
+	def getById(id: Long)(implicit session: Session): Option[Domain] = {
+		PersistenceSchema.domains.filter(_.id === id).firstOption
+	}
+
+	def getConformanceStatus(actorId: Long, sutId: Long, testSuiteId: Option[Long]) = {
 		DB.withSession { implicit session =>
-			PersistenceSchema.domains.filter(_.id === id).firstOption
+			var query = for {
+				conformanceResults <- PersistenceSchema.conformanceResults
+				testCases <- PersistenceSchema.testCases if testCases.id === conformanceResults.testcase
+				testSuites <- PersistenceSchema.testSuites if testSuites.id === conformanceResults.testsuite
+			} yield (conformanceResults, testCases, testSuites)
+			query = query
+				.filter(_._1.actor === actorId)
+				.filter(_._1.sut === sutId)
+			if (testSuiteId.isDefined) {
+				query = query.filter(_._1.testsuite === testSuiteId.get)
+			}
+			query = query.sortBy(x => (x._3.shortname, x._2.shortname))
+			val results = query.list
+			results
+		}
+	}
+
+	def getConformanceStatementsFull(domainIds: Option[List[Long]], specIds: Option[List[Long]], actorIds: Option[List[Long]], communityIds: Option[List[Long]], organizationIds: Option[List[Long]], systemIds: Option[List[Long]]): List[ConformanceStatementFull] = {
+		DB.withSession { implicit session =>
+			var query = for {
+				conformanceResults <- PersistenceSchema.conformanceResults
+				specifications <- PersistenceSchema.specifications if specifications.id === conformanceResults.spec
+				actors <- PersistenceSchema.actors if actors.id === conformanceResults.actor
+				domains <- PersistenceSchema.domains if domains.id === actors.domain
+				systems <- PersistenceSchema.systems if systems.id === conformanceResults.sut
+				organizations <- PersistenceSchema.organizations if organizations.id === systems.owner
+				communities <- PersistenceSchema.communities if communities.id === organizations.community
+				testSuites <- PersistenceSchema.testSuites if testSuites.id === conformanceResults.testsuite
+				testCases <- PersistenceSchema.testCases if testCases.id === conformanceResults.testcase
+			} yield (conformanceResults, specifications, actors, domains, systems, organizations, communities, testSuites, testCases)
+			if (domainIds.isDefined) {
+				query = query.filter(_._4.id inSet domainIds.get)
+			}
+			if (specIds.isDefined) {
+				query = query.filter(_._1.spec inSet specIds.get)
+			}
+			if (actorIds.isDefined) {
+				query = query.filter(_._1.actor inSet actorIds.get)
+			}
+			if (communityIds.isDefined) {
+				query = query.filter(_._7.id inSet communityIds.get)
+			}
+			if (organizationIds.isDefined) {
+				query = query.filter(_._6.id inSet organizationIds.get)
+			}
+			if (systemIds.isDefined) {
+				query = query.filter(_._1.sut inSet systemIds.get)
+			}
+			query = query.sortBy(x => (x._7.shortname, x._6.shortname, x._5.shortname, x._4.shortname, x._2.shortname, x._3.actorId, x._8.shortname, x._9.shortname))
+
+			val results = query.list
+			var statements = new ListBuffer[ConformanceStatementFull]
+			results.foreach { result =>
+				val conformanceStatement = ConformanceStatementFull(
+						result._7.id, result._7.shortname, result._6.id, result._6.shortname,
+						result._5.id, result._5.shortname,
+						result._4.id, result._4.shortname, result._4.fullname,
+						result._3.id, result._3.actorId, result._3.name,
+						result._2.id, result._2.shortname, result._2.fullname,
+						Some(result._8.shortname), Some(result._9.shortname), result._9.description,
+						Some(result._1.result), result._1.testsession, 0L, 0L)
+				statements += conformanceStatement
+			}
+			statements.toList
+		}
+	}
+
+	def getConformanceStatements(domainIds: Option[List[Long]], specIds: Option[List[Long]], actorIds: Option[List[Long]], communityIds: Option[List[Long]], organizationIds: Option[List[Long]], systemIds: Option[List[Long]]): List[ConformanceStatementFull] = {
+		DB.withSession { implicit session =>
+			var query = for {
+					conformanceResults <- PersistenceSchema.conformanceResults
+					specifications <- PersistenceSchema.specifications if specifications.id === conformanceResults.spec
+					actors <- PersistenceSchema.actors if actors.id === conformanceResults.actor
+					domains <- PersistenceSchema.domains if domains.id === actors.domain
+					systems <- PersistenceSchema.systems if systems.id === conformanceResults.sut
+					organizations <- PersistenceSchema.organizations if organizations.id === systems.owner
+					communities <- PersistenceSchema.communities if communities.id === organizations.community
+				} yield (conformanceResults, specifications, actors, domains, systems, organizations, communities)
+			if (domainIds.isDefined) {
+				query = query.filter(_._4.id inSet domainIds.get)
+			}
+			if (specIds.isDefined) {
+				query = query.filter(_._1.spec inSet specIds.get)
+			}
+			if (actorIds.isDefined) {
+				query = query.filter(_._1.actor inSet actorIds.get)
+			}
+			if (communityIds.isDefined) {
+				query = query.filter(_._7.id inSet communityIds.get)
+			}
+			if (organizationIds.isDefined) {
+				query = query.filter(_._6.id inSet organizationIds.get)
+			}
+			if (systemIds.isDefined) {
+				query = query.filter(_._1.sut inSet systemIds.get)
+			}
+			query = query.sortBy(x => (x._7.shortname, x._6.shortname, x._5.shortname, x._4.shortname, x._2.shortname, x._3.actorId))
+
+			val results = query.list
+			val conformanceMap = new util.LinkedHashMap[String, ConformanceStatementFull]
+			results.foreach { result =>
+				val key = result._1.sut + "|" + result._1.actor
+				var conformanceStatement = conformanceMap.get(key)
+				if (conformanceStatement == null) {
+					conformanceStatement = ConformanceStatementFull(
+						result._7.id, result._7.shortname, result._6.id, result._6.shortname,
+						result._5.id, result._5.shortname,
+						result._4.id, result._4.shortname, result._4.fullname,
+						result._3.id, result._3.actorId, result._3.name,
+						result._2.id, result._2.shortname, result._2.fullname,
+						None, None, result._1.testsession, None, None,
+						0L, 0L)
+					conformanceMap.put(key, conformanceStatement)
+				}
+				conformanceStatement.totalTests += 1
+				if (TestResultStatus.withName(result._1.result) == TestResultStatus.SUCCESS) {
+					conformanceStatement.completedTests += 1
+				}
+			}
+			var statements = new ListBuffer[ConformanceStatementFull]
+			import scala.collection.JavaConversions._
+			for (conformanceEntry <- conformanceMap) {
+				statements += conformanceEntry._2
+			}
+			statements.toList
 		}
 	}
 

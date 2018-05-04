@@ -21,10 +21,14 @@ object ParameterManager extends BaseManager {
     }
   }
 
-  def createParameter(parameter: models.Parameters) = {
-    DB.withSession { implicit session =>
-      PersistenceSchema.parameters.returning(PersistenceSchema.parameters.map(_.id)).insert(parameter)
+  def createParameterWrapper(parameter: models.Parameters) = {
+    DB.withTransaction { implicit session =>
+      createParameter(parameter)
     }
+  }
+
+  def createParameter(parameter: models.Parameters)(implicit session: Session) = {
+    PersistenceSchema.parameters.returning(PersistenceSchema.parameters.map(_.id)).insert(parameter)
   }
 
   def deleteParameterByEndPoint(endPointId: Long)(implicit session: Session) = {
@@ -45,22 +49,24 @@ object ParameterManager extends BaseManager {
     PersistenceSchema.configs.filter(_.parameter === parameterId).delete
   }
 
-  def updateParameter(parameterId: Long, name: String, description: Option[String], use: String, kind: String) = {
+  def updateParameterWrapper(parameterId: Long, name: String, description: Option[String], use: String, kind: String) = {
     DB.withTransaction { implicit session =>
-
-      val q1 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.desc)
-      q1.update(description)
-
-      val q2 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.use)
-      q2.update(use)
-
-      val q3 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.kind)
-      q3.update(kind)
-
-      val q4 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.name)
-      q4.update(name)
-
+      updateParameter(parameterId, name, description, use, kind)
     }
+  }
+
+  def updateParameter(parameterId: Long, name: String, description: Option[String], use: String, kind: String)(implicit session: Session) = {
+    val q1 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.desc)
+    q1.update(description)
+
+    val q2 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.use)
+    q2.update(use)
+
+    val q3 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.kind)
+    q3.update(kind)
+
+    val q4 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.name)
+    q4.update(name)
   }
 
 }

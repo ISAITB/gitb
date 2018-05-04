@@ -3,7 +3,7 @@ import jaxws.TestbedService
 import javax.xml.ws.Endpoint
 
 import filters._
-import managers.{SystemConfigurationManager, TestResultManager, TestSuiteManager}
+import managers.{ReportManager, SystemConfigurationManager, TestResultManager, TestSuiteManager}
 import models.Constants
 import controllers.TestService
 import org.apache.commons.io.FileUtils
@@ -54,6 +54,7 @@ with GlobalSettings {
     // start tasks
     destroyIdleSessions()
     cleanupPendingTestSuiteUploads()
+    cleanupTempReports()
     Logger.info("Application has started")
   }
 
@@ -95,6 +96,23 @@ with GlobalSettings {
           if (file.lastModified() + 3600000 < System.currentTimeMillis) {
             // Delete pending test suite folders that were created min 1 hour ago
             FileUtils.deleteDirectory(file)
+          }
+        }
+      }
+    }
+  }
+
+  def cleanupTempReports() = {
+    Akka.system.scheduler.schedule(0.minutes, 1.minutes) {
+      val tempFolder = ReportManager.getTempFolderPath().toFile
+      if (tempFolder.exists() && tempFolder.isDirectory) {
+        for (file <- tempFolder.listFiles()) {
+          try {
+            FileUtils.deleteDirectory(file)
+          } catch {
+            case e:Exception => {
+              Logger.warn("Unable to delete temp folder [" + file.getAbsolutePath + "]")
+            }
           }
         }
       }

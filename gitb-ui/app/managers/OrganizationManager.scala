@@ -15,11 +15,9 @@ object OrganizationManager extends BaseManager {
   /**
    * Checks if organization exists (ignoring the default)
    */
-  def checkOrganizationExists(orgId: Long): Boolean = {
-    DB.withSession { implicit session =>
-      val firstOption = PersistenceSchema.organizations.filter(_.id =!= Constants.DefaultOrganizationId).filter(_.id === orgId).firstOption
-      firstOption.isDefined
-    }
+  def checkOrganizationExists(orgId: Long)(implicit session: Session): Boolean = {
+    val firstOption = PersistenceSchema.organizations.filter(_.id =!= Constants.DefaultOrganizationId).filter(_.id === orgId).firstOption
+    firstOption.isDefined
   }
 
   /**
@@ -101,14 +99,12 @@ object OrganizationManager extends BaseManager {
    * Deletes organization by community
    */
   def deleteOrganizationByCommunity(communityId: Long)(implicit session: Session) = {
-    DB.withTransaction { implicit session =>
-      val list = PersistenceSchema.organizations.filter(_.community === communityId).list
-      list foreach { org =>
-        UserManager.deleteUserByOrganization(org.id)
-        SystemManager.deleteSystemByOrganization(org.id)
-        PersistenceSchema.organizations.filter(_.community === communityId).delete
-        TestResultManager.updateForDeletedOrganisationByCommunityId(communityId)
-      }
+    val list = PersistenceSchema.organizations.filter(_.community === communityId).list
+    list foreach { org =>
+      UserManager.deleteUserByOrganization(org.id)
+      SystemManager.deleteSystemByOrganization(org.id)
+      PersistenceSchema.organizations.filter(_.community === communityId).delete
+      TestResultManager.updateForDeletedOrganisationByCommunityId(communityId)
     }
   }
 

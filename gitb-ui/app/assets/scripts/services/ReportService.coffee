@@ -171,6 +171,16 @@ class ReportService
       path: jsRoutes.controllers.RepositoryService.getTestStepReport(session, reportPath).url
       authenticate: true
 
+  exportConformanceStatementReport: (actorId, systemId, includeTests) ->
+      @RestService.get
+        path: jsRoutes.controllers.RepositoryService.exportConformanceStatementReport().url
+        params:
+            actor_id:  actorId
+            system_id: systemId
+            tests: includeTests 
+        authenticate: true
+        responseType: "arraybuffer"
+
   exportTestCaseReport: (session, testName) ->
       @RestService.get
         path: jsRoutes.controllers.RepositoryService.exportTestCaseReport().url

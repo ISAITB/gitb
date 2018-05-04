@@ -7,7 +7,9 @@ import javax.xml.transform.stream.StreamSource
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl.TestCase
 import com.gitb.utils.XMLUtils
+import config.Configurations
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
+import managers.ReportManager.STATUS_UPDATES_PATH
 import managers.{ReportManager, TestCaseManager, TestResultManager}
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
@@ -27,7 +29,7 @@ class RepositoryService extends Controller {
 
 	def getTestSuiteResource(testId: String, filePath:String): Action[AnyContent] = Action {
 		implicit request =>
-      val testCase = TestCaseManager.getTestCaseForId(testId).get
+      val testCase = TestCaseManager.getTestCaseForIdWrapper(testId).get
       val file = RepositoryUtils.getTestSuitesResource(testCase.targetSpec, codec.decode(filePath))
 			logger.debug("Reading test resource ["+codec.decode(filePath)+"] definition from the file ["+file+"]")
 			if(file.exists()) {
@@ -39,7 +41,7 @@ class RepositoryService extends Controller {
 
 	def getTestStepReport(sessionId: String, reportPath: String): Action[AnyContent] = Action { implicit request=>
 //    34888315-6781-4d74-a677-8f9001a02cb8/4.xml
-		val sessionFolder = ReportManager.getPathForTestSession(sessionId, true).toFile
+		val sessionFolder = ReportManager.getPathForTestSessionWrapper(sessionId, true).toFile
     var path: String = null
     if (reportPath.startsWith(sessionId)) {
       // Backwards compatibility.
@@ -79,7 +81,7 @@ class RepositoryService extends Controller {
       path = reportPath
     }
     path = codec.decode(path)
-    val sessionFolder = ReportManager.getPathForTestSession(sessionId, true).toFile
+    val sessionFolder = ReportManager.getPathForTestSessionWrapper(sessionId, true).toFile
     val file = new File(sessionFolder, path)
     val pdf = new File(sessionFolder, path.toLowerCase().replace(".xml", ".pdf"))
 
@@ -100,11 +102,11 @@ class RepositoryService extends Controller {
     val session = ParameterExtractor.requiredQueryParameter(request, Parameters.SESSION_ID)
     val testCaseId = ParameterExtractor.requiredQueryParameter(request, Parameters.TEST_ID)
 
-    val folder = ReportManager.getPathForTestSession(codec.decode(session), true).toFile
+    val folder = ReportManager.getPathForTestSessionWrapper(codec.decode(session), true).toFile
 
     logger.debug("Reading test case report ["+codec.decode(session)+"] from the file ["+folder+"]")
 
-    val testResult = TestResultManager.getTestResultForSession(session)
+    val testResult = TestResultManager.getTestResultForSessionWrapper(session)
     if (testResult.isDefined) {
 
       var exportedReport: File = null
@@ -132,6 +134,31 @@ class RepositoryService extends Controller {
 
   def exportTestCaseReports(): Action[AnyContent] = Action { implicit request =>
     NotFound
+  }
+
+  def exportConformanceStatementReport(): Action[AnyContent] = Action.apply { implicit request =>
+    val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID)
+    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID)
+    val includeTests = ParameterExtractor.requiredQueryParameter(request, Parameters.TESTS).toBoolean
+    val reportPath = Paths.get(
+      ReportManager.getTempFolderPath().toFile.getAbsolutePath,
+      "conformance_reports",
+      actorId,
+      systemId,
+      "report_"+System.currentTimeMillis+".pdf"
+    )
+    try {
+      FileUtils.deleteDirectory(reportPath.toFile.getParentFile)
+    } catch  {
+      case e:Exception => {
+        // Ignore these are anyway deleted every hour
+      }
+    }
+    ReportManager.generateConformanceStatementReport(reportPath, includeTests, actorId.toLong, systemId.toLong)
+    Ok.sendFile(
+      content = reportPath.toFile,
+      fileName = _ => reportPath.toFile.getName
+    )
   }
 
 	def getTestCase(testId:String) = Action.apply { implicit request =>

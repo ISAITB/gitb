@@ -50,6 +50,7 @@ POST	/vendor/systems/register            @controllers.SystemService.registerSyst
 GET	    /specDomain                         @controllers.ConformanceService.getDomainOfSpecification(spec_id: Long)
 GET	    /domains                            @controllers.ConformanceService.getDomains
 GET	    /domains/community                  @controllers.ConformanceService.getCommunityDomain
+GET     /domains/conformance                @controllers.ConformanceService.getConformanceOverview
 POST    /domains                            @controllers.ConformanceService.createDomain
 DELETE  /domains/:domain_id                 @controllers.ConformanceService.deleteDomain(domain_id: Long)
 POST    /domains/:domain_id                 @controllers.ConformanceService.updateDomain(domain_id: Long)
@@ -69,7 +70,8 @@ POST    /actors                             @controllers.ConformanceService.crea
 DELETE  /actors/:actor_id                   @controllers.ActorService.deleteActor(actor_id : Long)
 POST    /actors/:actor_id                   @controllers.ActorService.updateActor(actor_id : Long)
 GET	    /actors/:actor_id/tests             @controllers.ConformanceService.getActorTestCases(actor_id : Long)
-GET	    /actors/:actor_id/suites            @controllers.ConformanceService.getActorTestSuites(actor_id : Long)
+GET	    /actors/:actor_id/conformance/:sut_id @controllers.ConformanceService.getConformanceStatus(actor_id : Long, sut_id : Long)
+GET	    /actors/:actor_id/conformance/:sut_id/:testsuite_id @controllers.ConformanceService.getConformanceStatusForTestSuite(actor_id : Long, sut_id : Long, testsuite_id : Long)
 GET	    /testsuites/:testSuiteId/testcases  @controllers.ConformanceService.getTestSuiteTestCases(testSuiteId : Long)
 GET	    /testcases/:testCaseId              @controllers.ConformanceService.getTestSuiteTestCase(testCaseId : Long)
 GET     /actors/:actor_id/options           @controllers.ConformanceService.getOptionsForActor(actor_id : Long)
@@ -183,6 +185,7 @@ GET     /repository/reports/teststep/:session_id/*file      @controllers.Reposit
 GET     /repository/export/testcase                         @controllers.RepositoryService.exportTestCaseReport
 GET     /repository/export/testcases                        @controllers.RepositoryService.exportTestCaseReports
 GET     /repository/export/teststep/:session_id/*path       @controllers.RepositoryService.exportTestStepReport(session_id: String, path)
+GET     /repository/export/conformance                      @controllers.RepositoryService.exportConformanceStatementReport
 GET     /repository/resource/:test_id/*file                 @controllers.RepositoryService.getTestSuiteResource(test_id: String, file: String)
 
 # Map static resources from the /public folder to the /assets URL path

@@ -36,47 +36,52 @@ object ActorManager extends BaseManager {
     }
   }
 
-  def deleteActor(actorId: Long) = {
+  def deleteActorWrapper(actorId: Long) = {
     DB.withTransaction { implicit session =>
-      delete(actorId)
+      deleteActor(actorId)
     }
+  }
+
+  def deleteActor(actorId: Long)(implicit session: Session) = {
+    delete(actorId)
   }
 
   private def delete(actorId: Long)(implicit session: Session) = {
+    TestResultManager.updateForDeletedActor(actorId)
+    PersistenceSchema.testCaseHasActors.filter(_.actor === actorId).delete
+    PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete
+    PersistenceSchema.systemImplementsActors.filter(_.actorId === actorId).delete
+    PersistenceSchema.testCaseHasActors.filter(_.actor === actorId).delete
+    PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete
+    PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).delete
+    PersistenceSchema.endpointSupportsTransactions.filter(_.actorId === actorId).delete
+    EndPointManager.deleteEndPointByActor(actorId)
+    OptionManager.deleteOptionByActor(actorId)
+    PersistenceSchema.conformanceResults.filter(_.actor === actorId).delete
+    PersistenceSchema.actors.filter(_.id === actorId).delete
+  }
+
+  def updateActorWrapper(id: Long, actorId: String, name: String, description: Option[String]) = {
     DB.withTransaction { implicit session =>
-      TestResultManager.updateForDeletedActor(actorId)
-      PersistenceSchema.testCaseHasActors.filter(_.actor === actorId).delete
-      PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete
-      PersistenceSchema.systemImplementsActors.filter(_.actorId === actorId).delete
-      PersistenceSchema.testCaseHasActors.filter(_.actor === actorId).delete
-      PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete
-      PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).delete
-      PersistenceSchema.endpointSupportsTransactions.filter(_.actorId === actorId).delete
-      EndPointManager.deleteEndPointByActor(actorId)
-      OptionManager.deleteOptionByActor(actorId)
-      PersistenceSchema.actors.filter(_.id === actorId).delete
+      updateActor(id, actorId, name, description)
     }
   }
 
-  def updateActor(id: Long, actorId: String, name: String, description: Option[String]) = {
-    DB.withTransaction { implicit session =>
-      val q1 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.name)
-      q1.update(name)
+  def updateActor(id: Long, actorId: String, name: String, description: Option[String])(implicit session: Session) = {
+    val q1 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.name)
+    q1.update(name)
 
-      val q2 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.desc)
-      q2.update(description)
+    val q2 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.desc)
+    q2.update(description)
 
-      val q3 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.actorId)
-      q3.update(actorId)
+    val q3 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.actorId)
+    q3.update(actorId)
 
-      TestResultManager.updateForUpdatedActor(id, name)
-    }
+    TestResultManager.updateForUpdatedActor(id, name)
   }
 
-  def getById(id: Long): Option[Actors] = {
-    DB.withSession { implicit session =>
-      PersistenceSchema.actors.filter(_.id === id).firstOption
-    }
+  def getById(id: Long)(implicit session: Session): Option[Actors] = {
+    PersistenceSchema.actors.filter(_.id === id).firstOption
   }
 
 }

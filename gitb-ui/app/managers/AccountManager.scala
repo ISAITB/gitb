@@ -15,10 +15,9 @@ object AccountManager extends BaseManager {
   def logger = LoggerFactory.getLogger("AccountManager")
 
   def registerVendor(organization: Organizations, admin: Users) = {
-    DB.withSession { implicit session =>
+    DB.withTransaction { implicit session =>
       //1) Persist Organization
       val orgId = PersistenceSchema.insertOrganization += organization
-
       //2) Persist Admin
       PersistenceSchema.insertUser += admin.withOrganizationId(orgId)
     }

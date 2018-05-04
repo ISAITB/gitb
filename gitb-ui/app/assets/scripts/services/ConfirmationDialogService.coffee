@@ -3,7 +3,7 @@ class ConfirmationDialogService
   @$inject = ['$q', '$modal']
   constructor: (@$q, @$modal) ->
 
-  confirm: (headerText, bodyText, actionButtonText, closeButtonText) =>
+  confirm: (headerText, bodyText, actionButtonText, closeButtonText, sameStyles) =>
     modalOptions =
       templateUrl: 'assets/views/components/confirmation-modal.html'
       controller: 'ConfirmationDialogController'
@@ -14,6 +14,7 @@ class ConfirmationDialogService
         bodyText: () => bodyText
         actionButtonText: () => actionButtonText
         closeButtonText: () => closeButtonText
+        sameStyles: () => sameStyles
 
     @$modal.open(modalOptions).result
 

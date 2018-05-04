@@ -1,0 +1,141 @@
+<div class="page conformancedashboard">
+	<div class="panel panel-default">
+        <div class="panel-heading">
+			<h4 class="title">Filters</h4>
+			<div class="btn-group btn-toggle pull-right">
+				<button ng-disabled="adminConformanceCtrl.showFilters"
+						ng-class="{true: 'btn btn-primary active', false : 'btn btn-default'}[adminConformanceCtrl.showFilters]"
+						ng-click="adminConformanceCtrl.showFilter()">
+					APPLY
+				</button>
+				<button ng-disabled="!adminConformanceCtrl.showFilters"
+						ng-class="{true: 'btn btn-default', false : 'btn btn-primary active'}[adminConformanceCtrl.showFilters]"
+						ng-click="adminConformanceCtrl.clearFilter()">
+					CLEAR
+				</button>
+			</div>
+		</div>
+        <div class="table-responsive">
+			<table class="table" ng-if="adminConformanceCtrl.showFilters">
+				<thead>
+				<tr>
+					<th class="col-md-1" ng-if="!adminConformanceCtrl.DataService.isCommunityAdmin">Community</th>
+					<th class="col-md-1">Organization</th>
+					<th class="col-md-1">System</th>
+					<th class="col-md-1" ng-if="adminConformanceCtrl.DataService.isSystemAdmin || (adminConformanceCtrl.DataService.isCommunityAdmin && adminConformanceCtrl.DataService.community.domain === null)">Domain</th>
+					<th class="col-md-1">Specification</th>
+				</tr>
+				</thead>
+				<tbody>
+				<tr>
+					<td ng-if="!adminConformanceCtrl.DataService.isCommunityAdmin">
+						<div isteven-multi-select input-model="adminConformanceCtrl.filters.community.filter"
+								output-model="adminConformanceCtrl.filters.community.selection" button-label="sname"
+								item-label="sname"
+								tick-property="ticked" max-labels="0" max-height="250px"
+								translation="adminConformanceCtrl.translation"
+								helper-elements="filter" search-property="sname" output-properties="id"
+								on-item-click="adminConformanceCtrl.communityClicked(data)"
+								is-disabled="adminConformanceCtrl.DataService.isCommunityAdmin"></div>
+					</td>
+					<td>
+						<div isteven-multi-select input-model="adminConformanceCtrl.filters.organization.filter"
+								output-model="adminConformanceCtrl.filters.organization.selection" button-label="sname"
+								item-label="sname"
+								tick-property="ticked" max-labels="0" max-height="250px"
+								translation="adminConformanceCtrl.translation"
+								helper-elements="filter" search-property="sname"
+								output-properties="id" on-item-click="adminConformanceCtrl.organizationClicked(data)"></div>
+					</td>
+					<td>
+						<div isteven-multi-select input-model="adminConformanceCtrl.filters.system.filter"
+								output-model="adminConformanceCtrl.filters.system.selection" button-label="sname"
+								item-label="sname"
+								tick-property="ticked" max-labels="0" max-height="250px"
+								translation="adminConformanceCtrl.translation"
+								helper-elements="filter" search-property="sname" output-properties="id"
+								on-item-click="adminConformanceCtrl.systemClicked(data)"></div>
+					</td>
+					<td ng-if="adminConformanceCtrl.DataService.isSystemAdmin || (adminConformanceCtrl.DataService.isCommunityAdmin && adminConformanceCtrl.DataService.community.domain === null)">
+							<div isteven-multi-select input-model="adminConformanceCtrl.filters.domain.filter"
+									output-model="adminConformanceCtrl.filters.domain.selection" button-label="sname"
+									item-label="sname"
+									tick-property="ticked" max-labels="0" max-height="250px"
+									translation="adminConformanceCtrl.translation"
+									helper-elements="filter" search-property="sname" output-properties="id"
+									on-item-click="adminConformanceCtrl.domainClicked(data)"
+									is-disabled="adminConformanceCtrl.domainDisabled"></div>
+						</td>
+						<td>
+							<div isteven-multi-select input-model="adminConformanceCtrl.filters.specification.filter"
+									output-model="adminConformanceCtrl.filters.specification.selection" button-label="sname"
+									item-label="sname"
+									tick-property="ticked" max-labels="0" max-height="250px"
+									translation="adminConformanceCtrl.translation"
+									helper-elements="filter" search-property="sname"
+									output-properties="id" on-item-click="adminConformanceCtrl.specificationClicked(data)"></div>
+						</td>
+					</tr>
+				</tbody>
+				</table>
+			</div>
+		</div>
+	</div>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 id="conformance-statements-title" class="title">Conformance Statements</h4>
+			<div class="pull-right">
+				<button class="btn btn-default" ng-if="adminConformanceCtrl.conformanceStatements.length > 0" ng-click="adminConformanceCtrl.onExportConformanceStatementsAsCsv()">Export CSV</button>
+				<button class="btn btn-default" ng-if="adminConformanceCtrl.showCollapseAll()" ng-click="adminConformanceCtrl.onCollapseAll()">Collapse all</button>
+			</div>
+		</div>
+		<table class="table table-directive conformance-test-cases-table">
+			<thead>
+			<tr>
+				<th ng-if="!adminConformanceCtrl.DataService.isCommunityAdmin">Community</th>
+				<th>Organization</th>
+				<th>System</th>
+				<th ng-if="adminConformanceCtrl.DataService.isSystemAdmin || (adminConformanceCtrl.DataService.isCommunityAdmin && adminConformanceCtrl.DataService.community.domain === null)">Domain</th>
+				<th>Specification</th>
+				<th>Actor</th>
+				<th width="10%">Status</th>
+				<th width="1%">Export</th>
+			</tr>
+			</thead>
+			<tbody ng-if="adminConformanceCtrl.conformanceStatements.length > 0">
+			<tr ng-repeat-start="statement in adminConformanceCtrl.conformanceStatements"
+				ng-click="adminConformanceCtrl.onExpand(statement)"
+				class="table-row-directive conformance-test-cases-row-collapsed">
+				<td ng-if="!adminConformanceCtrl.DataService.isCommunityAdmin">{{statement.communityName}}</td>
+				<td>{{statement.organizationName}}</td>
+				<td>{{statement.systemName}}</td>
+				<td ng-if="adminConformanceCtrl.DataService.isSystemAdmin || (adminConformanceCtrl.DataService.isCommunityAdmin && adminConformanceCtrl.DataService.community.domain === null)">{{statement.domainName}}</td>
+				<td>{{statement.specName}}</td>
+				<td>{{statement.actorName}}</td>
+				<td>{{statement.status}}</td>
+				<td align="center"><button class="btn btn-default" ng-click="adminConformanceCtrl.onExportConformanceStatement(statement); $event.stopPropagation();"><i class="fa fa-file-pdf-o"></i></button></td>
+			</tr>
+			<tr ng-if="adminConformanceCtrl.isExpanded(statement)" ng-repeat-end class="conformance-test-cases-row-expanded">
+				<td colspan="8" class="conformance-test-cases-cell">
+					<table class="table table-directive conformance-test-cases-table">
+						<thead>
+							<th width="45%">Test suite</th>
+							<th width="45%">Test case</th>
+							<th>Result</th>
+							<th width="1%">Export</th>
+						</thead>
+						<tbody>
+							<tr ng-repeat="testCase in statement.testCases">
+								<td>{{testCase.testSuiteName}}</td>
+								<td>{{testCase.testCaseName}}</td>
+								<td>{{testCase.result}}</td>
+								<td align="center"><button ng-if="adminConformanceCtrl.showExportTestCase(testCase)" class="btn btn-default" ng-click="adminConformanceCtrl.onExportTestCase(statement, testCase)"><i class="fa fa-file-pdf-o"></i></button></td>
+							</tr>
+						</tbody>
+					</table>
+				</td>
+			</tr>
+			</tbody>
+		</table>
+	</div>
+</div>

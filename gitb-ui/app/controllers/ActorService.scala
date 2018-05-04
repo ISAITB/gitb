@@ -7,7 +7,7 @@ import play.api.mvc.{Action, Controller}
 class ActorService extends Controller {
 
   def deleteActor(actorId: Long) = Action.apply { request =>
-    ActorManager.deleteActor(actorId)
+    ActorManager.deleteActorWrapper(actorId)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -18,7 +18,7 @@ class ActorService extends Controller {
     if (ActorManager.checkActorExistsInSpecification(actor.actorId, specificationId, Some(actorId))) {
       ResponseConstructor.constructBadRequestResponse(500, "An actor with this ID already exists in the specification")
     } else {
-      ActorManager.updateActor(actorId, actor.actorId, actor.name, actor.description)
+      ActorManager.updateActorWrapper(actorId, actor.actorId, actor.name, actor.description)
       ResponseConstructor.constructEmptyResponse
     }
   }
