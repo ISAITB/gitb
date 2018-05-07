@@ -310,7 +310,7 @@ object ReportManager extends BaseManager {
     path
   }
 
-  def getPathForTestSessionObj(testResult: Option[TestResultsTable#TableElementType], isExpected: Boolean)(implicit session: Session): Path = {
+  def getPathForTestSessionObj(sessionId: String, testResult: Option[TestResultsTable#TableElementType], isExpected: Boolean)(implicit session: Session): Path = {
     var startTime: LocalDateTime = null
     if (testResult.isDefined) {
       startTime = testResult.get.startTime.toLocalDateTime()
@@ -324,14 +324,14 @@ object ReportManager extends BaseManager {
       String.valueOf(startTime.getYear),
       String.valueOf(startTime.getMonthValue),
       String.valueOf(startTime.getDayOfMonth),
-      testResult.get.sessionId
+      sessionId
     )
     if (isExpected && !Files.exists(path)) {
       // For backwards compatibility. Lookup session folder directly under status-updates folder
       val otherPath = Paths.get(
         Configurations.TEST_CASE_REPOSITORY_PATH,
         STATUS_UPDATES_PATH,
-        testResult.get.sessionId
+        sessionId
       )
       if (Files.exists(otherPath)) {
         otherPath
@@ -346,7 +346,7 @@ object ReportManager extends BaseManager {
 
   def getPathForTestSession(sessionId: String, isExpected: Boolean)(implicit session: Session): Path = {
     val testResult = PersistenceSchema.testResults.filter(_.testSessionId === sessionId).firstOption
-    getPathForTestSessionObj(testResult, isExpected)
+    getPathForTestSessionObj(sessionId, testResult, isExpected)
   }
 
   def createTestStepReport(sessionId: String, step: TestStepStatus) = {
@@ -571,7 +571,7 @@ object ReportManager extends BaseManager {
                 testCaseOverview.setEndTime(sdf.format(new Date(testResult.endTime.get.getTime)))
               }
               val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.tpl)))
-              val folder = getPathForTestSessionObj(Some(testResult), true).toFile
+              val folder = getPathForTestSessionObj(info.sessionId.get, Some(testResult), true).toFile
               val list = ReportManager.getListOfTestSteps(testcasePresentation, folder)
               for (stepReport <- list) {
                 testCaseOverview.getSteps.add(generator.fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, false))

@@ -102,8 +102,11 @@ public class ObjectType extends DataType {
 
     @Override
     public void deserialize(byte[] content, String encoding) {
-        InputSource inputSource = new InputSource(new BomStrippingReader(new ByteArrayInputStream(content)));
-        inputSource.setEncoding(encoding);
+        InputSource inputSource = null;
+        if (content != null && content.length > 0) {
+            inputSource = new InputSource(new BomStrippingReader(new ByteArrayInputStream(content)));
+            inputSource.setEncoding(encoding);
+        }
         deserialize(inputSource);
     }
 
@@ -112,7 +115,12 @@ public class ObjectType extends DataType {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
             DocumentBuilder builder = factory.newDocumentBuilder();
-            Document document = builder.parse(inputSource);
+            Document document;
+            if (inputSource != null) {
+                document = builder.parse(inputSource);
+            } else {
+                document = builder.newDocument();
+            }
             setValue(document);
         } catch (ParserConfigurationException e) {
             e.printStackTrace();
