@@ -4,20 +4,20 @@ import com.gitb.core.Configuration;
 import com.gitb.core.MessagingModule;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
+import com.gitb.messaging.SecurityUtils;
+import com.gitb.messaging.SessionManager;
 import com.gitb.messaging.layer.AbstractMessagingHandler;
 import com.gitb.messaging.layer.application.http.HttpMessagingHandler;
+import com.gitb.messaging.model.SessionContext;
+import com.gitb.messaging.model.TransactionContext;
 import com.gitb.messaging.model.tcp.ITransactionListener;
 import com.gitb.messaging.model.tcp.ITransactionReceiver;
 import com.gitb.messaging.model.tcp.ITransactionSender;
-import com.gitb.messaging.model.SessionContext;
-import com.gitb.messaging.model.TransactionContext;
 import com.gitb.messaging.utils.MessagingHandlerUtils;
 import com.gitb.utils.ConfigurationUtils;
-
 import org.kohsuke.MetaInfServices;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLContext;
 import java.io.IOException;
 import java.util.List;
 
@@ -26,7 +26,6 @@ import java.util.List;
  */
 @MetaInfServices(IMessagingHandler.class)
 public class SoapMessagingHandler extends AbstractMessagingHandler {
-    private static final Logger logger = LoggerFactory.getLogger(SoapMessagingHandler.class);
 
     public static final String HTTP_HEADERS_FIELD_NAME = HttpMessagingHandler.HTTP_HEADERS_FIELD_NAME;
     public static final String HTTP_PATH_FIELD_NAME = HttpMessagingHandler.HTTP_PATH_FIELD_NAME;
@@ -38,6 +37,7 @@ public class SoapMessagingHandler extends AbstractMessagingHandler {
     public static final String SOAP_ATTACHMENTS_SIZE_FIELD_NAME = "soap_attachments_size";
 
     public static final String HTTP_URI_CONFIG_NAME = HttpMessagingHandler.HTTP_URI_CONFIG_NAME;
+    public static final String HTTP_SSL_CONFIG_NAME = "http.ssl";
 
     public static final String SOAP_CHARACTER_SET_ENCODING_CONFIG_NAME = "soap.encoding";
     public static final String SOAP_VERSION_CONFIG_NAME = "soap.version";
@@ -54,17 +54,47 @@ public class SoapMessagingHandler extends AbstractMessagingHandler {
     private static MessagingModule module = MessagingHandlerUtils.readModuleDefinition(MODULE_DEFINITION_XML);
 
     @Override
+    public void beginTransaction(String sessionId, String transactionId, String from, String to, List<Configuration> configurations) {
+        super.beginTransaction(sessionId, transactionId, from, to, configurations);
+
+        Configuration sslConfig = ConfigurationUtils.getConfiguration(configurations, HTTP_SSL_CONFIG_NAME);
+        if (sslConfig != null && sslConfig.getValue() != null && "true".equalsIgnoreCase(sslConfig.getValue())) {
+            SessionContext sessionContext = SessionManager.getInstance().getSession(sessionId);
+            List<TransactionContext> transactions = sessionContext.getTransactions(transactionId);
+
+            //create an SSLContext and save it to the transaction context
+            SSLContext sslContext = SecurityUtils.createSSLContext();
+
+            for(TransactionContext transactionContext : transactions) {
+                transactionContext.setParameter(SSLContext.class, sslContext);
+            }
+        }
+    }
+
+    @Override
     public MessagingModule getModuleDefinition() {
         return module;
     }
 
     @Override
     public ITransactionReceiver getReceiver(SessionContext sessionContext, TransactionContext transactionContext) throws IOException {
+        if (transactionContext.getConfigurations() != null) {
+            Configuration sslConfig = ConfigurationUtils.getConfiguration(transactionContext.getConfigurations(), HTTP_SSL_CONFIG_NAME);
+            if (sslConfig != null && sslConfig.getValue() != null && "true".equalsIgnoreCase(sslConfig.getValue())) {
+                return new SoapReceiverHTTPS(sessionContext, transactionContext);
+            }
+        }
         return new SoapReceiver(sessionContext, transactionContext);
     }
 
     @Override
     public ITransactionSender getSender(SessionContext sessionContext, TransactionContext transactionContext) {
+        if (transactionContext.getConfigurations() != null) {
+            Configuration sslConfig = ConfigurationUtils.getConfiguration(transactionContext.getConfigurations(), HTTP_SSL_CONFIG_NAME);
+            if (sslConfig != null && sslConfig.getValue() != null && "true".equalsIgnoreCase(sslConfig.getValue())) {
+                return new SoapSenderHTTPS(sessionContext, transactionContext);
+            }
+        }
         return new SoapSender(sessionContext, transactionContext);
     }
 

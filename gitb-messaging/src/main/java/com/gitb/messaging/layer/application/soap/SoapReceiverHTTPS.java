@@ -2,7 +2,7 @@ package com.gitb.messaging.layer.application.soap;
 
 import com.gitb.core.Configuration;
 import com.gitb.messaging.Message;
-import com.gitb.messaging.layer.application.http.HttpReceiver;
+import com.gitb.messaging.layer.application.https.HttpsReceiver;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
 
@@ -11,9 +11,9 @@ import java.util.List;
 /**
  * Created by serbay on 9/23/14.
  */
-public class SoapReceiver extends HttpReceiver {
+public class SoapReceiverHTTPS extends HttpsReceiver {
 
-	public SoapReceiver(SessionContext session, TransactionContext transaction) {
+	public SoapReceiverHTTPS(SessionContext session, TransactionContext transaction) {
 		super(session, transaction);
 	}
 
@@ -23,5 +23,4 @@ public class SoapReceiver extends HttpReceiver {
 		SoapReceiverCore impl = new SoapReceiverCore();
 		return impl.receive(httpMessage, configurations, inputs);
 	}
-
 }

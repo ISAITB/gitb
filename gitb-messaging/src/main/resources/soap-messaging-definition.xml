@@ -24,6 +24,7 @@
 		<param name="network.host" desc="Hostname/IP address for the actor"/>
 		<param name="network.port" desc="Port address for the actor"/>
         <param name="http.uri" use="O" desc="Request URI for Http message">/</param>
+		<param name="http.ssl" use="O" desc="Use HTTPS or HTTP (true for HTTPS)">/</param>
 	</actorConfigs>
     <receiveConfigs>
         <param name="soap.version" use="R" desc="SOAP Version. Can be 1.1 or 1.2" />

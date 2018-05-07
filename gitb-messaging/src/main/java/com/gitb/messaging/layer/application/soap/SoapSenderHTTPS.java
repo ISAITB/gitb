@@ -2,7 +2,7 @@ package com.gitb.messaging.layer.application.soap;
 
 import com.gitb.core.Configuration;
 import com.gitb.messaging.Message;
-import com.gitb.messaging.layer.application.http.HttpSender;
+import com.gitb.messaging.layer.application.https.HttpsSender;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
 import org.slf4j.Logger;
@@ -13,14 +13,11 @@ import java.util.List;
 /**
  * Created by serbay on 9/23/14.
  */
-public class SoapSender extends HttpSender {
+public class SoapSenderHTTPS extends HttpsSender {
 
-	private static final Logger logger = LoggerFactory.getLogger(SoapSender.class);
+	private static final Logger logger = LoggerFactory.getLogger(SoapSenderHTTPS.class);
 
-	public static final String DEFAULT_CHARACTER_SET_ENCODING = "UTF-8";
-	public static final String SOAP_HTTP_METHOD = "POST";
-
-	public SoapSender(SessionContext session, TransactionContext transaction) {
+	public SoapSenderHTTPS(SessionContext session, TransactionContext transaction) {
 		super(session, transaction);
 	}
 
