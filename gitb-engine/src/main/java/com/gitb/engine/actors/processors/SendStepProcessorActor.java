@@ -5,10 +5,12 @@ import akka.actor.ActorRef;
 import akka.dispatch.Futures;
 import akka.dispatch.OnFailure;
 import akka.dispatch.OnSuccess;
+import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.events.model.ErrorStatusEvent;
+import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
 import com.gitb.engine.testcase.TestCaseContext;
@@ -95,6 +97,15 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 			future = Futures.future(new Callable<TestStepReportType>() {
 				@Override
 				public TestStepReportType call() throws Exception {
+
+					VariableResolver resolver = new VariableResolver(scope);
+					if (step.getConfig() != null) {
+						for (Configuration config: step.getConfig()) {
+							if (resolver.isVariableReference(config.getValue())) {
+								config.setValue(resolver.resolveVariableAsString(config.getValue()).toString());
+							}
+						}
+					}
 
 					Message message = getMessageFromBindings(step.getInput());
 

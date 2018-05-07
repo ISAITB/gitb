@@ -1,10 +1,7 @@
 package com.gitb.engine.processors;
 
 import com.gitb.ModuleManager;
-import com.gitb.core.ErrorCode;
-import com.gitb.core.TestModule;
-import com.gitb.core.TypedParameter;
-import com.gitb.core.UsageEnumeration;
+import com.gitb.core.*;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
@@ -55,6 +52,13 @@ public class VerifyProcessor implements IProcessor {
 		VariableResolver resolver = new VariableResolver(scope);
 		if (resolver.isVariableReference(handlerIdentifier)) {
 			handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
+		}
+		if (verify.getConfig() != null) {
+			for (Configuration config: verify.getConfig()) {
+				if (resolver.isVariableReference(config.getValue())) {
+					config.setValue(resolver.resolveVariableAsString(config.getValue()).toString());
+				}
+			}
 		}
 
 		if (isURL(handlerIdentifier)) {

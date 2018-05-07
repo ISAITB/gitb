@@ -5,10 +5,7 @@ import akka.actor.ActorRef;
 import akka.dispatch.Futures;
 import akka.dispatch.OnFailure;
 import akka.dispatch.OnSuccess;
-import com.gitb.core.ErrorCode;
-import com.gitb.core.MessagingModule;
-import com.gitb.core.StepStatus;
-import com.gitb.core.TypedParameter;
+import com.gitb.core.*;
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.expr.resolvers.VariableResolver;
@@ -115,6 +112,15 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 				@Override
 				public TestStepReportType call() throws Exception {
 
+					VariableResolver resolver = new VariableResolver(scope);
+					if (step.getConfig() != null) {
+						for (Configuration config: step.getConfig()) {
+							if (resolver.isVariableReference(config.getValue())) {
+								config.setValue(resolver.resolveVariableAsString(config.getValue()).toString());
+							}
+						}
+					}
+
 					MessagingModule moduleDefinition = messagingHandler.getModuleDefinition();
 					if (moduleDefinition.getReceiveConfigs() != null) {
 						checkRequiredParametersAndSetDefaultValues(moduleDefinition.getReceiveConfigs().getParam(), step.getConfig());
@@ -126,7 +132,6 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 					CallbackManager.getInstance().prepareForCallback(messagingContext.getSessionId(), callId);
 
 					if (!StringUtils.isBlank(step.getTimeout())) {
-                        VariableResolver resolver = new VariableResolver(scope);
                         long timeout;
                         if (resolver.isVariableReference(step.getTimeout())) {
                             timeout = resolver.resolveVariableAsNumber(step.getTimeout()).longValue();
@@ -174,7 +179,6 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 
 							if (step.getTimeout() != null && !StringUtils.isBlank(step.getTimeoutFlag())) {
 								String flagName;
-								VariableResolver resolver = new VariableResolver(scope);
 								if (resolver.isVariableReference(step.getTimeoutFlag())) {
 									flagName = resolver.resolveVariableAsString(step.getTimeoutFlag()).toString();
 								} else {
