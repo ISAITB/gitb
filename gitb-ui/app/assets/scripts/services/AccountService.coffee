@@ -88,4 +88,23 @@ class AccountService
             authenticate: true
         })
 
+    getConfiguration: () ->
+        @RestService.get({
+            path: jsRoutes.controllers.AccountService.getConfiguration().url,
+            authenticate: true
+        })
+
+    submitFeedback: (userId, userEmail, messageTypeId, messageTypeDescription, messageContent) ->
+        data = {}
+        data["GITB-USER-ID"] = userId
+        data["user_email"] = userEmail
+        data["msg_type_id"] = messageTypeId
+        data["msg_type_description"] = messageTypeDescription
+        data["msg_content"] = messageContent
+        @RestService.post({
+            path: jsRoutes.controllers.AccountService.submitFeedback().url,
+            data: data
+            authenticate: true
+        })        
+
 services.service('AccountService', AccountService)

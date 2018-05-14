@@ -27,6 +27,8 @@ POST	/user/register                      @controllers.AccountService.registerUse
 GET	    /user/profile                       @controllers.AccountService.getUserProfile
 GET	    /user/community                     @controllers.CommunityService.getUserCommunity
 POST	/user/profile                       @controllers.AccountService.updateUserProfile
+GET     /user/configuration                 @controllers.AccountService.getConfiguration
+POST    /user/feedback                      @controllers.AccountService.submitFeedback
 
 # System mangement API
 POST	/suts/:sut_id/profile               @controllers.SystemService.updateSystemProfile(sut_id : Long)

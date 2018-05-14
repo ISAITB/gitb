@@ -2,10 +2,10 @@ class IndexController
 	@$inject = [
 		'$log', '$sce', '$scope', '$rootScope', '$location', '$state', '$window'
 		'AuthProvider', 'SystemConfigurationService', 'DataService', 'AccountService',
-		'Events', 'Constants', 'LegalNoticeService', 'HtmlService', 'ErrorService'
+		'Events', 'Constants', 'LegalNoticeService', 'HtmlService', 'ErrorService', '$modal'
 	]
 	constructor: (@$log, @$sce, @$scope, @$rootScope, @$location, @$state, @$window,
-		@AuthProvider, @SystemConfigurationService, @DataService, @AccountService, @Events, @Constants,@LegalNoticeService, @HtmlService, @ErrorService) ->
+		@AuthProvider, @SystemConfigurationService, @DataService, @AccountService, @Events, @Constants,@LegalNoticeService, @HtmlService, @ErrorService, @$modal) ->
 
 		@$log.debug "Constructing MainController..."
 
@@ -29,6 +29,7 @@ class IndexController
 		if @isAuthenticated
 			@getUserProfile()
 			@getVendorProfile()
+			@getConfigurationProperties()
 
 		#register for login events
 		@$rootScope.$on @Events.afterLogin, (event, params) =>
@@ -36,7 +37,19 @@ class IndexController
 			@isAuthenticated = true
 			@getUserProfile()
 			@getVendorProfile()
+			@getConfigurationProperties()
 			@redirect('/')
+
+	getConfigurationProperties : () ->
+		if !@DataService.configuration?
+			@AccountService.getConfiguration()
+			.then(
+				(data) =>
+					@DataService.setConfiguration(data)
+				,
+				(error) =>
+					@ErrorService.showErrorMessage(error)
+			)
 
 	getUserProfile : () ->
 		if !@DataService.user?
@@ -94,6 +107,22 @@ class IndexController
 
 	showLegalNotice: (html) ->
 		@HtmlService.showHtml("Legal Notice", html)
+
+	showContactUs: () ->
+		@DataService.configuration?["email.enabled"] == 'true'
+
+	contactUs: () =>
+		modalOptions =
+			templateUrl: 'assets/views/components/contact-support.html'
+			controller: 'ContactSupportController as ContactSupportController'
+			size: 'lg'
+		modalInstance = @$modal.open(modalOptions)
+
+	showProvideFeedback: () =>
+		!@showContactUs() && (@DataService.configuration?["survey.enabled"] == 'true')
+
+	provideFeedbackLink: () =>
+		@DataService.configuration?["survey.address"]
 
 	onTestsClick: () ->
 		@$window.localStorage['organization'] = angular.toJson @DataService.vendor

@@ -1,11 +1,10 @@
 package controllers
 
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-
-import org.slf4j.{LoggerFactory, Logger}
-import play.api.mvc._
+import config.Configurations
 import controllers.util._
+import org.slf4j.{Logger, LoggerFactory}
 import persistence.AccountManager
+import play.api.mvc._
 import utils.JsonUtil
 
 
@@ -88,4 +87,25 @@ class AccountService extends Controller{
     ResponseConstructor.constructEmptyResponse
   }
 
+  def getConfiguration = Action.apply { request =>
+    val configProperties = new java.util.HashMap[String, String]()
+    configProperties.put("email.enabled", String.valueOf(Configurations.EMAIL_ENABLED))
+    configProperties.put("survey.enabled", String.valueOf(Configurations.SURVEY_ENABLED))
+    configProperties.put("survey.address", String.valueOf(Configurations.SURVEY_ADDRESS))
+    val json = JsonUtil.serializeConfigurationProperties(configProperties)
+    ResponseConstructor.constructJsonResponse(json.toString())
+  }
+
+  def submitFeedback = Action.apply { request =>
+    val userId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_ID).toLong
+    val userEmail:String = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_EMAIL)
+    val messageTypeId: String = ParameterExtractor.requiredBodyParameter(request, Parameters.MESSAGE_TYPE_ID)
+    val messageTypeDescription: String = ParameterExtractor.requiredBodyParameter(request, Parameters.MESSAGE_TYPE_DESCRIPTION)
+    val messageContent: String = ParameterExtractor.requiredBodyParameter(request, Parameters.MESSAGE_CONTENT)
+
+    if (Configurations.EMAIL_ENABLED) {
+      AccountManager.submitFeedback(userId, userEmail, messageTypeId, messageTypeDescription, messageContent)
+    }
+    ResponseConstructor.constructEmptyResponse
+  }
 }

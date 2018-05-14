@@ -74,7 +74,7 @@ object CommunityManager extends BaseManager {
   /**
    * Update community
    */
-  def updateCommunity(communityId: Long, shortName: String, fullName: String, domainId: Option[Long]) = {
+  def updateCommunity(communityId: Long, shortName: String, fullName: String, supportEmail: Option[String], domainId: Option[Long]) = {
     DB.withTransaction { implicit session =>
       val community = PersistenceSchema.communities.filter(_.id === communityId).firstOption
 
@@ -90,6 +90,8 @@ object CommunityManager extends BaseManager {
           val q = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.fullname)
           q.update(fullName)
         }
+        val qs = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.supportEmail)
+        qs.update(supportEmail)
 
         val q = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.domain)
         q.update(domainId)

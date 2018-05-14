@@ -19,8 +19,10 @@ class CommunityCreateController
   createCommunity: () =>
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@community.sname, "Please enter short name of the community.") &
-    @ValidationService.requireNonNull(@community.fname, "Please enter full name of the community.")
-      @CommunityService.createCommunity @community.sname, @community.fname, @community.domain?.id
+    @ValidationService.requireNonNull(@community.fname, "Please enter full name of the community.") &
+    (!(@community.email? && @community.email.trim() != '') || @ValidationService.validateEmail(@community.email, "Please enter a valid support email."))
+
+      @CommunityService.createCommunity @community.sname, @community.fname, @community.email, @community.domain?.id
       .then () =>
         @cancelCreateCommunity()
       .catch (error) =>

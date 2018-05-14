@@ -17,6 +17,10 @@
           '<label class="col-sm-3 control-label" for="role">Domain:</label>'+
           '<div class="col-sm-8"><select class="form-control" ng-model="tbCommunity.domain" ng-options="domain.sname for domain in tbDomains track by domain.id"><option value="">--Optional--</option></select></div>'+
         '</div>'+
+        '<div class="form-group">'+
+          '<label class="col-sm-3 control-label" for="email">Support email:</label>'+
+          '<div class="col-sm-8"><input id="email" ng-model="tbCommunity.email" class="form-control" type="text"></div>'+
+        '</div>'+
       '</form>'
     restrict: 'A'
 ]

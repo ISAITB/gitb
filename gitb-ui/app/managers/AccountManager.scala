@@ -1,13 +1,15 @@
 package persistence
 
+import config.Configurations
 import exceptions._
-import managers.BaseManager
+import managers.{BaseManager, CommunityManager, OrganizationManager}
 import models.Enums.UserRole.UserRole
 import models.Enums._
 import models._
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
+import utils.EmailUtil
 
 import scala.slick.driver.MySQLDriver.simple._
 
@@ -138,5 +140,34 @@ object AccountManager extends BaseManager {
 
       option.isDefined && (roles.map(r => r.id.toShort) contains option.get.role)
     }
+  }
+
+  def submitFeedback(userId:Long, userEmail: String, messageTypeId: String, messageTypeDescription: String, messageContent: String): Unit = {
+    val user = getUserProfile(userId)
+    var community: Community = null
+    if (user.organization.isDefined) {
+      community = CommunityManager.getCommunityById(user.organization.get.community)
+    }
+
+    val subject = "Feedback form submission"
+    var content = "<h2>Message information</h2>"
+    var toAddresses:Array[String] = Configurations.EMAIL_TO
+    var ccAddresses:Array[String] = null
+    content += "<b>User:</b> " + user.id + " - " + user.name + " ["+userEmail+"]<br/>"
+    if (user.organization.isDefined) {
+      content += "<b>Organisation:</b> " + user.organization.get.id + " - " + user.organization.get.fullname + "<br/>"
+    }
+    if (community != null) {
+      content += "<b>Community:</b> " + community.id + " - " + community.fullname + "<br/>"
+      if (community.supportEmail.isDefined) {
+        toAddresses = Array[String] (community.supportEmail.get)
+        ccAddresses = Configurations.EMAIL_TO
+      }
+    }
+    content += "<b>Message type:</b> "+messageTypeId+" - "+messageTypeDescription+"<br/>"
+    content += "<h2>Message content</h2>"
+    content += "<p>"+messageContent+"</p>"
+
+    EmailUtil.sendEmail(Configurations.EMAIL_FROM, toAddresses, ccAddresses, subject, content, Configurations.SMTP_PROPERTIES, Configurations.EMAIL_SMTP_AUTH_USERNAME, Configurations.EMAIL_SMTP_AUTH_PASSWORD)
   }
 }

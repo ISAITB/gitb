@@ -15,8 +15,9 @@ object PersistenceSchema {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
+    def supportEmail = column[Option[String]] ("support_email")
     def domain = column[Option[Long]] ("domain", O.Nullable)
-    def * = (id, shortname, fullname, domain) <> (Communities.tupled, Communities.unapply)
+    def * = (id, shortname, fullname, supportEmail, domain) <> (Communities.tupled, Communities.unapply)
   }
   val communities = TableQuery[CommunitiesTable]
   val insertCommunity = (communities returning communities.map(_.id))

@@ -218,6 +218,7 @@ object JsonUtil {
       "id"    -> community.id,
       "sname" -> community.shortname,
       "fname" -> community.fullname,
+      "email" -> community.supportEmail,
       "domainId" -> community.domain
     )
     json
@@ -709,6 +710,15 @@ object JsonUtil {
     }
     //3) Return JSON String
     jUser.toString
+  }
+
+  def serializeConfigurationProperties(config: util.HashMap[String, String]):JsObject = {
+    val json = Json.obj(
+      "email.enabled" -> config.get("email.enabled"),
+      "survey.enabled" -> config.get("survey.enabled"),
+      "survey.address" -> config.get("survey.address")
+    )
+    json
   }
 
   def serializeSystemConfig(sc:SystemConfiguration):String = {

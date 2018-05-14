@@ -45,8 +45,9 @@ class CommunityService extends Controller{
   def updateCommunity(communityId: Long) = Action.apply { request =>
     val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
     val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
+    val email = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_EMAIL)
     val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    CommunityManager.updateCommunity(communityId, shortName, fullName, domainId)
+    CommunityManager.updateCommunity(communityId, shortName, fullName, email, domainId)
     ResponseConstructor.constructEmptyResponse
   }
 

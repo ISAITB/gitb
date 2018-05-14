@@ -83,8 +83,9 @@ object ParameterExtractor {
   def extractCommunityInfo(request:Request[AnyContent]):Communities = {
     val sname = requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
     val fname = requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
+    val email = optionalBodyParameter(request, Parameters.COMMUNITY_EMAIL)
     val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    Communities(0L, sname, fname, domainId)
+    Communities(0L, sname, fname, email, domainId)
   }
 
   def extractSystemAdminInfo(request:Request[AnyContent]):Users = {

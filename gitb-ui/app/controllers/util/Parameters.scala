@@ -88,6 +88,7 @@ object Parameters {
   val COMMUNITY_ID = "community_id"
   val COMMUNITY_SNAME = "community_sname"
   val COMMUNITY_FNAME = "community_fname"
+  val COMMUNITY_EMAIL = "community_email"
 
   //TestService parameters
   val ACTOR_ID   = "actor_id"
@@ -106,4 +107,8 @@ object Parameters {
   val FILE       = "file"
 	val LIMIT      = "limit"
 	val PAGE       = "page"
+
+  val MESSAGE_TYPE_ID = "msg_type_id"
+  val MESSAGE_TYPE_DESCRIPTION = "msg_type_description"
+  val MESSAGE_CONTENT = "msg_content"
 }

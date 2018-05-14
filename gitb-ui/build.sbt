@@ -47,7 +47,9 @@ libraryDependencies ++= Seq(
   "org.webjars" % "font-awesome" % "4.1.0" exclude("org.webjars", "jquery"),
   "org.webjars" % "angular-file-upload" % "1.6.12",
   "org.webjars" % "codemirror" % "4.8",
-  "org.webjars" % "tinymce" % "4.2.1"
+  "org.webjars" % "tinymce" % "4.2.1",
+  "javax.mail" % "mail" % "1.4.7",
+  "javax.activation" % "activation" % "1.1.1"
 )
 
 libraryDependencies += "com.github.tototoshi" %% "play-flyway" % "1.2.2"

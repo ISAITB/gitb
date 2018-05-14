@@ -13,6 +13,7 @@ class DataService
 		@user = undefined
 		@vendor = undefined
 		@community = undefined
+		@configuration = undefined
 		@isSystemAdmin = false
 		@isVendorUser = false
 		@isCommunityAdmin = false
@@ -26,6 +27,9 @@ class DataService
 		@isDomainUser  = (@user.role == @Constants.USER_DOMAIN_USER)
 		@isSystemAdmin = (@user.role == @Constants.USER_ROLE.SYSTEM_ADMIN)
 		@isCommunityAdmin = (@user.role == @Constants.USER_ROLE.COMMUNITY_ADMIN)
+
+	setConfiguration: (config) ->
+		@configuration = config
 
 	setVendor: (vendor) ->
 		@vendor = vendor
