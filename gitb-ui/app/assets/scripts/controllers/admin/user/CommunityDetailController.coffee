@@ -124,7 +124,10 @@ class CommunityDetailController
     (!(@community.email? && @community.email.trim() != '') || @ValidationService.validateEmail(@community.email, "Please enter a valid support email."))
       @CommunityService.updateCommunity(@communityId, @community.sname, @community.fname, @community.email, @community.domain?.id)
       .then () =>
-        @cancelCommunityDetail()
+        if @DataService.isSystemAdmin
+          @cancelCommunityDetail()
+        else
+          @$state.go(@$state.$current, null, { reload: true });
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
     else
@@ -143,7 +146,7 @@ class CommunityDetailController
     @$state.go 'app.admin.users.communities.detail.organizations.detail.list', { org_id : organization.id }
 
   isDefaultCommunity: () =>
-    @communityId == @Constants.DEFAULT_COMMUNITY_ID
+    (@communityId+'' == @Constants.DEFAULT_COMMUNITY_ID+'')
 
   landingPageSelect: (landingPage) =>
     @$state.go 'app.admin.users.communities.detail.landingpages.detail', { page_id : landingPage.id }

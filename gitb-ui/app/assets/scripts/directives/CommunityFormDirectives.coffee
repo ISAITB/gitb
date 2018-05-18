@@ -3,6 +3,7 @@
     scope:
       tbCommunity: '='
       tbDomains: '='
+      tbAdmin: '='
     template: ''+
       '<form class="form-horizontal" ng-submit="submit()">'+
         '<div class="form-group">'+
@@ -13,14 +14,17 @@
           '<label class="col-sm-3 control-label" for="fname">* Full name:</label>'+
           '<div class="col-sm-8"><input id="fname" ng-model="tbCommunity.fname" class="form-control" type="text" required></div>'+
         '</div>'+
-        '<div class="form-group">'+
+        '<div class="form-group" ng-if="tbAdmin">'+
           '<label class="col-sm-3 control-label" for="role">Domain:</label>'+
-          '<div class="col-sm-8"><select class="form-control" ng-model="tbCommunity.domain" ng-options="domain.sname for domain in tbDomains track by domain.id"><option value="">--Optional--</option></select></div>'+
+          '<div class="col-sm-8">'+
+            '<select class="form-control" ng-model="tbCommunity.domain" ng-options="domain.sname for domain in tbDomains track by domain.id"><option value="">--Optional--</option></select>'+
+          '</div>'+
         '</div>'+
         '<div class="form-group">'+
           '<label class="col-sm-3 control-label" for="email">Support email:</label>'+
           '<div class="col-sm-8"><input id="email" ng-model="tbCommunity.email" class="form-control" type="text"></div>'+
         '</div>'+
+        '<input id="domain" ng-if="!tbAdmin" ng-model="tbCommunity.domain" type="hidden">'+
       '</form>'
     restrict: 'A'
 ]
