@@ -103,7 +103,7 @@ with GlobalSettings {
   }
 
   def cleanupTempReports() = {
-    Akka.system.scheduler.schedule(0.minutes, 1.minutes) {
+    Akka.system.scheduler.schedule(0.minutes, 5.minutes) {
       val tempFolder = ReportManager.getTempFolderPath().toFile
       if (tempFolder.exists() && tempFolder.isDirectory) {
         for (file <- tempFolder.listFiles()) {
