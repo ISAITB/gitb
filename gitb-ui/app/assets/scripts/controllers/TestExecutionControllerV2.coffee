@@ -470,15 +470,16 @@ class TestExecutionControllerV2
     @started = true
     @firstTestStarted = true
     @startAutomatically = true
-    @ReportService.createTestReport(session, @systemId, @actorId, @currentTest.id)
-    @TestService.start(session)
-    .then(
-      (data) =>
-        @$log.debug data
-      ,
-      (error) =>
-        @ErrorService.showErrorMessage(error).result.then () =>
-          @$state.go @$state.current, {}, {reload: true}
+    @ReportService.createTestReport(session, @systemId, @actorId, @currentTest.id).then(() =>
+      @TestService.start(session)
+      .then(
+        (data) =>
+          @$log.debug data
+        ,
+        (error) =>
+          @ErrorService.showErrorMessage(error).result.then () =>
+            @$state.go @$state.current, {}, {reload: true}
+      )
     )
 
   stop: (session) =>

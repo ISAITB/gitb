@@ -274,6 +274,8 @@ object ReportManager extends BaseManager {
         // Update also the conformance results for the system
         val q1 = for {c <- PersistenceSchema.conformanceResults if c.sut === systemId && c.testcase === testCase.id} yield (c.testsession)
         q1.update(Some(sessionId))
+        val q2 = for {c <- PersistenceSchema.conformanceResults if c.sut === systemId && c.testcase === testCase.id} yield (c.result)
+        q2.update(initialStatus)
     }
   }
 
@@ -294,8 +296,13 @@ object ReportManager extends BaseManager {
   def setEndTimeNow(sessionId: String) = {
     DB.withTransaction {
       implicit session =>
-        val q = for {t <- PersistenceSchema.testResults if t.testSessionId === sessionId} yield (t.endTime)
-        q.update(Some(TimeUtil.getCurrentTimestamp()))
+        val testSession = PersistenceSchema.testResults.filter(_.testSessionId === sessionId).firstOption
+        if (testSession.isDefined) {
+          val q = for {t <- PersistenceSchema.testResults if t.testSessionId === sessionId} yield (t.endTime)
+          q.update(Some(TimeUtil.getCurrentTimestamp()))
+          val q1 = for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield (c.result)
+          q1.update(testSession.get.result)
+        }
     }
   }
 
