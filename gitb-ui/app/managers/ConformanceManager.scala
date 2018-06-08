@@ -144,12 +144,20 @@ object ConformanceManager extends BaseManager {
 		}
 	}
 
+	def deleteDomainParameters(domainId: Long)(implicit session: Session) = {
+		val ids = PersistenceSchema.domainParameters.filter(_.domain === domainId).map(_.id).list
+		ids foreach { id =>
+			deleteDomainParameter(id)
+		}
+	}
+
 	def deleteDomain(domain: Long) {
 		DB.withTransaction { implicit session =>
 			ActorManager.deleteActorByDomain(domain)
 			SpecificationManager.deleteSpecificationByDomain(domain)
 			TransactionManager.deleteTransactionByDomain(domain)
 			TestResultManager.updateForDeletedDomain(domain)
+			deleteDomainParameters(domain)
 			PersistenceSchema.domains.filter(_.id === domain).delete
 			RepositoryUtils.deleteDomainTestSuiteFolder(domain)
 		}
