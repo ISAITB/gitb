@@ -36,7 +36,7 @@ object OrganizationManager extends BaseManager {
    */
   def getOrganizationsByCommunity(communityId: Long): List[Organizations] = {
     DB.withSession { implicit session =>
-      val organizations = PersistenceSchema.organizations.filter(_.shortname =!= Constants.AdminOrganizationName).filter(_.community === communityId).list
+      val organizations = PersistenceSchema.organizations.filter(_.adminOrganization === false).filter(_.community === communityId).list
       organizations
     }
   }
