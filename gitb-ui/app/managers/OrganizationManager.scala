@@ -99,12 +99,12 @@ object OrganizationManager extends BaseManager {
    * Deletes organization by community
    */
   def deleteOrganizationByCommunity(communityId: Long)(implicit session: Session) = {
+    TestResultManager.updateForDeletedOrganisationByCommunityId(communityId)
     val list = PersistenceSchema.organizations.filter(_.community === communityId).list
     list foreach { org =>
       UserManager.deleteUserByOrganization(org.id)
       SystemManager.deleteSystemByOrganization(org.id)
       PersistenceSchema.organizations.filter(_.community === communityId).delete
-      TestResultManager.updateForDeletedOrganisationByCommunityId(communityId)
     }
   }
 
