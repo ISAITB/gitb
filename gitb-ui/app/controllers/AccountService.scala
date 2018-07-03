@@ -92,6 +92,10 @@ class AccountService extends Controller{
     configProperties.put("email.enabled", String.valueOf(Configurations.EMAIL_ENABLED))
     configProperties.put("survey.enabled", String.valueOf(Configurations.SURVEY_ENABLED))
     configProperties.put("survey.address", String.valueOf(Configurations.SURVEY_ADDRESS))
+    configProperties.put("userguide.ou", String.valueOf(Configurations.USERGUIDE_OU))
+    configProperties.put("userguide.oa", String.valueOf(Configurations.USERGUIDE_OA))
+    configProperties.put("userguide.ta", String.valueOf(Configurations.USERGUIDE_TA))
+    configProperties.put("userguide.ca", String.valueOf(Configurations.USERGUIDE_CA))
     val json = JsonUtil.serializeConfigurationProperties(configProperties)
     ResponseConstructor.constructJsonResponse(json.toString())
   }

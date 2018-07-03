@@ -716,7 +716,11 @@ object JsonUtil {
     val json = Json.obj(
       "email.enabled" -> config.get("email.enabled"),
       "survey.enabled" -> config.get("survey.enabled"),
-      "survey.address" -> config.get("survey.address")
+      "survey.address" -> config.get("survey.address"),
+      "userguide.ou" -> config.get("userguide.ou"),
+      "userguide.oa" -> config.get("userguide.oa"),
+      "userguide.ca" -> config.get("userguide.ca"),
+      "userguide.ta" -> config.get("userguide.ta")
     )
     json
   }

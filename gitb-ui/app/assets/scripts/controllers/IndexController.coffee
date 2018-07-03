@@ -128,6 +128,19 @@ class IndexController
 	provideFeedbackLink: () =>
 		@DataService.configuration?["survey.address"]
 
+	userGuideLink: () =>
+		if @DataService.isVendorAdmin
+			@DataService.configuration['userguide.oa']
+		else if @DataService.isCommunityAdmin
+			@DataService.configuration['userguide.ca']
+		else if @DataService.isSystemAdmin
+			@DataService.configuration['userguide.ta']
+		else
+			@DataService.configuration['userguide.ou']
+
+	showUserGuide: () =>
+		@DataService.user?
+
 	onTestsClick: () ->
 		@$window.localStorage['organization'] = angular.toJson @DataService.vendor
 		@$window.localStorage['community'] = angular.toJson @DataService.community

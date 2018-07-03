@@ -50,6 +50,11 @@ object Configurations {
   var SURVEY_ENABLED = false
   var SURVEY_ADDRESS = ""
 
+  var USERGUIDE_OU = ""
+  var USERGUIDE_OA = ""
+  var USERGUIDE_TA = ""
+  var USERGUIDE_CA = ""
+
   var SMTP_PROPERTIES = new Properties()
 
   def loadConfigurations() = {
@@ -106,6 +111,12 @@ object Configurations {
 
     SURVEY_ENABLED = fromEnv("SURVEY_ENABLED", conf.getString("survey.enabled")).toBoolean
     SURVEY_ADDRESS = fromEnv("SURVEY_ADDRESS", conf.getString("survey.address"))
+
+    USERGUIDE_OU = fromEnv("USERGUIDE_OU", conf.getString("userguide.ou"))
+    USERGUIDE_OA = fromEnv("USERGUIDE_OA", conf.getString("userguide.oa"))
+    USERGUIDE_CA = fromEnv("USERGUIDE_CA", conf.getString("userguide.ca"))
+    USERGUIDE_TA = fromEnv("USERGUIDE_TA", conf.getString("userguide.ta"))
+
   }
 
   def fromEnv(propertyName: String, default: String): String = {
