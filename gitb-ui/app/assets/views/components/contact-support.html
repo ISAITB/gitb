@@ -25,11 +25,16 @@
             </div>
         </div>
         <div class="form-group" ng-if="showSurveyLink()">
-            <div class="col-sm-offset-1 col-sm-10 bg-info">
+            <div class="col-sm-offset-1 col-sm-10 bg-info div-rounded">
                 <p class="form-control-static">If you have 10 minutes to spare we would much appreciate if you would complete our feedback survey. Click <a ng-href="{{surveyAddress}}" target="blank">here</a> to open the survey in a separate window and start.</p>
             </div>
         </div>
-    </form>
+        <div class="form-group">
+                <div class="col-sm-offset-1 col-sm-10 bg-info div-rounded">
+                    <p class="form-control-static"><b>Privacy note:</b> The information you provide is treated by the test bed support team and is never shared to other parties. The 'Contact email' you provide is used only to receive a response from the support team. Please refer to the legal notice (link available in the screen's footer) for more information.</p>
+                </div>
+            </div>
+        </form>
 </div>
 <div class="modal-footer">
     <button class="btn btn-default" ng-click="send()" ng-disabled="sendDisabled()"><span class="tab" ng-if="sendPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Send feedback</button>
