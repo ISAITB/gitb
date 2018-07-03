@@ -16,13 +16,21 @@ class CorsFilter extends EssentialFilter {
 
   def apply(next: EssentialAction) = new EssentialAction {
     def apply(requestHeader: RequestHeader) = {
-      next(requestHeader).map { result =>
-        result.withHeaders(
-          ACCESS_CONTROL_ALLOW_ORIGIN   -> CorsFilter.origin,
-          PRAGMA -> "no-cache",
-          EXPIRES -> "-1",
-          CACHE_CONTROL -> "no-cache"
-        )
+      if (requestHeader.path.contains("font-awesome") || requestHeader.path.contains("fontawesome")) {
+        next(requestHeader).map { result =>
+          result.withHeaders(
+            ACCESS_CONTROL_ALLOW_ORIGIN   -> CorsFilter.origin
+          )
+        }
+      } else {
+        next(requestHeader).map { result =>
+          result.withHeaders(
+            ACCESS_CONTROL_ALLOW_ORIGIN   -> CorsFilter.origin,
+            PRAGMA -> "no-cache",
+            EXPIRES -> "-1",
+            CACHE_CONTROL -> "no-cache"
+          )
+        }
       }
     }
   }
