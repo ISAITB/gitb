@@ -1546,7 +1546,19 @@ footer a {
 	margin-top: 20px;
 }
 
+footer a:link {
+	color: #FFF;
+}
+
 footer a:hover {
+	color: #FFF;
+}
+
+footer a:visited {
+	color: #FFF;
+}
+
+footer a:active {
 	color: #FFF;
 }
 
