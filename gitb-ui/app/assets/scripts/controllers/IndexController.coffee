@@ -88,22 +88,26 @@ class IndexController
 			html = @$sce.trustAsHtml(vendor.legalNotices.content)
 			@showLegalNotice(html)
 		else
-		    @LegalNoticeService.getCommunityDefaultLegalNotice(vendor.community)
-            .then (data) =>
-              if data.exists == true
-                html = @$sce.trustAsHtml(data.content)
-                @showLegalNotice(html)
-              else
-                if vendor.community != @Constants.DEFAULT_COMMUNITY_ID
-                  @LegalNoticeService.getCommunityDefaultLegalNotice(@Constants.DEFAULT_COMMUNITY_ID)
-                  .then (data) =>
-                    if data.exists == true
-                      html = @$sce.trustAsHtml(data.content)
-                      @showLegalNotice(html)
-                  .catch (error) =>
-                    @ErrorService.showErrorMessage(error)
-            .catch (error) =>
-              @ErrorService.showErrorMessage(error)
+			if vendor?
+				communityId = vendor.community
+			else 
+				communityId = @Constants.DEFAULT_COMMUNITY_ID
+			@LegalNoticeService.getCommunityDefaultLegalNotice(communityId)
+			.then (data) =>
+				if data.exists == true
+					html = @$sce.trustAsHtml(data.content)
+					@showLegalNotice(html)
+				else
+					if vendor? && (vendor.community != @Constants.DEFAULT_COMMUNITY_ID)
+						@LegalNoticeService.getCommunityDefaultLegalNotice(@Constants.DEFAULT_COMMUNITY_ID)
+						.then (data) =>
+							if data.exists == true
+								html = @$sce.trustAsHtml(data.content)
+								@showLegalNotice(html)
+						.catch (error) =>
+							@ErrorService.showErrorMessage(error)
+			.catch (error) =>
+				@ErrorService.showErrorMessage(error)
 
 	showLegalNotice: (html) ->
 		@HtmlService.showHtml("Legal Notice", html)
