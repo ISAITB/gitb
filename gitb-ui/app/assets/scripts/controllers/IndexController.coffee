@@ -129,14 +129,15 @@ class IndexController
 		@DataService.configuration?["survey.address"]
 
 	userGuideLink: () =>
-		if @DataService.isVendorAdmin
-			@DataService.configuration['userguide.oa']
-		else if @DataService.isCommunityAdmin
-			@DataService.configuration['userguide.ca']
-		else if @DataService.isSystemAdmin
-			@DataService.configuration['userguide.ta']
-		else
-			@DataService.configuration['userguide.ou']
+		if (@DataService.configuration?)
+			if @DataService.isVendorAdmin
+				@DataService.configuration['userguide.oa']
+			else if @DataService.isCommunityAdmin
+				@DataService.configuration['userguide.ca']
+			else if @DataService.isSystemAdmin
+				@DataService.configuration['userguide.ta']
+			else
+				@DataService.configuration['userguide.ou']
 
 	showUserGuide: () =>
 		@DataService.user?
