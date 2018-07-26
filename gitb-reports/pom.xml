@@ -28,9 +28,8 @@
             <version>6.0.0</version>
         </dependency>
         <dependency>
-            <groupId>com.gitb</groupId>
+            <groupId>eu.europa.ec.itb</groupId>
             <artifactId>gitb-types</artifactId>
-            <version>1.1.0</version>
         </dependency>
     </dependencies>
 
