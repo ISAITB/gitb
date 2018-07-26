@@ -14,7 +14,6 @@
         <dependency>
             <groupId>eu.europa.ec.itb</groupId>
             <artifactId>gitb-types</artifactId>
-            <version>1.4.0</version>
         </dependency>
 		<dependency>
 			<groupId>commons-io</groupId>

@@ -41,6 +41,16 @@
         </plugins>
     </build>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>eu.europa.ec.itb</groupId>
+                <artifactId>gitb-types</artifactId>
+                <version>1.4.0</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <modules>
         <module>gitb-core</module>
         <module>gitb-engine</module>
