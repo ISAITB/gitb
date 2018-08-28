@@ -62,4 +62,15 @@ public class MapType extends ContainerType {
         return this.elements.size();
     }
 
+    @Override
+    public MapType toMapType() {
+        MapType map = new MapType();
+        if (elements != null) {
+            for (Map.Entry<String, DataType> entry: elements.entrySet()) {
+                map.addItem(entry.getKey(), entry.getValue());
+            }
+        }
+        return map;
+    }
+
 }
