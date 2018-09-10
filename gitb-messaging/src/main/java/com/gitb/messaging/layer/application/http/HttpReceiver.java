@@ -3,6 +3,7 @@ package com.gitb.messaging.layer.application.http;
 import com.gitb.core.Configuration;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.Message;
+import com.gitb.messaging.SecurityUtils;
 import com.gitb.messaging.layer.AbstractTransactionReceiver;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
@@ -20,6 +21,8 @@ import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.List;
@@ -59,6 +62,14 @@ public class HttpReceiver extends AbstractTransactionReceiver {
         //below code blocks until a socket is created
         if(socket == null){
             waitUntilMessageReceived();
+        }
+
+        if (transaction.getParameter(SSLContext.class) != null) {
+            //secure this socket if it is not SSL secured
+            if(!(socket instanceof SSLSocket)) {//no need to create if we already have one
+                socket = SecurityUtils.secureSocket(transaction, socket);
+                ((SSLSocket) socket).setUseClientMode(false); //do not use client mode for handshaking since it is a server socket
+            }
         }
 
         //use the connection retrieved from the transaction

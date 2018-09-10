@@ -26,6 +26,10 @@ import org.apache.http.protocol.HTTP;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLSocket;
+import java.net.InetAddress;
 import java.net.Socket;
 import java.nio.charset.Charset;
 import java.util.HashMap;
@@ -62,6 +66,26 @@ public class HttpSender extends AbstractTransactionSender {
 
     @Override
     public Message send(List<Configuration> configurations, Message message) throws Exception {
+        //use the socket retrieved from the transaction
+        Socket socket = getSocket();
+
+        //secure this socket if it is not SSL secured
+        if (transaction.getParameter(SSLContext.class) != null) {
+            if(!(socket instanceof SSLSocket)) { //no need to create if we already have one
+                SSLContext sslContext = transaction.getParameter(SSLContext.class);
+
+                ActorConfiguration actorConfiguration = transaction.getWith();
+                Configuration ipAddressConfig = ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.IP_ADDRESS_CONFIG_NAME);
+                Configuration portConfig = ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.PORT_CONFIG_NAME);
+
+                SocketFactory sf = sslContext.getSocketFactory();
+                socket = sf.createSocket(InetAddress.getByName(ipAddressConfig.getValue()),
+                        Integer.parseInt(portConfig.getValue()));
+
+                transaction.setParameter(Socket.class, socket);
+            }
+        }
+
         //this ensures that a socket is created and saved into the transaction
         super.send(configurations, message);
 
@@ -70,8 +94,7 @@ public class HttpSender extends AbstractTransactionSender {
 
         //if the connection is null, that means transaction has just begun, so create new
         if (connection == null) {
-            Socket socket = getSocket(); //socket retrieved from the transaction
-            connection = httpConnectionFactory.createConnection(getSocket());
+            connection = httpConnectionFactory.createConnection(socket);
             transaction.setParameter(BHttpConnectionBase.class, connection);
         }
 
