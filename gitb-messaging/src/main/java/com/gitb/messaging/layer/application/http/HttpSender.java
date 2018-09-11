@@ -2,20 +2,21 @@ package com.gitb.messaging.layer.application.http;
 
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.Configuration;
-import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.ServerUtils;
 import com.gitb.messaging.layer.AbstractTransactionSender;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
-import com.gitb.types.BinaryType;
-import com.gitb.types.DataType;
-import com.gitb.types.MapType;
-import com.gitb.types.StringType;
+import com.gitb.types.*;
 import com.gitb.utils.ConfigurationUtils;
-import org.apache.http.*;
+import org.apache.http.HttpConnectionFactory;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpStatus;
+import org.apache.http.HttpVersion;
 import org.apache.http.config.ConnectionConfig;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.MultipartEntityBuilder;
 import org.apache.http.impl.BHttpConnectionBase;
 import org.apache.http.impl.DefaultBHttpClientConnection;
 import org.apache.http.impl.DefaultBHttpClientConnectionFactory;
@@ -94,7 +95,7 @@ public class HttpSender extends AbstractTransactionSender {
 
         //if the connection is null, that means transaction has just begun, so create new
         if (connection == null) {
-            connection = httpConnectionFactory.createConnection(socket);
+            connection = httpConnectionFactory.createConnection(getSocket());
             transaction.setParameter(BHttpConnectionBase.class, connection);
         }
 
@@ -144,19 +145,54 @@ public class HttpSender extends AbstractTransactionSender {
         String method = getHttpMethod(configurations, message);
         String path = getHttpPath(configurations, message);
         Map<String, String> headers = getHttpHeaders(message);
-        byte[] messageContent = getHttpBody(message);
 
         BasicHttpEntityEnclosingRequest request = new BasicHttpEntityEnclosingRequest(method, path);
 
+        byte[] messageContent = getHttpBody(message);
         if (messageContent != null) {
             ByteArrayEntity entity = new ByteArrayEntity(messageContent);
-
             request.setEntity(entity);
-
             request.addHeader(entity.getContentEncoding());
             request.addHeader(entity.getContentType());
             request.addHeader(HTTP.CONTENT_LEN, String.valueOf(entity.getContentLength()));
             request.addHeader(HTTP.TARGET_HOST, getHost() + ":" + getPort());
+        } else {
+            ListType partInput = (ListType) message.getFragments().get(HttpMessagingHandler.HTTP_PARTS_FIELD_NAME);
+            if (partInput != null) {
+                // Send the request as a multipart request.
+                if (!partInput.isEmpty() && "map".equals(partInput.getContainedType())) {
+                    List<MapType> parts = (List<MapType>) partInput.getValue();
+                    MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create();
+                    for (MapType partInfo: parts) {
+                        String name = (String)(partInfo.getItem("name")).getValue();
+                        StringType fileName = (StringType)partInfo.getItem("file_name");
+                        DataType content = partInfo.getItem("content");
+                        if (fileName == null) {
+                            // Text part.
+                            if (!(content instanceof StringType)) {
+                                content = content.convertTo(DataType.STRING_DATA_TYPE);
+                            }
+                            entityBuilder.addTextBody(name, (String)content.getValue());
+                        } else {
+                            // Binary/File part.
+                            String fileNameValue = (String)(fileName).getValue();
+                            String contentType = (String)(partInfo.getItem("content_type")).getValue();
+                            if (!(content instanceof BinaryType)) {
+                                content = content.convertTo(DataType.BINARY_DATA_TYPE);
+                            }
+                            entityBuilder.addBinaryBody(name, (byte[])content.getValue(), ContentType.getByMimeType(contentType), fileNameValue);
+                        }
+                    }
+                    HttpEntity entity = entityBuilder.build();
+                    request.setEntity(entity);
+                    request.addHeader(entity.getContentEncoding());
+                    request.addHeader(entity.getContentType());
+                    request.addHeader(HTTP.CONTENT_LEN, String.valueOf(entity.getContentLength()));
+                    request.addHeader(HTTP.TARGET_HOST, getHost() + ":" + getPort());
+                } else {
+                    logger.warn("Input for " + HttpMessagingHandler.HTTP_PARTS_FIELD_NAME + " must contain map items");
+                }
+            }
         }
 
         for (Map.Entry<String, String> entry : headers.entrySet()) {

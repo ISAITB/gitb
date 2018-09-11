@@ -27,6 +27,7 @@ public class HttpMessagingHandler extends AbstractMessagingHandler {
 
 	public static final String HTTP_HEADERS_FIELD_NAME = "http_headers";
 	public static final String HTTP_BODY_FIELD_NAME = "http_body";
+	public static final String HTTP_PARTS_FIELD_NAME = "http_parts";
 	public static final String HTTP_METHOD_FIELD_NAME = "http_method";
 	public static final String HTTP_PATH_FIELD_NAME = "http_path";
     public static final String HTTP_PROTOCOL_VERSION_FIELD_NAME = "http_version";
