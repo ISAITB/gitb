@@ -14,7 +14,10 @@ import com.gitb.utils.ConfigurationUtils;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -93,9 +96,13 @@ public class SessionManager {
 		}
 	}
 
-	private InetAddress extractInetAddress(ActorConfiguration actorConfiguration) throws UnknownHostException {
+	private InetAddress extractInetAddress(ActorConfiguration actorConfiguration) {
 		Configuration ipAddressConfig = ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.IP_ADDRESS_CONFIG_NAME);
-		return InetAddress.getByName(ipAddressConfig.getValue());
+		try {
+			return InetAddress.getByName(ipAddressConfig.getValue());
+		} catch (UnknownHostException e) {
+			throw new GITBEngineInternalError("Unable to lookup address ["+ipAddressConfig.getValue()+"]");
+		}
 	}
 
 	public SessionContext getSession(String sessionId) {
