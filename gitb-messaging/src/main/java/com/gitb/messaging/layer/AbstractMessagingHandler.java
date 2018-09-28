@@ -34,12 +34,16 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
 
 	@Override
     public InitiateResponse initiate(List<ActorConfiguration> actorConfigurations) {
+	    throw new IllegalStateException("Embedded validation handlers should have the initiateWithSession method called");
+    }
+
+    public InitiateResponse initiateWithSession(List<ActorConfiguration> actorConfigurations, String testSessionId) {
         try {
             SessionManager sessionManager = SessionManager.getInstance();
 
-	        validateActorConfigurations(actorConfigurations);
+            validateActorConfigurations(actorConfigurations);
 
-            return sessionManager.createSession(this, getMessagingServer(), actorConfigurations);
+            return sessionManager.createSession(testSessionId, this, getMessagingServer(), actorConfigurations);
         } catch (GITBEngineInternalError e) {
             throw e;
         } catch (Exception e) {

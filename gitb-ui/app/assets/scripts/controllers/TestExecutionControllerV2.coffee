@@ -549,10 +549,21 @@ class TestExecutionControllerV2
       msg.configurations = @createActorConfigurations(@configurations)
 
     @ws.send(angular.toJson(msg))
+
+    @keepAlive = @$interval(() => 
+      if (@ws?)
+        msg = {
+          command: @Constants.WEB_SOCKET_COMMAND.PING
+        }      
+        @ws.send(angular.toJson(msg))
+    , 5000)
+
     @socketOpen.resolve()
 
   onclose: (msg) =>
     @$log.debug "WebSocket closed."
+    if (@keepAlive?)
+      $interval.cancel(@keepAlive)
 
   onmessage: (msg) =>
     if (!@messagesToProcess?)

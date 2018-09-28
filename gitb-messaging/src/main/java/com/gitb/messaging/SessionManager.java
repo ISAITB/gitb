@@ -29,7 +29,7 @@ public class SessionManager {
 		sessions = new ConcurrentHashMap<>();
 	}
 
-	public synchronized InitiateResponse createSession(AbstractMessagingHandler messagingHandler, IMessagingServer server, List<ActorConfiguration> configurations) throws IOException, ExistingSessionException {
+	public synchronized InitiateResponse createSession(String testSessionId, AbstractMessagingHandler messagingHandler, IMessagingServer server, List<ActorConfiguration> configurations) throws IOException, ExistingSessionException {
 		String sessionId = UUID.randomUUID().toString();
 
 		SessionContext sessionContext = new SessionContext(sessionId, messagingHandler, configurations, server);
@@ -61,7 +61,7 @@ public class SessionManager {
 
 				availableWorker
 					.getNetworkingSessionManager()
-					.bindToSession(address, sessionId);
+					.bindToSession(address, sessionId, testSessionId);
 
 				sessionContext
 					.getServerActorConfigurations()

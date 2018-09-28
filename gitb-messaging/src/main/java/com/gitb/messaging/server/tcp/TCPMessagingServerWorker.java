@@ -1,18 +1,19 @@
 package com.gitb.messaging.server.tcp;
 
 import com.gitb.messaging.SessionManager;
-import com.gitb.messaging.model.tcp.ITransactionReceiver;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
+import com.gitb.messaging.model.tcp.ITransactionReceiver;
 import com.gitb.messaging.server.AbstractMessagingServerWorker;
+import com.gitb.messaging.server.NetworkingSessionManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -24,14 +25,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class TCPMessagingServerWorker extends AbstractMessagingServerWorker {
 	private static Logger logger = LoggerFactory.getLogger(TCPMessagingServerWorker.class);
 
-    private final List<Socket> waitingTransactions;
-
 	private TCPListenerThread listenerThread;
 	private AtomicBoolean active;
 
     public TCPMessagingServerWorker(int port) {
 	    super(port);
-        waitingTransactions = new CopyOnWriteArrayList<>();
 	    active = new AtomicBoolean(false);
     }
 
@@ -60,34 +58,32 @@ public class TCPMessagingServerWorker extends AbstractMessagingServerWorker {
 		return active.get();
 	}
 
-    private void tryWaitingTransactions() {
-        List<Socket> completedTransactions = new ArrayList<>();
-
-        for(Socket socket : waitingTransactions) {
-            InetAddress address = socket.getInetAddress();
-
-            String sessionId = networkingSessionManager.getSessionId(address);
-            if(sessionId != null) {
-
-                SessionContext sessionContext = SessionManager.getInstance().getSession(sessionId);
-
-                TransactionContext transactionContext = sessionContext.getTransaction(address, socket.getLocalPort());
-
-                if(transactionContext != null) {
-                    ITransactionReceiver receiver = transactionContext.getParameter(ITransactionReceiver.class);
-
-                    receiver.onReceive(socket);
-
-                    completedTransactions.add(socket);
-                }
-            } else {
-                StringBuilder failedConnectionInfo = new StringBuilder();
-                failedConnectionInfo.append("Received ["+address.getHostName()+"] but expected "+networkingSessionManager.getSessions());
-                logger.warn(failedConnectionInfo.toString());
+    private void tryWaitingTransactions(Socket socket) {
+        InetAddress address = socket.getInetAddress();
+        NetworkingSessionManager.SessionInfo sessionInfo = networkingSessionManager.getSessionInfo(address);
+        if(sessionInfo != null) {
+            // The received communication is expected for a session.
+            SessionContext sessionContext = SessionManager.getInstance().getSession(sessionInfo.getMessagingSessionId());
+            TransactionContext transactionContext = sessionContext.getTransaction(address, socket.getLocalPort());
+            if(transactionContext != null) {
+                ITransactionReceiver receiver = transactionContext.getParameter(ITransactionReceiver.class);
+                receiver.onReceive(socket);
+            }
+        } else {
+            // The received communication is not expected.
+            StringBuilder failedConnectionInfo = new StringBuilder();
+            failedConnectionInfo.append("Received connection from [").append(address).append("] on port [").append(networkingSessionManager.getPort()).append("] but expected ");
+            for (Map.Entry<InetAddress, NetworkingSessionManager.SessionInfo> entry: networkingSessionManager.getSessionMap().entrySet()) {
+                failedConnectionInfo.append("[").append(entry.getKey()).append(" for ").append(entry.getValue().getTestSessionId()).append("] | ");
+            }
+            logger.warn(failedConnectionInfo.toString());
+            try {
+                logger.debug("Closing socket: " + socket);
+                socket.close();
+            } catch (IOException e) {
+                // Ignore exception.
             }
         }
-
-        waitingTransactions.removeAll(completedTransactions);
     }
 
 	private class TCPReceiverThread extends Thread {
@@ -100,9 +96,7 @@ public class TCPMessagingServerWorker extends AbstractMessagingServerWorker {
 
         @Override
         public void run() {
-            waitingTransactions.add(socket);
-
-            tryWaitingTransactions();
+            tryWaitingTransactions(socket);
         }
     }
 

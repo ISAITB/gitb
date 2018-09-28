@@ -9,6 +9,7 @@ import com.gitb.engine.remote.messaging.RemoteMessagingModuleClient;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
+import com.gitb.messaging.layer.AbstractMessagingHandler;
 import com.gitb.messaging.model.InitiateResponse;
 import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tbs.SUTConfiguration;
@@ -543,7 +544,12 @@ public class TestCaseContext {
 			List<ActorConfiguration> configurations = new ArrayList<>(sutConfigurations.values());
 			Map<Tuple<String>, SUTConfiguration> sutHandlerConfigurations = new HashMap<>();
 
-			InitiateResponse initiateResponse = messagingHandler.initiate(configurations);
+			InitiateResponse initiateResponse;
+			if (messagingHandler instanceof AbstractMessagingHandler) {
+				initiateResponse = ((AbstractMessagingHandler) messagingHandler).initiateWithSession(configurations, sessionId);
+			} else {
+				initiateResponse = messagingHandler.initiate(configurations);
+			}
 			if (!configurations.isEmpty()) {
 				for(Map.Entry<Tuple<String>, ActorConfiguration> entry : sutConfigurations.entrySet()) {
 					ActorConfiguration simulatedActor = ActorUtils.getActorConfiguration(initiateResponse.getActorConfigurations(), entry.getValue().getActor(), entry.getValue().getEndpoint());

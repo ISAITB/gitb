@@ -36,6 +36,7 @@ public class TCPMessagingServer implements IMessagingServer {
      * @return port number
      * @throws IOException
      */
+    @Override
     public synchronized IMessagingServerWorker listenNextAvailablePort() {
         for (int port = configuration.getStart(); port <= configuration.getEnd(); port++) {
             if(!workers.containsKey(port)) {

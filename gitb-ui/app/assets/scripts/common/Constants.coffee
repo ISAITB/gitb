@@ -21,6 +21,7 @@ class Constants
 	@WEB_SOCKET_COMMAND =
 	    REGISTER: "register"
 	    NOTIFY: "notify"
+	    PING: "ping"
 
 	@TEST_CASE_TYPE =
 		CONFORMANCE: 0,

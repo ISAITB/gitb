@@ -75,6 +75,7 @@ class WebSocketActor(out: ActorRef) extends Actor{
 
   private final val REGISTER = "register"
   private final val NOTIFY   = "notify"
+  private final val PING   = "ping"
 
   var sessionId:String = null
   var actorId:String = null
@@ -122,6 +123,9 @@ class WebSocketActor(out: ActorRef) extends Actor{
 
             //send message to all actors
             WebSocketActor.broadcast(sessionId, Json.obj("notify" -> message).toString())
+
+          case PING =>
+            // Do nothing. This is sent to keep alive the web socket connection.
 
           case _ =>
             logger.error("Unknown command")

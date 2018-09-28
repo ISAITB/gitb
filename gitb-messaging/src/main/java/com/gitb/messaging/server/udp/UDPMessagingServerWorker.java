@@ -3,16 +3,20 @@ package com.gitb.messaging.server.udp;
 import com.gitb.core.ErrorCode;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.SessionManager;
-import com.gitb.messaging.model.udp.IDatagramReceiver;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
+import com.gitb.messaging.model.udp.IDatagramReceiver;
 import com.gitb.messaging.server.AbstractMessagingServerWorker;
+import com.gitb.messaging.server.NetworkingSessionManager;
 import com.gitb.utils.ErrorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.SocketException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -136,10 +140,10 @@ public class UDPMessagingServerWorker extends AbstractMessagingServerWorker {
         public void run() {
             InetAddress address = datagramPacket.getAddress();
 
-            String sessionId = networkingSessionManager.getSessionId(address, allowAllConnections);
+            NetworkingSessionManager.SessionInfo sessionInfo = networkingSessionManager.getSessionInfo(address, allowAllConnections);
 
-            if (sessionId != null) {
-                SessionContext sessionContext = SessionManager.getInstance().getSession(sessionId);
+            if (sessionInfo != null) {
+                SessionContext sessionContext = SessionManager.getInstance().getSession(sessionInfo.getMessagingSessionId());
 
                 TransactionContext transactionContext = sessionContext.getTransaction(address, socket.getLocalPort(), allowAllConnections);
 

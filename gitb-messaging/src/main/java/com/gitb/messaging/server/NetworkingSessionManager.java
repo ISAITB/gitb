@@ -1,6 +1,8 @@
 package com.gitb.messaging.server;
 
 import com.gitb.messaging.server.exceptions.ExistingSessionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -16,20 +18,27 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class NetworkingSessionManager {
 
-	private Map<InetAddress, String> sessions;
+    private static final Logger logger = LoggerFactory.getLogger(NetworkingSessionManager.class);
+	private Map<InetAddress, SessionInfo> sessions;
+	private final int port;
 
-	public NetworkingSessionManager() {
+	public NetworkingSessionManager(int port) {
 		sessions = new ConcurrentHashMap<>();
+		this.port = port;
 	}
 
-	public String bindToSession(InetAddress address, String sessionId) throws ExistingSessionException {
+	public String bindToSession(InetAddress address, String messagingSessionId, String testSessionId) throws ExistingSessionException {
 		if(sessions.containsKey(address)) {
-			throw new ExistingSessionException(address, sessionId);
+			throw new ExistingSessionException(address, messagingSessionId);
 		} else {
-			sessions.put(address, sessionId);
-
-			return sessionId;
+		    logger.debug("Test session ["+testSessionId+"] listening on port ["+port+"] for connections from ["+address+"]");
+			sessions.put(address, new SessionInfo(messagingSessionId, testSessionId));
+			return messagingSessionId;
 		}
+	}
+
+	public int getPort() {
+		return port;
 	}
 
 	public int getNumberOfActiveSessions() {
@@ -40,11 +49,11 @@ public class NetworkingSessionManager {
 		return sessions.containsKey(address);
 	}
 
-	public String getSessionId(InetAddress address) {
-		return getSessionId(address, false);
+	public SessionInfo getSessionInfo(InetAddress address) {
+		return getSessionInfo(address, false);
 	}
 
-	public String getSessionId(InetAddress address, boolean orFirstAvailable) {
+	public SessionInfo getSessionInfo(InetAddress address, boolean orFirstAvailable) {
 		if (sessions.containsKey(address)) {
 			return sessions.get(address);
 		} else if (orFirstAvailable && !sessions.isEmpty()) {
@@ -57,6 +66,10 @@ public class NetworkingSessionManager {
 		sessions.remove(address);
 	}
 
+	public Map<InetAddress, SessionInfo> getSessionMap() {
+		return Collections.unmodifiableMap(sessions);
+	}
+
 	public List<String> getSessions() {
 		List<String> addresses = new ArrayList<String>();
 		if (sessions != null) {
@@ -65,6 +78,26 @@ public class NetworkingSessionManager {
 			}
 		}
 		return Collections.unmodifiableList(addresses);
+	}
+
+	public static class SessionInfo {
+
+		private final String messagingSessionId;
+		private final String testSessionId;
+
+		SessionInfo(String messagingSessionId, String testSessionId) {
+			this.messagingSessionId = messagingSessionId;
+			this.testSessionId = testSessionId;
+		}
+
+		public String getMessagingSessionId() {
+			return messagingSessionId;
+		}
+
+		public String getTestSessionId() {
+			return testSessionId;
+		}
+
 	}
 
 }
