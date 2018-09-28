@@ -58,7 +58,6 @@ class TestExecutionControllerV2
     @$scope.$on '$destroy', () =>
       if @ws? and @session?
         @$log.debug 'Closing websocket in $destroy event handler'
-
         @ws.close()
 
       return
@@ -563,7 +562,7 @@ class TestExecutionControllerV2
   onclose: (msg) =>
     @$log.debug "WebSocket closed."
     if (@keepAlive?)
-      $interval.cancel(@keepAlive)
+      @$interval.cancel(@keepAlive)
 
   onmessage: (msg) =>
     if (!@messagesToProcess?)
