@@ -109,7 +109,7 @@ public class SessionManager {
 		return sessions.get(sessionId);
 	}
 
-	public synchronized void endSession(String sessionId) throws UnknownHostException {
+	public synchronized void endSession(String sessionId) {
 		SessionContext context = sessions.remove(sessionId);
 
 		if (context != null) {
