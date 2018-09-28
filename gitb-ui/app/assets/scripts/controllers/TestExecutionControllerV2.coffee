@@ -258,7 +258,7 @@ class TestExecutionControllerV2
             @configurationsLoaded.resolve()
 
         .catch (error) =>
-          @ErrorService.showErrorMessage(error).result.then () =>
+          @ErrorService.showErrorMessage(error, true).result.then () =>
             @$state.go @$state.current, {}, {reload: true}
 
   constructEndpointRepresentations: () =>
@@ -333,11 +333,11 @@ class TestExecutionControllerV2
               @actorConfigurations[testCaseActor.id] = null
         ,
         (error) =>
-          @ErrorService.showErrorMessage(error).result
+          @ErrorService.showErrorMessage(error, true).result
         )
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error).result.then () =>
+        @ErrorService.showErrorMessage(error, true).result.then () =>
           @$state.go @$state.current, {}, {reload: true}
     )
 
@@ -413,7 +413,7 @@ class TestExecutionControllerV2
         )
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error).result.then () =>
+        @ErrorService.showErrorMessage(error, true).result.then () =>
           @$state.go @$state.current, {}, {reload: true}
     )
 
@@ -441,7 +441,7 @@ class TestExecutionControllerV2
           configureFinished.resolve()
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error).result.then () =>
+        @ErrorService.showErrorMessage(error, true).result.then () =>
           @$state.go @$state.current, {}, {reload: true}
     )
 
@@ -452,7 +452,7 @@ class TestExecutionControllerV2
         configureFinished.resolve()
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error).result.then () =>
+        @ErrorService.showErrorMessage(error, true).result.then () =>
           @$state.go @$state.current, {}, {reload: true}
     )
 
@@ -477,7 +477,7 @@ class TestExecutionControllerV2
           @$log.debug data
         ,
         (error) =>
-          @ErrorService.showErrorMessage(error).result.then () =>
+          @ErrorService.showErrorMessage(error, true).result.then () =>
             @$state.go @$state.current, {}, {reload: true}
       )
     )
@@ -494,7 +494,7 @@ class TestExecutionControllerV2
         @testCaseFinished()
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error).result.then () =>
+        @ErrorService.showErrorMessage(error, true).result.then () =>
           @$state.go @$state.current, {}, {reload: true}
     )
 
@@ -505,7 +505,7 @@ class TestExecutionControllerV2
         @$log.debug data
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error).result.then () =>
+        @ErrorService.showErrorMessage(error, true).result.then () =>
           @$state.go @$state.current, {}, {reload: true}
     )
 
@@ -619,7 +619,7 @@ class TestExecutionControllerV2
     modalInstance = @$modal.open(modalOptions)
     modalInstance.result.then((result) => 
       if (!result.success)
-        @ErrorService.showErrorMessage(result.error).result.then () =>
+        @ErrorService.showErrorMessage(result.error, true).result.then () =>
         @$state.go @$state.current, {}, {reload: true}
     )
 

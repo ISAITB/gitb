@@ -105,11 +105,11 @@ class SpecificationDetailsController
 					else
 						error = { 
 							statusText: "Upload error",
-							data: {error_description: "En error occurred while processing the test suite: "+result.data.errorInformation}
+							data: {error_description: "An error occurred while processing the test suite: "+result.data.errorInformation}
 						}
 						@ErrorService.showErrorMessage(error)
 				else
-					@ErrorService.showErrorMessage("En error occurred while processing the test suite: Response was empty")
+					@ErrorService.showErrorMessage("An error occurred while processing the test suite: Response was empty")
 
 	showTestSuiteUploadResult: (result) =>
 		if (result.success)

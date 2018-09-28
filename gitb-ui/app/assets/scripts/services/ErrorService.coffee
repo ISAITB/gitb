@@ -5,12 +5,13 @@ class ErrorService
   constructor: (@$log, @$modal, @Constants) ->
     @$log.debug "Constructing ErrorService"
 
-  showErrorMessage: (error) ->
+  showErrorMessage: (error, withRetry) ->
     modalOptions =
       templateUrl: 'assets/views/components/error-modal.html'
       controller: 'ErrorController as errorCtrl'
       resolve:
         error: () => error
+        withRetry: () => withRetry
 
     @$modal.open modalOptions
 
