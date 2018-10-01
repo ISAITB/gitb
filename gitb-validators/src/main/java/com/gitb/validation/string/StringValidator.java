@@ -29,8 +29,8 @@ public class StringValidator extends AbstractValidator{
 
     @Override
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
-        StringType actualString    = (StringType) inputs.get(ACTUAL_STRING_ARGUMENT_NAME);
-        StringType expectedString  = (StringType) inputs.get(EXPECTED_STRING_ARGUMENT_NAME);
+        StringType actualString    = (StringType)(inputs.get(ACTUAL_STRING_ARGUMENT_NAME)).convertTo(DataType.STRING_DATA_TYPE);
+        StringType expectedString  = (StringType)(inputs.get(EXPECTED_STRING_ARGUMENT_NAME)).convertTo(DataType.STRING_DATA_TYPE);
 
         String actualStringValue   = (String) actualString.getValue();
         String expectedStringValue = (String) expectedString.getValue();
