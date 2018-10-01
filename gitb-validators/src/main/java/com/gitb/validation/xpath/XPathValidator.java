@@ -12,6 +12,7 @@ import org.kohsuke.MetaInfServices;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import java.util.List;
@@ -40,7 +41,7 @@ public class XPathValidator extends AbstractValidator {
         StringType expression = (StringType) inputs.get(XPATH_ARGUMENT_NAME).convertTo(DataType.STRING_DATA_TYPE);
 
         //compile xpath expression
-        XPathImpl xPath = (XPathImpl) new XPathFactoryImpl().newXPath();
+        XPath xPath = new net.sf.saxon.xpath.XPathFactoryImpl().newXPath();
         XPathExpression xPathExpr;
         try {
             xPathExpr = xPath.compile((String)expression.getValue());
