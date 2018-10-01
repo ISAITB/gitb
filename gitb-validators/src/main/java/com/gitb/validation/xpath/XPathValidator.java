@@ -36,15 +36,8 @@ public class XPathValidator extends AbstractValidator {
 
     @Override
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
-        ObjectType contentToProcess;
-        DataType content = (DataType) inputs.get(CONTENT_ARGUMENT_NAME);
-        if (content instanceof BinaryType) {
-            contentToProcess = new ObjectType();
-            contentToProcess.deserialize((byte[])content.getValue());
-        } else {
-            contentToProcess = (ObjectType) inputs.get(CONTENT_ARGUMENT_NAME);
-        }
-        StringType expression = (StringType) inputs.get(XPATH_ARGUMENT_NAME);
+        ObjectType contentToProcess = (ObjectType)inputs.get(CONTENT_ARGUMENT_NAME).convertTo(DataType.OBJECT_DATA_TYPE);
+        StringType expression = (StringType) inputs.get(XPATH_ARGUMENT_NAME).convertTo(DataType.STRING_DATA_TYPE);
 
         //compile xpath expression
         XPathImpl xPath = (XPathImpl) new XPathFactoryImpl().newXPath();
