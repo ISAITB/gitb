@@ -26,7 +26,9 @@ object OrganizationManager extends BaseManager {
   def getOrganizations(): List[Organizations] = {
     DB.withSession { implicit session =>
       //1) Get all organizations except the default organization for system administrators
-      val organizations = PersistenceSchema.organizations.list
+      val organizations = PersistenceSchema.organizations
+          .sortBy(_.shortname.asc)
+        .list
       organizations
     }
   }
@@ -36,7 +38,9 @@ object OrganizationManager extends BaseManager {
    */
   def getOrganizationsByCommunity(communityId: Long): List[Organizations] = {
     DB.withSession { implicit session =>
-      val organizations = PersistenceSchema.organizations.filter(_.adminOrganization === false).filter(_.community === communityId).list
+      val organizations = PersistenceSchema.organizations.filter(_.adminOrganization === false).filter(_.community === communityId)
+          .sortBy(_.shortname.asc)
+        .list
       organizations
     }
   }

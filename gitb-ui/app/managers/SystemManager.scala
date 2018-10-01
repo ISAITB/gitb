@@ -87,7 +87,9 @@ object SystemManager extends BaseManager {
 
   def getSystemsByOrganization(orgId: Long): List[Systems] = {
     DB.withSession { implicit session =>
-      val systems = PersistenceSchema.systems.filter(_.owner === orgId).list
+      val systems = PersistenceSchema.systems.filter(_.owner === orgId)
+          .sortBy(_.shortname.asc)
+        .list
       systems
     }
   }
@@ -98,7 +100,9 @@ object SystemManager extends BaseManager {
       val orgId = PersistenceSchema.users.filter(_.id === userId).firstOption.get.organization
 
       //2) Get systems of the organization
-      val systems = PersistenceSchema.systems.filter(_.owner === orgId).list
+      val systems = PersistenceSchema.systems.filter(_.owner === orgId)
+          .sortBy(_.shortname.asc)
+        .list
       systems
     }
   }
@@ -208,7 +212,9 @@ object SystemManager extends BaseManager {
   def getImplementedActors(system: Long): List[Actors] = {
     DB.withSession { implicit session =>
       val ids = getActorsForSystem(system)
-      PersistenceSchema.actors.filter(_.id inSet ids).list
+      PersistenceSchema.actors.filter(_.id inSet ids)
+          .sortBy(_.actorId.asc)
+        .list
     }
   }
 
@@ -289,7 +295,8 @@ object SystemManager extends BaseManager {
           PersistenceSchema.systems
         }
       }
-      q.list
+      q.sortBy(_.shortname.asc)
+        .list
     }
   }
 

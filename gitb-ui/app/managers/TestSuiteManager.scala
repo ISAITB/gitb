@@ -31,6 +31,7 @@ object TestSuiteManager extends BaseManager {
 		DB.withSession { implicit session =>
 			PersistenceSchema.testSuites
 				.filter(_.specification === specification)
+				.sortBy(_.shortname.asc)
 				.list
 		}
 	}
@@ -46,7 +47,8 @@ object TestSuiteManager extends BaseManager {
 					PersistenceSchema.testSuites
 				}
 			}
-			q.list
+			q.sortBy(_.shortname.asc)
+			 .list
 		}
 	}
 
@@ -60,7 +62,7 @@ object TestSuiteManager extends BaseManager {
 
 	def getTestSuitesWithTestCases(): List[TestSuite] = {
 		DB.withSession { implicit session =>
-			val testSuites = PersistenceSchema.testSuites.list
+			val testSuites = PersistenceSchema.testSuites.sortBy(_.shortname.asc).list
 
 			testSuites map {
 				ts:TestSuites =>
@@ -561,6 +563,7 @@ object TestSuiteManager extends BaseManager {
 			val testSuites = PersistenceSchema.testSuites
 				.filter(_.id inSet testSuiteIds)
 				.filter(_.specification === specificationId)
+				.sortBy(_.shortname.asc)
 				.list
 
 			testSuites map { testSuite =>

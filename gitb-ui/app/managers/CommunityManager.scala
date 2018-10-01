@@ -24,7 +24,8 @@ object CommunityManager extends BaseManager {
           PersistenceSchema.communities
         }
       }
-      q.list
+      q.sortBy(_.shortname.asc)
+        .list
     }
   }
 

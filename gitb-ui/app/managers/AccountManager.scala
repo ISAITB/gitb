@@ -123,7 +123,9 @@ object AccountManager extends BaseManager {
       val orgId = PersistenceSchema.users.filter(_.id === userId).firstOption.get.organization
 
       //2) Get all users of the organization
-      val users = PersistenceSchema.users.filter(_.organization === orgId).list
+      val users = PersistenceSchema.users.filter(_.organization === orgId)
+          .sortBy(_.name.asc)
+          .list
       users
     }
   }

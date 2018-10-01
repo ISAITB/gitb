@@ -17,7 +17,9 @@ object LandingPageManager extends BaseManager {
    */
   def getLandingPagesByCommunity(communityId: Long): List[LandingPages] = {
     DB.withSession { implicit session =>
-      val pages = PersistenceSchema.landingPages.filter(_.community === communityId).list
+      val pages = PersistenceSchema.landingPages.filter(_.community === communityId)
+          .sortBy(_.name.asc)
+        .list
       pages
     }
   }

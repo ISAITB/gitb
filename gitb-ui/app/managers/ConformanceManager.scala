@@ -47,7 +47,8 @@ object ConformanceManager extends BaseManager {
 					case None => q
 				}
 
-				q2.list
+				q2.sortBy(_.shortname.asc)
+					.list
 			}
 			domains
 		}
@@ -116,7 +117,9 @@ object ConformanceManager extends BaseManager {
 
 	def getDomainParameters(domainId: Long) = {
 		DB.withSession { implicit session =>
-			PersistenceSchema.domainParameters.filter(_.domain === domainId).list
+			PersistenceSchema.domainParameters.filter(_.domain === domainId)
+			  	.sortBy(_.name.asc)
+					.list
 		}
 	}
 
@@ -173,7 +176,8 @@ object ConformanceManager extends BaseManager {
 					case None => q
 				}
 
-				q2.list
+				q2.sortBy(_.shortname.asc)
+					.list
 			}
 			specs
 		}
@@ -181,7 +185,9 @@ object ConformanceManager extends BaseManager {
 
   def getSpecifications(domain:Long): List[Specifications] = {
 		DB.withSession { implicit session =>
-			val specs = PersistenceSchema.specifications.filter(_.domain === domain).list
+			val specs = PersistenceSchema.specifications.filter(_.domain === domain)
+			  	.sortBy(_.shortname.asc)
+					.list
 			specs
     }
   }
@@ -210,7 +216,8 @@ object ConformanceManager extends BaseManager {
 					case None => q
 				}
 
-				q2.list
+				q2.sortBy(_.actorId.asc)
+					.list
 			}
 			actors
 		}
@@ -218,7 +225,9 @@ object ConformanceManager extends BaseManager {
 	
 	def getActorsWithDomainId(domainId: Long): List[Actors] = {
 		DB.withSession { implicit session =>
-			PersistenceSchema.actors.filter(_.domain === domainId).list
+			PersistenceSchema.actors.filter(_.domain === domainId)
+			  	.sortBy(_.actorId.asc)
+					.list
 		}
 	}
 
@@ -229,9 +238,12 @@ object ConformanceManager extends BaseManager {
 				actor <- PersistenceSchema.actors
 				specificationHasActors <- PersistenceSchema.specificationHasActors if specificationHasActors.actorId === actor.id
 			} yield (actor, specificationHasActors)
-			query.filter(_._2.specId === spec).list.foreach{ result =>
-				actors ::= result._1
-			}
+			query.filter(_._2.specId === spec)
+			  	.sortBy(_._1.actorId.asc)
+					.list
+					.foreach{ result =>
+						actors ::= result._1
+					}
 			actors
 		}
   }
@@ -256,7 +268,9 @@ object ConformanceManager extends BaseManager {
 
 	def getEndpointsForActor(actorId: Long): List[Endpoint] = {
 		DB.withSession { implicit session =>
-			val caseObjects = PersistenceSchema.endpoints.filter(_.actor === actorId).list
+			val caseObjects = PersistenceSchema.endpoints.filter(_.actor === actorId)
+			  	.sortBy(_.name.asc)
+					.list
 			caseObjects map { caseObject =>
 				val actor = PersistenceSchema.actors.filter(_.id === caseObject.actor).first
 				val parameters = PersistenceSchema.parameters.filter(_.endpoint === caseObject.id).list
@@ -274,7 +288,8 @@ object ConformanceManager extends BaseManager {
 					case None => PersistenceSchema.endpoints
 				}
 
-				q.list
+				q.sortBy(_.name.asc)
+				 .list
 			}
 			caseObjects map { caseObject =>
 				val actor = PersistenceSchema.actors.filter(_.id === caseObject.actor).first
@@ -292,13 +307,16 @@ object ConformanceManager extends BaseManager {
 				case None => PersistenceSchema.parameters
 			}
 
-			q.list
+			q.sortBy(_.name.asc)
+				.list
 		}
 	}
 
 	def getEndpointParameters(endpointId: Long): List[models.Parameters] = {
 		DB.withSession { implicit session =>
-			PersistenceSchema.parameters.filter(_.endpoint === endpointId).list
+			PersistenceSchema.parameters.filter(_.endpoint === endpointId)
+			  	.sortBy(_.name.asc)
+					.list
 		}
 	}
 
@@ -374,7 +392,9 @@ object ConformanceManager extends BaseManager {
 			}
 			query = query.sortBy(x => (x._7.shortname, x._6.shortname, x._5.shortname, x._4.shortname, x._2.shortname, x._3.actorId, x._8.shortname, x._9.shortname))
 
-			val results = query.list
+			val results = query
+			  	.sortBy(s => (s._4.shortname, s._2.shortname, s._3.actorId))
+					.list
 			var statements = new ListBuffer[ConformanceStatementFull]
 			results.foreach { result =>
 				val conformanceStatement = ConformanceStatementFull(

@@ -23,7 +23,9 @@ object UserManager extends BaseManager {
   def getCommunityAdministrators(communityId:Long): List[Users] = {
     DB.withSession { implicit session =>
       val organizations = PersistenceSchema.organizations.filter(_.community === communityId).map(_.id).list
-      val users = PersistenceSchema.users.filter(_.organization inSet organizations).filter(_.role === UserRole.CommunityAdmin.id.toShort).list
+      val users = PersistenceSchema.users.filter(_.organization inSet organizations).filter(_.role === UserRole.CommunityAdmin.id.toShort)
+          .sortBy(_.name.asc)
+        .list
       users
     }
   }
@@ -33,7 +35,9 @@ object UserManager extends BaseManager {
    */
   def getUsersByRole(role: UserRole): List[Users] = {
     DB.withSession { implicit session =>
-      val users = PersistenceSchema.users.filter(_.role === role.id.toShort).list
+      val users = PersistenceSchema.users.filter(_.role === role.id.toShort)
+          .sortBy(_.name.asc)
+        .list
       users
     }
   }
@@ -43,7 +47,9 @@ object UserManager extends BaseManager {
    */
   def getUsersByOrganization(orgId: Long): List[Users] = {
     DB.withSession { implicit session =>
-      val users = PersistenceSchema.users.filter(_.organization === orgId).filter(x => x.role === UserRole.VendorUser.id.toShort || x.role === UserRole.VendorAdmin.id.toShort).list
+      val users = PersistenceSchema.users.filter(_.organization === orgId).filter(x => x.role === UserRole.VendorUser.id.toShort || x.role === UserRole.VendorAdmin.id.toShort)
+          .sortBy(_.name.asc)
+        .list
       users
     }
   }
