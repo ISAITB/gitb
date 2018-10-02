@@ -158,6 +158,14 @@ class SpecificationDetailsController
 			}
 			@PopupService.show("Test suite upload failed", data)
 
+	onTestSuiteDownload: (data) =>
+		@TestSuiteService.downloadTestSuite data.id
+		.then (data) =>
+			blobData = new Blob([data], {type: 'application/zip'});
+			saveAs(blobData, "test_suite.zip");
+		.catch (error) =>
+			@ErrorService.showErrorMessage(error)
+
 	onTestSuiteDelete: (data) =>
 		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this test suite?", "Yes", "No")
 		.then () =>

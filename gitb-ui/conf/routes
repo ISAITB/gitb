@@ -164,6 +164,7 @@ GET     /ws                                 @controllers.WebSocketService.socket
 
 # Test suite management API
 DELETE  /suite/:suite_id/undeploy           @controllers.TestSuiteService.undeployTestSuite(suite_id: Long)
+GET     /suite/:suite_id                    @controllers.TestSuiteService.downloadTestSuite(suite_id: Long)
 GET     /suite                              @controllers.TestSuiteService.getTestSuites()
 
 # Endpoint management API
