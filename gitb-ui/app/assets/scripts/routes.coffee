@@ -100,6 +100,9 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.login':
 				url: '/login'
 				templateUrl: 'assets/views/login.html'
+			'app.onetime':
+				url: '/onetime'
+				templateUrl: 'assets/views/onetime-password.html'
 			'app.recover':
 				url: '/recover'
 				templateUrl: 'assets/views/recover.html'

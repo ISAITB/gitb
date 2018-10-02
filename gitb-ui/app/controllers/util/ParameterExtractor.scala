@@ -92,28 +92,28 @@ object ParameterExtractor {
     val name = requiredBodyParameter(request, Parameters.USER_NAME)
     val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
     val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), UserRole.SystemAdmin.id.toShort, 0L)
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.SystemAdmin.id.toShort, 0L)
   }
 
   def extractCommunityAdminInfo(request:Request[AnyContent]):Users = {
     val name = requiredBodyParameter(request, Parameters.USER_NAME)
     val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
     val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), UserRole.CommunityAdmin.id.toShort, 0L)
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.CommunityAdmin.id.toShort, 0L)
   }
 
   def extractAdminInfo(request:Request[AnyContent]):Users = {
     val name = requiredBodyParameter(request, Parameters.USER_NAME)
     val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
     val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), UserRole.VendorAdmin.id.toShort, 0L)
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.VendorAdmin.id.toShort, 0L)
   }
 
   def extractUserInfo(request:Request[AnyContent]):Users = {
     val name = requiredBodyParameter(request, Parameters.USER_NAME)
     val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
     val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), UserRole.VendorUser.id.toShort, 0L)
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.VendorUser.id.toShort, 0L)
   }
 
   def extractSystemInfo(request:Request[AnyContent]):Systems = {

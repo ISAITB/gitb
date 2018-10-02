@@ -107,8 +107,8 @@ object AccountManager extends BaseManager {
         val user = PersistenceSchema.users.filter(_.id === userId).firstOption
         if (user.isDefined && BCrypt.checkpw(oldpassword.get, user.get.password)) {
           //2.1.1) password correct, replace it with the new one
-          val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.password)
-          q.update(BCrypt.hashpw(password.get, BCrypt.gensalt()))
+          val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.password, u.onetimePassword)
+          q.update(BCrypt.hashpw(password.get, BCrypt.gensalt()), false)
         } else {
           //2.1.2) incorrect password => send Invalid Credentials error
           throw InvalidAuthorizationException(ErrorCodes.INVALID_CREDENTIALS, "Invalid credentials")

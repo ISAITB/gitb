@@ -1,0 +1,1 @@
+ALTER TABLE users ADD COLUMN `onetime_password` TINYINT DEFAULT 0 NOT NULL;

@@ -2,15 +2,14 @@ class IndexController
 	@$inject = [
 		'$log', '$sce', '$scope', '$rootScope', '$location', '$state', '$window'
 		'AuthProvider', 'SystemConfigurationService', 'DataService', 'AccountService',
-		'Events', 'Constants', 'LegalNoticeService', 'HtmlService', 'ErrorService', '$modal'
+		'Events', 'Constants', 'LegalNoticeService', 'HtmlService', 'ErrorService', '$modal', '$q', 'ConfirmationDialogService'
 	]
 	constructor: (@$log, @$sce, @$scope, @$rootScope, @$location, @$state, @$window,
-		@AuthProvider, @SystemConfigurationService, @DataService, @AccountService, @Events, @Constants,@LegalNoticeService, @HtmlService, @ErrorService, @$modal) ->
+		@AuthProvider, @SystemConfigurationService, @DataService, @AccountService, @Events, @Constants,@LegalNoticeService, @HtmlService, @ErrorService, @$modal, @$q, @ConfirmationDialogService) ->
 
 		@$log.debug "Constructing MainController..."
 
 		@isAuthenticated = @AuthProvider.isAuthenticated()
-		@$log.debug "isAuthenticated: #{@isAuthenticated}"
 
 		@logo
 		@footer
@@ -30,15 +29,24 @@ class IndexController
 			@getUserProfile()
 			@getVendorProfile()
 			@getConfigurationProperties()
+			if @DataService.user? && @DataService.user.onetime
+				@redirect('/onetime')
 
 		#register for login events
 		@$rootScope.$on @Events.afterLogin, (event, params) =>
 			@$log.debug "handling after-login"
 			@isAuthenticated = true
+			@profileLoaded = @$q.defer()
 			@getUserProfile()
-			@getVendorProfile()
-			@getConfigurationProperties()
-			@redirect('/')
+			@$q.all(@profileLoaded.promise).then(() =>
+				if @DataService.user.onetime
+					# One time password - force replace
+					@redirect('/onetime')
+				else
+					@getVendorProfile()
+					@getConfigurationProperties()
+					@redirect('/')
+			)
 
 	getConfigurationProperties : () ->
 		if !@DataService.configuration?
@@ -57,7 +65,7 @@ class IndexController
 			.then(
 				(data) =>
 					@DataService.setUser(data)
-					@$log.debug angular.toJson(data)
+					@profileLoaded.resolve()
 				,
 				(error) =>
 					@ErrorService.showErrorMessage(error)
@@ -123,7 +131,7 @@ class IndexController
 		modalInstance = @$modal.open(modalOptions)
 
 	showProvideFeedback: () =>
-		!@showContactUs() && (@DataService.configuration?["survey.enabled"] == 'true')
+		!@showContactUs() && (@DataService.configuration?["survey.enabled"] == 'true') && !@DataService.user.onetime
 
 	provideFeedbackLink: () =>
 		@DataService.configuration?["survey.address"]
@@ -140,7 +148,7 @@ class IndexController
 				@DataService.configuration['userguide.ou']
 
 	showUserGuide: () =>
-		@DataService.user?
+		@DataService.user? && !@DataService.user.onetime
 
 	onTestsClick: () ->
 		@$window.localStorage['organization'] = angular.toJson @DataService.vendor

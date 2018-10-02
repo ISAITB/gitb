@@ -43,9 +43,10 @@ object PersistenceSchema {
     def name = column[String]("name")
     def email = column[String]("email")
     def password = column[String]("password")
+    def onetimePassword = column[Boolean]("onetime_password")
     def role = column[Short]("role")
     def organization = column[Long]("organization")
-    def * = (id, name, email, password, role, organization) <> (Users.tupled, Users.unapply)
+    def * = (id, name, email, password, onetimePassword, role, organization) <> (Users.tupled, Users.unapply)
     //def fk = foreignKey("users_fk", organization, Organizations)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
     //def idx1 = index("users_idx_1", email, unique = true)
   }

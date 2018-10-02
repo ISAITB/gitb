@@ -1,7 +1,7 @@
 class PasswordController
 
-    @$inject = ['$log', '$scope', '$location', 'AccountService', 'ErrorService', 'ErrorCodes']
-    constructor: (@$log, @$scope, @$location, @AccountService, @ErrorService, @ErrorCodes) ->
+    @$inject = ['$log', '$scope', '$location', 'AccountService', 'ErrorService', 'ErrorCodes', 'DataService', '$state']
+    constructor: (@$log, @$scope, @$location, @AccountService, @ErrorService, @ErrorCodes, @DataService, @$state) ->
         @$log.debug 'Constructing PasswordController'
 
         @ds = @DataService #shorten service name
@@ -9,10 +9,6 @@ class PasswordController
         @alerts = []       # alerts to be displayed
         @$scope.data = {}  # holds scope bindings
         @passwordSpinner = false # spinner to be displayed for password operations
-
-    resetPassword: () ->
-        @alerts = []
-        @alerts.push({type:'success', msg:"An email to reset your password has been sent."})
 
     updatePassword: () ->
         if @checkForm()
@@ -22,6 +18,9 @@ class PasswordController
                 (data) => #success handler
                     @alerts.push({type:'success', msg:"Your password has been updated."})
                     @passwordSpinner = false #stop spinner
+                    if @DataService.user.onetime
+                        @DataService.user.onetime = false
+                        @$state.go 'app.home'
                 ,
                 (error) => #error handler
                     if error.data.error_code == @ErrorCodes.INVALID_CREDENTIALS
