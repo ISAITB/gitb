@@ -101,8 +101,8 @@ object AccountManager extends BaseManager {
         val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name)
         q.update(name.get)
       }
-      //2) Update password of the user
-      if (password.isDefined && oldpassword.isDefined) {
+      //2) Update password of the user (passwords must be different
+      if (password.isDefined && oldpassword.isDefined && (password.get != oldpassword.get)) {
         //2.1) but first, check his old password if it is correct
         val user = PersistenceSchema.users.filter(_.id === userId).firstOption
         if (user.isDefined && BCrypt.checkpw(oldpassword.get, user.get.password)) {

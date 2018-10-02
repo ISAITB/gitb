@@ -24,8 +24,11 @@ class UserDetailController
   # update and cancel detail
   updateUser: () =>
     @ValidationService.clearAll()
-    if @ValidationService.requireNonNull(@user.name, "Please enter a name.")
-      @UserService.updateUserProfile(@userId, @user.name, @user.role.id)
+    if @ValidationService.requireNonNull(@user.name, "Please enter a name.") &
+    (!@user.changePassword || @ValidationService.validatePasswords(@user.password, @user.cpassword, "Passwords do not match."))
+      if @user.changePassword
+        newPassword = @user.password
+      @UserService.updateUserProfile(@userId, @user.name, @user.role.id, newPassword)
       .then (data) =>
         if (!data)
           @cancelDetailUser()

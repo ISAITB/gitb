@@ -3,6 +3,7 @@ package managers
 import models.Enums.UserRole
 import models.Enums.UserRole._
 import models._
+import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import persistence.AccountManager
 import persistence.db.PersistenceSchema
@@ -69,13 +70,14 @@ object UserManager extends BaseManager {
   /**
    * Updates system admin profile of given user
    */
-  def updateSystemAdminProfile(userId: Long, name: String) = {
+  def updateSystemAdminProfile(userId: Long, name: String, password: Option[String]) = {
     DB.withTransaction { implicit session =>
       val userExists = AccountManager.checkUserRole(userId, UserRole.SystemAdmin)
       if (userExists) {
-        val user = PersistenceSchema.users.filter(_.id === userId).firstOption.get
-
-        if (!name.isEmpty && name != user.name) {
+        if (password.isDefined) {
+          val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.password, u.onetimePassword)
+          q.update(name, BCrypt.hashpw(password.get, BCrypt.gensalt()), true)
+        } else {
           val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name)
           q.update(name)
         }
@@ -86,13 +88,14 @@ object UserManager extends BaseManager {
   /**
    * Updates community admin profile of given user
    */
-  def updateCommunityAdminProfile(userId: Long, name: String) = {
+  def updateCommunityAdminProfile(userId: Long, name: String, password: Option[String]) = {
     DB.withTransaction { implicit session =>
       val userExists = AccountManager.checkUserRole(userId, UserRole.CommunityAdmin)
       if (userExists) {
-        val user = PersistenceSchema.users.filter(_.id === userId).firstOption.get
-
-        if (!name.isEmpty && name != user.name) {
+        if (password.isDefined) {
+          val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.password, u.onetimePassword)
+          q.update(name, BCrypt.hashpw(password.get, BCrypt.gensalt()), true)
+        } else {
           val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name)
           q.update(name)
         }
@@ -103,19 +106,16 @@ object UserManager extends BaseManager {
   /**
    * Updates user profile of given user
    */
-  def updateUserProfile(userId: Long, name: String, roleId: Short) = {
+  def updateUserProfile(userId: Long, name: String, roleId: Short, password: Option[String]) = {
     DB.withTransaction { implicit session =>
       val user = PersistenceSchema.users.filter(_.id === userId).firstOption
-
       if (user.isDefined) {
-        if (!name.isEmpty && name != user.get.name) {
-          val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name)
-          q.update(name)
-        }
-
-        if (UserRole(roleId) != UserRole(user.get.role)) {
-          val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.role)
-          q.update(roleId)
+        if (password.isDefined) {
+          val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.role, u.password, u.onetimePassword)
+          q.update(name, roleId, BCrypt.hashpw(password.get, BCrypt.gensalt()), true)
+        } else {
+          val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.role)
+          q.update(name, roleId)
         }
       }
     }

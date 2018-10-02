@@ -23,8 +23,11 @@ class AdminDetailController
   # update and cancel detail
   updateAdmin: () =>
     @ValidationService.clearAll()
-    if @ValidationService.requireNonNull(@user.name, "Please enter a name.")
-      @UserService.updateSystemAdminProfile(@userId, @user.name)
+    if @ValidationService.requireNonNull(@user.name, "Please enter a name.") &
+    (!@user.changePassword || @ValidationService.validatePasswords(@user.password, @user.cpassword, "Passwords do not match."))
+      if @user.changePassword
+        newPassword = @user.password
+      @UserService.updateSystemAdminProfile(@userId, @user.name, newPassword)
       .then () =>
         @cancelDetailAdmin()
       .catch (error) =>

@@ -48,6 +48,9 @@ class PasswordController
         else if @$scope.data.password1 != @$scope.data.password2
             @alerts.push({type:'danger', msg:"Passwords do not match."})
             valid = false
+        else if @$scope.data.currentPassword == @$scope.data.password1
+            @alerts.push({type:'danger', msg:"The password you provided is the same as the current one."})
+            valid = false
 
         valid
 
