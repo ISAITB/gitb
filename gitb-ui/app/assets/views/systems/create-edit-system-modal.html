@@ -21,7 +21,11 @@
 				<label class="col-sm-3 control-label" for="version">*Version:</label>
 				<div class="col-sm-8"><input id="version" ng-model="system.version" class="form-control" type="text" required></div>
 			</div>
-		</form>		
+			<div class="form-group" ng-if="otherSystems.length">
+					<label class="col-sm-3 control-label" for="version">Copy test setup from:</label>
+					<div class="col-sm-8"><select class="form-control" ng-model="otherSystem" ng-options="sys.sname for sys in otherSystems track by sys.id"><option value=""></option></select></div>
+				</div>
+			</form>		
 	</div>
 	<div class="modal-footer">
 		<button class="btn btn-default" ng-click="save()" ng-disabled="!saveEnabled() || pending"><span class="tab" ng-if="savePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Save</button>

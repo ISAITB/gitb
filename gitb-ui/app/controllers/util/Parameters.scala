@@ -65,6 +65,7 @@ object Parameters {
   val SYSTEM_FNAME = "system_fname"
   val SYSTEM_DESC  = "system_description"
   val SYSTEM_VERSION = "system_version"
+  val OTHER_SYSTEM = "other_system"
 
   //Conformance Service parameters
   val ACTORS  = "actors"

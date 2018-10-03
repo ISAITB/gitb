@@ -9,6 +9,20 @@ class CreateEditSystemController
 		@$scope.deletePending = false
 		@$scope.system = system
 		@$scope.organisationId = organisationId
+		@$scope.otherSystems = []
+
+		@SystemService.getSystemsByOrganization(organisationId).then(
+			(data) =>
+				if @$scope.system.id?
+					for system in data
+						if (system.id+'' != @$scope.system.id+'')
+							@$scope.otherSystems.push(system)
+				else
+					@$scope.otherSystems = data
+			, (error) =>
+				@ErrorService.showErrorMessage(error)
+		)
+
 		if system.id?
 			@$scope.title = 'Update system'
 		else 
@@ -17,25 +31,34 @@ class CreateEditSystemController
 		@$scope.saveEnabled = () =>
 			@$scope.system.sname? && @$scope.system.fname? && @$scope.system.version?
 
+		@$scope.doUpdate = () =>
+			@$scope.pending = true
+			@$scope.savePending = true
+			@SystemService.updateSystem(@$scope.system.id, @$scope.system.sname, @$scope.system.fname, @$scope.system.description, @$scope.system.version, @$scope.organisationId, @$scope.otherSystem)
+				.then((data) =>
+						@$scope.pending = false
+						@$scope.savePending = false
+						@$modalInstance.close(data)
+				, (error) =>
+					@$scope.pending = false
+					@$scope.savePending = false
+					@ErrorService.showErrorMessage(error)
+				)
+
 		@$scope.save = () =>
 			if @$scope.saveEnabled()
-				@$scope.pending = true
-				@$scope.savePending = true
 				if @$scope.system.id?
 					# Update
-					@SystemService.updateSystem(@$scope.system.id, @$scope.system.sname, @$scope.system.fname, @$scope.system.description, @$scope.system.version, @$scope.organisationId)
-						.then((data) =>
-								@$scope.pending = false
-								@$scope.savePending = false
-								@$modalInstance.close(data)
-						, (error) =>
-							@$scope.pending = false
-							@$scope.savePending = false
-							@ErrorService.showErrorMessage(error)
-						)
+					if @$scope.otherSystem? && @$scope.otherSystem.id?
+						@ConfirmationDialogService.confirm("Confirm test setup copy", "Copying the test setup from another system will remove current conformance statements and test results. Are you sure you want to proceed?", "Yes", "No")
+							.then(() =>
+								@$scope.doUpdate()
+							)
+					else
+						@$scope.doUpdate()
 				else
 					# Create
-					@SystemService.registerSystemWithOrganization(@$scope.system.sname, @$scope.system.fname, @$scope.system.description, @$scope.system.version, @$scope.organisationId)
+					@SystemService.registerSystemWithOrganization(@$scope.system.sname, @$scope.system.fname, @$scope.system.description, @$scope.system.version, @$scope.organisationId, @$scope.otherSystem)
 						.then((data) =>
 							@$scope.pending = false
 							@$scope.savePending = false

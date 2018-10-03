@@ -23,7 +23,7 @@
           '<label class="col-sm-3 control-label" for="role">Legal notice:</label>'+
           '<div class="col-sm-8"><select class="form-control" ng-model="tbOrganization.legalNotices" ng-options="notice.name for notice in tbLegalNotices track by notice.id"><option value="">--Default Legal Notice--</option></select></div>'+
         '</div>'+
-        '<div class="form-group">'+
+        '<div class="form-group" ng-if="tbOtherOrganisations.length">'+
           '<label class="col-sm-3 control-label" for="role">Copy test setup from:</label>'+
           '<div class="col-sm-8"><select class="form-control" ng-model="tbOrganization.otherOrganisations" ng-options="organisation.sname for organisation in tbOtherOrganisations track by organisation.id"><option value=""></option></select></div>'+
         '</div>'+

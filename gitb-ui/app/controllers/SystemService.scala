@@ -22,7 +22,8 @@ class SystemService extends Controller{
 
   def registerSystemWithOrganization = Action.apply { request =>
     val system:Systems = ParameterExtractor.extractSystemWithOrganizationInfo(request)
-    SystemManager.registerSystemWrapper(system)
+    val otherSystem = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_SYSTEM)
+    SystemManager.registerSystemWrapper(system, otherSystem)
     // Return updated list of systems
     val systems = SystemManager.getSystemsByOrganization(system.owner)
     val json = JsonUtil.jsSystems(systems).toString()
@@ -41,7 +42,8 @@ class SystemService extends Controller{
       val descr:Option[String]   = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_DESC)
       val version:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_VERSION)
       val organisationId = ParameterExtractor.requiredBodyParameter(request, Parameters.ORGANIZATION_ID).toLong
-      SystemManager.updateSystemProfile(sut_id, sname, fname, descr, version)
+      val otherSystem = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_SYSTEM)
+      SystemManager.updateSystemProfile(sut_id, sname, fname, descr, version, otherSystem)
       // Return updated list of systems
       val systems = SystemManager.getSystemsByOrganization(organisationId)
       val json = JsonUtil.jsSystems(systems).toString()
@@ -100,7 +102,7 @@ class SystemService extends Controller{
 				if(actorIds.size == 0) {
           ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "'ids' parameter should be non-empty")
 				} else {
-					SystemManager.deleteConformanceStatments(sut_id, actorIds)
+					SystemManager.deleteConformanceStatmentsWrapper(sut_id, actorIds)
           ResponseConstructor.constructEmptyResponse
 				}
 			}
@@ -131,7 +133,7 @@ class SystemService extends Controller{
   }
 
 	def getImplementedActors(sut_id:Long) = Action.apply { request =>
-		val actors = SystemManager.getImplementedActors(sut_id)
+		val actors = SystemManager.getImplementedActorsWrapper(sut_id)
     val json:String = JsonUtil.jsActors(actors).toString()
     ResponseConstructor.constructJsonResponse(json)
 	}

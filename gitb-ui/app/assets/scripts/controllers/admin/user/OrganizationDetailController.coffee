@@ -89,7 +89,7 @@ class OrganizationDetailController
     if @ValidationService.requireNonNull(@organization.sname, "Please enter short name of the organization.") &
     @ValidationService.requireNonNull(@organization.fname, "Please enter full name of the organization.")
       if @organization.otherOrganisations? && @organization.otherOrganisations.id?
-        @ConfirmationDialogService.confirm("Confirm test setup copy", "Copying the test setup from another organisation will remove any currently configured systems, conformance statements and test results. Are you sure you want to proceed?", "Yes", "No")
+        @ConfirmationDialogService.confirm("Confirm test setup copy", "Copying the test setup from another organisation will remove current systems, conformance statements and test results. Are you sure you want to proceed?", "Yes", "No")
         .then(() =>
           @doUpdate()
         )

@@ -68,15 +68,7 @@ object OrganizationManager extends BaseManager {
     val systems = SystemManager.getSystemsByOrganization(fromOrganisation)
     systems.foreach { otherSystem =>
       val newSystemId = SystemManager.registerSystem(Systems(0L, otherSystem.shortname, otherSystem.fullname, otherSystem.description, otherSystem.version, toOrganisation))
-      val conformanceStatements = SystemManager.getConformanceStatementReferences(otherSystem.id)
-      var addedStatements = scala.collection.mutable.Set[String]()
-      conformanceStatements.foreach { otherConformanceStatement =>
-        val key = otherConformanceStatement.spec+"-"+otherConformanceStatement.actor
-        if (!addedStatements.contains(key)) {
-          addedStatements += key
-          SystemManager.defineConformanceStatement(newSystemId, otherConformanceStatement.spec, otherConformanceStatement.actor, None)
-        }
-      }
+      SystemManager.copyTestSetup(otherSystem.id, newSystemId)
     }
   }
 
