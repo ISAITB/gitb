@@ -34,7 +34,7 @@ class CreateEditSystemController
 		@$scope.doUpdate = () =>
 			@$scope.pending = true
 			@$scope.savePending = true
-			@SystemService.updateSystem(@$scope.system.id, @$scope.system.sname, @$scope.system.fname, @$scope.system.description, @$scope.system.version, @$scope.organisationId, @$scope.otherSystem)
+			@SystemService.updateSystem(@$scope.system.id, @$scope.system.sname, @$scope.system.fname, @$scope.system.description, @$scope.system.version, @$scope.organisationId, @$scope.system.otherSystem)
 				.then((data) =>
 						@$scope.pending = false
 						@$scope.savePending = false
@@ -49,7 +49,7 @@ class CreateEditSystemController
 			if @$scope.saveEnabled()
 				if @$scope.system.id?
 					# Update
-					if @$scope.otherSystem? && @$scope.otherSystem.id?
+					if @$scope.system.otherSystem? && @$scope.system.otherSystem.id?
 						@ConfirmationDialogService.confirm("Confirm test setup copy", "Copying the test setup from another system will remove current conformance statements and test results. Are you sure you want to proceed?", "Yes", "No")
 							.then(() =>
 								@$scope.doUpdate()
@@ -58,7 +58,7 @@ class CreateEditSystemController
 						@$scope.doUpdate()
 				else
 					# Create
-					@SystemService.registerSystemWithOrganization(@$scope.system.sname, @$scope.system.fname, @$scope.system.description, @$scope.system.version, @$scope.organisationId, @$scope.otherSystem)
+					@SystemService.registerSystemWithOrganization(@$scope.system.sname, @$scope.system.fname, @$scope.system.description, @$scope.system.version, @$scope.organisationId, @$scope.system.otherSystem)
 						.then((data) =>
 							@$scope.pending = false
 							@$scope.savePending = false

@@ -23,7 +23,7 @@
 			</div>
 			<div class="form-group" ng-if="otherSystems.length">
 					<label class="col-sm-3 control-label" for="version">Copy test setup from:</label>
-					<div class="col-sm-8"><select class="form-control" ng-model="otherSystem" ng-options="sys.sname for sys in otherSystems track by sys.id"><option value=""></option></select></div>
+					<div class="col-sm-8"><select class="form-control" ng-model="system.otherSystem" ng-options="sys.sname for sys in otherSystems track by sys.id"><option value=""></option></select></div>
 				</div>
 			</form>		
 	</div>
