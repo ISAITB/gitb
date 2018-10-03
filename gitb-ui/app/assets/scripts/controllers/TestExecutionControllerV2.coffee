@@ -263,7 +263,7 @@ class TestExecutionControllerV2
   constructEndpointRepresentations: () =>
     @endpointRepresentations = _.map @endpoints, (endpoint) =>
         name: endpoint.name
-        desc: endpoint.desc
+        description: endpoint.description
         id: endpoint.id
         parameters: _.map endpoint.parameters, (parameter) =>
           repr = _.cloneDeep parameter
