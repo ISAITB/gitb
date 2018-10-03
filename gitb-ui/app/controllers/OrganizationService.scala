@@ -3,7 +3,6 @@ package controllers
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
 import managers.OrganizationManager
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc.{Action, Controller}
 import utils.JsonUtil
 
@@ -45,7 +44,8 @@ class OrganizationService extends Controller {
    */
   def createOrganization() = Action.apply { request =>
     val organization = ParameterExtractor.extractOrganizationInfo(request)
-    OrganizationManager.createOrganization(organization)
+    val otherOrganisation = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_ORGANISATION)
+    OrganizationManager.createOrganization(organization, otherOrganisation)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -57,7 +57,8 @@ class OrganizationService extends Controller {
     val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_FNAME)
     val landingPageId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LANDING_PAGE_ID)
     val legalNoticeId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LEGAL_NOTICE_ID)
-    OrganizationManager.updateOrganization(orgId, shortName, fullName, landingPageId, legalNoticeId)
+    val otherOrganisation = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_ORGANISATION)
+    OrganizationManager.updateOrganization(orgId, shortName, fullName, landingPageId, legalNoticeId, otherOrganisation)
     ResponseConstructor.constructEmptyResponse
   }
 

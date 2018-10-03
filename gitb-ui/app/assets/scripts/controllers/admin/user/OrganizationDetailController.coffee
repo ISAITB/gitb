@@ -1,7 +1,7 @@
 class OrganizationDetailController
 
-  @$inject = ['$log', '$state', '$stateParams', '$window', 'LandingPageService', 'LegalNoticeService', 'UserManagementService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'UserService', 'ErrorService']
-  constructor: (@$log, @$state, @$stateParams, @$window, @LandingPageService, @LegalNoticeService, @UserManagementService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @UserService, @ErrorService) ->
+  @$inject = ['$log', '$state', '$stateParams', '$window', 'LandingPageService', 'LegalNoticeService', 'UserManagementService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'UserService', 'ErrorService', '$q']
+  constructor: (@$log, @$state, @$stateParams, @$window, @LandingPageService, @LegalNoticeService, @UserManagementService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @UserService, @ErrorService, @$q) ->
 
     @userColumns = [
       {
@@ -23,6 +23,7 @@ class OrganizationDetailController
     @organization = {}
     @landingPages = []
     @legalNotices = []
+    @otherOrganisations = []
     @users = []
     @alerts = []
 
@@ -53,6 +54,14 @@ class OrganizationDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+    @OrganizationService.getOrganizationsByCommunity(@communityId)
+    .then (data) =>
+      for org in data
+        if (org.id+'' != @orgId+'')
+          @otherOrganisations.push(org)
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
   # delete and cancel detail
   deleteOrganization: () =>
     @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this organization?", "Yes", "No")
@@ -66,16 +75,26 @@ class OrganizationDetailController
   saveDisabled: () =>
     !(@organization?.sname? && @organization?.fname?)
 
+  doUpdate: () =>
+    @OrganizationService.updateOrganization(@orgId, @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.otherOrganisations)
+    .then () =>
+      @cancelDetailOrganization()
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+
   # update and cancel detail
   updateOrganization: () =>
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@organization.sname, "Please enter short name of the organization.") &
     @ValidationService.requireNonNull(@organization.fname, "Please enter full name of the organization.")
-      @OrganizationService.updateOrganization(@orgId, @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices)
-      .then () =>
-        @cancelDetailOrganization()
-      .catch (error) =>
-        @ErrorService.showErrorMessage(error)
+      if @organization.otherOrganisations? && @organization.otherOrganisations.id?
+        @ConfirmationDialogService.confirm("Confirm test setup copy", "Copying the test setup from another organisation will remove any currently configured systems, conformance statements and test results. Are you sure you want to proceed?", "Yes", "No")
+        .then(() =>
+          @doUpdate()
+        )
+      else 
+        @doUpdate()
     else
       @alerts = @ValidationService.getAlerts()
 

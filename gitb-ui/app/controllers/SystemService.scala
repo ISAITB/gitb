@@ -22,7 +22,7 @@ class SystemService extends Controller{
 
   def registerSystemWithOrganization = Action.apply { request =>
     val system:Systems = ParameterExtractor.extractSystemWithOrganizationInfo(request)
-    SystemManager.registerSystem(system)
+    SystemManager.registerSystemWrapper(system)
     // Return updated list of systems
     val systems = SystemManager.getSystemsByOrganization(system.owner)
     val json = JsonUtil.jsSystems(systems).toString()
@@ -81,7 +81,7 @@ class SystemService extends Controller{
 	    case _ => None
 	  }
 
-    SystemManager.defineConformanceStatement(sut_id, spec, actor, optionIds)
+    SystemManager.defineConformanceStatementWrapper(sut_id, spec, actor, optionIds)
     ResponseConstructor.constructEmptyResponse
   }
 

@@ -64,16 +64,36 @@ object OrganizationManager extends BaseManager {
     }
   }
 
-  /**
-   * Creates new organization
-   */
-  def createOrganization(organization: Organizations) = {
-    DB.withTransaction { implicit session =>
-      PersistenceSchema.insertOrganization += organization
+  private def copyTestSetup(fromOrganisation: Long, toOrganisation: Long)(implicit session:Session) = {
+    val systems = SystemManager.getSystemsByOrganization(fromOrganisation)
+    systems.foreach { otherSystem =>
+      val newSystemId = SystemManager.registerSystem(Systems(0L, otherSystem.shortname, otherSystem.fullname, otherSystem.description, otherSystem.version, toOrganisation))
+      val conformanceStatements = SystemManager.getConformanceStatementReferences(otherSystem.id)
+      var addedStatements = scala.collection.mutable.Set[String]()
+      conformanceStatements.foreach { otherConformanceStatement =>
+        val key = otherConformanceStatement.spec+"-"+otherConformanceStatement.actor
+        if (!addedStatements.contains(key)) {
+          addedStatements += key
+          SystemManager.defineConformanceStatement(newSystemId, otherConformanceStatement.spec, otherConformanceStatement.actor, None)
+        }
+      }
     }
   }
 
-  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long]) = {
+  /**
+   * Creates new organization
+   */
+  def createOrganization(organization: Organizations, otherOrganisationId: Option[Long]) = {
+    DB.withTransaction { implicit session =>
+      val newOrganisationId = PersistenceSchema.insertOrganization += organization
+      if (otherOrganisationId.isDefined) {
+        copyTestSetup(otherOrganisationId.get, newOrganisationId)
+      }
+      newOrganisationId
+    }
+  }
+
+  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], otherOrganisation: Option[Long]) = {
     DB.withTransaction { implicit session =>
       val org = PersistenceSchema.organizations.filter(_.id === orgId).firstOption
 
@@ -81,17 +101,19 @@ object OrganizationManager extends BaseManager {
         if (!shortName.isEmpty && org.get.shortname != shortName) {
           val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname)
           q.update(shortName)
-
           TestResultManager.updateForUpdatedOrganisation(orgId, shortName)
         }
-
         if (!fullName.isEmpty && org.get.fullname != fullName) {
           val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.fullname)
           q.update(fullName)
         }
-
         val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.landingPage, o.legalNotice)
         q.update(landingPageId, legalNoticeId)
+        if (otherOrganisation.isDefined) {
+          // Replace the test setup for the organisation with the one from the provided one.
+          SystemManager.deleteSystemByOrganization(orgId)
+          copyTestSetup(otherOrganisation.get, orgId)
+        }
       } else {
         throw new IllegalArgumentException("Organization with ID '" + orgId + "' not found")
       }

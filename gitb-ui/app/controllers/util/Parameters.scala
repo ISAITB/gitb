@@ -57,6 +57,7 @@ object Parameters {
   val USER_ROLE    = "user_role"
   val ROLE_ID      = "role_id"
   val ORGANIZATION_ID = "organization_id"
+  val OTHER_ORGANISATION = "other_organisation"
 
   //System Service parameters
   val SYSTEM_ID    = "system_id"

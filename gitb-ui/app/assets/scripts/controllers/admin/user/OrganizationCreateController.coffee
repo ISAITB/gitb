@@ -9,6 +9,7 @@ class OrganizationCreateController
     @organization = {}
     @landingPages = []
     @legalNotices = []
+    @otherOrganisations = []
 
     @LandingPageService.getLandingPagesByCommunity(@communityId)
     .then (data) =>
@@ -22,6 +23,12 @@ class OrganizationCreateController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+    @OrganizationService.getOrganizationsByCommunity(@communityId)
+    .then (data) =>
+      @otherOrganisations = data
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
   saveDisabled: () =>
     !(@organization?.sname? && @organization?.fname?)
 
@@ -30,7 +37,7 @@ class OrganizationCreateController
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@organization.sname, "Please enter short name of the organization.") &
     @ValidationService.requireNonNull(@organization.fname, "Please enter full name of the organization.")
-      @OrganizationService.createOrganization @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @communityId
+      @OrganizationService.createOrganization @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.otherOrganisations, @communityId
       .then () =>
         @cancelCreateOrganization()
       .catch (error) =>
