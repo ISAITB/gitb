@@ -6,7 +6,6 @@ import akka.dispatch.Futures;
 import akka.dispatch.OnFailure;
 import akka.dispatch.OnSuccess;
 import com.gitb.core.ErrorCode;
-import com.gitb.core.StepStatus;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.engine.TestbedService;
 import com.gitb.engine.actors.ActorSystem;
@@ -23,7 +22,6 @@ import com.gitb.tbs.UserInput;
 import com.gitb.tbs.UserInteractionRequest;
 import com.gitb.tdl.InstructionOrRequest;
 import com.gitb.tdl.UserInteraction;
-import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
@@ -67,22 +65,6 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         final ActorContext context = getContext();
 
         promise = Futures.promise();
-
-        promise.future().onSuccess(new OnSuccess<TestStepReportType>() {
-            @Override
-            public void onSuccess(TestStepReportType result) throws Throwable {
-                if(result != null) {
-                    if (result.getResult() == TestResultType.SUCCESS) {
-                        updateTestStepStatus(context, StepStatus.COMPLETED, result);
-                    } else {
-                        updateTestStepStatus(context, StepStatus.ERROR, result);
-                    }
-                } else {
-                    updateTestStepStatus(context, StepStatus.COMPLETED, null);
-                }
-            }
-        }, getContext().dispatcher());
-
         promise.future().onFailure(new OnFailure() {
             @Override
             public void onFailure(Throwable failure) throws Throwable {
