@@ -252,6 +252,9 @@ public class JacksonUtil {
                     if(instruction.getEncoding() != null) {
                         json.writeStringField("encoding", instruction.getEncoding());
                     }
+                    if(instruction.getEmbeddingMethod() != null) {
+                        json.writeStringField("contentType", instruction.getEmbeddingMethod().value());
+                    }
                     json.writeEndObject();
                 }
             }

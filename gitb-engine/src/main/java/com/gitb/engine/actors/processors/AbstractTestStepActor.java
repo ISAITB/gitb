@@ -6,6 +6,8 @@ import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.japi.Creator;
 import com.gitb.core.StepStatus;
+import com.gitb.core.TestRole;
+import com.gitb.core.TestRoleEnumeration;
 import com.gitb.engine.actors.Actor;
 import com.gitb.engine.commands.interaction.RestartCommand;
 import com.gitb.engine.commands.interaction.StartCommand;
@@ -28,6 +30,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.xml.datatype.DatatypeConfigurationException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Created by serbay on 9/11/14.
@@ -330,4 +335,21 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	public static String getName(String actorName) {
 		return actorName + "-" + RandomStringUtils.random(5, true, true);
 	}
+
+	TestRole getSUTActor() {
+		return getSUTActors().get(0);
+	}
+
+	List<TestRole> getSUTActors() {
+		List<TestRole> sutActors = new ArrayList<>();
+		if (scope.getContext().getTestCase() != null && scope.getContext().getTestCase().getActors() != null && scope.getContext().getTestCase().getActors().getActor() != null) {
+			for (TestRole role: scope.getContext().getTestCase().getActors().getActor()) {
+				if (role.getRole() == TestRoleEnumeration.SUT) {
+					sutActors.add(role);
+				}
+			}
+		}
+		return Collections.unmodifiableList(sutActors);
+	}
+
 }

@@ -40,6 +40,13 @@ class ProvideInputModalController
 				reader.onload = (event) =>
 					request.data = event.target.result
 
+		@$scope.download = (interaction) =>
+			blobData = @$scope.base64toBlob(interaction.value)
+			nameToUse = "downloadedFile"
+			if interaction.name?
+				nameToUse = interaction.name
+			saveAs(blobData, nameToUse);
+
 		@$scope.isConfigurationDataURL = (configuration) =>
 			@Constants.DATA_URL_REGEX.test(configuration)
 
@@ -48,5 +55,11 @@ class ProvideInputModalController
 				if interaction.type == "request"
 					return true
 			return false
+
+		@$scope.base64toBlob = (byteString) =>
+			bytes = atob(byteString)
+			bb = new Blob([bytes])
+			# bb = new Blob([ab], {type: 'application/xml'})
+			return bb
 
 controllers.controller('ProvideInputModalController', ProvideInputModalController)

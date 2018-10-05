@@ -3,11 +3,15 @@ package com.gitb.engine.actors.processors;
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import akka.dispatch.Futures;
+import akka.dispatch.OnFailure;
+import akka.dispatch.OnSuccess;
 import com.gitb.core.ErrorCode;
+import com.gitb.core.StepStatus;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.engine.TestbedService;
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.events.TestStepInputEventBus;
+import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.events.model.InputEvent;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
@@ -19,6 +23,8 @@ import com.gitb.tbs.UserInput;
 import com.gitb.tbs.UserInteractionRequest;
 import com.gitb.tdl.InstructionOrRequest;
 import com.gitb.tdl.UserInteraction;
+import com.gitb.tr.TestResultType;
+import com.gitb.tr.TestStepReportType;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
@@ -27,6 +33,8 @@ import com.gitb.utils.ErrorUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.concurrent.Future;
+import scala.concurrent.Promise;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -42,6 +50,9 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
 
     private static Logger logger = LoggerFactory.getLogger(InteractionStepProcessorActor.class);
 
+    private Promise<TestStepReportType> promise;
+    private Future<TestStepReportType> future;
+
     public InteractionStepProcessorActor(UserInteraction step, TestCaseScope scope, String stepId) {
         super(step, scope, stepId);
     }
@@ -52,46 +63,114 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         TestStepInputEventBus
                 .getInstance()
                 .subscribe(self(), classifier);
+
+        final ActorContext context = getContext();
+
+        promise = Futures.promise();
+
+        promise.future().onSuccess(new OnSuccess<TestStepReportType>() {
+            @Override
+            public void onSuccess(TestStepReportType result) throws Throwable {
+                if(result != null) {
+                    if (result.getResult() == TestResultType.SUCCESS) {
+                        updateTestStepStatus(context, StepStatus.COMPLETED, result);
+                    } else {
+                        updateTestStepStatus(context, StepStatus.ERROR, result);
+                    }
+                } else {
+                    updateTestStepStatus(context, StepStatus.COMPLETED, null);
+                }
+            }
+        }, getContext().dispatcher());
+
+        promise.future().onFailure(new OnFailure() {
+            @Override
+            public void onFailure(Throwable failure) throws Throwable {
+                updateTestStepStatus(context, new ErrorStatusEvent(failure), null, true);
+            }
+        }, getContext().dispatcher());
+
     }
 
     @Override
     protected void start() throws Exception {
         processing();
-        Futures.future(new Callable<Object>() {
+        future = Futures.future(new Callable<TestStepReportType>() {
             @Override
-            public Object call() throws Exception {
+            public TestStepReportType call() throws Exception {
                 //Process the instructions and request the interaction from TestbedClient
-                List<InstructionOrRequest> instructionAndRequests = step.getInstructOrRequest();
-                UserInteractionRequest userInteractionRequest = new UserInteractionRequest();
-                userInteractionRequest.setWith(step.getWith());
-                int childStepId = 1;
-                for (InstructionOrRequest instructionOrRequest : instructionAndRequests) {
-                    if (StringUtils.isBlank(instructionOrRequest.getType())) {
-                        // Consider "string" as the default type if not specified
-                        instructionOrRequest.setType(DataType.STRING_DATA_TYPE);
+                try {
+                    VariableResolver variableResolver = new VariableResolver(scope);
+                    List<InstructionOrRequest> instructionAndRequests = step.getInstructOrRequest();
+                    UserInteractionRequest userInteractionRequest = new UserInteractionRequest();
+                    String sutActorId = getSUTActor().getId();
+                    if (StringUtils.isBlank(step.getWith())) {
+                        userInteractionRequest.setWith(sutActorId);
+                    } else {
+                        userInteractionRequest.setWith(step.getWith());
                     }
-                    //At least one of 'with's must be specified in test description
-                    if(userInteractionRequest.getWith() == null && instructionOrRequest.getWith() == null) {
-                        throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "At least one of 'with's should be specified in UserInteraction step"));
-                    }
-                    //If it is an instruction
-                    if (instructionOrRequest instanceof com.gitb.tdl.Instruction) {
-                        // If no expression is specified consider it an empty expression.
-                        if (StringUtils.isBlank(instructionOrRequest.getValue())) {
-                            instructionOrRequest.setValue("''");
+                    int childStepId = 1;
+                    for (InstructionOrRequest instructionOrRequest : instructionAndRequests) {
+                        // Set the type in case this is missing.
+                        if (StringUtils.isBlank(instructionOrRequest.getType())) {
+                            if (instructionOrRequest.getContentType() == ValueEmbeddingEnumeration.BASE_64) {
+                                // if the contentTYpe is set to BASE64 this will be a file.
+                                instructionOrRequest.setType(DataType.BINARY_DATA_TYPE);
+                            } else {
+                                if (variableResolver.isVariableReference(instructionOrRequest.getValue())) {
+                                    // If a target variable is referenced we can use this to determine the type.
+                                    DataType targetVariable = variableResolver.resolveVariable(instructionOrRequest.getValue());
+                                    instructionOrRequest.setType(targetVariable.getType());
+                                } else {
+                                    // Set "string" if no other type can be determined.
+                                    instructionOrRequest.setType(DataType.STRING_DATA_TYPE);
+                                }
+                            }
                         }
-                        userInteractionRequest.getInstructionOrRequest().add(processInstruction(instructionOrRequest, "" + childStepId));
+                        // Set the default content type based on the type.
+                        if (instructionOrRequest.getContentType() == null) {
+                            if (DataType.isFileType(instructionOrRequest.getType())) {
+                                instructionOrRequest.setContentType(ValueEmbeddingEnumeration.BASE_64);
+                            } else {
+                                instructionOrRequest.setContentType(ValueEmbeddingEnumeration.STRING);
+                            }
+                        }
+                        if (StringUtils.isBlank(instructionOrRequest.getWith())) {
+                            instructionOrRequest.setWith(userInteractionRequest.getWith());
+                        }
+                        //If it is an instruction
+                        if (instructionOrRequest instanceof com.gitb.tdl.Instruction) {
+                            // If no expression is specified consider it an empty expression.
+                            if (StringUtils.isBlank(instructionOrRequest.getValue())) {
+                                instructionOrRequest.setValue("''");
+                            }
+                            userInteractionRequest.getInstructionOrRequest().add(processInstruction(instructionOrRequest, "" + childStepId));
+                        }
+                        //If it is a request
+                        else {
+                            userInteractionRequest.getInstructionOrRequest().add(processRequest(instructionOrRequest, "" + childStepId));
+                        }
+                        childStepId++;
                     }
-                    //If it is a request
-                    else {
-                        userInteractionRequest.getInstructionOrRequest().add(processRequest(instructionOrRequest, "" + childStepId));
-                    }
-                    childStepId++;
+                    TestbedService.interactWithUsers(scope.getContext().getSessionId(), stepId, userInteractionRequest);
+                    return null;
+                } catch (Exception e) {
+                    logger.error("Error in preliminary step", e);
+                    throw new GITBEngineInternalError(e);
                 }
-                TestbedService.interactWithUsers(scope.getContext().getSessionId(), stepId, userInteractionRequest);
-                return null;
             }
         }, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER));
+        future.onSuccess(new OnSuccess<TestStepReportType>() {
+
+            @Override
+            public void onSuccess(TestStepReportType result) throws Throwable { promise.trySuccess(result);
+            }
+        }, getContext().dispatcher());
+        future.onFailure(new OnFailure() {
+            @Override
+            public void onFailure(Throwable failure) throws Throwable { promise.tryFailure(failure);
+            }
+        }, getContext().dispatcher());
         waiting();
     }
 
@@ -146,8 +225,9 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             DataType assignedVariable = variableResolver.resolveVariable(assignedVariableExpression);
             inputRequest.setType(assignedVariable.getType());
         } else {
-            if (instructionCommand.getType() == null)
+            if (instructionCommand.getType() == null) {
                 throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "The 'type' should be specified for InputRequest objects"));
+            }
             inputRequest.setType(instructionCommand.getType());
         }
         inputRequest.setEncoding(instructionCommand.getEncoding());
@@ -172,9 +252,6 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         for (UserInput userInput : userInputs) {
             int stepIndex = Integer.parseInt(userInput.getId());
             InstructionOrRequest targetRequest = step.getInstructOrRequest().get(stepIndex - 1);
-            if (DataType.STRING_DATA_TYPE.equals(userInput.getType())) {
-                userInput.setEmbeddingMethod(ValueEmbeddingEnumeration.STRING);
-            }
             if (targetRequest.getValue() != null && !targetRequest.getValue().equals("")) {
                 //Find the variable that the given input content is assigned(bound) to
                 String assignedVariableExpression = targetRequest.getValue();

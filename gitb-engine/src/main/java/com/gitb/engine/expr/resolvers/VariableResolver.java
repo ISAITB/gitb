@@ -6,6 +6,7 @@ import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.types.*;
 import com.gitb.utils.ErrorUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
@@ -150,8 +151,11 @@ public class VariableResolver implements XPathVariableResolver{
     }
 
     public boolean isVariableReference(String variableExpression) {
-        Matcher matcher = VARIABLE_EXPRESSION_PATTERN.matcher(variableExpression);
-        return matcher.matches();
+	    if (!StringUtils.isBlank(variableExpression)) {
+            Matcher matcher = VARIABLE_EXPRESSION_PATTERN.matcher(variableExpression);
+            return matcher.matches();
+        }
+        return false;
     }
 
     /**

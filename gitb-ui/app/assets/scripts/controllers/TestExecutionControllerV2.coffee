@@ -601,6 +601,19 @@ class TestExecutionControllerV2
         if report?
           report.tcInstanceId = response.tcInstanceId
         @updateStatus(step, stepId, status, report)
+        if !@started && report?.result == "FAILURE"
+          error = {
+            statusText: 'Preliminary step error',
+            data: {
+              error_description: ''
+            }
+          }
+          if report?.reports?.assertionReports? &&
+          report.reports.assertionReports.length > 0 &&
+          report.reports.assertionReports[0].value?.description?
+              error.data.error_description = report.reports.assertionReports[0].value.description
+
+          @ErrorService.showErrorMessage(error)
 
   interact: (interactions, stepId) =>
     sessionForModal = @session

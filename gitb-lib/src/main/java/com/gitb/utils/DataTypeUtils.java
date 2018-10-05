@@ -134,8 +134,6 @@ public class DataTypeUtils {
 					case BASE_64: {
 						data.deserialize(Base64.decodeBase64(
                                 EncodingUtils.extractBase64FromDataURL(anyContent.getValue())));
-                        System.out.println(Base64.decodeBase64(
-                                EncodingUtils.extractBase64FromDataURL(anyContent.getValue())));
                         break;
 					}
 					case URI: {
