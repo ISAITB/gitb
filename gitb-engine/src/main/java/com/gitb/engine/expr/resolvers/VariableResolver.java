@@ -81,7 +81,7 @@ public class VariableResolver implements XPathVariableResolver{
         DataType value = resolveVariable(variableExpression);
         if(value instanceof PrimitiveType){
             if(value instanceof BinaryType){
-                throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid variable reference in expression, binary variables can not be used in expressions!"));
+                return value.toStringType().getValue();
             }
             return value.getValue();
         }else if(value instanceof ObjectType){
