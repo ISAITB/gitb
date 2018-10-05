@@ -209,8 +209,8 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
     directive
 ]
 
-@directives.directive 'anyContentView', ['$log', '$modal', 'RecursionHelper',
-($log, $modal, RecursionHelper) ->
+@directives.directive 'anyContentView', ['$log', '$modal', 'RecursionHelper', 'DataService',
+($log, $modal, RecursionHelper, DataService) ->
     $log.debug 'Constructing any-content-view with the context'
 
     directive =
@@ -225,6 +225,9 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
             '<span ng-if="isValueTooLong">{{value.length}} bytes</span>'+
             '<a href="" class="pull-right clearfix open" ng-click="open()" ng-if="isValueTooLong">'+
               'Open in editor' +
+            '</a>'+
+            '<a href="" class="pull-right clearfix open" style="padding-right: 20px;" ng-click="download()" ng-if="isValueTooLong">'+
+              'Download as file' +
             '</a>'+
           '</div>'+
           '<div class="items">'+
@@ -258,7 +261,12 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
 
             scope.open = (lineNumber) =>
               openEditorWindow $modal, scope.context.name, scope.value, scope.report, lineNumber
-
+            
+            scope.download = () =>
+              blob = DataService.anyContentToBlob(scope.context)
+              DataService.getFileInfo(blob).then((info) =>
+                saveAs(blob, info.filename)
+              )
           return
 
     directive

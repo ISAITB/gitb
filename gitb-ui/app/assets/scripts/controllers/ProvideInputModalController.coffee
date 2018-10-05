@@ -1,7 +1,7 @@
 class ProvideInputModalController
 
-	@$inject = ['$log', '$scope', '$modalInstance', 'Constants', 'TestService', 'session', 'interactionStepId', 'interactions']
-	constructor:(@$log, @$scope, @$modalInstance, @Constants, @TestService, @session, @interactionStepId, interactions) ->
+	@$inject = ['$log', '$scope', '$modalInstance', 'Constants', 'TestService', 'session', 'interactionStepId', 'interactions', 'DataService']
+	constructor:(@$log, @$scope, @$modalInstance, @Constants, @TestService, @session, @interactionStepId, interactions, @DataService) ->
 
 		@$scope.interactions = interactions
 
@@ -41,11 +41,16 @@ class ProvideInputModalController
 					request.data = event.target.result
 
 		@$scope.download = (interaction) =>
-			blobData = @$scope.base64toBlob(interaction.value)
-			nameToUse = "downloadedFile"
-			if interaction.name?
-				nameToUse = interaction.name
-			saveAs(blobData, nameToUse);
+			blob = @DataService.b64toBlob(interaction.value)
+			@DataService.getFileInfo(blob).then((info) =>
+				if interaction.name?
+					nameToUse = interaction.name
+				else
+					nameToUse = "file"
+					if info.extension?
+						nameToUse += '.'+info.extension
+				saveAs(blob, nameToUse)
+			)
 
 		@$scope.isConfigurationDataURL = (configuration) =>
 			@Constants.DATA_URL_REGEX.test(configuration)
@@ -55,11 +60,5 @@ class ProvideInputModalController
 				if interaction.type == "request"
 					return true
 			return false
-
-		@$scope.base64toBlob = (byteString) =>
-			bytes = atob(byteString)
-			bb = new Blob([bytes])
-			# bb = new Blob([ab], {type: 'application/xml'})
-			return bb
 
 controllers.controller('ProvideInputModalController', ProvideInputModalController)
