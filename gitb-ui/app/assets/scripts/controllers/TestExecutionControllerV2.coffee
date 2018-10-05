@@ -601,7 +601,8 @@ class TestExecutionControllerV2
         if report?
           report.tcInstanceId = response.tcInstanceId
         @updateStatus(step, stepId, status, report)
-        if !@started && report?.result == "FAILURE"
+        if stepId+'' == '0' && report?.result == "FAILURE"
+          # stepId is 0 for the preliminary step
           error = {
             statusText: 'Preliminary step error',
             data: {
