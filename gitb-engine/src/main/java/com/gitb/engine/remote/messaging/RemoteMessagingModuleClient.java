@@ -109,7 +109,11 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 			request.getInput().add(attachment);
 		}
 		SendResponse response = call(() -> getServiceClient().send(request));
-		return MessagingHandlerUtils.getMessagingReport(response.getReport());
+		if (response == null || response.getReport() == null) {
+			return MessagingHandlerUtils.generateErrorReport("No response received");
+		} else {
+			return MessagingHandlerUtils.getMessagingReport(response.getReport());
+		}
 	}
 
 	@Override
