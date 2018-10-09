@@ -5,9 +5,12 @@ import com.gitb.ms.MessagingClient;
 import com.gitb.ms.NotifyForMessageRequest;
 import com.gitb.ms.Void;
 
+import javax.jws.WebMethod;
 import javax.jws.WebParam;
+import javax.jws.WebResult;
 import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
+import javax.xml.ws.Action;
 
 /**
  * Created by simatosc on 25/11/2016.
@@ -16,6 +19,16 @@ import javax.jws.soap.SOAPBinding;
 @SOAPBinding(parameterStyle = SOAPBinding.ParameterStyle.BARE)
 public class MessagingClientImpl implements MessagingClient {
 
+    @WebMethod
+    @WebResult(
+            name = "NotifyForMessageResponse",
+            targetNamespace = "http://www.gitb.com/ms/v1/",
+            partName = "parameters"
+    )
+    @Action(
+            input = "http://gitb.com/MessagingClient/notifyForMessage",
+            output = "http://gitb.com/MessagingClient/notifyForMessageResponse"
+    )
     @Override
     public Void notifyForMessage(@WebParam(name = "NotifyForMessageRequest", targetNamespace = "http://www.gitb.com/ms/v1/", partName = "parameters") NotifyForMessageRequest parameters) {
         CallbackManager.getInstance().callbackReceived(parameters);
