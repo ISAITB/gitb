@@ -2,7 +2,7 @@ package persistence
 
 import config.Configurations
 import exceptions._
-import managers.{BaseManager, CommunityManager, OrganizationManager}
+import managers.{AttachmentType, BaseManager, CommunityManager, OrganizationManager}
 import models.Enums.UserRole.UserRole
 import models.Enums._
 import models._
@@ -144,7 +144,7 @@ object AccountManager extends BaseManager {
     }
   }
 
-  def submitFeedback(userId:Long, userEmail: String, messageTypeId: String, messageTypeDescription: String, messageContent: String): Unit = {
+  def submitFeedback(userId:Long, userEmail: String, messageTypeId: String, messageTypeDescription: String, messageContent: String, attachments: Array[AttachmentType]): Unit = {
     val user = getUserProfile(userId)
     var community: Community = null
     if (user.organization.isDefined) {
@@ -170,6 +170,6 @@ object AccountManager extends BaseManager {
     content += "<h2>Message content</h2>"
     content += "<p>"+messageContent+"</p>"
 
-    EmailUtil.sendEmail(Configurations.EMAIL_FROM, toAddresses, ccAddresses, subject, content, Configurations.SMTP_PROPERTIES, Configurations.EMAIL_SMTP_AUTH_USERNAME, Configurations.EMAIL_SMTP_AUTH_PASSWORD)
+    EmailUtil.sendEmail(Configurations.EMAIL_FROM, toAddresses, ccAddresses, subject, content, attachments, Configurations.SMTP_PROPERTIES, Configurations.EMAIL_SMTP_AUTH_USERNAME, Configurations.EMAIL_SMTP_AUTH_PASSWORD)
   }
 }

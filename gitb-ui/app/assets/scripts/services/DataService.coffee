@@ -18,6 +18,7 @@ class DataService
 		@isVendorUser = false
 		@isCommunityAdmin = false
 		@isDomainUser = false
+		@acceptedEmailAttachmentTypes = undefined
 
 	setUser: (user) ->
 		@user = user
@@ -30,6 +31,10 @@ class DataService
 
 	setConfiguration: (config) ->
 		@configuration = config
+		@acceptedEmailAttachmentTypes = {}
+		acceptedTypes = config['email.attachments.allowedTypes'].split(',')
+		for acceptedType in acceptedTypes
+			@acceptedEmailAttachmentTypes[acceptedType] = true
 
 	setVendor: (vendor) ->
 		@vendor = vendor
@@ -102,6 +107,9 @@ class DataService
 				bb = new Blob([anyContent.value], contentType)
 			else 
 				bb = new Blob([anyContent.value])
+
+	mimeTypeFromDataURL: (dataURL) =>
+		dataURL.substring(dataURL.indexOf(':')+1, dataURL.indexOf(';'))
 
 	b64toBlob: (b64Data, contentType, sliceSize) =>
 		contentType = contentType || ''

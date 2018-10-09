@@ -67,6 +67,20 @@ object ParameterExtractor {
     }
   }
 
+  def optionalIntBodyParameter(request:Request[AnyContent], parameter:String):Option[Int] = {
+    try {
+      val paramList = request.body.asFormUrlEncoded.get(parameter)
+      if(paramList.length > 0){
+        Some(paramList(0).toInt)
+      } else{
+        None
+      }
+    } catch {
+      case e:NoSuchElementException =>
+        None
+    }
+  }
+
   def extractUserId(request:Request[AnyContent]):Long = {
     request.headers.get(Parameters.USER_ID).get.toLong
   }

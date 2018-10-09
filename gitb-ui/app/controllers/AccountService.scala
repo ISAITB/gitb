@@ -2,14 +2,19 @@ package controllers
 
 import config.Configurations
 import controllers.util._
+import exceptions.ErrorCodes
+import managers.AttachmentType
+import org.apache.commons.codec.binary.Base64
+import org.apache.tika.Tika
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.AccountManager
 import play.api.mvc._
-import utils.JsonUtil
+import utils.{ClamAVClient, JsonUtil}
 
 
 class AccountService extends Controller{
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AccountService])
+  private final val tika = new Tika()
 
   /**
    * Registers a vendor and an administrator for vendor to the system
@@ -90,6 +95,9 @@ class AccountService extends Controller{
   def getConfiguration = Action.apply { request =>
     val configProperties = new java.util.HashMap[String, String]()
     configProperties.put("email.enabled", String.valueOf(Configurations.EMAIL_ENABLED))
+    configProperties.put("email.attachments.maxCount", String.valueOf(Configurations.EMAIL_ATTACHMENTS_MAX_COUNT))
+    configProperties.put("email.attachments.maxSize", String.valueOf(Configurations.EMAIL_ATTACHMENTS_MAX_SIZE))
+    configProperties.put("email.attachments.allowedTypes", String.valueOf(Configurations.EMAIL_ATTACHMENTS_ALLOWED_TYPES_STR))
     configProperties.put("survey.enabled", String.valueOf(Configurations.SURVEY_ENABLED))
     configProperties.put("survey.address", String.valueOf(Configurations.SURVEY_ADDRESS))
     configProperties.put("userguide.ou", String.valueOf(Configurations.USERGUIDE_OU))
@@ -101,15 +109,69 @@ class AccountService extends Controller{
   }
 
   def submitFeedback = Action.apply { request =>
-    val userId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_ID).toLong
-    val userEmail:String = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_EMAIL)
+    val userId: Long = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_ID).toLong
+    val userEmail: String = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_EMAIL)
     val messageTypeId: String = ParameterExtractor.requiredBodyParameter(request, Parameters.MESSAGE_TYPE_ID)
     val messageTypeDescription: String = ParameterExtractor.requiredBodyParameter(request, Parameters.MESSAGE_TYPE_DESCRIPTION)
     val messageContent: String = ParameterExtractor.requiredBodyParameter(request, Parameters.MESSAGE_CONTENT)
 
-    if (Configurations.EMAIL_ENABLED) {
-      AccountManager.submitFeedback(userId, userEmail, messageTypeId, messageTypeDescription, messageContent)
+    var response:Result = null
+
+    // Extract attachments
+    val attachments = scala.collection.mutable.ArrayBuffer.empty[AttachmentType]
+    val messageAttachmentCount = ParameterExtractor.optionalIntBodyParameter(request, "msg_attachments_count")
+    var totalAttachmentSize = 0
+
+    if (messageAttachmentCount.isDefined) {
+      for (index <- 0 until messageAttachmentCount.get) {
+        val name = ParameterExtractor.requiredBodyParameter(request, "msg_attachments[" + index + "][name]")
+        var content = ParameterExtractor.requiredBodyParameter(request, "msg_attachments[" + index + "][data]")
+        if (content.startsWith("data:")) {
+          // Data URL
+          content = content.substring(content.indexOf(",") + 1)
+        }
+        val bytes = Base64.decodeBase64(content)
+        attachments += new AttachmentType(name, bytes)
+        totalAttachmentSize += bytes.length
+      }
+      // Validate attachments
+      if (attachments.length > Configurations.EMAIL_ATTACHMENTS_MAX_COUNT) {
+        // Count.
+        response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_COUNT_EXCEEDED, "A maximum of " + Configurations.EMAIL_ATTACHMENTS_MAX_COUNT + " attachments can be provided")
+      } else if (totalAttachmentSize > (Configurations.EMAIL_ATTACHMENTS_MAX_SIZE * 1024 * 1024)) {
+        // Size.
+        response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_COUNT_EXCEEDED, "The total size of attachments cannot exceed " + Configurations.EMAIL_ATTACHMENTS_MAX_SIZE + " MBs.")
+      } else {
+        var index = 0
+        while (index < messageAttachmentCount.get && response == null) {
+          val detectedMimeType = tika.detect(attachments(index).getContent)
+          if (!Configurations.EMAIL_ATTACHMENTS_ALLOWED_TYPES.contains(detectedMimeType)) {
+            logger.warn("Attachment type [" + detectedMimeType + "] of file [" + attachments(index).getName + "] not allowed.")
+            response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_TYPE_NOT_ALLOWED, "Attachment ["+attachments(index).getName+"] not allowed. Allowed types are images, text files and PDFs.")
+          } else {
+            attachments(index).setType(detectedMimeType);
+            index += 1
+          }
+        }
+        if (response == null) {
+          val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+          index = 0
+          while (index < messageAttachmentCount.get && response == null) {
+            val scanResult = virusScanner.scan(attachments(index).getContent)
+            if (!ClamAVClient.isCleanReply(scanResult)) {
+              logger.warn("Attachment [" + attachments(index).getName + "] found to contain virus.")
+              response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_VIRUS_FOUND, "Attachments failed virus scan.")
+            } else {
+              index += 1
+            }
+          }
+        }
+      }
     }
-    ResponseConstructor.constructEmptyResponse
+    if (response == null) {
+      AccountManager.submitFeedback(userId, userEmail, messageTypeId, messageTypeDescription, messageContent, attachments.toArray)
+      response = ResponseConstructor.constructEmptyResponse
+    }
+    response
   }
 }

@@ -716,6 +716,9 @@ object JsonUtil {
   def serializeConfigurationProperties(config: util.HashMap[String, String]):JsObject = {
     val json = Json.obj(
       "email.enabled" -> config.get("email.enabled"),
+      "email.attachments.maxCount" -> config.get("email.attachments.maxCount"),
+      "email.attachments.maxSize" -> config.get("email.attachments.maxSize"),
+      "email.attachments.allowedTypes" -> config.get("email.attachments.allowedTypes"),
       "survey.enabled" -> config.get("survey.enabled"),
       "survey.address" -> config.get("survey.address"),
       "userguide.ou" -> config.get("userguide.ou"),

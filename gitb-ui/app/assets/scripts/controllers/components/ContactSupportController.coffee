@@ -10,6 +10,7 @@ class ContactSupportController
     )
     @$scope.contactAddress = @DataService.user.email
     @$scope.surveyAddress = @DataService.configuration?["survey.address"]
+    @$scope.attachments = []
     @$scope.feedbackTypes = [
         {id: 0, description: "Technical issue"},
         {id: 1, description: "Feature request"},
@@ -21,6 +22,7 @@ class ContactSupportController
         @$scope.feedback = {}
         @$scope.sendPending = false
         @$scope.alerts = []
+        @$scope.attachments = []
         if (tinymce.activeEditor?)
             tinymce.activeEditor.setContent("")
 
@@ -32,19 +34,46 @@ class ContactSupportController
     @$scope.showSurveyLink = () =>
         @DataService.configuration?["survey.enabled"] == 'true'
 
+    @$scope.validateAttachments = () =>
+        valid = true
+        if @$scope.attachments?
+            maxCount = 5
+            if @DataService.configuration?["email.attachments.maxCount"]?
+                maxCount = parseInt(@DataService.configuration["email.attachments.maxCount"])
+            if @$scope.attachments.length > maxCount
+                @ValidationService.alerts.push({type:'danger', msg:'A maximum of '+maxCount+' attachments can be provided'})
+                valid = false
+            totalSize = 0
+            for attachment in @$scope.attachments
+                totalSize += attachment.size
+            maxSizeMBs = 5
+            if @DataService.configuration?["email.attachments.maxSize"]?
+                maxSizeMBs = parseInt(@DataService.configuration["email.attachments.maxSize"])
+            maxSize = maxSizeMBs * 1024 * 1024
+            if totalSize > maxSize
+                @ValidationService.alerts.push({type:'danger', msg:'The total size of attachments cannot exceed '+maxSizeMBs+' MBs.'})
+                valid = false
+        valid
+
     @$scope.send = () =>
         @$scope.clearSuccess()
         @ValidationService.clearAll()
         if (!@$scope.sendDisabled() & 
             @ValidationService.validateEmail(@$scope.contactAddress, "Please enter a valid email address.") &
             @ValidationService.objectNonNull(@$scope.feedback.id, "Please select the feedback type.") &
-            @ValidationService.requireNonNull(tinymce.activeEditor.getContent(), "Please provide a message.")
+            @ValidationService.requireNonNull(tinymce.activeEditor.getContent(), "Please provide a message.") &
+            @$scope.validateAttachments()
         ) 
             @$scope.sendPending = true
-            @AccountService.submitFeedback(@DataService.user.id, @$scope.contactAddress, @$scope.feedback.id, @$scope.feedback.description, tinymce.activeEditor.getContent())
-            .then () =>
-                @$scope.successMessage = "Your feedback was submitted successfully."
-                @$scope.resetState()                
+            @AccountService.submitFeedback(@DataService.user.id, @$scope.contactAddress, @$scope.feedback.id, @$scope.feedback.description, tinymce.activeEditor.getContent(), @$scope.attachments)
+            .then (data) =>
+                if (data? && data.error_code?)
+                    @ValidationService.alerts.push({type:'danger', msg:data.error_description})
+                    @$scope.sendPending = false
+                    @$scope.alerts = @ValidationService.getAlerts()
+                else
+                    @$scope.successMessage = "Your feedback was submitted successfully."
+                    @$scope.resetState()                
             .catch (error) =>
                 @$scope.sendPending = false
                 @ErrorService.showErrorMessage(error)
@@ -59,5 +88,23 @@ class ContactSupportController
 
     @$scope.clearSuccess = () =>
         @$scope.successMessage = undefined
+
+    @$scope.attachFile = (files) =>
+        file = _.head files
+        if file?
+            reader = new FileReader()
+            reader.readAsDataURL file
+            reader.onload = (event) =>
+                data = event.target.result
+                @$scope.attachments.push({
+                    name: file.name
+                    size: file.size
+                    type: file.type
+                    data: data
+                })
+                $scope.$apply()
+
+    @$scope.removeAttachment = (index) =>
+        @$scope.attachments.splice(index, 1)
 
 @controllers.controller 'ContactSupportController', ContactSupportController

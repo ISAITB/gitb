@@ -24,6 +24,28 @@
                 <textarea ng-show="editorReady" class="mce-editor"></textarea>
             </div>
         </div>
+        <div class="form-group" ng-if="attachments.length == 0">
+            <label class="col-sm-3 control-label">Attachment(s):</label>
+            <div class="col-sm-8">
+                <button class="btn btn-default" ng-file-select="attachFile($files)">Select file</button>
+            </div>
+        </div>
+        <div class="form-group" ng-repeat="attachment in attachments"> 
+            <label class="col-sm-3 control-label" ng-if="$first">Attachment(s):</label>
+            <div class="col-sm-8" ng-if="$first">
+                <span>{{attachment.name}} ({{attachment.size}} bytes)</span>
+                <button class="btn btn-default" ng-click="removeAttachment($index)"><i class="fa fa-times"></i></button>
+            </div>
+            <div class="col-sm-8 col-sm-offset-3" ng-if="!$first">
+                <span>{{attachment.name}} ({{attachment.size}} bytes)</span>
+                <button class="btn btn-default" ng-click="removeAttachment($index)"><i class="fa fa-times"></i></button>
+            </div>
+        </div>
+        <div class="form-group" ng-if="attachments.length > 0">
+            <div class="col-sm-8 col-sm-offset-3">
+                <button class="btn btn-default" ng-file-select="attachFile($files)">Select file</button>
+            </div>
+        </div>
         <div class="form-group" ng-if="showSurveyLink()">
             <div class="col-sm-offset-1 col-sm-10 bg-info div-rounded">
                 <p class="form-control-static">If you have 10 minutes to spare we would much appreciate if you would complete our feedback survey. Click <a ng-href="{{surveyAddress}}" target="blank">here</a> to open the survey in a separate window and start.</p>
