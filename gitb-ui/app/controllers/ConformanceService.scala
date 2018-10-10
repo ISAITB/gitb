@@ -10,6 +10,7 @@ import models.Enums.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import org.apache.commons.lang.RandomStringUtils
 import org.slf4j.{Logger, LoggerFactory}
+import persistence.AccountManager
 import play.api.mvc._
 import utils.JsonUtil
 
@@ -355,6 +356,42 @@ class ConformanceService extends Controller {
     }
     val json = JsonUtil.jsConformanceResultFullList(results).toString()
     ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def deleteAllObsoleteTestResults() = Action.apply { request =>
+    val authUserId = ParameterExtractor.extractUserId(request)
+    if (AccountManager.isSystemAdmin(authUserId)) {
+      TestResultManager.deleteAllObsoleteTestResults()
+      ResponseConstructor.constructEmptyResponse
+    } else {
+      ResponseConstructor.constructUnauthorizedResponse(403, "You must be a test bed administrator")
+    }
+  }
+
+  def deleteObsoleteTestResultsForSystem() = Action.apply { request =>
+    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+    val authUserId = ParameterExtractor.extractUserId(request)
+    val system = SystemManager.getSystemByIdWrapper(systemId)
+    val organisation = OrganizationManager.getOrganizationById(system.get.owner)
+    if (AccountManager.isVendorAdmin(authUserId, system.get.owner)
+      || AccountManager.isCommunityAdmin(authUserId, organisation.community.get.id)
+      || AccountManager.isSystemAdmin(authUserId)) {
+      TestResultManager.deleteObsoleteTestResultsForSystemWrapper(systemId)
+      ResponseConstructor.constructEmptyResponse
+    } else {
+      ResponseConstructor.constructUnauthorizedResponse(403, "You must be an organisation, community or test bed administrator")
+    }
+  }
+
+  def deleteObsoleteTestResultsForCommunity() = Action.apply { request =>
+    val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
+    val authUserId = ParameterExtractor.extractUserId(request)
+    if (AccountManager.isCommunityAdmin(authUserId, communityId) || AccountManager.isSystemAdmin(authUserId)) {
+      TestResultManager.deleteObsoleteTestResultsForCommunityWrapper(communityId)
+      ResponseConstructor.constructEmptyResponse
+    } else {
+      ResponseConstructor.constructUnauthorizedResponse(403, "You must be a community or test bed administrator")
+    }
   }
 
 }

@@ -124,7 +124,9 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Active test sessions</h4>
-            <button class="btn btn-default pull-right" ng-click="dashboardCtrl.exportActiveSessionsToCsv()">Export CSV</button>
+            <div class="pull-right">
+                <button class="btn btn-default" ng-click="dashboardCtrl.exportActiveSessionsToCsv()">Export CSV</button>
+            </div>
         </div>
         <div id="dashboard-table-active" table-directive columns="dashboardCtrl.activeTestsColumns" data="dashboardCtrl.activeTests"
              on-select="dashboardCtrl.testSelect" action-visible="true" action-icon="'fa-search'" on-action="dashboardCtrl.onAction"
@@ -135,7 +137,10 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Completed test sessions</h4>
-            <button class="btn btn-default pull-right" ng-click="dashboardCtrl.exportCompletedSessionsToCsv()">Export CSV</button>
+            <div class="pull-right">
+                <button class="btn btn-default" ng-click="dashboardCtrl.deleteObsolete()" ng-disabled="dashboardCtrl.deletePending"><span class="tab" ng-if="dashboardCtrl.deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete obsolete results</button>
+                <button class="btn btn-default" ng-click="dashboardCtrl.exportCompletedSessionsToCsv()">Export CSV</button>
+            </div>
         </div>
         <div id="dashboard-table" table-directive columns="dashboardCtrl.completedTestsColumns" data="dashboardCtrl.completedTests"
              on-select="dashboardCtrl.testSelect" action-visible="true" action-icon="'fa-search'" on-action="dashboardCtrl.onAction"

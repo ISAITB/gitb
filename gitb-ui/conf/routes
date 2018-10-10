@@ -92,6 +92,10 @@ POST    /domains/:domain_id/parameters                          @controllers.Con
 DELETE  /domains/:domain_id/parameters/:domain_parameter_id     @controllers.ConformanceService.deleteDomainParameter(domain_id : Long, domain_parameter_id : Long)
 POST    /domains/:domain_id/parameters/:domain_parameter_id     @controllers.ConformanceService.updateDomainParameter(domain_id : Long, domain_parameter_id : Long)
 
+DELETE  /testresults/obsolete/all           @controllers.ConformanceService.deleteAllObsoleteTestResults
+DELETE  /testresults/obsolete/system        @controllers.ConformanceService.deleteObsoleteTestResultsForSystem
+DELETE  /testresults/obsolete/community     @controllers.ConformanceService.deleteObsoleteTestResultsForCommunity
+
 # User management API
 GET     /admins/all                         @controllers.UserService.getSystemAdministrators
 POST    /admins/create                      @controllers.UserService.createSystemAdmin

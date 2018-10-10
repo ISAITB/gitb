@@ -2,7 +2,7 @@ package persistence
 
 import config.Configurations
 import exceptions._
-import managers.{AttachmentType, BaseManager, CommunityManager, OrganizationManager}
+import managers._
 import models.Enums.UserRole.UserRole
 import models.Enums._
 import models._
@@ -135,6 +135,15 @@ object AccountManager extends BaseManager {
   def isVendorAdmin(userId: Long) = checkUserRole(userId, UserRole.VendorAdmin)
 
   def isSystemAdmin(userId: Long) = checkUserRole(userId, UserRole.SystemAdmin)
+
+  def isCommunityAdmin(userId: Long, communityId: Long): Boolean = {
+    UserManager.getCommunityAdministrators(communityId).map(u => u.id).contains(userId)
+  }
+
+  def isVendorAdmin(userId: Long, organisationId: Long): Boolean = {
+    val user = UserManager.getUserById(userId)
+    user.role == UserRole.VendorAdmin.id.toShort && user.organization.get.id == organisationId
+  }
 
   def checkUserRole(userId: Long, roles: UserRole*): Boolean = {
     DB.withSession { implicit session =>

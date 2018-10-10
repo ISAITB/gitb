@@ -313,4 +313,25 @@ class ConformanceService
       authenticate: true
       params: params
 
+  deleteObsoleteTestResultsForCommunity: (communityId) ->
+    @RestService.delete
+      path: jsRoutes.controllers.ConformanceService.deleteObsoleteTestResultsForCommunity().url
+      authenticate: true
+      params: {
+        community_id: communityId
+      }
+
+  deleteObsoleteTestResults: () ->
+    @RestService.delete
+      path: jsRoutes.controllers.ConformanceService.deleteAllObsoleteTestResults().url
+      authenticate: true
+
+  deleteObsoleteTestResultsForSystem: (systemId) ->
+    @RestService.delete
+      path: jsRoutes.controllers.ConformanceService.deleteObsoleteTestResultsForSystem().url
+      authenticate: true
+      params: {
+        system_id: systemId
+      }
+
 services.service('ConformanceService', ConformanceService)

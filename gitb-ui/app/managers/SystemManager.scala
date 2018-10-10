@@ -334,6 +334,12 @@ object SystemManager extends BaseManager {
     }
 	}
 
+  def getSystemByIdWrapper(id: Long): Option[Systems] = {
+    DB.withSession { implicit session =>
+      PersistenceSchema.systems.filter(_.id === id).firstOption
+    }
+  }
+
   def getSystemById(id: Long)(implicit session: Session): Option[Systems] = {
     PersistenceSchema.systems.filter(_.id === id).firstOption
   }

@@ -1,6 +1,6 @@
 class SystemTestsController
-  @$inject = ['$log', '$q', '$scope', '$stateParams', '$state', '$modal', 'CommunityService', '$window', 'ReportService', 'Constants', 'TestSuiteService', 'ConformanceService', 'ErrorService']
-  constructor: (@$log, @$q, @$scope, @$stateParams, @$state, @$modal, @CommunityService, @$window, @ReportService, @Constants, @TestSuiteService, @ConformanceService, @ErrorService)->
+  @$inject = ['$log', '$q', '$scope', '$stateParams', '$state', '$modal', 'CommunityService', '$window', 'ReportService', 'Constants', 'TestSuiteService', 'ConformanceService', 'ErrorService', 'DataService', 'ConfirmationDialogService']
+  constructor: (@$log, @$q, @$scope, @$stateParams, @$state, @$modal, @CommunityService, @$window, @ReportService, @Constants, @TestSuiteService, @ConformanceService, @ErrorService, @DataService, @ConfirmationDialogService)->
     @$log.debug 'Constructing SystemTestsController...'
 
     @systemId = @$stateParams["id"]
@@ -456,5 +456,20 @@ class SystemTestsController
           csv += if i < resultReportsCollection.value().length then line + "\n" else line
         blobData = new Blob([csv], {type: 'text/csv'});
         saveAs(blobData, "export.csv");
+
+  canDelete: () =>
+    !@DataService.isVendorUser
+
+  deleteObsolete: () ->
+    @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete all obsolete test results?", "Yes", "No")
+    .then () =>
+      @deletePending = true
+      @ConformanceService.deleteObsoleteTestResultsForSystem(@systemId)
+      .then () =>
+        @deletePending = false
+        @$state.go @$state.current, {}, {reload: true}
+      .catch (error) =>
+          @deletePending = false
+          @ErrorService.showErrorMessage(error)
 
 @controllers.controller 'SystemTestsController', SystemTestsController
