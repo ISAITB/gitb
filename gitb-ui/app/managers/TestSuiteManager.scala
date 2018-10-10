@@ -52,6 +52,12 @@ object TestSuiteManager extends BaseManager {
 		}
 	}
 
+	def getTestSuiteOfTestCaseWrapper(testCaseId: Long): TestSuites = {
+		DB.withSession { implicit session =>
+			getTestSuiteOfTestCase(testCaseId)
+		}
+	}
+
 	def getTestSuiteOfTestCase(testCaseId: Long)(implicit session: Session): TestSuites = {
 		val query = for {
 			testSuite <- PersistenceSchema.testSuites

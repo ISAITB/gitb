@@ -7,10 +7,8 @@ import javax.xml.transform.stream.StreamSource
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl.TestCase
 import com.gitb.utils.XMLUtils
-import config.Configurations
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
-import managers.ReportManager.STATUS_UPDATES_PATH
-import managers.{ReportManager, TestCaseManager, TestResultManager}
+import managers.{ReportManager, TestCaseManager, TestResultManager, TestSuiteManager}
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.StringUtils
@@ -30,7 +28,13 @@ class RepositoryService extends Controller {
 	def getTestSuiteResource(testId: String, filePath:String): Action[AnyContent] = Action {
 		implicit request =>
       val testCase = TestCaseManager.getTestCaseForIdWrapper(testId).get
-      val file = RepositoryUtils.getTestSuitesResource(testCase.targetSpec, codec.decode(filePath))
+      val testSuite = TestSuiteManager.getTestSuiteOfTestCaseWrapper(testCase.id)
+      var filePathToLookup = codec.decode(filePath)
+      if (!filePath.startsWith(testSuite.shortname) && !filePath.startsWith("/"+testSuite.shortname)) {
+        // Prefix with the test suite name.
+        filePathToLookup = testSuite.shortname + "/" + filePathToLookup
+      }
+      val file = RepositoryUtils.getTestSuitesResource(testCase.targetSpec, filePathToLookup)
 			logger.debug("Reading test resource ["+codec.decode(filePath)+"] definition from the file ["+file+"]")
 			if(file.exists()) {
 				Ok.sendFile(file, true)
