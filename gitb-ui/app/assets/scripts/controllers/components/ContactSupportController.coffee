@@ -106,5 +106,13 @@ class ContactSupportController
 
     @$scope.removeAttachment = (index) =>
         @$scope.attachments.splice(index, 1)
+    
+    @$scope.showUpload = () =>
+        maxCount = -1
+        if @DataService.configuration?["email.attachments.maxCount"]?
+            maxCount = parseInt(@DataService.configuration["email.attachments.maxCount"])
+        maxCount > 0
+
+
 
 @controllers.controller 'ContactSupportController', ContactSupportController

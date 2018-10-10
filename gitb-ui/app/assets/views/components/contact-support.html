@@ -24,7 +24,7 @@
                 <textarea ng-show="editorReady" class="mce-editor"></textarea>
             </div>
         </div>
-        <div class="form-group" ng-if="attachments.length == 0">
+        <div class="form-group" ng-if="showUpload() && attachments.length == 0">
             <label class="col-sm-3 control-label">Attachment(s):</label>
             <div class="col-sm-8">
                 <button class="btn btn-default" ng-file-select="attachFile($files)">Select file</button>
