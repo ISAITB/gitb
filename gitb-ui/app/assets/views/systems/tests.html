@@ -131,10 +131,8 @@
         <div class="panel-heading">
             <h4 class="title">Performed Tests</h4>
             <div class="btn-toolbar pull-right">
-                <div class="pull-right">
-                    <button class="btn btn-default" ng-if="systemTestsCtrl.canDelete()" ng-disabled="systemTestsCtrl.deletePending" ng-click="systemTestsCtrl.deleteObsolete()"><span class="tab" ng-if="systemTestsCtrl.deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete obsolete results</button>
-                    <button class="btn btn-default" ng-click="systemTestsCtrl.exportToCsv()">Export CSV</button>
-                </div>
+                <button class="btn btn-default" ng-if="systemTestsCtrl.canDelete()" ng-disabled="systemTestsCtrl.deletePending" ng-click="systemTestsCtrl.deleteObsolete()"><span class="tab" ng-if="systemTestsCtrl.deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete obsolete results</button>
+                <button class="btn btn-default" ng-click="systemTestsCtrl.exportToCsv()">Export CSV</button>
             </div>
         </div>
         <div id="system-tests-table" ng-if="systemTestsCtrl.testResults.length > 0" table-directive
