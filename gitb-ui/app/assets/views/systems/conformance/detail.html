@@ -32,14 +32,13 @@
 		<div table-directive columns="conformanceStatementDetailCtrl.optionTableColumns" data="conformanceStatementDetailCtrl.conformanceStatement.options" allow-select="false"></div>
 	</div>
 	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.endpoints.length > 0">
-		<div class="panel-heading">
-			<h5 class="title">Endpoints</h5>
+		<div class="panel-heading panel-heading-tests">
+			<h5 class="title">Configuration parameters</h5>
+			<button class="btn btn-primary pull-right" ng-click="conformanceStatementDetailCtrl.toggleEndpointDisplay()"><i class="fa fa-plus" ng-if="conformanceStatementDetailCtrl.endpointsCollapsed"></i><i class="fa fa-minus" ng-if="!conformanceStatementDetailCtrl.endpointsCollapsed"></i></button>
 		</div>
-		<div class="list-group">
+		<div class="list-group" ng-show="!conformanceStatementDetailCtrl.endpointsCollapsed">
 			<div class="list-group-item endpoint" ng-repeat="endpoint in conformanceStatementDetailCtrl.endpointRepresentations">
-				<div><strong>Name: </strong>{{endpoint.name}}</div>
-				<div><strong>Description: </strong>{{endpoint.description}}</div>
-				<div table-directive columns="conformanceStatementDetailCtrl.parameterTableColumns" data="endpoint.parameters" table-caption="'Endpoint parameters'" on-select="conformanceStatementDetailCtrl.onParameterSelect"></div>
+				<div endpoint-display endpoint="endpoint" can-edit="conformanceStatementDetailCtrl.canDelete()" show-values="true" on-edit="conformanceStatementDetailCtrl.onParameterSelect"></div>
 			</div>
 		</div>
 	</div>
@@ -47,7 +46,7 @@
 	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.testSuites.length > 0">
 		<div class="panel-heading panel-heading-tests">
 			<h5 class="title">Conformance Tests</h5>
-			<button class="btn btn-primary pull-right" ng-if="conformanceStatementDetailCtrl.testSuites.length == 1 && conformanceStatementDetailCtrl.testSuites[0].testCases.length > 1" ng-click="conformanceStatementDetailCtrl.onTestSuiteSelect()"><i class="fa fa-play"></i></button>			
+			<button class="btn btn-primary pull-right" ng-if="conformanceStatementDetailCtrl.testSuites.length == 1 && conformanceStatementDetailCtrl.testSuites[0].testCases.length > 1" ng-click="conformanceStatementDetailCtrl.onTestSuiteSelect()"><i class="fa fa-play"></i></button>
 		</div>
 		<div>
 			<table id="system-tests-execution" class="table table-directive test-cases">

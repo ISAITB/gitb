@@ -177,6 +177,7 @@ GET     /endpoints/:endpoint_id/parameters  @controllers.ConformanceService.getE
 GET     /endpoints/:endpoint_id/config      @controllers.SystemService.getEndpointConfigurations(endpoint_id: Long)
 GET     /endpoints/config                   @controllers.SystemService.getConfigurationsWithEndpointIds()
 POST    /endpoints/:endpoint_id/config      @controllers.SystemService.saveEndpointConfiguration(endpoint_id: Long)
+DELETE  /endpoints/:endpoint_id/config      @controllers.SystemService.deleteEndpointConfiguration(endpoint_id: Long)
 
 # Report management API
 GET     /reports                            @controllers.ReportService.getTestResults

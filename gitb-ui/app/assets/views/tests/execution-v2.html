@@ -36,9 +36,7 @@
                 </div>
                 <diV class="panel-body">
                     <div class="endpoint" ng-repeat="endpoint in testExecutionCtrl.endpointRepresentations">
-                        <div><strong>Name: </strong>{{endpoint.name}}</div>
-                        <div style="padding-bottom:10px"><strong>Description: </strong>{{endpoint.description}}</div>
-                        <div table-directive columns="testExecutionCtrl.parameterTableColumns" data="endpoint.parameters" on-select="conformanceStatementDetailCtrl.onParameterSelect"></div>
+                        <div endpoint-display endpoint="endpoint" can-edit="false" show-values="false" on-download="testExecutionCtrl.downloadParameter"></div>
                     </div>
                 </diV>
             </div>

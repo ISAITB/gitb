@@ -108,8 +108,33 @@ class DataService
 			else 
 				bb = new Blob([anyContent.value])
 
+	base64FromDataURL: (dataURL) =>
+		dataURL.substring(dataURL.indexOf(',')+1)
+
 	mimeTypeFromDataURL: (dataURL) =>
 		dataURL.substring(dataURL.indexOf(':')+1, dataURL.indexOf(';'))
+
+	extensionFromMimeType: (mimeType) =>
+		if mimeType == "text/xml" || mimeType == "application/xml"
+			".xml"
+		else if mimeType == "application/zip" || mimeType == "application/x-zip-compressed"
+			".zip"
+		else if mimeType == "application/pkix-cert"
+			".cer"
+		else if mimeType == "application/pdf"
+			".pdf"
+		else if mimeType == "text/plain"
+			".txt"
+		else if mimeType == "image/png"
+			".png"
+		else if mimeType == "image/gif"
+			".gif"
+		else if mimeType == "image/gif"
+			".gif"
+		else if mimeType == "image/jpeg"
+			".jpeg"
+		else
+			""
 
 	b64toBlob: (b64Data, contentType, sliceSize) =>
 		contentType = contentType || ''

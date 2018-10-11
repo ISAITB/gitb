@@ -1,46 +1,31 @@
 <div class="modal-header">
-	<h4>Edit endpoint configuration</h4>
+	<h4>Edit parameter</h4>
 </div>
 <div class="modal-body">
-	<div class="configuration">
-		<div class="col-12-md">
-			<strong>Name: </strong> {{editEndpointConfigurationCtrl.parameter.name}}
-		</div>
-		<div class="col-12-md">
-			<strong>Description: </strong> {{editEndpointConfigurationCtrl.parameter.desc}}
-		</div>
-		<div class="col-12-md">
-			<strong>Kind: </strong> {{editEndpointConfigurationCtrl.parameter.kind}}
-		</div>
-		<div class="col-12-md">
-			<strong>Use: </strong> {{editEndpointConfigurationCtrl.parameter.use}}
-		</div>
-		<div class="col-12-md" ng-if="editEndpointConfigurationCtrl.canEdit() && !editEndpointConfigurationCtrl.isBinary">
-			<strong>Value: </strong> 
-			<input type="text" class="form-control" ng-model="editEndpointConfigurationCtrl.configuration.value">
-		</div>
-		<div class="col-12-md" ng-if="editEndpointConfigurationCtrl.canEdit() && editEndpointConfigurationCtrl.isBinary">
-			<strong>Value: </strong>
-			<span ng-if="editEndpointConfigurationCtrl.isConfiugrationSet">{{editEndpointConfigurationCtrl.configuration.value.length}} bytes</span>
-			<span ng-if="!editEndpointConfigurationCtrl.isConfiugrationSet">Not set</span>
-			<p>
-				<span ng-if="editEndpointConfigurationCtrl.file != null">{{editEndpointConfigurationCtrl.file.name}} - {{editEndpointConfigurationCtrl.file.size}} bytes</span>
-				<span ng-if="editEndpointConfigurationCtrl.file == null">No file selected</span>
-				<button class="btn btn-default" ng-file-select="editEndpointConfigurationCtrl.onFileSelect($files)">Select file</button>
-			</p>
-		</div>
-		<div class="col-12-md" ng-if="!editEndpointConfigurationCtrl.canEdit() && !editEndpointConfigurationCtrl.isBinary">
-			<strong>Value: </strong>
-			<span>{{editEndpointConfigurationCtrl.configuration.value}}</span>
-		</div>
-		<div class="col-12-md" ng-if="editEndpointConfigurationCtrl.canEdit() && editEndpointConfigurationCtrl.isBinary">
-			<strong>Value: </strong>
-			<span ng-if="editEndpointConfigurationCtrl.isConfiugrationSet">{{editEndpointConfigurationCtrl.configuration.value.length}} bytes</span>
-			<span ng-if="!editEndpointConfigurationCtrl.isConfiugrationSet">Not set</span>
-		</div>
+	<form class="form-horizontal">
+			<div class="form-group">
+				<label class="col-sm-3 control-label">Name:</label>
+				<div class="col-sm-8"><p class="form-control-static">{{editEndpointConfigurationCtrl.parameter.name}}</p></div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-3 control-label">Description:</label>
+				<div class="col-sm-8"><p class="form-control-static">{{editEndpointConfigurationCtrl.parameter.desc}}</p></div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-3 control-label" for="value" ng-if="editEndpointConfigurationCtrl.parameter.use == 'R'" style="font-weight: bold;">*Value:</span></label>
+				<label class="col-sm-3 control-label" for="value" ng-if="editEndpointConfigurationCtrl.parameter.use != 'R'">Value:</label>
+				<div class="col-sm-8">
+					<input id="value" ng-model="editEndpointConfigurationCtrl.configuration.value" class="form-control" type="text" ng-if="editEndpointConfigurationCtrl.parameter.kind != 'BINARY'"/>
+					<div ng-if="editEndpointConfigurationCtrl.parameter.kind == 'BINARY'">
+						<a class="form-control-static" href="" ng-if="editEndpointConfigurationCtrl.showFileName()" ng-click="editEndpointConfigurationCtrl.download()" style="padding-right:10px;">{{editEndpointConfigurationCtrl.fileName()}}</a>
+						<button class="btn btn-default" ng-file-select="editEndpointConfigurationCtrl.onFileSelect($files)">Upload</button>
+					</div>
+				</div>
+			</div>
+		</form>		
 	</div>
-</div>
-<div class="modal-footer">
-	<button class="btn btn-default" ng-click="editEndpointConfigurationCtrl.save()" ng-if="editEndpointConfigurationCtrl.canEdit()">Save</button>
-	<button class="btn btn-default" ng-click="editEndpointConfigurationCtrl.cancel()">Cancel</button>
-</div>
+	<div class="modal-footer">
+		<button class="btn btn-default" ng-click="editEndpointConfigurationCtrl.save()">Save</button>
+		<button class="btn btn-default" ng-click="editEndpointConfigurationCtrl.delete()">Delete</button>
+		<button class="btn btn-default" ng-click="editEndpointConfigurationCtrl.cancel()">Cancel</button>
+	</div>

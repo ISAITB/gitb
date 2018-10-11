@@ -285,6 +285,16 @@ object SystemManager extends BaseManager {
     }
   }
 
+  def deleteEndpointConfiguration(systemId: Long, parameterId: Long, endpointId: Long) = {
+    DB.withTransaction { implicit session =>
+      PersistenceSchema.configs
+        .filter(_.system === systemId)
+        .filter(_.parameter === parameterId)
+        .filter(_.endpoint === endpointId)
+        .delete
+    }
+  }
+
   def saveEndpointConfiguration(config: Config) = {
     DB.withTransaction { implicit session =>
       val size = PersistenceSchema.configs

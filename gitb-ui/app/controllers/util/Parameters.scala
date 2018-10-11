@@ -47,6 +47,7 @@ object Parameters {
 
   //System configuration parameters
   val PARAMETER = "parameter"
+  val PARAMETER_ID = "parameter_id"
 
   //Account Service parameters
   val VENDOR_SNAME = "vendor_sname"

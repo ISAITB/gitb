@@ -152,7 +152,14 @@ class SystemService extends Controller{
     ResponseConstructor.constructJsonResponse(json)
   }
 
-	def saveEndpointConfiguration(endpointId: Long) = Action.apply { request =>
+  def deleteEndpointConfiguration(endpointId: Long) = Action.apply { request =>
+    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+    val parameterId = ParameterExtractor.requiredQueryParameter(request, Parameters.PARAMETER_ID).toLong
+    SystemManager.deleteEndpointConfiguration(systemId, parameterId, endpointId)
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def saveEndpointConfiguration(endpointId: Long) = Action.apply { request =>
 		val jsConfig = ParameterExtractor.requiredBodyParameter(request, Parameters.CONFIG)
 		val config = JsonUtil.parseJsConfig(jsConfig)
 		SystemManager.saveEndpointConfiguration(config)

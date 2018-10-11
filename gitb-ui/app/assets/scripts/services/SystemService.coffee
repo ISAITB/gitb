@@ -116,29 +116,20 @@ class SystemService
       authenticate: true
     })
 
-  ###
-  getSystemConfigurations: (system) ->
-    @RestService.get({
-      path: jsRoutes.controllers.SystemService.getSystemConfigurations(system).url,
-      authenticate: true
-    })
-
-  saveSystemConfigurations: (system, configs) =>
-    @RestService.post({
-      path: jsRoutes.controllers.SystemService.updateSystemConfigurations(system).url,
-      data: {
-          configs: angular.toJson(configs)
-      },
-      authenticate: true
-    })
-  ###
-
   getEndpointConfigurations: (endpoint, system) ->
     @RestService.get
       path: jsRoutes.controllers.SystemService.getEndpointConfigurations(endpoint).url
       params:
         system_id: system
       authenticate: true
+
+  deleteEndpointConfiguration: (systemId, parameterId, endpointId) ->
+    @RestService.delete
+      path: jsRoutes.controllers.SystemService.saveEndpointConfiguration(endpointId).url
+      authenticate: true
+      params:
+        system_id: systemId
+        parameter_id: parameterId
 
   saveEndpointConfiguration: (endpoint, config) ->
     @RestService.post
