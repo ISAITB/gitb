@@ -209,8 +209,8 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
     directive
 ]
 
-@directives.directive 'anyContentView', ['$log', '$modal', 'RecursionHelper', 'DataService',
-($log, $modal, RecursionHelper, DataService) ->
+@directives.directive 'anyContentView', ['$log', '$modal', 'RecursionHelper', 'DataService', 'TestService', 'ErrorService'
+($log, $modal, RecursionHelper, DataService, TestService, ErrorService) ->
     $log.debug 'Constructing any-content-view with the context'
 
     directive =
@@ -263,10 +263,15 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
               openEditorWindow $modal, scope.context.name, scope.value, scope.report, lineNumber
             
             scope.download = () =>
-              blob = DataService.anyContentToBlob(scope.context)
-              DataService.getFileInfo(blob).then((info) =>
-                saveAs(blob, info.filename)
-              )
+              TestService.getBinaryMetadata(scope.context.value, (scope.context.embeddingMethod == 'BASE64'))
+                .then (info) =>
+                  if scope.context.embeddingMethod == 'BASE64'
+                    bb = DataService.b64toBlob(scope.context.value, info.mimeType)
+                  else
+                    bb = new Blob([scope.context.value], {type: info.mimeType})
+                  saveAs(bb, 'file'+info.extension)
+                .catch (error) =>	
+                  ErrorService.showErrorMessage(error)
           return
 
     directive

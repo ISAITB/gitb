@@ -206,6 +206,14 @@ object JsonUtil {
     json
   }
 
+  def jsBinaryMetadata(mimeType: String, extension: String):JsObject = {
+    val json = Json.obj(
+      "mimeType"    -> mimeType,
+      "extension" -> extension
+    )
+    json
+  }
+
   def jsCommunities(list:List[Communities]):JsArray = {
     var json = Json.arr()
     list.foreach{ community =>
@@ -381,7 +389,7 @@ object JsonUtil {
 		json
 	}
 
-  def jsConfig(config:Config): JsObject = {
+  def jsConfig(config:Configs): JsObject = {
     val json = Json.obj(
       "system" -> config.system,
       "value"  -> config.value,
@@ -391,7 +399,19 @@ object JsonUtil {
     return json;
   }
 
-  def jsConfigs(list:List[Config]):JsArray = {
+  def jsConfig(config:Config): JsObject = {
+    val json = Json.obj(
+      "system" -> config.system,
+      "value"  -> config.value,
+      "endpoint"  -> config.endpoint,
+      "parameter" -> config.parameter,
+      "mimeType" -> config.mimeType,
+      "extension" -> config.extension
+    )
+    return json;
+  }
+
+  def jsConfigList(list:List[Config]):JsArray = {
     var json = Json.arr()
     list.foreach{ config =>
       json = json.append(jsConfig(config))
@@ -399,11 +419,19 @@ object JsonUtil {
     json
   }
 
-  def parseJsConfigs(json:String):List[Config] = {
+  def jsConfigs(list:List[Configs]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ config =>
+      json = json.append(jsConfig(config))
+    }
+    json
+  }
+
+  def parseJsConfigs(json:String):List[Configs] = {
     val jsArray = Json.parse(json).as[List[JsObject]]
-    var list:List[Config] = List()
+    var list:List[Configs] = List()
     jsArray.foreach { jsonConfig =>
-      list ::= Config(
+      list ::= Configs(
         (jsonConfig \ "system").as[Long],
 	      (jsonConfig \ "parameter").as[Long],
 	      (jsonConfig \ "endpoint").as[Long],
@@ -413,9 +441,9 @@ object JsonUtil {
     list
   }
 
-  def parseJsConfig(json:String):Config = {
+  def parseJsConfig(json:String):Configs = {
     val jsonConfig = Json.parse(json).as[JsObject]
-    Config(
+    Configs(
       (jsonConfig \ "system").as[Long],
 	    (jsonConfig \ "parameter").as[Long],
 	    (jsonConfig \ "endpoint").as[Long],

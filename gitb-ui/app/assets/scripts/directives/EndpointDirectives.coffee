@@ -76,8 +76,6 @@
 			</div>'
 		link: (scope, element, attrs) =>
 			scope.downloadBinaryParameter = (parameter) =>
-				mimeType = @DataService.mimeTypeFromDataURL(parameter.value)
-				blob = @DataService.b64toBlob(@DataService.base64FromDataURL(parameter.value), mimeType)
-				extension = @DataService.extensionFromMimeType(mimeType)
-				saveAs(blob, parameter.name+extension)
+				blob = @DataService.b64toBlob(@DataService.base64FromDataURL(parameter.value), parameter.mimeType)
+				saveAs(blob, parameter.fileName)
 ]

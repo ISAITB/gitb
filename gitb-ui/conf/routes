@@ -150,6 +150,7 @@ POST    /communities/admins/:id             @controllers.UserService.updateCommu
 
 # Test Result management API
 GET	    /suts/:sut_id/conformance/:test_instance/report @controllers.TestResultService.getReportForTestInstance(sut_id:Long, test_instance:String)
+POST    /tests/binaryMetadata                           @controllers.TestResultService.getBinaryMetadata()
 
 # Test management API
 GET	    /tests/:test_id/definition          @controllers.TestService.getTestCaseDefinition(test_id : String)

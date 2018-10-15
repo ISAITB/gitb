@@ -279,7 +279,7 @@ object SystemManager extends BaseManager {
     actors
   }
 
-  def getEndpointConfigurations(endpoint: Long, system: Long): List[Config] = {
+  def getEndpointConfigurations(endpoint: Long, system: Long): List[Configs] = {
     DB.withSession { implicit session =>
       PersistenceSchema.configs.filter(_.endpoint === endpoint).filter(_.system === system).list
     }
@@ -295,7 +295,7 @@ object SystemManager extends BaseManager {
     }
   }
 
-  def saveEndpointConfiguration(config: Config) = {
+  def saveEndpointConfiguration(config: Configs) = {
     DB.withTransaction { implicit session =>
       val size = PersistenceSchema.configs
         .filter(_.system === config.system)
@@ -315,7 +315,7 @@ object SystemManager extends BaseManager {
     }
   }
 
-  def getConfigurationsWithEndpointIds(system: Long, ids: List[Long]): List[Config] = {
+  def getConfigurationsWithEndpointIds(system: Long, ids: List[Long]): List[Configs] = {
     DB.withSession { implicit session =>
       PersistenceSchema.configs.filter(_.system === system).filter(_.endpoint inSet ids).list
     }

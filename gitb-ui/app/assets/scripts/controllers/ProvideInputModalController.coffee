@@ -42,15 +42,15 @@ class ProvideInputModalController
 
 		@$scope.download = (interaction) =>
 			blob = @DataService.b64toBlob(interaction.value)
-			@DataService.getFileInfo(blob).then((info) =>
-				if interaction.name?
-					nameToUse = interaction.name
-				else
+			if interaction.name?
+				saveAs(blob, interaction.name)
+			else
+				@DataService.getFileInfo(blob).then((info) =>
 					nameToUse = "file"
 					if info.extension?
 						nameToUse += '.'+info.extension
-				saveAs(blob, nameToUse)
-			)
+					saveAs(blob, nameToUse)
+				)
 
 		@$scope.isConfigurationDataURL = (configuration) =>
 			@Constants.DATA_URL_REGEX.test(configuration)

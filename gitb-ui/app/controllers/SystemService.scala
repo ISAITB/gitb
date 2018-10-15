@@ -2,11 +2,13 @@ package controllers
 
 import controllers.util._
 import exceptions._
-import managers.{SystemManager, TestCaseManager}
-import models.Systems
+import managers.{ParameterManager, SystemManager, TestCaseManager}
+import models.{Configs, Systems}
 import org.slf4j._
 import play.api.mvc._
-import utils.JsonUtil
+import utils.{JsonUtil, MimeUtil}
+
+import scala.collection.mutable.ListBuffer
 
 class SystemService extends Controller{
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemService])
@@ -29,7 +31,6 @@ class SystemService extends Controller{
     val json = JsonUtil.jsSystems(systems).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
-
 
   /**
    * Updates the profile of a system
@@ -163,7 +164,16 @@ class SystemService extends Controller{
 		val jsConfig = ParameterExtractor.requiredBodyParameter(request, Parameters.CONFIG)
 		val config = JsonUtil.parseJsConfig(jsConfig)
 		SystemManager.saveEndpointConfiguration(config)
-    ResponseConstructor.constructEmptyResponse
+    val parameter = ParameterManager.getParameterById(config.parameter)
+    if (parameter.isDefined && parameter.get.kind == "BINARY") {
+      // Get the metadata for the parameter.
+      val detectedMimeType = MimeUtil.getMimeType(config.value, false)
+      val extension = MimeUtil.getExtensionFromMimeType(detectedMimeType)
+      val json = JsonUtil.jsBinaryMetadata(detectedMimeType, extension).toString()
+      ResponseConstructor.constructJsonResponse(json)
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
 	}
 
 	def getConfigurationsWithEndpointIds() = Action.apply { request =>
@@ -172,7 +182,19 @@ class SystemService extends Controller{
 		ids match {
 			case Some(list) => {
         val configurations = SystemManager.getConfigurationsWithEndpointIds(system, list)
-        val json = JsonUtil.jsConfigs(configurations).toString()
+        // Add mime-type and file name extension for binary ones.
+        val configsToReturn = new ListBuffer[models.Config]
+        configurations.foreach { config =>
+          // config.
+          if (MimeUtil.isDataURL(config.value)) {
+            val detectedMimeType = MimeUtil.getMimeTypeFromDataURL(config.value)
+            val extension = MimeUtil.getExtensionFromMimeType(detectedMimeType);
+            configsToReturn += new models.Config(config, detectedMimeType, extension)
+          } else {
+            configsToReturn += new models.Config(config, null, null)
+          }
+        }
+        val json = JsonUtil.jsConfigList(configsToReturn.toList).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
 			case None =>

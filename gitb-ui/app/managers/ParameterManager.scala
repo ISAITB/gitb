@@ -55,6 +55,12 @@ object ParameterManager extends BaseManager {
     }
   }
 
+  def getParameterById(parameterId: Long) = {
+    DB.withSession { implicit session =>
+      PersistenceSchema.parameters.filter(_.id === parameterId).firstOption
+    }
+  }
+
   def updateParameter(parameterId: Long, name: String, description: Option[String], use: String, kind: String)(implicit session: Session) = {
     val q1 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.desc)
     q1.update(description)

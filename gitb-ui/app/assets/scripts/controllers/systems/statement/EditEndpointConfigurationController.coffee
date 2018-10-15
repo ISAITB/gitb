@@ -90,7 +90,10 @@ class EditEndpointConfigurationController
             result = event.target.result
             @configuration.value = result
             @SystemService.saveEndpointConfiguration @endpoint.id, @configuration
-            .then () => 
+            .then (metadata) => 
+              if metadata?
+                @configuration.extension = metadata.extension
+                @configuration.mimeType = metadata.mimeType
               @closeDialog()
             .catch (error) => 
               @ErrorService.showErrorMessage(error)

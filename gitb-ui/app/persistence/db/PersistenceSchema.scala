@@ -148,12 +148,12 @@ object PersistenceSchema {
   }
   val conformanceResults = TableQuery[ConformanceResultsTable]
 
-  class ConfigurationsTable(tag:Tag) extends Table[Config] (tag, "Configurations") {
+  class ConfigurationsTable(tag:Tag) extends Table[Configs] (tag, "Configurations") {
     def system = column[Long] ("system")
 	  def parameter = column[Long]("parameter")
 	  def endpoint = column[Long] ("endpoint")
 	  def value = column[String]("value", O.DBType("BLOB"))
-    def * = (system, parameter, endpoint, value) <> (Config.tupled, Config.unapply)
+    def * = (system, parameter, endpoint, value) <> (Configs.tupled, Configs.unapply)
     def pk = primaryKey("c_pk", (system, parameter, endpoint))
   }
   val configs = TableQuery[ConfigurationsTable]

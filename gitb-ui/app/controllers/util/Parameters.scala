@@ -68,6 +68,9 @@ object Parameters {
   val SYSTEM_VERSION = "system_version"
   val OTHER_SYSTEM = "other_system"
 
+  val DATA = "data"
+  val IS_BASE64 = "is_base64"
+
   //Conformance Service parameters
   val ACTORS  = "actors"
   val ACTOR   = "actor"

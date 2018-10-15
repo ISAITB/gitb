@@ -2,18 +2,20 @@ package jaxws;
 
 import actors.WebSocketActor;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.tbs.*;
 import com.gitb.tbs.Void;
-import javax.xml.ws.Endpoint;
-
 import managers.ReportManager;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.JacksonUtil;
+import utils.MimeUtil;
 
 import javax.jws.WebParam;
 import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
+import javax.xml.ws.Endpoint;
 import javax.xml.ws.soap.Addressing;
 
 @Addressing(enabled = true, required = true)
@@ -54,6 +56,21 @@ public class TestbedService implements TestbedClient {
     @Override
     public Void interactWithUsers(@WebParam(name = "InteractWithUsersRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") InteractWithUsersRequest interactWithUsersRequest) {
         try {
+            if (interactWithUsersRequest.getInteraction() != null) {
+                for (Object obj: interactWithUsersRequest.getInteraction().getInstructionOrRequest()) {
+                    if (obj instanceof Instruction
+                            && StringUtils.isBlank(((Instruction)obj).getName())
+                            && ((Instruction)obj).getEmbeddingMethod() == ValueEmbeddingEnumeration.BASE_64
+                            && !StringUtils.isBlank(((Instruction)obj).getValue())) {
+                        // Determine the file name from the BASE64 content.
+                        String mimeType = MimeUtil.getMimeType(((Instruction)obj).getValue(), false);
+                        String extension = MimeUtil.getExtensionFromMimeType(mimeType);
+                        if (extension != null) {
+                            ((Instruction)obj).setName("file"+extension);
+                        }
+                    }
+                }
+            }
             String request = JacksonUtil.serializeInteractionRequest(interactWithUsersRequest);
             String session = interactWithUsersRequest.getTcInstanceid();
             String actor   = interactWithUsersRequest.getInteraction().getWith();

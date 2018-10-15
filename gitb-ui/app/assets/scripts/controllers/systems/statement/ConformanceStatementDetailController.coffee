@@ -136,9 +136,10 @@ class ConformanceStatementDetailController
             repr.configured = false
 
           if relevantConfig?.value? && parameter.kind == 'BINARY'
-            mimeType = @DataService.mimeTypeFromDataURL(relevantConfig.value)
-            extension = @DataService.extensionFromMimeType(mimeType)
-            repr.fileName = parameter.name+extension
+            repr.fileName = parameter.name
+            if relevantConfig.extension?
+              repr.fileName += relevantConfig.extension
+            repr.mimeType = relevantConfig.mimeType
           repr
 
   onExpand: (testSuite) =>
@@ -188,6 +189,8 @@ class ConformanceStatementDetailController
         when @Constants.OPERATION.UPDATE
           if oldConfiguration? && result.configuration.value?
             oldConfiguration.value = result.configuration.value
+            oldConfiguration.mimeType = result.configuration.mimeType
+            oldConfiguration.extension = result.configuration.extension
         when @Constants.OPERATION.DELETE
           if oldConfiguration?
             _.remove @configurations, (configuration) =>
