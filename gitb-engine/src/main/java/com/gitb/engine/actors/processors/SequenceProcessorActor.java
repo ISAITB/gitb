@@ -7,8 +7,8 @@ import com.gitb.core.StepStatus;
 import com.gitb.engine.commands.interaction.StartCommand;
 import com.gitb.engine.commands.interaction.StopCommand;
 import com.gitb.engine.events.model.StatusEvent;
-import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.*;
 import com.gitb.tdl.Process;
@@ -31,6 +31,7 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
     private Map<Integer, Integer> childActorUidIndexMap;
     private Map<Integer, ActorRef> childStepIndexActorMap;
     private Map<Integer, StepStatus> childStepStatuses;
+    private boolean stopping = false;
 
     public SequenceProcessorActor(T sequence, TestCaseScope scope) {
         super(sequence, scope);
@@ -134,6 +135,11 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
     }
 
     @Override
+    protected void reactToPrepareForStop() {
+        stopping = true;
+    }
+
+    @Override
     protected void stop() {
         StopCommand command = new StopCommand(scope.getContext().getSessionId());
         for (ActorRef child : getContext().getChildren()) {
@@ -160,8 +166,10 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
                 || status == StepStatus.ERROR
                 || status == StepStatus.SKIPPED) {
 
-            ActorRef nextStep = startTestStepAtIndex(completedStepIndex + 1);
-
+            ActorRef nextStep = null;
+            if (!stopping) {
+                nextStep = startTestStepAtIndex(completedStepIndex + 1);
+            }
             if (nextStep == null) {
                 boolean childrenHasError = false;
                 for (Map.Entry<Integer, StepStatus> childStepStatus : childStepStatuses.entrySet()) {

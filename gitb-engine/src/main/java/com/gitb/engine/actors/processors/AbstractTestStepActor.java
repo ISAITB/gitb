@@ -9,6 +9,8 @@ import com.gitb.core.StepStatus;
 import com.gitb.core.TestRole;
 import com.gitb.core.TestRoleEnumeration;
 import com.gitb.engine.actors.Actor;
+import com.gitb.engine.actors.util.ActorUtils;
+import com.gitb.engine.commands.interaction.PrepareForStopCommand;
 import com.gitb.engine.commands.interaction.RestartCommand;
 import com.gitb.engine.commands.interaction.StartCommand;
 import com.gitb.engine.commands.interaction.StopCommand;
@@ -17,11 +19,10 @@ import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.events.model.InputEvent;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.events.model.TestStepStatusEvent;
-import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.engine.testcase.TestCaseScope;
-import com.gitb.tdl.*;
+import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.tdl.IfStep;
 import com.gitb.tr.*;
-import com.gitb.tr.ObjectFactory;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.reflect.ConstructorUtils;
@@ -78,6 +79,27 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	protected abstract void stop();
 
 	/**
+	 * Prepare to stop the execution
+	 */
+	protected void prepareForStop(PrepareForStopCommand command) {
+		for(ActorRef child : getContext().getChildren()) {
+			try {
+				if (!child.equals(command.getOriginalSource())) {
+					ActorUtils.askBlocking(child, command);
+				}
+			} catch (Exception e) {
+				throw new IllegalStateException(e);
+			}
+		}
+		reactToPrepareForStop();
+		getSender().tell(Boolean.TRUE, self());
+	}
+
+	protected void reactToPrepareForStop() {
+		// Do nothing by default
+	}
+
+	/**
 	 * If step is waiting input in some phase, implement this to handle the input event
 	 *
 	 * @param event
@@ -131,6 +153,8 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 				start();
 			} else if (message instanceof StopCommand) {
 				stop();
+			} else if (message instanceof PrepareForStopCommand) {
+				prepareForStop((PrepareForStopCommand)message);
 			} else if (message instanceof RestartCommand) {
 				stop();
 				init();

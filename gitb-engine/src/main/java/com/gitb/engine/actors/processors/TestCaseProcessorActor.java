@@ -8,6 +8,7 @@ import akka.japi.Creator;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.SessionManager;
 import com.gitb.engine.TestbedService;
+import com.gitb.engine.actors.util.ActorUtils;
 import com.gitb.engine.commands.interaction.*;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -80,6 +81,18 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
 	            logger.debug("Received start command, starting test case sequence.");
                 sequenceProcessorActor = SequenceProcessorActor.create(getContext(), testCase.getSteps(), context.getScope(), "");
 	            sequenceProcessorActor.tell(message, self());
+            }
+            // Prepare for stop command
+            else if (message instanceof PrepareForStopCommand) {
+                logger.debug("Received prepare for stop command.");
+                if (sequenceProcessorActor != null) {
+                    ActorUtils.askBlocking(sequenceProcessorActor, message);
+                }
+                if (preliminaryProcessorActor != null) {
+                    //Stop child preliminary processor
+                    ActorUtils.askBlocking(preliminaryProcessorActor, message);
+                }
+                getSender().tell(Boolean.TRUE, self());
             }
             //Stop command for test case processing
             else if (message instanceof StopCommand || message instanceof RestartCommand) {
