@@ -39,7 +39,31 @@ extractActors = (messages, actorInfo) =>
       instructionActors.concat requestActors
     else
       []
-  collection.flatten().unique().value()
+  flattened = collection.flatten().unique().value()
+  hasOrdering = _.find(actorInfo, (actor) => 
+    return actor.displayOrder?
+  )
+  if hasOrdering?
+    sortActors(flattened, actorInfo)
+  else
+    flattened
+
+sortActors = (actors, actorInfo) =>
+  sortedArray = []
+  for actor in actors
+    actorDef = _.find(actorInfo, (actorDef) =>
+      actor == actorDef.id
+    )
+    if actorDef?
+      sortedArray.push(undefined)
+    else
+      sortedArray.push(actor)
+  for actor in actorInfo
+    for sortedActor, sortedIndex in sortedArray
+      if !sortedActor?
+        sortedArray[sortedIndex] = actor.id
+        break
+  sortedArray
 
 extractSteps = (s, actorInfo) =>
   stepFilter = (step) ->

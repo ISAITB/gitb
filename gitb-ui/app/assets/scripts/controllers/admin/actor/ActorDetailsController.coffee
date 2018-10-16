@@ -80,7 +80,7 @@ class ActorDetailsController
 				@ErrorService.showErrorMessage(error)
 
 	saveChanges: () =>
-		@ActorService.updateActor(@actorId, @actor.actorId, @actor.name, @actor.description, @domainId, @specificationId)
+		@ActorService.updateActor(@actorId, @actor.actorId, @actor.name, @actor.description, @actor.default, @actor.displayOrder, @domainId, @specificationId)
 		.then () =>
 			@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: @specificationId}
 		.catch (error) =>
@@ -90,7 +90,7 @@ class ActorDetailsController
 		@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: @specificationId}
 
 	saveDisabled: () =>
-		!(@actor?.actorId? && @actor?.name?)
+		!(@actor?.actorId? && @actor?.name?) || (@actor.displayOrder? && isNaN(@actor.displayOrder))
 
 	onEndpointSelect: (endpoint) =>
 		@$state.go 'app.admin.domains.detail.specifications.detail.actors.detail.endpoints.detail', {id: @domainId, spec_id: @specificationId, actor_id: @actorId, endpoint_id: endpoint.id}

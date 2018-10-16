@@ -344,6 +344,8 @@ object JsonUtil {
       "actorId" -> actor.actorId,
       "name"   -> actor.name,
       "description" -> (if(actor.description.isDefined) actor.description.get else JsNull),
+      "default" -> (if(actor.default.isDefined) actor.default.get else JsNull),
+      "displayOrder" -> (if(actor.displayOrder.isDefined) actor.displayOrder.get else JsNull),
       "domain"  -> actor.domain
     )
     return json;

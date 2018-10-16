@@ -94,8 +94,10 @@ object PersistenceSchema {
     def actorId = column[String]("actorId")
     def name    = column[String]("name")
     def desc    = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def default = column[Option[Boolean]]("is_default", O.Nullable)
+    def displayOrder = column[Option[Short]]("display_order", O.Nullable)
     def domain  = column[Long]("domain")
-    def * = (id, actorId, name, desc, domain) <> (Actors.tupled, Actors.unapply)
+    def * = (id, actorId, name, desc, default, displayOrder, domain) <> (Actors.tupled, Actors.unapply)
     def actorIdUniqueIdx = index("actors_aid_unq_idx", actorId, unique = true)
     //def fk = foreignKey("actors_fk", domain, Domains)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }

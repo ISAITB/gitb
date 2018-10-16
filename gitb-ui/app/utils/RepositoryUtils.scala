@@ -200,8 +200,11 @@ object RepositoryUtils {
 									.toList
 								new Endpoint(Endpoints(0l, tdlEndpoint.getName, Option(tdlEndpoint.getDesc), 0l), parameters)
 							}.toList
-
-							new Actor(Actors(0l, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), 0l), endpoints)
+							var displayOrder: Option[Short] = None
+							if (tdlActor.getDisplayOrder != null) {
+								displayOrder = Some(tdlActor.getDisplayOrder)
+							}
+							new Actor(Actors(0l, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), Option(tdlActor.isDefault), displayOrder,  0l), endpoints)
 						}.toList
 
 						val testCases = tdlTestCaseEntries.map {

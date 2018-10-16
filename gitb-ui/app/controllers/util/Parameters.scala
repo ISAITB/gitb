@@ -98,6 +98,8 @@ object Parameters {
 
   //TestService parameters
   val ACTOR_ID   = "actor_id"
+  val ACTOR_DEFAULT   = "default"
+  val DISPLAY_ORDER   = "displayOrder"
   val ACTOR_IDS   = "actor_ids"
   val ENDPOINT_ID   = "endpoint_id"
   val TEST_ID    = "test_id"

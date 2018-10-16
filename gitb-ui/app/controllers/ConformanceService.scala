@@ -152,7 +152,7 @@ class ConformanceService extends Controller {
     if (ActorManager.checkActorExistsInSpecification(actor.actorId, specificationId, None)) {
       ResponseConstructor.constructBadRequestResponse(500, "An actor with this ID already exists in the specification")
     } else {
-      ConformanceManager.createActor(actor, specificationId)
+      ConformanceManager.createActorWrapper(actor, specificationId)
       ResponseConstructor.constructEmptyResponse
     }
   }

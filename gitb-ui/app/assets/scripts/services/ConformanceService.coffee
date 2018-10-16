@@ -94,16 +94,21 @@ class ConformanceService
         endpoint_id: endpointId
     })
 
-  createActor: (shortName, fullName, description, domainId, specificationId) ->
-    @RestService.post({
-      path: jsRoutes.controllers.ConformanceService.createActor().url
-      authenticate: true
-      data:
+  createActor: (shortName, fullName, description, defaultActor, displayOrder, domainId, specificationId) =>
+    data = {
         actor_id: shortName
         name: fullName
         description: description
+        default: defaultActor
         domain_id: domainId
         spec_id: specificationId
+    }
+    if displayOrder? && (!displayOrder.trim? || displayOrder.trim() != '')
+      data.displayOrder = Number(displayOrder)
+    @RestService.post({
+      path: jsRoutes.controllers.ConformanceService.createActor().url
+      authenticate: true
+      data: data
     })
 
   createSpecification: (shortName, fullName, urls, diagram, description, specificationType, domainId) ->

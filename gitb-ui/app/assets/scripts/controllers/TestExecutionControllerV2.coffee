@@ -304,15 +304,28 @@ class TestExecutionControllerV2
           @currentTest["preliminary"] = testcase.preliminary
         
         @TestService.getActorDefinitions(@specId).then((data) =>
-          @$scope.actorInfoOfTests[testCaseToLookup] = testcase.actors.actor
+          tempActors = testcase.actors.actor
           for domainActorData in data
             if (domainActorData.id == @actorId)
               @actor = domainActorData.actorId
-            for testCaseActorData in @$scope.actorInfoOfTests[testCaseToLookup]
+            for testCaseActorData in tempActors
               if (testCaseActorData.id == domainActorData.actorId)
-                if (!(testCaseActorData.name?))
+                if !(testCaseActorData.name?)
                   testCaseActorData.name = domainActorData.name
+                if !(testCaseActorData.displayOrder?) && domainActorData.displayOrder?
+                  testCaseActorData.displayOrder = domainActorData.displayOrder
                 break
+          tempActors = tempActors.sort((a, b) =>
+            if !a.displayOrder? && !b.displayOrder?
+              0
+            else if a.displayOrder? && !b.displayOrder?
+              -1
+            else if !a.displayOrder? && b.displayOrder?
+              1
+            else
+              Number(a.displayOrder) - Number(b.displayOrder)
+          )
+          @$scope.actorInfoOfTests[testCaseToLookup] = tempActors
 
           @$scope.stepsOfTests[testCaseToLookup] = testcase.steps
           @$scope.$broadcast('sequence:testLoaded', testCaseToLookup)

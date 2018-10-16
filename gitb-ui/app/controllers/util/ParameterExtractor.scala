@@ -188,8 +188,18 @@ object ParameterExtractor {
 		val actorId:String = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID)
 		val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
 		val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
+    var default:Option[Boolean] = None
+    val defaultStr = ParameterExtractor.optionalBodyParameter(request, Parameters.ACTOR_DEFAULT)
+    if (defaultStr.isDefined) {
+      default = Some(defaultStr.get.toBoolean)
+    }
+    var displayOrder:Option[Short] = None
+    val displayOrderStr = ParameterExtractor.optionalBodyParameter(request, Parameters.DISPLAY_ORDER)
+    if (displayOrderStr.isDefined) {
+      displayOrder = Some(displayOrderStr.get.toShort)
+    }
 		val domainId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
-		Actors(id, actorId, name, description, domainId)
+		Actors(id, actorId, name, description, default, displayOrder, domainId)
 	}
 
   def extractEndpoint(request:Request[AnyContent]):Endpoints = {

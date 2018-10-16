@@ -53,6 +53,10 @@ class SpecificationDetailsController
 				field: 'description',
 				title: 'Description'
 			}
+			{
+				field: 'default',
+				title: 'Default'
+			}			
 		]
 
 		@ConformanceService.getSpecificationsWithIds([@specificationId])

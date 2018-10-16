@@ -198,12 +198,20 @@ object ConformanceManager extends BaseManager {
 		}
 	}
 
-	def createActor(actor: Actors, specificationId: Long) = {
-		DB.withSession { implicit session =>
-			val savedActorId = PersistenceSchema.actors.returning(PersistenceSchema.actors.map(_.id)).insert(actor)
-			PersistenceSchema.specificationHasActors.insert(specificationId, savedActorId)
-			savedActorId
+	def createActorWrapper(actor: Actors, specificationId: Long) = {
+		DB.withTransaction { implicit session =>
+			createActor(actor, specificationId)
 		}
+	}
+
+	def createActor(actor: Actors, specificationId: Long)(implicit session:Session) = {
+		val savedActorId = PersistenceSchema.actors.returning(PersistenceSchema.actors.map(_.id)).insert(actor)
+		PersistenceSchema.specificationHasActors.insert(specificationId, savedActorId)
+		if (actor.default.isDefined && actor.default.get) {
+			// Ensure no other default actors are defined.
+			ActorManager.setOtherActorsAsNonDefault(savedActorId, specificationId)
+		}
+		savedActorId
 	}
 
   def getActors(ids:Option[List[Long]]): List[Actors] = {
