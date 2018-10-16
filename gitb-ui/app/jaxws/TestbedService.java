@@ -42,11 +42,23 @@ public class TestbedService implements TestbedClient {
             //save report
             if(step.equals(END_STEP_ID)){
                 ReportManager.finishTestReport(session, testStepStatus.getReport().getResult());
+                // Send the end session message with a slight delay to avoid race conditions with other ending messages.
+                new java.util.Timer().schedule(
+                        new java.util.TimerTask() {
+                            @Override
+                            public void run() {
+                                //send status updates
+                                logger.info("Notifying client for end of session ["+session+"]");
+                                WebSocketActor.broadcast(session, status);
+                            }
+                        },
+                        1000
+                );
             } else {
                 ReportManager.createTestStepReport(session, testStepStatus);
+                //send status updates
+                WebSocketActor.broadcast(session, status);
             }
-            //send status updates
-            WebSocketActor.broadcast(session, status);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
         }

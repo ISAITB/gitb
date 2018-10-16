@@ -6,11 +6,14 @@ import com.gitb.core.StepStatus;
 import com.gitb.engine.actors.SessionActor;
 import com.gitb.engine.actors.util.ActorUtils;
 import com.gitb.engine.commands.interaction.PrepareForStopCommand;
-import com.gitb.engine.commands.interaction.StopCommand;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.tdl.ExitStep;
+import com.gitb.tr.SR;
+import com.gitb.tr.TestResultType;
+import com.gitb.tr.TestStepReportType;
+import com.gitb.utils.XMLDateTimeUtils;
 
 /**
  * Created by serbay on 9/15/14.
@@ -36,21 +39,20 @@ public class ExitStepProcessorActor extends AbstractTestStepActor<ExitStep> {
 		} else {
 			isSuccess = Boolean.valueOf(step.getSuccess());
 		}
+		TestStepReportType report = new SR();
+		report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
 		StatusEvent status;
 		if (isSuccess) {
+			report.setResult(TestResultType.SUCCESS);
 			status = new StatusEvent(StepStatus.COMPLETED);
 		} else {
+			report.setResult(TestResultType.FAILURE);
 			status = new StatusEvent(StepStatus.ERROR);
 		}
 		// Prepare the rest of the test case for the stop.
 		ActorUtils.askBlocking(getContext().system().actorFor(SessionActor.getPath(sessionId)), new PrepareForStopCommand(sessionId, self()));
 		// Send the step's report.
-		updateTestStepStatus(getContext(), status, null, true, false);
-		// Stop the rest of the test case.
-		getContext()
-				.system()
-				.actorSelection(SessionActor.getPath(sessionId))
-				.tell(new StopCommand(sessionId), self());
+		updateTestStepStatus(getContext(), status, report, true, false);
 	}
 
 	@Override

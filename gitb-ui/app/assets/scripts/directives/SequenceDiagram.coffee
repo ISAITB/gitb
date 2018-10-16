@@ -2,6 +2,11 @@ TEST_ENGINE_ACTOR = 'Test Engine'
 TESTER_ACTOR = 'Operator'
 
 getTesterNameForActor = (actor, actorInfo) ->
+  if !actor?
+    sutActor = _.find(actorInfo, (a) =>
+      a.role == 'SUT'
+    )
+    actor = sutActor.id
   actorName = actor + ' - ' + TESTER_ACTOR
   for info in actorInfo
     if actor == info.id
@@ -293,7 +298,7 @@ extractSteps = (s, actorInfo) =>
           '<div class="child-steps then reverse-offset-{{message.fromIndex}}" ng-if="message.type == \'decision\'">'+
             '<div ng-repeat="subMessage in message.then" seq-diagram-message message="subMessage"></div>'+
           '</div>'+
-          '<div class="child-steps else reverse-offset-{{message.fromIndex}}" ng-if="message.type == \'decision\'">'+
+          '<div class="child-steps else reverse-offset-{{message.fromIndex}}" ng-if="message.type == \'decision\' && message.else.length > 0">'+
             '<div ng-repeat="subMessage in message.else" seq-diagram-message message="subMessage"></div>'+
           '</div>'+
           '<div class="child-steps thread thread-{{$index}} reverse-offset-{{message.fromIndex}}" ng-if="message.type == \'flow\'" ng-repeat="thread in message.threads">'+

@@ -50,19 +50,25 @@ public class IfStepProcessorActor extends AbstractTestStepActor<IfStep> {
 			.processExpression(step.getCond(), DataType.BOOLEAN_DATA_TYPE)
 			.getValue();
 
-		ActorRef branch;
+		ActorRef branch = null;
 		if(condition) {
 			branch = SequenceProcessorActor.create(getContext(), step.getThen(), scope, stepId + THEN_BRANCH_ID);
-
-            sendSkippedStatusEvent(stepId + ELSE_BRANCH_ID);
+			if (step.getElse() != null) {
+				sendSkippedStatusEvent(stepId + ELSE_BRANCH_ID);
+			}
 		} else {
-			branch = SequenceProcessorActor.create(getContext(), step.getElse(), scope, stepId + ELSE_BRANCH_ID);
-
+			if (step.getElse() != null) {
+				branch = SequenceProcessorActor.create(getContext(), step.getElse(), scope, stepId + ELSE_BRANCH_ID);
+			}
             sendSkippedStatusEvent(stepId + THEN_BRANCH_ID);
 		}
 
-		StartCommand command = new StartCommand(scope.getContext().getSessionId());
-		branch.tell(command, self());
+		if (branch != null) {
+			StartCommand command = new StartCommand(scope.getContext().getSessionId());
+			branch.tell(command, self());
+		} else {
+			completed();
+		}
 	}
 
     private void sendSkippedStatusEvent(String stepId) throws DatatypeConfigurationException {

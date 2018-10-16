@@ -38,8 +38,10 @@ class TestResultController
 					if step.type == "decision"
 						if @testResultFlat[step.id+"[T]"]?
 							@testResultFlat[step.id].condition = true
+							step.condition = true
 						else if @testResultFlat[step.id+"[F]"]?
 							@testResultFlat[step.id].condition = false
+							step.condition = false
 
 						@traverseTestCaseSteps(step.then)
 						@traverseTestCaseSteps(step.else)

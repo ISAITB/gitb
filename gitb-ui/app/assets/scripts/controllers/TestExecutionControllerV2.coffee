@@ -715,12 +715,12 @@ class TestExecutionControllerV2
       else
         current = step
 
-      if current? &&
-      current.status != @Constants.TEST_STATUS.COMPLETED &&
-      current.status != @Constants.TEST_STATUS.ERROR &&
-      current.status != @Constants.TEST_STATUS.SKIPPED
-        current.status = status
-        current.report = report
+      if current? && current.status != status
+        if (status == @Constants.TEST_STATUS.COMPLETED) ||
+        (status == @Constants.TEST_STATUS.ERROR) ||
+        (status == @Constants.TEST_STATUS.SKIPPED && (current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.PROCESSING))
+          current.status = status
+          current.report = report
 
   isParent: (id, parentId) ->
     periodIndex = id.indexOf '.', parentId.length

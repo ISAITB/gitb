@@ -14,11 +14,15 @@ import com.gitb.engine.events.model.InputEvent;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tbs.*;
 import com.gitb.tpl.TestCase;
+import com.gitb.tr.SR;
+import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.utils.ErrorUtils;
+import com.gitb.utils.XMLDateTimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -252,6 +256,22 @@ public class TestbedService {
         if(stepId == null || stepId.length() == 0) {
             return;
         }
+
+        if (report == null && (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.SKIPPED)) {
+			report = new SR();
+			try {
+				report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
+			} catch (DatatypeConfigurationException e) {
+				throw new IllegalStateException(e);
+			}
+			if (status == StepStatus.COMPLETED) {
+				report.setResult(TestResultType.SUCCESS);
+			} else if (status == StepStatus.ERROR) {
+				report.setResult(TestResultType.FAILURE);
+			} else {
+				report.setResult(TestResultType.UNDEFINED);
+			}
+		}
 
 		TestbedClient testbedClient = tbsCallbackHandle
 			.getTestbedClient(sessionId);
