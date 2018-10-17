@@ -31,7 +31,7 @@ public class DNSReceiver extends UDPReceiver {
 	public Message receive(List<Configuration> configurations, Message inputs) throws Exception {
 		Message udpMessage = super.receive(configurations, inputs);
 
-		logger.debug("Received a message.");
+		logger.debug(addMarker(), "Received a message.");
 
         Configuration domainConfiguration = ConfigurationUtils.getConfiguration(configurations, DNSMessagingHandler.DNS_DOMAIN_CONFIG_NAME);
 //      Configuration addressConfiguration = ConfigurationUtils.getConfiguration(configurations, DNSMessagingHandler.DNS_ADDRESS_FIELD_NAME);

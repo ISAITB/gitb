@@ -29,6 +29,8 @@ import org.apache.commons.lang.reflect.ConstructorUtils;
 import org.apache.commons.lang.reflect.FieldUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.ArrayList;
@@ -57,6 +59,10 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		this.scope = scope;
 		this.stepId = stepId;
 		this.step = step;
+	}
+
+	protected Marker addMarker() {
+		return MarkerFactory.getDetachedMarker(scope.getContext().getSessionId());
 	}
 
 	/**
@@ -128,7 +134,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			super.preStart();
 			init();
 		} catch (Exception e) {
-			logger.error("" + this + " caught an exception", e);
+			logger.error(addMarker(), "" + this + " caught an exception", e);
 			error(e);
 		}
 	}
@@ -163,7 +169,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 				throw new GITBEngineInternalError("Invalid command [" + message.getClass().getName() + "]");
 			}
 		} catch (Exception e) {
-			logger.error("" + this + " caught an exception", e);
+			logger.error(addMarker(), "" + this + " caught an exception", e);
 			error(e);
 		}
 	}
@@ -251,7 +257,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	protected void updateTestStepStatus(ActorContext context, StatusEvent statusEvent, TestStepReportType report, boolean reportTestStepStatus, boolean logError) {
 
 		if (logError && statusEvent instanceof ErrorStatusEvent) {
-			logger.error("An error status received in [" + stepId + "]", ((ErrorStatusEvent) statusEvent).getException());
+			logger.error(addMarker(), "An error status received in [" + stepId + "]", ((ErrorStatusEvent) statusEvent).getException());
 		}
 
 		StepStatus status = statusEvent.getStatus();
@@ -259,7 +265,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 
 		if (status == StepStatus.COMPLETED || status == StepStatus.ERROR) {
 			if (statusEvent instanceof ErrorStatusEvent) {
-				logger.debug("An error status event is received. Stopping execution of the test step actor [" + stepId + "].");
+				logger.debug(addMarker(), "An error status event is received. Stopping execution of the test step actor [" + stepId + "].");
 
 				self().tell(new StopCommand(scope.getContext().getSessionId()), self());
 				self().tell(PoisonPill.getInstance(), self());
@@ -306,7 +312,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			report.setResult(TestResultType.SUCCESS);
 
 		} catch (DatatypeConfigurationException e) {
-			logger.error("An error occurred while trying to construct a completed report for [" + step + "] with id [" + stepId + "]");
+			logger.error(addMarker(), "An error occurred while trying to construct a completed report for [" + step + "] with id [" + stepId + "]");
 		}
 
 		return report;
@@ -331,7 +337,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			report.getReports().getInfoOrWarningOrError().add(trObjectFactory.createTestAssertionGroupReportsTypeError(error));
 
 		} catch (DatatypeConfigurationException e) {
-			logger.error("An error occurred while trying to construct a report for exception [" + ((ErrorStatusEvent) statusEvent).getException() + "]", e);
+			logger.error(addMarker(), "An error occurred while trying to construct a report for exception [" + ((ErrorStatusEvent) statusEvent).getException() + "]", e);
 		}
 		return report;
 	}

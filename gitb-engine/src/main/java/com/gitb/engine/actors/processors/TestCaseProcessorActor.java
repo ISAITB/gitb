@@ -20,6 +20,7 @@ import com.gitb.tr.TestStepReportType;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 import javax.xml.datatype.DatatypeConfigurationException;
 
@@ -78,13 +79,13 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
 
             //Start command for test case processing
             if (message instanceof StartCommand) {
-	            logger.debug("Received start command, starting test case sequence.");
+	            logger.debug(MarkerFactory.getDetachedMarker(((StartCommand) message).getSessionId()), "Received start command, starting test case sequence.");
                 sequenceProcessorActor = SequenceProcessorActor.create(getContext(), testCase.getSteps(), context.getScope(), "");
 	            sequenceProcessorActor.tell(message, self());
             }
             // Prepare for stop command
             else if (message instanceof PrepareForStopCommand) {
-                logger.debug("Received prepare for stop command.");
+                logger.debug(MarkerFactory.getDetachedMarker(((PrepareForStopCommand) message).getSessionId()), "Received prepare for stop command.");
                 if (sequenceProcessorActor != null) {
                     ActorUtils.askBlocking(sequenceProcessorActor, message);
                 }
@@ -135,7 +136,7 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
                 throw new GITBEngineInternalError("Invalid command [" + message.getClass().getName() + "]");
             }
         }catch(Exception e){
-            logger.error("InternalServerError",e);
+            logger.error(MarkerFactory.getDetachedMarker(sessionId), "InternalServerError",e);
             TestbedService.updateStatus(sessionId, null, StepStatus.ERROR, null);
         }
     }
@@ -150,7 +151,7 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
 		try {
 			report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
 		} catch (DatatypeConfigurationException e) {
-			logger.error("An error occurred.", e);
+			logger.error(MarkerFactory.getDetachedMarker(sessionId), "An error occurred.", e);
 		}
 
 		return report;

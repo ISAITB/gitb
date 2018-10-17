@@ -26,11 +26,11 @@ public class SoapSender extends HttpSender {
 
 	@Override
 	public Message send(List<Configuration> configurations, Message message) throws Exception {
-		logger.debug("Sending soap message");
-		SoapSenderCore impl = new SoapSenderCore();
+		logger.debug(addMarker(), "Sending soap message");
+		SoapSenderCore impl = new SoapSenderCore(this);
 		Message httpMessage = impl.send(configurations, message);
 		super.send(configurations, httpMessage);
-		logger.debug("Sent soap message");
+		logger.debug(addMarker(), "Sent soap message");
 		return httpMessage;
 	}
 

@@ -169,7 +169,7 @@ public class AS4Sender extends HttpSender {
             HttpEntity responseEntity = response.getEntity();
             responseContent = EntityUtils.toByteArray(responseEntity);
         } catch (Exception e) {
-            logger.error("Error POSTing to AS4 backend", e);
+            logger.error(addMarker(), "Error POSTing to AS4 backend", e);
             throw e;
         } finally {
             if (response != null) {
@@ -221,7 +221,7 @@ public class AS4Sender extends HttpSender {
             }
             domibusResponseContent = EntityUtils.toByteArray(responseEntity);
         } catch (Exception e) {
-            logger.error("Error POSTing to AS4 backend", e);
+            logger.error(addMarker(), "Error POSTing to AS4 backend", e);
             throw e;
         } finally {
             if (domibusResponse != null) {

@@ -10,6 +10,8 @@ import com.gitb.messaging.model.TransactionContext;
 import com.gitb.utils.ConfigurationUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.net.InetAddress;
 import java.net.Socket;
@@ -27,6 +29,10 @@ public abstract class AbstractTransactionSender implements ITransactionSender {
 	public AbstractTransactionSender(SessionContext session, TransactionContext transaction) {
 		this.session = session;
 		this.transaction = transaction;
+	}
+
+	public Marker addMarker() {
+		return MarkerFactory.getDetachedMarker(session.getTestSessionId());
 	}
 
 	@Override
@@ -51,7 +57,7 @@ public abstract class AbstractTransactionSender implements ITransactionSender {
 	public void onEnd() throws Exception {
 		Socket socket = getSocket();
 		if(socket != null && !socket.isClosed()) {
-			logger.debug("Closing socket: " + socket);
+			logger.debug(addMarker(), "Closing socket: " + socket);
 			socket.close();
 		}
 	}

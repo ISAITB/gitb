@@ -38,7 +38,7 @@ public class UDPSender extends AbstractDatagramSender {
         Configuration ipAddressConfig = ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.IP_ADDRESS_CONFIG_NAME);
         Configuration portConfig = ConfigurationUtils.getConfiguration(actorConfiguration.getConfig(), ServerUtils.PORT_CONFIG_NAME);
 
-        logger.debug("Sending a datagram message to [" + ipAddressConfig.getValue() + ":" + portConfig.getValue() + "].");
+        logger.debug(addMarker(), "Sending a datagram message to [" + ipAddressConfig.getValue() + ":" + portConfig.getValue() + "].");
 
         DatagramSocket socket = transaction.getParameter(DatagramSocket.class);
         DatagramPacket packet = transaction.getParameter(DatagramPacket.class);
@@ -53,7 +53,7 @@ public class UDPSender extends AbstractDatagramSender {
 
         socket.send(packet);
 
-        logger.debug("Sent [" + packet.getData().length + "] bytes to [" + packet.getAddress() + ":" + packet.getPort() + "]");
+        logger.debug(addMarker(), "Sent [" + packet.getData().length + "] bytes to [" + packet.getAddress() + ":" + packet.getPort() + "]");
 
         return message;
     }

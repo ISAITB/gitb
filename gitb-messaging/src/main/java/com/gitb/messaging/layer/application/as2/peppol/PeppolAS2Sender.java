@@ -81,7 +81,7 @@ public class PeppolAS2Sender extends HttpsSender {
         //calculate MIC and save it to the transaction
         String MIC = AS2MessagingHandler.calculateMIC(originalMimeBody, headers, true);
         transaction.setParameter(AS2MIC.class, new AS2MIC(MIC));
-        logger.debug("MIC calculated: " + MIC);
+        logger.debug(addMarker(), "MIC calculated: " + MIC);
 
         //define message body
         BinaryType binaryType = new BinaryType();

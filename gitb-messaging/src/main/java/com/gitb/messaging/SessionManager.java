@@ -35,7 +35,7 @@ public class SessionManager {
 	public synchronized InitiateResponse createSession(String testSessionId, AbstractMessagingHandler messagingHandler, IMessagingServer server, List<ActorConfiguration> configurations) throws IOException, ExistingSessionException {
 		String sessionId = UUID.randomUUID().toString();
 
-		SessionContext sessionContext = new SessionContext(sessionId, messagingHandler, configurations, server);
+		SessionContext sessionContext = new SessionContext(sessionId, messagingHandler, configurations, server, testSessionId);
 
 		Map<ActorConfiguration, IMessagingServerWorker> availableWorkers = new HashMap<>();
 

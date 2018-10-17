@@ -14,6 +14,7 @@ import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.map.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -34,6 +35,7 @@ public class SessionContext {
     private static final Logger logger = LoggerFactory.getLogger(SessionContext.class);
 
     private final String sessionId;
+    private final String testSessionId;
     private final AbstractMessagingHandler messagingHandler;
     private final IMessagingServer messagingServer;
     private final List<ActorConfiguration> actorConfigurations;
@@ -41,7 +43,7 @@ public class SessionContext {
     private final Map<Tuple<String>, IMessagingServerWorker> workers;
     private final Map<String, List<TransactionContext>> transactionMappings;
 
-    public SessionContext(String sessionId, AbstractMessagingHandler messagingHandler, List<ActorConfiguration> actorConfigurations, IMessagingServer messagingServer) {
+    public SessionContext(String sessionId, AbstractMessagingHandler messagingHandler, List<ActorConfiguration> actorConfigurations, IMessagingServer messagingServer, String testSessionId) {
         this.sessionId = sessionId;
         this.messagingHandler = messagingHandler;
         this.actorConfigurations = actorConfigurations;
@@ -49,6 +51,7 @@ public class SessionContext {
         this.serverActorConfigurations = new CopyOnWriteArrayList<>();
         this.workers = new ConcurrentHashMap<>();
         this.transactionMappings = new ConcurrentHashMap<>();
+        this.testSessionId = testSessionId;
     }
 
     public String getSessionId() {
@@ -237,7 +240,7 @@ public class SessionContext {
                 }
             }
         } catch (UnknownHostException e) {
-            logger.error("An error occurred while trying to find the transaction coming from [" + address + "] and binded to ["+incomingPort+"] port.", e);
+            logger.error(MarkerFactory.getDetachedMarker(testSessionId), "An error occurred while trying to find the transaction coming from [" + address + "] and binded to ["+incomingPort+"] port.", e);
         }
         if (lastAwaitingTransaction == null && orFirstAvailable && firstAvailableTransaction != null) {
             lastAwaitingTransaction = firstAvailableTransaction;
@@ -260,5 +263,9 @@ public class SessionContext {
 
     public AbstractMessagingHandler getMessagingHandler() {
         return messagingHandler;
+    }
+
+    public String getTestSessionId() {
+        return testSessionId;
     }
 }

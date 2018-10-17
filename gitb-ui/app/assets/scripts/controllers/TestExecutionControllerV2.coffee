@@ -55,6 +55,7 @@ class TestExecutionControllerV2
     @testCaseStatus = {}
     @$scope.stepsOfTests = {}
     @$scope.actorInfoOfTests = {}
+    @logMessages = {}
     @$scope.$on '$destroy', () =>
       if @ws? and @session?
         @$log.debug 'Closing websocket in $destroy event handler'
@@ -578,9 +579,18 @@ class TestExecutionControllerV2
       @$interval.cancel(@keepAlive)
 
   onmessage: (msg) =>
-    if (!@messagesToProcess?)
-      @messagesToProcess = []
-    @messagesToProcess.push(msg)
+    response = angular.fromJson(msg.data)
+    stepId = response.stepId
+    if stepId == @Constants.LOG_EVENT_TEST_STEP    
+      # Process log messages immediately
+      if @currentTest? && @currentTest.id?
+        if !@logMessages[@currentTest.id]?
+          @logMessages[@currentTest.id] = []
+      @logMessages[@currentTest.id].push(response.report.context.value)
+    else
+      if (!@messagesToProcess?)
+        @messagesToProcess = []
+      @messagesToProcess.push(msg)
 
   processNextMessage: () =>
     if (@messagesToProcess? && @messagesToProcess.length > 0)
@@ -718,7 +728,8 @@ class TestExecutionControllerV2
       if current? && current.status != status
         if (status == @Constants.TEST_STATUS.COMPLETED) ||
         (status == @Constants.TEST_STATUS.ERROR) ||
-        (status == @Constants.TEST_STATUS.SKIPPED && (current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.PROCESSING))
+        (status == @Constants.TEST_STATUS.SKIPPED && (current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.PROCESSING)) ||
+        ((status == @Constants.TEST_STATUS.PROCESSING) || (status == @Constants.TEST_STATUS.WAITING) && (current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.SKIPPED))
           current.status = status
           current.report = report
 
@@ -777,5 +788,36 @@ class TestExecutionControllerV2
           return parentOrCurrentNode
 
     return null
+
+  showViewLog: () =>
+    @visibleTest?
+
+  viewLog: () =>
+    if @logMessages[@visibleTest.id]?
+      value = @logMessages[@visibleTest.id].join('')
+    else
+      value = ''
+    modalOptions =
+      templateUrl: 'assets/views/components/editor-modal.html'
+      controller: 'EditorModalController as editorModalCtrl'
+      resolve:
+        name: () => 'Test session log'
+        editorOptions: () =>
+          value: value
+          readOnly: true
+          lineNumbers: true
+          smartIndent: false
+          electricChars: false
+          mode: 'text/plain' 
+          download: {
+            fileName: 'log.txt'
+            mimeType: 'text/plain'
+          }
+        indicators: () => null
+        lineNumber: () => null
+
+      size: 'lg'
+
+    @$modal.open modalOptions    
 
 controllers.controller('TestExecutionControllerV2', TestExecutionControllerV2)

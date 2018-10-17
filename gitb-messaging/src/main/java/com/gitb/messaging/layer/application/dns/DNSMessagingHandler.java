@@ -67,7 +67,7 @@ public class DNSMessagingHandler extends AbstractMessagingHandler {
 			try {
 				dnsServer = new DNSMessagingServer();
 			} catch (IOException e) {
-				logger.error("An error occurred while creating a DNS server instance", e);
+				logger.error(addMarker(), "An error occurred while creating a DNS server instance", e);
 			}
 		}
 

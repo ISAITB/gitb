@@ -15,16 +15,20 @@ object WebSocketActor {
   private var webSockets = Map[String, Map[String, ActorRef]]()
   private var testTypes  = Map[String, Short]()
 
-  /**
-   * Broadcasts given msg (in Json) to all clients with the given session
-   */
-  def broadcast(sessionId:String, msg:String) = {
+  def broadcast(sessionId:String, msg:String, retry: Boolean):Unit = {
     var attempts = 0
-    while (attempts < 10 && !broadcastMessage(sessionId, msg)) {
+    while (attempts < 10 && !broadcastMessage(sessionId, msg) && retry) {
       attempts += 1
       logger.warn("Unable to send message ["+msg+"] for session ["+sessionId+"] - attempt " + attempts)
       Thread.sleep(1000)
     }
+  }
+
+  /**
+   * Broadcasts given msg (in Json) to all clients with the given session
+   */
+  def broadcast(sessionId:String, msg:String):Unit = {
+    broadcast(sessionId, msg, true)
   }
 
   def broadcastMessage(sessionId:String, msg:String):Boolean = {

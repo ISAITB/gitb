@@ -4,6 +4,8 @@ import com.gitb.messaging.Message;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
 import com.gitb.messaging.model.udp.IDatagramReceiver;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -31,6 +33,10 @@ public abstract class AbstractDatagramReceiver implements IDatagramReceiver {
 		this.lock = new ReentrantLock();
 		this.messageReceived = lock.newCondition();
 		this.error = null;
+	}
+
+	protected Marker addMarker() {
+		return MarkerFactory.getDetachedMarker(session.getTestSessionId());
 	}
 
 	protected void waitUntilMessageReceived() throws Exception {

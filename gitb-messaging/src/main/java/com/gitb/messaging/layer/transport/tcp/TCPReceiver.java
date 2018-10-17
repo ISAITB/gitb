@@ -28,7 +28,7 @@ public class TCPReceiver extends AbstractTransactionReceiver {
 	public Message receive(List<Configuration> configurations, Message inputs) throws Exception {
 		waitUntilMessageReceived();
 
-		logger.debug("Message received: " + socket);
+		logger.debug(addMarker(), "Message received: " + socket);
 
 		InputStream inputStream = socket.getInputStream();
 

@@ -13,8 +13,6 @@ import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.*;
 import com.gitb.tdl.Process;
 import com.gitb.utils.ErrorUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * Actor for processing sequence of test steps. Root class for many test constructs extending tdl:Sequence
  */
 public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStepActor<T> {
-    private static Logger logger = LoggerFactory.getLogger(SequenceProcessorActor.class);
     public static final String NAME = "seq-p";
 
     private Map<Integer, Integer> childActorUidIndexMap;
@@ -151,16 +148,12 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
 
     @Override
     protected void handleStatusEvent(StatusEvent event) throws Exception {
-//		super.handleStatusEvent(event);
-
         StepStatus status = event.getStatus();
         //If a step is completed, continue from next step
         int senderUid = getSender().path().uid();
         int completedStepIndex = childActorUidIndexMap.get(senderUid);
 
         childStepStatuses.put(completedStepIndex, status);
-
-//		logger.debug("["+stepId+"] received a status event from its child step with index ["+completedStepIndex+"]: " + event);
 
         if (status == StepStatus.COMPLETED
                 || status == StepStatus.ERROR
@@ -179,10 +172,8 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
                     }
                 }
                 if (childrenHasError) {
-//					logger.debug("["+stepId+"] has no child steps left to run. Sending error status report to parent.");
                     childrenHasError();
                 } else {
-//					logger.debug("["+stepId+"] has no child steps left to run. Sending completed status report to parent.");
                     completed();
                 }
             }
@@ -197,7 +188,6 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
     private ActorRef startTestStepAtIndex(int index) {
         ActorRef childStep = childStepIndexActorMap.get(index);
         if (childStep != null) {
-//			logger.debug("["+stepId+"] starting child step with index ["+index+"]");
             childStep.tell(new StartCommand(scope.getContext().getSessionId()), self());
         }
         return childStep;

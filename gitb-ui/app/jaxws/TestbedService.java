@@ -24,6 +24,7 @@ import javax.xml.ws.soap.Addressing;
 public class TestbedService implements TestbedClient {
 
     private final static String END_STEP_ID = "-1";
+    private final static String LOG_EVENT_STEP_ID = "-999";
 
     private final Logger logger = LoggerFactory.getLogger(TestbedService.class);
 
@@ -34,11 +35,9 @@ public class TestbedService implements TestbedClient {
 
     @Override
     public com.gitb.tbs.Void updateStatus(@WebParam(name = "UpdateStatusRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") TestStepStatus testStepStatus) {
-        String sessionToReport = null;
         try {
             String status  = JacksonUtil.serializeTestStepStatus(testStepStatus);
             String session = testStepStatus.getTcInstanceId();
-            sessionToReport = session;
             String step    = testStepStatus.getStepId();
 
             //save report
@@ -50,19 +49,21 @@ public class TestbedService implements TestbedClient {
                             @Override
                             public void run() {
                                 //send status updates
-                                logger.info("Notifying client for end of session ["+session+"]");
                                 WebSocketActor.broadcast(session, status);
                             }
                         },
                         1000
                 );
+            } else if (step.equals(LOG_EVENT_STEP_ID)) {
+                //send log event
+                WebSocketActor.broadcast(session, status, false);
             } else {
                 ReportManager.createTestStepReport(session, testStepStatus);
                 //send status updates
                 WebSocketActor.broadcast(session, status);
             }
         } catch (JsonProcessingException e) {
-            logger.error("Error during test session update for session ["+sessionToReport+"]", e);
+            logger.error("Error during test session update for session ["+testStepStatus.getTcInstanceId()+"]", e);
         }
         return new Void();
     }

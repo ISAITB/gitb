@@ -137,7 +137,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     TestbedService.interactWithUsers(scope.getContext().getSessionId(), stepId, userInteractionRequest);
                     return null;
                 } catch (Exception e) {
-                    logger.error("Error in preliminary step", e);
+                    logger.error(addMarker(), "Error in preliminary step", e);
                     throw new GITBEngineInternalError(e);
                 }
             }

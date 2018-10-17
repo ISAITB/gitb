@@ -17,6 +17,7 @@ import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.tbs.SUTConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -232,7 +233,7 @@ public class SessionActor extends Actor {
 	}
 
 	private void unexpectedCommand(Object message, TestCaseContext context) {
-        logger.error("InternalError", "Invalid command [" + message.getClass().getName() + "] in state [" + context.getCurrentState() + "]");
+        logger.error(MarkerFactory.getDetachedMarker(context.getSessionId()), "InternalError", "Invalid command [" + message.getClass().getName() + "] in state [" + context.getCurrentState() + "]");
         throw new GITBEngineInternalError("Invalid command [" + message.getClass().getName() + "] in state [" + context.getCurrentState() + "]");
     }
 

@@ -108,12 +108,12 @@ public class HttpReceiver extends AbstractTransactionReceiver {
      * @throws Exception
      */
     private Message receiveHttpRequest(List<Configuration> configurations) throws Exception{
-        logger.debug("Message received: " + socket);
+        logger.debug(addMarker(), "Message received: " + socket);
 
-        logger.debug("Connection created: " + connection);
+        logger.debug(addMarker(), "Connection created: " + connection);
 
         HttpRequest request = ((DefaultBHttpServerConnection) connection).receiveRequestHeader();
-        logger.debug("Received request header: " + request);
+        logger.debug(addMarker(), "Received request header: " + request);
 
         Message message = new Message();
         message.getFragments()
@@ -129,7 +129,7 @@ public class HttpReceiver extends AbstractTransactionReceiver {
         if(request instanceof HttpEntityEnclosingRequest) {
             ((DefaultBHttpServerConnection) connection).receiveRequestEntity((HttpEntityEnclosingRequest) request);
 
-            logger.debug("Received request entity: " + request);
+            logger.debug(addMarker(), "Received request entity: " + request);
 
             HttpEntity entity = ((HttpEntityEnclosingRequest)request).getEntity();
 
@@ -190,7 +190,7 @@ public class HttpReceiver extends AbstractTransactionReceiver {
                     nextPart = multipartStream.readBoundary();
                 }
             } catch(Exception e) {
-                logger.warn("Error while parsing multipart contents", e);
+                logger.warn(addMarker(), "Error while parsing multipart contents", e);
             }
             info.addItem("parts", parts);
             info.addItem("partsByName", partsByName);
@@ -206,15 +206,15 @@ public class HttpReceiver extends AbstractTransactionReceiver {
      * @throws Exception
      */
     private Message receiveHttpResponse(List<Configuration> configurations) throws Exception {
-        logger.debug("Message received: " + socket);
+        logger.debug(addMarker(), "Message received: " + socket);
 
         HttpResponse response = ((DefaultBHttpClientConnection) connection).receiveResponseHeader();
 
-        logger.debug("Received response header: " + response);
+        logger.debug(addMarker(), "Received response header: " + response);
 
         ((DefaultBHttpClientConnection) connection).receiveResponseEntity(response);
 
-        logger.debug("Received response entity: " + response);
+        logger.debug(addMarker(), "Received response entity: " + response);
 
         //check retrieved status code
         checkStatusCode(configurations, response);

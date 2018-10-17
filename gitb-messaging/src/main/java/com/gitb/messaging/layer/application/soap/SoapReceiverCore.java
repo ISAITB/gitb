@@ -3,6 +3,7 @@ package com.gitb.messaging.layer.application.soap;
 import com.gitb.core.Configuration;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.layer.application.http.HttpMessagingHandler;
+import com.gitb.messaging.layer.application.http.HttpReceiver;
 import com.gitb.types.*;
 import com.gitb.utils.ConfigurationUtils;
 import org.apache.commons.io.IOUtils;
@@ -17,10 +18,16 @@ import java.util.List;
 
 public class SoapReceiverCore {
 
+    private final HttpReceiver parent;
+
+    public SoapReceiverCore(HttpReceiver parent) {
+        this.parent = parent;
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(SoapReceiverCore.class);
 
     public Message receive(Message httpMessage, List<Configuration> configurations, Message inputs) throws Exception {
-        logger.debug("Received http message");
+        logger.debug(parent.addMarker(), "Received http message");
 
         MapType httpHeaders = (MapType) httpMessage.getFragments().get(HttpMessagingHandler.HTTP_HEADERS_FIELD_NAME);
 
@@ -56,33 +63,33 @@ public class SoapReceiverCore {
 
         SOAPMessage soapMessage = messageFactory.createMessage(mimeHeaders, inputStream);
 
-        logger.debug("Created soap message from the http message: " + soapMessage);
+        logger.debug(parent.addMarker(), "Created soap message from the http message: " + soapMessage);
 
         // manage attachment parts
         ListType atts = new ListType(DataType.BINARY_DATA_TYPE);
         Iterator<?> itAtts = soapMessage.getAttachments();
         int sizeAtts = soapMessage.countAttachments();
-        logger.debug("Found {} attachment(s).", sizeAtts);
+        logger.debug(parent.addMarker(), "Found {} attachment(s).", sizeAtts);
 
         while (itAtts.hasNext()) {
             Object att = null;
 
             AttachmentPart itAtt = (AttachmentPart) itAtts.next();
-            logger.debug("Found an attachment: " + itAtt);
+            logger.debug(parent.addMarker(), "Found an attachment: " + itAtt);
             String typeAtt = itAtt.getContentType();
             if (typeAtt.contains("text/")) {
                 String text = (String) itAtt.getContent();
                 att = text.getBytes();
                 // process text
-                logger.debug("Found an attachment of type text: " + text);
+                logger.debug(parent.addMarker(), "Found an attachment of type text: " + text);
             } else if (typeAtt.contains("image/")) {
                 att = IOUtils.toByteArray((InputStream) itAtt.getContent());
                 // process InputStream of image
-                logger.debug("Found an attachment of type image: " + atts);
+                logger.debug(parent.addMarker(), "Found an attachment of type image: " + atts);
             } else if (typeAtt.contains("application/")) {
                 att = IOUtils.toByteArray((InputStream) itAtt.getContent());
                 // process InputStream of image
-                logger.debug("Found an attachment of type binary: " + atts);
+                logger.debug(parent.addMarker(), "Found an attachment of type binary: " + atts);
             }
 
             // add to the list

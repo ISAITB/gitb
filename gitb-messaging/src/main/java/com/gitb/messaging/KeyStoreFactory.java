@@ -1,12 +1,12 @@
 package com.gitb.messaging;
 
 import com.gitb.messaging.server.Configuration;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.security.*;
+import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.PrivateKey;
 import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
@@ -15,7 +15,6 @@ import java.security.cert.X509Certificate;
  * Created by senan on 11.11.2014.
  */
 public class KeyStoreFactory {
-    private static Logger logger = LoggerFactory.getLogger(KeyStoreFactory.class);
 
     private static final String KEYSTORE_TYPE = "JKS";
     private static final String CERTIFICATE_TYPE = "X.509";
@@ -36,9 +35,8 @@ public class KeyStoreFactory {
         try {
             return (X509Certificate) keyStore.getCertificate(defaultAlias);
         } catch (KeyStoreException e) {
-            logger.error("Error while returning certificate", e);
+            throw new IllegalStateException("Error while returning certificate", e);
         }
-        return null;
     }
 
     public X509Certificate generateCertificate(byte[] bytes) {
@@ -51,18 +49,16 @@ public class KeyStoreFactory {
             CertificateFactory certFactory = CertificateFactory.getInstance(CERTIFICATE_TYPE);
             return (X509Certificate)certFactory.generateCertificate(stream);
         } catch (CertificateException e) {
-            logger.error("Error while generating certificate", e);
+            throw new IllegalStateException("Error while generating certificate", e);
         }
-        return null;
     }
 
     public PrivateKey getPrivateKey() {
         try {
             return (PrivateKey) keyStore.getKey(defaultAlias, keyStorePassword.toCharArray());
         } catch (Exception e) {
-            logger.error("Error while returning private key", e);
+            throw new IllegalStateException("Error while returning private key", e);
         }
-        return null;
     }
 
     public String getKeyStorePassword() {
@@ -85,7 +81,7 @@ public class KeyStoreFactory {
             keyStore.load(getClass().getResourceAsStream("/" + keyStoreLocation),
                           keyStorePassword.toCharArray());
         } catch (Exception e) {
-            logger.error("Error while initializing KeyStore", e);
+            throw new IllegalStateException("Error while initializing KeyStore", e);
         }
     }
 

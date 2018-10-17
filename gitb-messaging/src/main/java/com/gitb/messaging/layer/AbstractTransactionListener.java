@@ -9,6 +9,8 @@ import com.gitb.messaging.model.tcp.ITransactionReceiver;
 import com.gitb.messaging.model.tcp.ITransactionSender;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.util.List;
 
@@ -29,22 +31,26 @@ public abstract class AbstractTransactionListener implements ITransactionListene
         this.senderTransactionContext = senderTransactionContext;
     }
 
+    protected Marker addMarker() {
+        return MarkerFactory.getDetachedMarker(session.getTestSessionId());
+    }
+
     public Message listen(List<Configuration> configurations, Message inputs) throws Exception {
         ITransactionReceiver receiver = receiverTransactionContext.getParameter(ITransactionReceiver.class);
         ITransactionSender sender = senderTransactionContext.getParameter(ITransactionSender.class);
 
         Message incomingMessage = receiver.receive(configurations, inputs);
 
-        logger.debug("Message received from the sender.");
+        logger.debug(addMarker(), "Message received from the sender.");
 
         Message outgoingMessage = transformMessage(incomingMessage);
         List<Configuration> outgoingConfigurations = transformConfigurations(incomingMessage, configurations);
 
-        logger.debug("Incoming message is transformed to an outgoing message.");
+        logger.debug(addMarker(), "Incoming message is transformed to an outgoing message.");
 
         sender.send(outgoingConfigurations, outgoingMessage);
 
-        logger.debug("Message is forwarded to the receiver.");
+        logger.debug(addMarker(), "Message is forwarded to the receiver.");
 
         return incomingMessage;
     }

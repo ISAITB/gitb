@@ -10,6 +10,7 @@ class EditorModalController
     @$scope.editorOptions = editorOptions
     @$scope.indicators = indicators
     @$scope.lineNumber = lineNumber
+    @$scope.isDownloadVisible = editorOptions.download? && editorOptions.value?
 
     @$scope.close = () =>
       @$modalInstance.dismiss()
@@ -22,5 +23,8 @@ class EditorModalController
         success = document.execCommand 'copy'
       catch err
 
+    @$scope.download = () =>
+      bb = new Blob([@$scope.editorOptions.value], {type: @$scope.editorOptions.download.mimeType})
+      saveAs(bb, @$scope.editorOptions.download.fileName)
 
 @controllers.controller 'EditorModalController', EditorModalController
