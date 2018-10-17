@@ -34,9 +34,11 @@ public class TestbedService implements TestbedClient {
 
     @Override
     public com.gitb.tbs.Void updateStatus(@WebParam(name = "UpdateStatusRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") TestStepStatus testStepStatus) {
+        String sessionToReport = null;
         try {
             String status  = JacksonUtil.serializeTestStepStatus(testStepStatus);
             String session = testStepStatus.getTcInstanceId();
+            sessionToReport = session;
             String step    = testStepStatus.getStepId();
 
             //save report
@@ -60,13 +62,14 @@ public class TestbedService implements TestbedClient {
                 WebSocketActor.broadcast(session, status);
             }
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error("Error during test session update for session ["+sessionToReport+"]", e);
         }
         return new Void();
     }
 
     @Override
     public Void interactWithUsers(@WebParam(name = "InteractWithUsersRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") InteractWithUsersRequest interactWithUsersRequest) {
+        String session = null;
         try {
             if (interactWithUsersRequest.getInteraction() != null) {
                 for (Object obj: interactWithUsersRequest.getInteraction().getInstructionOrRequest()) {
@@ -84,7 +87,7 @@ public class TestbedService implements TestbedClient {
                 }
             }
             String request = JacksonUtil.serializeInteractionRequest(interactWithUsersRequest);
-            String session = interactWithUsersRequest.getTcInstanceid();
+            session = interactWithUsersRequest.getTcInstanceid();
             String actor   = interactWithUsersRequest.getInteraction().getWith();
             //if actor not specified, send the request to all actors. Let client side handle this.
             if(actor == null) {
@@ -95,7 +98,7 @@ public class TestbedService implements TestbedClient {
                 WebSocketActor.push(session, actor, request);
             }
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error("Error during user interaction for session ["+session+"]", e);
         }
         return new Void();
     }
