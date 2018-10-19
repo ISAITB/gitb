@@ -90,8 +90,17 @@ class CreateConformanceStatementController
 
   onWizardFinish: () =>
     @saveConformanceStatement()
-    .then () =>
-      @$state.go "app.systems.detail.conformance.list", {id: @systemId}
+    .then (data) =>
+      if data? && data.length? && data.length > 0 && data[0].error_description?
+        error = {
+          statusText: "Error"
+          data: {
+            error_description: data[0].error_description
+          }
+        }      
+        @ErrorService.showErrorMessage(error)
+      else
+        @$state.go "app.systems.detail.conformance.list", {id: @systemId}
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 

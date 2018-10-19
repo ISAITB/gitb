@@ -177,7 +177,7 @@ object SystemManager extends BaseManager {
     }
   }
 
-  def getConformanceStatements(systemId: Long, spec: Option[String], actor: Option[String]): List[ConformanceStatement] = {
+  def getConformanceStatements(systemId: Long, spec: Option[Long], actor: Option[Long]): List[ConformanceStatement] = {
     DB.withSession { implicit session =>
       var query = for {
         conformanceResults <- PersistenceSchema.conformanceResults
@@ -188,8 +188,8 @@ object SystemManager extends BaseManager {
       query = query.filter(_._1.sut === systemId)
       if (spec.isDefined && actor.isDefined) {
         query = query
-          .filter(_._1.spec === spec.get.toLong)
-          .filter(_._1.actor === actor.get.toLong)
+          .filter(_._1.spec === spec.get)
+          .filter(_._1.actor === actor.get)
       }
       query = query.sortBy(x => (x._4.fullname, x._2.fullname, x._3.name))
 

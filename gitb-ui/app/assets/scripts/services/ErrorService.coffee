@@ -42,7 +42,7 @@ class ErrorService
         error.template = '<p><b>Error message: </b>'+@Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</p>' +
         '<p><b>Error reference: </b>'+@Constants.PLACEHOLDER__ERROR_ID+'</p>'
       else
-        error.template = '<p><b>Error message: </b>'+@Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</p>'
+        error.template = '<p>'+@Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</p>'
     modalOptions =
       templateUrl: 'assets/views/components/error-modal.html'
       controller: 'ErrorController as errorCtrl'

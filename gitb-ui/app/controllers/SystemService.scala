@@ -84,13 +84,18 @@ class SystemService extends Controller{
 	    case _ => None
 	  }
 
-    SystemManager.defineConformanceStatementWrapper(sut_id, spec, actor, optionIds)
-    ResponseConstructor.constructEmptyResponse
+    val matchingStatements = SystemManager.getConformanceStatements(sut_id, Some(spec), Some(actor))
+    if (matchingStatements.isEmpty) {
+      SystemManager.defineConformanceStatementWrapper(sut_id, spec, actor, optionIds)
+      ResponseConstructor.constructEmptyResponse
+    } else {
+      ResponseConstructor.constructErrorResponse(ErrorCodes.CONFORMANCE_STATEMENT_EXISTS, "This conformance statement is already defined.")
+    }
   }
 
 	def getConformanceStatements(sut_id: Long) = Action.apply { request =>
-    val specification = ParameterExtractor.optionalQueryParameter(request, Parameters.SPEC)
-    val actor = ParameterExtractor.optionalQueryParameter(request, Parameters.ACTOR)
+    val specification = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SPEC)
+    val actor = ParameterExtractor.optionalLongQueryParameter(request, Parameters.ACTOR)
 
 		val conformanceStatements = SystemManager.getConformanceStatements(sut_id, specification, actor)
     val json:String = JsonUtil.jsConformanceStatements(conformanceStatements).toString()
