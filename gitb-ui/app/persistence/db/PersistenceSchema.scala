@@ -30,8 +30,9 @@ object PersistenceSchema {
     def adminOrganization = column[Boolean]("admin_organization")
     def landingPage = column[Option[Long]] ("landing_page", O.Nullable)
     def legalNotice = column[Option[Long]] ("legal_notice", O.Nullable)
+    def errorTemplate = column[Option[Long]] ("error_template", O.Nullable)
     def community = column[Long] ("community")
-    def * = (id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, community) <> (Organizations.tupled, Organizations.unapply)
+    def * = (id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, errorTemplate, community) <> (Organizations.tupled, Organizations.unapply)
   }
   //get table name etc from organizations.baseTableRow
   val organizations = TableQuery[OrganizationsTable]
@@ -387,4 +388,16 @@ object PersistenceSchema {
   }
   val legalNotices = TableQuery[LegalNoticesTable]
   val insertLegalNotice = (legalNotices returning legalNotices.map(_.id))
+
+  class ErrorTemplatesTable(tag: Tag) extends Table[ErrorTemplates](tag, "ErrorTemplates") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def name = column[String]("name")
+    def description = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def content = column[String]("content")
+    def default = column[Boolean]("default_flag")
+    def community = column[Long]("community")
+    def * = (id, name, description, content, default, community) <> (ErrorTemplates.tupled, ErrorTemplates.unapply)
+  }
+  val errorTemplates = TableQuery[ErrorTemplatesTable]
+  val insertErrorTemplate = (errorTemplates returning errorTemplates.map(_.id))
 }

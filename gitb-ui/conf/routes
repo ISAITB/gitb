@@ -123,6 +123,11 @@ GET     /notices/:id                        @controllers.LegalNoticeService.getL
 DELETE  /notices/:id                        @controllers.LegalNoticeService.deleteLegalNotice(id : Long)
 POST    /notices/:id                        @controllers.LegalNoticeService.updateLegalNotice(id : Long)
 
+GET     /errortemplates/default             @controllers.ErrorTemplateService.getCommunityDefaultErrorTemplate
+GET     /errortemplates/:id                 @controllers.ErrorTemplateService.getErrorTemplateById(id : Long)
+DELETE  /errortemplates/:id                 @controllers.ErrorTemplateService.deleteErrorTemplate(id : Long)
+POST    /errortemplates/:id                 @controllers.ErrorTemplateService.updateErrorTemplate(id : Long)
+
 GET     /organizations/all                  @controllers.OrganizationService.getOrganizations
 POST    /organizations/create               @controllers.OrganizationService.createOrganization
 GET     /organizations/users                @controllers.UserService.getUsersByOrganization(id : Long)
@@ -143,6 +148,8 @@ GET     /communities/pages/:id              @controllers.LandingPageService.getL
 POST    /communities/pages/create           @controllers.LandingPageService.createLandingPage
 GET     /communities/notices/:id            @controllers.LegalNoticeService.getLegalNoticesByCommunity(id: Long)
 POST    /communities/notices/create         @controllers.LegalNoticeService.createLegalNotice
+GET     /communities/errortemplates/:id     @controllers.ErrorTemplateService.getErrorTemplatesByCommunity(id: Long)
+POST    /communities/errortemplates/create  @controllers.ErrorTemplateService.createErrorTemplate
 GET     /communities/admins/all             @controllers.UserService.getCommunityAdministrators
 POST    /communities/admins/create          @controllers.UserService.createCommunityAdmin
 POST    /communities/admins/create          @controllers.UserService.createCommunityAdmin

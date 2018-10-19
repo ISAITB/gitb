@@ -10,48 +10,47 @@ import config.Configurations
 object ResponseConstructor extends Results{
 
   def constructUnauthorizedResponse(errorCode: Int, errorDesc: String): Result = {
-    Unauthorized(constructErrorMessage(errorCode, errorDesc))
+    Unauthorized(constructErrorMessage(errorCode, errorDesc, None))
       .withHeaders(WWW_AUTHENTICATE ->  "Bearer realm=\"GITB\"").as(JSON)
   }
 
   def constructBadRequestResponse(errorCode: Int, errorDesc: String): Result = {
-    BadRequest(constructErrorMessage(errorCode, errorDesc)).as(JSON)
+    BadRequest(constructErrorMessage(errorCode, errorDesc, None)).as(JSON)
   }
 
   def constructNotFoundResponse(errorCode: Int, errorDesc: String):Result = {
-    NotFound(constructErrorMessage(errorCode, errorDesc)).as(JSON)
+    NotFound(constructErrorMessage(errorCode, errorDesc, None)).as(JSON)
   }
 
-  def constructServerError(errorCode: String, errorDesc:String):Result = {
-    InternalServerError(constructErrorMessage(errorCode, errorDesc)).as(JSON)
+  def constructServerError(errorCode: String, errorDesc:String, errorIdentifier:Option[String]):Result = {
+    InternalServerError(constructErrorMessage(errorCode, errorDesc, errorIdentifier)).as(JSON)
   }
 
   def constructTimeoutResponse:Result = {
     GatewayTimeout(constructErrorMessage(ErrorCodes.GATEWAY_TIMEOUT,
       "An operation could not be completed within " +
-      Configurations.SERVER_REQUEST_TIMEOUT_IN_SECONDS + " seconds"))
+      Configurations.SERVER_REQUEST_TIMEOUT_IN_SECONDS + " seconds", None))
   }
 
-  def constructErrorMessage(errorCode: Any, errorDesc:String): String = {
+  def constructErrorMessage(errorCode: Any, errorDesc:String, errorIdentifier: Option[String]): String = {
     val code = {
       var code = "\"\""
-
       if(errorCode.isInstanceOf[Int])
         code =  "" + errorCode
       else if (errorCode.isInstanceOf[String])
         code = "\"" + errorCode + "\""
-
       code
     }
-
-    "{" +
-      "\"error_code\":" + code + ", " +
-      "\"error_description\":\"" + errorDesc + "\"" +
-    "}"
+    var msg = "{\"error_code\":" + code + ", \"error_description\":\"" + errorDesc + "\""
+    if (errorIdentifier.isDefined) {
+      msg += ", \"error_id\": \""+errorIdentifier.get+"\""
+    }
+    msg += "}"
+    msg
   }
 
   def constructErrorResponse(errorCode: Int, errorDesc: String):Result = {
-    Ok(constructErrorMessage(errorCode, errorDesc)).as(JSON)
+    Ok(constructErrorMessage(errorCode, errorDesc, None)).as(JSON)
   }
 
   def constructEmptyResponse:Result = {

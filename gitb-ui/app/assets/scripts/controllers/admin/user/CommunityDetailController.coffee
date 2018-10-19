@@ -1,7 +1,7 @@
 class CommunityDetailController
 
-  @$inject = ['$log', '$state', '$window', '$stateParams', 'UserService', 'DataService', 'Constants', 'LandingPageService', 'LegalNoticeService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'CommunityService', 'ConformanceService', 'ErrorService']
-  constructor: (@$log, @$state, @$window, @$stateParams, @UserService, @DataService, @Constants, @LandingPageService, @LegalNoticeService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @CommunityService, @ConformanceService, @ErrorService) ->
+  @$inject = ['$log', '$state', '$window', '$stateParams', 'UserService', 'DataService', 'Constants', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'CommunityService', 'ConformanceService', 'ErrorService']
+  constructor: (@$log, @$state, @$window, @$stateParams, @UserService, @DataService, @Constants, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @CommunityService, @ConformanceService, @ErrorService) ->
 
     @communityId = @$stateParams.community_id
 
@@ -57,12 +57,28 @@ class CommunityDetailController
       }
     ]
 
+    @errorTemplatesColumns = [
+      {
+        field: 'name',
+        title: 'Name'
+      }
+      {
+        field: 'description',
+        title: 'Description'
+      }
+      {
+        field: 'default',
+        title: 'Default'
+      }
+    ]
+
     @community = {}
     @domains = {}
     @admins = []
     @organizations = []
     @landingPages = []
     @legalNotices = []
+    @errorTemplates = []
     @alerts = []
 
     @LegalNoticeService.getCommunityDefaultLegalNotice(@Constants.DEFAULT_COMMUNITY_ID)
@@ -74,6 +90,12 @@ class CommunityDetailController
     @LandingPageService.getCommunityDefaultLandingPage(@Constants.DEFAULT_COMMUNITY_ID)
     .then (data) =>
       @testBedLandingPage = data if data.exists
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+    @ErrorTemplateService.getCommunityDefaultErrorTemplate(@Constants.DEFAULT_COMMUNITY_ID)
+    .then (data) =>
+      @testBedErrorTemplate = data if data.exists
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -105,6 +127,12 @@ class CommunityDetailController
     @LegalNoticeService.getLegalNoticesByCommunity(@communityId)
     .then (data) =>
       @legalNotices = data
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+    @ErrorTemplateService.getErrorTemplatesByCommunity(@communityId)
+    .then (data) =>
+      @errorTemplates = data
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -153,6 +181,9 @@ class CommunityDetailController
 
   legalNoticeSelect: (legalNotice) =>
     @$state.go 'app.admin.users.communities.detail.legalnotices.detail', { notice_id : legalNotice.id }
+
+  errorTemplateSelect: (errorTemplate) =>
+    @$state.go 'app.admin.users.communities.detail.errortemplates.detail', { template_id : errorTemplate.id }
 
   adminSelect: (admin) =>
     @$state.go 'app.admin.users.communities.detail.admins.detail', { admin_id : admin.id }

@@ -1,7 +1,7 @@
 class CommunityCreateController
 
-  @$inject = ['$log', '$state', 'ValidationService', 'LandingPageService', 'LegalNoticeService', 'CommunityService', 'ConformanceService', 'ErrorService']
-  constructor: (@$log, @$state, @ValidationService, @LandingPageService, @LegalNoticeService, @CommunityService, @ConformanceService, @ErrorService) ->
+  @$inject = ['$log', '$state', 'ValidationService', 'CommunityService', 'ConformanceService', 'ErrorService']
+  constructor: (@$log, @$state, @ValidationService, @CommunityService, @ConformanceService, @ErrorService) ->
 
     @alerts = []
     @community = {}

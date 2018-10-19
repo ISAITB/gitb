@@ -39,6 +39,7 @@ object Parameters {
   val CONTENT = "content"
   val LANDING_PAGE_ID = "landing_page_id"
   val LEGAL_NOTICE_ID = "legal_notice_id"
+  val ERROR_TEMPLATE_ID = "error_template_id"
 
   //Authentication Service and OAuth 2.0 parameters
   val GRANT_TYPE = "grant_type"

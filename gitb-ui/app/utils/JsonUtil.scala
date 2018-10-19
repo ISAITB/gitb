@@ -154,6 +154,7 @@ object JsonUtil {
       "type"  -> organization.organizationType,
       "landingPage" -> (if(organization.landingPage.isDefined) organization.landingPage.get else JsNull),
       "legalNotice" -> (if(organization.legalNotice.isDefined) organization.legalNotice.get else JsNull),
+      "errorTemplate" -> (if(organization.errorTemplate.isDefined) organization.errorTemplate.get else JsNull),
       "community" -> organization.community,
       "adminOrganization" -> organization.adminOrganization
     )
@@ -806,6 +807,12 @@ object JsonUtil {
       jOrganization = jOrganization ++ Json.obj("legalNotices" -> JsNull)
     }
     //
+    if(org.errorTemplateObj.isDefined){
+      jOrganization = jOrganization ++ Json.obj("errorTemplates" -> jsErrorTemplate(org.errorTemplateObj.get))
+    } else{
+      jOrganization = jOrganization ++ Json.obj("errorTemplates" -> JsNull)
+    }
+    //
     if(org.community.isDefined){
       jOrganization = jOrganization ++ Json.obj("communities" -> jsCommunity(org.community.get))
     } else{
@@ -861,9 +868,9 @@ object JsonUtil {
   }
 
   /**
-   * Converts a LandingPage object into Play!'s JSON notation.
+   * Converts a LegalNotice object into Play!'s JSON notation.
    * Does not support cross object conversion
-   * @param legalNotice LandingPage object to be converted
+   * @param legalNotice LegalNotice object to be converted
    * @return JsObject
    */
   def jsLegalNotice(legalNotice:LegalNotices):JsObject = {
@@ -873,6 +880,23 @@ object JsonUtil {
       "description" -> (if(legalNotice.description.isDefined) legalNotice.description.get else JsNull),
       "content"  -> legalNotice.content,
       "default" -> legalNotice.default
+    )
+    json
+  }
+
+  /**
+    * Converts a ErrorTemplate object into Play!'s JSON notation.
+    * Does not support cross object conversion
+    * @param errorTemplate ErrorTemplate object to be converted
+    * @return JsObject
+    */
+  def jsErrorTemplate(errorTemplate:ErrorTemplates):JsObject = {
+    val json = Json.obj(
+      "id"    -> errorTemplate.id,
+      "name"  -> errorTemplate.name,
+      "description" -> (if(errorTemplate.description.isDefined) errorTemplate.description.get else JsNull),
+      "content"  -> errorTemplate.content,
+      "default" -> errorTemplate.default
     )
     json
   }
@@ -906,6 +930,20 @@ object JsonUtil {
   }
 
   /**
+    * Converts a List of ErrorTemplates into Play!'s JSON notation
+    * Does not support cross object conversion
+    * @param list List of ErrorTemplates to be convert
+    * @return JsArray
+    */
+  def jsErrorTemplates(list:List[ErrorTemplates]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ et =>
+      json = json.append(jsErrorTemplate(et))
+    }
+    json
+  }
+
+  /**
    * Converts a LandingPage object into a JSON string with its complex objects
    * @param landingPage LandingPage object to be converted
    * @return String
@@ -927,7 +965,7 @@ object JsonUtil {
    * @return String
    */
   def serializeLegalNotice(legalNotice:LegalNotice):String = {
-    //1) Serialize LandingPage
+    //1) Serialize LegalNotice
     val exists = legalNotice != null
     var jLegalNotice:JsObject = jsExists(exists)
     if (exists) {
@@ -935,6 +973,22 @@ object JsonUtil {
     }
     //3) Return JSON String
     jLegalNotice.toString
+  }
+
+  /**
+    * Converts a ErrorTemplate object into a JSON string with its complex objects
+    * @param errorTemplate ErrorTemplate object to be converted
+    * @return String
+    */
+  def serializeErrorTemplate(errorTemplate:ErrorTemplate):String = {
+    //1) Serialize ErrorTemplate
+    val exists = errorTemplate != null
+    var jErrorTemplate:JsObject = jsExists(exists)
+    if (exists) {
+      jErrorTemplate = jErrorTemplate ++ jsErrorTemplate(errorTemplate.toCaseObject)
+    }
+    //3) Return JSON String
+    jErrorTemplate.toString
   }
 
   def jsExists(bool:Boolean):JsObject = {

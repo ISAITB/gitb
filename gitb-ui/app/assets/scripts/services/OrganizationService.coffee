@@ -24,7 +24,7 @@ class OrganizationService
       authenticate: true
     })
 
-  createOrganization: (shortName, fullName, landingPage, legalNotice, otherOrganisation, communityId) ->
+  createOrganization: (shortName, fullName, landingPage, legalNotice, errorTemplate, otherOrganisation, communityId) ->
     data = {
       vendor_sname: shortName,
       vendor_fname: fullName,
@@ -35,6 +35,8 @@ class OrganizationService
       data.landing_page_id = landingPage.id
     if legalNotice?
       data.legal_notice_id = legalNotice.id
+    if errorTemplate?
+      data.error_template_id = errorTemplate.id
     if otherOrganisation?
       data.other_organisation = otherOrganisation.id
 
@@ -47,7 +49,7 @@ class OrganizationService
     @RestService.delete
       path: jsRoutes.controllers.OrganizationService.deleteOrganization(orgId).url
 
-  updateOrganization: (orgId, shortName, fullName, landingPage, legalNotice, otherOrganisation) ->
+  updateOrganization: (orgId, shortName, fullName, landingPage, legalNotice, errorTemplate, otherOrganisation) ->
     data = {
       vendor_sname: shortName,
       vendor_fname: fullName,
@@ -57,6 +59,8 @@ class OrganizationService
       data.landing_page_id = landingPage.id
     if legalNotice?
       data.legal_notice_id = legalNotice.id
+    if errorTemplate?
+      data.error_template_id = errorTemplate.id
     if otherOrganisation?
       data.other_organisation = otherOrganisation.id
 

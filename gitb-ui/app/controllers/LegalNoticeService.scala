@@ -30,7 +30,7 @@ class LegalNoticeService extends Controller {
       LegalNoticeManager.createLegalNotice(legalNotice)
       ResponseConstructor.constructEmptyResponse
     } else {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Legal notice with '" + legalNotice.name + "' already exists.")
+      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Legal notice with name '" + legalNotice.name + "' already exists.")
     }
   }
 
@@ -58,7 +58,7 @@ class LegalNoticeService extends Controller {
       LegalNoticeManager.updateLegalNotice(noticeId, name, description, content, default, communityId)
       ResponseConstructor.constructEmptyResponse
     } else {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Legal notice with '" + name + "' already exists.")
+      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Legal notice with name '" + name + "' already exists.")
     }
   }
 

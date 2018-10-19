@@ -59,7 +59,8 @@ object OrganizationManager extends BaseManager {
       val o = PersistenceSchema.organizations.filter(_.id === orgId).firstOption.get
       val l = PersistenceSchema.landingPages.filter(_.id === o.landingPage).firstOption
       val n = PersistenceSchema.legalNotices.filter(_.id === o.legalNotice).firstOption
-      val organization = new Organization(o, l.getOrElse(null), n.getOrElse(null))
+      val e = PersistenceSchema.errorTemplates.filter(_.id === o.errorTemplate).firstOption
+      val organization = new Organization(o, l.getOrElse(null), n.getOrElse(null), e.getOrElse(null))
       organization
     }
   }
@@ -85,7 +86,7 @@ object OrganizationManager extends BaseManager {
     }
   }
 
-  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], otherOrganisation: Option[Long]) = {
+  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long]) = {
     DB.withTransaction { implicit session =>
       val org = PersistenceSchema.organizations.filter(_.id === orgId).firstOption
 
@@ -99,8 +100,8 @@ object OrganizationManager extends BaseManager {
           val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.fullname)
           q.update(fullName)
         }
-        val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.landingPage, o.legalNotice)
-        q.update(landingPageId, legalNoticeId)
+        val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.landingPage, o.legalNotice, o.errorTemplate)
+        q.update(landingPageId, legalNoticeId, errorTemplateId)
         if (otherOrganisation.isDefined) {
           // Replace the test setup for the organisation with the one from the provided one.
           SystemManager.deleteSystemByOrganization(orgId)

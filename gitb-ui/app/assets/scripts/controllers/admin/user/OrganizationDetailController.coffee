@@ -1,7 +1,7 @@
 class OrganizationDetailController
 
-  @$inject = ['$log', '$state', '$stateParams', '$window', 'LandingPageService', 'LegalNoticeService', 'UserManagementService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'UserService', 'ErrorService', '$q']
-  constructor: (@$log, @$state, @$stateParams, @$window, @LandingPageService, @LegalNoticeService, @UserManagementService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @UserService, @ErrorService, @$q) ->
+  @$inject = ['$log', '$state', '$stateParams', '$window', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'UserManagementService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'UserService', 'ErrorService', '$q']
+  constructor: (@$log, @$state, @$stateParams, @$window, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @UserManagementService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @UserService, @ErrorService, @$q) ->
 
     @userColumns = [
       {
@@ -23,6 +23,7 @@ class OrganizationDetailController
     @organization = {}
     @landingPages = []
     @legalNotices = []
+    @errorTemplates = []
     @otherOrganisations = []
     @users = []
     @alerts = []
@@ -54,6 +55,12 @@ class OrganizationDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+    @ErrorTemplateService.getErrorTemplatesByCommunity(@communityId)
+    .then (data) =>
+      @errorTemplates = data
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
     @OrganizationService.getOrganizationsByCommunity(@communityId)
     .then (data) =>
       for org in data
@@ -76,7 +83,7 @@ class OrganizationDetailController
     !(@organization?.sname? && @organization?.fname?)
 
   doUpdate: () =>
-    @OrganizationService.updateOrganization(@orgId, @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.otherOrganisations)
+    @OrganizationService.updateOrganization(@orgId, @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.errorTemplates, @organization.otherOrganisations)
     .then () =>
       @cancelDetailOrganization()
     .catch (error) =>

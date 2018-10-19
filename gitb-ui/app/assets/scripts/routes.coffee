@@ -443,6 +443,20 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/users/legal-notice-detail.html'
 				controller: 'LegalNoticeDetailController'
 				controllerAs: 'legalNoticeDetailCtrl'
+			'app.admin.users.communities.detail.errortemplates':
+				url: '/errortemplates'
+				abstract: true
+				template: '<div ui-view/>'
+			'app.admin.users.communities.detail.errortemplates.create':
+				url: '/create?name&description&content'
+				templateUrl: 'assets/views/admin/users/error-template-create.html'
+				controller: 'ErrorTemplateCreateController'
+				controllerAs: 'errorTemplateCreateCtrl'
+			'app.admin.users.communities.detail.errortemplates.detail':
+				url: '/:template_id'
+				templateUrl: 'assets/views/admin/users/error-template-detail.html'
+				controller: 'ErrorTemplateDetailController'
+				controllerAs: 'errorTemplateDetailCtrl'
 
 		for state, value of states
 			$stateProvider.state state, value

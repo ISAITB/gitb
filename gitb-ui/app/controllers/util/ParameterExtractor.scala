@@ -91,7 +91,8 @@ object ParameterExtractor {
     val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
     val landingPageId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LANDING_PAGE_ID)
     val legalNoticeId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LEGAL_NOTICE_ID)
-    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, false, landingPageId, legalNoticeId, communityId)
+    val errorTemplateId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.ERROR_TEMPLATE_ID)
+    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, false, landingPageId, legalNoticeId, errorTemplateId, communityId)
   }
 
   def extractCommunityInfo(request:Request[AnyContent]):Communities = {
@@ -242,6 +243,15 @@ object ParameterExtractor {
     val default = requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
     val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
     LegalNotices(0L, name, desc, content, default, communityId)
+  }
+
+  def extractErrorTemplateInfo(request:Request[AnyContent]):ErrorTemplates = {
+    val name = requiredBodyParameter(request, Parameters.NAME)
+    val desc = optionalBodyParameter(request, Parameters.DESCRIPTION)
+    val content = requiredBodyParameter(request, Parameters.CONTENT)
+    val default = requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
+    val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    ErrorTemplates(0L, name, desc, content, default, communityId)
   }
 
 	def extractIdsQueryParameter(request:Request[AnyContent]): Option[List[String]] = {

@@ -1,7 +1,7 @@
 class OrganizationCreateController
 
-  @$inject = ['$log', '$state', '$stateParams', 'LandingPageService', 'LegalNoticeService', 'ValidationService', 'OrganizationService', 'ErrorService']
-  constructor: (@$log, @$state, @$stateParams, @LandingPageService, @LegalNoticeService, @ValidationService, @OrganizationService, @ErrorService) ->
+  @$inject = ['$log', '$state', '$stateParams', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'ValidationService', 'OrganizationService', 'ErrorService']
+  constructor: (@$log, @$state, @$stateParams, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @OrganizationService, @ErrorService) ->
 
     @communityId = @$stateParams.community_id
 
@@ -9,6 +9,7 @@ class OrganizationCreateController
     @organization = {}
     @landingPages = []
     @legalNotices = []
+    @errorTemplates = []
     @otherOrganisations = []
 
     @LandingPageService.getLandingPagesByCommunity(@communityId)
@@ -20,6 +21,12 @@ class OrganizationCreateController
     @LegalNoticeService.getLegalNoticesByCommunity(@communityId)
     .then (data) =>
       @legalNotices = data
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+    @ErrorTemplateService.getErrorTemplatesByCommunity(@communityId)
+    .then (data) =>
+      @errorTemplates = data
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -37,7 +44,7 @@ class OrganizationCreateController
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@organization.sname, "Please enter short name of the organization.") &
     @ValidationService.requireNonNull(@organization.fname, "Please enter full name of the organization.")
-      @OrganizationService.createOrganization @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.otherOrganisations, @communityId
+      @OrganizationService.createOrganization @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.errorTemplates, @organization.otherOrganisations, @communityId
       .then () =>
         @cancelCreateOrganization()
       .catch (error) =>

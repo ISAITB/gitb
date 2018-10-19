@@ -1,16 +1,16 @@
 package filters
 
-import com.gitb.tbs.Error
-import play.api.mvc._
-import exceptions._
-import scala.concurrent.Future
-import controllers.util.ResponseConstructor
 import java.util.concurrent.TimeoutException
+
+import com.gitb.tbs.Error
+import controllers.util.ResponseConstructor
+import exceptions._
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import org.slf4j.{LoggerFactory, Logger}
+import play.api.mvc._
+
+import scala.concurrent.Future
 
 class ErrorFilter extends Filter{
-  private final val logger: Logger = LoggerFactory.getLogger(classOf[ErrorFilter])
 
   def apply(next: (RequestHeader) => Future[Result])
            (requestHeader: RequestHeader): Future[Result] = {
@@ -18,7 +18,7 @@ class ErrorFilter extends Filter{
     next(requestHeader) recover  {
 
       case e:Error =>
-        ResponseConstructor.constructServerError(e.getFaultInfo.getErrorCode.value(), e.getFaultInfo.getDescription)
+        ResponseConstructor.constructServerError(e.getFaultInfo.getErrorCode.value(), e.getFaultInfo.getDescription, None)
 
       case e:InvalidRequestException =>
         ResponseConstructor.constructBadRequestResponse(e.error, e.msg)

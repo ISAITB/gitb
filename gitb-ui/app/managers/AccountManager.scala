@@ -45,10 +45,13 @@ object AccountManager extends BaseManager {
       //6) Get Legal Notice info
       val ln = PersistenceSchema.legalNotices.filter(_.id === org.legalNotice).firstOption
 
-      //7) Get Community info
+      //7) Get Error Template info
+      val et = PersistenceSchema.errorTemplates.filter(_.id === org.errorTemplate).firstOption
+
+      //8) Get Community info
       val c = PersistenceSchema.communities.filter(_.id === org.community).firstOption
 
-      new Organization(org, systems, admin.getOrElse(null), page.getOrElse(null), ln.getOrElse(null), c)
+      new Organization(org, systems, admin.getOrElse(null), page.getOrElse(null), ln.getOrElse(null), et.getOrElse(null), c)
     }
   }
 

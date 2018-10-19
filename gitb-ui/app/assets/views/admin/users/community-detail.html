@@ -52,4 +52,13 @@
         </div>
         <div table-directive columns="communityDetailCtrl.legalNoticesColumns" data="communityDetailCtrl.legalNotices" on-select="communityDetailCtrl.legalNoticeSelect"></div>
     </div>
+     <!--error templates -->
+     <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Error templates</h4>
+            <a ui-sref="app.admin.users.communities.detail.errortemplates.create" class="btn btn-default pull-right">Create error template</a>
+            <a ng-hide="communityDetailCtrl.communityId == 0" ng-disabled="communityDetailCtrl.testBedErrorTemplate == undefined" ui-sref="app.admin.users.communities.detail.errortemplates.create({name : communityDetailCtrl.testBedErrorTemplate.name, description : communityDetailCtrl.testBedErrorTemplate.description, content: communityDetailCtrl.testBedErrorTemplate.content})" class="btn btn-default pull-right">Copy Test bed error template</a>
+        </div>
+        <div table-directive columns="communityDetailCtrl.errorTemplatesColumns" data="communityDetailCtrl.errorTemplates" on-select="communityDetailCtrl.errorTemplateSelect"></div>
+    </div>
 </div>
