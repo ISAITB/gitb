@@ -545,13 +545,20 @@ object ReportManager extends BaseManager {
         overview.setSystem(conformanceInfo.head.systemName)
         overview.setTestCases(new util.ArrayList[TestCaseOverview]())
 
-        var totalTests = 0L
+        var failedTests = 0L
         var completedTests = 0L
+        var undefinedTests = 0L
+        var totalTests = 0L
         var index = 1
         conformanceInfo.foreach { info =>
           totalTests += 1
-          if (TestResultStatus.withName(info.result.get) == TestResultStatus.SUCCESS) {
+          val result = TestResultStatus.withName(info.result.get)
+          if (result == TestResultStatus.SUCCESS) {
             completedTests += 1
+          } else if (result == TestResultStatus.FAILURE) {
+            failedTests += 1
+          } else {
+            undefinedTests += 1
           }
           val testCaseOverview = new TestCaseOverview()
           testCaseOverview.setId(index.toString)
@@ -595,7 +602,24 @@ object ReportManager extends BaseManager {
           overview.getTestCases.add(testCaseOverview)
           index += 1
         }
-        overview.setTestStatus(completedTests+" / "+totalTests+" PASSED")
+
+        val resultText = new StringBuilder()
+        resultText.append(completedTests).append(" of ").append(totalTests).append(" passed")
+        if (totalTests > completedTests) {
+          resultText.append(" (")
+          if (failedTests > 0) {
+            resultText.append(failedTests).append(" failed")
+            if (undefinedTests > 0) {
+              resultText.append(", ")
+            }
+          }
+          if (undefinedTests > 0) {
+            resultText.append(undefinedTests).append(" undefined")
+          }
+          resultText.append(")")
+        }
+        overview.setTestStatus(resultText.toString())
+
         Files.createDirectories(reportPath.getParent)
         val fos = Files.newOutputStream(reportPath)
         try {

@@ -16,6 +16,7 @@ class ConformanceStatementDetailController
     @testSuites = []
     @runTestClicked = false
     @endpointsCollapsed = true
+    @testStatus = ''
 
     @parameterTableColumns = [
       {
@@ -59,13 +60,24 @@ class ConformanceStatementDetailController
       testSuiteResults = []
       testSuiteIds = []
       testSuiteData = {}
+      completedCount = 0
+      failedCount = 0
+      undefinedCount = 0
+      totalCount = 0
       for result in data
         testCase = {}
         testCase.id = result.testCaseId
         testCase.sname = result.testCaseName
         testCase.description = result.testCaseDescription
         testCase.result = result.result
-        if (!testSuiteData[result.testSuiteId]?)
+        totalCount += 1
+        if testCase.result == @Constants.TEST_CASE_RESULT.FAILURE
+          failedCount += 1
+        else if testCase.result == @Constants.TEST_CASE_RESULT.UNDEFINED
+          undefinedCount += 1
+        else 
+          completedCount += 1
+        if !testSuiteData[result.testSuiteId]?
           currentTestSuite = {}
           testSuiteIds.push(result.testSuiteId)
           currentTestSuite.id = result.testSuiteId
@@ -85,6 +97,7 @@ class ConformanceStatementDetailController
       for testSuiteId in testSuiteIds
         testSuiteResults.push(testSuiteData[testSuiteId])
       @testSuites = testSuiteResults
+      @testStatus = @DataService.testStatusText(completedCount, failedCount, undefinedCount)
 
     @ConformanceService.getActorsWithIds [@actorId]
     .then (data) =>

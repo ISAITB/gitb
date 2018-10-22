@@ -18,10 +18,14 @@
 				<div class="col-md-10">{{conformanceStatementDetailCtrl.specification.fname}}</div>
 				<div class="col-md-10 col-md-offset-2 row-display-inner" ng-if="conformanceStatementDetailCtrl.specification.description">{{conformanceStatementDetailCtrl.specification.description}}</div>
 			</div>
-			<div class="row row-display-last">
+			<div class="row row-display">
 				<div class="col-md-2"><strong>Actor</strong></div>
 				<div class="col-md-10">{{conformanceStatementDetailCtrl.actor.name}}</div>
 				<div class="col-md-10 col-md-offset-2 row-display-inner" ng-if="conformanceStatementDetailCtrl.actor.description">{{conformanceStatementDetailCtrl.actor.description}}</div>
+			</div>
+			<div class="row row-display-last">
+				<div class="col-md-2"><strong>Test status</strong></div>
+				<div class="col-md-10">{{conformanceStatementDetailCtrl.testStatus}}</div>
 			</div>
 		</div>
 	</div>

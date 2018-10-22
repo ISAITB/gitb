@@ -246,8 +246,11 @@ class AdminConformanceController
 
 		@ConformanceService.getConformanceOverview(domainIds, specIds, communityIds, organizationIds, systemIds, fullResults)
 		.then (data) =>
-			for statement in data
-				statement.status = "#{statement.completed}/#{statement.total} PASSED"
+			for conformanceStatement in data
+				completedCount = Number(conformanceStatement.completed)
+				failedCount = Number(conformanceStatement.failed)
+				undefinedCount = Number(conformanceStatement.undefined)
+				conformanceStatement.status = @DataService.testStatusText(completedCount, failedCount, undefinedCount)
 			d.resolve(data)
 		d.promise
 

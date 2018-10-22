@@ -412,7 +412,7 @@ object ConformanceManager extends BaseManager {
 						result._3.id, result._3.actorId, result._3.name,
 						result._2.id, result._2.shortname, result._2.fullname,
 						Some(result._8.shortname), Some(result._9.shortname), result._9.description,
-						Some(result._1.result), result._1.testsession, 0L, 0L)
+						Some(result._1.result), result._1.testsession, 0L, 0L, 0L)
 				statements += conformanceStatement
 			}
 			statements.toList
@@ -463,13 +463,16 @@ object ConformanceManager extends BaseManager {
 						result._3.id, result._3.actorId, result._3.name,
 						result._2.id, result._2.shortname, result._2.fullname,
 						None, None, result._1.testsession, None, None,
-						0L, 0L)
+						0L, 0L, 0L)
 					conformanceMap.put(key, conformanceStatement)
 				}
-				conformanceStatement.totalTests += 1
 				if (TestResultStatus.withName(result._1.result) == TestResultStatus.SUCCESS) {
 					conformanceStatement.completedTests += 1
-				}
+				} else if (TestResultStatus.withName(result._1.result) == TestResultStatus.FAILURE) {
+          conformanceStatement.failedTests += 1
+        } else {
+          conformanceStatement.undefinedTests += 1
+        }
 			}
 			var statements = new ListBuffer[ConformanceStatementFull]
 			import scala.collection.JavaConversions._

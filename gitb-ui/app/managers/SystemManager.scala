@@ -202,12 +202,15 @@ object SystemManager extends BaseManager {
             result._4.id, result._4.shortname, result._4.fullname,
             result._3.id, result._3.actorId, result._3.name,
             result._2.id, result._2.shortname, result._2.fullname,
-            0L, 0L)
+            0L, 0L, 0L)
           conformanceMap.put(result._1.actor, conformanceStatement)
         }
-        conformanceStatement.totalTests += 1
         if (TestResultStatus.withName(result._1.result) == TestResultStatus.SUCCESS) {
           conformanceStatement.completedTests += 1
+        } else if (TestResultStatus.withName(result._1.result) == TestResultStatus.FAILURE) {
+          conformanceStatement.failedTests += 1
+        } else {
+          conformanceStatement.undefinedTests += 1
         }
       }
       var statements = new ListBuffer[ConformanceStatement]

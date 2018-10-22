@@ -377,7 +377,8 @@ object JsonUtil {
       "specification" -> conformanceStatement.specificationName,
       "specificationFull" -> conformanceStatement.specificationNameFull,
 			"results" -> Json.obj(
-				"total" -> conformanceStatement.totalTests,
+				"undefined" -> conformanceStatement.undefinedTests,
+        "failed" -> conformanceStatement.failedTests,
 				"completed" -> conformanceStatement.completedTests
 			)
 		)
@@ -1072,8 +1073,9 @@ object JsonUtil {
       "testSuiteName" -> item.testSuiteName,
       "testCaseName" -> item.testCaseName,
       "testCaseDescription" -> item.testCaseDescription,
-      "total"    -> item.totalTests,
+      "failed"    -> item.failedTests,
       "completed"    -> item.completedTests,
+      "undefined"    -> item.undefinedTests,
       "result" -> item.result
     )
     json
