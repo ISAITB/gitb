@@ -112,6 +112,10 @@ object Parameters {
   val CONFIG     = "config"
   val INPUTS     = "inputs"
   val TEST_STEP  = "teststep"
+  val SETTINGS   = "settings"
+  val UPDATE_PASSWORDS  = "updatePasswords"
+  val REMOVE_KEYSTORE   = "removeKeystore"
+  val INCLUDE_KEYSTORE_DATA  = "keystore"
 
   val FILE       = "file"
 	val LIMIT      = "limit"

@@ -62,12 +62,25 @@
 	<parameter name="includeTestCases" class="java.lang.Boolean"/>
 	<parameter name="reportDate" class="java.lang.String"/>
 	<parameter name="testStatus" class="java.lang.String"/>
+	<parameter name="overviewLabel" class="java.lang.String">
+		<defaultValueExpression><![CDATA["Overview"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="includeMessage" class="java.lang.Boolean">
+		<defaultValueExpression><![CDATA[Boolean.FALSE]]></defaultValueExpression>
+	</parameter>
+	<parameter name="message" class="java.lang.String"/>
+	<parameter name="includeTestStatus" class="java.lang.Boolean">
+		<defaultValueExpression><![CDATA[Boolean.TRUE]]></defaultValueExpression>
+	</parameter>
+	<parameter name="includeDetails" class="java.lang.Boolean">
+		<defaultValueExpression><![CDATA[Boolean.TRUE]]></defaultValueExpression>
+	</parameter>
 	<queryString>
 		<![CDATA[]]>
 	</queryString>
 	<title>
 		<band height="79" splitType="Stretch">
-			<textField>
+			<textField isStretchWithOverflow="true">
 				<reportElement style="titleStyle" x="20" y="10" width="760" height="44" uuid="491e1116-2e5c-447c-9a13-d4d8d568a806"/>
 				<textElement verticalAlignment="Middle">
 					<font size="26"/>
@@ -78,7 +91,16 @@
 		</band>
 	</title>
 	<detail>
+		<band height="50">
+			<printWhenExpression><![CDATA[$P{includeMessage} != null && $P{includeMessage}]]></printWhenExpression>
+			<textField isStretchWithOverflow="true">
+				<reportElement x="20" y="0" width="759" height="39" uuid="e7053c20-bc32-429e-a3f3-462cca1b4d9d"/>
+				<textElement textAlignment="Justified" markup="html"/>
+				<textFieldExpression><![CDATA[$P{message}]]></textFieldExpression>
+			</textField>
+		</band>
 		<band height="127" splitType="Stretch">
+			<printWhenExpression><![CDATA[$P{includeDetails} != null && $P{includeDetails}]]></printWhenExpression>
 			<frame>
 				<reportElement positionType="Float" x="21" y="60" width="338" height="22" uuid="1da3e70a-e193-4d17-84a0-33eae3d63d7a"/>
 				<textField>
@@ -156,7 +178,7 @@
 				<textElement>
 					<font size="20"/>
 				</textElement>
-				<textFieldExpression><![CDATA["Overview"]]></textFieldExpression>
+				<textFieldExpression><![CDATA[$P{overviewLabel}]]></textFieldExpression>
 			</textField>
 			<line>
 				<reportElement x="21" y="33" width="752" height="1" uuid="6c8e0df0-db27-4e49-b517-4354a86cf5f9"/>
@@ -171,7 +193,9 @@
 				<textFieldExpression><![CDATA["Report date:"]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="30" y="24" width="81" height="15" uuid="75b8eb80-f4e7-483d-ab96-a094789ff375"/>
+				<reportElement x="30" y="24" width="81" height="15" uuid="75b8eb80-f4e7-483d-ab96-a094789ff375">
+					<printWhenExpression><![CDATA[$P{includeTestStatus} != null && $P{includeTestStatus}]]></printWhenExpression>
+				</reportElement>
 				<textElement textAlignment="Right">
 					<font isBold="true"/>
 				</textElement>
@@ -185,7 +209,9 @@
 				<textFieldExpression><![CDATA[$P{reportDate}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="118" y="24" width="341" height="15" uuid="98f6a5a7-5db1-490b-a020-1901d6d4f776"/>
+				<reportElement x="118" y="24" width="341" height="15" uuid="98f6a5a7-5db1-490b-a020-1901d6d4f776">
+					<printWhenExpression><![CDATA[$P{includeTestStatus} != null && $P{includeTestStatus}]]></printWhenExpression>
+				</reportElement>
 				<textElement textAlignment="Left">
 					<font isBold="false"/>
 				</textElement>

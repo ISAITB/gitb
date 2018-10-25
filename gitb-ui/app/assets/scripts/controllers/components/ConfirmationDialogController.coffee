@@ -1,7 +1,7 @@
 class ConfirmationDialogController
 
-  @$inject = ['$log', '$modalInstance', '$scope', 'headerText', 'bodyText', 'actionButtonText', 'closeButtonText', 'sameStyles']
-  constructor: (@$log, @$modalInstance, @$scope, @headerText, @bodyText, @actionButtonText, @closeButtonText, @sameStyles) ->
+  @$inject = ['$log', '$modalInstance', '$scope', 'headerText', 'bodyText', 'actionButtonText', 'closeButtonText', 'sameStyles', 'oneButton']
+  constructor: (@$log, @$modalInstance, @$scope, @headerText, @bodyText, @actionButtonText, @closeButtonText, @sameStyles, @oneButton) ->
 
     @$scope.ok = () =>
       @$modalInstance.close()

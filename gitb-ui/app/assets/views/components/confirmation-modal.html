@@ -6,5 +6,5 @@
 </div>
 <div class="modal-footer">
     <button ng-class="okClass()" type="button" ng-click="ok()">{{controller.actionButtonText}}</button>
-    <button ng-class="cancelClass()" type="button" ng-click="cancel()">{{controller.closeButtonText}}</button>
+    <button ng-class="cancelClass()" type="button" ng-click="cancel()" ng-if="!controller.oneButton">{{controller.closeButtonText}}</button>
 </div>

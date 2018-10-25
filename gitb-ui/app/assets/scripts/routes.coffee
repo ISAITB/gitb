@@ -365,6 +365,11 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/users/community-detail.html'
 				controller: 'CommunityDetailController'
 				controllerAs: 'communityDetailCtrl'
+			'app.admin.users.communities.detail.certificate':
+				url: '/cert'
+				templateUrl: 'assets/views/admin/users/community-detail-certificate.html'
+				controller: 'CommunityCertificateController'
+				controllerAs: 'communityCertificateCtrl'
 			'app.admin.users.communities.detail.admins':
 				url: '/admin'
 				abstract: true

@@ -299,13 +299,15 @@ class ConformanceService
       path: jsRoutes.controllers.ConformanceService.getTestSuiteTestCase(testCaseId).url
       authenticate: true
 
-  getConformanceOverview: (domainIds, specIds, communityIds, organizationIds, systemIds, fullResults) ->
+  getConformanceOverview: (domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, fullResults) ->
     params = {}
     params.full = fullResults
     if domainIds? and domainIds.length > 0
       params.domain_ids = domainIds.join ','
     if specIds? and specIds.length > 0
       params.specification_ids = specIds.join ','
+    if actorIds? and actorIds.length > 0
+      params.actor_ids = actorIds.join ','
     if communityIds? and communityIds.length > 0
       params.community_ids = communityIds.join ','
     if organizationIds? and organizationIds.length > 0
@@ -338,5 +340,97 @@ class ConformanceService
       params: {
         system_id: systemId
       }
+
+  getConformanceCertificateSettings: (communityId, includeKeystoreData) =>
+    @RestService.get
+      path: jsRoutes.controllers.ConformanceService.getConformanceCertificateSettings(communityId).url
+      authenticate: true
+      params: {
+        keystore: includeKeystoreData
+      }
+
+  updateConformanceCertificateSettings: (communityId, settings, updatePasswords, removeKeystore) =>
+    data = {}
+    if settings?
+      data.title = settings.title
+      data.message = settings.message
+      data.includeMessage = settings.includeMessage? && settings.includeMessage
+      data.includeTestStatus = settings.includeTestStatus? && settings.includeTestStatus
+      data.includeTestCases = settings.includeTestCases? && settings.includeTestCases
+      data.includeDetails = settings.includeDetails? && settings.includeDetails
+      data.includeSignature = settings.includeSignature? && settings.includeSignature
+      data.keystoreFile = settings.keystoreFile
+      data.keystoreType = settings.keystoreType
+      data.keystorePassword = settings.keystorePassword
+      data.keyPassword = settings.keyPassword
+    @RestService.post
+      path: jsRoutes.controllers.ConformanceService.updateConformanceCertificateSettings(communityId).url
+      authenticate: true
+      data: {
+        settings: angular.toJson data
+        updatePasswords: updatePasswords
+        removeKeystore: removeKeystore
+      }
+
+  testKeystoreSettings: (communityId, settings, updatePasswords) =>
+    data = {}
+    if settings?
+      data.keystoreFile = settings.keystoreFile
+      data.keystoreType = settings.keystoreType
+      data.keystorePassword = settings.keystorePassword
+      data.keyPassword = settings.keyPassword
+    @RestService.post
+      path: jsRoutes.controllers.ConformanceService.testKeystoreSettings(communityId).url
+      authenticate: true
+      data: {
+        settings: angular.toJson data
+        updatePasswords: updatePasswords
+      }
+
+  exportDemoConformanceCertificateReport: (communityId, settings) ->
+    data = {}
+    if settings?
+      data.title = settings.title
+      data.includeMessage = settings.includeMessage? && settings.includeMessage
+      data.includeTestStatus = settings.includeTestStatus? && settings.includeTestStatus
+      data.includeTestCases = settings.includeTestCases? && settings.includeTestCases
+      data.includeDetails = settings.includeDetails? && settings.includeDetails
+      data.includeSignature = settings.includeSignature? && settings.includeSignature
+      if data.includeMessage
+        data.message = settings.message
+      if data.includeSignature
+        data.keystoreFile = settings.keystoreFile
+        data.keystoreType = settings.keystoreType
+        data.keystorePassword = settings.keystorePassword
+        data.keyPassword = settings.keyPassword
+    @RestService.post
+      path: jsRoutes.controllers.RepositoryService.exportDemoConformanceCertificateReport(communityId).url
+      data: {
+        settings: angular.toJson data
+      }
+      authenticate: true
+      responseType: "arraybuffer"
+
+  exportConformanceCertificateReport: (communityId, actorId, systemId, settings) ->
+    data = {}
+    if settings?
+      data.title = settings.title
+      data.includeMessage = settings.includeMessage? && settings.includeMessage
+      data.includeTestStatus = settings.includeTestStatus? && settings.includeTestStatus
+      data.includeTestCases = settings.includeTestCases? && settings.includeTestCases
+      data.includeDetails = settings.includeDetails? && settings.includeDetails
+      data.includeSignature = settings.includeSignature? && settings.includeSignature
+      if data.includeMessage
+        data.message = settings.message
+    @RestService.post
+      path: jsRoutes.controllers.RepositoryService.exportConformanceCertificateReport().url
+      data: {
+        settings: angular.toJson data
+        community_id: communityId
+        actor_id: actorId
+        system_id: systemId
+      }
+      authenticate: true
+      responseType: "arraybuffer"
 
 services.service('ConformanceService', ConformanceService)

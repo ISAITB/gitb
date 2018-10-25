@@ -112,6 +112,7 @@ object CommunityManager extends BaseManager {
       LegalNoticeManager.deleteLegalNoticeByCommunity(communityId)
       ErrorTemplateManager.deleteErrorTemplateByCommunity(communityId)
       TestResultManager.updateForDeletedCommunity(communityId)
+      ConformanceManager.deleteConformanceCertificateSettings(communityId)
       PersistenceSchema.communities.filter(_.id === communityId).delete
     }
   }

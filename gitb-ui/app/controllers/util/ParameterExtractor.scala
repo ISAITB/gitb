@@ -193,6 +193,8 @@ object ParameterExtractor {
     val defaultStr = ParameterExtractor.optionalBodyParameter(request, Parameters.ACTOR_DEFAULT)
     if (defaultStr.isDefined) {
       default = Some(defaultStr.get.toBoolean)
+    } else {
+      default = Some(false)
     }
     var displayOrder:Option[Short] = None
     val displayOrderStr = ParameterExtractor.optionalBodyParameter(request, Parameters.DISPLAY_ORDER)

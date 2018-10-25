@@ -13,6 +13,10 @@ public class ConformanceStatementOverview {
     private String testStatus;
     private String reportDate;
     private Boolean includeTestCases;
+    private Boolean includeDetails = Boolean.TRUE;
+    private Boolean includeMessage = Boolean.FALSE;
+    private Boolean includeTestStatus = Boolean.TRUE;
+    private String message;
     private List<TestCaseOverview> testCases;
 
     public String getTitle() {
@@ -93,5 +97,37 @@ public class ConformanceStatementOverview {
 
     public void setTestCases(List<TestCaseOverview> testCases) {
         this.testCases = testCases;
+    }
+
+    public Boolean getIncludeDetails() {
+        return includeDetails;
+    }
+
+    public void setIncludeDetails(Boolean includeDetails) {
+        this.includeDetails = includeDetails;
+    }
+
+    public Boolean getIncludeMessage() {
+        return includeMessage;
+    }
+
+    public void setIncludeMessage(Boolean includeMessage) {
+        this.includeMessage = includeMessage;
+    }
+
+    public Boolean getIncludeTestStatus() {
+        return includeTestStatus;
+    }
+
+    public void setIncludeTestStatus(Boolean includeTestStatus) {
+        this.includeTestStatus = includeTestStatus;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }

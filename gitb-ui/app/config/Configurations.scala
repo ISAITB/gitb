@@ -3,7 +3,6 @@ package config
 import java.util.Properties
 
 import com.typesafe.config.{Config, ConfigFactory}
-import play.api.Play
 
 object Configurations {
 
@@ -64,6 +63,18 @@ object Configurations {
   var ANTIVIRUS_SERVER_HOST = ""
   var ANTIVIRUS_SERVER_PORT = -1
   var ANTIVIRUS_SERVER_TIMEOUT = 0
+
+  var PROXY_SERVER_ENABLED = false
+  var PROXY_SERVER_HOST = ""
+  var PROXY_SERVER_PORT = -1
+  var PROXY_SERVER_AUTH_ENABLED = false
+  var PROXY_SERVER_AUTH_USERNAME = ""
+  var PROXY_SERVER_AUTH_PASSWORD = ""
+
+  var TSA_SERVER_ENABLED = false
+  var TSA_SERVER_URL = ""
+
+  var MASTER_PASSWORD: Array[Char] = null
 
   var SMTP_PROPERTIES = new Properties()
 
@@ -136,12 +147,31 @@ object Configurations {
     }
     EMAIL_ATTACHMENTS_ALLOWED_TYPES = tempSet.toSet
 
-    ANTIVIRUS_SERVER_ENABLED = fromEnv("ANTIVIRUS_SERVER_HOST_ENABLED", conf.getString("antivirus.enabled")).toBoolean
+    ANTIVIRUS_SERVER_ENABLED = fromEnv("ANTIVIRUS_SERVER_ENABLED", conf.getString("antivirus.enabled")).toBoolean
     if (ANTIVIRUS_SERVER_ENABLED) {
       ANTIVIRUS_SERVER_HOST = fromEnv("ANTIVIRUS_SERVER_HOST", conf.getString("antivirus.host"))
       ANTIVIRUS_SERVER_PORT = fromEnv("ANTIVIRUS_SERVER_PORT", conf.getString("antivirus.port")).toInt
       ANTIVIRUS_SERVER_TIMEOUT = fromEnv("ANTIVIRUS_SERVER_TIMEOUT", conf.getString("antivirus.timeout")).toInt
     }
+
+    MASTER_PASSWORD = fromEnv("MASTER_PASSWORD", conf.getString("masterPassword")).toCharArray
+
+    PROXY_SERVER_ENABLED = fromEnv("PROXY_SERVER_ENABLED", conf.getString("proxy.enabled")).toBoolean
+    if (PROXY_SERVER_ENABLED) {
+      PROXY_SERVER_HOST = fromEnv("PROXY_SERVER_HOST", conf.getString("proxy.host")).toString
+      PROXY_SERVER_PORT = fromEnv("PROXY_SERVER_PORT", conf.getString("proxy.port")).toInt
+      PROXY_SERVER_AUTH_ENABLED = fromEnv("PROXY_SERVER_AUTH_ENABLED", conf.getString("proxy.auth.enabled")).toBoolean
+      if (PROXY_SERVER_AUTH_ENABLED) {
+        PROXY_SERVER_AUTH_USERNAME = fromEnv("PROXY_SERVER_AUTH_USERNAME", conf.getString("proxy.auth.user")).toString
+        PROXY_SERVER_AUTH_PASSWORD = fromEnv("PROXY_SERVER_AUTH_PASSWORD", conf.getString("proxy.auth.password")).toString
+      }
+    }
+
+    TSA_SERVER_ENABLED = fromEnv("TSA_SERVER_ENABLED", conf.getString("signature.tsa.enabled")).toBoolean
+    if (TSA_SERVER_ENABLED) {
+      TSA_SERVER_URL = fromEnv("TSA_SERVER_URL", conf.getString("signature.tsa.url")).toString
+    }
+
   }
 
   def fromEnv(propertyName: String, default: String): String = {

@@ -20,4 +20,11 @@ object Constants {
   val GitbLogo = ImagePath + "gitb.png"
 
   val domainConfigurationName = "com.gitb.DOMAIN"
+
+  val PlaceholderOrganisation = "$ORGANISATION"
+  val PlaceholderSystem = "$SYSTEM"
+  val PlaceholderSpecification = "$SPECIFICATION"
+  val PlaceholderActor = "$ACTOR"
+  val PlaceholderDomain = "$DOMAIN"
+
 }

@@ -194,6 +194,11 @@ GET     /reports/:session_id                @controllers.ReportService.getTestRe
 POST    /reports/create                     @controllers.ReportService.createTestReport
 GET     /reports/:session_id/steps          @controllers.ReportService.getTestStepResults(session_id:String)
 
+# Conformance certificate API
+GET     /conformancecertificate             @controllers.ConformanceService.getConformanceCertificateSettings(community_id: Long)
+POST    /conformancecertificate             @controllers.ConformanceService.updateConformanceCertificateSettings(community_id: Long)
+POST    /conformancecertificate/test        @controllers.ConformanceService.testKeystoreSettings(community_id: Long)
+
 # Repository file serving and management API
 GET     /repository/tests/:test_id                          @controllers.RepositoryService.getTestCase(test_id:String)
 GET     /repository/tests/:test_id/definition               @controllers.RepositoryService.getTestCaseDefinition(test_id:String)
@@ -202,6 +207,8 @@ GET     /repository/export/testcase                         @controllers.Reposit
 GET     /repository/export/testcases                        @controllers.RepositoryService.exportTestCaseReports
 GET     /repository/export/teststep/:session_id/*path       @controllers.RepositoryService.exportTestStepReport(session_id: String, path)
 GET     /repository/export/conformance                      @controllers.RepositoryService.exportConformanceStatementReport
+POST    /repository/export/certificatedemo                  @controllers.RepositoryService.exportDemoConformanceCertificateReport(community_id: Long)
+POST    /repository/export/certificate                      @controllers.RepositoryService.exportConformanceCertificateReport()
 GET     /repository/resource/:test_id/*file                 @controllers.RepositoryService.getTestSuiteResource(test_id: String, file: String)
 
 # Map static resources from the /public folder to the /assets URL path

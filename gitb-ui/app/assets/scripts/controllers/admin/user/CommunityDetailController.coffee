@@ -194,4 +194,7 @@ class CommunityDetailController
   closeAlert: (index) ->
     @ValidationService.clearAlert(index)
 
+  updateConformanceCertificateSettings: () =>
+    @$state.go 'app.admin.users.communities.detail.certificate'
+
 @controllers.controller 'CommunityDetailController', CommunityDetailController

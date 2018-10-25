@@ -400,4 +400,24 @@ object PersistenceSchema {
   }
   val errorTemplates = TableQuery[ErrorTemplatesTable]
   val insertErrorTemplate = (errorTemplates returning errorTemplates.map(_.id))
+
+  class ConformanceCertificatesTable(tag: Tag) extends Table[ConformanceCertificates](tag, "ConformanceCertificates") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def title = column[Option[String]]("title", O.Nullable, O.DBType("TEXT"))
+    def message = column[Option[String]]("message", O.Nullable, O.DBType("TEXT"))
+    def includeMessage = column[Boolean]("include_message")
+    def includeTestStatus = column[Boolean]("include_test_status")
+    def includeTestCases = column[Boolean]("include_test_cases")
+    def includeDetails = column[Boolean]("include_details")
+    def includeSignature = column[Boolean]("include_signature")
+    def keystoreFile = column[Option[String]]("keystore_file", O.DBType("BLOB"))
+    def keystoreType = column[Option[String]]("keystore_type", O.Nullable, O.DBType("TEXT"))
+    def keystorePassword = column[Option[String]]("keystore_pass", O.Nullable, O.DBType("TEXT"))
+    def keyPassword = column[Option[String]]("key_pass", O.Nullable, O.DBType("TEXT"))
+    def community = column[Long]("community")
+    def * = (id, title, message, includeMessage, includeTestStatus, includeTestCases, includeDetails, includeSignature, keystoreFile, keystoreType, keystorePassword, keyPassword, community) <> (ConformanceCertificates.tupled, ConformanceCertificates.unapply)
+  }
+  val conformanceCertificates = TableQuery[ConformanceCertificatesTable]
+  val insertConformanceCertificate = (conformanceCertificates returning conformanceCertificates.map(_.id))
+
 }

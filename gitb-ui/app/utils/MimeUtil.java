@@ -1,10 +1,12 @@
 package utils;
 
+import config.Configurations;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
+import org.jasypt.util.text.BasicTextEncryptor;
 
 public class MimeUtil {
 
@@ -59,4 +61,22 @@ public class MimeUtil {
         return getMimeTypeFromBase64(getBase64FromDataURL(dataURL));
     }
 
+    public static String encryptString(String input) {
+        return new Encryptor().encryptor.encrypt(input);
+    }
+
+    public static String decryptString(String input) {
+        return new Encryptor().encryptor.decrypt(input);
+    }
+
+    private static class Encryptor {
+
+        private BasicTextEncryptor encryptor;
+
+        private Encryptor() {
+            encryptor = new BasicTextEncryptor();
+            encryptor.setPasswordCharArray(Configurations.MASTER_PASSWORD());
+        }
+
+    }
 }

@@ -49,9 +49,13 @@ libraryDependencies ++= Seq(
   "org.webjars" % "font-awesome" % "4.1.0" exclude("org.webjars", "jquery"),
   "org.webjars" % "angular-file-upload" % "1.6.12",
   "org.webjars" % "codemirror" % "4.8",
-  "org.webjars" % "tinymce" % "4.2.1",
+  "org.webjars" % "tinymce" % "4.7.9",
   "javax.mail" % "mail" % "1.4.7",
-  "javax.activation" % "activation" % "1.1.1"
+  "javax.activation" % "activation" % "1.1.1",
+  "org.bouncycastle" % "bcmail-jdk15on" % "1.60",
+  "org.apache.pdfbox" % "pdfbox" % "2.0.9",
+  "org.jasypt" % "jasypt" % "1.9.2",
+  "commons-httpclient" % "commons-httpclient" % "3.1"
 )
 
 libraryDependencies += "com.github.tototoshi" %% "play-flyway" % "1.2.2"

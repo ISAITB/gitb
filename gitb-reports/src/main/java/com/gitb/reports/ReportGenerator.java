@@ -239,6 +239,12 @@ public class ReportGenerator {
             parameters.put("reportDate", overview.getReportDate());
             parameters.put("testCases", overview.getTestCases());
             parameters.put("includeTestCases", overview.getIncludeTestCases());
+            parameters.put("includeMessage", overview.getIncludeMessage());
+            if (overview.getIncludeMessage()) {
+                parameters.put("message", overview.getMessage());
+            }
+            parameters.put("includeTestStatus", overview.getIncludeTestStatus());
+            parameters.put("includeDetails", overview.getIncludeDetails());
             writeClasspathReport("reports/ConformanceStatementOverview.jasper", parameters, outputStream);
         } catch (Exception e) {
             throw new IllegalStateException(e);
