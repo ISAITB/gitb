@@ -2,11 +2,6 @@
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h4 class="title">Domain details</h4>
-			<div class="pull-right">
-				<button ng-click="domainDetailsCtrl.saveDomainChanges()" class="btn btn-default" ng-disabled="domainDetailsCtrl.saveDisabled()">Save changes</button>
-				<button ng-click="domainDetailsCtrl.deleteDomain()" class="btn btn-default">Delete</button>
-				<button ng-click="domainDetailsCtrl.back()" class="btn btn-default">Back</button>
-			</div>
 		</div>
 		<div class="panel-body">
 			<div class="row">
@@ -14,6 +9,16 @@
 				</div>
 			</div>
 		</div>
+        <div class="panel-footer">
+            <div class="row">
+                <div class="col-md-3"></div>
+                <div class="col-md-8 btn-toolbar">
+					<button ng-click="domainDetailsCtrl.saveDomainChanges()" class="btn btn-default" ng-disabled="domainDetailsCtrl.saveDisabled()">Save changes</button>
+					<button ng-click="domainDetailsCtrl.deleteDomain()" class="btn btn-default">Delete</button>
+					<button ng-click="domainDetailsCtrl.back()" class="btn btn-default">Back</button>
+                </div>
+            </div>
+        </div>
 	</div>
 	<div class="panel panel-default">
 		<div class="panel-heading">

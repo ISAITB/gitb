@@ -1,26 +1,24 @@
 <div class="page users create">
-    <div class="row">
-        <div class="col-md-10">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h4 class="title">User create</h4>
-                </div>
-                <div class="panel-body">
-                    <!-- Error messages -->
-                    <div class="row col-md-10 col-md-offset-1">
-                        <alert ng-repeat="alert in userCreateCtrl.alerts" type="{{alert.type}}" close="userCreateCtrl.closeAlert($index)">{{alert.msg}}</alert>
-                    </div>
-
-                    <div class="col-md-10 col-md-offset-1" tb-user-form tb-new="true" tb-admin="false" tb-user="userCreateCtrl.user" tb-roles="userCreateCtrl.roleCreateChoices"></div>
-                    <div class="row col-md-10 col-md-offset-3">
-                        <div class="btn-toolbar">
-                            <button class="btn btn-default" type="button" ng-click="userCreateCtrl.createUser()" ng-disabled="userCreateCtrl.saveDisabled()">Save</button>
-                            <button class="btn btn-default" type="button" ng-click="userCreateCtrl.cancelCreateUser()">Cancel</button>
-                        </div>
-                    </div>
-                    <div class="row col-md-10 col-md-offset-1 bg-info div-rounded div-spaced">
-                        <p class="form-control-static"><b>Privacy note:</b> By clicking 'Save' you grant the user's consent on his/her behalf to record the provided information. This is used only for internal identification purposes and is never shared with other parties. Alternatively you may also complete this form with information that is not personally identifiable. Please refer to the legal notice (link available in the screen's footer) for more information.</p>
-                    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">User create</h4>
+        </div>
+        <div class="panel-body">
+            <!-- Error messages -->
+            <div class="row col-md-10 col-md-offset-1">
+                <alert ng-repeat="alert in userCreateCtrl.alerts" type="{{alert.type}}" close="userCreateCtrl.closeAlert($index)">{{alert.msg}}</alert>
+            </div>
+            <div class="col-md-10 col-md-offset-1" tb-user-form tb-new="true" tb-admin="false" tb-user="userCreateCtrl.user" tb-roles="userCreateCtrl.roleCreateChoices"></div>
+            <div class="row col-md-10 col-md-offset-1 bg-info div-rounded div-spaced">
+                <p class="form-control-static"><b>Privacy note:</b> By clicking 'Save' you grant the user's consent on his/her behalf to record the provided information. This is used only for internal identification purposes and is never shared with other parties. Alternatively you may also complete this form with information that is not personally identifiable. Please refer to the legal notice (link available in the screen's footer) for more information.</p>
+            </div>
+        </div>
+        <div class="panel-footer">
+            <div class="row">
+                <div class="col-md-3"></div>
+                <div class="col-md-8 btn-toolbar">
+                    <button class="btn btn-default" type="button" ng-click="userCreateCtrl.createUser()" ng-disabled="userCreateCtrl.saveDisabled()">Save</button>
+                    <button class="btn btn-default" type="button" ng-click="userCreateCtrl.cancelCreateUser()">Cancel</button>
                 </div>
             </div>
         </div>
