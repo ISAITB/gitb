@@ -1,7 +1,7 @@
 class AdminConformanceController
 
-	@$inject = ['$log', '$scope', '$state', 'DataService', 'ConformanceService', 'ErrorService', 'Constants', '$q', 'CommunityService', 'OrganizationService', 'SystemService', 'ReportService', 'ConfirmationDialogService']
-	constructor: (@$log, @$scope, @$state, @DataService, @ConformanceService, @ErrorService, @Constants, @$q, @CommunityService, @OrganizationService, @SystemService, @ReportService, @ConfirmationDialogService) ->
+	@$inject = ['$log', '$scope', '$state', 'DataService', 'ConformanceService', 'ErrorService', 'Constants', '$q', 'CommunityService', 'OrganizationService', 'SystemService', 'ReportService', 'ConfirmationDialogService', '$modal']
+	constructor: (@$log, @$scope, @$state, @DataService, @ConformanceService, @ErrorService, @Constants, @$q, @CommunityService, @OrganizationService, @SystemService, @ReportService, @ConfirmationDialogService, @$modal) ->
 		@$log.debug "Constructing AdminConformanceController..."
 		@showFilters = false
 		@filters =
@@ -14,6 +14,10 @@ class AdminConformanceController
 				filter : []
 				selection : []
 			specification :
+				all : []
+				filter : []
+				selection : []
+			actor :
 				all : []
 				filter : []
 				selection : []
@@ -34,10 +38,11 @@ class AdminConformanceController
 		d1 = @getAllCommunities()
 		d2 = @getAllDomains()
 		d3 = @getAllSpecifications()
+		d4 = @getAllActors()
 		d6 = @getAllOrganizations()
 		d7 = @getAllSystems()
 
-		@$q.all([d1, d2, d3, d6, d7])
+		@$q.all([d1, d2, d3, d4, d6, d7])
 		.then () =>
 			@resetFilters(false)
 			@getConformanceStatements()
@@ -50,7 +55,7 @@ class AdminConformanceController
 			}
 		tempColumns.push {
 			field: 'organizationName',
-			title: 'Organization'
+			title: 'Organisation'
 		}
 		tempColumns.push {
 			field: 'systemName',
@@ -80,6 +85,7 @@ class AdminConformanceController
 	resetFilters: (keepTick) ->
 		@setDomainFilter()
 		@setSpecificationFilter(@filters.domain.filter, [], keepTick)
+		@setActorFilter(@filters.specification.filter, [], keepTick)
 		@setCommunityFilter()
 		@setOrganizationFilter(@filters.community.filter, [], keepTick)
 		@setSystemFilter(@filters.organization.filter, [], keepTick)
@@ -104,6 +110,18 @@ class AdminConformanceController
 			found = _.find @filters.specification.filter, (s) => `s.id == some.id`
 			if (!found?)
 				@filters.specification.selection.splice(i, 1)
+
+	setActorFilter: (selection1, selection2, keepTick) ->
+		selection = if selection1? and selection1.length > 0 then selection1 else selection2
+		copy = _.map(@filters.actor.filter, _.clone)
+		@filters.actor.filter = _.map((_.filter @filters.actor.all, (a) => (_.contains (_.map selection, (s) => s.id), a.specification)), _.clone)
+		@keepTickedProperty(copy, @filters.actor.filter) if keepTick
+
+		for i in [@filters.actor.selection.length - 1..0] by -1
+			some = @filters.actor.selection[i]
+			found = _.find @filters.actor.filter, (s) => `s.id == some.id`
+			if (!found?)
+				@filters.actor.selection.splice(i, 1)
 
 	setCommunityFilter: () ->
 		if @DataService.isCommunityAdmin
@@ -174,6 +192,16 @@ class AdminConformanceController
 			@ErrorService.showErrorMessage(error)
 		d.promise
 
+	getAllActors: () ->
+		d = @$q.defer()
+		@ConformanceService.getActorsWithIds()
+		.then (data) =>
+				@filters.actor.all = data
+				d.resolve()
+		.catch (error) =>
+			@ErrorService.showErrorMessage(error)
+		d.promise
+
 	getAllOrganizations: () ->
 		d = @$q.defer()
 		@OrganizationService.getOrganizations()
@@ -201,6 +229,7 @@ class AdminConformanceController
 		@showFilters = false
 		@filters.domain.selection = []
 		@filters.specification.selection = []
+		@filters.actor.selection = []
 		@filters.community.selection = []
 		@filters.organization.selection = []
 		@filters.system.selection = []
@@ -212,6 +241,10 @@ class AdminConformanceController
 		@getConformanceStatements()
 
 	specificationClicked: (spec) =>
+		@setActorFilter(@filters.specification.selection, @filters.specification.filter, true)
+		@getConformanceStatements()
+
+	actorClicked: (spec) =>
 		@getConformanceStatements()
 
 	communityClicked: (community) =>
@@ -241,10 +274,11 @@ class AdminConformanceController
 		else
 			domainIds = _.map @filters.domain.selection, (s) -> s.id
 		specIds = _.map @filters.specification.selection, (s) -> s.id
+		actorIds = _.map @filters.actor.selection, (s) -> s.id
 		organizationIds = _.map @filters.organization.selection, (s) -> s.id
 		systemIds = _.map @filters.system.selection, (s) -> s.id
 
-		@ConformanceService.getConformanceOverview(domainIds, specIds, communityIds, organizationIds, systemIds, fullResults)
+		@ConformanceService.getConformanceOverview(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, fullResults)
 		.then (data) =>
 			for conformanceStatement in data
 				completedCount = Number(conformanceStatement.completed)
@@ -306,13 +340,13 @@ class AdminConformanceController
 		@getConformanceStatementsInternal(true).then((data) =>
 			if @DataService.isCommunityAdmin
 				if @DataService.community.domain?
-					headers = ["Organization", "System", "Specification", "Actor", "Test suite", "Test case", "Result"]
+					headers = ["Organisation", "System", "Specification", "Actor", "Test suite", "Test case", "Result"]
 					columnMap = ["organizationName", "systemName", "specName", "actorName", "testSuiteName", "testCaseName", "result"]
 				else
-					headers = ["Organization", "System", "Domain", "Specification", "Actor", "Test suite", "Test case", "Result"]
+					headers = ["Organisation", "System", "Domain", "Specification", "Actor", "Test suite", "Test case", "Result"]
 					columnMap = ["organizationName", "systemName", "domainName", "specName", "actorName", "testSuiteName", "testCaseName", "result"]
 			else
-				headers = ["Community", "Organization", "System", "Domain", "Specification", "Actor", "Test suite", "Test case", "Result"]
+				headers = ["Community", "Organisation", "System", "Domain", "Specification", "Actor", "Test suite", "Test case", "Result"]
 				columnMap = ["communityName", "organizationName", "systemName", "domainName", "specName", "actorName", "testSuiteName", "testCaseName", "result"]
 			@exportAsCsv(headers, columnMap, data)
 		)
@@ -336,8 +370,8 @@ class AdminConformanceController
 		choice.then(() => 
 			@ReportService.exportConformanceStatementReport(statement.actorId, statement.systemId, true)
 			.then (data) =>
-					blobData = new Blob([data], {type: 'application/pdf'});
-					saveAs(blobData, "conformance_report.pdf");
+				blobData = new Blob([data], {type: 'application/pdf'});
+				saveAs(blobData, "conformance_report.pdf");
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 		, () => 
@@ -352,7 +386,21 @@ class AdminConformanceController
 	onExportTestCase: (statement, testCase) =>
 		@ReportService.exportTestCaseReport(testCase.sessionId, testCase.id)
 		.then (stepResults) =>
-				blobData = new Blob([stepResults], {type: 'application/pdf'});
-				saveAs(blobData, "test_case_report.pdf");
+			blobData = new Blob([stepResults], {type: 'application/pdf'});
+			saveAs(blobData, "test_case_report.pdf");
+		.catch (error) =>
+			@ErrorService.showErrorMessage(error)
+
+	generateConformanceCertificate: () =>
+		@ConformanceService.getConformanceCertificateSettings(@conformanceStatements[0].communityId, false)
+		.then (settings) => 
+			modalOptions =
+				templateUrl: 'assets/views/admin/conformance/generate-certificate-modal.html'
+				controller: 'ConformanceCertificateModalController as controller'
+				size: 'lg'
+				resolve: 
+					settings: () => settings
+					conformanceStatement: () => @conformanceStatements[0]
+			modalInstance = @$modal.open(modalOptions)
 
 @controllers.controller 'AdminConformanceController', AdminConformanceController

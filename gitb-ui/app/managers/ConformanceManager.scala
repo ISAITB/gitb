@@ -6,7 +6,7 @@ import models.Enums.TestResultStatus
 import models._
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
-import utils.RepositoryUtils
+import utils.{MimeUtil, RepositoryUtils}
 
 import scala.collection.mutable.ListBuffer
 import scala.slick.driver.MySQLDriver.simple._
@@ -214,43 +214,28 @@ object ConformanceManager extends BaseManager {
 		savedActorId
 	}
 
-  def getActors(ids:Option[List[Long]]): List[Actors] = {
-		DB.withSession { implicit session =>
-			val actors = {
-				val q = PersistenceSchema.actors
-
-				val q2 = ids match {
-					case Some(list) => q.filter(_.id inSet list)
-					case None => q
-				}
-
-				q2.sortBy(_.actorId.asc)
-					.list
-			}
-			actors
-		}
-  }
-	
 	def getActorsWithDomainId(domainId: Long): List[Actors] = {
 		DB.withSession { implicit session =>
 			PersistenceSchema.actors.filter(_.domain === domainId)
-			  	.sortBy(_.actorId.asc)
+			  	.sortBy(_.actorId.desc)
 					.list
 		}
 	}
 
-  def getActorsWithSpecificationId(spec:Long): List[Actors] = {
+  def getActorsWithSpecificationId(spec:Option[Long]): List[Actor] = {
 		DB.withSession { implicit session =>
-			var actors: List[Actors] = List()
+			var actors: List[Actor] = List()
 			var query = for {
 				actor <- PersistenceSchema.actors
 				specificationHasActors <- PersistenceSchema.specificationHasActors if specificationHasActors.actorId === actor.id
 			} yield (actor, specificationHasActors)
-			query.filter(_._2.specId === spec)
-			  	.sortBy(_._1.actorId.asc)
+      if (spec.isDefined) {
+        query = query.filter(_._2.specId === spec.get)
+      }
+			query.sortBy(_._1.actorId.desc)
 					.list
 					.foreach{ result =>
-						actors ::= result._1
+						actors ::= new Actor(result._1, null, null, result._2._1)
 					}
 			actors
 		}
@@ -482,5 +467,93 @@ object ConformanceManager extends BaseManager {
 			statements.toList
 		}
 	}
+
+	def getConformanceCertificateSettingsWrapper(communityId: Long) = {
+		DB.withSession { implicit session =>
+			getConformanceCertificateSettings(communityId)
+		}
+	}
+
+	def getConformanceCertificateSettings(communityId: Long)(implicit session:Session) = {
+		PersistenceSchema.conformanceCertificates.filter(_.community === communityId).firstOption
+	}
+
+	def updateConformanceCertificateSettings(conformanceCertificate: ConformanceCertificates, updatePasswords: Boolean, removeKeystore: Boolean) = {
+		DB.withTransaction { implicit session =>
+			val existingSettings = getConformanceCertificateSettings(conformanceCertificate.community)
+			if (existingSettings.isDefined) {
+
+				if (removeKeystore && conformanceCertificate.keystoreFile.isEmpty) {
+					val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
+						c.message, c.title, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
+						c.includeSignature, c.keystoreFile, c.keystoreType, c.keystorePassword, c.keyPassword
+					)
+					q.update(
+						conformanceCertificate.message,
+						conformanceCertificate.title,
+						conformanceCertificate.includeMessage,
+						conformanceCertificate.includeTestStatus,
+						conformanceCertificate.includeTestCases,
+						conformanceCertificate.includeDetails,
+						conformanceCertificate.includeSignature,
+						None,
+						None,
+						None,
+						None
+					)
+				} else {
+					if (updatePasswords) {
+						val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
+							c.message, c.title, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
+							c.includeSignature, c.keystoreFile, c.keystoreType, c.keystorePassword, c.keyPassword
+						)
+						var keystorePasswordToUpdate = conformanceCertificate.keystorePassword
+						if (keystorePasswordToUpdate.isDefined) {
+							keystorePasswordToUpdate = Some(MimeUtil.encryptString(keystorePasswordToUpdate.get))
+						}
+						var keyPasswordToUpdate = conformanceCertificate.keyPassword
+						if (keyPasswordToUpdate.isDefined) {
+							keyPasswordToUpdate = Some(MimeUtil.encryptString(keyPasswordToUpdate.get))
+						}
+						q.update(
+							conformanceCertificate.message,
+							conformanceCertificate.title,
+							conformanceCertificate.includeMessage,
+							conformanceCertificate.includeTestStatus,
+							conformanceCertificate.includeTestCases,
+							conformanceCertificate.includeDetails,
+							conformanceCertificate.includeSignature,
+							conformanceCertificate.keystoreFile,
+							conformanceCertificate.keystoreType,
+							keystorePasswordToUpdate,
+							keyPasswordToUpdate
+						)
+					} else {
+						val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
+							c.message, c.title, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
+							c.includeSignature, c.keystoreFile, c.keystoreType
+						)
+						q.update(
+							conformanceCertificate.message,
+							conformanceCertificate.title,
+							conformanceCertificate.includeMessage,
+							conformanceCertificate.includeTestStatus,
+							conformanceCertificate.includeTestCases,
+							conformanceCertificate.includeDetails,
+							conformanceCertificate.includeSignature,
+							conformanceCertificate.keystoreFile,
+							conformanceCertificate.keystoreType
+						)
+					}
+				}
+			} else {
+				PersistenceSchema.insertConformanceCertificate += conformanceCertificate
+			}
+		}
+	}
+
+  def deleteConformanceCertificateSettings(communityId: Long)(implicit session:Session) = {
+    PersistenceSchema.conformanceCertificates.filter(_.community === communityId).delete
+  }
 
 }

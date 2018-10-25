@@ -352,12 +352,34 @@ object JsonUtil {
     return json;
   }
 
+  def jsActor(actor:Actor) : JsObject = {
+    val json = Json.obj(
+      "id" -> actor.id,
+      "actorId" -> actor.actorId,
+      "name"   -> actor.name,
+      "description" -> (if(actor.description.isDefined) actor.description.get else JsNull),
+      "default" -> (if(actor.default.isDefined) actor.default.get else JsNull),
+      "displayOrder" -> (if(actor.displayOrder.isDefined) actor.displayOrder.get else JsNull),
+      "domain"  -> (if(actor.domain.isDefined) actor.domain.get.id else JsNull),
+      "specification"  -> (if(actor.specificationId.isDefined) actor.specificationId.get else JsNull)
+    )
+    return json;
+  }
+
   /**
    * Converts a List of Actors into Play!'s JSON notation
    * @param list List of Actors to be converted
    * @return JsArray
    */
   def jsActors(list:List[Actors]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ actor =>
+      json = json.append(jsActor(actor))
+    }
+    json
+  }
+
+  def jsActorsNonCase(list:List[Actor]):JsArray = {
     var json = Json.arr()
     list.foreach{ actor =>
       json = json.append(jsActor(actor))
@@ -468,6 +490,44 @@ object JsonUtil {
       (jsonConfig \ "kind").as[String],
       (jsonConfig \ "value").as[Option[String]],
       domainId
+    )
+  }
+
+  def parseJsConformanceCertificateSettings(json:String, communityId: Long): ConformanceCertificates = {
+    val jsonConfig = Json.parse(json).as[JsObject]
+    ConformanceCertificates(
+      0L,
+      (jsonConfig \ "title").as[Option[String]],
+      (jsonConfig \ "message").as[Option[String]],
+      (jsonConfig \ "includeMessage").as[Boolean],
+      (jsonConfig \ "includeTestStatus").as[Boolean],
+      (jsonConfig \ "includeTestCases").as[Boolean],
+      (jsonConfig \ "includeDetails").as[Boolean],
+      (jsonConfig \ "includeSignature").as[Boolean],
+      (jsonConfig \ "keystoreFile").as[Option[String]],
+      (jsonConfig \ "keystoreType").as[Option[String]],
+      (jsonConfig \ "keystorePassword").as[Option[String]],
+      (jsonConfig \ "keyPassword").as[Option[String]],
+      communityId
+    )
+  }
+
+  def parseJsConformanceCertificateSettingsForKeystoreTest(json:String, communityId: Long): ConformanceCertificates = {
+    val jsonConfig = Json.parse(json).as[JsObject]
+    ConformanceCertificates(
+      0L,
+      None,
+      None,
+      false,
+      false,
+      false,
+      false,
+      false,
+      (jsonConfig \ "keystoreFile").as[Option[String]],
+      (jsonConfig \ "keystoreType").as[Option[String]],
+      (jsonConfig \ "keystorePassword").as[Option[String]],
+      (jsonConfig \ "keyPassword").as[Option[String]],
+      communityId
     )
   }
 
@@ -1080,5 +1140,37 @@ object JsonUtil {
     )
     json
   }
+
+  def jsConformanceSettings(settings:Option[ConformanceCertificates], includeKeystoreData: Boolean):Option[JsObject] = {
+    if (settings.isDefined) {
+      val json = Json.obj(
+        "id"    -> settings.get.id,
+        "title" -> (if(settings.get.title.isDefined) settings.get.title.get else JsNull),
+        "message" -> (if(settings.get.message.isDefined) settings.get.message.get else JsNull),
+        "includeMessage" -> settings.get.includeMessage,
+        "includeTestStatus" -> settings.get.includeTestStatus,
+        "includeTestCases" -> settings.get.includeTestCases,
+        "includeDetails" -> settings.get.includeDetails,
+        "includeSignature" -> settings.get.includeSignature,
+        "keystoreFile" -> (if(includeKeystoreData && settings.get.keystoreFile.isDefined) settings.get.keystoreFile.get else JsNull),
+        "keystoreType" -> (if(includeKeystoreData && settings.get.keystoreType.isDefined) settings.get.keystoreType.get else JsNull),
+        "passwordsSet" -> (if(includeKeystoreData && settings.get.keystorePassword.isDefined && settings.get.keyPassword.isDefined) true else false),
+        "keystoreDefined" -> (if(settings.get.keystoreFile.isDefined && settings.get.keystoreType.isDefined && settings.get.keystorePassword.isDefined && settings.get.keyPassword.isDefined) true else false),
+        "community" -> settings.get.community
+      )
+      Some(json)
+    } else {
+      None
+    }
+  }
+
+  def jsConformanceSettingsValidation(problem: String, level: String): JsObject = {
+    val json = Json.obj(
+      "problem"    -> problem,
+      "level"    -> level
+    )
+    json
+  }
+
 
 }
