@@ -15,14 +15,14 @@ class Constants
 	@DEFAULT_COMMUNITY_ID = 0
 
 	@TEST_ROLE =
-	    SUT: "SUT"
-	    SIMULATED: "SIMULATED"
-	    MONITOR: "MONITOR"
+		SUT: "SUT"
+		SIMULATED: "SIMULATED"
+		MONITOR: "MONITOR"
 
 	@WEB_SOCKET_COMMAND =
-	    REGISTER: "register"
-	    NOTIFY: "notify"
-	    PING: "ping"
+		REGISTER: "register"
+		NOTIFY: "notify"
+		PING: "ping"
 
 	@TEST_CASE_TYPE =
 		CONFORMANCE: 0,
