@@ -27,7 +27,7 @@ class DashboardController
       }
       {
         field: 'organization',
-        title: 'Organization',
+        title: 'Organisation',
         sortable: true
       }
       {
@@ -66,7 +66,7 @@ class DashboardController
       }
       {
         field: 'organization',
-        title: 'Organization',
+        title: 'Organisation',
         sortable: true
       }
       {
@@ -630,7 +630,7 @@ class DashboardController
       testResultMapper = @newTestResult
       tests = _.map data, (t) -> testResultMapper(t)
 
-      @exportAsCsv(["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organization", "System", "Start time", "End time", "Result", "Obsolete"], tests)
+      @exportAsCsv(["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organisation", "System", "Start time", "End time", "Result", "Obsolete"], tests)
 
   exportActiveSessionsToCsv: () =>
     communityIds = _.map @filters.community.selection, (s) -> s.id
@@ -648,7 +648,7 @@ class DashboardController
       testResultMapper = @newTestResult
       tests = _.map data, (testResult) -> testResultMapper(testResult)
 
-      @exportAsCsv(["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organization", "System", "Start time", "End time", "Result", "Obsolete"], tests)
+      @exportAsCsv(["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organisation", "System", "Start time", "End time", "Result", "Obsolete"], tests)
 
   rowStyle: (row) => 
     if row.obsolete

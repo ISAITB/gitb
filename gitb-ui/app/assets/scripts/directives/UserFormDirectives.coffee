@@ -24,12 +24,12 @@
           '<div class="col-sm-8"><select class="form-control" ng-model="tbUser.role" ng-options="role.label for role in tbRoles track by role.id" required></select></div>'+
         '</div>'+
         '<div class="form-group" ng-if="!tbAdmin && !tbNew">'+
-          '<label class="col-sm-3 control-label" for="organization">* Organization:</label>'+
+          '<label class="col-sm-3 control-label" for="organization">* Organisation:</label>'+
           '<div class="col-sm-8"><input id="organization" ng-model="tbUser.organization.fname" class="form-control" type="text" ng-readOnly="true" required></div>'+
         '</div>'+
         '<div class="form-group" ng-if="!tbNew">'+
           '<label class="col-sm-3 control-label" for="changePassword">Set one-time password?</label>'+
-          '<div class="col-sm-8"><input id="changePassword" ng-model="tbUser.changePassword" class="form-check-input" type="checkbox"></div>'+
+          '<div class="col-sm-8"><input id="changePassword" ng-model="tbUser.changePassword" class="form-check-input" type="checkbox" class="form-check"></div>'+
         '</div>'+
         '<div class="form-group" ng-if="tbNew || tbUser.changePassword">'+
           '<label class="col-sm-3 control-label" for="password">* One-time password:</label>'+

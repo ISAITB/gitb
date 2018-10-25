@@ -1,7 +1,7 @@
 <div ng-controller="OrganizationController as oc">
 
     <div class="row">
-        <h4>Organization
+        <h4>Organisation
             <span class="tab" ng-if="oc.organizationSpinner"><i class="fa fa-spinner fa-spin"></i></span>
         </h4>
 
@@ -17,8 +17,8 @@
         <table class="table" ng-if="!oc.ds.isVendorAdmin">
             <thead >
             <tr>
-                <th class="grid-header col-md-4">Organization Name (Short)</th>
-                <th class="grid-header col-md-8">Organization Name (Full)</th>
+                <th class="grid-header col-md-4">Organisation Name (Short)</th>
+                <th class="grid-header col-md-8">Organisation Name (Full)</th>
             </tr>
             </thead>
             <tbody>
@@ -34,11 +34,11 @@
             <div class="row">
                 <div class="form-group">
                     <div class="col-md-4">
-                        <label class="bold">Organization Name (Short):</label><br>
+                        <label class="bold">Organisation Name (Short):</label><br>
                         <input type="text" class="form-control" ng-model="vdata.sname">
                     </div>
                     <div class="col-md-8">
-                        <label class="bold">Organization Name (Full):</label><br>
+                        <label class="bold">Organisation Name (Full):</label><br>
                         <input type="text" class="form-control" ng-model="vdata.fname">
                     </div>
                 </div>

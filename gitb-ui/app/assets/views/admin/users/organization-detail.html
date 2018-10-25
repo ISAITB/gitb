@@ -1,19 +1,21 @@
 <div class="page users detail">
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h4 class="title">Organization detail</h4>
+            <h4 class="title">Organisation detail</h4>
         </div>
         <div class="panel-body">
             <!-- Error messages -->
             <div class="row col-md-10 col-md-offset-1">
                 <alert ng-repeat="alert in orgDetailCtrl.alerts" type="{{alert.type}}" close="orgDetailCtrl.closeAlert($index)">{{alert.msg}}</alert>
             </div>
-
             <div class="row">
                 <div class="col-md-10 col-md-offset-1" tb-organization-form tb-organization="orgDetailCtrl.organization" tb-landing-pages="orgDetailCtrl.landingPages" tb-legal-notices="orgDetailCtrl.legalNotices" tb-error-templates="orgDetailCtrl.errorTemplates" tb-other-organisations="orgDetailCtrl.otherOrganisations"></div>
             </div>
-            <div class="row col-md-10 col-md-offset-3">
-                <div class="btn-toolbar">
+        </div>
+        <div class="panel-footer">
+            <div class="row">
+                <div class="col-md-3"></div>
+                <div class="col-md-8 btn-toolbar">
                     <button class="btn btn-default" type="button" ng-click="orgDetailCtrl.updateOrganization()" ng-disabled="orgDetailCtrl.saveDisabled()">Update</button>
                     <button class="btn btn-default" type="button" ng-click="orgDetailCtrl.deleteOrganization()">Delete</button>
                     <button class="btn btn-default" type="button" ng-click="orgDetailCtrl.manageOrganizationTests()">Manage Tests</button>

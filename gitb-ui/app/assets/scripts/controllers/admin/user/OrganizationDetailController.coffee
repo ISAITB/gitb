@@ -71,7 +71,7 @@ class OrganizationDetailController
 
   # delete and cancel detail
   deleteOrganization: () =>
-    @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this organization?", "Yes", "No")
+    @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this organisation?", "Yes", "No")
     .then () =>
       @OrganizationService.deleteOrganization(@orgId)
       .then () =>
@@ -93,8 +93,8 @@ class OrganizationDetailController
   # update and cancel detail
   updateOrganization: () =>
     @ValidationService.clearAll()
-    if @ValidationService.requireNonNull(@organization.sname, "Please enter short name of the organization.") &
-    @ValidationService.requireNonNull(@organization.fname, "Please enter full name of the organization.")
+    if @ValidationService.requireNonNull(@organization.sname, "Please enter short name of the organisation.") &
+    @ValidationService.requireNonNull(@organization.fname, "Please enter full name of the organisation.")
       if @organization.otherOrganisations? && @organization.otherOrganisations.id?
         @ConfirmationDialogService.confirm("Confirm test setup copy", "Copying the test setup from another organisation will remove current systems, conformance statements and test results. Are you sure you want to proceed?", "Yes", "No")
         .then(() =>

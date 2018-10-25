@@ -71,13 +71,13 @@ class RegisterController
         if @$scope.name == undefined || @$scope.name == ''
             @alerts.push({type:'danger', msg:"Please enter your name."})
             valid = false
-        #check for empty organization short name input
+        #check for empty organisation short name input
         else if @$scope.sname == undefined || @$scope.sname == ''
-            @alerts.push({type:'danger', msg:"Please enter short name of your organization"})
+            @alerts.push({type:'danger', msg:"Please enter short name of your organisation"})
             valid = false
-        #check for empty organization full name input
+        #check for empty organisation full name input
         else if @$scope.fname == undefined || @$scope.fname == ''
-            @alerts.push({type:'danger', msg:"Please enter full name of your organization"})
+            @alerts.push({type:'danger', msg:"Please enter full name of your organisation"})
             valid = false
         #check for empty email input
         else if @$scope.email == undefined || @$scope.email == ""

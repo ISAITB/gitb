@@ -42,8 +42,8 @@ class OrganizationCreateController
   # create organization and cancel screen
   createOrganization: () =>
     @ValidationService.clearAll()
-    if @ValidationService.requireNonNull(@organization.sname, "Please enter short name of the organization.") &
-    @ValidationService.requireNonNull(@organization.fname, "Please enter full name of the organization.")
+    if @ValidationService.requireNonNull(@organization.sname, "Please enter short name of the organisation.") &
+    @ValidationService.requireNonNull(@organization.fname, "Please enter full name of the organisation.")
       @OrganizationService.createOrganization @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.errorTemplates, @organization.otherOrganisations, @communityId
       .then () =>
         @cancelCreateOrganization()
