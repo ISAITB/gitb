@@ -4,7 +4,7 @@ class ContactSupportController
   constructor: (@$scope, @$modalInstance, @WebEditorService, @$timeout, @DataService, @AccountService, @ErrorService, @ValidationService) ->
     @$modalInstance.opened.then(
         @$timeout(() =>
-            @WebEditorService.editorMinimal(200, "")
+            @WebEditorService.editorMinimal(200, "", "mce-editor-contact")
             @$scope.editorReady = true
         , 1)
     )
@@ -23,8 +23,13 @@ class ContactSupportController
         @$scope.sendPending = false
         @$scope.alerts = []
         @$scope.attachments = []
-        if (tinymce.activeEditor?)
-            tinymce.activeEditor.setContent("")
+
+        editor = @$scope.getRichTextEditor()
+        if (editor?)
+            editor.setContent("")
+
+    @$scope.getRichTextEditor = () =>
+        tinymce.get('editor-contact')
 
     @$scope.resetState()
 
@@ -61,11 +66,11 @@ class ContactSupportController
         if (!@$scope.sendDisabled() & 
             @ValidationService.validateEmail(@$scope.contactAddress, "Please enter a valid email address.") &
             @ValidationService.objectNonNull(@$scope.feedback.id, "Please select the feedback type.") &
-            @ValidationService.requireNonNull(tinymce.activeEditor.getContent(), "Please provide a message.") &
+            @ValidationService.requireNonNull(@$scope.getRichTextEditor().getContent(), "Please provide a message.") &
             @$scope.validateAttachments()
         ) 
             @$scope.sendPending = true
-            @AccountService.submitFeedback(@DataService.user.id, @$scope.contactAddress, @$scope.feedback.id, @$scope.feedback.description, tinymce.activeEditor.getContent(), @$scope.attachments)
+            @AccountService.submitFeedback(@DataService.user.id, @$scope.contactAddress, @$scope.feedback.id, @$scope.feedback.description, @$scope.getRichTextEditor().getContent(), @$scope.attachments)
             .then (data) =>
                 if (data? && data.error_code?)
                     @ValidationService.alerts.push({type:'danger', msg:data.error_description})

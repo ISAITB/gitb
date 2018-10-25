@@ -68,8 +68,14 @@ object ActorManager extends BaseManager {
   }
 
   def updateActor(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], displayOrder: Option[Short], specificationId: Long)(implicit session: Session) = {
+    var defaultToSet: Option[Boolean] = null
+    if (default.isEmpty) {
+      defaultToSet = Some(false)
+    } else {
+      defaultToSet = default
+    }
     val q1 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.name, a.desc, a.actorId, a.default, a.displayOrder)
-    q1.update((name, description, actorId, default, displayOrder))
+    q1.update((name, description, actorId, defaultToSet, displayOrder))
     if (default.isDefined && default.get) {
       // Ensure no other default actors are defined.
       setOtherActorsAsNonDefault(id, specificationId)
