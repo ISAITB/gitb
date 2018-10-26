@@ -64,7 +64,7 @@
 					<tbody>
 						<tr ng-repeat="parameter in endpoint.parameters">
 							<td style="text-align: center;padding-right:30px;"><i class="glyphicon" ng-class="{\'glyphicon-ok\': parameter.configured, \'glyphicon-remove\': !parameter.configured}"></i></td>
-							<td style="font-weight: bold;" ng-if="parameter.use == \'R\'">* {{parameter.name}}</td>
+							<td style="font-weight: bold;" ng-if="parameter.use == \'R\'">*&nbsp;{{parameter.name}}</td>
 							<td ng-if="parameter.use != \'R\'">{{parameter.name}}</td>
 							<td ng-if="showValues && parameter.kind == \'BINARY\'"><a ng-if="parameter.value" href="" ng-click="downloadBinaryParameter(parameter)">{{parameter.fileName}}</a></td>
 							<td ng-if="showValues && parameter.kind != \'BINARY\'">{{parameter.value}}</td>

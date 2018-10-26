@@ -222,13 +222,19 @@ object ConformanceManager extends BaseManager {
 		}
 	}
 
-  def getActorsWithSpecificationId(spec:Option[Long]): List[Actor] = {
+  def getActorsWithSpecificationId(actorIds:Option[List[Long]], spec:Option[Long]): List[Actor] = {
 		DB.withSession { implicit session =>
 			var actors: List[Actor] = List()
 			var query = for {
 				actor <- PersistenceSchema.actors
 				specificationHasActors <- PersistenceSchema.specificationHasActors if specificationHasActors.actorId === actor.id
 			} yield (actor, specificationHasActors)
+			if (actorIds.isDefined) {
+				query = actorIds match {
+					case Some(list) => query.filter(_._1.id inSet list)
+					case None => query
+				}
+			}
       if (spec.isDefined) {
         query = query.filter(_._2.specId === spec.get)
       }

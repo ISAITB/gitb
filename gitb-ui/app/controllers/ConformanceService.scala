@@ -66,7 +66,7 @@ class ConformanceService extends Controller {
    */
   def getActors = Action.apply { request =>
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
-    val result = ConformanceManager.getActorsWithSpecificationId(None)
+    val result = ConformanceManager.getActorsWithSpecificationId(ids, None)
     val json = JsonUtil.jsActorsNonCase(result).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -84,7 +84,7 @@ class ConformanceService extends Controller {
    * Gets actors defined  for the spec
    */
   def getSpecActors(spec_id: Long) = Action.apply {
-    val actors = ConformanceManager.getActorsWithSpecificationId(Some(spec_id))
+    val actors = ConformanceManager.getActorsWithSpecificationId(None, Some(spec_id))
     val json = JsonUtil.jsActorsNonCase(actors).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
