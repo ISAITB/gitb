@@ -59,6 +59,7 @@
 							<th ng-if="showValues">Configured value</th>
 							<th>Description</th>
 							<th style="text-align: center;" width="5%" ng-if="canEdit">Action</th>
+							<th width="1%" ng-if="!canEdit"></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -70,6 +71,7 @@
 							<td ng-if="showValues && parameter.kind != \'BINARY\'">{{parameter.value}}</td>
 							<td>{{parameter.desc}}</td>
 							<td style="text-align: center;" ng-if="canEdit"><button class="btn btn-default" ng-click="onEdit(parameter)"><i class="fa fa-pencil"></i></button></td>
+							<td ng-if="!canEdit"></td>
 						</tr>
 					</tbody>
 				</table>

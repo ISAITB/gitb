@@ -629,11 +629,11 @@ object ReportManager extends BaseManager {
         var messageToUse:String  = null
         if (addMessage && message.isDefined) {
           // Replace placeholders
-          messageToUse = message.get.replaceAll(Constants.PlaceholderActor, overview.getTestActor)
-          messageToUse = messageToUse.replaceAll(Constants.PlaceholderDomain, overview.getTestDomain)
-          messageToUse = messageToUse.replaceAll(Constants.PlaceholderOrganisation, overview.getOrganisation)
-          messageToUse = messageToUse.replaceAll(Constants.PlaceholderSpecification, overview.getTestSpecification)
-          messageToUse = messageToUse.replaceAll(Constants.PlaceholderSystem, overview.getSystem)
+          messageToUse = message.get.replace(Constants.PlaceholderActor, overview.getTestActor)
+          messageToUse = messageToUse.replace(Constants.PlaceholderDomain, overview.getTestDomain)
+          messageToUse = messageToUse.replace(Constants.PlaceholderOrganisation, overview.getOrganisation)
+          messageToUse = messageToUse.replace(Constants.PlaceholderSpecification, overview.getTestSpecification)
+          messageToUse = messageToUse.replace(Constants.PlaceholderSystem, overview.getSystem)
           // Replace HTML elements
           messageToUse = messageToUse.replaceAll("<strong(([\\s]+[^>]*)|())>", "<b>")
           messageToUse = messageToUse.replaceAll("</strong>", "</b>")

@@ -33,7 +33,8 @@ class CommunityCreateController
   cancelCreateCommunity: () =>
     @$state.go 'app.admin.users.list'
 
-  closeAlert: (index) ->
+  closeAlert: (index) =>
     @ValidationService.clearAlert(index)
+    @alerts = @ValidationService.getAlerts()
 
 @controllers.controller 'CommunityCreateController', CommunityCreateController

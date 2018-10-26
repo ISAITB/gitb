@@ -90,6 +90,7 @@ class ContactSupportController
 
     @$scope.closeAlert = (index) =>
         @ValidationService.clearAlert(index)
+        @$scope.alerts = @ValidationService.getAlerts()
 
     @$scope.clearSuccess = () =>
         @$scope.successMessage = undefined

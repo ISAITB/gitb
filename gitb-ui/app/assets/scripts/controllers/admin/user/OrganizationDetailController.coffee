@@ -114,8 +114,9 @@ class OrganizationDetailController
     @$state.go 'app.admin.users.communities.detail.list', { community_id : @communityId }
 
   # closes alert which is displayed due to an error
-  closeAlert: (index) ->
+  closeAlert: (index) =>
     @ValidationService.clearAlert(index)
+    @alerts = @ValidationService.getAlerts()
 
   manageOrganizationTests: () =>
     @$window.localStorage['organization'] = angular.toJson @organization

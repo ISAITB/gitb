@@ -58,8 +58,8 @@ class UserDetailController
     @$state.go 'app.admin.users.communities.detail.organizations.detail.list', { org_id : @orgId }
 
   # closes alert which is displayed due to an error
-  closeAlert: (index) ->
+  closeAlert: (index) =>
     @ValidationService.clearAlert(index)
-
+    @alerts = @ValidationService.getAlerts()
 
 @controllers.controller 'UserDetailController', UserDetailController

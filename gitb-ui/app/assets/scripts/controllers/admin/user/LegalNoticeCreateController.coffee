@@ -43,7 +43,8 @@ class LegalNoticeCreateController
   cancelCreateLegalNotice: () =>
     @$state.go 'app.admin.users.communities.detail.list', { community_id : @communityId }
 
-  closeAlert: (index) ->
+  closeAlert: (index) =>
     @ValidationService.clearAlert(index)
+    @alerts = @ValidationService.getAlerts()
 
 @controllers.controller 'LegalNoticeCreateController', LegalNoticeCreateController

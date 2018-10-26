@@ -29,7 +29,7 @@
         '</div>'+
         '<div class="form-group" ng-if="!tbNew">'+
           '<label class="col-sm-3 control-label" for="changePassword">Set one-time password?</label>'+
-          '<div class="col-sm-8"><input id="changePassword" ng-model="tbUser.changePassword" class="form-check-input" type="checkbox" class="form-check"></div>'+
+          '<div class="col-sm-8"><input id="changePassword" ng-model="tbUser.changePassword" class="form-check" type="checkbox" class="form-check"></div>'+
         '</div>'+
         '<div class="form-group" ng-if="tbNew || tbUser.changePassword">'+
           '<label class="col-sm-3 control-label" for="password">* One-time password:</label>'+
