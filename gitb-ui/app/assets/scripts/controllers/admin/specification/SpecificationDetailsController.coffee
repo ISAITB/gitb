@@ -179,38 +179,6 @@ class SpecificationDetailsController
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 
-	addExistingActors: () =>
-		@ConformanceService.getActorsWithDomainId(@specification.domain)
-		.then (data) =>
-			domainActors = data
-			domainActors = _.filter domainActors, (domainActor) =>
-				not _.some @actors, (existingActor) =>
-					domainActor.id == existingActor.id
-
-			if domainActors.length > 0
-				options =
-					templateUrl: 'assets/views/admin/domains/add-existing-actors.html'
-					controller: 'AddExistingActorsController as addExistingActorsCtrl'
-					resolve:
-						specification: () =>	@specification
-						existingActors: () => @actors
-						domainActors: () => domainActors
-					size: 'lg'
-
-				instance = @$modal.open options
-				instance.result
-				.then (actors) =>
-					if actors?
-						_.forEach actors, (actor) =>
-							@actors.push actor
-				.catch () =>
-					@$log.debug "An error occurred or the user dismissed the modal dialog"
-			else
-				@$log.debug "No additional actors that can be added exists in this domain."
-
-		.catch (error) =>
-			@ErrorService.showErrorMessage(error)
-
 	onActorSelect: (actor) =>
 		@$state.go 'app.admin.domains.detail.specifications.detail.actors.detail.list', {id: @domainId, spec_id: @specificationId, actor_id: actor.id}
 

@@ -94,18 +94,12 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				controller: 'HomeController'
 				controllerAs: 'homeCtrl'
 				resolve: profile
-			'app.register':
-				url: '/register'
-				templateUrl: 'assets/views/register.html'
 			'app.login':
 				url: '/login'
 				templateUrl: 'assets/views/login.html'
 			'app.onetime':
 				url: '/onetime'
 				templateUrl: 'assets/views/onetime-password.html'
-			'app.recover':
-				url: '/recover'
-				templateUrl: 'assets/views/recover.html'
 			'app.tests':
 				url: '/tests'
 				abstract: true
@@ -174,14 +168,6 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/systems/tests.html'
 				controller: 'SystemTestsController'
 				controllerAs: 'systemTestsCtrl'
-			'app.page1':
-				url: '/page1'
-				controller: 'SystemsController'
-				controllerAs: 'sc'
-				templateUrl: 'assets/views/page1.html'
-			'app.page2':
-				url: '/page2'
-				templateUrl: 'assets/views/page2.html'
 			'app.users':
 				url: '/users'
 				templateUrl: 'assets/views/users.html'
@@ -191,15 +177,6 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.settings':
 				url: '/settings'
 				templateUrl: 'assets/views/settings.html'
-			'app.support':
-				url: '/support'
-				templateUrl: 'assets/views/help.html'
-			'app.contact':
-				url: '/contact'
-				templateUrl: 'assets/views/contact.html'
-			'app.about':
-				url: '/about'
-				templateUrl: 'assets/views/about.html'
 			'app.admin':
 				url: '/admin'
 				templateUrl: 'assets/views/admin/index.html'
@@ -296,34 +273,6 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/domains/detail-endpoint.html'
 				controller: 'EndpointDetailsController'
 				controllerAs: 'endpointDetailsCtrl'
-			'app.admin.domains.detail.actors.detail.options':
-				url: '/options'
-				template: '<div ui-view/>'
-				abstract: true
-			'app.admin.domains.detail.actors.detail.options.create':
-				url: '/create'
-				templateUrl: 'assets/views/admin/domains/create-option.html'
-				controller: 'CreateOptionController'
-				controllerAs: 'createOptionCtrl'
-			'app.admin.domains.detail.actors.detail.options.detail':
-				url: '/:option_id'
-				templateUrl: 'assets/views/admin/domains/detail-option.html'
-				controller: 'OptionDetailsController'
-				controllerAs: 'optionDetailsCtrl'
-			'app.admin.suites':
-				url: '/suites'
-				abstract: true
-				template: '<div ui-view/>'
-			'app.admin.suites.list':
-				url: ''
-				templateUrl: 'assets/views/admin/suites/index.html'
-				controller: 'AdminTestSuitesController'
-				controllerAs: 'adminTestSuitesCtrl'
-			'app.admin.suites.detail':
-				url: '/:id'
-				templateUrl: 'assets/views/admin/suites/detail.html'
-				controller: 'AdminTestSuiteDetailsController'
-				controllerAs: 'adminTestSuiteDetailsCtrl'
 			'app.admin.users':
 				url: '/users'
 				abstract: true
