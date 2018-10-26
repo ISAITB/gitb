@@ -37,21 +37,6 @@ class ConformanceStatementDetailController
       }
     ]
 
-    @optionTableColumns = [
-      {
-        field: 'sname',
-        title: 'Short Name'
-      }
-      {
-        field: 'fname',
-        title: 'Full Name'
-      }
-      {
-        field: 'description',
-        title: 'Description'
-      }
-    ]
-
     @initalizeFields()
 
   initalizeFields: () =>

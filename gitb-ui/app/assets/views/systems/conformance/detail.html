@@ -29,12 +29,6 @@
 			<button class="btn btn-default" ng-if="conformanceStatementDetailCtrl.canDelete()" ng-click="conformanceStatementDetailCtrl.deleteConformanceStatement()">Delete statement</button>
         </div>		
 	</div>
-	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.conformanceStatement.options.length > 0">
-		<div class="panel-heading">
-			<h5 class="title">Selected Actor Options</h5>
-		</div>
-		<div table-directive columns="conformanceStatementDetailCtrl.optionTableColumns" data="conformanceStatementDetailCtrl.conformanceStatement.options" allow-select="false"></div>
-	</div>
 	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.endpoints.length > 0">
 		<div class="panel-heading panel-heading-tests">
 			<h5 class="title">Configuration parameters</h5>

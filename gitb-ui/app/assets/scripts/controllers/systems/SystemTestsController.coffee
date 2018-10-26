@@ -26,13 +26,13 @@ class SystemTestsController
       }
       {
         field: 'startTime'
-        title: 'Start Time'
+        title: 'Start time'
         sortable: true
         order: 'desc'
       }
       {
         field: 'endTime'
-        title: 'End Time'
+        title: 'End time'
         sortable: true
       }
       {

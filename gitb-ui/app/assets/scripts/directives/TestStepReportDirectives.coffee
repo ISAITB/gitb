@@ -17,7 +17,6 @@
       template: ''+
         '<div class="row test-step-report {{step.type}}-type">'+
           '<div class="col-md-6">'+
-            #'<span class="report-item"><strong>Type: </strong>{{report.type}}</span>'+
             '<span class="report-item"><strong>Result: </strong>{{report.result}}</span>'+
           '</div>'+
           '<div class="col-md-6">'+

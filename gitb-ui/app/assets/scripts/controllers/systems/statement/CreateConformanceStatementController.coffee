@@ -17,11 +17,11 @@ class CreateConformanceStatementController
     @tableColumns = [
       {
         field: 'sname',
-        title: 'Short Name'
+        title: 'Short name'
       }
       {
         field: 'fname',
-        title: 'Full Name'
+        title: 'Full name'
       }
       {
         field: 'description',
@@ -47,15 +47,15 @@ class CreateConformanceStatementController
     @steps = [
       {
         id: 1
-        title: 'Select Domain'
+        title: 'Select domain'
       }
       {
         id: 2
-        title: 'Select Specification'
+        title: 'Select specification'
       }
       {
         id: 3
-        title: 'Select Actors'
+        title: 'Select actors'
       }
     ]
 
