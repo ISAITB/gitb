@@ -10,7 +10,7 @@
 		template: ''+
 			'<form class="form-horizontal" ng-submit="submit()">'+
 				'<div class="form-group">'+
-					'<label class="col-sm-3 control-label" for="name">*Name:</label>'+
+					'<label class="col-sm-3 control-label" for="name">* Name:</label>'+
 					'<div class="col-sm-8"><input id="name" ng-model="endpoint.name" class="form-control" type="text" required></div>'+
 				'</div>'+
 				'<div class="form-group">'+
