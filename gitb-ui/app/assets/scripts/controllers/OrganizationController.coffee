@@ -91,7 +91,7 @@ class OrganizationController
                         @addMember()
                     else #error handler
                         @modalAlerts.push({type:'danger', msg:"A user with email '#{@$scope.udata.email}' has already been registered."})
-                        @$scope.udata.email = @$scope.udata.password = ''
+                        @$scope.udata.email = @$scope.udata.password = @$scope.udata.cpassword = ''
                         @spinner = false
                 ,
                 (error) =>
@@ -101,7 +101,7 @@ class OrganizationController
                     @spinner = false
             )
         else
-            @$scope.udata.password = '' # clear password every time the form is not valid
+            @$scope.udata.password = @$scope.udata.cpassword = '' # clear password every time the form is not valid
 
 	#call remote operation to register user
     addMember: () ->
@@ -125,18 +125,23 @@ class OrganizationController
         emailRegex = @Constants.EMAIL_REGEX
 
         if @$scope.udata.name == undefined || @$scope.udata.name == ''
-            @modalAlerts.push({type:'danger', msg:"You have to enter user's name."})
+            @modalAlerts.push({type:'danger', msg:"You have to enter the user's name."})
             valid = false
         else if @$scope.udata.email == undefined || @$scope.udata.email == ''
-            @modalAlerts.push({type:'danger', msg:"You have to enter user's email."})
+            @modalAlerts.push({type:'danger', msg:"You have to enter the user's email."})
             valid = false
         else if !emailRegex.test(@$scope.udata.email)
             @modalAlerts.push({type:'danger', msg:"You have to enter a valid email address."})
             valid = false
         else if @$scope.udata.password == undefined || @$scope.udata.password == ''
-            @modalAlerts.push({type:'danger', msg:"You have to enter user's password."})
+            @modalAlerts.push({type:'danger', msg:"You have to enter the user's password."})
             valid = false
-
+        else if @$scope.udata.cpassword == undefined || @$scope.udata.cpassword == ''
+            @modalAlerts.push({type:'danger', msg:"You have to confirm the user's password."})
+            valid = false
+        else if @$scope.udata.password != @$scope.udata.cpassword
+            @modalAlerts.push({type:'danger', msg:"The provided passwords don't match."})
+            valid = false
         valid
 
     closeAlert: (index) ->

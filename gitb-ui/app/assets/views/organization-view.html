@@ -108,7 +108,7 @@
                             <div class="row">
                                 <div class="form-group">
                                     <div class="col-md-11 col-centered">
-                                        <label>User name</label>
+                                        <label>* User name</label>
                                         <input type="text" class="form-control" ng-model="udata.name">
                                     </div>
                                 </div>
@@ -117,7 +117,7 @@
                             <div class="row">
                                 <div class="form-group">
                                     <div class="col-md-11 col-centered">
-                                        <label>Email</label>
+                                        <label>* Email</label>
                                         <input type="email"  class="form-control" ng-model="udata.email">
                                     </div>
                                 </div>
@@ -126,8 +126,17 @@
                             <div class="row">
                                 <div class="form-group">
                                     <div class="col-md-11 col-centered">
-                                        <label>Password</label>
+                                        <label>* One-time password:</label>
                                         <input type="password" class="form-control" ng-model="udata.password" >
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="form-group">
+                                    <div class="col-md-11 col-centered">
+                                        <label>* Confirm one-time password:</label>
+                                        <input type="password" class="form-control" ng-model="udata.cpassword" >
                                     </div>
                                 </div>
                             </div>
