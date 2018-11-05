@@ -81,6 +81,7 @@ class AdminConformanceController
 		@tableColumns = tempColumns
 		@expandedStatements = {}
 		@expandedStatements.count = 0
+		@settingsLoaded = @$q.defer()
 
 	resetFilters: (keepTick) ->
 		@setDomainFilter()
@@ -365,24 +366,6 @@ class AdminConformanceController
 			blobData = new Blob([csv], {type: 'text/csv'});
 			saveAs(blobData, "export.csv");
 
-	onExportConformanceStatement: (statement) =>
-		choice = @ConfirmationDialogService.confirm("Report options", "Would you like to include the detailed test step results per test session?", "Yes, include step results", "No, summary only", true)
-		choice.then(() => 
-			@ReportService.exportConformanceStatementReport(statement.actorId, statement.systemId, true)
-			.then (data) =>
-				blobData = new Blob([data], {type: 'application/pdf'});
-				saveAs(blobData, "conformance_report.pdf");
-			.catch (error) =>
-				@ErrorService.showErrorMessage(error)
-		, () => 
-			@ReportService.exportConformanceStatementReport(statement.actorId, statement.systemId, false)
-			.then (data) =>
-					blobData = new Blob([data], {type: 'application/pdf'});
-					saveAs(blobData, "conformance_report.pdf");
-			.catch (error) =>
-				@ErrorService.showErrorMessage(error)
-		)
-
 	onExportTestCase: (statement, testCase) =>
 		@ReportService.exportTestCaseReport(testCase.sessionId, testCase.id)
 		.then (stepResults) =>
@@ -391,16 +374,23 @@ class AdminConformanceController
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
-	generateConformanceCertificate: () =>
-		@ConformanceService.getConformanceCertificateSettings(@conformanceStatements[0].communityId, false)
-		.then (settings) => 
+	onExportConformanceStatement: (statement) =>
+		@statementToProcess = statement
+		if !statement?
+			@statementToProcess = @conformanceStatements[0]
+		if !@settings?
+			@ConformanceService.getConformanceCertificateSettings(@statementToProcess.communityId, false)
+			.then (settings) => 
+				@settings = settings
+				@settingsLoaded.resolve()
+		@settingsLoaded.promise.then () =>
 			modalOptions =
 				templateUrl: 'assets/views/admin/conformance/generate-certificate-modal.html'
 				controller: 'ConformanceCertificateModalController as controller'
 				size: 'lg'
 				resolve: 
-					settings: () => settings
-					conformanceStatement: () => @conformanceStatements[0]
+					settings: () => @settings
+					conformanceStatement: () => @statementToProcess
 			modalInstance = @$modal.open(modalOptions)
 
 @controllers.controller 'AdminConformanceController', AdminConformanceController

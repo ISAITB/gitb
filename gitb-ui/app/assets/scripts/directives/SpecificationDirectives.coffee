@@ -38,7 +38,7 @@
 					'</div>'+
 				'</div>'+
 				'<div class="form-group">'+
-					'<label class="col-sm-3 control-label" for="specificationType">Specification Type:</label>'+
+					'<label class="col-sm-3 control-label" for="specificationType">Specification type:</label>'+
 					'<div class="col-sm-8">'+
 						'<select id="specificationType" ng-model="specification.spec_type" class="form-control">'+
 							'<option value="1">Integration Profile</option>'+
