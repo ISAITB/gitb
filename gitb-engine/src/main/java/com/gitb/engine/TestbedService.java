@@ -14,11 +14,17 @@ import com.gitb.engine.events.model.InputEvent;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tbs.*;
 import com.gitb.tpl.TestCase;
+import com.gitb.tr.SR;
+import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.utils.ErrorUtils;
+import com.gitb.utils.XMLDateTimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
+import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,18 +56,17 @@ public class TestbedService {
 	 * @return
 	 */
 	public static String initiate(String testCaseId) {
-		logger.debug("Initiating the test case [" + testCaseId + "]...");
 		//Create a Session in TestEngine and return session id
 		String sessionId = SessionManager
 			.getInstance()
 			.newSession(testCaseId);
-		logger.debug("New session [" + sessionId + "] created for the execution of test case [" + testCaseId + "]...");
+		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "New session [" + sessionId + "] created for the execution of test case [" + testCaseId + "]...");
 		TestEngine
 			.getInstance()
 			.getEngineActorSystem()
 			.getSessionSupervisor()
 			.tell(new CreateCommand(sessionId), ActorRef.noSender());
-		logger.debug("Test execution environment initialized for session [" + sessionId + "]...");
+		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "Test execution environment initialized for session [" + sessionId + "]...");
 		return sessionId;
 	}
 
@@ -72,7 +77,7 @@ public class TestbedService {
 	 * @param allConfigurations
 	 */
 	public static List<SUTConfiguration> configure(String sessionId, List<ActorConfiguration> allConfigurations) {
-		logger.debug("configure"
+		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "configure"
 			+ " ( "
 			+ sessionId + " , "
 			+ "actors - " + allConfigurations.size()
@@ -122,7 +127,7 @@ public class TestbedService {
 	 * @param userInputs
 	 */
 	public static void provideInput(String sessionId, String stepId, List<UserInput> userInputs) {
-		logger.debug("provideInput"
+		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "provideInput"
 			+ " ( "
 			+ sessionId + " , "
 			+ stepId
@@ -134,7 +139,7 @@ public class TestbedService {
 	}
 
 	public static void initiatePreliminary(String sessionId) {
-		logger.debug("initiatePreliminary"
+		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "initiatePreliminary"
 			+ " ( "
 			+ sessionId
 			+ " ) ");
@@ -153,7 +158,7 @@ public class TestbedService {
 	 * @param sessionId
 	 */
 	public static void start(String sessionId) {
-		logger.debug("start"
+		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "start"
 			+ " ( "
 			+ sessionId
 			+ " ) ");
@@ -172,7 +177,7 @@ public class TestbedService {
 	 * @param sessionId
 	 */
 	public static void stop(String sessionId) {
-		logger.debug("stop"
+		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "stop"
 			+ " ( "
 			+ sessionId
 			+ " ) ");
@@ -197,7 +202,7 @@ public class TestbedService {
 	 */
 	public static String restart(String sessionId) {
 
-		logger.debug("restart"
+		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "restart"
 			+ " ( "
 			+ sessionId
 			+ " ) ");
@@ -212,14 +217,14 @@ public class TestbedService {
 		String newSessionId = SessionManager
 			.getInstance()
 			.duplicateSession(sessionId);
-		logger.debug("Restarted session [" + sessionId + "] with the session id [" + newSessionId + "]...");
+		logger.debug(MarkerFactory.getDetachedMarker(newSessionId), "Restarted session [" + sessionId + "] with the session id [" + newSessionId + "]...");
 
 		TestEngine
 			.getInstance()
 			.getEngineActorSystem()
 			.getSessionSupervisor()
 			.tell(new CreateCommand(newSessionId), ActorRef.noSender());
-		logger.debug("Test execution environment initialized for session [" + newSessionId + "]...");
+		logger.debug(MarkerFactory.getDetachedMarker(newSessionId), "Test execution environment initialized for session [" + newSessionId + "]...");
 
 		return newSessionId;
 	}
@@ -233,7 +238,7 @@ public class TestbedService {
 	 * @param report
 	 */
 	public static void updateStatus(String sessionId, String stepId, StepStatus status, TestStepReportType report) {
-		logger.debug("updateStatus"
+		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "updateStatus"
 			+ " ( "
 			+ sessionId + " , "
 			+ stepId + " , "
@@ -252,6 +257,22 @@ public class TestbedService {
         if(stepId == null || stepId.length() == 0) {
             return;
         }
+
+        if (report == null && (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.SKIPPED)) {
+			report = new SR();
+			try {
+				report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
+			} catch (DatatypeConfigurationException e) {
+				throw new IllegalStateException(e);
+			}
+			if (status == StepStatus.COMPLETED) {
+				report.setResult(TestResultType.SUCCESS);
+			} else if (status == StepStatus.ERROR) {
+				report.setResult(TestResultType.FAILURE);
+			} else {
+				report.setResult(TestResultType.UNDEFINED);
+			}
+		}
 
 		TestbedClient testbedClient = tbsCallbackHandle
 			.getTestbedClient(sessionId);
@@ -272,7 +293,7 @@ public class TestbedService {
 	 * @param interaction
 	 */
 	public static void interactWithUsers(String sessionId, String stepId, UserInteractionRequest interaction) {
-		logger.debug("interactWithUsers"
+		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "interactWithUsers"
 			+ " ( "
 			+ sessionId
 			+ " ) ");

@@ -48,6 +48,12 @@ public abstract class DataType {
         return typeDefinition.startsWith(LIST_DATA_TYPE+CONTAINER_TYPE_PARENTHESIS[0]) && typeDefinition.endsWith(CONTAINER_TYPE_PARENTHESIS[1]);
     }
 
+    public static boolean isFileType(String typeDefinition) {
+        return DataType.BINARY_DATA_TYPE.equals(typeDefinition)
+                || DataType.SCHEMA_DATA_TYPE.equals(typeDefinition)
+                || DataType.OBJECT_DATA_TYPE.equals(typeDefinition);
+    }
+
     public DataType convertTo(String targetType) {
         if (this.getType().equals(targetType)) {
             return this;

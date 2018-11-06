@@ -41,7 +41,7 @@ class SystemService
       authenticate: true
     })
 
-  updateSystem:(systemId, sname, fname, description, version, organisationId) ->
+  updateSystem:(systemId, sname, fname, description, version, organisationId, otherSystem) ->
     data = {}
     if sname?
       data.system_sname = sname
@@ -51,6 +51,9 @@ class SystemService
       data.system_description = description
     if version?
       data.system_version = version
+    if otherSystem? && otherSystem.id?
+      data.other_system = otherSystem.id
+
     data.organization_id = organisationId
 
     @RestService.post({
@@ -59,13 +62,15 @@ class SystemService
       authenticate: true
     })
 
-  registerSystemWithOrganization:(sname, fname, description, version, orgId) ->
+  registerSystemWithOrganization:(sname, fname, description, version, orgId, otherSystem) ->
     data = {
       system_sname: sname,
       system_fname: fname,
       system_version: version
       organization_id: orgId
     }
+    if otherSystem? && otherSystem.id?
+      data.other_system = otherSystem.id
 
     if description?
       data.system_description = description
@@ -111,29 +116,20 @@ class SystemService
       authenticate: true
     })
 
-  ###
-  getSystemConfigurations: (system) ->
-    @RestService.get({
-      path: jsRoutes.controllers.SystemService.getSystemConfigurations(system).url,
-      authenticate: true
-    })
-
-  saveSystemConfigurations: (system, configs) =>
-    @RestService.post({
-      path: jsRoutes.controllers.SystemService.updateSystemConfigurations(system).url,
-      data: {
-          configs: angular.toJson(configs)
-      },
-      authenticate: true
-    })
-  ###
-
   getEndpointConfigurations: (endpoint, system) ->
     @RestService.get
       path: jsRoutes.controllers.SystemService.getEndpointConfigurations(endpoint).url
       params:
         system_id: system
       authenticate: true
+
+  deleteEndpointConfiguration: (systemId, parameterId, endpointId) ->
+    @RestService.delete
+      path: jsRoutes.controllers.SystemService.saveEndpointConfiguration(endpointId).url
+      authenticate: true
+      params:
+        system_id: systemId
+        parameter_id: parameterId
 
   saveEndpointConfiguration: (endpoint, config) ->
     @RestService.post

@@ -5,6 +5,8 @@ import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.net.Socket;
 import java.util.concurrent.locks.Condition;
@@ -37,6 +39,10 @@ public abstract class AbstractTransactionReceiver implements ITransactionReceive
 		if(socket != null) {
 			this.socket = socket;
 		}
+	}
+
+	public Marker addMarker() {
+		return MarkerFactory.getDetachedMarker(session.getTestSessionId());
 	}
 
 	protected void waitUntilMessageReceived() throws Exception {
@@ -81,7 +87,7 @@ public abstract class AbstractTransactionReceiver implements ITransactionReceive
 	@Override
 	public void onEnd() throws Exception {
 		if(socket != null && !socket.isClosed()) {
-			logger.debug("Closing socket: " + socket);
+			logger.debug(addMarker(), "Closing socket: " + socket);
 			socket.close();
 		}
 	}

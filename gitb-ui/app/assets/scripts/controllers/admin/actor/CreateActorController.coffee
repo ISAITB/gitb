@@ -10,11 +10,11 @@ class CreateActorController
 		@actor = {}
 
 	saveDisabled: () =>
-		!(@actor.actorId?.length > 0 and @actor.name?.length > 0)
+		!(@actor.actorId?.length > 0 && @actor.name?.length > 0) || (@actor.displayOrder? && isNaN(@actor.displayOrder))
 
 	createActor: () =>
 		if !@saveDisabled()
-			@ConformanceService.createActor @actor.actorId, @actor.name, @actor.description, @domainId, @specificationId
+			@ConformanceService.createActor @actor.actorId, @actor.name, @actor.description, @actor.default, @actor.displayOrder, @domainId, @specificationId
 				.then () =>
 					@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: @specificationId}
 				.catch (error) =>

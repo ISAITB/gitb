@@ -4,8 +4,6 @@ package com.gitb.messaging;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.model.TransactionContext;
 import com.helger.as2lib.util.http.DoNothingTrustManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.*;
 import java.io.IOException;
@@ -13,8 +11,6 @@ import java.net.Socket;
 import java.security.KeyStore;
 
 public class SecurityUtils {
-
-    private static Logger logger = LoggerFactory.getLogger(SecurityUtils.class);
 
     private static final String PKI_ALGORITHM     = "SunX509";
     private static final String SECURE_ALGORITHM  = "TLSv1.2";
@@ -33,7 +29,7 @@ public class SecurityUtils {
             sslContext = SSLContext.getInstance(SECURE_ALGORITHM);
             sslContext.init(kmf.getKeyManagers(), trustManagers, null);
         } catch (Exception e) {
-            logger.error("Exception while creating SSLContext in HttpsMessagingHandler", e);
+            throw new IllegalStateException("Exception while creating SSLContext in HttpsMessagingHandler", e);
         }
 
         return sslContext;

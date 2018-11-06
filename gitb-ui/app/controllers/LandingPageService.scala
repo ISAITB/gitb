@@ -32,7 +32,7 @@ class LandingPageService extends Controller {
       LandingPageManager.createLandingPage(landingPage)
       ResponseConstructor.constructEmptyResponse
     } else {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Landing page with '" + landingPage.name + "' already exists.")
+      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Landing page with name '" + landingPage.name + "' already exists.")
     }
   }
 
@@ -60,7 +60,7 @@ class LandingPageService extends Controller {
       LandingPageManager.updateLandingPage(pageId, name, description, content, default, communityId)
       ResponseConstructor.constructEmptyResponse
     } else {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Landing page with '" + name + "' already exists.")
+      ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Landing page with name '" + name + "' already exists.")
     }
   }
 

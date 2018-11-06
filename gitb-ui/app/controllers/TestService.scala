@@ -58,8 +58,8 @@ class TestService extends Controller{
    */
   def getActorDefinitions() = Action.apply { request =>
     val specId = ParameterExtractor.requiredQueryParameter(request, Parameters.SPECIFICATION_ID).toLong
-    val actors = ConformanceManager.getActorsWithSpecificationId(specId)
-    val json = JsonUtil.jsActors(actors).toString()
+    val actors = ConformanceManager.getActorsWithSpecificationId(None, Some(specId))
+    val json = JsonUtil.jsActorsNonCase(actors).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 

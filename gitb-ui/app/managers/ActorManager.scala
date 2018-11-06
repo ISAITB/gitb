@@ -61,27 +61,43 @@ object ActorManager extends BaseManager {
     PersistenceSchema.actors.filter(_.id === actorId).delete
   }
 
-  def updateActorWrapper(id: Long, actorId: String, name: String, description: Option[String]) = {
+  def updateActorWrapper(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], displayOrder: Option[Short], specificationId: Long) = {
     DB.withTransaction { implicit session =>
-      updateActor(id, actorId, name, description)
+      updateActor(id, actorId, name, description, default, displayOrder, specificationId)
     }
   }
 
-  def updateActor(id: Long, actorId: String, name: String, description: Option[String])(implicit session: Session) = {
-    val q1 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.name)
-    q1.update(name)
-
-    val q2 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.desc)
-    q2.update(description)
-
-    val q3 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.actorId)
-    q3.update(actorId)
-
+  def updateActor(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], displayOrder: Option[Short], specificationId: Long)(implicit session: Session) = {
+    var defaultToSet: Option[Boolean] = null
+    if (default.isEmpty) {
+      defaultToSet = Some(false)
+    } else {
+      defaultToSet = default
+    }
+    val q1 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.name, a.desc, a.actorId, a.default, a.displayOrder)
+    q1.update((name, description, actorId, defaultToSet, displayOrder))
+    if (default.isDefined && default.get) {
+      // Ensure no other default actors are defined.
+      setOtherActorsAsNonDefault(id, specificationId)
+    }
     TestResultManager.updateForUpdatedActor(id, name)
   }
 
   def getById(id: Long)(implicit session: Session): Option[Actors] = {
     PersistenceSchema.actors.filter(_.id === id).firstOption
+  }
+
+  def setOtherActorsAsNonDefault(defaultActorId: Long, specificationId: Long)(implicit session: Session): Unit = {
+    val actorIds = PersistenceSchema.specificationHasActors
+      .filter(_.specId === specificationId)
+      .map(e => e.actorId)
+      .list
+    actorIds.foreach { actorId =>
+      if (actorId != defaultActorId) {
+        val q = for (a <- PersistenceSchema.actors if a.id === actorId) yield a.default
+        q.update(Some(false))
+      }
+    }
   }
 
 }

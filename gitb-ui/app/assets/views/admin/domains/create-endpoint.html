@@ -1,12 +1,17 @@
 <div class="page domains detail options create-option">
-	<div class="row">
-		<div class="col-md-10">
-			<div class="panel panel-default">
-				<div class="panel-heading">
-					<h4 class="title">Create Endpoint</h4>
-				</div>
-				<div class="panel-body">
-					<div class="col-md-10 col-md-offset-1" endpoint-details-form endpoint="createEndpointCtrl.endpoint" on-submit="createEndpointCtrl.createEndpoint" show-save-button="true" on-cancel="createEndpointCtrl.cancel" show-cancel-button="true" save-disabled="createEndpointCtrl.saveDisabled"></div>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">Create endpoint</h4>
+		</div>
+		<div class="panel-body">
+			<div class="col-md-10 col-md-offset-1" endpoint-details-form endpoint="createEndpointCtrl.endpoint"></div>
+		</div>
+        <div class="panel-footer">
+			<div class="row">
+				<div class="col-md-3"></div>
+				<div class="col-md-8 btn-toolbar">
+					<button class="btn btn-default" type="button" ng-click="createEndpointCtrl.createEndpoint()" ng-disabled="createEndpointCtrl.saveDisabled()">Save</button>
+					<button class="btn btn-default" type="button" ng-click="createEndpointCtrl.cancel()">Cancel</button>
 				</div>
 			</div>
 		</div>

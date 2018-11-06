@@ -1,7 +1,7 @@
 class CommunityCreateController
 
-  @$inject = ['$log', '$state', 'ValidationService', 'LandingPageService', 'LegalNoticeService', 'CommunityService', 'ConformanceService', 'ErrorService']
-  constructor: (@$log, @$state, @ValidationService, @LandingPageService, @LegalNoticeService, @CommunityService, @ConformanceService, @ErrorService) ->
+  @$inject = ['$log', '$state', 'ValidationService', 'CommunityService', 'ConformanceService', 'ErrorService']
+  constructor: (@$log, @$state, @ValidationService, @CommunityService, @ConformanceService, @ErrorService) ->
 
     @alerts = []
     @community = {}
@@ -33,7 +33,8 @@ class CommunityCreateController
   cancelCreateCommunity: () =>
     @$state.go 'app.admin.users.list'
 
-  closeAlert: (index) ->
+  closeAlert: (index) =>
     @ValidationService.clearAlert(index)
+    @alerts = @ValidationService.getAlerts()
 
 @controllers.controller 'CommunityCreateController', CommunityCreateController

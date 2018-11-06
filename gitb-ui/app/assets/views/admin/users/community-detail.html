@@ -1,12 +1,7 @@
 <div class="page users detail">
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h4 class="title">Community detail</h4>
-			<div class="pull-right">
-                <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.updateCommunity()" ng-disabled="communityDetailCtrl.saveDisabled()">Save changes</button>
-                <button class="btn btn-default" type="button" ng-if="communityDetailCtrl.DataService.isSystemAdmin && !communityDetailCtrl.isDefaultCommunity()" ng-click="communityDetailCtrl.deleteCommunity()">Delete</button>
-                <button class="btn btn-default" type="button" ng-if="communityDetailCtrl.DataService.isSystemAdmin" ng-click="communityDetailCtrl.cancelCommunityDetail()">Back</button>
-            </div>
+            <h4 class="title">Community details</h4>
         </div>
         <div class="panel-body">
             <!-- Error messages -->
@@ -15,6 +10,17 @@
             </div>
             <div class="row">
                 <div class="col-md-10 col-md-offset-1" tb-community-form tb-community="communityDetailCtrl.community" tb-domains="communityDetailCtrl.domains" tb-admin="communityDetailCtrl.DataService.isSystemAdmin"></div>
+            </div>
+        </div>
+        <div class="panel-footer">
+            <div class="row">
+                <div class="col-md-3"></div>
+                <div class="col-md-8 btn-toolbar">
+                    <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.updateCommunity()" ng-disabled="communityDetailCtrl.saveDisabled()">Save changes</button>
+                    <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.updateConformanceCertificateSettings()">Edit conformance certificate settings</button>
+                    <button class="btn btn-default" type="button" ng-if="communityDetailCtrl.DataService.isSystemAdmin && !communityDetailCtrl.isDefaultCommunity()" ng-click="communityDetailCtrl.deleteCommunity()">Delete</button>
+                    <button class="btn btn-default" type="button" ng-if="communityDetailCtrl.DataService.isSystemAdmin" ng-click="communityDetailCtrl.cancelCommunityDetail()">Back</button>
+                </div>
             </div>
         </div>
     </div>
@@ -26,11 +32,11 @@
         </div>
         <div table-directive columns="communityDetailCtrl.adminColumns" data="communityDetailCtrl.admins" on-select="communityDetailCtrl.adminSelect"></div>
     </div>
-    <!-- organizations -->
+    <!-- organisations -->
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Organisations</h4>
-            <a ui-sref="app.admin.users.communities.detail.organizations.create" class="btn btn-default pull-right">Create organization</a>
+            <a ui-sref="app.admin.users.communities.detail.organizations.create" class="btn btn-default pull-right">Create organisation</a>
         </div>
         <div table-directive columns="communityDetailCtrl.organizationColumns" data="communityDetailCtrl.organizations" on-select="communityDetailCtrl.organizationSelect"></div>
     </div>
@@ -51,5 +57,14 @@
             <a ng-hide="communityDetailCtrl.communityId == 0" ng-disabled="communityDetailCtrl.testBedLegalNotice == undefined" ui-sref="app.admin.users.communities.detail.legalnotices.create({name : communityDetailCtrl.testBedLegalNotice.name, description : communityDetailCtrl.testBedLegalNotice.description, content: communityDetailCtrl.testBedLegalNotice.content})" class="btn btn-default pull-right">Copy Test bed legal notice</a>
         </div>
         <div table-directive columns="communityDetailCtrl.legalNoticesColumns" data="communityDetailCtrl.legalNotices" on-select="communityDetailCtrl.legalNoticeSelect"></div>
+    </div>
+     <!--error templates -->
+     <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Error templates</h4>
+            <a ui-sref="app.admin.users.communities.detail.errortemplates.create" class="btn btn-default pull-right">Create error template</a>
+            <a ng-hide="communityDetailCtrl.communityId == 0" ng-disabled="communityDetailCtrl.testBedErrorTemplate == undefined" ui-sref="app.admin.users.communities.detail.errortemplates.create({name : communityDetailCtrl.testBedErrorTemplate.name, description : communityDetailCtrl.testBedErrorTemplate.description, content: communityDetailCtrl.testBedErrorTemplate.content})" class="btn btn-default pull-right">Copy Test bed error template</a>
+        </div>
+        <div table-directive columns="communityDetailCtrl.errorTemplatesColumns" data="communityDetailCtrl.errorTemplates" on-select="communityDetailCtrl.errorTemplateSelect"></div>
     </div>
 </div>

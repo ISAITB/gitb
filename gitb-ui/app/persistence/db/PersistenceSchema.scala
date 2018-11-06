@@ -30,8 +30,9 @@ object PersistenceSchema {
     def adminOrganization = column[Boolean]("admin_organization")
     def landingPage = column[Option[Long]] ("landing_page", O.Nullable)
     def legalNotice = column[Option[Long]] ("legal_notice", O.Nullable)
+    def errorTemplate = column[Option[Long]] ("error_template", O.Nullable)
     def community = column[Long] ("community")
-    def * = (id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, community) <> (Organizations.tupled, Organizations.unapply)
+    def * = (id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, errorTemplate, community) <> (Organizations.tupled, Organizations.unapply)
   }
   //get table name etc from organizations.baseTableRow
   val organizations = TableQuery[OrganizationsTable]
@@ -43,9 +44,10 @@ object PersistenceSchema {
     def name = column[String]("name")
     def email = column[String]("email")
     def password = column[String]("password")
+    def onetimePassword = column[Boolean]("onetime_password")
     def role = column[Short]("role")
     def organization = column[Long]("organization")
-    def * = (id, name, email, password, role, organization) <> (Users.tupled, Users.unapply)
+    def * = (id, name, email, password, onetimePassword, role, organization) <> (Users.tupled, Users.unapply)
     //def fk = foreignKey("users_fk", organization, Organizations)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
     //def idx1 = index("users_idx_1", email, unique = true)
   }
@@ -93,8 +95,10 @@ object PersistenceSchema {
     def actorId = column[String]("actorId")
     def name    = column[String]("name")
     def desc    = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def default = column[Option[Boolean]]("is_default", O.Nullable)
+    def displayOrder = column[Option[Short]]("display_order", O.Nullable)
     def domain  = column[Long]("domain")
-    def * = (id, actorId, name, desc, domain) <> (Actors.tupled, Actors.unapply)
+    def * = (id, actorId, name, desc, default, displayOrder, domain) <> (Actors.tupled, Actors.unapply)
     def actorIdUniqueIdx = index("actors_aid_unq_idx", actorId, unique = true)
     //def fk = foreignKey("actors_fk", domain, Domains)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
@@ -147,12 +151,12 @@ object PersistenceSchema {
   }
   val conformanceResults = TableQuery[ConformanceResultsTable]
 
-  class ConfigurationsTable(tag:Tag) extends Table[Config] (tag, "Configurations") {
+  class ConfigurationsTable(tag:Tag) extends Table[Configs] (tag, "Configurations") {
     def system = column[Long] ("system")
 	  def parameter = column[Long]("parameter")
 	  def endpoint = column[Long] ("endpoint")
 	  def value = column[String]("value", O.DBType("BLOB"))
-    def * = (system, parameter, endpoint, value) <> (Config.tupled, Config.unapply)
+    def * = (system, parameter, endpoint, value) <> (Configs.tupled, Configs.unapply)
     def pk = primaryKey("c_pk", (system, parameter, endpoint))
   }
   val configs = TableQuery[ConfigurationsTable]
@@ -384,4 +388,36 @@ object PersistenceSchema {
   }
   val legalNotices = TableQuery[LegalNoticesTable]
   val insertLegalNotice = (legalNotices returning legalNotices.map(_.id))
+
+  class ErrorTemplatesTable(tag: Tag) extends Table[ErrorTemplates](tag, "ErrorTemplates") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def name = column[String]("name")
+    def description = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def content = column[String]("content")
+    def default = column[Boolean]("default_flag")
+    def community = column[Long]("community")
+    def * = (id, name, description, content, default, community) <> (ErrorTemplates.tupled, ErrorTemplates.unapply)
+  }
+  val errorTemplates = TableQuery[ErrorTemplatesTable]
+  val insertErrorTemplate = (errorTemplates returning errorTemplates.map(_.id))
+
+  class ConformanceCertificatesTable(tag: Tag) extends Table[ConformanceCertificates](tag, "ConformanceCertificates") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def title = column[Option[String]]("title", O.Nullable, O.DBType("TEXT"))
+    def message = column[Option[String]]("message", O.Nullable, O.DBType("TEXT"))
+    def includeMessage = column[Boolean]("include_message")
+    def includeTestStatus = column[Boolean]("include_test_status")
+    def includeTestCases = column[Boolean]("include_test_cases")
+    def includeDetails = column[Boolean]("include_details")
+    def includeSignature = column[Boolean]("include_signature")
+    def keystoreFile = column[Option[String]]("keystore_file", O.DBType("BLOB"))
+    def keystoreType = column[Option[String]]("keystore_type", O.Nullable, O.DBType("TEXT"))
+    def keystorePassword = column[Option[String]]("keystore_pass", O.Nullable, O.DBType("TEXT"))
+    def keyPassword = column[Option[String]]("key_pass", O.Nullable, O.DBType("TEXT"))
+    def community = column[Long]("community")
+    def * = (id, title, message, includeMessage, includeTestStatus, includeTestCases, includeDetails, includeSignature, keystoreFile, keystoreType, keystorePassword, keyPassword, community) <> (ConformanceCertificates.tupled, ConformanceCertificates.unapply)
+  }
+  val conformanceCertificates = TableQuery[ConformanceCertificatesTable]
+  val insertConformanceCertificate = (conformanceCertificates returning conformanceCertificates.map(_.id))
+
 }

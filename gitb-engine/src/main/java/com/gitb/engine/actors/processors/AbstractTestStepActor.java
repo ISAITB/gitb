@@ -6,7 +6,11 @@ import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.japi.Creator;
 import com.gitb.core.StepStatus;
+import com.gitb.core.TestRole;
+import com.gitb.core.TestRoleEnumeration;
 import com.gitb.engine.actors.Actor;
+import com.gitb.engine.actors.util.ActorUtils;
+import com.gitb.engine.commands.interaction.PrepareForStopCommand;
 import com.gitb.engine.commands.interaction.RestartCommand;
 import com.gitb.engine.commands.interaction.StartCommand;
 import com.gitb.engine.commands.interaction.StopCommand;
@@ -15,19 +19,23 @@ import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.events.model.InputEvent;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.events.model.TestStepStatusEvent;
-import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.engine.testcase.TestCaseScope;
-import com.gitb.tdl.*;
+import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.tdl.IfStep;
 import com.gitb.tr.*;
-import com.gitb.tr.ObjectFactory;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.reflect.ConstructorUtils;
 import org.apache.commons.lang.reflect.FieldUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import javax.xml.datatype.DatatypeConfigurationException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Created by serbay on 9/11/14.
@@ -53,6 +61,10 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		this.step = step;
 	}
 
+	protected Marker addMarker() {
+		return MarkerFactory.getDetachedMarker(scope.getContext().getSessionId());
+	}
+
 	/**
 	 * Initialize the Processor in this function
 	 *
@@ -71,6 +83,27 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	 * Stop your execution
 	 */
 	protected abstract void stop();
+
+	/**
+	 * Prepare to stop the execution
+	 */
+	protected void prepareForStop(PrepareForStopCommand command) {
+		for(ActorRef child : getContext().getChildren()) {
+			try {
+				if (!child.equals(command.getOriginalSource())) {
+					ActorUtils.askBlocking(child, command);
+				}
+			} catch (Exception e) {
+				throw new IllegalStateException(e);
+			}
+		}
+		reactToPrepareForStop();
+		getSender().tell(Boolean.TRUE, self());
+	}
+
+	protected void reactToPrepareForStop() {
+		// Do nothing by default
+	}
 
 	/**
 	 * If step is waiting input in some phase, implement this to handle the input event
@@ -101,7 +134,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			super.preStart();
 			init();
 		} catch (Exception e) {
-			logger.error("" + this + " caught an exception", e);
+			logger.error(addMarker(), "" + this + " caught an exception", e);
 			error(e);
 		}
 	}
@@ -126,6 +159,8 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 				start();
 			} else if (message instanceof StopCommand) {
 				stop();
+			} else if (message instanceof PrepareForStopCommand) {
+				prepareForStop((PrepareForStopCommand)message);
 			} else if (message instanceof RestartCommand) {
 				stop();
 				init();
@@ -134,7 +169,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 				throw new GITBEngineInternalError("Invalid command [" + message.getClass().getName() + "]");
 			}
 		} catch (Exception e) {
-			logger.error("" + this + " caught an exception", e);
+			logger.error(addMarker(), "" + this + " caught an exception", e);
 			error(e);
 		}
 	}
@@ -222,7 +257,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	protected void updateTestStepStatus(ActorContext context, StatusEvent statusEvent, TestStepReportType report, boolean reportTestStepStatus, boolean logError) {
 
 		if (logError && statusEvent instanceof ErrorStatusEvent) {
-			logger.error("An error status received in [" + stepId + "]", ((ErrorStatusEvent) statusEvent).getException());
+			logger.error(addMarker(), "An error status received in [" + stepId + "]", ((ErrorStatusEvent) statusEvent).getException());
 		}
 
 		StepStatus status = statusEvent.getStatus();
@@ -230,7 +265,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 
 		if (status == StepStatus.COMPLETED || status == StepStatus.ERROR) {
 			if (statusEvent instanceof ErrorStatusEvent) {
-				logger.debug("An error status event is received. Stopping execution of the test step actor [" + stepId + "].");
+				logger.debug(addMarker(), "An error status event is received. Stopping execution of the test step actor [" + stepId + "].");
 
 				self().tell(new StopCommand(scope.getContext().getSessionId()), self());
 				self().tell(PoisonPill.getInstance(), self());
@@ -277,7 +312,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			report.setResult(TestResultType.SUCCESS);
 
 		} catch (DatatypeConfigurationException e) {
-			logger.error("An error occurred while trying to construct a completed report for [" + step + "] with id [" + stepId + "]");
+			logger.error(addMarker(), "An error occurred while trying to construct a completed report for [" + step + "] with id [" + stepId + "]");
 		}
 
 		return report;
@@ -302,7 +337,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			report.getReports().getInfoOrWarningOrError().add(trObjectFactory.createTestAssertionGroupReportsTypeError(error));
 
 		} catch (DatatypeConfigurationException e) {
-			logger.error("An error occurred while trying to construct a report for exception [" + ((ErrorStatusEvent) statusEvent).getException() + "]", e);
+			logger.error(addMarker(), "An error occurred while trying to construct a report for exception [" + ((ErrorStatusEvent) statusEvent).getException() + "]", e);
 		}
 		return report;
 	}
@@ -330,4 +365,21 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	public static String getName(String actorName) {
 		return actorName + "-" + RandomStringUtils.random(5, true, true);
 	}
+
+	TestRole getSUTActor() {
+		return getSUTActors().get(0);
+	}
+
+	List<TestRole> getSUTActors() {
+		List<TestRole> sutActors = new ArrayList<>();
+		if (scope.getContext().getTestCase() != null && scope.getContext().getTestCase().getActors() != null && scope.getContext().getTestCase().getActors().getActor() != null) {
+			for (TestRole role: scope.getContext().getTestCase().getActors().getActor()) {
+				if (role.getRole() == TestRoleEnumeration.SUT) {
+					sutActors.add(role);
+				}
+			}
+		}
+		return Collections.unmodifiableList(sutActors);
+	}
+
 }

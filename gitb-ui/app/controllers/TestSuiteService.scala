@@ -1,11 +1,13 @@
 package controllers
 
+import java.nio.file.Paths
+
 import controllers.util.{ParameterExtractor, ResponseConstructor}
-import managers.TestSuiteManager
-import org.slf4j.{LoggerFactory, Logger}
+import managers.{ReportManager, TestSuiteManager}
+import org.apache.commons.io.FileUtils
+import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc.{Action, Controller}
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import utils.JsonUtil
+import utils.{JsonUtil, RepositoryUtils, ZipArchiver}
 
 
 /**
@@ -32,6 +34,25 @@ class TestSuiteService extends Controller {
 		val testSuites = TestSuiteManager.getTestSuitesWithTestCases()
 		val json = JsonUtil.jsTestSuiteList(testSuites).toString()
 		ResponseConstructor.constructJsonResponse(json)
+	}
+
+	def downloadTestSuite(testSuiteId: Long) = Action.apply {
+		val testSuite = TestSuiteManager.getTestSuites(Some(List(testSuiteId))).head
+		val testSuiteFolder = RepositoryUtils.getTestSuitesResource(testSuite.specification, testSuite.shortname)
+		val testSuiteOutputPath = Paths.get(
+			ReportManager.getTempFolderPath().toFile.getAbsolutePath,
+			"test_suite",
+			"test_suite."+testSuiteId.toString+"."+System.currentTimeMillis()+".zip"
+		)
+		val zipArchiver = new ZipArchiver(testSuiteFolder.toPath, testSuiteOutputPath)
+		zipArchiver.zip()
+
+		Ok.sendFile(
+			content = testSuiteOutputPath.toFile,
+			inline = false,
+			fileName = _ => testSuiteOutputPath.toFile.getName,
+			onClose = () => FileUtils.deleteQuietly(testSuiteOutputPath.toFile)
+		)
 	}
 
 }

@@ -84,7 +84,7 @@ public class HttpProxySender extends HttpSender {
             HttpEntity responseEntity = response.getEntity();
             responseContent = EntityUtils.toByteArray(responseEntity);
         } catch (Exception e) {
-            logger.error("Error sending message to proxied receiver", e);
+            logger.error(addMarker(), "Error sending message to proxied receiver", e);
             throw e;
         } finally {
             if (response != null) {

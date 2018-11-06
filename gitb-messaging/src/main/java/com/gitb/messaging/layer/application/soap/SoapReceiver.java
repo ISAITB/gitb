@@ -20,7 +20,7 @@ public class SoapReceiver extends HttpReceiver {
 	@Override
 	public Message receive(List<Configuration> configurations, Message inputs) throws Exception {
 		Message httpMessage = super.receive(configurations, inputs);
-		SoapReceiverCore impl = new SoapReceiverCore();
+		SoapReceiverCore impl = new SoapReceiverCore(this);
 		return impl.receive(httpMessage, configurations, inputs);
 	}
 

@@ -15,6 +15,8 @@ class ConformanceStatementDetailController
     @configurations = []
     @testSuites = []
     @runTestClicked = false
+    @endpointsCollapsed = true
+    @testStatus = ''
 
     @parameterTableColumns = [
       {
@@ -35,21 +37,6 @@ class ConformanceStatementDetailController
       }
     ]
 
-    @optionTableColumns = [
-      {
-        field: 'sname',
-        title: 'Short Name'
-      }
-      {
-        field: 'fname',
-        title: 'Full Name'
-      }
-      {
-        field: 'description',
-        title: 'Description'
-      }
-    ]
-
     @initalizeFields()
 
   initalizeFields: () =>
@@ -58,13 +45,24 @@ class ConformanceStatementDetailController
       testSuiteResults = []
       testSuiteIds = []
       testSuiteData = {}
+      completedCount = 0
+      failedCount = 0
+      undefinedCount = 0
+      totalCount = 0
       for result in data
         testCase = {}
         testCase.id = result.testCaseId
         testCase.sname = result.testCaseName
         testCase.description = result.testCaseDescription
         testCase.result = result.result
-        if (!testSuiteData[result.testSuiteId]?)
+        totalCount += 1
+        if testCase.result == @Constants.TEST_CASE_RESULT.FAILURE
+          failedCount += 1
+        else if testCase.result == @Constants.TEST_CASE_RESULT.UNDEFINED
+          undefinedCount += 1
+        else 
+          completedCount += 1
+        if !testSuiteData[result.testSuiteId]?
           currentTestSuite = {}
           testSuiteIds.push(result.testSuiteId)
           currentTestSuite.id = result.testSuiteId
@@ -84,6 +82,7 @@ class ConformanceStatementDetailController
       for testSuiteId in testSuiteIds
         testSuiteResults.push(testSuiteData[testSuiteId])
       @testSuites = testSuiteResults
+      @testStatus = @DataService.testStatusText(completedCount, failedCount, undefinedCount)
 
     @ConformanceService.getActorsWithIds [@actorId]
     .then (data) =>
@@ -124,10 +123,21 @@ class ConformanceStatementDetailController
         id: endpoint.id
         parameters: _.map endpoint.parameters, (parameter) =>
           repr = _.cloneDeep parameter
-          repr.configured =  _.some @configurations, (configuration) =>
-            parameter.id == configuration.parameter &&
-              Number(parameter.endpoint) == Number(configuration.endpoint) &&
-              configuration.value?
+
+          relevantConfig = _.find(@configurations, (config) => 
+            parameter.id == config.parameter && Number(parameter.endpoint) == Number(config.endpoint)
+          );
+          if relevantConfig?
+            repr.value = relevantConfig.value
+            repr.configured = relevantConfig.value?
+          else
+            repr.configured = false
+
+          if relevantConfig?.value? && parameter.kind == 'BINARY'
+            repr.fileName = parameter.name
+            if relevantConfig.extension?
+              repr.fileName += relevantConfig.extension
+            repr.mimeType = relevantConfig.mimeType
           repr
 
   onExpand: (testSuite) =>
@@ -165,7 +175,7 @@ class ConformanceStatementDetailController
         parameter: () => parameter
         systemId: () => parseInt @systemId
         configuration: () => oldConfiguration
-      size: 'sm'
+      size: 'm'
 
     instance = @$modal.open options
     instance.result
@@ -177,6 +187,8 @@ class ConformanceStatementDetailController
         when @Constants.OPERATION.UPDATE
           if oldConfiguration? && result.configuration.value?
             oldConfiguration.value = result.configuration.value
+            oldConfiguration.mimeType = result.configuration.mimeType
+            oldConfiguration.extension = result.configuration.extension
         when @Constants.OPERATION.DELETE
           if oldConfiguration?
             _.remove @configurations, (configuration) =>
@@ -220,60 +232,7 @@ class ConformanceStatementDetailController
         @exportPending = false
     )
 
-class EditEndpointConfigurationController
-  name: 'EditEndpointConfigurationController'
-
-  @$inject = ['$log', '$window', 'SystemService', 'Constants', '$modalInstance', 'systemId', 'endpoint', 'parameter', 'configuration']
-  constructor: (@$log, @$window, @SystemService, @Constants, @$modalInstance, @systemId, @endpoint, @parameter, @oldConfiguration) ->
-    @$log.debug "Constructing #{@name}"
-    @file = null
-
-    if !@oldConfiguration?
-      @configuration =
-        system: @systemId
-        endpoint: @endpoint.id
-        parameter: @parameter.id
-    else
-      @configuration = _.cloneDeep @oldConfiguration
-
-    @isBinary = @parameter.kind == "BINARY"
-    @isConfiugrationSet = @configuration.value?
-
-  onFileSelect: (files) =>
-    @file = _.head files
-
-  closeDialog: () =>
-    if !@oldConfiguration?
-      @$modalInstance.close
-        configuration: @configuration
-        operation: @Constants.OPERATION.ADD
-    else
-      @$modalInstance.close
-        configuration: @configuration
-        operation: @Constants.OPERATION.UPDATE
-
-  cancel: () =>
-    @$modalInstance.dismiss()
-
-  save: () =>
-    if @parameter.kind == "SIMPLE"
-      if @configuration.value?
-        @SystemService.saveEndpointConfiguration @endpoint.id, @configuration
-        .then () => @closeDialog()
-        .catch (error) => @$modalInstance.dismiss error
-    else if @parameter.kind == "BINARY"
-      if @file?
-        reader = new FileReader()
-        reader.readAsDataURL @file
-        reader.onload = (event) =>
-          result = event.target.result
-
-          @configuration.value = result
-          @SystemService.saveEndpointConfiguration @endpoint.id, @configuration
-          .then () => @closeDialog()
-          .catch (error) => @$modalInstance.dismiss error
-        reader.onerror = (event) =>
-          @$log.error "An error occurred while reading the file: ", @file, event
-          @$modalInstance.dismiss event
+  toggleEndpointDisplay: () =>
+    @endpointsCollapsed = !@endpointsCollapsed
 
 @controllers.controller 'ConformanceStatementDetailController', ConformanceStatementDetailController

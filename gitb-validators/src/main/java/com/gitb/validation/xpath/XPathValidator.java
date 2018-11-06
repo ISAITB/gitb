@@ -12,6 +12,7 @@ import org.kohsuke.MetaInfServices;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import java.util.List;
@@ -36,18 +37,11 @@ public class XPathValidator extends AbstractValidator {
 
     @Override
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
-        ObjectType contentToProcess;
-        DataType content = (DataType) inputs.get(CONTENT_ARGUMENT_NAME);
-        if (content instanceof BinaryType) {
-            contentToProcess = new ObjectType();
-            contentToProcess.deserialize((byte[])content.getValue());
-        } else {
-            contentToProcess = (ObjectType) inputs.get(CONTENT_ARGUMENT_NAME);
-        }
-        StringType expression = (StringType) inputs.get(XPATH_ARGUMENT_NAME);
+        ObjectType contentToProcess = (ObjectType)inputs.get(CONTENT_ARGUMENT_NAME).convertTo(DataType.OBJECT_DATA_TYPE);
+        StringType expression = (StringType) inputs.get(XPATH_ARGUMENT_NAME).convertTo(DataType.STRING_DATA_TYPE);
 
         //compile xpath expression
-        XPathImpl xPath = (XPathImpl) new XPathFactoryImpl().newXPath();
+        XPath xPath = new net.sf.saxon.xpath.XPathFactoryImpl().newXPath();
         XPathExpression xPathExpr;
         try {
             xPathExpr = xPath.compile((String)expression.getValue());

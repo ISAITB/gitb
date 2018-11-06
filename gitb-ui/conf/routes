@@ -92,6 +92,10 @@ POST    /domains/:domain_id/parameters                          @controllers.Con
 DELETE  /domains/:domain_id/parameters/:domain_parameter_id     @controllers.ConformanceService.deleteDomainParameter(domain_id : Long, domain_parameter_id : Long)
 POST    /domains/:domain_id/parameters/:domain_parameter_id     @controllers.ConformanceService.updateDomainParameter(domain_id : Long, domain_parameter_id : Long)
 
+DELETE  /testresults/obsolete/all           @controllers.ConformanceService.deleteAllObsoleteTestResults
+DELETE  /testresults/obsolete/system        @controllers.ConformanceService.deleteObsoleteTestResultsForSystem
+DELETE  /testresults/obsolete/community     @controllers.ConformanceService.deleteObsoleteTestResultsForCommunity
+
 # User management API
 GET     /admins/all                         @controllers.UserService.getSystemAdministrators
 POST    /admins/create                      @controllers.UserService.createSystemAdmin
@@ -119,6 +123,11 @@ GET     /notices/:id                        @controllers.LegalNoticeService.getL
 DELETE  /notices/:id                        @controllers.LegalNoticeService.deleteLegalNotice(id : Long)
 POST    /notices/:id                        @controllers.LegalNoticeService.updateLegalNotice(id : Long)
 
+GET     /errortemplates/default             @controllers.ErrorTemplateService.getCommunityDefaultErrorTemplate
+GET     /errortemplates/:id                 @controllers.ErrorTemplateService.getErrorTemplateById(id : Long)
+DELETE  /errortemplates/:id                 @controllers.ErrorTemplateService.deleteErrorTemplate(id : Long)
+POST    /errortemplates/:id                 @controllers.ErrorTemplateService.updateErrorTemplate(id : Long)
+
 GET     /organizations/all                  @controllers.OrganizationService.getOrganizations
 POST    /organizations/create               @controllers.OrganizationService.createOrganization
 GET     /organizations/users                @controllers.UserService.getUsersByOrganization(id : Long)
@@ -139,6 +148,8 @@ GET     /communities/pages/:id              @controllers.LandingPageService.getL
 POST    /communities/pages/create           @controllers.LandingPageService.createLandingPage
 GET     /communities/notices/:id            @controllers.LegalNoticeService.getLegalNoticesByCommunity(id: Long)
 POST    /communities/notices/create         @controllers.LegalNoticeService.createLegalNotice
+GET     /communities/errortemplates/:id     @controllers.ErrorTemplateService.getErrorTemplatesByCommunity(id: Long)
+POST    /communities/errortemplates/create  @controllers.ErrorTemplateService.createErrorTemplate
 GET     /communities/admins/all             @controllers.UserService.getCommunityAdministrators
 POST    /communities/admins/create          @controllers.UserService.createCommunityAdmin
 POST    /communities/admins/create          @controllers.UserService.createCommunityAdmin
@@ -146,6 +157,7 @@ POST    /communities/admins/:id             @controllers.UserService.updateCommu
 
 # Test Result management API
 GET	    /suts/:sut_id/conformance/:test_instance/report @controllers.TestResultService.getReportForTestInstance(sut_id:Long, test_instance:String)
+POST    /tests/binaryMetadata                           @controllers.TestResultService.getBinaryMetadata()
 
 # Test management API
 GET	    /tests/:test_id/definition          @controllers.TestService.getTestCaseDefinition(test_id : String)
@@ -164,6 +176,7 @@ GET     /ws                                 @controllers.WebSocketService.socket
 
 # Test suite management API
 DELETE  /suite/:suite_id/undeploy           @controllers.TestSuiteService.undeployTestSuite(suite_id: Long)
+GET     /suite/:suite_id                    @controllers.TestSuiteService.downloadTestSuite(suite_id: Long)
 GET     /suite                              @controllers.TestSuiteService.getTestSuites()
 
 # Endpoint management API
@@ -172,6 +185,7 @@ GET     /endpoints/:endpoint_id/parameters  @controllers.ConformanceService.getE
 GET     /endpoints/:endpoint_id/config      @controllers.SystemService.getEndpointConfigurations(endpoint_id: Long)
 GET     /endpoints/config                   @controllers.SystemService.getConfigurationsWithEndpointIds()
 POST    /endpoints/:endpoint_id/config      @controllers.SystemService.saveEndpointConfiguration(endpoint_id: Long)
+DELETE  /endpoints/:endpoint_id/config      @controllers.SystemService.deleteEndpointConfiguration(endpoint_id: Long)
 
 # Report management API
 GET     /reports                            @controllers.ReportService.getTestResults
@@ -179,6 +193,11 @@ GET     /reports/count                      @controllers.ReportService.getTestRe
 GET     /reports/:session_id                @controllers.ReportService.getTestResultOfSession(session_id: String)
 POST    /reports/create                     @controllers.ReportService.createTestReport
 GET     /reports/:session_id/steps          @controllers.ReportService.getTestStepResults(session_id:String)
+
+# Conformance certificate API
+GET     /conformancecertificate             @controllers.ConformanceService.getConformanceCertificateSettings(community_id: Long)
+POST    /conformancecertificate             @controllers.ConformanceService.updateConformanceCertificateSettings(community_id: Long)
+POST    /conformancecertificate/test        @controllers.ConformanceService.testKeystoreSettings(community_id: Long)
 
 # Repository file serving and management API
 GET     /repository/tests/:test_id                          @controllers.RepositoryService.getTestCase(test_id:String)
@@ -188,6 +207,8 @@ GET     /repository/export/testcase                         @controllers.Reposit
 GET     /repository/export/testcases                        @controllers.RepositoryService.exportTestCaseReports
 GET     /repository/export/teststep/:session_id/*path       @controllers.RepositoryService.exportTestStepReport(session_id: String, path)
 GET     /repository/export/conformance                      @controllers.RepositoryService.exportConformanceStatementReport
+POST    /repository/export/certificatedemo                  @controllers.RepositoryService.exportDemoConformanceCertificateReport(community_id: Long)
+POST    /repository/export/certificate                      @controllers.RepositoryService.exportConformanceCertificateReport()
 GET     /repository/resource/:test_id/*file                 @controllers.RepositoryService.getTestSuiteResource(test_id: String, file: String)
 
 # Map static resources from the /public folder to the /assets URL path

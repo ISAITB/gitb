@@ -1,14 +1,19 @@
  <div class="page domains create">
-	<div class="row">
-		<div class="col-md-10">
-			<div class="panel panel-default">
-				<div class="panel-heading">
-					<h4 class="title">Create Domain</h4>
-				</div>
-				<div class="panel-body">
-					<div class="col-md-10 col-md-offset-1" domain-details-form domain="createDomainCtrl.domain" on-submit="createDomainCtrl.createDomain" on-cancel="createDomainCtrl.cancel" show-save-button="true" show-cancel-button="true" save-disabled="createDomainCtrl.saveDisabled"></div>
-				</div>
-			</div>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">Create domain</h4>
 		</div>
+		<div class="panel-body">
+			<div class="col-md-10 col-md-offset-1" domain-details-form domain="createDomainCtrl.domain"></div>
+		</div>
+        <div class="panel-footer">
+            <div class="row">
+                <div class="col-md-3"></div>
+				<div class="col-md-8 btn-toolbar">
+					<button class="btn btn-default" type="button" ng-click="createDomainCtrl.createDomain()" ng-disabled="createDomainCtrl.saveDisabled()">Save</button>
+					<button class="btn btn-default" type="button" ng-click="createDomainCtrl.cancel()">Cancel</button>
+                </div>
+            </div>
+        </div>
 	</div>
 </div>

@@ -2,18 +2,20 @@ package jaxws;
 
 import actors.WebSocketActor;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.tbs.*;
 import com.gitb.tbs.Void;
-import javax.xml.ws.Endpoint;
-
 import managers.ReportManager;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.JacksonUtil;
+import utils.MimeUtil;
 
 import javax.jws.WebParam;
 import javax.jws.WebService;
 import javax.jws.soap.SOAPBinding;
+import javax.xml.ws.Endpoint;
 import javax.xml.ws.soap.Addressing;
 
 @Addressing(enabled = true, required = true)
@@ -22,6 +24,7 @@ import javax.xml.ws.soap.Addressing;
 public class TestbedService implements TestbedClient {
 
     private final static String END_STEP_ID = "-1";
+    private final static String LOG_EVENT_STEP_ID = "-999";
 
     private final Logger logger = LoggerFactory.getLogger(TestbedService.class);
 
@@ -40,22 +43,52 @@ public class TestbedService implements TestbedClient {
             //save report
             if(step.equals(END_STEP_ID)){
                 ReportManager.finishTestReport(session, testStepStatus.getReport().getResult());
+                // Send the end session message with a slight delay to avoid race conditions with other ending messages.
+                new java.util.Timer().schedule(
+                        new java.util.TimerTask() {
+                            @Override
+                            public void run() {
+                                //send status updates
+                                WebSocketActor.broadcast(session, status);
+                            }
+                        },
+                        1000
+                );
+            } else if (step.equals(LOG_EVENT_STEP_ID)) {
+                //send log event
+                WebSocketActor.broadcast(session, status, false);
             } else {
                 ReportManager.createTestStepReport(session, testStepStatus);
+                //send status updates
+                WebSocketActor.broadcast(session, status);
             }
-            //send status updates
-            WebSocketActor.broadcast(session, status);
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error("Error during test session update for session ["+testStepStatus.getTcInstanceId()+"]", e);
         }
         return new Void();
     }
 
     @Override
     public Void interactWithUsers(@WebParam(name = "InteractWithUsersRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") InteractWithUsersRequest interactWithUsersRequest) {
+        String session = null;
         try {
+            if (interactWithUsersRequest.getInteraction() != null) {
+                for (Object obj: interactWithUsersRequest.getInteraction().getInstructionOrRequest()) {
+                    if (obj instanceof Instruction
+                            && StringUtils.isBlank(((Instruction)obj).getName())
+                            && ((Instruction)obj).getEmbeddingMethod() == ValueEmbeddingEnumeration.BASE_64
+                            && !StringUtils.isBlank(((Instruction)obj).getValue())) {
+                        // Determine the file name from the BASE64 content.
+                        String mimeType = MimeUtil.getMimeType(((Instruction)obj).getValue(), false);
+                        String extension = MimeUtil.getExtensionFromMimeType(mimeType);
+                        if (extension != null) {
+                            ((Instruction)obj).setName("file"+extension);
+                        }
+                    }
+                }
+            }
             String request = JacksonUtil.serializeInteractionRequest(interactWithUsersRequest);
-            String session = interactWithUsersRequest.getTcInstanceid();
+            session = interactWithUsersRequest.getTcInstanceid();
             String actor   = interactWithUsersRequest.getInteraction().getWith();
             //if actor not specified, send the request to all actors. Let client side handle this.
             if(actor == null) {
@@ -66,7 +99,7 @@ public class TestbedService implements TestbedClient {
                 WebSocketActor.push(session, actor, request);
             }
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            logger.error("Error during user interaction for session ["+session+"]", e);
         }
         return new Void();
     }

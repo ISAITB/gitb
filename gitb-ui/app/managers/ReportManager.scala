@@ -18,11 +18,14 @@ import com.gitb.utils.XMLUtils
 import config.Configurations
 import models.Enums.TestResultStatus
 import models._
+import org.apache.commons.codec.binary.Base64
+import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import persistence.db.PersistenceSchema.TestResultsTable
-import utils.{JacksonUtil, TimeUtil}
+import utils.signature.{CreateSignature, SigUtils}
+import utils.{JacksonUtil, MimeUtil, TimeUtil}
 
 import scala.collection.mutable.ListBuffer
 import scala.slick.driver.MySQLDriver.simple._
@@ -529,73 +532,199 @@ object ReportManager extends BaseManager {
     reportPath
   }
 
+  private def getSampleConformanceStatement(index: Int): ConformanceStatementFull = {
+    ConformanceStatementFull(
+      0L, "Sample Community",
+      0L, "Sample Organisation",
+      0L, "Sample System",
+      0L, "Sample Domain", "Sample Domain",
+      0L, "Sample Specification Actor", "Sample Specification Actor",
+      0L, "Sample Specification", "Sample Specification",
+      Some("Sample Test Suite "+index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), Some("SUCCESS"),
+      None, 0L, 0L, 0L)
+  }
+
+  def generateDemoConformanceCertificate(reportPath: Path, settings: ConformanceCertificates): Path = {
+    val conformanceInfo = new ListBuffer[ConformanceStatementFull]
+    conformanceInfo += getSampleConformanceStatement(1)
+    conformanceInfo += getSampleConformanceStatement(2)
+    conformanceInfo += getSampleConformanceStatement(3)
+    conformanceInfo += getSampleConformanceStatement(4)
+    conformanceInfo += getSampleConformanceStatement(5)
+    generateConformanceCertificate(reportPath, settings, conformanceInfo.toList)
+  }
+
+  def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, actorId: Long, systemId: Long): Path = {
+    val conformanceInfo = ConformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)))
+    generateConformanceCertificate(reportPath, settings, conformanceInfo)
+  }
+
+  private def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, conformanceInfo: List[ConformanceStatementFull]): Path = {
+    var pathToUseForPdf = reportPath
+    if (settings.includeSignature) {
+      pathToUseForPdf = reportPath.resolveSibling(reportPath.getFileName.toString + ".signed.pdf")
+    }
+    var title = "Conformance Certificate"
+    if (settings.title.isDefined && !StringUtils.isBlank(settings.title.get)) {
+      title = settings.title.get.trim
+    }
+    generateCoreConformanceReport(pathToUseForPdf, false, title, settings.includeDetails, settings.includeTestCases, settings.includeTestStatus, settings.includeMessage, settings.message, conformanceInfo)
+    // Add signature is needed.
+    if (settings.includeSignature) {
+      val keystore = SigUtils.loadKeystore(
+        Base64.decodeBase64(MimeUtil.getBase64FromDataURL(settings.keystoreFile.get)),
+        settings.keystoreType.get,
+        settings.keystorePassword.get.toCharArray
+      )
+      val signer = new CreateSignature(keystore, settings.keyPassword.get.toCharArray)
+      val fis = Files.newInputStream(pathToUseForPdf)
+      val fos = Files.newOutputStream(reportPath)
+      try {
+        var tsaUrl: String = null
+        if (Configurations.TSA_SERVER_ENABLED) {
+          tsaUrl = Configurations.TSA_SERVER_URL
+        }
+        signer.signDetached(fis, fos, tsaUrl)
+        fos.flush()
+      } catch {
+        case e: Exception =>
+          throw new IllegalStateException("Unable to generate signed PDF report", e)
+      } finally {
+        if (fos != null) fos.close()
+        if (fis != null) {
+          fis.close()
+          FileUtils.deleteQuietly(pathToUseForPdf.toFile)
+        }
+      }
+    }
+    reportPath
+  }
+
   def generateConformanceStatementReport(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long): Path = {
+    generateCoreConformanceReport(reportPath, addTestCases, "Conformance Statement Report", true, true, true, false, None, actorId, systemId)
+  }
+
+  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: String, addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, message: Option[String], actorId: Long, systemId: Long): Path = {
+    val conformanceInfo = ConformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)))
+    generateCoreConformanceReport(reportPath, addTestCases, title, addDetails, addTestCaseResults, addTestStatus, addMessage, message, conformanceInfo)
+  }
+
+  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: String, addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, message: Option[String], conformanceInfo: List[ConformanceStatementFull]): Path = {
     val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
     DB.withSession {
       implicit session =>
         val overview = new ConformanceStatementOverview()
-        val conformanceInfo = ConformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)))
 
         overview.setIncludeTestCases(addTestCases)
-        overview.setTitle("Conformance Statement Report")
+        overview.setTitle(title)
         overview.setTestDomain(conformanceInfo.head.domainNameFull)
         overview.setTestSpecification(conformanceInfo.head.specificationNameFull)
         overview.setTestActor(conformanceInfo.head.actorFull)
         overview.setOrganisation(conformanceInfo.head.organizationName)
         overview.setSystem(conformanceInfo.head.systemName)
-        overview.setTestCases(new util.ArrayList[TestCaseOverview]())
+        overview.setIncludeDetails(addDetails)
+        overview.setIncludeMessage(addMessage)
 
-        var totalTests = 0L
+        // Prepare message
+        var messageToUse:String  = null
+        if (addMessage && message.isDefined) {
+          // Replace placeholders
+          messageToUse = message.get.replace(Constants.PlaceholderActor, overview.getTestActor)
+          messageToUse = messageToUse.replace(Constants.PlaceholderDomain, overview.getTestDomain)
+          messageToUse = messageToUse.replace(Constants.PlaceholderOrganisation, overview.getOrganisation)
+          messageToUse = messageToUse.replace(Constants.PlaceholderSpecification, overview.getTestSpecification)
+          messageToUse = messageToUse.replace(Constants.PlaceholderSystem, overview.getSystem)
+          // Replace HTML elements
+          messageToUse = messageToUse.replaceAll("<strong(([\\s]+[^>]*)|())>", "<b>")
+          messageToUse = messageToUse.replaceAll("</strong>", "</b>")
+          messageToUse = messageToUse.replaceAll("<em(([\\s]+[^>]*)|())>", "<i>")
+          messageToUse = messageToUse.replaceAll("</em>", "</i>")
+          overview.setMessage(messageToUse)
+        }
+
+        if (addTestCaseResults) {
+          overview.setTestCases(new util.ArrayList[TestCaseOverview]())
+        }
+        var failedTests = 0L
         var completedTests = 0L
+        var undefinedTests = 0L
+        var totalTests = 0L
         var index = 1
         conformanceInfo.foreach { info =>
           totalTests += 1
-          if (TestResultStatus.withName(info.result.get) == TestResultStatus.SUCCESS) {
+          val result = TestResultStatus.withName(info.result.get)
+          if (result == TestResultStatus.SUCCESS) {
             completedTests += 1
-          }
-          val testCaseOverview = new TestCaseOverview()
-          testCaseOverview.setId(index.toString)
-          testCaseOverview.setTestSuiteName(info.testSuiteName.get)
-          testCaseOverview.setTestName(info.testCaseName.get)
-          if (info.testCaseDescription.isDefined) {
-            testCaseOverview.setTestDescription(info.testCaseDescription.get)
+          } else if (result == TestResultStatus.FAILURE) {
+            failedTests += 1
           } else {
-            testCaseOverview.setTestDescription("-")
+            undefinedTests += 1
           }
-          testCaseOverview.setReportResult(info.result.get)
+          if (addTestCaseResults) {
+            val testCaseOverview = new TestCaseOverview()
+            testCaseOverview.setId(index.toString)
+            testCaseOverview.setTestSuiteName(info.testSuiteName.get)
+            testCaseOverview.setTestName(info.testCaseName.get)
+            if (info.testCaseDescription.isDefined) {
+              testCaseOverview.setTestDescription(info.testCaseDescription.get)
+            } else {
+              testCaseOverview.setTestDescription("-")
+            }
+            testCaseOverview.setReportResult(info.result.get)
 
-          if (addTestCases) {
-            testCaseOverview.setTitle("Test Case Report #" + index)
-            testCaseOverview.setOrganisation(info.organizationName)
-            testCaseOverview.setSystem(info.systemName)
-            testCaseOverview.setTestDomain(info.domainNameFull)
-            testCaseOverview.setTestSpecification(info.specificationNameFull)
-            testCaseOverview.setTestActor(info.actorFull)
-            if (info.sessionId.isDefined) {
-              val testResult = PersistenceSchema.testResults.filter(_.testSessionId === info.sessionId.get).first
-              testCaseOverview.setStartTime(sdf.format(new Date(testResult.startTime.getTime)))
-              if (testResult.endTime.isDefined) {
-                testCaseOverview.setEndTime(sdf.format(new Date(testResult.endTime.get.getTime)))
-              }
-              val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.tpl)))
-              val folder = getPathForTestSessionObj(info.sessionId.get, Some(testResult), true).toFile
-              val list = ReportManager.getListOfTestSteps(testcasePresentation, folder)
-              for (stepReport <- list) {
-                testCaseOverview.getSteps.add(generator.fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, false))
-              }
-              if (testCaseOverview.getSteps.isEmpty) {
+            if (addTestCases) {
+              testCaseOverview.setTitle("Test Case Report #" + index)
+              testCaseOverview.setOrganisation(info.organizationName)
+              testCaseOverview.setSystem(info.systemName)
+              testCaseOverview.setTestDomain(info.domainNameFull)
+              testCaseOverview.setTestSpecification(info.specificationNameFull)
+              testCaseOverview.setTestActor(info.actorFull)
+              if (info.sessionId.isDefined) {
+                val testResult = PersistenceSchema.testResults.filter(_.testSessionId === info.sessionId.get).first
+                testCaseOverview.setStartTime(sdf.format(new Date(testResult.startTime.getTime)))
+                if (testResult.endTime.isDefined) {
+                  testCaseOverview.setEndTime(sdf.format(new Date(testResult.endTime.get.getTime)))
+                }
+                val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.tpl)))
+                val folder = getPathForTestSessionObj(info.sessionId.get, Some(testResult), true).toFile
+                val list = ReportManager.getListOfTestSteps(testcasePresentation, folder)
+                for (stepReport <- list) {
+                  testCaseOverview.getSteps.add(generator.fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, false))
+                }
+                if (testCaseOverview.getSteps.isEmpty) {
+                  testCaseOverview.setSteps(null)
+                }
+              } else {
+                testCaseOverview.setStartTime("-")
+                testCaseOverview.setEndTime("-")
                 testCaseOverview.setSteps(null)
               }
-            } else {
-              testCaseOverview.setStartTime("-")
-              testCaseOverview.setEndTime("-")
-              testCaseOverview.setSteps(null)
             }
+            overview.getTestCases.add(testCaseOverview)
+            index += 1
           }
-          overview.getTestCases.add(testCaseOverview)
-          index += 1
         }
-        overview.setTestStatus(completedTests+" / "+totalTests+" PASSED")
+
+        overview.setIncludeTestStatus(addTestStatus)
+        if (addTestStatus) {
+          val resultText = new StringBuilder()
+          resultText.append(completedTests).append(" of ").append(totalTests).append(" passed")
+          if (totalTests > completedTests) {
+            resultText.append(" (")
+            if (failedTests > 0) {
+              resultText.append(failedTests).append(" failed")
+              if (undefinedTests > 0) {
+                resultText.append(", ")
+              }
+            }
+            if (undefinedTests > 0) {
+              resultText.append(undefinedTests).append(" undefined")
+            }
+            resultText.append(")")
+          }
+          overview.setTestStatus(resultText.toString())
+        }
+
         Files.createDirectories(reportPath.getParent)
         val fos = Files.newOutputStream(reportPath)
         try {

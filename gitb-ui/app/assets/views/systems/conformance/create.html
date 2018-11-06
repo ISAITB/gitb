@@ -13,14 +13,14 @@
 	<div class="step-content select-domain">
 	  <div table-directive columns="createConformanceStatementCtrl.tableColumns"
                data="createConformanceStatementCtrl.domains"
-               on-select="createConformanceStatementCtrl.onDomainSelect"></div>
+               on-select="createConformanceStatementCtrl.onDomainSelect" row-style="createConformanceStatementCtrl.styleDefaultDomain"></div>
 	  <button class="btn btn-primary pull-right"
                   ng-click="createConformanceStatementCtrl.nextStep()">Next</button>
 	</div>
 	<div class="step-content select-spec">
 	  <div table-directive columns="createConformanceStatementCtrl.tableColumns"
                data="createConformanceStatementCtrl.specs"
-               on-select="createConformanceStatementCtrl.onSpecificationSelect"></div>
+               on-select="createConformanceStatementCtrl.onSpecificationSelect" row-style="createConformanceStatementCtrl.styleDefaultSpecification"></div>
 	  <button class="btn btn-primary pull-right"
                   ng-click="createConformanceStatementCtrl.nextStep()">Next</button>
 	</div>
@@ -30,7 +30,7 @@
                data="createConformanceStatementCtrl.actors"
                on-select="createConformanceStatementCtrl.onActorSelect"
                on-deselect="createConformanceStatementCtrl.onActorDeselect"
-               allow-multi-select="true"></div>
+               allow-multi-select="true" row-style="createConformanceStatementCtrl.styleDefaultActor"></div>
           <div class="no-data-found" ng-if="createConformanceStatementCtrl.actors.length == 0">
             <span>There are no actors defined for this specification.</span>
           </div>

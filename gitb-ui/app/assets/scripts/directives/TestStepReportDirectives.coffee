@@ -17,7 +17,6 @@
       template: ''+
         '<div class="row test-step-report {{step.type}}-type">'+
           '<div class="col-md-6">'+
-            #'<span class="report-item"><strong>Type: </strong>{{report.type}}</span>'+
             '<span class="report-item"><strong>Result: </strong>{{report.result}}</span>'+
           '</div>'+
           '<div class="col-md-6">'+
@@ -209,8 +208,8 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
     directive
 ]
 
-@directives.directive 'anyContentView', ['$log', '$modal', 'RecursionHelper',
-($log, $modal, RecursionHelper) ->
+@directives.directive 'anyContentView', ['$log', '$modal', 'RecursionHelper', 'DataService', 'TestService', 'ErrorService'
+($log, $modal, RecursionHelper, DataService, TestService, ErrorService) ->
     $log.debug 'Constructing any-content-view with the context'
 
     directive =
@@ -225,6 +224,9 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
             '<span ng-if="isValueTooLong">{{value.length}} bytes</span>'+
             '<a href="" class="pull-right clearfix open" ng-click="open()" ng-if="isValueTooLong">'+
               'Open in editor' +
+            '</a>'+
+            '<a href="" class="pull-right clearfix open" style="padding-right: 20px;" ng-click="download()" ng-if="isValueTooLong">'+
+              'Download as file' +
             '</a>'+
           '</div>'+
           '<div class="items">'+
@@ -258,7 +260,17 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
 
             scope.open = (lineNumber) =>
               openEditorWindow $modal, scope.context.name, scope.value, scope.report, lineNumber
-
+            
+            scope.download = () =>
+              TestService.getBinaryMetadata(scope.context.value, (scope.context.embeddingMethod == 'BASE64'))
+                .then (info) =>
+                  if scope.context.embeddingMethod == 'BASE64'
+                    bb = DataService.b64toBlob(scope.context.value, info.mimeType)
+                  else
+                    bb = new Blob([scope.context.value], {type: info.mimeType})
+                  saveAs(bb, 'file'+info.extension)
+                .catch (error) =>	
+                  ErrorService.showErrorMessage(error)
           return
 
     directive

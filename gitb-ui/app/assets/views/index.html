@@ -4,55 +4,15 @@
           <div class="container">
             <img ng-src="{{indexCtrl.logo}}" class="logo"/>
             <nav class="nav-main mega-menu">
-              <ul class="nav nav-pills nav-main" id="mainMenu">
-                <li>
+              <ul class="nav nav-pills nav-main" id="mainMenu" ng-if="indexCtrl.isAuthenticated">
+                <li ng-if="!indexCtrl.DataService.user.onetime">
                   <a ui-sref="app.home">Home</a>
                 </li>
-                <!--<li>-->
-                  <!--<a ui-sref="app.tutorial">Tutorial</a>-->
-                <!--</li>-->
-                <li ng-if="indexCtrl.isAuthenticated">
+                <li ng-if="indexCtrl.isAuthenticated && !indexCtrl.DataService.user.onetime">
                   <a class="pointer" ng-click="indexCtrl.onTestsClick()">Tests</a>
                 </li>
-                <li ng-if="indexCtrl.DataService.isSystemAdmin || indexCtrl.DataService.isCommunityAdmin">
+                <li ng-if="(indexCtrl.DataService.isSystemAdmin || indexCtrl.DataService.isCommunityAdmin) && !indexCtrl.DataService.user.onetime">
                   <a ui-sref="app.admin.dashboard.list">Admin</a>
-                </li>
-                <!-- Login Menu Item -->
-                <li class="dropdown mega-menu-item mega-menu-signin signin" id="headerAccount" ng-cloak ng-if="!indexCtrl.isAuthenticated">
-                  <a class="dropdown-toggle" ng-click="indexCtrl.redirect('/login')">
-                    <i class="fa fa-user"></i> Login
-                    <i class="fa fa-angle-down"></i>
-                  </a>
-                  <ul class="dropdown-menu">
-                    <li>
-                      <div class="mega-menu-content">
-                        <div class="row">
-                          <div class="col-md-12">
-                            <!-- Login -->
-                            <div class="signin-form">
-                              <!-- include reusable login form component -->
-                              <ng-include src="'assets/views/login-form.html'"></ng-include>
-                            </div>
-                            <!-- Register -->
-                            <div class="signup-form">
-                              <!-- include reusable register form component -->
-                              <ng-include src="'assets/views/register-form.html'"></ng-include>
-
-                              <p class="log-in-info">Already have an account? <a href="#" id="headerSignIn">Log In!</a></p>
-                            </div>
-                            <!-- Reset Password -->
-                            <div class="recover-form">
-                              <!-- include reusable reset form component -->
-                              <ng-include src="'assets/views/recover-form.html'"></ng-include>
-
-                              <p class="log-in-info">Already have an account? <a href="#" id="headerRecoverCancel">Log In!</a></p>
-                            </div>
-
-                          </div>
-                        </div>
-                      </div>
-                    </li>
-                  </ul>
                 </li>
                 <!-- User menu item, show when authenticated -->
                 <li class="dropdown mega-menu-item mega-menu-signin signin logged" id="headerAccount" ng-cloak ng-if="indexCtrl.isAuthenticated">
@@ -66,15 +26,12 @@
                         <div class="row">
                           <div class="col-md-8">
                             <div class="user-avatar">
-                              <!-- <div class="img-thumbnail"> -->
-                              <!--   <img src="assets/images/clients/client.jpg" alt=""> -->
-                              <!-- </div> -->
-                              <p><strong>{{indexCtrl.DataService.user.name}}</strong><!-- <span>CEO & Founder - Okler</span> --></p>
+                              <p><strong>{{indexCtrl.DataService.user.name}}</strong></p>
                             </div>
                           </div>
                           <div class="col-md-4">
                             <ul class="list-account-options">
-                              <li>
+                              <li ng-if="!indexCtrl.DataService.user.onetime">
                                 <a class="pointer" ng-click="indexCtrl.redirect('/settings')">Settings</a>
                               </li>
                               <li>

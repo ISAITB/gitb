@@ -3,6 +3,7 @@ package com.gitb.messaging.layer.application.soap;
 import com.gitb.core.Configuration;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.layer.application.http.HttpMessagingHandler;
+import com.gitb.messaging.layer.application.http.HttpSender;
 import com.gitb.types.*;
 import com.gitb.utils.ConfigurationUtils;
 import org.slf4j.Logger;
@@ -19,18 +20,24 @@ import java.util.Map;
 
 public class SoapSenderCore {
 
+    private final HttpSender parent;
+
+    public SoapSenderCore(HttpSender parent) {
+        this.parent = parent;
+    }
+
     private static final Logger logger = LoggerFactory.getLogger(SoapSenderCore.class);
 
     public Message send(List<Configuration> configurations, Message message) throws Exception {
-        logger.debug("Sending soap message");
+        logger.debug(parent.addMarker(), "Sending soap message");
 
         SOAPMessage soapMessage = constructSoapMessage(configurations, message);
 
-        logger.debug("Constructed soap message");
+        logger.debug(parent.addMarker(), "Constructed soap message");
 
         Message httpMessage = constructHttpMessageFromSoapMessage(configurations, message, soapMessage);
 
-        logger.debug("Constructed http message from soap message");
+        logger.debug(parent.addMarker(), "Constructed http message from soap message");
 
         configurations
                 .add(ConfigurationUtils.constructConfiguration(HttpMessagingHandler.HTTP_METHOD_CONFIG_NAME, SoapSender.SOAP_HTTP_METHOD));

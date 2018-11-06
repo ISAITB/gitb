@@ -167,7 +167,7 @@ public class PeppolAS2Receiver extends HttpsReceiver{
                     "Please check the following error description: " + e.getMessage());
             return message;
         }
-        logger.debug("MIC calculated: " + mic.getValue());
+        logger.debug(addMarker(), "MIC calculated: " + mic.getValue());
         transaction.setParameter(AS2MIC.class, new AS2MIC((String)mic.getValue())); //save to transaction
 
         //put business header, business message and MIC value into output
@@ -213,7 +213,7 @@ public class PeppolAS2Receiver extends HttpsReceiver{
         String originalMIC = transaction.getParameter(AS2MIC.class).getMessageIntegrityCheck();
         String receivedMIC = checkMDN(mimeBody, originalMIC);
         StringType mic = new StringType(receivedMIC);
-        logger.debug("MIC received: " + mic.getValue());
+        logger.debug(addMarker(), "MIC received: " + mic.getValue());
     }
 
     private boolean checkAS2Headers(MapType headers){
@@ -274,7 +274,7 @@ public class PeppolAS2Receiver extends HttpsReceiver{
             throw new GITBEngineInternalError("MIC is not matched, original MIC: " +  originalMIC + " received MIC: " + receivedMIC);
         }
 
-        logger.debug("MICs matched, MIC: " + originalMIC);
+        logger.debug(addMarker(), "MICs matched, MIC: " + originalMIC);
 
         return receivedMIC;
 

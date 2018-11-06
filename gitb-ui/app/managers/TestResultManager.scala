@@ -1,8 +1,10 @@
 package managers
 
 import models._
+import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
+import play.api.Logger
 
 import scala.slick.driver.MySQLDriver.simple._
 
@@ -113,5 +115,70 @@ object TestResultManager extends BaseManager {
     val q1 = for {t <- PersistenceSchema.testResults if t.actorId === id} yield (t.actorId)
     q1.update(None)
   }
+
+  def deleteObsoleteTestResultsForSystemWrapper(systemId: Long): Unit = {
+    DB.withTransaction { implicit session =>
+      deleteObsoleteTestResultsForSystem(systemId)
+    }
+  }
+
+  def deleteObsoleteTestResultsForCommunityWrapper(communityId: Long): Unit = {
+    DB.withTransaction { implicit session =>
+      deleteObsoleteTestResultsForCommunity(communityId)
+    }
+  }
+
+  def deleteSessionDataFromFileSystem(testResult: TestResult)(implicit session: Session): Unit = {
+    val path = ReportManager.getPathForTestSessionObj(testResult.sessionId, Some(testResult), true)
+    try {
+        FileUtils.deleteDirectory(path.toFile)
+    } catch {
+      case e:Exception => {
+        Logger.warn("Unable to delete folder ["+path.toFile.getAbsolutePath+"] for obsolete session [" + testResult.sessionId + "]")
+      }
+    }
+  }
+
+  def deleteObsoleteTestResultsForSystem(systemId: Long)(implicit session: Session): Unit = {
+    val query = PersistenceSchema.testResults
+      .filter(x => x.sutId === systemId &&
+        (x.testSuiteId.isEmpty || x.testCaseId.isEmpty ||
+          x.communityId.isEmpty || x.organizationId.isEmpty ||
+          x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty))
+    val results = query.list
+    results.foreach{ result =>
+      deleteSessionDataFromFileSystem(result)
+    }
+    query.delete
+  }
+
+  def deleteObsoleteTestResultsForCommunity(communityId: Long)(implicit session: Session): Unit = {
+    val query = PersistenceSchema.testResults
+      .filter(x => x.communityId === communityId &&
+        (x.testSuiteId.isEmpty || x.testCaseId.isEmpty ||
+          x.sutId.isEmpty || x.organizationId.isEmpty ||
+          x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty))
+    val results = query.list
+    results.foreach{ result =>
+      deleteSessionDataFromFileSystem(result)
+    }
+    query.delete
+  }
+
+  def deleteAllObsoleteTestResults(): Unit = {
+    DB.withTransaction { implicit session =>
+      val query = PersistenceSchema.testResults
+        .filter(x =>
+          x.testSuiteId.isEmpty || x.testCaseId.isEmpty ||
+            x.sutId.isEmpty || x.organizationId.isEmpty || x.communityId.isEmpty ||
+            x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty)
+      val results = query.list
+      results.foreach{ result =>
+        deleteSessionDataFromFileSystem(result)
+      }
+      query.delete
+    }
+  }
+
 
 }

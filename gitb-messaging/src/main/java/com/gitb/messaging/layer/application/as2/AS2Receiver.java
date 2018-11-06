@@ -133,7 +133,7 @@ public class AS2Receiver extends HttpReceiver {
         if (receivedMIC == null || !receivedMIC.replaceAll (" ", "").equals (originalMIC.replaceAll (" ", ""))) {
             throw new Exception("MIC is not matched, original MIC: " +  originalMIC + " return mic: " + receivedMIC);
         } else {
-            logger.debug("MICs matched, MIC: " + originalMIC);
+            logger.debug(addMarker(), "MICs matched, MIC: " + originalMIC);
         }
 
         //validate disposition type

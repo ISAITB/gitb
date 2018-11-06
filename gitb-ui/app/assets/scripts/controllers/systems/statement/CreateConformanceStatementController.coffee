@@ -17,11 +17,11 @@ class CreateConformanceStatementController
     @tableColumns = [
       {
         field: 'sname',
-        title: 'Short Name'
+        title: 'Short name'
       }
       {
         field: 'fname',
-        title: 'Full Name'
+        title: 'Full name'
       }
       {
         field: 'description',
@@ -47,15 +47,15 @@ class CreateConformanceStatementController
     @steps = [
       {
         id: 1
-        title: 'Select Domain'
+        title: 'Select domain'
       }
       {
         id: 2
-        title: 'Select Specification'
+        title: 'Select specification'
       }
       {
         id: 3
-        title: 'Select Actors'
+        title: 'Select actors'
       }
     ]
 
@@ -90,8 +90,17 @@ class CreateConformanceStatementController
 
   onWizardFinish: () =>
     @saveConformanceStatement()
-    .then () =>
-      @$state.go "app.systems.detail.conformance.list", {id: @systemId}
+    .then (data) =>
+      if data? && data.length? && data.length > 0 && data[0].error_description?
+        error = {
+          statusText: "Error"
+          data: {
+            error_description: data[0].error_description
+          }
+        }      
+        @ErrorService.showErrorMessage(error)
+      else
+        @$state.go "app.systems.detail.conformance.list", {id: @systemId}
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -111,20 +120,22 @@ class CreateConformanceStatementController
   nextStep: () =>
     @$scope.$broadcast 'wizard-directive:next'
 
-  getDomains: () ->
+  getDomains: () =>
     @domains = []
 
     @ConformanceService.getDomains(@domainId)
     .then(
       (data) =>
         @domains = data
+        if @domains? && @domains.length == 1
+          @onDomainSelect(@domains[0])
         @$scope.$broadcast 'wizard-directive:start'
       ,
       (error) =>
         @ErrorService.showErrorMessage(error)
     )
 
-  getSpecs: (domainId) ->
+  getSpecs: (domainId) =>
     @specs  = []
     @selectedDomain = domainId
 
@@ -132,19 +143,33 @@ class CreateConformanceStatementController
     .then(
       (data) =>
         @specs = data
+        if @specs? && @specs.length == 1
+          @onSpecificationSelect(@specs[0])
       ,
       (error) =>
         @ErrorService.showErrorMessage(error)
     )
 
-  getActors: (specId) ->
+  getActors: (specId) =>
     @actors = []
     @selectedSpec = specId
 
     @ConformanceService.getActorsWithSpecificationId(specId)
     .then(
       (data) =>
-        @actors = data
+        if data? 
+          if data.length == 1
+            @actors = data
+            @onActorSelect(@actors[0])
+          else if data.length > 1
+            defaultActor = _.find(data, (actor) =>
+              actor.default == true
+            )
+            if defaultActor?
+              @actors.push(defaultActor)
+              @onActorSelect(defaultActor)
+            else
+              @actors = data
       ,
       (error) =>
         @ErrorService.showErrorMessage(error)
@@ -155,5 +180,23 @@ class CreateConformanceStatementController
       @SystemService.defineConformanceStatement @systemId, @selectedSpec, actor.id, []
 
     @$q.all promises
+
+  styleDefaultDomain: () =>
+    if @domains?.length == 1
+      'selected'
+    else
+      ''
+
+  styleDefaultSpecification: () =>
+    if @specs?.length == 1
+      'selected'
+    else
+      ''
+
+  styleDefaultActor: (rowActor) =>
+    if @actors?.length == 1
+      'selected'
+    else
+      ''
 
 @controllers.controller 'CreateConformanceStatementController', CreateConformanceStatementController

@@ -7,11 +7,11 @@ class AdminDomainsController
 		@tableColumns = [
 			{
 				field: 'sname',
-				title: 'Short Name'
+				title: 'Short name'
 			}
 			{
 				field: 'fname',
-				title: 'Full Name'
+				title: 'Full name'
 			}
 			{
 				field: 'description',

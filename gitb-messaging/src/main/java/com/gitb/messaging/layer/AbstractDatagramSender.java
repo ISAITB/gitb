@@ -8,6 +8,8 @@ import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
 import com.gitb.messaging.model.udp.IDatagramSender;
 import com.gitb.utils.ConfigurationUtils;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -26,6 +28,10 @@ public abstract class AbstractDatagramSender implements IDatagramSender {
 	protected AbstractDatagramSender(SessionContext session, TransactionContext transaction) {
 		this.session = session;
 		this.transaction = transaction;
+	}
+
+	protected Marker addMarker() {
+		return MarkerFactory.getDetachedMarker(session.getTestSessionId());
 	}
 
 	@Override

@@ -67,6 +67,20 @@ object ParameterExtractor {
     }
   }
 
+  def optionalIntBodyParameter(request:Request[AnyContent], parameter:String):Option[Int] = {
+    try {
+      val paramList = request.body.asFormUrlEncoded.get(parameter)
+      if(paramList.length > 0){
+        Some(paramList(0).toInt)
+      } else{
+        None
+      }
+    } catch {
+      case e:NoSuchElementException =>
+        None
+    }
+  }
+
   def extractUserId(request:Request[AnyContent]):Long = {
     request.headers.get(Parameters.USER_ID).get.toLong
   }
@@ -77,7 +91,8 @@ object ParameterExtractor {
     val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
     val landingPageId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LANDING_PAGE_ID)
     val legalNoticeId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LEGAL_NOTICE_ID)
-    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, false, landingPageId, legalNoticeId, communityId)
+    val errorTemplateId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.ERROR_TEMPLATE_ID)
+    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, false, landingPageId, legalNoticeId, errorTemplateId, communityId)
   }
 
   def extractCommunityInfo(request:Request[AnyContent]):Communities = {
@@ -92,28 +107,28 @@ object ParameterExtractor {
     val name = requiredBodyParameter(request, Parameters.USER_NAME)
     val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
     val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), UserRole.SystemAdmin.id.toShort, 0L)
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.SystemAdmin.id.toShort, 0L)
   }
 
   def extractCommunityAdminInfo(request:Request[AnyContent]):Users = {
     val name = requiredBodyParameter(request, Parameters.USER_NAME)
     val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
     val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), UserRole.CommunityAdmin.id.toShort, 0L)
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.CommunityAdmin.id.toShort, 0L)
   }
 
   def extractAdminInfo(request:Request[AnyContent]):Users = {
     val name = requiredBodyParameter(request, Parameters.USER_NAME)
     val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
     val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), UserRole.VendorAdmin.id.toShort, 0L)
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.VendorAdmin.id.toShort, 0L)
   }
 
   def extractUserInfo(request:Request[AnyContent]):Users = {
     val name = requiredBodyParameter(request, Parameters.USER_NAME)
     val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
     val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), UserRole.VendorUser.id.toShort, 0L)
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.VendorUser.id.toShort, 0L)
   }
 
   def extractSystemInfo(request:Request[AnyContent]):Systems = {
@@ -174,8 +189,20 @@ object ParameterExtractor {
 		val actorId:String = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID)
 		val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
 		val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
+    var default:Option[Boolean] = None
+    val defaultStr = ParameterExtractor.optionalBodyParameter(request, Parameters.ACTOR_DEFAULT)
+    if (defaultStr.isDefined) {
+      default = Some(defaultStr.get.toBoolean)
+    } else {
+      default = Some(false)
+    }
+    var displayOrder:Option[Short] = None
+    val displayOrderStr = ParameterExtractor.optionalBodyParameter(request, Parameters.DISPLAY_ORDER)
+    if (displayOrderStr.isDefined) {
+      displayOrder = Some(displayOrderStr.get.toShort)
+    }
 		val domainId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
-		Actors(id, actorId, name, description, domainId)
+		Actors(id, actorId, name, description, default, displayOrder, domainId)
 	}
 
   def extractEndpoint(request:Request[AnyContent]):Endpoints = {
@@ -218,6 +245,15 @@ object ParameterExtractor {
     val default = requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
     val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
     LegalNotices(0L, name, desc, content, default, communityId)
+  }
+
+  def extractErrorTemplateInfo(request:Request[AnyContent]):ErrorTemplates = {
+    val name = requiredBodyParameter(request, Parameters.NAME)
+    val desc = optionalBodyParameter(request, Parameters.DESCRIPTION)
+    val content = requiredBodyParameter(request, Parameters.CONTENT)
+    val default = requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
+    val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    ErrorTemplates(0L, name, desc, content, default, communityId)
   }
 
 	def extractIdsQueryParameter(request:Request[AnyContent]): Option[List[String]] = {

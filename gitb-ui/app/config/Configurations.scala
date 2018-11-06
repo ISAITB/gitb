@@ -3,7 +3,6 @@ package config
 import java.util.Properties
 
 import com.typesafe.config.{Config, ConfigFactory}
-import play.api.Play
 
 object Configurations {
 
@@ -54,6 +53,28 @@ object Configurations {
   var USERGUIDE_OA = ""
   var USERGUIDE_TA = ""
   var USERGUIDE_CA = ""
+
+  var EMAIL_ATTACHMENTS_MAX_SIZE = -1
+  var EMAIL_ATTACHMENTS_MAX_COUNT = -1
+  var EMAIL_ATTACHMENTS_ALLOWED_TYPES_STR = ""
+  var EMAIL_ATTACHMENTS_ALLOWED_TYPES: Set[String] = null
+
+  var ANTIVIRUS_SERVER_ENABLED = false
+  var ANTIVIRUS_SERVER_HOST = ""
+  var ANTIVIRUS_SERVER_PORT = -1
+  var ANTIVIRUS_SERVER_TIMEOUT = 0
+
+  var PROXY_SERVER_ENABLED = false
+  var PROXY_SERVER_HOST = ""
+  var PROXY_SERVER_PORT = -1
+  var PROXY_SERVER_AUTH_ENABLED = false
+  var PROXY_SERVER_AUTH_USERNAME = ""
+  var PROXY_SERVER_AUTH_PASSWORD = ""
+
+  var TSA_SERVER_ENABLED = false
+  var TSA_SERVER_URL = ""
+
+  var MASTER_PASSWORD: Array[Char] = null
 
   var SMTP_PROPERTIES = new Properties()
 
@@ -116,6 +137,40 @@ object Configurations {
     USERGUIDE_OA = fromEnv("USERGUIDE_OA", conf.getString("userguide.oa"))
     USERGUIDE_CA = fromEnv("USERGUIDE_CA", conf.getString("userguide.ca"))
     USERGUIDE_TA = fromEnv("USERGUIDE_TA", conf.getString("userguide.ta"))
+
+    EMAIL_ATTACHMENTS_MAX_SIZE = fromEnv("EMAIL_ATTACHMENTS_MAX_SIZE", conf.getString("email.attachments.maxSize")).toInt
+    EMAIL_ATTACHMENTS_MAX_COUNT = fromEnv("EMAIL_ATTACHMENTS_MAX_COUNT", conf.getString("email.attachments.maxCount")).toInt
+    EMAIL_ATTACHMENTS_ALLOWED_TYPES_STR = fromEnv("EMAIL_ATTACHMENTS_ALLOWED_TYPES", conf.getString("email.attachments.allowedTypes"))
+    val tempSet = new scala.collection.mutable.HashSet[String]()
+    EMAIL_ATTACHMENTS_ALLOWED_TYPES_STR.split(",").map(_.trim).foreach{ mimeType =>
+      tempSet += mimeType
+    }
+    EMAIL_ATTACHMENTS_ALLOWED_TYPES = tempSet.toSet
+
+    ANTIVIRUS_SERVER_ENABLED = fromEnv("ANTIVIRUS_SERVER_ENABLED", conf.getString("antivirus.enabled")).toBoolean
+    if (ANTIVIRUS_SERVER_ENABLED) {
+      ANTIVIRUS_SERVER_HOST = fromEnv("ANTIVIRUS_SERVER_HOST", conf.getString("antivirus.host"))
+      ANTIVIRUS_SERVER_PORT = fromEnv("ANTIVIRUS_SERVER_PORT", conf.getString("antivirus.port")).toInt
+      ANTIVIRUS_SERVER_TIMEOUT = fromEnv("ANTIVIRUS_SERVER_TIMEOUT", conf.getString("antivirus.timeout")).toInt
+    }
+
+    MASTER_PASSWORD = fromEnv("MASTER_PASSWORD", conf.getString("masterPassword")).toCharArray
+
+    PROXY_SERVER_ENABLED = fromEnv("PROXY_SERVER_ENABLED", conf.getString("proxy.enabled")).toBoolean
+    if (PROXY_SERVER_ENABLED) {
+      PROXY_SERVER_HOST = fromEnv("PROXY_SERVER_HOST", conf.getString("proxy.host")).toString
+      PROXY_SERVER_PORT = fromEnv("PROXY_SERVER_PORT", conf.getString("proxy.port")).toInt
+      PROXY_SERVER_AUTH_ENABLED = fromEnv("PROXY_SERVER_AUTH_ENABLED", conf.getString("proxy.auth.enabled")).toBoolean
+      if (PROXY_SERVER_AUTH_ENABLED) {
+        PROXY_SERVER_AUTH_USERNAME = fromEnv("PROXY_SERVER_AUTH_USERNAME", conf.getString("proxy.auth.user")).toString
+        PROXY_SERVER_AUTH_PASSWORD = fromEnv("PROXY_SERVER_AUTH_PASSWORD", conf.getString("proxy.auth.password")).toString
+      }
+    }
+
+    TSA_SERVER_ENABLED = fromEnv("TSA_SERVER_ENABLED", conf.getString("signature.tsa.enabled")).toBoolean
+    if (TSA_SERVER_ENABLED) {
+      TSA_SERVER_URL = fromEnv("TSA_SERVER_URL", conf.getString("signature.tsa.url")).toString
+    }
 
   }
 

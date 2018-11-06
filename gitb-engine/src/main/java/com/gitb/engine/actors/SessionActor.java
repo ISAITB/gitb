@@ -9,6 +9,7 @@ import com.gitb.engine.SessionManager;
 import com.gitb.engine.TestbedService;
 import com.gitb.engine.actors.processors.TestCaseProcessorActor;
 import com.gitb.engine.actors.supervisors.SessionSupervisor;
+import com.gitb.engine.actors.util.ActorUtils;
 import com.gitb.engine.commands.interaction.*;
 import com.gitb.engine.events.model.TestStepStatusEvent;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -16,6 +17,7 @@ import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.tbs.SUTConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 import java.util.List;
 import java.util.concurrent.Callable;
@@ -182,6 +184,14 @@ public class SessionActor extends Actor {
                         }
 
                         sendStatusUpdate(event);
+                    } else if (message instanceof PrepareForStopCommand) {
+                        ActorRef child = getContext().getChild(TestCaseProcessorActor.NAME);
+                        try {
+                            ActorUtils.askBlocking(child, message);
+                        } catch (Exception e) {
+                            throw new IllegalStateException(e);
+                        }
+                        getSender().tell(Boolean.TRUE, self());
                     } else if (message instanceof StopCommand) {
                         ActorRef child = getContext()
                                 .getChild(TestCaseProcessorActor.NAME);
@@ -223,7 +233,7 @@ public class SessionActor extends Actor {
 	}
 
 	private void unexpectedCommand(Object message, TestCaseContext context) {
-        logger.error("InternalError", "Invalid command [" + message.getClass().getName() + "] in state [" + context.getCurrentState() + "]");
+        logger.error(MarkerFactory.getDetachedMarker(context.getSessionId()), "InternalError", "Invalid command [" + message.getClass().getName() + "] in state [" + context.getCurrentState() + "]");
         throw new GITBEngineInternalError("Invalid command [" + message.getClass().getName() + "] in state [" + context.getCurrentState() + "]");
     }
 

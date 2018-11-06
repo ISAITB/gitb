@@ -188,7 +188,9 @@ public class TestCaseUtils {
         decision.setId(id);
         decision.setDesc(description.getDesc());
         decision.setThen(convertSequence(id + TRUE , scriptlets, description.getThen()));
-        decision.setElse(convertSequence(id + FALSE, scriptlets, description.getElse()));
+        if (description.getElse() != null) {
+            decision.setElse(convertSequence(id + FALSE, scriptlets, description.getElse()));
+        }
         return decision;
     }
 

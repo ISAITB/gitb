@@ -7,16 +7,15 @@ import javax.xml.transform.stream.StreamSource
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl.TestCase
 import com.gitb.utils.XMLUtils
-import config.Configurations
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
-import managers.ReportManager.STATUS_UPDATES_PATH
-import managers.{ReportManager, TestCaseManager, TestResultManager}
+import managers._
+import models.ConformanceCertificate
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang.StringUtils
 import org.slf4j.LoggerFactory
 import play.api.mvc._
-import utils.{JacksonUtil, JsonUtil, RepositoryUtils}
+import utils.{JacksonUtil, JsonUtil, MimeUtil, RepositoryUtils}
 
 /**
  * Created by serbay on 10/16/14.
@@ -30,7 +29,13 @@ class RepositoryService extends Controller {
 	def getTestSuiteResource(testId: String, filePath:String): Action[AnyContent] = Action {
 		implicit request =>
       val testCase = TestCaseManager.getTestCaseForIdWrapper(testId).get
-      val file = RepositoryUtils.getTestSuitesResource(testCase.targetSpec, codec.decode(filePath))
+      val testSuite = TestSuiteManager.getTestSuiteOfTestCaseWrapper(testCase.id)
+      var filePathToLookup = codec.decode(filePath)
+      if (!filePath.startsWith(testSuite.shortname) && !filePath.startsWith("/"+testSuite.shortname)) {
+        // Prefix with the test suite name.
+        filePathToLookup = testSuite.shortname + "/" + filePathToLookup
+      }
+      val file = RepositoryUtils.getTestSuitesResource(testCase.targetSpec, filePathToLookup)
 			logger.debug("Reading test resource ["+codec.decode(filePath)+"] definition from the file ["+file+"]")
 			if(file.exists()) {
 				Ok.sendFile(file, true)
@@ -155,6 +160,74 @@ class RepositoryService extends Controller {
       }
     }
     ReportManager.generateConformanceStatementReport(reportPath, includeTests, actorId.toLong, systemId.toLong)
+    Ok.sendFile(
+      content = reportPath.toFile,
+      fileName = _ => reportPath.toFile.getName
+    )
+  }
+
+  def exportConformanceCertificateReport(): Action[AnyContent] = Action.apply { implicit request =>
+    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+
+    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
+    var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
+    val reportPath = Paths.get(
+      ReportManager.getTempFolderPath().toFile.getAbsolutePath,
+      "conformance_reports",
+      "c"+communityId+"_a"+actorId+"_s"+systemId,
+      "report_"+System.currentTimeMillis+".pdf"
+    )
+    try {
+      FileUtils.deleteDirectory(reportPath.toFile.getParentFile)
+    } catch  {
+      case e:Exception => {
+        // Ignore these are anyway deleted every hour
+      }
+    }
+    if (settings.includeSignature) {
+      // The signature information needs to be looked up from the stored data.
+      val storedSettings = ConformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+      val completeSettings = new ConformanceCertificate(settings)
+      completeSettings.keystoreFile = storedSettings.get.keystoreFile
+      completeSettings.keystoreType = storedSettings.get.keystoreType
+      completeSettings.keyPassword = Some(MimeUtil.decryptString(storedSettings.get.keyPassword.get))
+      completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
+      settings = completeSettings.toCaseObject
+    }
+    ReportManager.generateConformanceCertificate(reportPath, settings, actorId, systemId)
+    Ok.sendFile(
+      content = reportPath.toFile,
+      fileName = _ => reportPath.toFile.getName
+    )
+  }
+
+  def exportDemoConformanceCertificateReport(communityId: Long): Action[AnyContent] = Action.apply { implicit request =>
+    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
+    var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
+    val reportPath = Paths.get(
+      ReportManager.getTempFolderPath().toFile.getAbsolutePath,
+      "conformance_reports",
+      "c"+communityId,
+      "report_"+System.currentTimeMillis+".pdf"
+    )
+    try {
+      FileUtils.deleteDirectory(reportPath.toFile.getParentFile)
+    } catch  {
+      case e:Exception => {
+        // Ignore these are anyway deleted every hour
+      }
+    }
+    if (settings.includeSignature && (settings.keystorePassword.isEmpty || settings.keyPassword.isEmpty)) {
+      // The passwords need to be looked up from the stored data.
+      val storedSettings = ConformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+      val completeSettings = new ConformanceCertificate(settings)
+      completeSettings.keyPassword = Some(MimeUtil.decryptString(storedSettings.get.keyPassword.get))
+      completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
+      settings = completeSettings.toCaseObject
+    }
+    ReportManager.generateDemoConformanceCertificate(reportPath, settings)
     Ok.sendFile(
       content = reportPath.toFile,
       fileName = _ => reportPath.toFile.getName

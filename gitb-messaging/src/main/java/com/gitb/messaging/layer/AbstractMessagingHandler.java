@@ -18,6 +18,8 @@ import com.gitb.utils.ErrorUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -30,6 +32,11 @@ import java.util.*;
 public abstract class AbstractMessagingHandler implements IMessagingHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractMessagingHandler.class);
+    private String testSessionId;
+
+    protected Marker addMarker() {
+        return MarkerFactory.getDetachedMarker(testSessionId);
+    }
 
 	@Override
     public InitiateResponse initiate(List<ActorConfiguration> actorConfigurations) {
@@ -38,6 +45,7 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
 
     public InitiateResponse initiateWithSession(List<ActorConfiguration> actorConfigurations, String testSessionId) {
         try {
+            this.testSessionId = testSessionId;
             SessionManager sessionManager = SessionManager.getInstance();
 
             validateActorConfigurations(actorConfigurations);
@@ -338,7 +346,7 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
 	}
 
     protected MessagingReport onError(GITBEngineInternalError error) {
-        logger.error("An error occurred", error);
+        logger.error(addMarker(), "An error occurred", error);
         return MessagingHandlerUtils.generateErrorReport(error);
     }
 

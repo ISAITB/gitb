@@ -1,6 +1,7 @@
 class WebEditorService
 
-  constructor: () ->
+  @$inject = ['$q']
+  constructor: (@$q) ->
 
   editor: (height, initialContent) =>
     tinymce.init
@@ -16,11 +17,14 @@ class WebEditorService
       toolbar: 'undo redo | insert | styleselect | bold italic | charmap | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image'
       init_instance_callback: () -> tinymce.activeEditor.setContent(initialContent)
       content_css: 'assets/stylesheets/css/tinymce/tinymce.css'
+      branding: false
 
-  editorMinimal: (height, initialContent) =>
+  editorMinimal: (height, initialContent, className) =>
+    if !className?
+      className = 'mce-editor'
     tinymce.init
       mode: 'specific_textareas'
-      editor_selector: 'mce-editor'
+      editor_selector: className
       height: height
       menubar: false
       plugins: [
@@ -31,5 +35,24 @@ class WebEditorService
       toolbar: 'bold italic | charmap | bullist numlist outdent indent | link'
       init_instance_callback: () -> tinymce.activeEditor.setContent(initialContent)
       content_css: 'assets/stylesheets/css/tinymce/tinymce.css'
+      branding: false
+
+  editorForPdfInput: (height, initialContent, className) =>
+    if !className?
+      className = 'mce-editor'
+    tinymce.init
+      mode: 'specific_textareas'
+      editor_selector: className
+      height: height
+      menubar: false
+      plugins: [
+        'autolink lists link image charmap anchor',
+        'visualblocks code fullscreen',
+        'contextmenu paste code'
+      ]
+      toolbar: 'bold italic | charmap | bullist numlist | link'
+      init_instance_callback: () -> tinymce.activeEditor.setContent(initialContent)
+      content_css: 'assets/stylesheets/css/tinymce/tinymce.css'
+      branding: false
 
 services.service('WebEditorService', WebEditorService)

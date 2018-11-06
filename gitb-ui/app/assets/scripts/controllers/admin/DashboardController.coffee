@@ -27,7 +27,7 @@ class DashboardController
       }
       {
         field: 'organization',
-        title: 'Organization',
+        title: 'Organisation',
         sortable: true
       }
       {
@@ -66,7 +66,7 @@ class DashboardController
       }
       {
         field: 'organization',
-        title: 'Organization',
+        title: 'Organisation',
         sortable: true
       }
       {
@@ -630,7 +630,7 @@ class DashboardController
       testResultMapper = @newTestResult
       tests = _.map data, (t) -> testResultMapper(t)
 
-      @exportAsCsv(["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organization", "System", "Start time", "End time", "Result", "Obsolete"], tests)
+      @exportAsCsv(["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organisation", "System", "Start time", "End time", "Result", "Obsolete"], tests)
 
   exportActiveSessionsToCsv: () =>
     communityIds = _.map @filters.community.selection, (s) -> s.id
@@ -648,7 +648,7 @@ class DashboardController
       testResultMapper = @newTestResult
       tests = _.map data, (testResult) -> testResultMapper(testResult)
 
-      @exportAsCsv(["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organization", "System", "Start time", "End time", "Result", "Obsolete"], tests)
+      @exportAsCsv(["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organisation", "System", "Start time", "End time", "Result", "Obsolete"], tests)
 
   rowStyle: (row) => 
     if row.obsolete
@@ -670,5 +670,20 @@ class DashboardController
         csv += if i < data.length then line + "\n" else line
       blobData = new Blob([csv], {type: 'text/csv'});
       saveAs(blobData, "export.csv");
+
+  deleteObsolete: () ->
+    @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete all obsolete test results?", "Yes", "No")
+    .then () =>
+      @deletePending = true
+      if @DataService.isCommunityAdmin and @DataService.community.id?
+        promise = @ConformanceService.deleteObsoleteTestResultsForCommunity(@DataService.community.id)
+      else 
+        promise = @ConformanceService.deleteObsoleteTestResults()
+      promise.then () =>
+        @deletePending = false
+        @$state.go @$state.current, {}, {reload: true}
+      .catch (error) =>
+          @deletePending = false
+          @ErrorService.showErrorMessage(error)
 
 @controllers.controller 'DashboardController', DashboardController

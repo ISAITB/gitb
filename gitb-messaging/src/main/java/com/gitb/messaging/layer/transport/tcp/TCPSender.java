@@ -29,7 +29,7 @@ public class TCPSender extends AbstractTransactionSender {
 
 		Socket socket = getSocket();
 
-		logger.debug("Socket created: " + socket);
+		logger.debug(addMarker(), "Socket created: " + socket);
 
 		OutputStream outputStream = socket.getOutputStream();
 
@@ -37,7 +37,7 @@ public class TCPSender extends AbstractTransactionSender {
 
         TCPMessagingHandler.sendBytes(outputStream, (byte[]) binaryData.getValue());
 
-		logger.debug("Flushed output stream: " + socket);
+		logger.debug(addMarker(), "Flushed output stream: " + socket);
 
         return message;
 	}

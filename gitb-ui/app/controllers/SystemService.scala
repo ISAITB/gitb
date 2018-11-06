@@ -2,11 +2,13 @@ package controllers
 
 import controllers.util._
 import exceptions._
-import managers.{SystemManager, TestCaseManager}
-import models.Systems
+import managers.{ParameterManager, SystemManager, TestCaseManager}
+import models.{Configs, Systems}
 import org.slf4j._
 import play.api.mvc._
-import utils.JsonUtil
+import utils.{JsonUtil, MimeUtil}
+
+import scala.collection.mutable.ListBuffer
 
 class SystemService extends Controller{
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemService])
@@ -22,13 +24,13 @@ class SystemService extends Controller{
 
   def registerSystemWithOrganization = Action.apply { request =>
     val system:Systems = ParameterExtractor.extractSystemWithOrganizationInfo(request)
-    SystemManager.registerSystem(system)
+    val otherSystem = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_SYSTEM)
+    SystemManager.registerSystemWrapper(system, otherSystem)
     // Return updated list of systems
     val systems = SystemManager.getSystemsByOrganization(system.owner)
     val json = JsonUtil.jsSystems(systems).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
-
 
   /**
    * Updates the profile of a system
@@ -41,7 +43,8 @@ class SystemService extends Controller{
       val descr:Option[String]   = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_DESC)
       val version:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_VERSION)
       val organisationId = ParameterExtractor.requiredBodyParameter(request, Parameters.ORGANIZATION_ID).toLong
-      SystemManager.updateSystemProfile(sut_id, sname, fname, descr, version)
+      val otherSystem = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_SYSTEM)
+      SystemManager.updateSystemProfile(sut_id, sname, fname, descr, version, otherSystem)
       // Return updated list of systems
       val systems = SystemManager.getSystemsByOrganization(organisationId)
       val json = JsonUtil.jsSystems(systems).toString()
@@ -81,13 +84,18 @@ class SystemService extends Controller{
 	    case _ => None
 	  }
 
-    SystemManager.defineConformanceStatement(sut_id, spec, actor, optionIds)
-    ResponseConstructor.constructEmptyResponse
+    val matchingStatements = SystemManager.getConformanceStatements(sut_id, Some(spec), Some(actor))
+    if (matchingStatements.isEmpty) {
+      SystemManager.defineConformanceStatementWrapper(sut_id, spec, actor, optionIds)
+      ResponseConstructor.constructEmptyResponse
+    } else {
+      ResponseConstructor.constructErrorResponse(ErrorCodes.CONFORMANCE_STATEMENT_EXISTS, "This conformance statement is already defined.")
+    }
   }
 
 	def getConformanceStatements(sut_id: Long) = Action.apply { request =>
-    val specification = ParameterExtractor.optionalQueryParameter(request, Parameters.SPEC)
-    val actor = ParameterExtractor.optionalQueryParameter(request, Parameters.ACTOR)
+    val specification = ParameterExtractor.optionalLongQueryParameter(request, Parameters.SPEC)
+    val actor = ParameterExtractor.optionalLongQueryParameter(request, Parameters.ACTOR)
 
 		val conformanceStatements = SystemManager.getConformanceStatements(sut_id, specification, actor)
     val json:String = JsonUtil.jsConformanceStatements(conformanceStatements).toString()
@@ -100,7 +108,7 @@ class SystemService extends Controller{
 				if(actorIds.size == 0) {
           ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "'ids' parameter should be non-empty")
 				} else {
-					SystemManager.deleteConformanceStatments(sut_id, actorIds)
+					SystemManager.deleteConformanceStatmentsWrapper(sut_id, actorIds)
           ResponseConstructor.constructEmptyResponse
 				}
 			}
@@ -131,7 +139,7 @@ class SystemService extends Controller{
   }
 
 	def getImplementedActors(sut_id:Long) = Action.apply { request =>
-		val actors = SystemManager.getImplementedActors(sut_id)
+		val actors = SystemManager.getImplementedActorsWrapper(sut_id)
     val json:String = JsonUtil.jsActors(actors).toString()
     ResponseConstructor.constructJsonResponse(json)
 	}
@@ -150,11 +158,27 @@ class SystemService extends Controller{
     ResponseConstructor.constructJsonResponse(json)
   }
 
-	def saveEndpointConfiguration(endpointId: Long) = Action.apply { request =>
+  def deleteEndpointConfiguration(endpointId: Long) = Action.apply { request =>
+    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+    val parameterId = ParameterExtractor.requiredQueryParameter(request, Parameters.PARAMETER_ID).toLong
+    SystemManager.deleteEndpointConfiguration(systemId, parameterId, endpointId)
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def saveEndpointConfiguration(endpointId: Long) = Action.apply { request =>
 		val jsConfig = ParameterExtractor.requiredBodyParameter(request, Parameters.CONFIG)
 		val config = JsonUtil.parseJsConfig(jsConfig)
 		SystemManager.saveEndpointConfiguration(config)
-    ResponseConstructor.constructEmptyResponse
+    val parameter = ParameterManager.getParameterById(config.parameter)
+    if (parameter.isDefined && parameter.get.kind == "BINARY") {
+      // Get the metadata for the parameter.
+      val detectedMimeType = MimeUtil.getMimeType(config.value, false)
+      val extension = MimeUtil.getExtensionFromMimeType(detectedMimeType)
+      val json = JsonUtil.jsBinaryMetadata(detectedMimeType, extension).toString()
+      ResponseConstructor.constructJsonResponse(json)
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
 	}
 
 	def getConfigurationsWithEndpointIds() = Action.apply { request =>
@@ -163,7 +187,19 @@ class SystemService extends Controller{
 		ids match {
 			case Some(list) => {
         val configurations = SystemManager.getConfigurationsWithEndpointIds(system, list)
-        val json = JsonUtil.jsConfigs(configurations).toString()
+        // Add mime-type and file name extension for binary ones.
+        val configsToReturn = new ListBuffer[models.Config]
+        configurations.foreach { config =>
+          // config.
+          if (MimeUtil.isDataURL(config.value)) {
+            val detectedMimeType = MimeUtil.getMimeTypeFromDataURL(config.value)
+            val extension = MimeUtil.getExtensionFromMimeType(detectedMimeType);
+            configsToReturn += new models.Config(config, detectedMimeType, extension)
+          } else {
+            configsToReturn += new models.Config(config, null, null)
+          }
+        }
+        val json = JsonUtil.jsConfigList(configsToReturn.toList).toString()
         ResponseConstructor.constructJsonResponse(json)
       }
 			case None =>

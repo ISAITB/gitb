@@ -1,6 +1,9 @@
 package controllers
 
+import java.io.ByteArrayInputStream
 import java.nio.file.Paths
+import java.security.cert.{Certificate, CertificateExpiredException, CertificateNotYetValidException, X509Certificate}
+import java.security.{KeyStore, NoSuchAlgorithmException}
 
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.{ErrorCodes, NotFoundException}
@@ -8,10 +11,13 @@ import managers._
 import models.ConformanceStatementFull
 import models.Enums.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
+import org.apache.commons.codec.binary.Base64
 import org.apache.commons.lang.RandomStringUtils
 import org.slf4j.{Logger, LoggerFactory}
+import persistence.AccountManager
 import play.api.mvc._
-import utils.JsonUtil
+import utils.signature.SigUtils
+import utils.{JsonUtil, MimeUtil}
 
 class ConformanceService extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ConformanceService])
@@ -60,8 +66,8 @@ class ConformanceService extends Controller {
    */
   def getActors = Action.apply { request =>
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
-    val result = ConformanceManager.getActors(ids)
-    val json = JsonUtil.jsActors(result).toString()
+    val result = ConformanceManager.getActorsWithSpecificationId(ids, None)
+    val json = JsonUtil.jsActorsNonCase(result).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
@@ -78,8 +84,8 @@ class ConformanceService extends Controller {
    * Gets actors defined  for the spec
    */
   def getSpecActors(spec_id: Long) = Action.apply {
-    val actors = ConformanceManager.getActorsWithSpecificationId(spec_id)
-    val json = JsonUtil.jsActors(actors).toString()
+    val actors = ConformanceManager.getActorsWithSpecificationId(None, Some(spec_id))
+    val json = JsonUtil.jsActorsNonCase(actors).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
@@ -151,7 +157,7 @@ class ConformanceService extends Controller {
     if (ActorManager.checkActorExistsInSpecification(actor.actorId, specificationId, None)) {
       ResponseConstructor.constructBadRequestResponse(500, "An actor with this ID already exists in the specification")
     } else {
-      ConformanceManager.createActor(actor, specificationId)
+      ConformanceManager.createActorWrapper(actor, specificationId)
       ResponseConstructor.constructEmptyResponse
     }
   }
@@ -357,4 +363,150 @@ class ConformanceService extends Controller {
     ResponseConstructor.constructJsonResponse(json)
   }
 
+  def deleteAllObsoleteTestResults() = Action.apply { request =>
+    val authUserId = ParameterExtractor.extractUserId(request)
+    if (AccountManager.isSystemAdmin(authUserId)) {
+      TestResultManager.deleteAllObsoleteTestResults()
+      ResponseConstructor.constructEmptyResponse
+    } else {
+      ResponseConstructor.constructUnauthorizedResponse(403, "You must be a test bed administrator")
+    }
+  }
+
+  def deleteObsoleteTestResultsForSystem() = Action.apply { request =>
+    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+    val authUserId = ParameterExtractor.extractUserId(request)
+    val system = SystemManager.getSystemByIdWrapper(systemId)
+    val organisation = OrganizationManager.getOrganizationById(system.get.owner)
+    if (AccountManager.isVendorAdmin(authUserId, system.get.owner)
+      || AccountManager.isCommunityAdmin(authUserId, organisation.community.get.id)
+      || AccountManager.isSystemAdmin(authUserId)) {
+      TestResultManager.deleteObsoleteTestResultsForSystemWrapper(systemId)
+      ResponseConstructor.constructEmptyResponse
+    } else {
+      ResponseConstructor.constructUnauthorizedResponse(403, "You must be an organisation, community or test bed administrator")
+    }
+  }
+
+  def deleteObsoleteTestResultsForCommunity() = Action.apply { request =>
+    val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
+    val authUserId = ParameterExtractor.extractUserId(request)
+    if (AccountManager.isCommunityAdmin(authUserId, communityId) || AccountManager.isSystemAdmin(authUserId)) {
+      TestResultManager.deleteObsoleteTestResultsForCommunityWrapper(communityId)
+      ResponseConstructor.constructEmptyResponse
+    } else {
+      ResponseConstructor.constructUnauthorizedResponse(403, "You must be a community or test bed administrator")
+    }
+  }
+
+  def getConformanceCertificateSettings(communityId: Long) = Action.apply { request =>
+    val authUserId = ParameterExtractor.extractUserId(request)
+    if (AccountManager.isCommunityAdmin(authUserId, communityId) || AccountManager.isSystemAdmin(authUserId)) {
+      val settings = ConformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+      val includeKeystoreData = ParameterExtractor.optionalQueryParameter(request, Parameters.INCLUDE_KEYSTORE_DATA).getOrElse("false").toBoolean
+      val json = JsonUtil.jsConformanceSettings(settings, includeKeystoreData)
+      if (json.isDefined) {
+        ResponseConstructor.constructJsonResponse(json.get.toString)
+      } else {
+        ResponseConstructor.constructEmptyResponse
+      }
+    } else {
+      ResponseConstructor.constructUnauthorizedResponse(403, "You must be a community or test bed administrator")
+    }
+  }
+
+  def updateConformanceCertificateSettings(communityId: Long) = Action.apply { request =>
+    val authUserId = ParameterExtractor.extractUserId(request)
+    if (AccountManager.isCommunityAdmin(authUserId, communityId) || AccountManager.isSystemAdmin(authUserId)) {
+      val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
+      val removeKeystore = ParameterExtractor.requiredBodyParameter(request, Parameters.REMOVE_KEYSTORE).toBoolean
+      val updatePasswords = ParameterExtractor.requiredBodyParameter(request, Parameters.UPDATE_PASSWORDS).toBoolean
+      val settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
+      ConformanceManager.updateConformanceCertificateSettings(settings, updatePasswords, removeKeystore)
+      ResponseConstructor.constructEmptyResponse
+    } else {
+      ResponseConstructor.constructUnauthorizedResponse(403, "You must be a community or test bed administrator")
+    }
+  }
+
+  def testKeystoreSettings(communityId: Long) = Action.apply { request =>
+    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
+    val updatePasswords = ParameterExtractor.requiredBodyParameter(request, Parameters.UPDATE_PASSWORDS).toBoolean
+    val settings = JsonUtil.parseJsConformanceCertificateSettingsForKeystoreTest(jsSettings, communityId)
+
+    var keystorePassword: String = null
+    var keyPassword: String = null
+    if (updatePasswords) {
+      if (settings.keystorePassword.isDefined && settings.keyPassword.isDefined) {
+        keystorePassword = settings.keystorePassword.get
+        keyPassword = settings.keyPassword.get
+      }
+    } else {
+      val storedSettings = ConformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+      if (storedSettings.isDefined && storedSettings.get.keystorePassword.isDefined && storedSettings.get.keyPassword.isDefined) {
+        keystorePassword = MimeUtil.decryptString(storedSettings.get.keystorePassword.get)
+        keyPassword = MimeUtil.decryptString(storedSettings.get.keyPassword.get)
+      }
+    }
+
+    if (keystorePassword == null || keyPassword == null) {
+      throw new IllegalArgumentException("Passwords could not be loaded")
+    }
+
+    var problem:String = null
+    var level: String = null
+
+    val keystoreBytes = Base64.decodeBase64(MimeUtil.getBase64FromDataURL(settings.keystoreFile.get))
+    val keystore = KeyStore.getInstance(settings.keystoreType.get)
+    val bin = new ByteArrayInputStream(keystoreBytes)
+    try {
+      keystore.load(bin, keystorePassword.toCharArray)
+    } catch {
+      case e: NoSuchAlgorithmException =>
+        problem = "The keystore defines an invalid integrity check algorithm"
+        level = "error"
+      case e: Exception =>
+        problem = "The keystore could not be opened"
+        level = "error"
+    } finally if (bin != null) bin.close()
+    if (problem == null) {
+      var certificate: Certificate = null
+      try {
+        certificate = SigUtils.checkKeystore(keystore, keyPassword.toCharArray)
+        if (certificate == null) {
+          problem = "A valid key could not be found in the keystore"
+          level = "error"
+        }
+      } catch {
+        case e: Exception =>
+          problem = "The key could not be read from the keystore"
+          level = "error"
+      }
+      if (problem == null) {
+        if (certificate.isInstanceOf[X509Certificate]) {
+          val x509Cert = certificate.asInstanceOf[X509Certificate]
+          try {
+            SigUtils.checkCertificateValidity(x509Cert)
+            if (!SigUtils.checkCertificateUsage(x509Cert) || !SigUtils.checkCertificateExtendedUsage(x509Cert)) {
+              problem = "The provided certificate is not valid for signature use"
+              level = "warning"
+            }
+          } catch {
+            case e: CertificateExpiredException =>
+              problem = "The contained certificate is expired"
+              level = "error"
+            case e: CertificateNotYetValidException =>
+              problem = "The certificate is not yet valid"
+              level = "error"
+          }
+        }
+      }
+    }
+    if (problem == null) {
+      ResponseConstructor.constructEmptyResponse
+    } else {
+      val json = JsonUtil.jsConformanceSettingsValidation(problem, level)
+      ResponseConstructor.constructJsonResponse(json.toString)
+    }
+  }
 }

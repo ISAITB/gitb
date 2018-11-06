@@ -2,7 +2,7 @@ package persistence
 
 import config.Configurations
 import exceptions._
-import managers.{BaseManager, CommunityManager, OrganizationManager}
+import managers._
 import models.Enums.UserRole.UserRole
 import models.Enums._
 import models._
@@ -45,10 +45,13 @@ object AccountManager extends BaseManager {
       //6) Get Legal Notice info
       val ln = PersistenceSchema.legalNotices.filter(_.id === org.legalNotice).firstOption
 
-      //7) Get Community info
+      //7) Get Error Template info
+      val et = PersistenceSchema.errorTemplates.filter(_.id === org.errorTemplate).firstOption
+
+      //8) Get Community info
       val c = PersistenceSchema.communities.filter(_.id === org.community).firstOption
 
-      new Organization(org, systems, admin.getOrElse(null), page.getOrElse(null), ln.getOrElse(null), c)
+      new Organization(org, systems, admin.getOrElse(null), page.getOrElse(null), ln.getOrElse(null), et.getOrElse(null), c)
     }
   }
 
@@ -101,14 +104,14 @@ object AccountManager extends BaseManager {
         val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name)
         q.update(name.get)
       }
-      //2) Update password of the user
-      if (password.isDefined && oldpassword.isDefined) {
+      //2) Update password of the user (passwords must be different
+      if (password.isDefined && oldpassword.isDefined && (password.get != oldpassword.get)) {
         //2.1) but first, check his old password if it is correct
         val user = PersistenceSchema.users.filter(_.id === userId).firstOption
         if (user.isDefined && BCrypt.checkpw(oldpassword.get, user.get.password)) {
           //2.1.1) password correct, replace it with the new one
-          val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.password)
-          q.update(BCrypt.hashpw(password.get, BCrypt.gensalt()))
+          val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.password, u.onetimePassword)
+          q.update(BCrypt.hashpw(password.get, BCrypt.gensalt()), false)
         } else {
           //2.1.2) incorrect password => send Invalid Credentials error
           throw InvalidAuthorizationException(ErrorCodes.INVALID_CREDENTIALS, "Invalid credentials")
@@ -123,7 +126,9 @@ object AccountManager extends BaseManager {
       val orgId = PersistenceSchema.users.filter(_.id === userId).firstOption.get.organization
 
       //2) Get all users of the organization
-      val users = PersistenceSchema.users.filter(_.organization === orgId).list
+      val users = PersistenceSchema.users.filter(_.organization === orgId)
+          .sortBy(_.name.asc)
+          .list
       users
     }
   }
@@ -134,6 +139,15 @@ object AccountManager extends BaseManager {
 
   def isSystemAdmin(userId: Long) = checkUserRole(userId, UserRole.SystemAdmin)
 
+  def isCommunityAdmin(userId: Long, communityId: Long): Boolean = {
+    UserManager.getCommunityAdministrators(communityId).map(u => u.id).contains(userId)
+  }
+
+  def isVendorAdmin(userId: Long, organisationId: Long): Boolean = {
+    val user = UserManager.getUserById(userId)
+    user.role == UserRole.VendorAdmin.id.toShort && user.organization.get.id == organisationId
+  }
+
   def checkUserRole(userId: Long, roles: UserRole*): Boolean = {
     DB.withSession { implicit session =>
       val option = PersistenceSchema.users.filter(_.id === userId).firstOption
@@ -142,7 +156,7 @@ object AccountManager extends BaseManager {
     }
   }
 
-  def submitFeedback(userId:Long, userEmail: String, messageTypeId: String, messageTypeDescription: String, messageContent: String): Unit = {
+  def submitFeedback(userId:Long, userEmail: String, messageTypeId: String, messageTypeDescription: String, messageContent: String, attachments: Array[AttachmentType]): Unit = {
     val user = getUserProfile(userId)
     var community: Community = null
     if (user.organization.isDefined) {
@@ -168,6 +182,6 @@ object AccountManager extends BaseManager {
     content += "<h2>Message content</h2>"
     content += "<p>"+messageContent+"</p>"
 
-    EmailUtil.sendEmail(Configurations.EMAIL_FROM, toAddresses, ccAddresses, subject, content, Configurations.SMTP_PROPERTIES, Configurations.EMAIL_SMTP_AUTH_USERNAME, Configurations.EMAIL_SMTP_AUTH_PASSWORD)
+    EmailUtil.sendEmail(Configurations.EMAIL_FROM, toAddresses, ccAddresses, subject, content, attachments, Configurations.SMTP_PROPERTIES, Configurations.EMAIL_SMTP_AUTH_USERNAME, Configurations.EMAIL_SMTP_AUTH_PASSWORD)
   }
 }

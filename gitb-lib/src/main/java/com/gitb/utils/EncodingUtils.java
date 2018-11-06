@@ -6,9 +6,11 @@ package com.gitb.utils;
 public class EncodingUtils {
 
     public static String extractBase64FromDataURL(String dataURL) {
-        int index = dataURL.indexOf("base64,");
-        if (index > 0) {
-            return dataURL.substring(index+"base64,".length());
+        if (dataURL != null) {
+            int index = dataURL.indexOf("base64,");
+            if (index > 0) {
+                return dataURL.substring(index+"base64,".length());
+            }
         }
         return null;
     }

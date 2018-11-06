@@ -149,6 +149,20 @@ public class MessagingHandlerUtils {
         return new MessagingReport(report, message);
     }
 
+	public static MessagingReport generateErrorReport(String message) {
+		TAR report = new TAR();
+		report.setResult(TestResultType.FAILURE);
+		report.setReports(new TestAssertionGroupReportsType());
+
+		BAR errorReport = new BAR();
+		errorReport.setDescription(message);
+
+		report.getReports()
+				.getInfoOrWarningOrError()
+				.add(objectFactory.createTestAssertionGroupReportsTypeError(errorReport));
+		return new MessagingReport(report);
+	}
+
 	public static MessagingReport generateErrorReport(GITBEngineInternalError error) {
 		TAR report = null;
 		try {

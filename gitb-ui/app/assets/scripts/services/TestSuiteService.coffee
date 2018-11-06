@@ -9,6 +9,12 @@ class TestSuiteService
 			path: jsRoutes.controllers.TestSuiteService.undeployTestSuite(testSuiteId).url
 			authenticate: true
 
+	downloadTestSuite: (testSuiteId) ->
+		@RestService.get
+			path: jsRoutes.controllers.TestSuiteService.downloadTestSuite(testSuiteId).url
+			authenticate: true
+			responseType: "arraybuffer"
+
 	getTestSuites: (ids) ->
 		if ids? and ids.length > 0
 			@RestService.get

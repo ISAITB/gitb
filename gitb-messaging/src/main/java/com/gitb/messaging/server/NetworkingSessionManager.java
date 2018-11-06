@@ -3,6 +3,7 @@ package com.gitb.messaging.server;
 import com.gitb.messaging.server.exceptions.ExistingSessionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ public class NetworkingSessionManager {
 		if(sessions.containsKey(address)) {
 			throw new ExistingSessionException(address, messagingSessionId);
 		} else {
-		    logger.debug("Test session ["+testSessionId+"] listening on port ["+port+"] for connections from ["+address+"]");
+		    logger.debug(MarkerFactory.getDetachedMarker(testSessionId), "Test session ["+testSessionId+"] listening on port ["+port+"] for connections from ["+address+"]");
 			sessions.put(address, new SessionInfo(messagingSessionId, testSessionId));
 			return messagingSessionId;
 		}

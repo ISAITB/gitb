@@ -28,13 +28,13 @@ class ConformanceStatementController
 
     @getConformanceStatements()
 
-  getConformanceStatements: () ->
+  getConformanceStatements: () =>
     systemId = @$stateParams["id"]
 
     @SystemService.getConformanceStatements systemId
     .then (conformanceStatements) =>
       @conformanceStatements = conformanceStatements
-      @conformanceStatementRepresentations = _.map conformanceStatements, (conformanceStatement) ->
+      @conformanceStatementRepresentations = _.map conformanceStatements, (conformanceStatement) =>
         transformedObject =
           id: conformanceStatement.actorId
           actor: conformanceStatement.actor
@@ -45,7 +45,7 @@ class ConformanceStatementController
           domainId: conformanceStatement.domainId
           domain: conformanceStatement.domain
           domainFull: conformanceStatement.domainFull
-          results: "#{conformanceStatement.results.completed}/#{conformanceStatement.results.total} PASSED"
+          results: @DataService.testStatusText(Number(conformanceStatement.results.completed), Number(conformanceStatement.results.failed), Number(conformanceStatement.results.undefined))
 
   onConformanceStatementSelect: (conformanceStatementRepresentation) =>
     @$state.go 'app.systems.detail.conformance.detail', {actor_id: conformanceStatementRepresentation.id, specId: conformanceStatementRepresentation.specificationId}

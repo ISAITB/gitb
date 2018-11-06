@@ -20,10 +20,11 @@
 				<thead>
 				<tr>
 					<th class="col-md-1" ng-if="!adminConformanceCtrl.DataService.isCommunityAdmin">Community</th>
-					<th class="col-md-1">Organization</th>
+					<th class="col-md-1">Organisation</th>
 					<th class="col-md-1">System</th>
 					<th class="col-md-1" ng-if="adminConformanceCtrl.DataService.isSystemAdmin || (adminConformanceCtrl.DataService.isCommunityAdmin && adminConformanceCtrl.DataService.community.domain === null)">Domain</th>
 					<th class="col-md-1">Specification</th>
+					<th class="col-md-1">Actor</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -75,6 +76,15 @@
 									helper-elements="filter" search-property="sname"
 									output-properties="id" on-item-click="adminConformanceCtrl.specificationClicked(data)"></div>
 						</td>
+						<td>
+							<div isteven-multi-select input-model="adminConformanceCtrl.filters.actor.filter"
+									output-model="adminConformanceCtrl.filters.actor.selection" button-label="actorId"
+									item-label="actorId"
+									tick-property="ticked" max-labels="0" max-height="250px"
+									translation="adminConformanceCtrl.translation"
+									helper-elements="filter" search-property="actorId"
+									output-properties="id" on-item-click="adminConformanceCtrl.actorClicked(data)"></div>
+						</td>
 					</tr>
 				</tbody>
 				</table>
@@ -83,7 +93,7 @@
 	</div>
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h4 id="conformance-statements-title" class="title">Conformance Statements</h4>
+			<h4 id="conformance-statements-title" class="title">Conformance statements</h4>
 			<div class="pull-right">
 				<button class="btn btn-default" ng-if="adminConformanceCtrl.conformanceStatements.length > 0" ng-click="adminConformanceCtrl.onExportConformanceStatementsAsCsv()">Export CSV</button>
 				<button class="btn btn-default" ng-if="adminConformanceCtrl.showCollapseAll()" ng-click="adminConformanceCtrl.onCollapseAll()">Collapse all</button>
@@ -93,12 +103,12 @@
 			<thead>
 			<tr>
 				<th ng-if="!adminConformanceCtrl.DataService.isCommunityAdmin">Community</th>
-				<th>Organization</th>
+				<th>Organisation</th>
 				<th>System</th>
 				<th ng-if="adminConformanceCtrl.DataService.isSystemAdmin || (adminConformanceCtrl.DataService.isCommunityAdmin && adminConformanceCtrl.DataService.community.domain === null)">Domain</th>
 				<th>Specification</th>
 				<th>Actor</th>
-				<th width="10%">Status</th>
+				<th width="20%">Status</th>
 				<th width="1%">Export</th>
 			</tr>
 			</thead>

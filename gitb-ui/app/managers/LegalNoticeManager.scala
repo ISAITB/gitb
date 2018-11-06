@@ -14,7 +14,9 @@ object LegalNoticeManager extends BaseManager {
    */
   def getLegalNoticesByCommunity(communityId: Long): List[LegalNotices] = {
     DB.withSession { implicit session =>
-      val legalNotices = PersistenceSchema.legalNotices.filter(_.community === communityId).list
+      val legalNotices = PersistenceSchema.legalNotices.filter(_.community === communityId)
+          .sortBy(_.name.asc)
+        .list
       legalNotices
     }
   }

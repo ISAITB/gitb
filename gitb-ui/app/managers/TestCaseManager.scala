@@ -153,7 +153,7 @@ object TestCaseManager extends BaseManager {
 					PersistenceSchema.testCases
 				}
 			}
-			q.list
+			q.sortBy(_.shortname.asc).list
 		}
 	}
 

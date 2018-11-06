@@ -1,24 +1,24 @@
-import config.Configurations
-import jaxws.TestbedService
 import javax.xml.ws.Endpoint
 
+import config.Configurations
+import controllers.TestService
+import controllers.util.ResponseConstructor
 import filters._
+import jaxws.TestbedService
 import managers.{ReportManager, SystemConfigurationManager, TestResultManager, TestSuiteManager}
 import models.Constants
-import controllers.TestService
 import org.apache.commons.io.FileUtils
+import org.apache.commons.lang.RandomStringUtils
 import persistence.db.PersistenceLayer
-import utils.TimeUtil
-
-import scala.concurrent.duration.DurationInt
-import play.api.Application
-import play.api.GlobalSettings
-import play.api.Logger
+import play.api.Play.current
+import play.api._
 import play.api.libs.concurrent.Akka
 import play.api.mvc._
-import play.api.Play.current
+import utils.TimeUtil
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 
 object Global extends WithFilters(new CorsFilter,
   new ErrorFilter,
@@ -65,6 +65,13 @@ with GlobalSettings {
     TestbedService.endpoint.stop()
 
     Logger.info("Application shutdown...")
+  }
+
+  override def onError(request: RequestHeader, ex: Throwable): Future[Result] = {
+    val errorIdentifier = RandomStringUtils.randomAlphabetic(10)
+    Logger.error("Error ["+errorIdentifier+"]", ex)
+    val result = ResponseConstructor.constructServerError("Unexpected error", ex.getMessage, Some(errorIdentifier))
+    Future.successful(result)
   }
 
   /**

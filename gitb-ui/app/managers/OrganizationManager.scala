@@ -26,7 +26,9 @@ object OrganizationManager extends BaseManager {
   def getOrganizations(): List[Organizations] = {
     DB.withSession { implicit session =>
       //1) Get all organizations except the default organization for system administrators
-      val organizations = PersistenceSchema.organizations.list
+      val organizations = PersistenceSchema.organizations
+          .sortBy(_.shortname.asc)
+        .list
       organizations
     }
   }
@@ -36,7 +38,9 @@ object OrganizationManager extends BaseManager {
    */
   def getOrganizationsByCommunity(communityId: Long): List[Organizations] = {
     DB.withSession { implicit session =>
-      val organizations = PersistenceSchema.organizations.filter(_.adminOrganization === false).filter(_.community === communityId).list
+      val organizations = PersistenceSchema.organizations.filter(_.adminOrganization === false).filter(_.community === communityId)
+          .sortBy(_.shortname.asc)
+        .list
       organizations
     }
   }
@@ -55,21 +59,34 @@ object OrganizationManager extends BaseManager {
       val o = PersistenceSchema.organizations.filter(_.id === orgId).firstOption.get
       val l = PersistenceSchema.landingPages.filter(_.id === o.landingPage).firstOption
       val n = PersistenceSchema.legalNotices.filter(_.id === o.legalNotice).firstOption
-      val organization = new Organization(o, l.getOrElse(null), n.getOrElse(null))
+      val e = PersistenceSchema.errorTemplates.filter(_.id === o.errorTemplate).firstOption
+      val organization = new Organization(o, l.getOrElse(null), n.getOrElse(null), e.getOrElse(null))
       organization
+    }
+  }
+
+  private def copyTestSetup(fromOrganisation: Long, toOrganisation: Long)(implicit session:Session) = {
+    val systems = SystemManager.getSystemsByOrganization(fromOrganisation)
+    systems.foreach { otherSystem =>
+      val newSystemId = SystemManager.registerSystem(Systems(0L, otherSystem.shortname, otherSystem.fullname, otherSystem.description, otherSystem.version, toOrganisation))
+      SystemManager.copyTestSetup(otherSystem.id, newSystemId)
     }
   }
 
   /**
    * Creates new organization
    */
-  def createOrganization(organization: Organizations) = {
+  def createOrganization(organization: Organizations, otherOrganisationId: Option[Long]) = {
     DB.withTransaction { implicit session =>
-      PersistenceSchema.insertOrganization += organization
+      val newOrganisationId = PersistenceSchema.insertOrganization += organization
+      if (otherOrganisationId.isDefined) {
+        copyTestSetup(otherOrganisationId.get, newOrganisationId)
+      }
+      newOrganisationId
     }
   }
 
-  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long]) = {
+  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long]) = {
     DB.withTransaction { implicit session =>
       val org = PersistenceSchema.organizations.filter(_.id === orgId).firstOption
 
@@ -77,17 +94,19 @@ object OrganizationManager extends BaseManager {
         if (!shortName.isEmpty && org.get.shortname != shortName) {
           val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname)
           q.update(shortName)
-
           TestResultManager.updateForUpdatedOrganisation(orgId, shortName)
         }
-
         if (!fullName.isEmpty && org.get.fullname != fullName) {
           val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.fullname)
           q.update(fullName)
         }
-
-        val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.landingPage, o.legalNotice)
-        q.update(landingPageId, legalNoticeId)
+        val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.landingPage, o.legalNotice, o.errorTemplate)
+        q.update(landingPageId, legalNoticeId, errorTemplateId)
+        if (otherOrganisation.isDefined) {
+          // Replace the test setup for the organisation with the one from the provided one.
+          SystemManager.deleteSystemByOrganization(orgId)
+          copyTestSetup(otherOrganisation.get, orgId)
+        }
       } else {
         throw new IllegalArgumentException("Organization with ID '" + orgId + "' not found")
       }

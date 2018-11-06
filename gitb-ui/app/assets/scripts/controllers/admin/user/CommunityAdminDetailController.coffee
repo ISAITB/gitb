@@ -22,8 +22,11 @@ class CommunityAdminDetailController
 
   updateAdmin: () =>
     @ValidationService.clearAll()
-    if @ValidationService.requireNonNull(@user.name, "Please enter a name.")
-      @UserService.updateCommunityAdminProfile(@userId, @user.name)
+    if @ValidationService.requireNonNull(@user.name, "Please enter a name.") &
+    (!@user.changePassword || @ValidationService.validatePasswords(@user.password, @user.cpassword, "Passwords do not match."))
+      if @user.changePassword
+        newPassword = @user.password
+      @UserService.updateCommunityAdminProfile(@userId, @user.name, newPassword)
       .then () =>
         @cancelDetailAdmin()
       .catch (error) =>
@@ -43,8 +46,8 @@ class CommunityAdminDetailController
   cancelDetailAdmin: () =>
     @$state.go 'app.admin.users.communities.detail.list', { community_id : @communityId }
 
-  closeAlert: (index) ->
+  closeAlert: (index) =>
     @ValidationService.clearAlert(index)
-
+    @alerts = @ValidationService.getAlerts()
 
 @controllers.controller 'CommunityAdminDetailController', CommunityAdminDetailController

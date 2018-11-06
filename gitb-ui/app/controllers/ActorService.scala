@@ -18,7 +18,7 @@ class ActorService extends Controller {
     if (ActorManager.checkActorExistsInSpecification(actor.actorId, specificationId, Some(actorId))) {
       ResponseConstructor.constructBadRequestResponse(500, "An actor with this ID already exists in the specification")
     } else {
-      ActorManager.updateActorWrapper(actorId, actor.actorId, actor.name, actor.description)
+      ActorManager.updateActorWrapper(actorId, actor.actorId, actor.name, actor.description, actor.default, actor.displayOrder, specificationId)
       ResponseConstructor.constructEmptyResponse
     }
   }

@@ -39,6 +39,7 @@ object Parameters {
   val CONTENT = "content"
   val LANDING_PAGE_ID = "landing_page_id"
   val LEGAL_NOTICE_ID = "legal_notice_id"
+  val ERROR_TEMPLATE_ID = "error_template_id"
 
   //Authentication Service and OAuth 2.0 parameters
   val GRANT_TYPE = "grant_type"
@@ -47,6 +48,7 @@ object Parameters {
 
   //System configuration parameters
   val PARAMETER = "parameter"
+  val PARAMETER_ID = "parameter_id"
 
   //Account Service parameters
   val VENDOR_SNAME = "vendor_sname"
@@ -57,6 +59,7 @@ object Parameters {
   val USER_ROLE    = "user_role"
   val ROLE_ID      = "role_id"
   val ORGANIZATION_ID = "organization_id"
+  val OTHER_ORGANISATION = "other_organisation"
 
   //System Service parameters
   val SYSTEM_ID    = "system_id"
@@ -64,6 +67,10 @@ object Parameters {
   val SYSTEM_FNAME = "system_fname"
   val SYSTEM_DESC  = "system_description"
   val SYSTEM_VERSION = "system_version"
+  val OTHER_SYSTEM = "other_system"
+
+  val DATA = "data"
+  val IS_BASE64 = "is_base64"
 
   //Conformance Service parameters
   val ACTORS  = "actors"
@@ -92,6 +99,8 @@ object Parameters {
 
   //TestService parameters
   val ACTOR_ID   = "actor_id"
+  val ACTOR_DEFAULT   = "default"
+  val DISPLAY_ORDER   = "displayOrder"
   val ACTOR_IDS   = "actor_ids"
   val ENDPOINT_ID   = "endpoint_id"
   val TEST_ID    = "test_id"
@@ -103,6 +112,10 @@ object Parameters {
   val CONFIG     = "config"
   val INPUTS     = "inputs"
   val TEST_STEP  = "teststep"
+  val SETTINGS   = "settings"
+  val UPDATE_PASSWORDS  = "updatePasswords"
+  val REMOVE_KEYSTORE   = "removeKeystore"
+  val INCLUDE_KEYSTORE_DATA  = "keystore"
 
   val FILE       = "file"
 	val LIMIT      = "limit"

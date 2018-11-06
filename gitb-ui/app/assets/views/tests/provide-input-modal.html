@@ -1,5 +1,5 @@
 <div class="modal-header">
-	<h4 class="modal-title" id="myModalLabel">Server Interaction</h4>
+	<h4 class="modal-title" id="myModalLabel">Server interaction</h4>
 </div>
 <div class="modal-body">
 	<div class="row">
@@ -12,16 +12,17 @@
 						<div ng-if="interaction.type == 'request'">
 							<input type="text" class="form-control" ng-model="interaction.data" ng-if="interaction.contentType != 'BASE64'" >
 							<div ng-if="interaction.contentType == 'BASE64'">
-								<span ng-if="interaction.file != null">{{interaction.file.name}} - {{interaction.file.size}} bytes</span>
-								<span ng-if="interaction.file == null">No file selected</span>
+								<span class="tab" ng-if="interaction.file != null">{{interaction.file.name}} - {{interaction.file.size}} bytes</span>
+								<span class="tab" ng-if="interaction.file == null">No file selected</span>
 								<button class="btn btn-default" ng-file-select="onFileSelect(interaction, $files)">Select file</button>
 							</div>
 						</div>
 						<!-- instruction interaction: server shows a message -->
 						<div ng-if="interaction.type == 'instruction' && interaction.value != null">
-							<span class="tab" ng-if="isConfigurationDataURL(interaction.value)"><a download='{{interaction.name}}' href="{{interaction.value}}">Download</a></span>
+							<span class="tab" ng-if="interaction.name != null">{{interaction.name}}</span>
+							<button class="btn btn-default" ng-if="interaction.contentType == 'BASE64'" ng-click="download(interaction)">Download</button>
 							<!-- configuration parameter is a string -->
-							<span class="tab" ng-if="!isConfigurationDataURL(interaction.value)">{{interaction.value}}</span>
+							<span class="tab" ng-if="interaction.contentType != 'BASE64'">{{interaction.value}}</span>
 						</div>
 					</div>
 				</div>

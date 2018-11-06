@@ -111,7 +111,8 @@ object JsonUtil {
       "id"    -> user.id,
       "name"  -> user.name,
       "email" -> user.email,
-      "role"  -> user.role
+      "role"  -> user.role,
+      "onetime" -> user.onetimePassword
     )
     json
   }
@@ -153,6 +154,7 @@ object JsonUtil {
       "type"  -> organization.organizationType,
       "landingPage" -> (if(organization.landingPage.isDefined) organization.landingPage.get else JsNull),
       "legalNotice" -> (if(organization.legalNotice.isDefined) organization.legalNotice.get else JsNull),
+      "errorTemplate" -> (if(organization.errorTemplate.isDefined) organization.errorTemplate.get else JsNull),
       "community" -> organization.community,
       "adminOrganization" -> organization.adminOrganization
     )
@@ -202,6 +204,14 @@ object JsonUtil {
     list.foreach{ system =>
       json = json.append(jsSystem(system))
     }
+    json
+  }
+
+  def jsBinaryMetadata(mimeType: String, extension: String):JsObject = {
+    val json = Json.obj(
+      "mimeType"    -> mimeType,
+      "extension" -> extension
+    )
     json
   }
 
@@ -335,7 +345,23 @@ object JsonUtil {
       "actorId" -> actor.actorId,
       "name"   -> actor.name,
       "description" -> (if(actor.description.isDefined) actor.description.get else JsNull),
+      "default" -> (if(actor.default.isDefined) actor.default.get else JsNull),
+      "displayOrder" -> (if(actor.displayOrder.isDefined) actor.displayOrder.get else JsNull),
       "domain"  -> actor.domain
+    )
+    return json;
+  }
+
+  def jsActor(actor:Actor) : JsObject = {
+    val json = Json.obj(
+      "id" -> actor.id,
+      "actorId" -> actor.actorId,
+      "name"   -> actor.name,
+      "description" -> (if(actor.description.isDefined) actor.description.get else JsNull),
+      "default" -> (if(actor.default.isDefined) actor.default.get else JsNull),
+      "displayOrder" -> (if(actor.displayOrder.isDefined) actor.displayOrder.get else JsNull),
+      "domain"  -> (if(actor.domain.isDefined) actor.domain.get.id else JsNull),
+      "specification"  -> (if(actor.specificationId.isDefined) actor.specificationId.get else JsNull)
     )
     return json;
   }
@@ -346,6 +372,14 @@ object JsonUtil {
    * @return JsArray
    */
   def jsActors(list:List[Actors]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ actor =>
+      json = json.append(jsActor(actor))
+    }
+    json
+  }
+
+  def jsActorsNonCase(list:List[Actor]):JsArray = {
     var json = Json.arr()
     list.foreach{ actor =>
       json = json.append(jsActor(actor))
@@ -365,7 +399,8 @@ object JsonUtil {
       "specification" -> conformanceStatement.specificationName,
       "specificationFull" -> conformanceStatement.specificationNameFull,
 			"results" -> Json.obj(
-				"total" -> conformanceStatement.totalTests,
+				"undefined" -> conformanceStatement.undefinedTests,
+        "failed" -> conformanceStatement.failedTests,
 				"completed" -> conformanceStatement.completedTests
 			)
 		)
@@ -380,7 +415,7 @@ object JsonUtil {
 		json
 	}
 
-  def jsConfig(config:Config): JsObject = {
+  def jsConfig(config:Configs): JsObject = {
     val json = Json.obj(
       "system" -> config.system,
       "value"  -> config.value,
@@ -390,7 +425,19 @@ object JsonUtil {
     return json;
   }
 
-  def jsConfigs(list:List[Config]):JsArray = {
+  def jsConfig(config:Config): JsObject = {
+    val json = Json.obj(
+      "system" -> config.system,
+      "value"  -> config.value,
+      "endpoint"  -> config.endpoint,
+      "parameter" -> config.parameter,
+      "mimeType" -> config.mimeType,
+      "extension" -> config.extension
+    )
+    return json;
+  }
+
+  def jsConfigList(list:List[Config]):JsArray = {
     var json = Json.arr()
     list.foreach{ config =>
       json = json.append(jsConfig(config))
@@ -398,11 +445,19 @@ object JsonUtil {
     json
   }
 
-  def parseJsConfigs(json:String):List[Config] = {
+  def jsConfigs(list:List[Configs]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ config =>
+      json = json.append(jsConfig(config))
+    }
+    json
+  }
+
+  def parseJsConfigs(json:String):List[Configs] = {
     val jsArray = Json.parse(json).as[List[JsObject]]
-    var list:List[Config] = List()
+    var list:List[Configs] = List()
     jsArray.foreach { jsonConfig =>
-      list ::= Config(
+      list ::= Configs(
         (jsonConfig \ "system").as[Long],
 	      (jsonConfig \ "parameter").as[Long],
 	      (jsonConfig \ "endpoint").as[Long],
@@ -412,9 +467,9 @@ object JsonUtil {
     list
   }
 
-  def parseJsConfig(json:String):Config = {
+  def parseJsConfig(json:String):Configs = {
     val jsonConfig = Json.parse(json).as[JsObject]
-    Config(
+    Configs(
       (jsonConfig \ "system").as[Long],
 	    (jsonConfig \ "parameter").as[Long],
 	    (jsonConfig \ "endpoint").as[Long],
@@ -435,6 +490,44 @@ object JsonUtil {
       (jsonConfig \ "kind").as[String],
       (jsonConfig \ "value").as[Option[String]],
       domainId
+    )
+  }
+
+  def parseJsConformanceCertificateSettings(json:String, communityId: Long): ConformanceCertificates = {
+    val jsonConfig = Json.parse(json).as[JsObject]
+    ConformanceCertificates(
+      0L,
+      (jsonConfig \ "title").as[Option[String]],
+      (jsonConfig \ "message").as[Option[String]],
+      (jsonConfig \ "includeMessage").as[Boolean],
+      (jsonConfig \ "includeTestStatus").as[Boolean],
+      (jsonConfig \ "includeTestCases").as[Boolean],
+      (jsonConfig \ "includeDetails").as[Boolean],
+      (jsonConfig \ "includeSignature").as[Boolean],
+      (jsonConfig \ "keystoreFile").as[Option[String]],
+      (jsonConfig \ "keystoreType").as[Option[String]],
+      (jsonConfig \ "keystorePassword").as[Option[String]],
+      (jsonConfig \ "keyPassword").as[Option[String]],
+      communityId
+    )
+  }
+
+  def parseJsConformanceCertificateSettingsForKeystoreTest(json:String, communityId: Long): ConformanceCertificates = {
+    val jsonConfig = Json.parse(json).as[JsObject]
+    ConformanceCertificates(
+      0L,
+      None,
+      None,
+      false,
+      false,
+      false,
+      false,
+      false,
+      (jsonConfig \ "keystoreFile").as[Option[String]],
+      (jsonConfig \ "keystoreType").as[Option[String]],
+      (jsonConfig \ "keystorePassword").as[Option[String]],
+      (jsonConfig \ "keyPassword").as[Option[String]],
+      communityId
     )
   }
 
@@ -715,6 +808,9 @@ object JsonUtil {
   def serializeConfigurationProperties(config: util.HashMap[String, String]):JsObject = {
     val json = Json.obj(
       "email.enabled" -> config.get("email.enabled"),
+      "email.attachments.maxCount" -> config.get("email.attachments.maxCount"),
+      "email.attachments.maxSize" -> config.get("email.attachments.maxSize"),
+      "email.attachments.allowedTypes" -> config.get("email.attachments.allowedTypes"),
       "survey.enabled" -> config.get("survey.enabled"),
       "survey.address" -> config.get("survey.address"),
       "userguide.ou" -> config.get("userguide.ou"),
@@ -772,6 +868,12 @@ object JsonUtil {
       jOrganization = jOrganization ++ Json.obj("legalNotices" -> JsNull)
     }
     //
+    if(org.errorTemplateObj.isDefined){
+      jOrganization = jOrganization ++ Json.obj("errorTemplates" -> jsErrorTemplate(org.errorTemplateObj.get))
+    } else{
+      jOrganization = jOrganization ++ Json.obj("errorTemplates" -> JsNull)
+    }
+    //
     if(org.community.isDefined){
       jOrganization = jOrganization ++ Json.obj("communities" -> jsCommunity(org.community.get))
     } else{
@@ -827,9 +929,9 @@ object JsonUtil {
   }
 
   /**
-   * Converts a LandingPage object into Play!'s JSON notation.
+   * Converts a LegalNotice object into Play!'s JSON notation.
    * Does not support cross object conversion
-   * @param legalNotice LandingPage object to be converted
+   * @param legalNotice LegalNotice object to be converted
    * @return JsObject
    */
   def jsLegalNotice(legalNotice:LegalNotices):JsObject = {
@@ -839,6 +941,23 @@ object JsonUtil {
       "description" -> (if(legalNotice.description.isDefined) legalNotice.description.get else JsNull),
       "content"  -> legalNotice.content,
       "default" -> legalNotice.default
+    )
+    json
+  }
+
+  /**
+    * Converts a ErrorTemplate object into Play!'s JSON notation.
+    * Does not support cross object conversion
+    * @param errorTemplate ErrorTemplate object to be converted
+    * @return JsObject
+    */
+  def jsErrorTemplate(errorTemplate:ErrorTemplates):JsObject = {
+    val json = Json.obj(
+      "id"    -> errorTemplate.id,
+      "name"  -> errorTemplate.name,
+      "description" -> (if(errorTemplate.description.isDefined) errorTemplate.description.get else JsNull),
+      "content"  -> errorTemplate.content,
+      "default" -> errorTemplate.default
     )
     json
   }
@@ -872,6 +991,20 @@ object JsonUtil {
   }
 
   /**
+    * Converts a List of ErrorTemplates into Play!'s JSON notation
+    * Does not support cross object conversion
+    * @param list List of ErrorTemplates to be convert
+    * @return JsArray
+    */
+  def jsErrorTemplates(list:List[ErrorTemplates]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ et =>
+      json = json.append(jsErrorTemplate(et))
+    }
+    json
+  }
+
+  /**
    * Converts a LandingPage object into a JSON string with its complex objects
    * @param landingPage LandingPage object to be converted
    * @return String
@@ -893,7 +1026,7 @@ object JsonUtil {
    * @return String
    */
   def serializeLegalNotice(legalNotice:LegalNotice):String = {
-    //1) Serialize LandingPage
+    //1) Serialize LegalNotice
     val exists = legalNotice != null
     var jLegalNotice:JsObject = jsExists(exists)
     if (exists) {
@@ -901,6 +1034,22 @@ object JsonUtil {
     }
     //3) Return JSON String
     jLegalNotice.toString
+  }
+
+  /**
+    * Converts a ErrorTemplate object into a JSON string with its complex objects
+    * @param errorTemplate ErrorTemplate object to be converted
+    * @return String
+    */
+  def serializeErrorTemplate(errorTemplate:ErrorTemplate):String = {
+    //1) Serialize ErrorTemplate
+    val exists = errorTemplate != null
+    var jErrorTemplate:JsObject = jsExists(exists)
+    if (exists) {
+      jErrorTemplate = jErrorTemplate ++ jsErrorTemplate(errorTemplate.toCaseObject)
+    }
+    //3) Return JSON String
+    jErrorTemplate.toString
   }
 
   def jsExists(bool:Boolean):JsObject = {
@@ -984,11 +1133,44 @@ object JsonUtil {
       "testSuiteName" -> item.testSuiteName,
       "testCaseName" -> item.testCaseName,
       "testCaseDescription" -> item.testCaseDescription,
-      "total"    -> item.totalTests,
+      "failed"    -> item.failedTests,
       "completed"    -> item.completedTests,
+      "undefined"    -> item.undefinedTests,
       "result" -> item.result
     )
     json
   }
+
+  def jsConformanceSettings(settings:Option[ConformanceCertificates], includeKeystoreData: Boolean):Option[JsObject] = {
+    if (settings.isDefined) {
+      val json = Json.obj(
+        "id"    -> settings.get.id,
+        "title" -> (if(settings.get.title.isDefined) settings.get.title.get else JsNull),
+        "message" -> (if(settings.get.message.isDefined) settings.get.message.get else JsNull),
+        "includeMessage" -> settings.get.includeMessage,
+        "includeTestStatus" -> settings.get.includeTestStatus,
+        "includeTestCases" -> settings.get.includeTestCases,
+        "includeDetails" -> settings.get.includeDetails,
+        "includeSignature" -> settings.get.includeSignature,
+        "keystoreFile" -> (if(includeKeystoreData && settings.get.keystoreFile.isDefined) settings.get.keystoreFile.get else JsNull),
+        "keystoreType" -> (if(includeKeystoreData && settings.get.keystoreType.isDefined) settings.get.keystoreType.get else JsNull),
+        "passwordsSet" -> (if(includeKeystoreData && settings.get.keystorePassword.isDefined && settings.get.keyPassword.isDefined) true else false),
+        "keystoreDefined" -> (if(settings.get.keystoreFile.isDefined && settings.get.keystoreType.isDefined && settings.get.keystorePassword.isDefined && settings.get.keyPassword.isDefined) true else false),
+        "community" -> settings.get.community
+      )
+      Some(json)
+    } else {
+      None
+    }
+  }
+
+  def jsConformanceSettingsValidation(problem: String, level: String): JsObject = {
+    val json = Json.obj(
+      "problem"    -> problem,
+      "level"    -> level
+    )
+    json
+  }
+
 
 }

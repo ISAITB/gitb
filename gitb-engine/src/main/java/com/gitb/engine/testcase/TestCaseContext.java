@@ -369,7 +369,9 @@ public class TestCaseContext {
                 transactions.add(new TransactionInfo(fromActorId, fromEndpoint, toActorId, toEndpoint, handlerIdentifier, TestCaseUtils.getStepProperties(beginTransactionStep.getProperty(), resolver)));
             } else if (step instanceof IfStep) {
 	            transactions.addAll(createTransactionInfo(((IfStep) step).getThen()));
-	            transactions.addAll(createTransactionInfo(((IfStep) step).getElse()));
+	            if (((IfStep) step).getElse() != null) {
+					transactions.addAll(createTransactionInfo(((IfStep) step).getElse()));
+				}
             } else if(step instanceof WhileStep) {
 	            transactions.addAll(createTransactionInfo(((WhileStep) step).getDo()));
             } else if(step instanceof ForEachStep) {

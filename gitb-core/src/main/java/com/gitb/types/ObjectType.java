@@ -4,8 +4,6 @@ import com.gitb.core.ErrorCode;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.utils.BomStrippingReader;
 import com.gitb.utils.ErrorUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -28,7 +26,6 @@ import java.io.*;
  * Created by senan on 9/8/14.
  */
 public class ObjectType extends DataType {
-    private static Logger logger = LoggerFactory.getLogger(ObjectType.class);
     public static String DEFAULT_COMMON_ENCODING_FORMAT = "utf-8";
     public static String DEFAULT_ENCODING = "utf-8";
 
@@ -196,8 +193,7 @@ public class ObjectType extends DataType {
             Transformer t = constructTransformerForSerialization();
             t.transform(new DOMSource(item), new StreamResult(baos));
         } catch (TransformerException te) {
-            te.printStackTrace();
-            //TODO Handle exception
+            throw new IllegalStateException(te);
         }
         return baos.toByteArray();
     }
@@ -215,7 +211,7 @@ public class ObjectType extends DataType {
             Transformer t = constructTransformerForSerialization();
             t.transform(new DOMSource(value), new StreamResult(sw));
         } catch (TransformerException te) {
-            logger.error("Transformer exception when converting Node to String");
+            throw new IllegalStateException("Transformer exception when converting Node to String", te);
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -55,6 +55,7 @@ class TestExecutionControllerV2
     @testCaseStatus = {}
     @$scope.stepsOfTests = {}
     @$scope.actorInfoOfTests = {}
+    @logMessages = {}
     @$scope.$on '$destroy', () =>
       if @ws? and @session?
         @$log.debug 'Closing websocket in $destroy event handler'
@@ -263,7 +264,7 @@ class TestExecutionControllerV2
   constructEndpointRepresentations: () =>
     @endpointRepresentations = _.map @endpoints, (endpoint) =>
         name: endpoint.name
-        desc: endpoint.desc
+        description: endpoint.description
         id: endpoint.id
         parameters: _.map endpoint.parameters, (parameter) =>
           repr = _.cloneDeep parameter
@@ -304,15 +305,28 @@ class TestExecutionControllerV2
           @currentTest["preliminary"] = testcase.preliminary
         
         @TestService.getActorDefinitions(@specId).then((data) =>
-          @$scope.actorInfoOfTests[testCaseToLookup] = testcase.actors.actor
+          tempActors = testcase.actors.actor
           for domainActorData in data
             if (domainActorData.id == @actorId)
               @actor = domainActorData.actorId
-            for testCaseActorData in @$scope.actorInfoOfTests[testCaseToLookup]
+            for testCaseActorData in tempActors
               if (testCaseActorData.id == domainActorData.actorId)
-                if (!(testCaseActorData.name?))
+                if !(testCaseActorData.name?)
                   testCaseActorData.name = domainActorData.name
+                if !(testCaseActorData.displayOrder?) && domainActorData.displayOrder?
+                  testCaseActorData.displayOrder = domainActorData.displayOrder
                 break
+          tempActors = tempActors.sort((a, b) =>
+            if !a.displayOrder? && !b.displayOrder?
+              0
+            else if a.displayOrder? && !b.displayOrder?
+              -1
+            else if !a.displayOrder? && b.displayOrder?
+              1
+            else
+              Number(a.displayOrder) - Number(b.displayOrder)
+          )
+          @$scope.actorInfoOfTests[testCaseToLookup] = tempActors
 
           @$scope.stepsOfTests[testCaseToLookup] = testcase.steps
           @$scope.$broadcast('sequence:testLoaded', testCaseToLookup)
@@ -565,9 +579,18 @@ class TestExecutionControllerV2
       @$interval.cancel(@keepAlive)
 
   onmessage: (msg) =>
-    if (!@messagesToProcess?)
-      @messagesToProcess = []
-    @messagesToProcess.push(msg)
+    response = angular.fromJson(msg.data)
+    stepId = response.stepId
+    if stepId == @Constants.LOG_EVENT_TEST_STEP    
+      # Process log messages immediately
+      if @currentTest? && @currentTest.id?
+        if !@logMessages[@currentTest.id]?
+          @logMessages[@currentTest.id] = []
+      @logMessages[@currentTest.id].push(response.report.context.value)
+    else
+      if (!@messagesToProcess?)
+        @messagesToProcess = []
+      @messagesToProcess.push(msg)
 
   processNextMessage: () =>
     if (@messagesToProcess? && @messagesToProcess.length > 0)
@@ -601,6 +624,20 @@ class TestExecutionControllerV2
         if report?
           report.tcInstanceId = response.tcInstanceId
         @updateStatus(step, stepId, status, report)
+        if stepId+'' == '0' && report?.result == "FAILURE"
+          # stepId is 0 for the preliminary step
+          error = {
+            statusText: 'Preliminary step error',
+            data: {
+              error_description: ''
+            }
+          }
+          if report?.reports?.assertionReports? &&
+          report.reports.assertionReports.length > 0 &&
+          report.reports.assertionReports[0].value?.description?
+              error.data.error_description = report.reports.assertionReports[0].value.description
+
+          @ErrorService.showErrorMessage(error)
 
   interact: (interactions, stepId) =>
     sessionForModal = @session
@@ -688,12 +725,13 @@ class TestExecutionControllerV2
       else
         current = step
 
-      if current? &&
-      current.status != @Constants.TEST_STATUS.COMPLETED &&
-      current.status != @Constants.TEST_STATUS.ERROR &&
-      current.status != @Constants.TEST_STATUS.SKIPPED
-        current.status = status
-        current.report = report
+      if current? && current.status != status
+        if (status == @Constants.TEST_STATUS.COMPLETED) ||
+        (status == @Constants.TEST_STATUS.ERROR) ||
+        (status == @Constants.TEST_STATUS.SKIPPED && (current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.PROCESSING)) ||
+        ((status == @Constants.TEST_STATUS.PROCESSING) || (status == @Constants.TEST_STATUS.WAITING) && (current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.SKIPPED))
+          current.status = status
+          current.report = report
 
   isParent: (id, parentId) ->
     periodIndex = id.indexOf '.', parentId.length
@@ -750,5 +788,36 @@ class TestExecutionControllerV2
           return parentOrCurrentNode
 
     return null
+
+  showViewLog: () =>
+    @visibleTest?
+
+  viewLog: () =>
+    if @logMessages[@visibleTest.id]?
+      value = @logMessages[@visibleTest.id].join('')
+    else
+      value = ''
+    modalOptions =
+      templateUrl: 'assets/views/components/editor-modal.html'
+      controller: 'EditorModalController as editorModalCtrl'
+      resolve:
+        name: () => 'Test session log'
+        editorOptions: () =>
+          value: value
+          readOnly: true
+          lineNumbers: true
+          smartIndent: false
+          electricChars: false
+          mode: 'text/plain' 
+          download: {
+            fileName: 'log.txt'
+            mimeType: 'text/plain'
+          }
+        indicators: () => null
+        lineNumber: () => null
+
+      size: 'lg'
+
+    @$modal.open modalOptions    
 
 controllers.controller('TestExecutionControllerV2', TestExecutionControllerV2)

@@ -33,8 +33,8 @@ class AdminCreateController
     @$state.go 'app.admin.users.list'
 
   # closes alert which is displayed due to an error
-  closeAlert: (index) ->
+  closeAlert: (index) =>
     @ValidationService.clearAlert(index)
-
+    @alerts = @ValidationService.getAlerts()
 
 @controllers.controller 'AdminCreateController', AdminCreateController

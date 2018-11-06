@@ -33,30 +33,33 @@ class UserService
       authenticate: true
     })
 
-  updateSystemAdminProfile: (userId, name) ->
+  updateSystemAdminProfile: (userId, name, password) ->
     @RestService.post({
       path: jsRoutes.controllers.UserService.updateSystemAdminProfile(userId).url,
       authenticate: true
       data: {
         user_name: name
+        password: password
       }
     })
 
-  updateCommunityAdminProfile: (userId, name) ->
+  updateCommunityAdminProfile: (userId, name, password) ->
     @RestService.post({
       path: jsRoutes.controllers.UserService.updateCommunityAdminProfile(userId).url,
       authenticate: true
       data: {
         user_name: name
+        password: password
       }
     })
 
-  updateUserProfile: (userId, name, role) ->
+  updateUserProfile: (userId, name, role, password) ->
     @RestService.post({
       path: jsRoutes.controllers.UserService.updateUserProfile(userId).url,
       data: {
         user_name: name
         role_id: role
+        password: password
       }
       authenticate: true
     })

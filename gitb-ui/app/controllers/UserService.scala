@@ -90,7 +90,8 @@ class UserService extends Controller {
    */
   def updateSystemAdminProfile(userId: Long) = Action.apply { request =>
     val name = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_NAME)
-    UserManager.updateSystemAdminProfile(userId, name)
+    val password = ParameterExtractor.optionalBodyParameter(request, Parameters.PASSWORD)
+    UserManager.updateSystemAdminProfile(userId, name, password)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -99,7 +100,8 @@ class UserService extends Controller {
     */
   def updateCommunityAdminProfile(userId: Long) = Action.apply { request =>
     val name = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_NAME)
-    UserManager.updateCommunityAdminProfile(userId, name)
+    val password = ParameterExtractor.optionalBodyParameter(request, Parameters.PASSWORD)
+    UserManager.updateCommunityAdminProfile(userId, name, password)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -110,10 +112,11 @@ class UserService extends Controller {
     val isLastAdmin = UserManager.isLastAdmin(userId)
     val roleId = ParameterExtractor.requiredBodyParameter(request, Parameters.ROLE_ID).toShort
     val name = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_NAME)
+    val password = ParameterExtractor.optionalBodyParameter(request, Parameters.PASSWORD)
     if (isLastAdmin && UserRole(roleId) == UserRole.VendorUser) {
       ResponseConstructor.constructErrorResponse(ErrorCodes.CANNOT_DELETE, "Cannot delete the only administrator of the organization.")
     } else {
-      UserManager.updateUserProfile(userId, name, roleId)
+      UserManager.updateUserProfile(userId, name, roleId, password)
       ResponseConstructor.constructEmptyResponse
     }
   }

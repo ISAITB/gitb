@@ -61,7 +61,7 @@ public class AS2Sender extends HttpSender {
         //calculate MIC after signing & encrypting since these operations updates headers of the original MIME Body
         String MIC = AS2MessagingHandler.calculateMIC(originalMimeBody, headers, true);
 
-        logger.debug("MIC calculated: " + MIC);
+        logger.debug(addMarker(), "MIC calculated: " + MIC);
 
         headers.addItem(CAS2Header.HEADER_CONTENT_TYPE, new StringType(encryptedMimeBody.getContentType()));
 

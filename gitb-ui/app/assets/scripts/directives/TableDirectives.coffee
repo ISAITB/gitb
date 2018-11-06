@@ -34,11 +34,11 @@
 				'<caption ng-if="tableCaptionVisible">{{tableCaption}}</caption>'+
 				'<thead>'+
 					'<tr>'+
-					    '<th ng-if="checkboxEnabled"></th>'+
+						'<th ng-if="checkboxEnabled"></th>'+
 						'<th ng-class="{sortable: column.sortable}" ng-repeat="column in columns" ng-click="!column.sortable || headerColumnClicked(column)">'+
-						    '{{column.title}} '+
-						    '<i ng-if="column.order == \'desc\'" class="fa fa-caret-down"></i>'+
-						    '<i ng-if="column.order == \'asc\'" class="fa fa-caret-up"></i>'+
+							'{{column.title}} '+
+							'<i ng-if="column.order == \'desc\'" class="fa fa-caret-down"></i>'+
+							'<i ng-if="column.order == \'asc\'" class="fa fa-caret-up"></i>'+
 						'</th>'+
 						'<th ng-if="actionVisible">Action</th>'+
 						'<th ng-if="operationsVisible">Operation</th>'+
@@ -145,9 +145,9 @@
 			onCheck: '='
 		restrict: 'A'
 		template: ''+
-		    '<td ng-if="checkboxEnabled">'+
-                '<input type="checkbox" ng-model="data.checked" ng-change="check()">' +
-            '</td>' +
+			'<td ng-if="checkboxEnabled">'+
+				'<input type="checkbox" ng-model="data.checked" ng-change="check()">' +
+			'</td>' +
 			'<td class="{{row.class}}" ng-repeat="row in rows">'+
 				'<div ng-if="row.boolean">'+
 					'<i class="glyphicon" ng-class="{\'glyphicon-ok\': row.data, \'glyphicon-remove\': !row.data}"></i>'+
@@ -163,8 +163,8 @@
 				'<button class="btn btn-default" ng-click="delete(); $event.stopPropagation();"><i class="fa fa-times"></i></button>'+
 			'</td>' +
 			'<td class="operations" ng-if="exportVisible">'+
-          '<button ng-if="!data.hideExportButton" class="btn btn-default" ng-click="export(); $event.stopPropagation();" ng-disabled="data.disableExportButton"><i ng-class="exportClass()"></i></button>'+
-      '</td>'
+				'<button ng-if="!data.hideExportButton" class="btn btn-default" ng-click="export(); $event.stopPropagation();" ng-disabled="data.disableExportButton"><i ng-class="exportClass()"></i></button>'+
+			'</td>'
 		link: (scope, element, attrs) ->
 			scope.rows = _.map scope.columns, (column)->
 				row = {}
@@ -177,7 +177,7 @@
 				if scope.onDelete?
 					scope.onDelete(scope.data)
 			scope.export = () =>
-			    scope.onExport? scope.data
+				scope.onExport? scope.data
 			scope.exportClass = () =>
 				if (scope.data.disableExportButton)
 					"fa fa-spinner fa-spin fa-lg fa-fw"
@@ -185,7 +185,7 @@
 					"fa fa-file-pdf-o"
 
 			scope.check = () =>
-			    scope.onCheck? scope.data
+				scope.onCheck? scope.data
 			scope.action = () =>
 				scope.onAction? scope.data
 ]

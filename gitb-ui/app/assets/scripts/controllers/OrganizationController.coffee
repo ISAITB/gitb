@@ -47,7 +47,7 @@ class OrganizationController
             @AccountService.updateVendorProfile(@$scope.vdata.fname, @$scope.vdata.sname) #call service op.
             .then(
                 (data) => #success handler
-                    @alerts.push({type:'success', msg:"Organization information updated."})
+                    @alerts.push({type:'success', msg:"Organisation information updated."})
                     @ds.user.organization.fname = @$scope.vdata.fname
                     @ds.user.organization.sname = @$scope.vdata.sname
                     @ds.vendor.fname = @$scope.vdata.fname
@@ -72,10 +72,10 @@ class OrganizationController
         valid = true
 
         if @$scope.vdata.fname == undefined || @$scope.vdata.fname == ''
-            @alerts.push({type:'danger', msg:"Full name of your organization can not be empty."})
+            @alerts.push({type:'danger', msg:"Full name of your organisation can not be empty."})
             valid = false
         else if @$scope.vdata.sname == undefined || @$scope.vdata.sname == ''
-            @alerts.push({type:'danger', msg:"Short name of your organization can not be empty."})
+            @alerts.push({type:'danger', msg:"Short name of your organisation can not be empty."})
             valid = false
 
         valid
@@ -91,7 +91,7 @@ class OrganizationController
                         @addMember()
                     else #error handler
                         @modalAlerts.push({type:'danger', msg:"A user with email '#{@$scope.udata.email}' has already been registered."})
-                        @$scope.udata.email = @$scope.udata.password = ''
+                        @$scope.udata.email = @$scope.udata.password = @$scope.udata.cpassword = ''
                         @spinner = false
                 ,
                 (error) =>
@@ -101,7 +101,7 @@ class OrganizationController
                     @spinner = false
             )
         else
-            @$scope.udata.password = '' # clear password every time the form is not valid
+            @$scope.udata.password = @$scope.udata.cpassword = '' # clear password every time the form is not valid
 
 	#call remote operation to register user
     addMember: () ->
@@ -125,18 +125,23 @@ class OrganizationController
         emailRegex = @Constants.EMAIL_REGEX
 
         if @$scope.udata.name == undefined || @$scope.udata.name == ''
-            @modalAlerts.push({type:'danger', msg:"You have to enter user's name."})
+            @modalAlerts.push({type:'danger', msg:"You have to enter the user's name."})
             valid = false
         else if @$scope.udata.email == undefined || @$scope.udata.email == ''
-            @modalAlerts.push({type:'danger', msg:"You have to enter user's email."})
+            @modalAlerts.push({type:'danger', msg:"You have to enter the user's email."})
             valid = false
         else if !emailRegex.test(@$scope.udata.email)
             @modalAlerts.push({type:'danger', msg:"You have to enter a valid email address."})
             valid = false
         else if @$scope.udata.password == undefined || @$scope.udata.password == ''
-            @modalAlerts.push({type:'danger', msg:"You have to enter user's password."})
+            @modalAlerts.push({type:'danger', msg:"You have to enter the user's password."})
             valid = false
-
+        else if @$scope.udata.cpassword == undefined || @$scope.udata.cpassword == ''
+            @modalAlerts.push({type:'danger', msg:"You have to confirm the user's password."})
+            valid = false
+        else if @$scope.udata.password != @$scope.udata.cpassword
+            @modalAlerts.push({type:'danger', msg:"The provided passwords don't match."})
+            valid = false
         valid
 
     closeAlert: (index) ->

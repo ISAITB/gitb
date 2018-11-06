@@ -2,24 +2,29 @@
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h4 class="title">Specification details</h4>
-			<div class="pull-right">
-				<button ng-click="specDetailsCtrl.saveSpecificationChanges()" class="btn btn-default" ng-disabled="specDetailsCtrl.saveDisabled()">Save changes</button>
-				<button ng-click="specDetailsCtrl.deleteSpecification()" class="btn btn-default">Delete</button>
-				<button ng-click="specDetailsCtrl.back()" class="btn btn-default">Back</button>
-			</div>
 		</div>
 		<div class="panel-body">
 			<div class="row">
 				<div class="col-md-10 col-md-offset-1" spec-details-form specification="specDetailsCtrl.specification"></div>
 			</div>
 		</div>
+        <div class="panel-footer">
+            <div class="row">
+                <div class="col-md-3"></div>
+                <div class="col-md-8 btn-toolbar">
+					<button ng-click="specDetailsCtrl.saveSpecificationChanges()" class="btn btn-default" ng-disabled="specDetailsCtrl.saveDisabled()">Save changes</button>
+					<button ng-click="specDetailsCtrl.deleteSpecification()" class="btn btn-default">Delete</button>
+					<button ng-click="specDetailsCtrl.back()" class="btn btn-default">Back</button>
+                </div>
+            </div>
+        </div>
 	</div>
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h4 class="title">Test suites</h4>
 			<button class="btn btn-default pull-right" ng-file-select="specDetailsCtrl.onFileSelect($files)" accept="application/zip" onclick="this.value = null">Deploy test suite</button>
 		</div>
-		<div table-directive id="test-suites-table" columns="specDetailsCtrl.testSuiteTableColumns" data="specDetailsCtrl.testSuites" operations-visible="true" on-delete="specDetailsCtrl.onTestSuiteDelete"></div>
+		<div table-directive id="test-suites-table" columns="specDetailsCtrl.testSuiteTableColumns" data="specDetailsCtrl.testSuites" operations-visible="true" on-delete="specDetailsCtrl.onTestSuiteDelete"  on-select="specDetailsCtrl.onTestSuiteDownload"></div>
 	</div>
 	<div class="panel panel-default">
 		<div class="panel-heading">

@@ -6,20 +6,17 @@ import com.gitb.tr.*;
 import com.gitb.types.DataType;
 import com.gitb.types.ObjectType;
 import com.gitb.types.SchemaType;
-import com.gitb.utils.XMLUtils;
 import com.gitb.validation.common.AbstractReportHandler;
-import com.helger.commons.error.EErrorLevel;
 import com.helger.schematron.svrl.AbstractSVRLMessage;
 import com.helger.schematron.svrl.SVRLFailedAssert;
 import com.helger.schematron.svrl.SVRLSuccessfulReport;
 import com.helger.schematron.svrl.SVRLUtils;
-import org.oclc.purl.dsdl.svrl.*;
+import org.oclc.purl.dsdl.svrl.SchematronOutputType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
 
 import javax.xml.bind.JAXBElement;
-import javax.xml.bind.JAXBException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
@@ -36,7 +33,6 @@ public class SchematronReportHandler extends AbstractReportHandler {
 
     public static final String XML_ITEM_NAME  = "XML";
     public static final String SCH_ITEM_NAME  = "SCH";
-    public static final String SVRL_ITEM_NAME = "SVRL";
 
     private Node node;
     private SchematronOutputType svrlReport;
@@ -118,15 +114,6 @@ public class SchematronReportHandler extends AbstractReportHandler {
             } else {
                 element = objectFactory.createTestAssertionGroupReportsTypeInfo(error);
             }
-            /*
-            if (message.getFlag() == EErrorLevel.ERROR || message.getFlag() == EErrorLevel.FATAL_ERROR) {
-                element = objectFactory.createTestAssertionGroupReportsTypeError(error);
-            } else if(message.getFlag() == EErrorLevel.WARN) {
-                element = objectFactory.createTestAssertionGroupReportsTypeWarning(error);
-            } else if(message.getFlag() == EErrorLevel.INFO) {
-                element = objectFactory.createTestAssertionGroupReportsTypeInfo(error);
-            }*/
-
             reports.add(element);
         }
 
@@ -135,12 +122,12 @@ public class SchematronReportHandler extends AbstractReportHandler {
 
     private String getLineNumbeFromXPath(String xpathExpression) {
         XPath xPath = XPathFactory.newInstance().newXPath();
-        Node node = null;
+        Node node;
         try {
             node = (Node) xPath.evaluate(xpathExpression, this.node, XPathConstants.NODE);
             return (String) node.getUserData("lineNumber");
         } catch (XPathExpressionException e) {
-            logger.error(e.getMessage());
+            logger.debug(e.getMessage());
             return "0";
         }
     }

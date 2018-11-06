@@ -31,6 +31,7 @@ object TestSuiteManager extends BaseManager {
 		DB.withSession { implicit session =>
 			PersistenceSchema.testSuites
 				.filter(_.specification === specification)
+				.sortBy(_.shortname.asc)
 				.list
 		}
 	}
@@ -46,7 +47,14 @@ object TestSuiteManager extends BaseManager {
 					PersistenceSchema.testSuites
 				}
 			}
-			q.list
+			q.sortBy(_.shortname.asc)
+			 .list
+		}
+	}
+
+	def getTestSuiteOfTestCaseWrapper(testCaseId: Long): TestSuites = {
+		DB.withSession { implicit session =>
+			getTestSuiteOfTestCase(testCaseId)
 		}
 	}
 
@@ -60,7 +68,7 @@ object TestSuiteManager extends BaseManager {
 
 	def getTestSuitesWithTestCases(): List[TestSuite] = {
 		DB.withSession { implicit session =>
-			val testSuites = PersistenceSchema.testSuites.list
+			val testSuites = PersistenceSchema.testSuites.sortBy(_.shortname.asc).list
 
 			testSuites map {
 				ts:TestSuites =>
@@ -261,7 +269,9 @@ object TestSuiteManager extends BaseManager {
 
 	private def theSameActor(one: Actors, two: Actors) = {
 		(ObjectUtils.equals(one.name, two.name)
-				&& ObjectUtils.equals(one.description, two.description))
+				&& ObjectUtils.equals(one.description, two.description)
+				&& ObjectUtils.equals(one.default, two.default)
+				&& ObjectUtils.equals(one.displayOrder, two.displayOrder))
 	}
 
 	private def theSameEndpoint(one: Endpoint, two: Endpoints) = {
@@ -352,7 +362,7 @@ object TestSuiteManager extends BaseManager {
 					if (isActorReference(actorToSave) || theSameActor(savedActor.head._1, actorToSave)) {
 						result.add(new TestSuiteUploadItemResult(savedActor.head._1.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED))
 					} else {
-						ActorManager.updateActor(savedActor.head._1.id, actorToSave.actorId, actorToSave.name, actorToSave.description)
+						ActorManager.updateActor(savedActor.head._1.id, actorToSave.actorId, actorToSave.name, actorToSave.description, actorToSave.default, actorToSave.displayOrder, suite.specification)
 						result.add(new TestSuiteUploadItemResult(savedActor.head._1.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE))
 					}
 					savedActorId = savedActor.head._1.id
@@ -362,13 +372,9 @@ object TestSuiteManager extends BaseManager {
 						throw new IllegalStateException("Actor reference ["+actorToSave.actorId+"] not found in specification")
 					} else {
 						// New actor.
-						savedActorId = PersistenceSchema.actors
-							.returning(PersistenceSchema.actors.map(_.id))
-							.insert(actorToSave)
+						savedActorId = ConformanceManager.createActor(actorToSave, suite.specification)
 						savedActorIds.put(actorToSave.actorId, savedActorId)
 					}
-					// Link new actor to specification.
-					PersistenceSchema.specificationHasActors.insert((suite.specification, savedActorId))
 					result.add(new TestSuiteUploadItemResult(actorToSave.actorId, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_ADD))
 				}
 				val existingEndpointMap = new util.HashMap[String, Endpoints]()
@@ -561,6 +567,7 @@ object TestSuiteManager extends BaseManager {
 			val testSuites = PersistenceSchema.testSuites
 				.filter(_.id inSet testSuiteIds)
 				.filter(_.specification === specificationId)
+				.sortBy(_.shortname.asc)
 				.list
 
 			testSuites map { testSuite =>

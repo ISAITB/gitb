@@ -10,18 +10,19 @@ class Constants
 	@SECONDS_IN_DAY: 86400
 
 	@END_OF_TEST_STEP: "-1"
+	@LOG_EVENT_TEST_STEP: "-999"
 
 	@DEFAULT_COMMUNITY_ID = 0
 
 	@TEST_ROLE =
-	    SUT: "SUT"
-	    SIMULATED: "SIMULATED"
-	    MONITOR: "MONITOR"
+		SUT: "SUT"
+		SIMULATED: "SIMULATED"
+		MONITOR: "MONITOR"
 
 	@WEB_SOCKET_COMMAND =
-	    REGISTER: "register"
-	    NOTIFY: "notify"
-	    PING: "ping"
+		REGISTER: "register"
+		NOTIFY: "notify"
+		PING: "ping"
 
 	@TEST_CASE_TYPE =
 		CONFORMANCE: 0,
@@ -52,6 +53,14 @@ class Constants
 		}
 	]
 
+	@PLACEHOLDER__ERROR_DESCRIPTION = "$ERROR_DESCRIPTION"
+	@PLACEHOLDER__ERROR_ID = "$ERROR_ID"
+	@PLACEHOLDER__ORGANISATION = "$ORGANISATION"
+	@PLACEHOLDER__SYSTEM = "$SYSTEM"
+	@PLACEHOLDER__SPECIFICATION = "$SPECIFICATION"
+	@PLACEHOLDER__ACTOR = "$ACTOR"
+	@PLACEHOLDER__DOMAIN = "$DOMAIN"
+
 	@TEST_STATUS =
 		UNKNOWN: null,
 		PROCESSING : 0,
@@ -80,6 +89,11 @@ class Constants
 		ADD: 2
 		DELETE: 3
 
+	@REPORT_OPTION_CHOICE = 
+		CERTIFICATE: 1
+		REPORT: 2
+		DETAILED_REPORT: 3
+
 	@TEST_CASE_RESULT =
 		SUCCESS : "SUCCESS"
 		FAILURE : "FAILURE"
@@ -88,6 +102,6 @@ class Constants
 	@EMAIL_REGEX: /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 	@DATA_URL_REGEX: /^data:.+\/(.+);base64,(.*)$/
 
-	@VERSION = "v1.4.1"
+	@VERSION = "v1.5.0"
 
 common.value('Constants', Constants)

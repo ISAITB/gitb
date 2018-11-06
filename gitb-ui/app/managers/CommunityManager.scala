@@ -24,7 +24,8 @@ object CommunityManager extends BaseManager {
           PersistenceSchema.communities
         }
       }
-      q.list
+      q.sortBy(_.shortname.asc)
+        .list
     }
   }
 
@@ -54,7 +55,7 @@ object CommunityManager extends BaseManager {
   def createCommunity(community: Communities) = {
     DB.withTransaction { implicit session =>
       val communityId = PersistenceSchema.insertCommunity += community
-      val adminOrganization = Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, true, None, None, communityId)
+      val adminOrganization = Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, true, None, None, None, communityId)
       PersistenceSchema.insertOrganization += adminOrganization
     }
   }
@@ -109,7 +110,9 @@ object CommunityManager extends BaseManager {
       OrganizationManager.deleteOrganizationByCommunity(communityId)
       LandingPageManager.deleteLandingPageByCommunity(communityId)
       LegalNoticeManager.deleteLegalNoticeByCommunity(communityId)
+      ErrorTemplateManager.deleteErrorTemplateByCommunity(communityId)
       TestResultManager.updateForDeletedCommunity(communityId)
+      ConformanceManager.deleteConformanceCertificateSettings(communityId)
       PersistenceSchema.communities.filter(_.id === communityId).delete
     }
   }

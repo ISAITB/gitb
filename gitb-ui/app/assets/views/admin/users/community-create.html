@@ -1,23 +1,21 @@
 <div class="page users create">
-    <div class="row">
-        <div class="col-md-10">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <h4 class="title">Community create</h4>
-                </div>
-                <div class="panel-body">
-                    <!-- Error messages -->
-                    <div class="row col-md-10 col-md-offset-1">
-                        <alert ng-repeat="alert in communityCreateCtrl.alerts" type="{{alert.type}}" close="communityCreateCtrl.closeAlert($index)">{{alert.msg}}</alert>
-                    </div>
-
-                    <div class="col-md-10 col-md-offset-1" tb-community-form tb-community="communityCreateCtrl.community" tb-domains="communityCreateCtrl.domains"></div>
-                    <div class="row col-md-10 col-md-offset-3">
-                        <div class="btn-toolbar">
-                            <button class="btn btn-default" type="button" ng-click="communityCreateCtrl.createCommunity()" ng-disabled="communityCreateCtrl.saveDisabled()">Save</button>
-                            <button class="btn btn-default" type="button" ng-click="communityCreateCtrl.cancelCreateCommunity()">Cancel</button>
-                        </div>
-                    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Create community</h4>
+        </div>
+        <div class="panel-body">
+            <!-- Error messages -->
+            <div class="row col-md-10 col-md-offset-1">
+                <alert ng-repeat="alert in communityCreateCtrl.alerts" type="{{alert.type}}" close="communityCreateCtrl.closeAlert($index)">{{alert.msg}}</alert>
+            </div>
+            <div class="col-md-10 col-md-offset-1" tb-community-form tb-community="communityCreateCtrl.community" tb-domains="communityCreateCtrl.domains"></div>
+        </div>
+        <div class="panel-footer">
+            <div class="row">
+                <div class="col-md-3"></div>
+                <div class="col-md-8 btn-toolbar">
+                    <button class="btn btn-default" type="button" ng-click="communityCreateCtrl.createCommunity()" ng-disabled="communityCreateCtrl.saveDisabled()">Save</button>
+                    <button class="btn btn-default" type="button" ng-click="communityCreateCtrl.cancelCreateCommunity()">Cancel</button>
                 </div>
             </div>
         </div>

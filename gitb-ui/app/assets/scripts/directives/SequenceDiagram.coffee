@@ -2,6 +2,11 @@ TEST_ENGINE_ACTOR = 'Test Engine'
 TESTER_ACTOR = 'Operator'
 
 getTesterNameForActor = (actor, actorInfo) ->
+  if !actor?
+    sutActor = _.find(actorInfo, (a) =>
+      a.role == 'SUT'
+    )
+    actor = sutActor.id
   actorName = actor + ' - ' + TESTER_ACTOR
   for info in actorInfo
     if actor == info.id
@@ -39,7 +44,31 @@ extractActors = (messages, actorInfo) =>
       instructionActors.concat requestActors
     else
       []
-  collection.flatten().unique().value()
+  flattened = collection.flatten().unique().value()
+  hasOrdering = _.find(actorInfo, (actor) => 
+    return actor.displayOrder?
+  )
+  if hasOrdering?
+    sortActors(flattened, actorInfo)
+  else
+    flattened
+
+sortActors = (actors, actorInfo) =>
+  sortedArray = []
+  for actor in actors
+    actorDef = _.find(actorInfo, (actorDef) =>
+      actor == actorDef.id
+    )
+    if actorDef?
+      sortedArray.push(undefined)
+    else
+      sortedArray.push(actor)
+  for actor in actorInfo
+    for sortedActor, sortedIndex in sortedArray
+      if !sortedActor?
+        sortedArray[sortedIndex] = actor.id
+        break
+  sortedArray
 
 extractSteps = (s, actorInfo) =>
   stepFilter = (step) ->
@@ -269,7 +298,7 @@ extractSteps = (s, actorInfo) =>
           '<div class="child-steps then reverse-offset-{{message.fromIndex}}" ng-if="message.type == \'decision\'">'+
             '<div ng-repeat="subMessage in message.then" seq-diagram-message message="subMessage"></div>'+
           '</div>'+
-          '<div class="child-steps else reverse-offset-{{message.fromIndex}}" ng-if="message.type == \'decision\'">'+
+          '<div class="child-steps else reverse-offset-{{message.fromIndex}}" ng-if="message.type == \'decision\' && message.else.length > 0">'+
             '<div ng-repeat="subMessage in message.else" seq-diagram-message message="subMessage"></div>'+
           '</div>'+
           '<div class="child-steps thread thread-{{$index}} reverse-offset-{{message.fromIndex}}" ng-if="message.type == \'flow\'" ng-repeat="thread in message.threads">'+

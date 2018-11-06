@@ -16,6 +16,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 scalaVersion := "2.11.1"
 
 libraryDependencies ++= Seq(
+  "eu.europa.ec.itb" % "gitb-types" % "1.5.0-SNAPSHOT",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
@@ -35,6 +36,7 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-frontend-jaxws" % "2.7.4",     //for calling jax-ws services
   "org.apache.cxf" % "cxf-rt-transports-http" % "2.7.4", //for calling jax-ws services
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % "2.7.4", //exporting jax-ws services
+  "org.apache.tika" % "tika-core" % "1.19",
   "org.webjars" %% "webjars-play" % "2.3.0",
   "org.webjars" % "jquery" % "1.11.1",
   "org.webjars" % "jquery-cookie" % "1.4.0",
@@ -47,9 +49,13 @@ libraryDependencies ++= Seq(
   "org.webjars" % "font-awesome" % "4.1.0" exclude("org.webjars", "jquery"),
   "org.webjars" % "angular-file-upload" % "1.6.12",
   "org.webjars" % "codemirror" % "4.8",
-  "org.webjars" % "tinymce" % "4.2.1",
+  "org.webjars" % "tinymce" % "4.7.9",
   "javax.mail" % "mail" % "1.4.7",
-  "javax.activation" % "activation" % "1.1.1"
+  "javax.activation" % "activation" % "1.1.1",
+  "org.bouncycastle" % "bcmail-jdk15on" % "1.60",
+  "org.apache.pdfbox" % "pdfbox" % "2.0.9",
+  "org.jasypt" % "jasypt" % "1.9.2",
+  "commons-httpclient" % "commons-httpclient" % "3.1"
 )
 
 libraryDependencies += "com.github.tototoshi" %% "play-flyway" % "1.2.2"

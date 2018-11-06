@@ -10,6 +10,7 @@ import com.gitb.tpl.TestCase;
 import com.gitb.utils.ErrorUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 import javax.annotation.Resource;
 import javax.jws.WebParam;
@@ -58,10 +59,11 @@ public class TestbedServiceImpl implements TestbedService {
 
     @Override
     public InitiateResponse initiate(@WebParam(name = "InitiateRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") BasicRequest parameters) throws Error {
+        String sessionId = null;
         try {
             String testCaseId = parameters.getTcId();
             //Call the real TestbedService
-            String sessionId = com.gitb.engine.TestbedService.initiate(testCaseId);
+            sessionId = com.gitb.engine.TestbedService.initiate(testCaseId);
             //Save the WSAddressing properties so we can use callbacks
             TestbedServiceCallbackHandler.
                     getInstance().
@@ -71,18 +73,19 @@ public class TestbedServiceImpl implements TestbedService {
             response.setTcInstanceId(sessionId);
             return response;
         } catch (GITBEngineInternalError e) {
-            logger.error("An error occurred", e);
+            logger.error(MarkerFactory.getDetachedMarker(sessionId), "An error occurred", e);
             throw new Error(e.getMessage(), e.getErrorInfo());
         } catch (Exception e) {
-            logger.error("An error occurred", e);
+            logger.error(MarkerFactory.getDetachedMarker(sessionId), "An error occurred", e);
             throw new Error("An error occurred.", ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR), e);
         }
     }
 
     @Override
     public ConfigureResponse configure(@WebParam(name = "ConfigureRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") ConfigureRequest parameters) throws Error {
+        String sessionId = null;
         try {
-            String sessionId = parameters.getTcInstanceId();
+            sessionId = parameters.getTcInstanceId();
             List<ActorConfiguration> actorConfigurations = parameters.getConfigs();
             //Call the real TestbedService
             List<SUTConfiguration> simulatedActorsConfigurations = com.gitb.engine.TestbedService.configure(sessionId, actorConfigurations);
@@ -91,44 +94,46 @@ public class TestbedServiceImpl implements TestbedService {
             response.getConfigs().addAll(simulatedActorsConfigurations);
             return response;
         } catch (GITBEngineInternalError e) {
-            logger.error("An error occurred", e);
+            logger.error(MarkerFactory.getDetachedMarker(sessionId), "An error occurred", e);
             throw new Error(e.getMessage(), e.getErrorInfo());
         } catch (Exception e) {
-            logger.error("An error occurred", e);
+            logger.error(MarkerFactory.getDetachedMarker(sessionId), "An error occurred", e);
             throw new Error("An error occurred.", ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR), e);
         }
     }
 
     @Override
     public Void provideInput(@WebParam(name = "ProvideInputRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") ProvideInputRequest parameters) throws Error {
+        String sessionId = null;
         try {
-            String sessionId = parameters.getTcInstanceId();
+            sessionId = parameters.getTcInstanceId();
             String interactionStepId = parameters.getStepId();
             List<UserInput> userInputs= parameters.getInput();
             //Call the real TestbedService
             com.gitb.engine.TestbedService.provideInput(sessionId, interactionStepId, userInputs);
             return new Void();
         } catch (GITBEngineInternalError e) {
-            logger.error("An error occurred", e);
+            logger.error(MarkerFactory.getDetachedMarker(sessionId), "An error occurred", e);
             throw new Error(e.getMessage(), e.getErrorInfo());
         } catch (Exception e) {
-            logger.error("An error occurred", e);
+            logger.error(MarkerFactory.getDetachedMarker(sessionId), "An error occurred", e);
             throw new Error("An error occurred.", ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR), e);
         }
     }
 
     @Override
     public Void initiatePreliminary(@WebParam(name = "InitiatePreliminaryRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") BasicCommand parameters) throws Error {
+        String sessionId = null;
         try {
-            String sessionId = parameters.getTcInstanceId();
+            sessionId = parameters.getTcInstanceId();
             //Call the real TestbedService
             com.gitb.engine.TestbedService.initiatePreliminary(sessionId);
             return new Void();
         } catch (GITBEngineInternalError e) {
-            logger.error("An error occurred", e);
+            logger.error(MarkerFactory.getDetachedMarker(sessionId), "An error occurred", e);
             throw new Error(e.getMessage(), e.getErrorInfo());
         } catch (Exception e) {
-            logger.error("An error occurred", e);
+            logger.error(MarkerFactory.getDetachedMarker(sessionId), "An error occurred", e);
             throw new Error("An error occurred.", ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR), e);
         }
     }

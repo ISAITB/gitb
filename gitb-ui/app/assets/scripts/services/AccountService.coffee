@@ -94,13 +94,16 @@ class AccountService
             authenticate: true
         })
 
-    submitFeedback: (userId, userEmail, messageTypeId, messageTypeDescription, messageContent) ->
+    submitFeedback: (userId, userEmail, messageTypeId, messageTypeDescription, messageContent, messageAttachments) ->
         data = {}
         data["GITB-USER-ID"] = userId
         data["user_email"] = userEmail
         data["msg_type_id"] = messageTypeId
         data["msg_type_description"] = messageTypeDescription
         data["msg_content"] = messageContent
+        if (messageAttachments?)
+            data["msg_attachments_count"] = messageAttachments.length
+            data["msg_attachments"] = messageAttachments
         @RestService.post({
             path: jsRoutes.controllers.AccountService.submitFeedback().url,
             data: data

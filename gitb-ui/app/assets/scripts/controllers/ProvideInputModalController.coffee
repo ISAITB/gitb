@@ -1,7 +1,7 @@
 class ProvideInputModalController
 
-	@$inject = ['$log', '$scope', '$modalInstance', 'Constants', 'TestService', 'session', 'interactionStepId', 'interactions']
-	constructor:(@$log, @$scope, @$modalInstance, @Constants, @TestService, @session, @interactionStepId, interactions) ->
+	@$inject = ['$log', '$scope', '$modalInstance', 'Constants', 'TestService', 'session', 'interactionStepId', 'interactions', 'DataService']
+	constructor:(@$log, @$scope, @$modalInstance, @Constants, @TestService, @session, @interactionStepId, interactions, @DataService) ->
 
 		@$scope.interactions = interactions
 
@@ -39,6 +39,18 @@ class ProvideInputModalController
 				reader.readAsDataURL request.file
 				reader.onload = (event) =>
 					request.data = event.target.result
+
+		@$scope.download = (interaction) =>
+			blob = @DataService.b64toBlob(interaction.value)
+			if interaction.name?
+				saveAs(blob, interaction.name)
+			else
+				@DataService.getFileInfo(blob).then((info) =>
+					nameToUse = "file"
+					if info.extension?
+						nameToUse += '.'+info.extension
+					saveAs(blob, nameToUse)
+				)
 
 		@$scope.isConfigurationDataURL = (configuration) =>
 			@Constants.DATA_URL_REGEX.test(configuration)

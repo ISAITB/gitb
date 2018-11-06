@@ -60,7 +60,7 @@ public class OFTP2Sender extends AbstractTransactionSender {
         //receive and validate SSRM (Start Session Ready Message)
         byte[] ssrm = OFTP2MessagingHandler.readOFTPMessage(inputStream);
         OFTP2MessagingHandler.validateCommandIdentifier(ssrm, OFTP2Constants.SSRM);
-        logger.debug("SSRM (Start Session Ready Message) received...");
+        logger.debug(addMarker(), "SSRM (Start Session Ready Message) received...");
 
         //send SSID (Start Session)
         String usercode = ConfigurationUtils.getConfiguration(transaction.getWith().getConfig(), OFTP2MessagingHandler.USERCODE_CONFIG_NAME).getValue();
@@ -73,42 +73,42 @@ public class OFTP2Sender extends AbstractTransactionSender {
         //receive and validate SSID (Start Session)
         ssid = OFTP2MessagingHandler.readOFTPMessage(inputStream);
         OFTP2MessagingHandler.validateSSID(ssid);
-        logger.debug("SSID (Start Session) received...");
+        logger.debug(addMarker(), "SSID (Start Session) received...");
 
         //send SFID (Start File)
         long fileSize = OFTP2MessagingHandler.computeVirtualFileSize(fileContent.length);
         byte[] sfid = OFTP2MessagingHandler.createSFIDMessage(fileName, new Date(), usercode, usercode, fileSize);
         TCPMessagingHandler.sendBytes(outputStream, OFTP2MessagingHandler.encodeMessage(sfid));
-        logger.debug("SFID (Start File) sent...");
+        logger.debug(addMarker(), "SFID (Start File) sent...");
 
         //receive and validate SFPA (Start File Positive Answer)
         byte[] sfpa = OFTP2MessagingHandler.readOFTPMessage(inputStream);
         OFTP2MessagingHandler.validateCommandIdentifier(sfpa, OFTP2Constants.SFPA);
-        logger.debug("SFPA (Start File Positive Answer) received...");
+        logger.debug(addMarker(), "SFPA (Start File Positive Answer) received...");
 
         //send DATA
         sendData(outputStream, fileContent);
-        logger.debug("DATA sending finished...");
+        logger.debug(addMarker(), "DATA sending finished...");
 
         //send EFID (End File)
         byte[] efid = OFTP2MessagingHandler.createEFIDMessage(0, fileContent.length);
         TCPMessagingHandler.sendBytes(outputStream, OFTP2MessagingHandler.encodeMessage(efid));
-        logger.debug("EFID (End File) sent...");
+        logger.debug(addMarker(), "EFID (End File) sent...");
 
         //receive EFPA (End File Postive Answer)
         byte[] efpa = OFTP2MessagingHandler.readOFTPMessage(inputStream);
         OFTP2MessagingHandler.validateCommandIdentifier(efpa, OFTP2Constants.EFPA);
-        logger.debug("EFPA (End File Positive Answer) received...");
+        logger.debug(addMarker(), "EFPA (End File Positive Answer) received...");
 
         //send  CD
         byte[] cd = OFTP2MessagingHandler.createCDMessage();
         TCPMessagingHandler.sendBytes(outputStream, OFTP2MessagingHandler.encodeMessage(cd));
-        logger.debug("CD (Change Direction) sent...");
+        logger.debug(addMarker(), "CD (Change Direction) sent...");
 
         //receive ESID
         byte[] esid = OFTP2MessagingHandler.readOFTPMessage(inputStream);
         OFTP2MessagingHandler.validateCommandIdentifier(esid, OFTP2Constants.ESID);
-        logger.debug("ESID (End Session) received...");
+        logger.debug(addMarker(), "ESID (End Session) received...");
 
         return message;
     }
@@ -156,7 +156,7 @@ public class OFTP2Sender extends AbstractTransactionSender {
 
             //send data buffer
             TCPMessagingHandler.sendBytes(outputStream, OFTP2MessagingHandler.encodeMessage(buffer.toByteArray()));
-            logger.debug("DATA sent...");
+            logger.debug(addMarker(), "DATA sent...");
         }
     }
 

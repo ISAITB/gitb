@@ -113,32 +113,32 @@ public class HttpSender extends AbstractTransactionSender {
     }
 
     private void sendHttpRequest(List<Configuration> configurations, Message message) throws Exception {
-        logger.debug("Connection created: " + connection);
+        logger.debug(addMarker(), "Connection created: " + connection);
 
         BasicHttpEntityEnclosingRequest request = createHttpRequest(configurations, message);
 
         ((DefaultBHttpClientConnection) connection).sendRequestHeader(request);
-        logger.debug("Sent request: " + request);
+        logger.debug(addMarker(), "Sent request: " + request);
         ((DefaultBHttpClientConnection) connection).flush();
 
         ((DefaultBHttpClientConnection) connection).sendRequestEntity(request);
-        logger.debug("Sent entity: " + request + " - " + request.getEntity());
+        logger.debug(addMarker(), "Sent entity: " + request + " - " + request.getEntity());
 
         ((DefaultBHttpClientConnection) connection).flush();
-        logger.debug("Flushed connection: " + connection);
+        logger.debug(addMarker(), "Flushed connection: " + connection);
     }
 
     private void sendHttpResponse(List<Configuration> configurations, Message message) throws Exception {
         BasicHttpResponse response = createHttpResponse(configurations, message);
 
         ((DefaultBHttpServerConnection) connection).sendResponseHeader(response);
-        logger.debug("Sent response: " + response);
+        logger.debug(addMarker(), "Sent response: " + response);
 
         ((DefaultBHttpServerConnection) connection).sendResponseEntity(response);
-        logger.debug("Sent response entity: " + response + " - " + response.getEntity());
+        logger.debug(addMarker(), "Sent response entity: " + response + " - " + response.getEntity());
 
         ((DefaultBHttpServerConnection) connection).flush();
-        logger.debug("Flushed connection: " + connection);
+        logger.debug(addMarker(), "Flushed connection: " + connection);
     }
 
     protected BasicHttpEntityEnclosingRequest createHttpRequest(List<Configuration> configurations, Message message) {
@@ -190,7 +190,7 @@ public class HttpSender extends AbstractTransactionSender {
                     request.addHeader(HTTP.CONTENT_LEN, String.valueOf(entity.getContentLength()));
                     request.addHeader(HTTP.TARGET_HOST, getHost() + ":" + getPort());
                 } else {
-                    logger.warn("Input for " + HttpMessagingHandler.HTTP_PARTS_FIELD_NAME + " must contain map items");
+                    logger.warn(addMarker(), "Input for " + HttpMessagingHandler.HTTP_PARTS_FIELD_NAME + " must contain map items");
                 }
             }
         }
