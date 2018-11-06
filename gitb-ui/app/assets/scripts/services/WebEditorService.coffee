@@ -33,13 +33,11 @@ class WebEditorService
         'insertdatetime media table contextmenu paste code'
       ]
       toolbar: 'bold italic | charmap | bullist numlist outdent indent | link'
-      init_instance_callback: () -> tinymce.activeEditor.setContent(initialContent)
+      init_instance_callback: () -> tinymce.get(className).setContent(initialContent)
       content_css: 'assets/stylesheets/css/tinymce/tinymce.css'
       branding: false
 
   editorForPdfInput: (height, initialContent, className) =>
-    if !className?
-      className = 'mce-editor'
     tinymce.init
       mode: 'specific_textareas'
       editor_selector: className

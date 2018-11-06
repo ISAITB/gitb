@@ -389,7 +389,7 @@ class AdminConformanceController
 				controller: 'ConformanceCertificateModalController as controller'
 				size: 'lg'
 				resolve: 
-					settings: () => @settings
+					settings: () => JSON.parse(JSON.stringify(@settings))
 					conformanceStatement: () => @statementToProcess
 			modalInstance = @$modal.open(modalOptions)
 
