@@ -1,7 +1,7 @@
 class ConformanceCertificateModalController
 
-    @$inject = ['$scope', '$modalInstance', 'WebEditorService', 'settings', 'conformanceStatement', 'ConformanceService', 'ErrorService', 'Constants', 'ReportService']
-    constructor: (@$scope, @$modalInstance, @WebEditorService, @settings, @conformanceStatement, @ConformanceService, @ErrorService, @Constants, @ReportService) ->
+    @$inject = ['$scope', '$timeout', '$modalInstance', 'WebEditorService', 'settings', 'conformanceStatement', 'ConformanceService', 'ErrorService', 'Constants', 'ReportService']
+    constructor: (@$scope, @$timeout, @$modalInstance, @WebEditorService, @settings, @conformanceStatement, @ConformanceService, @ErrorService, @Constants, @ReportService) ->
         @exportPending = false
         @choice = @Constants.REPORT_OPTION_CHOICE.REPORT
         if @settings.message? 
@@ -13,10 +13,12 @@ class ConformanceCertificateModalController
             @settings.message = @settings.message.split(@Constants.PLACEHOLDER__SYSTEM).join(@conformanceStatement.systemName)
         else 
             @settings.message = ''
-        tinyMCE.execCommand('mceRemoveEditor', false, 'message');
-        setTimeout(() => 
-            @WebEditorService.editorForPdfInput(200, @settings.message).then () =>
-        , 1);
+        @$modalInstance.opened.then(
+            @$timeout(() =>
+                tinymce.remove('.mce-message')
+                @WebEditorService.editorForPdfInput(200, @settings.message, "mce-message")
+            , 1)
+        )
 
     generate: () =>
         @exportPending = true

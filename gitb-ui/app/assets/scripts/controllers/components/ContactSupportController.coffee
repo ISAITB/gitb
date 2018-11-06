@@ -4,6 +4,7 @@ class ContactSupportController
   constructor: (@$scope, @$modalInstance, @WebEditorService, @$timeout, @DataService, @AccountService, @ErrorService, @ValidationService) ->
     @$modalInstance.opened.then(
         @$timeout(() =>
+            tinymce.remove('.mce-editor-contact')
             @WebEditorService.editorMinimal(200, "", "mce-editor-contact")
             @$scope.editorReady = true
         , 1)
@@ -29,7 +30,7 @@ class ContactSupportController
             editor.setContent("")
 
     @$scope.getRichTextEditor = () =>
-        tinymce.get('editor-contact')
+        tinymce.get('mce-editor-contact')
 
     @$scope.resetState()
 

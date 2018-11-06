@@ -4,9 +4,9 @@ class CommunityCertificateController
   constructor: (@$state, @$scope, @$stateParams, @WebEditorService, @Constants, @ConformanceService, @ErrorService, @$q, @DataService, @ConfirmationDialogService) ->
     @communityId = @$stateParams.community_id
     @editorReady = @$q.defer()
-    tinyMCE.execCommand('mceRemoveEditor', false, 'message');
+    tinyMCE.remove('.mce-message')
     setTimeout(() => 
-        @WebEditorService.editorForPdfInput(200, "").then () =>
+        @WebEditorService.editorForPdfInput(200, "", "mce-message").then () =>
           @editorReady.resolve()
     , 1);
     
