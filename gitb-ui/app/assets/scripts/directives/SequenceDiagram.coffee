@@ -1,12 +1,16 @@
 TEST_ENGINE_ACTOR = 'Test Engine'
 TESTER_ACTOR = 'Operator'
 
-getTesterNameForActor = (actor, actorInfo) ->
+getSutActorIfMissing = (actor, actorInfo) ->
   if !actor?
     sutActor = _.find(actorInfo, (a) =>
       a.role == 'SUT'
     )
     actor = sutActor.id
+  actor
+
+getTesterNameForActor = (actor, actorInfo) ->
+  actor = getSutActorIfMissing(actor, actorInfo)
   actorName = actor + ' - ' + TESTER_ACTOR
   for info in actorInfo
     if actor == info.id
@@ -38,7 +42,7 @@ extractActors = (messages, actorInfo) =>
       instructions = _.filter message.interactions, (interaction) -> interaction.type == 'instruction'
       requests = _.filter message.interactions, (interaction) -> interaction.type == 'request'
 
-      instructionActors = _.map instructions, (instruction) -> [(getTesterNameForActor(instruction.with, actorInfo)), instruction.with]
+      instructionActors = _.map instructions, (instruction) -> [(getTesterNameForActor(instruction.with, actorInfo)), getSutActorIfMissing(instruction.with, actorInfo)]
       requestActors = _.map requests, (request) -> [(getTesterNameForActor(request.with, actorInfo)), TEST_ENGINE_ACTOR]
 
       instructionActors.concat requestActors
@@ -103,7 +107,7 @@ extractSteps = (s, actorInfo) =>
           interaction.to = TEST_ENGINE_ACTOR
         else
           interaction.from = getTesterNameForActor(interaction.with, actorInfo)
-          interaction.to = interaction.with
+          interaction.to = getSutActorIfMissing(interaction.with, actorInfo)
     step
   for step in steps
     processStep(step, actorInfo)

@@ -8,6 +8,7 @@ import com.gitb.tbs.Error;
 import com.gitb.tbs.Void;
 import com.gitb.tpl.TestCase;
 import com.gitb.utils.ErrorUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
@@ -73,10 +74,18 @@ public class TestbedServiceImpl implements TestbedService {
             response.setTcInstanceId(sessionId);
             return response;
         } catch (GITBEngineInternalError e) {
-            logger.error(MarkerFactory.getDetachedMarker(sessionId), "An error occurred", e);
+            if (StringUtils.isBlank(sessionId)) {
+                logger.error("An error occurred", e);
+            } else {
+                logger.error(MarkerFactory.getDetachedMarker(sessionId), "An error occurred", e);
+            }
             throw new Error(e.getMessage(), e.getErrorInfo());
         } catch (Exception e) {
-            logger.error(MarkerFactory.getDetachedMarker(sessionId), "An error occurred", e);
+            if (StringUtils.isBlank(sessionId)) {
+                logger.error("An error occurred", e);
+            } else {
+                logger.error(MarkerFactory.getDetachedMarker(sessionId), "An error occurred", e);
+            }
             throw new Error("An error occurred.", ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR), e);
         }
     }

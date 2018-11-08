@@ -1,11 +1,12 @@
 # Provides a wrapper service for WebSockets
 class ErrorService
 
-  @$inject = ['$log', '$modal', 'Constants', 'ErrorTemplateService', 'AccountService']
-  constructor: (@$log, @$modal, @Constants, @ErrorTemplateService, @AccountService) ->
+  @$inject = ['$q', '$log', '$modal', 'Constants', 'ErrorTemplateService', 'AccountService']
+  constructor: (@$q, @$log, @$modal, @Constants, @ErrorTemplateService, @AccountService) ->
     @$log.debug "Constructing ErrorService"
 
   showErrorMessage: (error, withRetry) =>
+    errorDeferred = @$q.defer()
     if !error?
       error = {}
     if error.data?.error_id?
@@ -15,28 +16,29 @@ class ErrorService
         .then (vendor) =>
           if vendor.errorTemplates?
             error.template = vendor.errorTemplates.content
-            @openModal(error, withRetry)
+            @modal = @openModal(error, withRetry, errorDeferred)
           else
             communityId = vendor.community
             @ErrorTemplateService.getCommunityDefaultErrorTemplate(communityId)
             .then (data) =>
               if data.exists == true
                 error.template = data.content
-                @openModal(error, withRetry)
+                @modal = @openModal(error, withRetry, errorDeferred)
               else if communityId != @Constants.DEFAULT_COMMUNITY_ID
                 @ErrorTemplateService.getCommunityDefaultErrorTemplate(@Constants.DEFAULT_COMMUNITY_ID)
                 .then (data) =>
                   error.template = data.content  if data.exists == true
-                  @openModal(error, withRetry)
+                  @modal = @openModal(error, withRetry, errorDeferred)
               else
-                @openModal(error, withRetry)
+                @modal = @openModal(error, withRetry, errorDeferred)
       else
-        @openModal(error, withRetry)
+        @modal = @openModal(error, withRetry, errorDeferred)
     else
       # Expected errors (e.g. validation errors) that have clear error messages
-      @openModal(error, withRetry)
+      @modal = @openModal(error, withRetry)
+    errorDeferred.promise
 
-  openModal: (error, withRetry) =>
+  openModal: (error, withRetry, errorDeferred) =>
     if !error.template? || error.template == ''
       if error.data?.error_id?
         error.template = '<p><b>Error message: </b>'+@Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</p>' +
@@ -49,6 +51,16 @@ class ErrorService
       resolve:
         error: () => error
         withRetry: () => withRetry
-    @$modal.open modalOptions
+    modalInstance = @$modal.open modalOptions
+    modalInstance.result.then((result) => 
+      # Closed
+      errorDeferred.resolve()
+    , () => 
+      # Dismissed
+      if withRetry? && withRetry
+        errorDeferred.reject()
+      else
+        errorDeferred.resolve()
+    )    
 
 services.service('ErrorService', ErrorService)
