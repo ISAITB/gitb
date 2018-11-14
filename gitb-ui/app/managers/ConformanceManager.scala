@@ -352,7 +352,7 @@ object ConformanceManager extends BaseManager {
 			if (testSuiteId.isDefined) {
 				query = query.filter(_._1.testsuite === testSuiteId.get)
 			}
-			query = query.sortBy(x => (x._3.shortname, x._2.shortname))
+			query = query.sortBy(x => (x._3.shortname))
 			val results = query.list
 			results
 		}
