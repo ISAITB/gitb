@@ -9,23 +9,20 @@ import org.slf4j.LoggerFactory
 import persistence.cache.TokenCache
 import persistence.db._
 
-import scala.slick.driver.MySQLDriver.simple._
-
 object AuthManager extends BaseManager {
+
+  import dbConfig.driver.api._
+
   def logger = LoggerFactory.getLogger("AuthManager")
 
   def checkEmailAvailability(email:String): Boolean = {
-    DB.withSession { implicit session:Session =>
-      val q = PersistenceSchema.users.filter(_.email === email)
-      !q.firstOption.isDefined
-    }
+    val q = PersistenceSchema.users.filter(_.email === email)
+    !exec(q.result.headOption).isDefined
   }
 
   def checkUserByEmail(email:String, passwd:String): Option[Users] = {
-    DB.withSession { implicit session:Session =>
-      val query = PersistenceSchema.users.filter(_.email === email).firstOption
-      if (query.isDefined && BCrypt.checkpw(passwd, query.get.password)) query else None
-    }
+    val query = exec(PersistenceSchema.users.filter(_.email === email).result.headOption)
+    if (query.isDefined && BCrypt.checkpw(passwd, query.get.password)) query else None
   }
 
   def generateTokens(userId:Long): Token = {

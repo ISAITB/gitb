@@ -54,13 +54,15 @@ class ErrorService
     modalInstance = @$modal.open modalOptions
     modalInstance.result.then((result) => 
       # Closed
-      errorDeferred.resolve()
+      if errorDeferred?
+        errorDeferred.resolve()
     , () => 
       # Dismissed
-      if withRetry? && withRetry
-        errorDeferred.reject()
-      else
-        errorDeferred.resolve()
+      if errorDeferred?
+        if withRetry? && withRetry
+          errorDeferred.reject()
+        else
+          errorDeferred.resolve()
     )    
 
 services.service('ErrorService', ErrorService)

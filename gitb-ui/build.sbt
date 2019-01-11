@@ -1,5 +1,4 @@
 import com.github.play2war.plugin._
-import play.PlayImport.PlayKeys._
 
 name := """GITB"""
 
@@ -23,7 +22,7 @@ libraryDependencies ++= Seq(
   "mysql" % "mysql-connector-java" % "5.1.35",
   "com.typesafe.akka" %% "akka-actor" % "2.3.4",
   "com.typesafe.akka" %% "akka-remote" % "2.3.4",
-  "com.typesafe.play" %% "play-slick" % "0.8.0-RC2",
+  "com.typesafe.play" %% "play-slick" % "1.1.0",
   "org.slf4j" % "slf4j-nop" % "1.6.4",
   "ch.qos.logback" % "logback-classic" % "1.0.1",
   "commons-lang" % "commons-lang" % "2.6",
@@ -37,7 +36,7 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http" % "2.7.4", //for calling jax-ws services
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % "2.7.4", //exporting jax-ws services
   "org.apache.tika" % "tika-core" % "1.19",
-  "org.webjars" %% "webjars-play" % "2.3.0",
+  "org.webjars" %% "webjars-play" % "2.4.0",
   "org.webjars" % "jquery" % "1.11.1",
   "org.webjars" % "jquery-cookie" % "1.4.0",
   "org.webjars" % "lodash" % "2.4.1-6",
@@ -55,10 +54,9 @@ libraryDependencies ++= Seq(
   "org.bouncycastle" % "bcmail-jdk15on" % "1.60",
   "org.apache.pdfbox" % "pdfbox" % "2.0.9",
   "org.jasypt" % "jasypt" % "1.9.2",
-  "commons-httpclient" % "commons-httpclient" % "3.1"
+  "commons-httpclient" % "commons-httpclient" % "3.1",
+  "org.flywaydb" %% "flyway-play" % "3.2.0"
 )
-
-libraryDependencies += "com.github.tototoshi" %% "play-flyway" % "1.2.2"
 
 //JsEngineKeys.engineType := JsEngineKeys.EngineType.Node
 

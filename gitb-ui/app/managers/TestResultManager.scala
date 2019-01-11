@@ -6,129 +6,125 @@ import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.Logger
 
-import scala.slick.driver.MySQLDriver.simple._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object TestResultManager extends BaseManager {
   def logger = LoggerFactory.getLogger("TestResultManager")
 
+  import dbConfig.driver.api._
+
   def getTestResultForSessionWrapper(sessionId: String): Option[TestResult] = {
-    DB.withSession { implicit session =>
-      getTestResultForSession(sessionId)
-    }
+    exec(getTestResultForSession(sessionId))
   }
 
-  def getTestResultForSession(sessionId: String)(implicit session: Session): Option[TestResult] = {
-    PersistenceSchema.testResults.filter(_.testSessionId === sessionId).firstOption
+  def getTestResultForSession(sessionId: String) = {
+    PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption
   }
 
   /**
    * Gets all running test results
    */
   def getRunningTestResults: List[TestResult] = {
-    DB.withSession { implicit session =>
-      val results = PersistenceSchema.testResults.filter(_.endTime.isEmpty).list
-      results
-    }
+    val results = exec(
+      PersistenceSchema.testResults.filter(_.endTime.isEmpty).result.map(_.toList)
+    )
+    results
   }
 
-  def updateForUpdatedSystem(id: Long, name: String)(implicit session: Session) = {
+  def updateForUpdatedSystem(id: Long, name: String) = {
     val q1 = for {t <- PersistenceSchema.testResults if t.sutId === id} yield (t.sut)
     q1.update(Some(name))
   }
 
-  def updateForUpdatedOrganisation(id: Long, name: String)(implicit session: Session) = {
+  def updateForUpdatedOrganisation(id: Long, name: String) = {
     val q1 = for {t <- PersistenceSchema.testResults if t.organizationId === id} yield (t.organization)
     q1.update(Some(name))
   }
 
-  def updateForUpdatedCommunity(id: Long, name: String)(implicit session: Session) = {
+  def updateForUpdatedCommunity(id: Long, name: String) = {
     val q1 = for {t <- PersistenceSchema.testResults if t.communityId === id} yield (t.community)
     q1.update(Some(name))
   }
 
-  def updateForUpdatedTestCase(id: Long, name: String)(implicit session: Session) = {
+  def updateForUpdatedTestCase(id: Long, name: String) = {
     val q1 = for {t <- PersistenceSchema.testResults if t.testCaseId === id} yield (t.testCase)
     q1.update(Some(name))
   }
 
-  def updateForUpdatedTestSuite(id: Long, name: String)(implicit session: Session) = {
+  def updateForUpdatedTestSuite(id: Long, name: String) = {
     val q1 = for {t <- PersistenceSchema.testResults if t.testSuiteId === id} yield (t.testSuite)
     q1.update(Some(name))
   }
 
-  def updateForUpdatedDomain(id: Long, name: String)(implicit session: Session) = {
+  def updateForUpdatedDomain(id: Long, name: String) = {
     val q1 = for {t <- PersistenceSchema.testResults if t.domainId === id} yield (t.domain)
     q1.update(Some(name))
   }
 
-  def updateForUpdatedSpecification(id: Long, name: String)(implicit session: Session) = {
+  def updateForUpdatedSpecification(id: Long, name: String) = {
     val q1 = for {t <- PersistenceSchema.testResults if t.specificationId === id} yield (t.specification)
     q1.update(Some(name))
   }
 
-  def updateForUpdatedActor(id: Long, name: String)(implicit session: Session) = {
+  def updateForUpdatedActor(id: Long, name: String) = {
     val q1 = for {t <- PersistenceSchema.testResults if t.actorId === id} yield (t.actor)
     q1.update(Some(name))
   }
 
-  def updateForDeletedSystem(id: Long)(implicit session: Session) = {
+  def updateForDeletedSystem(id: Long) = {
     val q1 = for {t <- PersistenceSchema.testResults if t.sutId === id} yield (t.sutId)
     q1.update(None)
   }
 
-  def updateForDeletedOrganisation(id: Long)(implicit session: Session) = {
+  def updateForDeletedOrganisation(id: Long) = {
     val q1 = for {t <- PersistenceSchema.testResults if t.organizationId === id} yield (t.organizationId)
     q1.update(None)
   }
 
-  def updateForDeletedOrganisationByCommunityId(id: Long)(implicit session: Session) = {
+  def updateForDeletedOrganisationByCommunityId(id: Long) = {
     val q1 = for {t <- PersistenceSchema.testResults if t.communityId === id} yield (t.organizationId)
     q1.update(None)
   }
 
-  def updateForDeletedCommunity(id: Long)(implicit session: Session) = {
+  def updateForDeletedCommunity(id: Long) = {
     val q1 = for {t <- PersistenceSchema.testResults if t.communityId === id} yield (t.communityId)
     q1.update(None)
   }
 
-  def updateForDeletedTestCase(id: Long)(implicit session: Session) = {
+  def updateForDeletedTestCase(id: Long) = {
     val q1 = for {t <- PersistenceSchema.testResults if t.testCaseId === id} yield (t.testCaseId)
     q1.update(None)
   }
 
-  def updateForDeletedTestSuite(id: Long)(implicit session: Session) = {
+  def updateForDeletedTestSuite(id: Long) = {
     val q1 = for {t <- PersistenceSchema.testResults if t.testSuiteId === id} yield (t.testSuiteId)
     q1.update(None)
   }
 
-  def updateForDeletedDomain(id: Long)(implicit session: Session) = {
+  def updateForDeletedDomain(id: Long) = {
     val q1 = for {t <- PersistenceSchema.testResults if t.domainId === id} yield (t.domainId)
     q1.update(None)
   }
 
-  def updateForDeletedSpecification(id: Long)(implicit session: Session) = {
+  def updateForDeletedSpecification(id: Long) = {
     val q1 = for {t <- PersistenceSchema.testResults if t.specificationId === id} yield (t.specificationId)
     q1.update(None)
   }
 
-  def updateForDeletedActor(id: Long)(implicit session: Session) = {
+  def updateForDeletedActor(id: Long) = {
     val q1 = for {t <- PersistenceSchema.testResults if t.actorId === id} yield (t.actorId)
     q1.update(None)
   }
 
-  def deleteObsoleteTestResultsForSystemWrapper(systemId: Long): Unit = {
-    DB.withTransaction { implicit session =>
-      deleteObsoleteTestResultsForSystem(systemId)
-    }
+  def deleteObsoleteTestResultsForSystemWrapper(systemId: Long) = {
+    exec(deleteObsoleteTestResultsForSystem(systemId).transactionally)
   }
 
   def deleteObsoleteTestResultsForCommunityWrapper(communityId: Long): Unit = {
-    DB.withTransaction { implicit session =>
-      deleteObsoleteTestResultsForCommunity(communityId)
-    }
+    exec(deleteObsoleteTestResultsForCommunity(communityId).transactionally)
   }
 
-  def deleteSessionDataFromFileSystem(testResult: TestResult)(implicit session: Session): Unit = {
+  def deleteSessionDataFromFileSystem(testResult: TestResult) = {
     val path = ReportManager.getPathForTestSessionObj(testResult.sessionId, Some(testResult), true)
     try {
         FileUtils.deleteDirectory(path.toFile)
@@ -139,46 +135,60 @@ object TestResultManager extends BaseManager {
     }
   }
 
-  def deleteObsoleteTestResultsForSystem(systemId: Long)(implicit session: Session): Unit = {
+  def deleteObsoleteTestResultsForSystem(systemId: Long) = {
     val query = PersistenceSchema.testResults
       .filter(x => x.sutId === systemId &&
         (x.testSuiteId.isEmpty || x.testCaseId.isEmpty ||
           x.communityId.isEmpty || x.organizationId.isEmpty ||
           x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty))
-    val results = query.list
-    results.foreach{ result =>
-      deleteSessionDataFromFileSystem(result)
-    }
+    // Delete filesystem data.
+    (for {
+      results <- query.result
+      _ <- DBIO.seq(results.map(r => {
+        deleteSessionDataFromFileSystem(r)
+        DBIO.successful(())
+      }): _*)
+    } yield ()) andThen
+    // Delete the DB records.
     query.delete
   }
 
-  def deleteObsoleteTestResultsForCommunity(communityId: Long)(implicit session: Session): Unit = {
+  def deleteObsoleteTestResultsForCommunity(communityId: Long) = {
     val query = PersistenceSchema.testResults
       .filter(x => x.communityId === communityId &&
         (x.testSuiteId.isEmpty || x.testCaseId.isEmpty ||
           x.sutId.isEmpty || x.organizationId.isEmpty ||
           x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty))
-    val results = query.list
-    results.foreach{ result =>
-      deleteSessionDataFromFileSystem(result)
-    }
+    // Delete filesystem data.
+    (for {
+      results <- query.result
+      _ <- DBIO.seq(results.map(r => {
+        deleteSessionDataFromFileSystem(r)
+        DBIO.successful(())
+      }): _*)
+    } yield()) andThen
+    // Delete the DB records.
     query.delete
   }
 
   def deleteAllObsoleteTestResults(): Unit = {
-    DB.withTransaction { implicit session =>
-      val query = PersistenceSchema.testResults
-        .filter(x =>
-          x.testSuiteId.isEmpty || x.testCaseId.isEmpty ||
-            x.sutId.isEmpty || x.organizationId.isEmpty || x.communityId.isEmpty ||
-            x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty)
-      val results = query.list
-      results.foreach{ result =>
-        deleteSessionDataFromFileSystem(result)
-      }
-      query.delete
-    }
+    val query = PersistenceSchema.testResults
+      .filter(x =>
+        x.testSuiteId.isEmpty || x.testCaseId.isEmpty ||
+          x.sutId.isEmpty || x.organizationId.isEmpty || x.communityId.isEmpty ||
+          x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty)
+    exec(
+      (
+        (for {
+        results <- query.result
+        _ <- DBIO.seq(results.map(r => {
+          deleteSessionDataFromFileSystem(r)
+          DBIO.successful(())
+        }): _*)
+      } yield()) andThen
+        query.delete
+      ).transactionally
+    )
   }
-
 
 }

@@ -7,30 +7,28 @@ import models.{TestCase, TestCases}
 import persistence.db.PersistenceSchema
 
 import scala.collection.mutable.ListBuffer
-import scala.slick.driver.MySQLDriver.simple._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * Created by serbay on 10/16/14.
  */
 object TestCaseManager extends BaseManager {
 
+	import dbConfig.driver.api._
+
 	val TEST_CASES_PATH = "test-cases"
 
 	def createTestCase(testCase: TestCases) = {
-		DB.withTransaction { implicit session =>
-			PersistenceSchema.testCases.insert(testCase)
-		}
+		exec((PersistenceSchema.testCases += testCase).transactionally)
 	}
 
 	def getTestCaseForIdWrapper(testCaseId:String) = {
-		DB.withTransaction { implicit session =>
-			getTestCaseForId(testCaseId)
-		}
+		getTestCaseForId(testCaseId)
 	}
 
-	def getTestCaseForId(testCaseId:String)(implicit session: Session) = {
+	def getTestCaseForId(testCaseId:String) = {
 		try {
-			val tc = PersistenceSchema.testCases.filter(_.id === testCaseId.toLong).first
+			val tc = exec(PersistenceSchema.testCases.filter(_.id === testCaseId.toLong).result.head)
 			Some(new TestCase(tc))
 		}
 		catch {
@@ -39,22 +37,18 @@ object TestCaseManager extends BaseManager {
 	}
 
 	def getTestCasesOfTestSuiteWrapper(testSuiteId: Long, testCaseType: Option[Short]): util.List[TestCases] = {
-		DB.withSession { implicit session =>
-			getTestCasesOfTestSuite(testSuiteId, testCaseType)
-		}
+		getTestCasesOfTestSuite(testSuiteId, testCaseType)
 	}
 
-	def getTestCasesOfTestSuite(testSuiteId: Long, testCaseType: Option[Short])(implicit session: Session): util.List[TestCases] = {
-		var query = for {
-			testCase <- PersistenceSchema.testCases
-			testSuiteHasTestCases <- PersistenceSchema.testSuiteHasTestCases if testSuiteHasTestCases.testcase === testCase.id
-		} yield (testCase, testSuiteHasTestCases)
+	def getTestCasesOfTestSuite(testSuiteId: Long, testCaseType: Option[Short]): util.List[TestCases] = {
+		var query = PersistenceSchema.testCases
+			.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
 		query = query
 			.filter(_._2.testsuite === testSuiteId)
 		if (testCaseType.isDefined)
 			query = query
 				.filter(_._1.testCaseType === testCaseType.get)
-		val results = query.list
+		val results = exec(query.result.map(_.toList))
 
 		val testCases = new util.ArrayList[TestCases]()
 		for (result <- results) {
@@ -64,100 +58,91 @@ object TestCaseManager extends BaseManager {
 	}
 
 	def getTestCase(testCaseId:String) = {
-		DB.withSession { implicit session =>
-			try {
-				val tc = PersistenceSchema.testCases.filter(_.id === testCaseId.toLong).first
-				Some(new TestCase(tc))
-			}
-			catch {
-				case e: Exception => None
-			}
+		try {
+			val tc = exec(PersistenceSchema.testCases.filter(_.id === testCaseId.toLong).result.head)
+			Some(new TestCase(tc))
+		}
+		catch {
+			case e: Exception => None
 		}
 	}
 
 	def getTestCases(actor:Long, spec:Long, optionIds: Option[List[Long]], testCaseType:Short) : List[TestCase] = {
-		DB.withSession { implicit session =>
-			val actorTestCaseTuples = PersistenceSchema.testCaseHasActors
-														.filter(_.specification === spec)
-														.filter(_.actor === actor)
-														.map(_.testcase)
-														.list
+		val actorTestCaseTuples = exec(PersistenceSchema.testCaseHasActors
+													.filter(_.specification === spec)
+													.filter(_.actor === actor)
+													.map(_.testcase)
+													.result
+  												.map(_.toList))
 
-			val optionTestCaseTuples = optionIds match {
-				case Some(ids) => PersistenceSchema.testCaseCoversOptions
-														.filter(_.option inSet ids)
-														.map(_.testcase)
-														.list
-				case None => List()
-			}
-
-			val ids = actorTestCaseTuples union optionTestCaseTuples
-
-			val testCases = PersistenceSchema.testCases.filter(_.id inSet ids).filter(_.testCaseType === testCaseType).list
-
-			toTestCaseList(testCases)
+		val optionTestCaseTuples = optionIds match {
+			case Some(ids) => exec(PersistenceSchema.testCaseCoversOptions
+													.filter(_.option inSet ids)
+													.map(_.testcase)
+													.result
+													.map(_.toList))
+			case None => List()
 		}
+
+		val ids = actorTestCaseTuples union optionTestCaseTuples
+
+		val testCases = exec(PersistenceSchema.testCases.filter(_.id inSet ids).filter(_.testCaseType === testCaseType).result.map(_.toList))
+
+		toTestCaseList(testCases)
 	}
 
 	def getLastExecutionResultsForTestCases(sutId: Long, testCaseIds: List[Long]) = {
-		DB.withSession { implicit session =>
-			testCaseIds map { testCaseId =>
-				val testCaseResult = {
-					val testCaseResultStr = PersistenceSchema.testResults
-						.filter(_.sutId === sutId)
-						.filter(_.testCaseId === testCaseId)
-						.filter(_.endTime isDefined)
-						.sortBy(_.endTime.desc)
-						.map(_.result)
-						.firstOption
+		testCaseIds map { testCaseId =>
+			val testCaseResult = {
+				val testCaseResultStr = exec(PersistenceSchema.testResults
+					.filter(_.sutId === sutId)
+					.filter(_.testCaseId === testCaseId)
+					.filter(_.endTime isDefined)
+					.sortBy(_.endTime.desc)
+					.map(_.result)
+					.result
+					.headOption)
 
-					testCaseResultStr match {
-						case Some(result) => TestResultStatus.withName(result)
-						case None => TestResultStatus.UNDEFINED
-					}
+				testCaseResultStr match {
+					case Some(result) => TestResultStatus.withName(result)
+					case None => TestResultStatus.UNDEFINED
 				}
-
-				testCaseResult
 			}
-		}
+
+			testCaseResult
+			}
 	}
 
 	def getTestCasesHavingActors(actorIds: List[Long]): util.HashMap[Long, ListBuffer[TestCases]] = {
-		DB.withSession { implicit session =>
-			var query = for {
-					testCaseHasActors <- PersistenceSchema.testCaseHasActors
-					testCases <- PersistenceSchema.testCases if testCases.id === testCaseHasActors.testcase
-			} yield (testCaseHasActors, testCases)
-			query = query.filter(_._1.actor inSet actorIds)
+		var query = PersistenceSchema.testCaseHasActors
+  			.join(PersistenceSchema.testCases).on(_.testcase === _.id)
+		query = query.filter(_._1.actor inSet actorIds)
 
-			val results = query.list
-			val testCaseSet = new util.HashMap[Long, ListBuffer[TestCases]]()
-			results.foreach { result =>
-				if (!testCaseSet.containsKey(result._1._3)) {
-					testCaseSet.put(result._1._3, ListBuffer[TestCases]())
-				}
-				testCaseSet.get(result._1._3) += result._2
+		val results = exec(query.result.map(_.toList))
+		val testCaseSet = new util.HashMap[Long, ListBuffer[TestCases]]()
+		results.foreach { result =>
+			if (!testCaseSet.containsKey(result._1._3)) {
+				testCaseSet.put(result._1._3, ListBuffer[TestCases]())
 			}
-			testCaseSet
+			testCaseSet.get(result._1._3) += result._2
 		}
+		testCaseSet
 	}
 
 	def getTestCases(ids: Option[List[Long]]): List[TestCases] = {
-		DB.withSession { implicit session =>
-			val q = ids match {
-				case Some(idList) => {
-					PersistenceSchema.testCases
-						.filter(_.id inSet idList)
-				}
-				case None => {
-					PersistenceSchema.testCases
-				}
+		val q = ids match {
+			case Some(idList) => {
+				PersistenceSchema.testCases
+					.filter(_.id inSet idList)
 			}
-			q.sortBy(_.shortname.asc).list
+			case None => {
+				PersistenceSchema.testCases
+			}
 		}
+		exec(q.sortBy(_.shortname.asc).result.map(_.toList))
 	}
 
-	private def toTestCaseList(testCases:List[TestCases])(implicit session:Session) = {
+	private def toTestCaseList(testCases:List[TestCases]) = {
 		testCases map {
 			tc:TestCases =>
 				val actorIds = tc.targetActors.getOrElse("").split(",")
@@ -165,7 +150,7 @@ object TestCaseManager extends BaseManager {
 
 				val actors = {
 					if(actorIds.nonEmpty) {
-						Some(PersistenceSchema.actors.filter(_.actorId inSet actorIds).list)
+						Some(exec(PersistenceSchema.actors.filter(_.actorId inSet actorIds).result.map(_.toList)))
 					} else {
 						None
 					}
@@ -173,7 +158,7 @@ object TestCaseManager extends BaseManager {
 
 				val options = {
 					if(optionIds.nonEmpty) {
-						Some(PersistenceSchema.options.filter(_.shortname inSet optionIds).list)
+						Some(exec(PersistenceSchema.options.filter(_.shortname inSet optionIds).result.map(_.toList)))
 					} else {
 						None
 					}
@@ -183,56 +168,34 @@ object TestCaseManager extends BaseManager {
 		}
 	}
 
-	def updateTestCase(testCaseId: Long, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String)(implicit session: Session) = {
-		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname)
-		q1.update(shortName)
-
-		val q2 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.fullname)
-		q2.update(fullName)
-
-		val q3 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.version)
-		q3.update(version)
-
-		val q4 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.authors)
-		q4.update(authors)
-
-		val q5 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.description)
-		q5.update(description)
-
-		val q6 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.keywords)
-		q6.update(keywords)
-
-		val q7 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.testCaseType)
-		q7.update(testCaseType)
-
-		val q8 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.path)
-		q8.update(path)
-
+	def updateTestCase(testCaseId: Long, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String) = {
+		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname, t.fullname, t.version, t.authors, t.description, t.keywords, t.testCaseType, t.path)
+		q1.update(shortName, fullName, version, authors, description, keywords, testCaseType, path) andThen
 		TestResultManager.updateForUpdatedTestCase(testCaseId, shortName)
 	}
 
-	def delete(testCaseId: Long)(implicit session: Session): Unit = {
-		delete(testCaseId, false)
+	def delete(testCaseId: Long) = {
+		deleteInternal(testCaseId, false)
 	}
 
-	def delete(testCaseId: Long, skipConformanceResult: Boolean)(implicit session: Session): Unit = {
-		TestResultManager.updateForDeletedTestCase(testCaseId)
-		removeActorLinksForTestCase(testCaseId)
-		PersistenceSchema.testCaseCoversOptions.filter(_.testcase === testCaseId).delete
-		PersistenceSchema.testSuiteHasTestCases.filter(_.testcase === testCaseId).delete
+	private def deleteInternal(testCaseId: Long, skipConformanceResult: Boolean): DBIO[_] = {
+		val actions = new ListBuffer[DBIO[_]]()
+		actions += TestResultManager.updateForDeletedTestCase(testCaseId)
+		actions += removeActorLinksForTestCase(testCaseId)
+		actions += PersistenceSchema.testCaseCoversOptions.filter(_.testcase === testCaseId).delete
+		actions += PersistenceSchema.testSuiteHasTestCases.filter(_.testcase === testCaseId).delete
 		if (!skipConformanceResult) {
-			PersistenceSchema.conformanceResults.filter(_.testcase === testCaseId).delete
+			actions += PersistenceSchema.conformanceResults.filter(_.testcase === testCaseId).delete
 		}
-		PersistenceSchema.testCases.filter(_.id === testCaseId).delete
+		actions += PersistenceSchema.testCases.filter(_.id === testCaseId).delete
+		DBIO.seq(actions.map(a => a): _*)
 	}
 
-	def removeActorLinksForTestCase(testCaseId: Long)(implicit session: Session): Unit = {
-		PersistenceSchema.testCaseHasActors
-			.filter(_.testcase === testCaseId)
-			.delete
+	def removeActorLinksForTestCase(testCaseId: Long) = {
+		PersistenceSchema.testCaseHasActors.filter(_.testcase === testCaseId).delete
 	}
 
-	def removeActorLinkForTestCase(testCaseId: Long, actorId: Long)(implicit session: Session): Unit = {
+	def removeActorLinkForTestCase(testCaseId: Long, actorId: Long) = {
 		PersistenceSchema.testCaseHasActors
 			.filter(_.testcase === testCaseId)
 			.filter(_.actor === actorId)

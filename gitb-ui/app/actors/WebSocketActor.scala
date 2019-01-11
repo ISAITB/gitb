@@ -117,8 +117,8 @@ class WebSocketActor(out: ActorRef) extends Actor{
               WebSocketActor.testTypes  = WebSocketActor.testTypes.updated(sessionId, testCaseType)
 
               //if any actor sends its configurations, broadcast it.
-              if(!jsConfigurations.isInstanceOf[JsUndefined]) {
-                WebSocketActor.broadcast(sessionId, Json.obj("configuration" -> jsConfigurations).toString())
+              if(!jsConfigurations.isInstanceOf[JsUndefined] && jsConfigurations.toOption.isDefined) {
+                WebSocketActor.broadcast(sessionId, Json.obj("configuration" -> jsConfigurations.get).toString())
               }
             }
           case NOTIFY =>

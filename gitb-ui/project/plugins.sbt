@@ -5,10 +5,10 @@ resolvers += Resolver.url(
    url("http://dl.bintray.com/content/sbt/sbt-plugin-releases"))(
        Resolver.ivyStylePatterns)
 
-addSbtPlugin("com.github.play2war" % "play2-war-plugin" % "1.3-beta3")
+addSbtPlugin("com.github.play2war" % "play2-war-plugin" % "1.4.0")
 
 // The Play plugin
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.3.2")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.4.11")
 
 // web plugins
 

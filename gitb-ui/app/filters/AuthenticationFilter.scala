@@ -10,8 +10,6 @@ import exceptions._
 import persistence.AccountManager
 import org.slf4j.{LoggerFactory, Logger}
 
-class CustomizableHeaders(override protected val data:Seq[(String, Seq[String])]) extends Headers
-
 class AuthenticationFilter extends Filter {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthenticationFilter])
 
@@ -35,9 +33,7 @@ class AuthenticationFilter extends Filter {
           //check if access token exists for any user
           val userId = TokenCache.checkAccessToken(accessToken)
           //a workaround of customizing request headers to add our userId data, so that controllers can process it
-          val map = requestHeader.headers.toMap + ( Parameters.USER_ID -> Seq("" + userId) )
-          val headers:Seq[(String, Seq[String])] = map.toSeq
-          val customHeaders = new CustomizableHeaders(headers)
+          val customHeaders = requestHeader.headers.add((Parameters.USER_ID,  "" + userId))
           val customRequestHeader = requestHeader.copy(headers = customHeaders)
 
           //check if requested service requires admin access

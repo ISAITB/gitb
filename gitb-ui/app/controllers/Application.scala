@@ -1,9 +1,11 @@
 package controllers
 
-import org.slf4j.{LoggerFactory, Logger}
+import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import filters.CorsFilter
-import play.api.Routes
+
+import scala.collection.mutable.ListBuffer
+import play.api.routing._
 
 class Application extends Controller {
 
@@ -25,18 +27,17 @@ class Application extends Controller {
 
   def javascriptRoutes = Action { implicit request =>
     //cache for all the methods defined in the controllers in app.controllers package
-    val routeCache = {
-      val jsRoutesClass = classOf[routes.javascript]
-      val controllers = jsRoutesClass.getFields().map(_.get(null))
-      controllers.flatMap { controller =>
-        controller.getClass().getDeclaredMethods().map { action =>
-          action.invoke(controller).asInstanceOf[play.core.Router.JavascriptReverseRoute]
+    val jsRoutesClass = classOf[routes.javascript]
+    val controllers = jsRoutesClass.getFields.map(_.get(null))
+    val routeActions = new ListBuffer[play.api.routing.JavaScriptReverseRoute]()
+    controllers.foreach{ controller =>
+      controller.getClass.getDeclaredMethods.foreach{ action =>
+        if (action.getReturnType == classOf[play.api.routing.JavaScriptReverseRoute]) {
+          routeActions += action.invoke(controller).asInstanceOf[play.api.routing.JavaScriptReverseRoute]
         }
       }
     }
-
-    Ok(Routes.javascriptRouter("jsRoutes")(routeCache:_*)).as("text/javascript")
+    Ok(JavaScriptReverseRouter("jsRoutes")(routeActions.toList:_*)).as("text/javascript")
   }
-
 
 }

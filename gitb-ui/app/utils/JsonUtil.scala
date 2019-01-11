@@ -486,9 +486,9 @@ object JsonUtil {
     DomainParameter(
       idToUse,
       (jsonConfig \ "name").as[String],
-      (jsonConfig \ "desc").as[Option[String]],
+      (jsonConfig \ "desc").asOpt[String],
       (jsonConfig \ "kind").as[String],
-      (jsonConfig \ "value").as[Option[String]],
+      (jsonConfig \ "value").asOpt[String],
       domainId
     )
   }
@@ -497,17 +497,17 @@ object JsonUtil {
     val jsonConfig = Json.parse(json).as[JsObject]
     ConformanceCertificates(
       0L,
-      (jsonConfig \ "title").as[Option[String]],
-      (jsonConfig \ "message").as[Option[String]],
+      (jsonConfig \ "title").asOpt[String],
+      (jsonConfig \ "message").asOpt[String],
       (jsonConfig \ "includeMessage").as[Boolean],
       (jsonConfig \ "includeTestStatus").as[Boolean],
       (jsonConfig \ "includeTestCases").as[Boolean],
       (jsonConfig \ "includeDetails").as[Boolean],
       (jsonConfig \ "includeSignature").as[Boolean],
-      (jsonConfig \ "keystoreFile").as[Option[String]],
-      (jsonConfig \ "keystoreType").as[Option[String]],
-      (jsonConfig \ "keystorePassword").as[Option[String]],
-      (jsonConfig \ "keyPassword").as[Option[String]],
+      (jsonConfig \ "keystoreFile").asOpt[String],
+      (jsonConfig \ "keystoreType").asOpt[String],
+      (jsonConfig \ "keystorePassword").asOpt[String],
+      (jsonConfig \ "keyPassword").asOpt[String],
       communityId
     )
   }
@@ -523,10 +523,10 @@ object JsonUtil {
       false,
       false,
       false,
-      (jsonConfig \ "keystoreFile").as[Option[String]],
-      (jsonConfig \ "keystoreType").as[Option[String]],
-      (jsonConfig \ "keystorePassword").as[Option[String]],
-      (jsonConfig \ "keyPassword").as[Option[String]],
+      (jsonConfig \ "keystoreFile").asOpt[String],
+      (jsonConfig \ "keystoreType").asOpt[String],
+      (jsonConfig \ "keystorePassword").asOpt[String],
+      (jsonConfig \ "keyPassword").asOpt[String],
       communityId
     )
   }

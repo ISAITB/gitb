@@ -1,12 +1,23 @@
 package managers
 
-import play.api.Play.current
-import scala.slick.driver.MySQLDriver.simple._
-import play.api.libs.concurrent.Execution.Implicits._
+import play.api.Play
+import play.api.db.slick.DatabaseConfigProvider
+import slick.dbio.DBIO
+import slick.driver.JdbcProfile
+
+import scala.concurrent.Await
+import scala.concurrent.duration.Duration
 
 /**
  * Created by serbay on 10/22/14.
  */
 abstract class BaseManager {
-	def DB = play.api.db.slick.DB
+
+	val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
+	val DB = dbConfig.db
+
+	final def exec[R](a: DBIO[R]): R = {
+		Await.result(DB.run(a), Duration.Inf)
+	}
+
 }

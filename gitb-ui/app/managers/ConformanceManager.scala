@@ -9,556 +9,523 @@ import persistence.db.PersistenceSchema
 import utils.{MimeUtil, RepositoryUtils}
 
 import scala.collection.mutable.ListBuffer
-import scala.slick.driver.MySQLDriver.simple._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object ConformanceManager extends BaseManager {
   def logger = LoggerFactory.getLogger("ConformanceManager")
+
+	import dbConfig.driver.api._
 
 	/**
 	 * Checks if domain exists
 	 */
 	def checkDomainExists(domainId: Long): Boolean = {
-		DB.withSession { implicit session =>
-			val firstOption = PersistenceSchema.domains.filter(_.id === domainId).firstOption
-			firstOption.isDefined
-		}
+		exec(PersistenceSchema.domains.filter(_.id === domainId).result.headOption).isDefined
 	}
 
 	def getDomainOfSpecification(specificationId: Long ): Domain = {
-		DB.withSession { implicit session =>
-			var query = for {
-				domain <- PersistenceSchema.domains
-				specification <- PersistenceSchema.specifications if specification.domain === domain.id
-			} yield (domain, specification)
-			val result = query
-				.filter(_._2.id === specificationId)
-				.firstOption
-			result.get._1
-		}
+		val query = PersistenceSchema.domains
+  			.join(PersistenceSchema.specifications).on(_.id === _.domain)
+		val result = query
+			.filter(_._2.id === specificationId)
+			.result
+			.headOption
+		exec(result).get._1
 	}
 
   def getDomains(ids: Option[List[Long]] = None):List[Domain] = {
-		DB.withSession { implicit session =>
-			val domains = {
-				val q = PersistenceSchema.domains
-
-				val q2 = ids match {
-					case Some(list) => q.filter(_.id inSet list)
-					case None => q
-				}
-
-				q2.sortBy(_.shortname.asc)
-					.list
+		val domains = {
+			val q = PersistenceSchema.domains
+			val q2 = ids match {
+				case Some(list) => q.filter(_.id inSet list)
+				case None => q
 			}
-			domains
+			q2.sortBy(_.shortname.asc)
+				.result
+  			.map(_.toList)
 		}
+		exec(domains)
   }
 
 	def getCommunityDomain(communityId: Long): Domain = {
-		DB.withSession { implicit session =>
-			val community = PersistenceSchema.communities.filter(_.id === communityId).firstOption.get
+		val community = exec(PersistenceSchema.communities.filter(_.id === communityId).result.headOption).get
 
-			val domain = community.domain match {
-				case Some(d) => PersistenceSchema.domains.filter(_.id === d).firstOption.get
-				case None => null
-			}
-			domain
+		val domain = community.domain match {
+			case Some(d) => exec(PersistenceSchema.domains.filter(_.id === d).result.headOption).get
+			case None => null
 		}
+		domain
 	}
 
 	def createDomain(domain:Domain) = {
-		DB.withSession { implicit session =>
-			PersistenceSchema.domains.insert(domain)
-		}
+		exec(PersistenceSchema.domains.returning(PersistenceSchema.domains.map(_.id)) += domain)
 	}
 
 	def createDomainParameter(parameter:DomainParameter) = {
-		DB.withTransaction { implicit session =>
-			PersistenceSchema.domainParameters.insert(parameter)
-		}
+		exec(PersistenceSchema.domainParameters.returning(PersistenceSchema.domainParameters.map(_.id)) += parameter)
 	}
 
 	def updateDomainParameter(parameterId: Long, name: String, description: Option[String], kind: String, value: Option[String]) = {
-		DB.withTransaction { implicit session =>
+		val actions = new ListBuffer[DBIO[_]]()
+		val q1 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.name)
+		actions += q1.update(name)
 
-			val q1 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.name)
-			q1.update(name)
+		val q2 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.desc)
+		actions += q2.update(description)
 
-			val q2 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.desc)
-			q2.update(description)
+		val q3 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.kind)
+		actions += q3.update(kind)
 
-			val q3 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.kind)
-			q3.update(kind)
-
-			if (value.isDefined) {
-				// If there is no value provided this means that we don't want to update this
-				val q4 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.value)
-				q4.update(value)
-			}
-
+		if (value.isDefined) {
+			// If there is no value provided this means that we don't want to update this
+			val q4 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.value)
+			actions += q4.update(value)
 		}
+		exec(DBIO.seq(actions.map(a => a): _*).transactionally)
 	}
 
 	def deleteDomainParameterWrapper(domainParameter: Long) = {
-		DB.withTransaction { implicit session =>
-			deleteDomainParameter(domainParameter)
-		}
+		exec(deleteDomainParameter(domainParameter).transactionally)
 	}
 
-	def deleteDomainParameter(domainParameter: Long)(implicit session: Session) = {
+	def deleteDomainParameter(domainParameter: Long) = {
 		PersistenceSchema.domainParameters.filter(_.id === domainParameter).delete
 	}
 
 	def getDomainParameter(domainParameterId: Long) = {
-		DB.withSession { implicit session =>
-			PersistenceSchema.domainParameters.filter(_.id === domainParameterId).first
-		}
+		exec(PersistenceSchema.domainParameters.filter(_.id === domainParameterId).result.head)
 	}
 
 	def getDomainParameters(domainId: Long) = {
-		DB.withSession { implicit session =>
+		exec(
 			PersistenceSchema.domainParameters.filter(_.domain === domainId)
-			  	.sortBy(_.name.asc)
-					.list
-		}
+				.sortBy(_.name.asc)
+				.result
+  			.map(_.toList)
+		)
 	}
 
 	def getDomainParameterByDomainAndName(domainId: Long, name: String) = {
-		DB.withSession { implicit session =>
+		exec(
 			PersistenceSchema.domainParameters
 				.filter(_.domain === domainId)
 				.filter(_.name === name)
-				.firstOption
-		}
+				.result
+  			.headOption
+		)
 	}
 
 	def updateDomain(domainId: Long, shortName: String, fullName: String, description: Option[String]) = {
-		DB.withTransaction { implicit session =>
-			val q1 = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.shortname)
-			q1.update(shortName)
-
-			val q2 = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.fullname)
-			q2.update(fullName)
-
-			val q3 = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.description)
-			q3.update(description)
-
-			TestResultManager.updateForUpdatedDomain(domainId, shortName)
-		}
+		val q = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.shortname, d.fullname, d.description)
+		exec((
+				q.update(shortName, fullName, description) andThen
+				TestResultManager.updateForUpdatedDomain(domainId, shortName)
+			).transactionally
+		)
 	}
 
-	def deleteDomainParameters(domainId: Long)(implicit session: Session) = {
-		val ids = PersistenceSchema.domainParameters.filter(_.domain === domainId).map(_.id).list
-		ids foreach { id =>
-			deleteDomainParameter(id)
-		}
+	def deleteDomainParameters(domainId: Long) = {
+		(for {
+			ids <- PersistenceSchema.domainParameters.filter(_.domain === domainId).map(_.id).result
+			_ <- DBIO.seq(ids.map(id => deleteDomainParameter(id)): _*)
+		} yield()).transactionally
 	}
 
 	def deleteDomain(domain: Long) {
-		DB.withTransaction { implicit session =>
-			ActorManager.deleteActorByDomain(domain)
-			SpecificationManager.deleteSpecificationByDomain(domain)
-			TransactionManager.deleteTransactionByDomain(domain)
-			TestResultManager.updateForDeletedDomain(domain)
-			deleteDomainParameters(domain)
-			PersistenceSchema.domains.filter(_.id === domain).delete
-			RepositoryUtils.deleteDomainTestSuiteFolder(domain)
-		}
+		exec(
+			(
+				ActorManager.deleteActorByDomain(domain) andThen
+				SpecificationManager.deleteSpecificationByDomain(domain) andThen
+				TransactionManager.deleteTransactionByDomain(domain) andThen
+				TestResultManager.updateForDeletedDomain(domain) andThen
+				deleteDomainParameters(domain) andThen
+				PersistenceSchema.domains.filter(_.id === domain).delete
+			).transactionally
+		)
+		RepositoryUtils.deleteDomainTestSuiteFolder(domain)
 	}
 
 	def getSpecifications(ids: Option[List[Long]] = None): List[Specifications] = {
-		DB.withSession { implicit session =>
-			val specs = {
-				val q = PersistenceSchema.specifications
+		val specs = {
+			val q = PersistenceSchema.specifications
 
-				val q2 = ids match {
-					case Some(list) => q.filter(_.id inSet list)
-					case None => q
-				}
-
-				q2.sortBy(_.shortname.asc)
-					.list
+			val q2 = ids match {
+				case Some(list) => q.filter(_.id inSet list)
+				case None => q
 			}
-			specs
+
+			q2.sortBy(_.shortname.asc)
+				.result
+  			.map(_.toList)
 		}
+		exec(specs)
 	}
 
   def getSpecifications(domain:Long): List[Specifications] = {
-		DB.withSession { implicit session =>
 			val specs = PersistenceSchema.specifications.filter(_.domain === domain)
 			  	.sortBy(_.shortname.asc)
-					.list
-			specs
-    }
+					.result
+  				.map(_.toList)
+			exec(specs)
   }
 
 	def createSpecifications(specification: Specifications) = {
-		DB.withTransaction { implicit session =>
-			PersistenceSchema.specifications.insert(specification)
-		}
+		exec((PersistenceSchema.specifications.returning(PersistenceSchema.specifications.map(_.id)) += specification).transactionally)
 	}
 
 	def createActorWrapper(actor: Actors, specificationId: Long) = {
-		DB.withTransaction { implicit session =>
-			createActor(actor, specificationId)
-		}
+		exec(createActor(actor, specificationId).transactionally)
 	}
 
-	def createActor(actor: Actors, specificationId: Long)(implicit session:Session) = {
-		val savedActorId = PersistenceSchema.actors.returning(PersistenceSchema.actors.map(_.id)).insert(actor)
-		PersistenceSchema.specificationHasActors.insert(specificationId, savedActorId)
-		if (actor.default.isDefined && actor.default.get) {
-			// Ensure no other default actors are defined.
-			ActorManager.setOtherActorsAsNonDefault(savedActorId, specificationId)
-		}
-		savedActorId
+	def createActor(actor: Actors, specificationId: Long) = {
+		for {
+			savedActorId <- PersistenceSchema.actors.returning(PersistenceSchema.actors.map(_.id)) += actor
+			_ <- {
+				val actions = new ListBuffer[DBIO[_]]()
+				actions += (PersistenceSchema.specificationHasActors += (specificationId, savedActorId))
+				if (actor.default.isDefined && actor.default.get) {
+					// Ensure no other default actors are defined.
+					actions += ActorManager.setOtherActorsAsNonDefault(savedActorId, specificationId)
+				}
+				DBIO.seq(actions.map(a => a): _*)
+			}
+		} yield savedActorId
 	}
 
 	def getActorsWithDomainId(domainId: Long): List[Actors] = {
-		DB.withSession { implicit session =>
+		exec(
 			PersistenceSchema.actors.filter(_.domain === domainId)
-			  	.sortBy(_.actorId.desc)
-					.list
-		}
+			  .sortBy(_.actorId.desc)
+				.result
+  			.map(_.toList)
+		)
 	}
 
   def getActorsWithSpecificationId(actorIds:Option[List[Long]], spec:Option[Long]): List[Actor] = {
-		DB.withSession { implicit session =>
-			var actors: List[Actor] = List()
-			var query = for {
-				actor <- PersistenceSchema.actors
-				specificationHasActors <- PersistenceSchema.specificationHasActors if specificationHasActors.actorId === actor.id
-			} yield (actor, specificationHasActors)
-			if (actorIds.isDefined) {
-				query = actorIds match {
-					case Some(list) => query.filter(_._1.id inSet list)
-					case None => query
-				}
+		var actors: List[Actor] = List()
+
+		var query = PersistenceSchema.actors
+  			.join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
+		if (actorIds.isDefined) {
+			query = actorIds match {
+				case Some(list) => query.filter(_._1.id inSet list)
+				case None => query
 			}
-      if (spec.isDefined) {
-        query = query.filter(_._2.specId === spec.get)
-      }
-			query.sortBy(_._1.actorId.desc)
-					.list
-					.foreach{ result =>
-						actors ::= new Actor(result._1, null, null, result._2._1)
-					}
-			actors
 		}
+		if (spec.isDefined) {
+			query = query.filter(_._2.specId === spec.get)
+		}
+
+		exec(query.sortBy(_._1.actorId.desc).result).foreach { result =>
+			actors ::= new Actor(result._1, null, null, result._2._1)
+		}
+
+		actors
   }
 
 	def relateActorWithSpecification(actorId: Long, specificationId: Long) = {
-		DB.withTransaction { implicit session =>
-			PersistenceSchema.specificationHasActors.insert(specificationId, actorId)
-		}
+		exec((PersistenceSchema.specificationHasActors += (specificationId, actorId)).transactionally)
 	}
 
 	def createOption(option:Options) = {
-		DB.withSession { implicit session =>
-			PersistenceSchema.options.insert(option)
-		}
+		exec((PersistenceSchema.options += option).transactionally)
 	}
 
 	def getOptionsForActor(actorId:Long): List[Options] = {
-		DB.withSession { implicit session =>
-			PersistenceSchema.options.filter(_.actor === actorId).list
-		}
+		exec(PersistenceSchema.options.filter(_.actor === actorId).result.map(_.toList))
 	}
 
 	def getEndpointsForActor(actorId: Long): List[Endpoint] = {
-		DB.withSession { implicit session =>
-			val caseObjects = PersistenceSchema.endpoints.filter(_.actor === actorId)
-			  	.sortBy(_.name.asc)
-					.list
-			caseObjects map { caseObject =>
-				val actor = PersistenceSchema.actors.filter(_.id === caseObject.actor).first
-				val parameters = PersistenceSchema.parameters.filter(_.endpoint === caseObject.id).list
-
-				new Endpoint(caseObject, actor, parameters)
-			}
+		val endpoints = new ListBuffer[Endpoint]()
+		exec(PersistenceSchema.endpoints.filter(_.actor === actorId).sortBy(_.name.asc).result).map { caseObject =>
+			val actor = exec(PersistenceSchema.actors.filter(_.id === caseObject.actor).result.head)
+			val parameters = exec(PersistenceSchema.parameters.filter(_.endpoint === caseObject.id).result.map(_.toList))
+			endpoints += new Endpoint(caseObject, actor, parameters)
 		}
+		endpoints.toList
 	}
 
 	def getEndpoints(ids: Option[List[Long]]): List[Endpoint] = {
-		DB.withSession { implicit session =>
-			val caseObjects = {
-				val q = ids match {
-					case Some(list) => PersistenceSchema.endpoints.filter(_.id inSet list)
-					case None => PersistenceSchema.endpoints
-				}
-
-				q.sortBy(_.name.asc)
-				 .list
-			}
-			caseObjects map { caseObject =>
-				val actor = PersistenceSchema.actors.filter(_.id === caseObject.actor).first
-				val parameters = PersistenceSchema.parameters.filter(_.endpoint === caseObject.id).list
-
-				new Endpoint(caseObject, actor, parameters)
-			}
+		val endpoints = new ListBuffer[Endpoint]()
+		val q = ids match {
+			case Some(list) => PersistenceSchema.endpoints.filter(_.id inSet list)
+			case None => PersistenceSchema.endpoints
 		}
+		exec(q.sortBy(_.name.asc).result).map { caseObject =>
+			val actor = exec(PersistenceSchema.actors.filter(_.id === caseObject.actor).result.head)
+			val parameters = exec(PersistenceSchema.parameters.filter(_.endpoint === caseObject.id).result.map(_.toList))
+			endpoints += new Endpoint(caseObject, actor, parameters)
+		}
+		endpoints.toList
 	}
 
 	def getParameters(ids: Option[List[Long]]): List[models.Parameters] = {
-		DB.withSession { implicit session =>
-			val q = ids match {
-				case Some(ids) => PersistenceSchema.parameters.filter(_.id inSet ids)
-				case None => PersistenceSchema.parameters
-			}
-
-			q.sortBy(_.name.asc)
-				.list
+		val q = ids match {
+			case Some(ids) => PersistenceSchema.parameters.filter(_.id inSet ids)
+			case None => PersistenceSchema.parameters
 		}
+		exec(q.sortBy(_.name.asc).result.map(_.toList))
 	}
 
 	def getEndpointParameters(endpointId: Long): List[models.Parameters] = {
-		DB.withSession { implicit session =>
+		exec(
 			PersistenceSchema.parameters.filter(_.endpoint === endpointId)
-			  	.sortBy(_.name.asc)
-					.list
-		}
+			  .sortBy(_.name.asc)
+				.result
+  			.map(_.toList)
+		)
 	}
 
 	def getOptions(ids:Option[List[Long]]): List[Options] = {
-		DB.withSession { implicit session =>
-			val options = {
-				val q = PersistenceSchema.options
+		val options = {
+			val q = PersistenceSchema.options
 
-				val q2 = ids match {
-					case Some(s) => q.filter(_.actor inSet s)
-					case None => q
-				}
-
-				q2.list
+			val q2 = ids match {
+				case Some(s) => q.filter(_.actor inSet s)
+				case None => q
 			}
-			options
+
+			q2.result.map(_.toList)
 		}
+		exec(options)
 	}
 
-	def getById(id: Long)(implicit session: Session): Option[Domain] = {
-		PersistenceSchema.domains.filter(_.id === id).firstOption
+	def getById(id: Long) = {
+		exec(PersistenceSchema.domains.filter(_.id === id).result.head)
 	}
 
 	def getConformanceStatus(actorId: Long, sutId: Long, testSuiteId: Option[Long]) = {
-		DB.withSession { implicit session =>
-			var query = for {
-				conformanceResults <- PersistenceSchema.conformanceResults
-				testCases <- PersistenceSchema.testCases if testCases.id === conformanceResults.testcase
-				testSuites <- PersistenceSchema.testSuites if testSuites.id === conformanceResults.testsuite
-			} yield (conformanceResults, testCases, testSuites)
-			query = query
-				.filter(_._1.actor === actorId)
-				.filter(_._1.sut === sutId)
-			if (testSuiteId.isDefined) {
-				query = query.filter(_._1.testsuite === testSuiteId.get)
-			}
-			query = query.sortBy(x => (x._3.shortname))
-			val results = query.list
-			results
+		var query = PersistenceSchema.conformanceResults
+  			.join(PersistenceSchema.testCases).on(_.testcase === _.id)
+  			.join(PersistenceSchema.testSuites).on(_._1.testsuite === _.id)
+		query = query
+			.filter(_._1._1.actor === actorId)
+			.filter(_._1._1.sut === sutId)
+		if (testSuiteId.isDefined) {
+			query = query.filter(_._1._1.testsuite === testSuiteId.get)
 		}
+		query = query
+			.sortBy(x => (x._2.shortname))
+		val results = exec(query.result.map(_.toList)).map(r => {
+			(r._1._1.copy(), r._1._2.copy(), r._2.copy())
+		})
+		results
 	}
 
 	def getConformanceStatementsFull(domainIds: Option[List[Long]], specIds: Option[List[Long]], actorIds: Option[List[Long]], communityIds: Option[List[Long]], organizationIds: Option[List[Long]], systemIds: Option[List[Long]]): List[ConformanceStatementFull] = {
-		DB.withSession { implicit session =>
-			var query = for {
-				conformanceResults <- PersistenceSchema.conformanceResults
-				specifications <- PersistenceSchema.specifications if specifications.id === conformanceResults.spec
-				actors <- PersistenceSchema.actors if actors.id === conformanceResults.actor
-				domains <- PersistenceSchema.domains if domains.id === actors.domain
-				systems <- PersistenceSchema.systems if systems.id === conformanceResults.sut
-				organizations <- PersistenceSchema.organizations if organizations.id === systems.owner
-				communities <- PersistenceSchema.communities if communities.id === organizations.community
-				testSuites <- PersistenceSchema.testSuites if testSuites.id === conformanceResults.testsuite
-				testCases <- PersistenceSchema.testCases if testCases.id === conformanceResults.testcase
-			} yield (conformanceResults, specifications, actors, domains, systems, organizations, communities, testSuites, testCases)
-			if (domainIds.isDefined) {
-				query = query.filter(_._4.id inSet domainIds.get)
-			}
-			if (specIds.isDefined) {
-				query = query.filter(_._1.spec inSet specIds.get)
-			}
-			if (actorIds.isDefined) {
-				query = query.filter(_._1.actor inSet actorIds.get)
-			}
-			if (communityIds.isDefined) {
-				query = query.filter(_._7.id inSet communityIds.get)
-			}
-			if (organizationIds.isDefined) {
-				query = query.filter(_._6.id inSet organizationIds.get)
-			}
-			if (systemIds.isDefined) {
-				query = query.filter(_._1.sut inSet systemIds.get)
-			}
-			query = query.sortBy(x => (x._7.shortname, x._6.shortname, x._5.shortname, x._4.shortname, x._2.shortname, x._3.actorId, x._8.shortname, x._9.shortname))
-
-			val results = query
-			  	.sortBy(s => (s._4.shortname, s._2.shortname, s._3.actorId))
-					.list
-			var statements = new ListBuffer[ConformanceStatementFull]
-			results.foreach { result =>
-				val conformanceStatement = ConformanceStatementFull(
-						result._7.id, result._7.shortname, result._6.id, result._6.shortname,
-						result._5.id, result._5.shortname,
-						result._4.id, result._4.shortname, result._4.fullname,
-						result._3.id, result._3.actorId, result._3.name,
-						result._2.id, result._2.shortname, result._2.fullname,
-						Some(result._8.shortname), Some(result._9.shortname), result._9.description,
-						Some(result._1.result), result._1.testsession, 0L, 0L, 0L)
-				statements += conformanceStatement
-			}
-			statements.toList
+		var query = PersistenceSchema.conformanceResults
+			.join(PersistenceSchema.specifications).on(_.spec === _.id)
+			.join(PersistenceSchema.actors).on(_._1.actor === _.id)
+			.join(PersistenceSchema.domains).on(_._2.domain === _.id)
+			.join(PersistenceSchema.systems).on(_._1._1._1.sut === _.id)
+			.join(PersistenceSchema.organizations).on(_._2.owner === _.id)
+			.join(PersistenceSchema.communities).on(_._2.community === _.id)
+  		.join(PersistenceSchema.testSuites).on(_._1._1._1._1._1._1.testsuite === _.id)
+  		.join(PersistenceSchema.testCases).on(_._1._1._1._1._1._1._1.testcase === _.id)
+		if (domainIds.isDefined) {
+			query = query.filter(_._1._1._1._1._1._2.id inSet domainIds.get)
 		}
+		if (specIds.isDefined) {
+			query = query.filter(_._1._1._1._1._1._1._1._1.spec inSet specIds.get)
+		}
+		if (actorIds.isDefined) {
+			query = query.filter(_._1._1._1._1._1._1._1._1.actor inSet actorIds.get)
+		}
+		if (communityIds.isDefined) {
+			query = query.filter(_._1._1._2.id inSet communityIds.get)
+		}
+		if (organizationIds.isDefined) {
+			query = query.filter(_._1._1._1._2.id inSet organizationIds.get)
+		}
+		if (systemIds.isDefined) {
+			query = query.filter(_._1._1._1._1._1._1._1._1.sut inSet systemIds.get)
+		}
+		query = query.sortBy(x => (x._1._1._2.shortname, x._1._1._1._2.shortname, x._1._1._1._1._2.shortname, x._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._2.actorId, x._1._2.shortname, x._2.shortname))
+
+		val results = exec(query
+			.result
+  		.map(_.toList))
+
+		var statements = new ListBuffer[ConformanceStatementFull]
+		results.foreach { result =>
+			val resultCommunities = result._1._1._2
+			val resultConfResult = result._1._1._1._1._1._1._1._1
+			val resultTestSuite= result._1._2
+			val resultTestCase = result._2
+			val resultOrganisation = result._1._1._1._2
+			val resultSystem = result._1._1._1._1._2
+			val resultDomain = result._1._1._1._1._1._2
+			val resultActor = result._1._1._1._1._1._1._2
+
+			val conformanceStatement = ConformanceStatementFull(
+				resultCommunities.id, resultCommunities.shortname, resultOrganisation.id, resultOrganisation.shortname,
+					resultSystem.id, resultSystem.shortname,
+					resultDomain.id, resultDomain.shortname, resultDomain.fullname,
+					resultActor.id, resultActor.actorId, resultActor.name,
+					result._2.id, result._2.shortname, result._2.fullname,
+					Some(resultTestSuite.shortname), Some(resultTestCase.shortname), resultTestCase.description,
+					Some(resultConfResult.result), resultConfResult.testsession, 0L, 0L, 0L)
+			statements += conformanceStatement
+		}
+		statements.toList
 	}
 
 	def getConformanceStatements(domainIds: Option[List[Long]], specIds: Option[List[Long]], actorIds: Option[List[Long]], communityIds: Option[List[Long]], organizationIds: Option[List[Long]], systemIds: Option[List[Long]]): List[ConformanceStatementFull] = {
-		DB.withSession { implicit session =>
-			var query = for {
-					conformanceResults <- PersistenceSchema.conformanceResults
-					specifications <- PersistenceSchema.specifications if specifications.id === conformanceResults.spec
-					actors <- PersistenceSchema.actors if actors.id === conformanceResults.actor
-					domains <- PersistenceSchema.domains if domains.id === actors.domain
-					systems <- PersistenceSchema.systems if systems.id === conformanceResults.sut
-					organizations <- PersistenceSchema.organizations if organizations.id === systems.owner
-					communities <- PersistenceSchema.communities if communities.id === organizations.community
-				} yield (conformanceResults, specifications, actors, domains, systems, organizations, communities)
-			if (domainIds.isDefined) {
-				query = query.filter(_._4.id inSet domainIds.get)
-			}
-			if (specIds.isDefined) {
-				query = query.filter(_._1.spec inSet specIds.get)
-			}
-			if (actorIds.isDefined) {
-				query = query.filter(_._1.actor inSet actorIds.get)
-			}
-			if (communityIds.isDefined) {
-				query = query.filter(_._7.id inSet communityIds.get)
-			}
-			if (organizationIds.isDefined) {
-				query = query.filter(_._6.id inSet organizationIds.get)
-			}
-			if (systemIds.isDefined) {
-				query = query.filter(_._1.sut inSet systemIds.get)
-			}
-			query = query.sortBy(x => (x._7.shortname, x._6.shortname, x._5.shortname, x._4.shortname, x._2.shortname, x._3.actorId))
-
-			val results = query.list
-			val conformanceMap = new util.LinkedHashMap[String, ConformanceStatementFull]
-			results.foreach { result =>
-				val key = result._1.sut + "|" + result._1.actor
-				var conformanceStatement = conformanceMap.get(key)
-				if (conformanceStatement == null) {
-					conformanceStatement = ConformanceStatementFull(
-						result._7.id, result._7.shortname, result._6.id, result._6.shortname,
-						result._5.id, result._5.shortname,
-						result._4.id, result._4.shortname, result._4.fullname,
-						result._3.id, result._3.actorId, result._3.name,
-						result._2.id, result._2.shortname, result._2.fullname,
-						None, None, result._1.testsession, None, None,
-						0L, 0L, 0L)
-					conformanceMap.put(key, conformanceStatement)
-				}
-				if (TestResultStatus.withName(result._1.result) == TestResultStatus.SUCCESS) {
-					conformanceStatement.completedTests += 1
-				} else if (TestResultStatus.withName(result._1.result) == TestResultStatus.FAILURE) {
-          conformanceStatement.failedTests += 1
-        } else {
-          conformanceStatement.undefinedTests += 1
-        }
-			}
-			var statements = new ListBuffer[ConformanceStatementFull]
-			import scala.collection.JavaConversions._
-			for (conformanceEntry <- conformanceMap) {
-				statements += conformanceEntry._2
-			}
-			statements.toList
+		var query = PersistenceSchema.conformanceResults
+			.join(PersistenceSchema.specifications).on(_.spec === _.id)
+			.join(PersistenceSchema.actors).on(_._1.actor === _.id)
+			.join(PersistenceSchema.domains).on(_._2.domain === _.id)
+			.join(PersistenceSchema.systems).on(_._1._1._1.sut === _.id)
+  		.join(PersistenceSchema.organizations).on(_._2.owner === _.id)
+  		.join(PersistenceSchema.communities).on(_._2.community === _.id)
+		if (domainIds.isDefined) {
+			query = query.filter(_._1._1._1._2.id inSet domainIds.get)
 		}
+		if (specIds.isDefined) {
+			query = query.filter(_._1._1._1._1._1._1.spec inSet specIds.get)
+		}
+		if (actorIds.isDefined) {
+			query = query.filter(_._1._1._1._1._1._1.actor inSet actorIds.get)
+		}
+		if (communityIds.isDefined) {
+			query = query.filter(_._2.id inSet communityIds.get)
+		}
+		if (organizationIds.isDefined) {
+			query = query.filter(_._1._2.id inSet organizationIds.get)
+		}
+		if (systemIds.isDefined) {
+			query = query.filter(_._1._1._1._1._1._1.sut inSet systemIds.get)
+		}
+		query = query.sortBy(x => (x._2.shortname, x._1._2.shortname, x._1._1._2.shortname, x._1._1._1._2.shortname, x._1._1._1._1._1._2.shortname, x._1._1._1._1._2.actorId))
+
+		val results = exec(query.result.map(_.toList))
+		val conformanceMap = new util.LinkedHashMap[String, ConformanceStatementFull]
+		results.foreach { result =>
+			val resultConfResult = result._1._1._1._1._1._1
+			val resultCommunity = result._2
+			val resultOrganisation = result._1._2
+			val resultSystem = result._1._1._2
+			val resultDomain = result._1._1._1._2
+			val resultSpecification = result._1._1._1._1._1._2
+			val resultActor = result._1._1._1._1._2
+
+			val key = resultConfResult.sut + "|" + resultConfResult.actor
+			var conformanceStatement = conformanceMap.get(key)
+			if (conformanceStatement == null) {
+				conformanceStatement = ConformanceStatementFull(
+					resultCommunity.id, resultCommunity.shortname, resultOrganisation.id, resultOrganisation.shortname,
+					resultSystem.id, resultSystem.shortname,
+					resultDomain.id, resultDomain.shortname, resultDomain.fullname,
+					resultActor.id, resultActor.actorId, resultActor.name,
+					resultSpecification.id, resultSpecification.shortname, resultSpecification.fullname,
+					None, None, resultConfResult.testsession, None, None,
+					0L, 0L, 0L)
+				conformanceMap.put(key, conformanceStatement)
+			}
+			if (TestResultStatus.withName(resultConfResult.result) == TestResultStatus.SUCCESS) {
+				conformanceStatement.completedTests += 1
+			} else if (TestResultStatus.withName(resultConfResult.result) == TestResultStatus.FAILURE) {
+				conformanceStatement.failedTests += 1
+			} else {
+				conformanceStatement.undefinedTests += 1
+			}
+		}
+		var statements = new ListBuffer[ConformanceStatementFull]
+		import scala.collection.JavaConversions._
+		for (conformanceEntry <- conformanceMap) {
+			statements += conformanceEntry._2
+		}
+		statements.toList
 	}
 
 	def getConformanceCertificateSettingsWrapper(communityId: Long) = {
-		DB.withSession { implicit session =>
-			getConformanceCertificateSettings(communityId)
-		}
+		exec(getConformanceCertificateSettings(communityId))
 	}
 
-	def getConformanceCertificateSettings(communityId: Long)(implicit session:Session) = {
-		PersistenceSchema.conformanceCertificates.filter(_.community === communityId).firstOption
+	def getConformanceCertificateSettings(communityId: Long) = {
+		PersistenceSchema.conformanceCertificates.filter(_.community === communityId).result.headOption
 	}
 
 	def updateConformanceCertificateSettings(conformanceCertificate: ConformanceCertificates, updatePasswords: Boolean, removeKeystore: Boolean) = {
-		DB.withTransaction { implicit session =>
-			val existingSettings = getConformanceCertificateSettings(conformanceCertificate.community)
-			if (existingSettings.isDefined) {
-
-				if (removeKeystore && conformanceCertificate.keystoreFile.isEmpty) {
-					val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
-						c.message, c.title, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
-						c.includeSignature, c.keystoreFile, c.keystoreType, c.keystorePassword, c.keyPassword
-					)
-					q.update(
-						conformanceCertificate.message,
-						conformanceCertificate.title,
-						conformanceCertificate.includeMessage,
-						conformanceCertificate.includeTestStatus,
-						conformanceCertificate.includeTestCases,
-						conformanceCertificate.includeDetails,
-						conformanceCertificate.includeSignature,
-						None,
-						None,
-						None,
-						None
-					)
-				} else {
-					if (updatePasswords) {
-						val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
-							c.message, c.title, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
-							c.includeSignature, c.keystoreFile, c.keystoreType, c.keystorePassword, c.keyPassword
-						)
-						var keystorePasswordToUpdate = conformanceCertificate.keystorePassword
-						if (keystorePasswordToUpdate.isDefined) {
-							keystorePasswordToUpdate = Some(MimeUtil.encryptString(keystorePasswordToUpdate.get))
+		exec(
+			(for {
+				existingSettings <- getConformanceCertificateSettings(conformanceCertificate.community)
+				_ <- {
+					var action: DBIO[_] = null
+					if (existingSettings.isDefined) {
+						if (removeKeystore && conformanceCertificate.keystoreFile.isEmpty) {
+							val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
+								c.message, c.title, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
+								c.includeSignature, c.keystoreFile, c.keystoreType, c.keystorePassword, c.keyPassword
+							)
+							action = q.update(
+								conformanceCertificate.message,
+								conformanceCertificate.title,
+								conformanceCertificate.includeMessage,
+								conformanceCertificate.includeTestStatus,
+								conformanceCertificate.includeTestCases,
+								conformanceCertificate.includeDetails,
+								conformanceCertificate.includeSignature,
+								None,
+								None,
+								None,
+								None
+							)
+						} else {
+							if (updatePasswords) {
+								val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
+									c.message, c.title, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
+									c.includeSignature, c.keystoreFile, c.keystoreType, c.keystorePassword, c.keyPassword
+								)
+								var keystorePasswordToUpdate = conformanceCertificate.keystorePassword
+								if (keystorePasswordToUpdate.isDefined) {
+									keystorePasswordToUpdate = Some(MimeUtil.encryptString(keystorePasswordToUpdate.get))
+								}
+								var keyPasswordToUpdate = conformanceCertificate.keyPassword
+								if (keyPasswordToUpdate.isDefined) {
+									keyPasswordToUpdate = Some(MimeUtil.encryptString(keyPasswordToUpdate.get))
+								}
+								action = q.update(
+									conformanceCertificate.message,
+									conformanceCertificate.title,
+									conformanceCertificate.includeMessage,
+									conformanceCertificate.includeTestStatus,
+									conformanceCertificate.includeTestCases,
+									conformanceCertificate.includeDetails,
+									conformanceCertificate.includeSignature,
+									conformanceCertificate.keystoreFile,
+									conformanceCertificate.keystoreType,
+									keystorePasswordToUpdate,
+									keyPasswordToUpdate
+								)
+							} else {
+								val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
+									c.message, c.title, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
+									c.includeSignature, c.keystoreFile, c.keystoreType
+								)
+								action = q.update(
+									conformanceCertificate.message,
+									conformanceCertificate.title,
+									conformanceCertificate.includeMessage,
+									conformanceCertificate.includeTestStatus,
+									conformanceCertificate.includeTestCases,
+									conformanceCertificate.includeDetails,
+									conformanceCertificate.includeSignature,
+									conformanceCertificate.keystoreFile,
+									conformanceCertificate.keystoreType
+								)
+							}
 						}
-						var keyPasswordToUpdate = conformanceCertificate.keyPassword
-						if (keyPasswordToUpdate.isDefined) {
-							keyPasswordToUpdate = Some(MimeUtil.encryptString(keyPasswordToUpdate.get))
-						}
-						q.update(
-							conformanceCertificate.message,
-							conformanceCertificate.title,
-							conformanceCertificate.includeMessage,
-							conformanceCertificate.includeTestStatus,
-							conformanceCertificate.includeTestCases,
-							conformanceCertificate.includeDetails,
-							conformanceCertificate.includeSignature,
-							conformanceCertificate.keystoreFile,
-							conformanceCertificate.keystoreType,
-							keystorePasswordToUpdate,
-							keyPasswordToUpdate
-						)
 					} else {
-						val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
-							c.message, c.title, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
-							c.includeSignature, c.keystoreFile, c.keystoreType
-						)
-						q.update(
-							conformanceCertificate.message,
-							conformanceCertificate.title,
-							conformanceCertificate.includeMessage,
-							conformanceCertificate.includeTestStatus,
-							conformanceCertificate.includeTestCases,
-							conformanceCertificate.includeDetails,
-							conformanceCertificate.includeSignature,
-							conformanceCertificate.keystoreFile,
-							conformanceCertificate.keystoreType
-						)
+						action = PersistenceSchema.insertConformanceCertificate += conformanceCertificate
 					}
+					action
 				}
-			} else {
-				PersistenceSchema.insertConformanceCertificate += conformanceCertificate
-			}
-		}
+			} yield()).transactionally
+		)
 	}
 
-  def deleteConformanceCertificateSettings(communityId: Long)(implicit session:Session) = {
+  def deleteConformanceCertificateSettings(communityId: Long) = {
     PersistenceSchema.conformanceCertificates.filter(_.community === communityId).delete
   }
 

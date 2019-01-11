@@ -17,9 +17,10 @@
         <pattern>%-5level %date{yyyy-MM-dd HH:mm:ss} [%thread] %logger{36} - %msg%n</pattern>
       </encoder>      
     </appender>
-    <root level="DEBUG">
+    <root level="INFO">
         <appender-ref ref="STDOUT" />
     </root>
+    <logger name="com.zaxxer.hikari" level="INFO" />
     <logger name="scala.slick" level="INFO" />
     <logger name="com.sun.xml" level="INFO" />
     <logger name="org.apache" level="INFO" />

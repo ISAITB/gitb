@@ -45,8 +45,6 @@ with GlobalSettings {
    */
   override def onStart(app: Application) {
     System.setProperty("java.io.tmpdir", System.getProperty("user.dir"))
-    //Initialize persistence service
-    PersistenceLayer.initialize()
 
     //start TestbedClient service
     TestbedService.endpoint = Endpoint.publish(Configurations.TESTBED_CLIENT_URL, new TestbedService());

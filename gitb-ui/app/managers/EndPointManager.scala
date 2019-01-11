@@ -3,66 +3,62 @@ package managers
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 
-import scala.slick.driver.MySQLDriver.simple._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object EndPointManager extends BaseManager {
   def logger = LoggerFactory.getLogger("EndPointManager")
 
+  import dbConfig.driver.api._
+
   def createEndpointWrapper(endpoint: models.Endpoints) = {
-    DB.withTransaction { implicit session =>
-      createEndpoint(endpoint)
-    }
+    exec(createEndpoint(endpoint).transactionally)
   }
 
-  def createEndpoint(endpoint: models.Endpoints)(implicit session: Session) = {
-    PersistenceSchema.endpoints.returning(PersistenceSchema.endpoints.map(_.id)).insert(endpoint)
+  def createEndpoint(endpoint: models.Endpoints) = {
+    PersistenceSchema.endpoints.returning(PersistenceSchema.endpoints.map(_.id)) += endpoint
   }
 
   def checkEndPointExistsForActor(endPointName: String, actorId: Long, otherThanId: Option[Long]): Boolean = {
-    DB.withSession { implicit session =>
-      var endpointQuery = PersistenceSchema.endpoints
-        .filter(_.name === endPointName)
-        .filter(_.actor === actorId)
-      if (otherThanId.isDefined) {
-        endpointQuery = endpointQuery.filter(_.id =!= otherThanId.get)
-      }
-      val endpoint = endpointQuery.firstOption
-      endpoint.isDefined
+    var endpointQuery = PersistenceSchema.endpoints
+      .filter(_.name === endPointName)
+      .filter(_.actor === actorId)
+    if (otherThanId.isDefined) {
+      endpointQuery = endpointQuery.filter(_.id =!= otherThanId.get)
     }
+    val endpoint = endpointQuery.result.headOption
+    exec(endpoint).isDefined
   }
 
-  def deleteEndPointByActor(actorId: Long)(implicit session: Session) = {
-    val ids = PersistenceSchema.endpoints.filter(_.actor === actorId).map(_.id).list
-    ids foreach { id =>
-      delete(id)
-    }
+  def deleteEndPointByActor(actorId: Long) = {
+    val action = (for {
+      ids <- PersistenceSchema.endpoints.filter(_.actor === actorId).map(_.id).result
+      _ <- DBIO.seq(ids.map(id => delete(id)): _*)
+    } yield()).transactionally
+    action
   }
 
   def deleteEndPoint(endPointId: Long) = {
-    DB.withTransaction { implicit session =>
-      delete(endPointId)
-    }
+    exec(delete(endPointId).transactionally)
   }
 
-  def delete(endPointId: Long)(implicit session: Session) = {
-    val endPoint = PersistenceSchema.endpoints.filter(_.id === endPointId).firstOption.get
-    ParameterManager.deleteParameterByEndPoint(endPointId)
-    PersistenceSchema.endpointSupportsTransactions.filter(_.endpoint === endPoint.name).delete
-    PersistenceSchema.configs.filter(_.endpoint === endPointId).delete
+  def delete(endPointId: Long) = {
+    (for {
+      endPoint <- PersistenceSchema.endpoints.filter(_.id === endPointId).result.head
+      _ <- PersistenceSchema.endpointSupportsTransactions.filter(_.endpoint === endPoint.name).delete
+    } yield()) andThen
+    ParameterManager.deleteParameterByEndPoint(endPointId) andThen
+    PersistenceSchema.configs.filter(_.endpoint === endPointId).delete andThen
     PersistenceSchema.endpoints.filter(_.id === endPointId).delete
   }
 
   def updateEndPointWrapper(endPointId: Long, name: String, description: Option[String]) =  {
-    DB.withTransaction { implicit session =>
-      updateEndPoint(endPointId, name, description)
-    }
+    exec(updateEndPoint(endPointId, name, description).transactionally)
   }
 
-  def updateEndPoint(endPointId: Long, name: String, description: Option[String])(implicit session: Session) =  {
+  def updateEndPoint(endPointId: Long, name: String, description: Option[String]) =  {
     val q1 = for {e <- PersistenceSchema.endpoints if e.id === endPointId} yield (e.name)
-    q1.update(name)
-
     val q2 = for {e <- PersistenceSchema.endpoints if e.id === endPointId} yield (e.desc)
+    q1.update(name) andThen
     q2.update(description)
   }
 

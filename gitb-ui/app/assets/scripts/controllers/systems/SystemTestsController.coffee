@@ -15,7 +15,7 @@ class SystemTestsController
         sortable: true
       }
       {
-        field: 'actorName'
+        field: 'actor'
         title: 'Actor'
         sortable: true
       }
@@ -240,7 +240,7 @@ class SystemTestsController
                         testCaseId: if report.test? then report.test.id else '-'
                         specification: if report.test? then report.specification.sname else '-'
                         testCaseName: if report.test? then report.test.sname else '-'
-                        actorName: if report.actor? then report.actor.name else '-'
+                        actor: if report.actor? then report.actor.name else '-'
                         startTime: report.result.startTime
                         endTime: if report.result.endTime? then report.result.endTime else '-'
                         result: report.result.result
@@ -433,7 +433,7 @@ class SystemTestsController
                       transformedObject =
                         domain: if report.domain? then report.domain.sname else '-'
                         specification: if report.specification? then report.specification.sname else '-'
-                        actorName: if report.actor? then report.actor.name else '-'
+                        actor: if report.actor? then report.actor.name else '-'
                         testSuite: if report.testSuite? then report.testSuite.sname else '-'
                         testCase: if report.test? then report.test.sname else '-'
                         startTime: report.result.startTime
