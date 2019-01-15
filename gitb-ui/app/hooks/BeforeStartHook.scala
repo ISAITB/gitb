@@ -1,55 +1,37 @@
-import javax.xml.ws.Endpoint
+package hooks
 
+import java.nio.file.Paths
+
+import akka.actor.ActorSystem
 import config.Configurations
 import controllers.TestService
-import controllers.util.ResponseConstructor
-import filters._
+import javax.inject.{Inject, Singleton}
+import javax.xml.ws.Endpoint
 import jaxws.TestbedService
-import managers.{ReportManager, SystemConfigurationManager, TestResultManager, TestSuiteManager}
+import managers.{SystemConfigurationManager, TestResultManager, TestSuiteManager}
 import models.Constants
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang.RandomStringUtils
 import persistence.db.PersistenceLayer
-import play.api.Play.current
-import play.api._
-import play.api.libs.concurrent.Akka
-import play.api.mvc._
+import play.api.Logger
 import utils.TimeUtil
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.duration.DurationInt
+import scala.concurrent.ExecutionContext.Implicits.global
 
-object Global extends WithFilters(new CorsFilter,
-  new ErrorFilter,
-  new AuthenticationFilter,
-  new TimeoutFilter)
-with GlobalSettings {
+@Singleton
+class BeforeStartHook @Inject() (actorSystem: ActorSystem) {
 
-  /**
-   * Called before the application starts.
-   * Resources managed by plugins, such as database connections, are likely not available at this point.
-   */
-  override def beforeStart(app: Application) {
-    //Load application configurations before the applications starts
-    Configurations.loadConfigurations()
+  //Load application configurations before the applications starts
+  Configurations.loadConfigurations()
+  //Create database if not exists.
+  PersistenceLayer.preInitialize()
+  Logger.info("Application has been configured")
+  onStart()
 
-    //Create database if not exists.
-    PersistenceLayer.preInitialize()
-
-    Logger.info("Application has been configured")
-  }
-
-  /**
-   * Called once the application is started.
-   */
-  override def onStart(app: Application) {
+  def onStart(): Unit = {
     System.setProperty("java.io.tmpdir", System.getProperty("user.dir"))
-
     //start TestbedClient service
     TestbedService.endpoint = Endpoint.publish(Configurations.TESTBED_CLIENT_URL, new TestbedService());
-
-    // start tasks
     destroyIdleSessions()
     cleanupPendingTestSuiteUploads()
     cleanupTempReports()
@@ -57,26 +39,11 @@ with GlobalSettings {
   }
 
   /**
-   * Called on application stop
-   */
-  override def onStop(app: Application) {
-    TestbedService.endpoint.stop()
+    * Scheduled job that kills idle sessions
+    */
 
-    Logger.info("Application shutdown...")
-  }
-
-  override def onError(request: RequestHeader, ex: Throwable): Future[Result] = {
-    val errorIdentifier = RandomStringUtils.randomAlphabetic(10)
-    Logger.error("Error ["+errorIdentifier+"]", ex)
-    val result = ResponseConstructor.constructServerError("Unexpected error", ex.getMessage, Some(errorIdentifier))
-    Future.successful(result)
-  }
-
-  /**
-   * Scheduled job that kills idle sessions
-   */
   def destroyIdleSessions() = {
-    Akka.system.scheduler.schedule(1.days, 1.days) {
+    actorSystem.scheduler.schedule(1.days, 1.days) {
       val config = SystemConfigurationManager.getSystemConfiguration(Constants.SessionAliveTime)
       val aliveTime = config.parameter
       if (aliveTime.isDefined) {
@@ -94,7 +61,7 @@ with GlobalSettings {
   }
 
   def cleanupPendingTestSuiteUploads() = {
-    Akka.system.scheduler.schedule(1.hours, 1.hours) {
+    actorSystem.scheduler.schedule(1.hours, 1.hours) {
       val pendingFolder = TestSuiteManager.getPendingFolder
       if (pendingFolder.exists() && pendingFolder.isDirectory) {
         for (file <- pendingFolder.listFiles()) {
@@ -108,8 +75,8 @@ with GlobalSettings {
   }
 
   def cleanupTempReports() = {
-    Akka.system.scheduler.schedule(0.minutes, 5.minutes) {
-      val tempFolder = ReportManager.getTempFolderPath().toFile
+    actorSystem.scheduler.schedule(0.minutes, 5.minutes) {
+      val tempFolder = Paths.get("/tmp/reports").toFile
       if (tempFolder.exists() && tempFolder.isDirectory) {
         for (file <- tempFolder.listFiles()) {
           try {

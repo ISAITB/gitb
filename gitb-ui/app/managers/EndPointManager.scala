@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object EndPointManager extends BaseManager {
   def logger = LoggerFactory.getLogger("EndPointManager")
 
-  import dbConfig.driver.api._
+  import dbConfig.profile.api._
 
   def createEndpointWrapper(endpoint: models.Endpoints) = {
     exec(createEndpoint(endpoint).transactionally)

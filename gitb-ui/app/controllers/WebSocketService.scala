@@ -1,26 +1,24 @@
 package controllers
 
-import play.api.Play.current
-
-import org.slf4j.{LoggerFactory, Logger}
 import actors.WebSocketActor
-import play.api.mvc._
-import play.api.libs.iteratee.{Enumerator, Iteratee}
+import akka.actor.ActorSystem
+import akka.stream.Materializer
+import javax.inject.Inject
 import play.api.libs.json.JsValue
+import play.api.libs.streams.ActorFlow
+import play.api.mvc._
 
 /**
  * Handles the communication with browsers
  */
-class WebSocketService extends Controller{
-  private final val logger: Logger = LoggerFactory.getLogger(classOf[WebSocketService])
+class WebSocketService @Inject() (implicit system: ActorSystem, materializer: Materializer) extends Controller{
 
   /**
    * Creates a WebSocket for the client
    */
-  def socket = WebSocket.acceptWithActor[JsValue, String] { request => out =>
+  def socket = WebSocket.accept[JsValue, JsValue] { request =>
     //create a handler actor for communication handling
-    WebSocketActor.props(out)
+    ActorFlow.actorRef(out => WebSocketActor.props(out))
   }
-
 
 }

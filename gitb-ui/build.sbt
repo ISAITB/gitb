@@ -1,18 +1,10 @@
-import com.github.play2war.plugin._
-
 name := """GITB"""
 
 version := "1.0-SNAPSHOT"
 
-Play2WarPlugin.play2WarSettings
-
-Play2WarKeys.servletVersion := "3.1"
-
-Play2WarKeys.targetName := Some("itbui")
-
 lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
-scalaVersion := "2.11.1"
+scalaVersion := "2.11.12"
 
 libraryDependencies ++= Seq(
   "eu.europa.ec.itb" % "gitb-types" % "1.5.0",
@@ -20,9 +12,10 @@ libraryDependencies ++= Seq(
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
   "mysql" % "mysql-connector-java" % "5.1.35",
-  "com.typesafe.akka" %% "akka-actor" % "2.3.4",
-  "com.typesafe.akka" %% "akka-remote" % "2.3.4",
-  "com.typesafe.play" %% "play-slick" % "1.1.0",
+  "com.typesafe.akka" %% "akka-actor" % "2.5.19",
+  "com.typesafe.akka" %% "akka-remote" % "2.5.19",
+  "com.typesafe.akka" %% "akka-slf4j" % "2.5.19",
+  "com.typesafe.play" %% "play-slick" % "2.1.1",
   "org.slf4j" % "slf4j-nop" % "1.6.4",
   "ch.qos.logback" % "logback-classic" % "1.0.1",
   "commons-lang" % "commons-lang" % "2.6",
@@ -36,7 +29,7 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http" % "2.7.4", //for calling jax-ws services
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % "2.7.4", //exporting jax-ws services
   "org.apache.tika" % "tika-core" % "1.19",
-  "org.webjars" %% "webjars-play" % "2.4.0",
+  "org.webjars" %% "webjars-play" % "2.5.0",
   "org.webjars" % "jquery" % "1.11.1",
   "org.webjars" % "jquery-cookie" % "1.4.0",
   "org.webjars" % "lodash" % "2.4.1-6",

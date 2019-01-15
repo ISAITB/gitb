@@ -1,4 +1,5 @@
-<!doctype html>
+@(webJarAssets: WebJarAssets)
+<!DOCTYPE html>
 <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
 <!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
@@ -15,10 +16,10 @@
 			<!-- build:css({.tmp,app}) styles/main.css -->
 		<script type="text/javascript" src="@routes.Application.javascriptRoutes"></script>
 
-		<link rel='stylesheet' href='@routes.WebJarAssets.at(WebJarAssets.locate("css/bootstrap.css"))'>
-		<link rel='stylesheet' href='@routes.WebJarAssets.at(WebJarAssets.locate("ng-grid.css"))'>
-		<link rel="stylesheet" href='@routes.WebJarAssets.at(WebJarAssets.locate("css/font-awesome.css"))'>
-		<link rel="stylesheet" href='@routes.WebJarAssets.at(WebJarAssets.locate("lib/codemirror.css"))'>
+		<link rel='stylesheet' href='@routes.WebJarAssets.at(webJarAssets.locate("css/bootstrap.css"))'>
+		<link rel='stylesheet' href='@routes.WebJarAssets.at(webJarAssets.locate("ng-grid.css"))'>
+		<link rel="stylesheet" href='@routes.WebJarAssets.at(webJarAssets.locate("css/font-awesome.css"))'>
+		<link rel="stylesheet" href='@routes.WebJarAssets.at(webJarAssets.locate("lib/codemirror.css"))'>
 
 		<!-- Web Fonts  -->
 		<link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800|Shadows+Into+Light" rel="stylesheet" type="text/css">
@@ -64,27 +65,27 @@
 		</script>
 
 		<!-- WebJars -->
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("jquery.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("jquery.cookie.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("lodash.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("angular.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("angular-route.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("angular-resource.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("angular-cookies.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("angular-sanitize.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("angular-animate.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("ui-bootstrap.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("ui-bootstrap-tpls.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("angular-ui-router.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("ng-grid.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("angular-file-upload.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("lib/codemirror.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("mode/xml/xml.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("mode/xquery/xquery.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("mode/http/http.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("mode/htmlmixed/htmlmixed.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("mode/htmlembedded/htmlembedded.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(WebJarAssets.locate("tinymce.min.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("jquery.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("jquery.cookie.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("lodash.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("angular.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("angular-route.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("angular-resource.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("angular-cookies.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("angular-sanitize.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("angular-animate.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("ui-bootstrap.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("ui-bootstrap-tpls.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("angular-ui-router.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("ng-grid.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("angular-file-upload.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("lib/codemirror.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/xml/xml.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/xquery/xquery.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/http/http.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/htmlmixed/htmlmixed.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/htmlembedded/htmlembedded.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("tinymce.min.js"))'></script>
 
 		<script src='@routes.Assets.at("components/jquery.easing.js")'></script>
 		<script src='@routes.Assets.at("components/jquery.appear.js")'></script>

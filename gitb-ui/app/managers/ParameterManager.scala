@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object ParameterManager extends BaseManager {
   def logger = LoggerFactory.getLogger("ParameterManager")
 
-  import dbConfig.driver.api._
+  import dbConfig.profile.api._
 
   def checkParameterExistsForEndpoint(parameterName: String, endpointId: Long, otherThanId: Option[Long]): Boolean = {
     var parameterQuery = PersistenceSchema.parameters

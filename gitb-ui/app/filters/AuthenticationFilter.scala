@@ -1,16 +1,19 @@
 package filters
 
+import akka.stream.Materializer
 import play.api.mvc._
+
 import scala.concurrent.Future
 import play.mvc.Http.HeaderNames._
-import controllers.util.{ResponseConstructor, Parameters}
+import controllers.util.{Parameters, ResponseConstructor}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import persistence.cache.TokenCache
 import exceptions._
+import javax.inject.Inject
 import persistence.AccountManager
-import org.slf4j.{LoggerFactory, Logger}
+import org.slf4j.{Logger, LoggerFactory}
 
-class AuthenticationFilter extends Filter {
+class AuthenticationFilter @Inject() (implicit val mat: Materializer) extends Filter {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthenticationFilter])
 
   val BEARER = "Bearer"

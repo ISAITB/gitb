@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
  */
 object TestCaseManager extends BaseManager {
 
-	import dbConfig.driver.api._
+	import dbConfig.profile.api._
 
 	val TEST_CASES_PATH = "test-cases"
 

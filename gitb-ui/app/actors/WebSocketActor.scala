@@ -36,7 +36,7 @@ object WebSocketActor {
       webSockets.get(sessionId).get.foreach {
         case (actorId, out) =>
           //send message to each ActorRef of the same session ID
-          out ! msg
+          out ! Json.parse(msg)
       }
       true
     } else {
@@ -53,7 +53,7 @@ object WebSocketActor {
       if (actors.get(actorId).isDefined) {
         val out = actors.get(actorId).get
         //send message to the client with given session and actor IDs
-        out ! msg
+        out ! Json.parse(msg)
       }
     }
   }

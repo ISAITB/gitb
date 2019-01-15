@@ -24,7 +24,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
  */
 object TestSuiteManager extends BaseManager {
 
-	import dbConfig.driver.api._
+	import dbConfig.profile.api._
 
 	val TEST_SUITES_PATH = "test-suites"
 

@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
  */
 object UserManager extends BaseManager {
 
-  import dbConfig.driver.api._
+  import dbConfig.profile.api._
 
   def logger = LoggerFactory.getLogger("UserManager")
 

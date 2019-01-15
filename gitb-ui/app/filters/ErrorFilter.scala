@@ -2,15 +2,17 @@ package filters
 
 import java.util.concurrent.TimeoutException
 
+import akka.stream.Materializer
 import com.gitb.tbs.Error
 import controllers.util.ResponseConstructor
 import exceptions._
+import javax.inject.Inject
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc._
 
 import scala.concurrent.Future
 
-class ErrorFilter extends Filter{
+class ErrorFilter @Inject() (implicit val mat: Materializer) extends Filter{
 
   def apply(next: (RequestHeader) => Future[Result])
            (requestHeader: RequestHeader): Future[Result] = {

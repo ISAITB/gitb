@@ -8,7 +8,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object OptionManager extends BaseManager {
   def logger = LoggerFactory.getLogger("OptionManager")
 
-  import dbConfig.driver.api._
+  import dbConfig.profile.api._
 
   def deleteOptionByActor(actorId: Long) = {
     val action = (for {

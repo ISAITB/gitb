@@ -3,7 +3,7 @@ package managers
 import play.api.Play
 import play.api.db.slick.DatabaseConfigProvider
 import slick.dbio.DBIO
-import slick.driver.JdbcProfile
+import slick.jdbc.JdbcProfile
 
 import scala.concurrent.Await
 import scala.concurrent.duration.Duration

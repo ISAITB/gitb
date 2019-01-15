@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object ConformanceManager extends BaseManager {
   def logger = LoggerFactory.getLogger("ConformanceManager")
 
-	import dbConfig.driver.api._
+	import dbConfig.profile.api._
 
 	/**
 	 * Checks if domain exists

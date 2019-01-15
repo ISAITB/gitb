@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 object ActorManager extends BaseManager {
 
-  import dbConfig.driver.api._
+  import dbConfig.profile.api._
 
   def logger = LoggerFactory.getLogger("ActorManager")
 

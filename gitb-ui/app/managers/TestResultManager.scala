@@ -11,7 +11,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object TestResultManager extends BaseManager {
   def logger = LoggerFactory.getLogger("TestResultManager")
 
-  import dbConfig.driver.api._
+  import dbConfig.profile.api._
 
   def getTestResultForSessionWrapper(sessionId: String): Option[TestResult] = {
     exec(getTestResultForSession(sessionId))

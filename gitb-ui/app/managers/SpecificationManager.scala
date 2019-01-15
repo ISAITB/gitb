@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 object SpecificationManager extends BaseManager {
   def logger = LoggerFactory.getLogger("SpecificationManager")
 
-  import dbConfig.driver.api._
+  import dbConfig.profile.api._
 
   /**
    * Checks if domain exists

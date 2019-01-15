@@ -35,7 +35,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
   */
 object ReportManager extends BaseManager {
 
-  import dbConfig.driver.api._
+  import dbConfig.profile.api._
 
   val logger: Logger = LoggerFactory.getLogger("ReportManager")
 

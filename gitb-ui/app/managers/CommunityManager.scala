@@ -10,7 +10,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 object CommunityManager extends BaseManager {
 
-  import dbConfig.driver.api._
+  import dbConfig.profile.api._
 
   def logger = LoggerFactory.getLogger("CommunityManager")
 

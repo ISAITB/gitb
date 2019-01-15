@@ -5,7 +5,7 @@ import java.sql.Timestamp
 
 import play.api.Play
 import play.api.db.slick.DatabaseConfigProvider
-import slick.driver.JdbcProfile
+import slick.jdbc.JdbcProfile
 
 object PersistenceSchema {
 
@@ -14,7 +14,7 @@ object PersistenceSchema {
    **********************/
 
   val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
-  import dbConfig.driver.api._
+  import dbConfig.profile.api._
 
   class CommunitiesTable(tag: Tag) extends Table[Communities](tag, "Communities") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)

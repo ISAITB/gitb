@@ -3,17 +3,18 @@ package controllers
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import filters.CorsFilter
+import javax.inject.Inject
 
 import scala.collection.mutable.ListBuffer
 import play.api.routing._
 
-class Application extends Controller {
+class Application @Inject() (webJarAssets: WebJarAssets) extends Controller {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[Application])
 
-  def index = Action {
+  def index() = Action {
     logger.info("Serving index page...")
-    Ok(views.html.index())
+    Ok(views.html.index(webJarAssets))
   }
 
   def preFlight(all: String) = Action {
