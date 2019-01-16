@@ -3,18 +3,13 @@ package persistence.db
 import models._
 import java.sql.Timestamp
 
-import play.api.Play
-import play.api.db.slick.DatabaseConfigProvider
-import slick.jdbc.JdbcProfile
+import slick.jdbc.MySQLProfile.api._
 
 object PersistenceSchema {
 
   /**********************
    *** Primary Tables ***
    **********************/
-
-  val dbConfig = DatabaseConfigProvider.get[JdbcProfile](Play.current)
-  import dbConfig.profile.api._
 
   class CommunitiesTable(tag: Tag) extends Table[Communities](tag, "Communities") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)

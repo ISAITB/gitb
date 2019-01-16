@@ -1,10 +1,13 @@
 package managers
 
+import javax.inject.{Inject, Singleton}
 import models.SystemConfiguration
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
+import play.api.db.slick.DatabaseConfigProvider
 
-object SystemConfigurationManager extends BaseManager {
+@Singleton
+class SystemConfigurationManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 

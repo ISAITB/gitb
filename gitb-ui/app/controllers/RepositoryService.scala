@@ -2,12 +2,13 @@ package controllers
 
 import java.io._
 import java.nio.file.{Files, Paths}
-import javax.xml.transform.stream.StreamSource
 
+import javax.xml.transform.stream.StreamSource
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl.TestCase
 import com.gitb.utils.XMLUtils
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
+import javax.inject.Inject
 import managers._
 import models.ConformanceCertificate
 import org.apache.commons.codec.net.URLCodec
@@ -20,7 +21,7 @@ import utils.{JacksonUtil, JsonUtil, MimeUtil, RepositoryUtils}
 /**
  * Created by serbay on 10/16/14.
  */
-class RepositoryService extends Controller {
+class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager) extends Controller {
 	private val logger = LoggerFactory.getLogger(classOf[RepositoryService])
 	private val codec = new URLCodec()
 
@@ -28,14 +29,14 @@ class RepositoryService extends Controller {
 
 	def getTestSuiteResource(testId: String, filePath:String): Action[AnyContent] = Action {
 		implicit request =>
-      val testCase = TestCaseManager.getTestCaseForIdWrapper(testId).get
-      val testSuite = TestSuiteManager.getTestSuiteOfTestCaseWrapper(testCase.id)
+      val testCase = testCaseManager.getTestCaseForIdWrapper(testId).get
+      val testSuite = testSuiteManager.getTestSuiteOfTestCaseWrapper(testCase.id)
       var filePathToLookup = codec.decode(filePath)
       if (!filePath.startsWith(testSuite.shortname) && !filePath.startsWith("/"+testSuite.shortname)) {
         // Prefix with the test suite name.
         filePathToLookup = testSuite.shortname + "/" + filePathToLookup
       }
-      val file = RepositoryUtils.getTestSuitesResource(testCase.targetSpec, filePathToLookup)
+      val file = RepositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(testCase.targetSpec), filePathToLookup)
 			logger.debug("Reading test resource ["+codec.decode(filePath)+"] definition from the file ["+file+"]")
 			if(file.exists()) {
 				Ok.sendFile(file, true)
@@ -46,7 +47,7 @@ class RepositoryService extends Controller {
 
 	def getTestStepReport(sessionId: String, reportPath: String): Action[AnyContent] = Action { implicit request=>
 //    34888315-6781-4d74-a677-8f9001a02cb8/4.xml
-		val sessionFolder = ReportManager.getPathForTestSessionWrapper(sessionId, true).toFile
+		val sessionFolder = reportManager.getPathForTestSessionWrapper(sessionId, true).toFile
     var path: String = null
     if (reportPath.startsWith(sessionId)) {
       // Backwards compatibility.
@@ -86,13 +87,13 @@ class RepositoryService extends Controller {
       path = reportPath
     }
     path = codec.decode(path)
-    val sessionFolder = ReportManager.getPathForTestSessionWrapper(sessionId, true).toFile
+    val sessionFolder = reportManager.getPathForTestSessionWrapper(sessionId, true).toFile
     val file = new File(sessionFolder, path)
     val pdf = new File(sessionFolder, path.toLowerCase().replace(".xml", ".pdf"))
 
     if (!pdf.exists()) {
       if (file.exists()) {
-        ReportManager.generateTestStepReport(file.toPath, pdf.toPath)
+        reportManager.generateTestStepReport(file.toPath, pdf.toPath)
       } else {
         NotFound
       }
@@ -107,11 +108,11 @@ class RepositoryService extends Controller {
     val session = ParameterExtractor.requiredQueryParameter(request, Parameters.SESSION_ID)
     val testCaseId = ParameterExtractor.requiredQueryParameter(request, Parameters.TEST_ID)
 
-    val folder = ReportManager.getPathForTestSessionWrapper(codec.decode(session), true).toFile
+    val folder = reportManager.getPathForTestSessionWrapper(codec.decode(session), true).toFile
 
     logger.debug("Reading test case report ["+codec.decode(session)+"] from the file ["+folder+"]")
 
-    val testResult = TestResultManager.getTestResultForSessionWrapper(session)
+    val testResult = testResultManager.getTestResultForSessionWrapper(session)
     if (testResult.isDefined) {
 
       var exportedReport: File = null
@@ -123,10 +124,10 @@ class RepositoryService extends Controller {
         exportedReport = new File(folder, "report.pdf")
       }
       val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get.tpl)))
-      val testCase = TestCaseManager.getTestCase(testCaseId)
+      val testCase = testCaseManager.getTestCase(testCaseId)
       if (!exportedReport.exists()) {
-        val list = ReportManager.getListOfTestSteps(testcasePresentation, folder)
-        ReportManager.generateDetailedTestCaseReport(list, exportedReport.getAbsolutePath, testCase, session, false)
+        val list = reportManager.getListOfTestSteps(testcasePresentation, folder)
+        reportManager.generateDetailedTestCaseReport(list, exportedReport.getAbsolutePath, testCase, session, false)
       }
       Ok.sendFile(
         content = exportedReport,
@@ -159,7 +160,7 @@ class RepositoryService extends Controller {
         // Ignore these are anyway deleted every hour
       }
     }
-    ReportManager.generateConformanceStatementReport(reportPath, includeTests, actorId.toLong, systemId.toLong)
+    reportManager.generateConformanceStatementReport(reportPath, includeTests, actorId.toLong, systemId.toLong)
     Ok.sendFile(
       content = reportPath.toFile,
       fileName = _ => reportPath.toFile.getName
@@ -188,7 +189,7 @@ class RepositoryService extends Controller {
     }
     if (settings.includeSignature) {
       // The signature information needs to be looked up from the stored data.
-      val storedSettings = ConformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+      val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
       val completeSettings = new ConformanceCertificate(settings)
       completeSettings.keystoreFile = storedSettings.get.keystoreFile
       completeSettings.keystoreType = storedSettings.get.keystoreType
@@ -196,7 +197,7 @@ class RepositoryService extends Controller {
       completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
       settings = completeSettings.toCaseObject
     }
-    ReportManager.generateConformanceCertificate(reportPath, settings, actorId, systemId)
+    reportManager.generateConformanceCertificate(reportPath, settings, actorId, systemId)
     Ok.sendFile(
       content = reportPath.toFile,
       fileName = _ => reportPath.toFile.getName
@@ -221,13 +222,13 @@ class RepositoryService extends Controller {
     }
     if (settings.includeSignature && (settings.keystorePassword.isEmpty || settings.keyPassword.isEmpty)) {
       // The passwords need to be looked up from the stored data.
-      val storedSettings = ConformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+      val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
       val completeSettings = new ConformanceCertificate(settings)
       completeSettings.keyPassword = Some(MimeUtil.decryptString(storedSettings.get.keyPassword.get))
       completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
       settings = completeSettings.toCaseObject
     }
-    ReportManager.generateDemoConformanceCertificate(reportPath, settings)
+    reportManager.generateDemoConformanceCertificate(reportPath, settings)
     Ok.sendFile(
       content = reportPath.toFile,
       fileName = _ => reportPath.toFile.getName
@@ -235,7 +236,7 @@ class RepositoryService extends Controller {
   }
 
 	def getTestCase(testId:String) = Action.apply { implicit request =>
-		val tc = TestCaseManager.getTestCase(testId)
+		val tc = testCaseManager.getTestCase(testId)
     if (tc.isDefined) {
       val json = JsonUtil.jsTestCase(tc.get).toString()
       ResponseConstructor.constructJsonResponse(json)
@@ -245,9 +246,9 @@ class RepositoryService extends Controller {
 	}
 
 	def getTestCaseDefinition(testId: String) = Action.apply { implicit request =>
-		val tc = TestCaseManager.getTestCase(testId)
+		val tc = testCaseManager.getTestCase(testId)
     if (tc.isDefined) {
-      val file = RepositoryUtils.getTestSuitesResource(tc.get.targetSpec, tc.get.path)
+      val file = RepositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(tc.get.targetSpec), tc.get.path)
       logger.debug("Reading test case ["+testId+"] definition from the file ["+file+"]")
       if(file.exists()) {
         Ok.sendFile(file, true)
@@ -262,7 +263,7 @@ class RepositoryService extends Controller {
   def getTestCases() = Action.apply { request =>
     val testCaseIds = ParameterExtractor.extractLongIdsQueryParameter(request)
 
-    val testCases = TestCaseManager.getTestCases(testCaseIds)
+    val testCases = testCaseManager.getTestCases(testCaseIds)
     val json = JsonUtil.jsTestCasesList(testCases).toString()
     ResponseConstructor.constructJsonResponse(json)
   }

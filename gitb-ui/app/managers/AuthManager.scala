@@ -1,6 +1,7 @@
 package persistence
 
 import config.Configurations
+import javax.inject.{Inject, Singleton}
 import managers.BaseManager
 import models.{Token, Users}
 import org.apache.commons.lang.RandomStringUtils
@@ -8,8 +9,10 @@ import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import persistence.cache.TokenCache
 import persistence.db._
+import play.api.db.slick.DatabaseConfigProvider
 
-object AuthManager extends BaseManager {
+@Singleton
+class AuthManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -41,7 +44,7 @@ object AuthManager extends BaseManager {
     val userId = TokenCache.checkRefreshToken(refreshToken)
 
     //2) If so, generate new tokens
-    val tokens = AuthManager.generateTokens(userId)
+    val tokens = generateTokens(userId)
 
     //3) Delete the old ones and return the new
     TokenCache.deleteRefreshToken(refreshToken)

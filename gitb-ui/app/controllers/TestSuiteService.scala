@@ -3,7 +3,8 @@ package controllers
 import java.nio.file.Paths
 
 import controllers.util.{ParameterExtractor, ResponseConstructor}
-import managers.{ReportManager, TestSuiteManager}
+import javax.inject.Inject
+import managers.{ConformanceManager, ReportManager, SpecificationManager, TestSuiteManager}
 import org.apache.commons.io.FileUtils
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc.{Action, Controller}
@@ -11,34 +12,34 @@ import utils.{JsonUtil, RepositoryUtils, ZipArchiver}
 
 
 /**
- * Created by serbay.
+ * Created by serbay.Tes
  */
-class TestSuiteService extends Controller {
+class TestSuiteService @Inject() (testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager) extends Controller {
 
 	private final val logger: Logger = LoggerFactory.getLogger(classOf[TestSuiteService])
 
 	def undeployTestSuite(testSuiteId: Long) = Action.apply {
-		TestSuiteManager.undeployTestSuiteWrapper(testSuiteId)
+		conformanceManager.undeployTestSuiteWrapper(testSuiteId)
 		ResponseConstructor.constructEmptyResponse
 	}
 
 	def getTestSuites() = Action.apply { request =>
 		val testSuiteIds = ParameterExtractor.extractLongIdsQueryParameter(request)
 
-		val testSuites = TestSuiteManager.getTestSuites(testSuiteIds)
+		val testSuites = testSuiteManager.getTestSuites(testSuiteIds)
 		val json = JsonUtil.jsTestSuitesList(testSuites).toString()
 		ResponseConstructor.constructJsonResponse(json)
 	}
 
 	def getTestSuitesWithTestCases() = Action.apply { request =>
-		val testSuites = TestSuiteManager.getTestSuitesWithTestCases()
+		val testSuites = testSuiteManager.getTestSuitesWithTestCases()
 		val json = JsonUtil.jsTestSuiteList(testSuites).toString()
 		ResponseConstructor.constructJsonResponse(json)
 	}
 
 	def downloadTestSuite(testSuiteId: Long) = Action.apply {
-		val testSuite = TestSuiteManager.getTestSuites(Some(List(testSuiteId))).head
-		val testSuiteFolder = RepositoryUtils.getTestSuitesResource(testSuite.specification, testSuite.shortname)
+		val testSuite = testSuiteManager.getTestSuites(Some(List(testSuiteId))).head
+		val testSuiteFolder = RepositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(testSuite.specification), testSuite.shortname)
 		val testSuiteOutputPath = Paths.get(
 			ReportManager.getTempFolderPath().toFile.getAbsolutePath,
 			"test_suite",

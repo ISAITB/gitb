@@ -3,6 +3,7 @@ package controllers
 import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
+import javax.inject.Inject
 import managers.AttachmentType
 import org.apache.commons.codec.binary.Base64
 import org.apache.tika.Tika
@@ -12,7 +13,7 @@ import play.api.mvc._
 import utils.{ClamAVClient, JsonUtil}
 
 
-class AccountService extends Controller{
+class AccountService @Inject() (accountManager: AccountManager) extends Controller{
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AccountService])
   private final val tika = new Tika()
 
@@ -23,7 +24,7 @@ class AccountService extends Controller{
     val organization = ParameterExtractor.extractOrganizationInfo(request)
     val admin = ParameterExtractor.extractAdminInfo(request)
 
-    AccountManager.registerVendor(organization, admin)
+    accountManager.registerVendor(organization, admin)
     ResponseConstructor.constructEmptyResponse
   }
   /**
@@ -32,7 +33,7 @@ class AccountService extends Controller{
   def getVendorProfile = Action.apply { request =>
     val userId = ParameterExtractor.extractUserId(request)
 
-    val organization = AccountManager.getVendorProfile(userId)
+    val organization = accountManager.getVendorProfile(userId)
     val json:String = JsonUtil.serializeOrganization(organization)
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -45,7 +46,7 @@ class AccountService extends Controller{
     val vendor_sname = ParameterExtractor.optionalBodyParameter(request, Parameters.VENDOR_SNAME)
     val vendor_fname = ParameterExtractor.optionalBodyParameter(request, Parameters.VENDOR_FNAME)
 
-    AccountManager.updateVendorProfile(adminId, vendor_sname, vendor_fname)
+    accountManager.updateVendorProfile(adminId, vendor_sname, vendor_fname)
     ResponseConstructor.constructEmptyResponse
   }
   /**
@@ -54,7 +55,7 @@ class AccountService extends Controller{
   def getVendorUsers = Action.apply { request =>
     val userId = ParameterExtractor.extractUserId(request)
 
-    val list = AccountManager.getVendorUsers(userId)
+    val list = accountManager.getVendorUsers(userId)
     val json:String = JsonUtil.jsUsers(list).toString
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -66,7 +67,7 @@ class AccountService extends Controller{
     val adminId = ParameterExtractor.extractUserId(request)
     val user = ParameterExtractor.extractUserInfo(request)
 
-    AccountManager.registerUser(adminId, user)
+    accountManager.registerUser(adminId, user)
     ResponseConstructor.constructEmptyResponse
   }
   /**
@@ -75,7 +76,7 @@ class AccountService extends Controller{
   def getUserProfile = Action.apply { request =>
     val userId = ParameterExtractor.extractUserId(request)
 
-    val user = AccountManager.getUserProfile(userId)
+    val user = accountManager.getUserProfile(userId)
     val json:String = JsonUtil.serializeUser(user)
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -88,7 +89,7 @@ class AccountService extends Controller{
     val passwd:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.PASSWORD)
     val oldPasswd:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.OLD_PASSWORD)
 
-    AccountManager.updateUserProfile(userId, name, passwd, oldPasswd)
+    accountManager.updateUserProfile(userId, name, passwd, oldPasswd)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -169,7 +170,7 @@ class AccountService extends Controller{
       }
     }
     if (response == null) {
-      AccountManager.submitFeedback(userId, userEmail, messageTypeId, messageTypeDescription, messageContent, attachments.toArray)
+      accountManager.submitFeedback(userId, userEmail, messageTypeId, messageTypeDescription, messageContent, attachments.toArray)
       response = ResponseConstructor.constructEmptyResponse
     }
     response

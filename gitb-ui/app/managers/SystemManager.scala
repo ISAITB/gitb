@@ -2,15 +2,18 @@ package managers
 
 import java.util
 
+import javax.inject.{Inject, Singleton}
 import models.Enums.TestResultStatus
 import models.{ConformanceResult, ConformanceStatement, _}
 import org.slf4j.LoggerFactory
 import persistence.db._
+import play.api.db.slick.DatabaseConfigProvider
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object SystemManager extends BaseManager {
+@Singleton
+class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -31,13 +34,13 @@ object SystemManager extends BaseManager {
 
   def copyTestSetup(fromSystem: Long, toSystem: Long) = {
     val actions = new ListBuffer[DBIO[_]]()
-    val conformanceStatements = SystemManager.getConformanceStatementReferences(fromSystem)
+    val conformanceStatements = getConformanceStatementReferences(fromSystem)
     var addedStatements = scala.collection.mutable.Set[String]()
     conformanceStatements.foreach { otherConformanceStatement =>
       val key = otherConformanceStatement.spec+"-"+otherConformanceStatement.actor
       if (!addedStatements.contains(key)) {
         addedStatements += key
-        actions += SystemManager.defineConformanceStatement(toSystem, otherConformanceStatement.spec, otherConformanceStatement.actor, None)
+        actions += defineConformanceStatement(toSystem, otherConformanceStatement.spec, otherConformanceStatement.actor, None)
       }
     }
     DBIO.seq(actions.map(a => a): _*)
@@ -73,7 +76,7 @@ object SystemManager extends BaseManager {
     if (sname.isDefined) {
       val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield (s.shortname)
       actions += q.update(sname.get)
-      actions += TestResultManager.updateForUpdatedSystem(systemId, sname.get)
+      actions += testResultManager.updateForUpdatedSystem(systemId, sname.get)
     }
     //update full name of the system
     if (fname.isDefined) {
@@ -327,7 +330,7 @@ object SystemManager extends BaseManager {
   }
 
   def deleteSystem(systemId: Long) = {
-    TestResultManager.updateForDeletedSystem(systemId) andThen
+    testResultManager.updateForDeletedSystem(systemId) andThen
     PersistenceSchema.configs.filter(_.system === systemId).delete andThen
     PersistenceSchema.systemHasAdmins.filter(_.systemId === systemId).delete andThen
     PersistenceSchema.systemImplementsActors.filter(_.systemId === systemId).delete andThen

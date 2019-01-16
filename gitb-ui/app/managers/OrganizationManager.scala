@@ -1,8 +1,10 @@
 package managers
 
+import javax.inject.{Inject, Singleton}
 import models._
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
+import play.api.db.slick.DatabaseConfigProvider
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -10,7 +12,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 /**
  * Created by VWYNGAET on 26/10/2016.
  */
-object OrganizationManager extends BaseManager {
+@Singleton
+class OrganizationManager @Inject() (systemManager: SystemManager, testResultManager: TestResultManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -63,12 +66,12 @@ object OrganizationManager extends BaseManager {
 
   private def copyTestSetup(fromOrganisation: Long, toOrganisation: Long) = {
     val actions = new ListBuffer[DBIO[_]]()
-    val systems = SystemManager.getSystemsByOrganization(fromOrganisation)
+    val systems = systemManager.getSystemsByOrganization(fromOrganisation)
     systems.foreach { otherSystem =>
       actions += (
         for {
-          newSystemId <- SystemManager.registerSystem(Systems(0L, otherSystem.shortname, otherSystem.fullname, otherSystem.description, otherSystem.version, toOrganisation))
-          _ <- SystemManager.copyTestSetup(otherSystem.id, newSystemId)
+          newSystemId <- systemManager.registerSystem(Systems(0L, otherSystem.shortname, otherSystem.fullname, otherSystem.description, otherSystem.version, toOrganisation))
+          _ <- systemManager.copyTestSetup(otherSystem.id, newSystemId)
         } yield()
       )
     }
@@ -103,7 +106,7 @@ object OrganizationManager extends BaseManager {
       if (!shortName.isEmpty && org.get.shortname != shortName) {
         val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname)
         actions += q.update(shortName)
-        actions += TestResultManager.updateForUpdatedOrganisation(orgId, shortName)
+        actions += testResultManager.updateForUpdatedOrganisation(orgId, shortName)
       }
       if (!fullName.isEmpty && org.get.fullname != fullName) {
         val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.fullname)
@@ -113,7 +116,7 @@ object OrganizationManager extends BaseManager {
       actions += q.update(landingPageId, legalNoticeId, errorTemplateId)
       if (otherOrganisation.isDefined) {
         // Replace the test setup for the organisation with the one from the provided one.
-        actions += SystemManager.deleteSystemByOrganization(orgId)
+        actions += systemManager.deleteSystemByOrganization(orgId)
         actions += copyTestSetup(otherOrganisation.get, orgId)
       }
       exec(DBIO.seq(actions.map(a => a): _*).transactionally)
@@ -126,12 +129,12 @@ object OrganizationManager extends BaseManager {
    * Deletes organization by community
    */
   def deleteOrganizationByCommunity(communityId: Long) = {
-    TestResultManager.updateForDeletedOrganisationByCommunityId(communityId)
+    testResultManager.updateForDeletedOrganisationByCommunityId(communityId)
     for {
       list <- PersistenceSchema.organizations.filter(_.community === communityId).result
       _ <- DBIO.seq(list.map { org =>
-        UserManager.deleteUserByOrganization(org.id) andThen
-        SystemManager.deleteSystemByOrganization(org.id) andThen
+        deleteUserByOrganization(org.id) andThen
+        systemManager.deleteSystemByOrganization(org.id) andThen
         PersistenceSchema.organizations.filter(_.community === communityId).delete
       }: _*)
     } yield()
@@ -143,12 +146,19 @@ object OrganizationManager extends BaseManager {
   def deleteOrganization(orgId: Long) {
     exec(
       (
-        TestResultManager.updateForDeletedOrganisation(orgId) andThen
-        UserManager.deleteUserByOrganization(orgId) andThen
-        SystemManager.deleteSystemByOrganization(orgId) andThen
+        testResultManager.updateForDeletedOrganisation(orgId) andThen
+        deleteUserByOrganization(orgId) andThen
+        systemManager.deleteSystemByOrganization(orgId) andThen
         PersistenceSchema.organizations.filter(_.id === orgId).delete
       ).transactionally
     )
+  }
+
+  /**
+    * Deletes all users with specified organization
+    */
+  def deleteUserByOrganization(orgId: Long) = {
+    PersistenceSchema.users.filter(_.organization === orgId).delete
   }
 
 }

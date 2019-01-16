@@ -11,9 +11,7 @@ import scala.concurrent.Future
 class ErrorHandler extends HttpErrorHandler {
 
   override def onClientError(request: RequestHeader, statusCode: Int, message: String): Future[Result] = {
-    val errorIdentifier = RandomStringUtils.randomAlphabetic(10)
-    Logger.error("Client error ["+errorIdentifier+"] " + statusCode + " " + message)
-    val result = ResponseConstructor.constructServerError("Unexpected error", message, Some(errorIdentifier))
+    val result = ResponseConstructor.constructServerError("Unexpected error", message, Some(""))
     Future.successful(result)
   }
 

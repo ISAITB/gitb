@@ -2,9 +2,11 @@ package managers
 
 import java.util
 
+import javax.inject.{Inject, Singleton}
 import models.Enums.TestResultStatus
 import models.{TestCase, TestCases}
 import persistence.db.PersistenceSchema
+import play.api.db.slick.DatabaseConfigProvider
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -12,7 +14,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 /**
  * Created by serbay on 10/16/14.
  */
-object TestCaseManager extends BaseManager {
+@Singleton
+class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
 	import dbConfig.profile.api._
 
@@ -171,7 +174,7 @@ object TestCaseManager extends BaseManager {
 	def updateTestCase(testCaseId: Long, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String) = {
 		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname, t.fullname, t.version, t.authors, t.description, t.keywords, t.testCaseType, t.path)
 		q1.update(shortName, fullName, version, authors, description, keywords, testCaseType, path) andThen
-		TestResultManager.updateForUpdatedTestCase(testCaseId, shortName)
+		testResultManager.updateForUpdatedTestCase(testCaseId, shortName)
 	}
 
 	def delete(testCaseId: Long) = {
@@ -180,7 +183,7 @@ object TestCaseManager extends BaseManager {
 
 	private def deleteInternal(testCaseId: Long, skipConformanceResult: Boolean): DBIO[_] = {
 		val actions = new ListBuffer[DBIO[_]]()
-		actions += TestResultManager.updateForDeletedTestCase(testCaseId)
+		actions += testResultManager.updateForDeletedTestCase(testCaseId)
 		actions += removeActorLinksForTestCase(testCaseId)
 		actions += PersistenceSchema.testCaseCoversOptions.filter(_.testcase === testCaseId).delete
 		actions += PersistenceSchema.testSuiteHasTestCases.filter(_.testcase === testCaseId).delete

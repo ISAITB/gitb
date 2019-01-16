@@ -11,7 +11,9 @@ import scala.concurrent.Future
 class OnStopHook @Inject()(lifecycle: ApplicationLifecycle) {
 
   lifecycle.addStopHook(() => {
-    TestbedService.endpoint.stop()
+    if (TestbedService.endpoint != null) {
+      TestbedService.endpoint.stop()
+    }
     Logger.info("Application shutdown...")
     Future.successful(())
   })

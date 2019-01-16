@@ -1,6 +1,8 @@
 package jaxws;
 
 import config.Configurations;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -18,6 +20,7 @@ public class HeaderHandler implements SOAPHandler<SOAPMessageContext> {
 
     private static final String SOAP_NAMESPACE = "http://schemas.xmlsoap.org/soap/envelope";
     private static final String TESTBED_CLIENT_NODE = "TestbedClient";
+    private static final Logger logger = LoggerFactory.getLogger(HeaderHandler.class);
 
     public boolean handleMessage(SOAPMessageContext smc) {
         try {
@@ -34,23 +37,20 @@ public class HeaderHandler implements SOAPHandler<SOAPMessageContext> {
             }
 
         } catch (Exception e) {
-            e.printStackTrace();
+            logger.error("Error in HeaderHandler", e);
         }
 
         return true;
     }
 
-    public Set getHeaders() {
-        final HashSet headers = new HashSet();
-        return headers;
+    public Set<QName> getHeaders() {
+        return new HashSet<>();
     }
 
     public boolean handleFault(SOAPMessageContext context) {
-        //throw new UnsupportedOperationException("Not supported yet.");
         return true;
     }
 
     public void close(MessageContext context) {
-        //throw new UnsupportedOperationException("Not supported yet.");
     }
 }

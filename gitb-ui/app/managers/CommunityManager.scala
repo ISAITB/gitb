@@ -1,14 +1,17 @@
 package managers
 
+import javax.inject.{Inject, Singleton}
 import models.Enums._
 import models._
 import org.slf4j.LoggerFactory
 import persistence.db._
+import play.api.db.slick.DatabaseConfigProvider
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object CommunityManager extends BaseManager {
+@Singleton
+class CommunityManager @Inject() (testResultManager: TestResultManager, organizationManager: OrganizationManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -82,7 +85,7 @@ object CommunityManager extends BaseManager {
       if (!shortName.isEmpty && community.get.shortname != shortName) {
         val q = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.shortname)
         actions += q.update(shortName)
-        actions += TestResultManager.updateForUpdatedCommunity(communityId, shortName)
+        actions += testResultManager.updateForUpdatedCommunity(communityId, shortName)
       }
 
       if (!fullName.isEmpty && community.get.fullname != fullName) {
@@ -107,12 +110,12 @@ object CommunityManager extends BaseManager {
   def deleteCommunity(communityId: Long) {
     exec(
       (
-        OrganizationManager.deleteOrganizationByCommunity(communityId) andThen
-        LandingPageManager.deleteLandingPageByCommunity(communityId) andThen
-        LegalNoticeManager.deleteLegalNoticeByCommunity(communityId) andThen
-        ErrorTemplateManager.deleteErrorTemplateByCommunity(communityId) andThen
-        TestResultManager.updateForDeletedCommunity(communityId) andThen
-        ConformanceManager.deleteConformanceCertificateSettings(communityId) andThen
+        organizationManager.deleteOrganizationByCommunity(communityId) andThen
+        landingPageManager.deleteLandingPageByCommunity(communityId) andThen
+        legalNoticeManager.deleteLegalNoticeByCommunity(communityId) andThen
+        errorTemplateManager.deleteErrorTemplateByCommunity(communityId) andThen
+        testResultManager.updateForDeletedCommunity(communityId) andThen
+        conformanceManager.deleteConformanceCertificateSettings(communityId) andThen
         PersistenceSchema.communities.filter(_.id === communityId).delete
       ).transactionally
     )

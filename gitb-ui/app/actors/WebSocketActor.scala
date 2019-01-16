@@ -1,19 +1,37 @@
 package actors
 
-import akka.actor.{Props, Actor, ActorRef}
+import akka.actor.{Actor, ActorRef, Props}
 import com.gitb.core.TestCaseType
 import controllers.TestService
+import javax.inject.{Inject, Singleton}
 import play.api.libs.json._
-import org.slf4j.{LoggerFactory, Logger}
+import org.slf4j.{Logger, LoggerFactory}
 
 object WebSocketActor {
 
-  private final val logger = LoggerFactory.getLogger("WebSocketActor")
-
   //references to all the connection handling actors
   //[sessionId -> [actorId -> Actor]]
-  private var webSockets = Map[String, Map[String, ActorRef]]()
-  private var testTypes  = Map[String, Short]()
+  var webSockets = Map[String, Map[String, ActorRef]]()
+  var testTypes  = Map[String, Short]()
+
+  /**
+    * Returns all sessions in JSON format
+    */
+  def getSessions() = {
+    //convert websockets into map of ("session" -> list("actorId") by filtering by type first
+    val interopabilitySessions = testTypes.filter(_._2 == TestCaseType.INTEROPERABILITY.ordinal().toShort).map(_._1).toList
+    val list = webSockets
+      .filter(interopabilitySessions contains _._1)
+      .map(entry => Json.obj("session" -> entry._1, "actors" -> entry._2.map(_._1)))
+    Json.stringify(Json.toJson(list))
+  }
+
+}
+
+@Singleton
+class WebSocketActor @Inject() (TestService: TestService) {
+
+  private final val logger = LoggerFactory.getLogger("WebSocketActor")
 
   def broadcast(sessionId:String, msg:String, retry: Boolean):Unit = {
     var attempts = 0
@@ -32,8 +50,8 @@ object WebSocketActor {
   }
 
   def broadcastMessage(sessionId:String, msg:String):Boolean = {
-    if (webSockets.get(sessionId).isDefined) {
-      webSockets.get(sessionId).get.foreach {
+    if (WebSocketActor.webSockets.get(sessionId).isDefined) {
+      WebSocketActor.webSockets.get(sessionId).get.foreach {
         case (actorId, out) =>
           //send message to each ActorRef of the same session ID
           out ! Json.parse(msg)
@@ -48,8 +66,8 @@ object WebSocketActor {
    * Pushes given msg (in Json) to the given actor with given session
    */
   def push(sessionId:String, actorId:String, msg:String) = {
-    if(webSockets.get(sessionId).isDefined) {
-      val actors = webSockets.get(sessionId).get
+    if(WebSocketActor.webSockets.get(sessionId).isDefined) {
+      val actors = WebSocketActor.webSockets.get(sessionId).get
       if (actors.get(actorId).isDefined) {
         val out = actors.get(actorId).get
         //send message to the client with given session and actor IDs
@@ -58,22 +76,10 @@ object WebSocketActor {
     }
   }
 
-  /**
-   * Returns all sessions in JSON format
-   */
-  def getSessions() = {
-    //convert websockets into map of ("session" -> list("actorId") by filtering by type first
-    val interopabilitySessions = WebSocketActor.testTypes.filter(_._2 == TestCaseType.INTEROPERABILITY.ordinal().toShort).map(_._1).toList
-    val list = WebSocketActor.webSockets
-      .filter(interopabilitySessions contains _._1)
-      .map(entry => Json.obj("session" -> entry._1, "actors" -> entry._2.map(_._1)))
-    Json.stringify(Json.toJson(list))
-  }
-
-  def props(out: ActorRef) = Props(new WebSocketActor(out)).withDispatcher("blocking-processor-dispatcher")
+  def props(out: ActorRef) = Props(new WebSocketActorHandler(out, TestService, this)).withDispatcher("blocking-processor-dispatcher")
 }
 
-class WebSocketActor(out: ActorRef) extends Actor{
+class WebSocketActorHandler (out: ActorRef, TestService: TestService, webSocketActor: WebSocketActor) extends Actor{
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[WebSocketActor])
 
@@ -118,7 +124,7 @@ class WebSocketActor(out: ActorRef) extends Actor{
 
               //if any actor sends its configurations, broadcast it.
               if(!jsConfigurations.isInstanceOf[JsUndefined] && jsConfigurations.toOption.isDefined) {
-                WebSocketActor.broadcast(sessionId, Json.obj("configuration" -> jsConfigurations.get).toString())
+                webSocketActor.broadcast(sessionId, Json.obj("configuration" -> jsConfigurations.get).toString())
               }
             }
           case NOTIFY =>
@@ -126,7 +132,7 @@ class WebSocketActor(out: ActorRef) extends Actor{
             val sessionId = (msg \ "sessionId").as[String]
 
             //send message to all actors
-            WebSocketActor.broadcast(sessionId, Json.obj("notify" -> message).toString())
+            webSocketActor.broadcast(sessionId, Json.obj("notify" -> message).toString())
 
           case PING =>
             // Do nothing. This is sent to keep alive the web socket connection.

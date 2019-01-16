@@ -1,8 +1,10 @@
 package managers
 
+import javax.inject.{Inject, Singleton}
 import models._
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
+import play.api.db.slick.DatabaseConfigProvider
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -10,7 +12,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 /**
  * Created by VWYNGAET on 25/11/2016.
  */
-object LandingPageManager extends BaseManager {
+@Singleton
+class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 

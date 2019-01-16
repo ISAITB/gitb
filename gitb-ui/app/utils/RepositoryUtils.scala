@@ -3,24 +3,21 @@ package utils
 import java.io.{File, FileOutputStream}
 import java.nio.file.Paths
 import java.util.zip.{ZipEntry, ZipFile}
-import javax.xml.transform.stream.StreamSource
 
+import javax.xml.transform.stream.StreamSource
 import com.gitb.core.TestCaseType
 import com.gitb.utils.XMLUtils
 import config.Configurations
-import managers.{SpecificationManager, TestSuiteManager}
+import managers.{TestSuiteManager}
 import models._
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.slf4j.LoggerFactory
 
-//import scala.slick.driver.MySQLDriver.simple._
 import scala.collection.JavaConverters._
 import scala.xml.XML
 
-/**
- * Created by serbay on 10/16/14.
- */
 object RepositoryUtils {
+
 	private final val logger = LoggerFactory.getLogger("RepositoryUtils")
 
 	private final val TEST_SUITE_ELEMENT_LABEL: String = "testsuite"
@@ -52,60 +49,21 @@ object RepositoryUtils {
 		path.toFile
 	}
 
-	def getTestSuitesPath(specificationId: Long): File = {
-		val spec = SpecificationManager.getSpecificationById(specificationId)
-		getTestSuitesPath(spec.domain, spec.id)
-	}
-
-	def getTestSuitesResource(specificationId: Long, resourcePath: String): File = {
-		var file = new File(RepositoryUtils.getTestSuitesPath(specificationId), resourcePath)
+	def getTestSuitesResource(spec: Specifications, resourcePath: String): File = {
+		var file = new File(getTestSuitesPath(spec), resourcePath)
 		if(!file.exists()) {
 			// Backwards compatibility: Lookup directly under the test-suites folder
-			file = new File(RepositoryUtils.getTestSuitesRootFolder(), resourcePath)
+			file = new File(getTestSuitesRootFolder(), resourcePath)
 		}
 		file
 	}
 
 	/**
-	 * Extracts the test suite resources in the <code>file</code> into the <code>targetFolderName</code> folder.
-	 * A folder named <code>targetFolderName</code> is created if it does not exist.
-	 * @param targetFolder
-	 * @param tempFolder
-	 * @return id->path maps for the test case files
-	 */
-	def extractTestSuiteFilesFromZipToFolder(specification: Long, targetFolder: File, tempFolder: File): Map[String, String] = {
-    //target folder needs to be deleted due to an unknown exception thrown
-    if(targetFolder.exists()){
-      FileUtils.forceDelete(targetFolder);
-    }
-
-    logger.info("Creating folder ["+targetFolder+"]")
-    targetFolder.mkdirs()
-
-		extractTestSuiteFilesFromZipToFolder(targetFolder, tempFolder)
-	}
-
-	def deleteDomainTestSuiteFolder(domainId: Long): Unit = {
-		val targetFolder = getDomainTestSuitesPath(domainId)
-		FileUtils.deleteDirectory(targetFolder)
-	}
-
-	def deleteSpecificationTestSuiteFolder(specificationId: Long): Unit = {
-		val targetFolder = getTestSuitesPath(specificationId)
-		FileUtils.deleteDirectory(targetFolder)
-	}
-
-	def undeployTestSuite(specificationId: Long, testSuiteName: String): Unit = {
-		val targetFolder = RepositoryUtils.getTestSuitesResource(specificationId, testSuiteName)
-		FileUtils.deleteDirectory(targetFolder)
-	}
-
-	/**
-	 * Extracts the test suite resources in the <code>file</code> into the <code>targetFolder</code>
-	 * @param targetFolder
-	 * @param file
-	 * @return id->path maps for the test case files
-	 */
+		* Extracts the test suite resources in the <code>file</code> into the <code>targetFolder</code>
+		* @param targetFolder
+		* @param file
+		* @return id->path maps for the test case files
+		*/
 	def extractTestSuiteFilesFromZipToFolder(targetFolder: File, file: File): Map[String, String] = {
 		val testCasePaths = collection.mutable.HashMap[String, String]()
 
@@ -248,9 +206,9 @@ object RepositoryUtils {
 			val zip = new ZipFile(file)
 
 			val tdlTestCases = zip.entries().asScala
-													.filter(isTestCase(zip, _))
-													.map(getTestCase(zip, _))
-													.toList
+				.filter(isTestCase(zip, _))
+				.map(getTestCase(zip, _))
+				.toList
 
 			Some(tdlTestCases)
 		} else {
@@ -294,4 +252,43 @@ object RepositoryUtils {
 			false
 		}
 	}
+
+	/**
+		* Extracts the test suite resources in the <code>file</code> into the <code>targetFolderName</code> folder.
+		* A folder named <code>targetFolderName</code> is created if it does not exist.
+		* @param targetFolder
+		* @param tempFolder
+		* @return id->path maps for the test case files
+		*/
+	def extractTestSuiteFilesFromZipToFolder(specification: Long, targetFolder: File, tempFolder: File): Map[String, String] = {
+		//target folder needs to be deleted due to an unknown exception thrown
+		if(targetFolder.exists()){
+			FileUtils.forceDelete(targetFolder);
+		}
+
+		logger.info("Creating folder ["+targetFolder+"]")
+		targetFolder.mkdirs()
+
+		extractTestSuiteFilesFromZipToFolder(targetFolder, tempFolder)
+	}
+
+	def deleteDomainTestSuiteFolder(domainId: Long): Unit = {
+		val targetFolder = getDomainTestSuitesPath(domainId)
+		FileUtils.deleteDirectory(targetFolder)
+	}
+
+	def undeployTestSuite(spec: Specifications, testSuiteName: String): Unit = {
+		val targetFolder = getTestSuitesResource(spec, testSuiteName)
+		FileUtils.deleteDirectory(targetFolder)
+	}
+
+	def getTestSuitesPath(spec: Specifications): File = {
+		getTestSuitesPath(spec.domain, spec.id)
+	}
+
+	def deleteSpecificationTestSuiteFolder(spec: Specifications): Unit = {
+		val targetFolder = getTestSuitesPath(spec)
+		FileUtils.deleteDirectory(targetFolder)
+	}
+
 }

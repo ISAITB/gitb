@@ -6,8 +6,8 @@ import java.text.SimpleDateFormat
 import java.time.LocalDateTime
 import java.util
 import java.util.Date
-import javax.xml.transform.stream.StreamSource
 
+import javax.xml.transform.stream.StreamSource
 import com.gitb.core.StepStatus
 import com.gitb.reports.ReportGenerator
 import com.gitb.reports.dto.{ConformanceStatementOverview, TestCaseOverview}
@@ -16,6 +16,7 @@ import com.gitb.tpl.{DecisionStep, FlowStep, TestCase, TestStep}
 import com.gitb.tr._
 import com.gitb.utils.XMLUtils
 import config.Configurations
+import javax.inject.{Inject, Singleton}
 import models.Enums.TestResultStatus
 import models._
 import org.apache.commons.codec.binary.Base64
@@ -24,22 +25,68 @@ import org.apache.commons.lang.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import persistence.db.PersistenceSchema.TestResultsTable
+import play.api.db.slick.DatabaseConfigProvider
 import utils.signature.{CreateSignature, SigUtils}
 import utils.{JacksonUtil, MimeUtil, TimeUtil}
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
+object ReportManager {
+
+  val STATUS_UPDATES_PATH: String = "status-updates"
+
+  def getPathForTestSessionObj(sessionId: String, testResult: Option[TestResultsTable#TableElementType], isExpected: Boolean): Path = {
+    var startTime: LocalDateTime = null
+    if (testResult.isDefined) {
+      startTime = testResult.get.startTime.toLocalDateTime
+    } else {
+      // We have no DB entry only in the case of preliminary steps.
+      startTime = LocalDateTime.now()
+    }
+    val path = Paths.get(
+      Configurations.TEST_CASE_REPOSITORY_PATH,
+      STATUS_UPDATES_PATH,
+      String.valueOf(startTime.getYear),
+      String.valueOf(startTime.getMonthValue),
+      String.valueOf(startTime.getDayOfMonth),
+      sessionId
+    )
+    if (isExpected && !Files.exists(path)) {
+      // For backwards compatibility. Lookup session folder directly under status-updates folder
+      val otherPath = Paths.get(
+        Configurations.TEST_CASE_REPOSITORY_PATH,
+        STATUS_UPDATES_PATH,
+        sessionId
+      )
+      if (Files.exists(otherPath)) {
+        otherPath
+      } else {
+        // This is for test sessions that have no report.
+        path
+      }
+    } else {
+      path
+    }
+  }
+
+  def getTempFolderPath(): Path = {
+    val path = Paths.get("/tmp/reports")
+    path
+  }
+
+}
+
 /**
   * Created by senan on 03.12.2014.
   */
-object ReportManager extends BaseManager {
+@Singleton
+class ReportManager @Inject() (actorManager: ActorManager, systemManager: SystemManager, organizationManager: OrganizationManager, communityManager: CommunityManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
   val logger: Logger = LoggerFactory.getLogger("ReportManager")
 
-  val STATUS_UPDATES_PATH: String = "status-updates"
   private val generator = new ReportGenerator()
 
   def getTestResults(page: Long,
@@ -248,14 +295,14 @@ object ReportManager extends BaseManager {
   def createTestReport(sessionId: String, systemId: Long, testId: String, actorId: Long, presentation: String) = {
     val initialStatus = TestResultType.UNDEFINED.value()
     val startTime = TimeUtil.getCurrentTimestamp()
-    val system = SystemManager.getSystemById(systemId).get
-    val organisation = OrganizationManager.getById(system.owner).get
-    val community = CommunityManager.getById(organisation.community).get
-    val testCase = TestCaseManager.getTestCaseForId(testId).get
-    val testSuite = TestSuiteManager.getTestSuiteOfTestCase(testCase.id)
-    val actor = ActorManager.getById(actorId).get
-    val specification = SpecificationManager.getSpecificationOfActor(actor.id)
-    val domain = ConformanceManager.getById(specification.domain)
+    val system = systemManager.getSystemById(systemId).get
+    val organisation = organizationManager.getById(system.owner).get
+    val community = communityManager.getById(organisation.community).get
+    val testCase = testCaseManager.getTestCaseForId(testId).get
+    val testSuite = testSuiteManager.getTestSuiteOfTestCase(testCase.id)
+    val actor = actorManager.getById(actorId).get
+    val specification = specificationManager.getSpecificationOfActor(actor.id)
+    val domain = conformanceManager.getById(specification.domain)
 
     val q = (for {c <- PersistenceSchema.conformanceResults if c.sut === systemId && c.testcase === testCase.id} yield (c.testsession, c.result))
 
@@ -306,48 +353,9 @@ object ReportManager extends BaseManager {
     getPathForTestSession(sessionId, isExpected)
   }
 
-  def getTempFolderPath(): Path = {
-    val path = Paths.get("/tmp/reports")
-    path
-  }
-
-  def getPathForTestSessionObj(sessionId: String, testResult: Option[TestResultsTable#TableElementType], isExpected: Boolean): Path = {
-    var startTime: LocalDateTime = null
-    if (testResult.isDefined) {
-      startTime = testResult.get.startTime.toLocalDateTime
-    } else {
-      // We have no DB entry only in the case of preliminary steps.
-      startTime = LocalDateTime.now()
-    }
-    val path = Paths.get(
-      Configurations.TEST_CASE_REPOSITORY_PATH,
-      STATUS_UPDATES_PATH,
-      String.valueOf(startTime.getYear),
-      String.valueOf(startTime.getMonthValue),
-      String.valueOf(startTime.getDayOfMonth),
-      sessionId
-    )
-    if (isExpected && !Files.exists(path)) {
-      // For backwards compatibility. Lookup session folder directly under status-updates folder
-      val otherPath = Paths.get(
-        Configurations.TEST_CASE_REPOSITORY_PATH,
-        STATUS_UPDATES_PATH,
-        sessionId
-      )
-      if (Files.exists(otherPath)) {
-        otherPath
-      } else {
-        // This is for test sessions that have no report.
-        path
-      }
-    } else {
-      path
-    }
-  }
-
   def getPathForTestSession(sessionId: String, isExpected: Boolean): Path = {
     val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption)
-    getPathForTestSessionObj(sessionId, testResult, isExpected)
+    ReportManager.getPathForTestSessionObj(sessionId, testResult, isExpected)
   }
 
   def createTestStepReport(sessionId: String, step: TestStepStatus) = {
@@ -537,7 +545,7 @@ object ReportManager extends BaseManager {
   }
 
   def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, actorId: Long, systemId: Long): Path = {
-    val conformanceInfo = ConformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)))
+    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)))
     generateConformanceCertificate(reportPath, settings, conformanceInfo)
   }
 
@@ -587,7 +595,7 @@ object ReportManager extends BaseManager {
   }
 
   private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: String, addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, message: Option[String], actorId: Long, systemId: Long): Path = {
-    val conformanceInfo = ConformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)))
+    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)))
     generateCoreConformanceReport(reportPath, addTestCases, title, addDetails, addTestCaseResults, addTestStatus, addMessage, message, conformanceInfo)
   }
 
@@ -666,8 +674,8 @@ object ReportManager extends BaseManager {
               testCaseOverview.setEndTime(sdf.format(new Date(testResult.endTime.get.getTime)))
             }
             val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.tpl)))
-            val folder = getPathForTestSessionObj(info.sessionId.get, Some(testResult), true).toFile
-            val list = ReportManager.getListOfTestSteps(testcasePresentation, folder)
+            val folder = ReportManager.getPathForTestSessionObj(info.sessionId.get, Some(testResult), true).toFile
+            val list = getListOfTestSteps(testcasePresentation, folder)
             for (stepReport <- list) {
               testCaseOverview.getSteps.add(generator.fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, false))
             }

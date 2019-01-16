@@ -3,8 +3,8 @@ package jaxws;
 import actors.WebSocketActor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.gitb.core.ValueEmbeddingEnumeration;
-import com.gitb.tbs.*;
 import com.gitb.tbs.Void;
+import com.gitb.tbs.*;
 import managers.ReportManager;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -27,6 +27,14 @@ public class TestbedService implements TestbedClient {
     private final static String LOG_EVENT_STEP_ID = "-999";
 
     private final Logger logger = LoggerFactory.getLogger(TestbedService.class);
+
+    private ReportManager ReportManager;
+    private WebSocketActor WebSocketActor;
+
+    public TestbedService(ReportManager ReportManager, WebSocketActor WebSocketActor) {
+        this.ReportManager = ReportManager;
+        this.WebSocketActor = WebSocketActor;
+    }
 
     /**
      * Endpoint of the TestbedClient

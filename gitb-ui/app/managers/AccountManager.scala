@@ -2,6 +2,7 @@ package persistence
 
 import config.Configurations
 import exceptions._
+import javax.inject.{Inject, Singleton}
 import managers._
 import models.Enums.UserRole.UserRole
 import models.Enums._
@@ -9,12 +10,14 @@ import models._
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
+import play.api.db.slick.DatabaseConfigProvider
 import utils.EmailUtil
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object AccountManager extends BaseManager {
+@Singleton
+class AccountManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -138,12 +141,34 @@ object AccountManager extends BaseManager {
   def isSystemAdmin(userId: Long) = checkUserRole(userId, UserRole.SystemAdmin)
 
   def isCommunityAdmin(userId: Long, communityId: Long): Boolean = {
-    UserManager.getCommunityAdministrators(communityId).map(u => u.id).contains(userId)
+    getCommunityAdministrators(communityId).map(u => u.id).contains(userId)
+  }
+
+  /**
+    * Gets all community administrators of the given community
+    */
+  private def getCommunityAdministrators(communityId:Long): List[Users] = {
+    val organizations = exec(PersistenceSchema.organizations.filter(_.community === communityId).map(_.id).result.map(_.toList))
+    val users = exec(PersistenceSchema.users.filter(_.organization inSet organizations).filter(_.role === UserRole.CommunityAdmin.id.toShort)
+      .sortBy(_.name.asc)
+      .result
+      .map(_.toList))
+    users
   }
 
   def isVendorAdmin(userId: Long, organisationId: Long): Boolean = {
-    val user = UserManager.getUserById(userId)
+    val user = getUserById(userId)
     user.role == UserRole.VendorAdmin.id.toShort && user.organization.get.id == organisationId
+  }
+
+  /**
+    * Gets user with specified id
+    */
+  private def getUserById(userId: Long): User = {
+    val u = exec(PersistenceSchema.users.filter(_.id === userId).result.head)
+    val o = exec(PersistenceSchema.organizations.filter(_.id === u.organization).result.head)
+    val user = new User(u, o)
+    user
   }
 
   def checkUserRole(userId: Long, roles: UserRole*): Boolean = {
@@ -151,11 +176,21 @@ object AccountManager extends BaseManager {
     option.isDefined && (roles.map(r => r.id.toShort) contains option.get.role)
   }
 
+  /**
+    * Gets community with specified id
+    */
+  private def getCommunityById(communityId: Long): Community = {
+    val c = exec(PersistenceSchema.communities.filter(_.id === communityId).result.head)
+    val d = exec(PersistenceSchema.domains.filter(_.id === c.domain).result.headOption)
+    val community = new Community(c, d)
+    community
+  }
+
   def submitFeedback(userId:Long, userEmail: String, messageTypeId: String, messageTypeDescription: String, messageContent: String, attachments: Array[AttachmentType]): Unit = {
     val user = getUserProfile(userId)
     var community: Community = null
     if (user.organization.isDefined) {
-      community = CommunityManager.getCommunityById(user.organization.get.community)
+      community = getCommunityById(user.organization.get.community)
     }
 
     val subject = "Feedback form submission"

@@ -41,7 +41,7 @@ public class JacksonUtil {
         mapper.registerModule(module);
 
         //register custom module for enum serializations
-        SimpleModule customSerializersModule = new SimpleModule("CustomSerializersModule", new Version(1, 0, 0, null));
+        SimpleModule customSerializersModule = new SimpleModule("CustomSerializersModule", new Version(1, 0, 0, null, null, null));
         customSerializersModule.addSerializer(StepStatus.class, new StatusSerializer());
         customSerializersModule.addSerializer(TestAssertionGroupReportsType.class, new TestAssertionGroupReportsTypeSerializer());
         customSerializersModule.addSerializer(TestStepReportType.class, new TestStepReportTypeSerializer());

@@ -13,7 +13,7 @@ import javax.inject.Inject
 import persistence.AccountManager
 import org.slf4j.{Logger, LoggerFactory}
 
-class AuthenticationFilter @Inject() (implicit val mat: Materializer) extends Filter {
+class AuthenticationFilter @Inject() (implicit val mat: Materializer, accountManager: AccountManager) extends Filter {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthenticationFilter])
 
   val BEARER = "Bearer"
@@ -43,8 +43,8 @@ class AuthenticationFilter @Inject() (implicit val mat: Materializer) extends Fi
           if(requiresSystemAdminAccess(requestHeader)) {
             next(customRequestHeader)
           } else if(requiresAdminAccess(requestHeader)){
-            val isAdmin = AccountManager.isAdmin(userId)
-            if(isAdmin){
+            val isAdmin = accountManager.isAdmin(userId)
+              if(isAdmin){
               //has access, execute service
               next(customRequestHeader)
             } else{

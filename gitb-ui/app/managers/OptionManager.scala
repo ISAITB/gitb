@@ -1,11 +1,14 @@
 package managers
 
+import javax.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
+import play.api.db.slick.DatabaseConfigProvider
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object OptionManager extends BaseManager {
+@Singleton
+class OptionManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
   def logger = LoggerFactory.getLogger("OptionManager")
 
   import dbConfig.profile.api._

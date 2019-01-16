@@ -1,13 +1,16 @@
 package managers
 
+import javax.inject.{Inject, Singleton}
 import models._
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
+import play.api.db.slick.DatabaseConfigProvider
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object ErrorTemplateManager extends BaseManager {
+@Singleton
+class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 

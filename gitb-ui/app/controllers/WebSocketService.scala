@@ -11,14 +11,14 @@ import play.api.mvc._
 /**
  * Handles the communication with browsers
  */
-class WebSocketService @Inject() (implicit system: ActorSystem, materializer: Materializer) extends Controller{
+class WebSocketService @Inject() (implicit system: ActorSystem, materializer: Materializer, webSocketActor: WebSocketActor) extends Controller{
 
   /**
    * Creates a WebSocket for the client
    */
   def socket = WebSocket.accept[JsValue, JsValue] { request =>
     //create a handler actor for communication handling
-    ActorFlow.actorRef(out => WebSocketActor.props(out))
+    ActorFlow.actorRef(out => webSocketActor.props(out))
   }
 
 }

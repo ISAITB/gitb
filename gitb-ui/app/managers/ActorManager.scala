@@ -1,13 +1,16 @@
 package managers
 
+import javax.inject.{Inject, Singleton}
 import models.Actors
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
+import play.api.db.slick.DatabaseConfigProvider
 import slick.dbio.DBIOAction
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object ActorManager extends BaseManager {
+@Singleton
+class ActorManager @Inject() (testResultManager: TestResultManager, endPointManager: EndPointManager, optionManager: OptionManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -29,14 +32,6 @@ object ActorManager extends BaseManager {
     exec(actor).isDefined
   }
 
-  def deleteActorByDomain(domainId: Long) = {
-    val action = (for {
-      ids <- PersistenceSchema.actors.filter(_.domain === domainId).map(_.id).result
-      _ <- DBIO.seq(ids.map(id => delete(id)): _*)
-    } yield()).transactionally
-    action
-  }
-
   def deleteActorWrapper(actorId: Long) = {
     exec(deleteActor(actorId).transactionally)
   }
@@ -46,7 +41,7 @@ object ActorManager extends BaseManager {
   }
 
   private def delete(actorId: Long) = {
-    TestResultManager.updateForDeletedActor(actorId) andThen
+    testResultManager.updateForDeletedActor(actorId) andThen
     PersistenceSchema.testCaseHasActors.filter(_.actor === actorId).delete andThen
     PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete andThen
     PersistenceSchema.systemImplementsActors.filter(_.actorId === actorId).delete andThen
@@ -54,8 +49,8 @@ object ActorManager extends BaseManager {
     PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete andThen
     PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).delete andThen
     PersistenceSchema.endpointSupportsTransactions.filter(_.actorId === actorId).delete andThen
-    EndPointManager.deleteEndPointByActor(actorId) andThen
-    OptionManager.deleteOptionByActor(actorId) andThen
+    endPointManager.deleteEndPointByActor(actorId) andThen
+    optionManager.deleteOptionByActor(actorId) andThen
     PersistenceSchema.conformanceResults.filter(_.actor === actorId).delete andThen
     PersistenceSchema.actors.filter(_.id === actorId).delete
   }
@@ -85,7 +80,7 @@ object ActorManager extends BaseManager {
         }
       }
     } yield()) andThen
-    TestResultManager.updateForUpdatedActor(id, name)
+    testResultManager.updateForUpdatedActor(id, name)
   }
 
   def getById(id: Long): Option[Actors] = {

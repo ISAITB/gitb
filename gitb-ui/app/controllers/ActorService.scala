@@ -1,13 +1,14 @@
 package controllers
 
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
+import javax.inject.Inject
 import managers.ActorManager
 import play.api.mvc.{Action, Controller}
 
-class ActorService extends Controller {
+class ActorService @Inject() (actorManager: ActorManager) extends Controller {
 
   def deleteActor(actorId: Long) = Action.apply { request =>
-    ActorManager.deleteActorWrapper(actorId)
+    actorManager.deleteActorWrapper(actorId)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -15,10 +16,10 @@ class ActorService extends Controller {
     val actor = ParameterExtractor.extractActor(request)
     val specificationId = ParameterExtractor.requiredBodyParameter(request, Parameters.SPECIFICATION_ID).toLong
 
-    if (ActorManager.checkActorExistsInSpecification(actor.actorId, specificationId, Some(actorId))) {
+    if (actorManager.checkActorExistsInSpecification(actor.actorId, specificationId, Some(actorId))) {
       ResponseConstructor.constructBadRequestResponse(500, "An actor with this ID already exists in the specification")
     } else {
-      ActorManager.updateActorWrapper(actorId, actor.actorId, actor.name, actor.description, actor.default, actor.displayOrder, specificationId)
+      actorManager.updateActorWrapper(actorId, actor.actorId, actor.name, actor.description, actor.default, actor.displayOrder, specificationId)
       ResponseConstructor.constructEmptyResponse
     }
   }

@@ -1,5 +1,6 @@
 package managers
 
+import javax.inject.{Inject, Singleton}
 import models.Enums.UserRole
 import models.Enums.UserRole._
 import models._
@@ -7,13 +8,15 @@ import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import persistence.AccountManager
 import persistence.db.PersistenceSchema
+import play.api.db.slick.DatabaseConfigProvider
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * Created by VWYNGAET on 25/10/2016.
  */
-object UserManager extends BaseManager {
+@Singleton
+class UserManager @Inject() (accountManager: AccountManager, organizationManager: OrganizationManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -67,7 +70,7 @@ object UserManager extends BaseManager {
    * Updates system admin profile of given user
    */
   def updateSystemAdminProfile(userId: Long, name: String, password: Option[String]) = {
-    val userExists = AccountManager.checkUserRole(userId, UserRole.SystemAdmin)
+    val userExists = accountManager.checkUserRole(userId, UserRole.SystemAdmin)
     if (userExists) {
       var action: DBIO[_] = null
       if (password.isDefined) {
@@ -85,7 +88,7 @@ object UserManager extends BaseManager {
    * Updates community admin profile of given user
    */
   def updateCommunityAdminProfile(userId: Long, name: String, password: Option[String]) = {
-    val userExists = AccountManager.checkUserRole(userId, UserRole.CommunityAdmin)
+    val userExists = accountManager.checkUserRole(userId, UserRole.CommunityAdmin)
     if (userExists) {
       var action: DBIO[_] = null
       if (password.isDefined) {
@@ -129,7 +132,7 @@ object UserManager extends BaseManager {
    * Creates new user
    */
   def createUser(user: Users, orgId: Long) = {
-    val organizationExists = OrganizationManager.checkOrganizationExists(orgId)
+    val organizationExists = organizationManager.checkOrganizationExists(orgId)
     if (organizationExists) {
       exec((PersistenceSchema.insertUser += user.withOrganizationId(orgId)).transactionally)
     } else {
@@ -142,13 +145,6 @@ object UserManager extends BaseManager {
    */
   def deleteUser(userId: Long) = {
     exec(PersistenceSchema.users.filter(_.id === userId).delete.transactionally)
-  }
-
-  /**
-   * Deletes all users with specified organization
-   */
-  def deleteUserByOrganization(orgId: Long) = {
-    PersistenceSchema.users.filter(_.organization === orgId).delete
   }
 
   /**

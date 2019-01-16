@@ -1,11 +1,14 @@
 package managers
 
+import javax.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
+import play.api.db.slick.DatabaseConfigProvider
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-object EndPointManager extends BaseManager {
+@Singleton
+class EndPointManager @Inject() (parameterManager: ParameterManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
   def logger = LoggerFactory.getLogger("EndPointManager")
 
   import dbConfig.profile.api._
@@ -46,7 +49,7 @@ object EndPointManager extends BaseManager {
       endPoint <- PersistenceSchema.endpoints.filter(_.id === endPointId).result.head
       _ <- PersistenceSchema.endpointSupportsTransactions.filter(_.endpoint === endPoint.name).delete
     } yield()) andThen
-    ParameterManager.deleteParameterByEndPoint(endPointId) andThen
+    parameterManager.deleteParameterByEndPoint(endPointId) andThen
     PersistenceSchema.configs.filter(_.endpoint === endPointId).delete andThen
     PersistenceSchema.endpoints.filter(_.id === endPointId).delete
   }
