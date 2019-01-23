@@ -18,16 +18,21 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[TestService])
 
-  val port:TestbedService = {
-    logger.info("Creating TestbedService client")
-    val backendURL: java.net.URL = new java.net.URL(Configurations.TESTBED_SERVICE_URL+"?wsdl")
-    val service: TestbedService_Service = new TestbedService_Service(backendURL)
-    //add header handler resolver to add custom header element for TestbedClient service address
-    val handlerResolver = new HeaderHandlerResolver()
-    service.setHandlerResolver(handlerResolver)
+  private var portInternal: TestbedService = null
 
-    val port = service.getTestbedServicePort()
-    port
+  private def port() = {
+    if (portInternal == null) {
+      logger.info("Creating TestbedService client")
+      val backendURL: java.net.URL = new java.net.URL(Configurations.TESTBED_SERVICE_URL+"?wsdl")
+      val service: TestbedService_Service = new TestbedService_Service(backendURL)
+      //add header handler resolver to add custom header element for TestbedClient service address
+      val handlerResolver = new HeaderHandlerResolver()
+      service.setHandlerResolver(handlerResolver)
+
+      val port = service.getTestbedServicePort()
+      portInternal = port
+    }
+    portInternal
   }
 
   def getTestCasePresentation(testId:String): GetTestCaseDefinitionResponse = {
@@ -35,13 +40,13 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
     val request:BasicRequest = new BasicRequest
     request.setTcId(testId)
 
-    port.getTestCaseDefinition(request)
+    port().getTestCaseDefinition(request)
   }
 
   def endSession(session_id:String) = {
     val request: BasicCommand = new BasicCommand
     request.setTcInstanceId(session_id)
-    port.stop(request)
+    port().stop(request)
 
     reportManager.setEndTimeNow(session_id)
   }
@@ -72,7 +77,7 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
     val request: BasicRequest = new BasicRequest
     request.setTcId(test_id)
 
-    val response = port.initiate(request)
+    val response = port().initiate(request)
     ResponseConstructor.constructStringResponse(response.getTcInstanceId)
   }
   /**
@@ -101,7 +106,7 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
       cRequest.getConfigs.add(domainConfiguration)
     }
 
-    val response = port.configure(cRequest)
+    val response = port().configure(cRequest)
     val json = JacksonUtil.serializeConfigureResponse(response)
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -118,7 +123,7 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
     pRequest.setStepId(step)
     pRequest.getInput.addAll(JacksonUtil.parseUserInputs(inputs))
 
-    val response = port.provideInput(pRequest)
+    val response = port().provideInput(pRequest)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -129,7 +134,7 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
     val bRequest:BasicCommand = new BasicCommand
     bRequest.setTcInstanceId(session_id)
 
-    port.initiatePreliminary(bRequest)
+    port().initiatePreliminary(bRequest)
     ResponseConstructor.constructEmptyResponse
 
   }
@@ -140,7 +145,7 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
     val bRequest: BasicCommand = new BasicCommand
     bRequest.setTcInstanceId(session_id)
 
-    port.start(bRequest)
+    port().start(bRequest)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -158,7 +163,7 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
     val bRequest: BasicCommand = new BasicCommand
     bRequest.setTcInstanceId(session_id)
 
-    port.restart(bRequest)
+    port().restart(bRequest)
     ResponseConstructor.constructEmptyResponse
   }
 
