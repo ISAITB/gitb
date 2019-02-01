@@ -128,7 +128,7 @@ class IndexController
 			templateUrl: 'assets/views/components/contact-support.html'
 			controller: 'ContactSupportController as ContactSupportController'
 			size: 'lg'
-		modalInstance = @$uibModal.open(modalOptions)
+		modalInstance = @$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
 
 	showProvideFeedback: () =>
 		!@showContactUs() && (@DataService.configuration?["survey.enabled"] == 'true') && !@DataService.user.onetime

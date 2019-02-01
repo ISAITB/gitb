@@ -98,9 +98,10 @@ class DomainDetailsController
 			size: 'lg'
 		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result
+			.finally(angular.noop)
 			.then((result) => 
 				@$state.go @$state.current, {}, {reload: true}
-			)
+			, angular.noop)
 
 	createDomainParameter: () =>
 		modalOptions =
@@ -112,8 +113,9 @@ class DomainDetailsController
 			size: 'lg'
 		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result
+			.finally(angular.noop)
 			.then((result) => 
 				@$state.go @$state.current, {}, {reload: true}
-			)
+			, angular.noop)
 
 @controllers.controller 'DomainDetailsController', DomainDetailsController

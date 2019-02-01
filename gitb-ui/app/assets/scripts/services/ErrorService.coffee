@@ -8,34 +8,41 @@ class ErrorService
   showErrorMessage: (error, withRetry) =>
     errorDeferred = @$q.defer()
     if !error?
-      error = {}
-    if error.data?.error_id?
+      errorObj = {}
+    else
+      if (typeof error == 'string' || error instanceof String)
+        errorObj = {}
+        errorObj.data = {}
+        errorObj.data.error_description = error
+      else
+        errorObj = error
+    if errorObj.data?.error_id?
       # An error ID is assigned only to unexpected errors
-      if !error.template?
+      if !errorObj.template?
         @AccountService.getVendorProfile()
         .then (vendor) =>
           if vendor.errorTemplates?
-            error.template = vendor.errorTemplates.content
-            @modal = @openModal(error, withRetry, errorDeferred)
+            errorObj.template = vendor.errorTemplates.content
+            @modal = @openModal(errorObj, withRetry, errorDeferred)
           else
             communityId = vendor.community
             @ErrorTemplateService.getCommunityDefaultErrorTemplate(communityId)
             .then (data) =>
               if data.exists == true
-                error.template = data.content
-                @modal = @openModal(error, withRetry, errorDeferred)
+                errorObj.template = data.content
+                @modal = @openModal(errorObj, withRetry, errorDeferred)
               else if communityId != @Constants.DEFAULT_COMMUNITY_ID
                 @ErrorTemplateService.getCommunityDefaultErrorTemplate(@Constants.DEFAULT_COMMUNITY_ID)
                 .then (data) =>
-                  error.template = data.content  if data.exists == true
-                  @modal = @openModal(error, withRetry, errorDeferred)
+                  errorObj.template = data.content  if data.exists == true
+                  @modal = @openModal(errorObj, withRetry, errorDeferred)
               else
-                @modal = @openModal(error, withRetry, errorDeferred)
+                @modal = @openModal(errorObj, withRetry, errorDeferred)
       else
-        @modal = @openModal(error, withRetry, errorDeferred)
+        @modal = @openModal(errorObj, withRetry, errorDeferred)
     else
       # Expected errors (e.g. validation errors) that have clear error messages
-      @modal = @openModal(error, withRetry)
+      @modal = @openModal(errorObj, withRetry)
     errorDeferred.promise
 
   openModal: (error, withRetry, errorDeferred) =>
@@ -52,7 +59,9 @@ class ErrorService
         error: () => error
         withRetry: () => withRetry
     modalInstance = @$uibModal.open modalOptions
-    modalInstance.result.then((result) => 
+    modalInstance.result
+      .finally(angular.noop)
+      .then((result) => 
       # Closed
       if errorDeferred?
         errorDeferred.resolve()

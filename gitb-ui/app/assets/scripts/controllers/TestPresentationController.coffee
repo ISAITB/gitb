@@ -71,7 +71,7 @@ class TestPresentationController
 					sessionId: () => @sessionId
 				size: 'lg'
 
-			@$uibModal.open modalOptions
+			@$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
 
 		if step.report?
 			if step.report.path?

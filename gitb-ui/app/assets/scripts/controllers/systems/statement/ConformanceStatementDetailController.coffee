@@ -179,22 +179,23 @@ class ConformanceStatementDetailController
 
     instance = @$uibModal.open options
     instance.result
-    .then (result) =>
-      switch result.operation
-        when @Constants.OPERATION.ADD
-          if result.configuration.value?
-            @configurations.push result.configuration
-        when @Constants.OPERATION.UPDATE
-          if oldConfiguration? && result.configuration.value?
-            oldConfiguration.value = result.configuration.value
-            oldConfiguration.mimeType = result.configuration.mimeType
-            oldConfiguration.extension = result.configuration.extension
-        when @Constants.OPERATION.DELETE
-          if oldConfiguration?
-            _.remove @configurations, (configuration) =>
-              configuration.parameter == oldConfiguration.parameter &&
-                Number(configuration.endpoint) == Number(oldConfiguration.endpoint)
-
+      .finally(angular.noop)
+      .then((result) =>
+          switch result.operation
+            when @Constants.OPERATION.ADD
+              if result.configuration.value?
+                @configurations.push result.configuration
+            when @Constants.OPERATION.UPDATE
+              if oldConfiguration? && result.configuration.value?
+                oldConfiguration.value = result.configuration.value
+                oldConfiguration.mimeType = result.configuration.mimeType
+                oldConfiguration.extension = result.configuration.extension
+            when @Constants.OPERATION.DELETE
+              if oldConfiguration?
+                _.remove @configurations, (configuration) =>
+                  configuration.parameter == oldConfiguration.parameter &&
+                    Number(configuration.endpoint) == Number(oldConfiguration.endpoint)
+      , angular.noop)
       @constructEndpointRepresentations()
 
   canDelete: () =>

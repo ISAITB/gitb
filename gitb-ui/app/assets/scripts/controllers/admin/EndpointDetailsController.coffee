@@ -61,13 +61,15 @@ class EndpointDetailsController
 			controller: 'CreateParameterController as CreateParameterController'
 			size: 'lg'
 		modalInstance = @$uibModal.open(modalOptions)
-		modalInstance.result.then((parameter) => 
-			@ConformanceService.createParameter parameter.name, parameter.description, parameter.use, parameter.kind, @endpointId
-				.then () =>
-					@$state.go(@$state.$current, null, { reload: true });
-				.catch (error) =>
-					@ErrorService.showErrorMessage(error)
-		)
+		modalInstance.result
+			.finally(angular.noop)
+			.then((parameter) => 
+				@ConformanceService.createParameter parameter.name, parameter.description, parameter.use, parameter.kind, @endpointId
+					.then () =>
+						@$state.go(@$state.$current, null, { reload: true });
+					.catch (error) =>
+						@ErrorService.showErrorMessage(error)
+		, angular.noop)
 
 	onParameterSelect: (parameter) =>
 		modalOptions =
@@ -77,19 +79,21 @@ class EndpointDetailsController
 				parameter: () => parameter
 			size: 'lg'
 		modalInstance = @$uibModal.open(modalOptions)
-		modalInstance.result.then((data) => 
-			if data.action == 'update'
-				@ParameterService.updateParameter(data.parameter.id, data.parameter.name, data.parameter.desc, data.parameter.use, data.parameter.kind, @endpointId)
-				.then () =>
-					@$state.go(@$state.$current, null, { reload: true });
-				.catch (error) =>
-					@ErrorService.showErrorMessage(error)
-			else
-				@ParameterService.deleteParameter(data.parameter.id)
-				.then () =>
-					@$state.go(@$state.$current, null, { reload: true });
-				.catch (error) =>
-					@ErrorService.showErrorMessage(error)
-		)
+		modalInstance.result
+			.finally(angular.noop)
+			.then((data) => 
+				if data.action == 'update'
+					@ParameterService.updateParameter(data.parameter.id, data.parameter.name, data.parameter.desc, data.parameter.use, data.parameter.kind, @endpointId)
+					.then () =>
+						@$state.go(@$state.$current, null, { reload: true });
+					.catch (error) =>
+						@ErrorService.showErrorMessage(error)
+				else
+					@ParameterService.deleteParameter(data.parameter.id)
+					.then () =>
+						@$state.go(@$state.$current, null, { reload: true });
+					.catch (error) =>
+						@ErrorService.showErrorMessage(error)
+			, angular.noop)
 
 @controllers.controller 'EndpointDetailsController', EndpointDetailsController

@@ -653,11 +653,13 @@ class TestExecutionControllerV2
         interactionStepId: () => stepId
 
     modalInstance = @$uibModal.open(modalOptions)
-    modalInstance.result.then((result) => 
-      if (!result.success)
-        @ErrorService.showErrorMessage(result.error, true).then () =>
-        @$state.go @$state.current, {}, {reload: true}
-    )
+    modalInstance.result
+      .finally(angular.noop)
+      .then((result) => 
+        if (!result.success)
+          @ErrorService.showErrorMessage(result.error, true).then () =>
+          @$state.go @$state.current, {}, {reload: true}
+      , angular.noop)
 
   updateStatus: (step, stepId, status, report) =>
 
@@ -818,6 +820,6 @@ class TestExecutionControllerV2
 
       size: 'lg'
 
-    @$uibModal.open modalOptions    
+    @$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
 
 controllers.controller('TestExecutionControllerV2', TestExecutionControllerV2)

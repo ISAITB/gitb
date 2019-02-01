@@ -13,6 +13,6 @@ class HtmlService
         headerText: () => headerText
         html: () => html
 
-    @$uibModal.open(modalOptions)
+    @$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
 
 services.service('HtmlService', HtmlService)

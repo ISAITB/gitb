@@ -391,6 +391,6 @@ class AdminConformanceController
 				resolve: 
 					settings: () => JSON.parse(JSON.stringify(@settings))
 					conformanceStatement: () => @statementToProcess
-			modalInstance = @$uibModal.open(modalOptions)
+			@$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
 
 @controllers.controller 'AdminConformanceController', AdminConformanceController

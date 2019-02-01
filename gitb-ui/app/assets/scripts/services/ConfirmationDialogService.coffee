@@ -9,6 +9,7 @@ class ConfirmationDialogService
       controller: 'ConfirmationDialogController'
       controllerAs: 'controller'
       backdrop: 'static'
+      keyboard: false
       resolve:
         headerText: () => headerText
         bodyText: () => bodyText
@@ -25,6 +26,7 @@ class ConfirmationDialogService
       controller: 'ConfirmationDialogController'
       controllerAs: 'controller'
       backdrop: 'static'
+      keyboard: false
       resolve:
         headerText: () => headerText
         bodyText: () => bodyText

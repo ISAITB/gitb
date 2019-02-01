@@ -50,9 +50,10 @@ class SystemsController
 			size: 'lg'
 		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result
+			.finally(angular.noop)
 			.then((result) => 
 				@systems = result
-			)
+			, angular.noop)
 
 	onSystemSelect: (system) =>
 		if !@$scope.editing
@@ -69,6 +70,7 @@ class SystemsController
 			size: 'lg'
 		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result
+			.finally(angular.noop)
 			.then((result) => 
 				@$scope.editing = false
 				@systems = result

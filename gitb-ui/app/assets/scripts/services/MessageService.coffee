@@ -12,6 +12,6 @@ class MessageService
         headerText: () => headerText
         bodyText: () => bodyText
 
-    @$uibModal.open(modalOptions)
+    @$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
 
 services.service('MessageService', MessageService)

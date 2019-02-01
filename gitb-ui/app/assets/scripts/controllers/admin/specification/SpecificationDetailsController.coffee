@@ -98,14 +98,16 @@ class SpecificationDetailsController
 								pendingFolderId: () => result.data.pendingFolderId
 							size: 'lg'
 						modalInstance = @$uibModal.open(modalOptions)
-						modalInstance.result.then((pendingResolutionData) => 
-							# Closed
-							@showTestSuiteUploadResult(pendingResolutionData)
-							@$state.go(@$state.$current, null, { reload: true });
-						, () => 
-							# Dismissed
-							@ConformanceService.resolvePendingTestSuite(@$scope.specificationId, result.data.pendingFolderId, 'cancel')
-						)
+						modalInstance.result
+							.finally(angular.noop)
+							.then((pendingResolutionData) => 
+								# Closed
+								@showTestSuiteUploadResult(pendingResolutionData)
+								@$state.go(@$state.$current, null, { reload: true });
+							, () => 
+								# Dismissed
+								@ConformanceService.resolvePendingTestSuite(@$scope.specificationId, result.data.pendingFolderId, 'cancel')
+							)
 					else
 						error = { 
 							statusText: "Upload error",

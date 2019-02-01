@@ -13,6 +13,6 @@ class PopupService
         headerText: () => headerText
         data: () => data
 
-    @$uibModal.open(modalOptions)
+    @$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
 
 services.service('PopupService', PopupService)
