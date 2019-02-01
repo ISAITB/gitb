@@ -131,7 +131,7 @@ openEditorWindow = ($uibModal, name, value, report, lineNumber) ->
       lineNumber: () => lineNumber
     size: 'lg'
 
-  $uibModal.open modalOptions
+  $uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
 
 @directives.directive 'tarStepReport', ['$log', 'RecursionHelper',
   ($log, RecursionHelper) ->

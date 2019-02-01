@@ -27,8 +27,8 @@ class AuthProvider
 providers.provider('AuthProvider', AuthProvider)
 providers.provider('Auth', AuthProvider)
 
-providers.run ['$log', '$rootScope', '$location', '$cookieStore', 'AuthProvider', 'Events', 'Constants',
-	($log, $rootScope, $location, $cookieStore, authProvider, Events, Constants) ->
+providers.run ['$log', '$rootScope', '$location', 'AuthProvider', 'Events', 'Constants',
+	($log, $rootScope, $location, authProvider, Events, Constants) ->
 		# check if access token is set in cookies
 		atKey = Constants.ACCESS_TOKEN_COOKIE_KEY
 		accessToken = $.cookie(atKey)

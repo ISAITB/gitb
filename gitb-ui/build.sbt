@@ -34,7 +34,7 @@ libraryDependencies ++= Seq(
   "org.webjars" % "jquery-cookie" % "1.4.1-1",
   "org.webjars" % "lodash" % "2.4.1-6",
   "org.webjars" % "bootstrap" % "3.2.0-2" exclude("org.webjars", "jquery"),
-  "org.webjars" % "angularjs" % "1.6.10" exclude("org.webjars", "jquery"),
+  "org.webjars" % "angularjs" % "1.7.6" exclude("org.webjars", "jquery"),
   "org.webjars" % "angular-ui-bootstrap" % "2.5.0",
   "org.webjars" % "angular-ui-router" % "1.0.20",
   "org.webjars" % "font-awesome" % "4.1.0" exclude("org.webjars", "jquery"),

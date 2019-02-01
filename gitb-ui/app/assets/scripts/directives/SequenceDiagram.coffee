@@ -345,7 +345,7 @@ extractSteps = (s, actorInfo) =>
                 sessionId: () => scope.message.report.tcInstanceId
               size: 'lg'
 
-            $uibModal.open modalOptions
+            $uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
 
           if scope.message.report?
             if scope.message.report.path? && !scope.message.report.result?
