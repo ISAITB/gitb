@@ -1,8 +1,8 @@
 class ContactSupportController
 
-  @$inject = ['$scope', '$modalInstance', 'WebEditorService', '$timeout', 'DataService', 'AccountService', 'ErrorService', 'ValidationService']
-  constructor: (@$scope, @$modalInstance, @WebEditorService, @$timeout, @DataService, @AccountService, @ErrorService, @ValidationService) ->
-    @$modalInstance.opened.then(
+  @$inject = ['$scope', '$uibModalInstance', 'WebEditorService', '$timeout', 'DataService', 'AccountService', 'ErrorService', 'ValidationService']
+  constructor: (@$scope, @$uibModalInstance, @WebEditorService, @$timeout, @DataService, @AccountService, @ErrorService, @ValidationService) ->
+    @$uibModalInstance.opened.then(
         @$timeout(() =>
             tinymce.remove('.mce-editor-contact')
             @WebEditorService.editorMinimal(200, "", "mce-editor-contact")
@@ -87,7 +87,7 @@ class ContactSupportController
             @$scope.alerts = @ValidationService.getAlerts()
 
     @$scope.cancel = () =>
-        @$modalInstance.dismiss()
+        @$uibModalInstance.dismiss()
 
     @$scope.closeAlert = (index) =>
         @ValidationService.clearAlert(index)

@@ -1,7 +1,6 @@
 dependencies = [
 	'ngCookies'
 	'ngResource'
-	'ngGrid'
 	'ui.bootstrap'
 	'ui.bootstrap.modal'
 	'ngSanitize'

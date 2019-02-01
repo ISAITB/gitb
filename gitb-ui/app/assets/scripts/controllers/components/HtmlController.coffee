@@ -1,9 +1,9 @@
 class HtmlController
 
-  @$inject = ['$log', '$modalInstance', '$scope', 'headerText', 'html']
-  constructor: (@$log, @$modalInstance, @$scope, @headerText, @html) ->
+  @$inject = ['$log', '$uibModalInstance', '$scope', 'headerText', 'html']
+  constructor: (@$log, @$uibModalInstance, @$scope, @headerText, @html) ->
 
     @$scope.close = () =>
-      @$modalInstance.dismiss()
+      @$uibModalInstance.dismiss()
 
 @controllers.controller 'HtmlController', HtmlController

@@ -1,7 +1,7 @@
 class EndpointDetailsController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', 'EndPointService', 'ParameterService', 'ConfirmationDialogService', '$state', '$stateParams', '$modal', 'ErrorService']
-	constructor: (@$log, @$scope, @ConformanceService, @EndPointService, @ParameterService, @ConfirmationDialogService, @$state, @$stateParams, @$modal, @ErrorService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', 'EndPointService', 'ParameterService', 'ConfirmationDialogService', '$state', '$stateParams', '$uibModal', 'ErrorService']
+	constructor: (@$log, @$scope, @ConformanceService, @EndPointService, @ParameterService, @ConfirmationDialogService, @$state, @$stateParams, @$uibModal, @ErrorService) ->
 		@$log.debug "Constructing EndpointDetailsController"
 		@endpointId = @$stateParams.endpoint_id
 		@actorId = @$stateParams.actor_id
@@ -60,7 +60,7 @@ class EndpointDetailsController
 			templateUrl: 'assets/views/admin/domains/create-parameter-modal.html'
 			controller: 'CreateParameterController as CreateParameterController'
 			size: 'lg'
-		modalInstance = @$modal.open(modalOptions)
+		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result.then((parameter) => 
 			@ConformanceService.createParameter parameter.name, parameter.description, parameter.use, parameter.kind, @endpointId
 				.then () =>
@@ -76,7 +76,7 @@ class EndpointDetailsController
 			resolve:
 				parameter: () => parameter
 			size: 'lg'
-		modalInstance = @$modal.open(modalOptions)
+		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result.then((data) => 
 			if data.action == 'update'
 				@ParameterService.updateParameter(data.parameter.id, data.parameter.name, data.parameter.desc, data.parameter.use, data.parameter.kind, @endpointId)

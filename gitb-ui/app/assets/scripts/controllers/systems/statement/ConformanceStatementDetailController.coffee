@@ -1,7 +1,7 @@
 class ConformanceStatementDetailController
 
-  @$inject = ['$log', '$scope', '$state', '$stateParams', '$modal', 'SystemService', 'ConformanceService', 'ErrorService', 'Constants', 'ConfirmationDialogService', 'DataService', 'ReportService']
-  constructor: (@$log, @$scope, @$state, @$stateParams, @$modal, @SystemService, @ConformanceService, @ErrorService, @Constants, @ConfirmationDialogService, @DataService, @ReportService) ->
+  @$inject = ['$log', '$scope', '$state', '$stateParams', '$uibModal', 'SystemService', 'ConformanceService', 'ErrorService', 'Constants', 'ConfirmationDialogService', 'DataService', 'ReportService']
+  constructor: (@$log, @$scope, @$state, @$stateParams, @$uibModal, @SystemService, @ConformanceService, @ErrorService, @Constants, @ConfirmationDialogService, @DataService, @ReportService) ->
     @$log.debug "Constructing ConformanceStatementDetailController"
 
     @systemId = @$stateParams['id']
@@ -177,7 +177,7 @@ class ConformanceStatementDetailController
         configuration: () => oldConfiguration
       size: 'm'
 
-    instance = @$modal.open options
+    instance = @$uibModal.open options
     instance.result
     .then (result) =>
       switch result.operation

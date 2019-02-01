@@ -1,6 +1,6 @@
 class TestExecutionControllerV2
-  @$inject = ['$log', '$scope', '$location', '$modal', '$state', '$stateParams', 'Constants', 'TestService', 'SystemService', 'ConformanceService', 'WebSocketService', 'ReportService', 'ErrorService', 'DataService', '$q', '$timeout', '$interval']
-  constructor: (@$log, @$scope, @$location, @$modal, @$state, @$stateParams, @Constants, @TestService, @SystemService, @ConformanceService, @WebSocketService, @ReportService, @ErrorService, @DataService, @$q, @$timeout, @$interval) ->
+  @$inject = ['$log', '$scope', '$location', '$uibModal', '$state', '$stateParams', 'Constants', 'TestService', 'SystemService', 'ConformanceService', 'WebSocketService', 'ReportService', 'ErrorService', 'DataService', '$q', '$timeout', '$interval']
+  constructor: (@$log, @$scope, @$location, @$uibModal, @$state, @$stateParams, @Constants, @TestService, @SystemService, @ConformanceService, @WebSocketService, @ReportService, @ErrorService, @DataService, @$q, @$timeout, @$interval) ->
     @testsToExecute = @DataService.tests
     if (!@testsToExecute?)
       # We lost our state following a refresh - recreate state.
@@ -104,7 +104,7 @@ class TestExecutionControllerV2
     @endpointsLoaded = @$q.defer()
     @configurationsLoaded = @$q.defer()
     @testCaseLoaded = @$q.defer()
-    @$q.all(@endpointsLoaded.promise, @configurationsLoaded.promise, @testCaseLoaded.promise).then(() =>
+    @$q.all([@endpointsLoaded.promise, @configurationsLoaded.promise, @testCaseLoaded.promise]).then(() =>
       # Start the wizard
       @nextStep()
     )
@@ -652,7 +652,7 @@ class TestExecutionControllerV2
         session: () => sessionForModal
         interactionStepId: () => stepId
 
-    modalInstance = @$modal.open(modalOptions)
+    modalInstance = @$uibModal.open(modalOptions)
     modalInstance.result.then((result) => 
       if (!result.success)
         @ErrorService.showErrorMessage(result.error, true).then () =>
@@ -818,6 +818,6 @@ class TestExecutionControllerV2
 
       size: 'lg'
 
-    @$modal.open modalOptions    
+    @$uibModal.open modalOptions    
 
 controllers.controller('TestExecutionControllerV2', TestExecutionControllerV2)

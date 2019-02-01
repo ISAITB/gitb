@@ -113,7 +113,7 @@ extractRelatedIndicators = (name, report) ->
 base64ToString = (base64) ->
   atob base64
 
-openEditorWindow = ($modal, name, value, report, lineNumber) ->
+openEditorWindow = ($uibModal, name, value, report, lineNumber) ->
   indicators = extractRelatedIndicators name, report
 
   modalOptions =
@@ -131,7 +131,7 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
       lineNumber: () => lineNumber
     size: 'lg'
 
-  $modal.open modalOptions
+  $uibModal.open modalOptions
 
 @directives.directive 'tarStepReport', ['$log', 'RecursionHelper',
   ($log, RecursionHelper) ->
@@ -208,8 +208,8 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
     directive
 ]
 
-@directives.directive 'anyContentView', ['$log', '$modal', 'RecursionHelper', 'DataService', 'TestService', 'ErrorService'
-($log, $modal, RecursionHelper, DataService, TestService, ErrorService) ->
+@directives.directive 'anyContentView', ['$log', '$uibModal', 'RecursionHelper', 'DataService', 'TestService', 'ErrorService'
+($log, $uibModal, RecursionHelper, DataService, TestService, ErrorService) ->
     $log.debug 'Constructing any-content-view with the context'
 
     directive =
@@ -259,7 +259,7 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
                 scope.open location.line
 
             scope.open = (lineNumber) =>
-              openEditorWindow $modal, scope.context.name, scope.value, scope.report, lineNumber
+              openEditorWindow $uibModal, scope.context.name, scope.value, scope.report, lineNumber
             
             scope.download = () =>
               TestService.getBinaryMetadata(scope.context.value, (scope.context.embeddingMethod == 'BASE64'))
@@ -276,8 +276,8 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
     directive
 ]
 
-@directives.directive 'simpleStringContentView', ['$modal', '$log',
-  ($modal, $log) =>
+@directives.directive 'simpleStringContentView', ['$uibModal', '$log',
+  ($uibModal, $log) =>
     $log.debug 'Constructing simple-string-content-view with the content'
     directive =
       scope:
@@ -302,7 +302,7 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
             scope.open location.line
 
         scope.open = (lineNumber) =>
-          openEditorWindow $modal, scope.content.name, scope.value, scope.report, lineNumber
+          openEditorWindow $uibModal, scope.content.name, scope.value, scope.report, lineNumber
 ]
 
 @directives.directive 'uriContentView', ['$log',
@@ -324,8 +324,8 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
     directive
 ]
 
-@directives.directive 'simpleUriContentView', ['$modal','$log',
-  ($modal, $log) =>
+@directives.directive 'simpleUriContentView', ['$uibModal','$log',
+  ($uibModal, $log) =>
     $log.debug 'Constructing simple-uri-content-view with the content'
 
     directive =
@@ -369,8 +369,8 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
     directive
 ]
 
-@directives.directive 'simpleBase64ContentView', ['$modal', '$window', '$log',
-  ($modal, $window, $log) =>
+@directives.directive 'simpleBase64ContentView', ['$uibModal', '$window', '$log',
+  ($uibModal, $window, $log) =>
     $log.debug 'Constructing simple-base64-content-view with the content'
 
     base64toString = (base64) ->
@@ -401,7 +401,7 @@ openEditorWindow = ($modal, name, value, report, lineNumber) ->
         scope.open = (lineNumber) =>
           value = base64toString scope.content.value
 
-          openEditorWindow $modal, scope.content.name, value, scope.report, lineNumber
+          openEditorWindow $uibModal, scope.content.name, value, scope.report, lineNumber
 
     directive
 ]

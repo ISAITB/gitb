@@ -1,7 +1,7 @@
 class SpecificationDetailsController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', 'TestSuiteService', 'ConfirmationDialogService', 'SpecificationService', '$state', '$stateParams', '$modal', 'PopupService', 'ErrorService']
-	constructor: (@$log, @$scope, @ConformanceService, @TestSuiteService, @ConfirmationDialogService, @SpecificationService, @$state, @$stateParams, @$modal, @PopupService, @ErrorService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', 'TestSuiteService', 'ConfirmationDialogService', 'SpecificationService', '$state', '$stateParams', '$uibModal', 'PopupService', 'ErrorService']
+	constructor: (@$log, @$scope, @ConformanceService, @TestSuiteService, @ConfirmationDialogService, @SpecificationService, @$state, @$stateParams, @$uibModal, @PopupService, @ErrorService) ->
 		@$log.debug "Constructing SpecificationDetailsController"
 
 		@specification = {}
@@ -97,7 +97,7 @@ class SpecificationDetailsController
 								specificationId: () => @specificationId
 								pendingFolderId: () => result.data.pendingFolderId
 							size: 'lg'
-						modalInstance = @$modal.open(modalOptions)
+						modalInstance = @$uibModal.open(modalOptions)
 						modalInstance.result.then((pendingResolutionData) => 
 							# Closed
 							@showTestSuiteUploadResult(pendingResolutionData)

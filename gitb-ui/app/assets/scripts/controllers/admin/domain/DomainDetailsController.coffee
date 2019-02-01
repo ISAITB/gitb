@@ -1,7 +1,7 @@
 class DomainDetailsController
 
-	@$inject = ['$log', '$scope', '$state', '$stateParams', 'ConfirmationDialogService', 'ConformanceService', 'ErrorService', '$modal']
-	constructor: (@$log, @$scope, @$state, @$stateParams, @ConfirmationDialogService, @ConformanceService, @ErrorService, @$modal) ->
+	@$inject = ['$log', '$scope', '$state', '$stateParams', 'ConfirmationDialogService', 'ConformanceService', 'ErrorService', '$uibModal']
+	constructor: (@$log, @$scope, @$state, @$stateParams, @ConfirmationDialogService, @ConformanceService, @ErrorService, @$uibModal) ->
 		@$log.debug "Constructing DomainDetailsController..."
 
 		@domain = {}
@@ -96,7 +96,7 @@ class DomainDetailsController
 				domainParameter: () => domainParameter
 				domainId: () => @domain.id
 			size: 'lg'
-		modalInstance = @$modal.open(modalOptions)
+		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result
 			.then((result) => 
 				@$state.go @$state.current, {}, {reload: true}
@@ -110,7 +110,7 @@ class DomainDetailsController
 				domainParameter: () => {}
 				domainId: () => @domain.id
 			size: 'lg'
-		modalInstance = @$modal.open(modalOptions)
+		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result
 			.then((result) => 
 				@$state.go @$state.current, {}, {reload: true}

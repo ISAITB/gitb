@@ -1,7 +1,7 @@
 class ConformanceStatementController
 
-  @$inject = ['$log', '$scope', '$stateParams', '$state', '$modal', 'ConformanceService', 'SystemService', 'ErrorService', 'DataService']
-  constructor: (@$log, @$scope, @$stateParams, @$state, @$modal, @ConformanceService, @SystemService, @ErrorService, @DataService)->
+  @$inject = ['$log', '$scope', '$stateParams', '$state', '$uibModal', 'ConformanceService', 'SystemService', 'ErrorService', 'DataService']
+  constructor: (@$log, @$scope, @$stateParams, @$state, @$uibModal, @ConformanceService, @SystemService, @ErrorService, @DataService)->
     @$log.debug "Constructing ConformanceStatementController"
 
     @conformanceStatements = []

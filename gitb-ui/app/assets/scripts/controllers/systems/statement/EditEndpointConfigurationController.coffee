@@ -1,7 +1,7 @@
 class EditEndpointConfigurationController
 
-  @$inject = ['$log', '$window', 'ErrorService', 'ConfirmationDialogService', 'SystemService', 'DataService', 'Constants', '$modalInstance', 'systemId', 'endpoint', 'parameter', 'configuration']
-  constructor: (@$log, @$window, @ErrorService, @ConfirmationDialogService, @SystemService, @DataService, @Constants, @$modalInstance, @systemId, @endpoint, @parameter, @oldConfiguration) ->
+  @$inject = ['$log', '$window', 'ErrorService', 'ConfirmationDialogService', 'SystemService', 'DataService', 'Constants', '$uibModalInstance', 'systemId', 'endpoint', 'parameter', 'configuration']
+  constructor: (@$log, @$window, @ErrorService, @ConfirmationDialogService, @SystemService, @DataService, @Constants, @$uibModalInstance, @systemId, @endpoint, @parameter, @oldConfiguration) ->
     @$log.debug "Constructing EditEndpointConfigurationController"
     @file = null
 
@@ -41,15 +41,15 @@ class EditEndpointConfigurationController
 
   closeDialog: () =>
     if !@oldConfiguration?
-      @$modalInstance.close
+      @$uibModalInstance.close
         configuration: @configuration
         operation: @Constants.OPERATION.ADD
     else if @configuration?.deleted
-      @$modalInstance.close
+      @$uibModalInstance.close
         configuration: @configuration
         operation: @Constants.OPERATION.DELETE
     else
-      @$modalInstance.close
+      @$uibModalInstance.close
         configuration: @configuration
         operation: @Constants.OPERATION.UPDATE
 
@@ -64,7 +64,7 @@ class EditEndpointConfigurationController
         @ErrorService.showErrorMessage(error)
 
   cancel: () =>
-    @$modalInstance.dismiss()
+    @$uibModalInstance.dismiss()
  
   save: () =>
     if @parameter.kind == "SIMPLE"

@@ -1,7 +1,7 @@
 class PopupService
 
-  @$inject = ['$q', '$modal']
-  constructor: (@$q, @$modal) ->
+  @$inject = ['$q', '$uibModal']
+  constructor: (@$q, @$uibModal) ->
 
   show: (headerText, data) =>
     modalOptions =
@@ -13,6 +13,6 @@ class PopupService
         headerText: () => headerText
         data: () => data
 
-    @$modal.open(modalOptions)
+    @$uibModal.open(modalOptions)
 
 services.service('PopupService', PopupService)

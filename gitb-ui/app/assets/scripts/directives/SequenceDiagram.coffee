@@ -242,8 +242,8 @@ extractSteps = (s, actorInfo) =>
         else
           scope.actor = info.id + " (" + info.role + ")"
 
-@directives.directive 'seqDiagramMessage', ['RecursionHelper', 'ReportService', 'Constants', '$modal', '$timeout',
-  (RecursionHelper, ReportService, Constants, $modal, $timeout) =>
+@directives.directive 'seqDiagramMessage', ['RecursionHelper', 'ReportService', 'Constants', '$uibModal', '$timeout',
+  (RecursionHelper, ReportService, Constants, $uibModal, $timeout) =>
     scope:
       message: '='
       actorInfo: '='
@@ -345,7 +345,7 @@ extractSteps = (s, actorInfo) =>
                 sessionId: () => scope.message.report.tcInstanceId
               size: 'lg'
 
-            $modal.open modalOptions
+            $uibModal.open modalOptions
 
           if scope.message.report?
             if scope.message.report.path? && !scope.message.report.result?

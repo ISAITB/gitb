@@ -1,8 +1,8 @@
 class ErrorController
 
-  @$inject = ['$scope', '$log', '$modalInstance', '$sce', 'Constants', 'error', 'withRetry']
+  @$inject = ['$scope', '$log', '$uibModalInstance', '$sce', 'Constants', 'error', 'withRetry']
 
-  constructor: (@$scope, @$log, @$modalInstance, @$sce, @Constants, error, withRetry) ->
+  constructor: (@$scope, @$log, @$uibModalInstance, @$sce, @Constants, error, withRetry) ->
     @$log.debug "Constructing #{@name}"
 
     @$scope.title = 'Unexpected Error'
@@ -22,10 +22,10 @@ class ErrorController
     @$scope.error.messageToShow = @$sce.trustAsHtml(errorContent)
 
     @$scope.retry = () =>
-      @$modalInstance.close()
+      @$uibModalInstance.close()
 
     @$scope.close = () =>
-      @$modalInstance.dismiss()
+      @$uibModalInstance.dismiss()
 
 @controllers.controller 'ErrorController', ErrorController
 

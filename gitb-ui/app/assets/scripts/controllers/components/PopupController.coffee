@@ -1,9 +1,9 @@
 class PopupController
 
-  @$inject = ['$log', '$modalInstance', '$scope', 'headerText', 'data']
-  constructor: (@$log, @$modalInstance, @$scope, @headerText, @data) ->
+  @$inject = ['$log', '$uibModalInstance', '$scope', 'headerText', 'data']
+  constructor: (@$log, @$uibModalInstance, @$scope, @headerText, @data) ->
 
     @$scope.close = () =>
-      @$modalInstance.dismiss()
+      @$uibModalInstance.dismiss()
 
 @controllers.controller 'PopupController', PopupController

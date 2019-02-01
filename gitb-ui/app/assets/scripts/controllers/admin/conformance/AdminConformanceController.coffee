@@ -1,7 +1,7 @@
 class AdminConformanceController
 
-	@$inject = ['$log', '$scope', '$state', 'DataService', 'ConformanceService', 'ErrorService', 'Constants', '$q', 'CommunityService', 'OrganizationService', 'SystemService', 'ReportService', 'ConfirmationDialogService', '$modal']
-	constructor: (@$log, @$scope, @$state, @DataService, @ConformanceService, @ErrorService, @Constants, @$q, @CommunityService, @OrganizationService, @SystemService, @ReportService, @ConfirmationDialogService, @$modal) ->
+	@$inject = ['$log', '$scope', '$state', 'DataService', 'ConformanceService', 'ErrorService', 'Constants', '$q', 'CommunityService', 'OrganizationService', 'SystemService', 'ReportService', 'ConfirmationDialogService', '$uibModal']
+	constructor: (@$log, @$scope, @$state, @DataService, @ConformanceService, @ErrorService, @Constants, @$q, @CommunityService, @OrganizationService, @SystemService, @ReportService, @ConfirmationDialogService, @$uibModal) ->
 		@$log.debug "Constructing AdminConformanceController..."
 		@showFilters = false
 		@filters =
@@ -391,6 +391,6 @@ class AdminConformanceController
 				resolve: 
 					settings: () => JSON.parse(JSON.stringify(@settings))
 					conformanceStatement: () => @statementToProcess
-			modalInstance = @$modal.open(modalOptions)
+			modalInstance = @$uibModal.open(modalOptions)
 
 @controllers.controller 'AdminConformanceController', AdminConformanceController

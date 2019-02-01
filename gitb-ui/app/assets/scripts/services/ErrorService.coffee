@@ -1,8 +1,8 @@
 # Provides a wrapper service for WebSockets
 class ErrorService
 
-  @$inject = ['$q', '$log', '$modal', 'Constants', 'ErrorTemplateService', 'AccountService']
-  constructor: (@$q, @$log, @$modal, @Constants, @ErrorTemplateService, @AccountService) ->
+  @$inject = ['$q', '$log', '$uibModal', 'Constants', 'ErrorTemplateService', 'AccountService']
+  constructor: (@$q, @$log, @$uibModal, @Constants, @ErrorTemplateService, @AccountService) ->
     @$log.debug "Constructing ErrorService"
 
   showErrorMessage: (error, withRetry) =>
@@ -51,7 +51,7 @@ class ErrorService
       resolve:
         error: () => error
         withRetry: () => withRetry
-    modalInstance = @$modal.open modalOptions
+    modalInstance = @$uibModal.open modalOptions
     modalInstance.result.then((result) => 
       # Closed
       if errorDeferred?

@@ -1,7 +1,7 @@
 class CreateEditDomainParameterController
 
-	@$inject = ['$log', '$scope', '$modalInstance', 'ConfirmationDialogService', 'ConformanceService', 'ErrorService', 'domainParameter', 'domainId']
-	constructor:(@$log, @$scope, @$modalInstance, @ConfirmationDialogService, @ConformanceService, @ErrorService, domainParameter, domainId) ->
+	@$inject = ['$log', '$scope', '$uibModalInstance', 'ConfirmationDialogService', 'ConformanceService', 'ErrorService', 'domainParameter', 'domainId']
+	constructor:(@$log, @$scope, @$uibModalInstance, @ConfirmationDialogService, @ConformanceService, @ErrorService, domainParameter, domainId) ->
 		@$log.debug "Constructing SystemController"
 
 		@$scope.pending = false
@@ -43,7 +43,7 @@ class CreateEditDomainParameterController
 							.then((data) =>
 									@$scope.pending = false
 									@$scope.savePending = false
-									@$modalInstance.close(data)
+									@$uibModalInstance.close(data)
 							, (error) =>
 								@$scope.pending = false
 								@$scope.savePending = false
@@ -58,7 +58,7 @@ class CreateEditDomainParameterController
 							.then((data) =>
 								@$scope.pending = false
 								@$scope.savePending = false
-								@$modalInstance.close(data)
+								@$uibModalInstance.close(data)
 							, (error) =>
 								@$scope.pending = false
 								@$scope.savePending = false
@@ -74,7 +74,7 @@ class CreateEditDomainParameterController
 						.then((data) =>
 								@$scope.pending = false
 								@$scope.deletePending = false
-								@$modalInstance.close(data)
+								@$uibModalInstance.close(data)
 						, (error) =>
 							@$scope.pending = false
 							@$scope.deletePending = false
@@ -83,6 +83,6 @@ class CreateEditDomainParameterController
 					console.log 'delete'
 
 		@$scope.cancel = () =>
-			@$modalInstance.dismiss()
+			@$uibModalInstance.dismiss()
 
 controllers.controller('CreateEditDomainParameterController', CreateEditDomainParameterController)

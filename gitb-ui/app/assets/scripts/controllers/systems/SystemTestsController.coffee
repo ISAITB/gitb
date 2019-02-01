@@ -1,6 +1,6 @@
 class SystemTestsController
-  @$inject = ['$log', '$q', '$scope', '$stateParams', '$state', '$modal', 'CommunityService', '$window', 'ReportService', 'Constants', 'TestSuiteService', 'ConformanceService', 'ErrorService', 'DataService', 'ConfirmationDialogService']
-  constructor: (@$log, @$q, @$scope, @$stateParams, @$state, @$modal, @CommunityService, @$window, @ReportService, @Constants, @TestSuiteService, @ConformanceService, @ErrorService, @DataService, @ConfirmationDialogService)->
+  @$inject = ['$log', '$q', '$scope', '$stateParams', '$state', '$uibModal', 'CommunityService', '$window', 'ReportService', 'Constants', 'TestSuiteService', 'ConformanceService', 'ErrorService', 'DataService', 'ConfirmationDialogService']
+  constructor: (@$log, @$q, @$scope, @$stateParams, @$state, @$uibModal, @CommunityService, @$window, @ReportService, @Constants, @TestSuiteService, @ConformanceService, @ErrorService, @DataService, @ConfirmationDialogService)->
     @$log.debug 'Constructing SystemTestsController...'
 
     @systemId = @$stateParams["id"]

@@ -1,7 +1,7 @@
 class ProvideInputModalController
 
-	@$inject = ['$log', '$scope', '$modalInstance', 'Constants', 'TestService', 'session', 'interactionStepId', 'interactions', 'DataService']
-	constructor:(@$log, @$scope, @$modalInstance, @Constants, @TestService, @session, @interactionStepId, interactions, @DataService) ->
+	@$inject = ['$log', '$scope', '$uibModalInstance', 'Constants', 'TestService', 'session', 'interactionStepId', 'interactions', 'DataService']
+	constructor:(@$log, @$scope, @$uibModalInstance, @Constants, @TestService, @session, @interactionStepId, interactions, @DataService) ->
 
 		@$scope.interactions = interactions
 
@@ -23,13 +23,13 @@ class ProvideInputModalController
 						@$log.debug data
 						status = 
 							success: true
-						@$modalInstance.close(status)
+						@$uibModalInstance.close(status)
 				,
 				(error) =>
 					status = 
 						success: false
 						error: error
-					@$modalInstance.close(status)
+					@$uibModalInstance.close(status)
 			)
 
 		@$scope.onFileSelect = (request, files) =>

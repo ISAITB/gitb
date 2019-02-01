@@ -1,7 +1,7 @@
 class CreateEditSystemController
 
-	@$inject = ['$log', '$scope', '$modalInstance', 'ConfirmationDialogService', 'SystemService', 'ErrorService', 'system', 'organisationId']
-	constructor:(@$log, @$scope, @$modalInstance, @ConfirmationDialogService, @SystemService, @ErrorService, system, organisationId) ->
+	@$inject = ['$log', '$scope', '$uibModalInstance', 'ConfirmationDialogService', 'SystemService', 'ErrorService', 'system', 'organisationId']
+	constructor:(@$log, @$scope, @$uibModalInstance, @ConfirmationDialogService, @SystemService, @ErrorService, system, organisationId) ->
 		@$log.debug "Constructing SystemController"
 
 		@$scope.pending = false
@@ -38,7 +38,7 @@ class CreateEditSystemController
 				.then((data) =>
 						@$scope.pending = false
 						@$scope.savePending = false
-						@$modalInstance.close(data)
+						@$uibModalInstance.close(data)
 				, (error) =>
 					@$scope.pending = false
 					@$scope.savePending = false
@@ -62,7 +62,7 @@ class CreateEditSystemController
 						.then((data) =>
 							@$scope.pending = false
 							@$scope.savePending = false
-							@$modalInstance.close(data)
+							@$uibModalInstance.close(data)
 						, (error) =>
 							@$scope.pending = false
 							@$scope.savePending = false
@@ -78,7 +78,7 @@ class CreateEditSystemController
 						.then((data) =>
 								@$scope.pending = false
 								@$scope.deletePending = false
-								@$modalInstance.close(data)
+								@$uibModalInstance.close(data)
 						, (error) =>
 							@$scope.pending = false
 							@$scope.deletePending = false
@@ -86,6 +86,6 @@ class CreateEditSystemController
 						)
 
 		@$scope.cancel = () =>
-			@$modalInstance.dismiss()
+			@$uibModalInstance.dismiss()
 
 controllers.controller('CreateEditSystemController', CreateEditSystemController)

@@ -1,7 +1,7 @@
 class TestPresentationController
 
-	@$inject = ['$log', '$scope', '$window', '$modal','$state', '$stateParams', 'Constants', 'ReportService', 'ErrorService']
-	constructor: (@$log, @$scope, @$window, @$modal, @$state, @$stateParams, @Constants, @ReportService, @ErrorService) ->
+	@$inject = ['$log', '$scope', '$window', '$uibModal','$state', '$stateParams', 'Constants', 'ReportService', 'ErrorService']
+	constructor: (@$log, @$scope, @$window, @$uibModal, @$state, @$stateParams, @Constants, @ReportService, @ErrorService) ->
 		@$log.debug "Constructing TestPresentationController..."
 
 		@selectedIndices = {}
@@ -71,7 +71,7 @@ class TestPresentationController
 					sessionId: () => @sessionId
 				size: 'lg'
 
-			@$modal.open modalOptions
+			@$uibModal.open modalOptions
 
 		if step.report?
 			if step.report.path?
