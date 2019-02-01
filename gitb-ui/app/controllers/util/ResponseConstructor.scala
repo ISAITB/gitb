@@ -62,7 +62,7 @@ object ResponseConstructor extends Results{
   }
 
   def constructCssResponse(string:String): Result = {
-    Ok(string).withHeaders(CONTENT_TYPE -> "text/css")
+    Ok(string).as(CSS)
   }
 
   def constructJsonResponse(json:String):Result = {
