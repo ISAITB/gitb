@@ -21,7 +21,7 @@ import models.Enums.TestResultStatus
 import models._
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import persistence.db.PersistenceSchema.TestResultsTable

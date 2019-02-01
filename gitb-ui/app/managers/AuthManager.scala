@@ -4,7 +4,7 @@ import config.Configurations
 import javax.inject.{Inject, Singleton}
 import managers.BaseManager
 import models.{Token, Users}
-import org.apache.commons.lang.RandomStringUtils
+import org.apache.commons.lang3.RandomStringUtils
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import persistence.cache.TokenCache

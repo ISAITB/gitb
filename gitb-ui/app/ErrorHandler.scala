@@ -1,6 +1,6 @@
 import controllers.util.ResponseConstructor
 import javax.inject.Singleton
-import org.apache.commons.lang.RandomStringUtils
+import org.apache.commons.lang3.RandomStringUtils
 import play.api.Logger
 import play.api.http.HttpErrorHandler
 import play.api.mvc.{RequestHeader, Result}

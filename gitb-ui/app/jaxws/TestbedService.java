@@ -6,7 +6,7 @@ import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.tbs.Void;
 import com.gitb.tbs.*;
 import managers.ReportManager;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import utils.JacksonUtil;

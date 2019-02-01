@@ -13,7 +13,7 @@ import managers._
 import models.ConformanceCertificate
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang.StringUtils
+import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import play.api.mvc._
 import utils.{JacksonUtil, JsonUtil, MimeUtil, RepositoryUtils}
