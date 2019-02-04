@@ -12,16 +12,14 @@
 		<title>GITB</title>
 		<meta name="description" content="">
 		<meta name="viewport" content="width=device-width">
-		<!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
-			<!-- build:css({.tmp,app}) styles/main.css -->
 		<script type="text/javascript" src="@routes.Application.javascriptRoutes"></script>
 
-		<link rel='stylesheet' href='@routes.WebJarAssets.at(webJarAssets.locate("css/bootstrap.css"))'>
-		<link rel="stylesheet" href='@routes.WebJarAssets.at(webJarAssets.locate("css/font-awesome.css"))'>
+		<link rel='stylesheet' href='@routes.WebJarAssets.at(webJarAssets.locate("css/bootstrap.min.css"))'>
+		<link rel="stylesheet" href='@routes.WebJarAssets.at(webJarAssets.locate("css/font-awesome.min.css"))'>
 		<link rel="stylesheet" href='@routes.WebJarAssets.at(webJarAssets.locate("lib/codemirror.css"))'>
 
 		<!-- Web Fonts  -->
-		<link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800|Shadows+Into+Light" rel="stylesheet" type="text/css">
+		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/fonts/opensans/stylesheet.css")'>
 
 		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/theme.css")'>
 		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/theme-animate.css")'>
@@ -29,12 +27,6 @@
 		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/skins/blue.css")'>
 		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/custom.css")'>
 		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/tinymce/tinymce.css")'>
-		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/fonts/font-awesome/css/font-awesome.css")'>
-		<link rel="stylesheet" href='@routes.Assets.at("components/rs-plugin/css/settings.css")'>
-		<link rel="stylesheet" href='@routes.Assets.at("components/circle-flip-slideshow/css/component.css")'>
-		<link rel="stylesheet" href='@routes.Assets.at("components/owl-carousel/owl.carousel.css")'>
-		<link rel="stylesheet" href='@routes.Assets.at("components/owl-carousel/owl.theme.css")'>
-		<link rel="stylesheet" href='@routes.Assets.at("components/magnific-popup/magnific-popup.css")'>
 		<link rel="stylesheet" href='theme/css'>
 
 		<link rel="stylesheet" href='@routes.Assets.at("components/isteven-multi-select/isteven-multi-select.css")'>
@@ -51,18 +43,6 @@
 
 	<body>
 		<div class="app" ui-view></div>
-
-		<!-- Google Analytics: change UA-XXXXX-X to be your site's ID -->
-		<script>
-		   (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
-		   (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
-		   m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
-		   })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
-
-		   ga('create', 'UA-XXXXX-X');
-		   ga('send', 'pageview');
-		</script>
-
 		<!-- WebJars -->
 		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("jquery.min.js"))'></script>
 		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("jquery.cookie.js"))'></script>
@@ -217,22 +197,12 @@
         <script src='@routes.Assets.at("scripts/directives/ErrorDirective.js")?v=1.5.0'></script>
         <script src='@routes.Assets.at("scripts/directives/CommunityFormDirectives.js")?v=1.5.0'></script>
 
-		<script src='@routes.Assets.at("components/rs-plugin/js/jquery.themepunch.plugins.min.js")'></script>
-		<script src='@routes.Assets.at("components/rs-plugin/js/jquery.themepunch.revolution.min.js")'></script>
-		<script src='@routes.Assets.at("components/owl-carousel/owl.carousel.js")'></script>
-		<script src='@routes.Assets.at("components/circle-flip-slideshow/js/jquery.flipshow.js")'></script>
-		<script src='@routes.Assets.at("components/magnific-popup/magnific-popup.js")'></script>
-
 		<script src='@routes.Assets.at("components/plugins.js")'></script>
-		<script src='@routes.Assets.at("components/bootstrap.js")'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("bootstrap.min.js"))'></script>
 		<script src='@routes.Assets.at("components/theme.js")'></script>
-		<script src='@routes.Assets.at("components/validator.js")'></script><!-- TODO check -->
-		<script src='@routes.Assets.at("components/views/view.home.js")'></script>
-
 		<script src='@routes.Assets.at("components/momentjs/moment.min.js")'></script>
 		<script src='@routes.Assets.at("components/date-range-picker/daterangepicker.js")'></script>
 		<script src='@routes.Assets.at("components/date-range-picker/angular-daterangepicker.min.js")'></script>
-
 		<script src='@routes.Assets.at("components/isteven-multi-select/isteven-multi-select.js")'></script>
 	</body>
 </html>
