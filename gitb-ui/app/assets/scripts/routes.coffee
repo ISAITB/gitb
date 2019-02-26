@@ -433,8 +433,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 		return
 ]
 
-app.run ['$log', '$transitions', 'AuthProvider',
-	($log, $transitions, AuthProvider) ->
+app.run ['$log', '$transitions', 'AuthProvider', '$state'
+	($log, $transitions, AuthProvider, $state) ->
 
 		startsWith = (str, prefix) ->
 			(str.indexOf prefix) == 0
@@ -462,11 +462,15 @@ app.run ['$log', '$transitions', 'AuthProvider',
 
 		$transitions.onError({to: (state) -> true}, (trans) ->
 			error = trans.error()
-			if (error && error.redirectTo?)
-				if error.params?
-					trans.router.stateService.go error.redirectTo, error.params
+			if (error? && error.detail? && error.detail.redirectTo?)
+				if error.detail.params?
+					trans.router.stateService.go error.detail.redirectTo, error.detail.params
 				else
-					trans.router.stateService.go error.redirectTo				
+					trans.router.stateService.go error.detail.redirectTo
+		)
+
+		$state.defaultErrorHandler((error) =>
+			# Do not log transitionTo errors.
 		)
 
 		return
