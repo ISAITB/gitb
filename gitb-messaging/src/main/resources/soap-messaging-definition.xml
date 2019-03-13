@@ -8,7 +8,7 @@
 	</metadata>
 	<inputs>
 		<param name="http_headers" type="map" use="O"/>
-		<param name="soap_message" type="object"/>
+		<param name="soap_message" type="object" use="O"/>
 		<param name="soap_attachments" type="map" use="O"/>
 	</inputs>
 	<outputs>
