@@ -1,13 +1,13 @@
 class ConfirmationDialogController
 
-  @$inject = ['$log', '$modalInstance', '$scope', 'headerText', 'bodyText', 'actionButtonText', 'closeButtonText', 'sameStyles', 'oneButton']
-  constructor: (@$log, @$modalInstance, @$scope, @headerText, @bodyText, @actionButtonText, @closeButtonText, @sameStyles, @oneButton) ->
+  @$inject = ['$log', '$uibModalInstance', '$scope', 'headerText', 'bodyText', 'actionButtonText', 'closeButtonText', 'sameStyles', 'oneButton']
+  constructor: (@$log, @$uibModalInstance, @$scope, @headerText, @bodyText, @actionButtonText, @closeButtonText, @sameStyles, @oneButton) ->
 
     @$scope.ok = () =>
-      @$modalInstance.close()
+      @$uibModalInstance.close()
 
     @$scope.cancel = () =>
-      @$modalInstance.dismiss()
+      @$uibModalInstance.dismiss()
 
     @$scope.okClass = () =>
       "btn btn-default"

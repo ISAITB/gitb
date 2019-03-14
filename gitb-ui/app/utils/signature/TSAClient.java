@@ -1,10 +1,19 @@
 package utils.signature;
 
 import config.Configurations;
-import org.apache.commons.httpclient.*;
-import org.apache.commons.httpclient.auth.AuthScope;
-import org.apache.commons.httpclient.methods.ByteArrayRequestEntity;
-import org.apache.commons.httpclient.methods.PostMethod;
+import org.apache.http.HttpHost;
+import org.apache.http.HttpStatus;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.Credentials;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.CredentialsProvider;
+import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.BasicCredentialsProvider;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -90,26 +99,32 @@ public class TSAClient {
     // gets response data for the given encoded TimeStampRequest data
     // throws IOException if a connection to the TSA cannot be established
     private byte[] getTSAResponse(byte[] request) throws IOException {
-        HttpClient client = new HttpClient();
-        PostMethod post = new PostMethod(url.toString());
-
+        HttpPost post = new HttpPost(url.toString());
+        CloseableHttpClient httpClient = null;
         if (Configurations.PROXY_SERVER_ENABLED()) {
-            HostConfiguration config = client.getHostConfiguration();
-            config.setProxy(Configurations.PROXY_SERVER_HOST(), Configurations.PROXY_SERVER_PORT());
+            HttpHost proxy = new HttpHost(Configurations.PROXY_SERVER_HOST(), Configurations.PROXY_SERVER_PORT());
             if (Configurations.PROXY_SERVER_AUTH_ENABLED()) {
                 Credentials credentials = new UsernamePasswordCredentials(Configurations.PROXY_SERVER_AUTH_USERNAME(), Configurations.PROXY_SERVER_AUTH_PASSWORD());
                 AuthScope authScope = new AuthScope(Configurations.PROXY_SERVER_HOST(), Configurations.PROXY_SERVER_PORT());
-                client.getState().setProxyCredentials(authScope, credentials);
+                CredentialsProvider credsProvider = new BasicCredentialsProvider();
+                credsProvider.setCredentials(authScope, credentials);
+                httpClient = HttpClients.custom().setDefaultCredentialsProvider(credsProvider).build();
             }
+            RequestConfig config = RequestConfig.custom()
+                    .setProxy(proxy)
+                    .build();
+            post.setConfig(config);
         }
-
-        post.setRequestEntity(new ByteArrayRequestEntity(request));
-        post.setRequestHeader("Content-type", "application/timestamp-query");
+        if (httpClient == null) {
+            httpClient = HttpClients.createDefault();
+        }
+        post.setEntity(new ByteArrayEntity(request));
+        post.setHeader("Content-type", "application/timestamp-query");
         byte[] response = null;
         try {
-            client.executeMethod(post);
-            if (post.getStatusCode() == HttpStatus.SC_OK) {
-                response = org.apache.commons.io.IOUtils.toByteArray(post.getResponseBodyAsStream());
+            CloseableHttpResponse httpResponse = httpClient.execute(post);
+            if (httpResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+                response = org.apache.commons.io.IOUtils.toByteArray(httpResponse.getEntity().getContent());
             }
         } finally {
             post.releaseConnection();

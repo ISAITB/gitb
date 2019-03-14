@@ -3,6 +3,7 @@ package controllers
 import com.gitb.tpl.ObjectFactory
 import com.gitb.utils.XMLUtils
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
+import javax.inject.Inject
 import managers.ReportManager
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
@@ -11,7 +12,7 @@ import utils.JsonUtil
 /**
  * Created by senan on 04.12.2014.
  */
-class ReportService extends Controller {
+class ReportService @Inject() (reportManager: ReportManager, testService: TestService) extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ReportService])
 
   val defaultPage = 1L
@@ -33,7 +34,7 @@ class ReportService extends Controller {
     val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
 
-    val testResultReports = ReportManager.getTestResults(page, limit, systemId, domainIds, specIds, testSuiteIds, testCaseIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
+    val testResultReports = reportManager.getTestResults(page, limit, systemId, domainIds, specIds, testSuiteIds, testCaseIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
     val json = JsonUtil.jsTestResultReports(testResultReports).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -50,7 +51,7 @@ class ReportService extends Controller {
     val endTimeBegin = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_BEGIN)
     val endTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_END)
 
-    val count = ReportManager.getTestResultsCount(systemId, domainIds, specIds, testSuiteIds, testCaseIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd)
+    val count = reportManager.getTestResultsCount(systemId, domainIds, specIds, testSuiteIds, testCaseIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd)
     val json = JsonUtil.jsCount(count).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -68,7 +69,7 @@ class ReportService extends Controller {
     val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
 
-    val testResultReports = ReportManager.getActiveTestResults(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, startTimeBegin, startTimeEnd, sortColumn, sortOrder)
+    val testResultReports = reportManager.getActiveTestResults(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, startTimeBegin, startTimeEnd, sortColumn, sortOrder)
     val json = JsonUtil.jsTestResultSessionReports(testResultReports).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -87,7 +88,7 @@ class ReportService extends Controller {
     val endTimeBegin = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_BEGIN)
     val endTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_END)
 
-    val count = ReportManager.getFinishedTestResultsCount(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd)
+    val count = reportManager.getFinishedTestResultsCount(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd)
     val json = JsonUtil.jsCount(count).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -110,7 +111,7 @@ class ReportService extends Controller {
     val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
 
-    val testResultReports = ReportManager.getFinishedTestResults(page, limit, communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
+    val testResultReports = reportManager.getFinishedTestResults(page, limit, communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
     val json = JsonUtil.jsTestResultSessionReports(testResultReports).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -126,7 +127,7 @@ class ReportService extends Controller {
   }
 
   def getTestResultOfSession(sessionId: String) = Action.apply { request =>
-    val response = ReportManager.getTestResultOfSession(sessionId)
+    val response = reportManager.getTestResultOfSession(sessionId)
     val json = JsonUtil.jsTestResult(response, true).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -137,14 +138,14 @@ class ReportService extends Controller {
     val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
     val testId = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_ID)
 
-    val response = TestService.getTestCasePresentation(testId)
+    val response = testService.getTestCasePresentation(testId)
     val presentation = XMLUtils.marshalToString(new ObjectFactory().createTestcase(response.getTestcase))
-    ReportManager.createTestReport(sessionId, systemId, testId, actorId, presentation)
+    reportManager.createTestReport(sessionId, systemId, testId, actorId, presentation)
     ResponseConstructor.constructEmptyResponse
   }
 
   def getTestStepResults(sessionId: String) = Action.apply { request =>
-    val testStepResults = ReportManager.getTestStepResults(sessionId)
+    val testStepResults = reportManager.getTestStepResults(sessionId)
     val json = JsonUtil.jsTestStepResults(testStepResults).toString()
     ResponseConstructor.constructJsonResponse(json)
   }

@@ -7,19 +7,20 @@ import java.security.{KeyStore, NoSuchAlgorithmException}
 
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.{ErrorCodes, NotFoundException}
+import javax.inject.Inject
 import managers._
 import models.ConformanceStatementFull
 import models.Enums.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import org.apache.commons.codec.binary.Base64
-import org.apache.commons.lang.RandomStringUtils
+import org.apache.commons.lang3.RandomStringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.AccountManager
 import play.api.mvc._
 import utils.signature.SigUtils
 import utils.{JsonUtil, MimeUtil}
 
-class ConformanceService extends Controller {
+class ConformanceService @Inject() (conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, systemManager: SystemManager, testResultManager: TestResultManager, organizationManager: OrganizationManager, testCaseManager: TestCaseManager, endPointManager: EndPointManager, parameterManager: ParameterManager) extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ConformanceService])
 
   /**
@@ -27,13 +28,13 @@ class ConformanceService extends Controller {
    */
   def getDomains = Action.apply { request =>
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
-    val result = ConformanceManager.getDomains(ids)
+    val result = conformanceManager.getDomains(ids)
     val json = JsonUtil.jsDomains(result).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getDomainOfSpecification(specId: Long) = Action.apply { request =>
-    val json = JsonUtil.jsDomain(ConformanceManager.getDomainOfSpecification(specId)).toString()
+    val json = JsonUtil.jsDomain(conformanceManager.getDomainOfSpecification(specId)).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
@@ -42,7 +43,7 @@ class ConformanceService extends Controller {
    */
   def getCommunityDomain = Action.apply { request =>
    val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
-    val domain = ConformanceManager.getCommunityDomain(communityId)
+    val domain = conformanceManager.getCommunityDomain(communityId)
     if (domain != null) {
       val json = JsonUtil.jsDomain(domain).toString()
       ResponseConstructor.constructJsonResponse(json)
@@ -56,7 +57,7 @@ class ConformanceService extends Controller {
    */
   def getSpecs = Action.apply { request =>
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
-    val result = ConformanceManager.getSpecifications(ids)
+    val result = conformanceManager.getSpecifications(ids)
     val json = JsonUtil.jsSpecifications(result).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -66,7 +67,7 @@ class ConformanceService extends Controller {
    */
   def getActors = Action.apply { request =>
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
-    val result = ConformanceManager.getActorsWithSpecificationId(ids, None)
+    val result = conformanceManager.getActorsWithSpecificationId(ids, None)
     val json = JsonUtil.jsActorsNonCase(result).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -75,7 +76,7 @@ class ConformanceService extends Controller {
    * Gets the specifications that are defined/tested in the platform
    */
   def getDomainSpecs(domain_id: Long) = Action.apply {
-    val specs = ConformanceManager.getSpecifications(domain_id)
+    val specs = conformanceManager.getSpecifications(domain_id)
     val json = JsonUtil.jsSpecifications(specs).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -84,7 +85,7 @@ class ConformanceService extends Controller {
    * Gets actors defined  for the spec
    */
   def getSpecActors(spec_id: Long) = Action.apply {
-    val actors = ConformanceManager.getActorsWithSpecificationId(None, Some(spec_id))
+    val actors = conformanceManager.getActorsWithSpecificationId(None, Some(spec_id))
     val json = JsonUtil.jsActorsNonCase(actors).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -95,7 +96,7 @@ class ConformanceService extends Controller {
    * @return
    */
   def getSpecTestSuites(spec_id: Long) = Action.apply {
-    val testSuites = TestSuiteManager.getTestSuitesWithSpecificationId(spec_id)
+    val testSuites = testSuiteManager.getTestSuitesWithSpecificationId(spec_id)
     val json = JsonUtil.jsTestSuitesList(testSuites).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -104,7 +105,7 @@ class ConformanceService extends Controller {
    * Gets actors defined  for the domain
    */
   def getDomainActors(domainId: Long) = Action.apply {
-    val actors = ConformanceManager.getActorsWithDomainId(domainId)
+    val actors = conformanceManager.getActorsWithDomainId(domainId)
     val json = JsonUtil.jsActors(actors).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -120,25 +121,25 @@ class ConformanceService extends Controller {
     val spec = ParameterExtractor.requiredQueryParameter(request, Parameters.SPEC).toLong
     val testCaseType = ParameterExtractor.requiredQueryParameter(request, Parameters.TYPE).toShort
 
-    val testCases = TestCaseManager.getTestCases(actor_id, spec, optionIds, testCaseType)
+    val testCases = testCaseManager.getTestCases(actor_id, spec, optionIds, testCaseType)
     val json = JsonUtil.jsTestCaseList(testCases).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def createDomain() = Action.apply { request =>
     val domain = ParameterExtractor.extractDomain(request)
-    ConformanceManager.createDomain(domain)
+    conformanceManager.createDomain(domain)
     ResponseConstructor.constructEmptyResponse
   }
 
   def updateDomain(domainId: Long) = Action.apply { request =>
-    val domainExists = ConformanceManager.checkDomainExists(domainId)
+    val domainExists = conformanceManager.checkDomainExists(domainId)
     if(domainExists) {
       val shortName:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
       val fullName:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
       val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
 
-      ConformanceManager.updateDomain(domainId, shortName, fullName, description)
+      conformanceManager.updateDomain(domainId, shortName, fullName, description)
       ResponseConstructor.constructEmptyResponse
     } else{
       throw new NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, "Domain with ID '" + domainId + "' not found")
@@ -147,55 +148,55 @@ class ConformanceService extends Controller {
 
   def createOption() = Action.apply { request =>
     val option = ParameterExtractor.extractOption(request)
-    ConformanceManager.createOption(option)
+    conformanceManager.createOption(option)
     ResponseConstructor.constructEmptyResponse
   }
 
   def createActor() = Action.apply { request =>
     val actor = ParameterExtractor.extractActor(request)
     val specificationId = ParameterExtractor.requiredBodyParameter(request, Parameters.SPECIFICATION_ID).toLong
-    if (ActorManager.checkActorExistsInSpecification(actor.actorId, specificationId, None)) {
+    if (actorManager.checkActorExistsInSpecification(actor.actorId, specificationId, None)) {
       ResponseConstructor.constructBadRequestResponse(500, "An actor with this ID already exists in the specification")
     } else {
-      ConformanceManager.createActorWrapper(actor, specificationId)
+      conformanceManager.createActorWrapper(actor, specificationId)
       ResponseConstructor.constructEmptyResponse
     }
   }
 
   def createEndpoint() = Action.apply { request =>
     val endpoint = ParameterExtractor.extractEndpoint(request)
-    if (EndPointManager.checkEndPointExistsForActor(endpoint.name, endpoint.actor, None)) {
+    if (endPointManager.checkEndPointExistsForActor(endpoint.name, endpoint.actor, None)) {
       ResponseConstructor.constructBadRequestResponse(500, "An endpoint with this name already exists for the actor")
     } else{
-      EndPointManager.createEndpointWrapper(endpoint)
+      endPointManager.createEndpointWrapper(endpoint)
       ResponseConstructor.constructEmptyResponse
     }
   }
 
   def createParameter() = Action.apply { request =>
     val parameter = ParameterExtractor.extractParameter(request)
-    if (ParameterManager.checkParameterExistsForEndpoint(parameter.name, parameter.endpoint, None)) {
+    if (parameterManager.checkParameterExistsForEndpoint(parameter.name, parameter.endpoint, None)) {
       ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the endpoint")
     } else{
-      ParameterManager.createParameterWrapper(parameter)
+      parameterManager.createParameterWrapper(parameter)
       ResponseConstructor.constructEmptyResponse
     }
   }
 
   def createSpecification() = Action.apply { request =>
     val specification = ParameterExtractor.extractSpecification(request)
-    ConformanceManager.createSpecifications(specification)
+    conformanceManager.createSpecifications(specification)
     ResponseConstructor.constructEmptyResponse
   }
 
   def getOptionsForActor(actorId: Long) = Action.apply { request =>
-    val options = ConformanceManager.getOptionsForActor(actorId)
+    val options = conformanceManager.getOptionsForActor(actorId)
     val json = JsonUtil.jsOptions(options).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getEndpointsForActor(actorId: Long) = Action.apply {
-    val endpoints = ConformanceManager.getEndpointsForActor(actorId)
+    val endpoints = conformanceManager.getEndpointsForActor(actorId)
     val json = JsonUtil.jsEndpoints(endpoints).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -203,7 +204,7 @@ class ConformanceService extends Controller {
   def getEndpoints = Action.apply { request =>
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
 
-    val endpoints = ConformanceManager.getEndpoints(ids)
+    val endpoints = conformanceManager.getEndpoints(ids)
     val json = JsonUtil.jsEndpoints(endpoints).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -211,31 +212,31 @@ class ConformanceService extends Controller {
   def getParameters = Action.apply { request =>
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
 
-    val parameters = ConformanceManager.getParameters(ids)
+    val parameters = conformanceManager.getParameters(ids)
     val json = JsonUtil.jsParameters(parameters).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getEndpointParameters(endpointId: Long) = Action.apply {
-    val parameters = ConformanceManager.getEndpointParameters(endpointId)
+    val parameters = conformanceManager.getEndpointParameters(endpointId)
     val json = JsonUtil.jsParameters(parameters).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getOptions = Action.apply { request =>
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
-    val options = ConformanceManager.getOptions(ids)
+    val options = conformanceManager.getOptions(ids)
     val json = JsonUtil.jsOptions(options).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def deleteDomain(domain_id: Long) = Action.apply {
-    ConformanceManager.deleteDomain(domain_id)
+    conformanceManager.deleteDomain(domain_id)
     ResponseConstructor.constructEmptyResponse
   }
 
   def addActorToSpecification(specification_id: Long, actor_id: Long) = Action.apply {
-    ConformanceManager.relateActorWithSpecification(actor_id, specification_id)
+    conformanceManager.relateActorWithSpecification(actor_id, specification_id)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -251,7 +252,7 @@ class ConformanceService extends Controller {
       // Cancel
       pendingAction = TestSuiteReplacementChoice.CANCEL
     }
-    val result = TestSuiteManager.applyPendingTestSuiteAction(specification_id, pendingFolderId, pendingAction)
+    val result = testSuiteManager.applyPendingTestSuiteAction(specification_id, pendingFolderId, pendingAction)
     val json = JsonUtil.jsTestSuiteUploadResult(result).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -260,7 +261,7 @@ class ConformanceService extends Controller {
     request.body.file(Parameters.FILE) match {
     case Some(testSuite) => {
       val file = Paths.get(
-        TestSuiteManager.getTempFolder().getAbsolutePath,
+        testSuiteManager.getTempFolder().getAbsolutePath,
         RandomStringUtils.random(10, false, true),
         testSuite.filename
       ).toFile()
@@ -269,7 +270,7 @@ class ConformanceService extends Controller {
       val name = testSuite.filename
       val contentType = testSuite.contentType
       logger.debug("Test suite file uploaded - filename: [" + name + "] content type: [" + contentType + "]")
-      val result = TestSuiteManager.deployTestSuiteFromZipFile(specification_id, file)
+      val result = testSuiteManager.deployTestSuiteFromZipFile(specification_id, file)
       val json = JsonUtil.jsTestSuiteUploadResult(result).toString()
       ResponseConstructor.constructJsonResponse(json)
     }
@@ -279,39 +280,39 @@ class ConformanceService extends Controller {
   }
 
   def getConformanceStatus(actorId: Long, sutId: Long) = Action.apply { request =>
-    val results = ConformanceManager.getConformanceStatus(actorId, sutId, None)
+    val results = conformanceManager.getConformanceStatus(actorId, sutId, None)
     val json: String = JsonUtil.jsConformanceResultList(results).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getConformanceStatusForTestSuite(actorId: Long, sutId: Long, testSuite: Long) = Action.apply { request =>
-    val results = ConformanceManager.getConformanceStatus(actorId, sutId, Some(testSuite))
+    val results = conformanceManager.getConformanceStatus(actorId, sutId, Some(testSuite))
     val json: String = JsonUtil.jsConformanceResultList(results).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getTestSuiteTestCases(testSuiteId: Long) = Action.apply { request =>
     val testCaseType = ParameterExtractor.requiredQueryParameter(request, Parameters.TYPE).toShort
-    val list = TestCaseManager.getTestCasesOfTestSuiteWrapper(testSuiteId, Some(testCaseType))
+    val list = testCaseManager.getTestCasesOfTestSuiteWrapper(testSuiteId, Some(testCaseType))
     import scala.collection.JavaConversions._
     val json: String = JsonUtil.jsTestCasesList(list.toList).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getTestSuiteTestCase(testCaseId: Long) = Action.apply { request =>
-    val testCase = TestCaseManager.getTestCase(testCaseId.toString()).get
+    val testCase = testCaseManager.getTestCase(testCaseId.toString()).get
     val json: String = JsonUtil.jsTestCase(testCase).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getDomainParameters(domainId: Long) = Action.apply { request =>
-    val result = ConformanceManager.getDomainParameters(domainId)
+    val result = conformanceManager.getDomainParameters(domainId)
     val json = JsonUtil.jsDomainParameters(result).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getDomainParameter(domainId: Long, domainParameterId: Long) = Action.apply { request =>
-    val result = ConformanceManager.getDomainParameter(domainParameterId)
+    val result = conformanceManager.getDomainParameter(domainParameterId)
     val json = JsonUtil.jsDomainParameter(result).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -319,16 +320,16 @@ class ConformanceService extends Controller {
   def createDomainParameter(domainId: Long) = Action.apply { request =>
     val jsDomainParameter = ParameterExtractor.requiredBodyParameter(request, Parameters.CONFIG)
     val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, None, domainId)
-    if (ConformanceManager.getDomainParameterByDomainAndName(domainId, domainParameter.name).isDefined) {
+    if (conformanceManager.getDomainParameterByDomainAndName(domainId, domainParameter.name).isDefined) {
       ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the domain")
     } else {
-      ConformanceManager.createDomainParameter(domainParameter)
+      conformanceManager.createDomainParameter(domainParameter)
       ResponseConstructor.constructEmptyResponse
     }
   }
 
   def deleteDomainParameter(domainId: Long, domainParameterId: Long) = Action.apply {
-    ConformanceManager.deleteDomainParameterWrapper(domainParameterId)
+    conformanceManager.deleteDomainParameterWrapper(domainParameterId)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -336,11 +337,11 @@ class ConformanceService extends Controller {
     val jsDomainParameter = ParameterExtractor.requiredBodyParameter(request, Parameters.CONFIG)
     val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, Some(domainParameterId), domainId)
 
-    val existingDomainParameter = ConformanceManager.getDomainParameterByDomainAndName(domainId, domainParameter.name)
+    val existingDomainParameter = conformanceManager.getDomainParameterByDomainAndName(domainId, domainParameter.name)
     if (existingDomainParameter.isDefined && (existingDomainParameter.get.id != domainParameterId)) {
       ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the domain")
     } else {
-      ConformanceManager.updateDomainParameter(domainParameterId, domainParameter.name, domainParameter.desc, domainParameter.kind, domainParameter.value)
+      conformanceManager.updateDomainParameter(domainParameterId, domainParameter.name, domainParameter.desc, domainParameter.kind, domainParameter.value)
       ResponseConstructor.constructEmptyResponse
     }
   }
@@ -355,9 +356,9 @@ class ConformanceService extends Controller {
     val actorIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.ACTOR_IDS)
     var results: List[ConformanceStatementFull] = null
     if (fullResults) {
-      results = ConformanceManager.getConformanceStatementsFull(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds)
+      results = conformanceManager.getConformanceStatementsFull(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds)
     } else {
-      results = ConformanceManager.getConformanceStatements(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds)
+      results = conformanceManager.getConformanceStatements(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds)
     }
     val json = JsonUtil.jsConformanceResultFullList(results).toString()
     ResponseConstructor.constructJsonResponse(json)
@@ -365,8 +366,8 @@ class ConformanceService extends Controller {
 
   def deleteAllObsoleteTestResults() = Action.apply { request =>
     val authUserId = ParameterExtractor.extractUserId(request)
-    if (AccountManager.isSystemAdmin(authUserId)) {
-      TestResultManager.deleteAllObsoleteTestResults()
+    if (accountManager.isSystemAdmin(authUserId)) {
+      testResultManager.deleteAllObsoleteTestResults()
       ResponseConstructor.constructEmptyResponse
     } else {
       ResponseConstructor.constructUnauthorizedResponse(403, "You must be a test bed administrator")
@@ -376,12 +377,12 @@ class ConformanceService extends Controller {
   def deleteObsoleteTestResultsForSystem() = Action.apply { request =>
     val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
     val authUserId = ParameterExtractor.extractUserId(request)
-    val system = SystemManager.getSystemByIdWrapper(systemId)
-    val organisation = OrganizationManager.getOrganizationById(system.get.owner)
-    if (AccountManager.isVendorAdmin(authUserId, system.get.owner)
-      || AccountManager.isCommunityAdmin(authUserId, organisation.community.get.id)
-      || AccountManager.isSystemAdmin(authUserId)) {
-      TestResultManager.deleteObsoleteTestResultsForSystemWrapper(systemId)
+    val system = systemManager.getSystemByIdWrapper(systemId)
+    val organisation = organizationManager.getOrganizationById(system.get.owner)
+    if (accountManager.isVendorAdmin(authUserId, system.get.owner)
+      || accountManager.isCommunityAdmin(authUserId, organisation.community.get.id)
+      || accountManager.isSystemAdmin(authUserId)) {
+      testResultManager.deleteObsoleteTestResultsForSystemWrapper(systemId)
       ResponseConstructor.constructEmptyResponse
     } else {
       ResponseConstructor.constructUnauthorizedResponse(403, "You must be an organisation, community or test bed administrator")
@@ -391,8 +392,8 @@ class ConformanceService extends Controller {
   def deleteObsoleteTestResultsForCommunity() = Action.apply { request =>
     val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
     val authUserId = ParameterExtractor.extractUserId(request)
-    if (AccountManager.isCommunityAdmin(authUserId, communityId) || AccountManager.isSystemAdmin(authUserId)) {
-      TestResultManager.deleteObsoleteTestResultsForCommunityWrapper(communityId)
+    if (accountManager.isCommunityAdmin(authUserId, communityId) || accountManager.isSystemAdmin(authUserId)) {
+      testResultManager.deleteObsoleteTestResultsForCommunityWrapper(communityId)
       ResponseConstructor.constructEmptyResponse
     } else {
       ResponseConstructor.constructUnauthorizedResponse(403, "You must be a community or test bed administrator")
@@ -401,8 +402,8 @@ class ConformanceService extends Controller {
 
   def getConformanceCertificateSettings(communityId: Long) = Action.apply { request =>
     val authUserId = ParameterExtractor.extractUserId(request)
-    if (AccountManager.isCommunityAdmin(authUserId, communityId) || AccountManager.isSystemAdmin(authUserId)) {
-      val settings = ConformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+    if (accountManager.isCommunityAdmin(authUserId, communityId) || accountManager.isSystemAdmin(authUserId)) {
+      val settings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
       val includeKeystoreData = ParameterExtractor.optionalQueryParameter(request, Parameters.INCLUDE_KEYSTORE_DATA).getOrElse("false").toBoolean
       val json = JsonUtil.jsConformanceSettings(settings, includeKeystoreData)
       if (json.isDefined) {
@@ -417,12 +418,12 @@ class ConformanceService extends Controller {
 
   def updateConformanceCertificateSettings(communityId: Long) = Action.apply { request =>
     val authUserId = ParameterExtractor.extractUserId(request)
-    if (AccountManager.isCommunityAdmin(authUserId, communityId) || AccountManager.isSystemAdmin(authUserId)) {
+    if (accountManager.isCommunityAdmin(authUserId, communityId) || accountManager.isSystemAdmin(authUserId)) {
       val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
       val removeKeystore = ParameterExtractor.requiredBodyParameter(request, Parameters.REMOVE_KEYSTORE).toBoolean
       val updatePasswords = ParameterExtractor.requiredBodyParameter(request, Parameters.UPDATE_PASSWORDS).toBoolean
       val settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
-      ConformanceManager.updateConformanceCertificateSettings(settings, updatePasswords, removeKeystore)
+      conformanceManager.updateConformanceCertificateSettings(settings, updatePasswords, removeKeystore)
       ResponseConstructor.constructEmptyResponse
     } else {
       ResponseConstructor.constructUnauthorizedResponse(403, "You must be a community or test bed administrator")
@@ -442,7 +443,7 @@ class ConformanceService extends Controller {
         keyPassword = settings.keyPassword.get
       }
     } else {
-      val storedSettings = ConformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+      val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
       if (storedSettings.isDefined && storedSettings.get.keystorePassword.isDefined && storedSettings.get.keyPassword.isDefined) {
         keystorePassword = MimeUtil.decryptString(storedSettings.get.keystorePassword.get)
         keyPassword = MimeUtil.decryptString(storedSettings.get.keyPassword.get)

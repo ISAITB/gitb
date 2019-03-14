@@ -2,10 +2,10 @@ class IndexController
 	@$inject = [
 		'$log', '$sce', '$scope', '$rootScope', '$location', '$state', '$window'
 		'AuthProvider', 'SystemConfigurationService', 'DataService', 'AccountService',
-		'Events', 'Constants', 'LegalNoticeService', 'HtmlService', 'ErrorService', '$modal', '$q', 'ConfirmationDialogService'
+		'Events', 'Constants', 'LegalNoticeService', 'HtmlService', 'ErrorService', '$uibModal', '$q', 'ConfirmationDialogService'
 	]
 	constructor: (@$log, @$sce, @$scope, @$rootScope, @$location, @$state, @$window,
-		@AuthProvider, @SystemConfigurationService, @DataService, @AccountService, @Events, @Constants,@LegalNoticeService, @HtmlService, @ErrorService, @$modal, @$q, @ConfirmationDialogService) ->
+		@AuthProvider, @SystemConfigurationService, @DataService, @AccountService, @Events, @Constants,@LegalNoticeService, @HtmlService, @ErrorService, @$uibModal, @$q, @ConfirmationDialogService) ->
 
 		@$log.debug "Constructing MainController..."
 
@@ -38,7 +38,7 @@ class IndexController
 			@isAuthenticated = true
 			@profileLoaded = @$q.defer()
 			@getUserProfile()
-			@$q.all(@profileLoaded.promise).then(() =>
+			@$q.all([@profileLoaded.promise]).then(() =>
 				if @DataService.user.onetime
 					# One time password - force replace
 					@redirect('/onetime')
@@ -128,7 +128,7 @@ class IndexController
 			templateUrl: 'assets/views/components/contact-support.html'
 			controller: 'ContactSupportController as ContactSupportController'
 			size: 'lg'
-		modalInstance = @$modal.open(modalOptions)
+		modalInstance = @$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
 
 	showProvideFeedback: () =>
 		!@showContactUs() && (@DataService.configuration?["survey.enabled"] == 'true') && !@DataService.user.onetime

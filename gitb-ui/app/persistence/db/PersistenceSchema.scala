@@ -1,9 +1,9 @@
 package persistence.db
 
 import models._
-import java.sql.{Blob, Timestamp}
+import java.sql.Timestamp
 
-import scala.slick.driver.MySQLDriver.simple._
+import slick.jdbc.MySQLProfile.api._
 
 object PersistenceSchema {
 
@@ -16,7 +16,7 @@ object PersistenceSchema {
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
     def supportEmail = column[Option[String]] ("support_email")
-    def domain = column[Option[Long]] ("domain", O.Nullable)
+    def domain = column[Option[Long]] ("domain")
     def * = (id, shortname, fullname, supportEmail, domain) <> (Communities.tupled, Communities.unapply)
   }
   val communities = TableQuery[CommunitiesTable]
@@ -28,9 +28,9 @@ object PersistenceSchema {
     def fullname = column[String]("fname")
     def organizationType = column[Short]("type")
     def adminOrganization = column[Boolean]("admin_organization")
-    def landingPage = column[Option[Long]] ("landing_page", O.Nullable)
-    def legalNotice = column[Option[Long]] ("legal_notice", O.Nullable)
-    def errorTemplate = column[Option[Long]] ("error_template", O.Nullable)
+    def landingPage = column[Option[Long]] ("landing_page")
+    def legalNotice = column[Option[Long]] ("legal_notice")
+    def errorTemplate = column[Option[Long]] ("error_template")
     def community = column[Long] ("community")
     def * = (id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, errorTemplate, community) <> (Organizations.tupled, Organizations.unapply)
   }
@@ -58,7 +58,7 @@ object PersistenceSchema {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
-    def description = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def version = column[String]("version")
     def owner = column[Long]("owner")
     def * = (id, shortname, fullname, description, version, owner) <> (Systems.tupled, Systems.unapply)
@@ -71,7 +71,7 @@ object PersistenceSchema {
 	  def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
-	def description = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+	def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def * = (id, shortname, fullname, description) <> (Domain.tupled, Domain.unapply)
   }
   val domains = TableQuery[DomainsTable]
@@ -82,7 +82,7 @@ object PersistenceSchema {
     def fullname = column[String]("fname")
     def urls = column[Option[String]]("urls") //comma seperated
     def diagram = column[Option[String]]("diagram")
-    def description = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def stype = column[Short]("type")
     def domain = column[Long]("domain")
     def * = (id, shortname, fullname, urls, diagram, description, stype, domain) <> (Specifications.tupled, Specifications.unapply)
@@ -94,9 +94,9 @@ object PersistenceSchema {
     def id      = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def actorId = column[String]("actorId")
     def name    = column[String]("name")
-    def desc    = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
-    def default = column[Option[Boolean]]("is_default", O.Nullable)
-    def displayOrder = column[Option[Short]]("display_order", O.Nullable)
+    def desc    = column[Option[String]]("description", O.SqlType("TEXT"))
+    def default = column[Option[Boolean]]("is_default")
+    def displayOrder = column[Option[Short]]("display_order")
     def domain  = column[Long]("domain")
     def * = (id, actorId, name, desc, default, displayOrder, domain) <> (Actors.tupled, Actors.unapply)
     def actorIdUniqueIdx = index("actors_aid_unq_idx", actorId, unique = true)
@@ -107,7 +107,7 @@ object PersistenceSchema {
   class EndpointsTable(tag: Tag) extends Table[Endpoints](tag, "Endpoints") {
 	  def id    = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def name  = column[String]("name")
-    def desc  = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def desc  = column[Option[String]]("description", O.SqlType("TEXT"))
     def actor = column[Long]("actor")
     def * = (id, name, desc, actor) <> (Endpoints.tupled, Endpoints.unapply)
     def endpointActorUniqueIdx = index("endp_act_unq_idx", (name, actor), unique = true)
@@ -118,7 +118,7 @@ object PersistenceSchema {
 	class ParametersTable(tag: Tag) extends Table[models.Parameters] (tag, "Parameters") {
 		def id    = column[Long]("id", O.PrimaryKey, O.AutoInc)
 		def name  = column[String]("name")
-		def desc  = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+		def desc  = column[Option[String]]("description", O.SqlType("TEXT"))
 		def use   = column[String]("use")
 		def kind  = column[String]("kind")
 		def endpoint = column[Long]("endpoint")
@@ -130,9 +130,9 @@ object PersistenceSchema {
   class DomainParametersTable(tag: Tag) extends Table[models.DomainParameter] (tag, "DomainParameters") {
     def id    = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def name  = column[String]("name")
-    def desc  = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def desc  = column[Option[String]]("description", O.SqlType("TEXT"))
     def kind  = column[String]("kind")
-    def value = column[Option[String]]("value", O.DBType("BLOB"))
+    def value = column[Option[String]]("value", O.SqlType("BLOB"))
     def domain = column[Long]("domain")
     def * = (id, name, desc, kind, value, domain) <> (models.DomainParameter.tupled, models.DomainParameter.unapply)
   }
@@ -155,7 +155,7 @@ object PersistenceSchema {
     def system = column[Long] ("system")
 	  def parameter = column[Long]("parameter")
 	  def endpoint = column[Long] ("endpoint")
-	  def value = column[String]("value", O.DBType("BLOB"))
+	  def value = column[String]("value", O.SqlType("BLOB"))
     def * = (system, parameter, endpoint, value) <> (Configs.tupled, Configs.unapply)
     def pk = primaryKey("c_pk", (system, parameter, endpoint))
   }
@@ -164,7 +164,7 @@ object PersistenceSchema {
   class TransactionsTable(tag: Tag) extends Table[Transaction](tag, "Transactions") {
     def shortname = column[String]("sname", O.PrimaryKey)
     def fullname = column[String]("fname")
-    def description = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def domain = column[Long]("domain")
     def * = (shortname, fullname, description, domain) <> (Transaction.tupled, Transaction.unapply)
     //def fk = foreignKey("tx_fk", shortname, Domains)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
@@ -175,7 +175,7 @@ object PersistenceSchema {
 	  def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
-    def description = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def actor = column[Long]("actor")
     def * = (id, shortname, fullname, description, actor) <> (Options.tupled, Options.unapply)
     //def fk = foreignKey("options_fk", shortname, Domains)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
@@ -190,7 +190,7 @@ object PersistenceSchema {
     def authors = column[Option[String]]("authors")
     def originalDate = column[Option[String]]("original_date")
     def modificationDate = column[Option[String]]("modification_date")
-    def description = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def keywords = column[Option[String]]("keywords")
     def testCaseType = column[Short]("type")
 	  def path = column[String]("path")
@@ -212,7 +212,7 @@ object PersistenceSchema {
 		def authors = column[Option[String]]("authors")
 		def originalDate = column[Option[String]]("original_date")
 		def modificationDate = column[Option[String]]("modification_date")
-		def description = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+		def description = column[Option[String]]("description", O.SqlType("TEXT"))
 		def keywords = column[Option[String]]("keywords")
     def specification = column[Long]("specification")
 		def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, specification) <> (TestSuites.tupled, TestSuites.unapply)
@@ -240,8 +240,8 @@ object PersistenceSchema {
     def domain = column[Option[String]]("domain")
 	  def result = column[String]("result")
 	  def startTime = column[Timestamp]("start_time")
-	  def endTime = column[Option[Timestamp]]("end_time", O.Nullable, O.DBType("TIMESTAMP"))
-	  def tpl = column[String]("tpl", O.DBType("BLOB"))
+	  def endTime = column[Option[Timestamp]]("end_time", O.SqlType("TIMESTAMP"))
+	  def tpl = column[String]("tpl", O.SqlType("BLOB"))
     def * = (testSessionId, sutId, sut, organizationId, organization, communityId, community, testCaseId, testCase, testSuiteId, testSuite, actorId, actor, specificationId, specification, domainId, domain, result, startTime, endTime, tpl) <> (TestResult.tupled, TestResult.unapply)
     //def fk1 = foreignKey("tr_fk_1", sutId, Systems)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
     //def fk2 = foreignKey("tr_fk_2", testcase, TestCases)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
@@ -359,7 +359,7 @@ object PersistenceSchema {
   class LandingPagesTable(tag: Tag) extends Table[LandingPages](tag, "LandingPages") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def name = column[String]("name")
-    def description = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def content = column[String]("content")
     def default = column[Boolean]("default_flag")
     def community = column[Long]("community")
@@ -370,8 +370,8 @@ object PersistenceSchema {
 
   class SystemConfigurationsTable(tag: Tag) extends Table[SystemConfigurations](tag, "SystemConfigurations") {
     def name = column[String]("name", O.PrimaryKey)
-    def parameter = column[Option[String]]("parameter", O.Nullable)
-    def description = column[Option[String]]("description", O.Nullable)
+    def parameter = column[Option[String]]("parameter")
+    def description = column[Option[String]]("description")
     def * = (name, parameter, description) <> (SystemConfigurations.tupled, SystemConfigurations.unapply)
   }
   val systemConfigurations = TableQuery[SystemConfigurationsTable]
@@ -380,7 +380,7 @@ object PersistenceSchema {
   class LegalNoticesTable(tag: Tag) extends Table[LegalNotices](tag, "LegalNotices") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def name = column[String]("name")
-    def description = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def content = column[String]("content")
     def default = column[Boolean]("default_flag")
     def community = column[Long]("community")
@@ -392,7 +392,7 @@ object PersistenceSchema {
   class ErrorTemplatesTable(tag: Tag) extends Table[ErrorTemplates](tag, "ErrorTemplates") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def name = column[String]("name")
-    def description = column[Option[String]]("description", O.Nullable, O.DBType("TEXT"))
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def content = column[String]("content")
     def default = column[Boolean]("default_flag")
     def community = column[Long]("community")
@@ -403,17 +403,17 @@ object PersistenceSchema {
 
   class ConformanceCertificatesTable(tag: Tag) extends Table[ConformanceCertificates](tag, "ConformanceCertificates") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
-    def title = column[Option[String]]("title", O.Nullable, O.DBType("TEXT"))
-    def message = column[Option[String]]("message", O.Nullable, O.DBType("TEXT"))
+    def title = column[Option[String]]("title", O.SqlType("TEXT"))
+    def message = column[Option[String]]("message", O.SqlType("TEXT"))
     def includeMessage = column[Boolean]("include_message")
     def includeTestStatus = column[Boolean]("include_test_status")
     def includeTestCases = column[Boolean]("include_test_cases")
     def includeDetails = column[Boolean]("include_details")
     def includeSignature = column[Boolean]("include_signature")
-    def keystoreFile = column[Option[String]]("keystore_file", O.DBType("BLOB"))
-    def keystoreType = column[Option[String]]("keystore_type", O.Nullable, O.DBType("TEXT"))
-    def keystorePassword = column[Option[String]]("keystore_pass", O.Nullable, O.DBType("TEXT"))
-    def keyPassword = column[Option[String]]("key_pass", O.Nullable, O.DBType("TEXT"))
+    def keystoreFile = column[Option[String]]("keystore_file", O.SqlType("BLOB"))
+    def keystoreType = column[Option[String]]("keystore_type", O.SqlType("TEXT"))
+    def keystorePassword = column[Option[String]]("keystore_pass", O.SqlType("TEXT"))
+    def keyPassword = column[Option[String]]("key_pass", O.SqlType("TEXT"))
     def community = column[Long]("community")
     def * = (id, title, message, includeMessage, includeTestStatus, includeTestCases, includeDetails, includeSignature, keystoreFile, keystoreType, keystorePassword, keyPassword, community) <> (ConformanceCertificates.tupled, ConformanceCertificates.unapply)
   }

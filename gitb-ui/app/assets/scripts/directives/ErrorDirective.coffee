@@ -7,7 +7,7 @@
 			'</div>'
 		restrict: 'A'
 		link: (scope, element, attrs) ->
-			@$log.debug scope.error
+			# @$log.debug scope.error
 ]
 
 @directives.directive 'errorTemplateEditor', ['Constants',

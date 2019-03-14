@@ -1,7 +1,7 @@
 class ConfirmationDialogService
 
-  @$inject = ['$q', '$modal']
-  constructor: (@$q, @$modal) ->
+  @$inject = ['$q', '$uibModal']
+  constructor: (@$q, @$uibModal) ->
 
   notify: (headerText, bodyText, buttonText) =>
     modalOptions =
@@ -9,6 +9,7 @@ class ConfirmationDialogService
       controller: 'ConfirmationDialogController'
       controllerAs: 'controller'
       backdrop: 'static'
+      keyboard: false
       resolve:
         headerText: () => headerText
         bodyText: () => bodyText
@@ -17,7 +18,7 @@ class ConfirmationDialogService
         sameStyles: () => true
         oneButton: () => true
 
-    @$modal.open(modalOptions).result
+    @$uibModal.open(modalOptions).result
 
   confirm: (headerText, bodyText, actionButtonText, closeButtonText, sameStyles) =>
     modalOptions =
@@ -25,6 +26,7 @@ class ConfirmationDialogService
       controller: 'ConfirmationDialogController'
       controllerAs: 'controller'
       backdrop: 'static'
+      keyboard: false
       resolve:
         headerText: () => headerText
         bodyText: () => bodyText
@@ -33,6 +35,6 @@ class ConfirmationDialogService
         sameStyles: () => sameStyles
         oneButton: () => false
 
-    @$modal.open(modalOptions).result
+    @$uibModal.open(modalOptions).result
 
 services.service('ConfirmationDialogService', ConfirmationDialogService)

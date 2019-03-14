@@ -1,31 +1,31 @@
 package persistence
 
 import config.Configurations
+import javax.inject.{Inject, Singleton}
 import managers.BaseManager
 import models.{Token, Users}
-import org.apache.commons.lang.RandomStringUtils
+import org.apache.commons.lang3.RandomStringUtils
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import persistence.cache.TokenCache
 import persistence.db._
+import play.api.db.slick.DatabaseConfigProvider
 
-import scala.slick.driver.MySQLDriver.simple._
+@Singleton
+class AuthManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
-object AuthManager extends BaseManager {
+  import dbConfig.profile.api._
+
   def logger = LoggerFactory.getLogger("AuthManager")
 
   def checkEmailAvailability(email:String): Boolean = {
-    DB.withSession { implicit session:Session =>
-      val q = PersistenceSchema.users.filter(_.email === email)
-      !q.firstOption.isDefined
-    }
+    val q = PersistenceSchema.users.filter(_.email === email)
+    !exec(q.result.headOption).isDefined
   }
 
   def checkUserByEmail(email:String, passwd:String): Option[Users] = {
-    DB.withSession { implicit session:Session =>
-      val query = PersistenceSchema.users.filter(_.email === email).firstOption
-      if (query.isDefined && BCrypt.checkpw(passwd, query.get.password)) query else None
-    }
+    val query = exec(PersistenceSchema.users.filter(_.email === email).result.headOption)
+    if (query.isDefined && BCrypt.checkpw(passwd, query.get.password)) query else None
   }
 
   def generateTokens(userId:Long): Token = {
@@ -44,7 +44,7 @@ object AuthManager extends BaseManager {
     val userId = TokenCache.checkRefreshToken(refreshToken)
 
     //2) If so, generate new tokens
-    val tokens = AuthManager.generateTokens(userId)
+    val tokens = generateTokens(userId)
 
     //3) Delete the old ones and return the new
     TokenCache.deleteRefreshToken(refreshToken)

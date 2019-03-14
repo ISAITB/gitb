@@ -1,6 +1,6 @@
 class SystemsController
-	@$inject = ['$log', '$scope', '$state', '$window', 'SystemService', 'ErrorService', '$modal', 'DataService', '$location']
-	constructor: (@$log, @$scope, @$state, @$window, @SystemService, @ErrorService, @$modal, @DataService, @$location) ->
+	@$inject = ['$log', '$scope', '$state', '$window', 'SystemService', 'ErrorService', '$uibModal', 'DataService', '$location']
+	constructor: (@$log, @$scope, @$state, @$window, @SystemService, @ErrorService, @$uibModal, @DataService, @$location) ->
 		@$log.debug "Constructing SystemsController"
 		@systems  = []       # systems of the organization
 		@alerts   = []       # alerts to be displayed
@@ -48,11 +48,12 @@ class SystemsController
 				system: () => {}
 				organisationId: () => @organization.id
 			size: 'lg'
-		modalInstance = @$modal.open(modalOptions)
+		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result
+			.finally(angular.noop)
 			.then((result) => 
 				@systems = result
-			)
+			, angular.noop)
 
 	onSystemSelect: (system) =>
 		if !@$scope.editing
@@ -67,8 +68,9 @@ class SystemsController
 				system: () => system
 				organisationId: () => @organization.id
 			size: 'lg'
-		modalInstance = @$modal.open(modalOptions)
+		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result
+			.finally(angular.noop)
 			.then((result) => 
 				@$scope.editing = false
 				@systems = result

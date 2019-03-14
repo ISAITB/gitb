@@ -1039,7 +1039,7 @@ Version: 		2.9.0 - Wed Mar 19 2014 16:59:18
 
 	Core.initialize();
 
-	$(window).load(function () {
+	$(window).on('load', function () {
 
 		// Sticky Meny
 		Core.stickyMenu();

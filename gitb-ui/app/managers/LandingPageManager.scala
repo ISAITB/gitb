@@ -1,103 +1,104 @@
 package managers
 
+import javax.inject.{Inject, Singleton}
 import models._
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
+import play.api.db.slick.DatabaseConfigProvider
 
-import scala.slick.driver.MySQLDriver.simple._
+import scala.collection.mutable.ListBuffer
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /**
  * Created by VWYNGAET on 25/11/2016.
  */
-object LandingPageManager extends BaseManager {
+@Singleton
+class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+
+  import dbConfig.profile.api._
+
   def logger = LoggerFactory.getLogger("landingPageManager")
 
   /**
    * Gets all landing pages for the specified community
    */
   def getLandingPagesByCommunity(communityId: Long): List[LandingPages] = {
-    DB.withSession { implicit session =>
-      val pages = PersistenceSchema.landingPages.filter(_.community === communityId)
-          .sortBy(_.name.asc)
-        .list
-      pages
-    }
+    val pages = exec(PersistenceSchema.landingPages.filter(_.community === communityId)
+        .sortBy(_.name.asc)
+      .result.map(_.toList))
+    pages
   }
 
   /**
    * Checks if a landing page with given name exists for the given community
    */
   def checkUniqueName(name: String, communityId: Long): Boolean = {
-    DB.withSession { implicit session =>
-      val firstOption = PersistenceSchema.landingPages.filter(_.community === communityId).filter(_.name === name).firstOption
-      firstOption.isEmpty
-    }
+    val firstOption = exec(PersistenceSchema.landingPages.filter(_.community === communityId).filter(_.name === name).result.headOption)
+    firstOption.isEmpty
   }
 
   /**
     * Creates new landing page
     */
   def createLandingPage(landingPage: LandingPages) = {
-    DB.withTransaction { implicit session =>
-      if (landingPage.default) {
-        val q = for {l <- PersistenceSchema.landingPages if l.default === true && l.community === landingPage.community} yield (l.default)
-        q.update(false)
-      }
-      PersistenceSchema.insertLandingPage += landingPage
+    val actions = new ListBuffer[DBIO[_]]()
+    if (landingPage.default) {
+      val q = for {l <- PersistenceSchema.landingPages if l.default === true && l.community === landingPage.community} yield (l.default)
+      actions += q.update(false)
     }
+    actions += (PersistenceSchema.insertLandingPage += landingPage)
+    exec(DBIO.seq(actions.map(a => a): _*).transactionally)
   }
 
   /**
     * Gets landing page with specified id
     */
   def getLandingPageById(pageId: Long): LandingPage = {
-    DB.withSession { implicit session =>
-      val p = PersistenceSchema.landingPages.filter(_.id === pageId).firstOption.get
-      val page = new LandingPage(p)
-      page
-    }
+    val p = exec(PersistenceSchema.landingPages.filter(_.id === pageId).result.head)
+    val page = new LandingPage(p)
+    page
   }
 
   /**
    * Checks if a landing page with given name exists for the given community
    */
   def checkUniqueName(pageId: Long, name: String, communityId: Long): Boolean = {
-    DB.withSession { implicit session =>
-      val firstOption = PersistenceSchema.landingPages.filter(_.community === communityId).filter(_.id =!= pageId).filter(_.name === name).firstOption
-      firstOption.isEmpty
-    }
+    val firstOption = exec(PersistenceSchema.landingPages.filter(_.community === communityId).filter(_.id =!= pageId).filter(_.name === name).result.headOption)
+    firstOption.isEmpty
   }
 
   /**
    * Updates landing page
    */
   def updateLandingPage(pageId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long) = {
-    DB.withTransaction { implicit session =>
-      val landingPageOption = PersistenceSchema.landingPages.filter(_.id === pageId).firstOption
-      if (landingPageOption.isDefined) {
-        val landingPage = landingPageOption.get
+    val landingPageOption = exec(PersistenceSchema.landingPages.filter(_.id === pageId).result.headOption)
+    if (landingPageOption.isDefined) {
+      val actions = new ListBuffer[DBIO[_]]()
 
-        if (!name.isEmpty && landingPage.name != name) {
-          val q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.name)
-          q.update(name)
-        }
+      val landingPage = landingPageOption.get
 
-        if (content != landingPage.content) {
-          val q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.content)
-          q.update(content)
-        }
-
-        if (!landingPage.default && default) {
-          var q = for {l <- PersistenceSchema.landingPages if l.default === true && l.community === communityId} yield (l.default)
-          q.update(false)
-
-          q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.default)
-          q.update(default)
-        }
-
-        val q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.description)
-        q.update(description)
+      if (!name.isEmpty && landingPage.name != name) {
+        val q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.name)
+        actions += q.update(name)
       }
+
+      if (content != landingPage.content) {
+        val q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.content)
+        actions += q.update(content)
+      }
+
+      if (!landingPage.default && default) {
+        var q = for {l <- PersistenceSchema.landingPages if l.default === true && l.community === communityId} yield (l.default)
+        actions += q.update(false)
+
+        q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.default)
+        actions += q.update(default)
+      }
+
+      val q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.description)
+      actions += q.update(description)
+
+      exec(DBIO.seq(actions.map(a => a): _*).transactionally)
     }
   }
 
@@ -105,26 +106,22 @@ object LandingPageManager extends BaseManager {
    * Deletes landing page with specified id
    */
   def deleteLandingPage(pageId: Long) {
-    DB.withTransaction { implicit session =>
-      PersistenceSchema.landingPages.filter(_.id === pageId).delete
-    }
+    exec(PersistenceSchema.landingPages.filter(_.id === pageId).delete.transactionally)
   }
 
   /**
     * Gets the default landing page for given community
     */
   def getCommunityDefaultLandingPage(communityId: Long): LandingPage = {
-    DB.withSession { implicit session =>
-      val p = PersistenceSchema.landingPages.filter(_.community === communityId).filter(_.default === true).firstOption
-      val defaultPage = p match {
-        case Some(p) => new LandingPage(p)
-        case None => null
-      }
-      defaultPage
+    val p = exec(PersistenceSchema.landingPages.filter(_.community === communityId).filter(_.default === true).result.headOption)
+    val defaultPage = p match {
+      case Some(p) => new LandingPage(p)
+      case None => null
     }
+    defaultPage
   }
 
-  def deleteLandingPageByCommunity(communityId: Long)(implicit session: Session) = {
+  def deleteLandingPageByCommunity(communityId: Long) = {
     PersistenceSchema.landingPages.filter(_.community === communityId).delete
   }
 

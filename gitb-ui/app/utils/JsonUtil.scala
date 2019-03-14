@@ -2,6 +2,8 @@ package utils
 
 import java.util
 
+import com.gitb.tr._
+import javax.xml.bind.JAXBElement
 import models.Enums.TestResultStatus
 import models._
 import play.api.libs.json._
@@ -486,9 +488,9 @@ object JsonUtil {
     DomainParameter(
       idToUse,
       (jsonConfig \ "name").as[String],
-      (jsonConfig \ "desc").as[Option[String]],
+      (jsonConfig \ "desc").asOpt[String],
       (jsonConfig \ "kind").as[String],
-      (jsonConfig \ "value").as[Option[String]],
+      (jsonConfig \ "value").asOpt[String],
       domainId
     )
   }
@@ -497,17 +499,17 @@ object JsonUtil {
     val jsonConfig = Json.parse(json).as[JsObject]
     ConformanceCertificates(
       0L,
-      (jsonConfig \ "title").as[Option[String]],
-      (jsonConfig \ "message").as[Option[String]],
+      (jsonConfig \ "title").asOpt[String],
+      (jsonConfig \ "message").asOpt[String],
       (jsonConfig \ "includeMessage").as[Boolean],
       (jsonConfig \ "includeTestStatus").as[Boolean],
       (jsonConfig \ "includeTestCases").as[Boolean],
       (jsonConfig \ "includeDetails").as[Boolean],
       (jsonConfig \ "includeSignature").as[Boolean],
-      (jsonConfig \ "keystoreFile").as[Option[String]],
-      (jsonConfig \ "keystoreType").as[Option[String]],
-      (jsonConfig \ "keystorePassword").as[Option[String]],
-      (jsonConfig \ "keyPassword").as[Option[String]],
+      (jsonConfig \ "keystoreFile").asOpt[String],
+      (jsonConfig \ "keystoreType").asOpt[String],
+      (jsonConfig \ "keystorePassword").asOpt[String],
+      (jsonConfig \ "keyPassword").asOpt[String],
       communityId
     )
   }
@@ -523,10 +525,10 @@ object JsonUtil {
       false,
       false,
       false,
-      (jsonConfig \ "keystoreFile").as[Option[String]],
-      (jsonConfig \ "keystoreType").as[Option[String]],
-      (jsonConfig \ "keystorePassword").as[Option[String]],
-      (jsonConfig \ "keyPassword").as[Option[String]],
+      (jsonConfig \ "keystoreFile").asOpt[String],
+      (jsonConfig \ "keystoreType").asOpt[String],
+      (jsonConfig \ "keystorePassword").asOpt[String],
+      (jsonConfig \ "keyPassword").asOpt[String],
       communityId
     )
   }
@@ -1081,7 +1083,55 @@ object JsonUtil {
       "success"    -> result.success,
       "errorInformation"  -> result.errorInformation,
       "pendingFolderId"  -> result.pendingTestSuiteFolderName,
-      "items" -> jsTestSuiteUploadItemResults(result.items)
+      "exists" -> result.exists,
+      "items" -> jsTestSuiteUploadItemResults(result.items),
+      "validationReport" -> (if (result.validationReport != null) jsTAR(result.validationReport) else JsNull)
+    )
+    json
+  }
+
+  def jsTAR(report: TAR): JsObject = {
+    val json = Json.obj(
+      "counters" -> jsValidationCounters(report.getCounters),
+      "result" -> report.getResult.value(),
+      "reports" -> jsTARReports(report.getReports)
+    )
+    json
+  }
+
+  def jsTARReports(reports: TestAssertionGroupReportsType): JsArray = {
+    var json = Json.arr()
+    if (reports != null && reports.getInfoOrWarningOrError != null) {
+      import scala.collection.JavaConversions._
+      reports.getInfoOrWarningOrError.toList.foreach(item => {
+        val jsItem = jsTestAssertionReportType(item)
+        if (jsItem != null) {
+          json = json.append(jsItem)
+        }
+      })
+    }
+    json
+  }
+
+  def jsTestAssertionReportType(reportItem: JAXBElement[TestAssertionReportType]): JsObject = {
+    if (reportItem != null && reportItem.getValue.isInstanceOf[BAR]) {
+      val json = Json.obj(
+        "level" -> reportItem.getName.getLocalPart,
+        "assertionId" -> reportItem.getValue.asInstanceOf[BAR].getAssertionID,
+        "description" -> reportItem.getValue.asInstanceOf[BAR].getDescription,
+        "location" -> reportItem.getValue.asInstanceOf[BAR].getLocation
+      )
+      json
+    } else {
+      null
+    }
+  }
+
+  def jsValidationCounters(counters: ValidationCounters): JsObject = {
+    val json = Json.obj(
+      "infos" -> counters.getNrOfAssertions.intValue(),
+      "errors" -> counters.getNrOfErrors.intValue(),
+      "warnings" -> counters.getNrOfWarnings.intValue()
     )
     json
   }

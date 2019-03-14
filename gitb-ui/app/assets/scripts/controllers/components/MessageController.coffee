@@ -1,9 +1,9 @@
 class MessageController
 
-  @$inject = ['$log', '$modalInstance', '$scope', 'headerText', 'bodyText']
-  constructor: (@$log, @$modalInstance, @$scope, @headerText, @bodyText) ->
+  @$inject = ['$log', '$uibModalInstance', '$scope', 'headerText', 'bodyText']
+  constructor: (@$log, @$uibModalInstance, @$scope, @headerText, @bodyText) ->
 
     @$scope.close = () =>
-      @$modalInstance.dismiss()
+      @$uibModalInstance.dismiss()
 
 @controllers.controller 'MessageController', MessageController

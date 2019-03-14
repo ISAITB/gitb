@@ -1,17 +1,16 @@
 package controllers
 
-import org.slf4j.{LoggerFactory, Logger}
-import play.api.mvc._
 import filters.CorsFilter
-import play.api.Routes
+import javax.inject.Inject
+import play.api.mvc._
+import play.api.routing._
 
-class Application extends Controller {
+import scala.collection.mutable.ListBuffer
 
-  private final val logger: Logger = LoggerFactory.getLogger(classOf[Application])
+class Application @Inject() (webJarAssets: WebJarAssets) extends Controller {
 
-  def index = Action {
-    logger.info("Serving index page...")
-    Ok(views.html.index())
+  def index() = Action {
+    Ok(views.html.index(webJarAssets))
   }
 
   def preFlight(all: String) = Action {
@@ -25,18 +24,17 @@ class Application extends Controller {
 
   def javascriptRoutes = Action { implicit request =>
     //cache for all the methods defined in the controllers in app.controllers package
-    val routeCache = {
-      val jsRoutesClass = classOf[routes.javascript]
-      val controllers = jsRoutesClass.getFields().map(_.get(null))
-      controllers.flatMap { controller =>
-        controller.getClass().getDeclaredMethods().map { action =>
-          action.invoke(controller).asInstanceOf[play.core.Router.JavascriptReverseRoute]
+    val jsRoutesClass = classOf[routes.javascript]
+    val controllers = jsRoutesClass.getFields.map(_.get(null))
+    val routeActions = new ListBuffer[play.api.routing.JavaScriptReverseRoute]()
+    controllers.foreach{ controller =>
+      controller.getClass.getDeclaredMethods.foreach{ action =>
+        if (action.getReturnType == classOf[play.api.routing.JavaScriptReverseRoute]) {
+          routeActions += action.invoke(controller).asInstanceOf[play.api.routing.JavaScriptReverseRoute]
         }
       }
     }
-
-    Ok(Routes.javascriptRouter("jsRoutes")(routeCache:_*)).as("text/javascript")
+    Ok(JavaScriptReverseRouter("jsRoutes")(routeActions.toList:_*)).as("text/javascript")
   }
-
 
 }

@@ -1,78 +1,64 @@
 package managers
 
+import javax.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
+import play.api.db.slick.DatabaseConfigProvider
 
-import scala.slick.driver.MySQLDriver.simple._
+import scala.concurrent.ExecutionContext.Implicits.global
 
-object ParameterManager extends BaseManager {
+@Singleton
+class ParameterManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
   def logger = LoggerFactory.getLogger("ParameterManager")
 
+  import dbConfig.profile.api._
+
   def checkParameterExistsForEndpoint(parameterName: String, endpointId: Long, otherThanId: Option[Long]): Boolean = {
-    DB.withSession { implicit session =>
-      var parameterQuery = PersistenceSchema.parameters
-        .filter(_.name === parameterName)
-        .filter(_.endpoint === endpointId)
-      if (otherThanId.isDefined) {
-        parameterQuery = parameterQuery.filter(_.id =!= otherThanId.get)
-      }
-      val parameter = parameterQuery.firstOption
-      parameter.isDefined
+    var parameterQuery = PersistenceSchema.parameters
+      .filter(_.name === parameterName)
+      .filter(_.endpoint === endpointId)
+    if (otherThanId.isDefined) {
+      parameterQuery = parameterQuery.filter(_.id =!= otherThanId.get)
     }
+    exec(parameterQuery.result.headOption).isDefined
   }
 
   def createParameterWrapper(parameter: models.Parameters) = {
-    DB.withTransaction { implicit session =>
-      createParameter(parameter)
-    }
+    exec(createParameter(parameter).transactionally)
   }
 
-  def createParameter(parameter: models.Parameters)(implicit session: Session) = {
-    PersistenceSchema.parameters.returning(PersistenceSchema.parameters.map(_.id)).insert(parameter)
+  def createParameter(parameter: models.Parameters) = {
+    PersistenceSchema.parameters.returning(PersistenceSchema.parameters.map(_.id)) += parameter
   }
 
-  def deleteParameterByEndPoint(endPointId: Long)(implicit session: Session) = {
-    val ids = PersistenceSchema.parameters.filter(_.endpoint === endPointId).map(_.id).list
-    ids foreach { id =>
-      delete(id)
-    }
+  def deleteParameterByEndPoint(endPointId: Long) = {
+    val action = for {
+      ids <- PersistenceSchema.parameters.filter(_.endpoint === endPointId).map(_.id).result
+      _ <- DBIO.seq(ids.map(id => delete(id)): _*)
+    } yield()
+    action
   }
 
   def deleteParameter(parameterId: Long) = {
-    DB.withTransaction { implicit session =>
-      delete(parameterId)
-    }
+    exec(delete(parameterId).transactionally)
   }
 
-  def delete(parameterId: Long)(implicit session: Session) = {
-    PersistenceSchema.parameters.filter(_.id === parameterId).delete
+  def delete(parameterId: Long) = {
+    PersistenceSchema.parameters.filter(_.id === parameterId).delete andThen
     PersistenceSchema.configs.filter(_.parameter === parameterId).delete
   }
 
   def updateParameterWrapper(parameterId: Long, name: String, description: Option[String], use: String, kind: String) = {
-    DB.withTransaction { implicit session =>
-      updateParameter(parameterId, name, description, use, kind)
-    }
+    exec(updateParameter(parameterId, name, description, use, kind).transactionally)
   }
 
   def getParameterById(parameterId: Long) = {
-    DB.withSession { implicit session =>
-      PersistenceSchema.parameters.filter(_.id === parameterId).firstOption
-    }
+    exec(PersistenceSchema.parameters.filter(_.id === parameterId).result.headOption)
   }
 
-  def updateParameter(parameterId: Long, name: String, description: Option[String], use: String, kind: String)(implicit session: Session) = {
-    val q1 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.desc)
-    q1.update(description)
-
-    val q2 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.use)
-    q2.update(use)
-
-    val q3 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.kind)
-    q3.update(kind)
-
-    val q4 = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.name)
-    q4.update(name)
+  def updateParameter(parameterId: Long, name: String, description: Option[String], use: String, kind: String) = {
+    val q = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.desc, p.use, p.kind, p.name)
+    q.update(description, use, kind, name)
   }
 
 }

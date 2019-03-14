@@ -1,8 +1,8 @@
 class EditorModalController
 
-  @$inject = ['$scope', '$log', '$modalInstance', 'name', 'editorOptions', 'indicators', 'lineNumber']
+  @$inject = ['$scope', '$log', '$uibModalInstance', 'name', 'editorOptions', 'indicators', 'lineNumber']
 
-  constructor: (@$scope, @$log, @$modalInstance, documentName, editorOptions, indicators, lineNumber) ->
+  constructor: (@$scope, @$log, @$uibModalInstance, documentName, editorOptions, indicators, lineNumber) ->
     @$log.debug "Constructing EditorModalController"
 
     @$scope.isNameVisible = documentName?
@@ -13,7 +13,7 @@ class EditorModalController
     @$scope.isDownloadVisible = editorOptions.download? && editorOptions.value?
 
     @$scope.close = () =>
-      @$modalInstance.dismiss()
+      @$uibModalInstance.dismiss()
 
     @$scope.copyToClipboard = () =>
       cm = $('.CodeMirror')[0].CodeMirror

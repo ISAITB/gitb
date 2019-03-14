@@ -1,7 +1,7 @@
 class MessageService
 
-  @$inject = ['$q', '$modal']
-  constructor: (@$q, @$modal) ->
+  @$inject = ['$q', '$uibModal']
+  constructor: (@$q, @$uibModal) ->
 
   showMessage: (headerText, bodyText) =>
     modalOptions =
@@ -12,6 +12,6 @@ class MessageService
         headerText: () => headerText
         bodyText: () => bodyText
 
-    @$modal.open(modalOptions)
+    @$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
 
 services.service('MessageService', MessageService)

@@ -1,5 +1,7 @@
 package filters
 
+import akka.stream.Materializer
+import javax.inject.Inject
 import play.api.mvc._
 import play.api.http.HeaderNames.{ACCESS_CONTROL_ALLOW_ORIGIN, PRAGMA, _}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
@@ -11,7 +13,7 @@ object CorsFilter {
   def headers = "Authorization, Origin, X-Requested-With, Content-Type, Accept, X-Custom-Header"
 }
 
-class CorsFilter extends EssentialFilter {
+class CorsFilter @Inject() (implicit val mat: Materializer) extends EssentialFilter {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[CorsFilter])
 
   def apply(next: EssentialAction) = new EssentialAction {

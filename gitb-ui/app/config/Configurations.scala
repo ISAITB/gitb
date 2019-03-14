@@ -14,16 +14,6 @@ object Configurations {
 
   var DB_ROOT_URL:String = ""
   var DB_NAME:String = ""
-/*
-  // c3p0 connection pooling settings
-  var C3P0_ACQUIRE_INCREMENT:Int = 0
-  var C3P0_CONNECTION_TIMEOUT = 0
-  var C3P0_EXCESS_TIMEOUT = 0
-  var C3P0_MAX_POOLSIZE = 0
-  var C3P0_MIN_POOLSIZE = 0
-  var C3P0_UNRETURNED_TIMEOUT = 0
-  var C3P0_HELPER_THREADS = 0
-  */
 
   // Redis parameters
   var REDIS_HOST:String = ""
@@ -74,6 +64,9 @@ object Configurations {
   var TSA_SERVER_ENABLED = false
   var TSA_SERVER_URL = ""
 
+  var VALIDATION_TDL_EXTERNAL_ENABLED = false
+  var VALIDATION_TDL_EXTERNAL_URL = ""
+
   var MASTER_PASSWORD: Array[Char] = null
 
   var SMTP_PROPERTIES = new Properties()
@@ -89,16 +82,7 @@ object Configurations {
     DB_PASSWORD     = conf.getString("db.default.password")
     DB_ROOT_URL     = conf.getString("db.default.rooturl")
     DB_NAME         = conf.getString("db.default.name")
-/*
-    //Parse C3P0 Parameters
-    C3P0_ACQUIRE_INCREMENT  = conf.getInt("c3p0.acquire_increment")
-    C3P0_CONNECTION_TIMEOUT = conf.getInt("c3p0.connection_timeout")
-    C3P0_EXCESS_TIMEOUT     = conf.getInt("c3p0.excess_timeout")
-    C3P0_MAX_POOLSIZE       = conf.getInt("c3p0.max_poolsize")
-    C3P0_MIN_POOLSIZE       = conf.getInt("c3p0.min_poolsize")
-    C3P0_UNRETURNED_TIMEOUT = conf.getInt("c3p0.unreturned_timeout")
-    C3P0_HELPER_THREADS     = conf.getInt("c3p0.helper_threads")
-*/
+
     //Parse Redis Parameters
     REDIS_HOST = conf.getString("redis.host")
     REDIS_PORT = conf.getInt("redis.port")
@@ -170,6 +154,11 @@ object Configurations {
     TSA_SERVER_ENABLED = fromEnv("TSA_SERVER_ENABLED", conf.getString("signature.tsa.enabled")).toBoolean
     if (TSA_SERVER_ENABLED) {
       TSA_SERVER_URL = fromEnv("TSA_SERVER_URL", conf.getString("signature.tsa.url")).toString
+    }
+
+    VALIDATION_TDL_EXTERNAL_ENABLED = fromEnv("VALIDATION_TDL_EXTERNAL_ENABLED", conf.getString("validation.tdl.external.enabled")).toBoolean
+    if (VALIDATION_TDL_EXTERNAL_ENABLED) {
+      VALIDATION_TDL_EXTERNAL_URL = fromEnv("VALIDATION_TDL_EXTERNAL_URL", conf.getString("validation.tdl.external.url")).toString
     }
 
   }

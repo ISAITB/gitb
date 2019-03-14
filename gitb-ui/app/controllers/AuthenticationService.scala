@@ -1,13 +1,14 @@
 package controllers
 
 import play.api.mvc._
-import org.slf4j.{LoggerFactory, Logger}
-import controllers.util.{ResponseConstructor, ParameterExtractor, Parameters}
+import org.slf4j.{Logger, LoggerFactory}
+import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
 import persistence.{AccountManager, AuthManager}
 import play.api.libs.concurrent.Execution.Implicits._
 import exceptions._
+import javax.inject.Inject
 
-class AuthenticationService extends Controller{
+class AuthenticationService @Inject() (accountManager: AccountManager, authManager: AuthManager) extends Controller{
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthenticationService])
   /**
    * OAuth2.0 request (Resource Owner Password Credentials Grant) for getting or refreshing access token
@@ -20,10 +21,10 @@ class AuthenticationService extends Controller{
         val email  = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL)
         val passwd = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD)
 
-        val result = AuthManager.checkUserByEmail(email, passwd)
+        val result = authManager.checkUserByEmail(email, passwd)
         //user found
         if(result.isDefined){
-          val tokens = AuthManager.generateTokens(result.get.id)
+          val tokens = authManager.generateTokens(result.get.id)
           ResponseConstructor.constructOauthResponse(tokens)
         }
         //no user with given credentials
@@ -35,7 +36,7 @@ class AuthenticationService extends Controller{
       case Parameters.REFRESH_TOKEN =>
         val refreshToken  = ParameterExtractor.requiredBodyParameter(request, Parameters.REFRESH_TOKEN)
 
-        val tokens = AuthManager.refreshTokens(refreshToken)
+        val tokens = authManager.refreshTokens(refreshToken)
         ResponseConstructor.constructOauthResponse(tokens)
 
       //Invalid grant type
@@ -48,7 +49,7 @@ class AuthenticationService extends Controller{
    */
   def checkEmail = Action.apply { request =>
     val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
-    val isAvailable = AuthManager.checkEmailAvailability(email)
+    val isAvailable = authManager.checkEmailAvailability(email)
     ResponseConstructor.constructAvailabilityResponse(isAvailable)
   }
 }

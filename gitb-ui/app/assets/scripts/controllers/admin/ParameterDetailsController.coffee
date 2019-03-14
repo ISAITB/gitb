@@ -1,7 +1,7 @@
 class ParameterDetailsController
 
-	@$inject = ['$log', '$scope', '$modalInstance', 'parameter', 'ConfirmationDialogService']
-	constructor: (@$log, @$scope, @$modalInstance, parameter, @ConfirmationDialogService) ->
+	@$inject = ['$log', '$scope', '$uibModalInstance', 'parameter', 'ConfirmationDialogService']
+	constructor: (@$log, @$scope, @$uibModalInstance, parameter, @ConfirmationDialogService) ->
 		@$log.debug "Constructing ParameterDetailsController"
 		@$scope.parameter = parameter
 
@@ -13,7 +13,7 @@ class ParameterDetailsController
 				data = {}
 				data.parameter = @$scope.parameter
 				data.action = 'update'
-				@$modalInstance.close(data)
+				@$uibModalInstance.close(data)
 
 		@$scope.deleteParameter = () =>
 			@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this parameter?", "Yes", "No")
@@ -21,9 +21,9 @@ class ParameterDetailsController
 					data = {}
 					data.parameter = @$scope.parameter
 					data.action = 'delete'
-					@$modalInstance.close(data)
+					@$uibModalInstance.close(data)
 
 		@$scope.cancel = () =>
-			@$modalInstance.dismiss()
+			@$uibModalInstance.dismiss()
 
 @controllers.controller 'ParameterDetailsController', ParameterDetailsController

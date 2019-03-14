@@ -1,22 +1,23 @@
 package controllers
 
 import controllers.util.{ParameterExtractor, ResponseConstructor}
+import javax.inject.Inject
 import managers.ParameterManager
 import play.api.mvc.{Action, Controller}
 
-class ParameterService extends Controller {
+class ParameterService @Inject() (parameterManager: ParameterManager) extends Controller {
 
   def deleteParameter(parameterId: Long) = Action.apply { request =>
-    ParameterManager.deleteParameter(parameterId)
+    parameterManager.deleteParameter(parameterId)
     ResponseConstructor.constructEmptyResponse
   }
 
   def updateParameter(parameterId: Long) = Action.apply { request =>
     val parameter = ParameterExtractor.extractParameter(request)
-    if (ParameterManager.checkParameterExistsForEndpoint(parameter.name, parameter.endpoint, Some(parameterId))) {
+    if (parameterManager.checkParameterExistsForEndpoint(parameter.name, parameter.endpoint, Some(parameterId))) {
       ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the endpoint")
     } else{
-      ParameterManager.updateParameterWrapper(parameterId, parameter.name, parameter.desc, parameter.use, parameter.kind)
+      parameterManager.updateParameterWrapper(parameterId, parameter.name, parameter.desc, parameter.use, parameter.kind)
       ResponseConstructor.constructEmptyResponse
     }
   }

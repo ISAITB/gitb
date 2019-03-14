@@ -1,13 +1,7 @@
 package com.gitb.messaging.layer.transport.udp;
 
-import com.gitb.core.ActorConfiguration;
-import com.gitb.core.Configuration;
 import com.gitb.core.MessagingModule;
-import com.gitb.messaging.IMessagingHandler;
-import com.gitb.messaging.Message;
-import com.gitb.messaging.MessagingReport;
 import com.gitb.messaging.layer.AbstractMessagingHandler;
-import com.gitb.messaging.model.InitiateResponse;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
 import com.gitb.messaging.model.udp.IDatagramListener;
@@ -20,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.List;
 
 /**
  * Created by serbay.

@@ -1,7 +1,7 @@
 class EndpointDetailsController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', 'EndPointService', 'ParameterService', 'ConfirmationDialogService', '$state', '$stateParams', '$modal', 'ErrorService']
-	constructor: (@$log, @$scope, @ConformanceService, @EndPointService, @ParameterService, @ConfirmationDialogService, @$state, @$stateParams, @$modal, @ErrorService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', 'EndPointService', 'ParameterService', 'ConfirmationDialogService', '$state', '$stateParams', '$uibModal', 'ErrorService']
+	constructor: (@$log, @$scope, @ConformanceService, @EndPointService, @ParameterService, @ConfirmationDialogService, @$state, @$stateParams, @$uibModal, @ErrorService) ->
 		@$log.debug "Constructing EndpointDetailsController"
 		@endpointId = @$stateParams.endpoint_id
 		@actorId = @$stateParams.actor_id
@@ -60,14 +60,16 @@ class EndpointDetailsController
 			templateUrl: 'assets/views/admin/domains/create-parameter-modal.html'
 			controller: 'CreateParameterController as CreateParameterController'
 			size: 'lg'
-		modalInstance = @$modal.open(modalOptions)
-		modalInstance.result.then((parameter) => 
-			@ConformanceService.createParameter parameter.name, parameter.description, parameter.use, parameter.kind, @endpointId
-				.then () =>
-					@$state.go(@$state.$current, null, { reload: true });
-				.catch (error) =>
-					@ErrorService.showErrorMessage(error)
-		)
+		modalInstance = @$uibModal.open(modalOptions)
+		modalInstance.result
+			.finally(angular.noop)
+			.then((parameter) => 
+				@ConformanceService.createParameter parameter.name, parameter.description, parameter.use, parameter.kind, @endpointId
+					.then () =>
+						@$state.go(@$state.$current, null, { reload: true });
+					.catch (error) =>
+						@ErrorService.showErrorMessage(error)
+		, angular.noop)
 
 	onParameterSelect: (parameter) =>
 		modalOptions =
@@ -76,20 +78,22 @@ class EndpointDetailsController
 			resolve:
 				parameter: () => parameter
 			size: 'lg'
-		modalInstance = @$modal.open(modalOptions)
-		modalInstance.result.then((data) => 
-			if data.action == 'update'
-				@ParameterService.updateParameter(data.parameter.id, data.parameter.name, data.parameter.desc, data.parameter.use, data.parameter.kind, @endpointId)
-				.then () =>
-					@$state.go(@$state.$current, null, { reload: true });
-				.catch (error) =>
-					@ErrorService.showErrorMessage(error)
-			else
-				@ParameterService.deleteParameter(data.parameter.id)
-				.then () =>
-					@$state.go(@$state.$current, null, { reload: true });
-				.catch (error) =>
-					@ErrorService.showErrorMessage(error)
-		)
+		modalInstance = @$uibModal.open(modalOptions)
+		modalInstance.result
+			.finally(angular.noop)
+			.then((data) => 
+				if data.action == 'update'
+					@ParameterService.updateParameter(data.parameter.id, data.parameter.name, data.parameter.desc, data.parameter.use, data.parameter.kind, @endpointId)
+					.then () =>
+						@$state.go(@$state.$current, null, { reload: true });
+					.catch (error) =>
+						@ErrorService.showErrorMessage(error)
+				else
+					@ParameterService.deleteParameter(data.parameter.id)
+					.then () =>
+						@$state.go(@$state.$current, null, { reload: true });
+					.catch (error) =>
+						@ErrorService.showErrorMessage(error)
+			, angular.noop)
 
 @controllers.controller 'EndpointDetailsController', EndpointDetailsController

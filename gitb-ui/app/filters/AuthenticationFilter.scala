@@ -1,18 +1,19 @@
 package filters
 
+import akka.stream.Materializer
 import play.api.mvc._
+
 import scala.concurrent.Future
 import play.mvc.Http.HeaderNames._
-import controllers.util.{ResponseConstructor, Parameters}
+import controllers.util.{Parameters, ResponseConstructor}
 import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import persistence.cache.TokenCache
 import exceptions._
+import javax.inject.Inject
 import persistence.AccountManager
-import org.slf4j.{LoggerFactory, Logger}
+import org.slf4j.{Logger, LoggerFactory}
 
-class CustomizableHeaders(override protected val data:Seq[(String, Seq[String])]) extends Headers
-
-class AuthenticationFilter extends Filter {
+class AuthenticationFilter @Inject() (implicit val mat: Materializer, accountManager: AccountManager) extends Filter {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthenticationFilter])
 
   val BEARER = "Bearer"
@@ -35,17 +36,15 @@ class AuthenticationFilter extends Filter {
           //check if access token exists for any user
           val userId = TokenCache.checkAccessToken(accessToken)
           //a workaround of customizing request headers to add our userId data, so that controllers can process it
-          val map = requestHeader.headers.toMap + ( Parameters.USER_ID -> Seq("" + userId) )
-          val headers:Seq[(String, Seq[String])] = map.toSeq
-          val customHeaders = new CustomizableHeaders(headers)
+          val customHeaders = requestHeader.headers.add((Parameters.USER_ID,  "" + userId))
           val customRequestHeader = requestHeader.copy(headers = customHeaders)
 
           //check if requested service requires admin access
           if(requiresSystemAdminAccess(requestHeader)) {
             next(customRequestHeader)
           } else if(requiresAdminAccess(requestHeader)){
-            val isAdmin = AccountManager.isAdmin(userId)
-            if(isAdmin){
+            val isAdmin = accountManager.isAdmin(userId)
+              if(isAdmin){
               //has access, execute service
               next(customRequestHeader)
             } else{

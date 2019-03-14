@@ -1,8 +1,8 @@
 class TestStepReportModalController
 
-  @$inject = ['$scope', '$log', '$modalInstance', 'step', 'report', 'ReportService', 'sessionId', 'ErrorService']
+  @$inject = ['$scope', '$log', '$uibModalInstance', 'step', 'report', 'ReportService', 'sessionId', 'ErrorService']
 
-  constructor: (@$scope, @$log, @$modalInstance, step, report, @ReportService, sessionId, @ErrorService) ->
+  constructor: (@$scope, @$log, @$uibModalInstance, step, report, @ReportService, sessionId, @ErrorService) ->
     @$log.debug "Constructing TestStepReportModalController"
 
     @$scope.step = step
@@ -24,6 +24,6 @@ class TestStepReportModalController
                 @ErrorService.showErrorMessage(error)
 
     @$scope.close = () =>
-      @$modalInstance.dismiss()
+      @$uibModalInstance.dismiss()
 
 @controllers.controller 'TestStepReportModalController', TestStepReportModalController

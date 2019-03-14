@@ -10,7 +10,7 @@
 		<param name="dns.address" type="string" desc="IP address that the dns.domain is resolved to"/>
 	</inputs>
     <outputs>
-        <param name="dns.domain" type="string" desc="Result of the DNS query"></param>
+        <param name="dns.domain" type="string" desc="Result of the DNS query"/>
     </outputs>
     <actorConfigs>
         <param name="network.host" desc="Hostname/IP address for the actor"/>

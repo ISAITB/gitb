@@ -1,103 +1,108 @@
 package managers
 
+import javax.inject.{Inject, Singleton}
 import models.Actors
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
+import play.api.db.slick.DatabaseConfigProvider
+import slick.dbio.DBIOAction
 
-import scala.slick.driver.MySQLDriver.simple._
+import scala.concurrent.ExecutionContext.Implicits.global
 
-object ActorManager extends BaseManager {
+@Singleton
+class ActorManager @Inject() (testResultManager: TestResultManager, endPointManager: EndPointManager, optionManager: OptionManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+
+  import dbConfig.profile.api._
+
   def logger = LoggerFactory.getLogger("ActorManager")
 
   /**
    * Checks if actor exists
    */
   def checkActorExistsInSpecification(actorId: String, specificationId: Long, otherThanId: Option[Long]): Boolean = {
-    DB.withSession { implicit session =>
-      var query = for {
-        actor <- PersistenceSchema.actors
-        specificationHasActors <- PersistenceSchema.specificationHasActors if specificationHasActors.actorId === actor.id
-      } yield (actor, specificationHasActors)
-      query = query
-        .filter(_._1.actorId === actorId)
-        .filter(_._2.specId === specificationId)
-      if (otherThanId.isDefined) {
-        query = query.filter(_._1.id =!= otherThanId.get)
-      }
-      val actor = query.firstOption
-      actor.isDefined
+    var query = PersistenceSchema.actors
+      .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
+    query = query
+      .filter(_._1.actorId === actorId)
+      .filter(_._2.specId === specificationId)
+    if (otherThanId.isDefined) {
+      query = query.filter(_._1.id =!= otherThanId.get)
     }
-  }
-
-  def deleteActorByDomain(domainId: Long)(implicit session: Session) = {
-    val ids = PersistenceSchema.actors.filter(_.domain === domainId).map(_.id).list
-    ids foreach { id =>
-      delete(id)
-    }
+    val actor = query.result.headOption
+    exec(actor).isDefined
   }
 
   def deleteActorWrapper(actorId: Long) = {
-    DB.withTransaction { implicit session =>
-      deleteActor(actorId)
-    }
+    exec(deleteActor(actorId).transactionally)
   }
 
-  def deleteActor(actorId: Long)(implicit session: Session) = {
+  def deleteActor(actorId: Long) = {
     delete(actorId)
   }
 
-  private def delete(actorId: Long)(implicit session: Session) = {
-    TestResultManager.updateForDeletedActor(actorId)
-    PersistenceSchema.testCaseHasActors.filter(_.actor === actorId).delete
-    PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete
-    PersistenceSchema.systemImplementsActors.filter(_.actorId === actorId).delete
-    PersistenceSchema.testCaseHasActors.filter(_.actor === actorId).delete
-    PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete
-    PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).delete
-    PersistenceSchema.endpointSupportsTransactions.filter(_.actorId === actorId).delete
-    EndPointManager.deleteEndPointByActor(actorId)
-    OptionManager.deleteOptionByActor(actorId)
-    PersistenceSchema.conformanceResults.filter(_.actor === actorId).delete
+  private def delete(actorId: Long) = {
+    testResultManager.updateForDeletedActor(actorId) andThen
+    PersistenceSchema.testCaseHasActors.filter(_.actor === actorId).delete andThen
+    PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete andThen
+    PersistenceSchema.systemImplementsActors.filter(_.actorId === actorId).delete andThen
+    PersistenceSchema.testCaseHasActors.filter(_.actor === actorId).delete andThen
+    PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete andThen
+    PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).delete andThen
+    PersistenceSchema.endpointSupportsTransactions.filter(_.actorId === actorId).delete andThen
+    endPointManager.deleteEndPointByActor(actorId) andThen
+    optionManager.deleteOptionByActor(actorId) andThen
+    PersistenceSchema.conformanceResults.filter(_.actor === actorId).delete andThen
     PersistenceSchema.actors.filter(_.id === actorId).delete
   }
 
   def updateActorWrapper(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], displayOrder: Option[Short], specificationId: Long) = {
-    DB.withTransaction { implicit session =>
-      updateActor(id, actorId, name, description, default, displayOrder, specificationId)
-    }
+    exec(updateActor(id, actorId, name, description, default, displayOrder, specificationId).transactionally)
   }
 
-  def updateActor(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], displayOrder: Option[Short], specificationId: Long)(implicit session: Session) = {
+  def updateActor(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], displayOrder: Option[Short], specificationId: Long) = {
     var defaultToSet: Option[Boolean] = null
     if (default.isEmpty) {
       defaultToSet = Some(false)
     } else {
       defaultToSet = default
     }
-    val q1 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.name, a.desc, a.actorId, a.default, a.displayOrder)
-    q1.update((name, description, actorId, defaultToSet, displayOrder))
-    if (default.isDefined && default.get) {
-      // Ensure no other default actors are defined.
-      setOtherActorsAsNonDefault(id, specificationId)
-    }
-    TestResultManager.updateForUpdatedActor(id, name)
-  }
-
-  def getById(id: Long)(implicit session: Session): Option[Actors] = {
-    PersistenceSchema.actors.filter(_.id === id).firstOption
-  }
-
-  def setOtherActorsAsNonDefault(defaultActorId: Long, specificationId: Long)(implicit session: Session): Unit = {
-    val actorIds = PersistenceSchema.specificationHasActors
-      .filter(_.specId === specificationId)
-      .map(e => e.actorId)
-      .list
-    actorIds.foreach { actorId =>
-      if (actorId != defaultActorId) {
-        val q = for (a <- PersistenceSchema.actors if a.id === actorId) yield a.default
-        q.update(Some(false))
+    (for  {
+      _ <- {
+        val q1 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.name, a.desc, a.actorId, a.default, a.displayOrder)
+        q1.update((name, description, actorId, defaultToSet, displayOrder))
       }
-    }
+      _ <- {
+        if (default.isDefined && default.get) {
+          // Ensure no other default actors are defined.
+          setOtherActorsAsNonDefault(id, specificationId)
+        } else {
+          DBIOAction.successful(())
+        }
+      }
+    } yield()) andThen
+    testResultManager.updateForUpdatedActor(id, name)
+  }
+
+  def getById(id: Long): Option[Actors] = {
+    exec(PersistenceSchema.actors.filter(_.id === id).result.headOption)
+  }
+
+  def setOtherActorsAsNonDefault(defaultActorId: Long, specificationId: Long) = {
+    val actions = (for {
+      actorIds <- PersistenceSchema.specificationHasActors
+        .filter(_.specId === specificationId)
+        .map(e => e.actorId)
+        .result
+      _ <- DBIO.seq(actorIds.map(actorId =>
+        if (actorId != defaultActorId) {
+          val q = for (a <- PersistenceSchema.actors if a.id === actorId) yield a.default
+          q.update(Some(false))
+        } else {
+          DBIOAction.successful(())
+        }
+      ): _*)
+    } yield()).transactionally
+    actions
   }
 
 }

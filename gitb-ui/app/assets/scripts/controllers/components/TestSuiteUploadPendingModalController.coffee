@@ -1,8 +1,8 @@
 class TestSuiteUploadPendingModalController
 
-  @$inject = ['$scope', '$log', '$modalInstance', 'specificationId', 'pendingFolderId', 'ConformanceService']
+  @$inject = ['$scope', '$log', '$uibModalInstance', 'specificationId', 'pendingFolderId', 'ConformanceService']
 
-  constructor: (@$scope, @$log, @$modalInstance, specificationId, pendingFolderId, @ConformanceService) ->
+  constructor: (@$scope, @$log, @$uibModalInstance, specificationId, pendingFolderId, @ConformanceService) ->
     @$log.debug "Constructing TestSuiteUploadPendingModalController"
 
     @$scope.specificationId = specificationId
@@ -22,12 +22,12 @@ class TestSuiteUploadPendingModalController
 
     @$scope.cancel = () =>
       @$scope.actionCancelPending = true
-      @$modalInstance.dismiss()
+      @$uibModalInstance.dismiss()
 
     @$scope.performAction = (action) =>
         @$scope.actionPending = true
         @ConformanceService.resolvePendingTestSuite(@$scope.specificationId, @$scope.pendingFolderId, action)
             .then (data) =>
-                @$modalInstance.close(data)
+                @$uibModalInstance.close(data)
 
 @controllers.controller 'TestSuiteUploadPendingModalController', TestSuiteUploadPendingModalController

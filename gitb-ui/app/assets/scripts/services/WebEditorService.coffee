@@ -14,7 +14,7 @@ class WebEditorService
         'searchreplace visualblocks code fullscreen',
         'insertdatetime media table contextmenu paste code'
       ]
-      toolbar: 'undo redo | insert | styleselect | bold italic | charmap | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image'
+      toolbar: 'undo redo | insert | styleselect | bold italic | charmap | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | table tabledelete | tableprops tablerowprops tablecellprops | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol'
       init_instance_callback: () -> tinymce.activeEditor.setContent(initialContent)
       content_css: 'assets/stylesheets/css/tinymce/tinymce.css'
       branding: false

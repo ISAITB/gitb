@@ -1,7 +1,7 @@
 class HtmlService
 
-  @$inject = ['$q', '$modal']
-  constructor: (@$q, @$modal) ->
+  @$inject = ['$q', '$uibModal']
+  constructor: (@$q, @$uibModal) ->
 
   showHtml: (headerText, html) =>
     modalOptions =
@@ -13,6 +13,6 @@ class HtmlService
         headerText: () => headerText
         html: () => html
 
-    @$modal.open(modalOptions)
+    @$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
 
 services.service('HtmlService', HtmlService)

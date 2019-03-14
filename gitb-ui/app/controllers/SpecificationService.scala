@@ -2,20 +2,21 @@ package controllers
 
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.{ErrorCodes, NotFoundException}
-import managers.SpecificationManager
+import javax.inject.Inject
+import managers.{ConformanceManager, SpecificationManager}
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc.{Action, Controller}
 
-class SpecificationService extends Controller {
+class SpecificationService @Inject() (specificationManager: SpecificationManager, conformanceManager: ConformanceManager) extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SpecificationService])
 
   def deleteSpecification(specId: Long) = Action.apply {
-    SpecificationManager.deleteSpecification(specId)
+    conformanceManager.deleteSpecification(specId)
     ResponseConstructor.constructEmptyResponse
   }
 
   def updateSpecification(specId: Long) = Action.apply { request =>
-    val specExists = SpecificationManager.checkSpecifiationExists(specId)
+    val specExists = specificationManager.checkSpecifiationExists(specId)
     if(specExists) {
       val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
       val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
@@ -27,7 +28,7 @@ class SpecificationService extends Controller {
         case _ => None
       }
 
-      SpecificationManager.updateSpecification(specId, sname, fname, urls, diagram, descr, specificationType)
+      specificationManager.updateSpecification(specId, sname, fname, urls, diagram, descr, specificationType)
       ResponseConstructor.constructEmptyResponse
     } else{
       throw new NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, "Specification with ID '" + specId + "' not found")

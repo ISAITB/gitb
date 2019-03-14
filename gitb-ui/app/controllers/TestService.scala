@@ -5,23 +5,34 @@ import com.gitb.core.{ActorConfiguration, Configuration}
 import com.gitb.tbs._
 import config.Configurations
 import controllers.util._
+import javax.inject.{Inject, Singleton}
 import jaxws.HeaderHandlerResolver
-import managers.{ConformanceManager, ReportManager, TestResultManager}
+import managers.{ConformanceManager, ReportManager}
 import models.Constants
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import utils.{JacksonUtil, JsonUtil}
 
-object TestService{
-  val port:TestbedService = {
-    val backendURL: java.net.URL = new java.net.URL(Configurations.TESTBED_SERVICE_URL+"?wsdl");
-    val service: TestbedService_Service = new TestbedService_Service(backendURL)
-    //add header handler resolver to add custom header element for TestbedClient service address
-    val handlerResolver = new HeaderHandlerResolver()
-    service.setHandlerResolver(handlerResolver)
+@Singleton
+class TestService @Inject() (reportManager: ReportManager, conformanceManager: ConformanceManager) extends Controller {
 
-    val port = service.getTestbedServicePort()
-    port
+  private final val logger: Logger = LoggerFactory.getLogger(classOf[TestService])
+
+  private var portInternal: TestbedService = null
+
+  private def port() = {
+    if (portInternal == null) {
+      logger.info("Creating TestbedService client")
+      val backendURL: java.net.URL = new java.net.URL(Configurations.TESTBED_SERVICE_URL+"?wsdl")
+      val service: TestbedService_Service = new TestbedService_Service(backendURL)
+      //add header handler resolver to add custom header element for TestbedClient service address
+      val handlerResolver = new HeaderHandlerResolver()
+      service.setHandlerResolver(handlerResolver)
+
+      val port = service.getTestbedServicePort()
+      portInternal = port
+    }
+    portInternal
   }
 
   def getTestCasePresentation(testId:String): GetTestCaseDefinitionResponse = {
@@ -29,26 +40,22 @@ object TestService{
     val request:BasicRequest = new BasicRequest
     request.setTcId(testId)
 
-    TestService.port.getTestCaseDefinition(request)
+    port().getTestCaseDefinition(request)
   }
 
   def endSession(session_id:String) = {
     val request: BasicCommand = new BasicCommand
     request.setTcInstanceId(session_id)
-    TestService.port.stop(request)
+    port().stop(request)
 
-    ReportManager.setEndTimeNow(session_id)
+    reportManager.setEndTimeNow(session_id)
   }
-}
-
-class TestService extends Controller{
-  private final val logger: Logger = LoggerFactory.getLogger(classOf[TestService])
 
   /**
    * Gets the test case definition for a specific test
    */
   def getTestCaseDefinition(test_id:String) = Action.apply {
-    val response = TestService.getTestCasePresentation(test_id)
+    val response = getTestCasePresentation(test_id)
     val json = JacksonUtil.serializeTestCasePresentation(response.getTestcase)
     logger.debug("[TestCase] " + json)
     ResponseConstructor.constructJsonResponse(json)
@@ -58,7 +65,7 @@ class TestService extends Controller{
    */
   def getActorDefinitions() = Action.apply { request =>
     val specId = ParameterExtractor.requiredQueryParameter(request, Parameters.SPECIFICATION_ID).toLong
-    val actors = ConformanceManager.getActorsWithSpecificationId(None, Some(specId))
+    val actors = conformanceManager.getActorsWithSpecificationId(None, Some(specId))
     val json = JsonUtil.jsActorsNonCase(actors).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -70,7 +77,7 @@ class TestService extends Controller{
     val request: BasicRequest = new BasicRequest
     request.setTcId(test_id)
 
-    val response = TestService.port.initiate(request)
+    val response = port().initiate(request)
     ResponseConstructor.constructStringResponse(response.getTcInstanceId)
   }
   /**
@@ -84,8 +91,8 @@ class TestService extends Controller{
     cRequest.setTcInstanceId(session_id)
     cRequest.getConfigs.addAll(JacksonUtil.parseActorConfigurations(configs))
 
-    val domainId = ConformanceManager.getSpecifications(Some(List(specId)))(0).domain
-    val parameters = ConformanceManager.getDomainParameters(domainId)
+    val domainId = conformanceManager.getSpecifications(Some(List(specId)))(0).domain
+    val parameters = conformanceManager.getDomainParameters(domainId)
     if (!parameters.isEmpty) {
       val domainConfiguration = new ActorConfiguration()
       domainConfiguration.setActor(Constants.domainConfigurationName)
@@ -99,7 +106,7 @@ class TestService extends Controller{
       cRequest.getConfigs.add(domainConfiguration)
     }
 
-    val response = TestService.port.configure(cRequest)
+    val response = port().configure(cRequest)
     val json = JacksonUtil.serializeConfigureResponse(response)
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -116,7 +123,7 @@ class TestService extends Controller{
     pRequest.setStepId(step)
     pRequest.getInput.addAll(JacksonUtil.parseUserInputs(inputs))
 
-    val response = TestService.port.provideInput(pRequest)
+    val response = port().provideInput(pRequest)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -127,7 +134,7 @@ class TestService extends Controller{
     val bRequest:BasicCommand = new BasicCommand
     bRequest.setTcInstanceId(session_id)
 
-    TestService.port.initiatePreliminary(bRequest)
+    port().initiatePreliminary(bRequest)
     ResponseConstructor.constructEmptyResponse
 
   }
@@ -138,7 +145,7 @@ class TestService extends Controller{
     val bRequest: BasicCommand = new BasicCommand
     bRequest.setTcInstanceId(session_id)
 
-    TestService.port.start(bRequest)
+    port().start(bRequest)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -146,7 +153,7 @@ class TestService extends Controller{
    * Stops the test case
    */
   def stop(session_id:String) = Action.apply {
-    TestService.endSession(session_id)
+    endSession(session_id)
     ResponseConstructor.constructEmptyResponse
   }
   /**
@@ -156,7 +163,7 @@ class TestService extends Controller{
     val bRequest: BasicCommand = new BasicCommand
     bRequest.setTcInstanceId(session_id)
 
-    TestService.port.restart(bRequest)
+    port().restart(bRequest)
     ResponseConstructor.constructEmptyResponse
   }
 

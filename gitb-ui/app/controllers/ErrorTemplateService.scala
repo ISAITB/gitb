@@ -2,17 +2,18 @@ package controllers
 
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
+import javax.inject.Inject
 import managers.ErrorTemplateManager
 import play.api.mvc.{Action, Controller}
 import utils.JsonUtil
 
-class ErrorTemplateService extends Controller {
+class ErrorTemplateService @Inject() (errorTemplateManager: ErrorTemplateManager) extends Controller {
 
   /**
    * Gets all error templates for the specified community
    */
   def getErrorTemplatesByCommunity(communityId: Long) = Action.apply {
-    val list = ErrorTemplateManager.getErrorTemplatesByCommunity(communityId)
+    val list = errorTemplateManager.getErrorTemplatesByCommunity(communityId)
     val json: String = JsonUtil.jsErrorTemplates(list).toString
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -22,9 +23,9 @@ class ErrorTemplateService extends Controller {
    */
   def createErrorTemplate() = Action.apply { request =>
     val errorTemplate = ParameterExtractor.extractErrorTemplateInfo(request)
-    val uniqueName = ErrorTemplateManager.checkUniqueName(errorTemplate.name, errorTemplate.community)
+    val uniqueName = errorTemplateManager.checkUniqueName(errorTemplate.name, errorTemplate.community)
     if (uniqueName) {
-      ErrorTemplateManager.createErrorTemplate(errorTemplate)
+      errorTemplateManager.createErrorTemplate(errorTemplate)
       ResponseConstructor.constructEmptyResponse
     } else {
       ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Error template with name '" + errorTemplate.name + "' already exists.")
@@ -35,7 +36,7 @@ class ErrorTemplateService extends Controller {
    * Gets the error template with specified id
    */
   def getErrorTemplateById(templateId: Long) = Action.apply { request =>
-    val ln = ErrorTemplateManager.getErrorTemplateById(templateId)
+    val ln = errorTemplateManager.getErrorTemplateById(templateId)
     val json: String = JsonUtil.serializeErrorTemplate(ln)
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -50,9 +51,9 @@ class ErrorTemplateService extends Controller {
     val default = ParameterExtractor.requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
     val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
 
-    val uniqueName = ErrorTemplateManager.checkUniqueName(templateId, name, communityId)
+    val uniqueName = errorTemplateManager.checkUniqueName(templateId, name, communityId)
     if (uniqueName) {
-      ErrorTemplateManager.updateErrorTemplate(templateId, name, description, content, default, communityId)
+      errorTemplateManager.updateErrorTemplate(templateId, name, description, content, default, communityId)
       ResponseConstructor.constructEmptyResponse
     } else {
       ResponseConstructor.constructErrorResponse(ErrorCodes.NAME_EXISTS, "Error template with name '" + name + "' already exists.")
@@ -63,7 +64,7 @@ class ErrorTemplateService extends Controller {
    * Deletes error template with specified id
    */
   def deleteErrorTemplate(templateId: Long) = Action.apply { request =>
-    ErrorTemplateManager.deleteErrorTemplate(templateId)
+    errorTemplateManager.deleteErrorTemplate(templateId)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -72,7 +73,7 @@ class ErrorTemplateService extends Controller {
     */
   def getCommunityDefaultErrorTemplate() = Action.apply { request =>
     val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
-    val errorTemplate = ErrorTemplateManager.getCommunityDefaultErrorTemplate(communityId)
+    val errorTemplate = errorTemplateManager.getCommunityDefaultErrorTemplate(communityId)
     val json: String = JsonUtil.serializeErrorTemplate(errorTemplate)
     ResponseConstructor.constructJsonResponse(json)
   }

@@ -1,7 +1,7 @@
 class ConformanceCertificateModalController
 
-    @$inject = ['$scope', '$timeout', '$modalInstance', 'WebEditorService', 'settings', 'conformanceStatement', 'ConformanceService', 'ErrorService', 'Constants', 'ReportService']
-    constructor: (@$scope, @$timeout, @$modalInstance, @WebEditorService, @settings, @conformanceStatement, @ConformanceService, @ErrorService, @Constants, @ReportService) ->
+    @$inject = ['$scope', '$timeout', '$uibModalInstance', 'WebEditorService', 'settings', 'conformanceStatement', 'ConformanceService', 'ErrorService', 'Constants', 'ReportService']
+    constructor: (@$scope, @$timeout, @$uibModalInstance, @WebEditorService, @settings, @conformanceStatement, @ConformanceService, @ErrorService, @Constants, @ReportService) ->
         @exportPending = false
         @choice = @Constants.REPORT_OPTION_CHOICE.REPORT
         if @settings.message? 
@@ -13,7 +13,7 @@ class ConformanceCertificateModalController
             @settings.message = @settings.message.split(@Constants.PLACEHOLDER__SYSTEM).join(@conformanceStatement.systemName)
         else 
             @settings.message = ''
-        @$modalInstance.opened.then(
+        @$uibModalInstance.opened.then(
             @$timeout(() =>
                 tinymce.remove('.mce-message')
                 @WebEditorService.editorForPdfInput(200, @settings.message, "mce-message")
@@ -29,7 +29,7 @@ class ConformanceCertificateModalController
                 blobData = new Blob([data], {type: 'application/pdf'});
                 saveAs(blobData, "conformance_certificate.pdf");
                 @exportPending = false
-                @$modalInstance.dismiss()
+                @$uibModalInstance.dismiss()
             .catch (error) =>
                 @ErrorService.showErrorMessage(error)
                 @exportPending = false
@@ -40,12 +40,12 @@ class ConformanceCertificateModalController
                 blobData = new Blob([data], {type: 'application/pdf'});
                 saveAs(blobData, "conformance_report.pdf");
                 @exportPending = false
-                @$modalInstance.dismiss()
+                @$uibModalInstance.dismiss()
             .catch (error) =>
                 @ErrorService.showErrorMessage(error)
                 @exportPending = false
 
     cancel: () =>
-        @$modalInstance.dismiss()
+        @$uibModalInstance.dismiss()
 
 @controllers.controller 'ConformanceCertificateModalController', ConformanceCertificateModalController

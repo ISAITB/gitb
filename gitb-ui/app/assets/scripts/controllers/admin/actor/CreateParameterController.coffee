@@ -1,8 +1,8 @@
 class CreateParameterController
 
-	@$inject = ['$log', '$scope', '$modalInstance']
+	@$inject = ['$log', '$scope', '$uibModalInstance']
 
-	constructor: (@$log, @$scope, @$modalInstance) ->
+	constructor: (@$log, @$scope, @$uibModalInstance) ->
 		@$scope.parameter = {}
 		@$scope.parameter.use = 'O'
 		@$scope.parameter.kind = 'SIMPLE'
@@ -12,9 +12,9 @@ class CreateParameterController
 
 		@$scope.createParameter = () =>
 			if !@$scope.saveDisabled()
-				@$modalInstance.close(@$scope.parameter)
+				@$uibModalInstance.close(@$scope.parameter)
 
 		@$scope.cancel = () =>
-			@$modalInstance.dismiss()
+			@$uibModalInstance.dismiss()
 
 @controllers.controller 'CreateParameterController', CreateParameterController

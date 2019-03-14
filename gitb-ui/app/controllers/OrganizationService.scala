@@ -1,6 +1,7 @@
 package controllers
 
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
+import javax.inject.Inject
 import managers.OrganizationManager
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc.{Action, Controller}
@@ -9,14 +10,14 @@ import utils.JsonUtil
 /**
  * Created by VWYNGAET on 26/10/2016.
  */
-class OrganizationService extends Controller {
+class OrganizationService @Inject() (organizationManager: OrganizationManager) extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[OrganizationService])
 
   /**
    * Gets all organizations except the default organization for system administrators
    */
   def getOrganizations() = Action.apply {
-    val list = OrganizationManager.getOrganizations()
+    val list = organizationManager.getOrganizations()
     val json: String = JsonUtil.jsOrganizations(list).toString
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -25,7 +26,7 @@ class OrganizationService extends Controller {
    * Gets the organization with specified id
    */
   def getOrganizationById(orgId: Long) = Action.apply { request =>
-    val organization = OrganizationManager.getOrganizationById(orgId)
+    val organization = organizationManager.getOrganizationById(orgId)
     val json: String = JsonUtil.serializeOrganization(organization)
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -34,7 +35,7 @@ class OrganizationService extends Controller {
    * Gets the organizations with specified community
    */
   def getOrganizationsByCommunity(communityId: Long) = Action.apply { request =>
-    val list = OrganizationManager.getOrganizationsByCommunity(communityId)
+    val list = organizationManager.getOrganizationsByCommunity(communityId)
     val json: String = JsonUtil.jsOrganizations(list).toString
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -45,7 +46,7 @@ class OrganizationService extends Controller {
   def createOrganization() = Action.apply { request =>
     val organization = ParameterExtractor.extractOrganizationInfo(request)
     val otherOrganisation = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_ORGANISATION)
-    OrganizationManager.createOrganization(organization, otherOrganisation)
+    organizationManager.createOrganization(organization, otherOrganisation)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -59,7 +60,7 @@ class OrganizationService extends Controller {
     val legalNoticeId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LEGAL_NOTICE_ID)
     val errorTemplateId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.ERROR_TEMPLATE_ID)
     val otherOrganisation = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_ORGANISATION)
-    OrganizationManager.updateOrganization(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation)
+    organizationManager.updateOrganization(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -67,7 +68,7 @@ class OrganizationService extends Controller {
    * Deletes organization by id
    */
   def deleteOrganization(orgId: Long) = Action.apply { request =>
-    OrganizationManager.deleteOrganization(orgId)
+    organizationManager.deleteOrganization(orgId)
     ResponseConstructor.constructEmptyResponse
   }
 }

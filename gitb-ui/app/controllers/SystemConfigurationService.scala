@@ -4,16 +4,15 @@ import java.io.InputStream
 
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
+import javax.inject.Inject
 import managers.SystemConfigurationManager
 import models.Constants
 import org.apache.commons.io.IOUtils
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.Play
-import play.api.Play.current
 import play.api.mvc.{Action, Controller}
 import utils.JsonUtil
 
-class SystemConfigurationService extends Controller {
+class SystemConfigurationService @Inject()(systemConfigurationManager: SystemConfigurationManager, environment: play.api.Environment) extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemConfigurationService])
 
   /**
@@ -32,7 +31,7 @@ class SystemConfigurationService extends Controller {
     if (value.isDefined && !isPositiveInt(value.get)) {
       ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_PARAM, "Value should be a positive integer.")
     } else {
-      SystemConfigurationManager.updateSystemParameter(Constants.SessionAliveTime, value)
+      systemConfigurationManager.updateSystemParameter(Constants.SessionAliveTime, value)
       ResponseConstructor.constructEmptyResponse
     }
   }
@@ -56,7 +55,7 @@ class SystemConfigurationService extends Controller {
    * Gets the system configuration with specified name
    */
   private def getSystemConfiguration(name: String) = Action.apply { request =>
-    val config = SystemConfigurationManager.getSystemConfiguration(name)
+    val config = systemConfigurationManager.getSystemConfiguration(name)
     val json: String = JsonUtil.serializeSystemConfig(config)
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -74,7 +73,7 @@ class SystemConfigurationService extends Controller {
   }
 
   private def getInputStream(path: String): InputStream = {
-    Play.classloader.getResourceAsStream(path)
+    environment.classLoader.getResourceAsStream(path)
   }
 
   private def parseLogo(theme: Option[String]): String = {

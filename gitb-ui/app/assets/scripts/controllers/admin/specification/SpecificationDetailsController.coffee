@@ -1,7 +1,7 @@
 class SpecificationDetailsController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', 'TestSuiteService', 'ConfirmationDialogService', 'SpecificationService', '$state', '$stateParams', '$modal', 'PopupService', 'ErrorService']
-	constructor: (@$log, @$scope, @ConformanceService, @TestSuiteService, @ConfirmationDialogService, @SpecificationService, @$state, @$stateParams, @$modal, @PopupService, @ErrorService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', 'TestSuiteService', 'ConfirmationDialogService', 'SpecificationService', '$state', '$stateParams', '$uibModal', 'PopupService', 'ErrorService']
+	constructor: (@$log, @$scope, @ConformanceService, @TestSuiteService, @ConfirmationDialogService, @SpecificationService, @$state, @$stateParams, @$uibModal, @PopupService, @ErrorService) ->
 		@$log.debug "Constructing SpecificationDetailsController"
 
 		@specification = {}
@@ -9,6 +9,7 @@ class SpecificationDetailsController
 		@testSuites = []
 		@domainId = @$stateParams.id
 		@specificationId = @$stateParams.spec_id
+		@uploadPending = false
 
 		@tableColumns = [
 			{
@@ -77,45 +78,94 @@ class SpecificationDetailsController
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
+	hasErrorsOrWarnings: (report) =>
+		if report?.counters?.errors? && report?.counters?.warnings?
+			parseInt(report.counters.errors) > 0 || parseInt(report.counters.warnings) > 0
+		else
+			false
+		
+	showPendingOptions: (pendingFolderId) =>
+		modalOptions =
+			templateUrl: 'assets/views/components/test-suite-upload-pending-modal.html'
+			controller: 'TestSuiteUploadPendingModalController as TestSuiteUploadPendingModalController'
+			resolve:
+				specificationId: () => @specificationId
+				pendingFolderId: () => pendingFolderId
+			size: 'lg'
+		modalInstance = @$uibModal.open(modalOptions)
+		modalInstance.result
+			.finally(angular.noop)
+			.then((pendingResolutionData) => 
+				# Closed
+				@showTestSuiteUploadResult(pendingResolutionData)
+				@$state.go(@$state.$current, null, { reload: true });
+			, () => 
+				# Dismissed
+				@uploadPending = false
+				@ConformanceService.resolvePendingTestSuite(@specificationId, pendingFolderId, 'cancel')
+			)
+	
+	showTestSuiteValidationReport: (report, pendingFolderId, exists) =>
+		modalOptions =
+			templateUrl: 'assets/views/components/test-suite-validation-report-modal.html'
+			controller: 'TestSuiteValidationReportModalController as controller'
+			resolve:
+				report: () => report
+			size: 'lg'
+		modalInstance = @$uibModal.open(modalOptions)
+		modalInstance.result
+			.finally(angular.noop)
+			.then((data) => 
+				# Proceed
+				if (exists)
+					@showPendingOptions(pendingFolderId)
+				else
+					@ConformanceService.resolvePendingTestSuite(@specificationId, pendingFolderId, "keep")
+					.then((pendingResolutionData) =>
+						@showTestSuiteUploadResult(pendingResolutionData)
+						@$state.go(@$state.$current, null, { reload: true });
+					, () =>
+						@uploadPending = false
+					)
+			, () =>
+				# Cancel
+				@uploadPending = false
+				if (pendingFolderId?)
+					@ConformanceService.resolvePendingTestSuite(@specificationId, pendingFolderId, "cancel")
+			)
+
 	onFileSelect: (files) =>
 		@$log.debug "Test suite zip files is selected to deploy: ", files
 		if files.length > 0
+			@uploadPending = true
 			@ConformanceService.deployTestSuite @specificationId, files[0]
-			.progress (event) =>
-				@$log.debug "File upload: " + (100.0 * event.loaded / event.total) + " percent uploaded."
-			.then (result) => 
-				if (result && result.data)
-					if (result.data.success)
-						@showTestSuiteUploadResult(result.data)
-						@$state.go(@$state.$current, null, { reload: true });
-					else if (result.data.pendingFolderId && result.data.pendingFolderId.length > 0)
-						# Pending 
-						modalOptions =
-							templateUrl: 'assets/views/components/test-suite-upload-pending-modal.html'
-							controller: 'TestSuiteUploadPendingModalController as TestSuiteUploadPendingModalController'
-							resolve:
-								specificationId: () => @specificationId
-								pendingFolderId: () => result.data.pendingFolderId
-							size: 'lg'
-						modalInstance = @$modal.open(modalOptions)
-						modalInstance.result.then((pendingResolutionData) => 
-							# Closed
-							@showTestSuiteUploadResult(pendingResolutionData)
-							@$state.go(@$state.$current, null, { reload: true });
-						, () => 
-							# Dismissed
-							@ConformanceService.resolvePendingTestSuite(@$scope.specificationId, result.data.pendingFolderId, 'cancel')
-						)
+			.then((result) => 
+				if (result && result.data && result.data.validationReport)
+					hasErrorsOrWarnings = @hasErrorsOrWarnings(result.data.validationReport)
+					if (hasErrorsOrWarnings)
+						@showTestSuiteValidationReport(result.data.validationReport, result.data.pendingFolderId, result.data.exists)
 					else
-						error = { 
-							statusText: "Upload error",
-							data: {error_description: "An error occurred while processing the test suite: "+result.data.errorInformation}
-						}
-						@ErrorService.showErrorMessage(error)
+						if (result.data.exists)
+							@showPendingOptions(result.data.pendingFolderId)
+						else if (result.data.success)
+							@showTestSuiteUploadResult(result.data)
+							@$state.go(@$state.$current, null, { reload: true });
+						else
+							error = { 
+								statusText: "Upload error",
+								data: {error_description: "An error occurred while processing the test suite: "+result.data.errorInformation}
+							}
+							@ErrorService.showErrorMessage(error)
+							@uploadPending = false
 				else
 					@ErrorService.showErrorMessage("An error occurred while processing the test suite: Response was empty")
+					@uploadPending = false
+			, () =>
+				@uploadPending = false
+			)
 
 	showTestSuiteUploadResult: (result) =>
+		@uploadPending = false
 		if (result.success)
 			collect = (item, data) => 
 				getAction = (itemAction) -> 

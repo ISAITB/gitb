@@ -4,26 +4,28 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'$q', '$log', '$state', 'AuthProvider', 'AccountService', 'DataService', 'CommunityService',
 			($q, $log, $state, AuthProvider, AccountService, DataService, CommunityService)->
 				deferred = $q.defer()
-
+				userDeferred = $q.defer()
+				vendorDeferred = $q.defer()
+				communityDeferred = $q.defer()
 				getUserProfile = ()->
 					$log.debug 'Getting user profile from the server...'
 					AccountService.getUserProfile()
 						.then (data)->
 							DataService.setUser(data)
 							$log.debug 'Got user profile from the server...'
-							deferred.resolve()
+							userDeferred.resolve()
 
 				getVendorProfile = () ->
 					AccountService.getVendorProfile()
 					.then (data) ->
 						DataService.setVendor(data)
-						deferred.resolve()
+						vendorDeferred.resolve()
 
 				getUserCommunity = () ->
 					CommunityService.getUserCommunity()
 					.then (data) ->
 						DataService.setCommunity(data)
-						deferred.resolve()
+						communityDeferred.resolve()
 
 				$log.debug 'Resolving user profile..'
 				authenticated = AuthProvider.isAuthenticated()
@@ -31,13 +33,24 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				if authenticated
 					if !DataService.user?
 						getUserProfile()
+					else
+						userDeferred.resolve()
 					if !DataService.vendor?
 						getVendorProfile()
+					else
+						vendorDeferred.resolve()
 					if !DataService.community?
 						getUserCommunity()
+					else
+						communityDeferred.resolve()
+					$q.all([userDeferred.promise, vendorDeferred.promise, communityDeferred.promise]).then(() ->
+						deferred.resolve()
+					)
 				else
 					$log.debug 'No need for user profile, user is not authenticated...'
 					deferred.resolve()
+				
+				deferred.promise
 		]
 
 		system = [
@@ -93,7 +106,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/home.html'
 				controller: 'HomeController'
 				controllerAs: 'homeCtrl'
-				resolve: profile
+				resolve: 
+					profile: profile
 			'app.login':
 				url: '/login'
 				templateUrl: 'assets/views/login.html'
@@ -131,7 +145,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/systems/list.html'
 				controller: 'SystemsController'
 				controllerAs: 'systemsCtrl'
-				resolve: system
+				resolve: 
+					system: system
 			'app.systems.detail':
 				url: '/:id'
 				templateUrl: 'assets/views/systems/detail.html'
@@ -152,7 +167,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/systems/conformance/index.html'
 				controller: 'ConformanceStatementController'
 				controllerAs: 'conformanceStatementCtrl'
-				resolve: conformance
+				resolve: 
+					conformance: conformance
 			'app.systems.detail.conformance.detail':
 				url: '/detail/:actor_id?specId'
 				templateUrl: 'assets/views/systems/conformance/detail.html'
@@ -417,8 +433,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 		return
 ]
 
-app.run ['$log', '$rootScope', '$state', 'AuthProvider',
-	($log, $rootScope, $state, AuthProvider) ->
+app.run ['$log', '$transitions', 'AuthProvider', '$state'
+	($log, $transitions, AuthProvider, $state) ->
 
 		startsWith = (str, prefix) ->
 			(str.indexOf prefix) == 0
@@ -434,22 +450,28 @@ app.run ['$log', '$rootScope', '$state', 'AuthProvider',
 			(startsWith state.name, 'app.page') or
 			(startsWith state.name, 'app.admin')
 
-		$rootScope.$on '$stateChangeStart', (event, toState, toParams, fromState, fromParams)->
-			authenticated = AuthProvider.isAuthenticated()
-
+		$transitions.onStart({to: requiresLogin}, (trans) -> 
+			toState = trans.$to()
 			$log.debug 'Starting state', toState
-
-			if (requiresLogin toState) and not authenticated
+			authenticated = AuthProvider.isAuthenticated()
+			if not authenticated
 				$log.debug 'State requires login, redirecting...'
-				event.preventDefault()
-				$state.go 'app.login'
+				trans.abort()
+				trans.router.stateService.go 'app.login'
+		)
 
-		$rootScope.$on '$stateChangeError', (event, toState, toParams, fromState, fromParams, error) ->
-			if error.redirectTo?
-				if error.params?
-					$state.go error.redirectTo, error.params
+		$transitions.onError({to: (state) -> true}, (trans) ->
+			error = trans.error()
+			if (error? && error.detail? && error.detail.redirectTo?)
+				if error.detail.params?
+					trans.router.stateService.go error.detail.redirectTo, error.detail.params
 				else
-					$state.go error.redirectTo
+					trans.router.stateService.go error.detail.redirectTo
+		)
+
+		$state.defaultErrorHandler((error) =>
+			# Do not log transitionTo errors.
+		)
 
 		return
 ]
