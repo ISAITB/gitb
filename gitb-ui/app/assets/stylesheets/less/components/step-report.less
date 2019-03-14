@@ -86,22 +86,30 @@
 		}
 	    }
 	}
-
 	.test-assertion-group-report {
-	    .assertion-report {
-		display: block;
-		margin-bottom: 10px;
-		&:hover {
-		    cursor: pointer;
+		.assertion-report-nolink {
+			display: block;
+			margin-bottom: 10px;
+			&.warning-assertion-report {
+				background-color: fade(@warning-yellow, 15%);
+			}
+			&.error-assertion-report {
+				background-color: fade(@error-red, 15%);
+			}
 		}
-
-		&.warning-assertion-report {
-		    background-color: fade(@warning-yellow, 15%);
+		.assertion-report {
+			display: block;
+			margin-bottom: 10px;
+			&:hover {
+				cursor: pointer;
+			}
+			&.warning-assertion-report {
+				background-color: fade(@warning-yellow, 15%);
+			}
+			&.error-assertion-report {
+				background-color: fade(@error-red, 15%);
+			}
 		}
-		&.error-assertion-report {
-		    background-color: fade(@error-red, 15%);
-		}
-	    }
 	}
-    }
+}
 }

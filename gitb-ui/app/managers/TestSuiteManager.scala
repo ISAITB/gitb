@@ -4,6 +4,7 @@ import java.io.File
 import java.util
 import java.util.Objects
 
+import com.gitb.tr.{TAR, TestResultType}
 import javax.inject.{Inject, Singleton}
 import models.Enums.TestSuiteReplacementChoice.{TestSuiteReplacementChoice, _}
 import models.Enums.{TestResultStatus, TestSuiteReplacementChoice}
@@ -13,6 +14,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.RepositoryUtils
+import utils.tdlvalidator.tdl.{FileSource, TestSuiteValidationAdapter}
 
 import scala.collection.JavaConversions._
 import scala.collection.mutable.ListBuffer
@@ -96,6 +98,10 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		new File(getTempFolder(), "pending")
 	}
 
+	def getTmpValidationFolder(): File = {
+		new File(getTempFolder(), "ts_validation")
+	}
+
 	def applyPendingTestSuiteAction(specification: Long, pendingTestSuiteIdentifier: String, action: TestSuiteReplacementChoice): TestSuiteUploadResult = {
 		val result = new TestSuiteUploadResult()
 		val pendingTestSuiteFolder = new File(getPendingFolder(), pendingTestSuiteIdentifier)
@@ -138,21 +144,40 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		result
 	}
 
+	private def validateTestSuite(specification: Long, tempTestSuiteArchive: File): TAR = {
+		val actorSet = new util.HashSet[String]()
+		actorSet.addAll(conformanceManager.getActorsWithSpecificationId(None, Some(specification)).map(a => a.actorId))
+
+		val parameterSet = new util.HashSet[String]()
+		val domain = conformanceManager.getDomainOfSpecification(specification)
+		parameterSet.addAll(conformanceManager.getDomainParameters(domain.id).map(p => p.name))
+
+		val report = TestSuiteValidationAdapter.getInstance().doValidation(new FileSource(tempTestSuiteArchive), actorSet, parameterSet, getTmpValidationFolder().getAbsolutePath)
+		report
+	}
+
 	def deployTestSuiteFromZipFile(specification: Long, tempTestSuiteArchive: File): TestSuiteUploadResult = {
 		val result = new TestSuiteUploadResult()
 		try {
-			val testSuite = RepositoryUtils.getTestSuiteFromZip(specification, tempTestSuiteArchive)
-			if (testSuite.isDefined && testSuite.get.testCases.isDefined) {
-				logger.debug("Extracted test suite [" + testSuite + "] with the test cases [" + testSuite.get.testCases.get.map(_.shortname) + "]")
-				if (testSuiteExists(testSuite.get)) {
-					// Park the test suite for now and ask user what to do
-					FileUtils.moveDirectoryToDirectory(tempTestSuiteArchive.getParentFile, getPendingFolder(), true)
-					result.pendingTestSuiteFolderName = tempTestSuiteArchive.getParentFile.getName
-				} else {
-					result.items.addAll(exec(
-						saveTestSuite(testSuite.get.toCaseObject, null, testSuite.get.actors, testSuite.get.testCases, tempTestSuiteArchive).transactionally
-					))
-					result.success = true
+			result.validationReport =  validateTestSuite(specification, tempTestSuiteArchive)
+			if (result.validationReport.getResult == TestResultType.SUCCESS) {
+				// We can proceed. Check also if test suite exists.
+				val testSuite = RepositoryUtils.getTestSuiteFromZip(specification, tempTestSuiteArchive)
+				if (testSuite.isDefined && testSuite.get.testCases.isDefined) {
+					logger.debug("Extracted test suite [" + testSuite + "] with the test cases [" + testSuite.get.testCases.get.map(_.shortname) + "]")
+					val exists = testSuiteExists(testSuite.get)
+					val noWarnings = result.validationReport.getCounters.getNrOfWarnings.intValue() == 0
+					result.exists = exists
+					if (exists || !noWarnings) {
+						// Park the test suite for now and ask user what to do
+						FileUtils.moveDirectoryToDirectory(tempTestSuiteArchive.getParentFile, getPendingFolder(), true)
+						result.pendingTestSuiteFolderName = tempTestSuiteArchive.getParentFile.getName
+					} else {
+						result.items.addAll(exec(
+							saveTestSuite(testSuite.get.toCaseObject, null, testSuite.get.actors, testSuite.get.testCases, tempTestSuiteArchive).transactionally
+						))
+						result.success = true
+					}
 				}
 			}
 		} catch {
@@ -180,11 +205,11 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		count > 0
 	}
 
-	private def getTestSuiteBySpecificationAndName(specId: Long, name: String): TestSuites = {
+	private def getTestSuiteBySpecificationAndName(specId: Long, name: String): Option[TestSuites] = {
 		val testSuite = exec(PersistenceSchema.testSuites
 			.filter(_.shortname === name)
 			.filter(_.specification === specId)
-			.result.head)
+			.result.headOption)
 		testSuite
 	}
 
@@ -193,13 +218,13 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 			val existingTestSuite = getTestSuiteBySpecificationAndName(suite.specification, suite.shortname)
 			exec(
 				(
-					conformanceManager.undeployTestSuite(existingTestSuite.id) andThen
+					conformanceManager.undeployTestSuite(existingTestSuite.get.id) andThen
 					saveTestSuite(suite, null, testSuiteActors, testCases, tempTestSuiteArchive)
 				).transactionally
 			)
 		} else if (action == KEEP_TEST_HISTORY) {
 			val existingTestSuite = getTestSuiteBySpecificationAndName(suite.specification, suite.shortname)
-			exec(saveTestSuite(suite, existingTestSuite, testSuiteActors, testCases, tempTestSuiteArchive).transactionally)
+			exec(saveTestSuite(suite, existingTestSuite.orNull, testSuiteActors, testCases, tempTestSuiteArchive).transactionally)
 		} else {
 			throw new IllegalStateException("Unexpected test suite replacement action ["+action+"]")
 		}

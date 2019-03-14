@@ -7,10 +7,11 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 scalaVersion := "2.11.12"
 
 libraryDependencies ++= Seq(
-  "eu.europa.ec.itb" % "gitb-types" % "1.5.0",
+  "eu.europa.ec.itb" % "gitb-types" % "1.5.1-SNAPSHOT",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
+  "com.gitb" % "gitb-validator-tdl" % "1.0-SNAPSHOT",
   "mysql" % "mysql-connector-java" % "5.1.47",
   "com.typesafe.akka" %% "akka-actor" % "2.5.19",
   "com.typesafe.akka" %% "akka-remote" % "2.5.19",
