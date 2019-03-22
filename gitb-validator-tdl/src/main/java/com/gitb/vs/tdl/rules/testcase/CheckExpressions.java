@@ -9,7 +9,7 @@ import com.gitb.vs.tdl.ErrorCode;
 import com.gitb.vs.tdl.rules.testcase.expression.VariableResolver;
 import com.gitb.vs.tdl.rules.testcase.expression.VariableResolverProvider;
 import com.gitb.vs.tdl.util.Utils;
-import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
+import net.sf.saxon.xpath.XPathFactoryImpl;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.xml.parsers.DocumentBuilderFactory;
