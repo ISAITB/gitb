@@ -17,7 +17,6 @@
 
     <properties>
         <gitb.version>1.0-SNAPSHOT</gitb.version>
-        <compiler.version>1.8</compiler.version>
         <env>dev</env>
     </properties>
 
@@ -29,10 +28,9 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.0</version>
+                <version>3.8.0</version>
                 <configuration>
-                    <source>${compiler.version}</source>
-                    <target>${compiler.version}</target>
+                    <release>11</release>
                 </configuration>
             </plugin>
         </plugins>
