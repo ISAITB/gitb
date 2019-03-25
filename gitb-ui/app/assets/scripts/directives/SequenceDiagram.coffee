@@ -251,9 +251,8 @@ extractSteps = (s, actorInfo) =>
     replace: true
     template: ''+
       '<div class="message-wrapper offset-{{message.fromIndex}} {{message.type}}-type">'+
-        '<div class="message span-{{message.span}} reverse-offset-{{message.span}} depth-{{depth}} level-{{message.level}}" '+
-          'ng-class="{\'self-message\': message.fromIndex == message.toIndex, '+
-          '\'backwards-message\': message.fromIndex > message.toIndex, '+
+        '<div class="message span-{{message.span}} {{(message.fromIndex > message.toIndex)?\'backwards-message\':((message.fromIndex == message.toIndex)?\'self-message\':\'\')}} reverse-offset-{{message.span}} depth-{{depth}} level-{{message.level}}" '+
+          'ng-class="{'+
           '\'processing\': message.status == TEST_STATUS.PROCESSING, '+
           '\'skipped\': message.status == TEST_STATUS.SKIPPED, '+
           '\'waiting\': message.status == TEST_STATUS.WAITING, '+
@@ -402,10 +401,9 @@ extractSteps = (s, actorInfo) =>
   restrict: 'A'
   replace: true
   template: ''+
-    '<div class="status-wrapper {{message.type}}-type">'+
+    '<div class="status-wrapper {{(message.fromIndex > message.toIndex)?\'backwards-message\':((message.fromIndex == message.toIndex)?\'self-message\':\'\')}} {{message.type}}-type">'+
       '<div class="status" '+
-        'ng-class="{\'self-message\': message.fromIndex == message.toIndex, '+
-        '\'backwards-message\': message.fromIndex > message.toIndex, '+
+        'ng-class="{'+
         '\'processing\': message.status == TEST_STATUS.PROCESSING, '+
         '\'skipped\': message.status == TEST_STATUS.SKIPPED, '+
         '\'waiting\': message.status == TEST_STATUS.WAITING, '+
