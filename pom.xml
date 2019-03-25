@@ -157,7 +157,6 @@
         <module>gitb-remote-modules</module>
         <module>gitb-test-resources</module>
         <module>gitb-testbed-service</module>
-        <module>gitb-validator-validex</module>
         <module>gitb-validators</module>
         <module>gitb-reports</module>
         <module>gitb-validator-tdl</module>
