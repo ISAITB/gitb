@@ -46,7 +46,13 @@
             <dependency>
                 <groupId>eu.europa.ec.itb</groupId>
                 <artifactId>gitb-types</artifactId>
-                <version>1.5.1-SNAPSHOT</version>
+                <version>1.6.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kohsuke.metainf-services</groupId>
+                <artifactId>metainf-services</artifactId>
+                <version>1.8</version>
+                <optional>true</optional>
             </dependency>
             <dependency>
                 <groupId>org.apache.cxf</groupId>
