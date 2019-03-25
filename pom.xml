@@ -27,6 +27,7 @@
                 <version>3.8.0</version>
                 <configuration>
                     <release>11</release>
+                    <forceJavacCompilerUse>true</forceJavacCompilerUse>
                 </configuration>
             </plugin>
         </plugins>
