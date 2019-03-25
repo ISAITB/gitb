@@ -52,7 +52,17 @@
             <artifactId>activation</artifactId>
         </dependency>
     </dependencies>
+
     <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <executable>true</executable>
+                </configuration>
+            </plugin>
+        </plugins>
         <finalName>itbsrv</finalName>
     </build>
 </project>
