@@ -546,6 +546,7 @@ class TestExecutionControllerV2
 
   onopen: (msg) =>
     @$log.debug "WebSocket created."
+    @wsOpen = true
     testType = -1
     if @isInteroperabilityTesting
       testType = @Constants.TEST_CASE_TYPE.INTEROPERABILITY
@@ -564,7 +565,7 @@ class TestExecutionControllerV2
     @ws.send(angular.toJson(msg))
 
     @keepAlive = @$interval(() => 
-      if (@ws?)
+      if (@ws? && @wsOpen)
         msg = {
           command: @Constants.WEB_SOCKET_COMMAND.PING
         }      
@@ -575,6 +576,7 @@ class TestExecutionControllerV2
 
   onclose: (msg) =>
     @$log.debug "WebSocket closed."
+    @wsOpen = false
     if (@keepAlive?)
       @$interval.cancel(@keepAlive)
 
