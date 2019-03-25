@@ -22,8 +22,6 @@ import java.util.List;
 /**
  * Created by senan on 9/4/14.
  */
-//@SOAPBinding(parameterStyle= SOAPBinding.ParameterStyle.BARE)
-//@WebService(name = "TestbedService", serviceName = "TestbedService", targetNamespace = "http://www.gitb.com/tbs/v1/")
 @Component
 @Addressing(enabled = true, required = true)
 public class TestbedServiceImpl implements TestbedService {

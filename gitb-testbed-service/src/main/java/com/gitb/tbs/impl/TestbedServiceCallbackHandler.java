@@ -3,12 +3,17 @@ package com.gitb.tbs.impl;
 import com.gitb.engine.ITestbedServiceCallbackHandler;
 import com.gitb.tbs.TestbedClient;
 import com.gitb.tbs.TestbedClient_Service;
-import com.sun.xml.ws.api.message.HeaderList;
-import com.sun.xml.ws.developer.JAXWSProperties;
-import javax.xml.namespace.QName;
+import org.apache.cxf.headers.Header;
+import org.apache.cxf.helpers.CastUtils;
+import org.apache.cxf.jaxws.context.WrappedMessageContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.w3c.dom.Element;
+
 import javax.xml.ws.WebServiceContext;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -19,9 +24,10 @@ public class TestbedServiceCallbackHandler implements ITestbedServiceCallbackHan
     private static final String SOAP_NAMESPACE = "http://schemas.xmlsoap.org/soap/envelope";
     private static final String TESTBED_CLIENT_NODE = "TestbedClient";
 
+    private static final Logger LOG = LoggerFactory.getLogger(TestbedServiceCallbackHandler.class);
+
     private static TestbedServiceCallbackHandler instance = null;
     private Map<String, WSAddresingProperties> sessionCallbackMap;
-    private TestbedClient port;
 
     public synchronized static TestbedServiceCallbackHandler getInstance() {
         if(instance == null) {
@@ -30,50 +36,24 @@ public class TestbedServiceCallbackHandler implements ITestbedServiceCallbackHan
         return instance;
     }
 
-    protected TestbedServiceCallbackHandler(){
+    private TestbedServiceCallbackHandler(){
         sessionCallbackMap = new ConcurrentHashMap<>();
     }
 
     /**
      * Store the WS Addressing properties (replyTo and messageId) so that we can call callbacks later with the given session id
-     * @param sessionId
-     * @param wsc
-
-    public void saveWSAddressingProperties(String sessionId, WebServiceContext wsc){
-        //Process SOAP Header to find WS Addressing properties
-        HeaderList headers = getHeaders(wsc);
-        EndpointReference endpointReference = getReplyTo(headers);
-        String messageId = getMessageId(headers);
-        String testbedClientURL = getTestbedClientURL(headers);
-        //Put into the map
-        sessionCallbackMap.put(sessionId, new WSAddresingProperties(endpointReference, messageId, testbedClientURL));
-    }*/
-
-    /**
-     * Store the WS Addressing properties (replyTo and messageId) so that we can call callbacks later with the given session id
-     * @param sessionId
-     * @param wsc
+     * @param sessionId The session ID.
+     * @param wsc The web service context.
      */
-    public void saveWSAddressingProperties(String sessionId, WebServiceContext wsc){
+    void saveWSAddressingProperties(String sessionId, WebServiceContext wsc){
         //Process SOAP Header to find WS Addressing properties
-        HeaderList headers = getHeaders(wsc);
-        String testbedClientURL = getTestbedClientURL(headers);
+        String testbedClientURL = getTestbedClientURL(getHeaders(wsc));
         //Put into the map
         sessionCallbackMap.put(sessionId, new WSAddresingProperties(testbedClientURL));
     }
 
     @Override
     public TestbedClient getTestbedClient(String sessionId){
-        /*
-            WSAddresingProperties wsAddresingProperties = sessionCallbackMap.get(sessionId);
-            //Construct Port
-            TestbedClient_Service testbedClientService = new TestbedClient_Service();
-            TestbedClient testbedClient = testbedClientService.getPort(wsAddresingProperties.getReplyTo(), TestbedClient.class);
-            //Set message id
-            ((WSBindingProvider)testbedClient)
-                    .setOutboundHeaders(Headers.create(AddressingVersion.W3C.relatesToTag, wsAddresingProperties.getMessageId()));
-            return testbedClient;
-        */
         WSAddresingProperties wsAddresingProperties = sessionCallbackMap.get(sessionId);
         return wsAddresingProperties.getTestbedClient();
     }
@@ -83,46 +63,35 @@ public class TestbedServiceCallbackHandler implements ITestbedServiceCallbackHan
         sessionCallbackMap.remove(sessionId);
     }
 
-    private String getTestbedClientURL(HeaderList headers){
-        return headers.get(new QName(SOAP_NAMESPACE, TESTBED_CLIENT_NODE), false).getStringContent();
+    private String getTestbedClientURL(List<Header> headers) {
+        if (headers != null) {
+            for (Header header: headers) {
+                Element headerElement = ((Element)header.getObject());
+                if (SOAP_NAMESPACE.equals(headerElement.getNamespaceURI()) && TESTBED_CLIENT_NODE.equals(headerElement.getLocalName())) {
+                    return headerElement.getTextContent();
+                }
+            }
+        }
+        LOG.error("SOAP headers did not include test bed client URI.");
+        return null;
     }
 
     /**
      * Retrieves the headers
-     * @return
+     * @return The list of headers
      */
-    private HeaderList getHeaders(WebServiceContext wsc) {
-        return (HeaderList)wsc.getMessageContext().get(JAXWSProperties.INBOUND_HEADER_LIST_PROPERTY);
+    private List<Header> getHeaders(WebServiceContext wsc) {
+        if (wsc != null && wsc.getMessageContext() instanceof WrappedMessageContext) {
+            return CastUtils.cast((List<?>)((WrappedMessageContext)wsc.getMessageContext()).getWrappedMessage().get(Header.HEADER_LIST));
+        }
+        throw new IllegalStateException("Headers could not be retrieved from web service call");
     }
-
-    /**
-     * Grab WS-Addressing ReplyTo/Address header
-     * @return
-
-    private EndpointReference getReplyTo(HeaderList headers) {
-        return headers.getReplyTo(AddressingVersion.W3C,
-                SOAPVersion.SOAP_11).toSpec();
-    }
-     */
-
-    /**
-     * Grab WS-Addressing MessageID header
-     * @return
-
-    private String getMessageId(HeaderList headers) {
-        return headers.getMessageID(AddressingVersion.W3C,
-                SOAPVersion.SOAP_11);
-    }
-     */
 
     private class WSAddresingProperties {
-        private String testbedClientURL;
         private TestbedClient testbedClient;
 
         private WSAddresingProperties(String testbedClientURL) {
-            this.testbedClientURL = testbedClientURL;
-
-            TestbedClient_Service testbedClientService = null;
+            TestbedClient_Service testbedClientService;
             try {
                 testbedClientService = new TestbedClient_Service(new URL(testbedClientURL));
             } catch (MalformedURLException e) {
@@ -131,46 +100,9 @@ public class TestbedServiceCallbackHandler implements ITestbedServiceCallbackHan
             this.testbedClient = testbedClientService.getTestbedClientPort();
         }
 
-        public String getTestbedClientURL() {
-            return testbedClientURL;
-        }
-
-        public TestbedClient getTestbedClient() {
+        TestbedClient getTestbedClient() {
             return testbedClient;
         }
     }
-
-    /*
-    private class WSAddresingProperties {
-        private EndpointReference replyTo;
-        private String messageId;
-        private String testbedClientURL;
-
-        private WSAddresingProperties(EndpointReference replyTo, String messageId, String testbedClientURL) {
-            this.replyTo = replyTo;
-            this.messageId = messageId;
-            this.testbedClientURL = testbedClientURL;
-        }
-
-        public EndpointReference getReplyTo() {
-            return replyTo;
-        }
-
-        public void setReplyTo(EndpointReference replyTo) {
-            this.replyTo = replyTo;
-        }
-
-        public String getMessageId() {
-            return messageId;
-        }
-
-        public void setMessageId(String messageId) {
-            this.messageId = messageId;
-        }
-
-        public String getTestbedClientURL() {
-            return testbedClientURL;
-        }
-    }*/
 
 }

@@ -9,8 +9,6 @@ import org.springframework.stereotype.Component;
 /**
  * Created by simatosc on 25/11/2016.
  */
-//@WebService(name = "MessagingClient", serviceName = "MessagingClientService", targetNamespace = "http://www.gitb.com/ms/v1/")
-//@SOAPBinding(parameterStyle = SOAPBinding.ParameterStyle.BARE)
 @Component
 public class MessagingClientImpl implements MessagingClient {
 

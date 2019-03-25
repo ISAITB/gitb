@@ -35,15 +35,6 @@
                     <target>${compiler.version}</target>
                 </configuration>
             </plugin>
-            <plugin>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-maven-plugin</artifactId>
-                <version>9.2.2.v20140723</version>
-                <configuration>
-                    <jvmArgs>-Dorg.eclipse.jetty.annotations.maxWait=180</jvmArgs>
-                    <contextXml>gitb-testbed-service/src/main/webapp/WEB-INF/jetty-context.xml</contextXml>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
     <dependencies>
@@ -66,7 +57,7 @@
             <dependency>
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-spring-boot-starter-jaxws</artifactId>
-                <version>3.2.5</version>
+                <version>3.2.8</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
