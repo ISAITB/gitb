@@ -31,6 +31,10 @@
             <groupId>eu.europa.ec.itb</groupId>
             <artifactId>gitb-types</artifactId>
         </dependency>
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
