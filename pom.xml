@@ -17,13 +17,9 @@
 
     <properties>
         <gitb.version>1.0-SNAPSHOT</gitb.version>
-        <env>dev</env>
     </properties>
 
     <build>
-        <filters>
-            <filter>${basedir}/../etc/env.${env}.properties</filter>
-        </filters>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

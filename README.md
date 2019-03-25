@@ -3,13 +3,19 @@
 GITB PoC Testbed implementation uses Maven as a build automation and dependency management tool. This project can be built by executing the following command within the root folder of the project:
 
 ```sh
-$ mvn clean install -DskipTests=true -Denv=<environment>
+$ mvn clean install -DskipTests=true
 ```
-
-There are two different environments for which we can build `dev` or `docker`. `Dev` being the default and thus specifying is optional.
 
 This command builds and compiles all necessary files and creates a war file located in the *gitb-testbed-service/target/gitb-testbed-service-1.0-SNAPSHOT.war*
 
+## Development environment
+
+When making a development build, the URL for the test case repository needs to be set. This is done by providing
+environment variables as follows:
+- remote.testcase.repository.url: http://localhost:9000/repository/tests/:test_id/definition
+- remote.testresource.repository.url: http://localhost:9000/repository/resource/:test_id/:resource_id
+
+By default these are set to work with docker containers as defined in /gitb-remote-testcase-repository/src/main/resources/remote-testcase-repository.properties
 
 ## Running
 
@@ -82,16 +88,6 @@ One of the critical things about the structure of the test suite archives is the
 After configuring a user as *System Admin*, when this user is logged in to the system `Admin` link appears at the top navigation bar.
 
 To deploy a test suite, a domain and a specification related to the test suite must be created. Then, in the specification detail page, by using the `Deploy test suite` button, a test suite archived can be uploaded. If the deployment is successful, test cases and actors related to the test suite should be added to the system.
-
-### Sample Test Suites
-
-The application currently contains two sample test suites:
-
-* `test-suites/Peppol_BIS_3A_Order`
-* `test-suites/Peppol_BIS_4A_Invoice`
-* `test-suites/Peppol_BIS_30A_DespatchAdvice`
-* `test-suites/ServiceMetadataLocator`
-* `test-suites/ServiceMetadataPublisher`
 
 # Version
 1.0-SNAPSHOT
