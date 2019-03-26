@@ -52,6 +52,10 @@
             <groupId>javax.activation</groupId>
             <artifactId>activation</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.sun.org.apache.xml.internal</groupId>
+            <artifactId>resolver</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

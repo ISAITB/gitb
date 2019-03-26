@@ -118,5 +118,9 @@
 			<groupId>javax.jws</groupId>
 			<artifactId>javax.jws-api</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.sun.org.apache.xml.internal</groupId>
+			<artifactId>resolver</artifactId>
+		</dependency>
 	</dependencies>
 </project>
