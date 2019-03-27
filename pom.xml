@@ -150,6 +150,11 @@
                 <artifactId>resolver</artifactId>
                 <version>20050927</version>
             </dependency>
+            <dependency>
+                <groupId>com.sun.xml.stream.buffer</groupId>
+                <artifactId>streambuffer</artifactId>
+                <version>1.5.7</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
