@@ -57,6 +57,7 @@ libraryDependencies ++= Seq(
   "com.sun.org.apache.xml.internal" % "resolver" % "20050927",
   "com.sun.xml.stream.buffer" % "streambuffer" % "1.5.7",
   "com.sun.xml.ws" % "policy" % "2.7.6",
+  "org.glassfish.gmbal" % "gmbal-api-only" % "3.2.0-b003",
   "org.bouncycastle" % "bcmail-jdk15on" % "1.60",
   "org.apache.pdfbox" % "pdfbox" % "2.0.13",
   "org.jasypt" % "jasypt" % "1.9.2",

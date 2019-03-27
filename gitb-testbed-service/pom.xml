@@ -64,6 +64,10 @@
             <groupId>com.sun.xml.ws</groupId>
             <artifactId>policy</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.glassfish.gmbal</groupId>
+            <artifactId>gmbal-api-only</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
