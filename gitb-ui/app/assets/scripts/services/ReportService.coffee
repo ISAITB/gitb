@@ -167,8 +167,13 @@ class ReportService
     })
 
   getTestStepReport: (session, reportPath) ->
+    #paths like 6[2].1.xml must be escaped
+    if (reportPath?) 
+      reportPath = reportPath.replace(/\[/g, '__SQS__')
+      reportPath = reportPath.replace(/\]/g, '__SQE__')
+
     @RestService.get
-      path: jsRoutes.controllers.RepositoryService.getTestStepReport(session, reportPath).url
+      path: jsRoutes.controllers.RepositoryService.getTestStepReport(session, escape(reportPath)).url
       authenticate: true
 
   exportConformanceStatementReport: (actorId, systemId, includeTests) ->

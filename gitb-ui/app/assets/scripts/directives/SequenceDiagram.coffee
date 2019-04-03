@@ -348,7 +348,7 @@ extractSteps = (s, actorInfo) =>
 
           if scope.message.report?
             if scope.message.report.path? && !scope.message.report.result?
-              ReportService.getTestStepReport escape(scope.message.report.path) #paths like 6[2].1.xml must be escaped
+              ReportService.getTestStepReport scope.message.report.path
               .then (report) =>
                 showTestStepReportModal report
               .catch (error) =>

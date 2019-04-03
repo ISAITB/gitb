@@ -49,17 +49,19 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
 //    34888315-6781-4d74-a677-8f9001a02cb8/4.xml
 		val sessionFolder = reportManager.getPathForTestSessionWrapper(sessionId, true).toFile
     var path: String = null
-    if (reportPath.startsWith(sessionId)) {
+    path = reportPath
+      .replace("__SQS__", "[")
+      .replace("__SQE__", "]")
+
+    if (path.startsWith(sessionId)) {
       // Backwards compatibility.
-      val pathParts = StringUtils.split(codec.decode(reportPath), "/")
+      val pathParts = StringUtils.split(codec.decode(path), "/")
       path = pathParts(1)
     } else {
-      path = reportPath
+      path = path
     }
     path = codec.decode(path)
     val file = new File(sessionFolder, path)
-
-    logger.debug("Reading test step report ["+codec.decode(reportPath)+"] from the file ["+file+"]")
 
 		if(file.exists()) {
       //read file incto a string
