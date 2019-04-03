@@ -1,6 +1,7 @@
 package controllers
 
 import java.io.InputStream
+import java.nio.charset.Charset
 
 import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
@@ -66,9 +67,9 @@ class SystemConfigurationService @Inject()(systemConfigurationManager: SystemCon
 
   private def parseTheme(theme: Option[String]): String = {
     if (theme.isDefined && theme.get == Constants.EcTheme) {
-      IOUtils.toString(getInputStream("public/stylesheets/css/theme-ec.css"))
+      IOUtils.toString(getInputStream("public/stylesheets/css/theme-ec.css"), Charset.forName("UTF-8"))
     } else {
-      IOUtils.toString(getInputStream("public/stylesheets/css/theme-gitb.css"))
+      IOUtils.toString(getInputStream("public/stylesheets/css/theme-gitb.css"), Charset.forName("UTF-8"))
     }
   }
 

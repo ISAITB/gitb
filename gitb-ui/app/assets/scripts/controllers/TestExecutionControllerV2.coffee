@@ -258,8 +258,10 @@ class TestExecutionControllerV2
             @configurationsLoaded.resolve()
 
         .catch (error) =>
-          @ErrorService.showErrorMessage(error, true).then () =>
-            @$state.go @$state.current, {}, {reload: true}
+          @ErrorService.showErrorMessage(error, true)
+          .then(() =>
+            @$state.go @$state.current, {}, {reload: true})
+          .catch(angular.noop)
 
   constructEndpointRepresentations: () =>
     @endpointRepresentations = _.map @endpoints, (endpoint) =>
@@ -347,11 +349,16 @@ class TestExecutionControllerV2
         ,
         (error) =>
           @ErrorService.showErrorMessage(error, true)
+          .then(() =>
+            @$state.go @$state.current, {}, {reload: true})
+          .catch(angular.noop)
         )
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error, true).then () =>
-          @$state.go @$state.current, {}, {reload: true}
+        @ErrorService.showErrorMessage(error, true)
+        .then(() =>
+          @$state.go @$state.current, {}, {reload: true})
+        .catch(angular.noop)
     )
 
   getActorName: (actorId) ->
@@ -426,8 +433,8 @@ class TestExecutionControllerV2
         )
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error, true).then () =>
-          @$state.go @$state.current, {}, {reload: true}
+        @ErrorService.showErrorMessage(error).finally(angular.noop).then(() =>
+          @$state.go @$state.current, {}, {reload: true}, angular.noop) 
     )
 
   configure: (session, configs, configureFinished) ->
@@ -454,8 +461,10 @@ class TestExecutionControllerV2
           configureFinished.resolve()
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error, true).then () =>
-          @$state.go @$state.current, {}, {reload: true}
+        @ErrorService.showErrorMessage(error, true)
+        .then(() =>
+          @$state.go @$state.current, {}, {reload: true})
+        .catch(angular.noop)
     )
 
   initiatePreliminary: (session, configureFinished) ->
@@ -465,8 +474,10 @@ class TestExecutionControllerV2
         configureFinished.resolve()
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error, true).then () =>
-          @$state.go @$state.current, {}, {reload: true}
+        @ErrorService.showErrorMessage(error, true)
+        .then(() =>
+          @$state.go @$state.current, {}, {reload: true})
+        .catch(angular.noop)
     )
 
   backDisabled: () ->
@@ -490,8 +501,10 @@ class TestExecutionControllerV2
           @$log.debug data
         ,
         (error) =>
-          @ErrorService.showErrorMessage(error, true).then () =>
-            @$state.go @$state.current, {}, {reload: true}
+          @ErrorService.showErrorMessage(error, true)
+          .then(() =>
+            @$state.go @$state.current, {}, {reload: true})
+          .catch(angular.noop)
       )
     )
 
@@ -507,8 +520,10 @@ class TestExecutionControllerV2
         @testCaseFinished()
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error, true).then () =>
-          @$state.go @$state.current, {}, {reload: true}
+        @ErrorService.showErrorMessage(error, true)
+        .then(() =>
+          @$state.go @$state.current, {}, {reload: true})
+        .catch(angular.noop)
     )
 
   restart: (session) ->
@@ -518,8 +533,10 @@ class TestExecutionControllerV2
         @$log.debug data
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error, true).then () =>
-          @$state.go @$state.current, {}, {reload: true}
+        @ErrorService.showErrorMessage(error, true)
+        .then(() =>
+          @$state.go @$state.current, {}, {reload: true})
+        .catch(angular.noop)
     )
 
   createActorConfigurations: (configs) ->
@@ -546,6 +563,7 @@ class TestExecutionControllerV2
 
   onopen: (msg) =>
     @$log.debug "WebSocket created."
+    @wsOpen = true
     testType = -1
     if @isInteroperabilityTesting
       testType = @Constants.TEST_CASE_TYPE.INTEROPERABILITY
@@ -564,7 +582,7 @@ class TestExecutionControllerV2
     @ws.send(angular.toJson(msg))
 
     @keepAlive = @$interval(() => 
-      if (@ws?)
+      if (@ws? && @wsOpen)
         msg = {
           command: @Constants.WEB_SOCKET_COMMAND.PING
         }      
@@ -575,6 +593,7 @@ class TestExecutionControllerV2
 
   onclose: (msg) =>
     @$log.debug "WebSocket closed."
+    @wsOpen = false
     if (@keepAlive?)
       @$interval.cancel(@keepAlive)
 
