@@ -9,7 +9,7 @@ import com.gitb.tdl.Expression;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.utils.ErrorUtils;
-import net.sf.saxon.xpath.XPathFactoryImpl;
+import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;

@@ -48,6 +48,10 @@
             <groupId>javax.xml.bind</groupId>
             <artifactId>jaxb-api</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.sun.org.apache</groupId>
+            <artifactId>jaxp-ri</artifactId>
+        </dependency>
     </dependencies>
 
 </project>

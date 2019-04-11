@@ -9,7 +9,7 @@ import com.gitb.vs.tdl.ErrorCode;
 import com.gitb.vs.tdl.rules.testcase.expression.VariableResolver;
 import com.gitb.vs.tdl.rules.testcase.expression.VariableResolverProvider;
 import com.gitb.vs.tdl.util.Utils;
-import net.sf.saxon.xpath.XPathFactoryImpl;
+import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -17,7 +17,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -171,7 +170,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     }
 
     private XPathExpression createXPathExpression(String expression) throws XPathExpressionException {
-        XPathFactory factory = new XPathFactoryImpl();
+        XPathFactoryImpl factory = new XPathFactoryImpl();
         factory.setXPathVariableResolver(variableResolver);
         XPath xPath = factory.newXPath();
         return xPath.compile(expression);

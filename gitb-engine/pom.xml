@@ -134,5 +134,9 @@
 			<groupId>org.glassfish.gmbal</groupId>
 			<artifactId>gmbal-api-only</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.sun.org.apache</groupId>
+			<artifactId>jaxp-ri</artifactId>
+		</dependency>
 	</dependencies>
 </project>
