@@ -195,8 +195,8 @@ class ConformanceStatementDetailController
                 _.remove @configurations, (configuration) =>
                   configuration.parameter == oldConfiguration.parameter &&
                     Number(configuration.endpoint) == Number(oldConfiguration.endpoint)
+          @constructEndpointRepresentations()
       , angular.noop)
-      @constructEndpointRepresentations()
 
   canDelete: () =>
     !@DataService.isVendorUser
