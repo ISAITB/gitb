@@ -6,7 +6,7 @@
         <div class="panel-body">
             <!-- Error messages -->
             <div class="row col-md-10 col-md-offset-1">
-                <alert ng-repeat="alert in LegalNoticeCreateCtrl.alerts" type="{{alert.type}}" close="LegalNoticeCreateCtrl.closeAlert($index)">{{alert.msg}}</alert>
+                <div uib-alert ng-repeat="alert in LegalNoticeCreateCtrl.alerts" ng-class="'alert-' + alert.type" close="LegalNoticeCreateCtrl.closeAlert($index)">{{alert.msg}}</div>
             </div>
             <!-- legal notice form -->
             <div class="row col-md-10 col-md-offset-1">

@@ -6,7 +6,7 @@
         <div class="panel-body">
             <!-- Error messages -->
             <div class="row col-md-10 col-md-offset-1">
-                <alert ng-repeat="alert in communityCreateCtrl.alerts" type="{{alert.type}}" close="communityCreateCtrl.closeAlert($index)">{{alert.msg}}</alert>
+                <div uib-alert ng-repeat="alert in communityCreateCtrl.alerts" ng-class="'alert-' + alert.type" close="communityCreateCtrl.closeAlert($index)">{{alert.msg}}</div>
             </div>
             <div class="col-md-10 col-md-offset-1" tb-community-form tb-community="communityCreateCtrl.community" tb-domains="communityCreateCtrl.domains"></div>
         </div>
