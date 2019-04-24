@@ -1,7 +1,7 @@
 class RestService
 
-    @$inject = ['$http', '$q', '$log', 'AuthProvider']
-    constructor: (@$http, @$q, @$log, @AuthProvider) ->
+    @$inject = ['$http', '$q', '$log', 'AuthProvider', '$rootScope', 'Events']
+    constructor: (@$http, @$q, @$log, @AuthProvider, @$rootScope, @Events) ->
         @$log.debug "Constructing RestService..."
 
     get: (config) ->
@@ -26,7 +26,7 @@ class RestService
                 if !config.toJSON?
                     config.toJSON = false
                 @sendRequest(method, config.path.substring(1), config.params, config.data, config.toJSON, config.responseType);
-            )
+        )
 
     authenticate: (config) ->
         deferred = @$q.defer()
@@ -46,7 +46,17 @@ class RestService
         .then(
             (result) =>
                 result.data
-            )
+            (error) =>
+                if error? && error.status? && error.status == 401
+                    if error.data? && error.data.error_code == 104
+                        # Error 104 is the invalid credentials error that would be raised by the login screen. Re-throw to let login controller handle it.
+                        throw error
+                    else
+                        # Handle only authorisation-related errors (but not on login page).
+                        @$rootScope.$emit(@Events.onLogout)
+                else
+                    throw error
+        )
 
     refreshTokens: () ->
         "" #TODO: check if access token expired and refresh it, if necessary

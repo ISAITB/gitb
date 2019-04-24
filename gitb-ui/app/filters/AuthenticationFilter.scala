@@ -28,42 +28,53 @@ class AuthenticationFilter @Inject() (implicit val mat: Materializer, accountMan
     else{
       val authzHeader = requestHeader.headers.get(AUTHORIZATION)
       if(authzHeader.isDefined){
-        //parse access token info
-        val list = authzHeader.get.split(BEARER + " ")
 
-        if(list.length == 2){
-          val accessToken = list(1)
-          //check if access token exists for any user
-          val userId = TokenCache.checkAccessToken(accessToken)
-          //a workaround of customizing request headers to add our userId data, so that controllers can process it
-          val customHeaders = requestHeader.headers.add((Parameters.USER_ID,  "" + userId))
-          val customRequestHeader = requestHeader.copy(headers = customHeaders)
+        try {
+          //parse access token info
+          val list = authzHeader.get.split(BEARER + " ")
 
-          //check if requested service requires admin access
-          if(requiresSystemAdminAccess(requestHeader)) {
-            next(customRequestHeader)
-          } else if(requiresAdminAccess(requestHeader)){
-            val isAdmin = accountManager.isAdmin(userId)
-              if(isAdmin){
-              //has access, execute service
+          if(list.length == 2){
+            val accessToken = list(1)
+            //check if access token exists for any user
+            val userId = TokenCache.checkAccessToken(accessToken)
+            //a workaround of customizing request headers to add our userId data, so that controllers can process it
+            val customHeaders = requestHeader.headers.add((Parameters.USER_ID,  "" + userId))
+            val customRequestHeader = requestHeader.copy(headers = customHeaders)
+
+            //check if requested service requires admin access
+            if(requiresSystemAdminAccess(requestHeader)) {
               next(customRequestHeader)
-            } else{
-              //admin access required, send error response
-              Future{
-                ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.UNAUTHORIZED_ACCESS, "Requires admin access")
+            } else if(requiresAdminAccess(requestHeader)){
+              val isAdmin = accountManager.isAdmin(userId)
+                if(isAdmin){
+                //has access, execute service
+                next(customRequestHeader)
+              } else{
+                //admin access required, send error response
+                Future{
+                  ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.UNAUTHORIZED_ACCESS, "Requires admin access")
+                }
               }
+            } else{
+              //no admin access required, execute service
+              next(customRequestHeader)
             }
-          } else{
-            //no admin access required, execute service
-            next(customRequestHeader)
+          }
+          else{
+            //There is a problem with the authorization header
+            Future{
+              ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.INVALID_AUTHORIZATION_HEADER, "Invalid authorization header")
+            }
+          }
+        } catch {
+          // Catch-all for authorization header problems
+          case e: Exception => {
+            Future{
+              ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.INVALID_AUTHORIZATION_HEADER, "Invalid authorization header")
+            }
           }
         }
-        else{
-          //There is a problem with the authorization header
-          Future{
-            ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.INVALID_AUTHORIZATION_HEADER, "Invalid authorization header")
-          }
-        }
+
       }
       else{
         //Requires authorization to execute this service

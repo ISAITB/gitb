@@ -9,8 +9,6 @@ class IndexController
 
 		@$log.debug "Constructing MainController..."
 
-		@isAuthenticated = @AuthProvider.isAuthenticated()
-
 		@logo
 		@footer
 		@version = @Constants.VERSION
@@ -25,7 +23,7 @@ class IndexController
 		.then (data) =>
 			@footer = data
 
-		if @isAuthenticated
+		if @AuthProvider.isAuthenticated()
 			@getUserProfile()
 			@getVendorProfile()
 			@getConfigurationProperties()
@@ -35,7 +33,6 @@ class IndexController
 		#register for login events
 		@$rootScope.$on @Events.afterLogin, (event, params) =>
 			@$log.debug "handling after-login"
-			@isAuthenticated = true
 			@profileLoaded = @$q.defer()
 			@getUserProfile()
 			@$q.all([@profileLoaded.promise]).then(() =>
@@ -86,9 +83,6 @@ class IndexController
 
 	logout: () ->
 		@$rootScope.$emit(@Events.onLogout)
-		@DataService.destroy()
-		@isAuthenticated = false
-		@redirect('/login')
 
 	onLegalNotice: () ->
 		vendor = @DataService.vendor

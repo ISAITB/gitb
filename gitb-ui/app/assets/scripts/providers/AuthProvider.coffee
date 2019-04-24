@@ -27,8 +27,8 @@ class AuthProvider
 providers.provider('AuthProvider', AuthProvider)
 providers.provider('Auth', AuthProvider)
 
-providers.run ['$log', '$rootScope', '$location', 'AuthProvider', 'Events', 'Constants',
-	($log, $rootScope, $location, authProvider, Events, Constants) ->
+providers.run ['$log', '$rootScope', '$location', 'AuthProvider', 'Events', 'Constants', 'DataService'
+	($log, $rootScope, $location, authProvider, Events, Constants, @DataService) ->
 		# check if access token is set in cookies
 		atKey = Constants.ACCESS_TOKEN_COOKIE_KEY
 		accessToken = $.cookie(atKey)
@@ -58,6 +58,7 @@ providers.run ['$log', '$rootScope', '$location', 'AuthProvider', 'Events', 'Con
 		# handle logout event
 		$rootScope.$on Events.onLogout, () ->
 			$log.debug "handling logout event..."
+			@DataService.destroy()
 			$.removeCookie(atKey, { path: '/' })
 			authProvider.deauthenticate()
 			$location.path('/login')
