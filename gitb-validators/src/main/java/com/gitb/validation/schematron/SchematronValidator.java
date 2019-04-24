@@ -17,7 +17,7 @@ import org.kohsuke.MetaInfServices;
 import org.oclc.purl.dsdl.svrl.SchematronOutputType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Node;
+import org.w3c.dom.Document;
 
 import javax.xml.transform.Source;
 import javax.xml.transform.dom.DOMSource;
@@ -54,7 +54,7 @@ public class SchematronValidator extends AbstractValidator {
         }
         SchemaType sch = (SchemaType) inputs.get(SCHEMATRON_ARGUMENT_NAME);
 
-        Node schematronInput;
+        Document schematronInput;
         SchematronOutputType svrlOutput;
 
         StringResource resource         = new StringResource(sch.toString(), sch.getSchemaLocation());

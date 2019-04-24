@@ -7,6 +7,7 @@ import com.gitb.types.DataType;
 import com.gitb.types.ObjectType;
 import com.gitb.types.SchemaType;
 import com.gitb.validation.common.AbstractReportHandler;
+import com.gitb.validation.xml.DocumentNamespaceContext;
 import com.helger.schematron.svrl.AbstractSVRLMessage;
 import com.helger.schematron.svrl.SVRLFailedAssert;
 import com.helger.schematron.svrl.SVRLSuccessfulReport;
@@ -14,13 +15,14 @@ import com.helger.schematron.svrl.SVRLUtils;
 import org.oclc.purl.dsdl.svrl.SchematronOutputType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
 import javax.xml.bind.JAXBElement;
+import javax.xml.namespace.NamespaceContext;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,10 +36,11 @@ public class SchematronReportHandler extends AbstractReportHandler {
     public static final String XML_ITEM_NAME  = "XML";
     public static final String SCH_ITEM_NAME  = "SCH";
 
-    private Node node;
+    private Document node;
     private SchematronOutputType svrlReport;
+    private NamespaceContext namespaceContext;
 
-    protected SchematronReportHandler(ObjectType xml, SchemaType sch, Node node, SchematronOutputType svrl) {
+    protected SchematronReportHandler(ObjectType xml, SchemaType sch, Document node, SchematronOutputType svrl) {
         super();
 
         this.node = node;
@@ -120,8 +123,16 @@ public class SchematronReportHandler extends AbstractReportHandler {
         return reports;
     }
 
+    private NamespaceContext getNamespaceContext() {
+        if (namespaceContext == null) {
+            namespaceContext = new DocumentNamespaceContext(node, false);
+        }
+        return namespaceContext;
+    }
+
     private String getLineNumbeFromXPath(String xpathExpression) {
-        XPath xPath = XPathFactory.newInstance().newXPath();
+        XPath xPath = new net.sf.saxon.xpath.XPathFactoryImpl().newXPath();
+        xPath.setNamespaceContext(getNamespaceContext());
         Node node;
         try {
             node = (Node) xPath.evaluate(xpathExpression, this.node, XPathConstants.NODE);
