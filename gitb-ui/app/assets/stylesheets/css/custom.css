@@ -161,6 +161,10 @@ div.execution {
 	position: absolute;
 }
 
+.hidden {
+	display: none;
+}
+
 [ng\:cloak],
 [ng-cloak],
 [data-ng-cloak],
