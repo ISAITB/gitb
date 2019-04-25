@@ -5,7 +5,7 @@ import exceptions.ErrorCodes
 import javax.inject.Inject
 import managers.ErrorTemplateManager
 import play.api.mvc.{Action, Controller}
-import utils.JsonUtil
+import utils.{HtmlUtil, JsonUtil}
 
 class ErrorTemplateService @Inject() (errorTemplateManager: ErrorTemplateManager) extends Controller {
 
@@ -47,7 +47,7 @@ class ErrorTemplateService @Inject() (errorTemplateManager: ErrorTemplateManager
   def updateErrorTemplate(templateId: Long) = Action.apply { request =>
     val name = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
     val description = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
-    val content = ParameterExtractor.requiredBodyParameter(request, Parameters.CONTENT)
+    val content = HtmlUtil.sanitizeEditorContent(ParameterExtractor.requiredBodyParameter(request, Parameters.CONTENT))
     val default = ParameterExtractor.requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
     val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
 

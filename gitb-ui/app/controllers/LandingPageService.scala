@@ -6,7 +6,7 @@ import javax.inject.Inject
 import managers.LandingPageManager
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc.{Action, Controller}
-import utils.JsonUtil
+import utils.{HtmlUtil, JsonUtil}
 
 /**
  * Created by VWYNGAET on 25/11/2016.
@@ -52,7 +52,7 @@ class LandingPageService @Inject() (landingPageManager: LandingPageManager) exte
   def updateLandingPage(pageId: Long) = Action.apply { request =>
     val name = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
     val description = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
-    val content = ParameterExtractor.requiredBodyParameter(request, Parameters.CONTENT)
+    val content = HtmlUtil.sanitizeEditorContent(ParameterExtractor.requiredBodyParameter(request, Parameters.CONTENT))
     val default = ParameterExtractor.requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
     val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
 

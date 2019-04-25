@@ -62,7 +62,8 @@ libraryDependencies ++= Seq(
   "org.apache.pdfbox" % "pdfbox" % "2.0.13",
   "org.jasypt" % "jasypt" % "1.9.2",
   "org.apache.httpcomponents" % "httpclient" % "4.5.7",
-  "org.flywaydb" %% "flyway-play" % "3.2.0"
+  "org.flywaydb" %% "flyway-play" % "3.2.0",
+  "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20190325.1"  
 )
 
 //JsEngineKeys.engineType := JsEngineKeys.EngineType.Node

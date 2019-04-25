@@ -10,7 +10,7 @@ import org.apache.tika.Tika
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.AccountManager
 import play.api.mvc._
-import utils.{ClamAVClient, JsonUtil}
+import utils.{ClamAVClient, HtmlUtil, JsonUtil}
 
 
 class AccountService @Inject() (accountManager: AccountManager) extends Controller{
@@ -114,7 +114,7 @@ class AccountService @Inject() (accountManager: AccountManager) extends Controll
     val userEmail: String = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_EMAIL)
     val messageTypeId: String = ParameterExtractor.requiredBodyParameter(request, Parameters.MESSAGE_TYPE_ID)
     val messageTypeDescription: String = ParameterExtractor.requiredBodyParameter(request, Parameters.MESSAGE_TYPE_DESCRIPTION)
-    val messageContent: String = ParameterExtractor.requiredBodyParameter(request, Parameters.MESSAGE_CONTENT)
+    val messageContent: String = HtmlUtil.sanitizeMinimalEditorContent(ParameterExtractor.requiredBodyParameter(request, Parameters.MESSAGE_CONTENT))
 
     var response:Result = null
 

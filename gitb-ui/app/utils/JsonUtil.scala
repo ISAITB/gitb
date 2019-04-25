@@ -497,10 +497,15 @@ object JsonUtil {
 
   def parseJsConformanceCertificateSettings(json:String, communityId: Long): ConformanceCertificates = {
     val jsonConfig = Json.parse(json).as[JsObject]
+    // Ensure the message content (if provided) is correctly sanitized.
+    var certificateMessage = (jsonConfig \ "message").asOpt[String]
+    if (certificateMessage.isDefined) {
+      certificateMessage = Some(HtmlUtil.sanitizePdfContent(certificateMessage.get))
+    }
     ConformanceCertificates(
       0L,
       (jsonConfig \ "title").asOpt[String],
-      (jsonConfig \ "message").asOpt[String],
+      certificateMessage,
       (jsonConfig \ "includeMessage").as[Boolean],
       (jsonConfig \ "includeTestStatus").as[Boolean],
       (jsonConfig \ "includeTestCases").as[Boolean],

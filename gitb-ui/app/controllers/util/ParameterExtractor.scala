@@ -5,6 +5,7 @@ import models.Enums._
 import models._
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
+import utils.HtmlUtil
 
 object ParameterExtractor {
 
@@ -232,7 +233,7 @@ object ParameterExtractor {
   def extractLandingPageInfo(request:Request[AnyContent]):LandingPages = {
     val name = requiredBodyParameter(request, Parameters.NAME)
     val desc = optionalBodyParameter(request, Parameters.DESCRIPTION)
-    val content = requiredBodyParameter(request, Parameters.CONTENT)
+    val content = HtmlUtil.sanitizeEditorContent(requiredBodyParameter(request, Parameters.CONTENT))
     val default = requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
     val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
     LandingPages(0L, name, desc, content, default, communityId)
@@ -241,7 +242,7 @@ object ParameterExtractor {
   def extractLegalNoticeInfo(request:Request[AnyContent]):LegalNotices = {
     val name = requiredBodyParameter(request, Parameters.NAME)
     val desc = optionalBodyParameter(request, Parameters.DESCRIPTION)
-    val content = requiredBodyParameter(request, Parameters.CONTENT)
+    val content = HtmlUtil.sanitizeEditorContent(requiredBodyParameter(request, Parameters.CONTENT))
     val default = requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
     val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
     LegalNotices(0L, name, desc, content, default, communityId)
@@ -250,7 +251,7 @@ object ParameterExtractor {
   def extractErrorTemplateInfo(request:Request[AnyContent]):ErrorTemplates = {
     val name = requiredBodyParameter(request, Parameters.NAME)
     val desc = optionalBodyParameter(request, Parameters.DESCRIPTION)
-    val content = requiredBodyParameter(request, Parameters.CONTENT)
+    val content = HtmlUtil.sanitizeEditorContent(requiredBodyParameter(request, Parameters.CONTENT))
     val default = requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
     val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
     ErrorTemplates(0L, name, desc, content, default, communityId)

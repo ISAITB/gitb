@@ -6,7 +6,7 @@ import javax.inject.Inject
 import managers.LegalNoticeManager
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc.{Action, Controller}
-import utils.JsonUtil
+import utils.{HtmlUtil, JsonUtil}
 
 class LegalNoticeService @Inject() (legalNoticeManager: LegalNoticeManager) extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[LegalNoticeService])
@@ -49,7 +49,7 @@ class LegalNoticeService @Inject() (legalNoticeManager: LegalNoticeManager) exte
   def updateLegalNotice(noticeId: Long) = Action.apply { request =>
     val name = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
     val description = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
-    val content = ParameterExtractor.requiredBodyParameter(request, Parameters.CONTENT)
+    val content = HtmlUtil.sanitizeEditorContent(ParameterExtractor.requiredBodyParameter(request, Parameters.CONTENT))
     val default = ParameterExtractor.requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
     val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
 
