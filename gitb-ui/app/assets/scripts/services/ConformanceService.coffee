@@ -60,17 +60,6 @@ class ConformanceService
         fname: fullName
         description: description
     })
-  
-  createOption: (shortName, fullName, description, actor) ->
-    @RestService.post({
-      path: jsRoutes.controllers.ConformanceService.createOption().url
-      authenticate: true
-      data:
-        sname: shortName
-        fname: fullName
-        description: description
-        actor: actor
-    })
 
   createEndpoint: (name, description, actor) ->
     @RestService.post({
@@ -200,12 +189,6 @@ class ConformanceService
       authenticate: true
     })
 
-  getActorsWithDomainId: (domainId) ->
-    @RestService.get({
-      path: jsRoutes.controllers.ConformanceService.getDomainActors(domainId).url,
-      authenticate: true
-    })
-
   getTestCases: (actorId, specId, optionIds, type) ->
     params = {
       spec: specId,
@@ -219,12 +202,6 @@ class ConformanceService
       path: jsRoutes.controllers.ConformanceService.getActorTestCases(actorId).url
       authenticate: true
       params: params
-
-  getOptionsForActor: (actorId) ->
-    @RestService.get({
-      path: jsRoutes.controllers.ConformanceService.getOptionsForActor(actorId).url,
-      authenticate: true
-    })
 
   getEndpointsForActor: (actorId) ->
     @RestService.get
@@ -242,23 +219,6 @@ class ConformanceService
       authenticate: true
       params: params
     })
-
-  getOptions: (optionIds) ->
-
-    params = {}
-    if optionIds?
-      params["ids"] = optionIds.join ","
-
-    @RestService.get({
-      path: jsRoutes.controllers.ConformanceService.getOptions().url,
-      authenticate: true
-      params: params
-    })
-
-  addActorToSpecification: (specificationId, actorId) ->
-    @RestService.post
-      path: jsRoutes.controllers.ConformanceService.addActorToSpecification(specificationId, actorId).url
-      authenticate: true
 
   deployTestSuite: (specificationId, file) ->
     if file?

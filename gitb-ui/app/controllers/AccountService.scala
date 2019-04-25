@@ -18,16 +18,6 @@ class AccountService @Inject() (accountManager: AccountManager) extends Controll
   private final val tika = new Tika()
 
   /**
-   * Registers a vendor and an administrator for vendor to the system
-   */
-  def registerVendor = Action.apply { request =>
-    val organization = ParameterExtractor.extractOrganizationInfo(request)
-    val admin = ParameterExtractor.extractAdminInfo(request)
-
-    accountManager.registerVendor(organization, admin)
-    ResponseConstructor.constructEmptyResponse
-  }
-  /**
    * Gets the company profile for the authenticated user
    */
   def getVendorProfile = Action.apply { request =>
@@ -110,7 +100,7 @@ class AccountService @Inject() (accountManager: AccountManager) extends Controll
   }
 
   def submitFeedback = Action.apply { request =>
-    val userId: Long = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_ID).toLong
+    val userId: Long = ParameterExtractor.extractUserId(request)
     val userEmail: String = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_EMAIL)
     val messageTypeId: String = ParameterExtractor.requiredBodyParameter(request, Parameters.MESSAGE_TYPE_ID)
     val messageTypeDescription: String = ParameterExtractor.requiredBodyParameter(request, Parameters.MESSAGE_TYPE_DESCRIPTION)

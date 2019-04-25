@@ -19,7 +19,6 @@ POST    /oauth/access_token                 @controllers.AuthenticationService.a
 GET     /check/email                        @controllers.AuthenticationService.checkEmail
 
 # Account management API
-POST    /vendor/register                    @controllers.AccountService.registerVendor
 GET	    /vendor/profile                     @controllers.AccountService.getVendorProfile
 POST	/vendor/profile                     @controllers.AccountService.updateVendorProfile
 GET	    /vendor/users                       @controllers.AccountService.getVendorUsers
@@ -34,17 +33,11 @@ POST    /user/feedback                      @controllers.AccountService.submitFe
 POST	/suts/:sut_id/profile               @controllers.SystemService.updateSystemProfile(sut_id : Long)
 GET	    /suts/:sut_id                       @controllers.SystemService.getSystemProfile(sut_id : Long)
 DELETE  /suts/:sut_id                       @controllers.SystemService.deleteSystem(sut_id : Long)
-POST	/suts/:sut_id/assign                @controllers.SystemService.assignSystemAdminOrTester(sut_id : Long)
 POST    /suts/:sut_id/conformance           @controllers.SystemService.defineConformanceStatement(sut_id : Long)
 DELETE  /suts/:sut_id/conformance           @controllers.SystemService.deleteConformanceStatement(sut_id: Long)
 GET     /suts/:sut_id/conformance           @controllers.SystemService.getConformanceStatements(sut_id : Long)
-GET	    /suts/:sut_id/conformance/actors    @controllers.SystemService.getImplementedActors(sut_id : Long)
-GET	    /suts/:sut_id/conformance/tests/results     @controllers.SystemService.getLastExecutionResultsForTestCases(sut_id : Long)
-GET	    /suts/:sut_id/conformance/suites/results     @controllers.SystemService.getLastExecutionResultsForTestSuite(sut_id : Long)
-GET	    /suts/:sut_id/conformance/results   @controllers.SystemService.getConformanceResults(sut_id : Long)
 #GET	/suts/:sut_id/configs               @controllers.SystemService.getSystemConfigurations(sut_id : Long)
 #POST	/suts/:sut_id/configs               @controllers.SystemService.updateSystemConfigurations(sut_id : Long)
-GET	    /vendor/suts                        @controllers.SystemService.getVendorSystems
 GET	    /vendor/systems                     @controllers.SystemService.getSystemsByOrganization
 POST	/vendor/systems/register            @controllers.SystemService.registerSystemWithOrganization
 
@@ -57,10 +50,8 @@ POST    /domains                            @controllers.ConformanceService.crea
 DELETE  /domains/:domain_id                 @controllers.ConformanceService.deleteDomain(domain_id: Long)
 POST    /domains/:domain_id                 @controllers.ConformanceService.updateDomain(domain_id: Long)
 GET	    /domains/:domain_id/specs           @controllers.ConformanceService.getDomainSpecs(domain_id : Long)
-GET	    /domains/:domain_id/actors          @controllers.ConformanceService.getDomainActors(domain_id : Long)
 GET     /specs                              @controllers.ConformanceService.getSpecs
 POST    /specs                              @controllers.ConformanceService.createSpecification
-POST    /specs/:spec_id/actors/:actor_id    @controllers.ConformanceService.addActorToSpecification(spec_id : Long, actor_id: Long)
 GET	    /specs/:spec_id/actors              @controllers.ConformanceService.getSpecActors(spec_id : Long)
 GET	    /specs/:spec_id/suites              @controllers.ConformanceService.getSpecTestSuites(spec_id : Long)
 POST    /specs/:spec_id/deploy              @controllers.ConformanceService.deployTestSuite(spec_id: Long)
@@ -76,7 +67,6 @@ GET	    /actors/:actor_id/conformance/:sut_id @controllers.ConformanceService.ge
 GET	    /actors/:actor_id/conformance/:sut_id/:testsuite_id @controllers.ConformanceService.getConformanceStatusForTestSuite(actor_id : Long, sut_id : Long, testsuite_id : Long)
 GET	    /testsuites/:testSuiteId/testcases  @controllers.ConformanceService.getTestSuiteTestCases(testSuiteId : Long)
 GET	    /testcases/:testCaseId              @controllers.ConformanceService.getTestSuiteTestCase(testCaseId : Long)
-GET     /actors/:actor_id/options           @controllers.ConformanceService.getOptionsForActor(actor_id : Long)
 GET     /actors/:actor_id/endpoints         @controllers.ConformanceService.getEndpointsForActor(actor_id : Long)
 POST    /endpoints                          @controllers.ConformanceService.createEndpoint
 DELETE  /endpoints/:endpoint_id             @controllers.EndPointService.deleteEndPoint(endpoint_id : Long)
@@ -84,8 +74,6 @@ POST    /endpoints/:endpoint_id             @controllers.EndPointService.updateE
 POST    /parameters                         @controllers.ConformanceService.createParameter
 DELETE  /parameters/:parameter_id           @controllers.ParameterService.deleteParameter(parameter_id : Long)
 POST    /parameters/:parameter_id           @controllers.ParameterService.updateParameter(parameter_id : Long)
-POST    /options                            @controllers.ConformanceService.createOption
-GET     /options                            @controllers.ConformanceService.getOptions
 GET     /domains/:domain_id/parameters                          @controllers.ConformanceService.getDomainParameters(domain_id : Long)
 GET     /domains/:domain_id/parameters/:domain_parameter_id     @controllers.ConformanceService.getDomainParameter(domain_id : Long, domain_parameter_id : Long)
 POST    /domains/:domain_id/parameters                          @controllers.ConformanceService.createDomainParameter(domain_id : Long)
@@ -156,7 +144,6 @@ POST    /communities/admins/create          @controllers.UserService.createCommu
 POST    /communities/admins/:id             @controllers.UserService.updateCommunityAdminProfile(id : Long)
 
 # Test Result management API
-GET	    /suts/:sut_id/conformance/:test_instance/report @controllers.TestResultService.getReportForTestInstance(sut_id:Long, test_instance:String)
 POST    /tests/binaryMetadata                           @controllers.TestResultService.getBinaryMetadata()
 
 # Test management API
@@ -169,7 +156,6 @@ POST	/tests/:session_id/preliminary      @controllers.TestService.initiatePrelim
 POST	/tests/:session_id/start            @controllers.TestService.start(session_id:String)
 POST	/tests/:session_id/stop             @controllers.TestService.stop(session_id:String)
 POST	/tests/:session_id/restart          @controllers.TestService.restart(session_id:String)
-GET 	/tests/sessions                     @controllers.TestService.getSessions()
 
 # WebSocket management API
 GET     /ws                                 @controllers.WebSocketService.socket
@@ -181,7 +167,6 @@ GET     /suite                              @controllers.TestSuiteService.getTes
 
 # Endpoint management API
 GET     /endpoints                          @controllers.ConformanceService.getEndpoints
-GET     /endpoints/:endpoint_id/parameters  @controllers.ConformanceService.getEndpointParameters(endpoint_id: Long)
 GET     /endpoints/:endpoint_id/config      @controllers.SystemService.getEndpointConfigurations(endpoint_id: Long)
 GET     /endpoints/config                   @controllers.SystemService.getConfigurationsWithEndpointIds()
 POST    /endpoints/:endpoint_id/config      @controllers.SystemService.saveEndpointConfiguration(endpoint_id: Long)
@@ -200,7 +185,6 @@ POST    /conformancecertificate             @controllers.ConformanceService.upda
 POST    /conformancecertificate/test        @controllers.ConformanceService.testKeystoreSettings(community_id: Long)
 
 # Repository file serving and management API
-GET     /repository/tests/:test_id                          @controllers.RepositoryService.getTestCase(test_id:String)
 GET     /repository/tests/:test_id/definition               @controllers.RepositoryService.getTestCaseDefinition(test_id:String)
 GET     /repository/reports/teststep/:session_id/*file      @controllers.RepositoryService.getTestStepReport(session_id: String, file)
 GET     /repository/export/testcase                         @controllers.RepositoryService.exportTestCaseReport

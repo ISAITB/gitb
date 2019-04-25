@@ -7,20 +7,6 @@ class AccountService
     constructor: (@$log, @$http, @$q, @RestService) ->
         @$log.debug "Constructing AccountService..."
 
-    registerVendor: (vendorSname, vendorFname, adminName, adminEmail, adminPassword) ->
-        @$log.debug "Registering Vendor..."
-
-        @RestService.post({
-            path: jsRoutes.controllers.AccountService.registerVendor().url,
-            data: {
-                vendor_sname : vendorSname,
-                vendor_fname : vendorFname,
-                user_name    : adminName
-                user_email   : adminEmail
-                password     : adminPassword
-            }
-        })
-
     updateVendorProfile: (vendorFname, vendorSname) ->
         @$log.debug "Updating Vendor profile..."
 
@@ -94,9 +80,8 @@ class AccountService
             authenticate: true
         })
 
-    submitFeedback: (userId, userEmail, messageTypeId, messageTypeDescription, messageContent, messageAttachments) ->
+    submitFeedback: (userEmail, messageTypeId, messageTypeDescription, messageContent, messageAttachments) ->
         data = {}
-        data["GITB-USER-ID"] = userId
         data["user_email"] = userEmail
         data["msg_type_id"] = messageTypeId
         data["msg_type_description"] = messageTypeDescription

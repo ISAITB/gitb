@@ -20,12 +20,6 @@ class SystemService
       path: "/assets/jsons/testsuites.json"
     })
 
-  getVendorSystems: () ->
-    @RestService.get({
-      path: jsRoutes.controllers.SystemService.getVendorSystems().url,
-      authenticate: true
-    })
-
   getSystemsByOrganization: (orgId) ->
     @RestService.get({
       path: jsRoutes.controllers.SystemService.getSystemsByOrganization().url,
@@ -80,11 +74,6 @@ class SystemService
       data: data,
       authenticate: true
     })
-
-  getImplementedActors: (system)->
-    @RestService.get 
-      path: jsRoutes.controllers.SystemService.getImplementedActors(system).url
-      authenticate: true
 
   getConformanceStatements: (system, specId, actorId) ->
     if actorId? and specId?
@@ -146,12 +135,6 @@ class SystemService
         ids: endpointIds.join ','
         system_id: systemId
 
-  getLastExecutionResultsForTestCases: (system, testCaseIds) ->
-    @RestService.get
-      path: jsRoutes.controllers.SystemService.getLastExecutionResultsForTestCases(system).url
-      params:
-        ids: testCaseIds.join ','
-
   deleteConformanceStatement: (system, actorIds) ->
     @RestService.delete
       path: jsRoutes.controllers.SystemService.deleteConformanceStatement(system).url
@@ -163,13 +146,6 @@ class SystemService
       path: jsRoutes.controllers.SystemService.deleteSystem(systemId).url
       params: 
         organization_id: organisationId
-
-  getLastExecutionResultsForTestSuite: (system, testSuiteId, testCaseIds) ->
-      @RestService.get
-        path: jsRoutes.controllers.SystemService.getLastExecutionResultsForTestSuite(system).url
-        params:
-          id: testSuiteId,
-          ids: testCaseIds.join ','
 
   getSystems: (systemIds) ->
     params = {}

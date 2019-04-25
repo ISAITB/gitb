@@ -71,7 +71,7 @@ class ContactSupportController
             @$scope.validateAttachments()
         ) 
             @$scope.sendPending = true
-            @AccountService.submitFeedback(@DataService.user.id, @$scope.contactAddress, @$scope.feedback.id, @$scope.feedback.description, @$scope.getRichTextEditor().getContent(), @$scope.attachments)
+            @AccountService.submitFeedback(@$scope.contactAddress, @$scope.feedback.id, @$scope.feedback.description, @$scope.getRichTextEditor().getContent(), @$scope.attachments)
             .then (data) =>
                 if (data? && data.error_code?)
                     @ValidationService.alerts.push({type:'danger', msg:data.error_description})

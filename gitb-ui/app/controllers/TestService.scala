@@ -167,10 +167,4 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
     ResponseConstructor.constructEmptyResponse
   }
 
-  /**
-   * Returns all open interoperability testing sessions
-   */
-  def getSessions() = Action {
-    ResponseConstructor.constructJsonResponse(WebSocketActor.getSessions)
-  }
 }

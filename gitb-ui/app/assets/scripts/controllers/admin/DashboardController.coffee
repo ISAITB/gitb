@@ -163,14 +163,15 @@ class DashboardController
         'apply.daterangepicker': @applyTimeFiltering
         'cancel.daterangepicker': @clearEndTimeFiltering
 
-    @SystemConfigurationService.getSessionAliveTime()
-    .then (data) =>
-      @config = data
-      @config.parameter = parseInt(@config.parameter, 10)
-      @prevParameter = @config.parameter
-      @onOff = !(data.parameter? && !isNaN(data.parameter))
-    .catch (error) =>
-      @ErrorService.showErrorMessage(error)
+    if @DataService.isSystemAdmin
+      @SystemConfigurationService.getSessionAliveTime()
+      .then (data) =>
+        @config = data
+        @config.parameter = parseInt(@config.parameter, 10)
+        @prevParameter = @config.parameter
+        @onOff = !(data.parameter? && !isNaN(data.parameter))
+      .catch (error) =>
+        @ErrorService.showErrorMessage(error)
 
     @getAllResults()
     d1 = @getAllCommunities()
@@ -337,12 +338,20 @@ class DashboardController
 
   getAllOrganizations: () ->
     d = @$q.defer()
-    @OrganizationService.getOrganizations()
-    .then (data) =>
-      @filters.organization.all = data
-      d.resolve()
-    .catch (error) =>
-      @ErrorService.showErrorMessage(error)
+    if @DataService.isCommunityAdmin
+      @OrganizationService.getOrganizationsByCommunity(@DataService.community.id)
+      .then (data) =>
+        @filters.organization.all = data
+        d.resolve()
+      .catch (error) =>
+        @ErrorService.showErrorMessage(error)
+    else
+      @OrganizationService.getOrganizations()
+      .then (data) =>
+        @filters.organization.all = data
+        d.resolve()
+      .catch (error) =>
+        @ErrorService.showErrorMessage(error)
     d.promise
 
   getAllSystems: () ->

@@ -102,15 +102,6 @@ class ConformanceService @Inject() (conformanceManager: ConformanceManager, acco
   }
 
   /**
-   * Gets actors defined  for the domain
-   */
-  def getDomainActors(domainId: Long) = Action.apply {
-    val actors = conformanceManager.getActorsWithDomainId(domainId)
-    val json = JsonUtil.jsActors(actors).toString()
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
-  /**
    * Gets test cases defined  for the actor
    */
   def getActorTestCases(actor_id: Long) = Action.apply { request =>
@@ -144,12 +135,6 @@ class ConformanceService @Inject() (conformanceManager: ConformanceManager, acco
     } else{
       throw new NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, "Domain with ID '" + domainId + "' not found")
     }
-  }
-
-  def createOption() = Action.apply { request =>
-    val option = ParameterExtractor.extractOption(request)
-    conformanceManager.createOption(option)
-    ResponseConstructor.constructEmptyResponse
   }
 
   def createActor() = Action.apply { request =>
@@ -189,12 +174,6 @@ class ConformanceService @Inject() (conformanceManager: ConformanceManager, acco
     ResponseConstructor.constructEmptyResponse
   }
 
-  def getOptionsForActor(actorId: Long) = Action.apply { request =>
-    val options = conformanceManager.getOptionsForActor(actorId)
-    val json = JsonUtil.jsOptions(options).toString()
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
   def getEndpointsForActor(actorId: Long) = Action.apply {
     val endpoints = conformanceManager.getEndpointsForActor(actorId)
     val json = JsonUtil.jsEndpoints(endpoints).toString()
@@ -209,34 +188,8 @@ class ConformanceService @Inject() (conformanceManager: ConformanceManager, acco
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def getParameters = Action.apply { request =>
-    val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
-
-    val parameters = conformanceManager.getParameters(ids)
-    val json = JsonUtil.jsParameters(parameters).toString()
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
-  def getEndpointParameters(endpointId: Long) = Action.apply {
-    val parameters = conformanceManager.getEndpointParameters(endpointId)
-    val json = JsonUtil.jsParameters(parameters).toString()
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
-  def getOptions = Action.apply { request =>
-    val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
-    val options = conformanceManager.getOptions(ids)
-    val json = JsonUtil.jsOptions(options).toString()
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
   def deleteDomain(domain_id: Long) = Action.apply {
     conformanceManager.deleteDomain(domain_id)
-    ResponseConstructor.constructEmptyResponse
-  }
-
-  def addActorToSpecification(specification_id: Long, actor_id: Long) = Action.apply {
-    conformanceManager.relateActorWithSpecification(actor_id, specification_id)
     ResponseConstructor.constructEmptyResponse
   }
 

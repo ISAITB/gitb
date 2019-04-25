@@ -67,13 +67,7 @@ class SystemService @Inject() (systemManager: SystemManager, parameterManager: P
       throw new NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, "System with ID '" + sut_id + "' not found")
     }
   }
-  /**
-   * Assigns an administrator or tester for the system
-   */
-  def assignSystemAdminOrTester(sut_id:Long) = Action { request =>
-    logger.info("suts/" + sut_id + "/assign service")
-    Ok("suts/" + sut_id + "/assign")
-  }
+
   /**
    * Defines conformance statement for the system
    */
@@ -118,39 +112,6 @@ class SystemService @Inject() (systemManager: SystemManager, parameterManager: P
 		}
 
 	}
-
-	def getLastExecutionResultsForTestCases(sut_id:Long) = Action.apply { request =>
-		val testCaseIdsParam = ParameterExtractor.requiredQueryParameter(request, Parameters.IDS)
-		val testCaseIds = testCaseIdsParam.split(",").map(_.toLong).toList
-
-		val results = testCaseManager.getLastExecutionResultsForTestCases(sut_id, testCaseIds)
-    val json = JsonUtil.jsTestResultStatuses(testCaseIds, results).toString()
-
-    ResponseConstructor.constructJsonResponse(json)
-	}
-
-  def getLastExecutionResultsForTestSuite(sut_id:Long) = Action.apply { request =>
-    val testCaseIdsParam = ParameterExtractor.requiredQueryParameter(request, Parameters.IDS)
-    val testCaseIds = testCaseIdsParam.split(",").map(_.toLong).toList
-    val testSuiteId = ParameterExtractor.requiredQueryParameter(request, Parameters.ID).toLong
-
-    val results = testCaseManager.getLastExecutionResultsForTestCases(sut_id, testCaseIds)
-    val json = JsonUtil.jsTestResultStatuses(testSuiteId, testCaseIds, results).toString()
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
-	def getImplementedActors(sut_id:Long) = Action.apply { request =>
-		val actors = systemManager.getImplementedActorsWrapper(sut_id)
-    val json:String = JsonUtil.jsActors(actors).toString()
-    ResponseConstructor.constructJsonResponse(json)
-	}
-  /**
-   * Overall Results for each test case that the system has performed
-   */
-  def getConformanceResults(sut_id:Long) = Action {
-    logger.info("suts/" + sut_id + "/conformance/results")
-    Ok("suts/" + sut_id + "/conformance/results")
-  }
 
 	def getEndpointConfigurations(endpointId: Long) = Action.apply { request =>
     val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
@@ -211,17 +172,6 @@ class SystemService @Inject() (systemManager: SystemManager, parameterManager: P
   def getSystemsByOrganization() = Action.apply { request =>
     val orgId = ParameterExtractor.requiredQueryParameter(request, Parameters.ORGANIZATION_ID).toLong
     val list = systemManager.getSystemsByOrganization(orgId)
-    val json:String = JsonUtil.jsSystems(list).toString
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
-  /**
-   * Get the SUTs registered for the authenticated vendor
-   */
-  def getVendorSystems() = Action.apply { request =>
-    val userId:Long = ParameterExtractor.extractUserId(request)
-
-    val list = systemManager.getVendorSystems(userId)
     val json:String = JsonUtil.jsSystems(list).toString
     ResponseConstructor.constructJsonResponse(json)
   }

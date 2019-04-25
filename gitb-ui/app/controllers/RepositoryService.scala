@@ -96,14 +96,16 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     if (!pdf.exists()) {
       if (file.exists()) {
         reportManager.generateTestStepReport(file.toPath, pdf.toPath)
-      } else {
-        NotFound
       }
     }
-    Ok.sendFile(
-      content = pdf,
-      fileName = _ => TESTCASE_STEP_REPORT_NAME
-    )
+    if (!pdf.exists()) {
+      NotFound
+    } else {
+      Ok.sendFile(
+        content = pdf,
+        fileName = _ => TESTCASE_STEP_REPORT_NAME
+      )
+    }
   }
 
   def exportTestCaseReport(): Action[AnyContent] = Action.apply { implicit request =>
@@ -236,16 +238,6 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
       fileName = _ => reportPath.toFile.getName
     )
   }
-
-	def getTestCase(testId:String) = Action.apply { implicit request =>
-		val tc = testCaseManager.getTestCase(testId)
-    if (tc.isDefined) {
-      val json = JsonUtil.jsTestCase(tc.get).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    } else {
-      NotFound
-    }
-	}
 
 	def getTestCaseDefinition(testId: String) = Action.apply { implicit request =>
 		val tc = testCaseManager.getTestCase(testId)
