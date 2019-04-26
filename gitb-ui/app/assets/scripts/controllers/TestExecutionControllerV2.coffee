@@ -335,14 +335,6 @@ class TestExecutionControllerV2
           # @$scope.steps = testcase.steps
           @testCaseLoaded.resolve()
 
-          @isInteroperabilityTesting = testcase.metadata.type == @Constants.TEST_CASE_TYPE.INTEROPERABILITY
-          if @isInteroperabilityTesting
-            @$scope.stepsOfTests[testCaseToLookup].splice(1, 0, {id:2, title:"Participants" })
-            @$scope.stepsOfTests[testCaseToLookup].id = 3
-            @$scope.stepsOfTests[testCaseToLookup].id = 4
-
-            @getInteroperabilitySessions()
-
           for testCaseActor in @$scope.actorInfoOfTests[testCaseToLookup]
             if testCaseActor.role == @Constants.TEST_ROLE.SUT
               @actorConfigurations[testCaseActor.id] = null
@@ -371,15 +363,6 @@ class TestExecutionControllerV2
           actorName = info.id
         break
     actorName
-
-  getInteroperabilitySessions: () ->
-    @TestService.getSessions()
-    .then(
-      (data) =>
-        @interoperabilitySessions = data
-      (error) =>
-        @ErrorService.showErrorMessage(error)
-    )
 
   join: () ->
     @session = @selectedSession
