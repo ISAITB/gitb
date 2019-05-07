@@ -270,8 +270,8 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	}
 
 	private def updateTestSuiteInDb(testSuiteId: Long, newData: TestSuites) = {
-		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.shortname, t.fullname, t.version, t.authors, t.keywords, t.description)
-		q1.update(newData.shortname, newData.fullname, newData.version, newData.authors, newData.keywords, newData.description) andThen
+		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.shortname, t.fullname, t.version, t.authors, t.keywords, t.description, t.filename)
+		q1.update(newData.shortname, newData.fullname, newData.version, newData.authors, newData.keywords, newData.description, newData.filename) andThen
 		testResultManager.updateForUpdatedTestSuite(testSuiteId, newData.shortname)
 	}
 
@@ -292,28 +292,6 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 				&& Objects.equals(one.desc, two.desc)
 				&& Objects.equals(one.kind, two.kind)
 				&& Objects.equals(one.use, two.use))
-	}
-
-	private def theSameTestSuite(one: models.TestSuites, two: models.TestSuites) = {
-		(Objects.equals(one.shortname, two.shortname)
-			&& Objects.equals(one.description, two.description)
-			&& Objects.equals(one.keywords, two.keywords)
-			&& Objects.equals(one.version, two.version)
-			&& Objects.equals(one.fullname, two.fullname)
-			&& Objects.equals(one.authors, two.authors))
-	}
-
-	private def theSameTEstCase(one: models.TestCases, two: models.TestCases) = {
-		(Objects.equals(one.path, two.path)
-				&& Objects.equals(one.testCaseType, two.testCaseType)
-				&& Objects.equals(one.keywords, two.keywords)
-				&& Objects.equals(one.description, two.description)
-				&& Objects.equals(one.authors, two.authors)
-				&& Objects.equals(one.version, two.version)
-				&& Objects.equals(one.fullname, two.fullname)
-				&& Objects.equals(one.shortname, two.shortname)
-				&& Objects.equals(one.targetOptions, two.targetOptions)
-				&& Objects.equals(one.targetActors, two.targetActors))
 	}
 
 	def isActorReference(actorToSave: Actors) = {
@@ -645,14 +623,12 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	the only way to do things now that Slick dropped support for implicit sessions.
 	 */
 	private def saveTestSuite(suite: TestSuites, existingSuite: TestSuites, testSuiteActors: Option[List[Actor]], testCases: Option[List[TestCases]], tempTestSuiteArchive: File): DBIO[List[TestSuiteUploadItemResult]] = {
-		val targetFolder: File = getTestSuiteFile(suite.specification, suite.shortname)
-		val backupFolder: File = new File(targetFolder.getParent, targetFolder.getName+"_BACKUP")
-		if (targetFolder.exists()) {
-			if (backupFolder.exists()) {
-				FileUtils.deleteDirectory(backupFolder)
-			}
-			FileUtils.moveDirectory(targetFolder, backupFolder)
-		}
+		val targetFolder: File = getTestSuiteFile(suite.specification, suite.filename)
+    var existingFolder: File = null
+    if (existingSuite != null) {
+      // Update case.
+      existingFolder = new File(targetFolder.getParent, existingSuite.filename)
+    }
 		val resourcePaths = RepositoryUtils.extractTestSuiteFilesFromZipToFolder(suite.specification, targetFolder, tempTestSuiteArchive)
 		val action = for {
 			// Get the specification of the test suite.
@@ -724,25 +700,16 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 
 		action.flatMap(results => {
 			// Finally, delete the backup folder
-			if (backupFolder.exists()) {
-				FileUtils.deleteDirectory(backupFolder)
+			if (existingFolder != null && existingFolder.exists()) {
+				FileUtils.deleteDirectory(existingFolder)
 			}
 			DBIO.successful(results._1._2 ++ results._2._2 ++ results._3._2 ++ results._4)
 		}).cleanUp(error => {
 			if (error.isDefined) {
 				// Cleanup operations in case an error occurred.
-				if (existingSuite == null) {
-					// This was a new test suite
-					if (targetFolder.exists()) {
-						FileUtils.deleteDirectory(targetFolder)
-					}
-				} else {
-					// This was an update.
-					if (backupFolder.exists()) {
-						FileUtils.deleteDirectory(targetFolder)
-						FileUtils.moveDirectory(backupFolder, targetFolder)
-					}
-				}
+        if (targetFolder.exists()) {
+          FileUtils.deleteDirectory(targetFolder)
+        }
 				DBIO.failed(error.get)
 			} else {
 				DBIO.successful(())

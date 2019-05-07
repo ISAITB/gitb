@@ -215,7 +215,8 @@ object PersistenceSchema {
 		def description = column[Option[String]]("description", O.SqlType("TEXT"))
 		def keywords = column[Option[String]]("keywords")
     def specification = column[Long]("specification")
-		def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, specification) <> (TestSuites.tupled, TestSuites.unapply)
+    def filename = column[String]("file_name")
+		def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, specification, filename) <> (TestSuites.tupled, TestSuites.unapply)
     def shortNameVersionUniqueIdx = index("ts_sn_vsn_idx", (shortname, version), unique = true)
 	}
 	val testSuites = TableQuery[TestSuitesTable]

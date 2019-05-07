@@ -247,18 +247,18 @@ class ConformanceService @Inject() (conformanceManager: ConformanceManager, acco
 
   def deployTestSuite(specification_id: Long) = AuthorizedAction(parse.multipartFormData) { request =>
     authorizationManager.canEditTestSuitesMulti(request, specification_id)
+    val testSuiteFileName = "ts_"+RandomStringUtils.random(10, false, true)+".zip"
     request.body.file(Parameters.FILE) match {
     case Some(testSuite) => {
       val file = Paths.get(
         testSuiteManager.getTempFolder().getAbsolutePath,
         RandomStringUtils.random(10, false, true),
-        testSuite.filename
-      ).toFile()
+        testSuiteFileName
+      ).toFile
       file.getParentFile.mkdirs()
       testSuite.ref.moveTo(file)
-      val name = testSuite.filename
       val contentType = testSuite.contentType
-      logger.debug("Test suite file uploaded - filename: [" + name + "] content type: [" + contentType + "]")
+      logger.debug("Test suite file uploaded - filename: [" + testSuiteFileName + "] content type: [" + contentType + "]")
       val result = testSuiteManager.deployTestSuiteFromZipFile(specification_id, file)
       val json = JsonUtil.jsTestSuiteUploadResult(result).toString()
       ResponseConstructor.constructJsonResponse(json)

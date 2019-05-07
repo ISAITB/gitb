@@ -36,6 +36,7 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
         // Prefix with the test suite name.
         filePathToLookup = testSuite.shortname + "/" + filePathToLookup
       }
+      filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.shortname, testSuite.filename)
       val file = RepositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(testCase.targetSpec), filePathToLookup)
 			logger.debug("Reading test resource ["+codec.decode(filePath)+"] definition from the file ["+file+"]")
 			if(file.exists()) {

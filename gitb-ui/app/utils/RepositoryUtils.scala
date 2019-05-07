@@ -8,9 +8,10 @@ import javax.xml.transform.stream.StreamSource
 import com.gitb.core.TestCaseType
 import com.gitb.utils.XMLUtils
 import config.Configurations
-import managers.{TestSuiteManager}
+import managers.TestSuiteManager
 import models._
 import org.apache.commons.io.{FileUtils, IOUtils}
+import org.apache.commons.lang3.RandomStringUtils
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
@@ -146,11 +147,12 @@ object RepositoryUtils {
 						val description: String = tdlTestSuite.getMetadata.getDescription
 						val tdlActors = tdlTestSuite.getActors.getActor.asScala
 						val tdlTestCaseEntries = tdlTestSuite.getTestcase.asScala
+						val fileName = "ts_"+RandomStringUtils.random(10, false, true)
 
 						logger.info("Test suite has tdlActors ["+tdlActors.map(_.getId)+"]")
 						logger.info("Test suite has tdlTestCases ["+tdlTestCaseEntries.map(_.getId)+"]")
 
-						val caseObject = TestSuites(0l, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification)
+						val caseObject = TestSuites(0l, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification, fileName)
 						val actors = tdlActors.map { tdlActor =>
 							val endpoints = tdlActor.getEndpoint.asScala.map { tdlEndpoint => // construct actor endpoints
 								val parameters = tdlEndpoint.getConfig.asScala

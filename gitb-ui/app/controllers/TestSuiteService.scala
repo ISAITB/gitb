@@ -51,7 +51,7 @@ class TestSuiteService @Inject() (testSuiteManager: TestSuiteManager, specificat
 	def downloadTestSuite(testSuiteId: Long) = AuthorizedAction { request =>
 		authorizationManager.canDownloadTestSuite(request, testSuiteId)
 		val testSuite = testSuiteManager.getTestSuites(Some(List(testSuiteId))).head
-		val testSuiteFolder = RepositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(testSuite.specification), testSuite.shortname)
+		val testSuiteFolder = RepositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(testSuite.specification), testSuite.filename)
 		val testSuiteOutputPath = Paths.get(
 			ReportManager.getTempFolderPath().toFile.getAbsolutePath,
 			"test_suite",

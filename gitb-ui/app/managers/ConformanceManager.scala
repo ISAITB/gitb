@@ -201,7 +201,7 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 			(for {
 				testSuite <- PersistenceSchema.testSuites.filter(_.id === testSuiteId).result.head
 				_ <- {
-					RepositoryUtils.undeployTestSuite(getSpecificationById(testSuite.specification), testSuite.shortname)
+					RepositoryUtils.undeployTestSuite(getSpecificationById(testSuite.specification), testSuite.filename)
 					DBIO.successful(())
 				}
 			} yield testSuite) andThen
