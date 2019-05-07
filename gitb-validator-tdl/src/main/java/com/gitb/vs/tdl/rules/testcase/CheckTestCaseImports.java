@@ -32,7 +32,11 @@ public class CheckTestCaseImports extends AbstractTestCaseObserver {
             if (resolvedPath == null) {
                 addReportItem(ErrorCode.INVALID_TEST_CASE_IMPORT, currentTestCase.getId(), artifact.getValue());
             } else {
-                validImports.add(resolvedPath.toAbsolutePath());
+                if (!resolvedPath.normalize().startsWith(context.getTestSuiteRootPath())) {
+                    addReportItem(ErrorCode.INVALID_TEST_CASE_IMPORT, currentTestCase.getId(), artifact.getValue());
+                } else {
+                    validImports.add(resolvedPath.toAbsolutePath());
+                }
             }
         }
     }

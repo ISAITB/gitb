@@ -25,7 +25,7 @@ public enum ErrorCode {
     INVALID_EXTERNAL_PARAMETER_REFERENCE(               "TDL-017", "Test case [%s] references a domain parameter [%s] in step [%s] that is not defined.", WARNING),
     TEST_CASE_NOT_REFERENCED(                           "TDL-018", "Test case [%s] is not referenced in the test suite.", WARNING),
     DEFAULT_ACTOR_NOT_REFERENCED_IN_TEST_CASES_AS_SUT(  "TDL-019", "The default actor for the specification [%s] is not referenced as a SUT in any test cases.", WARNING),
-    INVALID_TEST_CASE_IMPORT(                           "TDL-020", "Test case [%s] defines an import [%s] that doesn't exist.", ERROR),
+    INVALID_TEST_CASE_IMPORT(                           "TDL-020", "Test case [%s] defines an import [%s] that doesn't exist within the test suite.", ERROR),
     UNUSED_RESOURCE(                                    "TDL-021", "Resource [%s] is included in the test suite archive but is never used.", WARNING),
     INVALID_EMBEDDED_MESSAGING_HANDLER_REFERENCE(       "TDL-022", "Test case [%s] references a messaging handler [%s] that does not exist.", ERROR),
     INVALID_EMBEDDED_PROCESSING_HANDLER_REFERENCE(      "TDL-023", "Test case [%s] references a processing handler [%s] that does not exist.", ERROR),
