@@ -1,20 +1,19 @@
 package controllers
 
-import actors.WebSocketActor
 import com.gitb.core.{ActorConfiguration, Configuration}
 import com.gitb.tbs._
 import config.Configurations
 import controllers.util._
 import javax.inject.{Inject, Singleton}
 import jaxws.HeaderHandlerResolver
-import managers.{ConformanceManager, ReportManager}
+import managers.{AuthorizationManager, ConformanceManager, ReportManager}
 import models.Constants
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import utils.{JacksonUtil, JsonUtil}
 
 @Singleton
-class TestService @Inject() (reportManager: ReportManager, conformanceManager: ConformanceManager) extends Controller {
+class TestService @Inject() (reportManager: ReportManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager) extends Controller {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[TestService])
 
@@ -54,7 +53,8 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
   /**
    * Gets the test case definition for a specific test
    */
-  def getTestCaseDefinition(test_id:String) = Action.apply {
+  def getTestCaseDefinition(test_id:String) = AuthorizedAction { request =>
+    authorizationManager.canViewTestCase(request, test_id)
     val response = getTestCasePresentation(test_id)
     val json = JacksonUtil.serializeTestCasePresentation(response.getTestcase)
     logger.debug("[TestCase] " + json)
@@ -63,8 +63,9 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
   /**
    * Gets the definition for a actor test
    */
-  def getActorDefinitions() = Action.apply { request =>
+  def getActorDefinitions() = AuthorizedAction { request =>
     val specId = ParameterExtractor.requiredQueryParameter(request, Parameters.SPECIFICATION_ID).toLong
+    authorizationManager.canViewActorsBySpecificationId(request, specId)
     val actors = conformanceManager.getActorsWithSpecificationId(None, Some(specId))
     val json = JsonUtil.jsActorsNonCase(actors).toString()
     ResponseConstructor.constructJsonResponse(json)
@@ -73,17 +74,20 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
   /**
    * Initiates the test case
    */
-  def initiate(test_id:String) = Action.apply {
-    val request: BasicRequest = new BasicRequest
-    request.setTcId(test_id)
+  def initiate(test_id:String) = AuthorizedAction { request =>
+    authorizationManager.canExecuteTestCase(request, test_id)
+    val requestData: BasicRequest = new BasicRequest
+    requestData.setTcId(test_id)
 
-    val response = port().initiate(request)
+    val response = port().initiate(requestData)
     ResponseConstructor.constructStringResponse(response.getTcInstanceId)
   }
   /**
    * Sends the required data on preliminary steps
    */
-  def configure(session_id:String) = Action.apply { request =>
+  def configure(session_id:String) = AuthorizedAction { request =>
+    authorizationManager.canExecuteTestSession(request, session_id)
+
     val specId = ParameterExtractor.requiredQueryParameter(request, Parameters.SPECIFICATION_ID).toLong
     val configs = ParameterExtractor.requiredBodyParameter(request, Parameters.CONFIGS)
 
@@ -93,7 +97,7 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
 
     val domainId = conformanceManager.getSpecifications(Some(List(specId)))(0).domain
     val parameters = conformanceManager.getDomainParameters(domainId)
-    if (!parameters.isEmpty) {
+    if (parameters.nonEmpty) {
       val domainConfiguration = new ActorConfiguration()
       domainConfiguration.setActor(Constants.domainConfigurationName)
       domainConfiguration.setEndpoint(Constants.domainConfigurationName)
@@ -114,7 +118,9 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
   /**
    * Sends inputs to the TestbedService
    */
-  def provideInput(session_id:String) = Action.apply { request =>
+  def provideInput(session_id:String) = AuthorizedAction { request =>
+    authorizationManager.canExecuteTestSession(request, session_id)
+
     val inputs = ParameterExtractor.requiredBodyParameter(request, Parameters.INPUTS)
     val step   = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_STEP)
 
@@ -130,7 +136,9 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
   /**
    * Starts the preliminary phase if test case description has one
    */
-  def initiatePreliminary(session_id:String) = Action.apply { request =>
+  def initiatePreliminary(session_id:String) = AuthorizedAction { request =>
+    authorizationManager.canExecuteTestSession(request, session_id)
+
     val bRequest:BasicCommand = new BasicCommand
     bRequest.setTcInstanceId(session_id)
 
@@ -141,7 +149,9 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
   /**
    * Starts the test case
    */
-  def start(session_id:String) = Action.apply {
+  def start(session_id:String) = AuthorizedAction { request =>
+    authorizationManager.canExecuteTestSession(request, session_id)
+
     val bRequest: BasicCommand = new BasicCommand
     bRequest.setTcInstanceId(session_id)
 
@@ -152,14 +162,18 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
   /**
    * Stops the test case
    */
-  def stop(session_id:String) = Action.apply {
+  def stop(session_id:String) = AuthorizedAction { request =>
+    authorizationManager.canExecuteTestSession(request, session_id)
+
     endSession(session_id)
     ResponseConstructor.constructEmptyResponse
   }
   /**
    * Restarts the test case with same preliminary data
    */
-  def restart(session_id:String) = Action.apply {
+  def restart(session_id:String) = AuthorizedAction { request =>
+    authorizationManager.canExecuteTestSession(request, session_id)
+
     val bRequest: BasicCommand = new BasicCommand
     bRequest.setTcInstanceId(session_id)
 

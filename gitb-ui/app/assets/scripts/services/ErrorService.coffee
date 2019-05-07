@@ -30,14 +30,7 @@ class ErrorService
             .then (data) =>
               if data.exists == true
                 errorObj.template = data.content
-                @modal = @openModal(errorObj, withRetry, errorDeferred)
-              else if communityId != @Constants.DEFAULT_COMMUNITY_ID
-                @ErrorTemplateService.getCommunityDefaultErrorTemplate(@Constants.DEFAULT_COMMUNITY_ID)
-                .then (data) =>
-                  errorObj.template = data.content  if data.exists == true
-                  @modal = @openModal(errorObj, withRetry, errorDeferred)
-              else
-                @modal = @openModal(errorObj, withRetry, errorDeferred)
+              @modal = @openModal(errorObj, withRetry, errorDeferred)
       else
         @modal = @openModal(errorObj, withRetry, errorDeferred)
     else

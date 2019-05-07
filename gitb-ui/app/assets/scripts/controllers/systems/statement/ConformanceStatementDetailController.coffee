@@ -83,6 +83,8 @@ class ConformanceStatementDetailController
         testSuiteResults.push(testSuiteData[testSuiteId])
       @testSuites = testSuiteResults
       @testStatus = @DataService.testStatusText(completedCount, failedCount, undefinedCount)
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
 
     @ConformanceService.getActorsWithIds [@actorId]
     .then (data) =>
@@ -115,6 +117,8 @@ class ConformanceStatementDetailController
           @constructEndpointRepresentations()
         .catch (error) =>
           @ErrorService.showErrorMessage(error)
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
 
   constructEndpointRepresentations: () =>
     @endpointRepresentations = _.map @endpoints, (endpoint) =>

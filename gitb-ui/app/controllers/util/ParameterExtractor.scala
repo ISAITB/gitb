@@ -82,6 +82,15 @@ object ParameterExtractor {
     }
   }
 
+  def extractOptionalUserId(request:Request[_]):Option[Long] = {
+    val userId = request.headers.get(Parameters.USER_ID)
+    if (userId.isDefined) {
+      Some(userId.get.toLong)
+    } else {
+      None
+    }
+  }
+
   def extractUserId(request:Request[AnyContent]):Long = {
     request.headers.get(Parameters.USER_ID).get.toLong
   }

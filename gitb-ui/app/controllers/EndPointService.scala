@@ -1,20 +1,22 @@
 package controllers
 
-import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import javax.inject.Inject
-import managers.EndPointManager
+import managers.{AuthorizationManager, EndPointManager}
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.mvc.{Action, Controller}
+import play.api.mvc.Controller
 
-class EndPointService @Inject() (endPointManager: EndPointManager) extends Controller {
+class EndPointService @Inject() (endPointManager: EndPointManager, authorizationManager: AuthorizationManager) extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[EndPointService])
 
-  def deleteEndPoint(endPointId: Long) = Action.apply { request =>
+  def deleteEndPoint(endPointId: Long) = AuthorizedAction { request =>
+    authorizationManager.canDeleteEndpoint(request, endPointId)
     endPointManager.deleteEndPoint(endPointId)
     ResponseConstructor.constructEmptyResponse
   }
 
-  def updateEndPoint(endPointId: Long) = Action.apply { request =>
+  def updateEndPoint(endPointId: Long) = AuthorizedAction { request =>
+    authorizationManager.canUpdateEndpoint(request, endPointId)
     val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
     val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
     val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong

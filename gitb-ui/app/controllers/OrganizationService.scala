@@ -1,22 +1,23 @@
 package controllers
 
-import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import javax.inject.Inject
-import managers.OrganizationManager
+import managers.{AuthorizationManager, OrganizationManager}
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.mvc.{Action, Controller}
+import play.api.mvc.Controller
 import utils.JsonUtil
 
 /**
  * Created by VWYNGAET on 26/10/2016.
  */
-class OrganizationService @Inject() (organizationManager: OrganizationManager) extends Controller {
+class OrganizationService @Inject() (organizationManager: OrganizationManager, authorizationManager: AuthorizationManager) extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[OrganizationService])
 
   /**
    * Gets all organizations except the default organization for system administrators
    */
-  def getOrganizations() = Action.apply {
+  def getOrganizations() = AuthorizedAction { request =>
+    authorizationManager.canViewAllOrganisations(request)
     val list = organizationManager.getOrganizations()
     val json: String = JsonUtil.jsOrganizations(list).toString
     ResponseConstructor.constructJsonResponse(json)
@@ -25,7 +26,8 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager) e
   /**
    * Gets the organization with specified id
    */
-  def getOrganizationById(orgId: Long) = Action.apply { request =>
+  def getOrganizationById(orgId: Long) = AuthorizedAction { request =>
+    authorizationManager.canViewOrganisation(request, orgId)
     val organization = organizationManager.getOrganizationById(orgId)
     val json: String = JsonUtil.serializeOrganization(organization)
     ResponseConstructor.constructJsonResponse(json)
@@ -34,7 +36,8 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager) e
   /**
    * Gets the organizations with specified community
    */
-  def getOrganizationsByCommunity(communityId: Long) = Action.apply { request =>
+  def getOrganizationsByCommunity(communityId: Long) = AuthorizedAction { request =>
+    authorizationManager.canViewOrganisationsByCommunity(request, communityId)
     val list = organizationManager.getOrganizationsByCommunity(communityId)
     val json: String = JsonUtil.jsOrganizations(list).toString
     ResponseConstructor.constructJsonResponse(json)
@@ -43,9 +46,10 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager) e
   /**
    * Creates new organization
    */
-  def createOrganization() = Action.apply { request =>
+  def createOrganization() = AuthorizedAction { request =>
     val organization = ParameterExtractor.extractOrganizationInfo(request)
     val otherOrganisation = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_ORGANISATION)
+    authorizationManager.canCreateOrganisation(request, organization, otherOrganisation)
     organizationManager.createOrganization(organization, otherOrganisation)
     ResponseConstructor.constructEmptyResponse
   }
@@ -53,7 +57,8 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager) e
   /**
    * Updates organization
    */
-  def updateOrganization(orgId: Long) = Action.apply { request =>
+  def updateOrganization(orgId: Long) = AuthorizedAction { request =>
+    authorizationManager.canUpdateOrganisation(request, orgId)
     val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_SNAME)
     val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_FNAME)
     val landingPageId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LANDING_PAGE_ID)
@@ -67,7 +72,8 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager) e
   /**
    * Deletes organization by id
    */
-  def deleteOrganization(orgId: Long) = Action.apply { request =>
+  def deleteOrganization(orgId: Long) = AuthorizedAction { request =>
+    authorizationManager.canDeleteOrganisation(request, orgId)
     organizationManager.deleteOrganization(orgId)
     ResponseConstructor.constructEmptyResponse
   }

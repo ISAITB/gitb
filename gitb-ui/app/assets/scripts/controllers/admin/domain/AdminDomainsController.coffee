@@ -23,18 +23,18 @@ class AdminDomainsController
 		@getDomains()
 
 	getDomains: () ->
-	  if @DataService.isSystemAdmin
-	    @ConformanceService.getDomains()
-	    .then (data) =>
-	      @domains = data
-	    .catch (error) =>
-	      @ErrorService.showErrorMessage(error)
-	  else if @DataService.isCommunityAdmin
-	    @ConformanceService.getCommunityDomain(@DataService.community.id)
-	    .then (data) =>
-	      @domains.push data if data
-	    .catch (error) =>
-	      @ErrorService.showErrorMessage(error)
+		if @DataService.isSystemAdmin
+			@ConformanceService.getDomains()
+			.then (data) =>
+				@domains = data
+			.catch (error) =>
+				@ErrorService.showErrorMessage(error)
+		else if @DataService.isCommunityAdmin
+			@ConformanceService.getCommunityDomain(@DataService.community.id)
+			.then (data) =>
+				@domains.push data if data
+			.catch (error) =>
+				@ErrorService.showErrorMessage(error)
 
 	onDomainSelect: (domain)=>
 		@$state.go 'app.admin.domains.detail.list', {id: domain.id}

@@ -288,7 +288,9 @@ class DashboardController
 
   getAllCommunities: () ->
     d = @$q.defer()
-    @CommunityService.getCommunities()
+    if @DataService.isCommunityAdmin
+      communityIds = [@DataService.community.id]
+    @CommunityService.getCommunities(communityIds)
     .then (data) =>
         @filters.community.all = data
         d.resolve()
@@ -298,7 +300,9 @@ class DashboardController
 
   getAllDomains: () ->
     d = @$q.defer()
-    @ConformanceService.getDomains()
+    if @DataService.isCommunityAdmin && @DataService.community.domainId?
+      domainIds = [@DataService.community.domainId]
+    @ConformanceService.getDomains(domainIds)
     .then (data) =>
       @filters.domain.all = data
       d.resolve()
@@ -308,8 +312,11 @@ class DashboardController
 
   getAllSpecifications: () ->
     d = @$q.defer()
-    @ConformanceService.getSpecificationsWithIds()
-    .then (data) =>
+    if @DataService.isCommunityAdmin && @DataService.community.domainId?
+      callResult = @ConformanceService.getSpecifications(@DataService.community.domainId)
+    else
+      callResult = @ConformanceService.getSpecificationsWithIds()
+    callResult.then (data) =>
        @filters.specification.all = data
        d.resolve()
     .catch (error) =>
@@ -317,8 +324,12 @@ class DashboardController
     d.promise
 
   getAllTestCases: () ->
+    if @DataService.isCommunityAdmin && @DataService.community.domainId
+      tcFunction = @ReportService.getTestCasesForCommunity
+    else
+      tcFunction = @ReportService.getAllTestCases
     d = @$q.defer()
-    @ReportService.getTestCases()
+    tcFunction()
     .then (data) =>
        @filters.testCase.all = data
        d.resolve()
@@ -327,8 +338,12 @@ class DashboardController
     d.promise
 
   getAllTestSuites: () ->
+    if @DataService.isCommunityAdmin && @DataService.community.domainId
+      tsFunction = @TestSuiteService.getTestSuitesWithTestCasesForCommunity
+    else
+      tsFunction = @TestSuiteService.getAllTestSuitesWithTestCases
     d = @$q.defer()
-    @TestSuiteService.getTestSuitesWithTestCases()
+    tsFunction()
     .then (data) =>
        @filters.testSuite.all = data
        d.resolve()
@@ -356,8 +371,11 @@ class DashboardController
 
   getAllSystems: () ->
     d = @$q.defer()
-    @SystemService.getSystems()
-    .then (data) =>
+    if @DataService.isSystemAdmin
+      sFunction = @SystemService.getSystems
+    else
+      sFunction = @SystemService.getSystemsByCommunity
+    sFunction().then (data) =>
       @filters.system.all = data
       d.resolve()
     .catch (error) =>
@@ -638,8 +656,9 @@ class DashboardController
     .then (data) =>
       testResultMapper = @newTestResult
       tests = _.map data, (t) -> testResultMapper(t)
-
       @exportAsCsv(["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organisation", "System", "Start time", "End time", "Result", "Obsolete"], tests)
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
 
   exportActiveSessionsToCsv: () =>
     communityIds = _.map @filters.community.selection, (s) -> s.id
@@ -656,8 +675,9 @@ class DashboardController
     .then (data) =>
       testResultMapper = @newTestResult
       tests = _.map data, (testResult) -> testResultMapper(testResult)
-
       @exportAsCsv(["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organisation", "System", "Start time", "End time", "Result", "Obsolete"], tests)
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
 
   rowStyle: (row) => 
     if row.obsolete

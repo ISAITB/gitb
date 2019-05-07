@@ -1,8 +1,8 @@
 app.config ['$stateProvider', '$urlRouterProvider',
 	($stateProvider, $urlRouterProvider) ->
 		profile = [
-			'$q', '$log', '$state', 'AuthProvider', 'AccountService', 'DataService', 'CommunityService',
-			($q, $log, $state, AuthProvider, AccountService, DataService, CommunityService)->
+			'$q', '$log', '$state', 'AuthProvider', 'AccountService', 'DataService', 'CommunityService', 'ErrorService', 
+			($q, $log, $state, AuthProvider, AccountService, DataService, CommunityService, ErrorService)->
 				deferred = $q.defer()
 				userDeferred = $q.defer()
 				vendorDeferred = $q.defer()
@@ -14,18 +14,23 @@ app.config ['$stateProvider', '$urlRouterProvider',
 							DataService.setUser(data)
 							$log.debug 'Got user profile from the server...'
 							userDeferred.resolve()
-
+						.catch (error) ->
+							ErrorService.showErrorMessage(error)
 				getVendorProfile = () ->
 					AccountService.getVendorProfile()
 					.then (data) ->
 						DataService.setVendor(data)
 						vendorDeferred.resolve()
+					.catch (error) ->
+						ErrorService.showErrorMessage(error)
 
 				getUserCommunity = () ->
 					CommunityService.getUserCommunity()
 					.then (data) ->
 						DataService.setCommunity(data)
 						communityDeferred.resolve()
+					.catch (error) ->
+						ErrorService.showErrorMessage(error)
 
 				$log.debug 'Resolving user profile..'
 				authenticated = AuthProvider.isAuthenticated()
@@ -54,8 +59,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 		]
 
 		system = [
-			'$q', 'DataService', 'SystemService'
-			($q, DataService, SystemService)->
+			'$q', 'DataService', 'SystemService', 'ErrorService',
+			($q, DataService, SystemService, ErrorService)->
 				deferred = $q.defer()
 
 				if DataService.isVendorUser
@@ -65,6 +70,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 							deferred.reject {redirectTo: 'app.systems.detail.conformance.list', params: {id: data[0].id}}
 						else
 							deferred.resolve()
+					.catch (error) ->
+						ErrorService.showErrorMessage(error)
 				else
 					deferred.resolve()
 
@@ -72,8 +79,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 		]
 
 		conformance = [
-			'$q', '$stateParams', 'DataService', 'SystemService'
-			($q, $stateParams, DataService, SystemService)->
+			'$q', '$stateParams', 'DataService', 'SystemService', 'ErrorService',
+			($q, $stateParams, DataService, SystemService, Errorservice)->
 				deferred = $q.defer()
 
 				if DataService.isVendorUser
@@ -83,6 +90,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 							deferred.reject {redirectTo: 'app.systems.detail.conformance.detail', params: {id: $stateParams.id, actor_id: data[0].actorId, specId: data[0].specificationId}}
 						else
 							deferred.resolve()
+					.catch (error) ->
+						ErrorService.showErrorMessage(error)
 				else
 					deferred.resolve()
 

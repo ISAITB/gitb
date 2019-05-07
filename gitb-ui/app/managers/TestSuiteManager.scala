@@ -36,6 +36,10 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 
 	private final val logger: Logger = LoggerFactory.getLogger("TestSuiteManager")
 
+	def getById(testSuiteId: Long): Option[TestSuites] = {
+		exec(PersistenceSchema.testSuites.filter(_.id === testSuiteId).result.headOption)
+	}
+
 	def getTestSuitesWithSpecificationId(specification: Long): List[TestSuites] = {
 		exec(PersistenceSchema.testSuites
 			.filter(_.specification === specification)
@@ -69,7 +73,42 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 
 	def getTestSuitesWithTestCases(): List[TestSuite] = {
 		val testSuites = exec(PersistenceSchema.testSuites.sortBy(_.shortname.asc).result.map(_.toList))
+		testSuites map {
+			ts:TestSuites =>
+				val testCaseIds = exec(PersistenceSchema.testSuiteHasTestCases.filter(_.testsuite === ts.id).map(_.testcase).result.map(_.toList))
+				val testCases = exec(PersistenceSchema.testCases.filter(_.id inSet testCaseIds).result.map(_.toList))
 
+				new TestSuite(ts, testCases)
+		}
+	}
+
+	def getTestSuitesWithTestCasesForCommunity(communityId: Long): List[TestSuite] = {
+		val testSuites = exec(
+			PersistenceSchema.testSuites
+				.join(PersistenceSchema.specifications).on(_.specification === _.id)
+  			.join(PersistenceSchema.communities).on(_._2.domain === _.domain)
+  			.filter(_._2.id === communityId)
+  			.map(r => r._1._1)
+				.sortBy(_.shortname.asc).result.map(_.toList)
+		)
+		testSuites map {
+			ts:TestSuites =>
+				val testCaseIds = exec(PersistenceSchema.testSuiteHasTestCases.filter(_.testsuite === ts.id).map(_.testcase).result.map(_.toList))
+				val testCases = exec(PersistenceSchema.testCases.filter(_.id inSet testCaseIds).result.map(_.toList))
+
+				new TestSuite(ts, testCases)
+		}
+	}
+
+	def getTestSuitesWithTestCasesForSystem(systemId: Long): List[TestSuite] = {
+		val testSuites = exec(
+			PersistenceSchema.testSuites
+				.join(PersistenceSchema.conformanceResults).on(_.id === _.testsuite)
+				.filter(_._2.sut === systemId)
+				.map(r => r._1)
+  			.distinctOn(_.id)
+				.sortBy(_.shortname.asc).result.map(_.toList)
+		)
 		testSuites map {
 			ts:TestSuites =>
 				val testCaseIds = exec(PersistenceSchema.testSuiteHasTestCases.filter(_.testsuite === ts.id).map(_.testcase).result.map(_.toList))

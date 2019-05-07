@@ -124,9 +124,25 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     system
   }
 
+  def getSystemIdsForOrganization(orgId: Long): Set[Long] = {
+    val systemIds = exec(PersistenceSchema.systems.filter(_.owner === orgId).map(s => {s.id}).result.map(_.toSet))
+    systemIds
+  }
+
   def getSystemsByOrganization(orgId: Long): List[Systems] = {
     val systems = exec(PersistenceSchema.systems.filter(_.owner === orgId)
         .sortBy(_.shortname.asc)
+      .result.map(_.toList))
+    systems
+  }
+
+  def getSystemsByCommunity(communityId: Long): List[Systems] = {
+    val systems = exec(
+      PersistenceSchema.systems
+        .join(PersistenceSchema.organizations).on(_.owner === _.id)
+        .filter(_._2.community === communityId)
+        .map(r => r._1)
+      .sortBy(_.shortname.asc)
       .result.map(_.toList))
     systems
   }
@@ -346,12 +362,9 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     } yield()
 	}
 
-  def getSystemByIdWrapper(id: Long): Option[Systems] = {
-    getSystemById(id)
-  }
-
-  def getSystemById(id: Long) = {
-    exec(PersistenceSchema.systems.filter(_.id === id).result.headOption)
+  def getSystemById(id: Long): Option[Systems] = {
+    val system = exec(PersistenceSchema.systems.filter(_.id === id).result.headOption)
+    system
   }
 
   def getSystems(ids: Option[List[Long]]): List[Systems] = {

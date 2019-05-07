@@ -1,7 +1,7 @@
 class TestSuiteService
-	@$inject = ['$log', 'RestService']
+	@$inject = ['$log', 'RestService', 'DataService']
 
-	constructor: (@$log, @RestService) ->
+	constructor: (@$log, @RestService, @DataService) ->
 		@$log.debug "Constructing TestSuiteService..."
 
 	undeployTestSuite: (testSuiteId) ->
@@ -15,21 +15,19 @@ class TestSuiteService
 			authenticate: true
 			responseType: "arraybuffer"
 
-	getTestSuites: (ids) ->
-		if ids? and ids.length > 0
-			@RestService.get
-				path: jsRoutes.controllers.TestSuiteService.getTestSuites().url
-				authenticate: true
-				params:
-					ids: ids.join ','
-		else
-			@RestService.get
-				path: jsRoutes.controllers.TestSuiteService.getTestSuites().url
-				authenticate: true
-
-	getTestSuitesWithTestCases: () ->
+	getAllTestSuitesWithTestCases: () =>
 		@RestService.get
-			path: jsRoutes.controllers.TestSuiteService.getTestSuitesWithTestCases().url
+			path: jsRoutes.controllers.TestSuiteService.getAllTestSuitesWithTestCases().url
+			authenticate: true
+
+	getTestSuitesWithTestCasesForCommunity: () =>
+		@RestService.get
+			path: jsRoutes.controllers.TestSuiteService.getTestSuitesWithTestCasesForCommunity(@DataService.community.id).url
+			authenticate: true
+
+	getTestSuitesWithTestCasesForSystem: (systemId) ->
+		@RestService.get
+			path: jsRoutes.controllers.TestSuiteService.getTestSuitesWithTestCasesForSystem(systemId).url
 			authenticate: true
 
 services.service('TestSuiteService', TestSuiteService)

@@ -1016,12 +1016,12 @@ object JsonUtil {
    * @param landingPage LandingPage object to be converted
    * @return String
    */
-  def serializeLandingPage(landingPage:LandingPage):String = {
+  def serializeLandingPage(landingPage: Option[LandingPage]):String = {
     //1) Serialize LandingPage
-    val exists = landingPage != null
+    val exists = landingPage.isDefined
     var jLandingPage:JsObject =  jsExists(exists)
     if (exists) {
-      jLandingPage = jLandingPage ++ jsLandingPage(landingPage.toCaseObject)
+      jLandingPage = jLandingPage ++ jsLandingPage(landingPage.get.toCaseObject)
     }
     //3) Return JSON String
     jLandingPage.toString
@@ -1032,12 +1032,12 @@ object JsonUtil {
    * @param legalNotice LegalNotice object to be converted
    * @return String
    */
-  def serializeLegalNotice(legalNotice:LegalNotice):String = {
+  def serializeLegalNotice(legalNotice: Option[LegalNotice]):String = {
     //1) Serialize LegalNotice
-    val exists = legalNotice != null
+    val exists = legalNotice.isDefined
     var jLegalNotice:JsObject = jsExists(exists)
     if (exists) {
-      jLegalNotice = jLegalNotice ++ jsLegalNotice(legalNotice.toCaseObject)
+      jLegalNotice = jLegalNotice ++ jsLegalNotice(legalNotice.get.toCaseObject)
     }
     //3) Return JSON String
     jLegalNotice.toString
@@ -1048,12 +1048,12 @@ object JsonUtil {
     * @param errorTemplate ErrorTemplate object to be converted
     * @return String
     */
-  def serializeErrorTemplate(errorTemplate:ErrorTemplate):String = {
+  def serializeErrorTemplate(errorTemplate: Option[ErrorTemplate]):String = {
     //1) Serialize ErrorTemplate
-    val exists = errorTemplate != null
+    val exists = errorTemplate.isDefined
     var jErrorTemplate:JsObject = jsExists(exists)
     if (exists) {
-      jErrorTemplate = jErrorTemplate ++ jsErrorTemplate(errorTemplate.toCaseObject)
+      jErrorTemplate = jErrorTemplate ++ jsErrorTemplate(errorTemplate.get.toCaseObject)
     }
     //3) Return JSON String
     jErrorTemplate.toString

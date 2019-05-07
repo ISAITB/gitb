@@ -51,6 +51,10 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
     ln
   }
 
+  def getCommunityId(noticeId: Long): Long = {
+    exec(PersistenceSchema.legalNotices.filter(_.id === noticeId).map(x => x.community).result.head)
+  }
+
   /**
    * Creates new legal notice
    */
@@ -113,11 +117,11 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   /**
    * Gets the default legal notice for given community
    */
-  def getCommunityDefaultLegalNotice(communityId: Long): LegalNotice = {
+  def getCommunityDefaultLegalNotice(communityId: Long): Option[LegalNotice] = {
     val n = exec(PersistenceSchema.legalNotices.filter(_.community === communityId).filter(_.default === true).result.headOption)
     val defaultLegalNotice = n match {
-      case Some(n) => new LegalNotice(n)
-      case None => null
+      case Some(n) => Some(new LegalNotice(n))
+      case None => None
     }
     defaultLegalNotice
   }

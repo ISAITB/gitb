@@ -59,6 +59,10 @@ class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
     page
   }
 
+  def getCommunityId(pageId: Long): Long = {
+    exec(PersistenceSchema.landingPages.filter(_.id === pageId).map(x => x.community).result.head)
+  }
+
   /**
    * Checks if a landing page with given name exists for the given community
    */
@@ -112,11 +116,11 @@ class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   /**
     * Gets the default landing page for given community
     */
-  def getCommunityDefaultLandingPage(communityId: Long): LandingPage = {
+  def getCommunityDefaultLandingPage(communityId: Long): Option[LandingPage] = {
     val p = exec(PersistenceSchema.landingPages.filter(_.community === communityId).filter(_.default === true).result.headOption)
     val defaultPage = p match {
-      case Some(p) => new LandingPage(p)
-      case None => null
+      case Some(p) => Some(new LandingPage(p))
+      case None => None
     }
     defaultPage
   }

@@ -51,6 +51,10 @@ class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider) 
     e
   }
 
+  def getCommunityId(templateId: Long): Long = {
+    exec(PersistenceSchema.errorTemplates.filter(_.id === templateId).map(x => x.community).result.head)
+  }
+
   /**
    * Creates new error template
    */
@@ -109,11 +113,11 @@ class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider) 
   /**
    * Gets the default error template for given community
    */
-  def getCommunityDefaultErrorTemplate(communityId: Long): ErrorTemplate = {
+  def getCommunityDefaultErrorTemplate(communityId: Long): Option[ErrorTemplate] = {
     val n = exec(PersistenceSchema.errorTemplates.filter(_.community === communityId).filter(_.default === true).result.headOption)
     val defaultErrorTemplate = n match {
-      case Some(n) => new ErrorTemplate(n)
-      case None => null
+      case Some(n) => Some(new ErrorTemplate(n))
+      case None => None
     }
     defaultErrorTemplate
   }

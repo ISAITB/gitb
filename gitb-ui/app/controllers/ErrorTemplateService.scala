@@ -1,18 +1,20 @@
 package controllers
 
-import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
 import javax.inject.Inject
-import managers.ErrorTemplateManager
-import play.api.mvc.{Action, Controller}
+import managers.{AuthorizationManager, ErrorTemplateManager}
+import models.Constants
+import play.api.mvc.Controller
 import utils.{HtmlUtil, JsonUtil}
 
-class ErrorTemplateService @Inject() (errorTemplateManager: ErrorTemplateManager) extends Controller {
+class ErrorTemplateService @Inject() (errorTemplateManager: ErrorTemplateManager, authorizationManager: AuthorizationManager) extends Controller {
 
   /**
    * Gets all error templates for the specified community
    */
-  def getErrorTemplatesByCommunity(communityId: Long) = Action.apply {
+  def getErrorTemplatesByCommunity(communityId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageErrorTemplates(request, communityId)
     val list = errorTemplateManager.getErrorTemplatesByCommunity(communityId)
     val json: String = JsonUtil.jsErrorTemplates(list).toString
     ResponseConstructor.constructJsonResponse(json)
@@ -21,8 +23,9 @@ class ErrorTemplateService @Inject() (errorTemplateManager: ErrorTemplateManager
   /**
    * Creates new error template
    */
-  def createErrorTemplate() = Action.apply { request =>
+  def createErrorTemplate() = AuthorizedAction { request =>
     val errorTemplate = ParameterExtractor.extractErrorTemplateInfo(request)
+    authorizationManager.canManageErrorTemplates(request, errorTemplate.community)
     val uniqueName = errorTemplateManager.checkUniqueName(errorTemplate.name, errorTemplate.community)
     if (uniqueName) {
       errorTemplateManager.createErrorTemplate(errorTemplate)
@@ -35,16 +38,18 @@ class ErrorTemplateService @Inject() (errorTemplateManager: ErrorTemplateManager
   /**
    * Gets the error template with specified id
    */
-  def getErrorTemplateById(templateId: Long) = Action.apply { request =>
+  def getErrorTemplateById(templateId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageErrorTemplate(request, templateId)
     val ln = errorTemplateManager.getErrorTemplateById(templateId)
-    val json: String = JsonUtil.serializeErrorTemplate(ln)
+    val json: String = JsonUtil.serializeErrorTemplate(Some(ln))
     ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
    * Updates error template
    */
-  def updateErrorTemplate(templateId: Long) = Action.apply { request =>
+  def updateErrorTemplate(templateId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageErrorTemplate(request, templateId)
     val name = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
     val description = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
     val content = HtmlUtil.sanitizeEditorContent(ParameterExtractor.requiredBodyParameter(request, Parameters.CONTENT))
@@ -63,7 +68,8 @@ class ErrorTemplateService @Inject() (errorTemplateManager: ErrorTemplateManager
   /**
    * Deletes error template with specified id
    */
-  def deleteErrorTemplate(templateId: Long) = Action.apply { request =>
+  def deleteErrorTemplate(templateId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageErrorTemplate(request, templateId)
     errorTemplateManager.deleteErrorTemplate(templateId)
     ResponseConstructor.constructEmptyResponse
   }
@@ -71,9 +77,13 @@ class ErrorTemplateService @Inject() (errorTemplateManager: ErrorTemplateManager
   /**
     * Gets the default error template for given community
     */
-  def getCommunityDefaultErrorTemplate() = Action.apply { request =>
+  def getCommunityDefaultErrorTemplate() = AuthorizedAction { request =>
     val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
-    val errorTemplate = errorTemplateManager.getCommunityDefaultErrorTemplate(communityId)
+    authorizationManager.canViewDefaultErrorTemplate(request, communityId)
+    var errorTemplate = errorTemplateManager.getCommunityDefaultErrorTemplate(communityId)
+    if (errorTemplate.isEmpty) {
+      errorTemplate = errorTemplateManager.getCommunityDefaultErrorTemplate(Constants.DefaultCommunityId)
+    }
     val json: String = JsonUtil.serializeErrorTemplate(errorTemplate)
     ResponseConstructor.constructJsonResponse(json)
   }

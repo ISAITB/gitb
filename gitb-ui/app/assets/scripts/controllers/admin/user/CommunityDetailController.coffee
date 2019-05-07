@@ -81,7 +81,7 @@ class CommunityDetailController
     @errorTemplates = []
     @alerts = []
 
-    @LegalNoticeService.getCommunityDefaultLegalNotice(@Constants.DEFAULT_COMMUNITY_ID)
+    @LegalNoticeService.getTestBedDefaultLegalNotice()
     .then (data) =>
       @testBedLegalNotice = data if data.exists
     .catch (error) =>
@@ -112,11 +112,12 @@ class CommunityDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-    @ConformanceService.getDomains()
-    .then (data) =>
-      @domains = data
-    .catch (error) =>
-      @ErrorService.showErrorMessage(error)
+    if @DataService.isSystemAdmin
+      @ConformanceService.getDomains()
+      .then (data) =>
+        @domains = data
+      .catch (error) =>
+        @ErrorService.showErrorMessage(error)
 
     @LandingPageService.getLandingPagesByCommunity(@communityId)
     .then (data) =>

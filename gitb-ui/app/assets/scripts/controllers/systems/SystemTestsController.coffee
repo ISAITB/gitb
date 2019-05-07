@@ -177,7 +177,7 @@ class SystemTestsController
 
   getAllDomains: () ->
     d = @$q.defer()
-    @ConformanceService.getDomains()
+    @ConformanceService.getDomainsForSystem(@systemId)
     .then (data) =>
       @filtering.domain.all = data
       d.resolve()
@@ -187,7 +187,7 @@ class SystemTestsController
 
   getAllSpecifications: () ->
     d = @$q.defer()
-    @ConformanceService.getSpecificationsWithIds()
+    @ConformanceService.getSpecificationsForSystem(@systemId)
     .then (data) =>
        @filtering.specification.all = data
        d.resolve()
@@ -197,7 +197,7 @@ class SystemTestsController
 
   getAllTestCases: () ->
     d = @$q.defer()
-    @ReportService.getTestCases()
+    @ReportService.getTestCasesForSystem(@systemId)
     .then (data) =>
        @filtering.testCase.all = data
        d.resolve()
@@ -207,7 +207,7 @@ class SystemTestsController
 
   getAllTestSuites: () ->
     d = @$q.defer()
-    @TestSuiteService.getTestSuitesWithTestCases()
+    @TestSuiteService.getTestSuitesWithTestCasesForSystem(@systemId)
     .then (data) =>
        @filtering.testSuite.all = data
        d.resolve()
@@ -391,29 +391,6 @@ class SystemTestsController
       .catch (error) =>
           @ErrorService.showErrorMessage(error)
 
-  onCheckboxCheck: (data) =>
-    @check = true
-
-    @showExportButton = false
-
-    for result in @testResults
-        if result.checked
-            @showExportButton = true
-
-  exportSelected: () =>
-    session_ids = []
-    testcase_ids = []
-
-    for result in @testResults
-        if result.checked
-            session_ids.push(result.sessionId)
-            testcase_ids.push(result.testCase)
-
-    @ReportService.exportTestCaseReports(session_ids.join(), testcase_ids.join())
-     .then (stepResults) =>
-        blobData = new Blob([stepResults], {type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
-        saveAs(blobData, "report.docx");
-
   exportToCsv: () =>
     specIds = _.map @filtering.specification.selection, (s) -> s.id
     testSuiteIds = _.map @filtering.testSuite.selection, (s) -> s.id
@@ -456,6 +433,8 @@ class SystemTestsController
           csv += if i < resultReportsCollection.value().length then line + "\n" else line
         blobData = new Blob([csv], {type: 'text/csv'});
         saveAs(blobData, "export.csv");
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
 
   canDelete: () =>
     !@DataService.isVendorUser

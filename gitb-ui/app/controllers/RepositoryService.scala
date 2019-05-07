@@ -3,12 +3,12 @@ package controllers
 import java.io._
 import java.nio.file.{Files, Paths}
 
-import javax.xml.transform.stream.StreamSource
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl.TestCase
 import com.gitb.utils.XMLUtils
-import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import javax.inject.Inject
+import javax.xml.transform.stream.StreamSource
 import managers._
 import models.ConformanceCertificate
 import org.apache.commons.codec.net.URLCodec
@@ -21,14 +21,14 @@ import utils.{JacksonUtil, JsonUtil, MimeUtil, RepositoryUtils}
 /**
  * Created by serbay on 10/16/14.
  */
-class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager) extends Controller {
+class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager) extends Controller {
 	private val logger = LoggerFactory.getLogger(classOf[RepositoryService])
 	private val codec = new URLCodec()
 
   private val TESTCASE_STEP_REPORT_NAME = "step.pdf"
 
-	def getTestSuiteResource(testId: String, filePath:String): Action[AnyContent] = Action {
-		implicit request =>
+	def getTestSuiteResource(testId: String, filePath:String) = AuthorizedAction { request =>
+      authorizationManager.canViewTestSuiteResource(request, testId)
       val testCase = testCaseManager.getTestCaseForIdWrapper(testId).get
       val testSuite = testSuiteManager.getTestSuiteOfTestCaseWrapper(testCase.id)
       var filePathToLookup = codec.decode(filePath)
@@ -45,8 +45,10 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
 			}
 	}
 
-	def getTestStepReport(sessionId: String, reportPath: String): Action[AnyContent] = Action { implicit request=>
+	def getTestStepReport(sessionId: String, reportPath: String) = AuthorizedAction { request =>
 //    34888315-6781-4d74-a677-8f9001a02cb8/4.xml
+    authorizationManager.canViewTestResultForSession(request, sessionId)
+
 		val sessionFolder = reportManager.getPathForTestSessionWrapper(sessionId, true).toFile
     var path: String = null
     path = reportPath
@@ -78,8 +80,9 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
 		}
 	}
 
-  def exportTestStepReport(sessionId: String, reportPath: String): Action[AnyContent] = Action { implicit request=>
+  def exportTestStepReport(sessionId: String, reportPath: String) = AuthorizedAction { request =>
     //    34888315-6781-4d74-a677-8f9001a02cb8/4.xml
+    authorizationManager.canViewTestResultForSession(request, sessionId)
     var path: String = null
     if (reportPath.startsWith(sessionId)) {
       // Backwards compatibility.
@@ -108,8 +111,9 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     }
   }
 
-  def exportTestCaseReport(): Action[AnyContent] = Action.apply { implicit request =>
+  def exportTestCaseReport() = AuthorizedAction { request =>
     val session = ParameterExtractor.requiredQueryParameter(request, Parameters.SESSION_ID)
+    authorizationManager.canViewTestResultForSession(request, session)
     val testCaseId = ParameterExtractor.requiredQueryParameter(request, Parameters.TEST_ID)
 
     val folder = reportManager.getPathForTestSessionWrapper(codec.decode(session), true).toFile
@@ -142,13 +146,10 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     }
   }
 
-  def exportTestCaseReports(): Action[AnyContent] = Action { implicit request =>
-    NotFound
-  }
-
-  def exportConformanceStatementReport(): Action[AnyContent] = Action.apply { implicit request =>
-    val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID)
+  def exportConformanceStatementReport() = AuthorizedAction { request =>
     val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID)
+    authorizationManager.canViewConformanceStatementReport(request, systemId)
+    val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID)
     val includeTests = ParameterExtractor.requiredQueryParameter(request, Parameters.TESTS).toBoolean
     val reportPath = Paths.get(
       ReportManager.getTempFolderPath().toFile.getAbsolutePath,
@@ -171,10 +172,11 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     )
   }
 
-  def exportConformanceCertificateReport(): Action[AnyContent] = Action.apply { implicit request =>
-    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+  def exportConformanceCertificateReport() = AuthorizedAction { request =>
     val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
     val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    authorizationManager.canViewConformanceCertificateReport(request, communityId)
 
     val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
     var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
@@ -208,7 +210,8 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     )
   }
 
-  def exportDemoConformanceCertificateReport(communityId: Long): Action[AnyContent] = Action.apply { implicit request =>
+  def exportDemoConformanceCertificateReport(communityId: Long) = AuthorizedAction { request =>
+    authorizationManager.canViewConformanceCertificateReport(request, communityId)
     val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
     var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
     val reportPath = Paths.get(
@@ -239,8 +242,9 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     )
   }
 
-	def getTestCaseDefinition(testId: String) = Action.apply { implicit request =>
-		val tc = testCaseManager.getTestCase(testId)
+	def getTestCaseDefinition(testId: String) = AuthorizedAction { request =>
+    authorizationManager.canViewTestCase(request, testId)
+    val tc = testCaseManager.getTestCase(testId)
     if (tc.isDefined) {
       val file = RepositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(tc.get.targetSpec), tc.get.path)
       logger.debug("Reading test case ["+testId+"] definition from the file ["+file+"]")
@@ -254,15 +258,25 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     }
 	}
 
-  def getTestCases() = Action.apply { request =>
-    val testCaseIds = ParameterExtractor.extractLongIdsQueryParameter(request)
-
-    val testCases = testCaseManager.getTestCases(testCaseIds)
+  def getAllTestCases() = AuthorizedAction { request =>
+    authorizationManager.canViewAllTestCases(request)
+    val testCases = testCaseManager.getAllTestCases()
     val json = JsonUtil.jsTestCasesList(testCases).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  private def removeFile(file:File) = {
-    file.delete()
+  def getTestCasesForSystem(systemId: Long) = AuthorizedAction { request =>
+    authorizationManager.canViewTestCasesBySystemId(request, systemId)
+    val testCases = testCaseManager.getTestCasesForSystem(systemId)
+    val json = JsonUtil.jsTestCasesList(testCases).toString()
+    ResponseConstructor.constructJsonResponse(json)
   }
+
+  def getTestCasesForCommunity(communityId: Long) = AuthorizedAction { request =>
+    authorizationManager.canViewTestCasesByCommunityId(request, communityId)
+    val testCases = testCaseManager.getTestCasesForCommunity(communityId)
+    val json = JsonUtil.jsTestCasesList(testCases).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
 }

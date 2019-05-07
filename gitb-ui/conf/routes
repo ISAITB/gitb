@@ -16,6 +16,7 @@ GET     /theme/footer                       @controllers.SystemConfigurationServ
 
 # Authentication management API
 POST    /oauth/access_token                 @controllers.AuthenticationService.access_token
+POST    /oauth/logout                       @controllers.AuthenticationService.logout
 GET     /check/email                        @controllers.AuthenticationService.checkEmail
 
 # Account management API
@@ -39,11 +40,13 @@ GET     /suts/:sut_id/conformance           @controllers.SystemService.getConfor
 #GET	/suts/:sut_id/configs               @controllers.SystemService.getSystemConfigurations(sut_id : Long)
 #POST	/suts/:sut_id/configs               @controllers.SystemService.updateSystemConfigurations(sut_id : Long)
 GET	    /vendor/systems                     @controllers.SystemService.getSystemsByOrganization
+GET	    /vendor/systems/community           @controllers.SystemService.getSystemsByCommunity(communityId: Long)
 POST	/vendor/systems/register            @controllers.SystemService.registerSystemWithOrganization
 
 # Test Case management API
 GET	    /specDomain                         @controllers.ConformanceService.getDomainOfSpecification(spec_id: Long)
 GET	    /domains                            @controllers.ConformanceService.getDomains
+GET	    /domains/system                     @controllers.ConformanceService.getDomainsForSystem(systemId: Long)
 GET	    /domains/community                  @controllers.ConformanceService.getCommunityDomain
 GET     /domains/conformance                @controllers.ConformanceService.getConformanceOverview
 POST    /domains                            @controllers.ConformanceService.createDomain
@@ -51,6 +54,7 @@ DELETE  /domains/:domain_id                 @controllers.ConformanceService.dele
 POST    /domains/:domain_id                 @controllers.ConformanceService.updateDomain(domain_id: Long)
 GET	    /domains/:domain_id/specs           @controllers.ConformanceService.getDomainSpecs(domain_id : Long)
 GET     /specs                              @controllers.ConformanceService.getSpecs
+GET     /specs/system                       @controllers.ConformanceService.getSpecsForSystem(systemId: Long)
 POST    /specs                              @controllers.ConformanceService.createSpecification
 GET	    /specs/:spec_id/actors              @controllers.ConformanceService.getSpecActors(spec_id : Long)
 GET	    /specs/:spec_id/suites              @controllers.ConformanceService.getSpecTestSuites(spec_id : Long)
@@ -59,6 +63,7 @@ POST    /specs/:spec_id/deploy/resolve      @controllers.ConformanceService.reso
 DELETE  /specs/:spec_id                     @controllers.SpecificationService.deleteSpecification(spec_id: Long)
 POST    /specs/:spec_id                     @controllers.SpecificationService.updateSpecification(spec_id: Long)
 GET     /actors                             @controllers.ConformanceService.getActors
+GET     /actors/domain                      @controllers.ConformanceService.getActorsForDomain(domainId: Long)
 POST    /actors                             @controllers.ConformanceService.createActor
 DELETE  /actors/:actor_id                   @controllers.ActorService.deleteActor(actor_id : Long)
 POST    /actors/:actor_id                   @controllers.ActorService.updateActor(actor_id : Long)
@@ -92,14 +97,18 @@ POST    /admins/:id                         @controllers.UserService.updateSyste
 DELETE  /admins/:id                         @controllers.UserService.deleteAdmin(id : Long)
 
 # Session management API
-GET     /dashboard/tests                    @controllers.RepositoryService.getTestCases
+GET     /dashboard/tests/all                @controllers.RepositoryService.getAllTestCases
+GET     /dashboard/tests/system             @controllers.RepositoryService.getTestCasesForSystem(systemId: Long)
+GET     /dashboard/tests/community          @controllers.RepositoryService.getTestCasesForCommunity(communityId: Long)
 GET     /dashboard/systems                  @controllers.SystemService.getSystems
 GET     /dashboard/active                   @controllers.ReportService.getActiveTestResults
 GET     /dashboard/finished                 @controllers.ReportService.getFinishedTestResults
 GET     /dashboard/count                    @controllers.ReportService.getFinishedTestResultsCount
 GET     /dashboard/config                   @controllers.SystemConfigurationService.getSessionAliveTime
 POST    /dashboard/config                   @controllers.SystemConfigurationService.updateSessionAliveTime
-GET     /dashboard/suites                   @controllers.TestSuiteService.getTestSuitesWithTestCases
+GET     /dashboard/suites/all               @controllers.TestSuiteService.getAllTestSuitesWithTestCases
+GET     /dashboard/suites/community         @controllers.TestSuiteService.getTestSuitesWithTestCasesForCommunity(communityId: Long)
+GET     /dashboard/suites/system            @controllers.TestSuiteService.getTestSuitesWithTestCasesForSystem(systemId: Long)
 
 GET     /pages/default                      @controllers.LandingPageService.getCommunityDefaultLandingPage
 GET     /pages/:id                          @controllers.LandingPageService.getLandingPageById(id : Long)
@@ -107,6 +116,7 @@ DELETE  /pages/:id                          @controllers.LandingPageService.dele
 POST    /pages/:id                          @controllers.LandingPageService.updateLandingPage(id : Long)
 
 GET     /notices/default                    @controllers.LegalNoticeService.getCommunityDefaultLegalNotice
+GET     /notices/tbdefault                  @controllers.LegalNoticeService.getTestBedDefaultLegalNotice
 GET     /notices/:id                        @controllers.LegalNoticeService.getLegalNoticeById(id : Long)
 DELETE  /notices/:id                        @controllers.LegalNoticeService.deleteLegalNotice(id : Long)
 POST    /notices/:id                        @controllers.LegalNoticeService.updateLegalNotice(id : Long)
@@ -163,7 +173,6 @@ GET     /ws                                 @controllers.WebSocketService.socket
 # Test suite management API
 DELETE  /suite/:suite_id/undeploy           @controllers.TestSuiteService.undeployTestSuite(suite_id: Long)
 GET     /suite/:suite_id                    @controllers.TestSuiteService.downloadTestSuite(suite_id: Long)
-GET     /suite                              @controllers.TestSuiteService.getTestSuites()
 
 # Endpoint management API
 GET     /endpoints                          @controllers.ConformanceService.getEndpoints
@@ -188,7 +197,6 @@ POST    /conformancecertificate/test        @controllers.ConformanceService.test
 GET     /repository/tests/:test_id/definition               @controllers.RepositoryService.getTestCaseDefinition(test_id:String)
 GET     /repository/reports/teststep/:session_id/*file      @controllers.RepositoryService.getTestStepReport(session_id: String, file)
 GET     /repository/export/testcase                         @controllers.RepositoryService.exportTestCaseReport
-GET     /repository/export/testcases                        @controllers.RepositoryService.exportTestCaseReports
 GET     /repository/export/teststep/:session_id/*path       @controllers.RepositoryService.exportTestStepReport(session_id: String, path)
 GET     /repository/export/conformance                      @controllers.RepositoryService.exportConformanceStatementReport
 POST    /repository/export/certificatedemo                  @controllers.RepositoryService.exportDemoConformanceCertificateReport(community_id: Long)

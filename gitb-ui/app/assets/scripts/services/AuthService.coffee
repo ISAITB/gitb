@@ -5,14 +5,11 @@ class AuthService
         @$log.debug "Constructing AuthService..."
 
     access_token: (email, password) ->
-        @$log.debug "Getting access_token for credentials => email: #{email}, password: #{password}"
-
         @RestService.post({
             path: jsRoutes.controllers.AuthenticationService.access_token().url,
             data: {
                 email: email,
-                password: password,
-                grant_type: 'password'
+                password: password
             }
         })
 
@@ -24,6 +21,12 @@ class AuthService
             params: {
                 email: email
             }
+        })
+
+    logout: () ->
+        @RestService.post({
+            path: jsRoutes.controllers.AuthenticationService.logout().url,
+            authenticate: true
         })
 
 services.service('AuthService', AuthService)

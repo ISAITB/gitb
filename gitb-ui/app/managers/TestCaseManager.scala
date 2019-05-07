@@ -132,17 +132,30 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		testCaseSet
 	}
 
-	def getTestCases(ids: Option[List[Long]]): List[TestCases] = {
-		val q = ids match {
-			case Some(idList) => {
-				PersistenceSchema.testCases
-					.filter(_.id inSet idList)
-			}
-			case None => {
-				PersistenceSchema.testCases
-			}
-		}
-		exec(q.sortBy(_.shortname.asc).result.map(_.toList))
+	def getAllTestCases(): List[TestCases] = {
+		exec(PersistenceSchema.testCases.sortBy(_.shortname.asc).result.map(_.toList))
+	}
+
+	def getTestCasesForSystem(systemId: Long): List[TestCases] = {
+		val query = PersistenceSchema.testCases
+  		.join(PersistenceSchema.conformanceResults).on(_.id === _.testcase)
+  		.filter(_._2.sut === systemId)
+			.sortBy(_._1.shortname.asc)
+  		.map(r => r._1)
+  	exec(query.result.map(_.toList))
+	}
+
+	def getTestCasesForCommunity(communityId: Long): List[TestCases] = {
+		exec(PersistenceSchema.testCases
+			.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
+			.join(PersistenceSchema.testSuites).on(_._2.testsuite === _.id)
+			.join(PersistenceSchema.specifications).on(_._2.specification === _.id)
+			.join(PersistenceSchema.communities).on(_._2.domain === _.domain)
+			.filter(_._2.id === communityId)
+			.map(r => r._1._1._1._1)
+			.sortBy(_.shortname.asc)
+			.result.map(_.toList)
+		)
 	}
 
 	private def toTestCaseList(testCases:List[TestCases]) = {

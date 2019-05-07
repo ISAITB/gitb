@@ -36,6 +36,10 @@ class ErrorFilter @Inject() (implicit val mat: Materializer) extends Filter{
 
       case e:TimeoutException =>
         ResponseConstructor.constructTimeoutResponse
+
+      case e:UnauthorizedAccessException =>
+        ResponseConstructor.constructAccessDeniedResponse(403, e.msg)
+
     }
   }
 }

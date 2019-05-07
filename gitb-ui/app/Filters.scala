@@ -1,4 +1,4 @@
-import filters.{AuthenticationFilter, CorsFilter, ErrorFilter, TimeoutFilter}
+import filters._
 import javax.inject.Inject
 import play.api.http.DefaultHttpFilters
 

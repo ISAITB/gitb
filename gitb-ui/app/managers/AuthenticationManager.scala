@@ -12,7 +12,7 @@ import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 
 @Singleton
-class AuthManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class AuthenticationManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -31,23 +31,10 @@ class AuthManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends B
   def generateTokens(userId:Long): Token = {
     //1) Create access and refresh tokens
     val access_token  = RandomStringUtils.randomAlphanumeric(Configurations.TOKEN_LENGTH)
-    val refresh_token = RandomStringUtils.randomAlphanumeric(Configurations.TOKEN_LENGTH)
-    val tokens = Token(access_token, refresh_token)
+    val tokens = Token(access_token)
 
     //2) Persist new access & refresh token information
     TokenCache.saveOAuthTokens(userId, tokens)
-    tokens
-  }
-
-  def refreshTokens(refreshToken:String): Token = {
-    //1) Check if refresh token exists
-    val userId = TokenCache.checkRefreshToken(refreshToken)
-
-    //2) If so, generate new tokens
-    val tokens = generateTokens(userId)
-
-    //3) Delete the old ones and return the new
-    TokenCache.deleteRefreshToken(refreshToken)
     tokens
   }
 

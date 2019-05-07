@@ -27,8 +27,8 @@ class AuthProvider
 providers.provider('AuthProvider', AuthProvider)
 providers.provider('Auth', AuthProvider)
 
-providers.run ['$log', '$rootScope', '$location', 'AuthProvider', 'Events', 'Constants', 'DataService'
-	($log, $rootScope, $location, authProvider, Events, Constants, @DataService) ->
+providers.run ['$log', '$rootScope', '$location', 'AuthProvider', 'Events', 'Constants', 'DataService', 'AuthService'
+	($log, $rootScope, $location, authProvider, Events, Constants, @DataService, @AuthService) ->
 		# check if access token is set in cookies
 		atKey = Constants.ACCESS_TOKEN_COOKIE_KEY
 		accessToken = $.cookie(atKey)
@@ -38,7 +38,6 @@ providers.run ['$log', '$rootScope', '$location', 'AuthProvider', 'Events', 'Con
 		# handle login event
 		$rootScope.$on Events.onLogin, (event, data) ->
 			accessToken  = data.tokens.access_token
-			refreshToken = data.tokens.refresh_token
 			expireTimeSec= data.tokens.expires_in  # in seconds
 			expireTimeDay= (expireTimeSec / Constants.SECONDS_IN_DAY) # in days
 			#TODO: access token expire time info should be retrieved from server
@@ -49,17 +48,23 @@ providers.run ['$log', '$rootScope', '$location', 'AuthProvider', 'Events', 'Con
 			else
 				$.cookie(atKey, accessToken, { path: '/' })
 
-			rtKey = Constants.REFRESH_TOKEN_COOKIE_KEY
-			$.cookie(rtKey, refreshToken, { expires: Constants.TOKEN_COOKIE_EXPIRE, path: '/' })
-
 			authProvider.authenticate(accessToken)
 			$rootScope.$emit(Events.afterLogin)
 
 		# handle logout event
 		$rootScope.$on Events.onLogout, () ->
 			$log.debug "handling logout event..."
-			@DataService.destroy()
-			$.removeCookie(atKey, { path: '/' })
-			authProvider.deauthenticate()
-			$location.path('/login')
+			@AuthService.logout()
+			.then((data) ->
+				$log.debug "Successfully signalled logout"
+			)
+			.catch((data) ->
+				$log.debug "Failed to signal logout"
+			)
+			.finally(() ->
+				@DataService.destroy()
+				$.removeCookie(atKey, { path: '/' })
+				authProvider.deauthenticate()
+				$location.path('/login')
+			)
 ]

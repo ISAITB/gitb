@@ -1,6 +1,7 @@
 package managers
 
 import javax.inject.{Inject, Singleton}
+import models.Endpoints
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
@@ -38,6 +39,11 @@ class EndPointManager @Inject() (parameterManager: ParameterManager, dbConfigPro
       _ <- DBIO.seq(ids.map(id => delete(id)): _*)
     } yield()).transactionally
     action
+  }
+
+  def getById(endPointId: Long): Endpoints = {
+    val endpoint = exec(PersistenceSchema.endpoints.filter(_.id === endPointId).result.head)
+    endpoint
   }
 
   def deleteEndPoint(endPointId: Long) = {

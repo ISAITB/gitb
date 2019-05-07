@@ -1,19 +1,21 @@
 package filters
 
 import akka.stream.Materializer
-import play.api.mvc._
-
-import scala.concurrent.Future
-import play.mvc.Http.HeaderNames._
+import com.gitb.utils.HmacUtils
 import controllers.util.{Parameters, ResponseConstructor}
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
-import persistence.cache.TokenCache
 import exceptions._
 import javax.inject.Inject
-import persistence.AccountManager
 import org.slf4j.{Logger, LoggerFactory}
+import persistence.AccountManager
+import persistence.cache.TokenCache
+import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import play.api.mvc._
+import play.mvc.Http.HeaderNames._
+
+import scala.concurrent.Future
 
 class AuthenticationFilter @Inject() (implicit val mat: Materializer, accountManager: AccountManager) extends Filter {
+
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthenticationFilter])
 
   val BEARER = "Bearer"
@@ -21,11 +23,10 @@ class AuthenticationFilter @Inject() (implicit val mat: Materializer, accountMan
   def apply(next: (RequestHeader) => Future[Result])
            (requestHeader: RequestHeader): Future[Result] = {
     //if public service called, execute it immediately
-    if(isPublic(requestHeader)){
+    if (isPublic(requestHeader)){
       next(requestHeader)
-    }
-    //check Authorization headers
-    else{
+    } else {
+      // Check Authorization headers
       val authzHeader = requestHeader.headers.get(AUTHORIZATION)
       if(authzHeader.isDefined){
 
@@ -40,27 +41,8 @@ class AuthenticationFilter @Inject() (implicit val mat: Materializer, accountMan
             //a workaround of customizing request headers to add our userId data, so that controllers can process it
             val customHeaders = requestHeader.headers.add((Parameters.USER_ID,  "" + userId))
             val customRequestHeader = requestHeader.copy(headers = customHeaders)
-
-            //check if requested service requires admin access
-            if(requiresSystemAdminAccess(requestHeader)) {
-              next(customRequestHeader)
-            } else if(requiresAdminAccess(requestHeader)){
-              val isAdmin = accountManager.isAdmin(userId)
-                if(isAdmin){
-                //has access, execute service
-                next(customRequestHeader)
-              } else{
-                //admin access required, send error response
-                Future{
-                  ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.UNAUTHORIZED_ACCESS, "Requires admin access")
-                }
-              }
-            } else{
-              //no admin access required, execute service
-              next(customRequestHeader)
-            }
-          }
-          else{
+            next(customRequestHeader)
+          } else{
             //There is a problem with the authorization header
             Future{
               ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.INVALID_AUTHORIZATION_HEADER, "Invalid authorization header")
@@ -74,51 +56,46 @@ class AuthenticationFilter @Inject() (implicit val mat: Materializer, accountMan
             }
           }
         }
-
-      }
-      else{
-        //Requires authorization to execute this service
-        Future{
-          ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.AUTHORIZATION_REQUIRED, "Needs authorization header")
+      } else {
+        if (isHmacAuthenticationAllowed(requestHeader)) {
+          val hmacHeader = requestHeader.headers.get(HmacUtils.HMAC_HEADER_TOKEN)
+          if (hmacHeader.isDefined) {
+            next(requestHeader)
+          } else {
+            //Requires authorization to execute this service
+            logger.warn("Request blocked due to missing user or HMAC authentication token ["+requestHeader.path+"]")
+            Future{
+              ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.AUTHORIZATION_REQUIRED, "Needs authorization header")
+            }
+          }
+        } else {
+          //Requires authorization to execute this service
+          logger.warn("Request blocked due to missing user token ["+requestHeader.path+"]")
+          Future{
+            ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.AUTHORIZATION_REQUIRED, "Needs authorization header")
+          }
         }
       }
     }
   }
 
+  def isHmacAuthenticationAllowed(request:RequestHeader):Boolean = {
+    request.path.startsWith("/repository/")
+  }
+
   def isPublic(request:RequestHeader):Boolean = {
-      //public services
-      request.method.equals("OPTIONS") ||
+    //public services
+    request.method.equals("OPTIONS") ||
       request.path.equals("/") ||
       request.path.equals("/oauth/access_token") ||
-      request.path.equals("/vendor/register") ||
-      request.path.equals("/check/email") ||
       request.path.equals("/theme/css") ||
       request.path.equals("/theme/logo") ||
       request.path.equals("/theme/footer") ||
-      request.path.equals("/notices/default") ||
+      request.path.equals("/notices/tbdefault") ||
       //public assets
       request.path.startsWith("/assets/") ||
       request.path.startsWith("/webjars/") ||
-      request.path.startsWith("/template/") ||
-	    request.path.startsWith("/repository/")
+      request.path.startsWith("/template/")
   }
-	
-	def requiresSystemAdminAccess(request:RequestHeader): Boolean = {
-		(request.path.equals("/domains") && request.method.equals("POST")) ||
-      (request.path.matches("/domains/\\d*") || request.method.equals("DELETE")) ||
-      (request.path.equals("/specs") && request.method.equals("POST")) ||
-      (request.path.equals("/suite/\\d*/deploy") && request.method.equals("POST")) ||
-      (request.path.equals("/actors") && request.method.equals("POST")) ||
-      (request.path.equals("/options") && request.method.equals("POST")) ||
-      (request.path.matches("/suite/\\d*/undeploy") && request.method.equals("DELETE"))
-	}
 
-  def requiresAdminAccess(request:RequestHeader):Boolean = {
-    (request.path.equals("/vendor/profile") && request.method.equals("POST")) ||
-      request.path.equals("/user/register") ||
-      request.path.equals("/suts/register") ||
-      request.path.matches("/suts/\\d*/profile") ||
-      (request.path.matches("/suts/\\d*/conformance")
-	      && (request.method.equals("POST") || request.method.equals("DELETE")))
-  }
 }

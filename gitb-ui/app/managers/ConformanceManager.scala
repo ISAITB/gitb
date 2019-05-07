@@ -15,6 +15,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class ConformanceManager @Inject() (actorManager: ActorManager, testResultManager: TestResultManager, testCaseManager: TestCaseManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+
   def logger = LoggerFactory.getLogger("ConformanceManager")
 
 	import dbConfig.profile.api._
@@ -26,7 +27,30 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 		exec(PersistenceSchema.domains.filter(_.id === domainId).result.headOption).isDefined
 	}
 
-	def getDomainOfSpecification(specificationId: Long ): Domain = {
+  def getSpecificationsBySystem(systemId: Long): List[Specifications] = {
+    exec(PersistenceSchema.conformanceResults
+      .join(PersistenceSchema.specifications).on(_.spec === _.id)
+      .filter(_._1.sut === systemId)
+      .map(r => r._2)
+			.distinctOn(_.id)
+      .sortBy(_.shortname.asc)
+      .result.map(_.toList)
+    )
+  }
+
+  def getDomainsBySystem(systemId: Long): List[Domain] = {
+    exec(PersistenceSchema.conformanceResults
+      .join(PersistenceSchema.specifications).on(_.spec === _.id)
+      .join(PersistenceSchema.domains).on(_._2.domain === _.id)
+      .filter(_._1._1.sut === systemId)
+      .map(r => r._2)
+			.distinctOn(_.id)
+      .sortBy(_.shortname.asc)
+      .result.map(_.toList)
+    )
+  }
+
+  def getDomainOfSpecification(specificationId: Long ): Domain = {
 		val query = PersistenceSchema.domains
   			.join(PersistenceSchema.specifications).on(_.id === _.domain)
 		val result = query
@@ -273,13 +297,18 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 		} yield savedActorId
 	}
 
-	def getActorsWithDomainId(domainId: Long): List[Actors] = {
+	def getActorsByDomainIdWithSpecificationId(domainId: Long): List[Actor] = {
+		var actors: List[Actor] = List()
 		exec(
-			PersistenceSchema.actors.filter(_.domain === domainId)
-			  .sortBy(_.actorId.desc)
+			PersistenceSchema.actors
+				.join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
+				.filter(_._1.domain === domainId)
+			  .sortBy(_._1.actorId.desc)
 				.result
-  			.map(_.toList)
-		)
+		).foreach{ result =>
+			actors ::= new Actor(result._1, null, null, result._2._1)
+		}
+		actors
 	}
 
   def getActorsWithSpecificationId(actorIds:Option[List[Long]], spec:Option[Long]): List[Actor] = {
@@ -391,6 +420,16 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 			(r._1._1.copy(), r._1._2.copy(), r._2.copy())
 		})
 		results
+	}
+
+	def getSpecificationIdForTestCaseFromConformanceStatements(testCaseId: Long): Option[Long] = {
+		val spec = exec(PersistenceSchema.conformanceResults.filter(_.testcase === testCaseId).map(c => {c.spec}).result.headOption)
+		spec
+	}
+
+	def getSpecificationIdForTestSuiteFromConformanceStatements(testSuiteId: Long): Option[Long] = {
+		val spec = exec(PersistenceSchema.conformanceResults.filter(_.testsuite === testSuiteId).map( c => {c.spec}).result.headOption)
+		spec
 	}
 
 	def getConformanceStatementsFull(domainIds: Option[List[Long]], specIds: Option[List[Long]], actorIds: Option[List[Long]], communityIds: Option[List[Long]], organizationIds: Option[List[Long]], systemIds: Option[List[Long]]): List[ConformanceStatementFull] = {

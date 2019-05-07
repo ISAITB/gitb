@@ -11,7 +11,7 @@
 ]
 
 @directives.directive 'errorTemplateEditor', ['Constants',
-	(@Constants)->
+	(@Constants) =>
 		scope:
 			error: '='
 		template: ''+
@@ -26,7 +26,7 @@
 				'</div>'+
 			'</div>'
 		restrict: 'A'
-		link: (scope, element, attrs) ->
+		link: (scope, element, attrs) =>
 			scope.errorDescriptionLabel = @Constants.PLACEHOLDER__ERROR_DESCRIPTION
 			scope.errorIdLabel = @Constants.PLACEHOLDER__ERROR_ID
 ]

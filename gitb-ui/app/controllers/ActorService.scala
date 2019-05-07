@@ -1,18 +1,20 @@
 package controllers
 
-import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import javax.inject.Inject
-import managers.ActorManager
-import play.api.mvc.{Action, Controller}
+import managers.{ActorManager, AuthorizationManager}
+import play.api.mvc.Controller
 
-class ActorService @Inject() (actorManager: ActorManager) extends Controller {
+class ActorService @Inject() (actorManager: ActorManager, authorizationManager: AuthorizationManager) extends Controller {
 
-  def deleteActor(actorId: Long) = Action.apply { request =>
+  def deleteActor(actorId: Long) = AuthorizedAction { request =>
+    authorizationManager.canDeleteActor(request, actorId)
     actorManager.deleteActorWrapper(actorId)
     ResponseConstructor.constructEmptyResponse
   }
 
-  def updateActor(actorId: Long) = Action.apply { request =>
+  def updateActor(actorId: Long) = AuthorizedAction { request =>
+    authorizationManager.canUpdateActor(request, actorId)
     val actor = ParameterExtractor.extractActor(request)
     val specificationId = ParameterExtractor.requiredBodyParameter(request, Parameters.SPECIFICATION_ID).toLong
 

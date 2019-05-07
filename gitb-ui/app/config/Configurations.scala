@@ -2,6 +2,7 @@ package config
 
 import java.util.Properties
 
+import com.gitb.utils.HmacUtils
 import com.typesafe.config.{Config, ConfigFactory}
 
 object Configurations {
@@ -161,6 +162,10 @@ object Configurations {
       VALIDATION_TDL_EXTERNAL_URL = fromEnv("VALIDATION_TDL_EXTERNAL_URL", conf.getString("validation.tdl.external.url")).toString
     }
 
+    // Configure HMAC processing
+    val hmacKey = System.getenv.getOrDefault("HMAC_KEY", "devKey")
+    val hmacKeyWindow = System.getenv.getOrDefault("HMAC_WINDOW", "10000")
+    HmacUtils.configure(hmacKey, hmacKeyWindow.toLong)
   }
 
   def fromEnv(propertyName: String, default: String): String = {

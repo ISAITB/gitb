@@ -26,6 +26,8 @@ class CommunityAdminCreateController
             @ErrorService.showErrorMessage(error)
         else
           @alerts.push({type:'danger', msg:"A user with email #{@user.email} has already been registered."})
+      .catch (error) =>
+        @ErrorService.showErrorMessage(error)
     else
       @alerts = @ValidationService.getAlerts()
 

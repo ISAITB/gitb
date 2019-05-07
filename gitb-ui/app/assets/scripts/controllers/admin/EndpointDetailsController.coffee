@@ -32,6 +32,8 @@ class EndpointDetailsController
 		@ConformanceService.getEndpoints [@endpointId]
 		.then (data) =>
 			@endpoint = _.head data
+		.catch (error) =>
+			@ErrorService.showErrorMessage(error)
 
 	delete: () =>
 		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this endpoint?", "Yes", "No")

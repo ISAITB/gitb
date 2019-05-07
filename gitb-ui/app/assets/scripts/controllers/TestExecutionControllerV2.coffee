@@ -253,6 +253,8 @@ class TestExecutionControllerV2
                   if parameter.id == configuration.parameter
                     parameter.value = configuration.value
               @endpointsLoaded.resolve()
+            .catch (error) =>
+              @ErrorService.showErrorMessage(error)
           else
             @endpointsLoaded.resolve()
             @configurationsLoaded.resolve()

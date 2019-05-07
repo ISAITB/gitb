@@ -22,7 +22,7 @@ class CommunityCertificateController
 
     @ConformanceService.getConformanceCertificateSettings(@communityId, true)
     .then (data) =>
-      if data?
+      if data? && data?.id?
         @settings = data
         if !@settings.passwordsSet? || !@settings.passwordsSet
           @updatePasswords = true

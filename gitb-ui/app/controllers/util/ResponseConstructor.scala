@@ -14,6 +14,10 @@ object ResponseConstructor extends Results{
       .withHeaders(WWW_AUTHENTICATE ->  "Bearer realm=\"GITB\"").as(JSON)
   }
 
+  def constructAccessDeniedResponse(errorCode: Int, errorDesc: String): Result = {
+    Forbidden(constructErrorMessage(errorCode, errorDesc, None)).as(JSON)
+  }
+
   def constructBadRequestResponse(errorCode: Int, errorDesc: String): Result = {
     BadRequest(constructErrorMessage(errorCode, errorDesc, None)).as(JSON)
   }
@@ -78,7 +82,6 @@ object ResponseConstructor extends Results{
       "\"access_token\":\"" + tokens.access_token + "\"," +
       "\"token_type\":\"Bearer\"," +
       "\"expires_in\":" + Configurations.TOKEN_LIFETIME_IN_SECONDS + "," + //in seconds ~ 30 days
-      "\"refresh_token\":\"" + tokens.refresh_token + "\"," +
       "\"registered\":true}").as(JSON)
   }
 

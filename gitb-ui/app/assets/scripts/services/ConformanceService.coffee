@@ -3,9 +3,9 @@ class ConformanceService
   @headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
   @defaultConfig = { headers: @headers }
 
-  @$inject = ['$log', 'RestService', '$upload']
+  @$inject = ['$log', 'RestService', '$upload', 'DataService']
 
-  constructor: (@$log, @RestService, @$upload) ->
+  constructor: (@$log, @RestService, @$upload, @DataService) ->
     @$log.debug "Constructing ConformanceService..."
 
   getDomains: (ids) ->
@@ -18,6 +18,12 @@ class ConformanceService
       path: jsRoutes.controllers.ConformanceService.getDomains().url,
       authenticate: true
       params: params
+    })
+
+  getDomainsForSystem: (systemId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.ConformanceService.getDomainsForSystem(systemId).url,
+      authenticate: true
     })
 
   getDomainForSpecification: (specId) ->
@@ -113,7 +119,7 @@ class ConformanceService
         spec_type: specificationType
         domain_id: domainId
 
-  getSpecificationsWithIds: (ids)->
+  getSpecificationsWithIds: (ids) =>
     params = {}
 
     if ids?
@@ -123,6 +129,18 @@ class ConformanceService
       path: jsRoutes.controllers.ConformanceService.getSpecs().url,
       authenticate: true
       params: params
+    })
+
+  getSpecificationsForSystem: (systemId) =>
+    @RestService.get({
+      path: jsRoutes.controllers.ConformanceService.getSpecsForSystem(systemId).url,
+      authenticate: true
+    })
+
+  getActorsForDomain: (domainId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.ConformanceService.getActorsForDomain(domainId).url,
+      authenticate: true
     })
 
   getActorsWithIds: (ids)->
@@ -137,7 +155,7 @@ class ConformanceService
       params: params
     })
 
-  getSpecifications: (domainId) ->
+  getSpecifications: (domainId) =>
     @RestService.get({
       path: jsRoutes.controllers.ConformanceService.getDomainSpecs(domainId).url,
       authenticate: true

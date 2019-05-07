@@ -3,22 +3,9 @@ class SystemService
   @headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
   @defaultConfig = { headers: @headers }
 
-  @$inject = ['$log', 'RestService']
-  constructor: (@$log, @RestService) ->
+  @$inject = ['$log', 'RestService', 'DataService']
+  constructor: (@$log, @RestService, @DataService) ->
     @$log.debug "Constructing SystemService..."
-
-
-  #dummy method for getting json
-  getTestSteps: () ->
-    @RestService.get({
-      path: "/assets/jsons/execution.json"
-    })
-
-  #dummy method for getting json
-  getTestSuites: () ->
-    @RestService.get({
-      path: "/assets/jsons/testsuites.json"
-    })
 
   getSystemsByOrganization: (orgId) ->
     @RestService.get({
@@ -147,7 +134,7 @@ class SystemService
       params: 
         organization_id: organisationId
 
-  getSystems: (systemIds) ->
+  getSystems: (systemIds) =>
     params = {}
     if systemIds? and systemIds.length > 0
         params.ids = systemIds.join ','
@@ -156,5 +143,10 @@ class SystemService
       path: jsRoutes.controllers.SystemService.getSystems().url
       authenticate: true
       params: params
+
+  getSystemsByCommunity: () =>
+    @RestService.get
+      path: jsRoutes.controllers.SystemService.getSystemsByCommunity(@DataService.community.id).url
+      authenticate: true
 
 services.service('SystemService', SystemService)

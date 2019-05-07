@@ -22,6 +22,8 @@ class IndexController
 		@SystemConfigurationService.getFooterLogo()
 		.then (data) =>
 			@footer = data
+		.catch (error) =>
+			@ErrorService.showErrorMessage(error)
 
 		if @AuthProvider.isAuthenticated()
 			@getUserProfile()
@@ -99,15 +101,6 @@ class IndexController
 				if data.exists == true
 					html = @$sce.trustAsHtml(data.content)
 					@showLegalNotice(html)
-				else
-					if vendor? && (vendor.community != @Constants.DEFAULT_COMMUNITY_ID)
-						@LegalNoticeService.getCommunityDefaultLegalNotice(@Constants.DEFAULT_COMMUNITY_ID)
-						.then (data) =>
-							if data.exists == true
-								html = @$sce.trustAsHtml(data.content)
-								@showLegalNotice(html)
-						.catch (error) =>
-							@ErrorService.showErrorMessage(error)
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 

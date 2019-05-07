@@ -1,5 +1,6 @@
 package com.gitb.repository;
 
+import com.gitb.utils.HmacUtils;
 import org.apache.commons.configuration.CompositeConfiguration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
@@ -33,6 +34,11 @@ public class TestCaseRepositoryConfiguration {
 			TEST_RESOURCE_REPOSITORY_URL = System.getenv().getOrDefault("remote.testresource.repository.url", config.getString("remote.testresource.repository.url"));
 			TEST_ID_PARAMETER = System.getenv().getOrDefault("remote.testcase.test-id.parameter", config.getString("remote.testcase.test-id.parameter"));
 			RESOURCE_ID_PARAMETER = System.getenv().getOrDefault("remote.testcase.resource-id.parameter", config.getString("remote.testcase.resource-id.parameter"));
+
+			// Configure also the HMAC information used to authorize remote calls.
+			String hmacKey = System.getenv().getOrDefault("HMAC_KEY", "devKey");
+			String hmacKeyWindow = System.getenv().getOrDefault("HMAC_WINDOW", "10000");
+			HmacUtils.configure(hmacKey, Long.valueOf(hmacKeyWindow));
 		} catch (ConfigurationException e) {
 			LOG.error("Error loading configuration", e);
 			throw new IllegalStateException("Error loading configuration", e);

@@ -3,8 +3,8 @@ class ReportService
   @headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
   @defaultConfig = { headers: @headers }
 
-  @$inject = ['$log', 'RestService']
-  constructor: (@$log, @RestService) ->
+  @$inject = ['$log', 'RestService', 'DataService']
+  constructor: (@$log, @RestService, @DataService) ->
     @$log.debug "Constructing ReportService..."
 
   getTestResults: (systemId, page, limit, specIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder) ->
@@ -210,15 +210,20 @@ class ReportService
       authenticate: true
       responseType: "arraybuffer"
 
-  getTestCases: (testCaseIds) ->
-    params = {}
-    if ids? and testCaseIds.length > 0
-        params.ids = testCaseIds.join ','
-
+  getTestCasesForSystem: (systemId) ->
     @RestService.get
-      path: jsRoutes.controllers.RepositoryService.getTestCases().url
+      path: jsRoutes.controllers.RepositoryService.getTestCasesForSystem(systemId).url
       authenticate: true
-      params: params
+
+  getAllTestCases: () =>
+    @RestService.get
+      path: jsRoutes.controllers.RepositoryService.getAllTestCases().url
+      authenticate: true
+
+  getTestCasesForCommunity: () =>
+    @RestService.get
+      path: jsRoutes.controllers.RepositoryService.getTestCasesForCommunity(@DataService.community.id).url
+      authenticate: true
 
   getCompletedTestResults: (page, limit, communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder) ->
     params = {
