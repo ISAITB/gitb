@@ -28,22 +28,25 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
   private val TESTCASE_STEP_REPORT_NAME = "step.pdf"
 
 	def getTestSuiteResource(testId: String, filePath:String) = AuthorizedAction { request =>
-      authorizationManager.canViewTestSuiteResource(request, testId)
-      val testCase = testCaseManager.getTestCaseForIdWrapper(testId).get
-      val testSuite = testSuiteManager.getTestSuiteOfTestCaseWrapper(testCase.id)
-      var filePathToLookup = codec.decode(filePath)
-      if (!filePath.startsWith(testSuite.shortname) && !filePath.startsWith("/"+testSuite.shortname)) {
-        // Prefix with the test suite name.
-        filePathToLookup = testSuite.shortname + "/" + filePathToLookup
-      }
-      filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.shortname, testSuite.filename)
-      val file = RepositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(testCase.targetSpec), filePathToLookup)
-			logger.debug("Reading test resource ["+codec.decode(filePath)+"] definition from the file ["+file+"]")
-			if(file.exists()) {
-				Ok.sendFile(file, true)
-			} else {
-				NotFound
-			}
+    authorizationManager.canViewTestSuiteResource(request, testId)
+    val testCase = testCaseManager.getTestCaseForIdWrapper(testId).get
+    val testSuite = testSuiteManager.getTestSuiteOfTestCaseWrapper(testCase.id)
+    var filePathToLookup = codec.decode(filePath)
+    if (!filePath.startsWith(testSuite.shortname) && !filePath.startsWith("/"+testSuite.shortname)) {
+      // Prefix with the test suite name.
+      filePathToLookup = testSuite.shortname + "/" + filePathToLookup
+    }
+    filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.shortname, testSuite.filename)
+    // Ensure that the requested resource is within the test suite folder (to avoid path traversal)
+    val spec = specificationManager.getSpecificationById(testSuite.specification)
+    val testSuiteFolder = RepositoryUtils.getTestSuitesResource(spec, testSuite.filename)
+    val file = RepositoryUtils.getTestSuitesResource(spec, filePathToLookup)
+    logger.debug("Reading test resource ["+codec.decode(filePath)+"] definition from the file ["+file+"]")
+    if (file.exists() && file.toPath.normalize().startsWith(testSuiteFolder.toPath.normalize())) {
+      Ok.sendFile(file, true)
+    } else {
+      NotFound
+    }
 	}
 
 	def getTestStepReport(sessionId: String, reportPath: String) = AuthorizedAction { request =>
