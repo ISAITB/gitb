@@ -1,56 +1,54 @@
 class ContactSupportController
 
-  @$inject = ['$scope', '$uibModalInstance', 'WebEditorService', '$timeout', 'DataService', 'AccountService', 'ErrorService', 'ValidationService']
-  constructor: (@$scope, @$uibModalInstance, @WebEditorService, @$timeout, @DataService, @AccountService, @ErrorService, @ValidationService) ->
-    @$uibModalInstance.opened.then(
-        @$timeout(() =>
-            tinymce.remove('.mce-editor-contact')
-            @WebEditorService.editorMinimal(200, "", "mce-editor-contact")
-            @$scope.editorReady = true
-        , 1)
-    )
-    @$scope.contactAddress = @DataService.user.email
-    @$scope.surveyAddress = @DataService.configuration?["survey.address"]
-    @$scope.attachments = []
-    @$scope.feedbackTypes = [
-        {id: 0, description: "Technical issue"},
-        {id: 1, description: "Feature request"},
-        {id: 2, description: "Question on usage"},
-        {id: 3, description: "Other"}
-    ]
+    @$inject = ['$scope', '$uibModalInstance', 'WebEditorService', '$timeout', 'DataService', 'AccountService', 'ErrorService', 'ValidationService']
+    constructor: (@$scope, @$uibModalInstance, @WebEditorService, @$timeout, @DataService, @AccountService, @ErrorService, @ValidationService) ->
+        @$uibModalInstance.opened.then(
+            @$timeout(() =>
+                tinymce.remove('.mce-editor-contact')
+                @WebEditorService.editorMinimal(200, "", "mce-editor-contact")
+                @editorReady = true
+            , 1)
+        )
+        @contactAddress = @DataService.user.email
+        @surveyAddress = @DataService.configuration?["survey.address"]
+        @attachments = []
+        @feedbackTypes = [
+            {id: 0, description: "Technical issue"},
+            {id: 1, description: "Feature request"},
+            {id: 2, description: "Question on usage"},
+            {id: 3, description: "Other"}
+        ]
+        @resetState()
 
-    @$scope.resetState = () =>
-        @$scope.feedback = {}
-        @$scope.sendPending = false
-        @$scope.alerts = []
-        @$scope.attachments = []
-
-        editor = @$scope.getRichTextEditor()
+    resetState: () =>
+        @feedback = {}
+        @sendPending = false
+        @alerts = []
+        @attachments = []
+        editor = @getRichTextEditor()
         if (editor?)
             editor.setContent("")
 
-    @$scope.getRichTextEditor = () =>
+    getRichTextEditor:() =>
         tinymce.get('mce-editor-contact')
 
-    @$scope.resetState()
+    sendDisabled: () =>
+        !(@contactAddress? && @feedback? && @feedback?.id? && !@sendPending)
 
-    @$scope.sendDisabled = () =>
-        !(@$scope.contactAddress? && @$scope.feedback? && @$scope.feedback?.id? && !@$scope.sendPending)
-
-    @$scope.showSurveyLink = () =>
+    showSurveyLink = () =>
         @DataService.configuration?["survey.enabled"] == 'true'
 
-    @$scope.validateAttachments = () =>
+    validateAttachments: () =>
         valid = true
-        if @$scope.attachments?
+        if @attachments?
             maxCount = 5
             if @DataService.configuration?["email.attachments.maxCount"]?
                 maxCount = parseInt(@DataService.configuration["email.attachments.maxCount"])
-            if @$scope.attachments.length > maxCount
+            if @attachments.length > maxCount
                 @ValidationService.alerts.push({type:'danger', msg:'A maximum of '+maxCount+' attachments can be provided'})
                 valid = false
             totalSize = 0
-            for attachment in @$scope.attachments
+            for attachment in @attachments
                 totalSize += attachment.size
             maxSizeMBs = 5
             if @DataService.configuration?["email.attachments.maxSize"]?
@@ -61,65 +59,63 @@ class ContactSupportController
                 valid = false
         valid
 
-    @$scope.send = () =>
-        @$scope.clearSuccess()
+    send: () =>
+        @clearSuccess()
         @ValidationService.clearAll()
-        if (!@$scope.sendDisabled() & 
-            @ValidationService.validateEmail(@$scope.contactAddress, "Please enter a valid email address.") &
-            @ValidationService.objectNonNull(@$scope.feedback.id, "Please select the feedback type.") &
-            @ValidationService.requireNonNull(@$scope.getRichTextEditor().getContent(), "Please provide a message.") &
-            @$scope.validateAttachments()
+        if (!@sendDisabled() & 
+            @ValidationService.validateEmail(@contactAddress, "Please enter a valid email address.") &
+            @ValidationService.objectNonNull(@feedback.id, "Please select the feedback type.") &
+            @ValidationService.requireNonNull(@getRichTextEditor().getContent(), "Please provide a message.") &
+            @validateAttachments()
         ) 
-            @$scope.sendPending = true
-            @AccountService.submitFeedback(@$scope.contactAddress, @$scope.feedback.id, @$scope.feedback.description, @$scope.getRichTextEditor().getContent(), @$scope.attachments)
+            @sendPending = true
+            @AccountService.submitFeedback(@contactAddress, @feedback.id, @feedback.description, @getRichTextEditor().getContent(), @attachments)
             .then (data) =>
                 if (data? && data.error_code?)
                     @ValidationService.alerts.push({type:'danger', msg:data.error_description})
-                    @$scope.sendPending = false
-                    @$scope.alerts = @ValidationService.getAlerts()
+                    @sendPending = false
+                    @alerts = @ValidationService.getAlerts()
                 else
-                    @$scope.successMessage = "Your feedback was submitted successfully."
-                    @$scope.resetState()                
+                    @successMessage = "Your feedback was submitted successfully."
+                    @resetState()                
             .catch (error) =>
-                @$scope.sendPending = false
+                @sendPending = false
                 @ErrorService.showErrorMessage(error)
         else
-            @$scope.alerts = @ValidationService.getAlerts()
+            @alerts = @ValidationService.getAlerts()
 
-    @$scope.cancel = () =>
+    cancel: () =>
         @$uibModalInstance.dismiss()
 
-    @$scope.closeAlert = (index) =>
+    closeAlert: (index) =>
         @ValidationService.clearAlert(index)
-        @$scope.alerts = @ValidationService.getAlerts()
+        @alerts = @ValidationService.getAlerts()
 
-    @$scope.clearSuccess = () =>
-        @$scope.successMessage = undefined
+    clearSuccess: () =>
+        @successMessage = undefined
 
-    @$scope.attachFile = (files) =>
+    attachFile: (files) =>
         file = _.head files
         if file?
             reader = new FileReader()
-            reader.readAsDataURL file
             reader.onload = (event) =>
                 data = event.target.result
-                @$scope.attachments.push({
+                @attachments.push({
                     name: file.name
                     size: file.size
                     type: file.type
                     data: data
                 })
-                $scope.$apply()
+                @$scope.$apply()
+            reader.readAsDataURL file
 
-    @$scope.removeAttachment = (index) =>
-        @$scope.attachments.splice(index, 1)
+    removeAttachment: (index) =>
+        @attachments.splice(index, 1)
     
-    @$scope.showUpload = () =>
+    showUpload: () =>
         maxCount = -1
         if @DataService.configuration?["email.attachments.maxCount"]?
             maxCount = parseInt(@DataService.configuration["email.attachments.maxCount"])
         maxCount > 0
-
-
 
 @controllers.controller 'ContactSupportController', ContactSupportController

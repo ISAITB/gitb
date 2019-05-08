@@ -113,7 +113,7 @@ class IndexController
 	contactUs: () =>
 		modalOptions =
 			templateUrl: 'assets/views/components/contact-support.html'
-			controller: 'ContactSupportController as ContactSupportController'
+			controller: 'ContactSupportController as controller'
 			size: 'lg'
 		modalInstance = @$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
 
