@@ -154,7 +154,7 @@ class AccountService @Inject() (accountManager: AccountManager, authorizationMan
             index += 1
           }
         }
-        if (response == null) {
+        if (response == null && Configurations.ANTIVIRUS_SERVER_ENABLED) {
           val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
           index = 0
           while (index < messageAttachmentCount.get && response == null) {
