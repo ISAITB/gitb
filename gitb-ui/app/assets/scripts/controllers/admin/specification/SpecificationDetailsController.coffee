@@ -160,7 +160,8 @@ class SpecificationDetailsController
 				else
 					@ErrorService.showErrorMessage("An error occurred while processing the test suite: Response was empty")
 					@uploadPending = false
-			, () =>
+			, (error) =>
+				@ErrorService.showErrorMessage(error)
 				@uploadPending = false
 			)
 

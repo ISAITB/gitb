@@ -1,13 +1,15 @@
 package controllers
 
+import config.Configurations
 import controllers.util._
 import exceptions._
 import javax.inject.Inject
 import managers.{AuthorizationManager, ParameterManager, SystemManager, TestCaseManager}
 import models.Systems
+import org.apache.commons.codec.binary.Base64
 import org.slf4j._
 import play.api.mvc._
-import utils.{JsonUtil, MimeUtil}
+import utils.{ClamAVClient, JsonUtil, MimeUtil}
 
 import scala.collection.mutable.ListBuffer
 
@@ -140,17 +142,30 @@ class SystemService @Inject() (systemManager: SystemManager, parameterManager: P
 		val jsConfig = ParameterExtractor.requiredBodyParameter(request, Parameters.CONFIG)
     val config = JsonUtil.parseJsConfig(jsConfig)
     authorizationManager.canEditEndpointConfiguration(request, config)
-    systemManager.saveEndpointConfiguration(config)
-    val parameter = parameterManager.getParameterById(config.parameter)
-    if (parameter.isDefined && parameter.get.kind == "BINARY") {
-      // Get the metadata for the parameter.
-      val detectedMimeType = MimeUtil.getMimeType(config.value, false)
-      val extension = MimeUtil.getExtensionFromMimeType(detectedMimeType)
-      val json = JsonUtil.jsBinaryMetadata(detectedMimeType, extension).toString()
-      ResponseConstructor.constructJsonResponse(json)
-    } else {
-      ResponseConstructor.constructEmptyResponse
+
+    var response: Result = null
+    if (Configurations.ANTIVIRUS_SERVER_ENABLED && MimeUtil.isDataURL(config.value)) {
+      // Check for virus. Do this regardless of the type of parameter as this can be changed later on.
+      val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+      val scanResult = virusScanner.scan(Base64.decodeBase64(MimeUtil.getBase64FromDataURL(config.value)))
+      if (!ClamAVClient.isCleanReply(scanResult)) {
+        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Configuration file failed virus scan.")
+      }
     }
+    if (response == null) {
+      systemManager.saveEndpointConfiguration(config)
+      val parameter = parameterManager.getParameterById(config.parameter)
+      if (parameter.isDefined && parameter.get.kind == "BINARY") {
+        // Get the metadata for the parameter.
+        val detectedMimeType = MimeUtil.getMimeType(config.value, false)
+        val extension = MimeUtil.getExtensionFromMimeType(detectedMimeType)
+        val json = JsonUtil.jsBinaryMetadata(detectedMimeType, extension).toString()
+        response = ResponseConstructor.constructJsonResponse(json)
+      } else {
+        response = ResponseConstructor.constructEmptyResponse
+      }
+    }
+    response
 	}
 
 	def getConfigurationsWithEndpointIds() = AuthorizedAction { request =>

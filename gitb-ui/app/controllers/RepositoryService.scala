@@ -6,17 +6,20 @@ import java.nio.file.{Files, Paths}
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl.TestCase
 import com.gitb.utils.XMLUtils
+import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import exceptions.ErrorCodes
 import javax.inject.Inject
 import javax.xml.transform.stream.StreamSource
 import managers._
 import models.ConformanceCertificate
+import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import play.api.mvc._
-import utils.{JacksonUtil, JsonUtil, MimeUtil, RepositoryUtils}
+import utils._
 
 /**
  * Created by serbay on 10/16/14.
@@ -218,32 +221,44 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     authorizationManager.canViewConformanceCertificateReport(request, communityId)
     val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
     var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
-    val reportPath = Paths.get(
-      ReportManager.getTempFolderPath().toFile.getAbsolutePath,
-      "conformance_reports",
-      "c"+communityId,
-      "report_"+System.currentTimeMillis+".pdf"
-    )
-    try {
-      FileUtils.deleteDirectory(reportPath.toFile.getParentFile)
-    } catch  {
-      case e:Exception => {
-        // Ignore these are anyway deleted every hour
+
+    var response: Result = null
+    if (settings.keystoreFile.isDefined && Configurations.ANTIVIRUS_SERVER_ENABLED) {
+      val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+      val scanResult = virusScanner.scan(Base64.decodeBase64(MimeUtil.getBase64FromDataURL(settings.keystoreFile.get)))
+      if (!ClamAVClient.isCleanReply(scanResult)) {
+        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Keystore file failed virus scan.")
       }
     }
-    if (settings.includeSignature && (settings.keystorePassword.isEmpty || settings.keyPassword.isEmpty)) {
-      // The passwords need to be looked up from the stored data.
-      val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
-      val completeSettings = new ConformanceCertificate(settings)
-      completeSettings.keyPassword = Some(MimeUtil.decryptString(storedSettings.get.keyPassword.get))
-      completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
-      settings = completeSettings.toCaseObject
+    if (response == null) {
+      val reportPath = Paths.get(
+        ReportManager.getTempFolderPath().toFile.getAbsolutePath,
+        "conformance_reports",
+        "c"+communityId,
+        "report_"+System.currentTimeMillis+".pdf"
+      )
+      try {
+        FileUtils.deleteDirectory(reportPath.toFile.getParentFile)
+      } catch  {
+        case e:Exception => {
+          // Ignore these are anyway deleted every hour
+        }
+      }
+      if (settings.includeSignature && (settings.keystorePassword.isEmpty || settings.keyPassword.isEmpty)) {
+        // The passwords need to be looked up from the stored data.
+        val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+        val completeSettings = new ConformanceCertificate(settings)
+        completeSettings.keyPassword = Some(MimeUtil.decryptString(storedSettings.get.keyPassword.get))
+        completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
+        settings = completeSettings.toCaseObject
+      }
+      reportManager.generateDemoConformanceCertificate(reportPath, settings)
+      response = Ok.sendFile(
+        content = reportPath.toFile,
+        fileName = _ => reportPath.toFile.getName
+      )
     }
-    reportManager.generateDemoConformanceCertificate(reportPath, settings)
-    Ok.sendFile(
-      content = reportPath.toFile,
-      fileName = _ => reportPath.toFile.getName
-    )
+    response
   }
 
 	def getTestCaseDefinition(testId: String) = AuthorizedAction { request =>

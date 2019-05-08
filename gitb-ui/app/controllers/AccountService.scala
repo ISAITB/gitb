@@ -161,7 +161,7 @@ class AccountService @Inject() (accountManager: AccountManager, authorizationMan
             val scanResult = virusScanner.scan(attachments(index).getContent)
             if (!ClamAVClient.isCleanReply(scanResult)) {
               logger.warn("Attachment [" + attachments(index).getName + "] found to contain virus.")
-              response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_VIRUS_FOUND, "Attachments failed virus scan.")
+              response = ResponseConstructor.constructErrorResponse(ErrorCodes.VIRUS_FOUND, "Attachments failed virus scan.")
             } else {
               index += 1
             }

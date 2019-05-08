@@ -1,16 +1,18 @@
 package controllers
 
-import com.gitb.core.{ActorConfiguration, Configuration}
+import com.gitb.core.{ActorConfiguration, Configuration, ValueEmbeddingEnumeration}
 import com.gitb.tbs._
 import config.Configurations
 import controllers.util._
+import exceptions.ErrorCodes
 import javax.inject.{Inject, Singleton}
 import jaxws.HeaderHandlerResolver
 import managers.{AuthorizationManager, ConformanceManager, ReportManager}
 import models.Constants
+import org.apache.commons.codec.binary.Base64
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
-import utils.{JacksonUtil, JsonUtil}
+import utils.{ClamAVClient, JacksonUtil, JsonUtil, MimeUtil}
 
 @Singleton
 class TestService @Inject() (reportManager: ReportManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager) extends Controller {
@@ -115,6 +117,27 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
     ResponseConstructor.constructJsonResponse(json)
   }
 
+  private def scanForVirus(inputs: List[com.gitb.core.AnyContent], scanner: ClamAVClient): Boolean = {
+    var found = false
+    if (inputs != null && inputs.nonEmpty) {
+      inputs.foreach { input =>
+        if (input.getValue != null && input.getEmbeddingMethod == ValueEmbeddingEnumeration.BASE_64) {
+          val scanResult = scanner.scan(Base64.decodeBase64(MimeUtil.getBase64FromDataURL(input.getValue)))
+          if (!ClamAVClient.isCleanReply(scanResult)) {
+            found = true
+          }
+        } else if (input.getItem != null && !input.getItem.isEmpty) {
+          import scala.collection.JavaConversions._
+          found = scanForVirus(input.getItem.toList, scanner)
+        }
+        if (found) {
+          return found
+        }
+      }
+    }
+    found
+  }
+
   /**
    * Sends inputs to the TestbedService
    */
@@ -123,14 +146,27 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
 
     val inputs = ParameterExtractor.requiredBodyParameter(request, Parameters.INPUTS)
     val step   = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_STEP)
+    val userInputs = JacksonUtil.parseUserInputs(inputs)
 
-    val pRequest: ProvideInputRequest = new ProvideInputRequest
-    pRequest.setTcInstanceId(session_id)
-    pRequest.setStepId(step)
-    pRequest.getInput.addAll(JacksonUtil.parseUserInputs(inputs))
+    var response: Result = null
+    if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
+      // Check for viruses in the uploaded file(s)
+      val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+      import scala.collection.JavaConversions._
+      if (scanForVirus(userInputs.toList, virusScanner)) {
+        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Provided file failed virus scan.")
+      }
+    }
+    if (response == null) {
+      val pRequest: ProvideInputRequest = new ProvideInputRequest
+      pRequest.setTcInstanceId(session_id)
+      pRequest.setStepId(step)
+      pRequest.getInput.addAll(userInputs)
 
-    val response = port().provideInput(pRequest)
-    ResponseConstructor.constructEmptyResponse
+      port().provideInput(pRequest)
+      response = ResponseConstructor.constructEmptyResponse
+    }
+    response
   }
 
   /**
