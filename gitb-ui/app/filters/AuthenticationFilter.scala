@@ -88,6 +88,7 @@ class AuthenticationFilter @Inject() (implicit val mat: Materializer, accountMan
     request.method.equals("OPTIONS") ||
       request.path.equals("/") ||
       request.path.equals("/oauth/access_token") ||
+      request.path.equals("/oauth/logout") ||
       request.path.equals("/theme/css") ||
       request.path.equals("/theme/logo") ||
       request.path.equals("/theme/footer") ||

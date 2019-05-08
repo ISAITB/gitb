@@ -675,7 +675,8 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canLogout(request: RequestWithAttributes[_]):Boolean = {
-    checkIsAuthenticated(request)
+    val ok = true
+    setAuthResult(request, ok, "User cannot logout")
   }
 
   def canCheckUserEmail(request: RequestWithAttributes[_]):Boolean = {
