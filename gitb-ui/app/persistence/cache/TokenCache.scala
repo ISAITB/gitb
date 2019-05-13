@@ -9,12 +9,13 @@ import persistence.cache.Keys._
 object TokenCache {
   def logger = LoggerFactory.getLogger("TokenCache")
 
-  val ACC_TOKEN_EXPIRE_IN_SECONDS = Configurations.TOKEN_LIFETIME_IN_SECONDS
+  val sessionMaxAgeMillis = Configurations.AUTHENTICATION_SESSION_MAX_TOTAL_TIME * 1000
 
   def saveOAuthTokens(userId:Long, tokens:Token) = {
     val act_key =  ACCESS_TOKEN_HASH_KEY  + HASH_SEPERATOR + tokens.access_token
     val redisClient = Redis.getClient()
-    redisClient.setex(act_key,  ACC_TOKEN_EXPIRE_IN_SECONDS,     userId)
+    val currentTime = System.currentTimeMillis()
+    redisClient.setex(act_key,  Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME, userId+":"+currentTime)
     Redis.releaseClient(redisClient)
   }
 
@@ -28,13 +29,27 @@ object TokenCache {
   def checkAccessToken(accessToken:String): Long = {
     val act_key =  ACCESS_TOKEN_HASH_KEY  + HASH_SEPERATOR + accessToken
     val redisClient = Redis.getClient()
-    val userId:Option[String] = redisClient.get(act_key)
-    Redis.releaseClient(redisClient)
-
-    if(!userId.isDefined){
-      throw InvalidTokenException(ErrorCodes.INVALID_ACCESS_TOKEN, "Invalid access token")
+    try {
+      val userData:Option[String] = redisClient.get(act_key)
+      if(userData.isEmpty){
+        throw InvalidTokenException(ErrorCodes.INVALID_ACCESS_TOKEN, "Invalid access token")
+      } else {
+        val userDataParts = userData.get.split(':')
+        if (userDataParts.length > 1) {
+          val sessionCreationTimeStamp = userDataParts(1).toLong
+          if (sessionMaxAgeMillis > 0 && (System.currentTimeMillis() - sessionCreationTimeStamp > sessionMaxAgeMillis)) {
+            redisClient.del(act_key)
+            throw InvalidTokenException(ErrorCodes.INVALID_ACCESS_TOKEN, "Expired access token")
+          }
+        }
+        // Reset the token expiry.
+        redisClient.setex(act_key, Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME, userData.get)
+        // Return user ID.
+        userDataParts(0).toLong
+      }
+    } finally {
+      Redis.releaseClient(redisClient)
     }
-    userId.get.toLong
   }
 
 }

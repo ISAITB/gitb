@@ -1,11 +1,11 @@
 package controllers.util
 
+import config.Configurations
 import exceptions.ErrorCodes
-import play.api.mvc._
+import models.Token
 import play.api.http.HeaderNames._
 import play.api.http.MimeTypes._
-import models.Token
-import config.Configurations
+import play.api.mvc._
 
 object ResponseConstructor extends Results{
 
@@ -79,9 +79,10 @@ object ResponseConstructor extends Results{
 
   def constructOauthResponse(tokens:Token):Result = {
     Ok("{" +
+      "\"path\":\"" + Configurations.AUTHENTICATION_COOKIE_PATH + "\"," +
       "\"access_token\":\"" + tokens.access_token + "\"," +
       "\"token_type\":\"Bearer\"," +
-      "\"expires_in\":" + Configurations.TOKEN_LIFETIME_IN_SECONDS + "," + //in seconds ~ 30 days
+      "\"expires_in\":" + Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME + "," + //in seconds ~ 30 days
       "\"registered\":true}").as(JSON)
   }
 

@@ -17,28 +17,17 @@ class RestService
         @call('DELETE', config)
 
     call: (method, config) ->
-        @authenticate(config)
-        .then(
-            (config) =>
-                if config.data?
-                    config.data = _.pick config.data, (value, key)->
-                        value?
-                if !config.toJSON?
-                    config.toJSON = false
-                @sendRequest(method, config.path.substring(1), config.params, config.data, config.toJSON, config.responseType);
-        )
-
-    authenticate: (config) ->
-        deferred = @$q.defer()
-        if config.authenticate
-            if @AuthProvider.isAuthenticated
-                deferred.resolve(config)
-            else
-                #TODO: show popup to user so that he can enter his credentials
+        if config.authenticate && !@AuthProvider.isAuthenticated() && !@AuthProvider.isAuthenticated()
+            # Trigger (re)authentication after logout cleanup
+            @$rootScope.$emit(@Events.onLogout)
         else
-            deferred.resolve(config)
-
-        deferred.promise
+            # Make request
+            if config.data?
+                config.data = _.pick config.data, (value, key)->
+                    value?
+            if !config.toJSON?
+                config.toJSON = false
+            @sendRequest(method, config.path.substring(1), config.params, config.data, config.toJSON, config.responseType);
 
     sendRequest: (_method, _url, _params, _data, _toJSON, _responseType) ->
         options = @configureOptions(_method, _url, _params, _data, _toJSON, _responseType)
@@ -48,12 +37,8 @@ class RestService
                 result.data
             (error) =>
                 if error? && error.status? && error.status == 401
-                    if error.data? && error.data.error_code == 104
-                        # Error 104 is the invalid credentials error that would be raised by the login screen. Re-throw to let login controller handle it.
-                        throw error
-                    else
-                        # Handle only authorisation-related errors (but not on login page).
-                        @$rootScope.$emit(@Events.onLogout)
+                    # Handle only authorisation-related errors.
+                    @$rootScope.$emit(@Events.onLogout)
                 else
                     throw error
         )
