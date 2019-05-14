@@ -272,11 +272,6 @@ class ConformanceService
       path: jsRoutes.controllers.ConformanceService.getConformanceStatusForTestSuite(actorId, sutId, testSuiteId).url
       authenticate: true
 
-  getTestSuiteTestCase: (testCaseId) ->
-    @RestService.get
-      path: jsRoutes.controllers.ConformanceService.getTestSuiteTestCase(testCaseId).url
-      authenticate: true
-
   getConformanceOverview: (domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, fullResults) ->
     params = {}
     params.full = fullResults

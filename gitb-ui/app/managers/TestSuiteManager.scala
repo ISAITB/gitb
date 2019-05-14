@@ -496,7 +496,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 					testCaseManager.updateTestCase(
 						existingTestCaseId, testCaseToStore.shortname, testCaseToStore.fullname,
 						testCaseToStore.version, testCaseToStore.authors, testCaseToStore.description,
-						testCaseToStore.keywords, testCaseToStore.testCaseType, testCaseToStore.path)
+						testCaseToStore.keywords, testCaseToStore.testCaseType, testCaseToStore.path, testCaseToStore.testSuiteOrder)
 				// Update test case relation to actors.
 				val newTestCaseActors = new util.HashSet[Long]
 				testCase.targetActors.getOrElse("").split(",").foreach { actorId =>

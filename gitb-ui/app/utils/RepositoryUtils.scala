@@ -167,8 +167,11 @@ object RepositoryUtils {
 							new Actor(Actors(0l, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), Option(tdlActor.isDefault), displayOrder,  0l), endpoints)
 						}.toList
 
+						var testCaseCounter = 0
 						val testCases = tdlTestCaseEntries.map {
 							entry =>
+								testCaseCounter += 1
+
 								logger.debug("Searching for the test case ["+entry.getId+"]")
 								val tdlTestCase = tdlTestCases.find(_.getId == entry.getId).get
 
@@ -177,7 +180,7 @@ object RepositoryUtils {
 									tdlTestCase.getActors.getActor.asScala.exists((role) => role.getId == actor.actorId)
 								} map(_.actorId)
 
-								var testCaseType = TestCaseType.CONFORMANCE;
+								var testCaseType = TestCaseType.CONFORMANCE
 								if (Option(tdlTestCase.getMetadata.getType).isDefined) {
 									testCaseType = tdlTestCase.getMetadata.getType
 								}
@@ -185,7 +188,8 @@ object RepositoryUtils {
 									0l, tdlTestCase.getId, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getVersion,
 									Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
 									Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
-									None, testCaseType.ordinal().toShort, null, specification, Some(testCaseActors.mkString(","))
+									None, testCaseType.ordinal().toShort, null, specification, Some(testCaseActors.mkString(",")), None,
+									testCaseCounter.toShort
 								)
 						}.toList
 						new TestSuite(caseObject, Some(actors), Some(testCases))

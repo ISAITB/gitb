@@ -296,15 +296,6 @@ class ConformanceService @Inject() (conformanceManager: ConformanceManager, acco
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def getTestSuiteTestCases(testSuiteId: Long) = AuthorizedAction { request =>
-    authorizationManager.canViewTestSuite(request, testSuiteId)
-    val testCaseType = ParameterExtractor.requiredQueryParameter(request, Parameters.TYPE).toShort
-    val list = testCaseManager.getTestCasesOfTestSuiteWrapper(testSuiteId, Some(testCaseType))
-    import scala.collection.JavaConversions._
-    val json: String = JsonUtil.jsTestCasesList(list.toList).toString
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
   def getTestSuiteTestCase(testCaseId: Long) = AuthorizedAction { request =>
     authorizationManager.canViewTestSuiteByTestCaseId(request, testCaseId)
     val testCase = testCaseManager.getTestCase(testCaseId.toString()).get

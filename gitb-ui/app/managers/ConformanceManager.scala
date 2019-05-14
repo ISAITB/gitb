@@ -415,7 +415,7 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 			query = query.filter(_._1._1.testsuite === testSuiteId.get)
 		}
 		query = query
-			.sortBy(x => (x._2.shortname))
+			.sortBy(x => (x._2.shortname, x._1._2.testSuiteOrder))
 		val results = exec(query.result.map(_.toList)).map(r => {
 			(r._1._1.copy(), r._1._2.copy(), r._2.copy())
 		})

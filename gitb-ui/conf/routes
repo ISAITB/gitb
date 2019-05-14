@@ -70,7 +70,6 @@ POST    /actors/:actor_id                   @controllers.ActorService.updateActo
 GET	    /actors/:actor_id/tests             @controllers.ConformanceService.getActorTestCases(actor_id : Long)
 GET	    /actors/:actor_id/conformance/:sut_id @controllers.ConformanceService.getConformanceStatus(actor_id : Long, sut_id : Long)
 GET	    /actors/:actor_id/conformance/:sut_id/:testsuite_id @controllers.ConformanceService.getConformanceStatusForTestSuite(actor_id : Long, sut_id : Long, testsuite_id : Long)
-GET	    /testsuites/:testSuiteId/testcases  @controllers.ConformanceService.getTestSuiteTestCases(testSuiteId : Long)
 GET	    /testcases/:testCaseId              @controllers.ConformanceService.getTestSuiteTestCase(testCaseId : Long)
 GET     /actors/:actor_id/endpoints         @controllers.ConformanceService.getEndpointsForActor(actor_id : Long)
 POST    /endpoints                          @controllers.ConformanceService.createEndpoint

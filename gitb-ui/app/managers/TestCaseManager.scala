@@ -39,27 +39,6 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		}
 	}
 
-	def getTestCasesOfTestSuiteWrapper(testSuiteId: Long, testCaseType: Option[Short]): util.List[TestCases] = {
-		getTestCasesOfTestSuite(testSuiteId, testCaseType)
-	}
-
-	def getTestCasesOfTestSuite(testSuiteId: Long, testCaseType: Option[Short]): util.List[TestCases] = {
-		var query = PersistenceSchema.testCases
-			.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
-		query = query
-			.filter(_._2.testsuite === testSuiteId)
-		if (testCaseType.isDefined)
-			query = query
-				.filter(_._1.testCaseType === testCaseType.get)
-		val results = exec(query.result.map(_.toList))
-
-		val testCases = new util.ArrayList[TestCases]()
-		for (result <- results) {
-			testCases.add(result._1)
-		}
-		testCases
-	}
-
 	def getTestCase(testCaseId:String) = {
 		try {
 			val tc = exec(PersistenceSchema.testCases.filter(_.id === testCaseId.toLong).result.head)
@@ -184,9 +163,9 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		}
 	}
 
-	def updateTestCase(testCaseId: Long, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String) = {
-		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname, t.fullname, t.version, t.authors, t.description, t.keywords, t.testCaseType, t.path)
-		q1.update(shortName, fullName, version, authors, description, keywords, testCaseType, path) andThen
+	def updateTestCase(testCaseId: Long, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String, testSuiteOrder: Short) = {
+		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname, t.fullname, t.version, t.authors, t.description, t.keywords, t.testCaseType, t.path, t.testSuiteOrder)
+		q1.update(shortName, fullName, version, authors, description, keywords, testCaseType, path, testSuiteOrder) andThen
 		testResultManager.updateForUpdatedTestCase(testCaseId, shortName)
 	}
 
