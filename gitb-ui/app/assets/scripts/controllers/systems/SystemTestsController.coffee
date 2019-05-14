@@ -421,18 +421,7 @@ class SystemTestsController
 
                       transformedObject
       if resultReportsCollection.value().length > 0
-        csv = ["Domain", "Specification", "Actor", "Test suite", "Test case", "Start time", "End time", "Result", "Session", "Obsolete"].toString() + "\n"
-        for o, i in resultReportsCollection.value()
-          line = ""
-          idx = 0
-          for k, v of o
-            if idx++ != 0
-              line += ","
-            if (v?)
-              line += String(v).replace /,/, " "
-          csv += if i < resultReportsCollection.value().length then line + "\n" else line
-        blobData = new Blob([csv], {type: 'text/csv'});
-        saveAs(blobData, "export.csv");
+        @DataService.exportAllAsCsv(["Domain", "Specification", "Actor", "Test suite", "Test case", "Start time", "End time", "Result", "Session", "Obsolete"], resultReportsCollection.value())
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 

@@ -374,22 +374,8 @@ class AdminConformanceController
 			else
 				headers = ["Community", "Organisation", "System", "Domain", "Specification", "Actor", "Test suite", "Test case", "Result"]
 				columnMap = ["communityName", "organizationName", "systemName", "domainName", "specName", "actorName", "testSuiteName", "testCaseName", "result"]
-			@exportAsCsv(headers, columnMap, data)
+			@DataService.exportPropertiesAsCsv(headers, columnMap, data)
 		)
-
-	exportAsCsv: (header, columnMap, data) ->
-		if data.length > 0
-			csv = header.toString() + "\n"
-			for rowData, rowIndex in data
-				line = ""
-				for columnName, columnIndex in columnMap
-					if columnIndex != 0
-						line += ","
-					if rowData[columnName]?
-						line += rowData[columnName].replace /,/, " "
-				csv += if rowIndex < data.length then line + "\n" else line
-			blobData = new Blob([csv], {type: 'text/csv'});
-			saveAs(blobData, "export.csv");
 
 	onExportTestCase: (statement, testCase) =>
 		@ReportService.exportTestCaseReport(testCase.sessionId, testCase.id)

@@ -656,7 +656,7 @@ class DashboardController
     .then (data) =>
       testResultMapper = @newTestResult
       tests = _.map data, (t) -> testResultMapper(t)
-      @exportAsCsv(["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organisation", "System", "Start time", "End time", "Result", "Obsolete"], tests)
+      @DataService.exportAllAsCsv(["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organisation", "System", "Start time", "End time", "Result", "Obsolete"], tests)
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -675,7 +675,7 @@ class DashboardController
     .then (data) =>
       testResultMapper = @newTestResult
       tests = _.map data, (testResult) -> testResultMapper(testResult)
-      @exportAsCsv(["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organisation", "System", "Start time", "End time", "Result", "Obsolete"], tests)
+      @DataService.exportAllAsCsv(["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organisation", "System", "Start time", "End time", "Result", "Obsolete"], tests)
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -684,21 +684,6 @@ class DashboardController
       "test-result-obsolete"
     else  
       ""
-
-  exportAsCsv: (header, data) ->
-    if data.length > 0
-      csv = header.toString() + "\n"
-      for o, i in data
-        line = ""
-        idx = 0
-        for k, v of o
-          if idx++ != 0
-            line += ","
-          if (v?)
-            line += String(v).replace /,/, " "
-        csv += if i < data.length then line + "\n" else line
-      blobData = new Blob([csv], {type: 'text/csv'});
-      saveAs(blobData, "export.csv");
 
   deleteObsolete: () ->
     @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete all obsolete test results?", "Yes", "No")
