@@ -21,7 +21,7 @@ class TestExecutionControllerV2
               @testsToExecute = tests
               @initialiseState()
             (error) =>
-              @ErrorService.showErrorMessage(error)
+              @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop) 
           )
       else
         testCaseId = @$stateParams['testCaseId']
@@ -32,7 +32,7 @@ class TestExecutionControllerV2
               @testsToExecute = [data]
               @initialiseState()
             (error) =>
-              @ErrorService.showErrorMessage(error)
+              @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop)
           )
     else 
       @initialiseState()
@@ -254,7 +254,7 @@ class TestExecutionControllerV2
                     parameter.value = configuration.value
               @endpointsLoaded.resolve()
             .catch (error) =>
-              @ErrorService.showErrorMessage(error)
+              @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop)
           else
             @endpointsLoaded.resolve()
             @configurationsLoaded.resolve()
@@ -418,8 +418,7 @@ class TestExecutionControllerV2
         )
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error).finally(angular.noop).then(() =>
-          @$state.go @$state.current, {}, {reload: true}, angular.noop) 
+        @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop) 
     )
 
   configure: (session, configs, configureFinished) ->
@@ -641,7 +640,7 @@ class TestExecutionControllerV2
           report.reports.assertionReports[0].value?.description?
               error.data.error_description = report.reports.assertionReports[0].value.description
 
-          @ErrorService.showErrorMessage(error)
+          @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop)
 
   interact: (interactions, stepId) =>
     sessionForModal = @session
