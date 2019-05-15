@@ -53,7 +53,8 @@ public enum ErrorCode {
     UNEXPECTED_HANDLER_CONFIG(                          "TDL-045", "Test case [%s] in step [%s] defines an unexpected configuration parameter [%s].", WARNING),
     MISSING_HANDLER_CONFIG(                             "TDL-046", "Test case [%s] in step [%s] does not provide a required configuration parameter [%s].", ERROR),
     INVALID_PROCESSING_HANDLER_OPERATION(               "TDL-047", "Test case [%s] in step [%s] refers to invalid processing operation [%s].", ERROR),
-    DUPLICATE_SCRIPTLET_ID(                             "TDL-048", "Test case [%s] defines multiple scriptlets for ID [%s].", ERROR);
+    DUPLICATE_SCRIPTLET_ID(                             "TDL-048", "Test case [%s] defines multiple scriptlets for ID [%s].", ERROR),
+    MISSING_LIST_CONTAINED_TYPE(                        "TDL-049", "Test case [%s] defines a 'list' variable with no contained type. A default of 'string' is considered but it is best to define it explicitly (e.g. 'list[string]').", WARNING);
 
     private String code;
     private String message;

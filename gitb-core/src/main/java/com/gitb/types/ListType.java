@@ -1,5 +1,9 @@
 package com.gitb.types;
 
+import com.gitb.core.ErrorCode;
+import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.utils.ErrorUtils;
+
 import javax.xml.xpath.XPathExpression;
 import java.util.ArrayList;
 import java.util.List;
@@ -27,8 +31,12 @@ public class ListType extends ContainerType {
      * @param element
      */
     public void append(DataType element){
-        if(this.elements != null)
+        if (this.elements != null) {
             this.elements.add(element);
+        }
+        if (containedType == null) {
+            containedType = element.getType();
+        }
     }
 
     /**
@@ -74,6 +82,28 @@ public class ListType extends ContainerType {
     }
 
     @Override
+    public void setValue(Object value) {
+        // The only allowed case is a direct assignment of another list of the same type.
+        if (value instanceof ListType) {
+            String leftContainedType = getContainedType();
+            String resultContainedType = ((ListType) value).getContainedType();
+            if (leftContainedType == null || resultContainedType == null) {
+                throw new IllegalStateException("Unable to determine the contained types for the list variables in the assign expression.");
+            } else if (!leftContainedType.equals(resultContainedType)) {
+                throw new IllegalStateException("The assigned variable is of type list["+leftContainedType+"] whereas the variable toassign is of type list["+resultContainedType+"]");
+            } else {
+                elements.clear();
+                List<DataType> items = (List<DataType>)((ListType) value).getValue();
+                for (DataType item: items) {
+                    append(item);
+                }
+            }
+        } else {
+            throw new IllegalStateException("Only list types can be directly assigned to other list types.");
+        }
+    }
+
+    @Override
     public boolean isEmpty() {
         return this.elements.isEmpty();
     }
@@ -85,7 +115,7 @@ public class ListType extends ContainerType {
 
     @Override
     public ListType toListType() {
-        ListType list = new ListType();
+        ListType list = new ListType(getContainedType());
         for (DataType obj: elements) {
             list.append(obj);
         }

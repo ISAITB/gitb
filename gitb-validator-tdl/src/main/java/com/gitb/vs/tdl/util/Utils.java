@@ -141,15 +141,28 @@ public class Utils {
         return true;
     }
 
+    public static ContainerTypeInfo getContainerTypeParts(String dataType) {
+        String containerTypePart;
+        String containedTypePart = null;
+        int containerStart = dataType.indexOf('[');
+        if (containerStart != -1) {
+            containerTypePart = dataType.substring(0, containerStart);
+            int containerEnd = dataType.indexOf(']');
+            if (containerEnd != -1 && containerEnd > containerStart && dataType.length() > containerStart+1) {
+                containedTypePart = dataType.substring(containerStart+1, containerEnd);
+            }
+        } else {
+            containerTypePart = dataType;
+        }
+        return new ContainerTypeInfo(containerTypePart, containedTypePart);
+    }
+
     public static boolean isContainerType(String dataType, Set<String> containerDataTypes, Set<String> containedDataTypes) {
         boolean isContainer = containerDataTypes.contains(dataType);
         if (!isContainer) {
-            int containerStart = dataType.indexOf('[');
-            int containerEnd = dataType.indexOf(']');
-            if (containerStart != -1 && containerEnd != -1 && containerEnd > containerStart && dataType.length() > containerStart+1) {
-                String containerTypePart = dataType.substring(0, containerStart);
-                String containedTypePart = dataType.substring(containerStart+1, containerEnd);
-                isContainer = containedDataTypes.contains(containedTypePart) && containerDataTypes.contains(containerTypePart);
+            ContainerTypeInfo typeInfo = getContainerTypeParts(dataType);
+            if (typeInfo.getContainerType() != null && typeInfo.getContainedType() != null) {
+                isContainer = containedDataTypes.contains(typeInfo.getContainedType()) && containerDataTypes.contains(typeInfo.getContainerType());
             }
         }
         return isContainer;

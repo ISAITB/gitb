@@ -2,6 +2,7 @@ package com.gitb.vs.tdl.rules.testcase;
 
 import com.gitb.tdl.*;
 import com.gitb.vs.tdl.ErrorCode;
+import com.gitb.vs.tdl.util.ContainerTypeInfo;
 import com.gitb.vs.tdl.util.Utils;
 
 public class CheckDataTypes extends AbstractTestCaseObserver {
@@ -46,9 +47,18 @@ public class CheckDataTypes extends AbstractTestCaseObserver {
 
     private void checkDataType(String dataType) {
         if (dataType != null) {
-            if (!context.getExternalConfiguration().getDataTypes().contains(dataType)
-                    && !Utils.isContainerType(dataType, context.getExternalConfiguration().getContainerDataTypes(), context.getExternalConfiguration().getContainedDataTypes())) {
-                addReportItem(ErrorCode.INVALID_DATA_TYPE_REFERENCE, currentTestCase.getId(), dataType);
+            boolean isDataType = context.getExternalConfiguration().getDataTypes().contains(dataType);
+            if (!isDataType) {
+                boolean isContainer = Utils.isContainerType(dataType, context.getExternalConfiguration().getContainerDataTypes(), context.getExternalConfiguration().getContainedDataTypes());
+                if (!isContainer) {
+                    addReportItem(ErrorCode.INVALID_DATA_TYPE_REFERENCE, currentTestCase.getId(), dataType);
+                } else {
+                    // Check for a list that has no subtype.
+                    ContainerTypeInfo typeInfo = Utils.getContainerTypeParts(dataType);
+                    if ("list".equals(typeInfo.getContainerType()) && typeInfo.getContainedType() == null) {
+                        addReportItem(ErrorCode.MISSING_LIST_CONTAINED_TYPE, currentTestCase.getId());
+                    }
+                }
             }
         }
     }

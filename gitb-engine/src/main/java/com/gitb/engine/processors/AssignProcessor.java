@@ -78,16 +78,22 @@ public class AssignProcessor implements IProcessor {
 		    }
 
 		    DataType result = exprHandler.processExpression(assign, expectedReturnType);
-		    if(lValue instanceof ListType && assign.isAppend()){
-			    ((ListType) lValue).append(result);
-		    }else {
-			    //Normal Assignment
-			    lValue.setValue(result.getValue());
-		    }
+		    if (result == null) {
+				throw new IllegalStateException("Assigned type was null");
+			} else {
+				if (lValue instanceof ListType) {
+					if (assign.isAppend()) {
+						((ListType) lValue).append(result);
+					} else {
+						// The result should be a list - this is a direct assignment,
+						lValue.setValue(result);
+					}
+				} else {
+					//Normal Assignment
+					lValue.setValue(result.getValue());
+				}
+			}
 	    }
-
-
-        //TODO generate test report and return it
         return null;
     }
 }
