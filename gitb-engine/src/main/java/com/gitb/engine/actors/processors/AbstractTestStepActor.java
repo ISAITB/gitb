@@ -44,6 +44,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	private static Logger logger = LoggerFactory.getLogger(AbstractTestStepActor.class);
 
 	public static final String STEP_SEPARATOR = ".";
+	public static final String EXCEPTION_SANITIZATION_EXPRESSION =  "(?:[a-z]+[a-z\\d_]*\\.)*(?:([A-Z]+\\S*)(?:Exception|Error))";
 
 	protected final T step;
 	protected final TestCaseScope scope;
@@ -328,10 +329,14 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 
 			BAR error = new BAR();
 			Exception exception = (Exception) statusEvent.getException();
+			String message;
 			if (exception instanceof GITBEngineInternalError && exception.getCause() != null) {
-				error.setDescription(exception.getCause().getMessage());
+				message = exception.getCause().getMessage();
 			} else {
-				error.setDescription(exception.getMessage());
+				message = exception.getMessage();
+			}
+			if (message != null) {
+				error.setDescription(message.replaceAll(EXCEPTION_SANITIZATION_EXPRESSION, "$1"));
 			}
 
 			report.getReports().getInfoOrWarningOrError().add(trObjectFactory.createTestAssertionGroupReportsTypeError(error));
