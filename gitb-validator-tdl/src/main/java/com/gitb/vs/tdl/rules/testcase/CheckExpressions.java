@@ -31,6 +31,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         super.initialiseTestCase(currentTestCase);
         scope = new HashMap<>();
         scope.put(Utils.DOMAIN_MAP, true);
+        scope.put(Utils.STEP_SUCCESS, true);
         variableResolver = new VariableResolver(this);
     }
 

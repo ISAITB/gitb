@@ -34,6 +34,7 @@ import java.util.zip.ZipInputStream;
 public class Utils {
 
     public static final String DOMAIN_MAP = "DOMAIN";
+    public static final String STEP_SUCCESS = "STEP_SUCCESS";
     public static final String VARIABLE_EXPRESSION = "\\$([a-zA-Z][a-zA-Z\\-_0-9]*)(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*";
     public static final Pattern VARIABLE_EXPRESSION_PATTERN = Pattern.compile(VARIABLE_EXPRESSION);
 

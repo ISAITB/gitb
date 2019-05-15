@@ -19,10 +19,14 @@ import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.events.model.InputEvent;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.events.model.TestStepStatusEvent;
+import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.IfStep;
+import com.gitb.tdl.TestConstruct;
 import com.gitb.tr.*;
+import com.gitb.types.BooleanType;
+import com.gitb.types.MapType;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.reflect.ConstructorUtils;
@@ -289,6 +293,10 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 
 		if (stepId == null || stepId.isEmpty()) {
 			return;
+		}
+
+		if (step instanceof TestConstruct && ((TestConstruct)step).getId() != null) {
+			((MapType)(scope.getVariable(TestCaseContext.STEP_SUCCESS_MAP, true).getValue())).addItem(((TestConstruct)step).getId(), new BooleanType(status == StepStatus.COMPLETED));
 		}
 
 		if (reportTestStepStatus) {
