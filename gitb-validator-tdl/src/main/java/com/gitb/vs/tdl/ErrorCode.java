@@ -54,7 +54,11 @@ public enum ErrorCode {
     MISSING_HANDLER_CONFIG(                             "TDL-046", "Test case [%s] in step [%s] does not provide a required configuration parameter [%s].", ERROR),
     INVALID_PROCESSING_HANDLER_OPERATION(               "TDL-047", "Test case [%s] in step [%s] refers to invalid processing operation [%s].", ERROR),
     DUPLICATE_SCRIPTLET_ID(                             "TDL-048", "Test case [%s] defines multiple scriptlets for ID [%s].", ERROR),
-    MISSING_LIST_CONTAINED_TYPE(                        "TDL-049", "Test case [%s] defines a 'list' variable with no contained type. A default of 'string' is considered but it is best to define it explicitly (e.g. 'list[string]').", WARNING);
+    MISSING_LIST_CONTAINED_TYPE(                        "TDL-049", "Test case [%s] defines a 'list' variable with no contained type. A default of 'string' is considered but it is best to define it explicitly (e.g. 'list[string]').", WARNING),
+    MISSING_INTERACTION_OPTIONS(                        "TDL-050", "Test case [%s] defines a user interaction request with a [%s] attribute but no [options] attribute. The [%s] attribute will be ignored.", WARNING),
+    INTERACTION_OPTIONS_FOR_NON_STRING_INPUT(           "TDL-051", "Test case [%s] defines a user interaction request of non-string [contentType] (%s) with a [options] attribute. The [options] attribute will be ignored.", WARNING),
+    INTERACTION_OPTIONS_AND_LABELS_MISMATCH(            "TDL-052", "Test case [%s] defines a user interaction request with an [options] attribute. The number of options [%s] must match the number of labels [%s].", ERROR),
+    INTERACTION_OPTIONS_SINGLE_OPTION(                  "TDL-053", "Test case [%s] defines a user interaction request with an [options] attribute but only a single option is defined.", WARNING);
 
     private String code;
     private String message;

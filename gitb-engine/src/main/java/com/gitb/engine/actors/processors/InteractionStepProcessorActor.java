@@ -22,6 +22,7 @@ import com.gitb.tbs.UserInput;
 import com.gitb.tbs.UserInteractionRequest;
 import com.gitb.tdl.InstructionOrRequest;
 import com.gitb.tdl.UserInteraction;
+import com.gitb.tdl.UserRequest;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
@@ -43,7 +44,7 @@ import java.util.concurrent.Callable;
  * User interaction step executor actor
  */
 public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInteraction> {
-    private static final String INSTRUCT_ELEMENT_NAME = "instruct";
+
     public static final String NAME = "interaction-p";
 
     private static Logger logger = LoggerFactory.getLogger(InteractionStepProcessorActor.class);
@@ -130,7 +131,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                         }
                         //If it is a request
                         else {
-                            userInteractionRequest.getInstructionOrRequest().add(processRequest(instructionOrRequest, "" + childStepId));
+                            userInteractionRequest.getInstructionOrRequest().add(processRequest((com.gitb.tdl.UserRequest)instructionOrRequest, "" + childStepId));
                         }
                         childStepId++;
                     }
@@ -192,7 +193,8 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
      * @param stepId step id
      * @return input request
      */
-    private InputRequest processRequest(InstructionOrRequest instructionCommand, String stepId) {
+    private InputRequest processRequest(UserRequest instructionCommand, String stepId) {
+        VariableResolver variableResolver = new VariableResolver(scope);
         InputRequest inputRequest = new InputRequest();
         inputRequest.setWith(instructionCommand.getWith());
         inputRequest.setDesc(instructionCommand.getDesc());
@@ -203,7 +205,6 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         }
         if (instructionCommand.getValue() != null && !instructionCommand.getValue().equals("")) {
             String assignedVariableExpression = instructionCommand.getValue();
-            VariableResolver variableResolver = new VariableResolver(scope);
             DataType assignedVariable = variableResolver.resolveVariable(assignedVariableExpression);
             inputRequest.setType(assignedVariable.getType());
         } else {
@@ -214,7 +215,62 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         }
         inputRequest.setEncoding(instructionCommand.getEncoding());
         inputRequest.setId(stepId);
+        // Handle selection options if applicable.
+        if (instructionCommand.getContentType() == ValueEmbeddingEnumeration.STRING) {
+            if (instructionCommand.getOptions() != null) {
+                String options = instructionCommand.getOptions();
+                if (variableResolver.isVariableReference(options)) {
+                    options = resolveTokenValues(variableResolver, options);
+                }
+                inputRequest.setOptions(options);
+                if (instructionCommand.getOptionLabels() == null) {
+                    // The options are the labels themselves.
+                    inputRequest.setOptionLabels(inputRequest.getOptions());
+                } else {
+                    String labels = instructionCommand.getOptionLabels();
+                    if (variableResolver.isVariableReference(labels)) {
+                        labels = resolveTokenValues(variableResolver, labels);
+                    }
+                    inputRequest.setOptionLabels(labels);
+                }
+                // Check that the counts are correct.
+                int optionCount = StringUtils.countMatches(inputRequest.getOptions(), ",");
+                int labelCount = StringUtils.countMatches(inputRequest.getOptionLabels(), ",");
+                if (optionCount != labelCount) {
+                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "The number of options ("+optionCount+") doesn't match the number of option labels ("+labelCount+")"));
+                }
+                inputRequest.setMultiple(Boolean.FALSE);
+                if (instructionCommand.getMultiple() != null) {
+                    if (variableResolver.isVariableReference(instructionCommand.getMultiple())) {
+                        inputRequest.setMultiple((Boolean)(variableResolver.resolveVariableAsBoolean(instructionCommand.getMultiple()).getValue()));
+                    } else {
+                        inputRequest.setMultiple(Boolean.parseBoolean(instructionCommand.getMultiple()));
+                    }
+                }
+            }
+        }
         return inputRequest;
+    }
+
+    private String resolveTokenValues(VariableResolver variableResolver, String expression) {
+        String tokenValues;
+        DataType referencedType = variableResolver.resolveVariable(expression);
+        if (DataType.isListType(referencedType.getType())) {
+            // Convert to comma-delimited list.
+            StringBuilder str = new StringBuilder();
+            List<DataType> items = (List<DataType>)referencedType.getValue();
+            if (items != null && !items.isEmpty()) {
+                for (DataType item: items) {
+                    str.append(item.convertTo(DataType.STRING_DATA_TYPE));
+                    str.append(',');
+                }
+                str.deleteCharAt(str.length()-1);
+            }
+            tokenValues = str.toString();
+        } else {
+            tokenValues = (String)(referencedType.convertTo(DataType.STRING_DATA_TYPE).getValue());
+        }
+        return tokenValues;
     }
 
 

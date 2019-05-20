@@ -108,6 +108,9 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                 for (InstructionOrRequest ir: ((UserInteraction)step).getInstructOrRequest()) {
                     if (ir instanceof UserRequest) {
                         checkToken(ir.getValue(), TokenType.VARIABLE_REFERENCE);
+                        checkToken(((UserRequest) ir).getOptions(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+                        checkToken(((UserRequest) ir).getOptionLabels(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+                        checkToken(((UserRequest) ir).getMultiple(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                     } else {
                         checkExpression(ir);
                     }

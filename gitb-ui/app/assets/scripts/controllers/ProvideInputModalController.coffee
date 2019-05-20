@@ -5,17 +5,48 @@ class ProvideInputModalController
 
 		@$scope.interactions = interactions
 
+		for interaction in @$scope.interactions
+			if interaction.type == "request" && interaction.options?
+				optionValues = interaction.options.split(',').map((item) =>
+					item.trim()
+				)
+				optionLabelValues = interaction.optionLabels.split(',').map((item) =>
+					item.trim()
+				)
+				interaction.optionData = []
+				for optionValue, index in optionValues
+					interaction.optionData.push({
+						value: optionValue
+						label: optionLabelValues[index]
+					})
+
+		@$scope.reset = () =>
+			for interaction in @$scope.interactions
+				delete interaction.data
+				delete interaction.file
+
 		@$scope.hideInput = () =>
 			inputs = []
 			for interaction in @$scope.interactions
 				if interaction.type == "request"
-					inputs.push({
+					inputData = {
 						id: interaction.id,
 						name:  interaction.name
-						value: interaction.data
 						type:  interaction.variableType,
 						embeddingMethod: interaction.contentType
-					})
+					}
+					if interaction.optionData? && interaction.data?
+						if interaction.multiple
+							if Array.isArray(interaction.data)
+								inputData.value = interaction.data.map((item) =>
+									item.value
+								)
+								inputData.value = inputData.value.join()
+						else
+							inputData.value = interaction.data.value
+					else
+						inputData.value = interaction.data
+					inputs.push(inputData)
 
 			@TestService.provideInput(@session, @interactionStepId, inputs)
 				.then(
