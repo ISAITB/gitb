@@ -186,5 +186,6 @@
         <module>gitb-validators</module>
         <module>gitb-reports</module>
         <module>gitb-validator-tdl</module>
+        <module>gitb-processing</module>
     </modules>
 </project>

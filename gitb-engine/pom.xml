@@ -55,6 +55,11 @@
 			<version>1.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
+			<groupId>com.gitb</groupId>
+			<artifactId>gitb-processing</artifactId>
+			<version>1.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
             <groupId>com.gitb</groupId>
             <artifactId>gitb-test-resources</artifactId>
             <version>1.0-SNAPSHOT</version>
