@@ -73,9 +73,17 @@ public class TestSessionAppender extends AppenderBase<ILoggingEvent> {
     private void addCauseMessage(StringBuilder messageBuilder, IThrowableProxy throwable) {
         if (throwable != null) {
             messageBuilder.append("\t[");
-            messageBuilder.append(throwable.getClassName().replaceAll(AbstractTestStepActor.EXCEPTION_SANITIZATION_EXPRESSION, "$1"));
+            if (throwable.getClassName() != null) {
+                messageBuilder.append(throwable.getClassName().replaceAll(AbstractTestStepActor.EXCEPTION_SANITIZATION_EXPRESSION, "$1"));
+            } else {
+                messageBuilder.append("-");
+            }
             messageBuilder.append("]: ");
-            messageBuilder.append(throwable.getMessage().replaceAll(AbstractTestStepActor.EXCEPTION_SANITIZATION_EXPRESSION, "$1"));
+            if (throwable.getMessage() != null) {
+                messageBuilder.append(throwable.getMessage().replaceAll(AbstractTestStepActor.EXCEPTION_SANITIZATION_EXPRESSION, "$1"));
+            } else {
+                messageBuilder.append("null");
+            }
             messageBuilder.append('\n');
             addCauseMessage(messageBuilder, throwable.getCause());
         }

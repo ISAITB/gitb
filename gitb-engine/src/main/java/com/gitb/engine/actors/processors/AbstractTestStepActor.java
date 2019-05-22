@@ -139,7 +139,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			super.preStart();
 			init();
 		} catch (Exception e) {
-			logger.error(addMarker(), "" + this + " caught an exception", e);
+			logger.error(addMarker(), "Processing caught an exception", e);
 			error(e);
 		}
 	}
@@ -174,7 +174,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 				throw new GITBEngineInternalError("Invalid command [" + message.getClass().getName() + "]");
 			}
 		} catch (Exception e) {
-			logger.error(addMarker(), "" + this + " caught an exception", e);
+			logger.error(addMarker(), "Processing caught an exception", e);
 			error(e);
 		}
 	}
