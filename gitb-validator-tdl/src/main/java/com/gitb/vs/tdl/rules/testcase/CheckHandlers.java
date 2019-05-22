@@ -5,6 +5,7 @@ import com.gitb.tdl.Process;
 import com.gitb.tdl.*;
 import com.gitb.vs.tdl.ErrorCode;
 import com.gitb.vs.tdl.util.Utils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.*;
 
@@ -82,7 +83,23 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                 }
             }
         } else if (stepObj instanceof Process) {
-            String handler = processingTxToHandler.get(((Process) stepObj).getTxnId());
+            String handler;
+            if (((Process) stepObj).getTxnId() != null) {
+                handler = processingTxToHandler.get(((Process) stepObj).getTxnId());
+                if (!StringUtils.isBlank(((Process) stepObj).getHandler())) {
+                    addReportItem(ErrorCode.DOUBLE_PROCESSING_HANDLER, currentTestCase.getId(), ((Process) stepObj).getTxnId(), ((Process) stepObj).getHandler());
+                }
+            } else {
+                handler = ((Process) stepObj).getHandler();
+                if (Utils.isVariableExpression(handler) || Utils.isURL(handler)) {
+                    // Remote handlers (or resolved ones) should not be checked - set to null to skip.
+                    handler = null;
+                } else {
+                    if (!checkHandlerReference(handler, context.getExternalConfiguration().getEmbeddedProcessingHandlers().keySet(), ErrorCode.INVALID_EMBEDDED_PROCESSING_HANDLER_REFERENCE)) {
+                        handler = null;
+                    }
+                }
+            }
             if (handler != null) {
                 String operation = ((Process) stepObj).getOperation();
                 if (operation != null) {

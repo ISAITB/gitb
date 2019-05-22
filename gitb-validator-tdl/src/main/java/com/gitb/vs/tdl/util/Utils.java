@@ -1,6 +1,7 @@
 package com.gitb.vs.tdl.util;
 
 import com.gitb.tdl.*;
+import com.gitb.tdl.Process;
 import com.gitb.vs.tdl.Context;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;
@@ -22,7 +23,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.Process;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;

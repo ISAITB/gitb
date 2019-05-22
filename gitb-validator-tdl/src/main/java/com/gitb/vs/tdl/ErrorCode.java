@@ -35,7 +35,7 @@ public enum ErrorCode {
     INVALID_TX_REFERENCE_FOR_MESSAGING_STEP(            "TDL-027", "Test case [%s] specifies a messaging step (%s) that refers to non-existent transaction ID [%s].", ERROR),
     INVALID_TX_REFERENCE_FOR_PROCESSING_STEP(           "TDL-028", "Test case [%s] specifies a process step that refers to non-existent transaction ID [%s].", ERROR),
     MESSAGING_STEP_OUTSIDE_TX(                          "TDL-029", "Test case [%s] specifies a messaging step (%s) that is not contained within a transaction.", ERROR),
-    PROCESSING_STEP_OUTSIDE_TX(                         "TDL-030", "Test case [%s] specifies a process step that is not contained within a transaction.", ERROR),
+    PROCESSING_STEP_OUTSIDE_TX(                         "TDL-030", "Test case [%s] specifies a process step that is not contained within a transaction nor defines its own handler.", ERROR),
     MESSAGING_TX_END_WITHOUT_START(                     "TDL-031", "Test case [%s] specifies a messaging transaction end (etxn) without a corresponding begin (btxn).", ERROR),
     PROCESSING_TX_END_WITHOUT_START(                    "TDL-032", "Test case [%s] specifies a processing transaction end (eptxn) without a corresponding begin (bptxn).", ERROR),
     INVALID_ACTOR_REFERENCE_IN_STEP(                    "TDL-033", "Test case [%s] defines a [%s] step with an invalid actor reference [%s].", ERROR),
@@ -58,7 +58,13 @@ public enum ErrorCode {
     MISSING_INTERACTION_OPTIONS(                        "TDL-050", "Test case [%s] defines a user interaction request with a [%s] attribute but no [options] attribute. The [%s] attribute will be ignored.", WARNING),
     INTERACTION_OPTIONS_FOR_NON_STRING_INPUT(           "TDL-051", "Test case [%s] defines a user interaction request of non-string [contentType] (%s) with a [options] attribute. The [options] attribute will be ignored.", WARNING),
     INTERACTION_OPTIONS_AND_LABELS_MISMATCH(            "TDL-052", "Test case [%s] defines a user interaction request with an [options] attribute. The number of options [%s] must match the number of labels [%s].", ERROR),
-    INTERACTION_OPTIONS_SINGLE_OPTION(                  "TDL-053", "Test case [%s] defines a user interaction request with an [options] attribute but only a single option is defined.", WARNING);
+    INTERACTION_OPTIONS_SINGLE_OPTION(                  "TDL-053", "Test case [%s] defines a user interaction request with an [options] attribute but only a single option is defined.", WARNING),
+    MISSING_TX_AND_HANDLER_FOR_PROCESSING_STEP(         "TDL-054", "Test case [%s] defines a process step with no transaction ID reference and no handler definition.", ERROR),
+    MESSAGING_TX_NOT_CLOSED(                            "TDL-055", "Test case [%s] defines a messaging transaction [%s] that is not closed.", WARNING),
+    PROCESSING_TX_NOT_CLOSED(                           "TDL-056", "Test case [%s] defines a processing transaction [%s] that is not closed.", WARNING),
+    MESSAGING_TX_NOT_USED(                              "TDL-057", "Test case [%s] defines a messaging transaction [%s] that is never used.", WARNING),
+    PROCESSING_TX_NOT_USED(                             "TDL-058", "Test case [%s] defines a processing transaction [%s] that is never used.", WARNING),
+    DOUBLE_PROCESSING_HANDLER(                          "TDL-059", "Test case [%s] defines a process step that defined both a transaction reference [%s] and a handler [%s].", ERROR);
 
     private String code;
     private String message;

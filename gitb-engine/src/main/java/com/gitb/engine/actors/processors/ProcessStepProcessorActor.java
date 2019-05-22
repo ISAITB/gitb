@@ -70,7 +70,17 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
     protected void start() throws Exception {
         processing();
 
-        final ProcessingContext context = this.scope.getContext().getProcessingContext(step.getTxnId());
+        ProcessingContext context;
+        if (step.getTxnId() == null) {
+            // No processing transaction - this is a standalone process call.
+            if (step.getHandler() == null) {
+                throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Test step [" + stepId + "] is a process step with no transaction reference and no handler definition."));
+            }
+            context = new ProcessingContext(step.getHandler(), null);
+        } else {
+            // A processing transaction is referenced.
+            context = this.scope.getContext().getProcessingContext(step.getTxnId());
+        }
 
         future = Futures.future(new Callable<TestStepReportType>() {
             @Override
