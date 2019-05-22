@@ -85,6 +85,10 @@ public class DocumentNamespaceContext implements NamespaceContext {
         uri2Prefix.put(uri, prefix);
     }
 
+    public Map<String, String> getPrefixToUriMap() {
+        return prefix2Uri;
+    }
+
     /**
      * This method is called by XPath. It returns the default namespace, if the
      * prefix is null or "".
