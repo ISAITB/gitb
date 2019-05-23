@@ -17,9 +17,28 @@ public class CheckDataTypes extends AbstractTestCaseObserver {
     @Override
     public void handleVariable(Variable var) {
         checkDataType(var.getType());
-        if (var.getValue() != null) {
-            for (TypedBinding binding: var.getValue()) {
-                checkDataType(binding.getType());
+        if (var.getValue() != null && var.getType() != null) {
+            if ("map".equals(var.getType())) {
+                for (NamedTypedString binding: var.getValue()) {
+                    if (binding.getName() == null || binding.getType() == null) {
+                        addReportItem(ErrorCode.VALUE_OF_MAP_VARIABLE_WITHOUT_NAME_OR_TYPE, currentTestCase.getId(), var.getName());
+                    }
+                    checkDataType(binding.getType());
+                }
+            } else if (var.getType().startsWith("list")) {
+                for (NamedTypedString binding: var.getValue()) {
+                    if (binding.getName() != null || binding.getType() != null) {
+                        addReportItem(ErrorCode.VALUE_OF_NON_MAP_VARIABLE_WITH_NAME_OR_TYPE, currentTestCase.getId(), var.getName());
+                    }
+                }
+            } else {
+                if (var.getValue().size() > 1) {
+                    addReportItem(ErrorCode.MULTIPLE_VALUES_FOR_PRIMITIVE_VARIABLE, currentTestCase.getId(), var.getName());
+                } else if (var.getValue().size() == 1) {
+                    if (var.getValue().get(0).getName() != null || var.getValue().get(0).getType() != null) {
+                        addReportItem(ErrorCode.VALUE_OF_NON_MAP_VARIABLE_WITH_NAME_OR_TYPE, currentTestCase.getId(), var.getName());
+                    }
+                }
             }
         }
     }

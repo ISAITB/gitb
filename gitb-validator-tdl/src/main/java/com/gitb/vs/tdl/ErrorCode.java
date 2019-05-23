@@ -64,7 +64,10 @@ public enum ErrorCode {
     PROCESSING_TX_NOT_CLOSED(                           "TDL-056", "Test case [%s] defines a processing transaction [%s] that is not closed.", WARNING),
     MESSAGING_TX_NOT_USED(                              "TDL-057", "Test case [%s] defines a messaging transaction [%s] that is never used.", WARNING),
     PROCESSING_TX_NOT_USED(                             "TDL-058", "Test case [%s] defines a processing transaction [%s] that is never used.", WARNING),
-    DOUBLE_PROCESSING_HANDLER(                          "TDL-059", "Test case [%s] defines a process step that defined both a transaction reference [%s] and a handler [%s].", ERROR);
+    DOUBLE_PROCESSING_HANDLER(                          "TDL-059", "Test case [%s] defines a process step that defined both a transaction reference [%s] and a handler [%s].", ERROR),
+    VALUE_OF_MAP_VARIABLE_WITHOUT_NAME_OR_TYPE(         "TDL-060", "Test case [%s] defines for map variable [%s] a value with no name or type.", ERROR),
+    VALUE_OF_NON_MAP_VARIABLE_WITH_NAME_OR_TYPE(        "TDL-061", "Test case [%s] defines for variable [%s] a value with name and type information that will be ignored.", WARNING),
+    MULTIPLE_VALUES_FOR_PRIMITIVE_VARIABLE(             "TDL-062", "Test case [%s] defines a simple variable [%s] with multiple values.", ERROR);
 
     private String code;
     private String message;

@@ -1,8 +1,7 @@
 package com.gitb.types;
 
 import com.gitb.ModuleManager;
-import com.gitb.exceptions.GITBEngineRuntimeException;
-import com.gitb.tdl.TypedBinding;
+import com.gitb.tdl.NamedTypedString;
 import com.gitb.tdl.Variable;
 
 import java.util.regex.Matcher;
@@ -159,8 +158,10 @@ public class DataTypeFactory {
             //Container Types
             else if (data instanceof ContainerType) {
                 if(data instanceof MapType){
-                    for (TypedBinding binding : variable.getValue()) {
-                        //TODO Check if binding has name
+                    for (NamedTypedString binding : variable.getValue()) {
+                        if (binding.getName() == null) {
+                            throw new IllegalStateException("A map variable's value was found for which no name was declared.");
+                        }
                         DataType item = create(binding.getType());
                         item.deserialize(binding.getValue().getBytes());
                         ((MapType)data).addItem(binding.getName(), item);
@@ -168,7 +169,7 @@ public class DataTypeFactory {
                 }
                 //ListType
                 else {
-                    for (TypedBinding binding : variable.getValue()) {
+                    for (NamedTypedString binding : variable.getValue()) {
                         DataType item = create(((ListType)data).getContainedType());
                         item.deserialize(binding.getValue().getBytes());
                         ((ListType)data).append(item);
