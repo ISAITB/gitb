@@ -496,11 +496,22 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 					testCaseManager.updateTestCase(
 						existingTestCaseId, testCaseToStore.shortname, testCaseToStore.fullname,
 						testCaseToStore.version, testCaseToStore.authors, testCaseToStore.description,
-						testCaseToStore.keywords, testCaseToStore.testCaseType, testCaseToStore.path, testCaseToStore.testSuiteOrder)
+						testCaseToStore.keywords, testCaseToStore.testCaseType, testCaseToStore.path, testCaseToStore.testSuiteOrder,
+						testCaseToStore.targetActors.get
+					)
 				// Update test case relation to actors.
-				val newTestCaseActors = new util.HashSet[Long]
+				val actorsToFurtherProcess = new util.HashSet[Long]
+				val actorsThatExistAndChangedToSut = new util.HashSet[Long]
+				var sutActor: Long = -1
 				testCase.targetActors.getOrElse("").split(",").foreach { actorId =>
-					newTestCaseActors.add(savedActorIds.get(actorId))
+					var actorIdToSet: String = null
+					if (actorId.endsWith("[SUT]")) {
+						actorIdToSet = actorId.substring(0, actorId.indexOf("[SUT]"))
+						sutActor = savedActorIds.get(actorIdToSet)
+					} else {
+						actorIdToSet = actorId
+					}
+					actorsToFurtherProcess.add(savedActorIds.get(actorIdToSet))
 				}
 				combinedAction = combinedAction andThen
 					(for {
@@ -509,13 +520,31 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 						val actions = new ListBuffer[DBIO[_]]()
 						existingTestCaseActors.map(existingTestCaseActor => {
 							val existingActorId = existingTestCaseActor._3
-							if (!newTestCaseActors.contains(existingActorId)) {
+							val existingMarkedAsSut = existingTestCaseActor._4
+							if (!actorsToFurtherProcess.contains(existingActorId)) {
 								// The actor is no longer mentioned in the test case - remove
 								actions += PersistenceSchema.conformanceResults.filter(_.testcase === existingTestCaseId.toLong).filter(_.actor === existingActorId).delete
 								actions += testCaseManager.removeActorLinkForTestCase(existingTestCaseId, existingActorId)
 							} else {
-								// Existing actor remains - remove so that we keep track of what's left.
-								newTestCaseActors.remove(existingActorId)
+								// Update the actor role if needed.
+								if ((existingActorId == sutActor && !existingMarkedAsSut)
+										|| (existingActorId != sutActor && existingMarkedAsSut)) {
+                  // Update the role of the actor.
+                  val query = for {t <- PersistenceSchema.testCaseHasActors if t.testcase === existingTestCaseActor._1 && t.specification === existingTestCaseActor._2 && t.actor === existingActorId} yield t.sut
+                  actions += query.update(existingActorId == sutActor)
+                  if (existingActorId != sutActor) {
+                    // The actor is no longer the SUT. Remove the conformance results for it.
+                    actions += PersistenceSchema.conformanceResults.filter(_.testcase === existingTestCaseId.toLong).filter(_.actor === existingActorId).delete
+                    // No need for further processing for this actor.
+                    actorsToFurtherProcess.remove(existingActorId)
+                  } else {
+                    // The actor was not previously the SUT but is now marked as the SUT. Need to check for updates to conformance results.
+                    actorsThatExistAndChangedToSut.add(existingActorId)
+                  }
+								} else {
+                  // Existing actor remains unchanged - remove so that we keep track of what's left.
+                  actorsToFurtherProcess.remove(existingActorId)
+                }
 							}
 						})
 						if (actions.nonEmpty) {
@@ -525,12 +554,17 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 						}
 					}
 					_ <- {
-						val actions = newTestCaseActors.map(newTestCaseActor => {
-							var action: DBIO[_] = PersistenceSchema.testCaseHasActors += (existingTestCaseId.longValue(), specificationId, newTestCaseActor)
+						val actions = actorsToFurtherProcess.map(newTestCaseActor => {
+							var action: DBIO[_] = null
+              if (actorsThatExistAndChangedToSut.contains(newTestCaseActor)) {
+                action = DBIO.successful(())
+              } else {
+                action = PersistenceSchema.testCaseHasActors += (existingTestCaseId.longValue(), specificationId, newTestCaseActor, newTestCaseActor == sutActor)
+              }
 							val implementingSystems = existingActorToSystemMap.get(newTestCaseActor)
 							if (implementingSystems != null) {
 								for (implementingSystem <- implementingSystems) {
-									// Check to see if there existing test sessions for this test case.
+									// Check to see if there are existing test sessions for this test case.
 									action = action andThen (for {
 										previousResult <- PersistenceSchema.testResults.filter(_.sutId === implementingSystem).filter(_.testCaseId === existingTestCaseId.toLong).sortBy(_.endTime.desc).result.headOption
 										_ <- {
@@ -563,12 +597,20 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 					_ <- {
 						var action: DBIO[_] = DBIO.successful(())
 						// Update test case relation to actors.
-						testCase.targetActors.getOrElse("").split(",").foreach {
-							actorId =>
-								val actorInternalId = savedActorIds.get(actorId)
-								action = action andThen
-									(PersistenceSchema.testCaseHasActors += (existingTestCaseId.longValue(), specificationId, actorInternalId))
-								// All conformance results will be new. We need to add these for all systems that implement the actor.
+						testCase.targetActors.getOrElse("").split(",").foreach { actorId =>
+							var isSut: Boolean = false
+							var actorIdToSet: String = null
+							if (actorId.endsWith("[SUT]")) {
+								actorIdToSet = actorId.substring(0, actorId.indexOf("[SUT]"))
+								isSut = true
+							} else {
+								actorIdToSet = actorId
+							}
+							val actorInternalId = savedActorIds.get(actorIdToSet)
+							action = action andThen
+								(PersistenceSchema.testCaseHasActors += (existingTestCaseId.longValue(), specificationId, actorInternalId, isSut))
+							// All conformance results will be new. We need to add these for all systems that implement the actor.
+							if (isSut) {
 								val implementingSystems = existingActorToSystemMap.get(actorInternalId)
 								if (implementingSystems != null) {
 									for (implementingSystem <- implementingSystems) {
@@ -576,6 +618,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 											(PersistenceSchema.conformanceResults += ConformanceResult(0L, implementingSystem, specificationId, actorInternalId, savedTestSuiteId, existingTestCaseId, TestResultStatus.UNDEFINED.toString, None))
 									}
 								}
+							}
 						}
 						action
 					}

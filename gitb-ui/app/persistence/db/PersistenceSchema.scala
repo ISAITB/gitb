@@ -317,12 +317,13 @@ object PersistenceSchema {
   }
   val endpointSupportsTransactions = TableQuery[EndpointSupportsTransactionsTable]
 
-	class TestCaseHasActorsTable(tag: Tag) extends Table[(Long, Long, Long)](tag, "TestCaseHasActors") {
+	class TestCaseHasActorsTable(tag: Tag) extends Table[(Long, Long, Long, Boolean)](tag, "TestCaseHasActors") {
 		def testcase = column[Long]("testcase")
     def specification = column[Long] ("specification")
 		def actor = column[Long]("actor")
+    def sut = column[Boolean]("sut")
 
-		def * = (testcase, specification, actor)
+		def * = (testcase, specification, actor, sut)
 
 		def pk = primaryKey("tcha_pk", (testcase, specification, actor))
 	}

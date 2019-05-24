@@ -163,9 +163,9 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		}
 	}
 
-	def updateTestCase(testCaseId: Long, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String, testSuiteOrder: Short) = {
-		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname, t.fullname, t.version, t.authors, t.description, t.keywords, t.testCaseType, t.path, t.testSuiteOrder)
-		q1.update(shortName, fullName, version, authors, description, keywords, testCaseType, path, testSuiteOrder) andThen
+	def updateTestCase(testCaseId: Long, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String, testSuiteOrder: Short, targetActors: String) = {
+		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname, t.fullname, t.version, t.authors, t.description, t.keywords, t.testCaseType, t.path, t.testSuiteOrder, t.targetActors)
+		q1.update(shortName, fullName, version, authors, description, keywords, testCaseType, path, testSuiteOrder, Some(targetActors)) andThen
 		testResultManager.updateForUpdatedTestCase(testCaseId, shortName)
 	}
 

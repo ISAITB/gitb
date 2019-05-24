@@ -88,8 +88,12 @@ class SystemService @Inject() (systemManager: SystemManager, parameterManager: P
 
     val matchingStatements = systemManager.getConformanceStatements(sut_id, Some(spec), Some(actor))
     if (matchingStatements.isEmpty) {
-      systemManager.defineConformanceStatementWrapper(sut_id, spec, actor, optionIds)
-      ResponseConstructor.constructEmptyResponse
+      if (systemManager.sutTestCasesExistForActor(actor)) {
+        systemManager.defineConformanceStatementWrapper(sut_id, spec, actor, optionIds)
+        ResponseConstructor.constructEmptyResponse
+      } else {
+        ResponseConstructor.constructErrorResponse(ErrorCodes.NO_SUT_TEST_CASES_FOR_ACTOR, "No test cases are defined for the selected actor.")
+      }
     } else {
       ResponseConstructor.constructErrorResponse(ErrorCodes.CONFORMANCE_STATEMENT_EXISTS, "This conformance statement is already defined.")
     }

@@ -67,7 +67,6 @@ GET     /actors/domain                      @controllers.ConformanceService.getA
 POST    /actors                             @controllers.ConformanceService.createActor
 DELETE  /actors/:actor_id                   @controllers.ActorService.deleteActor(actor_id : Long)
 POST    /actors/:actor_id                   @controllers.ActorService.updateActor(actor_id : Long)
-GET	    /actors/:actor_id/tests             @controllers.ConformanceService.getActorTestCases(actor_id : Long)
 GET	    /actors/:actor_id/conformance/:sut_id @controllers.ConformanceService.getConformanceStatus(actor_id : Long, sut_id : Long)
 GET	    /actors/:actor_id/conformance/:sut_id/:testsuite_id @controllers.ConformanceService.getConformanceStatusForTestSuite(actor_id : Long, sut_id : Long, testsuite_id : Long)
 GET	    /testcases/:testCaseId              @controllers.ConformanceService.getTestSuiteTestCase(testCaseId : Long)

@@ -7,7 +7,6 @@ import javax.xml.bind.JAXBElement
 import models.Enums.TestResultStatus
 import models._
 import play.api.libs.json._
-import play.libs.F.Tuple
 
 import scala.collection.JavaConverters._
 object JsonUtil {
@@ -579,7 +578,6 @@ object JsonUtil {
       "keywords" -> (if(testCase.keywords.isDefined) testCase.keywords.get else JsNull),
       "type" -> testCase.testCaseType,
       "path" -> testCase.path,
-      "actors" -> Json.arr(if(testCase.targetActors.isDefined) testCase.targetActors.get.map(_.id) else JsNull),
       "targetSpec"  -> testCase.targetSpec
     )
     json;
@@ -594,19 +592,6 @@ object JsonUtil {
     var json = Json.arr()
     list.foreach{ testCase =>
       json = json.append(jsTestCases(testCase))
-    }
-    json
-  }
-
-  /**
-   * Converts a List of TestCase into Play!'s JSON notation
-   * @param list List of TestCase to be converted
-   * @return JsArray
-   */
-  def jsTestCaseList(list:List[TestCase]):JsArray = {
-    var json = Json.arr()
-    list.foreach{ testCase =>
-      json = json.append(jsTestCase(testCase))
     }
     json
   }

@@ -76,15 +76,4 @@ class TestCase(
 		this(_case, None,	None)
 	}
 
-	def toCaseObject: TestCases = {
-		TestCases(this.id, this.shortname, this.fullname, this.version,
-			if (this.authors.isDefined) Some(this.authors.get.mkString(",")) else None,
-			this.originalDate, this.modificationDate, this.description,
-			if (this.keywords.isDefined) Some(this.keywords.get.mkString(",")) else None,
-			this.testCaseType, this.path, this.targetSpec,
-			if (this.targetActors.isDefined) Some(this.targetActors.get.map(_.actorId).mkString(",")) else  None,
-			if (this.targetOptions.isDefined) Some(this.targetOptions.get.map(_.sname).mkString(",")) else  None,
-			this.testSuiteOrder
-		)
-	}
 }

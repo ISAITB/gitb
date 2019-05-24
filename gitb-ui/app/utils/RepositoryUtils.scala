@@ -5,7 +5,7 @@ import java.nio.file.Paths
 import java.util.zip.{ZipEntry, ZipFile}
 
 import javax.xml.transform.stream.StreamSource
-import com.gitb.core.TestCaseType
+import com.gitb.core.{TestCaseType, TestRoleEnumeration}
 import com.gitb.utils.XMLUtils
 import config.Configurations
 import managers.TestSuiteManager
@@ -176,9 +176,16 @@ object RepositoryUtils {
 								val tdlTestCase = tdlTestCases.find(_.getId == entry.getId).get
 
 								logger.debug("Test case ["+tdlTestCase.getId+"] has actors ["+tdlTestCase.getActors.getActor.asScala.map(_.getId).mkString(",")+"]")
-								val testCaseActors = actors.filter { actor =>
-									tdlTestCase.getActors.getActor.asScala.exists((role) => role.getId == actor.actorId)
-								} map(_.actorId)
+
+								val actorString = new StringBuilder
+								tdlTestCase.getActors.getActor.asScala.foreach(role => {
+									actorString.append(role.getId)
+									if (role.getRole == TestRoleEnumeration.SUT) {
+										actorString.append("[SUT]")
+									}
+									actorString.append(',')
+								})
+								actorString.deleteCharAt(actorString.length - 1)
 
 								var testCaseType = TestCaseType.CONFORMANCE
 								if (Option(tdlTestCase.getMetadata.getType).isDefined) {
@@ -188,7 +195,7 @@ object RepositoryUtils {
 									0l, tdlTestCase.getId, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getVersion,
 									Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
 									Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
-									None, testCaseType.ordinal().toShort, null, specification, Some(testCaseActors.mkString(",")), None,
+									None, testCaseType.ordinal().toShort, null, specification, Some(actorString.toString()), None,
 									testCaseCounter.toShort
 								)
 						}.toList

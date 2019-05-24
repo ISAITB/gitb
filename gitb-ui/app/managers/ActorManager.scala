@@ -45,8 +45,6 @@ class ActorManager @Inject() (testResultManager: TestResultManager, endPointMana
     PersistenceSchema.testCaseHasActors.filter(_.actor === actorId).delete andThen
     PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete andThen
     PersistenceSchema.systemImplementsActors.filter(_.actorId === actorId).delete andThen
-    PersistenceSchema.testCaseHasActors.filter(_.actor === actorId).delete andThen
-    PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete andThen
     PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).delete andThen
     PersistenceSchema.endpointSupportsTransactions.filter(_.actorId === actorId).delete andThen
     endPointManager.deleteEndPointByActor(actorId) andThen

@@ -207,20 +207,6 @@ class ConformanceService
       authenticate: true
     })
 
-  getTestCases: (actorId, specId, optionIds, type) ->
-    params = {
-      spec: specId,
-      type: type
-    }
-
-    if optionIds? and optionIds.length > 0
-        params.options = optionIds.join ','
-
-    @RestService.get
-      path: jsRoutes.controllers.ConformanceService.getActorTestCases(actorId).url
-      authenticate: true
-      params: params
-
   getEndpointsForActor: (actorId) ->
     @RestService.get
       path: jsRoutes.controllers.ConformanceService.getEndpointsForActor(actorId).url

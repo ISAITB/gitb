@@ -132,19 +132,6 @@ class ConformanceService @Inject() (conformanceManager: ConformanceManager, acco
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  /**
-   * Gets test cases defined  for the actor
-   */
-  def getActorTestCases(actor_id: Long) = AuthorizedAction { request =>
-    authorizationManager.canViewTestCasesByActorId(request, actor_id)
-    val spec = ParameterExtractor.requiredQueryParameter(request, Parameters.SPEC).toLong
-    val testCaseType = ParameterExtractor.requiredQueryParameter(request, Parameters.TYPE).toShort
-
-    val testCases = testCaseManager.getTestCases(actor_id, spec, None, testCaseType)
-    val json = JsonUtil.jsTestCaseList(testCases).toString()
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
   def createDomain() = AuthorizedAction { request =>
     authorizationManager.canCreateDomain(request)
     val domain = ParameterExtractor.extractDomain(request)
