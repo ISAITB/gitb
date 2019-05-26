@@ -29,6 +29,5 @@ footer {
 }
 
 footer img {
-    zoom: 75%;
-    -moz-transform: scale(0.5);
+    height: 50px;
 }
