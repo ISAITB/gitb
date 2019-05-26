@@ -12,7 +12,12 @@ class CreateConformanceStatementController
     @systemId    = @$stateParams["id"]
     @selectedDomain = null
     @selectedSpec  = null
-    @selectedActors = []
+    @selectedActor = null
+    @showDomains = false
+    @showSpecs = false
+    @showActors = false
+    @showButtonPanel = false
+    @counter = 0
 
     @tableColumns = [
       {
@@ -55,7 +60,7 @@ class CreateConformanceStatementController
       }
       {
         id: 3
-        title: 'Select actors'
+        title: 'Select actor'
       }
     ]
 
@@ -64,38 +69,14 @@ class CreateConformanceStatementController
 
     @getDomains()
 
-  onWizardNext: (step) =>
-    if step.id == 1
-      if @selectedDomain?
-        @getSpecs @selectedDomain.id
-        true
-      else
-        false
-    else if step.id == 2
-      if @selectedSpec?
-        @getActors @selectedSpec.id
-        true
-      else
-        false
-    else if step.id == 3
-      if @selectedActors.length > 0
-        true
-      else
-        false
-    else
-      true
-
-  onWizardBefore: (step) =>
-    true
-
-  onWizardFinish: () =>
-    @saveConformanceStatement()
+  finish: () =>
+    @SystemService.defineConformanceStatement(@systemId, @selectedSpec.id, @selectedActor.id, [])
     .then (data) =>
-      if data? && data.length? && data.length > 0 && data[0].error_description?
+      if data? && data.error_description?
         error = {
           statusText: "Error"
           data: {
-            error_description: data[0].error_description
+            error_description: data.error_description
           }
         }      
         @ErrorService.showErrorMessage(error)
@@ -111,14 +92,49 @@ class CreateConformanceStatementController
     @selectedSpec = spec
 
   onActorSelect: (actor) =>
-    @selectedActors.push actor
+    @selectedActor = actor
 
-  onActorDeselect: (actor) =>
-    _.remove @selectedActors, (a)->
-      actor.id == a.id
+  setDomainsView: () =>
+    @counter += 1
+    @showDomains = true
+    @confirmAction = @confirmDomain
+    @confirmButtonText = 'Next'
+    @headerText = 'Select domain'
+    @showButtonPanel = true
 
-  nextStep: () =>
-    @$scope.$broadcast 'wizard-directive:next'
+  setSpecsView: () =>
+    @counter += 1
+    @showSpecs = true
+    @confirmAction = @confirmSpec
+    @confirmButtonText = 'Next'
+    @headerText = 'Select specification'
+    @showButtonPanel = true
+
+  setActorsView: () =>
+    @counter += 1
+    @showActors = true
+    @confirmAction = @confirmActor
+    @confirmButtonText = 'Next'
+    @headerText = 'Select actor'
+    @showButtonPanel = true
+
+  setConfirmationView: () =>
+    @counter += 1
+    @showConfirmation = true
+    @confirmAction = @confirmAll
+    @confirmButtonText = 'Confirm'
+    @headerText = 'Summary'
+    @showButtonPanel = true
+
+  confirmDisabled: () =>
+    if @showDomains
+      !@selectedDomain?
+    else if @showSpecs
+      !@selectedSpec?
+    else if @showActors
+      !@selectedActor?
+    else
+      false
 
   getDomains: () =>
     @domains = []
@@ -129,7 +145,9 @@ class CreateConformanceStatementController
         @domains = data
         if @domains? && @domains.length == 1
           @onDomainSelect(@domains[0])
-        @$scope.$broadcast 'wizard-directive:start'
+          @confirmDomain()
+        else
+           @setDomainsView()
       ,
       (error) =>
         @ErrorService.showErrorMessage(error)
@@ -137,7 +155,6 @@ class CreateConformanceStatementController
 
   getSpecs: (domainId) =>
     @specs  = []
-    @selectedDomain = domainId
 
     @ConformanceService.getSpecifications(domainId)
     .then(
@@ -145,6 +162,9 @@ class CreateConformanceStatementController
         @specs = data
         if @specs? && @specs.length == 1
           @onSpecificationSelect(@specs[0])
+          @confirmSpec()
+        else
+          @setSpecsView()
       ,
       (error) =>
         @ErrorService.showErrorMessage(error)
@@ -152,7 +172,6 @@ class CreateConformanceStatementController
 
   getActors: (specId) =>
     @actors = []
-    @selectedSpec = specId
 
     @ConformanceService.getActorsWithSpecificationId(specId)
     .then(
@@ -161,42 +180,39 @@ class CreateConformanceStatementController
           if data.length == 1
             @actors = data
             @onActorSelect(@actors[0])
-          else if data.length > 1
-            defaultActor = _.find(data, (actor) =>
-              actor.default == true
-            )
-            if defaultActor?
-              @actors.push(defaultActor)
-              @onActorSelect(defaultActor)
-            else
-              @actors = data
+            @confirmActor()
+          else 
+            if data.length > 1
+              defaultActor = _.find(data, (actor) =>
+                actor.default == true
+              )
+              if defaultActor?
+                @onActorSelect(defaultActor)
+                @confirmActor()
+              else
+                @actors = data
+                @setActorsView()
       ,
       (error) =>
         @ErrorService.showErrorMessage(error)
     )
 
-  saveConformanceStatement: () ->
-    promises = _.map @selectedActors, (actor)=>
-      @SystemService.defineConformanceStatement @systemId, @selectedSpec, actor.id, []
+  confirmDomain: () =>
+    @showDomains = false
+    @getSpecs(@selectedDomain.id)
 
-    @$q.all promises
+  confirmSpec: () =>
+    @showSpecs = false
+    @getActors(@selectedSpec.id)
 
-  styleDefaultDomain: () =>
-    if @domains?.length == 1
-      'selected'
-    else
-      ''
+  confirmActor: () =>
+    @showActors = false
+    @setConfirmationView()
 
-  styleDefaultSpecification: () =>
-    if @specs?.length == 1
-      'selected'
-    else
-      ''
+  confirmAll: () =>
+    @finish()
 
-  styleDefaultActor: (rowActor) =>
-    if @actors?.length == 1
-      'selected'
-    else
-      ''
+  cancel: () =>
+    @$state.go "app.systems.detail.conformance.list", {id: @systemId}
 
 @controllers.controller 'CreateConformanceStatementController', CreateConformanceStatementController
