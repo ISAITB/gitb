@@ -30,19 +30,12 @@ class ErrorService
             .then (data) =>
               if data.exists == true
                 errorObj.template = data.content
-                @modal = @openModal(errorObj, withRetry, errorDeferred)
-              else if communityId != @Constants.DEFAULT_COMMUNITY_ID
-                @ErrorTemplateService.getCommunityDefaultErrorTemplate(@Constants.DEFAULT_COMMUNITY_ID)
-                .then (data) =>
-                  errorObj.template = data.content  if data.exists == true
-                  @modal = @openModal(errorObj, withRetry, errorDeferred)
-              else
-                @modal = @openModal(errorObj, withRetry, errorDeferred)
+              @modal = @openModal(errorObj, withRetry, errorDeferred)
       else
         @modal = @openModal(errorObj, withRetry, errorDeferred)
     else
       # Expected errors (e.g. validation errors) that have clear error messages
-      @modal = @openModal(errorObj, withRetry)
+      @modal = @openModal(errorObj, withRetry, errorDeferred)
     errorDeferred.promise
 
   openModal: (error, withRetry, errorDeferred) =>
@@ -58,20 +51,20 @@ class ErrorService
       resolve:
         error: () => error
         withRetry: () => withRetry
-    modalInstance = @$uibModal.open modalOptions
+    modalInstance = @$uibModal.open(modalOptions)
     modalInstance.result
       .finally(angular.noop)
-      .then((result) => 
-      # Closed
-      if errorDeferred?
-        errorDeferred.resolve()
-    , () => 
-      # Dismissed
-      if errorDeferred?
-        if withRetry? && withRetry
-          errorDeferred.reject()
-        else
+      .then(() => 
+        # Closed
+        if errorDeferred?
           errorDeferred.resolve()
+      , () => 
+        # Dismissed
+        if errorDeferred?
+          if withRetry? && withRetry
+            errorDeferred.reject()
+          else
+            errorDeferred.resolve()
     )    
 
 services.service('ErrorService', ErrorService)

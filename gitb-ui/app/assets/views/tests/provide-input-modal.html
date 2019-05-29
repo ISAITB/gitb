@@ -10,7 +10,13 @@
 						<label>{{interaction.desc}}</label>
 						<!-- request interaction: server asks operator to send inputs -->
 						<div ng-if="interaction.type == 'request'">
-							<input type="text" class="form-control" ng-model="interaction.data" ng-if="interaction.contentType != 'BASE64'" >
+							<!-- Case 1: input text -->
+							<input ng-if="interaction.contentType != 'BASE64' && !interaction.options" type="text" class="form-control" ng-model="interaction.data"/>
+							<!-- Case 2: select multiple -->
+							<select ng-if="interaction.contentType != 'BASE64' && interaction.options && interaction.multiple" multiple="true" class="form-control" ng-model="interaction.data" ng-options="option.label for option in interaction.optionData track by option.value"></select>
+							<!-- Case 3: select single -->
+							<select ng-if="interaction.contentType != 'BASE64' && interaction.options && !interaction.multiple" class="form-control" ng-model="interaction.data" ng-options="option.label for option in interaction.optionData track by option.value"><option value=""></option></select>
+							<!-- Case 4: Upload file -->
 							<div ng-if="interaction.contentType == 'BASE64'">
 								<span class="tab" ng-if="interaction.file != null">{{interaction.file.name}} - {{interaction.file.size}} bytes</span>
 								<span class="tab" ng-if="interaction.file == null">No file selected</span>
@@ -31,6 +37,7 @@
 	</div>
 </div>
 <div class="modal-footer">
-	<input type="button" value="Send"  ng-if="interactionNeedsInput()"  ng-click="hideInput()" class="btn btn-default" >
+	<input type="button" value="Reset" ng-if="interactionNeedsInput()"  ng-click="reset()" class="btn btn-default" >
+	<input type="button" value="Submit" ng-if="interactionNeedsInput()"  ng-click="hideInput()" class="btn btn-default" >
 	<input type="button" value="Close" ng-if="!interactionNeedsInput()" ng-click="hideInput()" class="btn btn-default" >
 </div>

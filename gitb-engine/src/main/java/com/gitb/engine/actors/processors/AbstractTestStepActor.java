@@ -19,10 +19,14 @@ import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.events.model.InputEvent;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.events.model.TestStepStatusEvent;
+import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.IfStep;
+import com.gitb.tdl.TestConstruct;
 import com.gitb.tr.*;
+import com.gitb.types.BooleanType;
+import com.gitb.types.MapType;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.commons.lang.reflect.ConstructorUtils;
@@ -44,6 +48,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	private static Logger logger = LoggerFactory.getLogger(AbstractTestStepActor.class);
 
 	public static final String STEP_SEPARATOR = ".";
+	public static final String EXCEPTION_SANITIZATION_EXPRESSION =  "(?:[a-z]+[a-z\\d_]*\\.)*(?:([A-Z]+\\S*)(?:Exception|Error))";
 
 	protected final T step;
 	protected final TestCaseScope scope;
@@ -134,7 +139,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			super.preStart();
 			init();
 		} catch (Exception e) {
-			logger.error(addMarker(), "" + this + " caught an exception", e);
+			logger.error(addMarker(), "Processing caught an exception", e);
 			error(e);
 		}
 	}
@@ -169,7 +174,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 				throw new GITBEngineInternalError("Invalid command [" + message.getClass().getName() + "]");
 			}
 		} catch (Exception e) {
-			logger.error(addMarker(), "" + this + " caught an exception", e);
+			logger.error(addMarker(), "Processing caught an exception", e);
 			error(e);
 		}
 	}
@@ -290,6 +295,10 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			return;
 		}
 
+		if (step instanceof TestConstruct && ((TestConstruct)step).getId() != null) {
+			((MapType)(scope.getVariable(TestCaseContext.STEP_SUCCESS_MAP, true).getValue())).addItem(((TestConstruct)step).getId(), new BooleanType(status == StepStatus.COMPLETED));
+		}
+
 		if (reportTestStepStatus) {
 			final TestStepStatusEvent event = new TestStepStatusEvent(scope.getContext().getSessionId(), stepId, status, report, self());
 
@@ -328,10 +337,14 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 
 			BAR error = new BAR();
 			Exception exception = (Exception) statusEvent.getException();
+			String message;
 			if (exception instanceof GITBEngineInternalError && exception.getCause() != null) {
-				error.setDescription(exception.getCause().getMessage());
+				message = exception.getCause().getMessage();
 			} else {
-				error.setDescription(exception.getMessage());
+				message = exception.getMessage();
+			}
+			if (message != null) {
+				error.setDescription(message.replaceAll(EXCEPTION_SANITIZATION_EXPRESSION, "$1"));
 			}
 
 			report.getReports().getInfoOrWarningOrError().add(trObjectFactory.createTestAssertionGroupReportsTypeError(error));

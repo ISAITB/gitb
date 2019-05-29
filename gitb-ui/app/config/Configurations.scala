@@ -2,6 +2,7 @@ package config
 
 import java.util.Properties
 
+import com.gitb.utils.HmacUtils
 import com.typesafe.config.{Config, ConfigFactory}
 
 object Configurations {
@@ -21,8 +22,8 @@ object Configurations {
 
   //General configurations
   var SERVER_REQUEST_TIMEOUT_IN_SECONDS=0
-  var TOKEN_LIFETIME_IN_DAYS = 0
-  var TOKEN_LIFETIME_IN_SECONDS = 0
+  var AUTHENTICATION_SESSION_MAX_IDLE_TIME = 0
+  var AUTHENTICATION_SESSION_MAX_TOTAL_TIME = 0
   var TOKEN_LENGTH = 0
   var TESTBED_SERVICE_URL = ""
   var TESTBED_CLIENT_URL = ""
@@ -69,6 +70,8 @@ object Configurations {
 
   var MASTER_PASSWORD: Array[Char] = null
 
+  var AUTHENTICATION_COOKIE_PATH = ""
+
   var SMTP_PROPERTIES = new Properties()
 
   def loadConfigurations() = {
@@ -88,8 +91,8 @@ object Configurations {
     REDIS_PORT = conf.getInt("redis.port")
 
     //General Parameters
-    TOKEN_LIFETIME_IN_DAYS = conf.getInt("token.lifetime.days")
-    TOKEN_LIFETIME_IN_SECONDS = TOKEN_LIFETIME_IN_DAYS * 24 * 60 * 60
+    AUTHENTICATION_SESSION_MAX_IDLE_TIME = fromEnv("AUTHENTICATION_SESSION_MAX_IDLE_TIME", conf.getString("authentication.session.maxIdleTime")).toInt
+    AUTHENTICATION_SESSION_MAX_TOTAL_TIME = fromEnv("AUTHENTICATION_SESSION_MAX_TOTAL_TIME", conf.getString("authentication.session.maxTotalTime")).toInt
     TOKEN_LENGTH = conf.getInt("token.length")
     SERVER_REQUEST_TIMEOUT_IN_SECONDS = conf.getInt("server.request.timeout.seconds")
     TESTBED_SERVICE_URL = conf.getString("testbed.service.url")
@@ -161,6 +164,12 @@ object Configurations {
       VALIDATION_TDL_EXTERNAL_URL = fromEnv("VALIDATION_TDL_EXTERNAL_URL", conf.getString("validation.tdl.external.url")).toString
     }
 
+    // Configure HMAC processing
+    val hmacKey = System.getenv.getOrDefault("HMAC_KEY", "devKey")
+    val hmacKeyWindow = System.getenv.getOrDefault("HMAC_WINDOW", "10000")
+    HmacUtils.configure(hmacKey, hmacKeyWindow.toLong)
+
+    AUTHENTICATION_COOKIE_PATH = fromEnv("AUTHENTICATION_COOKIE_PATH", conf.getString("authentication.cookie.path")).toString
   }
 
   def fromEnv(propertyName: String, default: String): String = {

@@ -1,12 +1,15 @@
 class SystemNavigationController
 
-	@$inject = ['$log', '$scope', '$stateParams', '$state', 'SystemService', 'DataService']
-	constructor: (@$log, @$scope, @$stateParams, @$state, @SystemService, @DataService)->
+	@$inject = ['$log', '$scope', '$stateParams', '$state', 'SystemService', 'DataService', 'ErrorService']
+	constructor: (@$log, @$scope, @$stateParams, @$state, @SystemService, @DataService, @ErrorService)->
 
 		@count = 0
 
-		@SystemService.getSystems()
-		.then (data) =>
-			count = data.length
+		if @DataService.isVendorUser
+			@SystemService.getSystemsByOrganization(@DataService.vendor.id)
+			.then (data) =>
+				@count = data.length
+			.catch (error) =>
+				@ErrorService.showErrorMessage(error)
 
 @controllers.controller 'SystemNavigationController', SystemNavigationController

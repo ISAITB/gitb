@@ -21,7 +21,7 @@ class TestExecutionControllerV2
               @testsToExecute = tests
               @initialiseState()
             (error) =>
-              @ErrorService.showErrorMessage(error)
+              @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop) 
           )
       else
         testCaseId = @$stateParams['testCaseId']
@@ -32,7 +32,7 @@ class TestExecutionControllerV2
               @testsToExecute = [data]
               @initialiseState()
             (error) =>
-              @ErrorService.showErrorMessage(error)
+              @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop)
           )
     else 
       @initialiseState()
@@ -253,13 +253,17 @@ class TestExecutionControllerV2
                   if parameter.id == configuration.parameter
                     parameter.value = configuration.value
               @endpointsLoaded.resolve()
+            .catch (error) =>
+              @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop)
           else
             @endpointsLoaded.resolve()
             @configurationsLoaded.resolve()
 
         .catch (error) =>
-          @ErrorService.showErrorMessage(error, true).then () =>
-            @$state.go @$state.current, {}, {reload: true}
+          @ErrorService.showErrorMessage(error, true)
+          .then(() =>
+            @$state.go @$state.current, {}, {reload: true})
+          .catch(angular.noop)
 
   constructEndpointRepresentations: () =>
     @endpointRepresentations = _.map @endpoints, (endpoint) =>
@@ -333,25 +337,22 @@ class TestExecutionControllerV2
           # @$scope.steps = testcase.steps
           @testCaseLoaded.resolve()
 
-          @isInteroperabilityTesting = testcase.metadata.type == @Constants.TEST_CASE_TYPE.INTEROPERABILITY
-          if @isInteroperabilityTesting
-            @$scope.stepsOfTests[testCaseToLookup].splice(1, 0, {id:2, title:"Participants" })
-            @$scope.stepsOfTests[testCaseToLookup].id = 3
-            @$scope.stepsOfTests[testCaseToLookup].id = 4
-
-            @getInteroperabilitySessions()
-
           for testCaseActor in @$scope.actorInfoOfTests[testCaseToLookup]
             if testCaseActor.role == @Constants.TEST_ROLE.SUT
               @actorConfigurations[testCaseActor.id] = null
         ,
         (error) =>
           @ErrorService.showErrorMessage(error, true)
+          .then(() =>
+            @$state.go @$state.current, {}, {reload: true})
+          .catch(angular.noop)
         )
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error, true).then () =>
-          @$state.go @$state.current, {}, {reload: true}
+        @ErrorService.showErrorMessage(error, true)
+        .then(() =>
+          @$state.go @$state.current, {}, {reload: true})
+        .catch(angular.noop)
     )
 
   getActorName: (actorId) ->
@@ -364,15 +365,6 @@ class TestExecutionControllerV2
           actorName = info.id
         break
     actorName
-
-  getInteroperabilitySessions: () ->
-    @TestService.getSessions()
-    .then(
-      (data) =>
-        @interoperabilitySessions = data
-      (error) =>
-        @ErrorService.showErrorMessage(error)
-    )
 
   join: () ->
     @session = @selectedSession
@@ -426,8 +418,7 @@ class TestExecutionControllerV2
         )
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error, true).then () =>
-          @$state.go @$state.current, {}, {reload: true}
+        @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop) 
     )
 
   configure: (session, configs, configureFinished) ->
@@ -454,8 +445,10 @@ class TestExecutionControllerV2
           configureFinished.resolve()
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error, true).then () =>
-          @$state.go @$state.current, {}, {reload: true}
+        @ErrorService.showErrorMessage(error, true)
+        .then(() =>
+          @$state.go @$state.current, {}, {reload: true})
+        .catch(angular.noop)
     )
 
   initiatePreliminary: (session, configureFinished) ->
@@ -465,8 +458,10 @@ class TestExecutionControllerV2
         configureFinished.resolve()
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error, true).then () =>
-          @$state.go @$state.current, {}, {reload: true}
+        @ErrorService.showErrorMessage(error, true)
+        .then(() =>
+          @$state.go @$state.current, {}, {reload: true})
+        .catch(angular.noop)
     )
 
   backDisabled: () ->
@@ -490,8 +485,10 @@ class TestExecutionControllerV2
           @$log.debug data
         ,
         (error) =>
-          @ErrorService.showErrorMessage(error, true).then () =>
-            @$state.go @$state.current, {}, {reload: true}
+          @ErrorService.showErrorMessage(error, true)
+          .then(() =>
+            @$state.go @$state.current, {}, {reload: true})
+          .catch(angular.noop)
       )
     )
 
@@ -507,8 +504,10 @@ class TestExecutionControllerV2
         @testCaseFinished()
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error, true).then () =>
-          @$state.go @$state.current, {}, {reload: true}
+        @ErrorService.showErrorMessage(error, true)
+        .then(() =>
+          @$state.go @$state.current, {}, {reload: true})
+        .catch(angular.noop)
     )
 
   restart: (session) ->
@@ -518,8 +517,10 @@ class TestExecutionControllerV2
         @$log.debug data
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error, true).then () =>
-          @$state.go @$state.current, {}, {reload: true}
+        @ErrorService.showErrorMessage(error, true)
+        .then(() =>
+          @$state.go @$state.current, {}, {reload: true})
+        .catch(angular.noop)
     )
 
   createActorConfigurations: (configs) ->
@@ -546,6 +547,7 @@ class TestExecutionControllerV2
 
   onopen: (msg) =>
     @$log.debug "WebSocket created."
+    @wsOpen = true
     testType = -1
     if @isInteroperabilityTesting
       testType = @Constants.TEST_CASE_TYPE.INTEROPERABILITY
@@ -564,7 +566,7 @@ class TestExecutionControllerV2
     @ws.send(angular.toJson(msg))
 
     @keepAlive = @$interval(() => 
-      if (@ws?)
+      if (@ws? && @wsOpen)
         msg = {
           command: @Constants.WEB_SOCKET_COMMAND.PING
         }      
@@ -575,6 +577,7 @@ class TestExecutionControllerV2
 
   onclose: (msg) =>
     @$log.debug "WebSocket closed."
+    @wsOpen = false
     if (@keepAlive?)
       @$interval.cancel(@keepAlive)
 
@@ -637,7 +640,7 @@ class TestExecutionControllerV2
           report.reports.assertionReports[0].value?.description?
               error.data.error_description = report.reports.assertionReports[0].value.description
 
-          @ErrorService.showErrorMessage(error)
+          @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop)
 
   interact: (interactions, stepId) =>
     sessionForModal = @session

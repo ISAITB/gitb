@@ -3,20 +3,18 @@ package com.gitb.tbs.impl;
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.ErrorCode;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.tbs.*;
 import com.gitb.tbs.Error;
 import com.gitb.tbs.Void;
+import com.gitb.tbs.*;
 import com.gitb.tpl.TestCase;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
+import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
-import javax.jws.WebParam;
-import javax.jws.WebService;
-import javax.jws.soap.SOAPBinding;
 import javax.xml.ws.WebServiceContext;
 import javax.xml.ws.soap.Addressing;
 import java.util.List;
@@ -24,9 +22,8 @@ import java.util.List;
 /**
  * Created by senan on 9/4/14.
  */
+@Component
 @Addressing(enabled = true, required = true)
-@SOAPBinding(parameterStyle= SOAPBinding.ParameterStyle.BARE)
-@WebService(name = "TestbedService", serviceName = "TestbedService", targetNamespace = "http://www.gitb.com/tbs/v1/")
 public class TestbedServiceImpl implements TestbedService {
 
     private static final Logger logger = LoggerFactory.getLogger(TestbedService.class);
@@ -35,7 +32,7 @@ public class TestbedServiceImpl implements TestbedService {
     private WebServiceContext wsc;
 
     @Override
-    public GetTestCaseDefinitionResponse getTestCaseDefinition(@WebParam(name = "GetTestCaseDefinitionRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") BasicRequest parameters) throws Error {
+    public GetTestCaseDefinitionResponse getTestCaseDefinition(BasicRequest parameters) throws Error {
         try {
             String testCaseId = parameters.getTcId();
             //Call the real TestbedService
@@ -54,12 +51,12 @@ public class TestbedServiceImpl implements TestbedService {
     }
 
     @Override
-    public GetActorDefinitionResponse getActorDefinition(@WebParam(name = "GetActorDefinitionRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") GetActorDefinitionRequest parameters) throws Error {
+    public GetActorDefinitionResponse getActorDefinition(GetActorDefinitionRequest parameters) throws Error {
         throw new IllegalStateException("This call is deprecated");
     }
 
     @Override
-    public InitiateResponse initiate(@WebParam(name = "InitiateRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") BasicRequest parameters) throws Error {
+    public InitiateResponse initiate(BasicRequest parameters) throws Error {
         String sessionId = null;
         try {
             String testCaseId = parameters.getTcId();
@@ -91,7 +88,7 @@ public class TestbedServiceImpl implements TestbedService {
     }
 
     @Override
-    public ConfigureResponse configure(@WebParam(name = "ConfigureRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") ConfigureRequest parameters) throws Error {
+    public ConfigureResponse configure(ConfigureRequest parameters) throws Error {
         String sessionId = null;
         try {
             sessionId = parameters.getTcInstanceId();
@@ -112,7 +109,7 @@ public class TestbedServiceImpl implements TestbedService {
     }
 
     @Override
-    public Void provideInput(@WebParam(name = "ProvideInputRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") ProvideInputRequest parameters) throws Error {
+    public Void provideInput(ProvideInputRequest parameters) throws Error {
         String sessionId = null;
         try {
             sessionId = parameters.getTcInstanceId();
@@ -131,7 +128,7 @@ public class TestbedServiceImpl implements TestbedService {
     }
 
     @Override
-    public Void initiatePreliminary(@WebParam(name = "InitiatePreliminaryRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") BasicCommand parameters) throws Error {
+    public Void initiatePreliminary(BasicCommand parameters) throws Error {
         String sessionId = null;
         try {
             sessionId = parameters.getTcInstanceId();
@@ -149,7 +146,7 @@ public class TestbedServiceImpl implements TestbedService {
 
 
     @Override
-    public Void start(@WebParam(name = "StartRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") BasicCommand parameters) {
+    public Void start(BasicCommand parameters) {
         String sessionId = parameters.getTcInstanceId();
         //Call the real TestbedService
         com.gitb.engine.TestbedService.start(sessionId);
@@ -158,7 +155,7 @@ public class TestbedServiceImpl implements TestbedService {
     }
 
     @Override
-    public Void stop(@WebParam(name = "StopRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") BasicCommand parameters) {
+    public Void stop(BasicCommand parameters) {
         String sessionId = parameters.getTcInstanceId();
         //Call the real TestbedService
         com.gitb.engine.TestbedService.stop(sessionId);
@@ -167,7 +164,7 @@ public class TestbedServiceImpl implements TestbedService {
     }
 
     @Override
-    public Void restart(@WebParam(name = "RestartRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") BasicCommand parameters) {
+    public Void restart(BasicCommand parameters) {
         String sessionId = parameters.getTcInstanceId();
         //Call the real TestbedService
         com.gitb.engine.TestbedService.restart(sessionId);

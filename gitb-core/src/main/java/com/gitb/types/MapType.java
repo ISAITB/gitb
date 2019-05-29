@@ -2,6 +2,7 @@ package com.gitb.types;
 
 import javax.xml.xpath.XPathExpression;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -42,6 +43,20 @@ public class MapType extends ContainerType {
     @Override
     public Object getValue() {
         return elements;
+    }
+
+    @Override
+    public void setValue(Object value) {
+        // The only allowed case is a direct assignment of another list of the same type.
+        if (value instanceof MapType) {
+            elements.clear();
+            Map<String, DataType> items = (Map<String, DataType>)((MapType) value).getValue();
+            for (Map.Entry<String, DataType> entry: items.entrySet()) {
+                elements.put(entry.getKey(), entry.getValue());
+            }
+        } else {
+            throw new IllegalStateException("Only map types can be directly assigned to other map types.");
+        }
     }
 
     @Override

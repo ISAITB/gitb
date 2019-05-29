@@ -169,4 +169,47 @@ class DataService
 			resultText += ')'
 		resultText
 
+	asCsvString: (text) =>
+		textStr = ''
+		if text?
+			textStr = String(text)
+			if textStr.length > 0
+				# Replace values that can break the CSV format
+				textStr = textStr.replace(/(,|\s+)/g, ' ')
+				# Prevent CSV formula injection attacks
+				charsToEscape = ['=','@','+','-']
+				if charsToEscape.indexOf(textStr.charAt(0)) != -1
+					textStr = '\'' + textStr
+		textStr
+
+	
+	exportAllAsCsv: (header, data) =>
+		if data.length > 0
+			csv = header.toString() + '\n'
+			for o, i in data
+				line = ''
+				idx = 0
+				for k, v of o
+					if idx++ != 0
+						line += ','
+					line += @asCsvString(v)
+				csv += if i < data.length then line + '\n' else line
+			blobData = new Blob([csv], {type: 'text/csv'});
+			saveAs(blobData, 'export.csv');
+
+	exportPropertiesAsCsv: (header, columnMap, data) =>
+		if data.length > 0
+			csv = header.toString() + '\n'
+			for rowData, rowIndex in data
+				line = ''
+				for columnName, columnIndex in columnMap
+					if columnIndex != 0
+						line += ','
+					line += @asCsvString(rowData[columnName])
+				csv += if rowIndex < data.length then line + '\n' else line
+			blobData = new Blob([csv], {type: 'text/csv'});
+			saveAs(blobData, 'export.csv');
+
+
+
 services.service('DataService', DataService)

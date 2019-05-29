@@ -2,44 +2,56 @@ package controllers
 
 import java.nio.file.Paths
 
-import controllers.util.{ParameterExtractor, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ResponseConstructor}
 import javax.inject.Inject
-import managers.{ConformanceManager, ReportManager, SpecificationManager, TestSuiteManager}
+import managers._
 import org.apache.commons.io.FileUtils
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.mvc.{Action, Controller}
+import play.api.mvc.Controller
 import utils.{JsonUtil, RepositoryUtils, ZipArchiver}
 
 
 /**
  * Created by serbay.Tes
  */
-class TestSuiteService @Inject() (testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager) extends Controller {
+class TestSuiteService @Inject() (testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager) extends Controller {
 
 	private final val logger: Logger = LoggerFactory.getLogger(classOf[TestSuiteService])
 
-	def undeployTestSuite(testSuiteId: Long) = Action.apply {
+	def undeployTestSuite(testSuiteId: Long) = AuthorizedAction { request =>
+		authorizationManager.canDeleteTestSuite(request, testSuiteId)
 		conformanceManager.undeployTestSuiteWrapper(testSuiteId)
 		ResponseConstructor.constructEmptyResponse
 	}
 
-	def getTestSuites() = Action.apply { request =>
-		val testSuiteIds = ParameterExtractor.extractLongIdsQueryParameter(request)
+	def getAllTestSuitesWithTestCases() = AuthorizedAction { request =>
+		authorizationManager.canViewAllTestSuites(request)
 
-		val testSuites = testSuiteManager.getTestSuites(testSuiteIds)
-		val json = JsonUtil.jsTestSuitesList(testSuites).toString()
-		ResponseConstructor.constructJsonResponse(json)
-	}
-
-	def getTestSuitesWithTestCases() = Action.apply { request =>
 		val testSuites = testSuiteManager.getTestSuitesWithTestCases()
 		val json = JsonUtil.jsTestSuiteList(testSuites).toString()
 		ResponseConstructor.constructJsonResponse(json)
 	}
 
-	def downloadTestSuite(testSuiteId: Long) = Action.apply {
+	def getTestSuitesWithTestCasesForCommunity(communityId: Long) = AuthorizedAction { request =>
+		authorizationManager.canViewTestSuitesByCommunityId(request, communityId)
+
+		val testSuites = testSuiteManager.getTestSuitesWithTestCasesForCommunity(communityId)
+		val json = JsonUtil.jsTestSuiteList(testSuites).toString()
+		ResponseConstructor.constructJsonResponse(json)
+	}
+
+	def getTestSuitesWithTestCasesForSystem(systemId: Long) = AuthorizedAction { request =>
+		authorizationManager.canViewTestSuitesBySystemId(request, systemId)
+
+		val testSuites = testSuiteManager.getTestSuitesWithTestCasesForSystem(systemId)
+		val json = JsonUtil.jsTestSuiteList(testSuites).toString()
+		ResponseConstructor.constructJsonResponse(json)
+	}
+
+	def downloadTestSuite(testSuiteId: Long) = AuthorizedAction { request =>
+		authorizationManager.canDownloadTestSuite(request, testSuiteId)
 		val testSuite = testSuiteManager.getTestSuites(Some(List(testSuiteId))).head
-		val testSuiteFolder = RepositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(testSuite.specification), testSuite.shortname)
+		val testSuiteFolder = RepositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(testSuite.specification), testSuite.filename)
 		val testSuiteOutputPath = Paths.get(
 			ReportManager.getTempFolderPath().toFile.getAbsolutePath,
 			"test_suite",

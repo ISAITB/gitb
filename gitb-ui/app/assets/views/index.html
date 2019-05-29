@@ -4,18 +4,18 @@
           <div class="container">
             <img ng-src="{{indexCtrl.logo}}" class="logo"/>
             <nav class="nav-main mega-menu">
-              <ul class="nav nav-pills nav-main" id="mainMenu" ng-if="indexCtrl.isAuthenticated">
+              <ul class="nav nav-pills nav-main" id="mainMenu" ng-if="indexCtrl.AuthProvider.isAuthenticated()">
                 <li ng-if="!indexCtrl.DataService.user.onetime">
                   <a ui-sref="app.home">Home</a>
                 </li>
-                <li ng-if="indexCtrl.isAuthenticated && !indexCtrl.DataService.user.onetime">
+                <li ng-if="indexCtrl.AuthProvider.isAuthenticated() && !indexCtrl.DataService.user.onetime">
                   <a class="pointer" ng-click="indexCtrl.onTestsClick()">Tests</a>
                 </li>
                 <li ng-if="(indexCtrl.DataService.isSystemAdmin || indexCtrl.DataService.isCommunityAdmin) && !indexCtrl.DataService.user.onetime">
                   <a ui-sref="app.admin.dashboard.list">Admin</a>
                 </li>
                 <!-- User menu item, show when authenticated -->
-                <li class="dropdown mega-menu-item mega-menu-signin signin logged" id="headerAccount" ng-cloak ng-if="indexCtrl.isAuthenticated">
+                <li class="dropdown mega-menu-item mega-menu-signin signin logged" id="headerAccount" ng-cloak ng-if="indexCtrl.AuthProvider.isAuthenticated()">
                   <a class="dropdown-toggle" ng-click="indexCtrl.redirect('/settings')">
                     <i class="fa fa-user"></i> {{indexCtrl.DataService.user.name}}
                     <i class="fa fa-angle-down"></i>
@@ -57,7 +57,7 @@
     <div class="container">
         <div class="row">
           <div class="col-md-6">
-            <img ng-src="{{indexCtrl.footer}}" class="img-responsive pull-left"/>
+            <img ng-src="{{indexCtrl.footer}}" class="pull-left"/>
           </div>
           <div class="col-md-6 version-div">
             <span class="pull-right"><a href ng-if="indexCtrl.showUserGuide()" ng-href="{{indexCtrl.userGuideLink()}}" target="blank">User guide</a><span ng-if="indexCtrl.showUserGuide()" class="version-text"> | </span><a href ng-if="indexCtrl.showProvideFeedback()" ng-href="{{indexCtrl.provideFeedbackLink()}}" target="blank">Provide feedback</a><span ng-if="indexCtrl.showProvideFeedback()" class="version-text"> | </span><a href ng-if="indexCtrl.showContactUs()" ng-click="indexCtrl.contactUs()">Contact support</a><span ng-if="indexCtrl.showContactUs()" class="version-text"> | </span><a href ng-click="indexCtrl.onLegalNotice()">Legal notice</a><span class="version-text"> | </span><span class="version-text">{{indexCtrl.version}}</span></span>

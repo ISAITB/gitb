@@ -1,17 +1,21 @@
 package controllers.util
 
+import config.Configurations
 import exceptions.ErrorCodes
-import play.api.mvc._
+import models.Token
 import play.api.http.HeaderNames._
 import play.api.http.MimeTypes._
-import models.Token
-import config.Configurations
+import play.api.mvc._
 
 object ResponseConstructor extends Results{
 
   def constructUnauthorizedResponse(errorCode: Int, errorDesc: String): Result = {
     Unauthorized(constructErrorMessage(errorCode, errorDesc, None))
       .withHeaders(WWW_AUTHENTICATE ->  "Bearer realm=\"GITB\"").as(JSON)
+  }
+
+  def constructAccessDeniedResponse(errorCode: Int, errorDesc: String): Result = {
+    Forbidden(constructErrorMessage(errorCode, errorDesc, None)).as(JSON)
   }
 
   def constructBadRequestResponse(errorCode: Int, errorDesc: String): Result = {
@@ -75,10 +79,10 @@ object ResponseConstructor extends Results{
 
   def constructOauthResponse(tokens:Token):Result = {
     Ok("{" +
+      "\"path\":\"" + Configurations.AUTHENTICATION_COOKIE_PATH + "\"," +
       "\"access_token\":\"" + tokens.access_token + "\"," +
       "\"token_type\":\"Bearer\"," +
-      "\"expires_in\":" + Configurations.TOKEN_LIFETIME_IN_SECONDS + "," + //in seconds ~ 30 days
-      "\"refresh_token\":\"" + tokens.refresh_token + "\"," +
+      "\"expires_in\":" + Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME + "," + //in seconds ~ 30 days
       "\"registered\":true}").as(JSON)
   }
 

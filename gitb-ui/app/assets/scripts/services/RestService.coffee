@@ -1,7 +1,7 @@
 class RestService
 
-    @$inject = ['$http', '$q', '$log', 'AuthProvider']
-    constructor: (@$http, @$q, @$log, @AuthProvider) ->
+    @$inject = ['$http', '$q', '$log', 'AuthProvider', '$rootScope', 'Events']
+    constructor: (@$http, @$q, @$log, @AuthProvider, @$rootScope, @Events) ->
         @$log.debug "Constructing RestService..."
 
     get: (config) ->
@@ -17,28 +17,17 @@ class RestService
         @call('DELETE', config)
 
     call: (method, config) ->
-        @authenticate(config)
-        .then(
-            (config) =>
-                if config.data?
-                    config.data = _.pick config.data, (value, key)->
-                        value?
-                if !config.toJSON?
-                    config.toJSON = false
-                @sendRequest(method, config.path.substring(1), config.params, config.data, config.toJSON, config.responseType);
-            )
-
-    authenticate: (config) ->
-        deferred = @$q.defer()
-        if config.authenticate
-            if @AuthProvider.isAuthenticated
-                deferred.resolve(config)
-            else
-                #TODO: show popup to user so that he can enter his credentials
+        if config.authenticate && !@AuthProvider.isAuthenticated() && !@AuthProvider.isAuthenticated()
+            # Trigger (re)authentication after logout cleanup
+            @$rootScope.$emit(@Events.onLogout)
         else
-            deferred.resolve(config)
-
-        deferred.promise
+            # Make request
+            if config.data?
+                config.data = _.pick config.data, (value, key)->
+                    value?
+            if !config.toJSON?
+                config.toJSON = false
+            @sendRequest(method, config.path.substring(1), config.params, config.data, config.toJSON, config.responseType);
 
     sendRequest: (_method, _url, _params, _data, _toJSON, _responseType) ->
         options = @configureOptions(_method, _url, _params, _data, _toJSON, _responseType)
@@ -46,7 +35,13 @@ class RestService
         .then(
             (result) =>
                 result.data
-            )
+            (error) =>
+                if error? && error.status? && error.status == 401
+                    # Handle only authorisation-related errors.
+                    @$rootScope.$emit(@Events.onLogout)
+                else
+                    throw error
+        )
 
     refreshTokens: () ->
         "" #TODO: check if access token expired and refresh it, if necessary

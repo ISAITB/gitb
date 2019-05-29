@@ -1,4 +1,4 @@
-FROM java:openjdk-8u72-jre
+FROM openjdk:11.0.2-jre
 
 ENV PATH /usr/local/gitb-ui/bin:$PATH
 ENV TESTBED_SERVICE_URL http://gitb-srv:8080/itbsrv/TestbedService

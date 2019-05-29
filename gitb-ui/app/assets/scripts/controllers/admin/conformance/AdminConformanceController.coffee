@@ -165,7 +165,9 @@ class AdminConformanceController
 
 	getAllCommunities: () ->
 		d = @$q.defer()
-		@CommunityService.getCommunities()
+		if !@DataService.isSystemAdmin
+			communityIds = [@DataService.community.id]
+		@CommunityService.getCommunities(communityIds)
 		.then (data) =>
 				@filters.community.all = data
 				d.resolve()
@@ -175,7 +177,9 @@ class AdminConformanceController
 
 	getAllDomains: () ->
 		d = @$q.defer()
-		@ConformanceService.getDomains()
+		if !@DataService.isSystemAdmin && @DataService.community.domainId?
+			domainIds = [@DataService.community.domainId]
+		@ConformanceService.getDomains(domainIds)
 		.then (data) =>
 			@filters.domain.all = data
 			d.resolve()
@@ -185,8 +189,11 @@ class AdminConformanceController
 
 	getAllSpecifications: () ->
 		d = @$q.defer()
-		@ConformanceService.getSpecificationsWithIds()
-		.then (data) =>
+		if @DataService.isCommunityAdmin && @DataService.community.domainId?
+			callResult = @ConformanceService.getSpecifications(@DataService.community.domainId)
+		else
+			callResult = @ConformanceService.getSpecificationsWithIds()
+		callResult.then (data) =>
 				@filters.specification.all = data
 				d.resolve()
 		.catch (error) =>
@@ -195,8 +202,11 @@ class AdminConformanceController
 
 	getAllActors: () ->
 		d = @$q.defer()
-		@ConformanceService.getActorsWithIds()
-		.then (data) =>
+		if @DataService.isCommunityAdmin && @DataService.community.domainId?
+			callResult = @ConformanceService.getActorsForDomain(@DataService.community.domainId)
+		else
+			callResult = @ConformanceService.getActorsWithIds()
+		callResult.then (data) =>
 				@filters.actor.all = data
 				d.resolve()
 		.catch (error) =>
@@ -205,18 +215,29 @@ class AdminConformanceController
 
 	getAllOrganizations: () ->
 		d = @$q.defer()
-		@OrganizationService.getOrganizations()
-		.then (data) =>
-			@filters.organization.all = data
-			d.resolve()
-		.catch (error) =>
-			@ErrorService.showErrorMessage(error)
+		if @DataService.isCommunityAdmin
+			@OrganizationService.getOrganizationsByCommunity(@DataService.community.id)
+			.then (data) =>
+				@filters.organization.all = data
+				d.resolve()
+			.catch (error) =>
+				@ErrorService.showErrorMessage(error)
+		else
+			@OrganizationService.getOrganizations()
+			.then (data) =>
+				@filters.organization.all = data
+				d.resolve()
+			.catch (error) =>
+				@ErrorService.showErrorMessage(error)
 		d.promise
 
 	getAllSystems: () ->
 		d = @$q.defer()
-		@SystemService.getSystems()
-		.then (data) =>
+		if @DataService.isSystemAdmin
+			sFunction = @SystemService.getSystems
+		else
+			sFunction = @SystemService.getSystemsByCommunity
+		sFunction().then (data) =>
 			@filters.system.all = data
 			d.resolve()
 		.catch (error) =>
@@ -287,6 +308,8 @@ class AdminConformanceController
 				undefinedCount = Number(conformanceStatement.undefined)
 				conformanceStatement.status = @DataService.testStatusText(completedCount, failedCount, undefinedCount)
 			d.resolve(data)
+		.catch (error) =>
+			@ErrorService.showErrorMessage(error)
 		d.promise
 
 	getConformanceStatements: () =>
@@ -315,6 +338,8 @@ class AdminConformanceController
 						testCases.push(testCase)
 					statement.testCases = testCases
 					@expand(statement)
+				.catch (error) =>
+					@ErrorService.showErrorMessage(error)
 
 	collapse: (statement) =>
 		delete @expandedStatements[statement.systemId+"_"+statement.actorId]
@@ -349,22 +374,8 @@ class AdminConformanceController
 			else
 				headers = ["Community", "Organisation", "System", "Domain", "Specification", "Actor", "Test suite", "Test case", "Result"]
 				columnMap = ["communityName", "organizationName", "systemName", "domainName", "specName", "actorName", "testSuiteName", "testCaseName", "result"]
-			@exportAsCsv(headers, columnMap, data)
+			@DataService.exportPropertiesAsCsv(headers, columnMap, data)
 		)
-
-	exportAsCsv: (header, columnMap, data) ->
-		if data.length > 0
-			csv = header.toString() + "\n"
-			for rowData, rowIndex in data
-				line = ""
-				for columnName, columnIndex in columnMap
-					if columnIndex != 0
-						line += ","
-					if rowData[columnName]?
-						line += rowData[columnName].replace /,/, " "
-				csv += if rowIndex < data.length then line + "\n" else line
-			blobData = new Blob([csv], {type: 'text/csv'});
-			saveAs(blobData, "export.csv");
 
 	onExportTestCase: (statement, testCase) =>
 		@ReportService.exportTestCaseReport(testCase.sessionId, testCase.id)
@@ -381,8 +392,13 @@ class AdminConformanceController
 		if !@settings?
 			@ConformanceService.getConformanceCertificateSettings(@statementToProcess.communityId, false)
 			.then (settings) => 
-				@settings = settings
+				if settings? && settings?.id?
+					@settings = settings
+				else
+					@settings = {}
 				@settingsLoaded.resolve()
+			.catch (error) =>
+				@ErrorService.showErrorMessage(error)
 		@settingsLoaded.promise.then () =>
 			modalOptions =
 				templateUrl: 'assets/views/admin/conformance/generate-certificate-modal.html'

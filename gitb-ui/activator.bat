@@ -88,6 +88,9 @@ rem Detect if this java is ok to use.
 for /F %%j in ('"%_JAVACMD%" -version  2^>^&1') do (
   if %%~j==Java set JAVAINSTALLED=1
 )
+for /F %%j in ('"%_JAVACMD%" -version  2^>^&1') do (
+  if %%~j==OpenJDK set JAVAINSTALLED=1
+)
 
 rem Detect the same thing about javac
 if "%_JAVACCMD%"=="" (

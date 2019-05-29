@@ -1,7 +1,7 @@
 package com.gitb.types;
 
 import com.gitb.ModuleManager;
-import com.gitb.tdl.TypedBinding;
+import com.gitb.tdl.NamedTypedString;
 import com.gitb.tdl.Variable;
 
 import java.util.regex.Matcher;
@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
  * Created by tuncay on 9/24/14.
  */
 public class DataTypeFactory {
-    private static Pattern containerTypePattern = Pattern.compile("([a-z]+)\\[([a-z]+)\\]");
+    private static Pattern containerTypePattern = Pattern.compile("^(list)(?:\\[([a-z]+)\\])?$");
     private static DataTypeFactory instance = null;
 
     public static DataTypeFactory getInstance(){
@@ -39,7 +39,7 @@ public class DataTypeFactory {
      * @param type
      * @return
      */
-    public static String parseContainerType(String type) {
+    private static String parseContainerType(String type) {
         Matcher matcher = containerTypePattern.matcher(type);
         matcher.find();
         return matcher.group(1);
@@ -50,10 +50,16 @@ public class DataTypeFactory {
      * @param type
      * @return
      */
-    public static String parseContainedType(String type) {
+    private static String parseContainedType(String type) {
         Matcher matcher = containerTypePattern.matcher(type);
-        matcher.find();
-        return matcher.group(2);
+        String containedType = null;
+        if (matcher.find()) {
+            int count = matcher.groupCount();
+            if (count == 2) {
+                containedType = matcher.group(2);
+            }
+        }
+        return containedType;
     }
 
     /**
@@ -62,7 +68,7 @@ public class DataTypeFactory {
      * @return
      */
     public DataType create(String type){
-        DataType data = null;
+        DataType data;
         switch (type) {
             case DataType.BOOLEAN_DATA_TYPE:
                 data = new BooleanType();
@@ -89,13 +95,15 @@ public class DataTypeFactory {
                 if(isContainerType(type)){
                     String containerType = parseContainerType(type);
                     String containedType = parseContainedType(type);
-                    switch (containerType){
-                        case DataType.LIST_DATA_TYPE:
-                            data = new ListType(containedType);
-                        default:
-                            //TODO throw Invalid Test Case exception (No such container type)
+                    if (DataType.LIST_DATA_TYPE.equals(containerType)) {
+                        if (containedType == null) {
+                            containedType = DataType.STRING_DATA_TYPE;
+                        }
+                        data = new ListType(containedType);
+                    } else {
+                        throw new IllegalStateException("Unsupported container type ["+containerType+"]");
                     }
-                }else{
+                } else {
                    // It is a plugged in type
                     data = ModuleManager.getInstance().getDataType(type);
                 }
@@ -116,8 +124,7 @@ public class DataTypeFactory {
         try {
             data.deserialize(content, encoding);
         }catch(Exception e){
-            //TODO Handle exception
-            e.printStackTrace();
+            throw new IllegalStateException(e);
         }
         return data;
     }
@@ -128,8 +135,7 @@ public class DataTypeFactory {
         try {
             data.deserialize(content);
         }catch(Exception e){
-            //TODO Handle exception
-            e.printStackTrace();
+            throw new IllegalStateException(e);
         }
         return data;
     }
@@ -152,8 +158,10 @@ public class DataTypeFactory {
             //Container Types
             else if (data instanceof ContainerType) {
                 if(data instanceof MapType){
-                    for (TypedBinding binding : variable.getValue()) {
-                        //TODO Check if binding has name
+                    for (NamedTypedString binding : variable.getValue()) {
+                        if (binding.getName() == null) {
+                            throw new IllegalStateException("A map variable's value was found for which no name was declared.");
+                        }
                         DataType item = create(binding.getType());
                         item.deserialize(binding.getValue().getBytes());
                         ((MapType)data).addItem(binding.getName(), item);
@@ -161,7 +169,7 @@ public class DataTypeFactory {
                 }
                 //ListType
                 else {
-                    for (TypedBinding binding : variable.getValue()) {
+                    for (NamedTypedString binding : variable.getValue()) {
                         DataType item = create(((ListType)data).getContainedType());
                         item.deserialize(binding.getValue().getBytes());
                         ((ListType)data).append(item);
@@ -175,8 +183,7 @@ public class DataTypeFactory {
                 }
             }
         }catch (Exception e){
-            //TODO Handle exceptions
-            e.printStackTrace();
+            throw new IllegalStateException(e);
         }
         return data;
     }

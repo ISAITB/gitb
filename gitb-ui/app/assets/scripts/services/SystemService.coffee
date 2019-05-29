@@ -3,28 +3,9 @@ class SystemService
   @headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
   @defaultConfig = { headers: @headers }
 
-  @$inject = ['$log', 'RestService']
-  constructor: (@$log, @RestService) ->
+  @$inject = ['$log', 'RestService', 'DataService']
+  constructor: (@$log, @RestService, @DataService) ->
     @$log.debug "Constructing SystemService..."
-
-
-  #dummy method for getting json
-  getTestSteps: () ->
-    @RestService.get({
-      path: "/assets/jsons/execution.json"
-    })
-
-  #dummy method for getting json
-  getTestSuites: () ->
-    @RestService.get({
-      path: "/assets/jsons/testsuites.json"
-    })
-
-  getVendorSystems: () ->
-    @RestService.get({
-      path: jsRoutes.controllers.SystemService.getVendorSystems().url,
-      authenticate: true
-    })
 
   getSystemsByOrganization: (orgId) ->
     @RestService.get({
@@ -80,11 +61,6 @@ class SystemService
       data: data,
       authenticate: true
     })
-
-  getImplementedActors: (system)->
-    @RestService.get 
-      path: jsRoutes.controllers.SystemService.getImplementedActors(system).url
-      authenticate: true
 
   getConformanceStatements: (system, specId, actorId) ->
     if actorId? and specId?
@@ -146,12 +122,6 @@ class SystemService
         ids: endpointIds.join ','
         system_id: systemId
 
-  getLastExecutionResultsForTestCases: (system, testCaseIds) ->
-    @RestService.get
-      path: jsRoutes.controllers.SystemService.getLastExecutionResultsForTestCases(system).url
-      params:
-        ids: testCaseIds.join ','
-
   deleteConformanceStatement: (system, actorIds) ->
     @RestService.delete
       path: jsRoutes.controllers.SystemService.deleteConformanceStatement(system).url
@@ -164,14 +134,7 @@ class SystemService
       params: 
         organization_id: organisationId
 
-  getLastExecutionResultsForTestSuite: (system, testSuiteId, testCaseIds) ->
-      @RestService.get
-        path: jsRoutes.controllers.SystemService.getLastExecutionResultsForTestSuite(system).url
-        params:
-          id: testSuiteId,
-          ids: testCaseIds.join ','
-
-  getSystems: (systemIds) ->
+  getSystems: (systemIds) =>
     params = {}
     if systemIds? and systemIds.length > 0
         params.ids = systemIds.join ','
@@ -180,5 +143,10 @@ class SystemService
       path: jsRoutes.controllers.SystemService.getSystems().url
       authenticate: true
       params: params
+
+  getSystemsByCommunity: () =>
+    @RestService.get
+      path: jsRoutes.controllers.SystemService.getSystemsByCommunity(@DataService.community.id).url
+      authenticate: true
 
 services.service('SystemService', SystemService)

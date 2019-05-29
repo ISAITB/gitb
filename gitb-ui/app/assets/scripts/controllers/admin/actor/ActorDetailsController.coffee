@@ -49,12 +49,6 @@ class ActorDetailsController
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
-		@ConformanceService.getOptionsForActor(@actorId)
-		.then (data) =>
-			@options = data
-		.catch (error) =>
-			@ErrorService.showErrorMessage(error)
-
 		@ConformanceService.getEndpointsForActor(@actorId)
 		.then (data) =>
 			@endpoints = data

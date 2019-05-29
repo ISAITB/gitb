@@ -14,17 +14,18 @@ case class TestCases(
 	                    path: String,
 		                  targetSpec: Long,
 											targetActors: Option[String] = None,
-											targetOptions: Option[String] = None
+											targetOptions: Option[String] = None,
+											testSuiteOrder: Short
 	                    ) {
 
 	def withPath(path: String): TestCases = {
 		TestCases(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate,
-			this.modificationDate, this.description, this.keywords, this.testCaseType, path, this.targetSpec, this.targetActors, this.targetOptions)
+			this.modificationDate, this.description, this.keywords, this.testCaseType, path, this.targetSpec, this.targetActors, this.targetOptions, this.testSuiteOrder)
 	}
 
 	def withTargets(spec: Long, targetActors: Option[String] = None, targetOptions:Option[String] = None): TestCases = {
 		TestCases(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate,
-			this.modificationDate, this.description, this.keywords, this.testCaseType, this.path, targetSpec, targetActors, targetOptions)
+			this.modificationDate, this.description, this.keywords, this.testCaseType, this.path, targetSpec, targetActors, targetOptions, this.testSuiteOrder)
 	}
 }
 
@@ -43,7 +44,8 @@ class TestCase(
 	              _path: String,
 	              _targetSpec: Long,
 	              _targetActors: Option[List[Actors]],
-	              _targetOptions: Option[List[models.Options]]
+	              _targetOptions: Option[List[models.Options]],
+	              _testSuiteOrder: Short
 	              ) {
 	var id: Long = _id
 	var shortname: String = _sname
@@ -59,6 +61,7 @@ class TestCase(
 	var targetSpec: Long = _targetSpec
 	var targetActors: Option[List[Actors]] = _targetActors
 	var targetOptions: Option[List[models.Options]] = _targetOptions
+	var testSuiteOrder: Short = _testSuiteOrder
 
 
 	def this(_case: TestCases, targetActors: Option[List[Actors]], targetOptions: Option[List[models.Options]]) = {
@@ -66,21 +69,11 @@ class TestCase(
 			if (_case.authors.isDefined) Some(_case.authors.get.split(",").toList) else None,
 			_case.originalDate, _case.modificationDate, _case.description,
 			if (_case.keywords.isDefined) Some(_case.keywords.get.split(",").toList) else None,
-			_case.testCaseType, _case.path, _case.targetSpec, targetActors, targetOptions)
+			_case.testCaseType, _case.path, _case.targetSpec, targetActors, targetOptions, _case.testSuiteOrder)
 	}
 
 	def this(_case: TestCases) = {
 		this(_case, None,	None)
 	}
 
-	def toCaseObject: TestCases = {
-		TestCases(this.id, this.shortname, this.fullname, this.version,
-			if (this.authors.isDefined) Some(this.authors.get.mkString(",")) else None,
-			this.originalDate, this.modificationDate, this.description,
-			if (this.keywords.isDefined) Some(this.keywords.get.mkString(",")) else None,
-			this.testCaseType, this.path, this.targetSpec,
-			if (this.targetActors.isDefined) Some(this.targetActors.get.map(_.actorId).mkString(",")) else  None,
-			if (this.targetOptions.isDefined) Some(this.targetOptions.get.map(_.sname).mkString(",")) else  None
-		)
-	}
 }

@@ -124,9 +124,25 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     system
   }
 
+  def getSystemIdsForOrganization(orgId: Long): Set[Long] = {
+    val systemIds = exec(PersistenceSchema.systems.filter(_.owner === orgId).map(s => {s.id}).result.map(_.toSet))
+    systemIds
+  }
+
   def getSystemsByOrganization(orgId: Long): List[Systems] = {
     val systems = exec(PersistenceSchema.systems.filter(_.owner === orgId)
         .sortBy(_.shortname.asc)
+      .result.map(_.toList))
+    systems
+  }
+
+  def getSystemsByCommunity(communityId: Long): List[Systems] = {
+    val systems = exec(
+      PersistenceSchema.systems
+        .join(PersistenceSchema.organizations).on(_.owner === _.id)
+        .filter(_._2.community === communityId)
+        .map(r => r._1)
+      .sortBy(_.shortname.asc)
       .result.map(_.toList))
     systems
   }
@@ -146,35 +162,55 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     exec(defineConformanceStatement(system, spec, actor, options).transactionally)
   }
 
+  def sutTestCasesExistForActor(actor: Long): Boolean = {
+    val query = PersistenceSchema.testCaseHasActors
+      .join(PersistenceSchema.testSuiteHasTestCases).on(_.testcase === _.testcase)
+      .filter(_._1.actor === actor)
+      .filter(_._1.sut === true)
+    val result = exec(query.result.headOption)
+    result.isDefined
+  }
+
   def defineConformanceStatement(system: Long, spec: Long, actor: Long, options: Option[List[Long]]) = {
     val actions = new ListBuffer[DBIO[_]]()
-
-    actions += (PersistenceSchema.systemImplementsActors += (system, spec, actor))
-
-    options match {
-      case Some(optionIds) => optionIds foreach (optionId => actions += (PersistenceSchema.systemImplementsOptions += (system, optionId)))
-      case _ =>
-    }
-    // Load any existing test results for the system and actor.
-    val existingResults = exec(PersistenceSchema.testResults.filter(_.sutId === system).filter(_.actorId === actor).filter(_.testCaseId.isDefined).result.map(_.toList))
-    val existingResultsMap = new util.HashMap[Long, (String, String)]
-    existingResults.foreach { existingResult =>
-      existingResultsMap.put(existingResult.testCaseId.get, (existingResult.sessionId, existingResult.result))
-    }
     val query = PersistenceSchema.testCaseHasActors
         .join(PersistenceSchema.testSuiteHasTestCases).on(_.testcase === _.testcase)
-    val conformanceInfo = exec(query.filter(_._1.actor === actor).result.map(_.toList))
-    conformanceInfo.foreach { conformanceInfoEntry =>
-      val testCase = conformanceInfoEntry._1._1
-      val testSuite = conformanceInfoEntry._2._1
-      var result = TestResultStatus.UNDEFINED
-      var sessionId: Option[String] = None
-      if (existingResultsMap.containsKey(testCase)) {
-        val existingData = existingResultsMap.get(testCase)
-        sessionId = Some(existingData._1)
-        result = TestResultStatus.withName(existingData._2)
+        .filter(_._1.actor === actor)
+        .filter(_._1.sut === true)
+        .map(r => (r._1.testcase, r._2.testsuite))
+    val conformanceInfo = exec(query.result.map(_.toList))
+    if (conformanceInfo.isEmpty) {
+      actions += DBIO.successful(())
+    } else {
+      // Add the system to actor mapping. This may be missing due to test suite updates that changed actor roles.
+      val qCheck = PersistenceSchema.systemImplementsActors
+        .filter(_.systemId === system)
+        .filter(_.actorId === actor)
+        .filter(_.specId === spec)
+      val existingSystemMapping = exec(qCheck.result.headOption)
+      if (existingSystemMapping.isDefined) {
+        actions += DBIO.successful(())
+      } else {
+        actions += (PersistenceSchema.systemImplementsActors += (system, spec, actor))
       }
-      actions += (PersistenceSchema.conformanceResults += ConformanceResult(0L, system, spec, actor, testSuite, testCase, result.toString, sessionId))
+      // Load any existing test results for the system and actor.
+      val existingResults = exec(PersistenceSchema.testResults.filter(_.sutId === system).filter(_.actorId === actor).filter(_.testCaseId.isDefined).result.map(_.toList))
+      val existingResultsMap = new util.HashMap[Long, (String, String)]
+      existingResults.foreach { existingResult =>
+        existingResultsMap.put(existingResult.testCaseId.get, (existingResult.sessionId, existingResult.result))
+      }
+      conformanceInfo.foreach { conformanceInfoEntry =>
+        val testCase = conformanceInfoEntry._1
+        val testSuite = conformanceInfoEntry._2
+        var result = TestResultStatus.UNDEFINED
+        var sessionId: Option[String] = None
+        if (existingResultsMap.containsKey(testCase)) {
+          val existingData = existingResultsMap.get(testCase)
+          sessionId = Some(existingData._1)
+          result = TestResultStatus.withName(existingData._2)
+        }
+        actions += (PersistenceSchema.conformanceResults += ConformanceResult(0L, system, spec, actor, testSuite, testCase, result.toString, sessionId))
+      }
     }
     DBIO.seq(actions.map(a => a): _*)
   }
@@ -346,12 +382,9 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     } yield()
 	}
 
-  def getSystemByIdWrapper(id: Long): Option[Systems] = {
-    getSystemById(id)
-  }
-
-  def getSystemById(id: Long) = {
-    exec(PersistenceSchema.systems.filter(_.id === id).result.headOption)
+  def getSystemById(id: Long): Option[Systems] = {
+    val system = exec(PersistenceSchema.systems.filter(_.id === id).result.headOption)
+    system
   }
 
   def getSystems(ids: Option[List[Long]]): List[Systems] = {

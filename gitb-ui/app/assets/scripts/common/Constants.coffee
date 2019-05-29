@@ -3,9 +3,8 @@ class Constants
 	@TABLE_PAGE_SIZE = 10
 	@DEFAULT_LOGO = '/assets/images/gitb.png'
 
-	@TOKEN_COOKIE_EXPIRE: 180 # 6 months
+	@TOKEN_COOKIE_EXPIRE: 2592000000 # 1 month in millis
 	@ACCESS_TOKEN_COOKIE_KEY : 'tat'
-	@REFRESH_TOKEN_COOKIE_KEY: 'trt'
 
 	@SECONDS_IN_DAY: 86400
 
@@ -102,6 +101,6 @@ class Constants
 	@EMAIL_REGEX: /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 	@DATA_URL_REGEX: /^data:.+\/(.+);base64,(.*)$/
 
-	@VERSION = "v1.5.0"
+	@VERSION = "v1.6.0"
 
 common.value('Constants', Constants)

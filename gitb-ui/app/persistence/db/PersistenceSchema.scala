@@ -197,7 +197,8 @@ object PersistenceSchema {
 	  def targetSpec = column[Long]("target_spec")
     def targetActors = column[Option[String]]("target_actors")
     def targetOptions = column[Option[String]]("target_options")
-	  def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, testCaseType, path, targetSpec, targetActors, targetOptions) <> (TestCases.tupled, TestCases.unapply)
+    def testSuiteOrder = column[Short]("testsuite_order")
+	  def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, testCaseType, path, targetSpec, targetActors, targetOptions, testSuiteOrder) <> (TestCases.tupled, TestCases.unapply)
     def shortNameVersionUniqueIdx = index("tc_sn_vsn_idx", (shortname, version), unique = true)
     //def fk1 = foreignKey("tc_fk_1", targetSpec, Specifications)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
     //def fk2 = foreignKey("tc_fk_2", targetActor, Actors)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
@@ -215,7 +216,8 @@ object PersistenceSchema {
 		def description = column[Option[String]]("description", O.SqlType("TEXT"))
 		def keywords = column[Option[String]]("keywords")
     def specification = column[Long]("specification")
-		def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, specification) <> (TestSuites.tupled, TestSuites.unapply)
+    def filename = column[String]("file_name")
+		def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, specification, filename) <> (TestSuites.tupled, TestSuites.unapply)
     def shortNameVersionUniqueIdx = index("ts_sn_vsn_idx", (shortname, version), unique = true)
 	}
 	val testSuites = TableQuery[TestSuitesTable]
@@ -315,12 +317,13 @@ object PersistenceSchema {
   }
   val endpointSupportsTransactions = TableQuery[EndpointSupportsTransactionsTable]
 
-	class TestCaseHasActorsTable(tag: Tag) extends Table[(Long, Long, Long)](tag, "TestCaseHasActors") {
+	class TestCaseHasActorsTable(tag: Tag) extends Table[(Long, Long, Long, Boolean)](tag, "TestCaseHasActors") {
 		def testcase = column[Long]("testcase")
     def specification = column[Long] ("specification")
 		def actor = column[Long]("actor")
+    def sut = column[Boolean]("sut")
 
-		def * = (testcase, specification, actor)
+		def * = (testcase, specification, actor, sut)
 
 		def pk = primaryKey("tcha_pk", (testcase, specification, actor))
 	}

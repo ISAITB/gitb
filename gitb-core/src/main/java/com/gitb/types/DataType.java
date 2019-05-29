@@ -67,8 +67,6 @@ public abstract class DataType {
                 return toStringType();
             case (DataType.BINARY_DATA_TYPE):
                 return toBinaryType();
-            case (DataType.LIST_DATA_TYPE):
-                return toListType();
             case (DataType.SCHEMA_DATA_TYPE):
                 return toSchemaType();
             case (DataType.OBJECT_DATA_TYPE):
@@ -76,9 +74,12 @@ public abstract class DataType {
             case (DataType.MAP_DATA_TYPE):
                 return toMapType();
             default:
-                throw new IllegalArgumentException("Unknown target conversion type ["+targetType+"]");
+                if (isListType(targetType)) {
+                    return toListType();
+                } else {
+                    throw new IllegalArgumentException("Unknown target conversion type ["+targetType+"]");
+                }
         }
-
     }
 
     public BooleanType toBooleanType() {
@@ -98,7 +99,9 @@ public abstract class DataType {
     }
 
     public ListType toListType() {
-        throw new IllegalArgumentException("Conversion from ["+this.getType()+"] to ["+LIST_DATA_TYPE+"] not supported");
+        ListType list = new ListType(getType());
+        list.append(this);
+        return list;
     }
 
     public MapType toMapType() {

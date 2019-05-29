@@ -56,6 +56,10 @@ class UserManager @Inject() (accountManager: AccountManager, organizationManager
     users
   }
 
+  def getById(userId: Long): Users = {
+    exec(PersistenceSchema.users.filter(_.id === userId).result.head)
+  }
+
   /**
    * Gets user with specified id
    */

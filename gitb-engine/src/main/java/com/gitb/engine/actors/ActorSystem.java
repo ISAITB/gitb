@@ -36,6 +36,6 @@ public class ActorSystem {
 	}
 
 	public void shutdown() {
-		system.shutdown();
+		system.terminate();
 	}
 }

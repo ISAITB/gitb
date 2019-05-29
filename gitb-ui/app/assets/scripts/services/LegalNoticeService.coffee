@@ -57,4 +57,9 @@ class LegalNoticeService
       }
     })
 
+  getTestBedDefaultLegalNotice: () ->
+    @RestService.get({
+      path: jsRoutes.controllers.LegalNoticeService.getTestBedDefaultLegalNotice().url
+    })
+
 services.service('LegalNoticeService', LegalNoticeService)

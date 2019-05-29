@@ -88,7 +88,7 @@ public class VerifyProcessor implements IProcessor {
 			for (Binding inputExpression : inputExpressions) {
 				TypedParameter expectedParam = expectedParamsMap.get(inputExpression.getName());
 				if (expectedParam == null) {
-					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid parameter for the handler [" + handlerIdentifier + "]"));
+					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid parameter for the handler [" + inputExpression.getName() + "]"));
 				}
 				//Evaluate Expression
 				DataType result = exprHandler.processExpression(inputExpression, expectedParam.getType());

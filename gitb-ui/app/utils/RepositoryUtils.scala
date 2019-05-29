@@ -5,12 +5,13 @@ import java.nio.file.Paths
 import java.util.zip.{ZipEntry, ZipFile}
 
 import javax.xml.transform.stream.StreamSource
-import com.gitb.core.TestCaseType
+import com.gitb.core.{TestCaseType, TestRoleEnumeration}
 import com.gitb.utils.XMLUtils
 import config.Configurations
-import managers.{TestSuiteManager}
+import managers.TestSuiteManager
 import models._
 import org.apache.commons.io.{FileUtils, IOUtils}
+import org.apache.commons.lang3.RandomStringUtils
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
@@ -146,11 +147,12 @@ object RepositoryUtils {
 						val description: String = tdlTestSuite.getMetadata.getDescription
 						val tdlActors = tdlTestSuite.getActors.getActor.asScala
 						val tdlTestCaseEntries = tdlTestSuite.getTestcase.asScala
+						val fileName = "ts_"+RandomStringUtils.random(10, false, true)
 
 						logger.info("Test suite has tdlActors ["+tdlActors.map(_.getId)+"]")
 						logger.info("Test suite has tdlTestCases ["+tdlTestCaseEntries.map(_.getId)+"]")
 
-						val caseObject = TestSuites(0l, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification)
+						val caseObject = TestSuites(0l, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification, fileName)
 						val actors = tdlActors.map { tdlActor =>
 							val endpoints = tdlActor.getEndpoint.asScala.map { tdlEndpoint => // construct actor endpoints
 								val parameters = tdlEndpoint.getConfig.asScala
@@ -165,17 +167,27 @@ object RepositoryUtils {
 							new Actor(Actors(0l, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), Option(tdlActor.isDefault), displayOrder,  0l), endpoints)
 						}.toList
 
+						var testCaseCounter = 0
 						val testCases = tdlTestCaseEntries.map {
 							entry =>
+								testCaseCounter += 1
+
 								logger.debug("Searching for the test case ["+entry.getId+"]")
 								val tdlTestCase = tdlTestCases.find(_.getId == entry.getId).get
 
 								logger.debug("Test case ["+tdlTestCase.getId+"] has actors ["+tdlTestCase.getActors.getActor.asScala.map(_.getId).mkString(",")+"]")
-								val testCaseActors = actors.filter { actor =>
-									tdlTestCase.getActors.getActor.asScala.exists((role) => role.getId == actor.actorId)
-								} map(_.actorId)
 
-								var testCaseType = TestCaseType.CONFORMANCE;
+								val actorString = new StringBuilder
+								tdlTestCase.getActors.getActor.asScala.foreach(role => {
+									actorString.append(role.getId)
+									if (role.getRole == TestRoleEnumeration.SUT) {
+										actorString.append("[SUT]")
+									}
+									actorString.append(',')
+								})
+								actorString.deleteCharAt(actorString.length - 1)
+
+								var testCaseType = TestCaseType.CONFORMANCE
 								if (Option(tdlTestCase.getMetadata.getType).isDefined) {
 									testCaseType = tdlTestCase.getMetadata.getType
 								}
@@ -183,7 +195,8 @@ object RepositoryUtils {
 									0l, tdlTestCase.getId, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getVersion,
 									Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
 									Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
-									None, testCaseType.ordinal().toShort, null, specification, Some(testCaseActors.mkString(","))
+									None, testCaseType.ordinal().toShort, null, specification, Some(actorString.toString()), None,
+									testCaseCounter.toShort
 								)
 						}.toList
 						new TestSuite(caseObject, Some(actors), Some(testCases))

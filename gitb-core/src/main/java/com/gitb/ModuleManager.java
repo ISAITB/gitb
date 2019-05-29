@@ -44,6 +44,7 @@ public class ModuleManager {
 
         validationHandlers = new ConcurrentHashMap<>();
         messagingHandlers = new ConcurrentHashMap<>();
+		processingHandlers = new ConcurrentHashMap<>();
         functionRegistries = new ConcurrentHashMap<>();
 
         for(IValidationHandler validationHandler : ServiceLoader.load(IValidationHandler.class)) {
@@ -52,6 +53,9 @@ public class ModuleManager {
         for(IMessagingHandler messagingHandler : ServiceLoader.load(IMessagingHandler.class)) {
             messagingHandlers.put(messagingHandler.getModuleDefinition().getId(), messagingHandler);
         }
+		for(IProcessingHandler processingHandler : ServiceLoader.load(IProcessingHandler.class)) {
+			processingHandlers.put(processingHandler.getModuleDefinition().getId(), processingHandler);
+		}
         for(IFunctionRegistry functionRegistry : ServiceLoader.load(IFunctionRegistry.class)) {
             functionRegistries.put(functionRegistry.getName(), functionRegistry);
         }

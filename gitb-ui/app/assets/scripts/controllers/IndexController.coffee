@@ -9,8 +9,6 @@ class IndexController
 
 		@$log.debug "Constructing MainController..."
 
-		@isAuthenticated = @AuthProvider.isAuthenticated()
-
 		@logo
 		@footer
 		@version = @Constants.VERSION
@@ -24,8 +22,10 @@ class IndexController
 		@SystemConfigurationService.getFooterLogo()
 		.then (data) =>
 			@footer = data
+		.catch (error) =>
+			@ErrorService.showErrorMessage(error)
 
-		if @isAuthenticated
+		if @AuthProvider.isAuthenticated()
 			@getUserProfile()
 			@getVendorProfile()
 			@getConfigurationProperties()
@@ -35,7 +35,6 @@ class IndexController
 		#register for login events
 		@$rootScope.$on @Events.afterLogin, (event, params) =>
 			@$log.debug "handling after-login"
-			@isAuthenticated = true
 			@profileLoaded = @$q.defer()
 			@getUserProfile()
 			@$q.all([@profileLoaded.promise]).then(() =>
@@ -86,9 +85,6 @@ class IndexController
 
 	logout: () ->
 		@$rootScope.$emit(@Events.onLogout)
-		@DataService.destroy()
-		@isAuthenticated = false
-		@redirect('/login')
 
 	onLegalNotice: () ->
 		vendor = @DataService.vendor
@@ -105,15 +101,6 @@ class IndexController
 				if data.exists == true
 					html = @$sce.trustAsHtml(data.content)
 					@showLegalNotice(html)
-				else
-					if vendor? && (vendor.community != @Constants.DEFAULT_COMMUNITY_ID)
-						@LegalNoticeService.getCommunityDefaultLegalNotice(@Constants.DEFAULT_COMMUNITY_ID)
-						.then (data) =>
-							if data.exists == true
-								html = @$sce.trustAsHtml(data.content)
-								@showLegalNotice(html)
-						.catch (error) =>
-							@ErrorService.showErrorMessage(error)
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 
@@ -126,7 +113,7 @@ class IndexController
 	contactUs: () =>
 		modalOptions =
 			templateUrl: 'assets/views/components/contact-support.html'
-			controller: 'ContactSupportController as ContactSupportController'
+			controller: 'ContactSupportController as controller'
 			size: 'lg'
 		modalInstance = @$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
 

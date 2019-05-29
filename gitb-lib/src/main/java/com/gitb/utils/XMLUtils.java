@@ -1,6 +1,5 @@
 package com.gitb.utils;
 
-import com.sun.org.apache.xalan.internal.xsltc.trax.TransformerFactoryImpl;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.Attributes;
@@ -9,8 +8,6 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
 import javax.xml.bind.*;
-import javax.xml.bind.util.JAXBResult;
-import javax.xml.bind.util.JAXBSource;
 import javax.xml.crypto.dsig.*;
 import javax.xml.crypto.dsig.dom.DOMSignContext;
 import javax.xml.crypto.dsig.keyinfo.KeyInfo;
@@ -20,7 +17,6 @@ import javax.xml.crypto.dsig.spec.C14NMethodParameterSpec;
 import javax.xml.crypto.dsig.spec.TransformParameterSpec;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.*;
-import javax.xml.transform.Source;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -127,29 +123,6 @@ public class XMLUtils {
         Class<?> clazz = object.getClass();
         JAXBElement<T> jxElement = new JAXBElement( qname, clazz, object );
         return jxElement;
-    }
-
-    /**
-     * Transforms a given JAXB object into a given type by applying an XSL transformation
-     * @param source Object to be converted
-     * @param xsl XSL content used for transformation
-     * @param target Class of target object
-     * @param <S> Type of the source object
-     * @param <T> Type of the target object
-     * @return Resulting object of type T from type S
-     * @throws JAXBException
-     * @throws TransformerException
-     */
-    public static <S, T> T transform(JAXBElement<S> source, Source xsl, Class<T> target) throws JAXBException, TransformerException {
-        JAXBSource jxSource     = new JAXBSource(JAXBContext.newInstance(source.getValue().getClass()), source);
-        TransformerFactory tf   = new TransformerFactoryImpl();
-        Transformer transformer = tf.newTransformer(xsl);
-        JAXBResult jxTarget     = new JAXBResult(JAXBContext.newInstance(target));
-        transformer.transform(jxSource, jxTarget);
-
-        JAXBElement<T> jxResult = (JAXBElement<T>) jxTarget.getResult();
-        T result = jxResult.getValue();
-        return result;
     }
 
     public static String LINE_NUMBER_KEY_NAME = "lineNumber";

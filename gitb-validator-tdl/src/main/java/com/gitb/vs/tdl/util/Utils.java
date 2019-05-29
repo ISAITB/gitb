@@ -1,6 +1,7 @@
 package com.gitb.vs.tdl.util;
 
 import com.gitb.tdl.*;
+import com.gitb.tdl.Process;
 import com.gitb.vs.tdl.Context;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;
@@ -22,7 +23,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.Process;
 import java.net.URI;
 import java.nio.file.Path;
 import java.util.List;
@@ -34,6 +34,7 @@ import java.util.zip.ZipInputStream;
 public class Utils {
 
     public static final String DOMAIN_MAP = "DOMAIN";
+    public static final String STEP_SUCCESS = "STEP_SUCCESS";
     public static final String VARIABLE_EXPRESSION = "\\$([a-zA-Z][a-zA-Z\\-_0-9]*)(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*";
     public static final Pattern VARIABLE_EXPRESSION_PATTERN = Pattern.compile(VARIABLE_EXPRESSION);
 
@@ -141,15 +142,28 @@ public class Utils {
         return true;
     }
 
+    public static ContainerTypeInfo getContainerTypeParts(String dataType) {
+        String containerTypePart;
+        String containedTypePart = null;
+        int containerStart = dataType.indexOf('[');
+        if (containerStart != -1) {
+            containerTypePart = dataType.substring(0, containerStart);
+            int containerEnd = dataType.indexOf(']');
+            if (containerEnd != -1 && containerEnd > containerStart && dataType.length() > containerStart+1) {
+                containedTypePart = dataType.substring(containerStart+1, containerEnd);
+            }
+        } else {
+            containerTypePart = dataType;
+        }
+        return new ContainerTypeInfo(containerTypePart, containedTypePart);
+    }
+
     public static boolean isContainerType(String dataType, Set<String> containerDataTypes, Set<String> containedDataTypes) {
         boolean isContainer = containerDataTypes.contains(dataType);
         if (!isContainer) {
-            int containerStart = dataType.indexOf('[');
-            int containerEnd = dataType.indexOf(']');
-            if (containerStart != -1 && containerEnd != -1 && containerEnd > containerStart && dataType.length() > containerStart+1) {
-                String containerTypePart = dataType.substring(0, containerStart);
-                String containedTypePart = dataType.substring(containerStart+1, containerEnd);
-                isContainer = containedDataTypes.contains(containedTypePart) && containerDataTypes.contains(containerTypePart);
+            ContainerTypeInfo typeInfo = getContainerTypeParts(dataType);
+            if (typeInfo.getContainerType() != null && typeInfo.getContainedType() != null) {
+                isContainer = containedDataTypes.contains(typeInfo.getContainedType()) && containerDataTypes.contains(typeInfo.getContainerType());
             }
         }
         return isContainer;

@@ -46,6 +46,8 @@ class ConformanceStatementController
           domain: conformanceStatement.domain
           domainFull: conformanceStatement.domainFull
           results: @DataService.testStatusText(Number(conformanceStatement.results.completed), Number(conformanceStatement.results.failed), Number(conformanceStatement.results.undefined))
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
 
   onConformanceStatementSelect: (conformanceStatementRepresentation) =>
     @$state.go 'app.systems.detail.conformance.detail', {actor_id: conformanceStatementRepresentation.id, specId: conformanceStatementRepresentation.specificationId}

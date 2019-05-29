@@ -4,8 +4,8 @@
             <li ui-sref-active="active"><a ui-sref="app.systems.detail.conformance.list">Conformance Statement</a></li>
             <li ui-sref-active="active"><a ui-sref="app.systems.detail.info">System Information</a></li>
             <li ui-sref-active="active"><a ui-sref="app.systems.detail.tests">Performed Tests</a></li>
-            <li ng-if="!(systemNavigationCtrl.count <= 1 && systemNavigationCtrl.DataService.isVendorUser)" class="nav-divider"></li>
-            <li ng-if="!(systemNavigationCtrl.count <= 1 && systemNavigationCtrl.DataService.isVendorUser)"><a ui-sref="app.systems.list">Systems</a></li>
+            <li ng-if="!(systemNavigationCtrl.DataService.isVendorUser && systemNavigationCtrl.count <= 1)" class="nav-divider"></li>
+            <li ng-if="!(systemNavigationCtrl.DataService.isVendorUser && systemNavigationCtrl.count <= 1)"><a ui-sref="app.systems.list">Systems</a></li>
         </ul>
     </aside>
 </div>

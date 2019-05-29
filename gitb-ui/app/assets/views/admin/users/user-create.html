@@ -6,7 +6,7 @@
         <div class="panel-body">
             <!-- Error messages -->
             <div class="row col-md-10 col-md-offset-1">
-                <alert ng-repeat="alert in userCreateCtrl.alerts" type="{{alert.type}}" close="userCreateCtrl.closeAlert($index)">{{alert.msg}}</alert>
+                <div uib-alert ng-repeat="alert in userCreateCtrl.alerts" ng-class="'alert-' + alert.type" close="userCreateCtrl.closeAlert($index)">{{alert.msg}}</div>
             </div>
             <div class="col-md-10 col-md-offset-1" tb-user-form tb-new="true" tb-admin="false" tb-user="userCreateCtrl.user" tb-roles="userCreateCtrl.roleCreateChoices"></div>
             <div class="row col-md-10 col-md-offset-1 bg-info div-rounded div-spaced">

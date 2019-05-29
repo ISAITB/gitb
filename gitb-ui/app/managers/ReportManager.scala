@@ -409,7 +409,9 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
     }
     if (testStep.isInstanceOf[DecisionStep]) {
       collectStepReportsForSequence(testStep.asInstanceOf[DecisionStep].getThen, collectedSteps, folder)
-      collectStepReportsForSequence(testStep.asInstanceOf[DecisionStep].getElse, collectedSteps, folder)
+      if (testStep.asInstanceOf[DecisionStep].getElse != null) {
+        collectStepReportsForSequence(testStep.asInstanceOf[DecisionStep].getElse, collectedSteps, folder)
+      }
     } else if (testStep.isInstanceOf[FlowStep]) {
       import scala.collection.JavaConversions._
       for (thread <- testStep.asInstanceOf[FlowStep].getThread) {

@@ -35,6 +35,10 @@ class SpecificationManager @Inject() (actorManager: ActorManager, testResultMana
     )
   }
 
+  def getSpecificationIdOfActor(actorId: Long) = {
+    exec(PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).result.head)._1
+  }
+
   def getSpecificationOfActor(actorId: Long) = {
     val query = PersistenceSchema.specifications
         .join(PersistenceSchema.specificationHasActors).on(_.id === _.specId)

@@ -13,7 +13,8 @@ case class TestSuites(
 	modificationDate: Option[String],
 	description: Option[String],
 	keywords: Option[String],
-	specification: Long
+	specification: Long,
+	filename: String
 )
 
 class TestSuite(
@@ -28,7 +29,8 @@ class TestSuite(
 	               _keywords: Option[List[String]],
 	               _actors: Option[List[Actor]],
 	               _testCases: Option[List[TestCases]],
-								 _specification: Long
+								 _specification: Long,
+							   _filename: String
 	               ) {
 	var id: Long = _id
 	var shortname: String = _shortname
@@ -42,13 +44,14 @@ class TestSuite(
 	var actors: Option[List[Actor]] = _actors
 	var testCases: Option[List[TestCases]] = _testCases
 	var specification: Long = _specification
+	var filename: String = _filename
 
 	def this(testSuite: TestSuites, actors: Option[List[Actor]], testCases: Option[List[TestCases]]) = {
 		this(testSuite.id, testSuite.shortname, testSuite.fullname, testSuite.version,
 			if(testSuite.authors.isDefined) Some(testSuite.authors.get.split(",").toList) else None,
 			testSuite.originalDate,	testSuite.modificationDate, testSuite.description,
 			if(testSuite.keywords.isDefined) Some(testSuite.keywords.get.split(",").toList) else None,
-			actors, testCases, testSuite.specification)
+			actors, testCases, testSuite.specification, testSuite.filename)
 	}
 
 	def this(testSuite: TestSuites, testCases: List[TestCases]) = {
@@ -65,7 +68,7 @@ class TestSuite(
 			if(this.authors.isDefined) Some(this.authors.get.mkString(",")) else None,
 			this.originalDate, this.modificationDate, this.description,
 			if(this.keywords.isDefined) Some(this.keywords.get.mkString(",")) else None,
-			this.specification
+			this.specification, this.filename
 		)
 	}
 }

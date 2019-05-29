@@ -66,49 +66,6 @@ public class ExpressionHandler{
         }
     }
 
-    /*
-    public DataType processExpression(String expression, String targetDataType) throws Exception {
-        DataType returnData = null;
-
-        //expression starts with a variable
-        if(expression.startsWith("$")) {
-            //expression contains XPath expressions
-            if(expression.contains("/")) {
-                String varName    = expression.substring(1, expression.indexOf("/"));
-                String xpath      = expression.substring(expression.indexOf("/") + 1);
-                DataType variable = scope.getVariable(varName).getValue();
-                //process the xpath expression
-                XPathExpression expr = createXPathExpression(xpath);
-                returnData = variable.processXPath(expr, targetDataType);
-            }
-            //expression evaluates to a value of a variable
-            else{
-                //remove initial $
-                String varName = expression.substring(1);
-                returnData = scope.getVariable(varName).getValue();
-            }
-        }
-        //expression evaluates to a value or a direct function call
-        else{
-            //expression is a function call
-            if(expression.contains(":")){
-                Document empty = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-                //process the xpath expression which is, in fact, an XPath function call
-                XPathExpression expr = createXPathExpression(expression);
-                Object object  = expr.evaluate(empty, ObjectType.XPathConstantForDataType(targetDataType));
-                //get the data, convert to appropriate DataType and return it
-                returnData = DataType.create(targetDataType);
-                returnData.setValue(object);
-            }
-            //expression is a literal
-            else{
-                returnData = DataType.create(expression.getBytes(), targetDataType); // TODO encoding?
-            }
-        }
-
-        return returnData;
-    }*/
-
     private XPathExpression createXPathExpression(String expression) {
         try {
             //create an XPath processor
@@ -123,37 +80,5 @@ public class ExpressionHandler{
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid XPath expression"),e);
         }
     }
-
-    /*public static void main(String args[]) throws ParserConfigurationException, IOException, SAXException, XPathExpressionException {
-        TestCaseContext context = new TestCaseContext(new TestCase(), "session");
-        context.setScope(new TestCaseScope(context));
-        context.getTestCase().setNamespaces(new Namespaces());
-        context.getTestCase().getNamespaces().getNs().add(new Namespace());
-        context.getTestCase().getNamespaces().getNs().get(0).setPrefix("srdc");
-        context.getTestCase().getNamespaces().getNs().get(0).setValue("http://www.srdc.com.tr");
-        StringType string = new StringType();
-        string.setValue("5");
-        StringType string2 = new StringType();
-        string2.setValue("6");
-        context.getScope().createVariable("xxx").setValue(string);
-        context.getScope().createVariable("yyy").setValue(string2);
-
-        String xml = "<?xml version=\"1.0\"?><A id=\"5\" xmlns=\"www.srdc.com.tr\"> senan </A>";
-
-        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-        DocumentBuilder builder = dbf.newDocumentBuilder();
-        Document document = builder.parse(new InputSource(new StringReader(xml)));
-
-        XPath xpath = XPathFactory.newInstance().newXPath();
-        xpath.setNamespaceContext(new NamespaceContext(context.getScope()));
-        xpath.setXPathVariableResolver(new VariableResolver(context.getScope()));
-        xpath.setXPathFunctionResolver(new FunctionResolver(context.getScope()));
-        XPathExpression expr = xpath.compile("/");
-
-        Object x = expr.evaluate(document, XPathConstants.STRING);
-
-        System.out.println(x);
-    }*/
-
 
 }

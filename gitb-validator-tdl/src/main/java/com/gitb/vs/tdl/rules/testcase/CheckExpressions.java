@@ -17,7 +17,6 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
-import javax.xml.xpath.XPathFactory;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +31,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         super.initialiseTestCase(currentTestCase);
         scope = new HashMap<>();
         scope.put(Utils.DOMAIN_MAP, true);
+        scope.put(Utils.STEP_SUCCESS, true);
         variableResolver = new VariableResolver(this);
     }
 
@@ -108,6 +108,9 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                 for (InstructionOrRequest ir: ((UserInteraction)step).getInstructOrRequest()) {
                     if (ir instanceof UserRequest) {
                         checkToken(ir.getValue(), TokenType.VARIABLE_REFERENCE);
+                        checkToken(((UserRequest) ir).getOptions(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+                        checkToken(((UserRequest) ir).getOptionLabels(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+                        checkToken(((UserRequest) ir).getMultiple(), TokenType.STRING_OR_VARIABLE_REFERENCE);
                     } else {
                         checkExpression(ir);
                     }
@@ -171,7 +174,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     }
 
     private XPathExpression createXPathExpression(String expression) throws XPathExpressionException {
-        XPathFactory factory = new XPathFactoryImpl();
+        XPathFactoryImpl factory = new XPathFactoryImpl();
         factory.setXPathVariableResolver(variableResolver);
         XPath xPath = factory.newXPath();
         return xPath.compile(expression);

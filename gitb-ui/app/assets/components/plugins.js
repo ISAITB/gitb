@@ -20,7 +20,7 @@ Version: 		0.1
 							})
 							.append(
 								$("<i />")
-									.addClass("icon icon-chevron-up icon-white")
+									.addClass("fa fa-chevron-up")
 							));
 
 			$("#scrollToTop").click(function(e) {
@@ -447,7 +447,7 @@ Based on:
 				}
 
 				scrollArray(overflowing, -deltaX, -deltaY);
-				event.preventDefault();
+				// event.preventDefault();
 			}
 
 			/**

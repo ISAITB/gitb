@@ -25,7 +25,7 @@ public enum ErrorCode {
     INVALID_EXTERNAL_PARAMETER_REFERENCE(               "TDL-017", "Test case [%s] references a domain parameter [%s] in step [%s] that is not defined.", WARNING),
     TEST_CASE_NOT_REFERENCED(                           "TDL-018", "Test case [%s] is not referenced in the test suite.", WARNING),
     DEFAULT_ACTOR_NOT_REFERENCED_IN_TEST_CASES_AS_SUT(  "TDL-019", "The default actor for the specification [%s] is not referenced as a SUT in any test cases.", WARNING),
-    INVALID_TEST_CASE_IMPORT(                           "TDL-020", "Test case [%s] defines an import [%s] that doesn't exist.", ERROR),
+    INVALID_TEST_CASE_IMPORT(                           "TDL-020", "Test case [%s] defines an import [%s] that doesn't exist within the test suite.", ERROR),
     UNUSED_RESOURCE(                                    "TDL-021", "Resource [%s] is included in the test suite archive but is never used.", WARNING),
     INVALID_EMBEDDED_MESSAGING_HANDLER_REFERENCE(       "TDL-022", "Test case [%s] references a messaging handler [%s] that does not exist.", ERROR),
     INVALID_EMBEDDED_PROCESSING_HANDLER_REFERENCE(      "TDL-023", "Test case [%s] references a processing handler [%s] that does not exist.", ERROR),
@@ -35,7 +35,7 @@ public enum ErrorCode {
     INVALID_TX_REFERENCE_FOR_MESSAGING_STEP(            "TDL-027", "Test case [%s] specifies a messaging step (%s) that refers to non-existent transaction ID [%s].", ERROR),
     INVALID_TX_REFERENCE_FOR_PROCESSING_STEP(           "TDL-028", "Test case [%s] specifies a process step that refers to non-existent transaction ID [%s].", ERROR),
     MESSAGING_STEP_OUTSIDE_TX(                          "TDL-029", "Test case [%s] specifies a messaging step (%s) that is not contained within a transaction.", ERROR),
-    PROCESSING_STEP_OUTSIDE_TX(                         "TDL-030", "Test case [%s] specifies a process step that is not contained within a transaction.", ERROR),
+    PROCESSING_STEP_OUTSIDE_TX(                         "TDL-030", "Test case [%s] specifies a process step that is not contained within a transaction nor defines its own handler.", ERROR),
     MESSAGING_TX_END_WITHOUT_START(                     "TDL-031", "Test case [%s] specifies a messaging transaction end (etxn) without a corresponding begin (btxn).", ERROR),
     PROCESSING_TX_END_WITHOUT_START(                    "TDL-032", "Test case [%s] specifies a processing transaction end (eptxn) without a corresponding begin (bptxn).", ERROR),
     INVALID_ACTOR_REFERENCE_IN_STEP(                    "TDL-033", "Test case [%s] defines a [%s] step with an invalid actor reference [%s].", ERROR),
@@ -53,7 +53,21 @@ public enum ErrorCode {
     UNEXPECTED_HANDLER_CONFIG(                          "TDL-045", "Test case [%s] in step [%s] defines an unexpected configuration parameter [%s].", WARNING),
     MISSING_HANDLER_CONFIG(                             "TDL-046", "Test case [%s] in step [%s] does not provide a required configuration parameter [%s].", ERROR),
     INVALID_PROCESSING_HANDLER_OPERATION(               "TDL-047", "Test case [%s] in step [%s] refers to invalid processing operation [%s].", ERROR),
-    DUPLICATE_SCRIPTLET_ID(                             "TDL-048", "Test case [%s] defines multiple scriptlets for ID [%s].", ERROR);
+    DUPLICATE_SCRIPTLET_ID(                             "TDL-048", "Test case [%s] defines multiple scriptlets for ID [%s].", ERROR),
+    MISSING_LIST_CONTAINED_TYPE(                        "TDL-049", "Test case [%s] defines a 'list' variable with no contained type. A default of 'string' is considered but it is best to define it explicitly (e.g. 'list[string]').", WARNING),
+    MISSING_INTERACTION_OPTIONS(                        "TDL-050", "Test case [%s] defines a user interaction request with a [%s] attribute but no [options] attribute. The [%s] attribute will be ignored.", WARNING),
+    INTERACTION_OPTIONS_FOR_NON_STRING_INPUT(           "TDL-051", "Test case [%s] defines a user interaction request of non-string [contentType] (%s) with a [options] attribute. The [options] attribute will be ignored.", WARNING),
+    INTERACTION_OPTIONS_AND_LABELS_MISMATCH(            "TDL-052", "Test case [%s] defines a user interaction request with an [options] attribute. The number of options [%s] must match the number of labels [%s].", ERROR),
+    INTERACTION_OPTIONS_SINGLE_OPTION(                  "TDL-053", "Test case [%s] defines a user interaction request with an [options] attribute but only a single option is defined.", WARNING),
+    MISSING_TX_AND_HANDLER_FOR_PROCESSING_STEP(         "TDL-054", "Test case [%s] defines a process step with no transaction ID reference and no handler definition.", ERROR),
+    MESSAGING_TX_NOT_CLOSED(                            "TDL-055", "Test case [%s] defines a messaging transaction [%s] that is not closed.", WARNING),
+    PROCESSING_TX_NOT_CLOSED(                           "TDL-056", "Test case [%s] defines a processing transaction [%s] that is not closed.", WARNING),
+    MESSAGING_TX_NOT_USED(                              "TDL-057", "Test case [%s] defines a messaging transaction [%s] that is never used.", WARNING),
+    PROCESSING_TX_NOT_USED(                             "TDL-058", "Test case [%s] defines a processing transaction [%s] that is never used.", WARNING),
+    DOUBLE_PROCESSING_HANDLER(                          "TDL-059", "Test case [%s] defines a process step that defined both a transaction reference [%s] and a handler [%s].", ERROR),
+    VALUE_OF_MAP_VARIABLE_WITHOUT_NAME_OR_TYPE(         "TDL-060", "Test case [%s] defines for map variable [%s] a value with no name or type.", ERROR),
+    VALUE_OF_NON_MAP_VARIABLE_WITH_NAME_OR_TYPE(        "TDL-061", "Test case [%s] defines for variable [%s] a value with name and type information that will be ignored.", WARNING),
+    MULTIPLE_VALUES_FOR_PRIMITIVE_VARIABLE(             "TDL-062", "Test case [%s] defines a simple variable [%s] with multiple values.", ERROR);
 
     private String code;
     private String message;

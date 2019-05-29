@@ -226,6 +226,15 @@ public class JacksonUtil {
                     if(inputRequest.getContentType() != null) {
                         json.writeStringField("contentType", inputRequest.getContentType().value());
                     }
+                    if (inputRequest.getOptions() != null) {
+                        json.writeStringField("options", inputRequest.getOptions());
+                    }
+                    if (inputRequest.getOptionLabels() != null) {
+                        json.writeStringField("optionLabels", inputRequest.getOptionLabels());
+                    }
+                    if (inputRequest.isMultiple() != null) {
+                        json.writeBooleanField("multiple", inputRequest.isMultiple());
+                    }
                     json.writeEndObject();
                 } else if (ior instanceof com.gitb.tbs.Instruction) {
                     com.gitb.tbs.Instruction instruction = (com.gitb.tbs.Instruction) ior;

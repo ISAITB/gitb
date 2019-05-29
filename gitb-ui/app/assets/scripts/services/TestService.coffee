@@ -72,12 +72,6 @@ class TestService
             path: jsRoutes.controllers.TestService.restart(session).url,
             authenticate: true
         })
-
-    getSessions: () ->
-        @RestService.get({
-            path: jsRoutes.controllers.TestService.getSessions().url,
-            authenticate: true
-        })
     
     getBinaryMetadata: (data, isBase64) ->
         base64 = isBase64? && isBase64

@@ -20,6 +20,16 @@ class TestResultManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ext
     exec(getTestResultForSession(sessionId))
   }
 
+  def getCommunityIdForTestSession(sessionId: String): Option[(String, Option[Long])] = {
+    val result = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map(r => (r.testSessionId, r.communityId)).result.headOption)
+    result
+  }
+
+  def getOrganisationIdForTestSession(sessionId: String): Option[(String, Option[Long])] = {
+    val result = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).map(r => (r.testSessionId, r.organizationId)).result.headOption)
+    result
+  }
+
   def getTestResultForSession(sessionId: String) = {
     PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption
   }

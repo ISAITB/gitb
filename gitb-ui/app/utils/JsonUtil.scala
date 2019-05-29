@@ -7,7 +7,6 @@ import javax.xml.bind.JAXBElement
 import models.Enums.TestResultStatus
 import models._
 import play.api.libs.json._
-import play.libs.F.Tuple
 
 import scala.collection.JavaConverters._
 object JsonUtil {
@@ -497,10 +496,15 @@ object JsonUtil {
 
   def parseJsConformanceCertificateSettings(json:String, communityId: Long): ConformanceCertificates = {
     val jsonConfig = Json.parse(json).as[JsObject]
+    // Ensure the message content (if provided) is correctly sanitized.
+    var certificateMessage = (jsonConfig \ "message").asOpt[String]
+    if (certificateMessage.isDefined) {
+      certificateMessage = Some(HtmlUtil.sanitizePdfContent(certificateMessage.get))
+    }
     ConformanceCertificates(
       0L,
       (jsonConfig \ "title").asOpt[String],
-      (jsonConfig \ "message").asOpt[String],
+      certificateMessage,
       (jsonConfig \ "includeMessage").as[Boolean],
       (jsonConfig \ "includeTestStatus").as[Boolean],
       (jsonConfig \ "includeTestCases").as[Boolean],
@@ -574,7 +578,6 @@ object JsonUtil {
       "keywords" -> (if(testCase.keywords.isDefined) testCase.keywords.get else JsNull),
       "type" -> testCase.testCaseType,
       "path" -> testCase.path,
-      "actors" -> Json.arr(if(testCase.targetActors.isDefined) testCase.targetActors.get.map(_.id) else JsNull),
       "targetSpec"  -> testCase.targetSpec
     )
     json;
@@ -589,19 +592,6 @@ object JsonUtil {
     var json = Json.arr()
     list.foreach{ testCase =>
       json = json.append(jsTestCases(testCase))
-    }
-    json
-  }
-
-  /**
-   * Converts a List of TestCase into Play!'s JSON notation
-   * @param list List of TestCase to be converted
-   * @return JsArray
-   */
-  def jsTestCaseList(list:List[TestCase]):JsArray = {
-    var json = Json.arr()
-    list.foreach{ testCase =>
-      json = json.append(jsTestCase(testCase))
     }
     json
   }
@@ -1011,12 +1001,12 @@ object JsonUtil {
    * @param landingPage LandingPage object to be converted
    * @return String
    */
-  def serializeLandingPage(landingPage:LandingPage):String = {
+  def serializeLandingPage(landingPage: Option[LandingPage]):String = {
     //1) Serialize LandingPage
-    val exists = landingPage != null
+    val exists = landingPage.isDefined
     var jLandingPage:JsObject =  jsExists(exists)
     if (exists) {
-      jLandingPage = jLandingPage ++ jsLandingPage(landingPage.toCaseObject)
+      jLandingPage = jLandingPage ++ jsLandingPage(landingPage.get.toCaseObject)
     }
     //3) Return JSON String
     jLandingPage.toString
@@ -1027,12 +1017,12 @@ object JsonUtil {
    * @param legalNotice LegalNotice object to be converted
    * @return String
    */
-  def serializeLegalNotice(legalNotice:LegalNotice):String = {
+  def serializeLegalNotice(legalNotice: Option[LegalNotice]):String = {
     //1) Serialize LegalNotice
-    val exists = legalNotice != null
+    val exists = legalNotice.isDefined
     var jLegalNotice:JsObject = jsExists(exists)
     if (exists) {
-      jLegalNotice = jLegalNotice ++ jsLegalNotice(legalNotice.toCaseObject)
+      jLegalNotice = jLegalNotice ++ jsLegalNotice(legalNotice.get.toCaseObject)
     }
     //3) Return JSON String
     jLegalNotice.toString
@@ -1043,12 +1033,12 @@ object JsonUtil {
     * @param errorTemplate ErrorTemplate object to be converted
     * @return String
     */
-  def serializeErrorTemplate(errorTemplate:ErrorTemplate):String = {
+  def serializeErrorTemplate(errorTemplate: Option[ErrorTemplate]):String = {
     //1) Serialize ErrorTemplate
-    val exists = errorTemplate != null
+    val exists = errorTemplate.isDefined
     var jErrorTemplate:JsObject = jsExists(exists)
     if (exists) {
-      jErrorTemplate = jErrorTemplate ++ jsErrorTemplate(errorTemplate.toCaseObject)
+      jErrorTemplate = jErrorTemplate ++ jsErrorTemplate(errorTemplate.get.toCaseObject)
     }
     //3) Return JSON String
     jErrorTemplate.toString

@@ -8,7 +8,7 @@
         <div class="row">
             <div class="form-group">
                 <div class="col-md-12">
-                    <alert ng-repeat="alert in lc.alerts" type="{{alert.type}}" close="lc.closeAlert($index)">{{alert.msg}}</alert>
+                    <div uib-alert ng-repeat="alert in lc.alerts" ng-class="'alert-' + alert.type" close="lc.closeAlert($index)">{{alert.msg}}</div>
                 </div>
             </div>
         </div>

@@ -1,7 +1,7 @@
 class HomeController
 
-  @$inject = ['$log', '$sce', 'Constants', 'AccountService', 'DataService', 'LandingPageService', 'ErrorService']
-  constructor: (@$log, @$sce, @Constants, @AccountService, @DataService, @LandingPageService, @ErrorService) ->
+  @$inject = ['$log', '$sce', 'Constants', 'AccountService', 'LandingPageService', 'ErrorService']
+  constructor: (@$log, @$sce, @Constants, @AccountService, @LandingPageService, @ErrorService) ->
 
     @html = ""
 
@@ -15,12 +15,8 @@ class HomeController
         .then (data) =>
           if data.exists == true
             @html = @$sce.trustAsHtml(data.content)
-          else if communityId != @Constants.DEFAULT_COMMUNITY_ID
-            @LandingPageService.getCommunityDefaultLandingPage(@Constants.DEFAULT_COMMUNITY_ID)
-            .then (data) =>
-              @html = @$sce.trustAsHtml(data.content) if data.exists == true
-            .catch (error) =>
-              @ErrorService.showErrorMessage(error)
+        .catch (error) =>
+          @ErrorService.showErrorMessage(error)
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 

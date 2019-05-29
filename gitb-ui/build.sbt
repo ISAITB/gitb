@@ -7,7 +7,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 scalaVersion := "2.11.12"
 
 libraryDependencies ++= Seq(
-  "eu.europa.ec.itb" % "gitb-types" % "1.5.1-SNAPSHOT",
+  "eu.europa.ec.itb" % "gitb-types" % "1.6.0",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
@@ -15,6 +15,7 @@ libraryDependencies ++= Seq(
   "mysql" % "mysql-connector-java" % "5.1.47",
   "com.typesafe.akka" %% "akka-actor" % "2.5.19",
   "com.typesafe.akka" %% "akka-remote" % "2.5.19",
+  "com.typesafe.akka" %% "akka-stream" % "2.5.19",
   "com.typesafe.akka" %% "akka-slf4j" % "2.5.19",
   "com.typesafe.play" %% "play-slick" % "2.1.1",
   "org.slf4j" % "slf4j-nop" % "1.7.25",
@@ -32,23 +33,37 @@ libraryDependencies ++= Seq(
   "org.apache.tika" % "tika-core" % "1.20",
   "org.webjars" %% "webjars-play" % "2.5.0",
   "org.webjars" % "jquery" % "2.2.4",
-  "org.webjars" % "jquery-cookie" % "1.4.1-1",
+  "org.webjars" % "jquery-cookie" % "1.4.1-1" exclude("org.webjars", "jquery"),
   "org.webjars" % "lodash" % "2.4.1-6",
-  "org.webjars" % "bootstrap" % "3.2.0-2" exclude("org.webjars", "jquery"),
+  "org.webjars" % "bootstrap" % "3.3.6" exclude("org.webjars", "jquery"),
   "org.webjars" % "angularjs" % "1.7.6" exclude("org.webjars", "jquery"),
   "org.webjars" % "angular-ui-bootstrap" % "2.5.0",
   "org.webjars" % "angular-ui-router" % "1.0.20",
-  "org.webjars" % "font-awesome" % "4.1.0" exclude("org.webjars", "jquery"),
+  "org.webjars" % "font-awesome" % "4.1.0" excludeAll(
+      ExclusionRule(organization="org.webjars", name="jquery"),
+      ExclusionRule(organization="org.webjars", name="bootstrap")
+  ),
   "org.webjars" % "angular-file-upload" % "1.6.12",
   "org.webjars" % "codemirror" % "4.8",
   "org.webjars" % "tinymce" % "4.7.9",
   "javax.mail" % "mail" % "1.4.7",
   "javax.activation" % "activation" % "1.1.1",
+  "javax.xml.ws" % "jaxws-api" % "2.3.1",
+  "javax.jws" % "javax.jws-api" % "1.1",
+  "javax.xml.bind" % "jaxb-api" % "2.3.1",
+  "org.glassfish.jaxb" % "jaxb-runtime" % "2.3.1",
+  "javax.xml.soap" % "javax.xml.soap-api" % "1.3.8",
+  "com.sun.xml.messaging.saaj" % "saaj-impl" % "1.5.1",
+  "com.sun.org.apache.xml.internal" % "resolver" % "20050927",
+  "com.sun.xml.stream.buffer" % "streambuffer" % "1.5.7",
+  "com.sun.xml.ws" % "policy" % "2.7.6",
+  "org.glassfish.gmbal" % "gmbal-api-only" % "3.2.0-b003",
   "org.bouncycastle" % "bcmail-jdk15on" % "1.60",
   "org.apache.pdfbox" % "pdfbox" % "2.0.13",
   "org.jasypt" % "jasypt" % "1.9.2",
   "org.apache.httpcomponents" % "httpclient" % "4.5.7",
-  "org.flywaydb" %% "flyway-play" % "3.2.0"
+  "org.flywaydb" %% "flyway-play" % "3.2.0",
+  "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20190325.1"  
 )
 
 //JsEngineKeys.engineType := JsEngineKeys.EngineType.Node

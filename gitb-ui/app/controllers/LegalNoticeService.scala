@@ -1,20 +1,22 @@
 package controllers
 
-import controllers.util.{ParameterExtractor, Parameters, ResponseConstructor}
+import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
 import javax.inject.Inject
-import managers.LegalNoticeManager
+import managers.{AuthorizationManager, LegalNoticeManager}
+import models.Constants
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.mvc.{Action, Controller}
-import utils.JsonUtil
+import play.api.mvc.Controller
+import utils.{HtmlUtil, JsonUtil}
 
-class LegalNoticeService @Inject() (legalNoticeManager: LegalNoticeManager) extends Controller {
+class LegalNoticeService @Inject() (legalNoticeManager: LegalNoticeManager, authorizationManager: AuthorizationManager) extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[LegalNoticeService])
 
   /**
    * Gets all legal notices for the specified community
    */
-  def getLegalNoticesByCommunity(communityId: Long) = Action.apply {
+  def getLegalNoticesByCommunity(communityId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageLegalNotices(request, communityId)
     val list = legalNoticeManager.getLegalNoticesByCommunity(communityId)
     val json: String = JsonUtil.jsLegalNotices(list).toString
     ResponseConstructor.constructJsonResponse(json)
@@ -23,8 +25,9 @@ class LegalNoticeService @Inject() (legalNoticeManager: LegalNoticeManager) exte
   /**
    * Creates new legal notice
    */
-  def createLegalNotice() = Action.apply { request =>
+  def createLegalNotice() = AuthorizedAction { request =>
     val legalNotice = ParameterExtractor.extractLegalNoticeInfo(request)
+    authorizationManager.canManageLegalNotices(request, legalNotice.community)
     val uniqueName = legalNoticeManager.checkUniqueName(legalNotice.name, legalNotice.community)
     if (uniqueName) {
       legalNoticeManager.createLegalNotice(legalNotice)
@@ -37,19 +40,21 @@ class LegalNoticeService @Inject() (legalNoticeManager: LegalNoticeManager) exte
   /**
    * Gets the legal notice with specified id
    */
-  def getLegalNoticeById(noticeId: Long) = Action.apply { request =>
+  def getLegalNoticeById(noticeId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageLegalNotice(request, noticeId)
     val ln = legalNoticeManager.getLegalNoticeById(noticeId)
-    val json: String = JsonUtil.serializeLegalNotice(ln)
+    val json: String = JsonUtil.serializeLegalNotice(Some(ln))
     ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
    * Updates legal notice
    */
-  def updateLegalNotice(noticeId: Long) = Action.apply { request =>
+  def updateLegalNotice(noticeId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageLegalNotice(request, noticeId)
     val name = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
     val description = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
-    val content = ParameterExtractor.requiredBodyParameter(request, Parameters.CONTENT)
+    val content = HtmlUtil.sanitizeEditorContent(ParameterExtractor.requiredBodyParameter(request, Parameters.CONTENT))
     val default = ParameterExtractor.requiredBodyParameter(request, Parameters.DEFAULT).toBoolean
     val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
 
@@ -65,7 +70,8 @@ class LegalNoticeService @Inject() (legalNoticeManager: LegalNoticeManager) exte
   /**
    * Deletes legal notice with specified id
    */
-  def deleteLegalNotice(noticeId: Long) = Action.apply { request =>
+  def deleteLegalNotice(noticeId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageLegalNotice(request, noticeId)
     legalNoticeManager.deleteLegalNotice(noticeId)
     ResponseConstructor.constructEmptyResponse
   }
@@ -73,12 +79,25 @@ class LegalNoticeService @Inject() (legalNoticeManager: LegalNoticeManager) exte
   /**
     * Gets the default landing page for given community
     */
-  def getCommunityDefaultLegalNotice() = Action.apply { request =>
+  def getCommunityDefaultLegalNotice() = AuthorizedAction { request =>
     val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
-    val legalNotice = legalNoticeManager.getCommunityDefaultLegalNotice(communityId)
+    authorizationManager.canViewDefaultLegalNotice(request, communityId)
+    var legalNotice = legalNoticeManager.getCommunityDefaultLegalNotice(communityId)
+    if (legalNotice.isEmpty) {
+      legalNotice = legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId)
+    }
     val json: String = JsonUtil.serializeLegalNotice(legalNotice)
     ResponseConstructor.constructJsonResponse(json)
   }
 
+  /**
+    * Gets the default landing page for the test bed.
+    */
+  def getTestBedDefaultLegalNotice() = AuthorizedAction { request =>
+    authorizationManager.canViewTestBedDefaultLegalNotice(request)
+    val legalNotice = legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId)
+    val json: String = JsonUtil.serializeLegalNotice(legalNotice)
+    ResponseConstructor.constructJsonResponse(json)
+  }
 
 }

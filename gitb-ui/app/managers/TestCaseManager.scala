@@ -39,27 +39,6 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		}
 	}
 
-	def getTestCasesOfTestSuiteWrapper(testSuiteId: Long, testCaseType: Option[Short]): util.List[TestCases] = {
-		getTestCasesOfTestSuite(testSuiteId, testCaseType)
-	}
-
-	def getTestCasesOfTestSuite(testSuiteId: Long, testCaseType: Option[Short]): util.List[TestCases] = {
-		var query = PersistenceSchema.testCases
-			.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
-		query = query
-			.filter(_._2.testsuite === testSuiteId)
-		if (testCaseType.isDefined)
-			query = query
-				.filter(_._1.testCaseType === testCaseType.get)
-		val results = exec(query.result.map(_.toList))
-
-		val testCases = new util.ArrayList[TestCases]()
-		for (result <- results) {
-			testCases.add(result._1)
-		}
-		testCases
-	}
-
 	def getTestCase(testCaseId:String) = {
 		try {
 			val tc = exec(PersistenceSchema.testCases.filter(_.id === testCaseId.toLong).result.head)
@@ -132,17 +111,30 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		testCaseSet
 	}
 
-	def getTestCases(ids: Option[List[Long]]): List[TestCases] = {
-		val q = ids match {
-			case Some(idList) => {
-				PersistenceSchema.testCases
-					.filter(_.id inSet idList)
-			}
-			case None => {
-				PersistenceSchema.testCases
-			}
-		}
-		exec(q.sortBy(_.shortname.asc).result.map(_.toList))
+	def getAllTestCases(): List[TestCases] = {
+		exec(PersistenceSchema.testCases.sortBy(_.shortname.asc).result.map(_.toList))
+	}
+
+	def getTestCasesForSystem(systemId: Long): List[TestCases] = {
+		val query = PersistenceSchema.testCases
+  		.join(PersistenceSchema.conformanceResults).on(_.id === _.testcase)
+  		.filter(_._2.sut === systemId)
+			.sortBy(_._1.shortname.asc)
+  		.map(r => r._1)
+  	exec(query.result.map(_.toList))
+	}
+
+	def getTestCasesForCommunity(communityId: Long): List[TestCases] = {
+		exec(PersistenceSchema.testCases
+			.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
+			.join(PersistenceSchema.testSuites).on(_._2.testsuite === _.id)
+			.join(PersistenceSchema.specifications).on(_._2.specification === _.id)
+			.join(PersistenceSchema.communities).on(_._2.domain === _.domain)
+			.filter(_._2.id === communityId)
+			.map(r => r._1._1._1._1)
+			.sortBy(_.shortname.asc)
+			.result.map(_.toList)
+		)
 	}
 
 	private def toTestCaseList(testCases:List[TestCases]) = {
@@ -171,9 +163,9 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		}
 	}
 
-	def updateTestCase(testCaseId: Long, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String) = {
-		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname, t.fullname, t.version, t.authors, t.description, t.keywords, t.testCaseType, t.path)
-		q1.update(shortName, fullName, version, authors, description, keywords, testCaseType, path) andThen
+	def updateTestCase(testCaseId: Long, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String, testSuiteOrder: Short, targetActors: String) = {
+		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname, t.fullname, t.version, t.authors, t.description, t.keywords, t.testCaseType, t.path, t.testSuiteOrder, t.targetActors)
+		q1.update(shortName, fullName, version, authors, description, keywords, testCaseType, path, testSuiteOrder, Some(targetActors)) andThen
 		testResultManager.updateForUpdatedTestCase(testCaseId, shortName)
 	}
 

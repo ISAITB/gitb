@@ -22,7 +22,7 @@ class CommunityCertificateController
 
     @ConformanceService.getConformanceCertificateSettings(@communityId, true)
     .then (data) =>
-      if data?
+      if data? && data?.id?
         @settings = data
         if !@settings.passwordsSet? || !@settings.passwordsSet
           @updatePasswords = true
@@ -46,7 +46,7 @@ class CommunityCertificateController
           data = event.target.result
           @settings.keystoreFile = data
           @removeKeystore = false
-          $scope.$apply()
+          @$scope.$apply()
 
   downloadKeystore: () =>
     base64 = @DataService.base64FromDataURL(@settings.keystoreFile)
@@ -67,6 +67,7 @@ class CommunityCertificateController
     @settings.keyPassword = undefined
     @settings.passwordsSet = false
     @removeKeystore = true
+    @updatePasswords = true
 
   testKeystore: () =>
     @ConformanceService.testKeystoreSettings(@communityId, @settings, @updatePasswords)
