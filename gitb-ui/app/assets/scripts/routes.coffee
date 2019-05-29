@@ -7,6 +7,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				userDeferred = $q.defer()
 				vendorDeferred = $q.defer()
 				communityDeferred = $q.defer()
+				errorService = ErrorService
 				getUserProfile = ()->
 					$log.debug 'Getting user profile from the server...'
 					AccountService.getUserProfile()
@@ -15,14 +16,14 @@ app.config ['$stateProvider', '$urlRouterProvider',
 							$log.debug 'Got user profile from the server...'
 							userDeferred.resolve()
 						.catch (error) ->
-							ErrorService.showErrorMessage(error)
+							errorService.showErrorMessage(error)
 				getVendorProfile = () ->
 					AccountService.getVendorProfile()
 					.then (data) ->
 						DataService.setVendor(data)
 						vendorDeferred.resolve()
 					.catch (error) ->
-						ErrorService.showErrorMessage(error)
+						errorService.showErrorMessage(error)
 
 				getUserCommunity = () ->
 					CommunityService.getUserCommunity()
@@ -30,7 +31,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 						DataService.setCommunity(data)
 						communityDeferred.resolve()
 					.catch (error) ->
-						ErrorService.showErrorMessage(error)
+						errorService.showErrorMessage(error)
 
 				$log.debug 'Resolving user profile..'
 				authenticated = AuthProvider.isAuthenticated()
@@ -62,6 +63,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'$q', 'DataService', 'SystemService', 'ErrorService',
 			($q, DataService, SystemService, ErrorService)->
 				deferred = $q.defer()
+				errorService = ErrorService
 
 				if DataService.isVendorUser
 					SystemService.getSystemsByOrganization(DataService.vendor.id)
@@ -71,7 +73,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 						else
 							deferred.resolve()
 					.catch (error) ->
-						ErrorService.showErrorMessage(error)
+						errorService.showErrorMessage(error)
 				else
 					deferred.resolve()
 
@@ -82,6 +84,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'$q', '$stateParams', 'DataService', 'SystemService', 'ErrorService',
 			($q, $stateParams, DataService, SystemService, Errorservice)->
 				deferred = $q.defer()
+				errorService = Errorservice
 
 				if DataService.isVendorUser
 					SystemService.getConformanceStatements $stateParams.id
@@ -91,7 +94,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 						else
 							deferred.resolve()
 					.catch (error) ->
-						ErrorService.showErrorMessage(error)
+						errorService.showErrorMessage(error)
 				else
 					deferred.resolve()
 
