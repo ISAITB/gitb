@@ -32,10 +32,46 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      landingPageManager: LandingPageManager,
                                      legalNoticeManager: LegalNoticeManager,
                                      parameterManager: ParameterManager,
-                                     testResultManager: TestResultManager
+                                     testResultManager: TestResultManager,
+                                     actorManager: ActorManager
                                     ) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthorizationManager])
+
+  def canViewActors(request: RequestWithAttributes[AnyContent], ids: Option[List[Long]]): Boolean = {
+    var ok = false
+    val userInfo = getUser(getRequestUserId(request))
+    if (isTestBedAdmin(userInfo)) {
+      ok = true
+    } else {
+      if (ids.isDefined) {
+        val domainLinkedToUser = getVisibleDomainForUser(userInfo)
+        if (domainLinkedToUser.isDefined) {
+          var domainIds: Set[Long] = Set()
+          ids.get.foreach { actorId =>
+            val actor = actorManager.getById(actorId)
+            if (actor.isDefined) {
+              domainIds += actor.get.domain
+            }
+          }
+          if (domainIds.nonEmpty) {
+            if (domainIds.size == 1) {
+              ok = domainIds.head == domainLinkedToUser.get
+            } else {
+              ok = false
+            }
+          } else {
+            ok = true
+          }
+        } else {
+          ok = true
+        }
+      } else {
+        ok = true
+      }
+    }
+    setAuthResult(request, ok, "User cannot view the requested actor")
+  }
 
   def canViewDomainsBySystemId(request: RequestWithAttributes[AnyContent], systemId: Long): Boolean = {
     canViewSystem(request, systemId)
@@ -1018,14 +1054,13 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User doesn't have access to the requested domain(s)")
   }
 
-  def canViewDomains(request: RequestWithAttributes[_], ids: Option[List[Long]]):Boolean = {
+  def canViewDomains(request: RequestWithAttributes[_], userInfo: User, ids: Option[List[Long]]):Boolean = {
     var ok = false
-    val userId = getRequestUserId(request)
-    if (isTestBedAdmin(userId)) {
+    if (isTestBedAdmin(userInfo)) {
       ok = true
     } else {
       // Users are either linked to a community or not (in which case they view all domains).
-      val domainLinkedToUser = getVisibleDomainForUser(userId)
+      val domainLinkedToUser = getVisibleDomainForUser(userInfo)
       if (domainLinkedToUser.isDefined) {
         // The list of domains should include only the user's domain.
         if (ids.isDefined && ids.get.size == 1 && ids.get.head == domainLinkedToUser.get) {
@@ -1036,6 +1071,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       }
     }
     setAuthResult(request, ok, "User doesn't have access to the requested domain(s)")
+  }
+
+  def canViewDomains(request: RequestWithAttributes[_], ids: Option[List[Long]]):Boolean = {
+    canViewDomains(request, getUser(getRequestUserId(request)), ids)
   }
 
   private def getUser(userId: Long): User = {

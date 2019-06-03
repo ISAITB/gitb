@@ -87,7 +87,7 @@ class ConformanceService @Inject() (conformanceManager: ConformanceManager, acco
    */
   def getActors = AuthorizedAction { request =>
     val ids = ParameterExtractor.extractLongIdsQueryParameter(request)
-    authorizationManager.canViewActorsBySpecificationIds(request, ids)
+    authorizationManager.canViewActors(request, ids)
     val result = conformanceManager.getActorsWithSpecificationId(ids, None)
     val json = JsonUtil.jsActorsNonCase(result).toString()
     ResponseConstructor.constructJsonResponse(json)
