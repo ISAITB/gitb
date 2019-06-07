@@ -16,7 +16,6 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import javax.xml.datatype.DatatypeFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.time.Instant;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -30,10 +29,10 @@ public class TokenGenerator implements IProcessingHandler {
 
     private static final String INPUT__FORMAT = "format";
     private static final String INPUT__TIME = "time";
+    private static final String INPUT__DIFF = "diff";
+    private static final String INPUT__ZONE = "zone";
 
     private static final String OUTPUT__VALUE = "value";
-
-    private static final String DEFAULT_DATE_FORMAT = "dd/MM/yyyy'T'HH:mm:ss:SSS";
 
     @Override
     public ProcessingModule getModuleDefinition() {
@@ -45,12 +44,14 @@ public class TokenGenerator implements IProcessingHandler {
         module.setConfigs(new ConfigurationParameters());
 
         TypedParameter outputText = createParameter(OUTPUT__VALUE, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The output value.");
-        TypedParameter timestampFormat = createParameter(INPUT__FORMAT, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The optional format string to apply (see https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html). Default is '"+DEFAULT_DATE_FORMAT+"'.");
+        TypedParameter timestampFormat = createParameter(INPUT__FORMAT, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The optional format string to apply (see https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html). Default is the epoch milliseconds.");
         TypedParameter milliseconds = createParameter(INPUT__TIME, "number", UsageEnumeration.O, ConfigurationType.SIMPLE, "The optional time (in epoch milliseconds) to use as the value (default is the current time).");
+        TypedParameter diff = createParameter(INPUT__DIFF, "number", UsageEnumeration.O, ConfigurationType.SIMPLE, "The number of milliseconds to apply as a diff to the base time.");
+        TypedParameter zone = createParameter(INPUT__ZONE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The timezone to consider (default is UTC).");
         TypedParameter regexpFormat = createParameter(INPUT__FORMAT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "A regular expression defining the syntax and static parts of the returned string.");
 
         module.getOperation().add(createProcessingOperation(OPERATION__UUID, Collections.emptyList(), Arrays.asList(outputText)));
-        module.getOperation().add(createProcessingOperation(OPERATION__TIMESTAMP, Arrays.asList(timestampFormat, milliseconds), Arrays.asList(outputText)));
+        module.getOperation().add(createProcessingOperation(OPERATION__TIMESTAMP, Arrays.asList(timestampFormat, milliseconds, diff, zone), Arrays.asList(outputText)));
         module.getOperation().add(createProcessingOperation(OPERATION__STRING, Arrays.asList(regexpFormat), Arrays.asList(outputText)));
         return module;
     }
@@ -72,19 +73,30 @@ public class TokenGenerator implements IProcessingHandler {
         } else if (OPERATION__TIMESTAMP.equalsIgnoreCase(operation)) {
             StringType format = getInputForName(input, INPUT__FORMAT, StringType.class);
             NumberType time = getInputForName(input, INPUT__TIME, NumberType.class);
-            LocalDateTime date;
+            NumberType diff = getInputForName(input, INPUT__DIFF, NumberType.class);
+            StringType zone = getInputForName(input, INPUT__ZONE, StringType.class);
+            long epochMilliseconds;
             if (time == null) {
-                date = LocalDateTime.now();
+                epochMilliseconds = System.currentTimeMillis();
             } else {
-                date = Instant.ofEpochMilli(time.longValue()).atZone(ZoneId.systemDefault()).toLocalDateTime();
+                epochMilliseconds = time.longValue();
             }
-            DateTimeFormatter formatter;
+            if (diff != null) {
+                epochMilliseconds += diff.longValue();
+            }
             if (format == null) {
-                formatter = DateTimeFormatter.ofPattern(DEFAULT_DATE_FORMAT);
+                value = String.valueOf(epochMilliseconds);
             } else {
-                formatter = DateTimeFormatter.ofPattern((String)format.getValue());
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern((String)format.getValue());
+                Instant instant = Instant.ofEpochMilli(epochMilliseconds);
+                ZoneId zoneId;
+                if (zone == null) {
+                    zoneId = ZoneId.of("UTC");
+                } else {
+                    zoneId = ZoneId.of((String)zone.getValue());
+                }
+                value = formatter.format(instant.atZone(zoneId).toLocalDateTime());
             }
-            value = formatter.format(date);
         } else if (OPERATION__STRING.equalsIgnoreCase(operation)) {
             StringType format = getInputForName(input, INPUT__FORMAT, StringType.class);
             if (format == null) {
