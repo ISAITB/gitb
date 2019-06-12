@@ -35,15 +35,18 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     val testCase = testCaseManager.getTestCaseForIdWrapper(testId).get
     val testSuite = testSuiteManager.getTestSuiteOfTestCaseWrapper(testCase.id)
     var filePathToLookup = codec.decode(filePath)
+    var filePathToAlsoCheck: Option[String] = null
     if (!filePath.startsWith(testSuite.shortname) && !filePath.startsWith("/"+testSuite.shortname)) {
-      // Prefix with the test suite name.
-      filePathToLookup = testSuite.shortname + "/" + filePathToLookup
+      filePathToLookup = testSuite.filename + "/" + filePathToLookup
+      filePathToAlsoCheck = None
+    } else {
+      filePathToAlsoCheck = Some(testSuite.filename + "/" + filePathToLookup)
+      filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.shortname, testSuite.filename)
     }
-    filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.shortname, testSuite.filename)
     // Ensure that the requested resource is within the test suite folder (to avoid path traversal)
     val spec = specificationManager.getSpecificationById(testSuite.specification)
-    val testSuiteFolder = RepositoryUtils.getTestSuitesResource(spec, testSuite.filename)
-    val file = RepositoryUtils.getTestSuitesResource(spec, filePathToLookup)
+    val testSuiteFolder = RepositoryUtils.getTestSuitesResource(spec, testSuite.filename, None)
+    val file = RepositoryUtils.getTestSuitesResource(spec, filePathToLookup, filePathToAlsoCheck)
     logger.debug("Reading test resource ["+codec.decode(filePath)+"] definition from the file ["+file+"]")
     if (file.exists() && file.toPath.normalize().startsWith(testSuiteFolder.toPath.normalize())) {
       Ok.sendFile(file, true)
@@ -265,7 +268,7 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     authorizationManager.canViewTestCase(request, testId)
     val tc = testCaseManager.getTestCase(testId)
     if (tc.isDefined) {
-      val file = RepositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(tc.get.targetSpec), tc.get.path)
+      val file = RepositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(tc.get.targetSpec), tc.get.path, None)
       logger.debug("Reading test case ["+testId+"] definition from the file ["+file+"]")
       if(file.exists()) {
         Ok.sendFile(file, true)

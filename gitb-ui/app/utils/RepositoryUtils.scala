@@ -50,11 +50,16 @@ object RepositoryUtils {
 		path.toFile
 	}
 
-	def getTestSuitesResource(spec: Specifications, resourcePath: String): File = {
+	def getTestSuitesResource(spec: Specifications, resourcePath: String, pathToAlsoCheck: Option[String]): File = {
 		var file = new File(getTestSuitesPath(spec), resourcePath)
 		if(!file.exists()) {
-			// Backwards compatibility: Lookup directly under the test-suites folder
-			file = new File(getTestSuitesRootFolder(), resourcePath)
+			if (pathToAlsoCheck.isDefined) {
+				file = new File(getTestSuitesPath(spec), pathToAlsoCheck.get)
+			}
+			if (!file.exists()) {
+				// Backwards compatibility: Lookup directly under the test-suites folder
+				file = new File(getTestSuitesRootFolder(), resourcePath)
+			}
 		}
 		file
 	}
@@ -291,7 +296,7 @@ object RepositoryUtils {
 	}
 
 	def undeployTestSuite(spec: Specifications, testSuiteName: String): Unit = {
-		val targetFolder = getTestSuitesResource(spec, testSuiteName)
+		val targetFolder = getTestSuitesResource(spec, testSuiteName, None)
 		FileUtils.deleteDirectory(targetFolder)
 	}
 
