@@ -12,4 +12,7 @@ class AdminController
 			@$log.debug 'User is not system admin, redirecting to the main page...'
 			@$state.go 'app.home'
 
+	toSessionDashboard: () =>
+		@DataService.clearSearchState()
+
 controllers.controller 'AdminController', AdminController

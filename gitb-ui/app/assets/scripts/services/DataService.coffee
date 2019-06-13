@@ -19,6 +19,15 @@ class DataService
 		@isCommunityAdmin = false
 		@isDomainUser = false
 		@acceptedEmailAttachmentTypes = undefined
+		@searchState = undefined
+
+	clearSearchState: () =>
+		@searchState = undefined
+
+	setSearchState: (searchState, origin) =>
+		@searchState = {}
+		@searchState.data = searchState
+		@searchState.origin = origin
 
 	setUser: (user) ->
 		@user = user

@@ -12,7 +12,7 @@
                   <a class="pointer" ng-click="indexCtrl.onTestsClick()">Tests</a>
                 </li>
                 <li ng-if="(indexCtrl.DataService.isSystemAdmin || indexCtrl.DataService.isCommunityAdmin) && !indexCtrl.DataService.user.onetime">
-                  <a ui-sref="app.admin.dashboard.list">Admin</a>
+                  <a ui-sref="app.admin.dashboard.list" ng-click="indexCtrl.toAdmin()">Admin</a>
                 </li>
                 <!-- User menu item, show when authenticated -->
                 <li class="dropdown mega-menu-item mega-menu-signin signin logged" id="headerAccount" ng-cloak ng-if="indexCtrl.AuthProvider.isAuthenticated()">

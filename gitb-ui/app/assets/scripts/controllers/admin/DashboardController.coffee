@@ -184,18 +184,74 @@ class DashboardController
 
     @$q.all([d1, d2, d3, d4, d5, d6, d7])
     .then () =>
-      @resetFilters(false)
-      @goFirstPage()
+      @resetFilters(@applySavedSearchState())
+      @goPage()
       @getActiveTests()
+
+  applySavedSearchState: () =>
+    if @DataService.searchState? && @DataService.searchState.data? && @DataService.searchState.origin == @Constants.SEARCH_STATE_ORIGIN.DASHBOARD
+      @savedSearchState = @DataService.searchState.data
+      if @savedSearchState.domainIds?
+        @filters.domain.selection = _.map(_.filter(@filters.domain.all, (d) => @savedSearchState.domainIds.includes(d.id)), _.clone)
+      if @savedSearchState.specIds?
+        @filters.specification.selection = _.map(_.filter(@filters.specification.all, (d) => @savedSearchState.specIds.includes(d.id)), _.clone)
+      if @savedSearchState.testSuiteIds?
+        @filters.testSuite.selection = _.map(_.filter(@filters.testSuite.all, (d) => @savedSearchState.testSuiteIds.includes(d.id)), _.clone)
+      if @savedSearchState.testCaseIds?
+        @filters.testCase.selection = _.map(_.filter(@filters.testCase.all, (d) => @savedSearchState.testCaseIds.includes(d.id)), _.clone)
+      if @savedSearchState.communityIds?
+        @filters.community.selection = _.map(_.filter(@filters.community.all, (d) => @savedSearchState.communityIds.includes(d.id)), _.clone)
+      if @savedSearchState.organizationIds?
+        @filters.organization.selection = _.map(_.filter(@filters.organization.all, (d) => @savedSearchState.organizationIds.includes(d.id)), _.clone)
+      if @savedSearchState.systemIds?
+        @filters.system.selection = _.map(_.filter(@filters.system.all, (d) => @savedSearchState.systemIds.includes(d.id)), _.clone)
+      if @savedSearchState.results?
+        @filters.result.selection = _.map(_.filter(@filters.result.all, (d) => @savedSearchState.results.includes(d.result)), _.clone)
+        for f in @filters.result.filter
+          found = _.find @filters.result.selection, (d) => `d.result == f.result`
+          if found?
+            f.ticked = true
+      @startTime.startDate = @savedSearchState.startTimeBegin
+      @startTime.endDate = @savedSearchState.startTimeEnd
+      @endTime.startDate = @savedSearchState.endTimeBegin
+      @endTime.endDate = @savedSearchState.endTimeEnd
+      @currentPage = @savedSearchState.currentPage
+      @activeSortColumn = @savedSearchState.activeSortColumn
+      @activeSortOrder = @savedSearchState.activeSortOrder
+      for column in @activeTestsColumns
+        if column.field == @activeSortColumn
+          column.order = @activeSortOrder
+        else
+          column.order = undefined
+      @completedSortColumn = @savedSearchState.completedSortColumn
+      @completedSortOrder = @savedSearchState.completedSortOrder
+      for column in @completedTestsColumns
+        if column.field == @completedSortColumn
+          column.order = @completedSortOrder
+        else
+          column.order = undefined
+      @showFilters = @savedSearchState.showFilters
+      @DataService.clearSearchState()
+      @searchState = undefined
+      true
+    else
+      false
 
   resetFilters: (keepTick) ->
     @setDomainFilter()
-    @setSpecificationFilter(@filters.domain.filter, [], keepTick)
-    @setTestSuiteFilter(@filters.specification.filter, [], keepTick)
-    @setTestCaseFilter(@filters.testSuite.filter, [], keepTick)
     @setCommunityFilter()
-    @setOrganizationFilter(@filters.community.filter, [], keepTick)
-    @setSystemFilter(@filters.organization.filter, [], keepTick)
+    if keepTick
+      @setSpecificationFilter(@filters.domain.selection, @filters.domain.filter, keepTick)
+      @setTestSuiteFilter(@filters.specification.selection, @filters.specification.filter, keepTick)
+      @setTestCaseFilter(@filters.testSuite.selection, @filters.testSuite.filter, keepTick)
+      @setOrganizationFilter(@filters.community.selection, @filters.community.filter, keepTick)
+      @setSystemFilter(@filters.organization.selection, @filters.organization.filter, keepTick)
+    else
+      @setSpecificationFilter(@filters.domain.filter, [], keepTick)
+      @setTestSuiteFilter(@filters.specification.filter, [], keepTick)
+      @setTestCaseFilter(@filters.testSuite.filter, [], keepTick)
+      @setOrganizationFilter(@filters.community.filter, [], keepTick)
+      @setSystemFilter(@filters.organization.filter, [], keepTick)
 
   setDomainFilter: () ->
     if @DataService.isCommunityAdmin and @DataService.community.domainId?
@@ -205,6 +261,11 @@ class DashboardController
       @filters.domain.selection = _.map(@filters.domain.filter, _.clone)
     else
       @filters.domain.filter = _.map(@filters.domain.all, _.clone)
+      if @filters.domain.selection.length > 0
+        for f in @filters.domain.filter
+          found = _.find @filters.domain.selection, (d) => `d.id == f.id`
+          if found?
+            f.ticked = true
 
   setSpecificationFilter: (selection1, selection2, keepTick) ->
     selection = if selection1? and selection1.length > 0 then selection1 else selection2
@@ -217,6 +278,8 @@ class DashboardController
       found = _.find @filters.specification.filter, (s) => `s.id == some.id`
       if (!found?)
         @filters.specification.selection.splice(i, 1)
+      else
+        found.ticked = true
 
   setTestSuiteFilter: (selection1, selection2, keepTick) ->
     selection = if selection1? and selection1.length > 0 then selection1 else selection2
@@ -229,6 +292,8 @@ class DashboardController
       found = _.find @filters.testSuite.filter, (s) => `s.id == some.id`
       if (!found?)
         @filters.testSuite.selection.splice(i, 1)
+      else
+        found.ticked = true
 
   setTestCaseFilter: (selection1, selection2, keepTick) ->
     selection = if selection1? and selection1.length > 0 then selection1 else selection2
@@ -246,6 +311,8 @@ class DashboardController
       found = _.find @filters.testCase.filter, (s) => `s.id == some.id`
       if (!found?)
         @filters.testCase.selection.splice(i, 1)
+      else
+        found.ticked = true
 
   setCommunityFilter: () ->
     if @DataService.isCommunityAdmin
@@ -255,6 +322,11 @@ class DashboardController
       @filters.community.selection = _.map(@filters.community.filter, _.clone)
     else
       @filters.community.filter = _.map(@filters.community.all, _.clone)
+      if @filters.community.selection.length > 0
+        for f in @filters.community.filter
+          found = _.find @filters.community.selection, (c) => `c.id == f.id`
+          if found?
+            f.ticked = true
 
   setOrganizationFilter: (selection1, selection2, keepTick) ->
     selection = if selection1? and selection1.length > 0 then selection1 else selection2
@@ -267,6 +339,8 @@ class DashboardController
       found = _.find @filters.organization.filter, (s) => `s.id == some.id`
       if (!found?)
         @filters.organization.selection.splice(i, 1)
+      else
+        found.ticked = true
 
   setSystemFilter: (selection1, selection2, keepTick) ->
     selection = if selection1? and selection1.length > 0 then selection1 else selection2
@@ -279,6 +353,8 @@ class DashboardController
       found = _.find @filters.system.filter, (s) => `s.id == some.id`
       if (!found?)
         @filters.system.selection.splice(i, 1)
+      else
+        found.ticked = true
 
   keepTickedProperty: (oldArr, newArr) ->
     if oldArr? and oldArr.length > 0
@@ -407,18 +483,36 @@ class DashboardController
     @goFirstPage()
     @getActiveTests()
 
-  getActiveTests: () ->
-    domainIds = _.map @filters.domain.selection, (s) -> s.id
-    specIds = _.map @filters.specification.selection, (s) -> s.id
-    testSuiteIds = _.map @filters.testSuite.selection, (s) -> s.id
-    testCaseIds = _.map @filters.testCase.selection, (s) -> s.id
-    communityIds = _.map @filters.community.selection, (s) -> s.id
-    organizationIds = _.map @filters.organization.selection, (s) -> s.id
-    systemIds = _.map @filters.system.selection, (s) -> s.id
-    startTimeBegin = @startTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
-    startTimeEnd = @startTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
+  getCurrentSearchCriteria:() ->
+    searchCriteria = {}
+    searchCriteria.domainIds = _.map @filters.domain.selection, (s) -> s.id
+    searchCriteria.specIds = _.map @filters.specification.selection, (s) -> s.id
+    searchCriteria.testSuiteIds = _.map @filters.testSuite.selection, (s) -> s.id
+    searchCriteria.testCaseIds = _.map @filters.testCase.selection, (s) -> s.id
+    searchCriteria.communityIds = _.map @filters.community.selection, (s) -> s.id
+    searchCriteria.organizationIds = _.map @filters.organization.selection, (s) -> s.id
+    searchCriteria.systemIds = _.map @filters.system.selection, (s) -> s.id
+    searchCriteria.results = _.map @filters.result.selection, (s) -> s.result
+    searchCriteria.startTimeBegin = @startTime.startDate
+    searchCriteria.startTimeBeginStr = @startTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
+    searchCriteria.startTimeEnd = @startTime.endDate
+    searchCriteria.startTimeEndStr = @startTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
+    searchCriteria.endTimeBegin = @endTime.startDate
+    searchCriteria.endTimeBeginStr = @endTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
+    searchCriteria.endTimeEnd = @endTime.endDate
+    searchCriteria.endTimeEndStr = @endTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
+    searchCriteria.activeSortColumn = @activeSortColumn
+    searchCriteria.activeSortOrder = @activeSortOrder
+    searchCriteria.completedSortColumn = @completedSortColumn
+    searchCriteria.completedSortOrder = @completedSortOrder
+    searchCriteria.currentPage = @currentPage
+    searchCriteria.showFilters = @showFilters
+    searchCriteria
 
-    @ReportService.getActiveTestResults(communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, @activeSortColumn, @activeSortOrder)
+  getActiveTests: () ->
+    params = @getCurrentSearchCriteria()
+
+    @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.activeSortColumn, params.activeSortOrder)
     .then (data) =>
       testResultMapper = @newTestResult
       @activeTests = _.map data, (testResult) -> testResultMapper(testResult)
@@ -491,20 +585,9 @@ class DashboardController
       @filters.result.filter.push result
 
   getTotalTestCount: () ->
-    communityIds = _.map @filters.community.selection, (s) -> s.id
-    specIds = _.map @filters.specification.selection, (s) -> s.id
-    testSuiteIds = _.map @filters.testSuite.selection, (s) -> s.id
-    testCaseIds = _.map @filters.testCase.selection, (s) -> s.id
-    organizationIds = _.map @filters.organization.selection, (s) -> s.id
-    systemIds = _.map @filters.system.selection, (s) -> s.id
-    domainIds = _.map @filters.domain.selection, (s) -> s.id
-    results = _.map @filters.result.selection, (s) -> s.result
-    startTimeBegin = @startTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
-    startTimeEnd = @startTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
-    endTimeBegin = @endTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
-    endTimeEnd = @endTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
+    params = @getCurrentSearchCriteria()
 
-    @ReportService.getCompletedTestResultsCount(communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd)
+    @ReportService.getCompletedTestResultsCount(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr)
     .then (data) =>
       @completedTestsTotalCount = data.count
     .then () =>
@@ -513,20 +596,9 @@ class DashboardController
       @ErrorService.showErrorMessage(error)
 
   getCompletedTests: () =>
-    communityIds = _.map @filters.community.selection, (s) -> s.id
-    specIds = _.map @filters.specification.selection, (s) -> s.id
-    testSuiteIds = _.map @filters.testSuite.selection, (s) -> s.id
-    testCaseIds = _.map @filters.testCase.selection, (s) -> s.id
-    organizationIds = _.map @filters.organization.selection, (s) -> s.id
-    systemIds = _.map @filters.system.selection, (s) -> s.id
-    domainIds = _.map @filters.domain.selection, (s) -> s.id
-    results = _.map @filters.result.selection, (s) -> s.result
-    startTimeBegin = @startTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
-    startTimeEnd = @startTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
-    endTimeBegin = @endTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
-    endTimeEnd = @endTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
+    params = @getCurrentSearchCriteria()
 
-    @ReportService.getCompletedTestResults(@currentPage, @Constants.TABLE_PAGE_SIZE, communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, @completedSortColumn, @completedSortOrder)
+    @ReportService.getCompletedTestResults(params.currentPage, @Constants.TABLE_PAGE_SIZE, params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.completedSortColumn, params.completedSortOrder)
     .then (data) =>
       testResultMapper = @newTestResult
       @completedTests = _.map data, (t) -> testResultMapper(t)
@@ -559,6 +631,8 @@ class DashboardController
 
   onAction: (session) =>
     @action = true
+    searchState = @getCurrentSearchCriteria()
+    @DataService.setSearchState(searchState, @Constants.SEARCH_STATE_ORIGIN.DASHBOARD)
     @$state.go 'app.reports.presentation', {session_id: session.session}
 
   stopSession: (session) =>
@@ -639,20 +713,9 @@ class DashboardController
         @PopupService.show("Session #{test.session}", data)
 
   exportCompletedSessionsToCsv: () =>
-    communityIds = _.map @filters.community.selection, (s) -> s.id
-    specIds = _.map @filters.specification.selection, (s) -> s.id
-    testSuiteIds = _.map @filters.testSuite.selection, (s) -> s.id
-    testCaseIds = _.map @filters.testCase.selection, (s) -> s.id
-    organizationIds = _.map @filters.organization.selection, (s) -> s.id
-    systemIds = _.map @filters.system.selection, (s) -> s.id
-    domainIds = _.map @filters.domain.selection, (s) -> s.id
-    results = _.map @filters.result.selection, (s) -> s.result
-    startTimeBegin = @startTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
-    startTimeEnd = @startTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
-    endTimeBegin = @endTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
-    endTimeEnd = @endTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
+    params = @getCurrentSearchCriteria()
 
-    @ReportService.getCompletedTestResults(1, 1000000, communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, @completedSortColumn, @completedSortOrder)
+    @ReportService.getCompletedTestResults(1, 1000000, params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.completedSortColumn, params.completedSortOrder)
     .then (data) =>
       testResultMapper = @newTestResult
       tests = _.map data, (t) -> testResultMapper(t)
@@ -661,17 +724,9 @@ class DashboardController
       @ErrorService.showErrorMessage(error)
 
   exportActiveSessionsToCsv: () =>
-    communityIds = _.map @filters.community.selection, (s) -> s.id
-    specIds = _.map @filters.specification.selection, (s) -> s.id
-    testSuiteIds = _.map @filters.testSuite.selection, (s) -> s.id
-    testCaseIds = _.map @filters.testCase.selection, (s) -> s.id
-    organizationIds = _.map @filters.organization.selection, (s) -> s.id
-    systemIds = _.map @filters.system.selection, (s) -> s.id
-    domainIds = _.map @filters.domain.selection, (s) -> s.id
-    startTimeBegin = @startTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
-    startTimeEnd = @startTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
+    params = @getCurrentSearchCriteria()
 
-    @ReportService.getActiveTestResults(communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, @activeSortColumn, @activeSortOrder)
+    @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.activeSortColumn, params.activeSortOrder)
     .then (data) =>
       testResultMapper = @newTestResult
       tests = _.map data, (testResult) -> testResultMapper(testResult)

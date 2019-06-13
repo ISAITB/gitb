@@ -23,6 +23,10 @@ class Constants
 		NOTIFY: "notify"
 		PING: "ping"
 
+	@SEARCH_STATE_ORIGIN =
+		SYSTEM_TESTS: 0,
+		DASHBOARD : 1
+
 	@TEST_CASE_TYPE =
 		CONFORMANCE: 0,
 		INTEROPERABILITY : 1

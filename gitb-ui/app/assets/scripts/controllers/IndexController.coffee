@@ -142,4 +142,7 @@ class IndexController
 		@$window.localStorage['community'] = angular.toJson @DataService.community
 		@$state.go 'app.systems.list'
 
+	toAdmin:() =>
+		@DataService.clearSearchState()
+
 controllers.controller('IndexController', IndexController)

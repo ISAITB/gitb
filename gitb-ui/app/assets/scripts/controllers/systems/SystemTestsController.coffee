@@ -110,14 +110,56 @@ class SystemTestsController
 
     @$q.all([d1, d2, d3, d4, d5])
     .then () =>
-      @resetFilters(false)
+      @resetFilters(@applySavedSearchState())
       @queryDatabase()
+
+  applySavedSearchState: () =>
+    if @DataService.searchState? && @DataService.searchState.data? && @DataService.searchState.origin == @Constants.SEARCH_STATE_ORIGIN.SYSTEM_TESTS
+      @savedSearchState = @DataService.searchState.data
+      if @savedSearchState.domainIds?
+        @filtering.domain.selection = _.map(_.filter(@filtering.domain.all, (d) => @savedSearchState.domainIds.includes(d.id)), _.clone)
+      if @savedSearchState.specIds?
+        @filtering.specification.selection = _.map(_.filter(@filtering.specification.all, (d) => @savedSearchState.specIds.includes(d.id)), _.clone)
+      if @savedSearchState.testSuiteIds?
+        @filtering.testSuite.selection = _.map(_.filter(@filtering.testSuite.all, (d) => @savedSearchState.testSuiteIds.includes(d.id)), _.clone)
+      if @savedSearchState.testCaseIds?
+        @filtering.testCase.selection = _.map(_.filter(@filtering.testCase.all, (d) => @savedSearchState.testCaseIds.includes(d.id)), _.clone)
+      if @savedSearchState.results?
+        @filtering.result.selection = _.map(_.filter(@filtering.result.all, (d) => @savedSearchState.results.includes(d.result)), _.clone)
+        for f in @filtering.result.filter
+          found = _.find @filtering.result.selection, (d) => `d.result == f.result`
+          if found?
+            f.ticked = true            
+      @startTime.startDate = @savedSearchState.startTimeBegin
+      @startTime.endDate = @savedSearchState.startTimeEnd
+      @endTime.startDate = @savedSearchState.endTimeBegin
+      @endTime.endDate = @savedSearchState.endTimeEnd
+      @currentPage = @savedSearchState.currentPage
+      @limit = @savedSearchState.limit
+      @sortColumn = @savedSearchState.sortColumn
+      @sortOrder = @savedSearchState.sortOrder
+      for column in @tableColumns
+        if column.field == @sortColumn
+          column.order = @sortOrder
+        else
+          column.order = undefined
+      @showFiltering = @savedSearchState.showFiltering
+      @DataService.clearSearchState()
+      @searchState = undefined
+      true
+    else
+      false
 
   resetFilters: (keepTick) ->
     @setDomainFilter()
-    @setSpecificationFilter(@filtering.domain.filter, [], keepTick)
-    @setTestSuiteFilter(@filtering.specification.filter, [], keepTick)
-    @setTestCaseFilter(@filtering.testSuite.filter, [], keepTick)
+    if keepTick
+      @setSpecificationFilter(@filtering.domain.selection, @filtering.domain.filter, keepTick)
+      @setTestSuiteFilter(@filtering.specification.selection, @filtering.specification.filter, keepTick)
+      @setTestCaseFilter(@filtering.testSuite.selection, @filtering.testSuite.filter, keepTick)
+    else
+      @setSpecificationFilter(@filtering.domain.filter, [], keepTick)
+      @setTestSuiteFilter(@filtering.specification.filter, [], keepTick)
+      @setTestCaseFilter(@filtering.testSuite.filter, [], keepTick)
 
   setDomainFilter: () ->
     if @community.domainId?
@@ -127,6 +169,11 @@ class SystemTestsController
       @filtering.domain.selection = _.map(@filtering.domain.filter, _.clone)
     else
       @filtering.domain.filter = _.map(@filtering.domain.all, _.clone)
+      if @filtering.domain.selection.length > 0
+        for f in @filtering.domain.filter
+          found = _.find @filtering.domain.selection, (d) => `d.id == f.id`
+          if found?
+            f.ticked = true
 
   setSpecificationFilter: (selection1, selection2, keepTick) ->
     selection = if selection1? and selection1.length > 0 then selection1 else selection2
@@ -139,6 +186,8 @@ class SystemTestsController
       found = _.find @filtering.specification.filter, (s) => `s.id == some.id`
       if (!found?)
         @filtering.specification.selection.splice(i, 1)
+      else
+        found.ticked = true
 
   setTestSuiteFilter: (selection1, selection2, keepTick) ->
     selection = if selection1? and selection1.length > 0 then selection1 else selection2
@@ -151,6 +200,8 @@ class SystemTestsController
       found = _.find @filtering.testSuite.filter, (s) => `s.id == some.id`
       if (!found?)
         @filtering.testSuite.selection.splice(i, 1)
+      else
+        found.ticked = true
 
   setTestCaseFilter: (selection1, selection2, keepTick) ->
     selection = if selection1? and selection1.length > 0 then selection1 else selection2
@@ -168,6 +219,9 @@ class SystemTestsController
       found = _.find @filtering.testCase.filter, (s) => `s.id == some.id`
       if (!found?)
         @filtering.testCase.selection.splice(i, 1)
+      else
+        found.ticked = true
+
 
   keepTickedProperty: (oldArr, newArr) ->
     if oldArr? and oldArr.length > 0
@@ -220,18 +274,33 @@ class SystemTestsController
       @filtering.result.all.push { result: v }
       @filtering.result.filter.push { result: v }
 
-  getTestResults:() ->
-    specIds = _.map @filtering.specification.selection, (s) -> s.id
-    testSuiteIds = _.map @filtering.testSuite.selection, (s) -> s.id
-    testCaseIds = _.map @filtering.testCase.selection, (s) -> s.id
-    domainIds = _.map @filtering.domain.selection, (s) -> s.id
-    results = _.map @filtering.result.selection, (s) -> s.result
-    startTimeBegin = @startTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
-    startTimeEnd = @startTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
-    endTimeBegin = @endTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
-    endTimeEnd = @endTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
+  getCurrentSearchCriteria:() ->
+    searchCriteria = {}
+    searchCriteria.domainIds = _.map @filtering.domain.selection, (s) -> s.id
+    searchCriteria.specIds = _.map @filtering.specification.selection, (s) -> s.id
+    searchCriteria.testSuiteIds = _.map @filtering.testSuite.selection, (s) -> s.id
+    searchCriteria.testCaseIds = _.map @filtering.testCase.selection, (s) -> s.id
+    searchCriteria.results = _.map @filtering.result.selection, (s) -> s.result
+    searchCriteria.startTimeBegin = @startTime.startDate
+    searchCriteria.startTimeBeginStr = @startTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
+    searchCriteria.startTimeEnd = @startTime.endDate
+    searchCriteria.startTimeEndStr = @startTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
+    searchCriteria.endTimeBegin = @endTime.startDate
+    searchCriteria.endTimeBeginStr = @endTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
+    searchCriteria.endTimeEnd = @endTime.endDate
+    searchCriteria.endTimeEndStr = @endTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
+    searchCriteria.systemId = @systemId
+    searchCriteria.currentPage = @currentPage
+    searchCriteria.limit = @limit
+    searchCriteria.sortColumn = @sortColumn
+    searchCriteria.sortOrder = @sortOrder
+    searchCriteria.showFiltering = @showFiltering
+    searchCriteria
 
-    @ReportService.getTestResults(@systemId, @currentPage, @limit, specIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, @sortColumn, @sortOrder)
+  getTestResults:() ->
+    params = @getCurrentSearchCriteria()
+
+    @ReportService.getTestResults(params.systemId, params.currentPage, params.limit, params.specIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sortColumn, params.sortOrder)
     .then (testResultReports) =>
       resultReportsCollection = _ testResultReports
       resultReportsCollection = resultReportsCollection
@@ -253,17 +322,9 @@ class SystemTestsController
       @ErrorService.showErrorMessage(error)
 
   getTestResultsCount: () ->
-    specIds = _.map @filtering.specification.selection, (s) -> s.id
-    testSuiteIds = _.map @filtering.testSuite.selection, (s) -> s.id
-    testCaseIds = _.map @filtering.testCase.selection, (s) -> s.id
-    domainIds = _.map @filtering.domain.selection, (s) -> s.id
-    results = _.map @filtering.result.selection, (s) -> s.result
-    startTimeBegin = @startTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
-    startTimeEnd = @startTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
-    endTimeBegin = @endTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
-    endTimeEnd = @endTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
+    params = @getCurrentSearchCriteria()
 
-    @ReportService.getTestResultsCount(@systemId, specIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd)
+    @ReportService.getTestResultsCount(params.systemId, params.specIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr)
     .then (data) =>
       @testResultsCount = data.count
     .then () =>
@@ -282,6 +343,8 @@ class SystemTestsController
     @filtering.testSuite.selection = []
     @filtering.testCase.selection = []
     @filtering.result.selection = []
+    for f in @filtering.result.filter
+      f.ticked = false
 
     @resetFilters(false)
     @queryDatabase()
@@ -373,6 +436,8 @@ class SystemTestsController
     else if @check
         @check = false
     else
+        searchState = @getCurrentSearchCriteria()
+        @DataService.setSearchState(searchState, @Constants.SEARCH_STATE_ORIGIN.SYSTEM_TESTS)
         @$state.go 'app.reports.presentation', {session_id: test.sessionId}
 
   rowStyle: (row) => 
@@ -392,17 +457,9 @@ class SystemTestsController
           @ErrorService.showErrorMessage(error)
 
   exportToCsv: () =>
-    specIds = _.map @filtering.specification.selection, (s) -> s.id
-    testSuiteIds = _.map @filtering.testSuite.selection, (s) -> s.id
-    testCaseIds = _.map @filtering.testCase.selection, (s) -> s.id
-    domainIds = _.map @filtering.domain.selection, (s) -> s.id
-    results = _.map @filtering.result.selection, (s) -> s.result
-    startTimeBegin = @startTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
-    startTimeEnd = @startTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
-    endTimeBegin = @endTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
-    endTimeEnd = @endTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
+    params = @getCurrentSearchCriteria()
 
-    @ReportService.getTestResults(@systemId, 1, 1000000, specIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, @sortColumn, @sortOrder)
+    @ReportService.getTestResults(params.systemId, 1, 1000000, params.specIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sortColumn, params.sortOrder)
     .then (testResultReports) =>
       resultReportsCollection = _ testResultReports
       resultReportsCollection = resultReportsCollection
