@@ -7,7 +7,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 scalaVersion := "2.11.12"
 
 libraryDependencies ++= Seq(
-  "eu.europa.ec.itb" % "gitb-types" % "1.6.0",
+  "eu.europa.ec.itb" % "gitb-types" % "1.6.1",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
