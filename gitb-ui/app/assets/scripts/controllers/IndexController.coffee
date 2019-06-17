@@ -86,7 +86,7 @@ class IndexController
 	logout: () ->
 		@$rootScope.$emit(@Events.onLogout)
 
-	onLegalNotice: () ->
+	onLegalNotice: () =>
 		vendor = @DataService.vendor
 		if vendor? && vendor.legalNotices?
 			html = @$sce.trustAsHtml(vendor.legalNotices.content)
@@ -94,10 +94,10 @@ class IndexController
 		else
 			if vendor?
 				communityId = vendor.community
+				response = @LegalNoticeService.getCommunityDefaultLegalNotice(communityId)
 			else 
-				communityId = @Constants.DEFAULT_COMMUNITY_ID
-			@LegalNoticeService.getCommunityDefaultLegalNotice(communityId)
-			.then (data) =>
+				response = @LegalNoticeService.getTestBedDefaultLegalNotice()
+			response.then (data) =>
 				if data.exists == true
 					html = @$sce.trustAsHtml(data.content)
 					@showLegalNotice(html)
