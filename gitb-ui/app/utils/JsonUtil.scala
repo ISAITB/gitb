@@ -113,7 +113,10 @@ object JsonUtil {
       "name"  -> user.name,
       "email" -> user.email,
       "role"  -> user.role,
-      "onetime" -> user.onetimePassword
+      "onetime" -> user.onetimePassword,
+      "ssoUid" -> (if (user.ssoUid.isDefined) user.ssoUid.get else JsNull),
+      "ssoEmail" -> (if (user.ssoEmail.isDefined) user.ssoEmail.get else JsNull),
+      "ssoStatus" -> user.ssoStatus
     )
     json
   }
@@ -138,6 +141,42 @@ object JsonUtil {
     list.foreach{ user =>
       json = json.append(jsUser(user))
     }
+    json
+  }
+
+  def jsUserAccounts(list:List[UserAccount]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ userAccount =>
+      json = json.append(jsUserAccount(userAccount))
+    }
+    json
+  }
+
+  def jsUserAccount(userAccount:UserAccount):JsObject = {
+    val json = Json.obj(
+      "id"    -> userAccount.user.id,
+      "name"  -> userAccount.user.name,
+      "email" -> userAccount.user.email,
+      "role"  -> userAccount.user.role,
+      "organisationId" -> userAccount.organisation.id,
+      "organisationShortName" -> userAccount.organisation.shortname,
+      "organisationFullName" -> userAccount.organisation.fullname,
+      "organisationIsAdmin" -> userAccount.organisation.adminOrganization,
+      "communityId" -> userAccount.community.id,
+      "communityShortName" -> userAccount.community.shortname,
+      "communityFullName" -> userAccount.community.fullname
+    )
+    json
+  }
+
+  def jsActualUserInfo(userInfo: ActualUserInfo):JsObject = {
+    val json = Json.obj(
+      "uid" -> userInfo.uid,
+      "email" -> userInfo.email,
+      "firstName" -> userInfo.firstName,
+      "lastName" -> userInfo.lastName,
+      "accounts" -> jsUserAccounts(userInfo.accounts)
+    )
     json
   }
 
@@ -808,7 +847,10 @@ object JsonUtil {
       "userguide.ou" -> config.get("userguide.ou"),
       "userguide.oa" -> config.get("userguide.oa"),
       "userguide.ca" -> config.get("userguide.ca"),
-      "userguide.ta" -> config.get("userguide.ta")
+      "userguide.ta" -> config.get("userguide.ta"),
+      "sso.enabled" -> config.get("sso.enabled"),
+      "sso.inMigration" -> config.get("sso.inMigration"),
+      "demos.account" -> config.get("demos.account")
     )
     json
   }

@@ -29,10 +29,11 @@ class AuthProvider
 providers.provider('AuthProvider', AuthProvider)
 providers.provider('Auth', AuthProvider)
 
-providers.run ['$log', '$rootScope', '$location', '$cookies', 'AuthProvider', 'Events', 'Constants', 'DataService', 'AuthService'
-	($log, $rootScope, $location, $cookies, authProvider, Events, Constants, @DataService, @AuthService) =>
+providers.run ['$log', '$rootScope', '$location', '$window', '$cookies', 'AuthProvider', 'Events', 'Constants', 'DataService', 'AuthService'
+	($log, $rootScope, $location, $window, $cookies, authProvider, Events, Constants, @DataService, @AuthService) =>
 		# check if access token is set in cookies
 		atKey = Constants.ACCESS_TOKEN_COOKIE_KEY
+		loginOptionKey = Constants.LOGIN_OPTION_COOKIE_KEY
 		accessToken = $cookies.get(atKey)
 		if accessToken?
 			authProvider.authenticate(accessToken)
@@ -56,10 +57,11 @@ providers.run ['$log', '$rootScope', '$location', '$cookies', 'AuthProvider', 'E
 			$rootScope.$emit(Events.afterLogin)
 
 		# handle logout event
-		$rootScope.$on Events.onLogout, () =>
-			if !authProvider.logoutOngoing && authProvider.isAuthenticated()
+		$rootScope.$on Events.onLogout, (event, eventData) =>
+			if !authProvider.logoutOngoing && (eventData.full || authProvider.isAuthenticated())
 				authProvider.logoutOngoing = true
-				@AuthService.logout().then((data) ->
+				@eventData = eventData
+				@AuthService.logout(@eventData.full).then((data) ->
 					$log.debug "Successfully signalled logout"
 				)
 				.catch((data) ->
@@ -68,7 +70,12 @@ providers.run ['$log', '$rootScope', '$location', '$cookies', 'AuthProvider', 'E
 				.finally(() ->
 					@DataService.destroy()
 					$cookies.remove(atKey)
+					$cookies.remove(loginOptionKey)
 					authProvider.deauthenticate()
-					$location.path('/login')
+					if @eventData.full
+						url = $location.absUrl()
+						$window.location.href = url.substring(0, url.indexOf('app#!'))
+					else
+						$location.path('/login')
 				)
 ]

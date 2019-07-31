@@ -1,6 +1,6 @@
 package controllers
 
-import java.io.InputStream
+import java.io.{File, InputStream}
 import java.nio.charset.Charset
 
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
@@ -10,7 +10,7 @@ import managers.{AuthorizationManager, SystemConfigurationManager}
 import models.Constants
 import org.apache.commons.io.IOUtils
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.mvc.{Action, Controller}
+import play.api.mvc.Controller
 import utils.JsonUtil
 
 class SystemConfigurationService @Inject()(systemConfigurationManager: SystemConfigurationManager, environment: play.api.Environment, authorizationManager: AuthorizationManager) extends Controller {
@@ -48,16 +48,34 @@ class SystemConfigurationService @Inject()(systemConfigurationManager: SystemCon
     ResponseConstructor.constructCssResponse(parseTheme(env))
   }
 
+  def getFaviconForTheme = AuthorizedAction { request =>
+    authorizationManager.canAccessThemeData(request)
+    Ok.sendFile(new File(getFaviconPath()))
+  }
+
   def getLogo = AuthorizedAction { request =>
     authorizationManager.canAccessThemeData(request)
+    ResponseConstructor.constructStringResponse(getLogoPath())
+  }
+
+  def getFaviconPath(): String = {
     val env = sys.env.get(Constants.EnvironmentTheme)
-    ResponseConstructor.constructStringResponse(parseLogo(env))
+    parseFavicon(env)
+  }
+
+  def getLogoPath(): String = {
+    val env = sys.env.get(Constants.EnvironmentTheme)
+    parseLogo(env)
   }
 
   def getFooterLogo = AuthorizedAction { request =>
     authorizationManager.canAccessThemeData(request)
+    ResponseConstructor.constructStringResponse(getFooterLogoPath())
+  }
+
+  def getFooterLogoPath(): String = {
     val env = sys.env.get(Constants.EnvironmentTheme)
-    ResponseConstructor.constructStringResponse(parseFooterLogo(env))
+    parseFooterLogo(env)
   }
 
   private def isPositiveInt(value: String): Boolean = {
@@ -74,6 +92,14 @@ class SystemConfigurationService @Inject()(systemConfigurationManager: SystemCon
 
   private def getInputStream(path: String): InputStream = {
     environment.classLoader.getResourceAsStream(path)
+  }
+
+  private def parseFavicon(theme: Option[String]): String = {
+    if (theme.isDefined && theme.get == Constants.EcTheme) {
+      Constants.EcFavicon
+    } else {
+      Constants.GitbFavicon
+    }
   }
 
   private def parseLogo(theme: Option[String]): String = {

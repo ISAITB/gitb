@@ -36,6 +36,11 @@ object Enums {
     val Processing, Waiting, Error, Completed, Skipped = Value
   }
 
+  object UserSSOStatus extends Enumeration(1) {
+    type Status = Value
+    val NotMigrated, NotLinked, Linked = Value
+  }
+
 	object TestResultStatus extends Enumeration {
 		val UNDEFINED = Value("UNDEFINED")
 		val SUCCESS = Value("SUCCESS")

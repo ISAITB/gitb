@@ -1,0 +1,58 @@
+<div class="modal-header">
+	<h4>Link a new role to your account</h4>
+</div>
+<div class="modal-body">
+	<form class="form-horizontal">
+		<div class="form-group">
+			<label class="col-sm-3 control-label" for="choice_report">I want to ...</label>
+			<div class="col-sm-8">
+				<label class="radio-inline"><input type="radio" ng-model="controller.choice" name="choice" id="choice_link" ng-value="controller.Constants.CREATE_ACCOUNT_OPTION.LINK" ng-change="controller.choiceChanged()">Confirm a role assigned to me by an administrator</label><br/>
+				<label class="radio-inline"><input type="radio" ng-model="controller.choice" name="choice" id="choice_register" ng-value="controller.Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER" ng-change="controller.choiceChanged()">Register in a public community</label><br/>
+				<label class="radio-inline" ng-if="controller.DataService.configuration['sso.inMigration']"><input type="radio" ng-model="controller.choice" name="choice" id="choice_migrate" ng-value="controller.Constants.CREATE_ACCOUNT_OPTION.MIGRATE" ng-change="controller.choiceChanged()">Migrate an existing account to my EU Login account</label>
+			</div>
+		</div>
+		<div ng-if="controller.choice == controller.Constants.CREATE_ACCOUNT_OPTION.LINK">
+			<div class="link-account-separator">
+				<div class="bg-info div-rounded">
+					<p ng-if="controller.linkedAccounts.length > 0">The following roles have been assigned to you. Select the one you want to confirm and link to your account.</p>
+					<p ng-if="controller.linkedAccounts.length == 0">There are no unconfirmed roles currently assigned to you.</p>
+				</div>
+			</div>
+			<div class="container-fluid" style="margin-left: 40px;margin-right: 40px;">
+				<div class="row" ng-class="{'div-spaced-small': !$first, 'account-card-ou': account.role == controller.Constants.USER_ROLE.VENDOR_USER, 'account-card-oa': account.role == controller.Constants.USER_ROLE.VENDOR_ADMIN, 'account-card-ca': account.role == controller.Constants.USER_ROLE.COMMUNITY_ADMIN, 'account-card-ta': account.role == controller.Constants.USER_ROLE.SYSTEM_ADMIN}" ng-repeat="account in controller.linkedAccounts">
+					<div class="account-card-internal" ng-class="{'account-card-selected': controller.selectedAccountId == account.id}" ng-click="controller.selectAccount(account.id)">
+						<div class="account-card-text">
+							{{controller.DataService.getRoleDescription(true, account)}}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div ng-if="controller.DataService.configuration['sso.inMigration'] && controller.choice == controller.Constants.CREATE_ACCOUNT_OPTION.MIGRATE">
+			<div class="link-account-separator">
+				<div class="bg-info div-rounded">
+					<p>Provide the credentials you have been using to authenticate prior to EU Login.</p>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-3 control-label" for="username">Username:</label>
+				<div class="col-sm-7"><input id="username" ng-model="controller.email" class="form-control" type="text"></div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-3 control-label" for="password">Password:</label>
+				<div class="col-sm-7"><input id="password" ng-model="controller.password" class="form-control" type="password"></div>
+			</div>
+		</div>
+		<div ng-if="controller.choice == controller.Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER">
+			<div class="link-account-separator">
+				<div class="bg-info div-rounded">
+					<p>Self registration for public communities is not available yet.</p>
+				</div>
+			</div>
+		</div>
+	</form>
+</div>
+<div class="modal-footer">
+	<button class="btn btn-default" ng-click="controller.create()" ng-disabled="!controller.createEnabled()"><span class="tab" ng-if="controller.createPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Link role</button>
+	<button class="btn btn-default" ng-click="controller.cancel()">Cancel</button>
+</div>

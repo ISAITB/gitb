@@ -1,7 +1,7 @@
 class TabController
 
-    @$inject = ['$log']
-    constructor: (@$log) ->
+    @$inject = ['$log', 'DataService']
+    constructor: (@$log, @DataService) ->
         @$log.debug "Constructing TabController..."
 
         @selectedTab = 1   # selected tab

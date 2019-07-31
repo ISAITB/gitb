@@ -1068,6 +1068,7 @@ section.call-to-action h3 .btn {
 aside ul.nav-list > li > a {
 	color: #666;
 	font-size: 0.9em;
+	cursor: pointer;	
 }
 
 /* Parallax */

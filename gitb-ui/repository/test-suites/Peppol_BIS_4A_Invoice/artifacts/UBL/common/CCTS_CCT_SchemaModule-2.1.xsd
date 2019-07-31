@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- ====================================================================== -->
-<!-- ===== CCTS Core Component Type Schema Module ===== -->
+<!-- ===== CCTS Core Component Type Schema modules.Module ===== -->
 <!-- ====================================================================== -->
 <!--
-   Module of Core Component Type
+   modules.Module of Core Component Type
    Agency: UN/CEFACT
    VersionID: 1.1
    Last change: 14 January 2005

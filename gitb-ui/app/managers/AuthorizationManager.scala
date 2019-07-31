@@ -1,16 +1,20 @@
 package managers
 
 import com.gitb.utils.HmacUtils
+import config.Configurations
 import controllers.util.{ParameterExtractor, RequestWithAttributes}
-import exceptions.UnauthorizedAccessException
+import exceptions.{ErrorCodes, InvalidAuthorizationException, UnauthorizedAccessException}
 import javax.inject.{Inject, Singleton}
 import models.Enums.UserRole
 import models._
+import org.pac4j.core.profile.{CommonProfile, ProfileManager}
+import org.pac4j.play.PlayWebContext
+import org.pac4j.play.store.PlaySessionStore
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.AccountManager
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.Files
-import play.api.mvc.{AnyContent, MultipartFormData}
+import play.api.mvc.{AnyContent, MultipartFormData, Result}
 
 object AuthorizationManager {
   val AUTHORIZATION_OK = "AUTH_OK"
@@ -33,10 +37,88 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      legalNoticeManager: LegalNoticeManager,
                                      parameterManager: ParameterManager,
                                      testResultManager: TestResultManager,
-                                     actorManager: ActorManager
+                                     actorManager: ActorManager,
+                                     playSessionStore: PlaySessionStore
                                     ) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthorizationManager])
+
+  def getPrincipal(request: RequestWithAttributes[_]): ActualUserInfo = {
+    var userInfo: ActualUserInfo = null
+    val webContext = new PlayWebContext(request, playSessionStore)
+    val profileManager = new ProfileManager[CommonProfile](webContext)
+    val profile = profileManager.get(true)
+    if (profile.isEmpty) {
+      logger.error("Lookup for a real user's data failed due to a missing profile.")
+    } else {
+      val uid = profile.get().getId
+      val userAttributes = profile.get().getAttributes
+      var email: String = null
+      var firstName: String = null
+      var lastName: String = null
+      if (userAttributes != null) {
+        email = userAttributes.get("email").asInstanceOf[String]
+        firstName = userAttributes.get("firstName").asInstanceOf[String]
+        lastName = userAttributes.get("lastName").asInstanceOf[String]
+      }
+      if (uid == null || email == null || firstName == null || lastName == null) {
+        logger.error("User profile did not contain expected information [" + uid + "][" + email + "][" + firstName + "][" + lastName + "]")
+      } else {
+        userInfo = new ActualUserInfo(uid, email, firstName, lastName)
+      }
+    }
+    userInfo
+  }
+
+  private def checkHasPrincipal(request: RequestWithAttributes[_]): Boolean = {
+    // TODO set to always true if not ECAS
+    var ok = false
+    val principal = getPrincipal(request)
+    if (principal != null) {
+      ok = true
+    }
+    setAuthResult(request, ok, "User is not authenticated")
+  }
+
+  def canMigrateAccount(request: RequestWithAttributes[AnyContent]) = {
+    var ok = checkHasPrincipal(request)
+    if (Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD) {
+      ok = true
+    }
+    setAuthResult(request, ok, "Account migration not allowed")
+  }
+
+  def canLinkFunctionalAccount(request: RequestWithAttributes[_], userId: Long): Boolean = {
+    var ok = false
+    val principal = getPrincipal(request)
+    if (principal != null) {
+      val user = userManager.getUserById(userId)
+      ok = user.ssoEmail.isDefined && user.ssoEmail.get.toLowerCase == principal.email.toLowerCase
+    }
+    setAuthResult(request, ok, "You cannot access the requested account")
+  }
+
+  def canDisconnectFunctionalAccount(request: RequestWithAttributes[AnyContent]): Boolean = {
+    canSelectFunctionalAccount(request, getRequestUserId(request))
+  }
+
+  def canViewUserFunctionalAccounts(request: RequestWithAttributes[AnyContent]): Boolean = {
+    checkHasPrincipal(request)
+  }
+
+  def canSelectFunctionalAccount(request: RequestWithAttributes[AnyContent], id: Long): Boolean = {
+    var ok = false
+    if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT == id) {
+      ok = true
+    } else {
+      val principal = getPrincipal(request)
+      if (principal != null) {
+        val user = userManager.getUserById(id)
+        ok = user.ssoUid.isDefined && user.ssoUid.get == principal.uid
+      }
+    }
+    setAuthResult(request, ok, "You cannot access the requested account")
+  }
 
   def canViewActors(request: RequestWithAttributes[AnyContent], ids: Option[List[Long]]): Boolean = {
     var ok = false
@@ -733,19 +815,29 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canSubmitFeedback(request: RequestWithAttributes[_]):Boolean = {
-    checkIsAuthenticated(request)
+    val ok = true
+    setAuthResult(request, ok, "User not allowed to submit feedback")
   }
 
   def canViewConfiguration(request: RequestWithAttributes[_]):Boolean = {
-    checkIsAuthenticated(request)
+    val ok = true
+    setAuthResult(request, ok, "User not allowed to view configuration")
   }
 
   def canUpdateOwnProfile(request: RequestWithAttributes[_]):Boolean = {
-    checkIsAuthenticated(request)
+    var ok = checkIsAuthenticated(request)
+    if (ok) {
+      ok = !Configurations.AUTHENTICATION_SSO_ENABLED
+    }
+    setAuthResult(request, ok, "User cannot edit own profile")
   }
 
   def canViewOwnProfile(request: RequestWithAttributes[_]):Boolean = {
     checkIsAuthenticated(request)
+  }
+
+  def canViewOwnBasicProfile(request: RequestWithAttributes[_]):Boolean = {
+    checkHasPrincipal(request)
   }
 
   def canCreateUserInOwnOrganisation(request: RequestWithAttributes[_]):Boolean = {
@@ -1112,8 +1204,12 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   private def checkIsAuthenticated(request: RequestWithAttributes[_]): Boolean = {
     getRequestUserId(request)
-    val ok = true
-    setAuthResult(request, ok, "User is not authenticated")
+    var ok = false
+    if (checkHasPrincipal(request)) {
+      ok = true
+      setAuthResult(request, ok, "User is not authenticated")
+    }
+    ok
   }
 
   private def isTestBedAdmin(userId: Long): Boolean = {

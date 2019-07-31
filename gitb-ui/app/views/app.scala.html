@@ -1,0 +1,208 @@
+@(webJarAssets: WebJarAssets, config: models.PublicConfig)
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html class="no-js" ng-app="app">
+<!--<![endif]-->
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+		<title>GITB</title>
+		<meta name="description" content="">
+		<meta name="viewport" content="width=device-width">
+		<script type="text/javascript" src="@routes.Application.javascriptRoutes"></script>
+
+		<link rel='stylesheet' href='@routes.WebJarAssets.at(webJarAssets.locate("css/bootstrap.min.css"))'>
+		<link rel="stylesheet" href='@routes.WebJarAssets.at(webJarAssets.locate("css/font-awesome.min.css"))'>
+		<link rel="stylesheet" href='@routes.WebJarAssets.at(webJarAssets.locate("lib/codemirror.css"))'>
+
+		<!-- Web Fonts  -->
+		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/fonts/opensans/stylesheet.css")'>
+
+		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/theme.css")'>
+		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/theme-animate.css")'>
+		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/theme-responsive.css")'>
+		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/skins/blue.css")'>
+		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/custom.css")'>
+		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/tinymce/tinymce.css")'>
+		<link rel="stylesheet" href='theme/css'>
+
+		<link rel="stylesheet" href='@routes.Assets.at("components/isteven-multi-select/isteven-multi-select.css")'>
+		<link rel="stylesheet" href='@routes.Assets.at("components/date-range-picker/daterangepicker.css")'>
+
+		<script src='@routes.Assets.at("components/modernizr.js")'></script>
+		<script src='@routes.Assets.at("components/FileSaver.min.js")'></script>
+
+		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/gitb.css")?v=@config.versionNumber'>
+		<!-- endbuild -->
+	</head>
+
+	<body>
+		<div class="app" ui-view></div>
+		<!-- WebJars -->
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("jquery.min.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at("jquery-cookie/1.4.1-1/jquery.cookie.js")'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("lodash.min.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at("angularjs/1.7.6/angular.min.js")'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at("angularjs/1.7.6/angular-route.min.js")'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at("angularjs/1.7.6/angular-resource.min.js")'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at("angularjs/1.7.6/angular-cookies.min.js")'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at("angularjs/1.7.6/angular-sanitize.min.js")'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at("angularjs/1.7.6/angular-animate.min.js")'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("ui-bootstrap.min.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("ui-bootstrap-tpls.min.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("angular-ui-router.min.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("angular-file-upload.min.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("lib/codemirror.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/xml/xml.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/xquery/xquery.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/http/http.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/htmlmixed/htmlmixed.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/htmlembedded/htmlembedded.js"))'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("tinymce.min.js"))'></script>
+
+		<script src='@routes.Assets.at("components/jquery.easing.js")'></script>
+		<script src='@routes.Assets.at("components/jquery.appear.js")'></script>
+		<script src='@routes.Assets.at("components/jquery.cookie.js")'></script>
+		<script src='@routes.Assets.at("components/jquery.validate.js")'></script>
+
+		<!-- Angular JS -->
+		<script src='@routes.Assets.at("scripts/app.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/routes.js")?v=@config.versionNumber'></script>
+		<!-- common scripts -->
+		<script src='@routes.Assets.at("scripts/common/Base.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/common/Constants.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/common/Events.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/common/ErrorCodes.js")?v=@config.versionNumber'></script>
+        <script src='@routes.Assets.at("scripts/common/CompileProvider.js")?v=@config.versionNumber'></script>
+		<!-- directives -->
+		<!-- providers -->
+		<script src='@routes.Assets.at("scripts/providers/AuthProvider.js")?v=@config.versionNumber'></script>
+		<!-- services -->
+		<script src='@routes.Assets.at("scripts/services/DataService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/UserManagementService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/ConfirmationDialogService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/HtmlService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/PopupService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/MessageService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/RestService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/WebSocketService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/AccountService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/AuthService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/SystemService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/ConformanceService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/TestService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/TestSuiteService.js")?v=@config.versionNumber'></script>
+        <script src='@routes.Assets.at("scripts/services/ReportService.js")?v=@config.versionNumber'></script>
+        <script src='@routes.Assets.at("scripts/services/ErrorService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/UserService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/SystemConfigurationService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/ValidationService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/OrganizationService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/LandingPageService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/LegalNoticeService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/ErrorTemplateService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/WebEditorService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/ActorService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/EndPointService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/ParameterService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/SpecificationService.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/services/CommunityService.js")?v=@config.versionNumber'></script>
+		<!-- controllers -->
+		<script src='@routes.Assets.at("scripts/controllers/BaseController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/IndexController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/HomeController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/LoginController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/UsersController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/UserProfileController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/TabController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/OrganizationController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/PasswordController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/systems/SystemController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/systems/CreateEditSystemController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/systems/statement/ConformanceStatementController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/systems/statement/ConformanceStatementDetailController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/systems/statement/CreateConformanceStatementController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/systems/statement/EditEndpointConfigurationController.js")?v=@config.versionNumber'></script>
+        <script src='@routes.Assets.at("scripts/controllers/systems/SystemTestsController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/systems/SystemsController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/systems/SystemNavigationController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/systems/SystemsTitleController.js")?v=@config.versionNumber'></script>
+        <script src='@routes.Assets.at("scripts/controllers/TestPresentationController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/TestExecutionControllerV2.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/ProvideInputModalController.js")?v=@config.versionNumber'></script>
+        <script src='@routes.Assets.at("scripts/controllers/TestResultController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/AdminController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/domain/DomainDetailsController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/conformance/AdminConformanceController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/conformance/ConformanceCertificateModalController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/domain/AdminDomainsController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/domain/CreateDomainController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/domain/CreateEditDomainParameterController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/actor/ActorDetailsController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/actor/CreateActorController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/actor/CreateEndpointController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/actor/CreateParameterController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/specification/CreateSpecificationController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/specification/SpecificationDetailsController.js")?v=@config.versionNumber'></script>
+
+		<script src='@routes.Assets.at("scripts/controllers/admin/user/UserManagementController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/user/AdminCreateController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/user/CommunityAdminCreateController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/user/CommunityAdminDetailController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/user/AdminDetailController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/user/OrganizationCreateController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/user/OrganizationDetailController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/user/UserCreateController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/user/UserDetailController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/user/LandingPageCreateController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/user/LandingPageDetailController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/user/LegalNoticeCreateController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/user/LegalNoticeDetailController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/user/ErrorTemplateCreateController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/user/ErrorTemplateDetailController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/user/CommunityCreateController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/user/CommunityDetailController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/user/CommunityCertificateController.js")?v=@config.versionNumber'></script>
+
+		<script src='@routes.Assets.at("scripts/controllers/admin/DashboardController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/EndpointDetailsController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/admin/ParameterDetailsController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/components/ContactSupportController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/components/EditorModalController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/components/TestStepReportModalController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/components/TestSuiteValidationReportModalController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/components/TestSuiteUploadPendingModalController.js")?v=@config.versionNumber'></script>
+        <script src='@routes.Assets.at("scripts/controllers/components/ErrorController.js")?v=@config.versionNumber'></script>
+        <script src='@routes.Assets.at("scripts/controllers/components/ConfirmationDialogController.js")?v=@config.versionNumber'></script>
+        <script src='@routes.Assets.at("scripts/controllers/components/HtmlController.js")?v=@config.versionNumber'></script>
+        <script src='@routes.Assets.at("scripts/controllers/components/PopupController.js")?v=@config.versionNumber'></script>
+        <script src='@routes.Assets.at("scripts/controllers/components/MessageController.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/controllers/components/LinkAccountModalController.js")?v=@config.versionNumber'></script>
+
+		<script src='@routes.Assets.at("scripts/directives/TableDirectives.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/directives/DomainDirectives.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/directives/UserFormDirectives.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/directives/OrganizationFormDirectives.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/directives/WizardDirectives.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/directives/SpecificationDirectives.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/directives/ActorDirectives.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/directives/EndpointDirectives.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/directives/EditorDirectives.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/directives/TestStepReportDirectives.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/directives/SequenceDiagram.js")?v=@config.versionNumber'></script>
+		<script src='@routes.Assets.at("scripts/directives/RecursionHelper.js")?v=@config.versionNumber'></script>
+        <script src='@routes.Assets.at("scripts/directives/ErrorDirective.js")?v=@config.versionNumber'></script>
+        <script src='@routes.Assets.at("scripts/directives/CommunityFormDirectives.js")?v=@config.versionNumber'></script>
+
+		<script src='@routes.Assets.at("components/plugins.js")'></script>
+		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("bootstrap.min.js"))'></script>
+		<script src='@routes.Assets.at("components/theme.js")'></script>
+		<script src='@routes.Assets.at("components/momentjs/moment.min.js")'></script>
+		<script src='@routes.Assets.at("components/date-range-picker/daterangepicker.js")'></script>
+		<script src='@routes.Assets.at("components/date-range-picker/angular-daterangepicker.min.js")'></script>
+		<script src='@routes.Assets.at("components/isteven-multi-select/isteven-multi-select.js")'></script>
+	</body>
+</html>

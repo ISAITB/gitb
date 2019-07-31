@@ -71,6 +71,14 @@ object Configurations {
   var MASTER_PASSWORD: Array[Char] = null
 
   var AUTHENTICATION_COOKIE_PATH = ""
+  var AUTHENTICATION_SSO_ENABLED = false
+  var AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = false
+  var AUTHENTICATION_SSO_LOGIN_URL = ""
+  var AUTHENTICATION_SSO_CALLBACK_URL = ""
+  var AUTHENTICATION_SSO_CAS_VERSION: Short = 2
+
+  var DEMOS_ENABLED = false
+  var DEMOS_ACCOUNT:Long = -1
 
   var SMTP_PROPERTIES = new Properties()
 
@@ -170,6 +178,15 @@ object Configurations {
     HmacUtils.configure(hmacKey, hmacKeyWindow.toLong)
 
     AUTHENTICATION_COOKIE_PATH = fromEnv("AUTHENTICATION_COOKIE_PATH", conf.getString("authentication.cookie.path")).toString
+    AUTHENTICATION_SSO_ENABLED = fromEnv("AUTHENTICATION_SSO_ENABLED", conf.getString("authentication.sso.enabled")).toBoolean
+    AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = fromEnv("AUTHENTICATION_SSO_IN_MIGRATION_PERIOD", conf.getString("authentication.sso.inMigrationPeriod")).toBoolean
+    AUTHENTICATION_SSO_LOGIN_URL = fromEnv("AUTHENTICATION_SSO_LOGIN_URL", conf.getString("authentication.sso.url.login")).toString
+    AUTHENTICATION_SSO_CALLBACK_URL = fromEnv("AUTHENTICATION_SSO_LOGIN_URL", conf.getString("authentication.sso.url.callback")).toString
+    AUTHENTICATION_SSO_CAS_VERSION = fromEnv("AUTHENTICATION_SSO_LOGIN_URL", conf.getString("authentication.sso.casVersion")).toShort
+
+    DEMOS_ENABLED = fromEnv("DEMOS_ENABLED", conf.getString("demos.enabled")).toBoolean
+    DEMOS_ACCOUNT = fromEnv("DEMOS_ACCOUNT", conf.getString("demos.account")).toLong
+
   }
 
   def fromEnv(propertyName: String, default: String): String = {

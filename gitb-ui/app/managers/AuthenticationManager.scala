@@ -24,8 +24,8 @@ class AuthenticationManager @Inject()(dbConfigProvider: DatabaseConfigProvider) 
   }
 
   def checkUserByEmail(email:String, passwd:String): Option[Users] = {
-    val query = exec(PersistenceSchema.users.filter(_.email === email).result.headOption)
-    if (query.isDefined && BCrypt.checkpw(passwd, query.get.password)) query else None
+    val user = exec(PersistenceSchema.users.filter(_.email === email).result.headOption)
+    if (user.isDefined && BCrypt.checkpw(passwd, user.get.password)) user else None
   }
 
   def generateTokens(userId:Long): Token = {

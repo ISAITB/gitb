@@ -77,7 +77,7 @@ class AccountService
     getConfiguration: () ->
         @RestService.get({
             path: jsRoutes.controllers.AccountService.getConfiguration().url,
-            authenticate: true
+            authenticate: false
         })
 
     submitFeedback: (userEmail, messageTypeId, messageTypeDescription, messageContent, messageAttachments) ->
@@ -93,6 +93,6 @@ class AccountService
             path: jsRoutes.controllers.AccountService.submitFeedback().url,
             data: data
             authenticate: true
-        })        
+        })
 
 services.service('AccountService', AccountService)

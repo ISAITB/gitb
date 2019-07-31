@@ -59,7 +59,7 @@ class IndexController
 			)
 
 	getUserProfile : () ->
-		if !@DataService.user?
+		if !@userFullyLoaded()
 			@AccountService.getUserProfile()
 			.then(
 				(data) =>
@@ -83,8 +83,17 @@ class IndexController
 	redirect: (address) ->
 		@$location.path(address)
 
+	switchAccount: () ->
+		@$rootScope.$emit(@Events.onLogout, {full: false})
+
 	logout: () ->
-		@$rootScope.$emit(@Events.onLogout)
+		@$rootScope.$emit(@Events.onLogout, {full: true})
+
+	userLoaded: () ->
+		@DataService.user? && @DataService.user.name?
+
+	userFullyLoaded: () ->
+		@userLoaded() && @DataService.vendor?
 
 	onLegalNotice: () =>
 		vendor = @DataService.vendor
@@ -118,7 +127,7 @@ class IndexController
 		modalInstance = @$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
 
 	showProvideFeedback: () =>
-		!@showContactUs() && (@DataService.configuration?["survey.enabled"] == 'true') && !@DataService.user.onetime
+		!@showContactUs() && (@DataService.configuration?["survey.enabled"] == 'true')
 
 	provideFeedbackLink: () =>
 		@DataService.configuration?["survey.address"]

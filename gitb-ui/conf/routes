@@ -4,8 +4,14 @@
 # Note: @controllers syntax signifies the actual controller instance, retrieved via GlobalSettings.getController().
 # ~~~~
 
+GET      /favicon.ico   @controllers.SystemConfigurationService.getFaviconForTheme
+
+GET      /callback      org.pac4j.play.CallbackController.callback()
+POST     /callback      org.pac4j.play.CallbackController.callback()
+
 # Single endpoint for serving AngularJS
 GET     /                                   @controllers.Application.index
+GET     /app                                @controllers.Application.app
 OPTIONS /*all                               @controllers.Application.preFlight(all: String)
 GET     /assets/javascripts/routes          @controllers.Application.javascriptRoutes
 
@@ -18,6 +24,12 @@ GET     /theme/footer                       @controllers.SystemConfigurationServ
 POST    /oauth/access_token                 @controllers.AuthenticationService.access_token
 POST    /oauth/logout                       @controllers.AuthenticationService.logout
 GET     /check/email                        @controllers.AuthenticationService.checkEmail
+GET     /sso/accounts                       @controllers.AuthenticationService.getUserFunctionalAccounts
+POST    /sso/linkFunctionalAccount          @controllers.AuthenticationService.linkFunctionalAccount
+GET     /sso/unlinkedAccounts               @controllers.AuthenticationService.getUserUnlinkedFunctionalAccounts
+POST    /sso/select                         @controllers.AuthenticationService.selectFunctionalAccount
+POST    /sso/migrate                        @controllers.AuthenticationService.migrateFunctionalAccount
+POST    /user/disconnect                    @controllers.AuthenticationService.disconnectFunctionalAccount
 
 # Account management API
 GET	    /vendor/profile                     @controllers.AccountService.getVendorProfile
@@ -27,7 +39,7 @@ POST	/user/register                      @controllers.AccountService.registerUse
 GET	    /user/profile                       @controllers.AccountService.getUserProfile
 GET	    /user/community                     @controllers.CommunityService.getUserCommunity
 POST	/user/profile                       @controllers.AccountService.updateUserProfile
-GET     /user/configuration                 @controllers.AccountService.getConfiguration
+GET     /app/configuration                  @controllers.AccountService.getConfiguration
 POST    /user/feedback                      @controllers.AccountService.submitFeedback
 
 # System mangement API

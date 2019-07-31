@@ -65,6 +65,7 @@ class AccountService @Inject() (accountManager: AccountManager, authorizationMan
     accountManager.registerUser(adminId, user)
     ResponseConstructor.constructEmptyResponse
   }
+
   /**
    * Returns the user profile of the authenticated user
    */
@@ -104,13 +105,16 @@ class AccountService @Inject() (accountManager: AccountManager, authorizationMan
     configProperties.put("userguide.oa", String.valueOf(Configurations.USERGUIDE_OA))
     configProperties.put("userguide.ta", String.valueOf(Configurations.USERGUIDE_TA))
     configProperties.put("userguide.ca", String.valueOf(Configurations.USERGUIDE_CA))
+    configProperties.put("sso.enabled", String.valueOf(Configurations.AUTHENTICATION_SSO_ENABLED))
+    configProperties.put("sso.inMigration", String.valueOf(Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD))
+    configProperties.put("demos.account", String.valueOf(Configurations.DEMOS_ACCOUNT))
     val json = JsonUtil.serializeConfigurationProperties(configProperties)
     ResponseConstructor.constructJsonResponse(json.toString())
   }
 
   def submitFeedback = AuthorizedAction { request =>
     authorizationManager.canSubmitFeedback(request)
-    val userId = ParameterExtractor.extractUserId(request)
+    val userId = ParameterExtractor.extractOptionalUserId(request)
     val userEmail: String = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_EMAIL)
     val messageTypeId: String = ParameterExtractor.requiredBodyParameter(request, Parameters.MESSAGE_TYPE_ID)
     val messageTypeDescription: String = ParameterExtractor.requiredBodyParameter(request, Parameters.MESSAGE_TYPE_DESCRIPTION)

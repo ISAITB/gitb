@@ -4,19 +4,19 @@
           <div class="container">
             <img ng-src="{{indexCtrl.logo}}" class="logo"/>
             <nav class="nav-main mega-menu">
-              <ul class="nav nav-pills nav-main" id="mainMenu" ng-if="indexCtrl.AuthProvider.isAuthenticated()">
-                <li ng-if="!indexCtrl.DataService.user.onetime">
+              <ul class="nav nav-pills nav-main" id="mainMenu">
+                <li ng-if="indexCtrl.AuthProvider.isAuthenticated() && !indexCtrl.DataService.user.onetime">
                   <a ui-sref="app.home">Home</a>
                 </li>
                 <li ng-if="indexCtrl.AuthProvider.isAuthenticated() && !indexCtrl.DataService.user.onetime">
                   <a class="pointer" ng-click="indexCtrl.onTestsClick()">Tests</a>
                 </li>
-                <li ng-if="(indexCtrl.DataService.isSystemAdmin || indexCtrl.DataService.isCommunityAdmin) && !indexCtrl.DataService.user.onetime">
+                <li ng-if="indexCtrl.AuthProvider.isAuthenticated() && (indexCtrl.DataService.isSystemAdmin || indexCtrl.DataService.isCommunityAdmin) && !indexCtrl.DataService.user.onetime">
                   <a ui-sref="app.admin.dashboard.list" ng-click="indexCtrl.toAdmin()">Admin</a>
                 </li>
                 <!-- User menu item, show when authenticated -->
-                <li class="dropdown mega-menu-item mega-menu-signin signin logged" id="headerAccount" ng-cloak ng-if="indexCtrl.AuthProvider.isAuthenticated()">
-                  <a class="dropdown-toggle" ng-click="indexCtrl.redirect('/settings')">
+                <li class="dropdown mega-menu-item mega-menu-signin signin logged" id="headerAccount" ng-cloak ng-if="indexCtrl.userLoaded()">
+                  <a class="dropdown-toggle">
                     <i class="fa fa-user"></i> {{indexCtrl.DataService.user.name}}
                     <i class="fa fa-angle-down"></i>
                   </a>
@@ -24,18 +24,22 @@
                     <li>
                       <div class="mega-menu-content">
                         <div class="row">
-                          <div class="col-md-8">
+                          <div class="col-xs-7">
                             <div class="user-avatar">
                               <p><strong>{{indexCtrl.DataService.user.name}}</strong></p>
+                              <p class="role-description" ng-if="indexCtrl.userFullyLoaded()">{{indexCtrl.DataService.getRoleDescription(false)}}</p>
                             </div>
                           </div>
-                          <div class="col-md-4">
+                          <div class="col-xs-5">
                             <ul class="list-account-options">
-                              <li ng-if="!indexCtrl.DataService.user.onetime">
+                              <li ng-if="(indexCtrl.DataService.configuration['sso.enabled'] || !indexCtrl.DataService.user.onetime) && indexCtrl.AuthProvider.isAuthenticated()">
                                 <a class="pointer" ng-click="indexCtrl.redirect('/settings')">Settings</a>
                               </li>
+                              <li ng-if="indexCtrl.DataService.configuration['sso.enabled'] && indexCtrl.AuthProvider.isAuthenticated()">
+                                  <a class="pointer" ng-click="indexCtrl.switchAccount()">Switch account</a>
+                              </li>
                               <li>
-                                <a class="pointer" ng-click="indexCtrl.logout()">Log Out</a>
+                                <a class="pointer" ng-click="indexCtrl.logout()">Logout</a>
                               </li>
                             </ul>
                           </div>

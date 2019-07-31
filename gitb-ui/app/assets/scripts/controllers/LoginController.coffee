@@ -1,23 +1,87 @@
 class LoginController
 
 	@$inject = [
-		'$log', '$scope', '$rootScope', '$location', '$http',
-		'AuthService', 'AuthProvider', 'Events', 'Constants', 'ErrorService', 'RestService'
+		'$log', '$scope', '$rootScope', '$location', '$http', '$uibModal'
+		'AuthService', 'AuthProvider', 'Events', 'Constants', 'ErrorService', 'RestService', 'DataService', '$cookies'
 	]
-	constructor: (@$log, @$scope, @$rootScope, @$location, @$http, @AuthService,
-		@AuthProvider, @Events, @Constants, @ErrorService, @RestService) ->
+	constructor: (@$log, @$scope, @$rootScope, @$location, @$http, @$uibModal, @AuthService,
+		@AuthProvider, @Events, @Constants, @ErrorService, @RestService, @DataService, @$cookies) ->
 		@$log.debug "Constructing LoginController..."
 		if (@AuthProvider.isAuthenticated())
 			@$location.path('/')
 
+		@loginOption = @$cookies.get(@Constants.LOGIN_OPTION_COOKIE_KEY)
+		if !@loginOption?
+			@loginOption == @Constants.LOGIN_OPTION.NONE
 		@alerts = []	  # alerts to be displayed
 		@spinner = false # spinner to be display while waiting response from the server
+		@createPending = false
+
+		if @loginOption == @Constants.LOGIN_OPTION.REGISTER || (@DataService.configuration['sso.inMigration'] && @loginOption == @Constants.LOGIN_OPTION.MIGRATE)
+			@createAccount()
+		else if @loginOption == @Constants.LOGIN_OPTION.DEMO
+			@loginViaSelection(@DataService.configuration['demos.account'])
+
+	createAccount:() ->
+		@createPending = true
+		modalOptions =
+			templateUrl: 'assets/views/components/link-account-modal.html'
+			controller: 'LinkAccountModalController as controller'
+			size: 'lg'
+			resolve:
+				linkedAccounts: () => @AuthService.getUserUnlinkedFunctionalAccounts()
+				createOption: () => @loginOption
+		modalInstance = @$uibModal.open(modalOptions)
+		modalInstance.result.finally(angular.noop).then(
+			() => @createPending = false, 
+			() => @createPending = false
+		)
+
+	loginViaSelection: (userId) ->
+		data = {
+			id: userId
+		}
+		options = @RestService.configureOptions(
+			'POST', 
+			jsRoutes.controllers.AuthenticationService.selectFunctionalAccount().url.substring(1),
+			undefined,
+			data,
+			false,
+			undefined
+		)
+		@loginInternal(options)
+
+	loginInternal: (options) ->
+		@spinner = true #start spinner before calling service operation
+		@$http(options).then(
+			(result) =>
+				# login successful, fire onLogin event so that our authentication provider
+				# authenticaes user to the system
+				path = '/'
+				if result.headers('ITB-PATH')
+					path = result.headers('ITB-PATH')
+				else if result.data.path?
+					path = result.data.path
+				@$rootScope.$emit(@Events.onLogin, {
+					tokens: result.data,
+					path: path,
+					remember: if @$scope.rememberme? then @$scope.rememberme else false
+				})
+				@spinner = false #stop spinner
+			(error) =>
+				switch error.status
+					when 401  # Unauthorized
+						@alerts.push({type:'danger', msg:"Incorrect email or password."})
+					else
+						@ErrorService.showErrorMessage(error)
+				@$scope.password = '' #clear password field
+				@spinner = false		 #stop spinner
+		)
+
 
 	#call remote login operation to get access token to be authorized user operations
 	login: () ->
 		if @checkForm()
-			@spinner = true #start spinner before calling service operation
-
 			data = {
 				email: @$scope.email,
 				password: @$scope.password
@@ -30,30 +94,7 @@ class LoginController
 				false,
 				undefined
 			)
-			@$http(options).then(
-				(result) =>
-					# login successful, fire onLogin event so that our authentication provider
-					# authenticaes user to the system
-					path = '/'
-					if result.headers('ITB-PATH')
-						path = result.headers('ITB-PATH')
-					else if result.data.path?
-						path = result.data.path
-					@$rootScope.$emit(@Events.onLogin, {
-						tokens: result.data,
-						path: path,
-						remember: if @$scope.rememberme? then @$scope.rememberme else false
-					})
-					@spinner = false #stop spinner
-				(error) =>
-					switch error.status
-						when 401  # Unauthorized
-							@alerts.push({type:'danger', msg:"Incorrect email or password."})
-						else
-							@ErrorService.showErrorMessage(error)
-					@$scope.password = '' #clear password field
-					@spinner = false		 #stop spinner
-			)
+			@loginInternal(options)
 
 	#checks form validity
 	checkForm: () ->

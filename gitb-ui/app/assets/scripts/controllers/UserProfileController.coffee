@@ -1,7 +1,7 @@
 class UserProfileController
 
-	@$inject = ['$log', '$scope', '$location', 'DataService', 'AccountService', 'ErrorService', 'Constants']
-	constructor: (@$log, @$scope, @$location, @DataService, @AccountService, @ErrorService, @Constants) ->
+	@$inject = ['$log', '$scope', '$rootScope', '$location', 'DataService', 'AccountService', 'AuthService', 'ErrorService', 'Constants', 'Events', 'ConfirmationDialogService']
+	constructor: (@$log, @$scope, @$rootScope, @$location, @DataService, @AccountService, @AuthService, @ErrorService, @Constants, @Events, @ConfirmationDialogService) ->
 
 		@$log.debug "Constructing UserProfileController..."
 
@@ -13,6 +13,19 @@ class UserProfileController
 		@$scope.data.name  = @ds.user.name
 		@$scope.data.email = @ds.user.email
 		@$scope.data.role = @Constants.USER_ROLE_LABEL[@ds.user.role]
+
+	disconnect: () ->
+		@ConfirmationDialogService.confirm("Confirm role removal", "Removing this role from your account will also end your current session. Are you sure you want to proceed?", "Yes", "No")
+		.finally(angular.noop)
+		.then () =>
+			@AuthService.disconnectFunctionalAccount()
+			.then(
+				(data) => #success handler
+					@$rootScope.$emit(@Events.onLogout, {full: false})
+				,
+				(error) => #error handler
+					@ErrorService.showErrorMessage(error)
+			)
 
 	#cancels edit mode and reverts back the changes
 	cancelEdit: () ->

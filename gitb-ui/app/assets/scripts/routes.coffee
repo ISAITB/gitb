@@ -4,39 +4,50 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'$q', '$log', '$state', 'AuthProvider', 'AccountService', 'DataService', 'CommunityService', 'ErrorService', 
 			($q, $log, $state, AuthProvider, AccountService, DataService, CommunityService, ErrorService)->
 				deferred = $q.defer()
-				userDeferred = $q.defer()
-				vendorDeferred = $q.defer()
-				communityDeferred = $q.defer()
-				errorService = ErrorService
-				getUserProfile = ()->
-					$log.debug 'Getting user profile from the server...'
-					AccountService.getUserProfile()
-						.then (data)->
-							DataService.setUser(data)
-							$log.debug 'Got user profile from the server...'
-							userDeferred.resolve()
-						.catch (error) ->
-							errorService.showErrorMessage(error)
-				getVendorProfile = () ->
-					AccountService.getVendorProfile()
-					.then (data) ->
-						DataService.setVendor(data)
-						vendorDeferred.resolve()
-					.catch (error) ->
-						errorService.showErrorMessage(error)
-
-				getUserCommunity = () ->
-					CommunityService.getUserCommunity()
-					.then (data) ->
-						DataService.setCommunity(data)
-						communityDeferred.resolve()
-					.catch (error) ->
-						errorService.showErrorMessage(error)
-
 				$log.debug 'Resolving user profile..'
 				authenticated = AuthProvider.isAuthenticated()
-
+				errorService = ErrorService
+				configDeferred = $q.defer()
+				getConfigurationProperties = () ->
+					AccountService.getConfiguration()
+					.then (data) ->
+						DataService.setConfiguration(data)
+						configDeferred.resolve()
+					.catch (error) ->
+						errorService.showErrorMessage(error)
+				if !DataService.configuration?
+					getConfigurationProperties()
+				else
+					configDeferred.resolve()
 				if authenticated
+					userDeferred = $q.defer()
+					vendorDeferred = $q.defer()
+					communityDeferred = $q.defer()
+					getUserProfile = () ->
+						$log.debug 'Getting user profile from the server...'
+						AccountService.getUserProfile()
+							.then (data)->
+								DataService.setUser(data)
+								$log.debug 'Got user profile from the server...'
+								userDeferred.resolve()
+							.catch (error) ->
+								errorService.showErrorMessage(error)
+					getVendorProfile = () ->
+						AccountService.getVendorProfile()
+						.then (data) ->
+							DataService.setVendor(data)
+							vendorDeferred.resolve()
+						.catch (error) ->
+							errorService.showErrorMessage(error)
+
+					getUserCommunity = () ->
+						CommunityService.getUserCommunity()
+						.then (data) ->
+							DataService.setCommunity(data)
+							communityDeferred.resolve()
+						.catch (error) ->
+							errorService.showErrorMessage(error)
+
 					if !DataService.user?
 						getUserProfile()
 					else
@@ -49,13 +60,21 @@ app.config ['$stateProvider', '$urlRouterProvider',
 						getUserCommunity()
 					else
 						communityDeferred.resolve()
-					$q.all([userDeferred.promise, vendorDeferred.promise, communityDeferred.promise]).then(() ->
+					$q.all([userDeferred.promise, vendorDeferred.promise, communityDeferred.promise, configDeferred.promise]).then(() ->
 						deferred.resolve()
 					)
 				else
-					$log.debug 'No need for user profile, user is not authenticated...'
-					deferred.resolve()
-				
+					$q.all([configDeferred.promise]).then(() ->
+						if DataService.configuration['sso.enabled'] && !DataService.actualUser?
+							AuthService.getUserFunctionalAccounts()
+							.then (data) =>
+								DataService.setActualUser(data)
+								deferred.resolve()
+							.catch (error) =>
+								errorService.showErrorMessage(error)
+						else
+							deferred.resolve()
+					)
 				deferred.promise
 		]
 
@@ -123,6 +142,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.login':
 				url: '/login'
 				templateUrl: 'assets/views/login.html'
+				resolve:
+					profile: profile
 			'app.onetime':
 				url: '/onetime'
 				templateUrl: 'assets/views/onetime-password.html'

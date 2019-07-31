@@ -10,6 +10,7 @@ class DataService
 
 	#should be called after logout, since no user data should be kept any more
 	destroy: () ->
+		@actualUser = undefined
 		@user = undefined
 		@vendor = undefined
 		@community = undefined
@@ -29,9 +30,17 @@ class DataService
 		@searchState.data = searchState
 		@searchState.origin = origin
 
+	setActualUser: (actualUser) ->
+		@actualUser = actualUser
+		if !@user?
+			@user = {}
+		@user.name = actualUser.firstName + ' ' + actualUser.lastName
+		@user.email = actualUser.email
+
 	setUser: (user) ->
 		@user = user
-
+		if @actualUser?
+			@setActualUser(@actualUser)
 		@isVendorAdmin = (@user.role == @Constants.USER_ROLE.VENDOR_ADMIN)
 		@isVendorUser  = (@user.role == @Constants.USER_ROLE.VENDOR_USER)
 		@isDomainUser  = (@user.role == @Constants.USER_DOMAIN_USER)
@@ -44,6 +53,35 @@ class DataService
 		acceptedTypes = config['email.attachments.allowedTypes'].split(',')
 		for acceptedType in acceptedTypes
 			@acceptedEmailAttachmentTypes[acceptedType] = true
+
+	getRoleDescription: (full, account) ->
+		if !account?
+			if @user? && @vendor? && @community?
+				role = @user.role
+				if full
+					organisation = @vendor.fname
+					community = @community.fname
+				else
+					organisation = @vendor.sname
+					community = @community.sname
+		else
+			role = account.role
+			if full
+				organisation = account.organisationFullName
+				community = account.communityFullName
+			else
+				organisation = account.organisationShortName
+				community = account.communityShortName
+		description = ''
+		if role == @Constants.USER_ROLE.SYSTEM_ADMIN
+			description = 'Test bed administrator'
+		else if role == @Constants.USER_ROLE.COMMUNITY_ADMIN
+			description = 'Community administrator (' + community + ')'
+		else if role == @Constants.USER_ROLE.VENDOR_ADMIN
+			description = 'Administrator of '+organisation+' ('+community+')'
+		else
+			description = 'User of '+organisation+' ('+community+')'
+		description
 
 	setVendor: (vendor) ->
 		@vendor = vendor

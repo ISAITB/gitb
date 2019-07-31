@@ -47,7 +47,10 @@ object PersistenceSchema {
     def onetimePassword = column[Boolean]("onetime_password")
     def role = column[Short]("role")
     def organization = column[Long]("organization")
-    def * = (id, name, email, password, onetimePassword, role, organization) <> (Users.tupled, Users.unapply)
+    def ssoUid = column[Option[String]]("sso_uid")
+    def ssoEmail = column[Option[String]]("sso_email")
+    def ssoStatus = column[Short]("sso_status")
+    def * = (id, name, email, password, onetimePassword, role, organization, ssoUid, ssoEmail, ssoStatus) <> (Users.tupled, Users.unapply)
     //def fk = foreignKey("users_fk", organization, Organizations)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
     //def idx1 = index("users_idx_1", email, unique = true)
   }

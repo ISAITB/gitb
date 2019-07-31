@@ -7,6 +7,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 scalaVersion := "2.11.12"
 
 libraryDependencies ++= Seq(
+  cache,
   "eu.europa.ec.itb" % "gitb-types" % "1.6.1",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
@@ -18,6 +19,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream" % "2.5.19",
   "com.typesafe.akka" %% "akka-slf4j" % "2.5.19",
   "com.typesafe.play" %% "play-slick" % "2.1.1",
+  "org.pac4j" % "play-pac4j" % "3.1.0",
+  "org.pac4j" % "pac4j-cas" % "2.2.0",
   "org.slf4j" % "slf4j-nop" % "1.7.25",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "org.apache.commons" % "commons-lang3" % "3.8.1",

@@ -87,16 +87,20 @@ class AuthenticationFilter @Inject() (implicit val mat: Materializer, accountMan
     //public services
     request.method.equals("OPTIONS") ||
       request.path.equals("/") ||
-      request.path.equals("/oauth/access_token") ||
-      request.path.equals("/oauth/logout") ||
-      request.path.equals("/theme/css") ||
-      request.path.equals("/theme/logo") ||
-      request.path.equals("/theme/footer") ||
+      request.path.equals("/app") ||
+      request.path.equals("/app/configuration") ||
       request.path.equals("/notices/tbdefault") ||
+      request.path.equals("/user/feedback") ||
+      request.path.startsWith("/sso/") ||
+      request.path.startsWith("/oauth/") ||
+      request.path.startsWith("/theme/") ||
       //public assets
       request.path.startsWith("/assets/") ||
       request.path.startsWith("/webjars/") ||
-      request.path.startsWith("/template/")
+      request.path.startsWith("/template/") ||
+      request.path.equals("/favicon.ico") ||
+      // CAS callback
+      request.path.equals("/callback")
   }
 
 }

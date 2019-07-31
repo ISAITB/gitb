@@ -17,9 +17,9 @@ class RestService
         @call('DELETE', config)
 
     call: (method, config) ->
-        if config.authenticate && !@AuthProvider.isAuthenticated() && !@AuthProvider.isAuthenticated()
+        if config.authenticate && !@AuthProvider.isAuthenticated()
             # Trigger (re)authentication after logout cleanup
-            @$rootScope.$emit(@Events.onLogout)
+            @$rootScope.$emit(@Events.onLogout, {full: true})
         else
             # Make request
             if config.data?
@@ -38,7 +38,7 @@ class RestService
             (error) =>
                 if error? && error.status? && error.status == 401
                     # Handle only authorisation-related errors.
-                    @$rootScope.$emit(@Events.onLogout)
+                    @$rootScope.$emit(@Events.onLogout, {full: true})
                 else
                     throw error
         )
@@ -53,10 +53,12 @@ class RestService
         options.params = _params
         options.data   = _data
         options.responseType = _responseType
+        options.headers = {}
+        options.headers['X-Requested-With'] = 'XMLHttpRequest'
 
         if _method == 'POST' || _method == 'PUT'
             if !_toJSON && _data
-                options.headers = { 'Content-Type': 'application/x-www-form-urlencoded'  }
+                options.headers['Content-Type'] = 'application/x-www-form-urlencoded'
                 options.transformRequest = (data) -> $.param(data)
         options
 

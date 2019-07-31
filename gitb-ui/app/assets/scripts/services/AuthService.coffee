@@ -14,9 +14,49 @@ class AuthService
             }
         })
 
-    logout: () =>
+    logout: (fullLogout) =>
         @RestService.post({
             path: jsRoutes.controllers.AuthenticationService.logout().url,
+            data: {
+                full: fullLogout
+            }
+        })
+
+    loginToDemo: () =>
+        @RestService.post({
+            path: jsRoutes.controllers.AuthenticationService.loginToDemo().url
+        })
+
+    getUserFunctionalAccounts: () =>
+        @RestService.get({
+            path: jsRoutes.controllers.AuthenticationService.getUserFunctionalAccounts().url
+        })
+
+    getUserUnlinkedFunctionalAccounts: () =>
+        @RestService.get({
+            path: jsRoutes.controllers.AuthenticationService.getUserUnlinkedFunctionalAccounts().url
+        })
+
+    disconnectFunctionalAccount: () =>
+        @RestService.post({
+            path: jsRoutes.controllers.AuthenticationService.disconnectFunctionalAccount().url
+        })
+    
+    linkFunctionalAccount: (accountId) =>
+        @RestService.post({
+            path: jsRoutes.controllers.AuthenticationService.linkFunctionalAccount().url,
+            data : {
+                id: accountId
+            }
+        })
+
+    migrateFunctionalAccount: (email, password) =>
+        @RestService.post({
+            path: jsRoutes.controllers.AuthenticationService.migrateFunctionalAccount().url,
+            data : {
+                email: email,
+                password: password
+            }
         })
 
 services.service('AuthService', AuthService)

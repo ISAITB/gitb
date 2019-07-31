@@ -5,6 +5,7 @@ class Constants
 
 	@TOKEN_COOKIE_EXPIRE: 2592000000 # 1 month in millis
 	@ACCESS_TOKEN_COOKIE_KEY : 'tat'
+	@LOGIN_OPTION_COOKIE_KEY : 'LOGIN_OPTION'
 
 	@SECONDS_IN_DAY: 86400
 
@@ -17,6 +18,12 @@ class Constants
 		SUT: "SUT"
 		SIMULATED: "SIMULATED"
 		MONITOR: "MONITOR"
+
+	@LOGIN_OPTION =
+		NONE: "none" 
+		REGISTER: "register" 
+		DEMO: "demo" 
+		MIGRATE: "migrate" 
 
 	@WEB_SOCKET_COMMAND =
 		REGISTER: "register"
@@ -97,6 +104,11 @@ class Constants
 		REPORT: 2
 		DETAILED_REPORT: 3
 
+	@CREATE_ACCOUNT_OPTION =
+		LINK: 1
+		SELF_REGISTER: 2
+		MIGRATE: 3
+
 	@TEST_CASE_RESULT =
 		SUCCESS : "SUCCESS"
 		FAILURE : "FAILURE"
@@ -105,6 +117,6 @@ class Constants
 	@EMAIL_REGEX: /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 	@DATA_URL_REGEX: /^data:.+\/(.+);base64,(.*)$/
 
-	@VERSION = "v1.6.1"
+	@VERSION = "v1.7.0"
 
 common.value('Constants', Constants)
