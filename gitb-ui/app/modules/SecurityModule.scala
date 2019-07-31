@@ -16,6 +16,8 @@ import org.pac4j.play.{CallbackController, LogoutController}
 class SecurityModule extends AbstractModule {
 
   override def configure(): Unit = {
+    // Make sure the configuration is loaded
+    Configurations.loadConfigurations()
 
     bind(classOf[PlaySessionStore]).to(classOf[PlayCacheSessionStore])
 
