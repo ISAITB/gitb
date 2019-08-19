@@ -29,7 +29,7 @@ class IndexController
 			@getUserProfile()
 			@getVendorProfile()
 			@getConfigurationProperties()
-			if @DataService.user? && @DataService.user.onetime
+			if !@DataService.configuration['sso.enabled'] && @DataService.user? && @DataService.user.onetime
 				@redirect('/onetime')
 
 		#register for login events
@@ -38,7 +38,7 @@ class IndexController
 			@profileLoaded = @$q.defer()
 			@getUserProfile()
 			@$q.all([@profileLoaded.promise]).then(() =>
-				if @DataService.user.onetime
+				if !@DataService.configuration['sso.enabled'] && @DataService.user.onetime
 					# One time password - force replace
 					@redirect('/onetime')
 				else

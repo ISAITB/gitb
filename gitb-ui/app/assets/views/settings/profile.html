@@ -1,0 +1,41 @@
+<div class="page settings">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">Profile</h4>
+		</div>
+		<div class="panel-body">
+            <div class="row">
+                <div class="col-md-10 col-md-offset-1">
+                    <form class="form-horizontal">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label" for="shortName"><span ng-if="!pc.DataService.configuration['sso.enabled']">* </span>Name:</label>
+                            <div>
+                                <p ng-if="pc.DataService.configuration['sso.enabled']" class="form-control-static">{{data.name}}</p>
+                                <input ng-if="!pc.DataService.configuration['sso.enabled']" type="text" class="form-control" ng-model="data.name" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label" for="fullName">Email:</label>
+                            <div>
+                                <p class="form-control-static">{{data.email}}</p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label" for="fullName">Role:</label>
+                            <div>
+                                <p class="form-control-static">{{data.role}}</p>
+                            </div>
+                        </div>
+                        <div class="row bg-info div-rounded div-spaced div-padded-sides" ng-if="!pc.DataService.configuration['sso.enabled']">
+                            <p class="form-control-static"><b>Privacy note:</b> By clicking 'Save changes' you grant consent to record the provided information. This is used only for internal identification purposes and is never shared with other parties. Alternatively you may also complete this form with information that is not personally identifiable. Please refer to the legal notice (link available in the screen's footer) for more information.</p>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="panel-footer">
+            <button type="button" class="btn btn-default" ng-if="!pc.DataService.configuration['sso.enabled']"  ng-click="pc.updateProfile()">Save changes</button>
+            <button type="button" class="btn btn-default" ng-if="pc.DataService.configuration['sso.enabled']"  ng-click="pc.disconnect()">Remove role from your account</button>
+        </div>
+    </div>
+</div>

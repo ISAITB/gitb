@@ -217,15 +217,33 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/systems/tests.html'
 				controller: 'SystemTestsController'
 				controllerAs: 'systemTestsCtrl'
-			'app.users':
-				url: '/users'
-				templateUrl: 'assets/views/users.html'
-			'app.profile':
-				url: '/profile'
-				templateUrl: 'assets/views/profile.html'
+			# 'app.profile':
+			# 	url: '/profile'
+			# 	templateUrl: 'assets/views/profile.html'
 			'app.settings':
 				url: '/settings'
-				templateUrl: 'assets/views/settings.html'
+				templateUrl: 'assets/views/settings/settings.html'
+				controller: 'SettingsController'
+				controllerAs: 'sc'
+				abstract: true				
+			'app.settings.profile':
+				url: '/profile'
+				templateUrl: 'assets/views/settings/profile.html'
+				controller: 'UserProfileController'
+				controllerAs: 'pc'
+			'app.settings.organisation':
+				url: '/organisation'
+				templateUrl: 'assets/views/settings/organisation.html'
+				controller: 'OrganizationController'
+				controllerAs: 'oc'
+			'app.settings.password':
+				url: '/password'
+				templateUrl: 'assets/views/settings/password.html'
+				controller: 'PasswordController'
+				controllerAs: 'pc'
+			# 'app.settings':
+			# 	url: '/settings'
+			# 	templateUrl: 'assets/views/settings.html'
 			'app.admin':
 				url: '/admin'
 				templateUrl: 'assets/views/admin/index.html'

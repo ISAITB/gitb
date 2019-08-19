@@ -5,10 +5,16 @@ class AuthService
         @$log.debug "Constructing AuthService..."
 
     checkEmail: (email) =>
-        @$log.debug "Checking email availability: #{email}"
-
         @RestService.get({
             path: jsRoutes.controllers.AuthenticationService.checkEmail().url,
+            params: {
+                email: email
+            }
+        })
+
+    checkEmailOfOrganisationMember: (email) =>
+        @RestService.get({
+            path: jsRoutes.controllers.AuthenticationService.checkEmailOfOrganisationMember().url,
             params: {
                 email: email
             }

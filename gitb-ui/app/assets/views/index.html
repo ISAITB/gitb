@@ -32,8 +32,8 @@
                           </div>
                           <div class="col-xs-5">
                             <ul class="list-account-options">
-                              <li ng-if="(indexCtrl.DataService.configuration['sso.enabled'] || !indexCtrl.DataService.user.onetime) && indexCtrl.AuthProvider.isAuthenticated()">
-                                <a class="pointer" ng-click="indexCtrl.redirect('/settings')">Settings</a>
+                              <li ui-sref-active="active" ng-if="(indexCtrl.DataService.configuration['sso.enabled'] || !indexCtrl.DataService.user.onetime) && indexCtrl.AuthProvider.isAuthenticated()">
+                                <a class="pointer" ui-sref="app.settings.profile">Settings</a>
                               </li>
                               <li ng-if="indexCtrl.DataService.configuration['sso.enabled'] && indexCtrl.AuthProvider.isAuthenticated()">
                                   <a class="pointer" ng-click="indexCtrl.switchAccount()">Switch account</a>

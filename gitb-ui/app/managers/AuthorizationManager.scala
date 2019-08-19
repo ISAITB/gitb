@@ -797,8 +797,15 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User cannot logout")
   }
 
-  def canCheckUserEmail(request: RequestWithAttributes[_]):Boolean = {
-    setAuthResult(request, isAnyAdminType(getUser(getRequestUserId(request))), "User cannot manage own organisation")
+  def canCheckAnyUserEmail(request: RequestWithAttributes[_]):Boolean = {
+    val userInfo = getUser(getRequestUserId(request))
+    setAuthResult(request, isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo), "User cannot manage any organisation")
+  }
+
+  def canCheckUserEmail(request: RequestWithAttributes[_], organisationId: Long):Boolean = {
+    val userInfo = getUser(getRequestUserId(request))
+    val ok = isAnyAdminType(userInfo) && userInfo.organization.isDefined && userInfo.organization.get.id == organisationId
+    setAuthResult(request, ok, "User cannot manage own organisation")
   }
 
   def canLogin(request: RequestWithAttributes[_]):Boolean = {

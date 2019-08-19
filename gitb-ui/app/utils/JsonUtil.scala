@@ -3,6 +3,7 @@ package utils
 import java.util
 
 import com.gitb.tr._
+import config.Configurations
 import javax.xml.bind.JAXBElement
 import models.Enums.TestResultStatus
 import models._
@@ -110,12 +111,35 @@ object JsonUtil {
   def jsUser(user:Users):JsObject = {
     val json = Json.obj(
       "id"    -> user.id,
-      "name"  -> user.name,
-      "email" -> user.email,
+      "name"  -> (
+        if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+          if (user.ssoStatus == Enums.UserSSOStatus.NotLinked.id.toShort) {
+            JsNull
+          } else {
+            user.name
+          }
+        } else {
+          user.name
+        }
+      ),
+      "email" -> (
+        if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+          if (user.ssoStatus == Enums.UserSSOStatus.NotMigrated.id.toShort) {
+            user.email
+          } else {
+            user.ssoEmail
+          }
+        } else {
+          user.email
+        }),
       "role"  -> user.role,
-      "onetime" -> user.onetimePassword,
-      "ssoUid" -> (if (user.ssoUid.isDefined) user.ssoUid.get else JsNull),
-      "ssoEmail" -> (if (user.ssoEmail.isDefined) user.ssoEmail.get else JsNull),
+      "onetime" -> (
+        if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+          false
+        } else {
+          user.onetimePassword
+        }
+      ),
       "ssoStatus" -> user.ssoStatus
     )
     json

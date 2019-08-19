@@ -1,6 +1,5 @@
 package controllers
 
-import config.Configurations
 import controllers.util._
 import exceptions._
 import javax.inject.Inject
@@ -108,9 +107,21 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
     * Check email availability
     */
   def checkEmail = AuthorizedAction { request =>
-    authorizationManager.canCheckUserEmail(request)
+    authorizationManager.canCheckAnyUserEmail(request)
     val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
-    val isAvailable = authManager.checkEmailAvailability(email)
+    val isAvailable = authManager.checkEmailAvailability(email, None)
+    ResponseConstructor.constructAvailabilityResponse(isAvailable)
+  }
+
+  /**
+    * Check email availability
+    */
+  def checkEmailOfOrganisationMember = AuthorizedAction { request =>
+    val userId = ParameterExtractor.extractUserId(request)
+    val userInfo = accountManager.getUserProfile(userId)
+    authorizationManager.canCheckUserEmail(request, userInfo.organization.get.id)
+    val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
+    val isAvailable = authManager.checkEmailAvailability(email, Some(userInfo.organization.get.id))
     ResponseConstructor.constructAvailabilityResponse(isAvailable)
   }
 

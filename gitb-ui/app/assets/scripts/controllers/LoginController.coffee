@@ -18,11 +18,13 @@ class LoginController
 		@createPending = false
 
 		if @loginOption == @Constants.LOGIN_OPTION.REGISTER || (@DataService.configuration['sso.inMigration'] && @loginOption == @Constants.LOGIN_OPTION.MIGRATE)
-			@createAccount()
+			@createAccount(@loginOption)
 		else if @loginOption == @Constants.LOGIN_OPTION.DEMO
 			@loginViaSelection(@DataService.configuration['demos.account'])
 
-	createAccount:() ->
+	createAccount:(loginOption) ->
+		if !loginOption?
+			loginOption = @Constants.LOGIN_OPTION.NONE
 		@createPending = true
 		modalOptions =
 			templateUrl: 'assets/views/components/link-account-modal.html'
@@ -30,7 +32,7 @@ class LoginController
 			size: 'lg'
 			resolve:
 				linkedAccounts: () => @AuthService.getUserUnlinkedFunctionalAccounts()
-				createOption: () => @loginOption
+				createOption: () => loginOption
 		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result.finally(angular.noop).then(
 			() => @createPending = false, 

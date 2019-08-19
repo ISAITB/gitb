@@ -1,5 +1,9 @@
 package controllers.util
 
+import java.util.Random
+import java.util.concurrent.ThreadLocalRandom
+
+import config.Configurations
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import models._
@@ -134,11 +138,24 @@ object ParameterExtractor {
     Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.VendorAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
   }
 
+  private def getUserInfoForSSO(ssoEmail: String, role: Short): Users = {
+    val randomPart = ThreadLocalRandom.current.nextInt(10000000, 99999999 + 1)
+    val name = "User ["+randomPart+"]"
+    val email = randomPart+"@itb.ec.europa.eu"
+    val password = randomPart.toString
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, role, 0L, None, Some(ssoEmail), UserSSOStatus.NotLinked.id.toShort)
+  }
+
   def extractUserInfo(request:Request[AnyContent]):Users = {
-    val name = requiredBodyParameter(request, Parameters.USER_NAME)
-    val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
-    val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.VendorUser.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      val ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      getUserInfoForSSO(ssoEmail, UserRole.VendorUser.id.toShort)
+    } else {
+      val name = requiredBodyParameter(request, Parameters.USER_NAME)
+      val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      val password = requiredBodyParameter(request, Parameters.PASSWORD)
+      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.VendorUser.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+    }
   }
 
   def extractSystemInfo(request:Request[AnyContent]):Systems = {

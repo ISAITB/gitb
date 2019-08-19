@@ -96,12 +96,15 @@
 				else
 					scope.lastPage()
 			scope.rowClass = (selectedIndex) =>
+				rowClass = ''
 				if scope.rowStyle
 					rows = element.find 'tbody tr.table-row-directive'
 					row = scope.data[selectedIndex]
-					scope.rowStyle row
-				else
-					""
+					customClass = scope.rowStyle(row)
+					if customClass?
+						rowClass = rowClass + ' ' + customClass
+				if scope.allowSelect || scope.allowMultiSelect || scope.onSelect
+					rowClass = rowClass + ' selectable'
 				
 			scope.select = (selectedIndex)->
 				rows = element.find 'tbody tr.table-row-directive'

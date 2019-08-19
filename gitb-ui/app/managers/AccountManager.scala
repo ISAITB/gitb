@@ -188,7 +188,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
 
     //2) Get all users of the organization
     val users = exec(PersistenceSchema.users.filter(_.organization === orgId)
-      .sortBy(_.name.asc)
+      .sortBy(x => (x.role.asc, x.name.asc))
       .result
       .map(_.toList))
     users

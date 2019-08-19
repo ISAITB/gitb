@@ -15,21 +15,50 @@ class OrganizationController
         @organizationSpinner = false # spinner to be displayed for organization operations
         @memberSpinner = false       # spinner to be displayed for new member operations
 
+        @tableColumns = [
+            {
+                field: 'name',
+                title: 'Name'
+            }
+            {
+                field: 'email',
+                title: 'Email'
+            }
+            {
+                field: 'role',
+                title: 'Role'
+            }
+        ]
+        if !@DataService.isVendorUser
+            @tableColumns.push({
+                field: 'ssoStatusText',
+                title: 'Status'
+            })
+
         @getVendorUsers()  # get users of the organization
 
-    getVendorUsers:() ->
+    userStatus: (ssoStatus) =>
+        if @DataService.configuration['sso.enabled']
+            if ssoStatus == 1
+                'Not migrated'
+            else if ssoStatus == 2
+                'Inactive'
+            else
+                'Active'
+        else
+            'Active'
+
+    getVendorUsers:() =>
         @memberSpinner = true #start spinner
         @AccountService.getVendorUsers() #call service operation
         .then(
             (data) => #success handler
                 labels = @Constants.USER_ROLE_LABEL
-                @users = data.sort((a,b)-> #sort users by their roles (priority) in descending order
-                    if a.role == b.role    #if they have the same role, sort by ids
-                        a.id > b.id
-                    else
-                        a.role > b.role
-                ).map((user) ->
+                @users = data.map((user) =>
+                    if user.id == @DataService.user.id
+                        user.name = user.name + ' (You)'
                     user.role = labels[user.role]
+                    user.ssoStatusText = @userStatus(user.ssoStatus)
                     user
                 )
                 #stop spinner
@@ -40,6 +69,23 @@ class OrganizationController
                 #stop spinner
                 @memberSpinner = false
         )
+
+    saveDisabled : () ->
+        @$scope.vdata.fname == undefined || @$scope.vdata.fname == '' || @$scope.vdata.sname == undefined || @$scope.vdata.sname == ''
+
+    saveMemberDisabled : () ->
+        if @DataService.configuration?
+            isSSO = @DataService.configuration['sso.enabled']
+            if isSSO
+                disabled = @$scope.udata.email == undefined || @$scope.udata.email == ''
+            else
+                disabled = @$scope.udata.email == undefined || @$scope.udata.email == '' || 
+                    @$scope.udata.name == undefined || @$scope.udata.name == '' || 
+                    @$scope.udata.password == undefined || @$scope.udata.password == '' || 
+                    @$scope.udata.cpassword == undefined || @$scope.udata.cpassword == ''
+            disabled
+        else
+            true
 
     updateVendorProfile : () ->
         if @checkForm1()
@@ -84,7 +130,7 @@ class OrganizationController
     checkEmail: () ->
         if @checkForm2()
             @memberSpinner = true #start spinner
-            @AuthService.checkEmail(@$scope.udata.email)
+            @AuthService.checkEmailOfOrganisationMember(@$scope.udata.email)
             .then(
                 (data) =>  #success handler
                     if data.available
@@ -92,6 +138,7 @@ class OrganizationController
                     else #error handler
                         @modalAlerts.push({type:'danger', msg:"A user with email '#{@$scope.udata.email}' has already been registered."})
                         @$scope.udata.email = @$scope.udata.password = @$scope.udata.cpassword = ''
+                        @memberSpinner = false                        
                         @spinner = false
                 ,
                 (error) =>
@@ -123,8 +170,9 @@ class OrganizationController
         @removeAlerts()
         valid = true
         emailRegex = @Constants.EMAIL_REGEX
+        isSSO = @DataService.configuration['sso.enabled']
 
-        if @$scope.udata.name == undefined || @$scope.udata.name == ''
+        if !isSSO && (@$scope.udata.name == undefined || @$scope.udata.name == '')
             @modalAlerts.push({type:'danger', msg:"You have to enter the user's name."})
             valid = false
         else if @$scope.udata.email == undefined || @$scope.udata.email == ''
@@ -133,13 +181,13 @@ class OrganizationController
         else if !emailRegex.test(@$scope.udata.email)
             @modalAlerts.push({type:'danger', msg:"You have to enter a valid email address."})
             valid = false
-        else if @$scope.udata.password == undefined || @$scope.udata.password == ''
+        else if !isSSO && (@$scope.udata.password == undefined || @$scope.udata.password == '')
             @modalAlerts.push({type:'danger', msg:"You have to enter the user's password."})
             valid = false
-        else if @$scope.udata.cpassword == undefined || @$scope.udata.cpassword == ''
+        else if !isSSO && (@$scope.udata.cpassword == undefined || @$scope.udata.cpassword == '')
             @modalAlerts.push({type:'danger', msg:"You have to confirm the user's password."})
             valid = false
-        else if @$scope.udata.password != @$scope.udata.cpassword
+        else if !isSSO && (@$scope.udata.password != @$scope.udata.cpassword)
             @modalAlerts.push({type:'danger', msg:"The provided passwords don't match."})
             valid = false
         valid

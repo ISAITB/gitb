@@ -10,6 +10,11 @@ class PasswordController
         @$scope.data = {}  # holds scope bindings
         @passwordSpinner = false # spinner to be displayed for password operations
 
+    saveDisabled : () ->
+        @$scope.data.currentPassword == undefined || @$scope.data.currentPassword == '' || 
+        @$scope.data.password1 == undefined || @$scope.data.password1 == '' ||
+        @$scope.data.password2 == undefined || @$scope.data.password2 == ''
+
     updatePassword: () ->
         if @checkForm()
             @passwordSpinner = true #start spinner
@@ -46,7 +51,7 @@ class PasswordController
             @alerts.push({type:'danger', msg:"You have to confirm your new password."})
             valid = false
         else if @$scope.data.password1 != @$scope.data.password2
-            @alerts.push({type:'danger', msg:"Passwords do not match."})
+            @alerts.push({type:'danger', msg:"The new password does not match the confirmation."})
             valid = false
         else if @$scope.data.currentPassword == @$scope.data.password1
             @alerts.push({type:'danger', msg:"The password you provided is the same as the current one."})

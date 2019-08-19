@@ -24,6 +24,7 @@ GET     /theme/footer                       @controllers.SystemConfigurationServ
 POST    /oauth/access_token                 @controllers.AuthenticationService.access_token
 POST    /oauth/logout                       @controllers.AuthenticationService.logout
 GET     /check/email                        @controllers.AuthenticationService.checkEmail
+GET     /check/memberemail                  @controllers.AuthenticationService.checkEmailOfOrganisationMember
 GET     /sso/accounts                       @controllers.AuthenticationService.getUserFunctionalAccounts
 POST    /sso/linkFunctionalAccount          @controllers.AuthenticationService.linkFunctionalAccount
 GET     /sso/unlinkedAccounts               @controllers.AuthenticationService.getUserUnlinkedFunctionalAccounts
