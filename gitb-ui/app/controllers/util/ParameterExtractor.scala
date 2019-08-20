@@ -4,6 +4,7 @@ import java.util.Random
 import java.util.concurrent.ThreadLocalRandom
 
 import config.Configurations
+import controllers.util.ParameterExtractor.getUserInfoForSSO
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import models._
@@ -118,24 +119,39 @@ object ParameterExtractor {
   }
 
   def extractSystemAdminInfo(request:Request[AnyContent]):Users = {
-    val name = requiredBodyParameter(request, Parameters.USER_NAME)
-    val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
-    val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.SystemAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      val ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      getUserInfoForSSO(ssoEmail, UserRole.SystemAdmin.id.toShort)
+    } else {
+      val name = requiredBodyParameter(request, Parameters.USER_NAME)
+      val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      val password = requiredBodyParameter(request, Parameters.PASSWORD)
+      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.SystemAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+    }
   }
 
   def extractCommunityAdminInfo(request:Request[AnyContent]):Users = {
-    val name = requiredBodyParameter(request, Parameters.USER_NAME)
-    val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
-    val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.CommunityAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      val ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      getUserInfoForSSO(ssoEmail, UserRole.CommunityAdmin.id.toShort)
+    } else {
+      val name = requiredBodyParameter(request, Parameters.USER_NAME)
+      val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      val password = requiredBodyParameter(request, Parameters.PASSWORD)
+      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.CommunityAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+    }
   }
 
   def extractAdminInfo(request:Request[AnyContent]):Users = {
-    val name = requiredBodyParameter(request, Parameters.USER_NAME)
-    val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
-    val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.VendorAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      val ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      getUserInfoForSSO(ssoEmail, UserRole.VendorAdmin.id.toShort)
+    } else {
+      val name = requiredBodyParameter(request, Parameters.USER_NAME)
+      val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      val password = requiredBodyParameter(request, Parameters.PASSWORD)
+      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.VendorAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+    }
   }
 
   private def getUserInfoForSSO(ssoEmail: String, role: Short): Users = {

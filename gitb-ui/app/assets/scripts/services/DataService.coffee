@@ -257,6 +257,15 @@ class DataService
 			blobData = new Blob([csv], {type: 'text/csv'});
 			saveAs(blobData, 'export.csv');
 
-
+	userStatus: (ssoStatus) =>
+		if @configuration['sso.enabled']
+			if ssoStatus == 1
+				'Not migrated'
+			else if ssoStatus == 2
+				'Inactive'
+			else
+				'Active'
+		else
+			'Active'
 
 services.service('DataService', DataService)

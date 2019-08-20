@@ -1,7 +1,7 @@
 class OrganizationDetailController
 
-  @$inject = ['$log', '$state', '$stateParams', '$window', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'UserManagementService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'UserService', 'ErrorService', '$q']
-  constructor: (@$log, @$state, @$stateParams, @$window, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @UserManagementService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @UserService, @ErrorService, @$q) ->
+  @$inject = ['$log', '$state', '$stateParams', '$window', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'UserManagementService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'UserService', 'ErrorService', '$q', 'DataService']
+  constructor: (@$log, @$state, @$stateParams, @$window, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @UserManagementService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @UserService, @ErrorService, @$q, @DataService) ->
 
     @userColumns = [
       {
@@ -15,6 +15,10 @@ class OrganizationDetailController
       {
         field: 'role',
         title: 'Role'
+      }
+      {
+        field: 'ssoStatusText',
+        title: 'Status'
       }
     ]
 
@@ -38,6 +42,8 @@ class OrganizationDetailController
     # get users of the organization
     @UserService.getUsersByOrganization(@orgId)
     .then (data) =>
+      for user in data
+        user.ssoStatusText = @DataService.userStatus(user.ssoStatus)
       @users = data
       @UserManagementService.mapUsers(@users)
     .catch (error) =>

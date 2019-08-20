@@ -25,6 +25,9 @@ POST    /oauth/access_token                 @controllers.AuthenticationService.a
 POST    /oauth/logout                       @controllers.AuthenticationService.logout
 GET     /check/email                        @controllers.AuthenticationService.checkEmail
 GET     /check/memberemail                  @controllers.AuthenticationService.checkEmailOfOrganisationMember
+GET     /check/sysadminemail                @controllers.AuthenticationService.checkEmailOfSystemAdmin
+GET     /check/comadminemail                @controllers.AuthenticationService.checkEmailOfCommunityAdmin
+GET     /check/orguseremail                 @controllers.AuthenticationService.checkEmailOfOrganisationUser
 GET     /sso/accounts                       @controllers.AuthenticationService.getUserFunctionalAccounts
 POST    /sso/linkFunctionalAccount          @controllers.AuthenticationService.linkFunctionalAccount
 GET     /sso/unlinkedAccounts               @controllers.AuthenticationService.getUserUnlinkedFunctionalAccounts

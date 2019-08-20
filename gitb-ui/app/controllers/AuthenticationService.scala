@@ -4,7 +4,7 @@ import controllers.util._
 import exceptions._
 import javax.inject.Inject
 import managers.AuthorizationManager
-import models.ActualUserInfo
+import models.{ActualUserInfo, Enums}
 import org.pac4j.play.store.PlaySessionStore
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.cache.TokenCache
@@ -109,7 +109,7 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
   def checkEmail = AuthorizedAction { request =>
     authorizationManager.canCheckAnyUserEmail(request)
     val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
-    val isAvailable = authManager.checkEmailAvailability(email, None)
+    val isAvailable = authManager.checkEmailAvailability(email, None, None, Some(Enums.UserRole.VendorUser.id.toShort))
     ResponseConstructor.constructAvailabilityResponse(isAvailable)
   }
 
@@ -121,7 +121,42 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
     val userInfo = accountManager.getUserProfile(userId)
     authorizationManager.canCheckUserEmail(request, userInfo.organization.get.id)
     val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
-    val isAvailable = authManager.checkEmailAvailability(email, Some(userInfo.organization.get.id))
+    val isAvailable = authManager.checkEmailAvailability(email, Some(userInfo.organization.get.id), None, None)
+    ResponseConstructor.constructAvailabilityResponse(isAvailable)
+  }
+
+  /**
+    * Check email availability
+    */
+  def checkEmailOfSystemAdmin = AuthorizedAction { request =>
+    val userId = ParameterExtractor.extractUserId(request)
+    val userInfo = accountManager.getUserProfile(userId)
+    authorizationManager.canCheckSystemAdminEmail(request)
+    val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
+    val isAvailable = authManager.checkEmailAvailability(email, Some(userInfo.organization.get.id), None, None)
+    ResponseConstructor.constructAvailabilityResponse(isAvailable)
+  }
+
+  /**
+    * Check email availability
+    */
+  def checkEmailOfCommunityAdmin = AuthorizedAction { request =>
+    val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
+    authorizationManager.canCheckCommunityAdminEmail(request, communityId)
+    val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
+    val isAvailable = authManager.checkEmailAvailability(email, None, Some(communityId), None)
+    ResponseConstructor.constructAvailabilityResponse(isAvailable)
+  }
+
+  /**
+    * Check email availability
+    */
+  def checkEmailOfOrganisationUser = AuthorizedAction { request =>
+    val organisationId = ParameterExtractor.requiredQueryParameter(request, Parameters.ORGANIZATION_ID).toLong
+    authorizationManager.canCheckOrganisationUserEmail(request, organisationId)
+    val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
+    val roleId = ParameterExtractor.requiredQueryParameter(request, Parameters.ROLE_ID).toShort
+    val isAvailable = authManager.checkEmailAvailability(email, Some(organisationId), None, Some(roleId))
     ResponseConstructor.constructAvailabilityResponse(isAvailable)
   }
 

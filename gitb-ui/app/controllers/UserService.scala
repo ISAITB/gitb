@@ -1,5 +1,6 @@
 package controllers
 
+import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
 import javax.inject.Inject
@@ -122,16 +123,14 @@ class UserService @Inject() (userManager: UserManager, authorizationManager: Aut
    */
   def updateUserProfile(userId: Long) = AuthorizedAction { request =>
     authorizationManager.canUpdateOrganisationUser(request, userId)
-    val isLastAdmin = userManager.isLastAdmin(userId)
     val roleId = ParameterExtractor.requiredBodyParameter(request, Parameters.ROLE_ID).toShort
-    val name = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_NAME)
-    val password = ParameterExtractor.optionalBodyParameter(request, Parameters.PASSWORD)
-    if (isLastAdmin && UserRole(roleId) == UserRole.VendorUser) {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.CANNOT_DELETE, "Cannot delete the only administrator of the organization.")
-    } else {
-      userManager.updateUserProfile(userId, name, roleId, password)
-      ResponseConstructor.constructEmptyResponse
+    var name: Option[String] = None
+    if (!Configurations.AUTHENTICATION_SSO_ENABLED) {
+      name = Some(ParameterExtractor.requiredBodyParameter(request, Parameters.USER_NAME))
     }
+    val password = ParameterExtractor.optionalBodyParameter(request, Parameters.PASSWORD)
+    userManager.updateUserProfile(userId, name, roleId, password)
+    ResponseConstructor.constructEmptyResponse
   }
 
   /**

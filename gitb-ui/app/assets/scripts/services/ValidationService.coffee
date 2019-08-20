@@ -62,5 +62,6 @@ class ValidationService
   # clears all alert messages
   clearAll: () ->
     @alerts = []
+    @alerts
 
 services.service('ValidationService', ValidationService)

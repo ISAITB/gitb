@@ -21,6 +21,11 @@ public class ExtendedCas20ServiceTicketValidator extends Cas20ServiceTicketValid
     }
 
     @Override
+    protected String getUrlSuffix() {
+        return "laxValidate";
+    }
+
+    @Override
     protected Map<String, Object> extractCustomAttributes(final String xml) {
         Map<String, Object> attributes = super.extractCustomAttributes(xml);
         if (attributes == null) {

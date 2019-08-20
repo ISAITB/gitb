@@ -3,7 +3,7 @@ package managers
 import com.gitb.utils.HmacUtils
 import config.Configurations
 import controllers.util.{ParameterExtractor, RequestWithAttributes}
-import exceptions.{ErrorCodes, InvalidAuthorizationException, UnauthorizedAccessException}
+import exceptions.UnauthorizedAccessException
 import javax.inject.{Inject, Singleton}
 import models.Enums.UserRole
 import models._
@@ -14,7 +14,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import persistence.AccountManager
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.Files
-import play.api.mvc.{AnyContent, MultipartFormData, Result}
+import play.api.mvc.{AnyContent, MultipartFormData}
 
 object AuthorizationManager {
   val AUTHORIZATION_OK = "AUTH_OK"
@@ -806,6 +806,18 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     val userInfo = getUser(getRequestUserId(request))
     val ok = isAnyAdminType(userInfo) && userInfo.organization.isDefined && userInfo.organization.get.id == organisationId
     setAuthResult(request, ok, "User cannot manage own organisation")
+  }
+
+  def canCheckSystemAdminEmail(request: RequestWithAttributes[AnyContent]):Boolean = {
+    checkTestBedAdmin(request)
+  }
+
+  def canCheckCommunityAdminEmail(request: RequestWithAttributes[AnyContent], communityId: Long):Boolean = {
+    canManageCommunity(request, communityId)
+  }
+
+  def canCheckOrganisationUserEmail(request: RequestWithAttributes[AnyContent], organisationId: Long):Boolean = {
+    canManageOrganisationFull(request, getUser(getRequestUserId(request)), organisationId)
   }
 
   def canLogin(request: RequestWithAttributes[_]):Boolean = {

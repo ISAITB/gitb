@@ -12,6 +12,33 @@ class AuthService
             }
         })
 
+    checkEmailOfSystemAdmin: (email) =>
+        @RestService.get({
+            path: jsRoutes.controllers.AuthenticationService.checkEmailOfSystemAdmin().url,
+            params: {
+                email: email
+            }
+        })
+
+    checkEmailOfCommunityAdmin: (email, communityId) =>
+        @RestService.get({
+            path: jsRoutes.controllers.AuthenticationService.checkEmailOfCommunityAdmin().url,
+            params: {
+                email: email
+                community_id: communityId
+            }
+        })
+
+    checkEmailOfOrganisationUser: (email, orgId, roleId) =>
+        @RestService.get({
+            path: jsRoutes.controllers.AuthenticationService.checkEmailOfOrganisationUser().url,
+            params: {
+                email: email
+                organization_id: orgId
+                role_id: roleId
+            }
+        })
+
     checkEmailOfOrganisationMember: (email) =>
         @RestService.get({
             path: jsRoutes.controllers.AuthenticationService.checkEmailOfOrganisationMember().url,

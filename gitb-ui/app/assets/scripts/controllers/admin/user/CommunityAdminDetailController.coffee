@@ -13,6 +13,7 @@ class CommunityAdminDetailController
     @UserService.getUserById(@userId)
     .then (data) =>
       @user = data
+      @user.ssoStatusText = @DataService.userStatus(@user.ssoStatus)
       @UserManagementService.mapUser(@user)
     .catch (error) =>
       @ErrorService.showErrorMessage(error)

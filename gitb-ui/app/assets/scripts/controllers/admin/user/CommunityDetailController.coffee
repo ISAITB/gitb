@@ -14,6 +14,10 @@ class CommunityDetailController
         field: 'email',
         title: 'Email'
       }
+      {
+        field: 'ssoStatusText',
+        title: 'Status'
+      }
     ]
 
     @organizationColumns = [
@@ -101,6 +105,8 @@ class CommunityDetailController
 
     @UserService.getCommunityAdministrators(@communityId)
     .then (data) =>
+      for admin in data
+        admin.ssoStatusText = @DataService.userStatus(admin.ssoStatus)
       @admins = data
     .catch (error) =>
       @ErrorService.showErrorMessage(error)

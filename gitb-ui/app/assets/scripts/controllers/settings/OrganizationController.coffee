@@ -38,15 +38,7 @@ class OrganizationController
         @getVendorUsers()  # get users of the organization
 
     userStatus: (ssoStatus) =>
-        if @DataService.configuration['sso.enabled']
-            if ssoStatus == 1
-                'Not migrated'
-            else if ssoStatus == 2
-                'Inactive'
-            else
-                'Active'
-        else
-            'Active'
+        @DataService.userStatus(ssoStatus)
 
     getVendorUsers:() =>
         @memberSpinner = true #start spinner

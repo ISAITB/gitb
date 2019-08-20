@@ -3,7 +3,7 @@ package persistence
 import config.Configurations
 import javax.inject.{Inject, Singleton}
 import managers.BaseManager
-import models.{Enums, Token, Users}
+import models.{Constants, Enums, Token, Users}
 import org.apache.commons.lang3.RandomStringUtils
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
@@ -18,20 +18,33 @@ class AuthenticationManager @Inject()(dbConfigProvider: DatabaseConfigProvider) 
 
   def logger = LoggerFactory.getLogger("AuthManager")
 
-  def checkEmailAvailability(email:String, organisationId: Option[Long]): Boolean = {
+  def checkEmailAvailability(email:String, organisationId: Option[Long], communityId: Option[Long], roleId: Option[Short]): Boolean = {
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
       if (organisationId.isDefined) {
         // We should not have a member user with the same email address within the organisation
-        val q = PersistenceSchema.users
+        var q = PersistenceSchema.users
           .filter(_.ssoEmail === email)
           .filter(_.organization === organisationId.get)
-          .filter(_.role === Enums.UserRole.VendorUser.id.toShort)
+        if (roleId.isDefined) {
+          q = q.filter(_.role === roleId.get)
+        }
         exec(q.result.headOption).isEmpty
       } else {
-        // TODO ECAS correct for test bed and community admins
-        // The email is a username and needs to be unique across the entire test bed.
-        val q = PersistenceSchema.users.filter(_.ssoEmail === email)
-        exec(q.result.headOption).isEmpty
+        if (communityId.isDefined) {
+          // We should not have multiple community admins in the same community with the same email.
+          val q = PersistenceSchema.users
+            .join(PersistenceSchema.organizations).on(_.organization === _.id)
+            .filter(_._1.ssoEmail === email)
+            .filter(_._2.community === communityId.get)
+            .filter(_._1.role === Enums.UserRole.CommunityAdmin.id.toShort)
+          exec(q.result.headOption).isEmpty
+        } else {
+          // We should not have multiple system admins with the same email.
+          val q = PersistenceSchema.users
+            .filter(_.ssoEmail === email)
+            .filter(_.role === Enums.UserRole.SystemAdmin.id.toShort)
+          exec(q.result.headOption).isEmpty
+        }
       }
     } else {
       // The email is a username and needs to be unique across the entire test bed.

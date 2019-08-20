@@ -1,7 +1,7 @@
 class UserDetailController
 
-  @$inject = ['$log', '$state', '$stateParams', 'ValidationService', 'UserManagementService', 'ConfirmationDialogService', 'UserService', 'Constants', 'ErrorService']
-  constructor: (@$log, @$state, @$stateParams,  @ValidationService, @UserManagementService, @ConfirmationDialogService, @UserService, @Constants, @ErrorService) ->
+  @$inject = ['$log', '$state', '$stateParams', 'ValidationService', 'UserManagementService', 'ConfirmationDialogService', 'UserService', 'Constants', 'ErrorService', 'DataService', 'AuthService', '$q']
+  constructor: (@$log, @$state, @$stateParams,  @ValidationService, @UserManagementService, @ConfirmationDialogService, @UserService, @Constants, @ErrorService, @DataService, @AuthService, @$q) ->
 
     @orgId = @$stateParams.org_id
     @userId = @$stateParams.user_id
@@ -14,30 +14,57 @@ class UserDetailController
     @UserService.getUserById(@userId)
     .then (data) =>
       @user = data
+      @user.ssoStatusText = @DataService.userStatus(@user.ssoStatus)
       @UserManagementService.mapUser(@user)
+      @originalRoleId = @user.role.id
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
   saveDisabled: () =>
-    !(@user.name? && @user.role?)
+    if @DataService.configuration['sso.enabled']
+      !(@user.role?)
+    else
+      !(@user.name? && @user.role?)
 
   # update and cancel detail
   updateUser: () =>
-    @ValidationService.clearAll()
-    if @ValidationService.requireNonNull(@user.name, "Please enter a name.") &
-    (!@user.changePassword || @ValidationService.validatePasswords(@user.password, @user.cpassword, "Passwords do not match."))
-      if @user.changePassword
-        newPassword = @user.password
-      @UserService.updateUserProfile(@userId, @user.name, @user.role.id, newPassword)
-      .then (data) =>
-        if (!data)
-          @cancelDetailUser()
-        else
-          @ValidationService.pushAlert({type:'danger', msg:data.error_description})
-      .catch (error) =>
-        @ErrorService.showErrorMessage(error)
-    @alerts = @ValidationService.getAlerts()
+    @alerts = @ValidationService.clearAll()
+    @okToUpdate = false
+    @updateDeferred = @$q.defer()
+    isSSO = @DataService.configuration['sso.enabled']
+    if isSSO
+      if @originalRoleId != @user.role.id
+        @AuthService.checkEmailOfOrganisationUser(@user.email, @orgId, @user.role.id)
+        .then (data) =>
+          if data.available
+            @okToUpdate = true
+          else
+            @alerts.push({type:'danger', msg:"A user with email #{@user.email} has already been registered with the specified role for this organisation."})
+            @okToUpdate = false
+          @updateDeferred.resolve()
+      else
+        @okToUpdate = true
+        @updateDeferred.resolve()
+    else
+      @okToUpdate = @ValidationService.requireNonNull(@user.name, "Please enter a name.") &
+        (!@user.changePassword || @ValidationService.validatePasswords(@user.password, @user.cpassword, "Passwords do not match."))
+      @alerts = @ValidationService.getAlerts()
+      @updateDeferred.resolve()
 
+    @$q.all([@updateDeferred.promise]).then(() =>
+      if @okToUpdate
+        if @user.changePassword
+          newPassword = @user.password
+        @UserService.updateUserProfile(@userId, @user.name, @user.role.id, newPassword)
+        .then (data) =>
+          if (!data)
+            @cancelDetailUser()
+          else
+            @ValidationService.pushAlert({type:'danger', msg:data.error_description})
+        .catch (error) =>
+          @ErrorService.showErrorMessage(error)
+    )
+  
   # delete and cancel detail
   deleteUser: () =>
     @ValidationService.clearAll()

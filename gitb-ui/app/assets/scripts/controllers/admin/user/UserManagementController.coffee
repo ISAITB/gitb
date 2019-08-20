@@ -13,6 +13,10 @@ class UserManagementController
         field: 'email',
         title: 'Email'
       }
+      {
+        field: 'ssoStatusText',
+        title: 'Status'
+      }
     ]
 
     @communityColumns = [
@@ -34,6 +38,8 @@ class UserManagementController
 
     @UserService.getSystemAdministrators()
     .then (data) =>
+      for admin in data
+        admin.ssoStatusText = @userStatus(admin.ssoStatus)
       @admins = data
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
@@ -43,6 +49,9 @@ class UserManagementController
       @communities = data
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+
+  userStatus: (ssoStatus) =>
+      @DataService.userStatus(ssoStatus)
 
   # detail of selected admin
   adminSelect: (admin) =>
