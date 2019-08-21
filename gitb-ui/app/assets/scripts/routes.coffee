@@ -142,6 +142,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.login':
 				url: '/login'
 				templateUrl: 'assets/views/login.html'
+				controller: 'LoginController'
+				controllerAs: 'lc'
 				resolve:
 					profile: profile
 			'app.onetime':
