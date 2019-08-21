@@ -4,7 +4,7 @@ import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
 import javax.inject.Inject
-import managers.{AttachmentType, AuthorizationManager}
+import managers.{AttachmentType, AuthorizationManager, UserManager}
 import org.apache.commons.codec.binary.Base64
 import org.apache.tika.Tika
 import org.slf4j.{Logger, LoggerFactory}
@@ -13,7 +13,7 @@ import play.api.mvc._
 import utils.{ClamAVClient, HtmlUtil, JsonUtil}
 
 
-class AccountService @Inject() (accountManager: AccountManager, authorizationManager: AuthorizationManager) extends Controller{
+class AccountService @Inject() (accountManager: AccountManager, userManager: UserManager, authorizationManager: AuthorizationManager) extends Controller{
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AccountService])
   private final val tika = new Tika()
 
@@ -107,6 +107,7 @@ class AccountService @Inject() (accountManager: AccountManager, authorizationMan
     configProperties.put("userguide.ca", String.valueOf(Configurations.USERGUIDE_CA))
     configProperties.put("sso.enabled", String.valueOf(Configurations.AUTHENTICATION_SSO_ENABLED))
     configProperties.put("sso.inMigration", String.valueOf(Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD))
+    configProperties.put("demos.enabled", String.valueOf(Configurations.DEMOS_ENABLED))
     configProperties.put("demos.account", String.valueOf(Configurations.DEMOS_ACCOUNT))
     val json = JsonUtil.serializeConfigurationProperties(configProperties)
     ResponseConstructor.constructJsonResponse(json.toString())

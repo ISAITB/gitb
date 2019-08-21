@@ -78,6 +78,11 @@ object Configurations {
   var AUTHENTICATION_SSO_LOGIN_URL = ""
   var AUTHENTICATION_SSO_CALLBACK_URL = ""
   var AUTHENTICATION_SSO_CAS_VERSION: Short = 2
+  var AUTHENTICATION_SSO_CUSTOM_PARAMETERS__USER_DETAILS: String = "userDetails"
+  var AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL: String = "email"
+  var AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME: String = "firstName"
+  var AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME: String = "lastName"
+  var AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX: String = "laxValidate"
 
   var DEMOS_ENABLED = false
   var DEMOS_ACCOUNT:Long = -1
@@ -186,6 +191,12 @@ object Configurations {
       AUTHENTICATION_SSO_LOGIN_URL = fromEnv("AUTHENTICATION_SSO_LOGIN_URL", conf.getString("authentication.sso.url.login")).toString
       AUTHENTICATION_SSO_CALLBACK_URL = fromEnv("AUTHENTICATION_SSO_CALLBACK_URL", conf.getString("authentication.sso.url.callback")).toString
       AUTHENTICATION_SSO_CAS_VERSION = fromEnv("AUTHENTICATION_SSO_CAS_VERSION", conf.getString("authentication.sso.casVersion")).toShort
+
+      AUTHENTICATION_SSO_CUSTOM_PARAMETERS__USER_DETAILS = fromEnv("AUTHENTICATION_SSO_CUSTOM_PARAMETERS__USER_DETAILS", conf.getString("authentication.sso.customParameters.userDetails")).toString
+      AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL", conf.getString("authentication.sso.userAttributes.email")).toString
+      AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME", conf.getString("authentication.sso.userAttributes.firstName")).toString
+      AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME", conf.getString("authentication.sso.userAttributes.lastName")).toString
+      AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX = fromEnv("AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX", conf.getString("authentication.sso.ticketValidationUrlSuffix")).toString
 
       DEMOS_ENABLED = fromEnv("DEMOS_ENABLED", conf.getString("demos.enabled")).toBoolean
       DEMOS_ACCOUNT = fromEnv("DEMOS_ACCOUNT", conf.getString("demos.account")).toLong

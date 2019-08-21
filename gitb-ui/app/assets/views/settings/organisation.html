@@ -4,6 +4,9 @@
 			<h4 class="title">Organisation details</h4>
 		</div>
 		<div class="panel-body">
+            <div class="row col-md-10 col-md-offset-1">
+                <div uib-alert ng-repeat="alert in oc.alerts" ng-class="'alert-' + alert.type" close="oc.closeAlert($index)">{{alert.msg}}</div>
+            </div>
             <div class="row">
                 <div class="col-md-10 col-md-offset-1" ng-if="oc.ds.isVendorAdmin">
                     <form class="form-horizontal">
@@ -40,7 +43,7 @@
             <h4 class="title">Members</h4>
 			<button class="btn btn-default pull-right" ng-if="oc.ds.isVendorAdmin" ng-click="oc.openModel()" data-toggle="modal" data-target="#addMemberModal">Add member</button>
         </div>
-		<div table-directive columns="oc.tableColumns" data="oc.users" allowSelect="false"></div>
+		<div ng-attr-id="{{oc.ds.isVendorAdmin?'members-table':'members-table-na'}}" table-directive columns="oc.tableColumns" data="oc.users" allowSelect="false" operations-visible="oc.ds.isVendorAdmin" on-delete="oc.deleteMember" delete-visible-for-row="oc.deleteVisible"></div>
     </div>
     <!-- Popup control for adding members to organization -->
     <div class="modal fade" id="addMemberModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -64,7 +67,7 @@
                             <div class="row" ng-if="!oc.DataService.configuration['sso.enabled']">
                                 <div class="form-group">
                                     <div class="col-md-11 col-centered">
-                                        <label>* User name</label>
+                                        <label>* User name:</label>
                                         <input type="text" class="form-control" ng-model="udata.name">
                                     </div>
                                 </div>
@@ -73,7 +76,7 @@
                             <div class="row">
                                 <div class="form-group">
                                     <div class="col-md-11 col-centered">
-                                        <label>* Email</label>
+                                        <label>* Email:</label>
                                         <input type="text"  class="form-control" ng-model="udata.email">
                                     </div>
                                 </div>
@@ -99,7 +102,7 @@
                             </div>
                             <div class="row">
                                 <div class="col-md-11 col-centered">
-                                    <div class="form-control-static bg-info div-padded-sides div-rounded">
+                                    <div class="form-control-static bg-info div-padded div-rounded">
                                         <p ng-if="oc.DataService.configuration['sso.enabled']">The user's new role assignment will need to be confirmed by the user upon login.</p>
                                         <p style="margin-bottom: 0px;"><b>Privacy note:</b> By clicking 'Save changes' you grant the user's consent on his/her behalf to record the provided information. This is used only for internal identification purposes and is never shared with other parties. <span ng-if="!oc.DataService.configuration['sso.enabled']">Alternatively you may also complete this form with information that is not personally identifiable. </span>Please refer to the legal notice (link available in the screen's footer) for more information.</p>
                                     </div>

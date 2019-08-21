@@ -1,7 +1,7 @@
 class RestService
 
-    @$inject = ['$http', '$q', '$log', 'AuthProvider', '$rootScope', 'Events']
-    constructor: (@$http, @$q, @$log, @AuthProvider, @$rootScope, @Events) ->
+    @$inject = ['$http', '$q', '$log', 'AuthProvider', '$rootScope', 'Events', 'ConfirmationDialogService']
+    constructor: (@$http, @$q, @$log, @AuthProvider, @$rootScope, @Events, @ConfirmationDialogService) ->
         @$log.debug "Constructing RestService..."
 
     get: (config) ->
@@ -38,7 +38,16 @@ class RestService
             (error) =>
                 if error? && error.status? && error.status == 401
                     # Handle only authorisation-related errors.
-                    @$rootScope.$emit(@Events.onLogout, {full: true})
+                    promise = @ConfirmationDialogService.invalidSessionNotification()
+                    promise
+                        .then(
+                            () =>
+                                @$rootScope.$emit(@Events.onLogout, {full: true})
+                            ,
+                            angular.noop
+                        )
+                        .catch(angular.noop)
+                        .finally(angular.noop)
                 else
                     throw error
         )

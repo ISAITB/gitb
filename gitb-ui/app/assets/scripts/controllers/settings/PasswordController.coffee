@@ -1,7 +1,7 @@
 class PasswordController
 
-    @$inject = ['$log', '$scope', '$location', 'AccountService', 'ErrorService', 'ErrorCodes', 'DataService', '$state']
-    constructor: (@$log, @$scope, @$location, @AccountService, @ErrorService, @ErrorCodes, @DataService, @$state) ->
+    @$inject = ['$log', '$scope', '$location', 'AccountService', 'ErrorService', 'ErrorCodes', 'DataService', '$state', '$rootScope', 'Events']
+    constructor: (@$log, @$scope, @$location, @AccountService, @ErrorService, @ErrorCodes, @DataService, @$state, @$rootScope, @Events) ->
         @$log.debug 'Constructing PasswordController'
 
         @ds = @DataService #shorten service name
@@ -14,6 +14,9 @@ class PasswordController
         @$scope.data.currentPassword == undefined || @$scope.data.currentPassword == '' || 
         @$scope.data.password1 == undefined || @$scope.data.password1 == '' ||
         @$scope.data.password2 == undefined || @$scope.data.password2 == ''
+
+    cancelOneTimePasswordUpdate: () ->
+        @$rootScope.$emit(@Events.onLogout, {full: true})
 
     updatePassword: () ->
         if @checkForm()

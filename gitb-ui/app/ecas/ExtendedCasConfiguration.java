@@ -6,6 +6,9 @@ import org.pac4j.cas.config.CasConfiguration;
 import org.pac4j.cas.store.ProxyGrantingTicketStore;
 import org.pac4j.core.context.WebContext;
 
+/**
+ * Extension class used to supply the ExtendedCas20ServiceTicketValidator to the configuration.
+ */
 public class ExtendedCasConfiguration extends CasConfiguration {
 
     @Override

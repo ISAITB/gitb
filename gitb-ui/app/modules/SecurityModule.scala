@@ -6,6 +6,7 @@ import ecas.ExtendedCasConfiguration
 import org.pac4j.cas.client.{CasClient, CasProxyReceptor}
 import org.pac4j.cas.config.CasProtocol
 import org.pac4j.core.client.Clients
+import org.pac4j.core.client.direct.AnonymousClient
 import org.pac4j.core.config.Config
 import org.pac4j.core.http.DefaultAjaxRequestResolver
 import org.pac4j.core.matching.PathMatcher
@@ -14,6 +15,8 @@ import org.pac4j.play.store.{PlayCacheSessionStore, PlaySessionStore}
 import org.pac4j.play.{CallbackController, LogoutController}
 
 class SecurityModule extends AbstractModule {
+
+  private val CLIENT_NAME: String = "euLoginCASClient"
 
   override def configure(): Unit = {
     // Make sure the configuration is loaded
@@ -51,14 +54,21 @@ class SecurityModule extends AbstractModule {
     }
     casConfiguration.setProxyReceptor(casProxyReceptor)
     val casClient = new CasClient(casConfiguration)
-    casClient.setName("euLoginCASClient")
+    casClient.setName(CLIENT_NAME)
     casClient.setAjaxRequestResolver(new DefaultAjaxRequestResolver)
     casClient
   }
 
   @Provides
   def provideConfig(casClient: CasClient, casProxyReceptor: CasProxyReceptor): Config = {
-    val clients = new Clients(Configurations.AUTHENTICATION_SSO_CALLBACK_URL, casClient, casProxyReceptor)
+    var clients: Clients = null
+    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      clients = new Clients(Configurations.AUTHENTICATION_SSO_CALLBACK_URL, casClient, casProxyReceptor)
+    } else {
+      val anonymoucClient = new AnonymousClient()
+      anonymoucClient.setName(CLIENT_NAME)
+      clients = new Clients(anonymoucClient)
+    }
     val config = new Config(clients)
     config.addAuthorizer("any", new BasicAuthorizer[Nothing])
     config.addMatcher("excludedPath", new PathMatcher().excludePath("/"))

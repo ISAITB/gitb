@@ -70,18 +70,25 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     userInfo
   }
 
-  private def checkHasPrincipal(request: RequestWithAttributes[_]): Boolean = {
-    // TODO set to always true if not ECAS
+  private def checkHasPrincipal(request: RequestWithAttributes[_], skipForNonSSO: Boolean): Boolean = {
     var ok = false
-    val principal = getPrincipal(request)
-    if (principal != null) {
-      ok = true
+    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      val principal = getPrincipal(request)
+      if (principal != null) {
+        ok = true
+      }
+    } else {
+      if (skipForNonSSO) {
+        ok = true
+      } else {
+        ok = false
+      }
     }
     setAuthResult(request, ok, "User is not authenticated")
   }
 
   def canMigrateAccount(request: RequestWithAttributes[AnyContent]) = {
-    var ok = checkHasPrincipal(request)
+    var ok = checkHasPrincipal(request, false)
     if (Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD) {
       ok = true
     }
@@ -103,7 +110,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canViewUserFunctionalAccounts(request: RequestWithAttributes[AnyContent]): Boolean = {
-    checkHasPrincipal(request)
+    checkHasPrincipal(request, false)
   }
 
   def canSelectFunctionalAccount(request: RequestWithAttributes[AnyContent], id: Long): Boolean = {
@@ -203,6 +210,13 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     } else if (isCommunityAdmin(userInfo)) {
       val user = userManager.getById(userId)
       ok = canManageOrganisationFull(request, userInfo, user.organization)
+    } else if (isOrganisationAdmin(userInfo)) {
+      if (!Configurations.DEMOS_ENABLED || Configurations.DEMOS_ACCOUNT != userInfo.id) {
+        val user = userManager.getById(userId)
+        if (userInfo.organization.isDefined && user.organization == userInfo.organization.get.id) {
+          ok = canUpdateOwnOrganisation(request)
+        }
+      }
     }
     setAuthResult(request, ok, "User cannot manage the requested user")
   }
@@ -846,17 +860,15 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   def canUpdateOwnProfile(request: RequestWithAttributes[_]):Boolean = {
     var ok = checkIsAuthenticated(request)
     if (ok) {
-      ok = !Configurations.AUTHENTICATION_SSO_ENABLED
+      val userId = getRequestUserId(request)
+      ok = !Configurations.AUTHENTICATION_SSO_ENABLED &&
+        (!Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT)
     }
     setAuthResult(request, ok, "User cannot edit own profile")
   }
 
   def canViewOwnProfile(request: RequestWithAttributes[_]):Boolean = {
     checkIsAuthenticated(request)
-  }
-
-  def canViewOwnBasicProfile(request: RequestWithAttributes[_]):Boolean = {
-    checkHasPrincipal(request)
   }
 
   def canCreateUserInOwnOrganisation(request: RequestWithAttributes[_]):Boolean = {
@@ -868,7 +880,12 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canUpdateOwnOrganisation(request: RequestWithAttributes[_]):Boolean = {
-    setAuthResult(request, isAnyAdminType(getUser(getRequestUserId(request))), "User cannot manage own organisation")
+    var ok = isAnyAdminType(getUser(getRequestUserId(request)))
+    if (ok) {
+      val userId = getRequestUserId(request)
+      ok = !Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT
+    }
+    setAuthResult(request, ok, "User cannot manage own organisation")
   }
 
   def canViewOwnOrganisation(request: RequestWithAttributes[_]):Boolean = {
@@ -1224,7 +1241,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   private def checkIsAuthenticated(request: RequestWithAttributes[_]): Boolean = {
     getRequestUserId(request)
     var ok = false
-    if (checkHasPrincipal(request)) {
+    if (checkHasPrincipal(request, true)) {
       ok = true
       setAuthResult(request, ok, "User is not authenticated")
     }

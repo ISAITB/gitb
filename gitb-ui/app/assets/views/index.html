@@ -32,7 +32,7 @@
                           </div>
                           <div class="col-xs-5">
                             <ul class="list-account-options">
-                              <li ui-sref-active="active" ng-if="(indexCtrl.DataService.configuration['sso.enabled'] || !indexCtrl.DataService.user.onetime) && indexCtrl.AuthProvider.isAuthenticated()">
+                              <li ui-sref-active="active" ng-if="!indexCtrl.DataService.isDemoAccount() && (indexCtrl.DataService.configuration['sso.enabled'] || !indexCtrl.DataService.user.onetime) && indexCtrl.AuthProvider.isAuthenticated()">
                                 <a class="pointer" ui-sref="app.settings.profile">Settings</a>
                               </li>
                               <li ng-if="indexCtrl.DataService.configuration['sso.enabled'] && indexCtrl.AuthProvider.isAuthenticated()">

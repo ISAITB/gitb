@@ -862,19 +862,20 @@ object JsonUtil {
 
   def serializeConfigurationProperties(config: util.HashMap[String, String]):JsObject = {
     val json = Json.obj(
-      "email.enabled" -> config.get("email.enabled"),
-      "email.attachments.maxCount" -> config.get("email.attachments.maxCount"),
-      "email.attachments.maxSize" -> config.get("email.attachments.maxSize"),
+      "email.enabled" -> config.get("email.enabled").toBoolean,
+      "email.attachments.maxCount" -> config.get("email.attachments.maxCount").toInt,
+      "email.attachments.maxSize" -> config.get("email.attachments.maxSize").toLong,
       "email.attachments.allowedTypes" -> config.get("email.attachments.allowedTypes"),
-      "survey.enabled" -> config.get("survey.enabled"),
+      "survey.enabled" -> config.get("survey.enabled").toBoolean,
       "survey.address" -> config.get("survey.address"),
       "userguide.ou" -> config.get("userguide.ou"),
       "userguide.oa" -> config.get("userguide.oa"),
       "userguide.ca" -> config.get("userguide.ca"),
       "userguide.ta" -> config.get("userguide.ta"),
-      "sso.enabled" -> config.get("sso.enabled"),
-      "sso.inMigration" -> config.get("sso.inMigration"),
-      "demos.account" -> config.get("demos.account")
+      "sso.enabled" -> config.get("sso.enabled").toBoolean,
+      "sso.inMigration" -> config.get("sso.inMigration").toBoolean,
+      "demos.enabled" -> config.get("demos.enabled").toBoolean,
+      "demos.account" -> config.get("demos.account").toLong
     )
     json
   }

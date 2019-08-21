@@ -1,7 +1,7 @@
 class OrganizationController
 
-    @$inject = ['$log', '$scope', '$location', '$uibModal', 'DataService', 'AccountService', 'AuthService', 'ErrorService', 'Constants']
-    constructor: (@$log, @$scope, @$location, @$uibModal, @DataService, @AccountService, @AuthService, @ErrorService, @Constants) ->
+    @$inject = ['$log', '$scope', '$location', '$uibModal', 'DataService', 'AccountService', 'AuthService', 'ErrorService', 'Constants', 'UserService', 'ConfirmationDialogService']
+    constructor: (@$log, @$scope, @$location, @$uibModal, @DataService, @AccountService, @AuthService, @ErrorService, @Constants, @UserService, @ConfirmationDialogService) ->
         @$log.debug 'Constructing OrganizationController'
 
         @ds = @DataService #shorten service name
@@ -39,6 +39,25 @@ class OrganizationController
 
     userStatus: (ssoStatus) =>
         @DataService.userStatus(ssoStatus)
+
+    deleteVisible: (member) =>
+        # Don't allow deletion of own account or demo user account.
+        member.id != @DataService.user.id && (!@DataService.configuration['demos.enabled'] || @DataService.configuration['demos.account'] != member.id)
+
+    deleteMember: (member) =>
+        @memberSpinner = true
+        @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this user?", "Yes", "No")
+        .then () =>
+            @UserService.deleteVendorUser(member.id)
+            .then (data) =>
+                if data.error_code?
+                    @ErrorService.showErrorMessage(data.error_description)
+                else
+                    @getVendorUsers() #get users list again
+                @memberSpinner = false # stop spinner        
+            .catch (error) =>
+                @ErrorService.showErrorMessage(error)
+                @memberSpinner = false # stop spinner
 
     getVendorUsers:() =>
         @memberSpinner = true #start spinner

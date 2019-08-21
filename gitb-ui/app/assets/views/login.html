@@ -1,4 +1,4 @@
-<section class="page-top">
+<section class="page-top" ng-controller="LoginController as lc">
     <div class="container">
         <div class="row">
             <div class="col-xs-12">
@@ -14,7 +14,7 @@
             <span class="tab" style="font-size: xx-large;"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>
         </div>
     </div>
-    <div ng-if="lc.loginOption != lc.Constants.LOGIN_OPTION.DEMO">
+    <div ng-if="lc.loginOption != lc.Constants.LOGIN_OPTION.DEMO && lc.DataService.configuration['sso.enabled']">
         <div class="container" ng-if="lc.DataService.configuration['sso.enabled']">
             <div class="row">
                 <div class="col-xs-12">
@@ -40,20 +40,58 @@
                 </div>
             </div>
         </div>
-        <div class="container" ng-if="lc.DataService.configuration['sso.enabled'] == false">
-            <div class="row">
-                <div class="col-md-12">
-                    <div class="row featured-boxes login">
-                        <div class="col-md-6">
-                            <div class="featured-box featured-box-secundary default info-content">
-                                <div class="box-content">
-                                    <ng-include src="'assets/views/login-form.html'"></ng-include>
+    </div>
+    <div class="container" ng-if="lc.loginOption != lc.Constants.LOGIN_OPTION.DEMO && !lc.DataService.configuration['sso.enabled']">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="row">
+                    <div class="page settings">
+                        <form class="form-horizontal">
+                        <div class="panel panel-default">
+                            <div class="panel-heading">
+                                <h4 class="title">Login</h4>
+                            </div>
+                            <div class="panel-body">
+                                <!-- Error messages -->
+                                <div class="row col-md-10 col-md-offset-1">
+                                    <div uib-alert ng-repeat="alert in lc.alerts" ng-class="'alert-' + alert.type" close="lc.closeAlert($index)">{{alert.msg}}</div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-10 col-md-offset-1">
+                                        <div class="form-group">
+                                            <label class="col-sm-3 control-label" for="email">Email address:</label>
+                                            <div class="col-sm-7"><input id="email" ng-model="lc.email" class="form-control" required></div>
+                                        </div>
+                                        <div class="form-group">
+                                            <label class="col-sm-3 control-label" for="password">Password:</label>
+                                            <div class="col-sm-7"><input id="password" ng-model="lc.password" class="form-control" type="password" required></div>
+                                        </div>
+                                        <div class="form-group">
+                                            <div class="col-sm-offset-3 col-sm-7">
+                                                <div class="checkbox">
+                                                    <label>
+                                                        <input type="checkbox"> Remember me
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row col-md-10 col-md-offset-1">
+                                    <div class="bg-info div-rounded div-padded">
+                                        <span><b>Privacy note:</b> By clicking 'Log in' you consent to the use of cookies to manage your session. Please refer to the legal notice (link available in the screen's footer) for more information.</span>
+                                    </div>
                                 </div>
                             </div>
+                            <div class="panel-footer">
+                                <input type="submit" ng-click="lc.login()" value="Log in" class="btn btn-default">
+                                <button ng-click="lc.cancelLogin()" class="btn btn-default">Cancel</button>
+                            </div>
+                            </form>
                         </div>
-                    </div>
+                    </div>                    
                 </div>
             </div>
-        </div>    
-    </div>
+        </div>
+    </div>    
 </div>

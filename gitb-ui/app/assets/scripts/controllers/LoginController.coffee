@@ -1,11 +1,11 @@
 class LoginController
 
 	@$inject = [
-		'$log', '$scope', '$rootScope', '$location', '$http', '$uibModal'
-		'AuthService', 'AuthProvider', 'Events', 'Constants', 'ErrorService', 'RestService', 'DataService', '$cookies'
+		'$log', '$rootScope', '$location', '$http', '$uibModal'
+		'AuthService', 'AuthProvider', 'Events', 'Constants', 'ErrorService', 'RestService', 'DataService', '$cookies', '$window'
 	]
-	constructor: (@$log, @$scope, @$rootScope, @$location, @$http, @$uibModal, @AuthService,
-		@AuthProvider, @Events, @Constants, @ErrorService, @RestService, @DataService, @$cookies) ->
+	constructor: (@$log, @$rootScope, @$location, @$http, @$uibModal, @AuthService,
+		@AuthProvider, @Events, @Constants, @ErrorService, @RestService, @DataService, @$cookies, @$window) ->
 		@$log.debug "Constructing LoginController..."
 		if (@AuthProvider.isAuthenticated())
 			@$location.path('/')
@@ -67,7 +67,7 @@ class LoginController
 				@$rootScope.$emit(@Events.onLogin, {
 					tokens: result.data,
 					path: path,
-					remember: if @$scope.rememberme? then @$scope.rememberme else false
+					remember: if @rememberme? then @rememberme else false
 				})
 				@spinner = false #stop spinner
 			(error) =>
@@ -76,17 +76,20 @@ class LoginController
 						@alerts.push({type:'danger', msg:"Incorrect email or password."})
 					else
 						@ErrorService.showErrorMessage(error)
-				@$scope.password = '' #clear password field
+				@password = '' #clear password field
 				@spinner = false		 #stop spinner
 		)
 
+	cancelLogin: () ->
+		url = @$location.absUrl()
+		@$window.location.href = url.substring(0, url.indexOf('app#!'))
 
 	#call remote login operation to get access token to be authorized user operations
 	login: () ->
 		if @checkForm()
 			data = {
-				email: @$scope.email,
-				password: @$scope.password
+				email: @email,
+				password: @password
 			}
 			options = @RestService.configureOptions(
 				'POST', 
@@ -105,15 +108,15 @@ class LoginController
 		emailRegex = @Constants.EMAIL_REGEX
 
 		#check for empty email input
-		if @$scope.email == undefined || @$scope.email == ''
+		if @email == undefined || @email == ''
 			@alerts.push({type:'danger', msg:"Please enter your email address."})
 			valid = false
 		#check for invalid email input
-		else if !emailRegex.test(@$scope.email)
+		else if !emailRegex.test(@email)
 			@alerts.push({type:'danger', msg:"Please enter a valid email address."})
 			valid = false
 		#check for empty password input
-		else if @$scope.password == undefined || @$scope.password == ''
+		else if @password == undefined || @password == ''
 			@alerts.push({type:'danger', msg:"Please enter your password."})
 			valid = false
 

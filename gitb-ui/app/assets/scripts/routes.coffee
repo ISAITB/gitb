@@ -147,6 +147,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.onetime':
 				url: '/onetime'
 				templateUrl: 'assets/views/onetime-password.html'
+				controller: 'PasswordController'
+				controllerAs: 'pc'
 			'app.tests':
 				url: '/tests'
 				abstract: true
@@ -217,9 +219,6 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/systems/tests.html'
 				controller: 'SystemTestsController'
 				controllerAs: 'systemTestsCtrl'
-			# 'app.profile':
-			# 	url: '/profile'
-			# 	templateUrl: 'assets/views/profile.html'
 			'app.settings':
 				url: '/settings'
 				templateUrl: 'assets/views/settings/settings.html'
@@ -241,9 +240,6 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/settings/password.html'
 				controller: 'PasswordController'
 				controllerAs: 'pc'
-			# 'app.settings':
-			# 	url: '/settings'
-			# 	templateUrl: 'assets/views/settings.html'
 			'app.admin':
 				url: '/admin'
 				templateUrl: 'assets/views/admin/index.html'

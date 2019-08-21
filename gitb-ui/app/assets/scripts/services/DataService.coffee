@@ -47,6 +47,9 @@ class DataService
 		@isSystemAdmin = (@user.role == @Constants.USER_ROLE.SYSTEM_ADMIN)
 		@isCommunityAdmin = (@user.role == @Constants.USER_ROLE.COMMUNITY_ADMIN)
 
+	isDemoAccount: () ->
+		@user? && @configuration['demos.enabled'] && @configuration['demos.account'] == @user.id
+
 	setConfiguration: (config) ->
 		@configuration = config
 		@acceptedEmailAttachmentTypes = {}

@@ -1,41 +1,45 @@
 # Provides a wrapper service for WebSockets
 class ErrorService
 
-  @$inject = ['$q', '$log', '$uibModal', 'Constants', 'ErrorTemplateService', 'AccountService']
-  constructor: (@$q, @$log, @$uibModal, @Constants, @ErrorTemplateService, @AccountService) ->
+  @$inject = ['$q', '$log', '$uibModal', 'Constants', 'ErrorTemplateService', 'AccountService', 'ConfirmationDialogService']
+  constructor: (@$q, @$log, @$uibModal, @Constants, @ErrorTemplateService, @AccountService, @ConfirmationDialogService) ->
     @$log.debug "Constructing ErrorService"
 
   showErrorMessage: (error, withRetry) =>
     errorDeferred = @$q.defer()
-    if !error?
-      errorObj = {}
+
+    if @ConfirmationDialogService.sessionNotificationOpen
+      errorDeferred.resolve()
     else
-      if (typeof error == 'string' || error instanceof String)
+      if !error?
         errorObj = {}
-        errorObj.data = {}
-        errorObj.data.error_description = error
       else
-        errorObj = error
-    if errorObj.data?.error_id?
-      # An error ID is assigned only to unexpected errors
-      if !errorObj.template?
-        @AccountService.getVendorProfile()
-        .then (vendor) =>
-          if vendor.errorTemplates?
-            errorObj.template = vendor.errorTemplates.content
-            @modal = @openModal(errorObj, withRetry, errorDeferred)
-          else
-            communityId = vendor.community
-            @ErrorTemplateService.getCommunityDefaultErrorTemplate(communityId)
-            .then (data) =>
-              if data.exists == true
-                errorObj.template = data.content
+        if (typeof error == 'string' || error instanceof String)
+          errorObj = {}
+          errorObj.data = {}
+          errorObj.data.error_description = error
+        else
+          errorObj = error
+      if errorObj.data?.error_id?
+        # An error ID is assigned only to unexpected errors
+        if !errorObj.template?
+          @AccountService.getVendorProfile()
+          .then (vendor) =>
+            if vendor.errorTemplates?
+              errorObj.template = vendor.errorTemplates.content
               @modal = @openModal(errorObj, withRetry, errorDeferred)
+            else
+              communityId = vendor.community
+              @ErrorTemplateService.getCommunityDefaultErrorTemplate(communityId)
+              .then (data) =>
+                if data.exists == true
+                  errorObj.template = data.content
+                @modal = @openModal(errorObj, withRetry, errorDeferred)
+        else
+          @modal = @openModal(errorObj, withRetry, errorDeferred)
       else
+        # Expected errors (e.g. validation errors) that have clear error messages
         @modal = @openModal(errorObj, withRetry, errorDeferred)
-    else
-      # Expected errors (e.g. validation errors) that have clear error messages
-      @modal = @openModal(errorObj, withRetry, errorDeferred)
     errorDeferred.promise
 
   openModal: (error, withRetry, errorDeferred) =>
