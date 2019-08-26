@@ -267,7 +267,16 @@ public class VariableResolver implements XPathVariableResolver{
         }
         //MapType
         else {
-            return ((MapType)container).getItem(keyOrIndex);
+            DataType returnValue = ((MapType)container).getItem(keyOrIndex);
+            if (returnValue == null) {
+                // Check to see in case of numeric index.
+                try {
+                    returnValue = ((MapType)container).getItem(String.valueOf(Double.valueOf(keyOrIndex).intValue()));
+                } catch (Exception e) {
+                    // Ignore.
+                }
+            }
+            return returnValue;
         }
     }
 
