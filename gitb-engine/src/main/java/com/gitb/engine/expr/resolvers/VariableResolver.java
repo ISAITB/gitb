@@ -262,7 +262,7 @@ public class VariableResolver implements XPathVariableResolver{
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid variable reference, you can use index or key only on container types"));
         }
         if(container instanceof ListType){
-            int index = Integer.parseInt(keyOrIndex);
+            int index = Double.valueOf(keyOrIndex).intValue();
             return ((ListType) container).getItem(index);
         }
         //MapType
