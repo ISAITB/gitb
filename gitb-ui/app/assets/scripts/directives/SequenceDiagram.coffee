@@ -260,10 +260,10 @@ extractSteps = (s, actorInfo) =>
           '\'completed\': message.status == TEST_STATUS.COMPLETED}">'+
           '<div class="message-type">'+
             '<span>{{message.type}}</span>'+
-            '<span class="dropdown iterations" dropdown ng-if="message.type == \'loop\' && message.sequences != null && message.sequences.length > 0">'+
-              '<span href="" class="dropdown-toggle" dropdown-toggle>Show Iterations</span>'+
-              '<ul class="dropdown-menu">'+
-                '<li class="dropdown-item"'+
+            '<span class="uib-dropdown iterations" uib-dropdown ng-if="message.type == \'loop\' && message.sequences != null && message.sequences.length > 0">'+
+              '<span href="" class="uib-dropdown-toggle" uib-dropdown-toggle>Show Iterations</span>'+
+              '<ul uib-dropdown-menu class="uib-dropdown-menu">'+
+                '<li class="uib-dropdown-item"'+
                   'ng-repeat="iteration in message.sequences track by $index" ng-click="showLoopIteration($index)" '+
                   'ng-if="iteration != null" '+
                   'ng-class="{\'processing\': iteration.status == TEST_STATUS.PROCESSING, '+
