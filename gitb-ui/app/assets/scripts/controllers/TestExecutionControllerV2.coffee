@@ -734,7 +734,7 @@ class TestExecutionControllerV2
         if (status == @Constants.TEST_STATUS.COMPLETED) ||
         (status == @Constants.TEST_STATUS.ERROR) ||
         (status == @Constants.TEST_STATUS.SKIPPED && (current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.PROCESSING)) ||
-        ((status == @Constants.TEST_STATUS.PROCESSING || status == @Constants.TEST_STATUS.WAITING) && (current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.SKIPPED))
+        ((status == @Constants.TEST_STATUS.PROCESSING || status == @Constants.TEST_STATUS.WAITING) && (@started && current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.SKIPPED))
           current.status = status
           current.report = report
 
