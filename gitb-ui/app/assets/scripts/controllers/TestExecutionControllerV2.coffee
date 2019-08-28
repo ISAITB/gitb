@@ -227,6 +227,8 @@ class TestExecutionControllerV2
       @updateTestCaseStatus(@currentTest.id, @Constants.TEST_CASE_STATUS.ERROR)
     else
       @updateTestCaseStatus(@currentTest.id, @Constants.TEST_CASE_STATUS.STOPPED)
+    # Make sure steps still marked as pending or in progress are set as skipped.
+    @setPendingStepsToSkipped()
     if (@currentTestIndex + 1 < @testsToExecute.length)
       @$timeout(() => 
         @nextStep()
@@ -599,6 +601,11 @@ class TestExecutionControllerV2
     if (@messagesToProcess? && @messagesToProcess.length > 0)
       msg = @messagesToProcess.shift()
       @processMessage(msg)
+
+  setPendingStepsToSkipped: () =>
+    for step in @$scope.stepsOfTests[@currentTest.id]
+      if step.status == @Constants.TEST_STATUS.PROCESSING || step.status == @Constants.TEST_STATUS.WAITING
+        step.status = @Constants.TEST_STATUS.SKIPPED
 
   processMessage: (msg) =>
     response = angular.fromJson(msg.data)
