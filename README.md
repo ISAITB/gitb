@@ -19,10 +19,10 @@ By default these are set to work with docker containers as defined in /gitb-remo
 
 ## Running
 
-GITB PoC Testbed implementation can be run after a successful build by executing the following command within the root folder of the project:
+GITB PoC Testbed implementation can be run after a successful build by executing the following command within the project's gitb-testbed-service module's folder:
 
 ```sh
-$ mvn jetty:run -pl ./gitb-testbed-service/
+$ mvn spring-boot:run
 ```
 
 # GITB UI
@@ -50,11 +50,15 @@ For this application to work properly, the following DB configurations must be s
 * db.default.rooturl="jdbc:mysql://localhost/"
 * db.default.name="gitb"
 
+Note that if running with a VM-based Docker DB "localhost" would need to be replaced with typically "192.168.99.100".
+
 ### Redis Server
 By default, it assumed that there is a Redis Server available at the `127.0.0.1:6379` address. This can be configured by setting the parameters in `gitb-ui/conf/application.conf`:
 
 * redis.host = "127.0.0.1"
 * redis.port = 6379
+
+Similarly, if Redis is running via a VM-based Docker machine replace "127.0.0.1" with (typically) "192.168.99.100".
 
 ### GITB Engine
 To run the tests, an instance of the GITB Engine should be up and running. The **Testbed Service** endpoint for the GITB Engine instance can be configured by setting the `testbed.service.url` parameter in `gitb-ui/conf/application.conf`.
@@ -80,14 +84,6 @@ Since this application is using the [Play! Framework](http://www.playframework.c
 These build commands are equal for both docker and local deployment. The application config file defaults to a local deployment and is working with environment variables for the docker container.
 This way no additional steps have to be taken depending for which deployment we are building for.
 
-## Test Suite Deployment
-Currently only users with *System Admin* roles can deploy test suites. Test suites are deployed using zip files.
-
-One of the critical things about the structure of the test suite archives is the test suite definition xml file. This file is formatted according to the `TestSuite` type defined in the `gitb-tdl` schema (ns: http://www.gitb.com/tdl/v1/) and it should be located at the root of the test suite archive.
-
-After configuring a user as *System Admin*, when this user is logged in to the system `Admin` link appears at the top navigation bar.
-
-To deploy a test suite, a domain and a specification related to the test suite must be created. Then, in the specification detail page, by using the `Deploy test suite` button, a test suite archived can be uploaded. If the deployment is successful, test cases and actors related to the test suite should be added to the system.
-
-# Version
-1.0-SNAPSHOT
+A fresh test bed installation is configured to work with functional accounts where the test bed admin is:
+* Username: test@test.com
+* Password: test
