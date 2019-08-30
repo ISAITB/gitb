@@ -50,7 +50,7 @@ class SystemConfigurationService @Inject()(systemConfigurationManager: SystemCon
 
   def getFaviconForTheme = AuthorizedAction { request =>
     authorizationManager.canAccessThemeData(request)
-    Ok.sendFile(new File(getFaviconPath()))
+    Ok.sendResource(getFaviconPath(), environment.classLoader, true)
   }
 
   def getLogo = AuthorizedAction { request =>
