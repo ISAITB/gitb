@@ -84,6 +84,9 @@ class LoginController
 		url = @$location.absUrl()
 		@$window.location.href = url.substring(0, url.indexOf('app#!'))
 
+	loginDisabled: () ->
+		@spinner || @email == undefined || @email == '' || @password == undefined || @password == ''
+
 	#call remote login operation to get access token to be authorized user operations
 	login: () ->
 		if @checkForm()
