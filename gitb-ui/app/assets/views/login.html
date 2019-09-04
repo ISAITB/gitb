@@ -2,18 +2,17 @@
     <div class="container">
         <div class="row">
             <div class="col-xs-12">
-                <h2 ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.DEMO">Home</h2>
-                <h2 ng-if="lc.loginOption != lc.Constants.LOGIN_OPTION.DEMO">Welcome to the Interoperability Test Bed</h2>
+                <h2 ng-if="lc.directLogin">{{lc.directLogin?'Home':'Welcome to the Interoperability Test Bed'}}</h2>
             </div>
         </div>
     </div>
 </section>
-<div ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.DEMO">
+<div ng-if="lc.directLogin">
     <div class="container">
         <span class="tab" style="font-size: xx-large;"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>
     </div>
 </div>
-<div ng-if="lc.DataService.configuration && lc.loginOption != lc.Constants.LOGIN_OPTION.DEMO">
+<div ng-if="!lc.directLogin">
     <div ng-if="lc.DataService.configuration['sso.enabled']">
         <div class="container" ng-if="lc.DataService.configuration['sso.enabled']">
             <div class="row">
@@ -30,7 +29,8 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="row" ng-class="{'account-list-new': lc.DataService.actualUser.accounts.length > 0}">
+                        <div class="row account-list-new">
+                                <!-- <div class="row" ng-class="{'account-list-new': lc.DataService.actualUser.accounts.length > 0}"> -->
                             <button class="btn btn-primary" ng-click="lc.createAccount()" ng-disabled="lc.createPending"><span class="tab" ng-if="lc.createPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>
                                 <span ng-if="lc.DataService.actualUser.accounts.length > 0">Link another role to your account</span>
                                 <span ng-if="lc.DataService.actualUser.accounts.length == 0">Link a role to your account</span>

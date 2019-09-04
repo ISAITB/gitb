@@ -14,6 +14,12 @@ class Constants
 
 	@DEFAULT_COMMUNITY_ID = 0
 
+	@SELF_REGISTRATION_TYPE = 
+		NOT_SUPPORTED: 1
+		PUBLIC_LISTING: 2
+		PUBLIC_LISTING_WITH_TOKEN: 3
+		TOKEN: 4
+
 	@TEST_ROLE =
 		SUT: "SUT"
 		SIMULATED: "SIMULATED"
@@ -24,6 +30,8 @@ class Constants
 		REGISTER: "register" 
 		DEMO: "demo" 
 		MIGRATE: "migrate" 
+		LINK_ACCOUNT: "link" 
+		FORCE_CHOICE: "force"
 
 	@WEB_SOCKET_COMMAND =
 		REGISTER: "register"

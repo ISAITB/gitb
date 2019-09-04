@@ -36,7 +36,7 @@
                                 <a class="pointer" ui-sref="app.settings.profile">Settings</a>
                               </li>
                               <li ng-if="indexCtrl.DataService.configuration['sso.enabled'] && indexCtrl.AuthProvider.isAuthenticated()">
-                                  <a class="pointer" ng-click="indexCtrl.switchAccount()">Switch account</a>
+                                  <a class="pointer" ng-click="indexCtrl.switchAccount()">Switch role</a>
                               </li>
                               <li>
                                 <a class="pointer" ng-click="indexCtrl.logout()">Logout</a>

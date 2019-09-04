@@ -16,11 +16,13 @@ class CommunityService
       authenticate: true
       params: params
 
-  createCommunity: (shortName, fullName, email, domainId) ->
+  createCommunity: (shortName, fullName, email, selfRegType, selfRegToken, domainId) ->
     data = {
       community_sname: shortName,
       community_fname: fullName,
-      community_email: email
+      community_email: email,
+      community_selfreg_type: selfRegType,
+      community_selfreg_token: selfRegToken
     }
 
     if domainId?
@@ -37,11 +39,13 @@ class CommunityService
       authenticate: true
     })
 
-  updateCommunity: (communityId, shortName, fullName, email, domainId) ->
+  updateCommunity: (communityId, shortName, fullName, email, selfRegType, selfRegToken, domainId) ->
     data = {
       community_sname: shortName,
       community_fname: fullName,
-      community_email: email
+      community_email: email,
+      community_selfreg_type: selfRegType,
+      community_selfreg_token: selfRegToken
     }
 
     if domainId?

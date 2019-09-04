@@ -15,12 +15,19 @@ class LoginController
 			@loginOption == @Constants.LOGIN_OPTION.NONE
 		@alerts = []	  # alerts to be displayed
 		@spinner = false # spinner to be display while waiting response from the server
+		@directLogin = false
 		@createPending = false
 
-		if @loginOption == @Constants.LOGIN_OPTION.REGISTER || (@DataService.configuration['sso.inMigration'] && @loginOption == @Constants.LOGIN_OPTION.MIGRATE)
+		if @loginOption == @Constants.LOGIN_OPTION.REGISTER || 
+				(@DataService.configuration['sso.enabled'] && (@DataService.configuration['sso.inMigration'] && @loginOption == @Constants.LOGIN_OPTION.MIGRATE ||
+					@loginOption == @Constants.LOGIN_OPTION.LINK_ACCOUNT))
 			@createAccount(@loginOption)
 		else if @loginOption == @Constants.LOGIN_OPTION.DEMO
+			@directLogin = true
 			@loginViaSelection(@DataService.configuration['demos.account'])
+		else if @DataService.actualUser.accounts? && @DataService.actualUser.accounts.length == 1 && @loginOption != @Constants.LOGIN_OPTION.FORCE_CHOICE
+			@directLogin = true
+			@loginViaSelection(@DataService.actualUser.accounts[0].id)
 
 	createAccount:(loginOption) ->
 		if !loginOption?

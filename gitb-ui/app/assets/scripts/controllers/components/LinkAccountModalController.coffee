@@ -11,6 +11,8 @@ class LinkAccountModalController
             @choice = @Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER
         else if createOption == @Constants.LOGIN_OPTION.MIGRATE
             @choice = @Constants.CREATE_ACCOUNT_OPTION.MIGRATE
+        else if createOption == @Constants.LOGIN_OPTION.LINK_ACCOUNT
+            @choice = @Constants.CREATE_ACCOUNT_OPTION.LINK
 
     selectAccount: (accountId) =>
         if @selectedAccountId == accountId

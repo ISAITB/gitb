@@ -60,12 +60,21 @@
 						<div class="col-xs-12">
 							<h4>The Interoperability Test Bed is a platform to help you test conformance against one or more specifications.</h4>
 							<div style="padding-top:20px">
-								<button type="button" class="btn btn-primary" onclick="option()" style="padding:20px">Click to log in</button>
-								@if(config.demosEnabled) {
-									<span style="margin-left: 20px;">New to the Test Bed? <a href="#" onclick="option('register')">Create an account</a> or <a href="#" onclick="option('demo')">try out our demos</a></span>.
-								} else {
-									<span style="margin-left: 20px;">New to the Test Bed? <a href="#" onclick="option('register')">Create an account</a>.</span>
-								}
+								<div style="display:flex; align-items:center;">
+									<div>
+										<button type="button" class="btn btn-primary" onclick="option()" style="padding:20px">Click to log in</button>
+									</div>
+									<div style="margin-left:20px;">
+										@if(config.ssoEnabled) {
+										<p><b style="margin-right:10px;">Assigned a new role by an administrator?</b><a href="#" onclick="option('link')">Confirm your new role</a>.</p>
+										}
+										@if(config.demosEnabled) {
+										<span><b style="margin-right:10px;">New to the Test Bed?</b><a href="#" onclick="option('register')">Create an account</a> or <a href="#" onclick="option('demo')">try out our demos</a></span>.
+										} else {
+										<span><b style="margin-right:10px;">New to the Test Bed?</b><a href="#" onclick="option('register')">Create an account</a>.</span>
+										}
+									</div>
+								</div>
 							</div>
 							<div class="bg-info div-rounded div-spaced div-padded">
 								@if(config.ssoEnabled) {

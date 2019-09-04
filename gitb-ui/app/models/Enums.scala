@@ -11,6 +11,11 @@ object Enums {
     val VendorAdmin, VendorUser, DomainUser, SystemAdmin, CommunityAdmin = Value
   }
 
+  object SelfRegistrationType extends Enumeration(1) {
+    type SelfRegistrationType = Value
+    val NotSupported, PublicListing, PublicListingWithToken, Token = Value
+  }
+
   object SpecificationType extends Enumeration(1) {
     type SpecificationType = Value
     val IntegrationProfile, ContentSpecification = Value

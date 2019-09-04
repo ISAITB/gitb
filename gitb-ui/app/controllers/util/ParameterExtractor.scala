@@ -8,6 +8,7 @@ import controllers.util.ParameterExtractor.getUserInfoForSSO
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import models._
+import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
 import utils.HtmlUtil
@@ -110,12 +111,28 @@ object ParameterExtractor {
     Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, false, landingPageId, legalNoticeId, errorTemplateId, communityId)
   }
 
+  def validCommunitySelfRegType(selfRegType: Short) = {
+    selfRegType == SelfRegistrationType.NotSupported.id.toShort || selfRegType == SelfRegistrationType.PublicListing.id.toShort || selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort || selfRegType == SelfRegistrationType.Token.id.toShort
+  }
+
   def extractCommunityInfo(request:Request[AnyContent]):Communities = {
     val sname = requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
     val fname = requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
     val email = optionalBodyParameter(request, Parameters.COMMUNITY_EMAIL)
+    val selfRegType = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
+    if (!validCommunitySelfRegType(selfRegType)) {
+      throw new IllegalArgumentException("Unsupported value ["+selfRegType+"] for self-registration type")
+    }
+    var selfRegToken = optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
+    if (selfRegType == SelfRegistrationType.Token.id.toShort || selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort) {
+      if (selfRegToken.isEmpty || StringUtils.isBlank(selfRegToken.get)) {
+        throw new IllegalArgumentException("Missing self-registration token")
+      }
+    } else {
+      selfRegToken = None
+    }
     val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    Communities(0L, sname, fname, email, domainId)
+    Communities(0L, sname, fname, email, selfRegType, selfRegToken, domainId)
   }
 
   def extractSystemAdminInfo(request:Request[AnyContent]):Users = {

@@ -17,6 +17,15 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
 
   def logger = LoggerFactory.getLogger("CommunityManager")
 
+  def isSelfRegTokenUnique(token: String, communityIdToIgnore: Option[Long]): Boolean = {
+    var q = PersistenceSchema.communities.filter(_.selfRegToken === token)
+    if (communityIdToIgnore.isDefined) {
+      q = q.filter(_.id =!= communityIdToIgnore.get)
+    }
+    val result = exec(q.result.headOption)
+    result.isEmpty
+  }
+
   /**
    * Gets all communities with given ids or all if none specified
    */
@@ -76,7 +85,7 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   /**
    * Update community
    */
-  def updateCommunity(communityId: Long, shortName: String, fullName: String, supportEmail: Option[String], domainId: Option[Long]) = {
+  def updateCommunity(communityId: Long, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], domainId: Option[Long]) = {
     val actions = new ListBuffer[DBIO[_]]()
 
     val community = exec(PersistenceSchema.communities.filter(_.id === communityId).result.headOption)
@@ -92,11 +101,8 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
         val q = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.fullname)
         actions += q.update(fullName)
       }
-      val qs = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.supportEmail)
-      actions += qs.update(supportEmail)
-
-      val q = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.domain)
-      actions += q.update(domainId)
+      val qs = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.supportEmail, c.domain, c.selfRegType, c.selfRegToken)
+      actions += qs.update(supportEmail, domainId, selfRegType, selfRegToken)
 
       exec(DBIO.seq(actions.map(a => a): _*).transactionally)
     } else {

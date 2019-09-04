@@ -96,6 +96,8 @@ object Parameters {
   val COMMUNITY_SNAME = "community_sname"
   val COMMUNITY_FNAME = "community_fname"
   val COMMUNITY_EMAIL = "community_email"
+  val COMMUNITY_SELFREG_TYPE = "community_selfreg_type"
+  val COMMUNITY_SELFREG_TOKEN = "community_selfreg_token"
 
   //TestService parameters
   val ACTOR_ID   = "actor_id"

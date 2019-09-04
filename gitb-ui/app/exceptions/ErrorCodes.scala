@@ -22,6 +22,7 @@ object ErrorCodes {
   val CONFORMANCE_STATEMENT_EXISTS:Int = 119
   val INVALID_CERTIFICATE:Int = 120
   val NO_SUT_TEST_CASES_FOR_ACTOR:Int = 121
+  val DUPLICATE_SELFREG_TOKEN:Int = 122
 
   //Auth Service Related Errors
   val INVALID_ACCESS_TOKEN = 201

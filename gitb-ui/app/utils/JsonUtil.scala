@@ -293,6 +293,8 @@ object JsonUtil {
       "sname" -> community.shortname,
       "fname" -> community.fullname,
       "email" -> community.supportEmail,
+      "selfRegType" -> community.selfRegType,
+      "selfRegToken" -> (if(community.selfRegToken.isDefined) community.selfRegToken.get else JsNull),
       "domainId" -> community.domain
     )
     json

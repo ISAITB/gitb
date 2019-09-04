@@ -2,10 +2,10 @@ class IndexController
 	@$inject = [
 		'$log', '$sce', '$scope', '$rootScope', '$location', '$state', '$window'
 		'AuthProvider', 'SystemConfigurationService', 'DataService', 'AccountService',
-		'Events', 'Constants', 'LegalNoticeService', 'HtmlService', 'ErrorService', '$uibModal', '$q', 'ConfirmationDialogService'
+		'Events', 'Constants', 'LegalNoticeService', 'HtmlService', 'ErrorService', '$uibModal', '$q', 'ConfirmationDialogService', '$cookies'
 	]
 	constructor: (@$log, @$sce, @$scope, @$rootScope, @$location, @$state, @$window,
-		@AuthProvider, @SystemConfigurationService, @DataService, @AccountService, @Events, @Constants,@LegalNoticeService, @HtmlService, @ErrorService, @$uibModal, @$q, @ConfirmationDialogService) ->
+		@AuthProvider, @SystemConfigurationService, @DataService, @AccountService, @Events, @Constants,@LegalNoticeService, @HtmlService, @ErrorService, @$uibModal, @$q, @ConfirmationDialogService, @$cookies) ->
 
 		@$log.debug "Constructing MainController..."
 
@@ -84,7 +84,8 @@ class IndexController
 		@$location.path(address)
 
 	switchAccount: () ->
-		@$rootScope.$emit(@Events.onLogout, {full: false})
+		@$cookies.put(@Constants.LOGIN_OPTION_COOKIE_KEY, @Constants.LOGIN_OPTION.FORCE_CHOICE)
+		@$rootScope.$emit(@Events.onLogout, {full: false, keepLoginOption: true})
 
 	logout: () ->
 		@$rootScope.$emit(@Events.onLogout, {full: true})

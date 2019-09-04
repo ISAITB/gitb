@@ -70,7 +70,8 @@ providers.run ['$log', '$rootScope', '$location', '$window', '$cookies', 'AuthPr
 				.finally(() ->
 					@DataService.destroy()
 					$cookies.remove(atKey)
-					$cookies.remove(loginOptionKey)
+					if eventData == undefined || eventData.keepLoginOption == undefined || !eventData.keepLoginOption
+						$cookies.remove(loginOptionKey)
 					authProvider.deauthenticate()
 					if @eventData.full
 						url = $location.absUrl()
