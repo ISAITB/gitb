@@ -3,8 +3,8 @@ class OrganizationService
   @headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
   @defaultConfig = { headers: @headers }
 
-  @$inject = ['$log', 'RestService']
-  constructor: (@$log, @RestService) ->
+  @$inject = ['$log', 'RestService', 'DataService']
+  constructor: (@$log, @RestService, @DataService) ->
 
   getOrganizations: () ->
     @RestService.get({
@@ -24,12 +24,16 @@ class OrganizationService
       authenticate: true
     })
 
-  createOrganization: (shortName, fullName, landingPage, legalNotice, errorTemplate, otherOrganisation, communityId) ->
+  createOrganization: (shortName, fullName, landingPage, legalNotice, errorTemplate, otherOrganisation, communityId, template, templateName) ->
     data = {
       vendor_sname: shortName,
       vendor_fname: fullName,
-      community_id: communityId,
+      community_id: communityId
     }
+    if @DataService.configuration['registration.enabled']
+      data.template =  template
+      if template && templateName?
+        data.template_name = templateName
 
     if landingPage?
       data.landing_page_id = landingPage.id
@@ -49,11 +53,15 @@ class OrganizationService
     @RestService.delete
       path: jsRoutes.controllers.OrganizationService.deleteOrganization(orgId).url
 
-  updateOrganization: (orgId, shortName, fullName, landingPage, legalNotice, errorTemplate, otherOrganisation) ->
+  updateOrganization: (orgId, shortName, fullName, landingPage, legalNotice, errorTemplate, otherOrganisation, template, templateName) ->
     data = {
       vendor_sname: shortName,
-      vendor_fname: fullName,
+      vendor_fname: fullName
     }
+    if @DataService.configuration['registration.enabled']
+      data.template =  template
+      if template && templateName?
+        data.template_name = templateName
 
     if landingPage?
       data.landing_page_id = landingPage.id

@@ -5,7 +5,7 @@ import config.Configurations
 import controllers.util.{ParameterExtractor, RequestWithAttributes}
 import exceptions.UnauthorizedAccessException
 import javax.inject.{Inject, Singleton}
-import models.Enums.UserRole
+import models.Enums.{SelfRegistrationType, UserRole}
 import models._
 import org.pac4j.core.profile.{CommonProfile, ProfileManager}
 import org.pac4j.play.PlayWebContext
@@ -42,6 +42,13 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                     ) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthorizationManager])
+
+  def getAccountInfo(request: RequestWithAttributes[_]): ActualUserInfo = {
+    val accountInfo = getPrincipal(request)
+    val userAccounts = accountManager.getUserAccountsForUid(accountInfo.uid)
+    val userInfo = new ActualUserInfo(accountInfo.uid, accountInfo.email, accountInfo.firstName, accountInfo.lastName, userAccounts)
+    userInfo
+  }
 
   def getPrincipal(request: RequestWithAttributes[_]): ActualUserInfo = {
     var userInfo: ActualUserInfo = null
@@ -85,6 +92,40 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       }
     }
     setAuthResult(request, ok, "User is not authenticated")
+  }
+
+  def canSelfRegister(request: RequestWithAttributes[_], organisation: Organizations, organisationAdmin: Users, selfRegToken: Option[String], templateId: Option[Long]): Boolean = {
+    var ok = false
+    if (Configurations.REGISTRATION_ENABLED && checkHasPrincipal(request, true)) {
+      val targetCommunity = communityManager.getById(organisation.community)
+      if (targetCommunity.isDefined) {
+        var communityOk = false
+        if (targetCommunity.get.selfRegType == SelfRegistrationType.PublicListing.id.toShort) {
+          communityOk = true
+        } else if (targetCommunity.get.selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort) {
+          if (selfRegToken.isDefined) {
+            communityOk = true
+          }
+        }
+        if (communityOk) {
+          if (templateId.isDefined) {
+            val targetTemplate = organizationManager.getById(templateId.get)
+            if (targetTemplate.isDefined && targetTemplate.get.community == targetCommunity.get.id && targetTemplate.get.template) {
+              ok = true
+            }
+          } else {
+            ok = true
+          }
+        }
+      }
+      setAuthResult(request, ok, "User not allowed to self-register with the provided configuration")
+    }
+    ok
+  }
+
+  def canViewSelfRegistrationOptions(request: RequestWithAttributes[_]): Boolean = {
+    val ok = Configurations.REGISTRATION_ENABLED
+    setAuthResult(request, ok, "User not allowed to view self-registration options")
   }
 
   def canMigrateAccount(request: RequestWithAttributes[AnyContent]) = {

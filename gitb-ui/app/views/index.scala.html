@@ -68,11 +68,13 @@
 										@if(config.ssoEnabled) {
 										<p><b style="margin-right:10px;">Assigned a new role by an administrator?</b><a href="#" onclick="option('link')">Confirm your new role</a>.</p>
 										}
-										@if(config.demosEnabled) {
+										@if(config.demosEnabled && config.registrationEnabled) {
 										<span><b style="margin-right:10px;">New to the Test Bed?</b><a href="#" onclick="option('register')">Create an account</a> or <a href="#" onclick="option('demo')">try out our demos</a></span>.
-										} else {
+										} else {@if(config.demosEnabled && !config.registrationEnabled) {
+										<span><b style="margin-right:10px;">New to the Test Bed?</b><a href="#" onclick="option('demo')">Try out our demos</a>.</span>
+										} else {@if(!config.demosEnabled && config.registrationEnabled) {
 										<span><b style="margin-right:10px;">New to the Test Bed?</b><a href="#" onclick="option('register')">Create an account</a>.</span>
-										}
+										}}}
 									</div>
 								</div>
 							</div>

@@ -60,6 +60,9 @@ object Parameters {
   val ROLE_ID      = "role_id"
   val ORGANIZATION_ID = "organization_id"
   val OTHER_ORGANISATION = "other_organisation"
+  val TEMPLATE = "template"
+  val TEMPLATE_ID = "template_id"
+  val TEMPLATE_NAME = "template_name"
 
   //System Service parameters
   val SYSTEM_ID    = "system_id"

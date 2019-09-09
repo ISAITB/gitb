@@ -109,6 +109,7 @@ class AccountService @Inject() (accountManager: AccountManager, userManager: Use
     configProperties.put("sso.inMigration", String.valueOf(Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD))
     configProperties.put("demos.enabled", String.valueOf(Configurations.DEMOS_ENABLED))
     configProperties.put("demos.account", String.valueOf(Configurations.DEMOS_ACCOUNT))
+    configProperties.put("registration.enabled", String.valueOf(Configurations.REGISTRATION_ENABLED))
     val json = JsonUtil.serializeConfigurationProperties(configProperties)
     ResponseConstructor.constructJsonResponse(json.toString())
   }

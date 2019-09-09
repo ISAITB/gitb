@@ -108,7 +108,15 @@ object ParameterExtractor {
     val landingPageId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LANDING_PAGE_ID)
     val legalNoticeId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LEGAL_NOTICE_ID)
     val errorTemplateId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.ERROR_TEMPLATE_ID)
-    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, false, landingPageId, legalNoticeId, errorTemplateId, communityId)
+    var template:Boolean = false
+    var templateName: Option[String] = None
+    if (Configurations.REGISTRATION_ENABLED) {
+      template = optionalBodyParameter(request, Parameters.TEMPLATE).getOrElse("false").toBoolean
+      if (template) {
+        templateName = optionalBodyParameter(request, Parameters.TEMPLATE_NAME)
+      }
+    }
+    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, false, landingPageId, legalNoticeId, errorTemplateId, template, templateName, communityId)
   }
 
   def validCommunitySelfRegType(selfRegType: Short) = {
@@ -119,17 +127,23 @@ object ParameterExtractor {
     val sname = requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
     val fname = requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
     val email = optionalBodyParameter(request, Parameters.COMMUNITY_EMAIL)
-    val selfRegType = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
-    if (!validCommunitySelfRegType(selfRegType)) {
-      throw new IllegalArgumentException("Unsupported value ["+selfRegType+"] for self-registration type")
-    }
-    var selfRegToken = optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
-    if (selfRegType == SelfRegistrationType.Token.id.toShort || selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort) {
-      if (selfRegToken.isEmpty || StringUtils.isBlank(selfRegToken.get)) {
-        throw new IllegalArgumentException("Missing self-registration token")
+    var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
+    var selfRegToken: Option[String] = None
+    if (Configurations.REGISTRATION_ENABLED) {
+      selfRegType = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
+      if (!validCommunitySelfRegType(selfRegType)) {
+        throw new IllegalArgumentException("Unsupported value ["+selfRegType+"] for self-registration type")
       }
     } else {
-      selfRegToken = None
+      selfRegType = SelfRegistrationType.NotSupported.id.toShort
+      selfRegToken = optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
+      if (selfRegType == SelfRegistrationType.Token.id.toShort || selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort) {
+        if (selfRegToken.isEmpty || StringUtils.isBlank(selfRegToken.get)) {
+          throw new IllegalArgumentException("Missing self-registration token")
+        }
+      } else {
+        selfRegToken = None
+      }
     }
     val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
     Communities(0L, sname, fname, email, selfRegType, selfRegToken, domainId)
@@ -159,16 +173,25 @@ object ParameterExtractor {
     }
   }
 
-  def extractAdminInfo(request:Request[AnyContent]):Users = {
+  def extractAdminInfo(request:Request[AnyContent], ssoEmailToForce: Option[String], passwordIsOneTime: Option[Boolean]):Users = {
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-      val ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      var ssoEmail: String = null
+      if (ssoEmailToForce.isDefined) {
+        ssoEmail = ssoEmailToForce.get
+      } else {
+        ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      }
       getUserInfoForSSO(ssoEmail, UserRole.VendorAdmin.id.toShort)
     } else {
       val name = requiredBodyParameter(request, Parameters.USER_NAME)
       val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
       val password = requiredBodyParameter(request, Parameters.PASSWORD)
-      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.VendorAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), passwordIsOneTime.getOrElse(true), UserRole.VendorAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
     }
+  }
+
+  def extractAdminInfo(request:Request[AnyContent]):Users = {
+    extractAdminInfo(request, None, None)
   }
 
   private def getUserInfoForSSO(ssoEmail: String, role: Short): Users = {

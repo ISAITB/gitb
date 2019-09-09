@@ -12,7 +12,7 @@
         <span class="tab" style="font-size: xx-large;"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>
     </div>
 </div>
-<div ng-if="!lc.directLogin">
+<div ng-if="lc.DataService.configuration && !lc.directLogin">
     <div ng-if="lc.DataService.configuration['sso.enabled']">
         <div class="container" ng-if="lc.DataService.configuration['sso.enabled']">
             <div class="row">
@@ -30,7 +30,6 @@
                             </div>
                         </div>
                         <div class="row account-list-new">
-                                <!-- <div class="row" ng-class="{'account-list-new': lc.DataService.actualUser.accounts.length > 0}"> -->
                             <button class="btn btn-primary" ng-click="lc.createAccount()" ng-disabled="lc.createPending"><span class="tab" ng-if="lc.createPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>
                                 <span ng-if="lc.DataService.actualUser.accounts.length > 0">Link another role to your account</span>
                                 <span ng-if="lc.DataService.actualUser.accounts.length == 0">Link a role to your account</span>
@@ -44,31 +43,33 @@
     <div ng-if="!lc.DataService.configuration['sso.enabled']">
         <div class="container">
             <div class="row">
-                <div class="col-md-12">
+                <div class="col-xs-12">
                     <div class="row">
                         <div class="page settings">
                             <form class="form-horizontal">
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
-                                        <h4 class="title">{{lc.loginOption == lc.Constants.LOGIN_OPTION.REGISTER?'Register':'Login'}}</h4>
+                                        <h4 class="title">{{lc.loginOption == lc.Constants.LOGIN_OPTION.REGISTER && lc.DataService.configuration['registration.enabled']?'Register your organisation':'Login'}}</h4>
                                     </div>
                                     <div class="panel-body">
                                         <!-- Error messages -->
-                                        <div class="row col-md-10 col-md-offset-1">
-                                            <div uib-alert ng-repeat="alert in lc.alerts" ng-class="'alert-' + alert.type" close="lc.closeAlert($index)">{{alert.msg}}</div>
+                                        <div class="row" ng-if="lc.alerts.length > 0">
+                                            <div class="col-xs-10 col-xs-offset-1">
+                                                <div uib-alert ng-repeat="alert in lc.alerts" ng-class="'alert-' + alert.type" close="lc.closeAlert($index)">{{alert.msg}}</div>
+                                            </div>
                                         </div>
                                         <div class="row" ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.NONE">
-                                            <div class="col-md-10 col-md-offset-1">
+                                            <div class="col-xs-10 col-xs-offset-1">
                                                 <div class="form-group">
-                                                    <label class="col-sm-3 control-label" for="email">Email address:</label>
-                                                    <div class="col-sm-7"><input id="email" ng-model="lc.email" class="form-control" required></div>
+                                                    <label class="col-xs-3 control-label" for="email">Email address:</label>
+                                                    <div class="col-xs-7"><input id="email" ng-model="lc.email" class="form-control" required></div>
                                                 </div>
                                                 <div class="form-group">
-                                                    <label class="col-sm-3 control-label" for="password">Password:</label>
-                                                    <div class="col-sm-7"><input id="password" ng-model="lc.password" class="form-control" type="password" required></div>
+                                                    <label class="col-xs-3 control-label" for="password">Password:</label>
+                                                    <div class="col-xs-7"><input id="password" ng-model="lc.password" class="form-control" type="password" required></div>
                                                 </div>
                                                 <div class="form-group">
-                                                    <div class="col-sm-offset-3 col-sm-7">
+                                                    <div class="col-xs-offset-3 col-xs-7">
                                                         <div class="checkbox">
                                                             <label>
                                                                 <input type="checkbox"> Remember me
@@ -78,19 +79,20 @@
                                                 </div>
                                             </div>
                                         </div>
-                                        <div class="row col-md-10 col-md-offset-1" ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.NONE">
+                                        <div class="row" ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.REGISTER && lc.DataService.configuration['registration.enabled']">
+                                            <div class="col-xs-10 col-xs-offset-1">
+                                                <div tb-self-reg-form model="lc.selfRegData" self-reg-options=""></div>
+                                            </div>
+                                        </div>
+                                        <div class="row col-xs-10 col-xs-offset-1" ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.NONE">
                                             <div class="bg-info div-rounded div-padded">
                                                 <span><b>Privacy note:</b> By clicking 'Log in' you consent to the use of cookies to manage your session. Please refer to the legal notice (link available in the screen's footer) for more information.</span>
                                             </div>
                                         </div>
-                                        <div class="row col-md-10 col-md-offset-1" ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.REGISTER">
-                                            <div class="bg-info div-rounded div-padded">
-                                                <span>Self registration for public communities is not available yet.</span>
-                                            </div>
-                                        </div>
                                     </div>
                                     <div class="panel-footer">
-                                        <button ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.NONE" type="submit" ng-click="lc.login()" class="btn btn-default" ng-disabled="lc.loginDisabled()"><span class="tab" ng-if="lc.spinner"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span> Log in</button>
+                                        <button ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.NONE" type="submit" ng-click="lc.login()" class="btn btn-default" ng-disabled="lc.loginDisabled()"><span class="tab" ng-if="lc.spinner"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i> </span>Log in</button>
+                                        <button ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.REGISTER" type="submit" ng-click="lc.register()" class="btn btn-default" ng-disabled="lc.registerDisabled()"><span class="tab" ng-if="lc.spinner"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i> </span>Register</button>
                                         <button ng-click="lc.cancelLogin()" class="btn btn-default">Cancel</button>
                                     </div>
                                 </form>

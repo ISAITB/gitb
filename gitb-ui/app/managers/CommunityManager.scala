@@ -4,6 +4,7 @@ import javax.inject.{Inject, Singleton}
 import models.Enums._
 import models._
 import org.slf4j.LoggerFactory
+import persistence.AccountManager
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 
@@ -11,7 +12,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class CommunityManager @Inject() (testResultManager: TestResultManager, organizationManager: OrganizationManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class CommunityManager @Inject() (testResultManager: TestResultManager, organizationManager: OrganizationManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, conformanceManager: ConformanceManager, accountManager: AccountManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -24,6 +25,24 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
     }
     val result = exec(q.result.headOption)
     result.isEmpty
+  }
+
+  def selfRegister(organisation: Organizations, organisationAdmin: Users, templateId: Option[Long], actualUserInfo: Option[ActualUserInfo]):Long = {
+    val userId = exec (
+      (
+        for {
+          organisationId <- organizationManager.createOrganizationInTrans(organisation, templateId)
+          userId <- PersistenceSchema.insertUser += organisationAdmin.withOrganizationId(organisationId)
+          _ <-
+            if (actualUserInfo.isDefined) {
+              accountManager.linkAccountInternal(userId, actualUserInfo.get)
+            } else {
+              DBIO.successful(())
+            }
+        } yield userId
+      ).transactionally
+    )
+    userId
   }
 
   /**
@@ -41,6 +60,14 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
     }
     exec(q.sortBy(_.shortname.asc)
       .result.map(_.toList))
+  }
+
+  def getSelfRegistrationOptions():List[SelfRegOption] = {
+    exec(
+      PersistenceSchema.communities
+        .filter(x => x.id =!= Constants.DefaultCommunityId && (x.selfRegType === SelfRegistrationType.PublicListing.id.toShort || x.selfRegType === SelfRegistrationType.PublicListingWithToken.id.toShort))
+        .sortBy(_.shortname.asc).result
+    ).map(x => new SelfRegOption(x.id, x.shortname, x.selfRegType, organizationManager.getOrganisationTemplates(x.id))).toList
   }
 
   def getById(id: Long): Option[Communities] = {
@@ -66,7 +93,7 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
     exec((for {
       communityId <- PersistenceSchema.insertCommunity += community
       _ <- {
-        val adminOrganization = Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, true, None, None, None, communityId)
+        val adminOrganization = Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, true, None, None, None, false, None, communityId)
         PersistenceSchema.insertOrganization += adminOrganization
       }
     } yield()).transactionally)

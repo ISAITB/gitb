@@ -1,6 +1,8 @@
 package controllers
 
+import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import exceptions.ErrorCodes
 import javax.inject.Inject
 import managers.{AuthorizationManager, OrganizationManager}
 import org.slf4j.{Logger, LoggerFactory}
@@ -50,8 +52,13 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager, a
     val organization = ParameterExtractor.extractOrganizationInfo(request)
     val otherOrganisation = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_ORGANISATION)
     authorizationManager.canCreateOrganisation(request, organization, otherOrganisation)
-    organizationManager.createOrganization(organization, otherOrganisation)
-    ResponseConstructor.constructEmptyResponse
+
+    if (organization.template && !organizationManager.isTemplateNameUnique(organization.templateName.get, organization.community, None)) {
+      ResponseConstructor.constructErrorResponse(ErrorCodes.DUPLICATE_ORGANISATION_TEMPLATE, "The provided template name is already in use.")
+    } else {
+      organizationManager.createOrganization(organization, otherOrganisation)
+      ResponseConstructor.constructEmptyResponse
+    }
   }
 
   /**
@@ -65,8 +72,18 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager, a
     val legalNoticeId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LEGAL_NOTICE_ID)
     val errorTemplateId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.ERROR_TEMPLATE_ID)
     val otherOrganisation = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_ORGANISATION)
-    organizationManager.updateOrganization(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation)
-    ResponseConstructor.constructEmptyResponse
+    var template: Boolean = false
+    var templateName: Option[String] = None
+    if (Configurations.REGISTRATION_ENABLED) {
+      template = ParameterExtractor.requiredBodyParameter(request, Parameters.TEMPLATE).toBoolean
+      templateName = ParameterExtractor.optionalBodyParameter(request, Parameters.TEMPLATE_NAME)
+    }
+    if (template && !organizationManager.isTemplateNameUnique(templateName.get, organizationManager.getById(orgId).get.community, Some(orgId))) {
+      ResponseConstructor.constructErrorResponse(ErrorCodes.DUPLICATE_ORGANISATION_TEMPLATE, "The provided template name is already in use.")
+    } else {
+      organizationManager.updateOrganization(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation, template, templateName)
+      ResponseConstructor.constructEmptyResponse
+    }
   }
 
   /**

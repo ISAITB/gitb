@@ -1,18 +1,22 @@
 class LinkAccountModalController
 
-    @$inject = ['$scope', '$uibModalInstance', 'DataService', 'linkedAccounts', 'Constants', 'AuthService', 'ErrorService', 'createOption']
+    @$inject = ['$scope', '$uibModalInstance', 'DataService', 'linkedAccounts', 'Constants', 'AuthService', 'ErrorService', 'createOption', 'CommunityService', 'selfRegOptions']
 
-    constructor: (@$scope, @$uibModalInstance, @DataService, @linkedAccounts, @Constants, @AuthService, @ErrorService, createOption) ->
+    constructor: (@$scope, @$uibModalInstance, @DataService, @linkedAccounts, @Constants, @AuthService, @ErrorService, createOption, @CommunityService, @selfRegOptions) ->
         @choice = -1
         @selectedAccountId = -1
         @createPending = false
+        @selfRegData = {}
 
         if createOption == @Constants.LOGIN_OPTION.REGISTER
             @choice = @Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER
         else if createOption == @Constants.LOGIN_OPTION.MIGRATE
             @choice = @Constants.CREATE_ACCOUNT_OPTION.MIGRATE
-        else if createOption == @Constants.LOGIN_OPTION.LINK_ACCOUNT
+        else if createOption == @Constants.LOGIN_OPTION.LINK_ACCOUNT || (!@DataService.configuration['registration.enabled'] && !@DataService.configuration['sso.inMigration'])
             @choice = @Constants.CREATE_ACCOUNT_OPTION.LINK
+
+    resetSelfRegOptions: () =>
+        @selfRegData = {}
 
     selectAccount: (accountId) =>
         if @selectedAccountId == accountId
@@ -27,14 +31,22 @@ class LinkAccountModalController
             if @choice == @Constants.CREATE_ACCOUNT_OPTION.LINK
                 @selectedAccountId != -1
             else if @choice == @Constants.CREATE_ACCOUNT_OPTION.MIGRATE
-                @email? && @password? && @email.trim().length > 0 && @password.trim().length > 0
+                @textProvided(@email) && @textProvided(@password)
+            else if @choice == @Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER
+                @selfRegData.selfRegOption?.communityId? && 
+                    (@selfRegData.selfRegOption.selfRegType != @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN || @textProvided(@selfRegData.selfRegToken)) && 
+                    @textProvided(@selfRegData.orgShortName) && @textProvided(@selfRegData.orgFullName)
             else
                 false
+
+    textProvided: (value) =>
+        value? && value.trim().length > 0
 
     choiceChanged: () =>
         @selectedAccountId = -1
         @email = undefined
         @password = undefined
+        @resetSelfRegOptions()
 
     handleError: (title, response) =>
         handled = false
@@ -66,6 +78,22 @@ class LinkAccountModalController
             .then((data) => 
                 @createPending = false
                 if !@handleError('Unable to migrate account', data)
+                    @DataService.setActualUser(data)
+                    @$uibModalInstance.close()
+            ,
+            (error) =>
+                @createPending = false
+                @ErrorService.showErrorMessage(error)
+            )
+        else if @choice == @Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER
+            if @selfRegData.selfRegOption.selfRegType == @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN
+                token = @selfRegData.selfRegToken
+            if @selfRegData.template?
+                templateId = @selfRegData.template.id
+            @CommunityService.selfRegister(@selfRegData.selfRegOption.communityId, token, @selfRegData.orgShortName, @selfRegData.orgFullName, templateId, undefined, undefined, undefined)
+            .then((data) => 
+                @createPending = false
+                if !@handleError('Unable to register', data)
                     @DataService.setActualUser(data)
                     @$uibModalInstance.close()
             ,

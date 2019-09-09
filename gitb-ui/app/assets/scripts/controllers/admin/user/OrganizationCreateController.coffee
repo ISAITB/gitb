@@ -1,7 +1,7 @@
 class OrganizationCreateController
 
-  @$inject = ['$log', '$state', '$stateParams', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'ValidationService', 'OrganizationService', 'ErrorService']
-  constructor: (@$log, @$state, @$stateParams, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @OrganizationService, @ErrorService) ->
+  @$inject = ['$log', '$state', '$stateParams', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'ValidationService', 'OrganizationService', 'ErrorService', 'DataService']
+  constructor: (@$log, @$state, @$stateParams, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @OrganizationService, @ErrorService, @DataService) ->
 
     @communityId = @$stateParams.community_id
 
@@ -37,16 +37,20 @@ class OrganizationCreateController
       @ErrorService.showErrorMessage(error)
 
   saveDisabled: () =>
-    !(@organization?.sname? && @organization?.fname?)
+    !(@organization?.sname? && @organization?.fname? && (!@DataService.configuration?['registration.enabled'] || (!@organization?.template || @organization?.templateName?)))
 
   # create organization and cancel screen
   createOrganization: () =>
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@organization.sname, "Please enter short name of the organisation.") &
     @ValidationService.requireNonNull(@organization.fname, "Please enter full name of the organisation.")
-      @OrganizationService.createOrganization @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.errorTemplates, @organization.otherOrganisations, @communityId
-      .then () =>
-        @cancelCreateOrganization()
+      @OrganizationService.createOrganization(@organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.errorTemplates, @organization.otherOrganisations, @communityId, @organization.template, @organization.templateName)
+      .then (data) =>
+        if data? && data.error_code?
+          @ValidationService.pushAlert({type:'danger', msg:data.error_description})
+          @alerts = @ValidationService.getAlerts()          
+        else
+          @cancelCreateOrganization()
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
     else

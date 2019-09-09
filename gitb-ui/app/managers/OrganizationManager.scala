@@ -38,6 +38,19 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     organizations
   }
 
+  def getOrganisationTemplates(communityId: Long): Option[List[SelfRegTemplate]] = {
+    val result = exec(PersistenceSchema.organizations
+      .filter(_.community === communityId)
+      .filter(_.template === true)
+      .sortBy(_.templateName).result
+    ).map(x => new SelfRegTemplate(x.id, x.templateName.get)).toList
+    if (result.isEmpty) {
+      None
+    } else {
+      Some(result)
+    }
+  }
+
   /**
    * Gets organizations with specified community
    */
@@ -60,7 +73,7 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     val l = exec(PersistenceSchema.landingPages.filter(_.id === o.landingPage).result.headOption)
     val n = exec(PersistenceSchema.legalNotices.filter(_.id === o.legalNotice).result.headOption)
     val e = exec(PersistenceSchema.errorTemplates.filter(_.id === o.errorTemplate).result.headOption)
-    val organization = new Organization(o, l.getOrElse(null), n.getOrElse(null), e.getOrElse(null))
+    val organization = new Organization(o, l.orNull, n.orNull, e.orNull)
     organization
   }
 
@@ -78,28 +91,42 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     DBIO.seq(actions.map(a => a): _*)
   }
 
+  def createOrganizationInTrans(organization: Organizations, otherOrganisationId: Option[Long]) = {
+    for {
+      newOrganisationId <- PersistenceSchema.insertOrganization += organization
+      _ <- {
+        if (otherOrganisationId.isDefined) {
+          copyTestSetup(otherOrganisationId.get, newOrganisationId)
+        } else {
+          DBIO.successful(())
+        }
+      }
+    } yield newOrganisationId
+  }
+
   /**
    * Creates new organization
    */
   def createOrganization(organization: Organizations, otherOrganisationId: Option[Long]) = {
     val id: Long = exec(
-      (
-        for {
-          newOrganisationId <- PersistenceSchema.insertOrganization += organization
-          _ <- {
-            if (otherOrganisationId.isDefined) {
-              copyTestSetup(otherOrganisationId.get, newOrganisationId)
-            } else {
-              DBIO.successful(())
-            }
-          }
-        } yield newOrganisationId
-      ).transactionally
+      createOrganizationInTrans(organization, otherOrganisationId).transactionally
     )
     id
   }
 
-  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long]) = {
+  def isTemplateNameUnique(templateName: String, communityId: Long, organisationIdToIgnore: Option[Long]): Boolean = {
+    var q = PersistenceSchema.organizations
+      .filter(_.community === communityId)
+      .filter(_.template === true)
+      .filter(_.templateName === templateName)
+    if (organisationIdToIgnore.isDefined) {
+      q = q.filter(_.id =!= organisationIdToIgnore.get)
+    }
+    val result = exec(q.result.headOption)
+    result.isEmpty
+  }
+
+  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String]) = {
     val org = exec(PersistenceSchema.organizations.filter(_.id === orgId).result.headOption)
     if (org.isDefined) {
       val actions = new ListBuffer[DBIO[_]]()
@@ -112,8 +139,14 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
         val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.fullname)
         actions += q.update(fullName)
       }
-      val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.landingPage, o.legalNotice, o.errorTemplate)
-      actions += q.update(landingPageId, legalNoticeId, errorTemplateId)
+      var templateNameToSet: Option[String] = null
+      if (template) {
+        templateNameToSet = templateName
+      } else {
+        templateNameToSet = None
+      }
+      val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.landingPage, o.legalNotice, o.errorTemplate, o.template, o.templateName)
+      actions += q.update(landingPageId, legalNoticeId, errorTemplateId, template, templateNameToSet)
       if (otherOrganisation.isDefined) {
         // Replace the test setup for the organisation with the one from the provided one.
         actions += systemManager.deleteSystemByOrganization(orgId)

@@ -33,8 +33,10 @@ object PersistenceSchema {
     def landingPage = column[Option[Long]] ("landing_page")
     def legalNotice = column[Option[Long]] ("legal_notice")
     def errorTemplate = column[Option[Long]] ("error_template")
+    def template = column[Boolean]("template")
+    def templateName = column[Option[String]]("template_name")
     def community = column[Long] ("community")
-    def * = (id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, errorTemplate, community) <> (Organizations.tupled, Organizations.unapply)
+    def * = (id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, errorTemplate, template, templateName, community) <> (Organizations.tupled, Organizations.unapply)
   }
   //get table name etc from organizations.baseTableRow
   val organizations = TableQuery[OrganizationsTable]

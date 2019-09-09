@@ -4,7 +4,7 @@ import controllers.util._
 import exceptions._
 import javax.inject.Inject
 import managers.AuthorizationManager
-import models.{ActualUserInfo, Enums}
+import models.Enums
 import org.pac4j.play.store.PlaySessionStore
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.cache.TokenCache
@@ -19,7 +19,7 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
 
   def getUserFunctionalAccounts = AuthorizedAction { request =>
     authorizationManager.canViewUserFunctionalAccounts(request)
-    val json: String = JsonUtil.jsActualUserInfo(getAccountInfo(request)).toString
+    val json: String = JsonUtil.jsActualUserInfo(authorizationManager.getAccountInfo(request)).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 
@@ -36,7 +36,7 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
     authorizationManager.canLinkFunctionalAccount(request, userId)
     accountManager.linkAccount(userId, authorizationManager.getPrincipal(request))
     // Return new account info
-    val json: String = JsonUtil.jsActualUserInfo(getAccountInfo(request)).toString
+    val json: String = JsonUtil.jsActualUserInfo(authorizationManager.getAccountInfo(request)).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 
@@ -52,20 +52,13 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
       } else {
         // Link the account.
         accountManager.migrateAccount(result.get.id, authorizationManager.getPrincipal(request))
-        val json: String = JsonUtil.jsActualUserInfo(getAccountInfo(request)).toString
+        val json: String = JsonUtil.jsActualUserInfo(authorizationManager.getAccountInfo(request)).toString
         ResponseConstructor.constructJsonResponse(json)
       }
     } else {
       // User not found
       ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided credentials did not match a previously existing account")
     }
-  }
-
-  private def getAccountInfo(request: RequestWithAttributes[_]): ActualUserInfo = {
-    val accountInfo = authorizationManager.getPrincipal(request)
-    val userAccounts = accountManager.getUserAccountsForUid(accountInfo.uid)
-    val userInfo = new ActualUserInfo(accountInfo.uid, accountInfo.email, accountInfo.firstName, accountInfo.lastName, userAccounts)
-    userInfo
   }
 
   def selectFunctionalAccount = AuthorizedAction { request =>

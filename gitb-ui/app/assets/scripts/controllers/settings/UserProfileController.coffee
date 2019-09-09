@@ -35,6 +35,13 @@ class UserProfileController
 			@$cookies.put(@Constants.LOGIN_OPTION_COOKIE_KEY, @Constants.LOGIN_OPTION.LINK_ACCOUNT)
 			@$rootScope.$emit(@Events.onLogout, {full: false, keepLoginOption: true})
 
+	register: () ->
+		@ConfirmationDialogService.confirm("Confirmation", "Before registering another organisation your current session will be closed. Are you sure you want to proceed?", "Yes", "No")
+		.finally(angular.noop)
+		.then () =>
+			@$cookies.put(@Constants.LOGIN_OPTION_COOKIE_KEY, @Constants.LOGIN_OPTION.REGISTER)
+			@$rootScope.$emit(@Events.onLogout, {full: false, keepLoginOption: true})
+
 	#cancels edit mode and reverts back the changes
 	cancelEdit: () ->
 		@edit = false

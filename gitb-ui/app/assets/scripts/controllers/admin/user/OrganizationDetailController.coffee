@@ -86,12 +86,16 @@ class OrganizationDetailController
         @ErrorService.showErrorMessage(error)
 
   saveDisabled: () =>
-    !(@organization?.sname? && @organization?.fname?)
+    !(@organization?.sname? && @organization?.fname? && (!@DataService.configuration?['registration.enabled'] || (!@organization?.template || @organization?.templateName?)))
 
   doUpdate: () =>
-    @OrganizationService.updateOrganization(@orgId, @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.errorTemplates, @organization.otherOrganisations)
-    .then () =>
-      @cancelDetailOrganization()
+    @OrganizationService.updateOrganization(@orgId, @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.errorTemplates, @organization.otherOrganisations, @organization.template, @organization.templateName)
+    .then (data) =>
+      if data? && data.error_code?
+        @ValidationService.pushAlert({type:'danger', msg:data.error_description})
+        @alerts = @ValidationService.getAlerts()          
+      else
+        @cancelDetailOrganization()
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 

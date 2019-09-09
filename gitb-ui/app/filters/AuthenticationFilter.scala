@@ -91,6 +91,7 @@ class AuthenticationFilter @Inject() (implicit val mat: Materializer, accountMan
       request.path.equals("/app/configuration") ||
       request.path.equals("/notices/tbdefault") ||
       request.path.equals("/user/feedback") ||
+      request.path.equals("/user/selfreg") ||
       request.path.startsWith("/sso/") ||
       request.path.startsWith("/oauth/") ||
       request.path.startsWith("/theme/") ||

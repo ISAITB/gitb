@@ -12,7 +12,7 @@ import play.api.libs.json._
 import scala.collection.JavaConverters._
 object JsonUtil {
 
-	def jsTestSuite(suite: TestSuites): JsObject = {
+  def jsTestSuite(suite: TestSuites): JsObject = {
     val json = Json.obj(
       "id"                -> suite.id,
       "sname"             -> suite.shortname,
@@ -219,6 +219,8 @@ object JsonUtil {
       "landingPage" -> (if(organization.landingPage.isDefined) organization.landingPage.get else JsNull),
       "legalNotice" -> (if(organization.legalNotice.isDefined) organization.legalNotice.get else JsNull),
       "errorTemplate" -> (if(organization.errorTemplate.isDefined) organization.errorTemplate.get else JsNull),
+      "template" -> organization.template,
+      "templateName" -> (if(organization.templateName.isDefined) organization.templateName.get else JsNull),
       "community" -> organization.community,
       "adminOrganization" -> organization.adminOrganization
     )
@@ -726,6 +728,13 @@ object JsonUtil {
     json
   }
 
+  def jsId(id: Long): JsObject = {
+    val json = Json.obj(
+      "id"    -> id
+    )
+    json
+  }
+
   def jsCount(count: Long): JsObject = {
     val json = Json.obj(
       "count"    -> count
@@ -862,6 +871,40 @@ object JsonUtil {
     jUser.toString
   }
 
+  def jsSelfRegOption(option: SelfRegOption): JsObject = {
+    val json = Json.obj(
+        "communityId" -> option.communityId,
+        "communityName" -> option.communityName,
+        "selfRegType" -> option.selfRegType,
+        "templates" -> (if (option.templates.isDefined) jsSelfRegTemplates(option.templates.get) else JsNull)
+    )
+    json
+  }
+
+  def jsSelfRegTemplates(templates: List[SelfRegTemplate]): JsArray = {
+    var json = Json.arr()
+    templates.foreach{ template =>
+      json = json.append(jsSelfRegTemplate(template))
+    }
+    json
+  }
+
+  def jsSelfRegTemplate(template: SelfRegTemplate): JsObject = {
+    val json = Json.obj(
+      "id" -> template.id,
+      "name" -> template.name
+    )
+    json
+  }
+
+  def jsSelfRegOptions(options: List[SelfRegOption]): JsArray = {
+    var json = Json.arr()
+    options.foreach{ option =>
+      json = json.append(jsSelfRegOption(option))
+    }
+    json
+  }
+
   def serializeConfigurationProperties(config: util.HashMap[String, String]):JsObject = {
     val json = Json.obj(
       "email.enabled" -> config.get("email.enabled").toBoolean,
@@ -877,7 +920,8 @@ object JsonUtil {
       "sso.enabled" -> config.get("sso.enabled").toBoolean,
       "sso.inMigration" -> config.get("sso.inMigration").toBoolean,
       "demos.enabled" -> config.get("demos.enabled").toBoolean,
-      "demos.account" -> config.get("demos.account").toLong
+      "demos.account" -> config.get("demos.account").toLong,
+      "registration.enabled" -> config.get("registration.enabled").toBoolean
     )
     json
   }

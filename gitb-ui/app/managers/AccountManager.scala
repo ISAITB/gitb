@@ -50,15 +50,19 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
     )
       .map(x => new UserAccount(
         Users(x._1, x._2, x._3, null, false, x._4, x._5, None, None, UserSSOStatus.NotLinked.id.toShort),
-        Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, x._9),
+        Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, false, None, x._9),
         Communities(x._9, x._10, x._11, None, -1, None, None)
       ))
     results.sorted
   }
 
-  def linkAccount(userId: Long, userInfo: ActualUserInfo) = {
+  def linkAccountInternal(userId: Long, userInfo: ActualUserInfo): DBIO[_] = {
     val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.ssoUid, u.name, u.ssoStatus)
-    exec(q.update(Some(userInfo.uid), userInfo.firstName+" "+userInfo.lastName, UserSSOStatus.Linked.id.toShort).transactionally)
+    q.update(Some(userInfo.uid), userInfo.firstName+" "+userInfo.lastName, UserSSOStatus.Linked.id.toShort)
+  }
+
+  def linkAccount(userId: Long, userInfo: ActualUserInfo) = {
+    exec(linkAccountInternal(userId, userInfo).transactionally)
   }
 
   def getUserAccountsForUid(uid: String): List[UserAccount] = {
@@ -77,7 +81,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
     )
     .map(x => new UserAccount(
       Users(x._1, x._2, x._3, null, false, x._4, x._5, None, None, UserSSOStatus.Linked.id.toShort),
-      Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, x._9),
+      Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, false, None, x._9),
       Communities(x._9, x._10, x._11, None, -1, None, None)
     ))
     results.sorted

@@ -87,6 +87,8 @@ object Configurations {
   var DEMOS_ENABLED = false
   var DEMOS_ACCOUNT:Long = -1
 
+  var REGISTRATION_ENABLED = true
+
   var SMTP_PROPERTIES = new Properties()
 
   def loadConfigurations() = {
@@ -200,6 +202,8 @@ object Configurations {
 
       DEMOS_ENABLED = fromEnv("DEMOS_ENABLED", conf.getString("demos.enabled")).toBoolean
       DEMOS_ACCOUNT = fromEnv("DEMOS_ACCOUNT", conf.getString("demos.account")).toLong
+
+      REGISTRATION_ENABLED = fromEnv("REGISTRATION_ENABLED", conf.getString("registration.enabled")).toBoolean
 
       _IS_LOADED = true
     }

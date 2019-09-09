@@ -1,17 +1,19 @@
 package controllers
 
-import controllers.util.ParameterExtractor.{optionalBodyParameter, requiredBodyParameter, validCommunitySelfRegType}
+import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
 import javax.inject.Inject
-import managers.{AuthorizationManager, CommunityManager}
+import managers.{AuthorizationManager, CommunityManager, OrganizationManager}
 import models.Enums.SelfRegistrationType
+import models.{ActualUserInfo, Users}
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
+import persistence.AuthenticationManager
 import play.api.mvc.{Controller, Result}
 import utils.JsonUtil
 
-class CommunityService @Inject() (communityManager: CommunityManager, authorizationManager: AuthorizationManager) extends Controller{
+class CommunityService @Inject() (communityManager: CommunityManager, authorizationManager: AuthorizationManager, organisationManager: OrganizationManager, authenticationManager: AuthenticationManager) extends Controller{
   private final val logger: Logger = LoggerFactory.getLogger(classOf[CommunityService])
 
   /**
@@ -65,37 +67,27 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
    */
   def updateCommunity(communityId: Long) = AuthorizedAction { request =>
     authorizationManager.canUpdateCommunity(request, communityId)
-    var result: Result = null
     val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
     val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
     val email = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_EMAIL)
-    val selfRegType = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
-    if (!ParameterExtractor.validCommunitySelfRegType(selfRegType)) {
-      throw new IllegalArgumentException("Unsupported value ["+selfRegType+"] for self-registration type")
+    var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
+    if (Configurations.REGISTRATION_ENABLED) {
+      selfRegType = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
+      if (!ParameterExtractor.validCommunitySelfRegType(selfRegType)) {
+        throw new IllegalArgumentException("Unsupported value ["+selfRegType+"] for self-registration type")
+      }
     }
     var selfRegToken = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
-    var proceed = false
     if (selfRegType == SelfRegistrationType.Token.id.toShort || selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort) {
       if (selfRegToken.isEmpty || StringUtils.isBlank(selfRegToken.get)) {
         throw new IllegalArgumentException("Missing self-registration token")
-      } else {
-        // Ensure that the token is unique.
-        if (communityManager.isSelfRegTokenUnique(selfRegToken.get, Some(communityId))) {
-          proceed = true
-        } else {
-          result = ResponseConstructor.constructErrorResponse(ErrorCodes.DUPLICATE_SELFREG_TOKEN, "The provided self-registration token is already in use.")
-        }
       }
     } else {
       selfRegToken = None
-      proceed = true
     }
-    if (proceed) {
-      val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-      communityManager.updateCommunity(communityId, shortName, fullName, email, selfRegType, selfRegToken, domainId)
-      result = ResponseConstructor.constructEmptyResponse
-    }
-    result
+    val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
+    communityManager.updateCommunity(communityId, shortName, fullName, email, selfRegType, selfRegToken, domainId)
+    ResponseConstructor.constructEmptyResponse
   }
 
   /**
@@ -107,9 +99,62 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     ResponseConstructor.constructEmptyResponse
   }
 
+  def selfRegister() = AuthorizedAction { request =>
+    var response: Result = null
+    val selfRegToken = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
+    val organisation = ParameterExtractor.extractOrganizationInfo(request)
+    var organisationAdmin: Users = null
+    var actualUserInfo: Option[ActualUserInfo] = None
+    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      actualUserInfo = Some(authorizationManager.getPrincipal(request))
+      organisationAdmin = ParameterExtractor.extractAdminInfo(request, Some(actualUserInfo.get.email), None)
+    } else {
+      organisationAdmin = ParameterExtractor.extractAdminInfo(request, None, Some(false))
+    }
+    val templateId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.TEMPLATE_ID)
+    authorizationManager.canSelfRegister(request, organisation, organisationAdmin, selfRegToken, templateId)
+    val community = communityManager.getById(organisation.community)
+    if (community.isDefined) {
+      // Check that the token (if required) matches
+      if (community.get.selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort
+        && selfRegToken.isDefined && community.get.selfRegToken.isDefined
+        && community.get.selfRegToken.get != selfRegToken.get) {
+        response = ResponseConstructor.constructErrorResponse(ErrorCodes.INCORRECT_SELFREG_TOKEN, "The provided token is incorrect.")
+      }
+      if (response == null) {
+        // Check the user email (only if not SSO)
+        if (!Configurations.AUTHENTICATION_SSO_ENABLED) {
+          if (!authenticationManager.checkEmailAvailability(organisationAdmin.email, None, None, None)) {
+            response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_EXISTS, "The provided email is already defined.")
+          }
+        }
+      }
+      if (response == null) {
+        val userId = communityManager.selfRegister(organisation, organisationAdmin, templateId, actualUserInfo)
+        if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+          val json: String = JsonUtil.jsActualUserInfo(authorizationManager.getAccountInfo(request)).toString
+          response = ResponseConstructor.constructJsonResponse(json)
+        } else {
+          response = ResponseConstructor.constructJsonResponse(JsonUtil.jsId(userId).toString)
+        }
+      }
+    }
+    if (response == null) {
+      response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_SELFREG_DATA, "Unable to self-register due to error in provided configuration.")
+    }
+    response
+  }
+
+  def getSelfRegistrationOptions() = AuthorizedAction { request =>
+    authorizationManager.canViewSelfRegistrationOptions(request)
+    val options = communityManager.getSelfRegistrationOptions()
+    val json:String = JsonUtil.jsSelfRegOptions(options).toString
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
   /**
-    * Returns the community of the authenticated user
-    */
+  * Returns the community of the authenticated user
+  */
   def getUserCommunity = AuthorizedAction { request =>
     val userId = ParameterExtractor.extractUserId(request)
     authorizationManager.canViewOwnCommunity(request)

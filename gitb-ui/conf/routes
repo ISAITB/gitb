@@ -45,6 +45,8 @@ GET	    /user/community                     @controllers.CommunityService.getUse
 POST	/user/profile                       @controllers.AccountService.updateUserProfile
 GET     /app/configuration                  @controllers.AccountService.getConfiguration
 POST    /user/feedback                      @controllers.AccountService.submitFeedback
+POST    /user/selfreg                       @controllers.CommunityService.selfRegister
+GET     /user/selfreg                       @controllers.CommunityService.getSelfRegistrationOptions
 
 # System mangement API
 POST	/suts/:sut_id/profile               @controllers.SystemService.updateSystemProfile(sut_id : Long)

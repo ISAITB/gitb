@@ -2,30 +2,35 @@ class LoginController
 
 	@$inject = [
 		'$log', '$rootScope', '$location', '$http', '$uibModal'
-		'AuthService', 'AuthProvider', 'Events', 'Constants', 'ErrorService', 'RestService', 'DataService', '$cookies', '$window'
+		'AuthService', 'AuthProvider', 'Events', 'Constants', 'ErrorService', 'RestService', 'DataService', '$cookies', '$window', 'CommunityService', 'ConfirmationDialogService'
 	]
 	constructor: (@$log, @$rootScope, @$location, @$http, @$uibModal, @AuthService,
-		@AuthProvider, @Events, @Constants, @ErrorService, @RestService, @DataService, @$cookies, @$window) ->
+		@AuthProvider, @Events, @Constants, @ErrorService, @RestService, @DataService, @$cookies, @$window, @CommunityService, @ConfirmationDialogService) ->
 		@$log.debug "Constructing LoginController..."
 		if (@AuthProvider.isAuthenticated())
 			@$location.path('/')
 
 		@loginOption = @$cookies.get(@Constants.LOGIN_OPTION_COOKIE_KEY)
 		if !@loginOption?
-			@loginOption == @Constants.LOGIN_OPTION.NONE
+			@loginOption = @Constants.LOGIN_OPTION.NONE
+		if (@loginOption == @Constants.LOGIN_OPTION.REGISTER && !@DataService.configuration['registration.enabled']) || (@loginOption == @Constants.LOGIN_OPTION.DEMO && !@DataService.configuration['demos.enabled']) || (@loginOption == @Constants.LOGIN_OPTION.MIGRATE && (!@DataService.configuration['sso.enabled'] || !@DataService.configuration['sso.inMigration']))
+			# Invalid login option
+			@loginOption = @Constants.LOGIN_OPTION.NONE
 		@alerts = []	  # alerts to be displayed
 		@spinner = false # spinner to be display while waiting response from the server
 		@directLogin = false
 		@createPending = false
+		@selfRegData = {}
 
-		if @loginOption == @Constants.LOGIN_OPTION.REGISTER || 
-				(@DataService.configuration['sso.enabled'] && (@DataService.configuration['sso.inMigration'] && @loginOption == @Constants.LOGIN_OPTION.MIGRATE ||
-					@loginOption == @Constants.LOGIN_OPTION.LINK_ACCOUNT))
+		if @loginOption == @Constants.LOGIN_OPTION.REGISTER
+			if @DataService.configuration['sso.enabled']
+				@createAccount(@loginOption)
+		else if @loginOption == @Constants.LOGIN_OPTION.MIGRATE || @loginOption == @Constants.LOGIN_OPTION.LINK_ACCOUNT
 			@createAccount(@loginOption)
 		else if @loginOption == @Constants.LOGIN_OPTION.DEMO
 			@directLogin = true
 			@loginViaSelection(@DataService.configuration['demos.account'])
-		else if @DataService.actualUser.accounts? && @DataService.actualUser.accounts.length == 1 && @loginOption != @Constants.LOGIN_OPTION.FORCE_CHOICE
+		else if @DataService.actualUser?.accounts? && @DataService.actualUser.accounts.length == 1 && @loginOption != @Constants.LOGIN_OPTION.FORCE_CHOICE
 			@directLogin = true
 			@loginViaSelection(@DataService.actualUser.accounts[0].id)
 
@@ -40,13 +45,14 @@ class LoginController
 			resolve:
 				linkedAccounts: () => @AuthService.getUserUnlinkedFunctionalAccounts()
 				createOption: () => loginOption
+				selfRegOptions: () => @CommunityService.getSelfRegistrationOptions()
 		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result.finally(angular.noop).then(
 			() => @createPending = false, 
 			() => @createPending = false
 		)
 
-	loginViaSelection: (userId) ->
+	loginViaSelection: (userId) =>
 		data = {
 			id: userId
 		}
@@ -60,7 +66,22 @@ class LoginController
 		)
 		@loginInternal(options)
 
-	loginInternal: (options) ->
+	loginViaCredentials: (userEmail, userPassword) ->
+		data = {
+			email: userEmail,
+			password: userPassword
+		}
+		options = @RestService.configureOptions(
+			'POST', 
+			jsRoutes.controllers.AuthenticationService.access_token().url.substring(1),
+			undefined,
+			data,
+			false,
+			undefined
+		)
+		@loginInternal(options)
+
+	loginInternal: (options) =>
 		@spinner = true #start spinner before calling service operation
 		@$http(options).then(
 			(result) =>
@@ -80,7 +101,20 @@ class LoginController
 			(error) =>
 				switch error.status
 					when 401  # Unauthorized
-						@alerts.push({type:'danger', msg:"Incorrect email or password."})
+						if @DataService.configuration['sso.enabled']
+							# We need to re-login to EU Login.
+							promise = @ConfirmationDialogService.invalidSessionNotification()
+							promise
+								.then(
+									() =>
+										@$rootScope.$emit(@Events.onLogout, {full: true})
+									,
+									angular.noop
+								)
+								.catch(angular.noop)
+								.finally(angular.noop)
+						else
+							@alerts.push({type:'danger', msg:"Incorrect email or password."})
 					else
 						@ErrorService.showErrorMessage(error)
 				@password = '' #clear password field
@@ -91,45 +125,60 @@ class LoginController
 		url = @$location.absUrl()
 		@$window.location.href = url.substring(0, url.indexOf('app#!'))
 
-	loginDisabled: () ->
-		@spinner || @email == undefined || @email == '' || @password == undefined || @password == ''
+	loginDisabled: () =>
+		@spinner || !@textProvided(@email) || !@textProvided(@password)
+
+	textProvided: (value) =>
+		value? && value.trim().length > 0
+
+	registerDisabled: () ->
+		@spinner || !(@selfRegData.selfRegOption?.communityId? && 
+			(@selfRegData.selfRegOption.selfRegType != @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN || @textProvided(@selfRegData.selfRegToken)) && 
+			@textProvided(@selfRegData.orgShortName) && @textProvided(@selfRegData.orgFullName)
+			@textProvided(@selfRegData.adminName) && @textProvided(@selfRegData.adminEmail) && @textProvided(@selfRegData.adminPassword) && @textProvided(@selfRegData.adminPasswordConfirm))
+
+	register: () =>
+		if @checkRegisterForm()
+			@spinner = true
+			if @selfRegData.selfRegOption.selfRegType == @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN
+				token = @selfRegData.selfRegToken
+			if @selfRegData.template?
+				templateId = @selfRegData.template.id
+			@CommunityService.selfRegister(@selfRegData.selfRegOption.communityId, token, @selfRegData.orgShortName, @selfRegData.orgFullName, templateId, @selfRegData.adminName, @selfRegData.adminEmail, @selfRegData.adminPassword)
+			.then (data) =>
+				if data?.error_code?
+					@alerts.push({type:'danger', msg:data.error_description})
+					@spinner = false
+				else
+					# All ok.
+					@loginViaCredentials(@selfRegData.adminEmail, @selfRegData.adminPassword)
+			.catch (error) =>
+				@ErrorService.showErrorMessage(error)
+				@spinner = false
 
 	#call remote login operation to get access token to be authorized user operations
 	login: () ->
-		if @checkForm()
-			data = {
-				email: @email,
-				password: @password
-			}
-			options = @RestService.configureOptions(
-				'POST', 
-				jsRoutes.controllers.AuthenticationService.access_token().url.substring(1),
-				undefined,
-				data,
-				false,
-				undefined
-			)
-			@loginInternal(options)
+		if @checkLoginForm()
+			@loginViaCredentials(@email, @password)
 
 	#checks form validity
-	checkForm: () ->
+	checkLoginForm: () ->
 		@alerts = []
 		valid = true
-		emailRegex = @Constants.EMAIL_REGEX
-
-		#check for empty email input
-		if @email == undefined || @email == ''
-			@alerts.push({type:'danger', msg:"Please enter your email address."})
-			valid = false
-		#check for invalid email input
-		else if !emailRegex.test(@email)
+		if !@Constants.EMAIL_REGEX.test(@email)
 			@alerts.push({type:'danger', msg:"Please enter a valid email address."})
 			valid = false
-		#check for empty password input
-		else if @password == undefined || @password == ''
-			@alerts.push({type:'danger', msg:"Please enter your password."})
-			valid = false
+		valid
 
+	checkRegisterForm: () ->
+		@alerts = []
+		valid = true
+		if !@Constants.EMAIL_REGEX.test(@selfRegData.adminEmail)
+			@alerts.push({type:'danger', msg:"Please enter a valid email address."})
+			valid = false
+		else if @selfRegData.adminPassword != @selfRegData.adminPasswordConfirm
+			@alerts.push({type:'danger', msg:"Your password was not correctly confirmed."})
+			valid = false
 		valid
 
 	#closes alert which is displayed due to an error
