@@ -33,7 +33,7 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-frontend-jaxws" % "3.3.0",     //for calling jax-ws services
   "org.apache.cxf" % "cxf-rt-transports-http" % "3.3.0", //for calling jax-ws services
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % "3.3.0", //exporting jax-ws services
-  "org.apache.tika" % "tika-core" % "1.20",
+  "org.apache.tika" % "tika-core" % "1.22",
   "org.webjars" %% "webjars-play" % "2.5.0",
   "org.webjars" % "jquery" % "2.2.4",
   "org.webjars" % "jquery-cookie" % "1.4.1-1" exclude("org.webjars", "jquery"),
