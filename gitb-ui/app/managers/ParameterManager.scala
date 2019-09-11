@@ -48,17 +48,17 @@ class ParameterManager @Inject() (dbConfigProvider: DatabaseConfigProvider) exte
     PersistenceSchema.configs.filter(_.parameter === parameterId).delete
   }
 
-  def updateParameterWrapper(parameterId: Long, name: String, description: Option[String], use: String, kind: String) = {
-    exec(updateParameter(parameterId, name, description, use, kind).transactionally)
+  def updateParameterWrapper(parameterId: Long, name: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean) = {
+    exec(updateParameter(parameterId, name, description, use, kind, adminOnly, notForTests).transactionally)
   }
 
   def getParameterById(parameterId: Long) = {
     exec(PersistenceSchema.parameters.filter(_.id === parameterId).result.headOption)
   }
 
-  def updateParameter(parameterId: Long, name: String, description: Option[String], use: String, kind: String) = {
-    val q = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.desc, p.use, p.kind, p.name)
-    q.update(description, use, kind, name)
+  def updateParameter(parameterId: Long, name: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean) = {
+    val q = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.desc, p.use, p.kind, p.name, p.adminOnly, p.notForTests)
+    q.update(description, use, kind, name, adminOnly, notForTests)
   }
 
 }

@@ -19,7 +19,7 @@ class ParameterService @Inject() (parameterManager: ParameterManager, authorizat
     if (parameterManager.checkParameterExistsForEndpoint(parameter.name, parameter.endpoint, Some(parameterId))) {
       ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the endpoint")
     } else{
-      parameterManager.updateParameterWrapper(parameterId, parameter.name, parameter.desc, parameter.use, parameter.kind)
+      parameterManager.updateParameterWrapper(parameterId, parameter.name, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests)
       ResponseConstructor.constructEmptyResponse
     }
   }

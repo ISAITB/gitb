@@ -20,18 +20,32 @@ class EndpointDetailsController
 				title: 'Description'
 			}
 			{
-				field: 'use'
-				title: 'Usage'
+				field: 'kindLabel'
+				title: 'Type'
 			}
 			{
-				field: 'kind'
-				title: 'Type'
+				field: 'useLabel'
+				title: 'Required'
+			}
+			{
+				field: 'adminOnlyLabel'
+				title: 'Editable'
+			}
+			{
+				field: 'notForTestsLabel'
+				title: 'Included in tests'
 			}
 		]
 
 		@ConformanceService.getEndpoints [@endpointId]
 		.then (data) =>
 			@endpoint = _.head data
+			if @endpoint.parameters? && @endpoint.parameters.length > 0
+				for e in @endpoint.parameters
+					e.kindLabel = if e.kind == 'SIMPLE' then 'Simple' else if e.kind == 'BINARY' then 'Binary' else 'Hidden'
+					e.useLabel = e.use == 'R'
+					e.adminOnlyLabel = !e.adminOnly
+					e.notForTestsLabel = !e.notForTests
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
@@ -66,7 +80,7 @@ class EndpointDetailsController
 		modalInstance.result
 			.finally(angular.noop)
 			.then((parameter) => 
-				@ConformanceService.createParameter parameter.name, parameter.description, parameter.use, parameter.kind, @endpointId
+				@ConformanceService.createParameter parameter.name, parameter.description, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, @endpointId
 					.then () =>
 						@$state.go(@$state.$current, null, { reload: true });
 					.catch (error) =>
@@ -85,7 +99,7 @@ class EndpointDetailsController
 			.finally(angular.noop)
 			.then((data) => 
 				if data.action == 'update'
-					@ParameterService.updateParameter(data.parameter.id, data.parameter.name, data.parameter.desc, data.parameter.use, data.parameter.kind, @endpointId)
+					@ParameterService.updateParameter(data.parameter.id, data.parameter.name, data.parameter.desc, data.parameter.use, data.parameter.kind, data.parameter.adminOnly, data.parameter.notForTests, @endpointId)
 					.then () =>
 						@$state.go(@$state.$current, null, { reload: true });
 					.catch (error) =>

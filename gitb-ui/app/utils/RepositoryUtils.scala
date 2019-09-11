@@ -161,7 +161,7 @@ object RepositoryUtils {
 						val actors = tdlActors.map { tdlActor =>
 							val endpoints = tdlActor.getEndpoint.asScala.map { tdlEndpoint => // construct actor endpoints
 								val parameters = tdlEndpoint.getConfig.asScala
-									.map((tdlParameter) => Parameters(0l, tdlParameter.getName, Option(tdlParameter.getDesc), tdlParameter.getUse.value(), tdlParameter.getKind.value(), 0l))
+									.map(tdlParameter => Parameters(0l, tdlParameter.getName, Option(tdlParameter.getDesc), tdlParameter.getUse.value(), tdlParameter.getKind.value(), tdlParameter.isAdminOnly, tdlParameter.isNotForTests, 0l))
 									.toList
 								new Endpoint(Endpoints(0l, tdlEndpoint.getName, Option(tdlEndpoint.getDesc), 0l), parameters)
 							}.toList

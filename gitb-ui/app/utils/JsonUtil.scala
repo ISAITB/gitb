@@ -28,6 +28,53 @@ object JsonUtil {
     json
   }
 
+  def jsSystemConfigurationEndpoints(endpoints: List[SystemConfigurationEndpoint], addValues: Boolean): JsArray = {
+    var json = Json.arr()
+    endpoints.foreach{ endpoint =>
+      json = json.append(jsSystemConfigurationEndpoint(endpoint, addValues))
+    }
+    json
+  }
+
+  def jsSystemConfigurationEndpoint(endpoint: SystemConfigurationEndpoint, addValues: Boolean): JsObject = {
+    val json = Json.obj(
+      "id" -> endpoint.endpoint.id,
+      "name" -> endpoint.endpoint.name,
+      "description" -> (if(endpoint.endpoint.desc.isDefined) endpoint.endpoint.desc.get else JsNull),
+      "parameters" -> jsSystemConfigurationParameters(endpoint.endpointParameters, addValues)
+    )
+    json
+  }
+
+  def jsSystemConfigurationParameters(parameters: Option[List[SystemConfigurationParameter]], addValues: Boolean): JsArray = {
+    var json = Json.arr()
+    if (parameters.isDefined) {
+      parameters.get.foreach{ parameter =>
+        json = json.append(jsSystemConfigurationParameter(parameter, addValues))
+      }
+    }
+    json
+  }
+
+  def jsSystemConfigurationParameter(parameter: SystemConfigurationParameter, addValues: Boolean): JsObject = {
+    var json = jsParameter(parameter.parameter)
+    json = json.+("configured" -> JsBoolean(parameter.configured))
+    if (addValues && parameter.config.isDefined) {
+      if (parameter.parameter.kind != "SECRET") {
+        json = json.+("value" -> JsString(parameter.config.get.value))
+        if (parameter.parameter.kind == "BINARY") {
+          if (parameter.mimeType.isDefined) {
+            json = json.+("mimeType" -> JsString(parameter.mimeType.get))
+          }
+          if (parameter.extension.isDefined) {
+            json = json.+("extension" -> JsString(parameter.extension.get))
+          }
+        }
+      }
+    }
+    json
+  }
+
   def jsTestSuitesList(list: List[TestSuites]) = {
     var json = Json.arr()
     list.foreach { testSuite =>
@@ -89,6 +136,8 @@ object JsonUtil {
 			"desc" -> parameter.desc,
 			"use" -> parameter.use,
 			"kind" -> parameter.kind,
+      "adminOnly" -> parameter.adminOnly,
+      "notForTests" -> parameter.notForTests,
 			"endpoint" -> parameter.endpoint
 		)
 		json

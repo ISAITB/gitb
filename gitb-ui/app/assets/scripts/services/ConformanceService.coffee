@@ -77,7 +77,7 @@ class ConformanceService
         actor_id: actor
     })
 
-  createParameter: (name, description, use, kind, endpointId) ->
+  createParameter: (name, description, use, kind, adminOnly, notForTests, endpointId) ->
     @RestService.post({
       path: jsRoutes.controllers.ConformanceService.createParameter().url
       authenticate: true
@@ -86,7 +86,29 @@ class ConformanceService
         description: description
         use: use
         kind: kind
+        admin_only: adminOnly
+        not_for_tests: notForTests
         endpoint_id: endpointId
+    })
+
+  getSystemConfigurations: (actorId, systemId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.ConformanceService.getSystemConfigurations().url,
+      authenticate: true
+      params: {
+        actor_id: actorId,
+        system_id: systemId
+      }
+    })
+
+  checkConfigurations: (actorId, systemId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.ConformanceService.checkConfigurations().url,
+      authenticate: true
+      params: {
+        actor_id: actorId,
+        system_id: systemId
+      }
     })
 
   createActor: (shortName, fullName, description, defaultActor, displayOrder, domainId, specificationId) =>

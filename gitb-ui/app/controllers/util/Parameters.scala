@@ -121,6 +121,8 @@ object Parameters {
   val UPDATE_PASSWORDS  = "updatePasswords"
   val REMOVE_KEYSTORE   = "removeKeystore"
   val INCLUDE_KEYSTORE_DATA  = "keystore"
+  val ADMIN_ONLY  = "admin_only"
+  val NOT_FOR_TESTS  = "not_for_tests"
 
   val FILE       = "file"
 	val LIMIT      = "limit"

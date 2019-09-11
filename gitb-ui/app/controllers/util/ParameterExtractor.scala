@@ -309,7 +309,9 @@ object ParameterExtractor {
     val use:String = ParameterExtractor.requiredBodyParameter(request, Parameters.USE)
     val kind:String = ParameterExtractor.requiredBodyParameter(request, Parameters.KIND)
     val endpointId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.ENDPOINT_ID).toLong
-    models.Parameters(id, name, desc, use, kind, endpointId)
+    val adminOnly = ParameterExtractor.requiredBodyParameter(request, Parameters.ADMIN_ONLY).toBoolean
+    val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
+    models.Parameters(id, name, desc, use, kind, adminOnly, notForTests, endpointId)
   }
 
   def extractLandingPageInfo(request:Request[AnyContent]):LandingPages = {

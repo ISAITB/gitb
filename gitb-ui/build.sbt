@@ -8,7 +8,7 @@ scalaVersion := "2.11.12"
 
 libraryDependencies ++= Seq(
   cache,
-  "eu.europa.ec.itb" % "gitb-types" % "1.6.1",
+  "eu.europa.ec.itb" % "gitb-types" % "1.7.0",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",

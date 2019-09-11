@@ -6,7 +6,7 @@ class ParameterDetailsController
 		@$scope.parameter = parameter
 
 		@$scope.saveDisabled= () =>
-			!(@$scope.parameter.name?.length > 0 && @$scope.parameter.use?.length > 0 && @$scope.parameter.kind?.length > 0)
+			!(@$scope.parameter.name?.length > 0 && @$scope.parameter.kind?.length > 0)
 
 		@$scope.updateParameter = () =>
 			if !@$scope.saveDisabled()

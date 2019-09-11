@@ -14,17 +14,25 @@
 				</div>
 			</div>
 			<div class="form-group">
-				<label class="col-sm-3 control-label" for="use_1">* Use:</label>
-				<div class="col-sm-8">
-					<label class="radio-inline"><input type="radio" ng-model="parameter.use" name="uses" id="use_1" value="O">Optional</label>
-					<label class="radio-inline"><input type="radio" ng-model="parameter.use" name="uses" id="use_2" value="R">Required</label>
-				</div>
-			</div>
-			<div class="form-group">
 				<label class="col-sm-3 control-label" for="kind_1">* Kind:</label>
 				<div class="col-sm-8">
 					<label class="radio-inline"><input type="radio" ng-model="parameter.kind" name="kinds" id="kind_1" value="SIMPLE">Simple</label>
 					<label class="radio-inline"><input type="radio" ng-model="parameter.kind" name="kinds" id="kind_2" value="BINARY">Binary</label>
+					<label class="radio-inline"><input type="radio" ng-model="parameter.kind" name="kinds" id="kind_3" value="SECRET">Hidden</label>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-3 control-label">* Properties:</label>
+				<div class="col-sm-8">
+					<label class="checkbox-inline">
+						<input type="checkbox" ng-model="parameter.use" ng-true-value="'R'" ng-false-value="'O'">Required
+					</label>
+					<label class="checkbox-inline">
+						<input type="checkbox" ng-model="parameter.adminOnly" ng-true-value="false" ng-false-value="true">Editable by users
+					</label>
+					<label class="checkbox-inline">
+						<input type="checkbox" ng-model="parameter.notForTests" ng-true-value="false" ng-false-value="true">Included in tests
+					</label>
 				</div>
 			</div>
 		</form>		

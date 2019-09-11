@@ -499,4 +499,37 @@ class ConformanceService @Inject() (conformanceManager: ConformanceManager, acco
     }
     response
   }
+
+  def getSystemConfigurations() = AuthorizedAction { request =>
+    val system = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+    authorizationManager.canViewEndpointConfigurationsForSystem(request, system)
+    val actor = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
+    val configs = conformanceManager.getSystemConfigurationStatus(system, actor)
+    configs.foreach{ config =>
+      // config.
+      if (config.endpointParameters.isDefined) {
+        config.endpointParameters.get.foreach{ systemConfig =>
+          if (systemConfig.config.isDefined) {
+            if (MimeUtil.isDataURL(systemConfig.config.get.value)) {
+              val detectedMimeType = MimeUtil.getMimeTypeFromDataURL(systemConfig.config.get.value)
+              val extension = MimeUtil.getExtensionFromMimeType(detectedMimeType)
+              systemConfig.extension = Some(extension)
+              systemConfig.mimeType = Some(detectedMimeType)
+            }
+          }
+        }
+      }
+    }
+    val json = JsonUtil.jsSystemConfigurationEndpoints(configs, true)
+    ResponseConstructor.constructJsonResponse(json.toString)
+  }
+
+  def checkConfigurations() = AuthorizedAction { request =>
+    val system = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+    authorizationManager.canViewEndpointConfigurationsForSystem(request, system)
+    val actor = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
+    val status = conformanceManager.getSystemConfigurationStatus(system, actor)
+    val json = JsonUtil.jsSystemConfigurationEndpoints(status, false)
+    ResponseConstructor.constructJsonResponse(json.toString)
+  }
 }

@@ -40,18 +40,19 @@ class EditEndpointConfigurationController
     saveAs(blob, @parameter.name+extension)
 
   closeDialog: () =>
-    if !@oldConfiguration?
-      @$uibModalInstance.close
-        configuration: @configuration
-        operation: @Constants.OPERATION.ADD
-    else if @configuration?.deleted
+    if @configuration.deleted
       @$uibModalInstance.close
         configuration: @configuration
         operation: @Constants.OPERATION.DELETE
     else
-      @$uibModalInstance.close
-        configuration: @configuration
-        operation: @Constants.OPERATION.UPDATE
+      if !@oldConfiguration?
+        @$uibModalInstance.close
+          configuration: @configuration
+          operation: @Constants.OPERATION.ADD
+      else
+        @$uibModalInstance.close
+          configuration: @configuration
+          operation: @Constants.OPERATION.UPDATE
 
   delete: () =>
     @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete the value for this parameter?", "Yes", "No")
@@ -67,22 +68,35 @@ class EditEndpointConfigurationController
     @$uibModalInstance.dismiss()
  
   save: () =>
+    @configuration.configured = true
     if @parameter.kind == "SIMPLE"
       if !@configuration.value?
         @configuration.value = ''
       @SystemService.saveEndpointConfiguration @endpoint.id, @configuration
       .then () => @closeDialog()
       .catch (error) => @ErrorService.showErrorMessage(error)
+    else if @parameter.kind == "SECRET"
+      if !@configuration.value?
+        configurationValue = ''
+      else
+        configurationValue = @configuration.value
+      if !@configuration.valueConfirm?
+        configurationValueConfirm = ''
+      else
+        configurationValueConfirm = @configuration.valueConfirm
+      if configurationValue != configurationValueConfirm
+        @ErrorService.showSimpleErrorMessage('Invalid value', 'The provided value and its confirmation don\'t match.')
+      else
+        @SystemService.saveEndpointConfiguration @endpoint.id, @configuration
+        .then () => 
+          @configuration.value = undefined
+          @configuration.valueConfirm = undefined
+          @closeDialog()
+        .catch (error) => @ErrorService.showErrorMessage(error)
     else if @parameter.kind == "BINARY"
       if @file?
-        if @file.size >= (1024 * 64)
-          error = {
-            statusText: 'File upload problem',
-            data: {
-              error_description: 'The maximum allowed size for binary parameters is 65 KBs.'
-            }
-          }
-          @ErrorService.showErrorMessage(error)
+        if @file.size >= (1024 * 500)
+          @ErrorService.showSimpleErrorMessage('File upload problem', 'The maximum allowed size for binary parameters is 500 KBs.')
         else 
           reader = new FileReader()
           reader.readAsDataURL @file

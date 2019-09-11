@@ -6,9 +6,11 @@ class CreateParameterController
 		@$scope.parameter = {}
 		@$scope.parameter.use = 'O'
 		@$scope.parameter.kind = 'SIMPLE'
+		@$scope.parameter.notForTests = false
+		@$scope.parameter.adminOnly = false
 
 		@$scope.saveDisabled = () =>
-			!(@$scope.parameter.name?.length > 0 && @$scope.parameter.use?.length > 0 && @$scope.parameter.kind?.length > 0)
+			!(@$scope.parameter.name?.length > 0 && @$scope.parameter.kind?.length > 0)
 
 		@$scope.createParameter = () =>
 			if !@$scope.saveDisabled()

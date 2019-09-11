@@ -192,6 +192,8 @@ GET     /suite/:suite_id                    @controllers.TestSuiteService.downlo
 
 # Endpoint management API
 GET     /endpoints                          @controllers.ConformanceService.getEndpoints
+GET     /endpoints/checkConfig              @controllers.ConformanceService.checkConfigurations
+GET     /endpoints/systemConfig             @controllers.ConformanceService.getSystemConfigurations
 GET     /endpoints/:endpoint_id/config      @controllers.SystemService.getEndpointConfigurations(endpoint_id: Long)
 GET     /endpoints/config                   @controllers.SystemService.getConfigurationsWithEndpointIds()
 POST    /endpoints/:endpoint_id/config      @controllers.SystemService.saveEndpointConfiguration(endpoint_id: Long)

@@ -394,12 +394,33 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canViewSystem(request, system)
   }
 
-  def canEditEndpointConfiguration(request: RequestWithAttributes[_], config: Configs):Boolean = {
-    canManageSystem(request, getUser(getRequestUserId(request)), config.system)
+  def canManageSystemButCanAlsoEditParameter(request: RequestWithAttributes[_], userInfo: User, parameterId: Long): Boolean = {
+    var ok = false
+    if (isCommunityAdmin(userInfo) || isTestBedAdmin(userInfo)) {
+      ok = true
+    } else {
+      val parameter = parameterManager.getParameterById(parameterId)
+      ok = parameter.isDefined && !parameter.get.adminOnly
+    }
+    setAuthResult(request, ok, "User cannot edit this parameter")
   }
 
-  def canDeleteEndpointConfiguration(request: RequestWithAttributes[_], systemId: Long, endpointId: Long):Boolean = {
-    canManageSystem(request, getUser(getRequestUserId(request)), systemId)
+  def canEditEndpointConfiguration(request: RequestWithAttributes[_], config: Configs):Boolean = {
+    val userInfo = getUser(getRequestUserId(request))
+    var check = canManageSystem(request, userInfo, config.system)
+    if (check) {
+      check = canManageSystemButCanAlsoEditParameter(request, userInfo, config.parameter)
+    }
+    check
+  }
+
+  def canDeleteEndpointConfiguration(request: RequestWithAttributes[_], systemId: Long, endpointId: Long, parameterId: Long):Boolean = {
+    val userInfo = getUser(getRequestUserId(request))
+    var check = canManageSystem(request, userInfo, systemId)
+    if (check) {
+      check = canManageSystemButCanAlsoEditParameter(request, userInfo, parameterId)
+    }
+    check
   }
 
   def canViewEndpointConfigurations(request: RequestWithAttributes[_], systemId: Long, endpointId: Long):Boolean = {

@@ -136,8 +136,8 @@ class SystemService @Inject() (systemManager: SystemManager, parameterManager: P
 
   def deleteEndpointConfiguration(endpointId: Long) = AuthorizedAction { request =>
     val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
-    authorizationManager.canDeleteEndpointConfiguration(request, systemId, endpointId)
     val parameterId = ParameterExtractor.requiredQueryParameter(request, Parameters.PARAMETER_ID).toLong
+    authorizationManager.canDeleteEndpointConfiguration(request, systemId, endpointId, parameterId)
     systemManager.deleteEndpointConfiguration(systemId, parameterId, endpointId)
     ResponseConstructor.constructEmptyResponse
   }

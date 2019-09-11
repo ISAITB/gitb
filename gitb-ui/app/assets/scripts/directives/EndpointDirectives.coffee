@@ -39,6 +39,7 @@
 		scope:
 			endpoint: '='
 			showValues: '='
+			editable: '='
 			canEdit: '='
 			onEdit: '='
 		template: ''+
@@ -58,8 +59,8 @@
 							<th width="10%">Parameter</th>
 							<th ng-if="showValues">Configured value</th>
 							<th>Description</th>
-							<th style="text-align: center;" width="5%" ng-if="canEdit">Action</th>
-							<th width="1%" ng-if="!canEdit"></th>
+							<th style="text-align: center;" width="5%" ng-if="editable">Action</th>
+							<th width="1%" ng-if="!editable"></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -70,8 +71,8 @@
 							<td ng-if="showValues && parameter.kind == \'BINARY\'"><a ng-if="parameter.value" href="" ng-click="downloadBinaryParameter(parameter)">{{parameter.fileName}}</a></td>
 							<td ng-if="showValues && parameter.kind != \'BINARY\'">{{parameter.value}}</td>
 							<td>{{parameter.desc}}</td>
-							<td style="text-align: center;" ng-if="canEdit"><button class="btn btn-default" ng-click="onEdit(parameter)"><i class="fa fa-pencil"></i></button></td>
-							<td ng-if="!canEdit"></td>
+							<td style="text-align: center;" ng-if="editable && canEdit(parameter)"><button class="btn btn-default" ng-click="onEdit(parameter)"><i class="fa fa-pencil"></i></button></td>
+							<td ng-if="!editable || !canEdit(parameter)"></td>
 						</tr>
 					</tbody>
 				</table>

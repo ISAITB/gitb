@@ -5,6 +5,15 @@ class ErrorService
   constructor: (@$q, @$log, @$uibModal, @Constants, @ErrorTemplateService, @AccountService, @ConfirmationDialogService) ->
     @$log.debug "Constructing ErrorService"
 
+  showSimpleErrorMessage: (title, message) =>
+    error = {
+      statusText: title,
+      data: {
+        error_description: message
+      }
+    }
+    @showErrorMessage(error)
+
   showErrorMessage: (error, withRetry) =>
     errorDeferred = @$q.defer()
 

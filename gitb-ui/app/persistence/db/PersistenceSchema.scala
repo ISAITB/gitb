@@ -128,9 +128,11 @@ object PersistenceSchema {
 		def desc  = column[Option[String]]("description", O.SqlType("TEXT"))
 		def use   = column[String]("use")
 		def kind  = column[String]("kind")
+    def adminOnly = column[Boolean]("admin_only")
+    def notForTests = column[Boolean]("not_for_tests")
 		def endpoint = column[Long]("endpoint")
 
-		def * = (id, name, desc, use, kind, endpoint) <> (models.Parameters.tupled, models.Parameters.unapply)
+		def * = (id, name, desc, use, kind, adminOnly, notForTests, endpoint) <> (models.Parameters.tupled, models.Parameters.unapply)
 	}
 	val parameters = TableQuery[ParametersTable]
 

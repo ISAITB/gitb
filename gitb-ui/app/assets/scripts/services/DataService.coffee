@@ -17,6 +17,7 @@ class DataService
 		@configuration = undefined
 		@isSystemAdmin = false
 		@isVendorUser = false
+		@isVendorAdmin = false
 		@isCommunityAdmin = false
 		@isDomainUser = false
 		@acceptedEmailAttachmentTypes = undefined
