@@ -162,15 +162,16 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
    * Deletes organization by community
    */
   def deleteOrganizationByCommunity(communityId: Long) = {
-    testResultManager.updateForDeletedOrganisationByCommunityId(communityId)
-    for {
+    testResultManager.updateForDeletedOrganisationByCommunityId(communityId) andThen
+      (for {
       list <- PersistenceSchema.organizations.filter(_.community === communityId).result
       _ <- DBIO.seq(list.map { org =>
         deleteUserByOrganization(org.id) andThen
         systemManager.deleteSystemByOrganization(org.id) andThen
-        PersistenceSchema.organizations.filter(_.community === communityId).delete
+        PersistenceSchema.organisationParameterValues.filter(_.organisation === org.id).delete
+        PersistenceSchema.organizations.filter(_.id === org.id).delete
       }: _*)
-    } yield()
+    } yield())
   }
 
   /**
