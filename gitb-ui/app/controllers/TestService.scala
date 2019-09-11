@@ -93,7 +93,6 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
     val specId = ParameterExtractor.requiredQueryParameter(request, Parameters.SPECIFICATION_ID).toLong
     val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
     val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
-//    val configs = ParameterExtractor.requiredBodyParameter(request, Parameters.CONFIGS)
 
     val cRequest: ConfigureRequest = new ConfigureRequest
     cRequest.setTcInstanceId(session_id)
@@ -102,7 +101,6 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
     val systemParameters = conformanceManager.getSystemConfigurationParameters(systemId, actorId)
     import scala.collection.JavaConversions._
     cRequest.getConfigs.addAll(systemParameters)
-//    JacksonUtil.parseActorConfigurations(configs)
     // Load domain configuration parameters.
     val domainId = conformanceManager.getSpecifications(Some(List(specId))).head.domain
     val parameters = conformanceManager.getDomainParameters(domainId)

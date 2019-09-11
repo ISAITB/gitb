@@ -65,7 +65,7 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   def getSelfRegistrationOptions():List[SelfRegOption] = {
     exec(
       PersistenceSchema.communities
-        .filter(x => x.id =!= Constants.DefaultCommunityId && (x.selfRegType === SelfRegistrationType.PublicListing.id.toShort || x.selfRegType === SelfRegistrationType.PublicListingWithToken.id.toShort))
+        .filter(x => x.selfRegType === SelfRegistrationType.PublicListing.id.toShort || x.selfRegType === SelfRegistrationType.PublicListingWithToken.id.toShort)
         .sortBy(_.shortname.asc).result
     ).map(x => new SelfRegOption(x.id, x.shortname, x.selfRegType, organizationManager.getOrganisationTemplates(x.id))).toList
   }
