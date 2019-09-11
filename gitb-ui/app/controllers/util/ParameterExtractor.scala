@@ -314,6 +314,38 @@ object ParameterExtractor {
     models.Parameters(id, name, desc, use, kind, adminOnly, notForTests, endpointId)
   }
 
+  def extractOrganisationParameter(request:Request[AnyContent]):models.OrganisationParameters = {
+    val id:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ID) match {
+      case Some(i) => i.toLong
+      case _ => 0l
+    }
+    val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
+    val testKey:String = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_KEY)
+    val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+    val use:String = ParameterExtractor.requiredBodyParameter(request, Parameters.USE)
+    val kind:String = ParameterExtractor.requiredBodyParameter(request, Parameters.KIND)
+    val communityId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val adminOnly = ParameterExtractor.requiredBodyParameter(request, Parameters.ADMIN_ONLY).toBoolean
+    val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
+    models.OrganisationParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, communityId)
+  }
+
+  def extractSystemParameter(request:Request[AnyContent]):models.SystemParameters = {
+    val id:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ID) match {
+      case Some(i) => i.toLong
+      case _ => 0l
+    }
+    val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
+    val testKey:String = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_KEY)
+    val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+    val use:String = ParameterExtractor.requiredBodyParameter(request, Parameters.USE)
+    val kind:String = ParameterExtractor.requiredBodyParameter(request, Parameters.KIND)
+    val communityId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val adminOnly = ParameterExtractor.requiredBodyParameter(request, Parameters.ADMIN_ONLY).toBoolean
+    val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
+    models.SystemParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, communityId)
+  }
+
   def extractLandingPageInfo(request:Request[AnyContent]):LandingPages = {
     val name = requiredBodyParameter(request, Parameters.NAME)
     val desc = optionalBodyParameter(request, Parameters.DESCRIPTION)

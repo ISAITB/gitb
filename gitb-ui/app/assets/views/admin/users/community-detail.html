@@ -14,10 +14,11 @@
         </div>
         <div class="panel-footer">
             <div class="row">
-                <div class="col-md-3"></div>
+                <div class="col-md-2"></div>
                 <div class="col-md-8 btn-toolbar">
                     <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.updateCommunity()" ng-disabled="communityDetailCtrl.saveDisabled()">Save changes</button>
                     <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.updateConformanceCertificateSettings()">Edit conformance certificate settings</button>
+                    <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.updateParameters()">Edit custom member properties</button>
                     <button class="btn btn-default" type="button" ng-if="communityDetailCtrl.DataService.isSystemAdmin && !communityDetailCtrl.isDefaultCommunity()" ng-click="communityDetailCtrl.deleteCommunity()">Delete</button>
                     <button class="btn btn-default" type="button" ng-if="communityDetailCtrl.DataService.isSystemAdmin" ng-click="communityDetailCtrl.cancelCommunityDetail()">Back</button>
                 </div>

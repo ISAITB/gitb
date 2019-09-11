@@ -22,7 +22,7 @@ object PersistenceSchema {
     def * = (id, shortname, fullname, supportEmail, selfRegType, selfRegToken, domain) <> (Communities.tupled, Communities.unapply)
   }
   val communities = TableQuery[CommunitiesTable]
-  val insertCommunity = (communities returning communities.map(_.id))
+  val insertCommunity = communities returning communities.map(_.id)
 
   class OrganizationsTable(tag: Tag) extends Table[Organizations](tag, "Organizations") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -41,7 +41,7 @@ object PersistenceSchema {
   //get table name etc from organizations.baseTableRow
   val organizations = TableQuery[OrganizationsTable]
   //insert organizations by insertOrganization += organization. This is implemented to get auto-incremented ids
-  val insertOrganization = (organizations returning organizations.map(_.id))
+  val insertOrganization = organizations returning organizations.map(_.id)
 
   class UsersTable(tag: Tag) extends Table[Users](tag, "Users") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -59,7 +59,7 @@ object PersistenceSchema {
     //def idx1 = index("users_idx_1", email, unique = true)
   }
   val users = TableQuery[UsersTable]
-  val insertUser = (users returning users.map(_.id))
+  val insertUser = users returning users.map(_.id)
 
   class SystemsTable(tag: Tag) extends Table[Systems](tag, "Systems") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -72,7 +72,7 @@ object PersistenceSchema {
     //def fk = foreignKey("systems_fk", owner, Organizations)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
   val systems = TableQuery[SystemsTable]
-  val insertSystem = (systems returning systems.map(_.id))
+  val insertSystem = systems returning systems.map(_.id)
 
   class DomainsTable(tag: Tag) extends Table[Domain](tag, "Domains") {
 	  def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -378,7 +378,7 @@ object PersistenceSchema {
     def * = (id, name, description, content, default, community) <> (LandingPages.tupled, LandingPages.unapply)
   }
   val landingPages = TableQuery[LandingPagesTable]
-  val insertLandingPage = (landingPages returning landingPages.map(_.id))
+  val insertLandingPage = landingPages returning landingPages.map(_.id)
 
   class SystemConfigurationsTable(tag: Tag) extends Table[SystemConfigurations](tag, "SystemConfigurations") {
     def name = column[String]("name", O.PrimaryKey)
@@ -387,7 +387,7 @@ object PersistenceSchema {
     def * = (name, parameter, description) <> (SystemConfigurations.tupled, SystemConfigurations.unapply)
   }
   val systemConfigurations = TableQuery[SystemConfigurationsTable]
-  val insertSystemConfiguration = (systemConfigurations returning systemConfigurations.map(_.name))
+  val insertSystemConfiguration = systemConfigurations returning systemConfigurations.map(_.name)
 
   class LegalNoticesTable(tag: Tag) extends Table[LegalNotices](tag, "LegalNotices") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -399,7 +399,7 @@ object PersistenceSchema {
     def * = (id, name, description, content, default, community) <> (LegalNotices.tupled, LegalNotices.unapply)
   }
   val legalNotices = TableQuery[LegalNoticesTable]
-  val insertLegalNotice = (legalNotices returning legalNotices.map(_.id))
+  val insertLegalNotice = legalNotices returning legalNotices.map(_.id)
 
   class ErrorTemplatesTable(tag: Tag) extends Table[ErrorTemplates](tag, "ErrorTemplates") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -411,7 +411,7 @@ object PersistenceSchema {
     def * = (id, name, description, content, default, community) <> (ErrorTemplates.tupled, ErrorTemplates.unapply)
   }
   val errorTemplates = TableQuery[ErrorTemplatesTable]
-  val insertErrorTemplate = (errorTemplates returning errorTemplates.map(_.id))
+  val insertErrorTemplate = errorTemplates returning errorTemplates.map(_.id)
 
   class ConformanceCertificatesTable(tag: Tag) extends Table[ConformanceCertificates](tag, "ConformanceCertificates") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
@@ -430,6 +430,54 @@ object PersistenceSchema {
     def * = (id, title, message, includeMessage, includeTestStatus, includeTestCases, includeDetails, includeSignature, keystoreFile, keystoreType, keystorePassword, keyPassword, community) <> (ConformanceCertificates.tupled, ConformanceCertificates.unapply)
   }
   val conformanceCertificates = TableQuery[ConformanceCertificatesTable]
-  val insertConformanceCertificate = (conformanceCertificates returning conformanceCertificates.map(_.id))
+  val insertConformanceCertificate = conformanceCertificates returning conformanceCertificates.map(_.id)
+
+  class OrganisationParametersTable(tag: Tag) extends Table[OrganisationParameters](tag, "OrganisationParameters") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def name = column[String]("name")
+    def testKey = column[String]("test_key")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def use   = column[String]("use")
+    def kind  = column[String]("kind")
+    def adminOnly = column[Boolean]("admin_only")
+    def notForTests = column[Boolean]("not_for_tests")
+    def community = column[Long]("community")
+    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, community) <> (OrganisationParameters.tupled, OrganisationParameters.unapply)
+  }
+  val organisationParameters = TableQuery[OrganisationParametersTable]
+  val insertOrganisationParameters = organisationParameters returning organisationParameters.map(_.id)
+
+  class SystemParametersTable(tag: Tag) extends Table[SystemParameters](tag, "SystemParameters") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def name = column[String]("name")
+    def testKey = column[String]("test_key")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def use   = column[String]("use")
+    def kind  = column[String]("kind")
+    def adminOnly = column[Boolean]("admin_only")
+    def notForTests = column[Boolean]("not_for_tests")
+    def community = column[Long]("community")
+    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, community) <> (SystemParameters.tupled, SystemParameters.unapply)
+  }
+  val systemParameters = TableQuery[SystemParametersTable]
+  val insertSystemParameters = systemParameters returning systemParameters.map(_.id)
+
+  class OrganisationParameterValuesTable(tag: Tag) extends Table[OrganisationParameterValues](tag, "OrganisationParameterValues") {
+    def organisation = column[Long] ("organisation")
+    def parameter = column[Long]("parameter")
+    def value = column[String]("value", O.SqlType("BLOB"))
+    def * = (organisation, parameter, value) <> (OrganisationParameterValues.tupled, OrganisationParameterValues.unapply)
+    def pk = primaryKey("opv_pk", (organisation, parameter))
+  }
+  val organisationParameterValues = TableQuery[OrganisationParameterValuesTable]
+
+  class SystemParameterValuesTable(tag: Tag) extends Table[SystemParameterValues](tag, "SystemParameterValues") {
+    def system = column[Long] ("system")
+    def parameter = column[Long]("parameter")
+    def value = column[String]("value", O.SqlType("BLOB"))
+    def * = (system, parameter, value) <> (SystemParameterValues.tupled, SystemParameterValues.unapply)
+    def pk = primaryKey("spv_pk", (system, parameter))
+  }
+  val systemParameterValues = TableQuery[SystemParameterValuesTable]
 
 }

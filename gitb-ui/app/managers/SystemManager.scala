@@ -372,6 +372,7 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     PersistenceSchema.systemImplementsActors.filter(_.systemId === systemId).delete andThen
     PersistenceSchema.systemImplementsOptions.filter(_.systemId === systemId).delete andThen
     PersistenceSchema.conformanceResults.filter(_.sut === systemId).delete andThen
+    PersistenceSchema.systemParameterValues.filter(_.system === systemId).delete andThen
     PersistenceSchema.systems.filter(_.id === systemId).delete
   }
 

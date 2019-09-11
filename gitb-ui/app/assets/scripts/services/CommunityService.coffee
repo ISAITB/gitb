@@ -93,4 +93,94 @@ class CommunityService
       data: data
     })
 
+  getOrganisationParameters: (communityId) =>
+    @RestService.get({
+      path: jsRoutes.controllers.CommunityService.getOrganisationParameters(communityId).url
+      authenticate: true
+    })
+
+  getSystemParameters: (communityId) =>
+    @RestService.get({
+      path: jsRoutes.controllers.CommunityService.getSystemParameters(communityId).url
+      authenticate: true
+    })
+
+  deleteOrganisationParameter: (parameterId) =>
+    @RestService.delete
+      path: jsRoutes.controllers.CommunityService.deleteOrganisationParameter(parameterId).url
+
+  deleteSystemParameter: (parameterId) =>
+    @RestService.delete
+      path: jsRoutes.controllers.CommunityService.deleteSystemParameter(parameterId).url
+
+  createOrganisationParameter: (parameter) =>
+    data = {
+      name: parameter.name,
+      test_key: parameter.testKey,
+      description: parameter.desc,
+      use: parameter.use,
+      kind: parameter.kind,
+      admin_only: parameter.adminOnly,
+      not_for_tests: parameter.notForTests,
+      community_id: parameter.community
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.CommunityService.createOrganisationParameter().url,
+      data: data,
+      authenticate: true
+    })
+
+  createSystemParameter: (parameter) =>
+    data = {
+      name: parameter.name,
+      test_key: parameter.testKey,
+      description: parameter.desc,
+      use: parameter.use,
+      kind: parameter.kind,
+      admin_only: parameter.adminOnly,
+      not_for_tests: parameter.notForTests,
+      community_id: parameter.community
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.CommunityService.createSystemParameter().url,
+      data: data,
+      authenticate: true
+    })
+
+  updateOrganisationParameter: (parameter) =>
+    data = {
+      id: parameter.id
+      name: parameter.name,
+      test_key: parameter.testKey,
+      description: parameter.desc,
+      use: parameter.use,
+      kind: parameter.kind,
+      admin_only: parameter.adminOnly,
+      not_for_tests: parameter.notForTests,
+      community_id: parameter.community
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.CommunityService.updateOrganisationParameter(parameter.id).url,
+      data: data,
+      authenticate: true
+    })
+
+  updateSystemParameter: (parameter) =>
+    data = {
+      id: parameter.id
+      name: parameter.name,
+      test_key: parameter.testKey,
+      description: parameter.desc,
+      use: parameter.use,
+      kind: parameter.kind,
+      admin_only: parameter.adminOnly,
+      not_for_tests: parameter.notForTests,
+      community_id: parameter.community
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.CommunityService.updateSystemParameter(parameter.id).url,
+      data: data,
+      authenticate: true
+    })
+
 services.service('CommunityService', CommunityService)

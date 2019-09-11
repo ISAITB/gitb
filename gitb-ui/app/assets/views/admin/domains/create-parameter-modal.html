@@ -1,11 +1,15 @@
 <div class="modal-header">
-		<h4>Create parameter</h4>
+		<h4>{{modalTitle}}</h4>
 	</div>
 	<div class="modal-body">
 		<form class="form-horizontal">
 			<div class="form-group">
-				<label class="col-sm-3 control-label" for="name">* Name:</label>
+				<label class="col-sm-3 control-label" for="name">* {{nameLabel}}:</label>
 				<div class="col-sm-8"><input id="name" ng-model="parameter.name" class="form-control" type="text" required></div>
+			</div>
+			<div class="form-group" ng-if="hasKey">
+				<label class="col-sm-3 control-label" for="key">* Key:</label>
+				<div class="col-sm-8"><input id="key" ng-model="parameter.key" class="form-control" type="text" required></div>
 			</div>
 			<div class="form-group">
 				<label class="col-sm-3 control-label" for="description">Description:</label>
@@ -38,7 +42,7 @@
 		</form>		
 	</div>
 	<div class="modal-footer">
-		<button class="btn btn-default" ng-click="createParameter()" ng-disabled="saveDisabled()">Save parameter</button>
+		<button class="btn btn-default" ng-click="createParameter()" ng-disabled="saveDisabled()">Save</button>
 		<button class="btn btn-default" ng-click="cancel()">Cancel</button>
 	</div>
 </div>

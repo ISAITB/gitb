@@ -151,6 +151,53 @@ object JsonUtil {
 		json
 	}
 
+  def jsOrganisationParameters(list: List[OrganisationParameters]) = {
+    var json = Json.arr()
+    list.foreach { parameter =>
+      json = json.append(jsOrganisationParameter(parameter))
+    }
+    json
+  }
+
+  def jsOrganisationParameter(parameter: OrganisationParameters) = {
+    val json = Json.obj(
+      "id" -> parameter.id,
+      "name" -> parameter.name,
+      "testKey" -> parameter.testKey,
+      "desc" -> (if (parameter.description.isDefined) parameter.description.get else JsNull),
+      "use" -> parameter.use,
+      "kind" -> parameter.kind,
+      "adminOnly" -> parameter.adminOnly,
+      "notForTests" -> parameter.notForTests,
+      "community" -> parameter.community
+    )
+    json
+  }
+
+  def jsSystemParameters(list: List[SystemParameters]) = {
+    var json = Json.arr()
+    list.foreach { parameter =>
+      json = json.append(jsSystemParameter(parameter))
+    }
+    json
+  }
+
+  def jsSystemParameter(parameter: SystemParameters) = {
+    val json = Json.obj(
+      "id" -> parameter.id,
+      "name" -> parameter.name,
+      "testKey" -> parameter.testKey,
+      "desc" -> (if (parameter.description.isDefined) parameter.description.get else JsNull),
+      "use" -> parameter.use,
+      "kind" -> parameter.kind,
+      "adminOnly" -> parameter.adminOnly,
+      "notForTests" -> parameter.notForTests,
+      "community" -> parameter.community
+    )
+    json
+  }
+
+
   /**
    * Converts a User object into Play!'s JSON notation.
    * Does not support cross object conversion

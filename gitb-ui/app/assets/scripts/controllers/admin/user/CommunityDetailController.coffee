@@ -211,4 +211,7 @@ class CommunityDetailController
   updateConformanceCertificateSettings: () =>
     @$state.go 'app.admin.users.communities.detail.certificate'
 
+  updateParameters: () =>
+    @$state.go 'app.admin.users.communities.detail.parameters'
+
 @controllers.controller 'CommunityDetailController', CommunityDetailController

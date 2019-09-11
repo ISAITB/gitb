@@ -33,6 +33,7 @@ object Parameters {
   val DESCRIPTION = "description"
   val USE = "use"
   val KIND = "kind"
+  val TEST_KEY = "test_key"
 
   // Landing page Service
   val DEFAULT = "default_flag"

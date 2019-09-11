@@ -44,8 +44,8 @@ class ParameterManager @Inject() (dbConfigProvider: DatabaseConfigProvider) exte
   }
 
   def delete(parameterId: Long) = {
-    PersistenceSchema.parameters.filter(_.id === parameterId).delete andThen
-    PersistenceSchema.configs.filter(_.parameter === parameterId).delete
+    PersistenceSchema.configs.filter(_.parameter === parameterId).delete andThen
+      PersistenceSchema.parameters.filter(_.id === parameterId).delete
   }
 
   def updateParameterWrapper(parameterId: Long, name: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean) = {

@@ -94,4 +94,5 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager, a
     organizationManager.deleteOrganization(orgId)
     ResponseConstructor.constructEmptyResponse
   }
+
 }

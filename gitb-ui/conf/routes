@@ -157,6 +157,14 @@ POST    /communities/create                 @controllers.CommunityService.create
 GET     /communities/:id                    @controllers.CommunityService.getCommunityById(id : Long)
 POST    /communities/:id                    @controllers.CommunityService.updateCommunity(id : Long)
 DELETE  /communities/:id                    @controllers.CommunityService.deleteCommunity(id: Long)
+POST    /communities/orgparam/create        @controllers.CommunityService.createOrganisationParameter
+POST    /communities/orgparam/:id           @controllers.CommunityService.updateOrganisationParameter(id: Long)
+DELETE  /communities/orgparam/:id           @controllers.CommunityService.deleteOrganisationParameter(id: Long)
+GET     /communities/orgparam/:id           @controllers.CommunityService.getOrganisationParameters(id: Long)
+POST    /communities/sysparam/create        @controllers.CommunityService.createSystemParameter
+POST    /communities/sysparam/:id           @controllers.CommunityService.updateSystemParameter(id: Long)
+DELETE  /communities/sysparam/:id           @controllers.CommunityService.deleteSystemParameter(id: Long)
+GET     /communities/sysparam/:id           @controllers.CommunityService.getSystemParameters(id: Long)
 GET     /communities/organizations/:id      @controllers.OrganizationService.getOrganizationsByCommunity(id: Long)
 GET     /communities/pages/:id              @controllers.LandingPageService.getLandingPagesByCommunity(id: Long)
 POST    /communities/pages/create           @controllers.LandingPageService.createLandingPage

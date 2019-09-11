@@ -149,9 +149,99 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
         errorTemplateManager.deleteErrorTemplateByCommunity(communityId) andThen
         testResultManager.updateForDeletedCommunity(communityId) andThen
         conformanceManager.deleteConformanceCertificateSettings(communityId) andThen
+        deleteOrganisationParametersByCommunity(communityId) andThen
+        deleteSystemParametersByCommunity(communityId) andThen
         PersistenceSchema.communities.filter(_.id === communityId).delete
       ).transactionally
     )
+  }
+
+  def createOrganisationParameter(parameter: OrganisationParameters) = {
+    exec((PersistenceSchema.organisationParameters.returning(PersistenceSchema.organisationParameters.map(_.id)) += parameter).transactionally)
+  }
+
+  def updateOrganisationParameter(parameter: OrganisationParameters) = {
+    val q = for {p <- PersistenceSchema.organisationParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests)
+    exec(q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests).transactionally)
+  }
+
+  def deleteOrganisationParameterWrapper(parameterId: Long) = {
+    exec(deleteOrganisationParameter(parameterId).transactionally)
+  }
+
+  def deleteOrganisationParameter(parameterId: Long) = {
+    PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterId).delete andThen
+      PersistenceSchema.organisationParameters.filter(_.id === parameterId).delete
+  }
+
+  def deleteOrganisationParametersByCommunity(communityId: Long) = {
+    // The values are already deleted as part of the organisation deletes
+    PersistenceSchema.organisationParameters.filter(_.community === communityId).delete
+  }
+
+  def createSystemParameter(parameter: SystemParameters) = {
+    exec((PersistenceSchema.systemParameters.returning(PersistenceSchema.systemParameters.map(_.id)) += parameter).transactionally)
+  }
+
+  def updateSystemParameter(parameter: SystemParameters) = {
+    val q = for {p <- PersistenceSchema.systemParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests)
+    exec(q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests).transactionally)
+  }
+
+  def deleteSystemParameterWrapper(parameterId: Long) = {
+    exec(deleteSystemParameter(parameterId).transactionally)
+  }
+
+  def deleteSystemParameter(parameterId: Long) = {
+    PersistenceSchema.systemParameterValues.filter(_.parameter === parameterId).delete andThen
+      PersistenceSchema.systemParameters.filter(_.id === parameterId).delete
+  }
+
+  def deleteSystemParametersByCommunity(communityId: Long) = {
+    // The values are already deleted as part of the system deletes
+    PersistenceSchema.systemParameters.filter(_.community === communityId).delete
+  }
+
+  def checkOrganisationParameterExists(parameter: OrganisationParameters, isUpdate: Boolean): Boolean = {
+    var q = PersistenceSchema.organisationParameters
+      .filter(_.community === parameter.community)
+      .filter(x => {x.name === parameter.name || x.testKey === parameter.testKey})
+    if (isUpdate) {
+      q = q.filter(_.id =!= parameter.id)
+    }
+    exec(q.result.headOption).isDefined
+  }
+
+  def checkSystemParameterExists(parameter: SystemParameters, isUpdate: Boolean): Boolean = {
+    var q = PersistenceSchema.systemParameters
+      .filter(_.community === parameter.community)
+      .filter(x => {x.name === parameter.name || x.testKey === parameter.testKey})
+    if (isUpdate) {
+      q = q.filter(_.id =!= parameter.id)
+    }
+    exec(q.result.headOption).isDefined
+  }
+
+  def getOrganisationParameterById(parameterId: Long): Option[OrganisationParameters] = {
+    exec(PersistenceSchema.organisationParameters.filter(_.id === parameterId).result.headOption)
+  }
+
+  def getSystemParameterById(parameterId: Long): Option[SystemParameters] = {
+    exec(PersistenceSchema.systemParameters.filter(_.id === parameterId).result.headOption)
+  }
+
+  def getOrganisationParameters(communityId: Long): List[OrganisationParameters] = {
+    exec(PersistenceSchema.organisationParameters
+      .filter(_.community === communityId)
+      .sortBy(_.name.asc)
+      .result).toList
+  }
+
+  def getSystemParameters(communityId: Long): List[SystemParameters] = {
+    exec(PersistenceSchema.systemParameters
+      .filter(_.community === communityId)
+      .sortBy(_.name.asc)
+      .result).toList
   }
 
 }

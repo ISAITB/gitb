@@ -76,6 +76,8 @@ class EndpointDetailsController
 			templateUrl: 'assets/views/admin/domains/create-parameter-modal.html'
 			controller: 'CreateParameterController as CreateParameterController'
 			size: 'lg'
+			resolve:
+				options: () => {}
 		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result
 			.finally(angular.noop)
@@ -93,6 +95,7 @@ class EndpointDetailsController
 			controller: 'ParameterDetailsController as ParameterDetailsController'
 			resolve:
 				parameter: () => parameter
+				options: () => {}
 			size: 'lg'
 		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result

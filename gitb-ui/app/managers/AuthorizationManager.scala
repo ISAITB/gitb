@@ -976,6 +976,24 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canManageCommunity(request, getUser(getRequestUserId(request)), communityId)
   }
 
+  def canManageOrganisationParameter(request: RequestWithAttributes[_], parameterId: Long): Boolean = {
+    val parameter = communityManager.getOrganisationParameterById(parameterId)
+    var ok = false
+    if (parameter.isDefined) {
+      ok = canManageCommunity(request, parameter.get.community)
+    }
+    setAuthResult(request, ok, "User cannot manage the requested parameter")
+  }
+
+  def canManageSystemParameter(request: RequestWithAttributes[_], parameterId: Long): Boolean = {
+    val parameter = communityManager.getSystemParameterById(parameterId)
+    var ok = false
+    if (parameter.isDefined) {
+      ok = canManageCommunity(request, parameter.get.community)
+    }
+    setAuthResult(request, ok, "User cannot manage the requested parameter")
+  }
+
   def canDeleteObsoleteTestResultsForCommunity(request: RequestWithAttributes[_], communityId: Long):Boolean = {
     canManageCommunity(request, communityId)
   }

@@ -175,7 +175,7 @@
 				row = {}
 				row.data = scope.data[column.field]
 				row.boolean = _.isBoolean row.data
-				row.class = if classes? then classes[column.field] else column.title.toLowerCase().replace(" ", "-")
+				row.class = if classes? then classes[column.field] else 'tb-'+column.title.toLowerCase().replace(" ", "-")
 
 				row
 			scope.delete = () =>
