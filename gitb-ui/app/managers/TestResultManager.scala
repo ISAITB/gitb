@@ -158,8 +158,15 @@ class TestResultManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ext
     (for {
       results <- query.result
       _ <- DBIO.seq(results.map(r => {
-        deleteSessionDataFromFileSystem(r)
-        DBIO.successful(())
+        for {
+          _ <- {
+            (for {t <- PersistenceSchema.conformanceResults if t.testsession === r.sessionId} yield t.testsession).update(None)
+          }
+          _ <- {
+            deleteSessionDataFromFileSystem(r)
+            DBIO.successful(())
+          }
+        } yield()
       }): _*)
     } yield ()) andThen
     // Delete the DB records.
@@ -176,8 +183,15 @@ class TestResultManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ext
     (for {
       results <- query.result
       _ <- DBIO.seq(results.map(r => {
-        deleteSessionDataFromFileSystem(r)
-        DBIO.successful(())
+        for {
+          _ <- {
+            (for {t <- PersistenceSchema.conformanceResults if t.testsession === r.sessionId} yield t.testsession).update(None)
+          }
+          _ <- {
+            deleteSessionDataFromFileSystem(r)
+            DBIO.successful(())
+          }
+        } yield()
       }): _*)
     } yield()) andThen
     // Delete the DB records.
@@ -195,8 +209,15 @@ class TestResultManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ext
         (for {
         results <- query.result
         _ <- DBIO.seq(results.map(r => {
-          deleteSessionDataFromFileSystem(r)
-          DBIO.successful(())
+          for {
+            _ <- {
+              (for {t <- PersistenceSchema.conformanceResults if t.testsession === r.sessionId} yield t.testsession).update(None)
+            }
+            _ <- {
+              deleteSessionDataFromFileSystem(r)
+              DBIO.successful(())
+            }
+          } yield()
         }): _*)
       } yield()) andThen
         query.delete
