@@ -88,6 +88,7 @@ object Configurations {
   var DEMOS_ACCOUNT:Long = -1
 
   var REGISTRATION_ENABLED = true
+  var TESTBED_HOME_LINK: String = "/"
 
   var SMTP_PROPERTIES = new Properties()
 
@@ -204,6 +205,7 @@ object Configurations {
       DEMOS_ACCOUNT = fromEnv("DEMOS_ACCOUNT", conf.getString("demos.account")).toLong
 
       REGISTRATION_ENABLED = fromEnv("REGISTRATION_ENABLED", conf.getString("registration.enabled")).toBoolean
+      TESTBED_HOME_LINK = fromEnv("TESTBED_HOME_LINK", TESTBED_HOME_LINK).toString
 
       _IS_LOADED = true
     }
