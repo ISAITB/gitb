@@ -2,30 +2,36 @@
 		<h4>{{title}}</h4>
 	</div>
 	<div class="modal-body">
-		<form class="form-horizontal">
-			<div class="form-group">
-				<label class="col-sm-3 control-label" for="sname">* Short name:</label>
-				<div class="col-sm-8"><input id="sname" ng-model="system.sname" class="form-control" type="text" required></div>
+		<div class="row">
+			<div class="col-md-10 col-md-offset-1">
+				<form class="form-horizontal">
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="sname">* Short name:</label>
+						<div class="col-sm-8"><input id="sname" ng-model="system.sname" class="form-control" type="text" required></div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="fname">* Full name:</label>
+						<div class="col-sm-8"><input id="fname" ng-model="system.fname" class="form-control" type="text" required></div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="description">Description:</label>
+						<div class="col-sm-8">
+							<textarea id="description" ng-model="system.description" class="form-control"></textarea>
+						</div>
+					</div>
+					<div class="form-group">
+						<label class="col-sm-3 control-label" for="version">* Version:</label>
+						<div class="col-sm-8"><input id="version" ng-model="system.version" class="form-control" type="text" required></div>
+					</div>
+					<div class="form-group" ng-if="otherSystems.length">
+						<label class="col-sm-3 control-label" for="version">Copy test setup from:</label>
+						<div class="col-sm-8"><select class="form-control" ng-model="system.otherSystem" ng-options="sys.sname for sys in otherSystems track by sys.id"><option value=""></option></select></div>
+					</div>
+				</form>
 			</div>
-			<div class="form-group">
-				<label class="col-sm-3 control-label" for="fname">* Full name:</label>
-				<div class="col-sm-8"><input id="fname" ng-model="system.fname" class="form-control" type="text" required></div>
-			</div>
-			<div class="form-group">
-				<label class="col-sm-3 control-label" for="description">Description:</label>
-				<div class="col-sm-8">
-					<textarea id="description" ng-model="system.description" class="form-control"></textarea>
-				</div>
-			</div>
-			<div class="form-group">
-				<label class="col-sm-3 control-label" for="version">* Version:</label>
-				<div class="col-sm-8"><input id="version" ng-model="system.version" class="form-control" type="text" required></div>
-			</div>
-			<div class="form-group" ng-if="otherSystems.length">
-					<label class="col-sm-3 control-label" for="version">Copy test setup from:</label>
-					<div class="col-sm-8"><select class="form-control" ng-model="system.otherSystem" ng-options="sys.sname for sys in otherSystems track by sys.id"><option value=""></option></select></div>
-				</div>
-			</form>		
+		</div>
+		<div tb-optional-custom-properties-form tb-property-data="propertyData" tb-popup="true">
+		</div>            
 	</div>
 	<div class="modal-footer">
 		<button class="btn btn-default" ng-click="save()" ng-disabled="!saveEnabled() || pending"><span class="tab" ng-if="savePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Save</button>

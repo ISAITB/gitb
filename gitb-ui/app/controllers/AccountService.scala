@@ -4,7 +4,7 @@ import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
 import javax.inject.Inject
-import managers.{AttachmentType, AuthorizationManager, UserManager}
+import managers.{AttachmentType, AuthorizationManager, OrganizationManager, UserManager}
 import org.apache.commons.codec.binary.Base64
 import org.apache.tika.Tika
 import org.slf4j.{Logger, LoggerFactory}
@@ -13,7 +13,7 @@ import play.api.mvc._
 import utils.{ClamAVClient, HtmlUtil, JsonUtil}
 
 
-class AccountService @Inject() (accountManager: AccountManager, userManager: UserManager, authorizationManager: AuthorizationManager) extends Controller{
+class AccountService @Inject() (accountManager: AccountManager, userManager: UserManager, organisationManager: OrganizationManager, authorizationManager: AuthorizationManager) extends Controller{
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AccountService])
   private final val tika = new Tika()
 
@@ -36,12 +36,17 @@ class AccountService @Inject() (accountManager: AccountManager, userManager: Use
     authorizationManager.canUpdateOwnOrganisation(request)
     val adminId = ParameterExtractor.extractUserId(request)
 
-    val vendor_sname = ParameterExtractor.optionalBodyParameter(request, Parameters.VENDOR_SNAME)
-    val vendor_fname = ParameterExtractor.optionalBodyParameter(request, Parameters.VENDOR_FNAME)
-
-    accountManager.updateVendorProfile(adminId, vendor_sname, vendor_fname)
-    ResponseConstructor.constructEmptyResponse
+    val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_SNAME)
+    val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_FNAME)
+    val values = ParameterExtractor.extractOrganisationParameterValues(request, Parameters.PROPERTIES, true)
+    var response: Result = ParameterExtractor.checkOrganisationParameterValues(values)
+    if (response == null) {
+      organisationManager.updateOwnOrganization(adminId, shortName, fullName, values)
+      response = ResponseConstructor.constructEmptyResponse
+    }
+    response
   }
+
   /**
    * Gets the all users for the vendor
    */
@@ -110,6 +115,7 @@ class AccountService @Inject() (accountManager: AccountManager, userManager: Use
     configProperties.put("demos.enabled", String.valueOf(Configurations.DEMOS_ENABLED))
     configProperties.put("demos.account", String.valueOf(Configurations.DEMOS_ACCOUNT))
     configProperties.put("registration.enabled", String.valueOf(Configurations.REGISTRATION_ENABLED))
+    configProperties.put("savedFile.maxSize", String.valueOf(Configurations.SAVED_FILE_MAX_SIZE))
     val json = JsonUtil.serializeConfigurationProperties(configProperties)
     ResponseConstructor.constructJsonResponse(json.toString())
   }

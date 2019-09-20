@@ -24,7 +24,7 @@ class OrganizationService
       authenticate: true
     })
 
-  createOrganization: (shortName, fullName, landingPage, legalNotice, errorTemplate, otherOrganisation, communityId, template, templateName) ->
+  createOrganization: (shortName, fullName, landingPage, legalNotice, errorTemplate, otherOrganisation, communityId, template, templateName, processProperties, properties) ->
     data = {
       vendor_sname: shortName,
       vendor_fname: fullName,
@@ -43,6 +43,8 @@ class OrganizationService
       data.error_template_id = errorTemplate.id
     if otherOrganisation?
       data.other_organisation = otherOrganisation.id
+    if processProperties
+      data.properties = @DataService.customPropertiesForPost(properties)
 
     @RestService.post({
       path: jsRoutes.controllers.OrganizationService.createOrganization().url,
@@ -53,7 +55,7 @@ class OrganizationService
     @RestService.delete
       path: jsRoutes.controllers.OrganizationService.deleteOrganization(orgId).url
 
-  updateOrganization: (orgId, shortName, fullName, landingPage, legalNotice, errorTemplate, otherOrganisation, template, templateName) ->
+  updateOrganization: (orgId, shortName, fullName, landingPage, legalNotice, errorTemplate, otherOrganisation, template, templateName, processProperties, properties) ->
     data = {
       vendor_sname: shortName,
       vendor_fname: fullName
@@ -71,9 +73,33 @@ class OrganizationService
       data.error_template_id = errorTemplate.id
     if otherOrganisation?
       data.other_organisation = otherOrganisation.id
+    if processProperties
+      data.properties = @DataService.customPropertiesForPost(properties)
 
     @RestService.post({
       path: jsRoutes.controllers.OrganizationService.updateOrganization(orgId).url,
+      data: data,
+      authenticate: true
+    })
+  
+  getOwnOrganisationParameterValues: () ->
+    @RestService.get({
+      path: jsRoutes.controllers.OrganizationService.getOwnOrganisationParameterValues().url,
+      authenticate: true
+    })
+
+  getOrganisationParameterValues: (orgId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.OrganizationService.getOrganisationParameterValues(orgId).url,
+      authenticate: true
+    })
+
+  updateOrganisationParameterValues: (orgId, values) ->
+    data = {
+      values: values
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.OrganizationService.updateOrganisationParameterValues(orgId).url,
       data: data,
       authenticate: true
     })

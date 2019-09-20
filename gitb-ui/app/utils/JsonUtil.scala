@@ -617,6 +617,32 @@ object JsonUtil {
     json
   }
 
+  def parseJsOrganisationParameterValues(json:String):List[OrganisationParameterValues] = {
+    val jsArray = Json.parse(json).as[List[JsObject]]
+    var list:List[OrganisationParameterValues] = List()
+    jsArray.foreach { jsonConfig =>
+      list ::= OrganisationParameterValues(
+        -1, // Will be forced later
+        (jsonConfig \ "parameter").as[Long],
+        (jsonConfig \ "value").as[String]
+      )
+    }
+    list
+  }
+
+  def parseJsSystemParameterValues(json:String):List[SystemParameterValues] = {
+    val jsArray = Json.parse(json).as[List[JsObject]]
+    var list:List[SystemParameterValues] = List()
+    jsArray.foreach { jsonConfig =>
+      list ::= SystemParameterValues(
+        -1, // Will be forced later
+        (jsonConfig \ "parameter").as[Long],
+        (jsonConfig \ "value").as[String]
+      )
+    }
+    list
+  }
+
   def parseJsConfigs(json:String):List[Configs] = {
     val jsArray = Json.parse(json).as[List[JsObject]]
     var list:List[Configs] = List()
@@ -1017,7 +1043,9 @@ object JsonUtil {
       "sso.inMigration" -> config.get("sso.inMigration").toBoolean,
       "demos.enabled" -> config.get("demos.enabled").toBoolean,
       "demos.account" -> config.get("demos.account").toLong,
-      "registration.enabled" -> config.get("registration.enabled").toBoolean
+      "registration.enabled" -> config.get("registration.enabled").toBoolean,
+      "savedFile.maxSize" -> config.get("savedFile.maxSize").toLong
+
     )
     json
   }
@@ -1421,5 +1449,38 @@ object JsonUtil {
     json
   }
 
+  def jsOrganisationParametersWithValues(list: List[OrganisationParametersWithValue]):JsArray = {
+    var json = Json.arr()
+    list.foreach { parameter =>
+      json = json.append(jsOrganisationParametersWithValue(parameter))
+    }
+    json
+  }
+
+  def jsOrganisationParametersWithValue(param: OrganisationParametersWithValue): JsObject = {
+    var json = jsOrganisationParameter(param.parameter)
+    json = json.+("configured" -> JsBoolean(param.value.isDefined))
+    if (param.value.isDefined && param.parameter.kind != "SECRET") {
+      json = json.+("value" -> JsString(param.value.get.value))
+    }
+    json
+  }
+
+  def jsSystemParametersWithValues(list: List[SystemParametersWithValue]):JsArray = {
+    var json = Json.arr()
+    list.foreach { parameter =>
+      json = json.append(jsSystemParametersWithValue(parameter))
+    }
+    json
+  }
+
+  def jsSystemParametersWithValue(param: SystemParametersWithValue): JsObject = {
+    var json = jsSystemParameter(param.parameter)
+    json = json.+("configured" -> JsBoolean(param.value.isDefined))
+    if (param.value.isDefined && param.parameter.kind != "SECRET") {
+      json = json.+("value" -> JsString(param.value.get.value))
+    }
+    json
+  }
 
 }

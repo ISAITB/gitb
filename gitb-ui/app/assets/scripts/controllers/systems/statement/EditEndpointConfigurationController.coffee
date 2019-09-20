@@ -17,7 +17,12 @@ class EditEndpointConfigurationController
     @isConfiugrationSet = @configuration.value?
 
   onFileSelect: (files) =>
-    @file = _.head files
+    tempFile = _.head files
+    if tempFile?
+      if tempFile.size >= (Number(@DataService.configuration['savedFile.maxSize']) * 1024)
+        @ErrorService.showSimpleErrorMessage('File upload problem', 'The maximum allowed size for files is '+@DataService.configuration['savedFile.maxSize']+' KBs.')
+      else
+        @file = tempFile
 
   showFileName: () =>
     @file? || @configuration?.value?
@@ -95,9 +100,6 @@ class EditEndpointConfigurationController
         .catch (error) => @ErrorService.showErrorMessage(error)
     else if @parameter.kind == "BINARY"
       if @file?
-        if @file.size >= (1024 * 500)
-          @ErrorService.showSimpleErrorMessage('File upload problem', 'The maximum allowed size for binary parameters is 500 KBs.')
-        else 
           reader = new FileReader()
           reader.readAsDataURL @file
           reader.onload = (event) =>

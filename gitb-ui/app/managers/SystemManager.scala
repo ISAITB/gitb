@@ -3,7 +3,7 @@ package managers
 import java.util
 
 import javax.inject.{Inject, Singleton}
-import models.Enums.TestResultStatus
+import models.Enums.{TestResultStatus, UserRole}
 import models.{ConformanceResult, ConformanceStatement, _}
 import org.slf4j.LoggerFactory
 import persistence.db._
@@ -46,11 +46,18 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     DBIO.seq(actions.map(a => a): _*)
   }
 
-  def registerSystemWrapper(system: Systems, otherSystem: Option[Long]) = {
+  def registerSystemWrapper(userId:Long, system: Systems, otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]]) = {
+    var isAdmin: Option[Boolean] = None
+    var communityId: Option[Long] = None
+    if (propertyValues.isDefined) {
+      val user = exec(PersistenceSchema.users.filter(_.id === userId).result.head)
+      isAdmin = Some(user.role == UserRole.SystemAdmin.id.toShort || user.role == UserRole.CommunityAdmin.id.toShort)
+      communityId = Some(exec(PersistenceSchema.organizations.filter(_.id === system.owner).result.head).community)
+    }
     val id: Long = exec(
       (
         for {
-          newSystemId <- registerSystem(system)
+          newSystemId <- registerSystem(system, communityId, isAdmin, propertyValues)
           _ <- {
             if (otherSystem.isDefined) {
               copyTestSetup(otherSystem.get, newSystemId)
@@ -64,12 +71,51 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     id
   }
 
-  def registerSystem(system: Systems): DBIO[Long] = {
-    val action = (PersistenceSchema.insertSystem += system)
-    action
+  def registerSystem(system: Systems, communityId: Option[Long], isAdmin: Option[Boolean], propertyValues: Option[List[SystemParameterValues]]): DBIO[Long] = {
+    for {
+      newSystemId <- PersistenceSchema.insertSystem += system
+      _ <- {
+        if (propertyValues.isDefined) {
+          saveSystemParameterValues(newSystemId, communityId.get, isAdmin.get, propertyValues.get)
+        } else {
+          DBIO.successful(())
+        }
+      }
+    } yield newSystemId
   }
 
-  def updateSystemProfile(systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String], otherSystem: Option[Long]) = {
+  def saveSystemParameterValues(systemId: Long, communityId: Long, isAdmin: Boolean, values: List[SystemParameterValues]) = {
+    var providedParameters:Map[Long, SystemParameterValues] = Map()
+    values.foreach{ v =>
+      providedParameters += (v.parameter -> v)
+    }
+    // Load parameter definitions for the system's community
+    val parameterDefinitions = exec(PersistenceSchema.systemParameters.filter(_.community === communityId).result).toList
+    // Make updates
+    val actions = new ListBuffer[DBIO[_]]()
+    parameterDefinitions.foreach{ parameterDefinition =>
+      if (!parameterDefinition.adminOnly || isAdmin) {
+        val matchedProvidedParameter = providedParameters.get(parameterDefinition.id)
+        if (matchedProvidedParameter.isDefined) {
+          // Create or update
+          if (parameterDefinition.kind != "SECRET" || (parameterDefinition.kind == "SECRET" && matchedProvidedParameter.get.value != "")) {
+            // Special case: No update for secret parameters that are defined but not updated.
+            actions += PersistenceSchema.systemParameterValues.filter(_.parameter === parameterDefinition.id).filter(_.system === systemId).delete
+            actions += (PersistenceSchema.systemParameterValues += matchedProvidedParameter.get.withSystemId(systemId))
+          }
+        } else {
+          // Delete existing (if present)
+          actions += PersistenceSchema.systemParameterValues.filter(_.parameter === parameterDefinition.id).filter(_.system === systemId).delete
+        }
+      }
+    }
+    if (actions.nonEmpty) {
+      DBIO.seq(actions.map(a => a): _*)
+    } else
+      DBIO.successful(())
+  }
+
+  def updateSystemProfile(userId: Long, systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]]) = {
     val actions = new ListBuffer[DBIO[_]]()
 
     //update short name of the system
@@ -97,6 +143,13 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     if (otherSystem.isDefined) {
       actions += deleteAllConformanceStatements(systemId)
       actions += copyTestSetup(otherSystem.get, systemId)
+    }
+    if (propertyValues.isDefined) {
+      val communityId = getCommunityIdOfSystem(systemId)
+      val user = exec(PersistenceSchema.users.filter(_.id === userId).result.head)
+      val isAdmin = user.role == UserRole.SystemAdmin.id.toShort || user.role == UserRole.CommunityAdmin.id.toShort
+
+      actions += saveSystemParameterValues(systemId, communityId, isAdmin, propertyValues.get)
     }
 
     if (actions.nonEmpty) {
@@ -338,7 +391,6 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
   }
 
   def saveEndpointConfiguration(config: Configs) = {
-//    DB.withTransaction { implicit session =>
     val size = exec(PersistenceSchema.configs
       .filter(_.system === config.system)
       .filter(_.parameter === config.parameter)
@@ -400,6 +452,24 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     }
     exec(q.sortBy(_.shortname.asc)
       .result.map(_.toList))
+  }
+
+  def getCommunityIdOfSystem(systemId: Long): Long = {
+    exec(PersistenceSchema.systems
+      .join(PersistenceSchema.organizations).on(_.owner === _.id)
+      .filter(_._1.id === systemId)
+      .map(x => x._2.community).result.head)
+  }
+
+  def getSystemParameterValues(systemId: Long): List[SystemParametersWithValue] = {
+    val communityId = getCommunityIdOfSystem(systemId)
+    exec(PersistenceSchema.systemParameters
+      .joinLeft(PersistenceSchema.systemParameterValues).on((p, v) => p.id === v.parameter && v.system === systemId)
+      .filter(_._1.community === communityId)
+      .sortBy(_._1.name.asc)
+      .map(x => (x._1, x._2))
+      .result
+    ).toList.map(r => new SystemParametersWithValue(r._1, r._2))
   }
 
 }

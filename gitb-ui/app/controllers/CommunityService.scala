@@ -228,7 +228,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
   }
 
   def getSystemParameters(communityId: Long) = AuthorizedAction { request =>
-    authorizationManager.canManageCommunity(request, communityId)
+    authorizationManager.canViewCommunityBasic(request, communityId)
     ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemParameters(communityManager.getSystemParameters(communityId)).toString)
   }
 

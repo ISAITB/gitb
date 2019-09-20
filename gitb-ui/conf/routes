@@ -49,6 +49,7 @@ POST    /user/selfreg                       @controllers.CommunityService.selfRe
 GET     /user/selfreg                       @controllers.CommunityService.getSelfRegistrationOptions
 
 # System mangement API
+GET     /suts/sysparam/:id                  @controllers.SystemService.getSystemParameterValues(id: Long)
 POST	/suts/:sut_id/profile               @controllers.SystemService.updateSystemProfile(sut_id : Long)
 GET	    /suts/:sut_id                       @controllers.SystemService.getSystemProfile(sut_id : Long)
 DELETE  /suts/:sut_id                       @controllers.SystemService.deleteSystem(sut_id : Long)
@@ -151,6 +152,9 @@ POST    /organizations/:id                  @controllers.OrganizationService.upd
 POST    /organizations/:id/users/create     @controllers.UserService.createUser(id: Long)
 POST    /users/:user_id                     @controllers.UserService.updateUserProfile(user_id: Long)
 DELETE  /users/:user_id                     @controllers.UserService.deleteVendorUser(user_id: Long)
+GET     /organizations/orgparam/:id         @controllers.OrganizationService.getOrganisationParameterValues(id: Long)
+GET     /organizations/own/orgparam         @controllers.OrganizationService.getOwnOrganisationParameterValues
+POST    /organizations/orgparam/:id         @controllers.OrganizationService.updateOrganisationParameterValues(id: Long)
 
 GET     /communities/all                    @controllers.CommunityService.getCommunities
 POST    /communities/create                 @controllers.CommunityService.createCommunity

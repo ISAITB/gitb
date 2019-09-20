@@ -40,13 +40,16 @@ class CommunityCertificateController
     @$scope.attachKeystore = (files) =>
       file = _.head files
       if file?
-        reader = new FileReader()
-        reader.readAsDataURL file
-        reader.onload = (event) =>
-          data = event.target.result
-          @settings.keystoreFile = data
-          @removeKeystore = false
-          @$scope.$apply()
+        if file.size >= (Number(@DataService.configuration['savedFile.maxSize']) * 1024)
+          @ErrorService.showSimpleErrorMessage('File upload problem', 'The maximum allowed size for the keystore file is '+@DataService.configuration['savedFile.maxSize']+' KBs.')
+        else
+          reader = new FileReader()
+          reader.readAsDataURL file
+          reader.onload = (event) =>
+            data = event.target.result
+            @settings.keystoreFile = data
+            @removeKeystore = false
+            @$scope.$apply()
 
   downloadKeystore: () =>
     base64 = @DataService.base64FromDataURL(@settings.keystoreFile)

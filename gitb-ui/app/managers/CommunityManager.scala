@@ -31,7 +31,7 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
     val userId = exec (
       (
         for {
-          organisationId <- organizationManager.createOrganizationInTrans(organisation, templateId)
+          organisationId <- organizationManager.createOrganizationInTrans(organisation, templateId, None)
           userId <- PersistenceSchema.insertUser += organisationAdmin.withOrganizationId(organisationId)
           _ <-
             if (actualUserInfo.isDefined) {

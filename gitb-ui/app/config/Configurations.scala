@@ -90,6 +90,9 @@ object Configurations {
   var REGISTRATION_ENABLED = true
   var TESTBED_HOME_LINK: String = "/"
 
+  // 1024 KB default
+  var SAVED_FILE_MAX_SIZE: Long = 1024
+
   var SMTP_PROPERTIES = new Properties()
 
   def loadConfigurations() = {
@@ -206,6 +209,8 @@ object Configurations {
 
       REGISTRATION_ENABLED = fromEnv("REGISTRATION_ENABLED", conf.getString("registration.enabled")).toBoolean
       TESTBED_HOME_LINK = fromEnv("TESTBED_HOME_LINK", TESTBED_HOME_LINK).toString
+
+      SAVED_FILE_MAX_SIZE = fromEnv("SAVED_FILE_MAX_SIZE", SAVED_FILE_MAX_SIZE.toString).toLong
 
       _IS_LOADED = true
     }

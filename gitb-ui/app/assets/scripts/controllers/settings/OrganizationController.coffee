@@ -1,7 +1,7 @@
 class OrganizationController
 
-    @$inject = ['$log', '$scope', '$location', '$uibModal', 'DataService', 'AccountService', 'AuthService', 'ErrorService', 'Constants', 'UserService', 'ConfirmationDialogService']
-    constructor: (@$log, @$scope, @$location, @$uibModal, @DataService, @AccountService, @AuthService, @ErrorService, @Constants, @UserService, @ConfirmationDialogService) ->
+    @$inject = ['$log', '$scope', '$location', '$uibModal', 'DataService', 'AccountService', 'AuthService', 'ErrorService', 'Constants', 'UserService', 'ConfirmationDialogService', 'OrganizationService']
+    constructor: (@$log, @$scope, @$location, @$uibModal, @DataService, @AccountService, @AuthService, @ErrorService, @Constants, @UserService, @ConfirmationDialogService, @OrganizationService) ->
         @$log.debug 'Constructing OrganizationController'
 
         @ds = @DataService #shorten service name
@@ -14,6 +14,16 @@ class OrganizationController
         @$scope.vdata.sname = @ds.vendor.sname
         @organizationSpinner = false # spinner to be displayed for organization operations
         @memberSpinner = false       # spinner to be displayed for new member operations
+        @propertyData = {
+            properties: []
+            edit: false
+        }
+
+        @OrganizationService.getOwnOrganisationParameterValues()
+        .then (data) =>
+            @propertyData.properties = data
+        .catch (error) =>
+            @ErrorService.showErrorMessage(error)
 
         @tableColumns = [
             {
@@ -81,8 +91,11 @@ class OrganizationController
                 @memberSpinner = false
         )
 
-    saveDisabled : () ->
-        @$scope.vdata.fname == undefined || @$scope.vdata.fname == '' || @$scope.vdata.sname == undefined || @$scope.vdata.sname == ''
+    valueDefined: (value) =>
+        value? && value.trim().length > 0
+
+    saveDisabled : () =>
+        !@valueDefined(@$scope.vdata.fname) || !@valueDefined(@$scope.vdata.sname) || (@propertyData.edit && !@DataService.customPropertiesValid(@propertyData.properties))
 
     saveMemberDisabled : () ->
         if @DataService.configuration?
@@ -101,7 +114,7 @@ class OrganizationController
     updateVendorProfile : () ->
         if @checkForm1()
             @organizationSpinner = true #start spinner
-            @AccountService.updateVendorProfile(@$scope.vdata.fname, @$scope.vdata.sname) #call service op.
+            @AccountService.updateVendorProfile(@$scope.vdata.fname, @$scope.vdata.sname, @propertyData.edit, @propertyData.properties) #call service op.
             .then(
                 (data) => #success handler
                     @alerts.push({type:'success', msg:"Organisation information updated."})

@@ -29,6 +29,10 @@ class OrganizationDetailController
     @legalNotices = []
     @errorTemplates = []
     @otherOrganisations = []
+    @propertyData = {
+      properties: []
+      edit: false
+    }
     @users = []
     @alerts = []
 
@@ -36,6 +40,12 @@ class OrganizationDetailController
     @OrganizationService.getOrganizationById(@orgId)
     .then (data) =>
       @organization = data
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+    @OrganizationService.getOrganisationParameterValues(@orgId)
+    .then (data) =>
+      @propertyData.properties = data
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -86,10 +96,13 @@ class OrganizationDetailController
         @ErrorService.showErrorMessage(error)
 
   saveDisabled: () =>
-    !(@organization?.sname? && @organization?.fname? && (!@DataService.configuration?['registration.enabled'] || (!@organization?.template || @organization?.templateName?)))
+    !(@valueDefined(@organization?.sname) && @valueDefined(@organization?.fname) && (!@DataService.configuration?['registration.enabled'] || (!@organization?.template || @valueDefined(@organization?.templateName))) && (!@propertyData.edit || @DataService.customPropertiesValid(@propertyData.properties)))
+
+  valueDefined: (value) =>
+    value? && value.trim().length > 0
 
   doUpdate: () =>
-    @OrganizationService.updateOrganization(@orgId, @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.errorTemplates, @organization.otherOrganisations, @organization.template, @organization.templateName)
+    @OrganizationService.updateOrganization(@orgId, @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.errorTemplates, @organization.otherOrganisations, @organization.template, @organization.templateName, @propertyData.edit, @propertyData.properties)
     .then (data) =>
       if data? && data.error_code?
         @ValidationService.pushAlert({type:'danger', msg:data.error_description})

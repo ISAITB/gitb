@@ -1,6 +1,9 @@
 package managers
 
+import java.util
+
 import javax.inject.{Inject, Singleton}
+import models.Enums.UserRole
 import models._
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
@@ -83,7 +86,7 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     systems.foreach { otherSystem =>
       actions += (
         for {
-          newSystemId <- systemManager.registerSystem(Systems(0L, otherSystem.shortname, otherSystem.fullname, otherSystem.description, otherSystem.version, toOrganisation))
+          newSystemId <- systemManager.registerSystem(Systems(0L, otherSystem.shortname, otherSystem.fullname, otherSystem.description, otherSystem.version, toOrganisation), None, None, None)
           _ <- systemManager.copyTestSetup(otherSystem.id, newSystemId)
         } yield()
       )
@@ -91,9 +94,16 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     DBIO.seq(actions.map(a => a): _*)
   }
 
-  def createOrganizationInTrans(organization: Organizations, otherOrganisationId: Option[Long]) = {
+  def createOrganizationInTrans(organization: Organizations, otherOrganisationId: Option[Long], propertyValues: Option[List[OrganisationParameterValues]]) = {
     for {
       newOrganisationId <- PersistenceSchema.insertOrganization += organization
+      _ <- {
+        if (propertyValues.isDefined) {
+          saveOrganisationParameterValues(newOrganisationId, organization.community, true, propertyValues.get)
+        } else {
+          DBIO.successful(())
+        }
+      }
       _ <- {
         if (otherOrganisationId.isDefined) {
           copyTestSetup(otherOrganisationId.get, newOrganisationId)
@@ -107,9 +117,9 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
   /**
    * Creates new organization
    */
-  def createOrganization(organization: Organizations, otherOrganisationId: Option[Long]) = {
+  def createOrganization(organization: Organizations, otherOrganisationId: Option[Long], propertyValues: Option[List[OrganisationParameterValues]]) = {
     val id: Long = exec(
-      createOrganizationInTrans(organization, otherOrganisationId).transactionally
+      createOrganizationInTrans(organization, otherOrganisationId, propertyValues).transactionally
     )
     id
   }
@@ -126,7 +136,21 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     result.isEmpty
   }
 
-  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String]) = {
+  def updateOwnOrganization(userId: Long, shortName: String, fullName: String, propertyValues: Option[List[OrganisationParameterValues]]) = {
+    val user = exec(PersistenceSchema.users.filter(_.id === userId).result.head)
+    val organisation = exec(PersistenceSchema.organizations.filter(_.id === user.organization).result.head)
+
+    val actions = new ListBuffer[DBIO[_]]()
+    val q = for {o <- PersistenceSchema.organizations if o.id === user.organization} yield (o.shortname, o.fullname)
+    actions += q.update(shortName, fullName)
+    if (propertyValues.isDefined) {
+      val isAdmin = user.role == UserRole.SystemAdmin.id.toShort || user.role == UserRole.CommunityAdmin.id.toShort
+      actions += saveOrganisationParameterValues(user.organization, organisation.community, isAdmin, propertyValues.get)
+    }
+    exec(DBIO.seq(actions.map(a => a): _*).transactionally)
+  }
+
+  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], propertyValues: Option[List[OrganisationParameterValues]]) = {
     val org = exec(PersistenceSchema.organizations.filter(_.id === orgId).result.headOption)
     if (org.isDefined) {
       val actions = new ListBuffer[DBIO[_]]()
@@ -151,6 +175,9 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
         // Replace the test setup for the organisation with the one from the provided one.
         actions += systemManager.deleteSystemByOrganization(orgId)
         actions += copyTestSetup(otherOrganisation.get, orgId)
+      }
+      if (propertyValues.isDefined) {
+        actions += saveOrganisationParameterValues(orgId, org.get.community, true, propertyValues.get)
       }
       exec(DBIO.seq(actions.map(a => a): _*).transactionally)
     } else {
@@ -193,6 +220,55 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     */
   def deleteUserByOrganization(orgId: Long) = {
     PersistenceSchema.users.filter(_.organization === orgId).delete
+  }
+
+  def getOrganisationParameterValues(orgId: Long): List[OrganisationParametersWithValue] = {
+    val communityId = getById(orgId).get.community
+    exec(PersistenceSchema.organisationParameters
+      .joinLeft(PersistenceSchema.organisationParameterValues).on((p, v) => p.id === v.parameter && v.organisation === orgId)
+      .filter(_._1.community === communityId)
+      .sortBy(_._1.name.asc)
+      .map(x => (x._1, x._2))
+      .result
+    ).toList.map(r => new OrganisationParametersWithValue(r._1, r._2))
+  }
+
+  def saveOrganisationParameterValues(orgId: Long, communityId: Long, isAdmin: Boolean, values: List[OrganisationParameterValues]) = {
+    var providedParameters:Map[Long, OrganisationParameterValues] = Map()
+    values.foreach{ v =>
+      providedParameters += (v.parameter -> v)
+    }
+    // Load parameter definitions for the organisation's community
+    val parameterDefinitions = exec(PersistenceSchema.organisationParameters.filter(_.community === communityId).result).toList
+    // Make updates
+    val actions = new ListBuffer[DBIO[_]]()
+    parameterDefinitions.foreach{ parameterDefinition =>
+      if (!parameterDefinition.adminOnly || isAdmin) {
+        val matchedProvidedParameter = providedParameters.get(parameterDefinition.id)
+        if (matchedProvidedParameter.isDefined) {
+          // Create or update
+          if (parameterDefinition.kind != "SECRET" || (parameterDefinition.kind == "SECRET" && matchedProvidedParameter.get.value != "")) {
+            // Special case: No update for secret parameters that are defined but not updated.
+            actions += PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterDefinition.id).filter(_.organisation === orgId).delete
+            actions += (PersistenceSchema.organisationParameterValues += matchedProvidedParameter.get.withOrgId(orgId))
+          }
+        } else {
+          // Delete existing (if present)
+          actions += PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterDefinition.id).filter(_.organisation === orgId).delete
+        }
+      }
+    }
+    if (actions.nonEmpty) {
+      DBIO.seq(actions.map(a => a): _*)
+    } else
+      DBIO.successful(())
+  }
+
+  def saveOrganisationParameterValuesWrapper(userId: Long, orgId: Long, values: List[OrganisationParameterValues]) = {
+    val userRole: Short = exec(PersistenceSchema.users.filter(_.id === userId).map(x => x.role).result).head
+    val isAdmin: Boolean = userRole == UserRole.CommunityAdmin.id.toShort || userRole == UserRole.SystemAdmin.id.toShort
+    val organisation = getById(orgId)
+    exec(saveOrganisationParameterValues(orgId, organisation.get.community, isAdmin, values).transactionally)
   }
 
 }

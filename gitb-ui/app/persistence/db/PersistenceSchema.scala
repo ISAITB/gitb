@@ -141,7 +141,7 @@ object PersistenceSchema {
     def name  = column[String]("name")
     def desc  = column[Option[String]]("description", O.SqlType("TEXT"))
     def kind  = column[String]("kind")
-    def value = column[Option[String]]("value", O.SqlType("BLOB"))
+    def value = column[Option[String]]("value", O.SqlType("MEDIUMBLOB"))
     def domain = column[Long]("domain")
     def * = (id, name, desc, kind, value, domain) <> (models.DomainParameter.tupled, models.DomainParameter.unapply)
   }
@@ -164,7 +164,7 @@ object PersistenceSchema {
     def system = column[Long] ("system")
 	  def parameter = column[Long]("parameter")
 	  def endpoint = column[Long] ("endpoint")
-	  def value = column[String]("value", O.SqlType("BLOB"))
+	  def value = column[String]("value", O.SqlType("MEDIUMBLOB"))
     def * = (system, parameter, endpoint, value) <> (Configs.tupled, Configs.unapply)
     def pk = primaryKey("c_pk", (system, parameter, endpoint))
   }
@@ -422,7 +422,7 @@ object PersistenceSchema {
     def includeTestCases = column[Boolean]("include_test_cases")
     def includeDetails = column[Boolean]("include_details")
     def includeSignature = column[Boolean]("include_signature")
-    def keystoreFile = column[Option[String]]("keystore_file", O.SqlType("BLOB"))
+    def keystoreFile = column[Option[String]]("keystore_file", O.SqlType("MEDIUMBLOB"))
     def keystoreType = column[Option[String]]("keystore_type", O.SqlType("TEXT"))
     def keystorePassword = column[Option[String]]("keystore_pass", O.SqlType("TEXT"))
     def keyPassword = column[Option[String]]("key_pass", O.SqlType("TEXT"))
@@ -465,7 +465,7 @@ object PersistenceSchema {
   class OrganisationParameterValuesTable(tag: Tag) extends Table[OrganisationParameterValues](tag, "OrganisationParameterValues") {
     def organisation = column[Long] ("organisation")
     def parameter = column[Long]("parameter")
-    def value = column[String]("value", O.SqlType("BLOB"))
+    def value = column[String]("value", O.SqlType("MEDIUMBLOB"))
     def * = (organisation, parameter, value) <> (OrganisationParameterValues.tupled, OrganisationParameterValues.unapply)
     def pk = primaryKey("opv_pk", (organisation, parameter))
   }
@@ -474,7 +474,7 @@ object PersistenceSchema {
   class SystemParameterValuesTable(tag: Tag) extends Table[SystemParameterValues](tag, "SystemParameterValues") {
     def system = column[Long] ("system")
     def parameter = column[Long]("parameter")
-    def value = column[String]("value", O.SqlType("BLOB"))
+    def value = column[String]("value", O.SqlType("MEDIUMBLOB"))
     def * = (system, parameter, value) <> (SystemParameterValues.tupled, SystemParameterValues.unapply)
     def pk = primaryKey("spv_pk", (system, parameter))
   }

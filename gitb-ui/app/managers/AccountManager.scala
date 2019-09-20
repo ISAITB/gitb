@@ -121,23 +121,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
     //8) Get Community info
     val c = exec(PersistenceSchema.communities.filter(_.id === org.community).result.headOption)
 
-    new Organization(org, systems, admin.getOrElse(null), page.getOrElse(null), ln.getOrElse(null), et.getOrElse(null), c)
-  }
-
-  def updateVendorProfile(adminId: Long, vendorSname: Option[String], vendorFname: Option[String]) = {
-    //1) Get organization id of the admin
-    val orgId = exec(PersistenceSchema.users.filter(_.id === adminId).result.headOption).get.organization
-    //2) Update organization table
-    val actions = new ListBuffer[DBIO[_]]()
-    if (vendorSname.isDefined) {
-      val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname)
-      actions += q.update(vendorSname.get)
-    }
-    if (vendorFname.isDefined) {
-      val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.fullname)
-      actions += q.update(vendorFname.get)
-    }
-    exec(DBIO.seq(actions.map(a => a): _*).transactionally)
+    new Organization(org, systems, admin.orNull, page.orNull, ln.orNull, et.orNull, c)
   }
 
   def registerUser(adminId: Long, user: Users) = {

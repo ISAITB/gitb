@@ -1,17 +1,16 @@
 package controllers.util
 
-import java.util.Random
 import java.util.concurrent.ThreadLocalRandom
 
 import config.Configurations
-import controllers.util.ParameterExtractor.getUserInfoForSSO
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import models._
+import org.apache.commons.codec.binary.Base64
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
-import utils.HtmlUtil
+import utils.{ClamAVClient, HtmlUtil, JsonUtil, MimeUtil}
 
 object ParameterExtractor {
 
@@ -34,6 +33,72 @@ object ParameterExtractor {
     } else {
       None
     }
+  }
+
+  def extractOrganisationParameterValues(request:Request[AnyContent], parameterName: String, optional: Boolean): Option[List[OrganisationParameterValues]] = {
+    var values: Option[List[OrganisationParameterValues]] = None
+    if (optional) {
+      val valuesJson = optionalBodyParameter(request, parameterName)
+      if (valuesJson.isDefined) {
+        values = Some(JsonUtil.parseJsOrganisationParameterValues(valuesJson.get))
+      }
+    } else {
+      val valuesJson = requiredBodyParameter(request, parameterName)
+      values = Some(JsonUtil.parseJsOrganisationParameterValues(valuesJson))
+    }
+    values
+  }
+
+  def checkOrganisationParameterValues(values: Option[List[OrganisationParameterValues]]): Result = {
+    var response: Result = null
+    if (Configurations.ANTIVIRUS_SERVER_ENABLED && values.isDefined) {
+      val dataUrls = values.get.collect({
+        case x if MimeUtil.isDataURL(x.value) => x.value
+      })
+      if (virusPresent(dataUrls)) {
+        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+      }
+    }
+    response
+  }
+
+  def extractSystemParameterValues(request:Request[AnyContent], parameterName: String, optional: Boolean): Option[List[SystemParameterValues]] = {
+    var values: Option[List[SystemParameterValues]] = None
+    if (optional) {
+      val valuesJson = optionalBodyParameter(request, parameterName)
+      if (valuesJson.isDefined) {
+        values = Some(JsonUtil.parseJsSystemParameterValues(valuesJson.get))
+      }
+    } else {
+      val valuesJson = requiredBodyParameter(request, parameterName)
+      values = Some(JsonUtil.parseJsSystemParameterValues(valuesJson))
+    }
+    values
+  }
+
+  def checkSystemParameterValues(values: Option[List[SystemParameterValues]]): Result = {
+    var response: Result = null
+    if (Configurations.ANTIVIRUS_SERVER_ENABLED && values.isDefined) {
+      val dataUrls = values.get.collect({
+        case x if MimeUtil.isDataURL(x.value) => x.value
+      })
+      if (virusPresent(dataUrls)) {
+        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+      }
+    }
+    response
+  }
+
+  private def virusPresent(values: List[String]): Boolean = {
+    val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+    values.foreach { value =>
+      // Check for virus. Do this regardless of the type of parameter as this can be changed later on.
+      val scanResult = virusScanner.scan(Base64.decodeBase64(MimeUtil.getBase64FromDataURL(value)))
+      if (!ClamAVClient.isCleanReply(scanResult)) {
+        return true
+      }
+    }
+    false
   }
 
   def requiredBodyParameter(request:Request[AnyContent], parameter:String):String = {

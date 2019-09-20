@@ -3,11 +3,11 @@ class AccountService
     @headers = {'Accept': 'application/json', 'Content-Type': 'application/json'}
     @defaultConfig = { headers: @headers }
 
-    @$inject = ['$log', '$http', '$q', 'RestService']
-    constructor: (@$log, @$http, @$q, @RestService) ->
+    @$inject = ['$log', '$http', '$q', 'RestService', 'DataService']
+    constructor: (@$log, @$http, @$q, @RestService, @DataService) ->
         @$log.debug "Constructing AccountService..."
 
-    updateVendorProfile: (vendorFname, vendorSname) ->
+    updateVendorProfile: (vendorFname, vendorSname, processProperties, properties) ->
         @$log.debug "Updating Vendor profile..."
 
         data = {}
@@ -15,6 +15,8 @@ class AccountService
             data.vendor_fname = vendorFname
         if vendorSname?
             data.vendor_sname = vendorSname
+        if processProperties
+            data.properties = @DataService.customPropertiesForPost(properties)
 
         @RestService.post({
             path: jsRoutes.controllers.AccountService.updateVendorProfile().url,

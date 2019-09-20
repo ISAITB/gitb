@@ -165,7 +165,8 @@ class SystemTestsController
     if @community.domainId?
       id = @community.domainId
       @filtering.domain.filter = _.map(_.filter(@filtering.domain.all, (d) => `d.id == id`), _.clone)
-      @filtering.domain.filter[0].ticked = true
+      if @filtering.domain.filter? && @filtering.domain.filter.length > 0
+        @filtering.domain.filter[0].ticked = true
       @filtering.domain.selection = _.map(@filtering.domain.filter, _.clone)
     else
       @filtering.domain.filter = _.map(@filtering.domain.all, _.clone)

@@ -664,6 +664,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canManageOrganisationFull(request, getUser(getRequestUserId(request)), orgId)
   }
 
+  def canManageOrganisationBasic(request: RequestWithAttributes[_], orgId: Long):Boolean = {
+    canManageOrganisationBasic(request, getUser(getRequestUserId(request)), orgId)
+  }
+
   def canManageOrganisationBasic(request: RequestWithAttributes[_], userInfo: User, orgId: Long):Boolean = {
     var ok = false
     if (isTestBedAdmin(userInfo)) {
