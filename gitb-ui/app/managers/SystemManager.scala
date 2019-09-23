@@ -32,7 +32,7 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     exec((PersistenceSchema.insertSystem += system.withOrganizationId(orgId)).transactionally)
   }
 
-  def copyTestSetup(fromSystem: Long, toSystem: Long) = {
+  def copyTestSetup(fromSystem: Long, toSystem: Long, copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
     val actions = new ListBuffer[DBIO[_]]()
     val conformanceStatements = getConformanceStatementReferences(fromSystem)
     var addedStatements = scala.collection.mutable.Set[String]()
@@ -43,24 +43,58 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
         actions += defineConformanceStatement(toSystem, otherConformanceStatement.spec, otherConformanceStatement.actor, None)
       }
     }
+    if (copySystemParameters) {
+      actions += PersistenceSchema.systemParameterValues.filter(_.system === toSystem).delete
+      actions += (
+        for {
+          otherValues <- PersistenceSchema.systemParameterValues.filter(_.system === fromSystem).result.map(_.toList)
+          _ <- {
+            val copyActions = new ListBuffer[DBIO[_]]()
+            otherValues.map(otherValue => {
+              copyActions += (PersistenceSchema.systemParameterValues += SystemParameterValues(toSystem, otherValue.parameter, otherValue.value))
+            })
+            DBIO.seq(copyActions.map(a => a): _*)
+          }
+        } yield()
+      )
+    }
+    if (copyStatementParameters) {
+      actions += PersistenceSchema.configs.filter(_.system === toSystem).delete
+      actions += (
+        for {
+          otherValues <- PersistenceSchema.configs.filter(_.system === fromSystem).result.map(_.toList)
+          _ <- {
+            val copyActions = new ListBuffer[DBIO[_]]()
+            otherValues.map(otherValue => {
+              copyActions += (PersistenceSchema.configs += Configs(toSystem, otherValue.parameter, otherValue.endpoint, otherValue.value))
+            })
+            DBIO.seq(copyActions.map(a => a): _*)
+          }
+        } yield()
+        )
+    }
     DBIO.seq(actions.map(a => a): _*)
   }
 
-  def registerSystemWrapper(userId:Long, system: Systems, otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]]) = {
+  def registerSystemWrapper(userId:Long, system: Systems, otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
     var isAdmin: Option[Boolean] = None
     var communityId: Option[Long] = None
-    if (propertyValues.isDefined) {
+
+    var propertyValuesToUse = propertyValues
+    if (propertyValues.isDefined && (otherSystem.isEmpty || !copySystemParameters)) {
       val user = exec(PersistenceSchema.users.filter(_.id === userId).result.head)
       isAdmin = Some(user.role == UserRole.SystemAdmin.id.toShort || user.role == UserRole.CommunityAdmin.id.toShort)
       communityId = Some(exec(PersistenceSchema.organizations.filter(_.id === system.owner).result.head).community)
+    } else {
+      propertyValuesToUse = None
     }
     val id: Long = exec(
       (
         for {
-          newSystemId <- registerSystem(system, communityId, isAdmin, propertyValues)
+          newSystemId <- registerSystem(system, communityId, isAdmin, propertyValuesToUse)
           _ <- {
             if (otherSystem.isDefined) {
-              copyTestSetup(otherSystem.get, newSystemId)
+              copyTestSetup(otherSystem.get, newSystemId, copySystemParameters, copyStatementParameters)
             } else {
               DBIO.successful(())
             }
@@ -115,7 +149,7 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
       DBIO.successful(())
   }
 
-  def updateSystemProfile(userId: Long, systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]]) = {
+  def updateSystemProfile(userId: Long, systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
     val actions = new ListBuffer[DBIO[_]]()
 
     //update short name of the system
@@ -142,9 +176,9 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     // Update test configuration
     if (otherSystem.isDefined) {
       actions += deleteAllConformanceStatements(systemId)
-      actions += copyTestSetup(otherSystem.get, systemId)
+      actions += copyTestSetup(otherSystem.get, systemId, copySystemParameters, copyStatementParameters)
     }
-    if (propertyValues.isDefined) {
+    if (propertyValues.isDefined && (otherSystem.isEmpty || !copySystemParameters)) {
       val communityId = getCommunityIdOfSystem(systemId)
       val user = exec(PersistenceSchema.users.filter(_.id === userId).result.head)
       val isAdmin = user.role == UserRole.SystemAdmin.id.toShort || user.role == UserRole.CommunityAdmin.id.toShort

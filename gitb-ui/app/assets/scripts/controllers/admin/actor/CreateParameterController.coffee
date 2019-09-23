@@ -8,6 +8,7 @@ class CreateParameterController
 		@$scope.parameter.kind = 'SIMPLE'
 		@$scope.parameter.notForTests = options.notForTests? && options.notForTests
 		@$scope.parameter.adminOnly = options.adminOnly? && options.adminOnly
+		@$scope.parameter.inExports = false
 
 		@$scope.nameLabel = if options.nameLabel? then options.nameLabel else 'Name'
 		@$scope.hasKey = options.hasKey? && options.hasKey

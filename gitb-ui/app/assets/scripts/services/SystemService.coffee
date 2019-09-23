@@ -22,7 +22,7 @@ class SystemService
       authenticate: true
     })
 
-  updateSystem:(systemId, sname, fname, description, version, organisationId, otherSystem, processProperties, properties) ->
+  updateSystem:(systemId, sname, fname, description, version, organisationId, otherSystem, processProperties, properties, copySystemParameters, copyStatementParameters) ->
     data = {}
     if sname?
       data.system_sname = sname
@@ -34,6 +34,8 @@ class SystemService
       data.system_version = version
     if otherSystem? && otherSystem.id?
       data.other_system = otherSystem.id
+      data.sys_params = copySystemParameters
+      data.stm_params = copyStatementParameters
     if processProperties
       data.properties = @DataService.customPropertiesForPost(properties)
 
@@ -45,7 +47,7 @@ class SystemService
       authenticate: true
     })
 
-  registerSystemWithOrganization:(sname, fname, description, version, orgId, otherSystem, processProperties, properties) ->
+  registerSystemWithOrganization:(sname, fname, description, version, orgId, otherSystem, processProperties, properties, copySystemParameters, copyStatementParameters) ->
     data = {
       system_sname: sname,
       system_fname: fname,
@@ -54,6 +56,8 @@ class SystemService
     }
     if otherSystem? && otherSystem.id?
       data.other_system = otherSystem.id
+      data.sys_params = copySystemParameters
+      data.stm_params = copyStatementParameters
 
     if description?
       data.system_description = description

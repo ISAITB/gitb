@@ -30,7 +30,7 @@ class OrganizationService
       authenticate: true
     })
 
-  createOrganization: (shortName, fullName, landingPage, legalNotice, errorTemplate, otherOrganisation, communityId, template, templateName, processProperties, properties) ->
+  createOrganization: (shortName, fullName, landingPage, legalNotice, errorTemplate, otherOrganisation, communityId, template, templateName, processProperties, properties, copyOrganisationParameters, copySystemParameters, copyStatementParameters) ->
     data = {
       vendor_sname: shortName,
       vendor_fname: fullName,
@@ -49,6 +49,10 @@ class OrganizationService
       data.error_template_id = errorTemplate.id
     if otherOrganisation?
       data.other_organisation = otherOrganisation.id
+      data.org_params = copyOrganisationParameters
+      data.sys_params = copySystemParameters
+      data.stm_params = copyStatementParameters
+
     if processProperties
       data.properties = @DataService.customPropertiesForPost(properties)
 
@@ -61,7 +65,7 @@ class OrganizationService
     @RestService.delete
       path: jsRoutes.controllers.OrganizationService.deleteOrganization(orgId).url
 
-  updateOrganization: (orgId, shortName, fullName, landingPage, legalNotice, errorTemplate, otherOrganisation, template, templateName, processProperties, properties) ->
+  updateOrganization: (orgId, shortName, fullName, landingPage, legalNotice, errorTemplate, otherOrganisation, template, templateName, processProperties, properties, copyOrganisationParameters, copySystemParameters, copyStatementParameters) ->
     data = {
       vendor_sname: shortName,
       vendor_fname: fullName
@@ -79,6 +83,9 @@ class OrganizationService
       data.error_template_id = errorTemplate.id
     if otherOrganisation?
       data.other_organisation = otherOrganisation.id
+      data.org_params = copyOrganisationParameters
+      data.sys_params = copySystemParameters
+      data.stm_params = copyStatementParameters
     if processProperties
       data.properties = @DataService.customPropertiesForPost(properties)
 

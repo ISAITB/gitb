@@ -49,10 +49,17 @@ class CreateEditSystemController
 		@$scope.saveEnabled = () =>
 			@$scope.system.sname? && @$scope.system.fname? && @$scope.system.version?
 
+		@$scope.copyChanged = () =>
+			if @$scope.system.otherSystem == undefined || @$scope.system.otherSystem == null
+				@$scope.system.copySystemParameters = false
+				@$scope.system.copyStatementParameters = false
+			else if @$scope.system.copySystemParameters
+				@$scope.propertyData.edit = false
+
 		@$scope.doUpdate = () =>
 			@$scope.pending = true
 			@$scope.savePending = true
-			@SystemService.updateSystem(@$scope.system.id, @$scope.system.sname, @$scope.system.fname, @$scope.system.description, @$scope.system.version, @$scope.organisationId, @$scope.system.otherSystem, @$scope.propertyData.edit, @$scope.propertyData.properties)
+			@SystemService.updateSystem(@$scope.system.id, @$scope.system.sname, @$scope.system.fname, @$scope.system.description, @$scope.system.version, @$scope.organisationId, @$scope.system.otherSystem, @$scope.propertyData.edit, @$scope.propertyData.properties, @$scope.system.copySystemParameters, @$scope.system.copyStatementParameters)
 				.then((data) =>
 						@$scope.pending = false
 						@$scope.savePending = false
@@ -76,7 +83,7 @@ class CreateEditSystemController
 						@$scope.doUpdate()
 				else
 					# Create
-					@SystemService.registerSystemWithOrganization(@$scope.system.sname, @$scope.system.fname, @$scope.system.description, @$scope.system.version, @$scope.organisationId, @$scope.system.otherSystem, @$scope.propertyData.edit, @$scope.propertyData.properties)
+					@SystemService.registerSystemWithOrganization(@$scope.system.sname, @$scope.system.fname, @$scope.system.description, @$scope.system.version, @$scope.organisationId, @$scope.system.otherSystem, @$scope.propertyData.edit, @$scope.propertyData.properties, @$scope.system.copySystemParameters, @$scope.system.copyStatementParameters)
 						.then((data) =>
 							@$scope.pending = false
 							@$scope.savePending = false

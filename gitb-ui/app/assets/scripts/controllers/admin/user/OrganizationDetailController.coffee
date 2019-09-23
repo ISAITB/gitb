@@ -102,7 +102,7 @@ class OrganizationDetailController
     value? && value.trim().length > 0
 
   doUpdate: () =>
-    @OrganizationService.updateOrganization(@orgId, @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.errorTemplates, @organization.otherOrganisations, @organization.template, @organization.templateName, @propertyData.edit, @propertyData.properties)
+    @OrganizationService.updateOrganization(@orgId, @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.errorTemplates, @organization.otherOrganisations, @organization.template, @organization.templateName, @propertyData.edit, @propertyData.properties, @organization.copyOrganisationParameters, @organization.copySystemParameters, @organization.copyStatementParameters)
     .then (data) =>
       if data? && data.error_code?
         @ValidationService.pushAlert({type:'danger', msg:data.error_description})
@@ -112,6 +112,13 @@ class OrganizationDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+  copyChanged: () =>
+    if @organization.otherOrganisations == undefined || @organization.otherOrganisations == null
+      @organization.copyOrganisationParameters = false
+      @organization.copySystemParameters = false
+      @organization.copyStatementParameters = false
+    else if @organization.copyOrganisationParameters
+      @propertyData.edit = false
 
   # update and cancel detail
   updateOrganization: () =>

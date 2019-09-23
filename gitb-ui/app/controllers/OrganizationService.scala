@@ -59,7 +59,12 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager, u
   def createOrganization() = AuthorizedAction { request =>
     val organization = ParameterExtractor.extractOrganizationInfo(request)
     val otherOrganisation = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_ORGANISATION)
+
     authorizationManager.canCreateOrganisation(request, organization, otherOrganisation)
+
+    val copyOrganisationParameters = ParameterExtractor.optionalBodyParameter(request, Parameters.ORGANISATION_PARAMETERS).getOrElse("false").toBoolean
+    val copySystemParameters = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_PARAMETERS).getOrElse("false").toBoolean
+    val copyStatementParameters = ParameterExtractor.optionalBodyParameter(request, Parameters.STATEMENT_PARAMETERS).getOrElse("false").toBoolean
 
     val values = ParameterExtractor.extractOrganisationParameterValues(request, Parameters.PROPERTIES, true)
     var response: Result = ParameterExtractor.checkOrganisationParameterValues(values)
@@ -67,7 +72,7 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager, u
       if (organization.template && !organizationManager.isTemplateNameUnique(organization.templateName.get, organization.community, None)) {
         response = ResponseConstructor.constructErrorResponse(ErrorCodes.DUPLICATE_ORGANISATION_TEMPLATE, "The provided template name is already in use.")
       } else {
-        organizationManager.createOrganization(organization, otherOrganisation, values)
+        organizationManager.createOrganization(organization, otherOrganisation, values, copyOrganisationParameters, copySystemParameters, copyStatementParameters)
         response = ResponseConstructor.constructEmptyResponse
       }
     }
@@ -85,6 +90,9 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager, u
     val legalNoticeId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LEGAL_NOTICE_ID)
     val errorTemplateId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.ERROR_TEMPLATE_ID)
     val otherOrganisation = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_ORGANISATION)
+    val copyOrganisationParameters = ParameterExtractor.optionalBodyParameter(request, Parameters.ORGANISATION_PARAMETERS).getOrElse("false").toBoolean
+    val copySystemParameters = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_PARAMETERS).getOrElse("false").toBoolean
+    val copyStatementParameters = ParameterExtractor.optionalBodyParameter(request, Parameters.STATEMENT_PARAMETERS).getOrElse("false").toBoolean
     val values = ParameterExtractor.extractOrganisationParameterValues(request, Parameters.PROPERTIES, true)
     var response: Result = ParameterExtractor.checkOrganisationParameterValues(values)
     if (response == null) {
@@ -97,7 +105,7 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager, u
       if (template && !organizationManager.isTemplateNameUnique(templateName.get, organizationManager.getById(orgId).get.community, Some(orgId))) {
         response = ResponseConstructor.constructErrorResponse(ErrorCodes.DUPLICATE_ORGANISATION_TEMPLATE, "The provided template name is already in use.")
       } else {
-        organizationManager.updateOrganization(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation, template, templateName, values)
+        organizationManager.updateOrganization(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation, template, templateName, values, copyOrganisationParameters, copySystemParameters, copyStatementParameters)
         response = ResponseConstructor.constructEmptyResponse
       }
     }
@@ -109,7 +117,7 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager, u
    */
   def deleteOrganization(orgId: Long) = AuthorizedAction { request =>
     authorizationManager.canDeleteOrganisation(request, orgId)
-    organizationManager.deleteOrganization(orgId)
+    organizationManager.deleteOrganizationWrapper(orgId)
     ResponseConstructor.constructEmptyResponse
   }
 

@@ -65,6 +65,10 @@ object Parameters {
   val TEMPLATE_ID = "template_id"
   val TEMPLATE_NAME = "template_name"
 
+  val ORGANISATION_PARAMETERS = "org_params"
+  val SYSTEM_PARAMETERS = "sys_params"
+  val STATEMENT_PARAMETERS = "stm_params"
+
   //System Service parameters
   val SYSTEM_ID    = "system_id"
   val SYSTEM_SNAME = "system_sname"

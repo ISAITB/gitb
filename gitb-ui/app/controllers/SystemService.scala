@@ -31,10 +31,12 @@ class SystemService @Inject() (systemManager: SystemManager, parameterManager: P
     val system:Systems = ParameterExtractor.extractSystemWithOrganizationInfo(request)
     authorizationManager.canCreateSystem(request, system.owner)
     val otherSystem = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_SYSTEM)
+    val copySystemParameters = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_PARAMETERS).getOrElse("false").toBoolean
+    val copyStatementParameters = ParameterExtractor.optionalBodyParameter(request, Parameters.STATEMENT_PARAMETERS).getOrElse("false").toBoolean
     val values = ParameterExtractor.extractSystemParameterValues(request, Parameters.PROPERTIES, true)
     var response: Result = ParameterExtractor.checkSystemParameterValues(values)
     if (response == null) {
-      systemManager.registerSystemWrapper(userId, system, otherSystem, values)
+      systemManager.registerSystemWrapper(userId, system, otherSystem, values, copySystemParameters, copyStatementParameters)
       // Return updated list of systems
       val systems = systemManager.getSystemsByOrganization(system.owner)
       val json = JsonUtil.jsSystems(systems).toString()
@@ -56,11 +58,13 @@ class SystemService @Inject() (systemManager: SystemManager, parameterManager: P
       val version:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_VERSION)
       val organisationId = ParameterExtractor.requiredBodyParameter(request, Parameters.ORGANIZATION_ID).toLong
       val otherSystem = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_SYSTEM)
+      val copySystemParameters = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_PARAMETERS).getOrElse("false").toBoolean
+      val copyStatementParameters = ParameterExtractor.optionalBodyParameter(request, Parameters.STATEMENT_PARAMETERS).getOrElse("false").toBoolean
       val values = ParameterExtractor.extractSystemParameterValues(request, Parameters.PROPERTIES, true)
       var response: Result = ParameterExtractor.checkSystemParameterValues(values)
       if (response == null) {
         val userId = ParameterExtractor.extractUserId(request)
-        systemManager.updateSystemProfile(userId, sut_id, sname, fname, descr, version, otherSystem, values)
+        systemManager.updateSystemProfile(userId, sut_id, sname, fname, descr, version, otherSystem, values, copySystemParameters, copyStatementParameters)
         // Return updated list of systems
         val systems = systemManager.getSystemsByOrganization(organisationId)
         val json = JsonUtil.jsSystems(systems).toString()

@@ -6,6 +6,7 @@
       tbLegalNotices: '='
       tbErrorTemplates: '='
       tbOtherOrganisations: '='
+      tbCopyChanged: '='
     template: ''+
       '<form class="form-horizontal" ng-submit="submit()">'+
         '<div class="form-group">'+
@@ -30,7 +31,21 @@
         '</div>'+
         '<div class="form-group" ng-if="tbOtherOrganisations.length">'+
           '<label class="col-sm-3 control-label" for="role">Copy test setup from:</label>'+
-          '<div class="col-sm-8"><select class="form-control" ng-model="tbOrganization.otherOrganisations" ng-options="organisation.sname for organisation in tbOtherOrganisations track by organisation.id"><option value=""></option></select></div>'+
+          '<div class="col-sm-8"><select ng-change="tbCopyChanged()" class="form-control" ng-model="tbOrganization.otherOrganisations" ng-options="organisation.sname for organisation in tbOtherOrganisations track by organisation.id"><option value=""></option></select></div>'+
+        '</div>'+
+        '<div class="form-group" ng-if="tbOrganization.otherOrganisations">'+
+          '<label class="col-sm-3 control-label">Copy also:</label>'+
+          '<div class="col-sm-8">'+
+            '<label class="checkbox-inline">'+
+              '<input type="checkbox" ng-change="tbCopyChanged()" ng-model="tbOrganization.copyOrganisationParameters">Organisation properties'+
+            '</label>'+
+            '<label class="checkbox-inline">'+
+              '<input type="checkbox" ng-change="tbCopyChanged()" ng-model="tbOrganization.copySystemParameters">System properties'+
+            '</label>'+
+            '<label class="checkbox-inline">'+
+              '<input type="checkbox" ng-change="tbCopyChanged()" ng-model="tbOrganization.copyStatementParameters">Conformance statement configurations'+
+            '</label>'+
+          '</div>'+
         '</div>'+
         '<div ng-if="selfRegEnabled">'+
           '<div class="form-group">'+
