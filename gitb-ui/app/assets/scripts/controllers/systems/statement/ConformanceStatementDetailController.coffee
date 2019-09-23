@@ -15,7 +15,7 @@ class ConformanceStatementDetailController
     @configurations = []
     @testSuites = []
     @runTestClicked = false
-    @endpointsCollapsed = true
+    @endpointsCollapsed = @$stateParams['editEndpoints'] == undefined || !@$stateParams['editEndpoints']
     @testStatus = ''
 
     @parameterTableColumns = [

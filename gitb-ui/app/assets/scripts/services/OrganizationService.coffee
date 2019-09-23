@@ -18,6 +18,12 @@ class OrganizationService
       authenticate: true
     })
 
+  getOrganizationBySystemId: (systemId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.OrganizationService.getOrganizationBySystemId(systemId).url,
+      authenticate: true
+    })
+
   getOrganizationsByCommunity: (communityId) ->
     @RestService.get({
       path: jsRoutes.controllers.OrganizationService.getOrganizationsByCommunity(communityId).url,
@@ -88,10 +94,14 @@ class OrganizationService
       authenticate: true
     })
 
-  getOrganisationParameterValues: (orgId) ->
+  getOrganisationParameterValues: (orgId, includeValues) ->
+    params = {}
+    if includeValues?
+      params.values = includeValues
     @RestService.get({
       path: jsRoutes.controllers.OrganizationService.getOrganisationParameterValues(orgId).url,
       authenticate: true
+      params: params
     })
 
   updateOrganisationParameterValues: (orgId, values) ->

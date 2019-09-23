@@ -51,12 +51,27 @@
 				<div class="col-md-1"><strong>Description</strong></div>
 				<div class="col-md-11">{{endpoint.description}}</div>
 			</div>
-			<div class="parameter-div">
-				<table id="parameter-table" class="table table-directive" ng-if="endpoint.parameters && endpoint.parameters.length > 0">
+			<div class="parameter-div" parameter-display parameters="endpoint.parameters" show-values="showValues" editable="editable" can-edit="canEdit" on-edit="onEdit">
+			</div>'
+		link: (scope, element, attrs) =>
+]
+
+@directives.directive 'parameterDisplay', ['DataService'
+	(@DataService)->
+		scope:
+			parameters: '='
+			showValues: '='
+			editable: '='
+			canEdit: '='
+			onEdit: '='
+			parameterLabel: '@?'
+		template: ''+
+			'<div>
+				<table id="parameter-table" class="table table-directive" ng-if="parameters && parameters.length > 0">
 					<thead>
 						<tr>
 							<th width="1%" style="padding-right:30px;">Set?</th>
-							<th width="10%">Parameter</th>
+							<th width="20%">{{parameterLabel}}</th>
 							<th ng-if="showValues">Configured value</th>
 							<th>Description</th>
 							<th style="text-align: center;" width="5%" ng-if="editable">Action</th>
@@ -64,7 +79,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr ng-repeat="parameter in endpoint.parameters">
+						<tr ng-repeat="parameter in parameters">
 							<td style="text-align: center;padding-right:30px;"><i class="glyphicon" ng-class="{\'glyphicon-ok\': parameter.configured, \'glyphicon-remove\': !parameter.configured}"></i></td>
 							<td style="font-weight: bold;" ng-if="parameter.use == \'R\'">*&nbsp;{{parameter.name}}</td>
 							<td ng-if="parameter.use != \'R\'">{{parameter.name}}</td>
@@ -77,7 +92,10 @@
 					</tbody>
 				</table>
 			</div>'
+		restrict: 'A'
 		link: (scope, element, attrs) =>
+			if scope.parameterLabel == undefined
+				scope.parameterLabel = 'Parameter'
 			scope.downloadBinaryParameter = (parameter) =>
 				blob = @DataService.b64toBlob(@DataService.base64FromDataURL(parameter.value), parameter.mimeType)
 				saveAs(blob, parameter.fileName)

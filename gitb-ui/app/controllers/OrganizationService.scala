@@ -35,6 +35,14 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager, u
     ResponseConstructor.constructJsonResponse(json)
   }
 
+  def getOrganizationBySystemId(systemId: Long) = AuthorizedAction { request =>
+    authorizationManager.canViewSystem(request, systemId)
+
+    val organization = organizationManager.getOrganizationBySystemId(systemId)
+    val json: String = JsonUtil.jsOrganization(organization).toString
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
   /**
    * Gets the organizations with specified community
    */
@@ -109,14 +117,15 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager, u
     authorizationManager.canViewOwnOrganisation(request)
     val user = userManager.getById(ParameterExtractor.extractUserId(request))
     val values = organizationManager.getOrganisationParameterValues(user.organization)
-    val json: String = JsonUtil.jsOrganisationParametersWithValues(values).toString
+    val json: String = JsonUtil.jsOrganisationParametersWithValues(values, true).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getOrganisationParameterValues(orgId: Long) = AuthorizedAction { request =>
     authorizationManager.canViewOrganisation(request, orgId)
+    val includeValues = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.VALUES)
     val values = organizationManager.getOrganisationParameterValues(orgId)
-    val json: String = JsonUtil.jsOrganisationParametersWithValues(values).toString
+    val json: String = JsonUtil.jsOrganisationParametersWithValues(values, includeValues.getOrElse(true)).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 

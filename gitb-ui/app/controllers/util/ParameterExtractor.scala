@@ -26,6 +26,15 @@ object ParameterExtractor {
     param
   }
 
+  def optionalBooleanQueryParameter(request:Request[AnyContent], parameter:String):Option[Boolean] = {
+    val param = request.getQueryString(parameter)
+    if (param.isDefined) {
+      Some(param.get.toBoolean)
+    } else {
+      None
+    }
+  }
+
   def optionalLongQueryParameter(request:Request[AnyContent], parameter:String):Option[Long] = {
     val param = request.getQueryString(parameter)
     if (param.isDefined) {
@@ -89,7 +98,7 @@ object ParameterExtractor {
     response
   }
 
-  private def virusPresent(values: List[String]): Boolean = {
+  def virusPresent(values: List[String]): Boolean = {
     val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
     values.foreach { value =>
       // Check for virus. Do this regardless of the type of parameter as this can be changed later on.

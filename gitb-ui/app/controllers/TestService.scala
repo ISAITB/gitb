@@ -7,7 +7,7 @@ import controllers.util._
 import exceptions.ErrorCodes
 import javax.inject.{Inject, Singleton}
 import jaxws.HeaderHandlerResolver
-import managers.{AuthorizationManager, ConformanceManager, ReportManager}
+import managers._
 import models.Constants
 import org.apache.commons.codec.binary.Base64
 import org.slf4j.{Logger, LoggerFactory}
@@ -15,7 +15,7 @@ import play.api.mvc._
 import utils.{ClamAVClient, JacksonUtil, JsonUtil, MimeUtil}
 
 @Singleton
-class TestService @Inject() (reportManager: ReportManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager) extends Controller {
+class TestService @Inject() (reportManager: ReportManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager, organisationManager: OrganizationManager, systemManager: SystemManager) extends Controller {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[TestService])
 
@@ -109,17 +109,60 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
       domainConfiguration.setActor(Constants.domainConfigurationName)
       domainConfiguration.setEndpoint(Constants.domainConfigurationName)
       parameters.foreach { parameter =>
-        val config = new Configuration()
-        config.setName(parameter.name)
-        config.setValue(parameter.value.get)
-        domainConfiguration.getConfig.add(config)
+        addConfig(domainConfiguration, parameter.name, parameter.value.get)
       }
       cRequest.getConfigs.add(domainConfiguration)
+    }
+    // Load organisation parameters.
+    val organisation = organisationManager.getOrganizationBySystemId(systemId)
+    val organisationProperties = organisationManager.getOrganisationParameterValues(organisation.id)
+    if (organisationProperties.nonEmpty) {
+      val organisationConfiguration = new ActorConfiguration()
+      organisationConfiguration.setActor(Constants.organisationConfigurationName)
+      organisationConfiguration.setEndpoint(Constants.organisationConfigurationName)
+      addConfig(organisationConfiguration, Constants.organisationConfiguration_fullName, organisation.fullname)
+      addConfig(organisationConfiguration, Constants.organisationConfiguration_shortName, organisation.shortname)
+      organisationProperties.foreach{ property =>
+        if (property.parameter.use == "R" && property.value.isEmpty) {
+          throw new IllegalStateException("Missing required parameter")
+        }
+        if (!property.parameter.notForTests && property.value.isDefined) {
+          addConfig(organisationConfiguration, property.parameter.testKey, property.value.get.value)
+        }
+      }
+      cRequest.getConfigs.add(organisationConfiguration)
+    }
+    // Load system parameters.
+    val system = systemManager.getSystemById(systemId).get
+    val systemProperties = systemManager.getSystemParameterValues(systemId)
+    if (systemProperties.nonEmpty) {
+      val systemConfiguration = new ActorConfiguration()
+      systemConfiguration.setActor(Constants.systemConfigurationName)
+      systemConfiguration.setEndpoint(Constants.systemConfigurationName)
+      addConfig(systemConfiguration, Constants.systemConfiguration_fullName, system.fullname)
+      addConfig(systemConfiguration, Constants.systemConfiguration_shortName, system.shortname)
+      addConfig(systemConfiguration, Constants.systemConfiguration_version, system.version)
+      systemProperties.foreach{ property =>
+        if (property.parameter.use == "R" && property.value.isEmpty) {
+          throw new IllegalStateException("Missing required parameter")
+        }
+        if (!property.parameter.notForTests && property.value.isDefined) {
+          addConfig(systemConfiguration, property.parameter.testKey, property.value.get.value)
+        }
+      }
+      cRequest.getConfigs.add(systemConfiguration)
     }
 
     val response = port().configure(cRequest)
     val json = JacksonUtil.serializeConfigureResponse(response)
     ResponseConstructor.constructJsonResponse(json)
+  }
+
+  private def addConfig(configuration: ActorConfiguration, key: String, value: String) =  {
+    val config = new Configuration()
+    config.setName(key)
+    config.setValue(value)
+    configuration.getConfig.add(config)
   }
 
   private def scanForVirus(inputs: List[com.gitb.core.AnyContent], scanner: ClamAVClient): Boolean = {

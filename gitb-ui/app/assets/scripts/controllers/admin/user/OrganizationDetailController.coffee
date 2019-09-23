@@ -31,7 +31,7 @@ class OrganizationDetailController
     @otherOrganisations = []
     @propertyData = {
       properties: []
-      edit: false
+      edit: @$stateParams['viewProperties']? && @$stateParams['viewProperties']
     }
     @users = []
     @alerts = []

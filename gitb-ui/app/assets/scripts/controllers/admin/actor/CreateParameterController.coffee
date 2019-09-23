@@ -13,6 +13,7 @@ class CreateParameterController
 		@$scope.hasKey = options.hasKey? && options.hasKey
 		@$scope.modalTitle = if options.modalTitle? then options.modalTitle else 'Create parameter'
 		@$scope.existingValues = options.existingValues
+		@$scope.reservedKeys = options.reservedKeys
 
 		@$scope.saveDisabled = () =>
 			!(@$scope.parameter.name?.length > 0 && @$scope.parameter.kind?.length > 0 && (!@$scope.hasKey || @$scope.parameter.key?.length > 0))
@@ -40,9 +41,14 @@ class CreateParameterController
 		finder = (value) =>
 			_.find @$scope.existingValues, (v) => 
 				v.key == value
+		finderReserved = (value) =>
+			_.find @$scope.reservedKeys, (v) => 
+				v == value
 		if @$scope.hasKey
 			if @$scope.existingValues? && finder(keyValue)
 				@ErrorService.showSimpleErrorMessage('Invalid key', 'The provided key is already defined.')
+			else if @$scope.reservedKeys? && finderReserved(keyValue)
+				@ErrorService.showSimpleErrorMessage('Invalid key', 'The provided key is reserved.')
 			else if !@Constants.VARIABLE_NAME_REGEX.test(keyValue)
 				@ErrorService.showSimpleErrorMessage('Invalid key', 'The provided key is invalid. A key must begin with a character followed by zero or more characters, digits, or one of [\'.\', \'_\', \'-\'].')
 			else

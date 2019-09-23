@@ -4,7 +4,7 @@ class SystemController
 		@systemId = @$stateParams["id"]
 		@propertyData = {
 			properties: []
-			edit: false
+			edit: @$stateParams["viewProperties"]? && @$stateParams["viewProperties"]
 		}
 		@SystemService.getSystem(@systemId)
 		.then (data) =>

@@ -147,6 +147,8 @@ GET     /organizations/all                  @controllers.OrganizationService.get
 POST    /organizations/create               @controllers.OrganizationService.createOrganization
 GET     /organizations/users                @controllers.UserService.getUsersByOrganization(id : Long)
 GET     /organizations/:org_id              @controllers.OrganizationService.getOrganizationById(org_id : Long)
+GET     /organizations/system/:system_id    @controllers.OrganizationService.getOrganizationBySystemId(system_id : Long)
+
 DELETE  /organizations/:id                  @controllers.OrganizationService.deleteOrganization(id: Long)
 POST    /organizations/:id                  @controllers.OrganizationService.updateOrganization(id : Long)
 POST    /organizations/:id/users/create     @controllers.UserService.createUser(id: Long)

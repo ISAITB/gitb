@@ -310,6 +310,8 @@ class ConformanceService @Inject() (conformanceManager: ConformanceManager, acco
     val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, None, domainId)
     if (conformanceManager.getDomainParameterByDomainAndName(domainId, domainParameter.name).isDefined) {
       ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the domain")
+    } else if (domainParameter.kind == "BINARY" && Configurations.ANTIVIRUS_SERVER_ENABLED && domainParameter.value.isDefined && ParameterExtractor.virusPresent(List(domainParameter.value.get))) {
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
     } else {
       conformanceManager.createDomainParameter(domainParameter)
       ResponseConstructor.constructEmptyResponse
@@ -330,6 +332,8 @@ class ConformanceService @Inject() (conformanceManager: ConformanceManager, acco
     val existingDomainParameter = conformanceManager.getDomainParameterByDomainAndName(domainId, domainParameter.name)
     if (existingDomainParameter.isDefined && (existingDomainParameter.get.id != domainParameterId)) {
       ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the domain")
+    } else if (domainParameter.kind == "BINARY" && Configurations.ANTIVIRUS_SERVER_ENABLED && domainParameter.value.isDefined && ParameterExtractor.virusPresent(List(domainParameter.value.get))) {
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
     } else {
       conformanceManager.updateDomainParameter(domainParameterId, domainParameter.name, domainParameter.desc, domainParameter.kind, domainParameter.value)
       ResponseConstructor.constructEmptyResponse

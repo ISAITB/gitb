@@ -8,7 +8,7 @@
                 <div uib-alert ng-repeat="alert in oc.alerts" ng-class="'alert-' + alert.type" close="oc.closeAlert($index)">{{alert.msg}}</div>
             </div>
             <div class="row">
-                <div class="col-sm-10 col-sm-offset-1" ng-if="oc.ds.isVendorAdmin">
+                <div class="col-sm-10 col-sm-offset-1" ng-if="oc.ds.isVendorAdmin || oc.ds.isSystemAdmin || oc.ds.isCommunityAdmin">
                     <form class="form-horizontal">
                         <div class="form-group">
                             <label class="col-sm-3 control-label" for="shortName">* Short name:</label>
@@ -20,7 +20,7 @@
                         </div>
                     </form>
                 </div>
-                <div class="col-sm-10 col-sm-offset-1" ng-if="!oc.ds.isVendorAdmin">
+                <div class="col-sm-10 col-sm-offset-1" ng-if="oc.ds.isVendorUser">
                     <form class="form-horizontal">
                         <div class="form-group">
                             <label class="col-sm-3 control-label" for="shortName">Short name:</label>
@@ -35,7 +35,7 @@
             </div>
             <div tb-optional-custom-properties-form tb-property-data="oc.propertyData"></div>
         </div>
-        <div class="panel-footer" ng-if="oc.ds.isVendorAdmin">
+        <div class="panel-footer" ng-if="oc.ds.isVendorAdmin || oc.ds.isSystemAdmin || oc.ds.isCommunityAdmin">
             <button ng-click="oc.updateVendorProfile()" ng-disabled="oc.saveDisabled()" class="btn btn-default">Save changes</button>
         </div>
     </div>

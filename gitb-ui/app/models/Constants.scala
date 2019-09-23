@@ -23,6 +23,14 @@ object Constants {
   val GitbFavicon = "public/images/favicon.png"
 
   val domainConfigurationName = "com.gitb.DOMAIN"
+  val organisationConfigurationName = "com.gitb.ORGANISATION"
+  val systemConfigurationName = "com.gitb.SYSTEM"
+
+  val organisationConfiguration_shortName = "shortName"
+  val organisationConfiguration_fullName = "fullName"
+  val systemConfiguration_shortName = "shortName"
+  val systemConfiguration_fullName = "fullName"
+  val systemConfiguration_version = "version"
 
   val PlaceholderOrganisation = "$ORGANISATION"
   val PlaceholderSystem = "$SYSTEM"

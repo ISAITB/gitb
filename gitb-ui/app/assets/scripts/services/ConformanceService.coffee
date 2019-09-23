@@ -414,4 +414,10 @@ class ConformanceService
       authenticate: true
       responseType: "arraybuffer"
 
+  getTestSuiteTestCase: (testCaseId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.ConformanceService.getTestSuiteTestCase(testCaseId).url,
+      authenticate: true
+    })
+
 services.service('ConformanceService', ConformanceService)

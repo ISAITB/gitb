@@ -10,6 +10,7 @@ class ParameterDetailsController
 		@$scope.modalTitle = if options.modalTitle? then options.modalTitle else 'Parameter details'
 		@$scope.confirmMessage = if options.confirmMessage? then options.confirmMessage else 'Are you sure you want to delete this parameter?'
 		@$scope.existingValues = options.existingValues
+		@$scope.reservedKeys = options.reservedKeys
 
 		@$scope.saveDisabled= () =>
 			!(@$scope.parameter.name?.length > 0 && @$scope.parameter.kind?.length > 0 && (!@$scope.hasKey || @$scope.parameter.key?.length > 0))
@@ -48,9 +49,14 @@ class ParameterDetailsController
 		finder = (value) =>
 			_.find @$scope.existingValues, (v) => 
 				v.id != @$scope.parameter.id && v.key == value
+		finderReserved = (value) =>
+			_.find @$scope.reservedKeys, (v) => 
+				v == value
 		if @$scope.hasKey
 			if @$scope.existingValues? && finder(keyValue)
 				@ErrorService.showSimpleErrorMessage('Invalid key', 'The provided key is already defined.')
+			else if @$scope.reservedKeys? && finderReserved(keyValue)
+				@ErrorService.showSimpleErrorMessage('Invalid key', 'The provided key is reserved.')
 			else if !@Constants.VARIABLE_NAME_REGEX.test(keyValue)
 				@ErrorService.showSimpleErrorMessage('Invalid key', 'The provided key is invalid. A key must begin with a character followed by zero or more characters, digits, or one of [\'.\', \'_\', \'-\'].')
 			else

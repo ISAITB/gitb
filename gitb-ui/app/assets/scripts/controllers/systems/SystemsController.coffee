@@ -1,6 +1,6 @@
 class SystemsController
-	@$inject = ['$log', '$scope', '$state', '$window', 'SystemService', 'ErrorService', '$uibModal', 'DataService', '$location']
-	constructor: (@$log, @$scope, @$state, @$window, @SystemService, @ErrorService, @$uibModal, @DataService, @$location) ->
+	@$inject = ['$log', '$scope', '$state', '$stateParams', '$window', 'SystemService', 'ErrorService', '$uibModal', 'DataService', '$location']
+	constructor: (@$log, @$scope, @$state, @$stateParams, @$window, @SystemService, @ErrorService, @$uibModal, @DataService, @$location) ->
 		@$log.debug "Constructing SystemsController"
 		@systems  = []       # systems of the organization
 		@alerts   = []       # alerts to be displayed
@@ -35,6 +35,11 @@ class SystemsController
 		.then(
 			(data) =>
 				@systems = data
+				if @$stateParams['id']?
+					systemToEdit = _.find @systems, (s) => 
+						s.id == @$stateParams['id']
+					if systemToEdit?
+						@onSystemEdit(systemToEdit)
 			,
 			(error) =>
 				@ErrorService.showErrorMessage(error)
@@ -47,6 +52,7 @@ class SystemsController
 			resolve: 
 				system: () => {}
 				organisationId: () => @organization.id
+				viewProperties: () => false
 			size: 'lg'
 		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result
@@ -67,6 +73,7 @@ class SystemsController
 			resolve: 
 				system: () => system
 				organisationId: () => @organization.id
+				viewProperties: () => @$stateParams['viewProperties']? && @$stateParams['viewProperties']
 			size: 'lg'
 		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result

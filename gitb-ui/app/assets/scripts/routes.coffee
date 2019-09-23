@@ -182,6 +182,10 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/systems/list.html'
 				controller: 'SystemsController'
 				controllerAs: 'systemsCtrl'
+				params: {
+					id: undefined
+					viewProperties: false
+				}
 				resolve: 
 					system: system
 			'app.systems.detail':
@@ -195,6 +199,9 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/systems/info.html'
 				controller: 'SystemController'
 				controllerAs: 'systemCtrl'
+				params: {
+					viewProperties: false
+				}
 			'app.systems.detail.conformance':
 				url: '/conformance'
 				template: '<div ui-view/>'
@@ -211,6 +218,9 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/systems/conformance/detail.html'
 				controller: 'ConformanceStatementDetailController'
 				controllerAs: 'conformanceStatementDetailCtrl'
+				params: {
+					editEndpoints: false
+				}
 			'app.systems.detail.conformance.create':
 				url: '/create'
 				templateUrl: 'assets/views/systems/conformance/create.html'
@@ -237,6 +247,9 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/settings/organisation.html'
 				controller: 'OrganizationController'
 				controllerAs: 'oc'
+				params: {
+					viewProperties: false
+				}
 			'app.settings.password':
 				url: '/password'
 				templateUrl: 'assets/views/settings/password.html'
@@ -421,6 +434,9 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/users/organization-detail.html'
 				controller: 'OrganizationDetailController'
 				controllerAs: 'orgDetailCtrl'
+				params: {
+					viewProperties: false
+				}
 			'app.admin.users.communities.detail.organizations.detail.users':
 				url: '/users'
 				template: '<div ui-view/>'

@@ -237,8 +237,9 @@ class SystemService @Inject() (systemManager: SystemManager, parameterManager: P
 
   def getSystemParameterValues(systemId: Long) = AuthorizedAction { request =>
     authorizationManager.canViewSystemsById(request, Some(List(systemId)))
+    val includeValues = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.VALUES)
     val values = systemManager.getSystemParameterValues(systemId)
-    val json: String = JsonUtil.jsSystemParametersWithValues(values).toString
+    val json: String = JsonUtil.jsSystemParametersWithValues(values, includeValues.getOrElse(true)).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 

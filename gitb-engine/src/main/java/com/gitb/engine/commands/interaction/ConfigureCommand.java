@@ -12,12 +12,16 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class ConfigureCommand extends SessionCommand {
 	private final ActorConfiguration domainConfiguration;
+	private final ActorConfiguration organisationConfiguration;
+	private final ActorConfiguration systemConfiguration;
     private final List<ActorConfiguration> actorConfigurations;
 
-	public ConfigureCommand(String sessionId, List<ActorConfiguration> actorConfigurations, ActorConfiguration domainConfiguration) {
+	public ConfigureCommand(String sessionId, List<ActorConfiguration> actorConfigurations, ActorConfiguration domainConfiguration, ActorConfiguration organisationConfiguration, ActorConfiguration systemConfiguration) {
 		super(sessionId);
 		this.actorConfigurations = new CopyOnWriteArrayList<>(actorConfigurations);
 		this.domainConfiguration = domainConfiguration;
+		this.organisationConfiguration = organisationConfiguration;
+		this.systemConfiguration = systemConfiguration;
 	}
 
 	public List<ActorConfiguration> getActorConfigurations() {
@@ -26,5 +30,13 @@ public class ConfigureCommand extends SessionCommand {
 
 	public ActorConfiguration getDomainConfiguration() {
 		return domainConfiguration;
+	}
+
+	public ActorConfiguration getOrganisationConfiguration() {
+		return organisationConfiguration;
+	}
+
+	public ActorConfiguration getSystemConfiguration() {
+		return systemConfiguration;
 	}
 }

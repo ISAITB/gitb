@@ -1,6 +1,6 @@
 class TestExecutionControllerV2
-  @$inject = ['$log', '$scope', '$location', '$uibModal', '$state', '$stateParams', 'Constants', 'TestService', 'SystemService', 'ConformanceService', 'WebSocketService', 'ReportService', 'ErrorService', 'DataService', '$q', '$timeout', '$interval']
-  constructor: (@$log, @$scope, @$location, @$uibModal, @$state, @$stateParams, @Constants, @TestService, @SystemService, @ConformanceService, @WebSocketService, @ReportService, @ErrorService, @DataService, @$q, @$timeout, @$interval) ->
+  @$inject = ['$window','$log', '$scope', '$location', '$uibModal', '$state', '$stateParams', 'Constants', 'TestService', 'SystemService', 'ConformanceService', 'WebSocketService', 'ReportService', 'ErrorService', 'DataService', '$q', '$timeout', '$interval', 'OrganizationService']
+  constructor: (@$window, @$log, @$scope, @$location, @$uibModal, @$state, @$stateParams, @Constants, @TestService, @SystemService, @ConformanceService, @WebSocketService, @ReportService, @ErrorService, @DataService, @$q, @$timeout, @$interval, @OrganizationService) ->
     @testsToExecute = @DataService.tests
     if (!@testsToExecute?)
       # We lost our state following a refresh - recreate state.
@@ -61,36 +61,6 @@ class TestExecutionControllerV2
         @ws.close()
 
       return
-    @parameterTableColumns = [
-      {
-        field: 'name'
-        title: 'Name'
-      }
-      {
-        field: 'use'
-        title: 'Usage'
-      }
-      {
-        field: 'kind'
-        title: 'Type'
-      }
-      {
-        field: 'configured'
-        title: 'Configured'
-      }
-    ]
-    @sessionTableColumns = [
-      {
-        title:'Session'
-        field:'session'
-      }
-    ]
-    @actorTableColumns = [
-      {
-        title:'Actor'
-        field:'actor'
-      }
-    ]
     @stopped = false
     @currentTestIndex = 0
     @currentTest = @testsToExecute[@currentTestIndex]
@@ -100,9 +70,11 @@ class TestExecutionControllerV2
       @$scope.stepsOfTests[test.id] = {}
       @$scope.actorInfoOfTests[test.id] = {}
 
+    @organisationConfigurationChecked = @$q.defer()
+    @systemConfigurationChecked = @$q.defer()
     @configurationChecked = @$q.defer()
     @testCaseLoaded = @$q.defer()
-    @$q.all([@configurationChecked.promise, @testCaseLoaded.promise]).then(() =>
+    @$q.all([@organisationConfigurationChecked.promise, @systemConfigurationChecked.promise, @configurationChecked.promise, @testCaseLoaded.promise]).then(() =>
       @nextStep()
     )
     @checkConfigurations(@actorId, @systemId)
@@ -186,7 +158,10 @@ class TestExecutionControllerV2
         stepToConsider = @wizardStep
       if (stepToConsider == 0)
         # Before starting
-        if (!@isSystemConfigurationsValid())
+        @configurationValid = @isConfigurationValid()
+        @systemConfigurationValid = @isMemberConfigurationValid(@systemProperties)
+        @organisationConfigurationValid = @isMemberConfigurationValid(@organisationProperties)
+        if (!@configurationValid || !@systemConfigurationValid || !@organisationConfigurationValid)
           @wizardStep = 1
         else 
           @runInitiateStep()
@@ -232,12 +207,36 @@ class TestExecutionControllerV2
     else
       @nextStep()
 
+  getOrganisation : () =>
+    organisation = @DataService.vendor
+    if @DataService.isCommunityAdmin || @DataService.isSystemAdmin
+      organisation = JSON.parse(@$window.localStorage['organization'])
+    organisation
+
   checkConfigurations : (actorId, systemId) ->
+    @OrganizationService.getOrganisationParameterValues(@getOrganisation().id, false)
+    .then (data) =>
+      @organisationProperties = data
+      @organisationConfigurationChecked.resolve()
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error, true)
+      .then(() =>
+        @$state.go @$state.current, {}, {reload: true})
+      .catch(angular.noop)
+
+    @SystemService.getSystemParameterValues(systemId, false)
+    .then (data) =>
+      @systemProperties = data
+      @systemConfigurationChecked.resolve()
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error, true)
+      .then(() =>
+        @$state.go @$state.current, {}, {reload: true})
+      .catch(angular.noop)
+
     @ConformanceService.checkConfigurations(actorId, systemId)
     .then (data) =>
-      # @configurations = configurations
       @endpointRepresentations = data
-      # @constructEndpointRepresentations()
       @configurationChecked.resolve()
     .catch (error) =>
       @ErrorService.showErrorMessage(error, true)
@@ -245,17 +244,21 @@ class TestExecutionControllerV2
         @$state.go @$state.current, {}, {reload: true})
       .catch(angular.noop)
 
-  isSystemConfigurationsValid: () ->
-    # @endpointRepresentations.valid
+  isMemberConfigurationValid: (properties) ->
+    valid = true
+    if properties?
+      for property in properties
+        if property.use == 'R' && !property.configured
+          return false
+    valid
+
+  isConfigurationValid: () ->
     valid = true
     if @endpointRepresentations?
       for endpoint in @endpointRepresentations
         for parameter in endpoint.parameters
           if !parameter.configured && parameter.use == "R"
-            valid = false
-            break
-        if !valid
-          break
+            return false
     valid
 
   getTestCaseDefinition: (testCaseToLookup) ->
@@ -706,5 +709,28 @@ class TestExecutionControllerV2
       size: 'lg'
 
     @$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
+
+  toOrganisationProperties: () =>
+    if @DataService.isVendorUser || @DataService.isVendorAdmin
+      @$state.go 'app.settings.organisation', {viewProperties: true}
+    else
+      organisation = @getOrganisation()
+      if @DataService.vendor.id == organisation.id
+        @$state.go 'app.settings.organisation', {viewProperties: true}
+      else
+        @OrganizationService.getOrganizationBySystemId(@systemId)
+        .then (org) =>
+          @$state.go 'app.admin.users.communities.detail.organizations.detail.list', {org_id: org.id, community_id: org.community, viewProperties: true}
+        .catch (error) =>
+          @ErrorService.showErrorMessage(error)
+
+  toSystemProperties: () =>
+    if @DataService.isVendorUser
+      @$state.go 'app.systems.detail.info', {id: @systemId, viewProperties: true}
+    else
+      @$state.go 'app.systems.list', {id: @systemId, viewProperties: true}
+  
+  toConfigurationProperties: () =>
+    @$state.go 'app.systems.detail.conformance.detail', {actor_id: @actorId, specId: @specId, id: @systemId, editEndpoints: true}
 
 controllers.controller('TestExecutionControllerV2', TestExecutionControllerV2)

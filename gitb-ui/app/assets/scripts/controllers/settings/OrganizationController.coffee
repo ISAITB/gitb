@@ -1,7 +1,7 @@
 class OrganizationController
 
-    @$inject = ['$log', '$scope', '$location', '$uibModal', 'DataService', 'AccountService', 'AuthService', 'ErrorService', 'Constants', 'UserService', 'ConfirmationDialogService', 'OrganizationService']
-    constructor: (@$log, @$scope, @$location, @$uibModal, @DataService, @AccountService, @AuthService, @ErrorService, @Constants, @UserService, @ConfirmationDialogService, @OrganizationService) ->
+    @$inject = ['$log', '$scope', '$location', '$uibModal', 'DataService', 'AccountService', 'AuthService', 'ErrorService', 'Constants', 'UserService', 'ConfirmationDialogService', 'OrganizationService', '$stateParams']
+    constructor: (@$log, @$scope, @$location, @$uibModal, @DataService, @AccountService, @AuthService, @ErrorService, @Constants, @UserService, @ConfirmationDialogService, @OrganizationService, @$stateParams) ->
         @$log.debug 'Constructing OrganizationController'
 
         @ds = @DataService #shorten service name
@@ -16,7 +16,7 @@ class OrganizationController
         @memberSpinner = false       # spinner to be displayed for new member operations
         @propertyData = {
             properties: []
-            edit: false
+            edit: @$stateParams['viewProperties']? && @$stateParams['viewProperties']
         }
 
         @OrganizationService.getOwnOrganisationParameterValues()

@@ -1,7 +1,7 @@
 class DomainDetailsController
 
-	@$inject = ['$log', '$scope', '$state', '$stateParams', 'ConfirmationDialogService', 'ConformanceService', 'ErrorService', '$uibModal']
-	constructor: (@$log, @$scope, @$state, @$stateParams, @ConfirmationDialogService, @ConformanceService, @ErrorService, @$uibModal) ->
+	@$inject = ['$log', '$scope', '$state', '$stateParams', 'ConfirmationDialogService', 'ConformanceService', 'ErrorService', '$uibModal', 'DataService']
+	constructor: (@$log, @$scope, @$state, @$stateParams, @ConfirmationDialogService, @ConformanceService, @ErrorService, @$uibModal, @DataService) ->
 		@$log.debug "Constructing DomainDetailsController..."
 
 		@domain = {}
@@ -24,21 +24,6 @@ class DomainDetailsController
 			}
 		]
 
-		@parameterTableColumns = [
-			{
-				field: 'name',
-				title: 'Name'
-			}
-			{
-				field: 'description',
-				title: 'Description'
-			}
-			{
-				field: 'valueToShow',
-				title: 'Value'
-			}
-		]
-
 		@ConformanceService.getDomains([@domainId])
 		.then (data) =>
 			@domain = _.head data
@@ -57,11 +42,22 @@ class DomainDetailsController
 			for parameter in data
 				if (parameter.kind == 'HIDDEN')
 					parameter.valueToShow = "*****"
+				else if (parameter.kind == 'BINARY')
+					mimeType = @DataService.mimeTypeFromDataURL(parameter.value)
+					blob = @DataService.b64toBlob(@DataService.base64FromDataURL(parameter.value), mimeType)
+					extension = @DataService.extensionFromMimeType(mimeType)
+					parameter.valueToShow =  parameter.name+extension
 				else 
 					parameter.valueToShow = parameter.value
 				@domainParameters.push(parameter)
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
+
+	downloadParameter: (parameter) =>
+		mimeType = @DataService.mimeTypeFromDataURL(parameter.value)
+		blob = @DataService.b64toBlob(@DataService.base64FromDataURL(parameter.value), mimeType)
+		extension = @DataService.extensionFromMimeType(mimeType)
+		saveAs(blob, parameter.name+extension)
 
 	deleteDomain: () =>
 		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this domain?", "Yes", "No")

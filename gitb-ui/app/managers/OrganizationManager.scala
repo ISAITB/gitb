@@ -80,6 +80,14 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     organization
   }
 
+  def getOrganizationBySystemId(systemId: Long): Organizations = {
+    exec(PersistenceSchema.organizations
+      .join(PersistenceSchema.systems).on(_.id === _.owner)
+      .filter(_._2.id === systemId)
+      .map(x => x._1)
+      .result.head)
+  }
+
   private def copyTestSetup(fromOrganisation: Long, toOrganisation: Long) = {
     val actions = new ListBuffer[DBIO[_]]()
     val systems = systemManager.getSystemsByOrganization(fromOrganisation)

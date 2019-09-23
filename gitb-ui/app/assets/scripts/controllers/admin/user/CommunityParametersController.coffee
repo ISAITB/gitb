@@ -34,6 +34,9 @@ class CommunityParametersController
       }
     ]
 
+    @organisationReservedKeys = ['fullName', 'shortName']
+    @systemReservedKeys = ['fullName', 'shortName', 'version']
+
     @loadParameters(@CommunityService.getOrganisationParameters)
     .then((data) =>
       @organisationParameterValues = []
@@ -65,12 +68,12 @@ class CommunityParametersController
     resultDeferred.promise
 
   addOrganisationParameter: () =>
-    @addParameter('Create organisation property', @organisationParameterValues, @CommunityService.createOrganisationParameter)
+    @addParameter('Create organisation property', @organisationParameterValues, @organisationReservedKeys, @CommunityService.createOrganisationParameter)
 
   addSystemParameter: () =>
-    @addParameter('Create system property', @systemParameterValues, @CommunityService.createSystemParameter)
+    @addParameter('Create system property', @systemParameterValues, @systemReservedKeys, @CommunityService.createSystemParameter)
 
-  addParameter: (modalTitle, existingValues, createMethod) =>
+  addParameter: (modalTitle, existingValues, reservedKeys, createMethod) =>
     options = {
       nameLabel: 'Label'
       notForTests: true
@@ -79,6 +82,7 @@ class CommunityParametersController
       modalTitle: modalTitle
       confirmMessage: 'Are you sure you want to delete this property?'
       existingValues: existingValues
+      reservedKeys: reservedKeys
     }
     modalOptions =
       templateUrl: 'assets/views/admin/domains/create-parameter-modal.html'
@@ -102,18 +106,19 @@ class CommunityParametersController
     , angular.noop)
 
   onOrganisationParameterSelect: (parameter) =>
-    @onParameterSelect(parameter, 'Organisation property details', @organisationParameterValues, @CommunityService.updateOrganisationParameter, @CommunityService.deleteOrganisationParameter)
+    @onParameterSelect(parameter, 'Organisation property details', @organisationParameterValues, @organisationReservedKeys, @CommunityService.updateOrganisationParameter, @CommunityService.deleteOrganisationParameter)
 
   onSystemParameterSelect: (parameter) =>
-    @onParameterSelect(parameter, 'System property details', @systemParameterValues, @CommunityService.updateSystemParameter, @CommunityService.deleteSystemParameter)
+    @onParameterSelect(parameter, 'System property details', @systemParameterValues, @systemReservedKeys, @CommunityService.updateSystemParameter, @CommunityService.deleteSystemParameter)
 
-  onParameterSelect: (parameter, modalTitle, existingValues, updateMethod, deleteMethod) =>
+  onParameterSelect: (parameter, modalTitle, existingValues, reservedKeys, updateMethod, deleteMethod) =>
     options = {
       nameLabel: 'Label'
       hasKey: true
       modalTitle: modalTitle
       confirmMessage: 'Are you sure you want to delete this property?'
       existingValues: existingValues
+      reservedKeys: reservedKeys
     }
     parameter.key = parameter.testKey
     parameter.desc = parameter.description

@@ -1449,35 +1449,35 @@ object JsonUtil {
     json
   }
 
-  def jsOrganisationParametersWithValues(list: List[OrganisationParametersWithValue]):JsArray = {
+  def jsOrganisationParametersWithValues(list: List[OrganisationParametersWithValue], includeValues: Boolean):JsArray = {
     var json = Json.arr()
     list.foreach { parameter =>
-      json = json.append(jsOrganisationParametersWithValue(parameter))
+      json = json.append(jsOrganisationParametersWithValue(parameter, includeValues))
     }
     json
   }
 
-  def jsOrganisationParametersWithValue(param: OrganisationParametersWithValue): JsObject = {
+  def jsOrganisationParametersWithValue(param: OrganisationParametersWithValue, includeValues: Boolean): JsObject = {
     var json = jsOrganisationParameter(param.parameter)
     json = json.+("configured" -> JsBoolean(param.value.isDefined))
-    if (param.value.isDefined && param.parameter.kind != "SECRET") {
+    if (includeValues && param.value.isDefined && param.parameter.kind != "SECRET") {
       json = json.+("value" -> JsString(param.value.get.value))
     }
     json
   }
 
-  def jsSystemParametersWithValues(list: List[SystemParametersWithValue]):JsArray = {
+  def jsSystemParametersWithValues(list: List[SystemParametersWithValue], includeValues: Boolean):JsArray = {
     var json = Json.arr()
     list.foreach { parameter =>
-      json = json.append(jsSystemParametersWithValue(parameter))
+      json = json.append(jsSystemParametersWithValue(parameter, includeValues))
     }
     json
   }
 
-  def jsSystemParametersWithValue(param: SystemParametersWithValue): JsObject = {
+  def jsSystemParametersWithValue(param: SystemParametersWithValue, includeValues: Boolean): JsObject = {
     var json = jsSystemParameter(param.parameter)
     json = json.+("configured" -> JsBoolean(param.value.isDefined))
-    if (param.value.isDefined && param.parameter.kind != "SECRET") {
+    if (includeValues && param.value.isDefined && param.parameter.kind != "SECRET") {
       json = json.+("value" -> JsString(param.value.get.value))
     }
     json

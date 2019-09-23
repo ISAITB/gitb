@@ -117,7 +117,12 @@ public class SessionActor extends Actor {
                      */
                     if (message instanceof ConfigureCommand) {
                         try {
-                            List<SUTConfiguration> sutConfigurations = context.configure(((ConfigureCommand) message).getActorConfigurations(), ((ConfigureCommand) message).getDomainConfiguration());
+                            List<SUTConfiguration> sutConfigurations = context.configure(
+                                    ((ConfigureCommand) message).getActorConfigurations(),
+                                    ((ConfigureCommand) message).getDomainConfiguration(),
+                                    ((ConfigureCommand) message).getOrganisationConfiguration(),
+                                    ((ConfigureCommand) message).getSystemConfiguration()
+                            );
                             getSender().tell(sutConfigurations, self());
 
                             if (context.getTestCase().getPreliminary() != null) {
