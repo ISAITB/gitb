@@ -30,7 +30,11 @@ class CommunityParametersController
       }
       {
         field: 'notForTestsLabel'
-        title: 'Included in tests'
+        title: 'In tests'
+      }
+      {
+        field: 'inExports'
+        title: 'In exports'
       }
     ]
 

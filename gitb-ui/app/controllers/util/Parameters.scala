@@ -126,10 +126,12 @@ object Parameters {
   val INCLUDE_KEYSTORE_DATA  = "keystore"
   val ADMIN_ONLY  = "admin_only"
   val NOT_FOR_TESTS  = "not_for_tests"
+  val IN_EXPORTS  = "in_exports"
 
   val FILE       = "file"
 	val LIMIT      = "limit"
 	val PAGE       = "page"
+  val EXPORT     = "export"
 
   val MESSAGE_TYPE_ID = "msg_type_id"
   val MESSAGE_TYPE_DESCRIPTION = "msg_type_description"

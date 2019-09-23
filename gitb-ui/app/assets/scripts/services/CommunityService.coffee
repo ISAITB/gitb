@@ -122,6 +122,7 @@ class CommunityService
       kind: parameter.kind,
       admin_only: parameter.adminOnly,
       not_for_tests: parameter.notForTests,
+      in_exports: parameter.inExports,
       community_id: parameter.community
     }
     @RestService.post({
@@ -139,6 +140,7 @@ class CommunityService
       kind: parameter.kind,
       admin_only: parameter.adminOnly,
       not_for_tests: parameter.notForTests,
+      in_exports: parameter.inExports,
       community_id: parameter.community
     }
     @RestService.post({
@@ -157,6 +159,7 @@ class CommunityService
       kind: parameter.kind,
       admin_only: parameter.adminOnly,
       not_for_tests: parameter.notForTests,
+      in_exports: parameter.inExports,
       community_id: parameter.community
     }
     @RestService.post({
@@ -175,6 +178,7 @@ class CommunityService
       kind: parameter.kind,
       admin_only: parameter.adminOnly,
       not_for_tests: parameter.notForTests,
+      in_exports: parameter.inExports,
       community_id: parameter.community
     }
     @RestService.post({

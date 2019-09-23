@@ -101,7 +101,7 @@ class ReportService
       authenticate: true
       params: params
 
-  getActiveTestResults: (communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, sortColumn, sortOrder) ->
+  getActiveTestResults: (communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, sortColumn, sortOrder, forExport) ->
     params = {}
 
     if communityIds? and communityIds.length > 0
@@ -136,6 +136,8 @@ class ReportService
 
     if sortOrder
       params.sort_order = sortOrder
+
+    params.export = forExport? && forExport
 
     @RestService.get
       path: jsRoutes.controllers.ReportService.getActiveTestResults().url
@@ -225,7 +227,7 @@ class ReportService
       path: jsRoutes.controllers.RepositoryService.getTestCasesForCommunity(@DataService.community.id).url
       authenticate: true
 
-  getCompletedTestResults: (page, limit, communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder) ->
+  getCompletedTestResults: (page, limit, communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder, forExport) ->
     params = {
         page: page
         limit: limit
@@ -275,6 +277,8 @@ class ReportService
 
     if sortOrder
       params.sort_order = sortOrder
+
+    params.export = forExport? && forExport
 
     @RestService.get
       path: jsRoutes.controllers.ReportService.getFinishedTestResults().url

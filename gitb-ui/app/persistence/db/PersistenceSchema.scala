@@ -441,8 +441,9 @@ object PersistenceSchema {
     def kind  = column[String]("kind")
     def adminOnly = column[Boolean]("admin_only")
     def notForTests = column[Boolean]("not_for_tests")
+    def inExports = column[Boolean]("in_exports")
     def community = column[Long]("community")
-    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, community) <> (OrganisationParameters.tupled, OrganisationParameters.unapply)
+    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, community) <> (OrganisationParameters.tupled, OrganisationParameters.unapply)
   }
   val organisationParameters = TableQuery[OrganisationParametersTable]
   val insertOrganisationParameters = organisationParameters returning organisationParameters.map(_.id)
@@ -456,8 +457,9 @@ object PersistenceSchema {
     def kind  = column[String]("kind")
     def adminOnly = column[Boolean]("admin_only")
     def notForTests = column[Boolean]("not_for_tests")
+    def inExports = column[Boolean]("in_exports")
     def community = column[Long]("community")
-    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, community) <> (SystemParameters.tupled, SystemParameters.unapply)
+    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, community) <> (SystemParameters.tupled, SystemParameters.unapply)
   }
   val systemParameters = TableQuery[SystemParametersTable]
   val insertSystemParameters = systemParameters returning systemParameters.map(_.id)

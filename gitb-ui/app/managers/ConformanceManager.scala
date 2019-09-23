@@ -481,13 +481,14 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 			val resultSystem = result._1._1._1._1._2
 			val resultDomain = result._1._1._1._1._1._2
 			val resultActor = result._1._1._1._1._1._1._2
+			val resultSpec = result._1._1._1._1._1._1._1._2
 
 			val conformanceStatement = ConformanceStatementFull(
 				resultCommunities.id, resultCommunities.shortname, resultOrganisation.id, resultOrganisation.shortname,
 					resultSystem.id, resultSystem.shortname,
 					resultDomain.id, resultDomain.shortname, resultDomain.fullname,
 					resultActor.id, resultActor.actorId, resultActor.name,
-					result._2.id, result._2.shortname, result._2.fullname,
+					resultSpec.id, resultSpec.shortname, resultSpec.fullname,
 					Some(resultTestSuite.shortname), Some(resultTestCase.shortname), resultTestCase.description,
 					Some(resultConfResult.result), resultConfResult.testsession, 0L, 0L, 0L)
 			statements += conformanceStatement

@@ -23,21 +23,21 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
   def logger = LoggerFactory.getLogger("OrganizationManager")
 
   /**
-   * Checks if organization exists (ignoring the default)
-   */
+    * Checks if organization exists (ignoring the default)
+    */
   def checkOrganizationExists(orgId: Long): Boolean = {
     val firstOption = exec(PersistenceSchema.organizations.filter(_.id =!= Constants.DefaultOrganizationId).filter(_.id === orgId).result.headOption)
     firstOption.isDefined
   }
 
   /**
-   * Gets all organizations
-   */
+    * Gets all organizations
+    */
   def getOrganizations(): List[Organizations] = {
     //1) Get all organizations except the default organization for system administrators
     val organizations = exec(PersistenceSchema.organizations
-        .sortBy(_.shortname.asc)
-        .result.map(_.toList))
+      .sortBy(_.shortname.asc)
+      .result.map(_.toList))
     organizations
   }
 
@@ -55,8 +55,8 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
   }
 
   /**
-   * Gets organizations with specified community
-   */
+    * Gets organizations with specified community
+    */
   def getOrganizationsByCommunity(communityId: Long): List[Organizations] = {
     val organizations = exec(PersistenceSchema.organizations.filter(_.adminOrganization === false).filter(_.community === communityId)
       .sortBy(_.shortname.asc)
@@ -69,8 +69,8 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
   }
 
   /**
-   * Gets organization with specified id
-   */
+    * Gets organization with specified id
+    */
   def getOrganizationById(orgId: Long): Organization = {
     val o = exec(PersistenceSchema.organizations.filter(_.id === orgId).result.head)
     val l = exec(PersistenceSchema.landingPages.filter(_.id === o.landingPage).result.headOption)
@@ -96,8 +96,8 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
         for {
           newSystemId <- systemManager.registerSystem(Systems(0L, otherSystem.shortname, otherSystem.fullname, otherSystem.description, otherSystem.version, toOrganisation), None, None, None)
           _ <- systemManager.copyTestSetup(otherSystem.id, newSystemId)
-        } yield()
-      )
+        } yield ()
+        )
     }
     DBIO.seq(actions.map(a => a): _*)
   }
@@ -123,8 +123,8 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
   }
 
   /**
-   * Creates new organization
-   */
+    * Creates new organization
+    */
   def createOrganization(organization: Organizations, otherOrganisationId: Option[Long], propertyValues: Option[List[OrganisationParameterValues]]) = {
     val id: Long = exec(
       createOrganizationInTrans(organization, otherOrganisationId, propertyValues).transactionally
@@ -194,32 +194,32 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
   }
 
   /**
-   * Deletes organization by community
-   */
+    * Deletes organization by community
+    */
   def deleteOrganizationByCommunity(communityId: Long) = {
     testResultManager.updateForDeletedOrganisationByCommunityId(communityId) andThen
       (for {
-      list <- PersistenceSchema.organizations.filter(_.community === communityId).result
-      _ <- DBIO.seq(list.map { org =>
-        deleteUserByOrganization(org.id) andThen
-        systemManager.deleteSystemByOrganization(org.id) andThen
-        PersistenceSchema.organisationParameterValues.filter(_.organisation === org.id).delete
-        PersistenceSchema.organizations.filter(_.id === org.id).delete
-      }: _*)
-    } yield())
+        list <- PersistenceSchema.organizations.filter(_.community === communityId).result
+        _ <- DBIO.seq(list.map { org =>
+          deleteUserByOrganization(org.id) andThen
+            systemManager.deleteSystemByOrganization(org.id) andThen
+            PersistenceSchema.organisationParameterValues.filter(_.organisation === org.id).delete
+          PersistenceSchema.organizations.filter(_.id === org.id).delete
+        }: _*)
+      } yield ())
   }
 
   /**
-   * Deletes organization with specified id
-   */
+    * Deletes organization with specified id
+    */
   def deleteOrganization(orgId: Long) {
     exec(
       (
         testResultManager.updateForDeletedOrganisation(orgId) andThen
-        deleteUserByOrganization(orgId) andThen
-        systemManager.deleteSystemByOrganization(orgId) andThen
-        PersistenceSchema.organizations.filter(_.id === orgId).delete
-      ).transactionally
+          deleteUserByOrganization(orgId) andThen
+          systemManager.deleteSystemByOrganization(orgId) andThen
+          PersistenceSchema.organizations.filter(_.id === orgId).delete
+        ).transactionally
     )
   }
 
@@ -242,15 +242,15 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
   }
 
   def saveOrganisationParameterValues(orgId: Long, communityId: Long, isAdmin: Boolean, values: List[OrganisationParameterValues]) = {
-    var providedParameters:Map[Long, OrganisationParameterValues] = Map()
-    values.foreach{ v =>
+    var providedParameters: Map[Long, OrganisationParameterValues] = Map()
+    values.foreach { v =>
       providedParameters += (v.parameter -> v)
     }
     // Load parameter definitions for the organisation's community
     val parameterDefinitions = exec(PersistenceSchema.organisationParameters.filter(_.community === communityId).result).toList
     // Make updates
     val actions = new ListBuffer[DBIO[_]]()
-    parameterDefinitions.foreach{ parameterDefinition =>
+    parameterDefinitions.foreach { parameterDefinition =>
       if (!parameterDefinition.adminOnly || isAdmin) {
         val matchedProvidedParameter = providedParameters.get(parameterDefinition.id)
         if (matchedProvidedParameter.isDefined) {
@@ -278,5 +278,4 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     val organisation = getById(orgId)
     exec(saveOrganisationParameterValues(orgId, organisation.get.community, isAdmin, values).transactionally)
   }
-
 }

@@ -10,7 +10,7 @@ import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, Respo
 import exceptions.{ErrorCodes, NotFoundException}
 import javax.inject.Inject
 import managers._
-import models.ConformanceStatementFull
+import models.{ConformanceStatementFull, OrganisationParameters, SystemParameters}
 import models.Enums.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import org.apache.commons.codec.binary.Base64
@@ -22,7 +22,7 @@ import play.api.mvc._
 import utils.signature.SigUtils
 import utils.{ClamAVClient, JsonUtil, MimeUtil}
 
-class ConformanceService @Inject() (conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, systemManager: SystemManager, testResultManager: TestResultManager, organizationManager: OrganizationManager, testCaseManager: TestCaseManager, endPointManager: EndPointManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager) extends Controller {
+class ConformanceService @Inject() (communityManager: CommunityManager, conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, systemManager: SystemManager, testResultManager: TestResultManager, organizationManager: OrganizationManager, testCaseManager: TestCaseManager, endPointManager: EndPointManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager) extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ConformanceService])
 
   /**
@@ -349,13 +349,24 @@ class ConformanceService @Inject() (conformanceManager: ConformanceManager, acco
     val organizationIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.ORG_IDS)
     val systemIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SYSTEM_IDS)
     val actorIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.ACTOR_IDS)
+    val forExport: Boolean = ParameterExtractor.optionalQueryParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
     var results: List[ConformanceStatementFull] = null
     if (fullResults) {
       results = conformanceManager.getConformanceStatementsFull(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds)
     } else {
       results = conformanceManager.getConformanceStatements(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds)
     }
-    val json = JsonUtil.jsConformanceResultFullList(results).toString()
+    var orgParameterDefinitions: Option[List[OrganisationParameters]] = None
+    var orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
+    var sysParameterDefinitions: Option[List[SystemParameters]] = None
+    var sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
+    if (forExport && communityIds.isDefined && communityIds.get.size == 1) {
+      orgParameterDefinitions = Some(communityManager.getOrganisationParametersForExport(communityIds.get.head))
+      orgParameterValues = Some(communityManager.getOrganisationParametersValuesForExport(communityIds.get.head, organizationIds))
+      sysParameterDefinitions = Some(communityManager.getSystemParametersForExport(communityIds.get.head))
+      sysParameterValues = Some(communityManager.getSystemParametersValuesForExport(communityIds.get.head, organizationIds, systemIds))
+    }
+    val json = JsonUtil.jsConformanceResultFullList(results, orgParameterDefinitions, orgParameterValues, sysParameterDefinitions, sysParameterValues).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 

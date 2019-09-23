@@ -4,15 +4,18 @@ import com.gitb.tpl.ObjectFactory
 import com.gitb.utils.XMLUtils
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import javax.inject.Inject
-import managers.{AuthorizationManager, ReportManager}
+import managers.{AuthorizationManager, CommunityManager, ReportManager}
+import models.{OrganisationParameters, SystemParameters}
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import utils.JsonUtil
 
+import scala.collection.mutable.ListBuffer
+
 /**
  * Created by senan on 04.12.2014.
  */
-class ReportService @Inject() (reportManager: ReportManager, testService: TestService, authorizationManager: AuthorizationManager) extends Controller {
+class ReportService @Inject() (reportManager: ReportManager, testService: TestService, authorizationManager: AuthorizationManager, communityManager: CommunityManager) extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ReportService])
 
   val defaultPage = 1L
@@ -78,9 +81,21 @@ class ReportService @Inject() (reportManager: ReportManager, testService: TestSe
     val startTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_END)
     val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
+    val forExport: Boolean = ParameterExtractor.optionalQueryParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
 
     val testResultReports = reportManager.getActiveTestResults(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, startTimeBegin, startTimeEnd, sortColumn, sortOrder)
-    val json = JsonUtil.jsTestResultSessionReports(testResultReports).toString()
+
+    var orgParameterDefinitions: Option[List[OrganisationParameters]] = None
+    var orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
+    var sysParameterDefinitions: Option[List[SystemParameters]] = None
+    var sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
+    if (forExport && communityIds.isDefined && communityIds.get.size == 1) {
+      orgParameterDefinitions = Some(communityManager.getOrganisationParametersForExport(communityIds.get.head))
+      orgParameterValues = Some(communityManager.getOrganisationParametersValuesForExport(communityIds.get.head, organizationIds))
+      sysParameterDefinitions = Some(communityManager.getSystemParametersForExport(communityIds.get.head))
+      sysParameterValues = Some(communityManager.getSystemParametersValuesForExport(communityIds.get.head, organizationIds, systemIds))
+    }
+    val json = JsonUtil.jsTestResultSessionReports(testResultReports, orgParameterDefinitions, orgParameterValues, sysParameterDefinitions, sysParameterValues).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
@@ -126,9 +141,21 @@ class ReportService @Inject() (reportManager: ReportManager, testService: TestSe
     val endTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_END)
     val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
+    val forExport: Boolean = ParameterExtractor.optionalQueryParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
 
     val testResultReports = reportManager.getFinishedTestResults(page, limit, communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
-    val json = JsonUtil.jsTestResultSessionReports(testResultReports).toString()
+
+    var orgParameterDefinitions: Option[List[OrganisationParameters]] = None
+    var orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
+    var sysParameterDefinitions: Option[List[SystemParameters]] = None
+    var sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
+    if (forExport && communityIds.isDefined && communityIds.get.size == 1) {
+      orgParameterDefinitions = Some(communityManager.getOrganisationParametersForExport(communityIds.get.head))
+      orgParameterValues = Some(communityManager.getOrganisationParametersValuesForExport(communityIds.get.head, organizationIds))
+      sysParameterDefinitions = Some(communityManager.getSystemParametersForExport(communityIds.get.head))
+      sysParameterValues = Some(communityManager.getSystemParametersValuesForExport(communityIds.get.head, organizationIds, systemIds))
+    }
+    val json = JsonUtil.jsTestResultSessionReports(testResultReports, orgParameterDefinitions, orgParameterValues, sysParameterDefinitions, sysParameterValues).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 

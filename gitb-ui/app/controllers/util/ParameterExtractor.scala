@@ -401,7 +401,8 @@ object ParameterExtractor {
     val communityId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
     val adminOnly = ParameterExtractor.requiredBodyParameter(request, Parameters.ADMIN_ONLY).toBoolean
     val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
-    models.OrganisationParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, communityId)
+    val inExports:Boolean = (kind == "SIMPLE") && ParameterExtractor.requiredBodyParameter(request, Parameters.IN_EXPORTS).toBoolean
+    models.OrganisationParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, communityId)
   }
 
   def extractSystemParameter(request:Request[AnyContent]):models.SystemParameters = {
@@ -417,7 +418,8 @@ object ParameterExtractor {
     val communityId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
     val adminOnly = ParameterExtractor.requiredBodyParameter(request, Parameters.ADMIN_ONLY).toBoolean
     val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
-    models.SystemParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, communityId)
+    val inExports = (kind == "SIMPLE") && ParameterExtractor.requiredBodyParameter(request, Parameters.IN_EXPORTS).toBoolean
+    models.SystemParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, communityId)
   }
 
   def extractLandingPageInfo(request:Request[AnyContent]):LandingPages = {

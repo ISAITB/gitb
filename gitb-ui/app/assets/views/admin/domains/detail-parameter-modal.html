@@ -37,6 +37,9 @@
 					<label class="checkbox-inline">
 						<input type="checkbox" ng-model="parameter.notForTests" ng-true-value="false" ng-false-value="true">Included in tests
 					</label>
+					<label class="checkbox-inline" ng-if="parameter.kind == 'SIMPLE'">
+						<input type="checkbox" ng-model="parameter.inExports">Included in exports
+					</label>
 				</div>
 			</div>
 		</form>		

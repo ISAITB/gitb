@@ -280,7 +280,7 @@ class ConformanceService
       path: jsRoutes.controllers.ConformanceService.getConformanceStatusForTestSuite(actorId, sutId, testSuiteId).url
       authenticate: true
 
-  getConformanceOverview: (domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, fullResults) ->
+  getConformanceOverview: (domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, fullResults, forExport) ->
     params = {}
     params.full = fullResults
     if domainIds? and domainIds.length > 0
@@ -295,6 +295,8 @@ class ConformanceService
       params.organization_ids = organizationIds.join ','
     if systemIds? and systemIds.length > 0
       params.system_ids = systemIds.join ','
+
+    params.export = forExport? && forExport
 
     @RestService.get
       path: jsRoutes.controllers.ConformanceService.getConformanceOverview().url

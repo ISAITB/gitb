@@ -27,8 +27,8 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
     result.isEmpty
   }
 
-  def selfRegister(organisation: Organizations, organisationAdmin: Users, templateId: Option[Long], actualUserInfo: Option[ActualUserInfo]):Long = {
-    val userId = exec (
+  def selfRegister(organisation: Organizations, organisationAdmin: Users, templateId: Option[Long], actualUserInfo: Option[ActualUserInfo]): Long = {
+    val userId = exec(
       (
         for {
           organisationId <- organizationManager.createOrganizationInTrans(organisation, templateId, None)
@@ -40,14 +40,14 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
               DBIO.successful(())
             }
         } yield userId
-      ).transactionally
+        ).transactionally
     )
     userId
   }
 
   /**
-   * Gets all communities with given ids or all if none specified
-   */
+    * Gets all communities with given ids or all if none specified
+    */
   def getCommunities(ids: Option[List[Long]]): List[Communities] = {
     val q = ids match {
       case Some(idList) => {
@@ -62,7 +62,7 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
       .result.map(_.toList))
   }
 
-  def getSelfRegistrationOptions():List[SelfRegOption] = {
+  def getSelfRegistrationOptions(): List[SelfRegOption] = {
     exec(
       PersistenceSchema.communities
         .filter(x => x.selfRegType === SelfRegistrationType.PublicListing.id.toShort || x.selfRegType === SelfRegistrationType.PublicListingWithToken.id.toShort)
@@ -75,8 +75,8 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   }
 
   /**
-   * Gets the user community
-   */
+    * Gets the user community
+    */
   def getUserCommunity(userId: Long): Community = {
     val u = exec(PersistenceSchema.users.filter(_.id === userId).result.head)
     val o = exec(PersistenceSchema.organizations.filter(_.id === u.organization).result.head)
@@ -87,8 +87,8 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   }
 
   /**
-   *  Creates new community
-   */
+    * Creates new community
+    */
   def createCommunity(community: Communities) = {
     exec((for {
       communityId <- PersistenceSchema.insertCommunity += community
@@ -96,7 +96,7 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
         val adminOrganization = Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, true, None, None, None, false, None, communityId)
         PersistenceSchema.insertOrganization += adminOrganization
       }
-    } yield()).transactionally)
+    } yield ()).transactionally)
   }
 
   /**
@@ -110,8 +110,8 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   }
 
   /**
-   * Update community
-   */
+    * Update community
+    */
   def updateCommunity(communityId: Long, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], domainId: Option[Long]) = {
     val actions = new ListBuffer[DBIO[_]]()
 
@@ -138,21 +138,21 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   }
 
   /**
-   * Deletes the community with specified id
-   */
+    * Deletes the community with specified id
+    */
   def deleteCommunity(communityId: Long) {
     exec(
       (
         organizationManager.deleteOrganizationByCommunity(communityId) andThen
-        landingPageManager.deleteLandingPageByCommunity(communityId) andThen
-        legalNoticeManager.deleteLegalNoticeByCommunity(communityId) andThen
-        errorTemplateManager.deleteErrorTemplateByCommunity(communityId) andThen
-        testResultManager.updateForDeletedCommunity(communityId) andThen
-        conformanceManager.deleteConformanceCertificateSettings(communityId) andThen
-        deleteOrganisationParametersByCommunity(communityId) andThen
-        deleteSystemParametersByCommunity(communityId) andThen
-        PersistenceSchema.communities.filter(_.id === communityId).delete
-      ).transactionally
+          landingPageManager.deleteLandingPageByCommunity(communityId) andThen
+          legalNoticeManager.deleteLegalNoticeByCommunity(communityId) andThen
+          errorTemplateManager.deleteErrorTemplateByCommunity(communityId) andThen
+          testResultManager.updateForDeletedCommunity(communityId) andThen
+          conformanceManager.deleteConformanceCertificateSettings(communityId) andThen
+          deleteOrganisationParametersByCommunity(communityId) andThen
+          deleteSystemParametersByCommunity(communityId) andThen
+          PersistenceSchema.communities.filter(_.id === communityId).delete
+        ).transactionally
     )
   }
 
@@ -161,8 +161,8 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   }
 
   def updateOrganisationParameter(parameter: OrganisationParameters) = {
-    val q = for {p <- PersistenceSchema.organisationParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests)
-    exec(q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests).transactionally)
+    val q = for {p <- PersistenceSchema.organisationParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports)
+    exec(q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports).transactionally)
   }
 
   def deleteOrganisationParameterWrapper(parameterId: Long) = {
@@ -184,8 +184,8 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   }
 
   def updateSystemParameter(parameter: SystemParameters) = {
-    val q = for {p <- PersistenceSchema.systemParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests)
-    exec(q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests).transactionally)
+    val q = for {p <- PersistenceSchema.systemParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports)
+    exec(q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports).transactionally)
   }
 
   def deleteSystemParameterWrapper(parameterId: Long) = {
@@ -205,7 +205,9 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   def checkOrganisationParameterExists(parameter: OrganisationParameters, isUpdate: Boolean): Boolean = {
     var q = PersistenceSchema.organisationParameters
       .filter(_.community === parameter.community)
-      .filter(x => {x.name === parameter.name || x.testKey === parameter.testKey})
+      .filter(x => {
+        x.name === parameter.name || x.testKey === parameter.testKey
+      })
     if (isUpdate) {
       q = q.filter(_.id =!= parameter.id)
     }
@@ -215,7 +217,9 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   def checkSystemParameterExists(parameter: SystemParameters, isUpdate: Boolean): Boolean = {
     var q = PersistenceSchema.systemParameters
       .filter(_.community === parameter.community)
-      .filter(x => {x.name === parameter.name || x.testKey === parameter.testKey})
+      .filter(x => {
+        x.name === parameter.name || x.testKey === parameter.testKey
+      })
     if (isUpdate) {
       q = q.filter(_.id =!= parameter.id)
     }
@@ -237,11 +241,81 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
       .result).toList
   }
 
+  def getOrganisationParametersForExport(communityId: Long): List[OrganisationParameters] = {
+    exec(PersistenceSchema.organisationParameters
+      .filter(_.community === communityId)
+      .filter(_.inExports === true)
+      .filter(_.kind === "SIMPLE")
+      .sortBy(_.testKey.asc)
+      .result).toList
+  }
+
+  def getOrganisationParametersValuesForExport(communityId: Long, organisationIds: Option[List[Long]]): scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]] = {
+    // Maps are based on organisationID, parameterID pointing to value.
+    var query = PersistenceSchema.organisationParameterValues
+      .join(PersistenceSchema.organisationParameters).on(_.parameter === _.id)
+      .join(PersistenceSchema.organizations).on(_._1.organisation === _.id)
+      .filter(_._2.community === communityId)
+      .filter(_._1._2.inExports === true)
+      .filter(_._1._2.kind === "SIMPLE")
+    if (organisationIds.isDefined) {
+      query = query.filter(_._2.id inSet organisationIds.get)
+    }
+    val values = exec(query.result).toList
+    val valuesPerOrganisation = scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]()
+    values.foreach{ value =>
+      var parameterMap = valuesPerOrganisation.get(value._2.id)
+      if (parameterMap.isEmpty) {
+        parameterMap = Some(scala.collection.mutable.Map[Long, String]())
+        valuesPerOrganisation(value._2.id) = parameterMap.get
+      }
+      parameterMap.get(value._1._1.parameter) = value._1._1.value
+    }
+    valuesPerOrganisation
+  }
+
   def getSystemParameters(communityId: Long): List[SystemParameters] = {
     exec(PersistenceSchema.systemParameters
       .filter(_.community === communityId)
       .sortBy(_.name.asc)
       .result).toList
+  }
+
+  def getSystemParametersForExport(communityId: Long): List[SystemParameters] = {
+    exec(PersistenceSchema.systemParameters
+      .filter(_.community === communityId)
+      .filter(_.inExports === true)
+      .filter(_.kind === "SIMPLE")
+      .sortBy(_.testKey.asc)
+      .result).toList
+  }
+
+  def getSystemParametersValuesForExport(communityId: Long, organisationIds: Option[List[Long]], systemIds: Option[List[Long]]): scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]] = {
+    // Maps are based on systemID, parameterID pointing to value.
+    var query = PersistenceSchema.systemParameterValues
+      .join(PersistenceSchema.systemParameters).on(_.parameter === _.id)
+      .join(PersistenceSchema.systems).on(_._1.system === _.id)
+      .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
+      .filter(_._2.community === communityId)
+      .filter(_._1._1._2.inExports === true)
+      .filter(_._1._1._2.kind === "SIMPLE")
+    if (organisationIds.isDefined) {
+      query = query.filter(_._2.id inSet organisationIds.get)
+    }
+    if (systemIds.isDefined) {
+      query = query.filter(_._1._2.id inSet systemIds.get)
+    }
+    val values = exec(query.result).toList
+    val valuesPerSystem = scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]()
+    values.foreach{ value =>
+      var parameterMap = valuesPerSystem.get(value._1._2.id)
+      if (parameterMap.isEmpty) {
+        parameterMap = Some(scala.collection.mutable.Map[Long, String]())
+        valuesPerSystem(value._1._2.id) = parameterMap.get
+      }
+      parameterMap.get(value._1._1._2.id) = value._1._1._1.value
+    }
+    valuesPerSystem
   }
 
 }
