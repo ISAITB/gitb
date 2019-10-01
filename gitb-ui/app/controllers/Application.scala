@@ -28,7 +28,9 @@ class Application @Inject() (webJarAssets: WebJarAssets, systemConfigurationServ
       Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD,
       Configurations.DEMOS_ENABLED,
       Configurations.USERGUIDE_OU,
-      Configurations.REGISTRATION_ENABLED
+      Configurations.REGISTRATION_ENABLED,
+      Configurations.GUIDES_EULOGIN_USE,
+      Configurations.GUIDES_EULOGIN_MIGRATION
     )))
   }
 

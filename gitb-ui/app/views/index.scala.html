@@ -85,11 +85,11 @@
 							</div>
 							<div class="bg-info div-rounded div-spaced div-padded">
 								@if(config.ssoEnabled) {
-									<p>To connect to the Test Bed you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="#">this tutorial</a> to get started.</p>
+									<p>To connect to the Test Bed you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="@config.euLoginUseGuideLink" target="blank">this tutorial</a> to get started.</p>
 								}
 								<p style="margin-bottom: 0px"><b>Privacy note:</b> By connecting you consent to the use of cookies to manage your session. Please refer to our <a href="#" data-toggle="modal" data-target="#legalModal">legal notice</a> for more information.</p>
 								@if(config.ssoEnabled && config.inMigrationPeriod) {
-									<p style="margin-top: 10px; margin-bottom: 0px"><b>Migration note:</b> If you have been using a functional account to log in click <a href="#" onclick="option('migrate')">here</a> to migrate it to EU Login. Step-by-step instructions are available in <a href="#">this guide</a>.</p>
+									<p style="margin-top: 10px; margin-bottom: 0px"><b>Migration note:</b> If you have been using a functional account to log in click <a href="#" onclick="option('migrate')">here</a> to migrate it to EU Login. Step-by-step instructions are available in <a href="@config.euLoginMigrationGuideLink" target="blank">this guide</a>.</p>
 								}
 							</div>
 						</div>

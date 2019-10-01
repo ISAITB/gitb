@@ -47,6 +47,9 @@ object Configurations {
   var USERGUIDE_TA = ""
   var USERGUIDE_CA = ""
 
+  var GUIDES_EULOGIN_USE = ""
+  var GUIDES_EULOGIN_MIGRATION = ""
+
   var EMAIL_ATTACHMENTS_MAX_SIZE = -1
   var EMAIL_ATTACHMENTS_MAX_COUNT = -1
   var EMAIL_ATTACHMENTS_ALLOWED_TYPES_STR = ""
@@ -211,6 +214,9 @@ object Configurations {
       TESTBED_HOME_LINK = fromEnv("TESTBED_HOME_LINK", TESTBED_HOME_LINK).toString
 
       SAVED_FILE_MAX_SIZE = fromEnv("SAVED_FILE_MAX_SIZE", SAVED_FILE_MAX_SIZE.toString).toLong
+
+      GUIDES_EULOGIN_USE = fromEnv("GUIDES_EULOGIN_USE", conf.getString("guides.eulogin.use")).toString
+      GUIDES_EULOGIN_MIGRATION = fromEnv("GUIDES_EULOGIN_MIGRATION", conf.getString("guides.eulogin.migration")).toString
 
       _IS_LOADED = true
     }
