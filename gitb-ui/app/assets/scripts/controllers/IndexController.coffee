@@ -143,9 +143,11 @@ class IndexController
 				@DataService.configuration['userguide.ta']
 			else
 				@DataService.configuration['userguide.ou']
+		else
+			@DataService.configuration['userguide.ou']
 
 	showUserGuide: () =>
-		@DataService.user? && !@DataService.user.onetime
+		@DataService.configuration?
 
 	onTestsClick: () ->
 		@$window.localStorage['organization'] = angular.toJson @DataService.vendor
