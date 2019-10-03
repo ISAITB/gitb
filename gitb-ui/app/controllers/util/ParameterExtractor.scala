@@ -208,8 +208,6 @@ object ParameterExtractor {
       if (!validCommunitySelfRegType(selfRegType)) {
         throw new IllegalArgumentException("Unsupported value ["+selfRegType+"] for self-registration type")
       }
-    } else {
-      selfRegType = SelfRegistrationType.NotSupported.id.toShort
       selfRegToken = optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
       if (selfRegType == SelfRegistrationType.Token.id.toShort || selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort) {
         if (selfRegToken.isEmpty || StringUtils.isBlank(selfRegToken.get)) {
@@ -218,6 +216,8 @@ object ParameterExtractor {
       } else {
         selfRegToken = None
       }
+    } else {
+      selfRegType = SelfRegistrationType.NotSupported.id.toShort
     }
     val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
     Communities(0L, sname, fname, email, selfRegType, selfRegToken, domainId)

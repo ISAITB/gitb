@@ -33,23 +33,9 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     */
   def createCommunity() = AuthorizedAction { request =>
     authorizationManager.canCreateCommunity(request)
-    var result: Result = null
     val community = ParameterExtractor.extractCommunityInfo(request)
-    var proceed = false
-    if (community.selfRegType == SelfRegistrationType.Token.id.toShort || community.selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort) {
-      if (communityManager.isSelfRegTokenUnique(community.selfRegToken.get, None)) {
-        proceed = true
-      } else {
-        result = ResponseConstructor.constructErrorResponse(ErrorCodes.DUPLICATE_SELFREG_TOKEN, "The provided self-registration token is already in use.")
-      }
-    } else {
-      proceed = true
-    }
-    if (proceed) {
-      communityManager.createCommunity(community)
-      result = ResponseConstructor.constructEmptyResponse
-    }
-    result
+    communityManager.createCommunity(community)
+    ResponseConstructor.constructEmptyResponse
   }
 
   /**
