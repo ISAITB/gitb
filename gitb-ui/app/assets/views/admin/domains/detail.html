@@ -32,6 +32,24 @@
 			<h4 class="title">Parameters</h4>
 			<a href="" ng-click="domainDetailsCtrl.createDomainParameter()" class="btn btn-default pull-right">Create parameter</a>
 		</div>
-		<div table-directive columns="domainDetailsCtrl.parameterTableColumns" data="domainDetailsCtrl.domainParameters" on-select="domainDetailsCtrl.onDomainParameterSelect"></div>
+		<div>
+			<table class="table table-directive">
+				<thead>
+					<tr>
+						<th>Name</th>
+						<th>Value</th>
+						<th>Description</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr class="selectable" ng-click="domainDetailsCtrl.onDomainParameterSelect(parameter)" ng-repeat="parameter in domainDetailsCtrl.domainParameters">
+						<td>{{parameter.name}}</td>
+						<td ng-if="parameter.kind == 'BINARY'"><a href="" ng-click="domainDetailsCtrl.downloadParameter(parameter); $event.stopPropagation();">{{parameter.valueToShow}}</a></td>
+						<td ng-if="parameter.kind != 'BINARY'">{{parameter.valueToShow}}</td>
+						<td>{{parameter.description}}</td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
 	</div>
 </div>

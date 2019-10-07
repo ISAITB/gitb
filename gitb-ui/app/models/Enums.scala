@@ -11,6 +11,11 @@ object Enums {
     val VendorAdmin, VendorUser, DomainUser, SystemAdmin, CommunityAdmin = Value
   }
 
+  object SelfRegistrationType extends Enumeration(1) {
+    type SelfRegistrationType = Value
+    val NotSupported, PublicListing, PublicListingWithToken, Token = Value
+  }
+
   object SpecificationType extends Enumeration(1) {
     type SpecificationType = Value
     val IntegrationProfile, ContentSpecification = Value
@@ -34,6 +39,11 @@ object Enums {
   object Status extends Enumeration(1) {
     type Status = Value
     val Processing, Waiting, Error, Completed, Skipped = Value
+  }
+
+  object UserSSOStatus extends Enumeration(1) {
+    type Status = Value
+    val NotMigrated, NotLinked, Linked = Value
   }
 
 	object TestResultStatus extends Enumeration {

@@ -28,14 +28,13 @@ class TestService
             authenticate: true
         })
 
-    configure: (specId, session, configs) ->
+    configure: (specId, session, systemId, actorId) ->
         @RestService.post({
             path: jsRoutes.controllers.TestService.configure(session).url,
             params:
                 spec_id: specId
-            data: {
-                configs: angular.toJson(configs)
-            }
+                system_id: systemId
+                actor_id: actorId
             authenticate: true
         })
 

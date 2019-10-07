@@ -1,11 +1,15 @@
 <div class="modal-header">
-		<h4>Create parameter</h4>
+		<h4>{{modalTitle}}</h4>
 	</div>
 	<div class="modal-body">
 		<form class="form-horizontal">
 			<div class="form-group">
-				<label class="col-sm-3 control-label" for="name">* Name:</label>
+				<label class="col-sm-3 control-label" for="name">* {{nameLabel}}:</label>
 				<div class="col-sm-8"><input id="name" ng-model="parameter.name" class="form-control" type="text" required></div>
+			</div>
+			<div class="form-group" ng-if="hasKey">
+				<label class="col-sm-3 control-label" for="key">* Key:</label>
+				<div class="col-sm-8"><input id="key" ng-model="parameter.key" class="form-control" type="text" required></div>
 			</div>
 			<div class="form-group">
 				<label class="col-sm-3 control-label" for="description">Description:</label>
@@ -14,23 +18,34 @@
 				</div>
 			</div>
 			<div class="form-group">
-				<label class="col-sm-3 control-label" for="use_1">* Use:</label>
-				<div class="col-sm-8">
-					<label class="radio-inline"><input type="radio" ng-model="parameter.use" name="uses" id="use_1" value="O">Optional</label>
-					<label class="radio-inline"><input type="radio" ng-model="parameter.use" name="uses" id="use_2" value="R">Required</label>
-				</div>
-			</div>
-			<div class="form-group">
-				<label class="col-sm-3 control-label" for="kind_1">* Kind:</label>
+				<label class="col-sm-3 control-label" for="kind_1">* Value type:</label>
 				<div class="col-sm-8">
 					<label class="radio-inline"><input type="radio" ng-model="parameter.kind" name="kinds" id="kind_1" value="SIMPLE">Simple</label>
 					<label class="radio-inline"><input type="radio" ng-model="parameter.kind" name="kinds" id="kind_2" value="BINARY">Binary</label>
+					<label class="radio-inline"><input type="radio" ng-model="parameter.kind" name="kinds" id="kind_3" value="SECRET">Hidden</label>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-sm-3 control-label">* Properties:</label>
+				<div class="col-sm-8">
+					<label class="checkbox-inline">
+						<input type="checkbox" ng-model="parameter.use" ng-true-value="'R'" ng-false-value="'O'">Required
+					</label>
+					<label class="checkbox-inline">
+						<input type="checkbox" ng-model="parameter.adminOnly" ng-true-value="false" ng-false-value="true">Editable by users
+					</label>
+					<label class="checkbox-inline">
+						<input type="checkbox" ng-model="parameter.notForTests" ng-true-value="false" ng-false-value="true">Included in tests
+					</label>
+					<label class="checkbox-inline" ng-if="!hideInExport && parameter.kind == 'SIMPLE'">
+						<input type="checkbox" ng-model="parameter.inExports">Included in exports
+					</label>
 				</div>
 			</div>
 		</form>		
 	</div>
 	<div class="modal-footer">
-		<button class="btn btn-default" ng-click="createParameter()" ng-disabled="saveDisabled()">Save parameter</button>
+		<button class="btn btn-default" ng-click="createParameter()" ng-disabled="saveDisabled()">Save</button>
 		<button class="btn btn-default" ng-click="cancel()">Cancel</button>
 	</div>
 </div>

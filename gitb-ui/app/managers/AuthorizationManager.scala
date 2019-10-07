@@ -1,11 +1,15 @@
 package managers
 
 import com.gitb.utils.HmacUtils
+import config.Configurations
 import controllers.util.{ParameterExtractor, RequestWithAttributes}
 import exceptions.UnauthorizedAccessException
 import javax.inject.{Inject, Singleton}
-import models.Enums.UserRole
+import models.Enums.{SelfRegistrationType, UserRole}
 import models._
+import org.pac4j.core.profile.{CommonProfile, ProfileManager}
+import org.pac4j.play.PlayWebContext
+import org.pac4j.play.store.PlaySessionStore
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.AccountManager
 import play.api.db.slick.DatabaseConfigProvider
@@ -33,10 +37,136 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      legalNoticeManager: LegalNoticeManager,
                                      parameterManager: ParameterManager,
                                      testResultManager: TestResultManager,
-                                     actorManager: ActorManager
+                                     actorManager: ActorManager,
+                                     playSessionStore: PlaySessionStore
                                     ) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthorizationManager])
+
+  def getAccountInfo(request: RequestWithAttributes[_]): ActualUserInfo = {
+    val accountInfo = getPrincipal(request)
+    val userAccounts = accountManager.getUserAccountsForUid(accountInfo.uid)
+    val userInfo = new ActualUserInfo(accountInfo.uid, accountInfo.email, accountInfo.firstName, accountInfo.lastName, userAccounts)
+    userInfo
+  }
+
+  def getPrincipal(request: RequestWithAttributes[_]): ActualUserInfo = {
+    var userInfo: ActualUserInfo = null
+    val webContext = new PlayWebContext(request, playSessionStore)
+    val profileManager = new ProfileManager[CommonProfile](webContext)
+    val profile = profileManager.get(true)
+    if (profile.isEmpty) {
+      logger.error("Lookup for a real user's data failed due to a missing profile.")
+    } else {
+      val uid = profile.get().getId
+      val userAttributes = profile.get().getAttributes
+      var email: String = null
+      var firstName: String = null
+      var lastName: String = null
+      if (userAttributes != null) {
+        email = userAttributes.get("email").asInstanceOf[String]
+        firstName = userAttributes.get("firstName").asInstanceOf[String]
+        lastName = userAttributes.get("lastName").asInstanceOf[String]
+      }
+      if (uid == null || email == null || firstName == null || lastName == null) {
+        logger.error("User profile did not contain expected information [" + uid + "][" + email + "][" + firstName + "][" + lastName + "]")
+      } else {
+        userInfo = new ActualUserInfo(uid, email, firstName, lastName)
+      }
+    }
+    userInfo
+  }
+
+  private def checkHasPrincipal(request: RequestWithAttributes[_], skipForNonSSO: Boolean): Boolean = {
+    var ok = false
+    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      val principal = getPrincipal(request)
+      if (principal != null) {
+        ok = true
+      }
+    } else {
+      if (skipForNonSSO) {
+        ok = true
+      } else {
+        ok = false
+      }
+    }
+    setAuthResult(request, ok, "User is not authenticated")
+  }
+
+  def canSelfRegister(request: RequestWithAttributes[_], organisation: Organizations, organisationAdmin: Users, selfRegToken: Option[String], templateId: Option[Long]): Boolean = {
+    var ok = false
+    if (Configurations.REGISTRATION_ENABLED && checkHasPrincipal(request, true)) {
+      val targetCommunity = communityManager.getById(organisation.community)
+      if (targetCommunity.isDefined) {
+        var communityOk = false
+        if (targetCommunity.get.selfRegType == SelfRegistrationType.PublicListing.id.toShort) {
+          communityOk = true
+        } else if (targetCommunity.get.selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort) {
+          if (selfRegToken.isDefined) {
+            communityOk = true
+          }
+        }
+        if (communityOk) {
+          if (templateId.isDefined) {
+            val targetTemplate = organizationManager.getById(templateId.get)
+            if (targetTemplate.isDefined && targetTemplate.get.community == targetCommunity.get.id && targetTemplate.get.template) {
+              ok = true
+            }
+          } else {
+            ok = true
+          }
+        }
+      }
+      setAuthResult(request, ok, "User not allowed to self-register with the provided configuration")
+    }
+    ok
+  }
+
+  def canViewSelfRegistrationOptions(request: RequestWithAttributes[_]): Boolean = {
+    val ok = Configurations.REGISTRATION_ENABLED
+    setAuthResult(request, ok, "User not allowed to view self-registration options")
+  }
+
+  def canMigrateAccount(request: RequestWithAttributes[AnyContent]) = {
+    var ok = checkHasPrincipal(request, false)
+    if (Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD) {
+      ok = true
+    }
+    setAuthResult(request, ok, "Account migration not allowed")
+  }
+
+  def canLinkFunctionalAccount(request: RequestWithAttributes[_], userId: Long): Boolean = {
+    var ok = false
+    val principal = getPrincipal(request)
+    if (principal != null) {
+      val user = userManager.getUserById(userId)
+      ok = user.ssoEmail.isDefined && user.ssoEmail.get.toLowerCase == principal.email.toLowerCase
+    }
+    setAuthResult(request, ok, "You cannot access the requested account")
+  }
+
+  def canDisconnectFunctionalAccount(request: RequestWithAttributes[AnyContent]): Boolean = {
+    canSelectFunctionalAccount(request, getRequestUserId(request))
+  }
+
+  def canViewUserFunctionalAccounts(request: RequestWithAttributes[AnyContent]): Boolean = {
+    checkHasPrincipal(request, false)
+  }
+
+  def canSelectFunctionalAccount(request: RequestWithAttributes[AnyContent], id: Long): Boolean = {
+    var ok = false
+    if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT == id) {
+      ok = true
+    } else {
+      val principal = getPrincipal(request)
+      if (principal != null) {
+        val user = userManager.getUserById(id)
+        ok = user.ssoUid.isDefined && user.ssoUid.get == principal.uid
+      }
+    }
+    setAuthResult(request, ok, "You cannot access the requested account")
+  }
 
   def canViewActors(request: RequestWithAttributes[AnyContent], ids: Option[List[Long]]): Boolean = {
     var ok = false
@@ -121,6 +251,13 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     } else if (isCommunityAdmin(userInfo)) {
       val user = userManager.getById(userId)
       ok = canManageOrganisationFull(request, userInfo, user.organization)
+    } else if (isOrganisationAdmin(userInfo)) {
+      if (!Configurations.DEMOS_ENABLED || Configurations.DEMOS_ACCOUNT != userInfo.id) {
+        val user = userManager.getById(userId)
+        if (userInfo.organization.isDefined && user.organization == userInfo.organization.get.id) {
+          ok = canUpdateOwnOrganisation(request)
+        }
+      }
     }
     setAuthResult(request, ok, "User cannot manage the requested user")
   }
@@ -257,12 +394,33 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canViewSystem(request, system)
   }
 
-  def canEditEndpointConfiguration(request: RequestWithAttributes[_], config: Configs):Boolean = {
-    canManageSystem(request, getUser(getRequestUserId(request)), config.system)
+  def canManageSystemButCanAlsoEditParameter(request: RequestWithAttributes[_], userInfo: User, parameterId: Long): Boolean = {
+    var ok = false
+    if (isCommunityAdmin(userInfo) || isTestBedAdmin(userInfo)) {
+      ok = true
+    } else {
+      val parameter = parameterManager.getParameterById(parameterId)
+      ok = parameter.isDefined && !parameter.get.adminOnly
+    }
+    setAuthResult(request, ok, "User cannot edit this parameter")
   }
 
-  def canDeleteEndpointConfiguration(request: RequestWithAttributes[_], systemId: Long, endpointId: Long):Boolean = {
-    canManageSystem(request, getUser(getRequestUserId(request)), systemId)
+  def canEditEndpointConfiguration(request: RequestWithAttributes[_], config: Configs):Boolean = {
+    val userInfo = getUser(getRequestUserId(request))
+    var check = canManageSystem(request, userInfo, config.system)
+    if (check) {
+      check = canManageSystemButCanAlsoEditParameter(request, userInfo, config.parameter)
+    }
+    check
+  }
+
+  def canDeleteEndpointConfiguration(request: RequestWithAttributes[_], systemId: Long, endpointId: Long, parameterId: Long):Boolean = {
+    val userInfo = getUser(getRequestUserId(request))
+    var check = canManageSystem(request, userInfo, systemId)
+    if (check) {
+      check = canManageSystemButCanAlsoEditParameter(request, userInfo, parameterId)
+    }
+    check
   }
 
   def canViewEndpointConfigurations(request: RequestWithAttributes[_], systemId: Long, endpointId: Long):Boolean = {
@@ -506,6 +664,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canManageOrganisationFull(request, getUser(getRequestUserId(request)), orgId)
   }
 
+  def canManageOrganisationBasic(request: RequestWithAttributes[_], orgId: Long):Boolean = {
+    canManageOrganisationBasic(request, getUser(getRequestUserId(request)), orgId)
+  }
+
   def canManageOrganisationBasic(request: RequestWithAttributes[_], userInfo: User, orgId: Long):Boolean = {
     var ok = false
     if (isTestBedAdmin(userInfo)) {
@@ -715,8 +877,27 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User cannot logout")
   }
 
-  def canCheckUserEmail(request: RequestWithAttributes[_]):Boolean = {
-    setAuthResult(request, isAnyAdminType(getUser(getRequestUserId(request))), "User cannot manage own organisation")
+  def canCheckAnyUserEmail(request: RequestWithAttributes[_]):Boolean = {
+    val userInfo = getUser(getRequestUserId(request))
+    setAuthResult(request, isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo), "User cannot manage any organisation")
+  }
+
+  def canCheckUserEmail(request: RequestWithAttributes[_], organisationId: Long):Boolean = {
+    val userInfo = getUser(getRequestUserId(request))
+    val ok = isAnyAdminType(userInfo) && userInfo.organization.isDefined && userInfo.organization.get.id == organisationId
+    setAuthResult(request, ok, "User cannot manage own organisation")
+  }
+
+  def canCheckSystemAdminEmail(request: RequestWithAttributes[AnyContent]):Boolean = {
+    checkTestBedAdmin(request)
+  }
+
+  def canCheckCommunityAdminEmail(request: RequestWithAttributes[AnyContent], communityId: Long):Boolean = {
+    canManageCommunity(request, communityId)
+  }
+
+  def canCheckOrganisationUserEmail(request: RequestWithAttributes[AnyContent], organisationId: Long):Boolean = {
+    canManageOrganisationFull(request, getUser(getRequestUserId(request)), organisationId)
   }
 
   def canLogin(request: RequestWithAttributes[_]):Boolean = {
@@ -733,15 +914,23 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canSubmitFeedback(request: RequestWithAttributes[_]):Boolean = {
-    checkIsAuthenticated(request)
+    val ok = true
+    setAuthResult(request, ok, "User not allowed to submit feedback")
   }
 
   def canViewConfiguration(request: RequestWithAttributes[_]):Boolean = {
-    checkIsAuthenticated(request)
+    val ok = true
+    setAuthResult(request, ok, "User not allowed to view configuration")
   }
 
   def canUpdateOwnProfile(request: RequestWithAttributes[_]):Boolean = {
-    checkIsAuthenticated(request)
+    var ok = checkIsAuthenticated(request)
+    if (ok) {
+      val userId = getRequestUserId(request)
+      ok = !Configurations.AUTHENTICATION_SSO_ENABLED &&
+        (!Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT)
+    }
+    setAuthResult(request, ok, "User cannot edit own profile")
   }
 
   def canViewOwnProfile(request: RequestWithAttributes[_]):Boolean = {
@@ -757,7 +946,12 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canUpdateOwnOrganisation(request: RequestWithAttributes[_]):Boolean = {
-    setAuthResult(request, isAnyAdminType(getUser(getRequestUserId(request))), "User cannot manage own organisation")
+    var ok = isAnyAdminType(getUser(getRequestUserId(request)))
+    if (ok) {
+      val userId = getRequestUserId(request)
+      ok = !Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT
+    }
+    setAuthResult(request, ok, "User cannot manage own organisation")
   }
 
   def canViewOwnOrganisation(request: RequestWithAttributes[_]):Boolean = {
@@ -784,6 +978,24 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canManageCommunity(request: RequestWithAttributes[_], communityId: Long): Boolean = {
     canManageCommunity(request, getUser(getRequestUserId(request)), communityId)
+  }
+
+  def canManageOrganisationParameter(request: RequestWithAttributes[_], parameterId: Long): Boolean = {
+    val parameter = communityManager.getOrganisationParameterById(parameterId)
+    var ok = false
+    if (parameter.isDefined) {
+      ok = canManageCommunity(request, parameter.get.community)
+    }
+    setAuthResult(request, ok, "User cannot manage the requested parameter")
+  }
+
+  def canManageSystemParameter(request: RequestWithAttributes[_], parameterId: Long): Boolean = {
+    val parameter = communityManager.getSystemParameterById(parameterId)
+    var ok = false
+    if (parameter.isDefined) {
+      ok = canManageCommunity(request, parameter.get.community)
+    }
+    setAuthResult(request, ok, "User cannot manage the requested parameter")
   }
 
   def canDeleteObsoleteTestResultsForCommunity(request: RequestWithAttributes[_], communityId: Long):Boolean = {
@@ -1112,8 +1324,12 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   private def checkIsAuthenticated(request: RequestWithAttributes[_]): Boolean = {
     getRequestUserId(request)
-    val ok = true
-    setAuthResult(request, ok, "User is not authenticated")
+    var ok = false
+    if (checkHasPrincipal(request, true)) {
+      ok = true
+      setAuthResult(request, ok, "User is not authenticated")
+    }
+    ok
   }
 
   private def isTestBedAdmin(userId: Long): Boolean = {

@@ -1,7 +1,7 @@
 class OrganizationCreateController
 
-  @$inject = ['$log', '$state', '$stateParams', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'ValidationService', 'OrganizationService', 'ErrorService']
-  constructor: (@$log, @$state, @$stateParams, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @OrganizationService, @ErrorService) ->
+  @$inject = ['$log', '$state', '$stateParams', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'ValidationService', 'OrganizationService', 'ErrorService', 'DataService', 'CommunityService']
+  constructor: (@$log, @$state, @$stateParams, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @OrganizationService, @ErrorService, @DataService, @CommunityService) ->
 
     @communityId = @$stateParams.community_id
 
@@ -11,6 +11,16 @@ class OrganizationCreateController
     @legalNotices = []
     @errorTemplates = []
     @otherOrganisations = []
+    @propertyData = {
+      properties: []
+      edit: false
+    }
+
+    @CommunityService.getOrganisationParameters(@communityId)
+    .then (data) =>
+      @propertyData.properties = data
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
 
     @LandingPageService.getLandingPagesByCommunity(@communityId)
     .then (data) =>
@@ -36,17 +46,32 @@ class OrganizationCreateController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+  valueDefined: (value) =>
+    value? && value.trim().length > 0
+
   saveDisabled: () =>
-    !(@organization?.sname? && @organization?.fname?)
+    !(@valueDefined(@organization?.sname) && @valueDefined(@organization?.fname) && (!@DataService.configuration?['registration.enabled'] || (!@organization?.template || @valueDefined(@organization?.templateName))) && (!@propertyData.edit || @DataService.customPropertiesValid(@propertyData.properties)))
+
+  copyChanged: () =>
+    if @organization.otherOrganisations == undefined || @organization.otherOrganisations == null
+      @organization.copyOrganisationParameters = false
+      @organization.copySystemParameters = false
+      @organization.copyStatementParameters = false
+    else if @organization.copyOrganisationParameters
+      @propertyData.edit = false
 
   # create organization and cancel screen
   createOrganization: () =>
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@organization.sname, "Please enter short name of the organisation.") &
     @ValidationService.requireNonNull(@organization.fname, "Please enter full name of the organisation.")
-      @OrganizationService.createOrganization @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.errorTemplates, @organization.otherOrganisations, @communityId
-      .then () =>
-        @cancelCreateOrganization()
+      @OrganizationService.createOrganization(@organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.errorTemplates, @organization.otherOrganisations, @communityId, @organization.template, @organization.templateName, @propertyData.edit, @propertyData.properties, @organization.copyOrganisationParameters, @organization.copySystemParameters, @organization.copyStatementParameters)
+      .then (data) =>
+        if data? && data.error_code?
+          @ValidationService.pushAlert({type:'danger', msg:data.error_description})
+          @alerts = @ValidationService.getAlerts()          
+        else
+          @cancelCreateOrganization()
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
     else

@@ -7,7 +7,8 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 scalaVersion := "2.11.12"
 
 libraryDependencies ++= Seq(
-  "eu.europa.ec.itb" % "gitb-types" % "1.6.1",
+  cache,
+  "eu.europa.ec.itb" % "gitb-types" % "1.7.0",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
@@ -18,6 +19,8 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream" % "2.5.19",
   "com.typesafe.akka" %% "akka-slf4j" % "2.5.19",
   "com.typesafe.play" %% "play-slick" % "2.1.1",
+  "org.pac4j" % "play-pac4j" % "3.1.0",
+  "org.pac4j" % "pac4j-cas" % "2.2.0",
   "org.slf4j" % "slf4j-nop" % "1.7.25",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "org.apache.commons" % "commons-lang3" % "3.8.1",
@@ -30,7 +33,7 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-frontend-jaxws" % "3.3.0",     //for calling jax-ws services
   "org.apache.cxf" % "cxf-rt-transports-http" % "3.3.0", //for calling jax-ws services
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % "3.3.0", //exporting jax-ws services
-  "org.apache.tika" % "tika-core" % "1.20",
+  "org.apache.tika" % "tika-core" % "1.22",
   "org.webjars" %% "webjars-play" % "2.5.0",
   "org.webjars" % "jquery" % "2.2.4",
   "org.webjars" % "jquery-cookie" % "1.4.1-1" exclude("org.webjars", "jquery"),

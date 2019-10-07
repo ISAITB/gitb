@@ -47,7 +47,7 @@
             <dependency>
                 <groupId>eu.europa.ec.itb</groupId>
                 <artifactId>gitb-types</artifactId>
-                <version>1.6.1</version>
+                <version>1.7.0</version>
             </dependency>
             <dependency>
                 <groupId>org.kohsuke.metainf-services</groupId>
@@ -108,7 +108,7 @@
             <dependency>
                 <groupId>org.apache.tika</groupId>
                 <artifactId>tika-core</artifactId>
-                <version>1.20</version>
+                <version>1.22</version>
             </dependency>
             <dependency>
                 <groupId>xerces</groupId>

@@ -14,6 +14,10 @@ class CommunityDetailController
         field: 'email',
         title: 'Email'
       }
+      {
+        field: 'ssoStatusText',
+        title: 'Status'
+      }
     ]
 
     @organizationColumns = [
@@ -101,6 +105,8 @@ class CommunityDetailController
 
     @UserService.getCommunityAdministrators(@communityId)
     .then (data) =>
+      for admin in data
+        admin.ssoStatusText = @DataService.userStatus(admin.ssoStatus)
       @admins = data
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
@@ -108,6 +114,7 @@ class CommunityDetailController
     @CommunityService.getCommunityById(@communityId)
     .then (data) =>
       @community = data
+      # @community.selfRegType = @community.selfRegType+''
       @$window.localStorage['community'] = angular.toJson data
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
@@ -144,19 +151,24 @@ class CommunityDetailController
       @ErrorService.showErrorMessage(error)
 
   saveDisabled: () =>
-    !(@community?.sname? && @community?.fname?)
+    !(@community?.sname? && @community?.fname? && (!@DataService.configuration?['registration.enabled'] || 
+    (@community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED || @community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || (@community?.selfRegToken?.trim().length > 0))))
 
   updateCommunity: () =>
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@community.sname, "Please enter short name of the community.") &
     @ValidationService.requireNonNull(@community.fname, "Please enter full name of the community.") &
     (!(@community.email? && @community.email.trim() != '') || @ValidationService.validateEmail(@community.email, "Please enter a valid support email."))
-      @CommunityService.updateCommunity(@communityId, @community.sname, @community.fname, @community.email, @community.domain?.id)
-      .then () =>
-        if @DataService.isSystemAdmin
-          @cancelCommunityDetail()
+      @CommunityService.updateCommunity(@communityId, @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegToken, @community.domain?.id)
+      .then (data) =>
+        if data? && data.error_code?
+          @ValidationService.pushAlert({type:'danger', msg:data.error_description})
+          @alerts = @ValidationService.getAlerts()          
         else
-          @$state.go(@$state.$current, null, { reload: true });
+          if @DataService.isSystemAdmin
+            @cancelCommunityDetail()
+          else
+            @$state.go(@$state.$current, null, { reload: true });
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
     else
@@ -198,5 +210,8 @@ class CommunityDetailController
 
   updateConformanceCertificateSettings: () =>
     @$state.go 'app.admin.users.communities.detail.certificate'
+
+  updateParameters: () =>
+    @$state.go 'app.admin.users.communities.detail.parameters'
 
 @controllers.controller 'CommunityDetailController', CommunityDetailController

@@ -1,7 +1,7 @@
 <div class="page conformance">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h5 class="title">Conformance statement details</h5>
+			<h4 class="title">Conformance statement details</h4>
 		</div>
 		<div class="panel-body">
 			<div class="row row-display-first">
@@ -31,19 +31,19 @@
 	</div>
 	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.endpoints.length > 0">
 		<div class="panel-heading panel-heading-tests">
-			<h5 class="title">Configuration parameters</h5>
+			<h4 class="title">Configuration parameters</h4>
 			<button class="btn btn-default pull-right" ng-click="conformanceStatementDetailCtrl.toggleEndpointDisplay()"><i class="fa fa-plus" ng-if="conformanceStatementDetailCtrl.endpointsCollapsed"></i><i class="fa fa-minus" ng-if="!conformanceStatementDetailCtrl.endpointsCollapsed"></i></button>
 		</div>
 		<div class="list-group" ng-show="!conformanceStatementDetailCtrl.endpointsCollapsed">
 			<div class="list-group-item endpoint" ng-repeat="endpoint in conformanceStatementDetailCtrl.endpointRepresentations">
-				<div endpoint-display endpoint="endpoint" can-edit="conformanceStatementDetailCtrl.canDelete()" show-values="true" on-edit="conformanceStatementDetailCtrl.onParameterSelect"></div>
+				<div endpoint-display endpoint="endpoint" editable="!conformanceStatementDetailCtrl.DataService.isVendorUser" can-edit="conformanceStatementDetailCtrl.canEditParameter" show-values="true" on-edit="conformanceStatementDetailCtrl.onParameterSelect"></div>
 			</div>
 		</div>
 	</div>
 
 	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.testSuites.length > 0">
 		<div class="panel-heading panel-heading-tests">
-			<h5 class="title">Conformance tests</h5>
+			<h4 class="title">Conformance tests</h4>
 			<button class="btn btn-primary pull-right" ng-if="conformanceStatementDetailCtrl.testSuites.length == 1 && conformanceStatementDetailCtrl.testSuites[0].testCases.length > 1" ng-click="conformanceStatementDetailCtrl.onTestSuiteSelect()"><i class="fa fa-play"></i></button>
 		</div>
 		<div>

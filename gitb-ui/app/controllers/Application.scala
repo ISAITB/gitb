@@ -1,16 +1,41 @@
 package controllers
 
+import config.Configurations
 import filters.CorsFilter
 import javax.inject.Inject
+import managers.LegalNoticeManager
+import models.{Constants, PublicConfig}
 import play.api.mvc._
 import play.api.routing._
 
 import scala.collection.mutable.ListBuffer
 
-class Application @Inject() (webJarAssets: WebJarAssets) extends Controller {
+class Application @Inject() (webJarAssets: WebJarAssets, systemConfigurationService: SystemConfigurationService, legalNoticeManager: LegalNoticeManager) extends Controller {
 
   def index() = Action {
-    Ok(views.html.index(webJarAssets))
+    val legalNotice = legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId)
+    var legalNoticeContent = ""
+    if (legalNotice.isDefined) {
+      legalNoticeContent = legalNotice.get.content
+    }
+    Ok(views.html.index(webJarAssets,
+      new PublicConfig(
+      Configurations.AUTHENTICATION_SSO_ENABLED,
+      systemConfigurationService.getLogoPath(),
+      systemConfigurationService.getFooterLogoPath(),
+      Constants.VersionNumber,
+      legalNoticeContent,
+      Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD,
+      Configurations.DEMOS_ENABLED,
+      Configurations.USERGUIDE_OU,
+      Configurations.REGISTRATION_ENABLED,
+      Configurations.GUIDES_EULOGIN_USE,
+      Configurations.GUIDES_EULOGIN_MIGRATION
+    )))
+  }
+
+  def app() = Action {
+    Ok(views.html.app(webJarAssets, new PublicConfig(Constants.VersionNumber)))
   }
 
   def preFlight(all: String) = Action {

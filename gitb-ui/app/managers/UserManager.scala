@@ -1,5 +1,6 @@
 package managers
 
+import config.Configurations
 import javax.inject.{Inject, Singleton}
 import models.Enums.UserRole
 import models.Enums.UserRole._
@@ -109,16 +110,22 @@ class UserManager @Inject() (accountManager: AccountManager, organizationManager
   /**
    * Updates user profile of given user
    */
-  def updateUserProfile(userId: Long, name: String, roleId: Short, password: Option[String]) = {
+  def updateUserProfile(userId: Long, name: Option[String], roleId: Short, password: Option[String]) = {
     val user = exec(PersistenceSchema.users.filter(_.id === userId).result.headOption)
     if (user.isDefined) {
       var action: DBIO[_] = null
-      if (password.isDefined) {
-        val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.role, u.password, u.onetimePassword)
-        action = q.update(name, roleId, BCrypt.hashpw(password.get, BCrypt.gensalt()), true)
+
+      if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+        val q = for {u <- PersistenceSchema.users if u.id === userId} yield u.role
+        action = q.update(roleId)
       } else {
-        val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.role)
-        action = q.update(name, roleId)
+        if (password.isDefined) {
+          val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.role, u.password, u.onetimePassword)
+          action = q.update(name.get, roleId, BCrypt.hashpw(password.get, BCrypt.gensalt()), true)
+        } else {
+          val q = for {u <- PersistenceSchema.users if u.id === userId} yield (u.name, u.role)
+          action = q.update(name.get, roleId)
+        }
       }
       exec(action.transactionally)
     }

@@ -1,10 +1,10 @@
-@(webJarAssets: WebJarAssets)
+@(webJarAssets: WebJarAssets, config: models.PublicConfig)
 <!DOCTYPE html>
 <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
 <!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
 <!--[if gt IE 8]><!-->
-<html class="no-js" ng-app="app">
+<html>
 <!--<![endif]-->
 	<head>
 		<meta charset="utf-8">
@@ -12,198 +12,125 @@
 		<title>GITB</title>
 		<meta name="description" content="">
 		<meta name="viewport" content="width=device-width">
-		<script type="text/javascript" src="@routes.Application.javascriptRoutes"></script>
-
 		<link rel='stylesheet' href='@routes.WebJarAssets.at(webJarAssets.locate("css/bootstrap.min.css"))'>
 		<link rel="stylesheet" href='@routes.WebJarAssets.at(webJarAssets.locate("css/font-awesome.min.css"))'>
-		<link rel="stylesheet" href='@routes.WebJarAssets.at(webJarAssets.locate("lib/codemirror.css"))'>
-
 		<!-- Web Fonts  -->
 		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/fonts/opensans/stylesheet.css")'>
-
 		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/theme.css")'>
 		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/theme-animate.css")'>
 		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/theme-responsive.css")'>
 		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/skins/blue.css")'>
 		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/custom.css")'>
-		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/tinymce/tinymce.css")'>
 		<link rel="stylesheet" href='theme/css'>
-
-		<link rel="stylesheet" href='@routes.Assets.at("components/isteven-multi-select/isteven-multi-select.css")'>
-		<link rel="stylesheet" href='@routes.Assets.at("components/date-range-picker/daterangepicker.css")'>
-
-		<script src='@routes.Assets.at("components/modernizr.js")'></script>
-		<script src='@routes.Assets.at("components/FileSaver.min.js")'></script>
-
-		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/gitb.css")?v=1.6.1.1'>
-
-		<link rel="shortcut icon" type="image/png" href='@routes.Assets.at("images/favicon.png")'>
-		<!-- endbuild -->
-	</head>
-
-	<body>
-		<div class="app" ui-view></div>
-		<!-- WebJars -->
+		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/gitb.css")?v=@config.versionNumber'>
 		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("jquery.min.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at("jquery-cookie/1.4.1-1/jquery.cookie.js")'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("lodash.min.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at("angularjs/1.7.6/angular.min.js")'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at("angularjs/1.7.6/angular-route.min.js")'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at("angularjs/1.7.6/angular-resource.min.js")'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at("angularjs/1.7.6/angular-cookies.min.js")'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at("angularjs/1.7.6/angular-sanitize.min.js")'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at("angularjs/1.7.6/angular-animate.min.js")'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("ui-bootstrap.min.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("ui-bootstrap-tpls.min.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("angular-ui-router.min.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("angular-file-upload.min.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("lib/codemirror.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/xml/xml.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/xquery/xquery.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/http/http.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/htmlmixed/htmlmixed.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/htmlembedded/htmlembedded.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("tinymce.min.js"))'></script>
-
-		<script src='@routes.Assets.at("components/jquery.easing.js")'></script>
-		<script src='@routes.Assets.at("components/jquery.appear.js")'></script>
-		<script src='@routes.Assets.at("components/jquery.cookie.js")'></script>
-		<script src='@routes.Assets.at("components/jquery.validate.js")'></script>
-
-		<!-- Angular JS -->
-		<script src='@routes.Assets.at("scripts/app.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/routes.js")?v=1.6.1.1'></script>
-		<!-- common scripts -->
-		<script src='@routes.Assets.at("scripts/common/Base.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/common/Constants.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/common/Events.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/common/ErrorCodes.js")?v=1.6.1.1'></script>
-        <script src='@routes.Assets.at("scripts/common/CompileProvider.js")?v=1.6.1.1'></script>
-		<!-- directives -->
-		<!-- providers -->
-		<script src='@routes.Assets.at("scripts/providers/AuthProvider.js")?v=1.6.1.1'></script>
-		<!-- services -->
-		<script src='@routes.Assets.at("scripts/services/DataService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/UserManagementService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/ConfirmationDialogService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/HtmlService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/PopupService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/MessageService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/RestService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/WebSocketService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/AccountService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/AuthService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/SystemService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/ConformanceService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/TestService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/TestSuiteService.js")?v=1.6.1.1'></script>
-        <script src='@routes.Assets.at("scripts/services/ReportService.js")?v=1.6.1.1'></script>
-        <script src='@routes.Assets.at("scripts/services/ErrorService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/UserService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/SystemConfigurationService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/ValidationService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/OrganizationService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/LandingPageService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/LegalNoticeService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/ErrorTemplateService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/WebEditorService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/ActorService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/EndPointService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/ParameterService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/SpecificationService.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/services/CommunityService.js")?v=1.6.1.1'></script>
-		<!-- controllers -->
-		<script src='@routes.Assets.at("scripts/controllers/BaseController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/IndexController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/HomeController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/LoginController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/UsersController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/UserProfileController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/TabController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/OrganizationController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/PasswordController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/systems/SystemController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/systems/CreateEditSystemController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/systems/statement/ConformanceStatementController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/systems/statement/ConformanceStatementDetailController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/systems/statement/CreateConformanceStatementController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/systems/statement/EditEndpointConfigurationController.js")?v=1.6.1.1'></script>
-        <script src='@routes.Assets.at("scripts/controllers/systems/SystemTestsController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/systems/SystemsController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/systems/SystemNavigationController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/systems/SystemsTitleController.js")?v=1.6.1.1'></script>
-        <script src='@routes.Assets.at("scripts/controllers/TestPresentationController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/TestExecutionControllerV2.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/ProvideInputModalController.js")?v=1.6.1.1'></script>
-        <script src='@routes.Assets.at("scripts/controllers/TestResultController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/AdminController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/domain/DomainDetailsController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/conformance/AdminConformanceController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/conformance/ConformanceCertificateModalController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/domain/AdminDomainsController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/domain/CreateDomainController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/domain/CreateEditDomainParameterController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/actor/ActorDetailsController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/actor/CreateActorController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/actor/CreateEndpointController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/actor/CreateParameterController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/specification/CreateSpecificationController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/specification/SpecificationDetailsController.js")?v=1.6.1.1'></script>
-
-		<script src='@routes.Assets.at("scripts/controllers/admin/user/UserManagementController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/user/AdminCreateController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/user/CommunityAdminCreateController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/user/CommunityAdminDetailController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/user/AdminDetailController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/user/OrganizationCreateController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/user/OrganizationDetailController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/user/UserCreateController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/user/UserDetailController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/user/LandingPageCreateController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/user/LandingPageDetailController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/user/LegalNoticeCreateController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/user/LegalNoticeDetailController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/user/ErrorTemplateCreateController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/user/ErrorTemplateDetailController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/user/CommunityCreateController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/user/CommunityDetailController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/user/CommunityCertificateController.js")?v=1.6.1.1'></script>
-
-		<script src='@routes.Assets.at("scripts/controllers/admin/DashboardController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/EndpointDetailsController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/admin/ParameterDetailsController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/components/ContactSupportController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/components/EditorModalController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/components/TestStepReportModalController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/components/TestSuiteValidationReportModalController.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/controllers/components/TestSuiteUploadPendingModalController.js")?v=1.6.1.1'></script>
-        <script src='@routes.Assets.at("scripts/controllers/components/ErrorController.js")?v=1.6.1.1'></script>
-        <script src='@routes.Assets.at("scripts/controllers/components/ConfirmationDialogController.js")?v=1.6.1.1'></script>
-        <script src='@routes.Assets.at("scripts/controllers/components/HtmlController.js")?v=1.6.1.1'></script>
-        <script src='@routes.Assets.at("scripts/controllers/components/PopupController.js")?v=1.6.1.1'></script>
-        <script src='@routes.Assets.at("scripts/controllers/components/MessageController.js")?v=1.6.1.1'></script>
-
-		<script src='@routes.Assets.at("scripts/directives/TableDirectives.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/directives/DomainDirectives.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/directives/UserFormDirectives.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/directives/OrganizationFormDirectives.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/directives/WizardDirectives.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/directives/SpecificationDirectives.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/directives/ActorDirectives.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/directives/EndpointDirectives.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/directives/EditorDirectives.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/directives/TestStepReportDirectives.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/directives/SequenceDiagram.js")?v=1.6.1.1'></script>
-		<script src='@routes.Assets.at("scripts/directives/RecursionHelper.js")?v=1.6.1.1'></script>
-        <script src='@routes.Assets.at("scripts/directives/ErrorDirective.js")?v=1.6.1.1'></script>
-        <script src='@routes.Assets.at("scripts/directives/CommunityFormDirectives.js")?v=1.6.1.1'></script>
-
-		<script src='@routes.Assets.at("components/plugins.js")'></script>
 		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("bootstrap.min.js"))'></script>
-		<script src='@routes.Assets.at("components/theme.js")'></script>
-		<script src='@routes.Assets.at("components/momentjs/moment.min.js")'></script>
-		<script src='@routes.Assets.at("components/date-range-picker/daterangepicker.js")'></script>
-		<script src='@routes.Assets.at("components/date-range-picker/angular-daterangepicker.min.js")'></script>
-		<script src='@routes.Assets.at("components/isteven-multi-select/isteven-multi-select.js")'></script>
+		<script type='text/javascript'>
+			function option(value) {
+				if (value) {
+					document.cookie = 'LOGIN_OPTION='+value;
+				} else {
+					document.cookie = 'LOGIN_OPTION=none';
+				}
+				window.location.href = 'app';
+			}
+			function eraseCookies() {
+				document.cookie = 'LOGIN_OPTION=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+				document.cookie = 'tat=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+			}
+			eraseCookies();
+		</script>
+	</head>
+	<body class="sticky-menu-active">
+		<div class="page index">
+			<header>
+				<div class="navbar-collapse nav-main-collapse collapse">
+					<div class="container">
+						<img src='@config.logoPath' class="logo"/>
+					</div>
+				</div>
+			</header>
+			<div class="child">
+				<section class="page-top">
+					<div class="container">
+						<div class="row">
+							<div class="col-xs-12">
+								<h2>Welcome to the Interoperability Test Bed</h2>
+							</div>
+						</div>
+					</div>
+				</section>
+				<div class="container">
+					<div class="row">
+						<div class="col-xs-12">
+							<h4>The Interoperability Test Bed is a platform to help you test conformance against one or more specifications.</h4>
+							<div style="padding-top:20px">
+								<div style="display:flex; align-items:center;">
+									<div>
+										<button type="button" class="btn btn-primary" onclick="option()" style="padding:20px">Click to log in</button>
+									</div>
+									<div style="margin-left:20px;">
+										@if(config.ssoEnabled) {
+										<p><b style="margin-right:10px;">Assigned a new role by an administrator?</b><a href="#" onclick="option('link')">Confirm your new role</a>.</p>
+										}
+										@if(config.demosEnabled && config.registrationEnabled) {
+										<span><b style="margin-right:10px;">New to the Test Bed?</b><a href="#" onclick="option('register')">Create an account</a> or <a href="#" onclick="option('demo')">try out our demos</a></span>.
+										} else {@if(config.demosEnabled && !config.registrationEnabled) {
+										<span><b style="margin-right:10px;">New to the Test Bed?</b><a href="#" onclick="option('demo')">Try out our demos</a>.</span>
+										} else {@if(!config.demosEnabled && config.registrationEnabled) {
+										<span><b style="margin-right:10px;">New to the Test Bed?</b><a href="#" onclick="option('register')">Create an account</a>.</span>
+										}}}
+									</div>
+								</div>
+							</div>
+							<div class="bg-info div-rounded div-spaced div-padded">
+								@if(config.ssoEnabled) {
+									<p>To connect to the Test Bed you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="@config.euLoginUseGuideLink" target="blank">this tutorial</a> to get started.</p>
+								}
+								<p style="margin-bottom: 0px"><b>Privacy note:</b> By connecting you consent to the use of cookies to manage your session. Please refer to our <a href="#" data-toggle="modal" data-target="#legalModal">legal notice</a> for more information.</p>
+								@if(config.ssoEnabled && config.inMigrationPeriod) {
+									<p style="margin-top: 10px; margin-bottom: 0px"><b>Migration note:</b> If you have been using a functional account to log in click <a href="#" onclick="option('migrate')">here</a> to migrate it to EU Login. Step-by-step instructions are available in <a href="@config.euLoginMigrationGuideLink" target="blank">this guide</a>.</p>
+								}
+							</div>
+						</div>
+
+					</div>
+				</div>
+			</div>
+			<footer>
+				<div class="container">
+					<div class="row">
+						<div class="col-md-6">
+							<img src="@config.footerLogoPath" class="pull-left"/>
+						</div>
+						<div class="col-md-6 version-div">
+							<span class="pull-right">
+								<a href="@config.userGuideLink" target="blank">User guide</a><span class="version-text"> | </span><a href="#" data-toggle="modal" data-target="#legalModal">Legal notice</a><span class="version-text"> | </span><span class="version-text">@config.versionNumber</span>
+							</span>
+						</div>
+					</div>
+				</div>
+			</footer>
+		</div>
+		<!-- Modal -->
+		<div class="modal fade" id="legalModal" role="dialog">
+			<div class="modal-dialog modal-lg">
+				<!-- Modal content-->
+				<div class="modal-content">
+					<div class="modal-header">
+						<h3>Legal Notice</h3>
+					</div>
+					<div class="modal-body">
+						<div id="content">
+							@Html(config.defaultLegalNotice)
+						</div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					</div>
+				</div>
+
+			</div>
+		</div>
 	</body>
 </html>

@@ -76,11 +76,11 @@
         <div ng-switch-when="loop">
             <div class="col-md-12" >
 
-                <div class="btn-group pull-right" style="top:5px;" dropdown >
-                    <button type="button" class="btn btn-default btn-sm dropdown-toggle" dropdown-toggle ng-disabled="disabled">
+                <div class="btn-group pull-right" style="top:5px;" uib-dropdown >
+                    <button type="button" class="btn btn-default btn-sm uib-dropdown-toggle" uib-dropdown-toggle ng-disabled="disabled">
                         Iterations <span class="caret"></span>
                     </button>
-                    <ul class="dropdown-menu" role="menu">
+                    <ul uib-dropdown-menu class="dropdown-menu" role="menu">
                         <li ng-repeat="sequence in step.sequences" ng-click="testPresentationCtrl.select(step.id, $index)" ng-class="{active: testPresentationCtrl.getSelection(step, $index)}">
                             <a href="#tab{{step.id}}[{{$index + 1}}]" target="_self"  data-toggle="tab">{{$index + 1}}</a>
                         </li>
@@ -102,11 +102,11 @@
         <!-- flow step -->
         <div ng-switch-when="flow">
             <div class="col-md-12">
-                <div class="btn-group pull-right" style="top:5px;" dropdown >
-                    <button type="button" class="btn btn-default btn-sm dropdown-toggle" dropdown-toggle ng-disabled="disabled">
+                <div class="btn-group pull-right" style="top:5px;" uib-dropdown >
+                    <button type="button" class="btn btn-default btn-sm uib-dropdown-toggle" uib-dropdown-toggle ng-disabled="disabled">
                         Threads <span class="caret"></span>
                     </button>
-                    <ul class="dropdown-menu" role="menu">
+                    <ul uib-dropdown-menu class="dropdown-menu" role="menu">
                         <li ng-repeat="thread in step.threads" ng-click="testPresentationCtrl.select(step.id, $index)" ng-class="{active: testPresentationCtrl.getSelection(step, $index)}">
                             <a href="#thread{{step.id}}{{$index + 1}}" target="_self"  data-toggle="tab">{{$index + 1}}</a>
                         </li>

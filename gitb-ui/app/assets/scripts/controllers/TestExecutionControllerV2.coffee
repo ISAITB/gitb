@@ -1,6 +1,6 @@
 class TestExecutionControllerV2
-  @$inject = ['$log', '$scope', '$location', '$uibModal', '$state', '$stateParams', 'Constants', 'TestService', 'SystemService', 'ConformanceService', 'WebSocketService', 'ReportService', 'ErrorService', 'DataService', '$q', '$timeout', '$interval']
-  constructor: (@$log, @$scope, @$location, @$uibModal, @$state, @$stateParams, @Constants, @TestService, @SystemService, @ConformanceService, @WebSocketService, @ReportService, @ErrorService, @DataService, @$q, @$timeout, @$interval) ->
+  @$inject = ['$window','$log', '$scope', '$location', '$uibModal', '$state', '$stateParams', 'Constants', 'TestService', 'SystemService', 'ConformanceService', 'WebSocketService', 'ReportService', 'ErrorService', 'DataService', '$q', '$timeout', '$interval', 'OrganizationService']
+  constructor: (@$window, @$log, @$scope, @$location, @$uibModal, @$state, @$stateParams, @Constants, @TestService, @SystemService, @ConformanceService, @WebSocketService, @ReportService, @ErrorService, @DataService, @$q, @$timeout, @$interval, @OrganizationService) ->
     @testsToExecute = @DataService.tests
     if (!@testsToExecute?)
       # We lost our state following a refresh - recreate state.
@@ -45,7 +45,6 @@ class TestExecutionControllerV2
     @firstTestStarted	= false
     @reload	  = false
     @startAutomatically	  = false
-    @actorConfigurations = {}
     @$scope.interactions  = []
     @selectedInteroperabilitySession = null
     @isOwner = false
@@ -62,36 +61,6 @@ class TestExecutionControllerV2
         @ws.close()
 
       return
-    @parameterTableColumns = [
-      {
-        field: 'name'
-        title: 'Name'
-      }
-      {
-        field: 'use'
-        title: 'Usage'
-      }
-      {
-        field: 'kind'
-        title: 'Type'
-      }
-      {
-        field: 'configured'
-        title: 'Configured'
-      }
-    ]
-    @sessionTableColumns = [
-      {
-        title:'Session'
-        field:'session'
-      }
-    ]
-    @actorTableColumns = [
-      {
-        title:'Actor'
-        field:'actor'
-      }
-    ]
     @stopped = false
     @currentTestIndex = 0
     @currentTest = @testsToExecute[@currentTestIndex]
@@ -101,14 +70,14 @@ class TestExecutionControllerV2
       @$scope.stepsOfTests[test.id] = {}
       @$scope.actorInfoOfTests[test.id] = {}
 
-    @endpointsLoaded = @$q.defer()
-    @configurationsLoaded = @$q.defer()
+    @organisationConfigurationChecked = @$q.defer()
+    @systemConfigurationChecked = @$q.defer()
+    @configurationChecked = @$q.defer()
     @testCaseLoaded = @$q.defer()
-    @$q.all([@endpointsLoaded.promise, @configurationsLoaded.promise, @testCaseLoaded.promise]).then(() =>
-      # Start the wizard
+    @$q.all([@organisationConfigurationChecked.promise, @systemConfigurationChecked.promise, @configurationChecked.promise, @testCaseLoaded.promise]).then(() =>
       @nextStep()
     )
-    @getEndpointConfigurations(@actorId)
+    @checkConfigurations(@actorId, @systemId)
     @getTestCaseDefinition(@currentTest.id)
 
   stopAll: () =>
@@ -181,7 +150,6 @@ class TestExecutionControllerV2
           delete c3["$$hashKey"]
     configStr1 = JSON.stringify(previous)
     configStr2 = JSON.stringify(current)
-    console.log "HERE"
     !(configStr1 == configStr2)
 
   nextStep: (stepToConsider) =>
@@ -190,7 +158,10 @@ class TestExecutionControllerV2
         stepToConsider = @wizardStep
       if (stepToConsider == 0)
         # Before starting
-        if (!@isSystemConfigurationsValid(@endpointRepresentations))
+        @configurationValid = @isConfigurationValid()
+        @systemConfigurationValid = @isMemberConfigurationValid(@systemProperties)
+        @organisationConfigurationValid = @isMemberConfigurationValid(@organisationProperties)
+        if (!@configurationValid || !@systemConfigurationValid || !@organisationConfigurationValid)
           @wizardStep = 1
         else 
           @runInitiateStep()
@@ -227,6 +198,8 @@ class TestExecutionControllerV2
       @updateTestCaseStatus(@currentTest.id, @Constants.TEST_CASE_STATUS.ERROR)
     else
       @updateTestCaseStatus(@currentTest.id, @Constants.TEST_CASE_STATUS.STOPPED)
+    # Make sure steps still marked as pending or in progress are set as skipped.
+    @setPendingStepsToSkipped()
     if (@currentTestIndex + 1 < @testsToExecute.length)
       @$timeout(() => 
         @nextStep()
@@ -234,71 +207,59 @@ class TestExecutionControllerV2
     else
       @nextStep()
 
-  getEndpointConfigurations :(actorId)->
-    @ConformanceService.getEndpointsForActor actorId
-        .then (endpoints) =>
-          @endpoints = endpoints
-        .then () =>
-          if @endpoints?.length > 0
-            endpointIds = _.map @endpoints, (endpoint) -> endpoint.id
-            @SystemService.getConfigurationsWithEndpointIds(endpointIds, @systemId)
-            .then (configurations) =>
-              @configurations = configurations
-              @constructEndpointRepresentations()
-              @configurationsLoaded.resolve()
+  getOrganisation : () =>
+    organisation = @DataService.vendor
+    if @DataService.isCommunityAdmin || @DataService.isSystemAdmin
+      organisation = JSON.parse(@$window.localStorage['organization'])
+    organisation
 
-              for configuration in @configurations
-                endpoint = @getEndpointForId(configuration.endpoint)
-                for parameter in endpoint.parameters
-                  if parameter.id == configuration.parameter
-                    parameter.value = configuration.value
-              @endpointsLoaded.resolve()
-            .catch (error) =>
-              @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop)
-          else
-            @endpointsLoaded.resolve()
-            @configurationsLoaded.resolve()
+  checkConfigurations : (actorId, systemId) ->
+    @OrganizationService.getOrganisationParameterValues(@getOrganisation().id, false)
+    .then (data) =>
+      @organisationProperties = data
+      @organisationConfigurationChecked.resolve()
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error, true)
+      .then(() =>
+        @$state.go @$state.current, {}, {reload: true})
+      .catch(angular.noop)
 
-        .catch (error) =>
-          @ErrorService.showErrorMessage(error, true)
-          .then(() =>
-            @$state.go @$state.current, {}, {reload: true})
-          .catch(angular.noop)
+    @SystemService.getSystemParameterValues(systemId, false)
+    .then (data) =>
+      @systemProperties = data
+      @systemConfigurationChecked.resolve()
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error, true)
+      .then(() =>
+        @$state.go @$state.current, {}, {reload: true})
+      .catch(angular.noop)
 
-  constructEndpointRepresentations: () =>
-    @endpointRepresentations = _.map @endpoints, (endpoint) =>
-        name: endpoint.name
-        description: endpoint.description
-        id: endpoint.id
-        parameters: _.map endpoint.parameters, (parameter) =>
-          repr = _.cloneDeep parameter
-          repr.configured =  _.some @configurations, (configuration) =>
-            parameter.id == configuration.parameter &&
-              Number(parameter.endpoint) == Number(configuration.endpoint) &&
-              configuration.value?
-          repr
+    @ConformanceService.checkConfigurations(actorId, systemId)
+    .then (data) =>
+      @endpointRepresentations = data
+      @configurationChecked.resolve()
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error, true)
+      .then(() =>
+        @$state.go @$state.current, {}, {reload: true})
+      .catch(angular.noop)
 
-  isSystemConfigurationsValid: (endpoints) ->
+  isMemberConfigurationValid: (properties) ->
     valid = true
-
-    if endpoints?
-      for endpoint in endpoints
-        for parameter in endpoint.parameters
-          if !parameter.configured && parameter.use == "R"
-            valid = false
-            break
-        if !valid
-          break
-
+    if properties?
+      for property in properties
+        if property.use == 'R' && !property.configured
+          return false
     valid
 
-  getEndpointForId: (id) ->
-    _endpoint = null
-    for endpoint in @endpoints
-      if endpoint.id == id
-        _endpoint = endpoint
-        break;
-    _endpoint
+  isConfigurationValid: () ->
+    valid = true
+    if @endpointRepresentations?
+      for endpoint in @endpointRepresentations
+        for parameter in endpoint.parameters
+          if !parameter.configured && parameter.use == "R"
+            return false
+    valid
 
   getTestCaseDefinition: (testCaseToLookup) ->
     @TestService.getTestCaseDefinition(testCaseToLookup)
@@ -334,12 +295,7 @@ class TestExecutionControllerV2
 
           @$scope.stepsOfTests[testCaseToLookup] = testcase.steps
           @$scope.$broadcast('sequence:testLoaded', testCaseToLookup)
-          # @$scope.steps = testcase.steps
           @testCaseLoaded.resolve()
-
-          for testCaseActor in @$scope.actorInfoOfTests[testCaseToLookup]
-            if testCaseActor.role == @Constants.TEST_ROLE.SUT
-              @actorConfigurations[testCaseActor.id] = null
         ,
         (error) =>
           @ErrorService.showErrorMessage(error, true)
@@ -366,24 +322,6 @@ class TestExecutionControllerV2
         break
     actorName
 
-  join: () ->
-    @session = @selectedSession
-    @ws = @WebSocketService.createWebSocket({
-      callbacks: {
-        onopen : @onopen,
-        onclose : @onclose,
-        onmessage : @onmessage
-      }
-    })
-    @$scope.$broadcast 'wizard-directive:next'
-
-  createInteroperabilitySession: () ->
-    $("#createSession").text("Waiting...").attr("disabled", true)
-    $("#joinSession").attr("disabled", true)
-
-    @isOwner = true
-    @initiate(@currentTest.id)
-
   initiate: (testCase, initiateFinished) ->
     @socketOpen = @$q.defer()
     @socketOpen.promise.then(() =>
@@ -396,14 +334,8 @@ class TestExecutionControllerV2
     .then(
       (data) =>
         @session = data
-        @actorConfigurations[@actor] = @createActorConfigurations(@configurations)
-        list = _.values(@actorConfigurations)
-
-        #if actor configurations list contains null values, that means other actors of interoperability
-        #testing did not send their configurations yet. WON'T happen in Conformance Testing
-        if !_.contains(list, null)
-          configureFinished = @$q.defer()
-          @configure(@session, list, configureFinished)
+        configureFinished = @$q.defer()
+        @configure(@session, configureFinished)
 
         #create a WebSocket when a new session is initiated
         @ws = @WebSocketService.createWebSocket({
@@ -421,22 +353,11 @@ class TestExecutionControllerV2
         @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop) 
     )
 
-  configure: (session, configs, configureFinished) ->
-    @TestService.configure(@specId, session, configs)
+  configure: (session, configureFinished) ->
+    @TestService.configure(@specId, session, @systemId, @actorId)
     .then(
       (data) =>
         @simulatedConfigs = data.configs
-
-        @$log.debug "-------------------"
-        @$log.debug @simulatedConfigs
-
-        if @isOwner
-          msg = {
-            command: @Constants.WEB_SOCKET_COMMAND.NOTIFY
-            sessionId: @session
-            simulatedConfigs: @simulatedConfigs
-          }
-          @ws.send(angular.toJson(msg))
 
         if @currentTest.preliminary?
           @startAutomatically = false
@@ -523,30 +444,7 @@ class TestExecutionControllerV2
         .catch(angular.noop)
     )
 
-  createActorConfigurations: (configs) ->
-    if @endpoints?.length > 0
-      #TODO cover all endpoints
-      endpoint = @endpoints[0]
-
-      configurations = {
-        actor: endpoint.actor.actorId,
-        endpoint: endpoint.name,
-        config: []
-      }
-
-      for config in endpoint.parameters
-        configurations.config.push({
-          name: config.name,
-          value: config.value
-        })
-
-      @$log.debug angular.toJson(configurations)
-
-      configurations
-
-
   onopen: (msg) =>
-    @$log.debug "WebSocket created."
     @wsOpen = true
     testType = -1
     if @isInteroperabilityTesting
@@ -560,8 +458,6 @@ class TestExecutionControllerV2
       actorId:   @actor
       type: testType
     }
-    if !@isOwner
-      msg.configurations = @createActorConfigurations(@configurations)
 
     @ws.send(angular.toJson(msg))
 
@@ -600,6 +496,11 @@ class TestExecutionControllerV2
       msg = @messagesToProcess.shift()
       @processMessage(msg)
 
+  setPendingStepsToSkipped: () =>
+    for step in @$scope.stepsOfTests[@currentTest.id]
+      if step.status == @Constants.TEST_STATUS.PROCESSING || step.status == @Constants.TEST_STATUS.WAITING
+        step.status = @Constants.TEST_STATUS.SKIPPED
+
   processMessage: (msg) =>
     response = angular.fromJson(msg.data)
     stepId = response.stepId
@@ -608,13 +509,6 @@ class TestExecutionControllerV2
     else if response.notify?
       if response.notify.simulatedConfigs?
         @simulatedConfigs = response.notify.simulatedConfigs
-    else if response.configuration? #actorConfigurations for interoperability testing
-      if @isOwner
-        @actorConfigurations[response.configuration.actor] = response.configuration
-        list = _.values(@actorConfigurations)
-        if !_.contains(list, null)
-          @$scope.$broadcast 'wizard-directive:next' #proceed to 3rd step after all configurations received
-          @configure(@session, list)
     else  #updateStatus
       if stepId == @Constants.END_OF_TEST_STEP
         @$log.debug "END OF THE TEST"
@@ -675,7 +569,6 @@ class TestExecutionControllerV2
 
         while current? &&
         current.id != stepId
-          console.debug 'Looking for ['+stepId+'] in its parent step ['+current.id+']'
           if current.type == 'loop'
             if !current.sequences?
               current.sequences = []
@@ -718,7 +611,6 @@ class TestExecutionControllerV2
             setIds copySteps, oldId, newId
 
             if !current.sequences[index - 1]?
-              console.debug 'Creating a new step sequence with id ['+newId+']'
               current.sequences[index - 1] =
                 id: newId
                 type: current.type
@@ -734,7 +626,7 @@ class TestExecutionControllerV2
         if (status == @Constants.TEST_STATUS.COMPLETED) ||
         (status == @Constants.TEST_STATUS.ERROR) ||
         (status == @Constants.TEST_STATUS.SKIPPED && (current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.PROCESSING)) ||
-        ((status == @Constants.TEST_STATUS.PROCESSING) || (status == @Constants.TEST_STATUS.WAITING) && (current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.SKIPPED))
+        ((status == @Constants.TEST_STATUS.PROCESSING || status == @Constants.TEST_STATUS.WAITING) && (@started && current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.SKIPPED))
           current.status = status
           current.report = report
 
@@ -745,35 +637,28 @@ class TestExecutionControllerV2
 
   findNodeWithStepId: (steps, id) ->
     filter = (step) =>
-      console.debug 'Looking for ['+id+'] in step ['+step.id+']'
       if step.id == id
-        console.debug 'Found step with id ['+id+']'
         return step
       else if @isParent id, step.id
         parent = step
         s = null
 
         if parent.type == 'loop'
-          console.debug 'Found a parent loop step for id ['+id+'] with id ['+parent.id+']'
           if parent.sequences?
             for sequence in parent.sequences
               if sequence?
                 if sequence.id == id
-                  console.debug 'Found matching loop sequence for id ['+id+']'
                   s = sequence
                 else if @isParent id, sequence.id
-                  console.debug 'Found matching parent loop sequence for id ['+id+'] with id ['+sequence.id+']. Looking at its steps.'
                   s = @findNodeWithStepId sequence.steps, id
                   if s?
                     break
         else if parent.type == 'decision'
-          console.debug 'Found a parent decision step for id ['+id+'] with id ['+parent.id+']'
           s = @findNodeWithStepId parent.then, id
 
           if !s?
             s = @findNodeWithStepId parent.else, id
         else if parent.type == 'flow'
-          console.debug 'Found a parent flow step for id ['+id+'] with id ['+parent.id+']. Looking at its threads.'
           for thread in parent.threads
             s = @findNodeWithStepId thread, id
             if s?
@@ -824,5 +709,28 @@ class TestExecutionControllerV2
       size: 'lg'
 
     @$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
+
+  toOrganisationProperties: () =>
+    if @DataService.isVendorUser || @DataService.isVendorAdmin
+      @$state.go 'app.settings.organisation', {viewProperties: true}
+    else
+      organisation = @getOrganisation()
+      if @DataService.vendor.id == organisation.id
+        @$state.go 'app.settings.organisation', {viewProperties: true}
+      else
+        @OrganizationService.getOrganizationBySystemId(@systemId)
+        .then (org) =>
+          @$state.go 'app.admin.users.communities.detail.organizations.detail.list', {org_id: org.id, community_id: org.community, viewProperties: true}
+        .catch (error) =>
+          @ErrorService.showErrorMessage(error)
+
+  toSystemProperties: () =>
+    if @DataService.isVendorUser
+      @$state.go 'app.systems.detail.info', {id: @systemId, viewProperties: true}
+    else
+      @$state.go 'app.systems.list', {id: @systemId, viewProperties: true}
+  
+  toConfigurationProperties: () =>
+    @$state.go 'app.systems.detail.conformance.detail', {actor_id: @actorId, specId: @specId, id: @systemId, editEndpoints: true}
 
 controllers.controller('TestExecutionControllerV2', TestExecutionControllerV2)

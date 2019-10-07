@@ -11,6 +11,7 @@
 			exportVisible: '='
 			checkboxEnabled: '='
 			onDelete: '='
+			deleteVisibleForRow: '='
 			onExport: '='
 			onCheck: '='
 			allowSelect: '='
@@ -46,7 +47,7 @@
 					'</tr>'+
 				'</thead>'+
 				'<tbody>'+
-					'<tr class="table-row-directive" ng-class="rowClass($index)" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" action-visible="actionVisible" action-icon="actionIcon" operations-visible="operationsVisible" export-visible="exportVisible" checkbox-enabled="checkboxEnabled" on-action="onAction" on-delete="onDelete" on-export="onExport" on-check="onCheck"></tr>'+
+					'<tr class="table-row-directive" ng-class="rowClass($index)" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" action-visible="actionVisible" action-icon="actionIcon" operations-visible="operationsVisible" export-visible="exportVisible" checkbox-enabled="checkboxEnabled" on-action="onAction" on-delete="onDelete" on-export="onExport" on-check="onCheck" delete-visible-for-row="deleteVisibleForRow"></tr>'+
 				'</tbody>'+
 			'</table>'+
 				'<div ng-if="paginationVisible" class="text-center">'+
@@ -96,12 +97,15 @@
 				else
 					scope.lastPage()
 			scope.rowClass = (selectedIndex) =>
+				rowClass = ''
 				if scope.rowStyle
 					rows = element.find 'tbody tr.table-row-directive'
 					row = scope.data[selectedIndex]
-					scope.rowStyle row
-				else
-					""
+					customClass = scope.rowStyle(row)
+					if customClass?
+						rowClass = rowClass + ' ' + customClass
+				if scope.allowSelect || scope.allowMultiSelect || scope.onSelect
+					rowClass = rowClass + ' selectable'
 				
 			scope.select = (selectedIndex)->
 				rows = element.find 'tbody tr.table-row-directive'
@@ -139,6 +143,7 @@
 			exportVisible: '='
 			checkboxEnabled: '='
 			onDelete: '='
+			deleteVisibleForRow: '='
 			onAction: '='
 			actionIcon: '='
 			onExport: '='
@@ -160,7 +165,7 @@
 				'<button class="btn btn-default" ng-click="action(); $event.stopPropagation();"><i class="fa {{actionIcon}}"></i></button>'+
 			'</td>' +
 			'<td class="operations" ng-if="operationsVisible">'+
-				'<button class="btn btn-default" ng-click="delete(); $event.stopPropagation();"><i class="fa fa-times"></i></button>'+
+				'<button ng-if="!deleteVisibleForRow || deleteVisibleForRow(data)" class="btn btn-default" ng-click="delete(); $event.stopPropagation();"><i class="fa fa-times"></i></button>'+
 			'</td>' +
 			'<td class="operations" ng-if="exportVisible">'+
 				'<button ng-if="!data.hideExportButton" class="btn btn-default" ng-click="export(); $event.stopPropagation();" ng-disabled="data.disableExportButton"><i ng-class="exportClass()"></i></button>'+
@@ -170,7 +175,7 @@
 				row = {}
 				row.data = scope.data[column.field]
 				row.boolean = _.isBoolean row.data
-				row.class = if classes? then classes[column.field] else column.title.toLowerCase().replace(" ", "-")
+				row.class = if classes? then classes[column.field] else 'tb-'+column.title.toLowerCase().replace(" ", "-")
 
 				row
 			scope.delete = () =>

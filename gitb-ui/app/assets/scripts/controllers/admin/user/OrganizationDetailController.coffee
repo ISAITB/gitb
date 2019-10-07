@@ -1,7 +1,7 @@
 class OrganizationDetailController
 
-  @$inject = ['$log', '$state', '$stateParams', '$window', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'UserManagementService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'UserService', 'ErrorService', '$q']
-  constructor: (@$log, @$state, @$stateParams, @$window, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @UserManagementService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @UserService, @ErrorService, @$q) ->
+  @$inject = ['$log', '$state', '$stateParams', '$window', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'UserManagementService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'UserService', 'ErrorService', '$q', 'DataService']
+  constructor: (@$log, @$state, @$stateParams, @$window, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @UserManagementService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @UserService, @ErrorService, @$q, @DataService) ->
 
     @userColumns = [
       {
@@ -16,6 +16,10 @@ class OrganizationDetailController
         field: 'role',
         title: 'Role'
       }
+      {
+        field: 'ssoStatusText',
+        title: 'Status'
+      }
     ]
 
     @orgId = @$stateParams.org_id
@@ -25,6 +29,10 @@ class OrganizationDetailController
     @legalNotices = []
     @errorTemplates = []
     @otherOrganisations = []
+    @propertyData = {
+      properties: []
+      edit: @$stateParams['viewProperties']? && @$stateParams['viewProperties']
+    }
     @users = []
     @alerts = []
 
@@ -35,9 +43,17 @@ class OrganizationDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+    @OrganizationService.getOrganisationParameterValues(@orgId)
+    .then (data) =>
+      @propertyData.properties = data
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
     # get users of the organization
     @UserService.getUsersByOrganization(@orgId)
     .then (data) =>
+      for user in data
+        user.ssoStatusText = @DataService.userStatus(user.ssoStatus)
       @users = data
       @UserManagementService.mapUsers(@users)
     .catch (error) =>
@@ -80,15 +96,29 @@ class OrganizationDetailController
         @ErrorService.showErrorMessage(error)
 
   saveDisabled: () =>
-    !(@organization?.sname? && @organization?.fname?)
+    !(@valueDefined(@organization?.sname) && @valueDefined(@organization?.fname) && (!@DataService.configuration?['registration.enabled'] || (!@organization?.template || @valueDefined(@organization?.templateName))) && (!@propertyData.edit || @DataService.customPropertiesValid(@propertyData.properties)))
+
+  valueDefined: (value) =>
+    value? && value.trim().length > 0
 
   doUpdate: () =>
-    @OrganizationService.updateOrganization(@orgId, @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.errorTemplates, @organization.otherOrganisations)
-    .then () =>
-      @cancelDetailOrganization()
+    @OrganizationService.updateOrganization(@orgId, @organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.errorTemplates, @organization.otherOrganisations, @organization.template, @organization.templateName, @propertyData.edit, @propertyData.properties, @organization.copyOrganisationParameters, @organization.copySystemParameters, @organization.copyStatementParameters)
+    .then (data) =>
+      if data? && data.error_code?
+        @ValidationService.pushAlert({type:'danger', msg:data.error_description})
+        @alerts = @ValidationService.getAlerts()          
+      else
+        @cancelDetailOrganization()
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+  copyChanged: () =>
+    if @organization.otherOrganisations == undefined || @organization.otherOrganisations == null
+      @organization.copyOrganisationParameters = false
+      @organization.copySystemParameters = false
+      @organization.copyStatementParameters = false
+    else if @organization.copyOrganisationParameters
+      @propertyData.edit = false
 
   # update and cancel detail
   updateOrganization: () =>

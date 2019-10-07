@@ -81,7 +81,7 @@
         <xsd:attribute name="uri" type="xsd:string"/>
         <xsd:attribute name="isRemote" type="xsd:boolean" default="true"/>
     </xsd:complexType>
-    <!-- Validation Module Definition-->
+    <!-- Validation modules.Module Definition-->
     <xsd:complexType name="ValidationModule">
         <xsd:complexContent>
             <xsd:extension base="TestModule">
@@ -92,7 +92,7 @@
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
-    <!--Messaging Module Definition-->
+    <!--Messaging modules.Module Definition-->
     <xsd:complexType name="MessagingModule">
         <xsd:complexContent>
             <xsd:extension base="TestModule">

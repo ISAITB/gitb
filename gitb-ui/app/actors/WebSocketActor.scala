@@ -123,9 +123,9 @@ class WebSocketActorHandler (out: ActorRef, TestService: TestService, webSocketA
               WebSocketActor.testTypes  = WebSocketActor.testTypes.updated(sessionId, testCaseType)
 
               //if any actor sends its configurations, broadcast it.
-              if(!jsConfigurations.isInstanceOf[JsUndefined] && jsConfigurations.toOption.isDefined) {
-                webSocketActor.broadcast(sessionId, Json.obj("configuration" -> jsConfigurations.get).toString())
-              }
+//              if(!jsConfigurations.isInstanceOf[JsUndefined] && jsConfigurations.toOption.isDefined) {
+//                webSocketActor.broadcast(sessionId, Json.obj("configuration" -> jsConfigurations.get).toString())
+//              }
             }
           case NOTIFY =>
             val message = msg.as[JsObject] - "command" //remove command field from msg

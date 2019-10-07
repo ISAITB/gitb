@@ -22,7 +22,7 @@ class SystemService
       authenticate: true
     })
 
-  updateSystem:(systemId, sname, fname, description, version, organisationId, otherSystem) ->
+  updateSystem:(systemId, sname, fname, description, version, organisationId, otherSystem, processProperties, properties, copySystemParameters, copyStatementParameters) ->
     data = {}
     if sname?
       data.system_sname = sname
@@ -34,6 +34,10 @@ class SystemService
       data.system_version = version
     if otherSystem? && otherSystem.id?
       data.other_system = otherSystem.id
+      data.sys_params = copySystemParameters
+      data.stm_params = copyStatementParameters
+    if processProperties
+      data.properties = @DataService.customPropertiesForPost(properties)
 
     data.organization_id = organisationId
 
@@ -43,7 +47,7 @@ class SystemService
       authenticate: true
     })
 
-  registerSystemWithOrganization:(sname, fname, description, version, orgId, otherSystem) ->
+  registerSystemWithOrganization:(sname, fname, description, version, orgId, otherSystem, processProperties, properties, copySystemParameters, copyStatementParameters) ->
     data = {
       system_sname: sname,
       system_fname: fname,
@@ -52,9 +56,13 @@ class SystemService
     }
     if otherSystem? && otherSystem.id?
       data.other_system = otherSystem.id
+      data.sys_params = copySystemParameters
+      data.stm_params = copyStatementParameters
 
     if description?
       data.system_description = description
+    if processProperties
+      data.properties = @DataService.customPropertiesForPost(properties)
 
     @RestService.post({
       path: jsRoutes.controllers.SystemService.registerSystemWithOrganization().url,
@@ -148,5 +156,15 @@ class SystemService
     @RestService.get
       path: jsRoutes.controllers.SystemService.getSystemsByCommunity(@DataService.community.id).url
       authenticate: true
+
+  getSystemParameterValues: (systemId, includeValues) ->
+    params = {}
+    if includeValues?
+      params.values = includeValues
+    @RestService.get({
+      path: jsRoutes.controllers.SystemService.getSystemParameterValues(systemId).url,
+      authenticate: true
+      params: params
+    })
 
 services.service('SystemService', SystemService)

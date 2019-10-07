@@ -19,8 +19,18 @@ object Constants {
   val ImagePath = "assets/images/"
   val EcLogo = ImagePath + "ec.png"
   val GitbLogo = ImagePath + "gitb.png"
+  val EcFavicon = "public/images/favicon-ec.gif"
+  val GitbFavicon = "public/images/favicon.png"
 
   val domainConfigurationName = "com.gitb.DOMAIN"
+  val organisationConfigurationName = "com.gitb.ORGANISATION"
+  val systemConfigurationName = "com.gitb.SYSTEM"
+
+  val organisationConfiguration_shortName = "shortName"
+  val organisationConfiguration_fullName = "fullName"
+  val systemConfiguration_shortName = "shortName"
+  val systemConfiguration_fullName = "fullName"
+  val systemConfiguration_version = "version"
 
   val PlaceholderOrganisation = "$ORGANISATION"
   val PlaceholderSystem = "$SYSTEM"
@@ -28,4 +38,5 @@ object Constants {
   val PlaceholderActor = "$ACTOR"
   val PlaceholderDomain = "$DOMAIN"
 
+  val VersionNumber = "1.7.0"
 }

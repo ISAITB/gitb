@@ -285,7 +285,7 @@ class AdminConformanceController
 		@DataService.isCommunityAdmin
 
 
-	getConformanceStatementsInternal: (fullResults) =>
+	getConformanceStatementsInternal: (fullResults, forExport) =>
 		d = @$q.defer()
 		if (@DataService.isCommunityAdmin)
 			communityIds = [@DataService.community.id]
@@ -300,9 +300,9 @@ class AdminConformanceController
 		organizationIds = _.map @filters.organization.selection, (s) -> s.id
 		systemIds = _.map @filters.system.selection, (s) -> s.id
 
-		@ConformanceService.getConformanceOverview(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, fullResults)
+		@ConformanceService.getConformanceOverview(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, fullResults, forExport)
 		.then (data) =>
-			for conformanceStatement in data
+			for conformanceStatement in data.data
 				completedCount = Number(conformanceStatement.completed)
 				failedCount = Number(conformanceStatement.failed)
 				undefinedCount = Number(conformanceStatement.undefined)
@@ -313,8 +313,8 @@ class AdminConformanceController
 		d.promise
 
 	getConformanceStatements: () =>
-		searchPromise = @getConformanceStatementsInternal(false).then((data) => 
-			@conformanceStatements = data
+		searchPromise = @getConformanceStatementsInternal(false, false).then((data) => 
+			@conformanceStatements = data.data
 			@onCollapseAll()
 		)
 
@@ -363,18 +363,30 @@ class AdminConformanceController
 		testCase.sessionId? && testCase.sessionId != ""
 
 	onExportConformanceStatementsAsCsv: () =>
-		@getConformanceStatementsInternal(true).then((data) =>
-			if @DataService.isCommunityAdmin
-				if @DataService.community.domain?
-					headers = ["Organisation", "System", "Specification", "Actor", "Test suite", "Test case", "Result"]
-					columnMap = ["organizationName", "systemName", "specName", "actorName", "testSuiteName", "testCaseName", "result"]
-				else
-					headers = ["Organisation", "System", "Domain", "Specification", "Actor", "Test suite", "Test case", "Result"]
-					columnMap = ["organizationName", "systemName", "domainName", "specName", "actorName", "testSuiteName", "testCaseName", "result"]
-			else
-				headers = ["Community", "Organisation", "System", "Domain", "Specification", "Actor", "Test suite", "Test case", "Result"]
-				columnMap = ["communityName", "organizationName", "systemName", "domainName", "specName", "actorName", "testSuiteName", "testCaseName", "result"]
-			@DataService.exportPropertiesAsCsv(headers, columnMap, data)
+		@getConformanceStatementsInternal(true, true).then((data) =>
+			headers = []
+			columnMap = []
+			if !@DataService.isCommunityAdmin
+				headers.push("Community")
+				columnMap.push("communityName")
+			headers.push("Organisation")
+			columnMap.push("organizationName")
+			if data.orgParameters?
+				for param in data.orgParameters
+					headers.push("Organisation ("+param+")")
+					columnMap.push("orgparam_"+param)
+			headers.push("System")
+			columnMap.push("systemName")
+			if data.sysParameters?
+				for param in data.sysParameters
+					headers.push("System ("+param+")")
+					columnMap.push("sysparam_"+param)
+			if !@DataService.isCommunityAdmin || @DataService.isCommunityAdmin && !@DataService.community.domain?
+				headers.push("Domain")
+				columnMap.push("domainName")
+			headers = headers.concat(["Specification", "Actor", "Test suite", "Test case", "Result"])
+			columnMap = columnMap.concat(["specName", "actorName", "testSuiteName", "testCaseName", "result"])
+			@DataService.exportPropertiesAsCsv(headers, columnMap, data.data)
 		)
 
 	onExportTestCase: (statement, testCase) =>

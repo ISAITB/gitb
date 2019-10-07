@@ -1,7 +1,7 @@
 class CreateEditSystemController
 
-	@$inject = ['$log', '$scope', '$uibModalInstance', 'ConfirmationDialogService', 'SystemService', 'ErrorService', 'system', 'organisationId']
-	constructor:(@$log, @$scope, @$uibModalInstance, @ConfirmationDialogService, @SystemService, @ErrorService, system, organisationId) ->
+	@$inject = ['$log', '$scope', '$uibModalInstance', 'ConfirmationDialogService', 'SystemService', 'ErrorService', 'system', 'organisationId', 'CommunityService', 'DataService', 'viewProperties']
+	constructor:(@$log, @$scope, @$uibModalInstance, @ConfirmationDialogService, @SystemService, @ErrorService, system, organisationId, @CommunityService, @DataService, viewProperties) ->
 		@$log.debug "Constructing SystemController"
 
 		@$scope.pending = false
@@ -10,6 +10,24 @@ class CreateEditSystemController
 		@$scope.system = system
 		@$scope.organisationId = organisationId
 		@$scope.otherSystems = []
+
+		@$scope.propertyData = {
+			properties: []
+			edit: viewProperties
+		}
+
+		if system.id?
+			@SystemService.getSystemParameterValues(system.id)
+			.then (data) =>
+				@$scope.propertyData.properties = data
+			.catch (error) =>
+				@ErrorService.showErrorMessage(error)
+		else
+			@CommunityService.getSystemParameters(@DataService.community.id)
+			.then (data) =>
+				@$scope.propertyData.properties = data
+			.catch (error) =>
+				@ErrorService.showErrorMessage(error)
 
 		@SystemService.getSystemsByOrganization(organisationId).then(
 			(data) =>
@@ -31,10 +49,17 @@ class CreateEditSystemController
 		@$scope.saveEnabled = () =>
 			@$scope.system.sname? && @$scope.system.fname? && @$scope.system.version?
 
+		@$scope.copyChanged = () =>
+			if @$scope.system.otherSystem == undefined || @$scope.system.otherSystem == null
+				@$scope.system.copySystemParameters = false
+				@$scope.system.copyStatementParameters = false
+			else if @$scope.system.copySystemParameters
+				@$scope.propertyData.edit = false
+
 		@$scope.doUpdate = () =>
 			@$scope.pending = true
 			@$scope.savePending = true
-			@SystemService.updateSystem(@$scope.system.id, @$scope.system.sname, @$scope.system.fname, @$scope.system.description, @$scope.system.version, @$scope.organisationId, @$scope.system.otherSystem)
+			@SystemService.updateSystem(@$scope.system.id, @$scope.system.sname, @$scope.system.fname, @$scope.system.description, @$scope.system.version, @$scope.organisationId, @$scope.system.otherSystem, @$scope.propertyData.edit, @$scope.propertyData.properties, @$scope.system.copySystemParameters, @$scope.system.copyStatementParameters)
 				.then((data) =>
 						@$scope.pending = false
 						@$scope.savePending = false
@@ -58,7 +83,7 @@ class CreateEditSystemController
 						@$scope.doUpdate()
 				else
 					# Create
-					@SystemService.registerSystemWithOrganization(@$scope.system.sname, @$scope.system.fname, @$scope.system.description, @$scope.system.version, @$scope.organisationId, @$scope.system.otherSystem)
+					@SystemService.registerSystemWithOrganization(@$scope.system.sname, @$scope.system.fname, @$scope.system.description, @$scope.system.version, @$scope.organisationId, @$scope.system.otherSystem, @$scope.propertyData.edit, @$scope.propertyData.properties, @$scope.system.copySystemParameters, @$scope.system.copyStatementParameters)
 						.then((data) =>
 							@$scope.pending = false
 							@$scope.savePending = false

@@ -27,14 +27,22 @@ class SystemService @Inject() (systemManager: SystemManager, parameterManager: P
   }
 
   def registerSystemWithOrganization = AuthorizedAction { request =>
+    val userId = ParameterExtractor.extractUserId(request)
     val system:Systems = ParameterExtractor.extractSystemWithOrganizationInfo(request)
     authorizationManager.canCreateSystem(request, system.owner)
     val otherSystem = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_SYSTEM)
-    systemManager.registerSystemWrapper(system, otherSystem)
-    // Return updated list of systems
-    val systems = systemManager.getSystemsByOrganization(system.owner)
-    val json = JsonUtil.jsSystems(systems).toString()
-    ResponseConstructor.constructJsonResponse(json)
+    val copySystemParameters = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_PARAMETERS).getOrElse("false").toBoolean
+    val copyStatementParameters = ParameterExtractor.optionalBodyParameter(request, Parameters.STATEMENT_PARAMETERS).getOrElse("false").toBoolean
+    val values = ParameterExtractor.extractSystemParameterValues(request, Parameters.PROPERTIES, true)
+    var response: Result = ParameterExtractor.checkSystemParameterValues(values)
+    if (response == null) {
+      systemManager.registerSystemWrapper(userId, system, otherSystem, values, copySystemParameters, copyStatementParameters)
+      // Return updated list of systems
+      val systems = systemManager.getSystemsByOrganization(system.owner)
+      val json = JsonUtil.jsSystems(systems).toString()
+      response = ResponseConstructor.constructJsonResponse(json)
+    }
+    response
   }
 
   /**
@@ -50,11 +58,19 @@ class SystemService @Inject() (systemManager: SystemManager, parameterManager: P
       val version:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_VERSION)
       val organisationId = ParameterExtractor.requiredBodyParameter(request, Parameters.ORGANIZATION_ID).toLong
       val otherSystem = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_SYSTEM)
-      systemManager.updateSystemProfile(sut_id, sname, fname, descr, version, otherSystem)
-      // Return updated list of systems
-      val systems = systemManager.getSystemsByOrganization(organisationId)
-      val json = JsonUtil.jsSystems(systems).toString()
-      ResponseConstructor.constructJsonResponse(json)
+      val copySystemParameters = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_PARAMETERS).getOrElse("false").toBoolean
+      val copyStatementParameters = ParameterExtractor.optionalBodyParameter(request, Parameters.STATEMENT_PARAMETERS).getOrElse("false").toBoolean
+      val values = ParameterExtractor.extractSystemParameterValues(request, Parameters.PROPERTIES, true)
+      var response: Result = ParameterExtractor.checkSystemParameterValues(values)
+      if (response == null) {
+        val userId = ParameterExtractor.extractUserId(request)
+        systemManager.updateSystemProfile(userId, sut_id, sname, fname, descr, version, otherSystem, values, copySystemParameters, copyStatementParameters)
+        // Return updated list of systems
+        val systems = systemManager.getSystemsByOrganization(organisationId)
+        val json = JsonUtil.jsSystems(systems).toString()
+        response = ResponseConstructor.constructJsonResponse(json)
+      }
+      response
     } else{
       throw new NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, "System with ID '" + sut_id + "' not found")
     }
@@ -136,8 +152,8 @@ class SystemService @Inject() (systemManager: SystemManager, parameterManager: P
 
   def deleteEndpointConfiguration(endpointId: Long) = AuthorizedAction { request =>
     val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
-    authorizationManager.canDeleteEndpointConfiguration(request, systemId, endpointId)
     val parameterId = ParameterExtractor.requiredQueryParameter(request, Parameters.PARAMETER_ID).toLong
+    authorizationManager.canDeleteEndpointConfiguration(request, systemId, endpointId, parameterId)
     systemManager.deleteEndpointConfiguration(systemId, parameterId, endpointId)
     ResponseConstructor.constructEmptyResponse
   }
@@ -220,6 +236,14 @@ class SystemService @Inject() (systemManager: SystemManager, parameterManager: P
 
     val systems = systemManager.getSystems(systemIds)
     val json = JsonUtil.jsSystems(systems).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def getSystemParameterValues(systemId: Long) = AuthorizedAction { request =>
+    authorizationManager.canViewSystemsById(request, Some(List(systemId)))
+    val includeValues = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.VALUES)
+    val values = systemManager.getSystemParameterValues(systemId)
+    val json: String = JsonUtil.jsSystemParametersWithValues(values, includeValues.getOrElse(true)).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 

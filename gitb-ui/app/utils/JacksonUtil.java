@@ -13,8 +13,8 @@ import com.gitb.core.ActorConfiguration;
 import com.gitb.core.StepStatus;
 import com.gitb.core.TestCaseType;
 import com.gitb.tbs.*;
-import com.gitb.tpl.*;
 import com.gitb.tpl.Instruction;
+import com.gitb.tpl.*;
 import com.gitb.tr.*;
 
 import javax.xml.bind.JAXBElement;

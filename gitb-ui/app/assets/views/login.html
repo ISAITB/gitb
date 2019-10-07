@@ -1,27 +1,111 @@
 <section class="page-top">
     <div class="container">
         <div class="row">
-            <div class="col-md-12">
-                <h2>Login</h2>
+            <div class="col-xs-12">
+                <h2>{{lc.directLogin?'Home':'Welcome to the Interoperability Test Bed'}}</h2>
             </div>
         </div>
     </div>
 </section>
-
-<div class="container" >
-    <div class="row">
-        <div class="col-md-12">
-            <div class="row featured-boxes login">
-                <div class="col-md-6">
-                    <div class="featured-box featured-box-secundary default info-content">
-                        <div class="box-content">
-
-                            <!-- include reusable login form component -->
-                            <ng-include src="'assets/views/login-form.html'"></ng-include>
+<div ng-if="lc.directLogin">
+    <div class="container">
+        <span class="tab" style="font-size: xx-large;"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>
+    </div>
+</div>
+<div ng-if="lc.DataService.configuration && !lc.directLogin">
+    <div ng-if="lc.DataService.configuration['sso.enabled']">
+        <div class="container" ng-if="lc.DataService.configuration['sso.enabled']">
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="container-fluid">
+                        <div class="row">
+                            <h4 ng-if="lc.DataService.actualUser.accounts.length > 0" style="padding-bottom: 10px;">Select a role linked to your account</h4>
+                            <h4 ng-if="lc.DataService.actualUser.accounts.length == 0" style="padding-bottom: 10px;">No roles are currently linked to your account</h4>
+                        </div>
+                        <div class="row" ng-if="lc.DataService.actualUser.accounts.length == 0">
+                            <div class="bg-info div-rounded div-padded">
+                                <span>To use the Test Bed you need to first be assigned a role in one or more organisations. To link such a role to your account click the button below to view available options.</span>
+                            </div>                        
+                        </div>
+                        <div class="row" ng-class="{'div-spaced-small': !$first, 'account-card-ou': account.role == lc.Constants.USER_ROLE.VENDOR_USER, 'account-card-oa': account.role == lc.Constants.USER_ROLE.VENDOR_ADMIN, 'account-card-ca': account.role == lc.Constants.USER_ROLE.COMMUNITY_ADMIN, 'account-card-ta': account.role == lc.Constants.USER_ROLE.SYSTEM_ADMIN}" ng-repeat="account in lc.DataService.actualUser.accounts">
+                            <div class="account-card-internal" ng-click="lc.loginViaSelection(account.id)">
+                                <div class="account-card-text">
+                                    {{lc.DataService.getRoleDescription(true, account)}}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row account-list-new">
+                            <button class="btn btn-primary" ng-click="lc.createAccount()" ng-disabled="lc.createPending"><span class="tab" ng-if="lc.createPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>
+                                <span ng-if="lc.DataService.actualUser.accounts.length > 0">Link another role to your account</span>
+                                <span ng-if="lc.DataService.actualUser.accounts.length == 0">Link a role to your account</span>
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
+    </div>
+    <div ng-if="!lc.DataService.configuration['sso.enabled']">
+        <div class="container">
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="row">
+                        <div class="page settings">
+                            <form class="form-horizontal">
+                                <div class="panel panel-default">
+                                    <div class="panel-heading">
+                                        <h4 class="title">{{lc.loginOption == lc.Constants.LOGIN_OPTION.REGISTER && lc.DataService.configuration['registration.enabled']?'Register your organisation':'Login'}}</h4>
+                                    </div>
+                                    <div class="panel-body">
+                                        <!-- Error messages -->
+                                        <div class="row" ng-if="lc.alerts.length > 0">
+                                            <div class="col-xs-10 col-xs-offset-1">
+                                                <div uib-alert ng-repeat="alert in lc.alerts" ng-class="'alert-' + alert.type" close="lc.closeAlert($index)">{{alert.msg}}</div>
+                                            </div>
+                                        </div>
+                                        <div class="row" ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.NONE">
+                                            <div class="col-xs-10 col-xs-offset-1">
+                                                <div class="form-group">
+                                                    <label class="col-xs-3 control-label" for="email">Email address:</label>
+                                                    <div class="col-xs-7"><input id="email" ng-model="lc.email" class="form-control" required></div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label class="col-xs-3 control-label" for="password">Password:</label>
+                                                    <div class="col-xs-7"><input id="password" ng-model="lc.password" class="form-control" type="password" required></div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <div class="col-xs-offset-3 col-xs-7">
+                                                        <div class="checkbox">
+                                                            <label>
+                                                                <input type="checkbox"> Remember me
+                                                            </label>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="row" ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.REGISTER && lc.DataService.configuration['registration.enabled']">
+                                            <div class="col-xs-10 col-xs-offset-1">
+                                                <div tb-self-reg-form model="lc.selfRegData" self-reg-options=""></div>
+                                            </div>
+                                        </div>
+                                        <div class="row col-xs-10 col-xs-offset-1" ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.NONE">
+                                            <div class="bg-info div-rounded div-padded">
+                                                <span><b>Privacy note:</b> By clicking 'Log in' you consent to the use of cookies to manage your session. Please refer to the legal notice (link available in the screen's footer) for more information.</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="panel-footer">
+                                        <button ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.NONE" type="submit" ng-click="lc.login()" class="btn btn-default" ng-disabled="lc.loginDisabled()"><span class="tab" ng-if="lc.spinner"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i> </span>Log in</button>
+                                        <button ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.REGISTER" type="submit" ng-click="lc.register()" class="btn btn-default" ng-disabled="lc.registerDisabled()"><span class="tab" ng-if="lc.spinner"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i> </span>Register</button>
+                                        <button ng-click="lc.cancelLogin()" class="btn btn-default">Cancel</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>                    
+                    </div>
+                </div>
+            </div>
+        </div>    
     </div>
 </div>

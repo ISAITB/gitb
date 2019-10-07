@@ -33,6 +33,7 @@ object Parameters {
   val DESCRIPTION = "description"
   val USE = "use"
   val KIND = "kind"
+  val TEST_KEY = "test_key"
 
   // Landing page Service
   val DEFAULT = "default_flag"
@@ -60,6 +61,13 @@ object Parameters {
   val ROLE_ID      = "role_id"
   val ORGANIZATION_ID = "organization_id"
   val OTHER_ORGANISATION = "other_organisation"
+  val TEMPLATE = "template"
+  val TEMPLATE_ID = "template_id"
+  val TEMPLATE_NAME = "template_name"
+
+  val ORGANISATION_PARAMETERS = "org_params"
+  val SYSTEM_PARAMETERS = "sys_params"
+  val STATEMENT_PARAMETERS = "stm_params"
 
   //System Service parameters
   val SYSTEM_ID    = "system_id"
@@ -96,6 +104,8 @@ object Parameters {
   val COMMUNITY_SNAME = "community_sname"
   val COMMUNITY_FNAME = "community_fname"
   val COMMUNITY_EMAIL = "community_email"
+  val COMMUNITY_SELFREG_TYPE = "community_selfreg_type"
+  val COMMUNITY_SELFREG_TOKEN = "community_selfreg_token"
 
   //TestService parameters
   val ACTOR_ID   = "actor_id"
@@ -111,15 +121,21 @@ object Parameters {
   val CONFIGS    = "configs"
   val CONFIG     = "config"
   val INPUTS     = "inputs"
+  val VALUES     = "values"
+  val PROPERTIES = "properties"
   val TEST_STEP  = "teststep"
   val SETTINGS   = "settings"
   val UPDATE_PASSWORDS  = "updatePasswords"
   val REMOVE_KEYSTORE   = "removeKeystore"
   val INCLUDE_KEYSTORE_DATA  = "keystore"
+  val ADMIN_ONLY  = "admin_only"
+  val NOT_FOR_TESTS  = "not_for_tests"
+  val IN_EXPORTS  = "in_exports"
 
   val FILE       = "file"
 	val LIMIT      = "limit"
 	val PAGE       = "page"
+  val EXPORT     = "export"
 
   val MESSAGE_TYPE_ID = "msg_type_id"
   val MESSAGE_TYPE_DESCRIPTION = "msg_type_description"

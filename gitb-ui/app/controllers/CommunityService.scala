@@ -1,18 +1,24 @@
 package controllers
 
+import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
+import exceptions.ErrorCodes
 import javax.inject.Inject
-import managers.{AuthorizationManager, CommunityManager}
+import managers.{AuthorizationManager, CommunityManager, OrganizationManager}
+import models.Enums.SelfRegistrationType
+import models.{ActualUserInfo, Users}
+import org.apache.commons.lang3.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.mvc.Controller
+import persistence.AuthenticationManager
+import play.api.mvc.{Controller, Result}
 import utils.JsonUtil
 
-class CommunityService @Inject() (communityManager: CommunityManager, authorizationManager: AuthorizationManager) extends Controller{
+class CommunityService @Inject() (communityManager: CommunityManager, authorizationManager: AuthorizationManager, organisationManager: OrganizationManager, authenticationManager: AuthenticationManager) extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[CommunityService])
 
   /**
-   * Gets all communities with given ids or all if none specified
-   */
+    * Gets all communities with given ids or all if none specified
+    */
   def getCommunities() = AuthorizedAction { request =>
     val communityIds = ParameterExtractor.extractLongIdsQueryParameter(request)
     authorizationManager.canViewCommunities(request, communityIds)
@@ -23,8 +29,8 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
   }
 
   /**
-   * Creates new community
-   */
+    * Creates new community
+    */
   def createCommunity() = AuthorizedAction { request =>
     authorizationManager.canCreateCommunity(request)
     val community = ParameterExtractor.extractCommunityInfo(request)
@@ -33,8 +39,8 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
   }
 
   /**
-   * Gets the community with specified id
-   */
+    * Gets the community with specified id
+    */
   def getCommunityById(communityId: Long) = AuthorizedAction { request =>
     authorizationManager.canViewCommunityFull(request, communityId)
     val community = communityManager.getCommunityById(communityId)
@@ -43,25 +49,93 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
   }
 
   /**
-   * Updates community
-   */
+    * Updates community
+    */
   def updateCommunity(communityId: Long) = AuthorizedAction { request =>
     authorizationManager.canUpdateCommunity(request, communityId)
     val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
     val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
     val email = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_EMAIL)
-    val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    communityManager.updateCommunity(communityId, shortName, fullName, email, domainId)
+    var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
+    if (Configurations.REGISTRATION_ENABLED) {
+      selfRegType = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
+      if (!ParameterExtractor.validCommunitySelfRegType(selfRegType)) {
+        throw new IllegalArgumentException("Unsupported value [" + selfRegType + "] for self-registration type")
+      }
+    }
+    var selfRegToken = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
+    if (selfRegType == SelfRegistrationType.Token.id.toShort || selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort) {
+      if (selfRegToken.isEmpty || StringUtils.isBlank(selfRegToken.get)) {
+        throw new IllegalArgumentException("Missing self-registration token")
+      }
+    } else {
+      selfRegToken = None
+    }
+    val domainId: Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
+    communityManager.updateCommunity(communityId, shortName, fullName, email, selfRegType, selfRegToken, domainId)
     ResponseConstructor.constructEmptyResponse
   }
 
   /**
-   * Deletes the community with specified id
-   */
+    * Deletes the community with specified id
+    */
   def deleteCommunity(communityId: Long) = AuthorizedAction { request =>
     authorizationManager.canDeleteCommunity(request, communityId)
     communityManager.deleteCommunity(communityId)
     ResponseConstructor.constructEmptyResponse
+  }
+
+  def selfRegister() = AuthorizedAction { request =>
+    var response: Result = null
+    val selfRegToken = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
+    val organisation = ParameterExtractor.extractOrganizationInfo(request)
+    var organisationAdmin: Users = null
+    var actualUserInfo: Option[ActualUserInfo] = None
+    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      actualUserInfo = Some(authorizationManager.getPrincipal(request))
+      organisationAdmin = ParameterExtractor.extractAdminInfo(request, Some(actualUserInfo.get.email), None)
+    } else {
+      organisationAdmin = ParameterExtractor.extractAdminInfo(request, None, Some(false))
+    }
+    val templateId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.TEMPLATE_ID)
+    authorizationManager.canSelfRegister(request, organisation, organisationAdmin, selfRegToken, templateId)
+    val community = communityManager.getById(organisation.community)
+    if (community.isDefined) {
+      // Check that the token (if required) matches
+      if (community.get.selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort
+        && selfRegToken.isDefined && community.get.selfRegToken.isDefined
+        && community.get.selfRegToken.get != selfRegToken.get) {
+        response = ResponseConstructor.constructErrorResponse(ErrorCodes.INCORRECT_SELFREG_TOKEN, "The provided token is incorrect.")
+      }
+      if (response == null) {
+        // Check the user email (only if not SSO)
+        if (!Configurations.AUTHENTICATION_SSO_ENABLED) {
+          if (!authenticationManager.checkEmailAvailability(organisationAdmin.email, None, None, None)) {
+            response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_EXISTS, "The provided email is already defined.")
+          }
+        }
+      }
+      if (response == null) {
+        val userId = communityManager.selfRegister(organisation, organisationAdmin, templateId, actualUserInfo)
+        if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+          val json: String = JsonUtil.jsActualUserInfo(authorizationManager.getAccountInfo(request)).toString
+          response = ResponseConstructor.constructJsonResponse(json)
+        } else {
+          response = ResponseConstructor.constructJsonResponse(JsonUtil.jsId(userId).toString)
+        }
+      }
+    }
+    if (response == null) {
+      response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_SELFREG_DATA, "Unable to self-register due to error in provided configuration.")
+    }
+    response
+  }
+
+  def getSelfRegistrationOptions() = AuthorizedAction { request =>
+    authorizationManager.canViewSelfRegistrationOptions(request)
+    val options = communityManager.getSelfRegistrationOptions()
+    val json: String = JsonUtil.jsSelfRegOptions(options).toString
+    ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
@@ -72,8 +146,76 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     authorizationManager.canViewOwnCommunity(request)
 
     val community = communityManager.getUserCommunity(userId)
-    val json:String = JsonUtil.serializeCommunity(community)
+    val json: String = JsonUtil.serializeCommunity(community)
     ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def createOrganisationParameter() = AuthorizedAction { request =>
+    val parameter = ParameterExtractor.extractOrganisationParameter(request)
+    authorizationManager.canManageCommunity(request, parameter.community)
+    if (communityManager.checkOrganisationParameterExists(parameter, false)) {
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.NAME_EXISTS, "The name and key of the property must be unique.")
+    } else {
+      val id = communityManager.createOrganisationParameter(parameter)
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsId(id).toString)
+    }
+  }
+
+  def createSystemParameter() = AuthorizedAction { request =>
+    val parameter = ParameterExtractor.extractSystemParameter(request)
+    authorizationManager.canManageCommunity(request, parameter.community)
+    if (communityManager.checkSystemParameterExists(parameter, false)) {
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.NAME_EXISTS, "The name and key of the property must be unique.")
+    } else {
+      val id = communityManager.createSystemParameter(parameter)
+      ResponseConstructor.constructJsonResponse(JsonUtil.jsId(id).toString)
+    }
+  }
+
+  def deleteOrganisationParameter(parameterId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageOrganisationParameter(request, parameterId)
+    communityManager.deleteOrganisationParameterWrapper(parameterId)
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def deleteSystemParameter(parameterId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageSystemParameter(request, parameterId)
+    communityManager.deleteSystemParameterWrapper(parameterId)
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def updateOrganisationParameter(parameterId: Long) = AuthorizedAction { request =>
+    val parameter = ParameterExtractor.extractOrganisationParameter(request)
+    authorizationManager.canManageCommunity(request, parameter.community)
+
+    if (communityManager.checkOrganisationParameterExists(parameter, true)) {
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.NAME_EXISTS, "The name and key of the property must be unique.")
+    } else {
+      communityManager.updateOrganisationParameter(parameter)
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  def updateSystemParameter(parameterId: Long) = AuthorizedAction { request =>
+    val parameter = ParameterExtractor.extractSystemParameter(request)
+    authorizationManager.canManageCommunity(request, parameter.community)
+
+    if (communityManager.checkSystemParameterExists(parameter, true)) {
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.NAME_EXISTS, "The name and key of the property must be unique.")
+    } else {
+      communityManager.updateSystemParameter(parameter)
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  def getOrganisationParameters(communityId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageCommunity(request, communityId)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsOrganisationParameters(communityManager.getOrganisationParameters(communityId)).toString)
+  }
+
+  def getSystemParameters(communityId: Long) = AuthorizedAction { request =>
+    authorizationManager.canViewCommunityBasic(request, communityId)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemParameters(communityManager.getSystemParameters(communityId)).toString)
   }
 
 }

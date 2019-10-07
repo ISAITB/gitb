@@ -1,38 +1,40 @@
-<div>
-    <div class="row">
-        <h4>System information</h4>
-    </div>
-    <div class="row">
-        <form class="form-horizontal">
-            <div class="form-group">
-                <div class="col-sm-12">
-                    <p class="form-control-static"></p>
+<div class="page users detail">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">System information</h4>
+        </div>
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-xs-11">
+                    <form class="form-horizontal">
+                        <div class="form-group">
+                            <label class="col-xs-3 control-label">Short name:</label>
+                            <div class="col-xs-9">
+                                <p class="form-control-static">{{systemCtrl.system.sname}}</p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-xs-3 control-label">Full name:</label>
+                            <div class="col-xs-9">
+                                <p class="form-control-static">{{systemCtrl.system.fname}}</p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-xs-3 control-label">Description:</label>
+                            <div class="col-xs-9">
+                                <p class="form-control-static">{{systemCtrl.system.description}}</p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-xs-3 control-label">Version:</label>
+                            <div class="col-xs-9">
+                                <p class="form-control-static">{{systemCtrl.system.version}}</p>
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
-            <div class="form-group">
-                <label class="col-sm-1 control-label">Short name</label>
-                    <div class="col-sm-11">
-                    <p class="form-control-static">{{systemCtrl.system.sname}}</p>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-sm-1 control-label">Full name</label>
-                    <div class="col-sm-11">
-                    <p class="form-control-static">{{systemCtrl.system.fname}}</p>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-sm-1 control-label">Description</label>
-                <div class="col-sm-11">
-                    <p class="form-control-static">{{systemCtrl.system.description}}</p>
-                </div>
-            </div>
-            <div class="form-group">
-                <label class="col-sm-1 control-label">Version</label>
-                <div class="col-sm-11">
-                    <p class="form-control-static">{{systemCtrl.system.version}}</p>
-                </div>
-            </div>
-        </form>
+            <div tb-optional-custom-properties-form tb-property-data="systemCtrl.propertyData" tb-col-offset="0" tb-col-label="3" tb-readonly="true">
+        </div>
     </div>
 </div>

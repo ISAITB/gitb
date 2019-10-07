@@ -77,7 +77,7 @@ class ConformanceService
         actor_id: actor
     })
 
-  createParameter: (name, description, use, kind, endpointId) ->
+  createParameter: (name, description, use, kind, adminOnly, notForTests, endpointId) ->
     @RestService.post({
       path: jsRoutes.controllers.ConformanceService.createParameter().url
       authenticate: true
@@ -86,7 +86,29 @@ class ConformanceService
         description: description
         use: use
         kind: kind
+        admin_only: adminOnly
+        not_for_tests: notForTests
         endpoint_id: endpointId
+    })
+
+  getSystemConfigurations: (actorId, systemId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.ConformanceService.getSystemConfigurations().url,
+      authenticate: true
+      params: {
+        actor_id: actorId,
+        system_id: systemId
+      }
+    })
+
+  checkConfigurations: (actorId, systemId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.ConformanceService.checkConfigurations().url,
+      authenticate: true
+      params: {
+        actor_id: actorId,
+        system_id: systemId
+      }
     })
 
   createActor: (shortName, fullName, description, defaultActor, displayOrder, domainId, specificationId) =>
@@ -258,7 +280,7 @@ class ConformanceService
       path: jsRoutes.controllers.ConformanceService.getConformanceStatusForTestSuite(actorId, sutId, testSuiteId).url
       authenticate: true
 
-  getConformanceOverview: (domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, fullResults) ->
+  getConformanceOverview: (domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, fullResults, forExport) ->
     params = {}
     params.full = fullResults
     if domainIds? and domainIds.length > 0
@@ -273,6 +295,8 @@ class ConformanceService
       params.organization_ids = organizationIds.join ','
     if systemIds? and systemIds.length > 0
       params.system_ids = systemIds.join ','
+
+    params.export = forExport? && forExport
 
     @RestService.get
       path: jsRoutes.controllers.ConformanceService.getConformanceOverview().url
@@ -391,5 +415,11 @@ class ConformanceService
       }
       authenticate: true
       responseType: "arraybuffer"
+
+  getTestSuiteTestCase: (testCaseId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.ConformanceService.getTestSuiteTestCase(testCaseId).url,
+      authenticate: true
+    })
 
 services.service('ConformanceService', ConformanceService)

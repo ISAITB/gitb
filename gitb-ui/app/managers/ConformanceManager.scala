@@ -2,6 +2,7 @@ package managers
 
 import java.util
 
+import com.gitb.core.{ActorConfiguration, Configuration}
 import javax.inject.{Inject, Singleton}
 import models.Enums.TestResultStatus
 import models._
@@ -345,6 +346,10 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 		exec(PersistenceSchema.options.filter(_.actor === actorId).result.map(_.toList))
 	}
 
+	def getEndpointsCaseForActor(actorId: Long): List[Endpoints] = {
+		exec(PersistenceSchema.endpoints.filter(_.actor === actorId).sortBy(_.name.asc).result).toList
+	}
+
 	def getEndpointsForActor(actorId: Long): List[Endpoint] = {
 		val endpoints = new ListBuffer[Endpoint]()
 		exec(PersistenceSchema.endpoints.filter(_.actor === actorId).sortBy(_.name.asc).result).map { caseObject =>
@@ -476,13 +481,14 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 			val resultSystem = result._1._1._1._1._2
 			val resultDomain = result._1._1._1._1._1._2
 			val resultActor = result._1._1._1._1._1._1._2
+			val resultSpec = result._1._1._1._1._1._1._1._2
 
 			val conformanceStatement = ConformanceStatementFull(
 				resultCommunities.id, resultCommunities.shortname, resultOrganisation.id, resultOrganisation.shortname,
 					resultSystem.id, resultSystem.shortname,
 					resultDomain.id, resultDomain.shortname, resultDomain.fullname,
 					resultActor.id, resultActor.actorId, resultActor.name,
-					result._2.id, result._2.shortname, result._2.fullname,
+					resultSpec.id, resultSpec.shortname, resultSpec.fullname,
 					Some(resultTestSuite.shortname), Some(resultTestCase.shortname), resultTestCase.description,
 					Some(resultConfResult.result), resultConfResult.testsession, 0L, 0L, 0L)
 			statements += conformanceStatement
@@ -648,5 +654,72 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
   def deleteConformanceCertificateSettings(communityId: Long) = {
     PersistenceSchema.conformanceCertificates.filter(_.community === communityId).delete
   }
+
+	def getSystemConfigurationParameters(systemId: Long, actorId: Long): List[ActorConfiguration] = {
+		val actor = actorManager.getById(actorId).get
+		val parameterData = exec(PersistenceSchema.configs
+  		.join(PersistenceSchema.parameters).on(_.parameter === _.id)
+			.join(PersistenceSchema.endpoints).on(_._2.endpoint === _.id)
+  		.filter(_._1._1.system === systemId)
+  		.filter(_._2.actor === actorId)
+  		.filter(_._1._2.notForTests === false)
+  		.map(x => (
+				x._2.name, // Endpoint name
+				x._1._2.name, // Parameter name
+				x._1._1.value // Parameter value
+			)).result).toList
+
+		val actorMap = new util.HashMap[String, ActorConfiguration]()
+		parameterData.foreach{ p =>
+			var actorConfig = actorMap.get(p._1)
+			if (actorConfig == null) {
+				actorConfig = new ActorConfiguration()
+				actorConfig.setActor(actor.name)
+				actorConfig.setEndpoint(p._1)
+				actorMap.put(p._1, actorConfig)
+			}
+			val config = new Configuration()
+			config.setName(p._2)
+			config.setValue(p._3)
+			actorConfig.getConfig.add(config)
+		}
+		import scala.collection.JavaConversions._
+		actorMap.values().toList
+	}
+
+	def getSystemConfigurationStatus(systemId: Long, actorId: Long): List[SystemConfigurationEndpoint] = {
+		val configuredParameters = exec(PersistenceSchema.configs
+			.join(PersistenceSchema.parameters).on(_.parameter === _.id)
+			.join(PersistenceSchema.endpoints).on(_._2.endpoint === _.id)
+			.filter(_._1._1.system === systemId)
+			.filter(_._2.actor === actorId)
+			.map(x => (
+				x._1._2.id, // Parameter ID
+				x._1._1.value // Config value
+			)).result).toList
+		val configuredParametersMap = new util.HashMap[Long, String]()
+		configuredParameters.foreach{ config =>
+			configuredParametersMap.put(config._1, config._2)
+		}
+		val expectedEndpoints = getEndpointsCaseForActor(actorId)
+		val endpointList: List[SystemConfigurationEndpoint] = expectedEndpoints.map(expectedEndpoint => {
+			val expectedParameters = getEndpointParameters(expectedEndpoint.id)
+			var parameterList: Option[List[SystemConfigurationParameter]] = None
+			if (expectedParameters.nonEmpty) {
+				parameterList = Some(expectedParameters.map(expectedParameter => {
+					val parameterValue = configuredParametersMap.get(expectedParameter.id)
+					var config: Option[Configs] = None
+					if (parameterValue != null) {
+						config = Some(Configs(systemId, expectedParameter.id, expectedParameter.endpoint, parameterValue))
+					}
+					val parameterStatus = new SystemConfigurationParameter(expectedParameter, config.isDefined, config, None, None)
+					parameterStatus
+				}))
+			}
+			val endpointStatus = new SystemConfigurationEndpoint(expectedEndpoint, parameterList)
+			endpointStatus
+		})
+		endpointList
+	}
 
 }

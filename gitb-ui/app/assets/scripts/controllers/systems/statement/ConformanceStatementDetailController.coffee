@@ -15,7 +15,7 @@ class ConformanceStatementDetailController
     @configurations = []
     @testSuites = []
     @runTestClicked = false
-    @endpointsCollapsed = true
+    @endpointsCollapsed = @$stateParams['editEndpoints'] == undefined || !@$stateParams['editEndpoints']
     @testStatus = ''
 
     @parameterTableColumns = [
@@ -104,21 +104,34 @@ class ConformanceStatementDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-    @ConformanceService.getEndpointsForActor @actorId
-    .then (endpoints) =>
-      @endpoints = endpoints
-    .then () =>
-      if @endpoints?.length > 0
-        endpointIds = _.map @endpoints, (endpoint) -> endpoint.id
-        @SystemService.getConfigurationsWithEndpointIds(endpointIds, @systemId)
-        .then (configurations) =>
-          @configurations = configurations
-        .then () =>
-          @constructEndpointRepresentations()
-        .catch (error) =>
-          @ErrorService.showErrorMessage(error)
+    @ConformanceService.getSystemConfigurations(@actorId, @systemId)
+    .then (systemConfigs) =>
+      endpointsTemp = []
+      configurations = []
+      for endpointConfig in systemConfigs
+        endpoint = {}
+        endpoint.id = endpointConfig.id
+        endpoint.name = endpointConfig.name
+        endpoint.description = endpointConfig.description
+        endpoint.parameters = []
+        for parameterConfig in endpointConfig.parameters
+          endpoint.parameters.push(parameterConfig)
+          if parameterConfig.configured
+            configurations.push({
+              system: Number(@systemId),
+              value: parameterConfig.value
+              endpoint: endpointConfig.id
+              parameter: parameterConfig.id
+              mimeType: parameterConfig.mimeType
+              extension: parameterConfig.extension
+              configured: parameterConfig.configured
+            })
+        endpointsTemp.push(endpoint)
+      @endpoints = endpointsTemp
+      @configurations = configurations
+      @constructEndpointRepresentations()
     .catch (error) =>
-      @ErrorService.showErrorMessage(error)
+      @ErrorService.showErrorMessage(error)      
 
   constructEndpointRepresentations: () =>
     @endpointRepresentations = _.map @endpoints, (endpoint) =>
@@ -133,15 +146,18 @@ class ConformanceStatementDetailController
           );
           if relevantConfig?
             repr.value = relevantConfig.value
-            repr.configured = relevantConfig.value?
+            repr.configured = relevantConfig.configured
           else
             repr.configured = false
 
-          if relevantConfig?.value? && parameter.kind == 'BINARY'
-            repr.fileName = parameter.name
-            if relevantConfig.extension?
-              repr.fileName += relevantConfig.extension
-            repr.mimeType = relevantConfig.mimeType
+          if repr.configured
+            if parameter.kind == 'BINARY'
+              repr.fileName = parameter.name
+              if relevantConfig.extension?
+                repr.fileName += relevantConfig.extension
+              repr.mimeType = relevantConfig.mimeType
+            else if parameter.kind == 'SECRET'
+              repr.value = '*****'
           repr
 
   onExpand: (testSuite) =>
@@ -166,7 +182,7 @@ class ConformanceStatementDetailController
 
     oldConfiguration = _.find @configurations, (configuration) =>
       parameter.id == configuration.parameter &&
-        configuration.value? &&
+        configuration.configured &&
         Number(configuration.endpoint) == Number(parameter.endpoint)
 
     endpoint = _.find @endpoints, (endpoint) => Number(parameter.endpoint) == Number(endpoint.id)
@@ -187,11 +203,12 @@ class ConformanceStatementDetailController
       .then((result) =>
           switch result.operation
             when @Constants.OPERATION.ADD
-              if result.configuration.value?
+              if result.configuration.configured
                 @configurations.push result.configuration
             when @Constants.OPERATION.UPDATE
-              if oldConfiguration? && result.configuration.value?
+              if oldConfiguration? && result.configuration.configured
                 oldConfiguration.value = result.configuration.value
+                oldConfiguration.configured = result.configuration.configured
                 oldConfiguration.mimeType = result.configuration.mimeType
                 oldConfiguration.extension = result.configuration.extension
             when @Constants.OPERATION.DELETE
@@ -204,6 +221,9 @@ class ConformanceStatementDetailController
 
   canDelete: () =>
     !@DataService.isVendorUser
+
+  canEditParameter: (parameter) =>
+    @DataService.isSystemAdmin || @DataService.isCommunityAdmin || (@DataService.isVendorAdmin && !parameter.adminOnly)
 
   deleteConformanceStatement: () ->
     @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this conformance statement?", "Yes", "No")

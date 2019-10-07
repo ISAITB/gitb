@@ -4,39 +4,50 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'$q', '$log', '$state', 'AuthProvider', 'AccountService', 'DataService', 'CommunityService', 'ErrorService', 
 			($q, $log, $state, AuthProvider, AccountService, DataService, CommunityService, ErrorService)->
 				deferred = $q.defer()
-				userDeferred = $q.defer()
-				vendorDeferred = $q.defer()
-				communityDeferred = $q.defer()
-				errorService = ErrorService
-				getUserProfile = ()->
-					$log.debug 'Getting user profile from the server...'
-					AccountService.getUserProfile()
-						.then (data)->
-							DataService.setUser(data)
-							$log.debug 'Got user profile from the server...'
-							userDeferred.resolve()
-						.catch (error) ->
-							errorService.showErrorMessage(error)
-				getVendorProfile = () ->
-					AccountService.getVendorProfile()
-					.then (data) ->
-						DataService.setVendor(data)
-						vendorDeferred.resolve()
-					.catch (error) ->
-						errorService.showErrorMessage(error)
-
-				getUserCommunity = () ->
-					CommunityService.getUserCommunity()
-					.then (data) ->
-						DataService.setCommunity(data)
-						communityDeferred.resolve()
-					.catch (error) ->
-						errorService.showErrorMessage(error)
-
 				$log.debug 'Resolving user profile..'
 				authenticated = AuthProvider.isAuthenticated()
-
+				errorService = ErrorService
+				configDeferred = $q.defer()
+				getConfigurationProperties = () ->
+					AccountService.getConfiguration()
+					.then (data) ->
+						DataService.setConfiguration(data)
+						configDeferred.resolve()
+					.catch (error) ->
+						errorService.showErrorMessage(error)
+				if !DataService.configuration?
+					getConfigurationProperties()
+				else
+					configDeferred.resolve()
 				if authenticated
+					userDeferred = $q.defer()
+					vendorDeferred = $q.defer()
+					communityDeferred = $q.defer()
+					getUserProfile = () ->
+						$log.debug 'Getting user profile from the server...'
+						AccountService.getUserProfile()
+							.then (data)->
+								DataService.setUser(data)
+								$log.debug 'Got user profile from the server...'
+								userDeferred.resolve()
+							.catch (error) ->
+								errorService.showErrorMessage(error)
+					getVendorProfile = () ->
+						AccountService.getVendorProfile()
+						.then (data) ->
+							DataService.setVendor(data)
+							vendorDeferred.resolve()
+						.catch (error) ->
+							errorService.showErrorMessage(error)
+
+					getUserCommunity = () ->
+						CommunityService.getUserCommunity()
+						.then (data) ->
+							DataService.setCommunity(data)
+							communityDeferred.resolve()
+						.catch (error) ->
+							errorService.showErrorMessage(error)
+
 					if !DataService.user?
 						getUserProfile()
 					else
@@ -49,13 +60,21 @@ app.config ['$stateProvider', '$urlRouterProvider',
 						getUserCommunity()
 					else
 						communityDeferred.resolve()
-					$q.all([userDeferred.promise, vendorDeferred.promise, communityDeferred.promise]).then(() ->
+					$q.all([userDeferred.promise, vendorDeferred.promise, communityDeferred.promise, configDeferred.promise]).then(() ->
 						deferred.resolve()
 					)
 				else
-					$log.debug 'No need for user profile, user is not authenticated...'
-					deferred.resolve()
-				
+					$q.all([configDeferred.promise]).then(() ->
+						if DataService.configuration['sso.enabled'] && !DataService.actualUser?
+							AuthService.getUserFunctionalAccounts()
+							.then (data) =>
+								DataService.setActualUser(data)
+								deferred.resolve()
+							.catch (error) =>
+								errorService.showErrorMessage(error)
+						else
+							deferred.resolve()
+					)
 				deferred.promise
 		]
 
@@ -123,9 +142,15 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.login':
 				url: '/login'
 				templateUrl: 'assets/views/login.html'
+				controller: 'LoginController'
+				controllerAs: 'lc'
+				resolve:
+					profile: profile
 			'app.onetime':
 				url: '/onetime'
 				templateUrl: 'assets/views/onetime-password.html'
+				controller: 'PasswordController'
+				controllerAs: 'pc'
 			'app.tests':
 				url: '/tests'
 				abstract: true
@@ -157,6 +182,10 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/systems/list.html'
 				controller: 'SystemsController'
 				controllerAs: 'systemsCtrl'
+				params: {
+					id: undefined
+					viewProperties: false
+				}
 				resolve: 
 					system: system
 			'app.systems.detail':
@@ -170,6 +199,9 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/systems/info.html'
 				controller: 'SystemController'
 				controllerAs: 'systemCtrl'
+				params: {
+					viewProperties: false
+				}
 			'app.systems.detail.conformance':
 				url: '/conformance'
 				template: '<div ui-view/>'
@@ -186,6 +218,9 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/systems/conformance/detail.html'
 				controller: 'ConformanceStatementDetailController'
 				controllerAs: 'conformanceStatementDetailCtrl'
+				params: {
+					editEndpoints: false
+				}
 			'app.systems.detail.conformance.create':
 				url: '/create'
 				templateUrl: 'assets/views/systems/conformance/create.html'
@@ -196,15 +231,30 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/systems/tests.html'
 				controller: 'SystemTestsController'
 				controllerAs: 'systemTestsCtrl'
-			'app.users':
-				url: '/users'
-				templateUrl: 'assets/views/users.html'
-			'app.profile':
-				url: '/profile'
-				templateUrl: 'assets/views/profile.html'
 			'app.settings':
 				url: '/settings'
-				templateUrl: 'assets/views/settings.html'
+				templateUrl: 'assets/views/settings/settings.html'
+				controller: 'SettingsController'
+				controllerAs: 'sc'
+				abstract: true				
+			'app.settings.profile':
+				url: '/profile'
+				templateUrl: 'assets/views/settings/profile.html'
+				controller: 'UserProfileController'
+				controllerAs: 'pc'
+			'app.settings.organisation':
+				url: '/organisation'
+				templateUrl: 'assets/views/settings/organisation.html'
+				controller: 'OrganizationController'
+				controllerAs: 'oc'
+				params: {
+					viewProperties: false
+				}
+			'app.settings.password':
+				url: '/password'
+				templateUrl: 'assets/views/settings/password.html'
+				controller: 'PasswordController'
+				controllerAs: 'pc'
 			'app.admin':
 				url: '/admin'
 				templateUrl: 'assets/views/admin/index.html'
@@ -347,6 +397,11 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/users/community-detail-certificate.html'
 				controller: 'CommunityCertificateController'
 				controllerAs: 'communityCertificateCtrl'
+			'app.admin.users.communities.detail.parameters':
+				url: '/params'
+				templateUrl: 'assets/views/admin/users/community-detail-parameters.html'
+				controller: 'CommunityParametersController'
+				controllerAs: 'controller'
 			'app.admin.users.communities.detail.admins':
 				url: '/admin'
 				abstract: true
@@ -379,6 +434,9 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/users/organization-detail.html'
 				controller: 'OrganizationDetailController'
 				controllerAs: 'orgDetailCtrl'
+				params: {
+					viewProperties: false
+				}
 			'app.admin.users.communities.detail.organizations.detail.users':
 				url: '/users'
 				template: '<div ui-view/>'

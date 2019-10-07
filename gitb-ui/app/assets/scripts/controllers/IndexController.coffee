@@ -2,10 +2,10 @@ class IndexController
 	@$inject = [
 		'$log', '$sce', '$scope', '$rootScope', '$location', '$state', '$window'
 		'AuthProvider', 'SystemConfigurationService', 'DataService', 'AccountService',
-		'Events', 'Constants', 'LegalNoticeService', 'HtmlService', 'ErrorService', '$uibModal', '$q', 'ConfirmationDialogService'
+		'Events', 'Constants', 'LegalNoticeService', 'HtmlService', 'ErrorService', '$uibModal', '$q', 'ConfirmationDialogService', '$cookies'
 	]
 	constructor: (@$log, @$sce, @$scope, @$rootScope, @$location, @$state, @$window,
-		@AuthProvider, @SystemConfigurationService, @DataService, @AccountService, @Events, @Constants,@LegalNoticeService, @HtmlService, @ErrorService, @$uibModal, @$q, @ConfirmationDialogService) ->
+		@AuthProvider, @SystemConfigurationService, @DataService, @AccountService, @Events, @Constants,@LegalNoticeService, @HtmlService, @ErrorService, @$uibModal, @$q, @ConfirmationDialogService, @$cookies) ->
 
 		@$log.debug "Constructing MainController..."
 
@@ -29,7 +29,7 @@ class IndexController
 			@getUserProfile()
 			@getVendorProfile()
 			@getConfigurationProperties()
-			if @DataService.user? && @DataService.user.onetime
+			if !@DataService.configuration['sso.enabled'] && @DataService.user? && @DataService.user.onetime
 				@redirect('/onetime')
 
 		#register for login events
@@ -38,7 +38,7 @@ class IndexController
 			@profileLoaded = @$q.defer()
 			@getUserProfile()
 			@$q.all([@profileLoaded.promise]).then(() =>
-				if @DataService.user.onetime
+				if !@DataService.configuration['sso.enabled'] && @DataService.user.onetime
 					# One time password - force replace
 					@redirect('/onetime')
 				else
@@ -59,7 +59,7 @@ class IndexController
 			)
 
 	getUserProfile : () ->
-		if !@DataService.user?
+		if !@userFullyLoaded()
 			@AccountService.getUserProfile()
 			.then(
 				(data) =>
@@ -83,8 +83,18 @@ class IndexController
 	redirect: (address) ->
 		@$location.path(address)
 
+	switchAccount: () ->
+		@$cookies.put(@Constants.LOGIN_OPTION_COOKIE_KEY, @Constants.LOGIN_OPTION.FORCE_CHOICE)
+		@$rootScope.$emit(@Events.onLogout, {full: false, keepLoginOption: true})
+
 	logout: () ->
-		@$rootScope.$emit(@Events.onLogout)
+		@$rootScope.$emit(@Events.onLogout, {full: true})
+
+	userLoaded: () ->
+		@DataService.user? && @DataService.user.name?
+
+	userFullyLoaded: () ->
+		@userLoaded() && @DataService.vendor?
 
 	onLegalNotice: () =>
 		vendor = @DataService.vendor
@@ -118,7 +128,7 @@ class IndexController
 		modalInstance = @$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
 
 	showProvideFeedback: () =>
-		!@showContactUs() && (@DataService.configuration?["survey.enabled"] == 'true') && !@DataService.user.onetime
+		!@showContactUs() && (@DataService.configuration?["survey.enabled"] == 'true')
 
 	provideFeedbackLink: () =>
 		@DataService.configuration?["survey.address"]
@@ -133,9 +143,11 @@ class IndexController
 				@DataService.configuration['userguide.ta']
 			else
 				@DataService.configuration['userguide.ou']
+		else
+			@DataService.configuration['userguide.ou']
 
 	showUserGuide: () =>
-		@DataService.user? && !@DataService.user.onetime
+		@DataService.configuration?
 
 	onTestsClick: () ->
 		@$window.localStorage['organization'] = angular.toJson @DataService.vendor

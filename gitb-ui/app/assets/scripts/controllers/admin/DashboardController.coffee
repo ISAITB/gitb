@@ -515,7 +515,7 @@ class DashboardController
     @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.activeSortColumn, params.activeSortOrder)
     .then (data) =>
       testResultMapper = @newTestResult
-      @activeTests = _.map data, (testResult) -> testResultMapper(testResult)
+      @activeTests = _.map data.data, (testResult) -> testResultMapper(testResult)
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -601,23 +601,31 @@ class DashboardController
     @ReportService.getCompletedTestResults(params.currentPage, @Constants.TABLE_PAGE_SIZE, params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.completedSortColumn, params.completedSortOrder)
     .then (data) =>
       testResultMapper = @newTestResult
-      @completedTests = _.map data, (t) -> testResultMapper(t)
+      @completedTests = _.map data.data, (t) -> testResultMapper(t)
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-  newTestResult: (testResult) ->
-    session: testResult.result.sessionId
-    domain: testResult.domain?.sname
-    specification: testResult.specification?.sname
-    actor: testResult.actor?.name
-    testSuite: testResult.testSuite?.sname
-    testCase: testResult.test?.sname
-    organization: testResult.organization?.sname
-    system: testResult.system?.sname
-    startTime: testResult.result.startTime
-    endTime: testResult.result.endTime
-    result: testResult.result.result
-    obsolete: testResult.result.obsolete
+  newTestResult: (testResult, orgParameters, sysParameters) ->
+    result = {}
+    result.session = testResult.result.sessionId
+    result.domain = testResult.domain?.sname
+    result.specification = testResult.specification?.sname
+    result.actor = testResult.actor?.name
+    result.testSuite = testResult.testSuite?.sname
+    result.testCase = testResult.test?.sname
+    result.organization = testResult.organization?.sname
+    if orgParameters?
+      for param in orgParameters
+        result['organization_'+param] = testResult.organization?.parameters?[param]
+    result.system = testResult.system?.sname
+    if sysParameters?
+      for param in sysParameters
+        result['system_'+param] = testResult.system?.parameters?[param]
+    result.startTime = testResult.result.startTime
+    result.endTime = testResult.result.endTime
+    result.result = testResult.result.result
+    result.obsolete = testResult.result.obsolete
+    result
 
   sortActiveSessions: (column) =>
     @activeSortColumn = column.field
@@ -715,22 +723,40 @@ class DashboardController
   exportCompletedSessionsToCsv: () =>
     params = @getCurrentSearchCriteria()
 
-    @ReportService.getCompletedTestResults(1, 1000000, params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.completedSortColumn, params.completedSortOrder)
+    @ReportService.getCompletedTestResults(1, 1000000, params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.completedSortColumn, params.completedSortOrder, true)
     .then (data) =>
+      headers = ["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organisation"]
+      if data.orgParameters?
+        for param in data.orgParameters
+          headers.push("Organisation ("+param+")")
+      headers.push("System")
+      if data.sysParameters?
+        for param in data.sysParameters
+          headers.push("System ("+param+")")
+      headers = headers.concat(["Start time", "End time", "Result", "Obsolete"])
       testResultMapper = @newTestResult
-      tests = _.map data, (t) -> testResultMapper(t)
-      @DataService.exportAllAsCsv(["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organisation", "System", "Start time", "End time", "Result", "Obsolete"], tests)
+      tests = _.map data.data, (t) -> testResultMapper(t, data.orgParameters, data.sysParameters)
+      @DataService.exportAllAsCsv(headers, tests)
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
   exportActiveSessionsToCsv: () =>
     params = @getCurrentSearchCriteria()
 
-    @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.activeSortColumn, params.activeSortOrder)
+    @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.activeSortColumn, params.activeSortOrder, true)
     .then (data) =>
+      headers = ["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organisation"]
+      if data.orgParameters?
+        for param in data.orgParameters
+          headers.push("Organisation ("+param+")")
+      headers.push("System")
+      if data.sysParameters?
+        for param in data.sysParameters
+          headers.push("System ("+param+")")
+      headers = headers.concat(["Start time", "End time", "Result", "Obsolete"])
       testResultMapper = @newTestResult
-      tests = _.map data, (testResult) -> testResultMapper(testResult)
-      @DataService.exportAllAsCsv(["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organisation", "System", "Start time", "End time", "Result", "Obsolete"], tests)
+      tests = _.map data.data, (testResult) -> testResultMapper(testResult, data.orgParameters, data.sysParameters)
+      @DataService.exportAllAsCsv(headers, tests)
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 

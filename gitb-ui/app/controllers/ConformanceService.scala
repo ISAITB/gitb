@@ -10,7 +10,7 @@ import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, Respo
 import exceptions.{ErrorCodes, NotFoundException}
 import javax.inject.Inject
 import managers._
-import models.ConformanceStatementFull
+import models.{ConformanceStatementFull, OrganisationParameters, SystemParameters}
 import models.Enums.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import org.apache.commons.codec.binary.Base64
@@ -22,7 +22,7 @@ import play.api.mvc._
 import utils.signature.SigUtils
 import utils.{ClamAVClient, JsonUtil, MimeUtil}
 
-class ConformanceService @Inject() (conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, systemManager: SystemManager, testResultManager: TestResultManager, organizationManager: OrganizationManager, testCaseManager: TestCaseManager, endPointManager: EndPointManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager) extends Controller {
+class ConformanceService @Inject() (communityManager: CommunityManager, conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, systemManager: SystemManager, testResultManager: TestResultManager, organizationManager: OrganizationManager, testCaseManager: TestCaseManager, endPointManager: EndPointManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager) extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ConformanceService])
 
   /**
@@ -310,6 +310,8 @@ class ConformanceService @Inject() (conformanceManager: ConformanceManager, acco
     val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, None, domainId)
     if (conformanceManager.getDomainParameterByDomainAndName(domainId, domainParameter.name).isDefined) {
       ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the domain")
+    } else if (domainParameter.kind == "BINARY" && Configurations.ANTIVIRUS_SERVER_ENABLED && domainParameter.value.isDefined && ParameterExtractor.virusPresent(List(domainParameter.value.get))) {
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
     } else {
       conformanceManager.createDomainParameter(domainParameter)
       ResponseConstructor.constructEmptyResponse
@@ -330,6 +332,8 @@ class ConformanceService @Inject() (conformanceManager: ConformanceManager, acco
     val existingDomainParameter = conformanceManager.getDomainParameterByDomainAndName(domainId, domainParameter.name)
     if (existingDomainParameter.isDefined && (existingDomainParameter.get.id != domainParameterId)) {
       ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the domain")
+    } else if (domainParameter.kind == "BINARY" && Configurations.ANTIVIRUS_SERVER_ENABLED && domainParameter.value.isDefined && ParameterExtractor.virusPresent(List(domainParameter.value.get))) {
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
     } else {
       conformanceManager.updateDomainParameter(domainParameterId, domainParameter.name, domainParameter.desc, domainParameter.kind, domainParameter.value)
       ResponseConstructor.constructEmptyResponse
@@ -345,13 +349,24 @@ class ConformanceService @Inject() (conformanceManager: ConformanceManager, acco
     val organizationIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.ORG_IDS)
     val systemIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SYSTEM_IDS)
     val actorIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.ACTOR_IDS)
+    val forExport: Boolean = ParameterExtractor.optionalQueryParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
     var results: List[ConformanceStatementFull] = null
     if (fullResults) {
       results = conformanceManager.getConformanceStatementsFull(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds)
     } else {
       results = conformanceManager.getConformanceStatements(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds)
     }
-    val json = JsonUtil.jsConformanceResultFullList(results).toString()
+    var orgParameterDefinitions: Option[List[OrganisationParameters]] = None
+    var orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
+    var sysParameterDefinitions: Option[List[SystemParameters]] = None
+    var sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
+    if (forExport && communityIds.isDefined && communityIds.get.size == 1) {
+      orgParameterDefinitions = Some(communityManager.getOrganisationParametersForExport(communityIds.get.head))
+      orgParameterValues = Some(communityManager.getOrganisationParametersValuesForExport(communityIds.get.head, organizationIds))
+      sysParameterDefinitions = Some(communityManager.getSystemParametersForExport(communityIds.get.head))
+      sysParameterValues = Some(communityManager.getSystemParametersValuesForExport(communityIds.get.head, organizationIds, systemIds))
+    }
+    val json = JsonUtil.jsConformanceResultFullList(results, orgParameterDefinitions, orgParameterValues, sysParameterDefinitions, sysParameterValues).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
@@ -498,5 +513,38 @@ class ConformanceService @Inject() (conformanceManager: ConformanceManager, acco
       }
     }
     response
+  }
+
+  def getSystemConfigurations() = AuthorizedAction { request =>
+    val system = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+    authorizationManager.canViewEndpointConfigurationsForSystem(request, system)
+    val actor = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
+    val configs = conformanceManager.getSystemConfigurationStatus(system, actor)
+    configs.foreach{ config =>
+      // config.
+      if (config.endpointParameters.isDefined) {
+        config.endpointParameters.get.foreach{ systemConfig =>
+          if (systemConfig.config.isDefined) {
+            if (MimeUtil.isDataURL(systemConfig.config.get.value)) {
+              val detectedMimeType = MimeUtil.getMimeTypeFromDataURL(systemConfig.config.get.value)
+              val extension = MimeUtil.getExtensionFromMimeType(detectedMimeType)
+              systemConfig.extension = Some(extension)
+              systemConfig.mimeType = Some(detectedMimeType)
+            }
+          }
+        }
+      }
+    }
+    val json = JsonUtil.jsSystemConfigurationEndpoints(configs, true)
+    ResponseConstructor.constructJsonResponse(json.toString)
+  }
+
+  def checkConfigurations() = AuthorizedAction { request =>
+    val system = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+    authorizationManager.canViewEndpointConfigurationsForSystem(request, system)
+    val actor = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
+    val status = conformanceManager.getSystemConfigurationStatus(system, actor)
+    val json = JsonUtil.jsSystemConfigurationEndpoints(status, false)
+    ResponseConstructor.constructJsonResponse(json.toString)
   }
 }

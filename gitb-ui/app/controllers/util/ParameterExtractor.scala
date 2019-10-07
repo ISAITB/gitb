@@ -1,11 +1,16 @@
 package controllers.util
 
+import java.util.concurrent.ThreadLocalRandom
+
+import config.Configurations
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import models._
+import org.apache.commons.codec.binary.Base64
+import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
-import utils.HtmlUtil
+import utils.{ClamAVClient, HtmlUtil, JsonUtil, MimeUtil}
 
 object ParameterExtractor {
 
@@ -21,6 +26,15 @@ object ParameterExtractor {
     param
   }
 
+  def optionalBooleanQueryParameter(request:Request[AnyContent], parameter:String):Option[Boolean] = {
+    val param = request.getQueryString(parameter)
+    if (param.isDefined) {
+      Some(param.get.toBoolean)
+    } else {
+      None
+    }
+  }
+
   def optionalLongQueryParameter(request:Request[AnyContent], parameter:String):Option[Long] = {
     val param = request.getQueryString(parameter)
     if (param.isDefined) {
@@ -28,6 +42,72 @@ object ParameterExtractor {
     } else {
       None
     }
+  }
+
+  def extractOrganisationParameterValues(request:Request[AnyContent], parameterName: String, optional: Boolean): Option[List[OrganisationParameterValues]] = {
+    var values: Option[List[OrganisationParameterValues]] = None
+    if (optional) {
+      val valuesJson = optionalBodyParameter(request, parameterName)
+      if (valuesJson.isDefined) {
+        values = Some(JsonUtil.parseJsOrganisationParameterValues(valuesJson.get))
+      }
+    } else {
+      val valuesJson = requiredBodyParameter(request, parameterName)
+      values = Some(JsonUtil.parseJsOrganisationParameterValues(valuesJson))
+    }
+    values
+  }
+
+  def checkOrganisationParameterValues(values: Option[List[OrganisationParameterValues]]): Result = {
+    var response: Result = null
+    if (Configurations.ANTIVIRUS_SERVER_ENABLED && values.isDefined) {
+      val dataUrls = values.get.collect({
+        case x if MimeUtil.isDataURL(x.value) => x.value
+      })
+      if (virusPresent(dataUrls)) {
+        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+      }
+    }
+    response
+  }
+
+  def extractSystemParameterValues(request:Request[AnyContent], parameterName: String, optional: Boolean): Option[List[SystemParameterValues]] = {
+    var values: Option[List[SystemParameterValues]] = None
+    if (optional) {
+      val valuesJson = optionalBodyParameter(request, parameterName)
+      if (valuesJson.isDefined) {
+        values = Some(JsonUtil.parseJsSystemParameterValues(valuesJson.get))
+      }
+    } else {
+      val valuesJson = requiredBodyParameter(request, parameterName)
+      values = Some(JsonUtil.parseJsSystemParameterValues(valuesJson))
+    }
+    values
+  }
+
+  def checkSystemParameterValues(values: Option[List[SystemParameterValues]]): Result = {
+    var response: Result = null
+    if (Configurations.ANTIVIRUS_SERVER_ENABLED && values.isDefined) {
+      val dataUrls = values.get.collect({
+        case x if MimeUtil.isDataURL(x.value) => x.value
+      })
+      if (virusPresent(dataUrls)) {
+        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+      }
+    }
+    response
+  }
+
+  def virusPresent(values: List[String]): Boolean = {
+    val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+    values.foreach { value =>
+      // Check for virus. Do this regardless of the type of parameter as this can be changed later on.
+      val scanResult = virusScanner.scan(Base64.decodeBase64(MimeUtil.getBase64FromDataURL(value)))
+      if (!ClamAVClient.isCleanReply(scanResult)) {
+        return true
+      }
+    }
+    false
   }
 
   def requiredBodyParameter(request:Request[AnyContent], parameter:String):String = {
@@ -102,43 +182,110 @@ object ParameterExtractor {
     val landingPageId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LANDING_PAGE_ID)
     val legalNoticeId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LEGAL_NOTICE_ID)
     val errorTemplateId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.ERROR_TEMPLATE_ID)
-    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, false, landingPageId, legalNoticeId, errorTemplateId, communityId)
+    var template:Boolean = false
+    var templateName: Option[String] = None
+    if (Configurations.REGISTRATION_ENABLED) {
+      template = optionalBodyParameter(request, Parameters.TEMPLATE).getOrElse("false").toBoolean
+      if (template) {
+        templateName = optionalBodyParameter(request, Parameters.TEMPLATE_NAME)
+      }
+    }
+    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, false, landingPageId, legalNoticeId, errorTemplateId, template, templateName, communityId)
+  }
+
+  def validCommunitySelfRegType(selfRegType: Short) = {
+    selfRegType == SelfRegistrationType.NotSupported.id.toShort || selfRegType == SelfRegistrationType.PublicListing.id.toShort || selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort || selfRegType == SelfRegistrationType.Token.id.toShort
   }
 
   def extractCommunityInfo(request:Request[AnyContent]):Communities = {
     val sname = requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
     val fname = requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
     val email = optionalBodyParameter(request, Parameters.COMMUNITY_EMAIL)
+    var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
+    var selfRegToken: Option[String] = None
+    if (Configurations.REGISTRATION_ENABLED) {
+      selfRegType = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
+      if (!validCommunitySelfRegType(selfRegType)) {
+        throw new IllegalArgumentException("Unsupported value ["+selfRegType+"] for self-registration type")
+      }
+      selfRegToken = optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
+      if (selfRegType == SelfRegistrationType.Token.id.toShort || selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort) {
+        if (selfRegToken.isEmpty || StringUtils.isBlank(selfRegToken.get)) {
+          throw new IllegalArgumentException("Missing self-registration token")
+        }
+      } else {
+        selfRegToken = None
+      }
+    } else {
+      selfRegType = SelfRegistrationType.NotSupported.id.toShort
+    }
     val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    Communities(0L, sname, fname, email, domainId)
+    Communities(0L, sname, fname, email, selfRegType, selfRegToken, domainId)
   }
 
   def extractSystemAdminInfo(request:Request[AnyContent]):Users = {
-    val name = requiredBodyParameter(request, Parameters.USER_NAME)
-    val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
-    val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.SystemAdmin.id.toShort, 0L)
+    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      val ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      getUserInfoForSSO(ssoEmail, UserRole.SystemAdmin.id.toShort)
+    } else {
+      val name = requiredBodyParameter(request, Parameters.USER_NAME)
+      val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      val password = requiredBodyParameter(request, Parameters.PASSWORD)
+      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.SystemAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+    }
   }
 
   def extractCommunityAdminInfo(request:Request[AnyContent]):Users = {
-    val name = requiredBodyParameter(request, Parameters.USER_NAME)
-    val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
-    val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.CommunityAdmin.id.toShort, 0L)
+    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      val ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      getUserInfoForSSO(ssoEmail, UserRole.CommunityAdmin.id.toShort)
+    } else {
+      val name = requiredBodyParameter(request, Parameters.USER_NAME)
+      val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      val password = requiredBodyParameter(request, Parameters.PASSWORD)
+      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.CommunityAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+    }
+  }
+
+  def extractAdminInfo(request:Request[AnyContent], ssoEmailToForce: Option[String], passwordIsOneTime: Option[Boolean]):Users = {
+    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      var ssoEmail: String = null
+      if (ssoEmailToForce.isDefined) {
+        ssoEmail = ssoEmailToForce.get
+      } else {
+        ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      }
+      getUserInfoForSSO(ssoEmail, UserRole.VendorAdmin.id.toShort)
+    } else {
+      val name = requiredBodyParameter(request, Parameters.USER_NAME)
+      val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      val password = requiredBodyParameter(request, Parameters.PASSWORD)
+      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), passwordIsOneTime.getOrElse(true), UserRole.VendorAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+    }
   }
 
   def extractAdminInfo(request:Request[AnyContent]):Users = {
-    val name = requiredBodyParameter(request, Parameters.USER_NAME)
-    val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
-    val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.VendorAdmin.id.toShort, 0L)
+    extractAdminInfo(request, None, None)
+  }
+
+  private def getUserInfoForSSO(ssoEmail: String, role: Short): Users = {
+    val randomPart = ThreadLocalRandom.current.nextInt(10000000, 99999999 + 1)
+    val name = "User ["+randomPart+"]"
+    val email = randomPart+"@itb.ec.europa.eu"
+    val password = randomPart.toString
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, role, 0L, None, Some(ssoEmail), UserSSOStatus.NotLinked.id.toShort)
   }
 
   def extractUserInfo(request:Request[AnyContent]):Users = {
-    val name = requiredBodyParameter(request, Parameters.USER_NAME)
-    val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
-    val password = requiredBodyParameter(request, Parameters.PASSWORD)
-    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.VendorUser.id.toShort, 0L)
+    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      val ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      getUserInfoForSSO(ssoEmail, UserRole.VendorUser.id.toShort)
+    } else {
+      val name = requiredBodyParameter(request, Parameters.USER_NAME)
+      val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
+      val password = requiredBodyParameter(request, Parameters.PASSWORD)
+      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.VendorUser.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+    }
   }
 
   def extractSystemInfo(request:Request[AnyContent]):Systems = {
@@ -236,7 +383,43 @@ object ParameterExtractor {
     val use:String = ParameterExtractor.requiredBodyParameter(request, Parameters.USE)
     val kind:String = ParameterExtractor.requiredBodyParameter(request, Parameters.KIND)
     val endpointId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.ENDPOINT_ID).toLong
-    models.Parameters(id, name, desc, use, kind, endpointId)
+    val adminOnly = ParameterExtractor.requiredBodyParameter(request, Parameters.ADMIN_ONLY).toBoolean
+    val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
+    models.Parameters(id, name, desc, use, kind, adminOnly, notForTests, endpointId)
+  }
+
+  def extractOrganisationParameter(request:Request[AnyContent]):models.OrganisationParameters = {
+    val id:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ID) match {
+      case Some(i) => i.toLong
+      case _ => 0l
+    }
+    val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
+    val testKey:String = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_KEY)
+    val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+    val use:String = ParameterExtractor.requiredBodyParameter(request, Parameters.USE)
+    val kind:String = ParameterExtractor.requiredBodyParameter(request, Parameters.KIND)
+    val communityId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val adminOnly = ParameterExtractor.requiredBodyParameter(request, Parameters.ADMIN_ONLY).toBoolean
+    val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
+    val inExports:Boolean = (kind == "SIMPLE") && ParameterExtractor.requiredBodyParameter(request, Parameters.IN_EXPORTS).toBoolean
+    models.OrganisationParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, communityId)
+  }
+
+  def extractSystemParameter(request:Request[AnyContent]):models.SystemParameters = {
+    val id:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ID) match {
+      case Some(i) => i.toLong
+      case _ => 0l
+    }
+    val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
+    val testKey:String = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_KEY)
+    val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
+    val use:String = ParameterExtractor.requiredBodyParameter(request, Parameters.USE)
+    val kind:String = ParameterExtractor.requiredBodyParameter(request, Parameters.KIND)
+    val communityId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val adminOnly = ParameterExtractor.requiredBodyParameter(request, Parameters.ADMIN_ONLY).toBoolean
+    val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
+    val inExports = (kind == "SIMPLE") && ParameterExtractor.requiredBodyParameter(request, Parameters.IN_EXPORTS).toBoolean
+    models.SystemParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, communityId)
   }
 
   def extractLandingPageInfo(request:Request[AnyContent]):LandingPages = {

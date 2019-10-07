@@ -10,12 +10,14 @@ class DataService
 
 	#should be called after logout, since no user data should be kept any more
 	destroy: () ->
+		@actualUser = undefined
 		@user = undefined
 		@vendor = undefined
 		@community = undefined
 		@configuration = undefined
 		@isSystemAdmin = false
 		@isVendorUser = false
+		@isVendorAdmin = false
 		@isCommunityAdmin = false
 		@isDomainUser = false
 		@acceptedEmailAttachmentTypes = undefined
@@ -29,14 +31,25 @@ class DataService
 		@searchState.data = searchState
 		@searchState.origin = origin
 
+	setActualUser: (actualUser) ->
+		@actualUser = actualUser
+		if !@user?
+			@user = {}
+		@user.name = actualUser.firstName + ' ' + actualUser.lastName
+		@user.email = actualUser.email
+
 	setUser: (user) ->
 		@user = user
-
+		if @actualUser?
+			@setActualUser(@actualUser)
 		@isVendorAdmin = (@user.role == @Constants.USER_ROLE.VENDOR_ADMIN)
 		@isVendorUser  = (@user.role == @Constants.USER_ROLE.VENDOR_USER)
 		@isDomainUser  = (@user.role == @Constants.USER_DOMAIN_USER)
 		@isSystemAdmin = (@user.role == @Constants.USER_ROLE.SYSTEM_ADMIN)
 		@isCommunityAdmin = (@user.role == @Constants.USER_ROLE.COMMUNITY_ADMIN)
+
+	isDemoAccount: () ->
+		@user? && @configuration['demos.enabled'] && @configuration['demos.account'] == @user.id
 
 	setConfiguration: (config) ->
 		@configuration = config
@@ -44,6 +57,35 @@ class DataService
 		acceptedTypes = config['email.attachments.allowedTypes'].split(',')
 		for acceptedType in acceptedTypes
 			@acceptedEmailAttachmentTypes[acceptedType] = true
+
+	getRoleDescription: (full, account) ->
+		if !account?
+			if @user? && @vendor? && @community?
+				role = @user.role
+				if full
+					organisation = @vendor.fname
+					community = @community.fname
+				else
+					organisation = @vendor.sname
+					community = @community.sname
+		else
+			role = account.role
+			if full
+				organisation = account.organisationFullName
+				community = account.communityFullName
+			else
+				organisation = account.organisationShortName
+				community = account.communityShortName
+		description = ''
+		if role == @Constants.USER_ROLE.SYSTEM_ADMIN
+			description = 'Test bed administrator'
+		else if role == @Constants.USER_ROLE.COMMUNITY_ADMIN
+			description = 'Community administrator (' + community + ')'
+		else if role == @Constants.USER_ROLE.VENDOR_ADMIN
+			description = 'Administrator of '+organisation+' ('+community+')'
+		else
+			description = 'User of '+organisation+' ('+community+')'
+		description
 
 	setVendor: (vendor) ->
 		@vendor = vendor
@@ -219,6 +261,40 @@ class DataService
 			blobData = new Blob([csv], {type: 'text/csv'});
 			saveAs(blobData, 'export.csv');
 
+	userStatus: (ssoStatus) =>
+		if @configuration['sso.enabled']
+			if ssoStatus == 1
+				'Not migrated'
+			else if ssoStatus == 2
+				'Inactive'
+			else
+				'Active'
+		else
+			'Active'
 
+	customPropertiesValid: (properties) =>
+		# if properties?
+		# 	for property in properties
+		# 		if property.use == 'R'
+		# 			if !(((property.kind == 'BINARY' || property.kind == 'SIMPLE') && property.value? && property.value.trim().length > 0) || (property.kind == 'SECRET') && ((property.changeValue && property.value? && property.value.trim().length > 0) || (!property.changeValue && property.configured)))
+		# 				if !property.adminOnly || (@isSystemAdmin || @isCommunityAdmin)
+		# 					return false
+		return true
+
+	customPropertiesForPost: (properties) =>
+		propValues = []
+		for property in properties
+			propValue = {}
+			propValue.parameter = Number(property.id)
+			if property.kind == 'SECRET'
+				if property.changeValue && property.value? && property.value.trim().length > 0
+					propValue.value = property.value.trim()
+				else if !property.changeValue && property.configured
+					propValue.value = ''
+			else if property.value? && property.value.trim().length > 0
+				propValue.value = property.value.trim()
+			if propValue.value?
+				propValues.push(propValue)
+		JSON.stringify(propValues)
 
 services.service('DataService', DataService)

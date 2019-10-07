@@ -1,7 +1,7 @@
 class UserCreateController
 
-  @$inject = ['$log', '$state', '$stateParams', 'ValidationService', 'UserService', 'Constants', 'AuthService', 'ErrorService']
-  constructor: (@$log, @$state, @$stateParams, @ValidationService, @UserService, @Constants, @AuthService, @ErrorService) ->
+  @$inject = ['$log', '$state', '$stateParams', 'ValidationService', 'UserService', 'Constants', 'AuthService', 'ErrorService', 'DataService']
+  constructor: (@$log, @$state, @$stateParams, @ValidationService, @UserService, @Constants, @AuthService, @ErrorService, @DataService) ->
 
     @orgId = @$stateParams.org_id
     @alerts = []
@@ -10,16 +10,28 @@ class UserCreateController
     @roleCreateChoices = @Constants.VENDOR_USER_ROLES
 
   saveDisabled: () =>
-    !(@user.name? && @user.password? && @user.cpassword? && @user.email? && @user.role?)
+    if @DataService.configuration['sso.enabled']
+      !(@user.email? && @user.role?)
+    else
+      !(@user.name? && @user.password? && @user.cpassword? && @user.email? && @user.role?)
 
   # create user and cancel screen
   createUser: () =>
-    @ValidationService.clearAll()
-    if @ValidationService.requireNonNull(@user.name, "Please enter a name.") &
-    @ValidationService.objectNonNull(@user.role, "Please enter a role.") &
-    @ValidationService.validatePasswords(@user.password, @user.cpassword, "Please enter equal passwords.") &
-    @ValidationService.validateEmail(@user.email, "Please enter a valid email address.")
-      @AuthService.checkEmail(@user.email)
+    @alerts = @ValidationService.clearAll()
+    isSSO = @DataService.configuration['sso.enabled']
+    if isSSO
+      ok = @ValidationService.validateEmail(@user.email, "Please enter a valid email address.") &
+          @ValidationService.objectNonNull(@user.role, "Please enter a role.")
+      emailCheckFunction = @AuthService.checkEmailOfOrganisationUser
+    else
+      ok = @ValidationService.requireNonNull(@user.name, "Please enter a name.") &
+        @ValidationService.objectNonNull(@user.role, "Please enter a role.") &
+        @ValidationService.validatePasswords(@user.password, @user.cpassword, "Please enter equal passwords.") &
+        @ValidationService.validateEmail(@user.email, "Please enter a valid email address.")
+      emailCheckFunction = @AuthService.checkEmail
+
+    if ok
+      emailCheckFunction(@user.email, @orgId, @user.role.id)
       .then (data) =>
         if (data.available)
           @UserService.createVendorUser @user.name, @user.email, @user.password, @orgId, @user.role.id
@@ -28,7 +40,10 @@ class UserCreateController
           .catch (error) =>
             @ErrorService.showErrorMessage(error)
         else
-          @alerts.push({type:'danger', msg:"A user with email #{@user.email} has already been registered."})
+          if isSSO
+            @alerts.push({type:'danger', msg:"A user with email #{@user.email} has already been registered with the specified role for this organisation."})
+          else
+            @alerts.push({type:'danger', msg:"A user with email #{@user.email} has already been registered."})
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
     else

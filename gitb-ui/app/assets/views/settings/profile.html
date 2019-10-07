@@ -1,0 +1,50 @@
+<div class="page settings">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">Profile</h4>
+		</div>
+		<div class="panel-body">
+            <div class="row col-md-10 col-md-offset-1">
+                <div uib-alert ng-repeat="alert in pc.alerts" ng-class="'alert-' + alert.type" close="pc.closeAlert($index)">{{alert.msg}}</div>
+            </div>
+            <div class="row">
+                <div class="col-md-10 col-md-offset-1">
+                    <form class="form-horizontal">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label" for="shortName"><span ng-if="!pc.DataService.configuration['sso.enabled']">* </span>Name:</label>
+                            <div class="col-sm-8">
+                                <p ng-if="pc.DataService.configuration['sso.enabled']" class="form-control-static">{{data.name}}</p>
+                                <input ng-if="!pc.DataService.configuration['sso.enabled']" type="text" class="form-control" ng-model="data.name" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label" for="fullName">Email:</label>
+                            <div class="col-sm-8">
+                                <p class="form-control-static">{{data.email}}</p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label" for="fullName">Role:</label>
+                            <div class="col-sm-8">
+                                <p class="form-control-static">{{data.role}}</p>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-10 col-md-offset-1">
+                    <div class="bg-info div-rounded div-padded" ng-if="!pc.DataService.configuration['sso.enabled']">
+                        <span><b>Privacy note:</b> By clicking 'Save changes' you grant consent to record the provided information. This is used only for internal identification purposes and is never shared with other parties. Please refer to the legal notice (link available in the screen's footer) for more information.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="panel-footer">
+            <button type="button" class="btn btn-default" ng-if="!pc.DataService.configuration['sso.enabled']"  ng-click="pc.updateProfile()">Save changes</button>
+            <button type="button" class="btn btn-default" ng-if="pc.DataService.configuration['sso.enabled']"  ng-click="pc.disconnect()">Remove current role from your account</button>
+            <button type="button" class="btn btn-default" ng-if="pc.DataService.configuration['sso.enabled']"  ng-click="pc.linkOtherRole()">Link another role to your account</button>
+            <button type="button" class="btn btn-default" ng-if="pc.DataService.configuration['registration.enabled']" ng-click="pc.register()">Register another organisation</button>
+        </div>
+    </div>
+</div>

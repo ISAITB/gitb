@@ -18,6 +18,7 @@ import com.gitb.types.*;
 import com.gitb.utils.ActorUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.map.Tuple;
+import org.apache.commons.codec.binary.Base64;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -197,21 +198,13 @@ public class TestCaseContext {
      * @param configurations SUT configurations
      * @return Simulated actor configurations for each (actorId, endpointName) tuple
      */
-    public List<SUTConfiguration> configure(List<ActorConfiguration> configurations, ActorConfiguration domainConfiguration){
+    public List<SUTConfiguration> configure(List<ActorConfiguration> configurations, ActorConfiguration domainConfiguration, ActorConfiguration organisationConfiguration, ActorConfiguration systemConfiguration){
 
-		if (domainConfiguration != null) {
-			DataTypeFactory factory = DataTypeFactory.getInstance();
-			TestCaseScope.ScopedVariable variable = scope.createVariable("DOMAIN");
-			MapType map = (MapType) factory.create(DataType.MAP_DATA_TYPE);
-			for(Configuration configuration : domainConfiguration.getConfig()) {
-				StringType configurationValue = (StringType) factory.create(DataType.STRING_DATA_TYPE);
-				configurationValue.setValue(configuration.getValue());
-				map.addItem(configuration.getName(), configurationValue);
-			}
-			variable.setValue(map);
-		}
+		addSpecialConfiguration("DOMAIN", domainConfiguration);
+		addSpecialConfiguration("ORGANISATION", organisationConfiguration);
+		addSpecialConfiguration("SYSTEM", systemConfiguration);
 
-	    for(ActorConfiguration actorConfiguration : configurations) {
+		for(ActorConfiguration actorConfiguration : configurations) {
 		    Tuple<String> actorIdEndpointTupleKey = new Tuple<>(new String[] {actorConfiguration.getActor(), actorConfiguration.getEndpoint()});
 		    sutConfigurations.put(actorIdEndpointTupleKey, actorConfiguration);
 		    sutHandlerConfigurations.put(actorIdEndpointTupleKey, new CopyOnWriteArrayList<ActorConfiguration>());
@@ -232,6 +225,29 @@ public class TestCaseContext {
 
 	    return sutConfigurations;
     }
+
+	private void addSpecialConfiguration(String mapVariableName, ActorConfiguration domainConfiguration) {
+		if (domainConfiguration != null) {
+			DataTypeFactory factory = DataTypeFactory.getInstance();
+			TestCaseScope.ScopedVariable variable = scope.createVariable(mapVariableName);
+			MapType map = (MapType) factory.create(DataType.MAP_DATA_TYPE);
+			for (Configuration configuration : domainConfiguration.getConfig()) {
+				DataType configurationValue = null;
+				if (configuration.getValue() != null && configuration.getValue().startsWith("data:") && configuration.getValue().contains(";base64,")) {
+					// Data URL
+					String base64 = configuration.getValue().substring(configuration.getValue().indexOf(",")+1);
+					configurationValue = factory.create(DataType.BINARY_DATA_TYPE);
+					configurationValue.setValue(Base64.decodeBase64(base64));
+				} else {
+					// String
+					configurationValue = factory.create(DataType.STRING_DATA_TYPE);
+					configurationValue.setValue(configuration.getValue());
+				}
+				map.addItem(configuration.getName(), configurationValue);
+			}
+			variable.setValue(map);
+		}
+	}
 
 	private void setSUTConfigurationParameter(List<SUTConfiguration> sutConfigurations, String id, String endpoint, Parameter parameter) {
 		for(SUTConfiguration sutConfiguration : sutConfigurations) {

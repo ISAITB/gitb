@@ -8,7 +8,7 @@
 .table-directive {
   	padding:0; margin:0;
 	tbody {
-		tr.table-row-directive {
+		tr.selectable {
 			&:hover {
 				cursor: pointer;
 				background-color: fade(@gray-light, 50%);
@@ -20,7 +20,7 @@
 	}
 }
 
-#dashboard-table, #dashboard-table-active, #systems-table, #system-tests-table, #system-tests-execution, #test-suites-table, #parameter-table {
+#dashboard-table, #dashboard-table-active, #systems-table, #system-tests-table, #system-tests-execution, #test-suites-table, #parameter-table, #members-table {
 	td {
 		padding-top: 15px;
 		padding-bottom: 15px;
@@ -133,6 +133,14 @@
 .form-separator {
 	border-bottom: 1px solid @gray-light; margin-bottom: 20px;
 }
+.form-separator-popup {
+	border-bottom: 1px solid #e5e5e5;
+    margin-bottom: 20px;
+    margin-left: 40px;
+    margin-top: 20px;
+    margin-right: 40px;
+}
+
 .test-suite-validation-summary {
 	margin-bottom: 15px;
 }

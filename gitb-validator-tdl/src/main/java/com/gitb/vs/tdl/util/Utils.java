@@ -34,6 +34,13 @@ import java.util.zip.ZipInputStream;
 public class Utils {
 
     public static final String DOMAIN_MAP = "DOMAIN";
+    public static final String ORGANISATION_MAP = "ORGANISATION";
+    public static final String ORGANISATION_MAP__SHORT_NAME = "shortName";
+    public static final String ORGANISATION_MAP__FULL_NAME = "fullName";
+    public static final String SYSTEM_MAP = "SYSTEM";
+    public static final String SYSTEM_MAP__SHORT_NAME = "shortName";
+    public static final String SYSTEM_MAP__FULL_NAME = "fullName";
+    public static final String SYSTEM_MAP__VERSION = "version";
     public static final String STEP_SUCCESS = "STEP_SUCCESS";
     public static final String VARIABLE_EXPRESSION = "\\$([a-zA-Z][a-zA-Z\\-_0-9]*)(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*";
     public static final Pattern VARIABLE_EXPRESSION_PATTERN = Pattern.compile(VARIABLE_EXPRESSION);

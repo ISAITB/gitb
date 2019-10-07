@@ -97,10 +97,16 @@ public class TestbedService {
 
 		List<ActorConfiguration> actorConfigurations = new ArrayList<>();
 		ActorConfiguration domainConfiguration = null;
+		ActorConfiguration organisationConfiguration = null;
+		ActorConfiguration systemConfiguration = null;
 		if (allConfigurations != null) {
 			for (ActorConfiguration configuration: allConfigurations) {
 				if ("com.gitb.DOMAIN".equals(configuration.getActor())) {
 					domainConfiguration = configuration;
+				} else if ("com.gitb.ORGANISATION".equals(configuration.getActor())) {
+					organisationConfiguration = configuration;
+				} else if ("com.gitb.SYSTEM".equals(configuration.getActor())) {
+					systemConfiguration = configuration;
 				} else {
 					actorConfigurations.add(configuration);
 				}
@@ -110,7 +116,7 @@ public class TestbedService {
 		try {
 			ActorRef sessionActor = ActorUtils.getIdentity(actorSystem, SessionActor.getPath(sessionId));
 			//Call the configure command
-			Object response = ActorUtils.askBlocking(sessionActor, new ConfigureCommand(sessionId, actorConfigurations, domainConfiguration));
+			Object response = ActorUtils.askBlocking(sessionActor, new ConfigureCommand(sessionId, actorConfigurations, domainConfiguration, organisationConfiguration, systemConfiguration));
 			return (List<SUTConfiguration>) response;
 		} catch (GITBEngineInternalError e) {
 			throw e;

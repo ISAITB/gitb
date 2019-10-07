@@ -1,24 +1,26 @@
 package models
 
-case class Communities(id: Long = 0, shortname: String, fullname: String, supportEmail: Option[String], domain: Option[Long]) {
+case class Communities(id: Long = 0, shortname: String, fullname: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], domain: Option[Long]) {
 }
 
-class Community(_id:Long, _shortname:String, _fullname:String, _supportEmail:Option[String], _domain:Option[Domain]) {
+class Community(_id:Long, _shortname:String, _fullname:String, _supportEmail:Option[String], _selfRegType: Short, _selfRegToken: Option[String],_domain:Option[Domain]) {
   var id:Long = _id
   var shortname:String = _shortname
   var fullname:String = _fullname
   var supportEmail:Option[String] = _supportEmail
+  var selfRegType:Short = _selfRegType
+  var selfRegToken:Option[String] = _selfRegToken
   var domain:Option[Domain] = _domain
 
   def this(_case:Communities, _domain:Option[Domain]) =
-    this(_case.id, _case.shortname, _case.fullname, _case.supportEmail, _domain)
+    this(_case.id, _case.shortname, _case.fullname, _case.supportEmail, _case.selfRegType, _case.selfRegToken, _domain)
 
   def toCaseObject:Communities = {
     val d = domain match {
       case Some(d) => Some(d.id)
       case None => None
     }
-    Communities(id, shortname, fullname, supportEmail, d)
+    Communities(id, shortname, fullname, supportEmail, selfRegType, selfRegToken, d)
   }
 
 }
