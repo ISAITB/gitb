@@ -77,7 +77,9 @@ class EndpointDetailsController
 			controller: 'CreateParameterController as CreateParameterController'
 			size: 'lg'
 			resolve:
-				options: () => {}
+				options: () => {
+					hideInExport: true
+				}
 		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result
 			.finally(angular.noop)
@@ -95,7 +97,9 @@ class EndpointDetailsController
 			controller: 'ParameterDetailsController as ParameterDetailsController'
 			resolve:
 				parameter: () => parameter
-				options: () => {}
+				options: () => {
+					hideInExport: true
+				}
 			size: 'lg'
 		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result

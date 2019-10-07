@@ -11,6 +11,7 @@ class ParameterDetailsController
 		@$scope.confirmMessage = if options.confirmMessage? then options.confirmMessage else 'Are you sure you want to delete this parameter?'
 		@$scope.existingValues = options.existingValues
 		@$scope.reservedKeys = options.reservedKeys
+		@$scope.hideInExport = options.hideInExport? && options.hideInExport
 
 		@$scope.saveDisabled= () =>
 			!(@$scope.parameter.name?.length > 0 && @$scope.parameter.kind?.length > 0 && (!@$scope.hasKey || @$scope.parameter.key?.length > 0))
