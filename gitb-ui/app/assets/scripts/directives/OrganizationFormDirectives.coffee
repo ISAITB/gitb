@@ -35,7 +35,7 @@
         '</div>'+
         '<div class="form-group" ng-if="tbOrganization.otherOrganisations">'+
           '<label class="col-sm-3 control-label">Copy also:</label>'+
-          '<div class="col-sm-8">'+
+          '<div class="col-sm-9">'+
             '<label class="checkbox-inline">'+
               '<input type="checkbox" ng-change="tbCopyChanged()" ng-model="tbOrganization.copyOrganisationParameters">Organisation properties'+
             '</label>'+

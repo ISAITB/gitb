@@ -125,7 +125,6 @@ class CommunityParametersController
       reservedKeys: reservedKeys
     }
     parameter.key = parameter.testKey
-    parameter.desc = parameter.description
     modalOptions =
       templateUrl: 'assets/views/admin/domains/detail-parameter-modal.html'
       controller: 'ParameterDetailsController as ParameterDetailsController'
