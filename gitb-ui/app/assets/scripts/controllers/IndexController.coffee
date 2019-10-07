@@ -118,7 +118,7 @@ class IndexController
 		@HtmlService.showHtml("Legal Notice", html)
 
 	showContactUs: () ->
-		@DataService.configuration?["email.enabled"] == 'true'
+		@DataService.configuration?["email.enabled"] == true
 
 	contactUs: () =>
 		modalOptions =
@@ -128,7 +128,7 @@ class IndexController
 		modalInstance = @$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
 
 	showProvideFeedback: () =>
-		!@showContactUs() && (@DataService.configuration?["survey.enabled"] == 'true')
+		!@showContactUs() && (@DataService.configuration?["survey.enabled"] == true)
 
 	provideFeedbackLink: () =>
 		@DataService.configuration?["survey.address"]

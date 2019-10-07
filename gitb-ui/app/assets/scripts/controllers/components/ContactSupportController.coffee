@@ -36,7 +36,7 @@ class ContactSupportController
         !(@contactAddress? && @feedback? && @feedback?.id? && !@sendPending)
 
     showSurveyLink: () =>
-        @DataService.configuration?["survey.enabled"] == 'true'
+        @DataService.configuration?["survey.enabled"] == true
 
     validateAttachments: () =>
         valid = true
