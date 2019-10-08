@@ -9,7 +9,7 @@
     template: ''+
       '<form class="form-horizontal">'+
         '<div class="form-group" ng-if="sso && !tbNew">'+
-          '<label class="col-sm-4 control-label" for="name">Name:</label>'+
+          '<label class="col-sm-3 control-label" for="name">Name:</label>'+
           '<div class="col-sm-7"><input id="name" ng-readOnly="true" ng-model="tbUser.name" class="form-control" type="text"></div>'+
         '</div>'+
         '<div class="form-group" ng-if="!sso">'+
