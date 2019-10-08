@@ -674,7 +674,7 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 			var actorConfig = actorMap.get(p._1)
 			if (actorConfig == null) {
 				actorConfig = new ActorConfiguration()
-				actorConfig.setActor(actor.name)
+				actorConfig.setActor(actor.actorId)
 				actorConfig.setEndpoint(p._1)
 				actorMap.put(p._1, actorConfig)
 			}
