@@ -30,7 +30,8 @@ class Application @Inject() (webJarAssets: WebJarAssets, systemConfigurationServ
       Configurations.USERGUIDE_OU,
       Configurations.REGISTRATION_ENABLED,
       Configurations.GUIDES_EULOGIN_USE,
-      Configurations.GUIDES_EULOGIN_MIGRATION
+      Configurations.GUIDES_EULOGIN_MIGRATION,
+      Configurations.AUTHENTICATION_COOKIE_PATH
     )))
   }
 

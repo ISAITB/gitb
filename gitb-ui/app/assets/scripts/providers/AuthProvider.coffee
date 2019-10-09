@@ -12,14 +12,16 @@ class AuthProvider
 		@ # return this
 
 	# Sets the Authorization header with access token
-	authenticate: (accessToken) =>
+	authenticate: (accessToken, cookiePath) =>
 		@authenticated = true
+		@cookiePath = cookiePath
 		@$httpProvider.defaults.headers.common.Authorization = 'Bearer ' + accessToken
 
 	# Removes access token information from request headers
 	deauthenticate: () =>
 		@authenticated = false
 		@logoutOngoing = false
+		@cookiePath = undefined
 		delete @$httpProvider.defaults.headers.common.Authorization
 
 	# Checks if we are authenticated or not
@@ -53,7 +55,7 @@ providers.run ['$log', '$rootScope', '$location', '$window', '$cookies', 'AuthPr
 
 			$cookies.put(atKey, accessToken, cookieOptions)
 
-			authProvider.authenticate(accessToken)
+			authProvider.authenticate(accessToken, data.path)
 			$rootScope.$emit(Events.afterLogin)
 
 		# handle logout event
@@ -70,6 +72,8 @@ providers.run ['$log', '$rootScope', '$location', '$window', '$cookies', 'AuthPr
 				.finally(() ->
 					@DataService.destroy()
 					$cookies.remove(atKey)
+					if authProvider.cookiePath?
+						$cookies.remove(atKey, {path: authProvider.cookiePath})
 					if eventData == undefined || eventData.keepLoginOption == undefined || !eventData.keepLoginOption
 						$cookies.remove(loginOptionKey)
 					authProvider.deauthenticate()
