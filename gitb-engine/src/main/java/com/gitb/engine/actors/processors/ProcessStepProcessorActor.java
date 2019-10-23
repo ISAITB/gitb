@@ -8,6 +8,7 @@ import akka.dispatch.OnSuccess;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.events.model.ErrorStatusEvent;
+import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -76,7 +77,12 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             if (step.getHandler() == null) {
                 throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Test step [" + stepId + "] is a process step with no transaction reference and no handler definition."));
             }
-            context = new ProcessingContext(step.getHandler(), null);
+            String handlerIdentifier = step.getHandler();
+            VariableResolver resolver = new VariableResolver(scope);
+            if (resolver.isVariableReference(handlerIdentifier)) {
+                handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
+            }
+            context = new ProcessingContext(handlerIdentifier, null);
         } else {
             // A processing transaction is referenced.
             context = this.scope.getContext().getProcessingContext(step.getTxnId());
