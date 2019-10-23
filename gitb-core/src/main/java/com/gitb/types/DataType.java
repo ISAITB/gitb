@@ -45,7 +45,7 @@ public abstract class DataType {
     public abstract void setValue(Object value);
 
     public static boolean isListType(String typeDefinition) {
-        return typeDefinition.startsWith(LIST_DATA_TYPE+CONTAINER_TYPE_PARENTHESIS[0]) && typeDefinition.endsWith(CONTAINER_TYPE_PARENTHESIS[1]);
+        return typeDefinition.equals(LIST_DATA_TYPE) || (typeDefinition.startsWith(LIST_DATA_TYPE+CONTAINER_TYPE_PARENTHESIS[0]) && typeDefinition.endsWith(CONTAINER_TYPE_PARENTHESIS[1]));
     }
 
     public static boolean isFileType(String typeDefinition) {
@@ -99,9 +99,13 @@ public abstract class DataType {
     }
 
     public ListType toListType() {
-        ListType list = new ListType(getType());
-        list.append(this);
-        return list;
+        if (this instanceof ListType) {
+            return (ListType)this;
+        } else {
+            ListType list = new ListType(getType());
+            list.append(this);
+            return list;
+        }
     }
 
     public MapType toMapType() {
