@@ -37,7 +37,9 @@ public class TemplateUtils {
 		StringBuffer stringBuffer = new StringBuffer();
 
 		VariableResolver variableResolver = new VariableResolver(scope);
-
+		if (encoding == null) {
+			encoding = "UTF-8";
+		}
 		while(matcher.find()) {
 			String variableExpression = matcher.group(1);
 			DataType value = variableResolver.resolveVariable("$"+variableExpression);
