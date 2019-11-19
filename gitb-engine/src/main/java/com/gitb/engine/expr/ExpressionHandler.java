@@ -58,6 +58,9 @@ public class ExpressionHandler{
         if (variableResolver.isVariableReference(expression)) {
             // This is a pure reference to a context variable
             DataType result = variableResolver.resolveVariable(expression);
+            if (result == null) {
+                throw new IllegalStateException("Expression ["+expression+"] did not resolve an existing session variable");
+            }
             return result.convertTo(expectedReturnType);
         } else {
             // This is a complete XPath expression
