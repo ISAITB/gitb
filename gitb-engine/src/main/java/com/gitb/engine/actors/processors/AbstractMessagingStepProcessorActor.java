@@ -140,11 +140,13 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
         IMessagingHandler messagingHandler = getMessagingContext().getHandler();
         for(Binding binding : input) {
             TypedParameter parameter = getTypedParameterByName(messagingHandler.getModuleDefinition().getInputs().getParam(), binding.getName());
-
-            requiredParameters.remove(parameter);
-
-            DataType data = getInputValue(parameter.getType(), binding);
-            message.getFragments().put(binding.getName(), data);
+            if (parameter == null) {
+                throw new IllegalStateException("Unexpected input found with name ["+binding.getName()+"]");
+            } else {
+                requiredParameters.remove(parameter);
+                DataType data = getInputValue(parameter.getType(), binding);
+                message.getFragments().put(binding.getName(), data);
+            }
         }
 
         setDefaultValuesForRequiredParameters(message, requiredParameters);
