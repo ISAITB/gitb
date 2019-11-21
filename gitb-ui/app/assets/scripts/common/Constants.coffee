@@ -126,6 +126,6 @@ class Constants
 	@DATA_URL_REGEX: /^data:.+\/(.+);base64,(.*)$/
 	@VARIABLE_NAME_REGEX: /^[a-zA-Z][a-zA-Z\-_\.0-9]*$/
 
-	@VERSION = "v1.7.0"
+	@VERSION = "v1.7.1"
 
 common.value('Constants', Constants)
