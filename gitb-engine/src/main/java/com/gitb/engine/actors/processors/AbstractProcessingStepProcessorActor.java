@@ -53,9 +53,13 @@ public abstract class AbstractProcessingStepProcessorActor<T extends Process> ex
         List<TypedParameter> requiredParams = getRequiredParams(params);
         for (Binding binding : input) {
             TypedParameter parameter = getParam(params, binding.getName());
-            requiredParams.remove(parameter);
-            DataType data = getInputValue(parameter.getType(), binding);
-            processingData.getData().put(binding.getName(), data);
+            if (parameter == null) {
+                throw new IllegalStateException("Unexpected input found with name [" + binding.getName() + "]");
+            } else {
+                requiredParams.remove(parameter);
+                DataType data = getInputValue(parameter.getType(), binding);
+                processingData.getData().put(binding.getName(), data);
+            }
         }
         setDefaultValuesForRequiredParameters(processingData, requiredParams);
     }

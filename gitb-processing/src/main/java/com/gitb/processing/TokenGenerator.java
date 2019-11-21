@@ -95,7 +95,7 @@ public class TokenGenerator implements IProcessingHandler {
                 } else {
                     zoneId = ZoneId.of((String)zone.getValue());
                 }
-                value = formatter.format(instant.atZone(zoneId).toLocalDateTime());
+                value = formatter.format(instant.atZone(zoneId));
             }
         } else if (OPERATION__STRING.equalsIgnoreCase(operation)) {
             StringType format = getInputForName(input, INPUT__FORMAT, StringType.class);

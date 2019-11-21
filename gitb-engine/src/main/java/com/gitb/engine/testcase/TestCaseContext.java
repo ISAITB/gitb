@@ -649,7 +649,9 @@ public class TestCaseContext {
 					}
 				}
 			}
-
+			if (initiateResponse.getSessionId() == null) {
+				throw new IllegalStateException("The remote messaging service must return a session identifier");
+			}
 			return new MessagingContext(messagingHandler, initiateResponse.getSessionId(),
 				initiateResponse.getActorConfigurations(), new ArrayList<>(sutHandlerConfigurations.values()), transactionCount);
 		}

@@ -74,7 +74,11 @@ public class TestSessionAppender extends AppenderBase<ILoggingEvent> {
         if (throwable != null) {
             messageBuilder.append("\t[");
             if (throwable.getClassName() != null) {
-                messageBuilder.append(throwable.getClassName().replaceAll(AbstractTestStepActor.EXCEPTION_SANITIZATION_EXPRESSION, "$1"));
+                String replacementValue = throwable.getClassName().replaceAll(AbstractTestStepActor.EXCEPTION_SANITIZATION_EXPRESSION, "$1");
+                if (throwable.getClassName().equals(replacementValue)) {
+                    replacementValue = "-";
+                }
+                messageBuilder.append(replacementValue);
             } else {
                 messageBuilder.append("-");
             }
