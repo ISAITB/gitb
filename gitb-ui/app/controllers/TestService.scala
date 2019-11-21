@@ -115,13 +115,13 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
     }
     // Load organisation parameters.
     val organisation = organisationManager.getOrganizationBySystemId(systemId)
+    val organisationConfiguration = new ActorConfiguration()
+    organisationConfiguration.setActor(Constants.organisationConfigurationName)
+    organisationConfiguration.setEndpoint(Constants.organisationConfigurationName)
+    addConfig(organisationConfiguration, Constants.organisationConfiguration_fullName, organisation.fullname)
+    addConfig(organisationConfiguration, Constants.organisationConfiguration_shortName, organisation.shortname)
     val organisationProperties = organisationManager.getOrganisationParameterValues(organisation.id)
     if (organisationProperties.nonEmpty) {
-      val organisationConfiguration = new ActorConfiguration()
-      organisationConfiguration.setActor(Constants.organisationConfigurationName)
-      organisationConfiguration.setEndpoint(Constants.organisationConfigurationName)
-      addConfig(organisationConfiguration, Constants.organisationConfiguration_fullName, organisation.fullname)
-      addConfig(organisationConfiguration, Constants.organisationConfiguration_shortName, organisation.shortname)
       organisationProperties.foreach{ property =>
         if (property.parameter.use == "R" && property.value.isEmpty) {
           throw new IllegalStateException("Missing required parameter")
@@ -130,18 +130,18 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
           addConfig(organisationConfiguration, property.parameter.testKey, property.value.get.value)
         }
       }
-      cRequest.getConfigs.add(organisationConfiguration)
     }
+    cRequest.getConfigs.add(organisationConfiguration)
     // Load system parameters.
     val system = systemManager.getSystemById(systemId).get
+    val systemConfiguration = new ActorConfiguration()
+    systemConfiguration.setActor(Constants.systemConfigurationName)
+    systemConfiguration.setEndpoint(Constants.systemConfigurationName)
+    addConfig(systemConfiguration, Constants.systemConfiguration_fullName, system.fullname)
+    addConfig(systemConfiguration, Constants.systemConfiguration_shortName, system.shortname)
+    addConfig(systemConfiguration, Constants.systemConfiguration_version, system.version)
     val systemProperties = systemManager.getSystemParameterValues(systemId)
     if (systemProperties.nonEmpty) {
-      val systemConfiguration = new ActorConfiguration()
-      systemConfiguration.setActor(Constants.systemConfigurationName)
-      systemConfiguration.setEndpoint(Constants.systemConfigurationName)
-      addConfig(systemConfiguration, Constants.systemConfiguration_fullName, system.fullname)
-      addConfig(systemConfiguration, Constants.systemConfiguration_shortName, system.shortname)
-      addConfig(systemConfiguration, Constants.systemConfiguration_version, system.version)
       systemProperties.foreach{ property =>
         if (property.parameter.use == "R" && property.value.isEmpty) {
           throw new IllegalStateException("Missing required parameter")
@@ -150,8 +150,8 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
           addConfig(systemConfiguration, property.parameter.testKey, property.value.get.value)
         }
       }
-      cRequest.getConfigs.add(systemConfiguration)
     }
+    cRequest.getConfigs.add(systemConfiguration)
 
     val response = port().configure(cRequest)
     val json = JacksonUtil.serializeConfigureResponse(response)
