@@ -10,6 +10,7 @@ import com.gitb.tr.TestStepReportType;
 import com.gitb.types.DataType;
 import com.gitb.types.ListType;
 import com.gitb.types.MapType;
+import com.gitb.types.StringType;
 import com.gitb.utils.ErrorUtils;
 
 import java.util.regex.Matcher;
@@ -50,21 +51,15 @@ public class AssignProcessor implements IProcessor {
 		    }
 
             DataType result = exprHandler.processExpression(assign, assign.getType());
-
-            if(keyExpression.startsWith("$")) { //key is also a variable reference
-                DataType keyValue = variableResolver.resolveVariable(keyExpression);
-                if(!keyValue.getType().equals(DataType.STRING_DATA_TYPE)) {
-                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Map type key should be a string"));
-                }
-
-                if(assign.getType() == null) {
-                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Type parameter for the assign operation is necessary"));
-                }
-
-                ((MapType)lValue).addItem((String) keyValue.getValue(), result);
-            } else {
-                ((MapType)lValue).addItem(keyExpression, result);
+		    String mapKey = keyExpression;
+            if (mapKey.startsWith("$")) { //key is also a variable reference
+                DataType keyValue = variableResolver.resolveVariable(mapKey);
+                if (keyValue == null) {
+					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Map key expression ["+mapKey+"] could not resolve an existing variable"));
+				}
+				mapKey = (String)(keyValue.convertTo(StringType.STRING_DATA_TYPE).getValue());
             }
+			((MapType)lValue).addItem(mapKey, result);
 	    } else { // regular assign expression
 		    DataType lValue = variableResolver.resolveVariable(assign.getTo());
 		    //Expected return type for the expression is normally the type of lef value
@@ -83,14 +78,20 @@ public class AssignProcessor implements IProcessor {
 			} else {
 				if (lValue instanceof ListType) {
 					if (assign.isAppend()) {
-						((ListType) lValue).append(result);
+						String containedType = ((ListType) lValue).getContainedType();
+						if (containedType != null) {
+							((ListType) lValue).append(result.convertTo(containedType));
+						} else {
+							((ListType) lValue).append(result);
+						}
 					} else {
 						// The result should be a list - this is a direct assignment,
-						lValue.setValue(result);
+						lValue.setValue(result.toListType());
 					}
 				} else {
-					//Normal Assignment
-					lValue.setValue(result.getValue());
+					// Normal Assignment
+					// First convert to make sure the types match and then set the value (lValue is updated via reference).
+					lValue.setValue(result.convertTo(lValue.getType()).getValue());
 				}
 			}
 	    }

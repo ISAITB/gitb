@@ -119,12 +119,8 @@ public class ObjectType extends DataType {
                 document = builder.newDocument();
             }
             setValue(document);
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-        } catch (SAXException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            throw new IllegalStateException("Unable to deserialise variable as XML", e);
         }
     }
 
