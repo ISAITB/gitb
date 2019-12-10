@@ -17,6 +17,10 @@ import java.util.Map;
  */
 public class DataTypeUtils {
 
+	private static DataTypePostProcessor noActionPostProcessor = dataType -> {
+		// Do nothing.
+	};
+
 	public static DataType convertAnyContentToDataType(AnyContent anyContent) {
 		DataType data = DataTypeFactory.getInstance().create(anyContent.getType());
 
@@ -94,13 +98,14 @@ public class DataTypeUtils {
 		content.setValue(value.getValue());
 	}
 
-	public static void setDataTypeValueWithAnyContent(DataType data, AnyContent anyContent) {
+	public static void setDataTypeValueWithAnyContent(DataType data, AnyContent anyContent, DataTypePostProcessor postProcessor) {
 		switch (anyContent.getType()) {
 			case DataType.LIST_DATA_TYPE: {
 				ListType list = (ListType) data;
 
 				for(AnyContent childItem : anyContent.getItem()) {
 					DataType childData = convertAnyContentToDataType(childItem);
+					postProcessor.process(childData);
 
 					if(list.getContainedType() == null) {
 						list.setContainedType(childData.getType());
@@ -115,6 +120,7 @@ public class DataTypeUtils {
 
 				for(AnyContent childItem : anyContent.getItem()) {
 					DataType childData = convertAnyContentToDataType(childItem);
+					postProcessor.process(childData);
 
 					map.addItem(childItem.getName(), childData);
 				}
@@ -129,23 +135,26 @@ public class DataTypeUtils {
 						} else {
 							data.deserialize(anyContent.getValue().getBytes());
 						}
+						postProcessor.process(data);
 						break;
 					}
 					case BASE_64: {
 						data.deserialize(Base64.decodeBase64(
-                                EncodingUtils.extractBase64FromDataURL(anyContent.getValue())));
-                        break;
+								EncodingUtils.extractBase64FromDataURL(anyContent.getValue())));
+						postProcessor.process(data);
+						break;
 					}
 					case URI: {
 
 						Client client = Client.create();
 						String content =
-							client
-								.resource(anyContent.getValue())
-								.accept(MediaType.WILDCARD_TYPE)
-								.get(String.class);
+								client
+										.resource(anyContent.getValue())
+										.accept(MediaType.WILDCARD_TYPE)
+										.get(String.class);
 
 						data.deserialize(content.getBytes());
+						postProcessor.process(data);
 						break;
 					}
 				}
@@ -154,4 +163,13 @@ public class DataTypeUtils {
 			}
 		}
 	}
+
+	public static void setDataTypeValueWithAnyContent(DataType data, AnyContent anyContent) {
+		setDataTypeValueWithAnyContent(data, anyContent, noActionPostProcessor);
+	}
+
+	public interface DataTypePostProcessor {
+		void process(DataType dataType);
+	}
+
 }

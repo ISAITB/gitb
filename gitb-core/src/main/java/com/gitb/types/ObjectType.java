@@ -61,12 +61,8 @@ public class ObjectType extends DataType {
                 // Make a second attempt, evaluating as a string
                 object = expression.evaluate(this.value);
             }
-            //If return type is primitive directly set the value (Java types matches)
-            if (result instanceof PrimitiveType){
-                result.setValue(object);
-            }
             //If return type is a list type, cast each Node in the NodeList to the contained type
-            else if(result instanceof ListType){
+            if(result instanceof ListType){
                 String containedType = ((ListType) result).getContainedType();
                 NodeList nodeList = (NodeList) object;
                 for(int i=0; i<nodeList.getLength(); i++) {
@@ -87,9 +83,19 @@ public class ObjectType extends DataType {
             else {
                 //Try casting from XML format
                 if (object instanceof Node) {
-                    result.deserialize(serializeNode((Node)object), ObjectType.DEFAULT_COMMON_ENCODING_FORMAT);
-                } else if (object instanceof String) {
-                    StringType resultType = new StringType((String)object);
+                    result.deserialize(serializeNode((Node) object), ObjectType.DEFAULT_COMMON_ENCODING_FORMAT);
+                } else {
+                    DataType resultType;
+                    if (object instanceof Boolean) {
+                        resultType = new BooleanType((Boolean)object);
+                    } else if (object instanceof Number) {
+                        resultType = new NumberType();
+                        resultType.setValue(((Number)object).doubleValue());
+                    } else if (object instanceof String) {
+                        resultType = new StringType((String)object);
+                    } else {
+                        throw new IllegalStateException("Could not parse the result of expression ["+expression+"] as a ["+returnType+"]");
+                    }
                     result = resultType.convertTo(result.getType());
                 }
             }

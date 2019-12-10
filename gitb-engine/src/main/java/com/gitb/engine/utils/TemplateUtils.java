@@ -20,17 +20,15 @@ import static com.gitb.engine.expr.resolvers.VariableResolver.VARIABLE_EXPRESSIO
 public class TemplateUtils {
 	private static final Pattern placeholderPattern = Pattern.compile("\\$\\{("+VARIABLE_EXPRESSION__NO_DOLLAR+")\\}");
 
-	public static DataType generateDataTypeFromTemplate(TestCaseScope scope, InputStream template, String type, String encoding) throws IOException {
-		byte[] content = IOUtils.toByteArray(template);
+	public static DataType generateDataTypeFromTemplate(TestCaseScope scope, byte[] templateBytes, String type, String encoding, boolean forceBinaryTemplateProcessing) {
+		if (type.equals(DataType.BINARY_DATA_TYPE) && !forceBinaryTemplateProcessing) {
+			// return immediately if dealing with binary data
+			BinaryType binary = new BinaryType();
+			binary.setValue(templateBytes);
+			return binary;
+		}
 
-        //return immediately if dealing with binary data
-        if(type.equals(DataType.BINARY_DATA_TYPE)) {
-            BinaryType binary = new BinaryType();
-            binary.setValue(content);
-            return binary;
-        }
-
-		String str = new String(content);
+		String str = new String(templateBytes);
 
 		Matcher matcher = placeholderPattern.matcher(str);
 
@@ -53,9 +51,14 @@ public class TemplateUtils {
 			matcher.appendReplacement(stringBuffer, replacement);
 		}
 		matcher.appendTail(stringBuffer);
+		return DataTypeFactory.getInstance().create(stringBuffer.toString().getBytes(), type, encoding);
+	}
 
-		DataType data = DataTypeFactory.getInstance().create(stringBuffer.toString().getBytes(), type, encoding);
+	public static DataType generateDataTypeFromTemplate(TestCaseScope scope, DataType templateVariable, String type) {
+		return generateDataTypeFromTemplate(scope, templateVariable.serializeByDefaultEncoding(), type, null, true);
+	}
 
-		return data;
+	public static DataType generateDataTypeFromTemplate(TestCaseScope scope, InputStream template, String type, String encoding) throws IOException {
+		return generateDataTypeFromTemplate(scope, IOUtils.toByteArray(template), type, encoding, false);
 	}
 }

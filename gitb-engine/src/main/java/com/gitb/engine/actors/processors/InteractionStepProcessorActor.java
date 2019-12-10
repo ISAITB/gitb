@@ -15,6 +15,7 @@ import com.gitb.engine.events.model.InputEvent;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.TemplateUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tbs.InputRequest;
 import com.gitb.tbs.Instruction;
@@ -295,11 +296,25 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 String assignedVariableExpression = targetRequest.getValue();
                 VariableResolver variableResolver = new VariableResolver(scope);
                 DataType assignedVariable = variableResolver.resolveVariable(assignedVariableExpression);
-                DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput);
+                if (targetRequest.isAsTemplate()) {
+                    DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput, (dataType) -> {
+                        DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
+                        dataType.setValue(dataTypeAfterAppliedTemplate.convertTo(dataType.getType()).getValue());
+                    });
+                } else {
+                    DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput);
+                }
             } else {
                 //Create an empty value
                 DataType assignedValue = dataTypeFactory.create(targetRequest.getType());
-                DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput);
+                if (targetRequest.isAsTemplate()) {
+                    DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput, (dataType) -> {
+                        DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
+                        dataType.setValue(dataTypeAfterAppliedTemplate.convertTo(dataType.getType()).getValue());
+                    });
+                } else {
+                    DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput);
+                }
                 //Put it to the Interaction Result map
                 if (targetRequest.getName() != null) {
                     interactionResult.addItem(targetRequest.getName(), assignedValue);

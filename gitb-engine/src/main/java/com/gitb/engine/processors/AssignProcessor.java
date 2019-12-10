@@ -49,7 +49,9 @@ public class AssignProcessor implements IProcessor {
 		    if(!lValue.getType().equals(DataType.MAP_DATA_TYPE)) {
 			    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "To expression should be a map type"));
 		    }
-
+			if(assign.getType() == null) {
+				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Type parameter for the assign operation is necessary"));
+			}
             DataType result = exprHandler.processExpression(assign, assign.getType());
 		    String mapKey = keyExpression;
             if (mapKey.startsWith("$")) { //key is also a variable reference

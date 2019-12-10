@@ -153,11 +153,7 @@ public abstract class AbstractMessagingStepProcessorActor<T extends MessagingSte
     }
 
     protected DataType getInputValue(String type, Binding input) {
-        Expression expression = new Expression();
-        expression.setSource(input.getSource());
-        expression.setValue(input.getValue());
-
-        return expressionHandler.processExpression(expression, type);
+        return expressionHandler.processExpression(input, type);
     }
 
     protected TypedParameter getTypedParameterByName(List<TypedParameter> parameters, String name) {
