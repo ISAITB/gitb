@@ -54,7 +54,13 @@ public class ObjectType extends DataType {
         DataType result = DataTypeFactory.getInstance().create(returnType);
         try {
             //Evaluate the expression with the expected type
-            Object object = expression.evaluate(this.value, type);
+            Object object;
+            try {
+                object = expression.evaluate(this.value, type);
+            } catch (XPathExpressionException e) {
+                // Make a second attempt, evaluating as a string
+                object = expression.evaluate(this.value);
+            }
             //If return type is primitive directly set the value (Java types matches)
             if (result instanceof PrimitiveType){
                 result.setValue(object);
@@ -80,12 +86,15 @@ public class ObjectType extends DataType {
             //For other types
             else {
                 //Try casting from XML format
-                result.deserialize(serializeNode((Node)object), ObjectType.DEFAULT_COMMON_ENCODING_FORMAT);
+                if (object instanceof Node) {
+                    result.deserialize(serializeNode((Node)object), ObjectType.DEFAULT_COMMON_ENCODING_FORMAT);
+                } else if (object instanceof String) {
+                    StringType resultType = new StringType((String)object);
+                    result = resultType.convertTo(result.getType());
+                }
             }
         } catch (XPathExpressionException e) {
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Error while evaluating XPath expression"), e);
-        } catch (Exception e) {
-            e.printStackTrace();
         }
 
         return result;
