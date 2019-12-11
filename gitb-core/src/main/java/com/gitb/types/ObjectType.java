@@ -54,13 +54,15 @@ public class ObjectType extends DataType {
         DataType result = DataTypeFactory.getInstance().create(returnType);
         try {
             //Evaluate the expression with the expected type
-            Object object = expression.evaluate(this.value, type);
-            //If return type is primitive directly set the value (Java types matches)
-            if (result instanceof PrimitiveType){
-                result.setValue(object);
+            Object object;
+            try {
+                object = expression.evaluate(this.value, type);
+            } catch (XPathExpressionException e) {
+                // Make a second attempt, evaluating as a string
+                object = expression.evaluate(this.value);
             }
             //If return type is a list type, cast each Node in the NodeList to the contained type
-            else if(result instanceof ListType){
+            if(result instanceof ListType){
                 String containedType = ((ListType) result).getContainedType();
                 NodeList nodeList = (NodeList) object;
                 for(int i=0; i<nodeList.getLength(); i++) {
@@ -80,12 +82,25 @@ public class ObjectType extends DataType {
             //For other types
             else {
                 //Try casting from XML format
-                result.deserialize(serializeNode((Node)object), ObjectType.DEFAULT_COMMON_ENCODING_FORMAT);
+                if (object instanceof Node) {
+                    result.deserialize(serializeNode((Node) object), ObjectType.DEFAULT_COMMON_ENCODING_FORMAT);
+                } else {
+                    DataType resultType;
+                    if (object instanceof Boolean) {
+                        resultType = new BooleanType((Boolean)object);
+                    } else if (object instanceof Number) {
+                        resultType = new NumberType();
+                        resultType.setValue(((Number)object).doubleValue());
+                    } else if (object instanceof String) {
+                        resultType = new StringType((String)object);
+                    } else {
+                        throw new IllegalStateException("Could not parse the result of expression ["+expression+"] as a ["+returnType+"]");
+                    }
+                    result = resultType.convertTo(result.getType());
+                }
             }
         } catch (XPathExpressionException e) {
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Error while evaluating XPath expression"), e);
-        } catch (Exception e) {
-            e.printStackTrace();
         }
 
         return result;
@@ -119,12 +134,8 @@ public class ObjectType extends DataType {
                 document = builder.newDocument();
             }
             setValue(document);
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-        } catch (SAXException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (ParserConfigurationException | SAXException | IOException e) {
+            throw new IllegalStateException("Unable to deserialise variable as XML", e);
         }
     }
 

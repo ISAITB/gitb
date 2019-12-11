@@ -65,11 +65,7 @@ public abstract class AbstractProcessingStepProcessorActor<T extends Process> ex
     }
 
     protected DataType getInputValue(String type, Binding input) {
-        Expression expression = new Expression();
-        expression.setSource(input.getSource());
-        expression.setValue(input.getValue());
-
-        return expressionHandler.processExpression(expression, type);
+        return expressionHandler.processExpression(input, type);
     }
 
     protected void setInputWithModuleDefinition(ProcessingData processingData, List<Binding> input, String operation, IProcessingHandler handler) {

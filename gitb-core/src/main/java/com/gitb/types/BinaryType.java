@@ -19,7 +19,7 @@ public class BinaryType extends PrimitiveType {
 
     @Override
     public DataType processXPath(XPathExpression expression, String returnType) {
-        return this;
+        return toObjectType().processXPath(expression, returnType);
     }
 
     @Override

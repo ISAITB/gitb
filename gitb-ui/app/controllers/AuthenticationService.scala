@@ -1,5 +1,6 @@
 package controllers
 
+import config.Configurations
 import controllers.util._
 import exceptions._
 import javax.inject.Inject
@@ -49,6 +50,10 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
       if (result.get.ssoUid.isDefined || result.get.ssoEmail.isDefined) {
         // User already migrated.
         ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided credentials match an already migrated account")
+      } else if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT == result.get.id) {
+        // Attempt to migrate the demo account. Return message as if the user doesn't exist.
+        logger.warn("Attempt made by ["+authorizationManager.getPrincipal(request).uid+"] to migrate the demo account ["+Configurations.DEMOS_ACCOUNT+"]")
+        ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided credentials did not match a previously existing account")
       } else {
         // Link the account.
         accountManager.migrateAccount(result.get.id, authorizationManager.getPrincipal(request))

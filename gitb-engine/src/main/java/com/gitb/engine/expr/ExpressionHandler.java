@@ -4,6 +4,7 @@ import com.gitb.core.ErrorCode;
 import com.gitb.engine.expr.resolvers.FunctionResolver;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.TemplateUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.Expression;
 import com.gitb.types.DataType;
@@ -36,17 +37,23 @@ public class ExpressionHandler{
     public DataType processExpression(Expression expression, String expectedReturnType) {
         String sourceVariableExpression = expression.getSource();
         String xpathExpression = expression.getValue();
+        boolean asTemplate = expression.isAsTemplate();
+        DataType expressionResult;
         if(sourceVariableExpression != null) {
             DataType source = variableResolver.resolveVariable(sourceVariableExpression);
             if(xpathExpression == null || xpathExpression.equals("")) {
                 //if nothing to process, return the source immediately
-                return source;
+                expressionResult = source;
             } else {
-                return processExpression(source, xpathExpression, expectedReturnType);
+                expressionResult = processExpression(source, xpathExpression, expectedReturnType);
             }
         } else {
-            return processExpression(xpathExpression, expectedReturnType);
+            expressionResult = processExpression(xpathExpression, expectedReturnType);
         }
+        if (asTemplate) {
+            expressionResult = TemplateUtils.generateDataTypeFromTemplate(scope, expressionResult, expectedReturnType);
+        }
+        return expressionResult;
     }
 
     private DataType processExpression(DataType source, String expression, String expectedReturnType)  {

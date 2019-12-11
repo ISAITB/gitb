@@ -25,8 +25,7 @@ public class StringType extends PrimitiveType {
 
     @Override
     public DataType processXPath(XPathExpression expression, String returnType) {
-        //expression evaluates/returns itself
-        return this;
+	    return toObjectType().processXPath(expression, returnType);
     }
 
     @Override
@@ -98,4 +97,8 @@ public class StringType extends PrimitiveType {
         return type;
     }
 
+    @Override
+    public StringType toStringType() {
+	    return this;
+    }
 }
