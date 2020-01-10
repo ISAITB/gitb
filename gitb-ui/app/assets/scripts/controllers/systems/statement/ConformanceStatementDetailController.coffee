@@ -142,13 +142,14 @@ class ConformanceStatementDetailController
           repr = _.cloneDeep parameter
 
           relevantConfig = _.find(@configurations, (config) => 
-            parameter.id == config.parameter && Number(parameter.endpoint) == Number(config.endpoint)
+            Number(parameter.id) == Number(config.parameter) && Number(parameter.endpoint) == Number(config.endpoint)
           );
           if relevantConfig?
             repr.value = relevantConfig.value
             repr.configured = relevantConfig.configured
           else
             repr.configured = false
+            repr.value = undefined
 
           if repr.configured
             if parameter.kind == 'BINARY'
