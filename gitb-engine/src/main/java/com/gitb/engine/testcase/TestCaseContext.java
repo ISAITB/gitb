@@ -232,7 +232,7 @@ public class TestCaseContext {
 			TestCaseScope.ScopedVariable variable = scope.createVariable(mapVariableName);
 			MapType map = (MapType) factory.create(DataType.MAP_DATA_TYPE);
 			for (Configuration configuration : domainConfiguration.getConfig()) {
-				DataType configurationValue = null;
+				DataType configurationValue;
 				if (configuration.getValue() != null && configuration.getValue().startsWith("data:") && configuration.getValue().contains(";base64,")) {
 					// Data URL
 					String base64 = configuration.getValue().substring(configuration.getValue().indexOf(",")+1);
@@ -288,9 +288,17 @@ public class TestCaseContext {
 			MapType map = (MapType) factory.create(DataType.MAP_DATA_TYPE);
 
 			for(Configuration configuration : actorConfiguration.getConfig()) {
-				StringType configurationValue = (StringType) factory.create(DataType.STRING_DATA_TYPE);
-				configurationValue.setValue(configuration.getValue());
-
+				DataType configurationValue;
+				if (configuration.getValue() != null && configuration.getValue().startsWith("data:") && configuration.getValue().contains(";base64,")) {
+					// Data URL
+					String base64 = configuration.getValue().substring(configuration.getValue().indexOf(",")+1);
+					configurationValue = factory.create(DataType.BINARY_DATA_TYPE);
+					configurationValue.setValue(Base64.decodeBase64(base64));
+				} else {
+					// String
+					configurationValue = factory.create(DataType.STRING_DATA_TYPE);
+					configurationValue.setValue(configuration.getValue());
+				}
 				map.addItem(configuration.getName(), configurationValue);
 			}
 
@@ -302,9 +310,17 @@ public class TestCaseContext {
 						MapType sutConfigurationMap = (MapType) factory.create(DataType.MAP_DATA_TYPE);
 
 						for(Configuration configuration : sutConfiguration.getConfig()) {
-							StringType configurationValue = (StringType) factory.create(DataType.STRING_DATA_TYPE);
-							configurationValue.setValue(configuration.getValue());
-
+							DataType configurationValue;
+							if (configuration.getValue() != null && configuration.getValue().startsWith("data:") && configuration.getValue().contains(";base64,")) {
+								// Data URL
+								String base64 = configuration.getValue().substring(configuration.getValue().indexOf(",")+1);
+								configurationValue = factory.create(DataType.BINARY_DATA_TYPE);
+								configurationValue.setValue(Base64.decodeBase64(base64));
+							} else {
+								// String
+								configurationValue = factory.create(DataType.STRING_DATA_TYPE);
+								configurationValue.setValue(configuration.getValue());
+							}
 							sutConfigurationMap.addItem(configuration.getName(), configurationValue);
 						}
 
