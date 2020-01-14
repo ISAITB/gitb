@@ -1,7 +1,7 @@
 class CreateConformanceStatementController
 
-  @$inject = ['$log', '$location', '$q', '$window', '$scope', '$state', '$stateParams', 'ConformanceService', 'SystemService', 'ErrorService']
-  constructor:(@$log, @$location, @$q, @$window, @$scope, @$state, @$stateParams, @ConformanceService, @SystemService, @ErrorService) ->
+  @$inject = ['$log', '$location', '$q', '$window', '$scope', '$state', '$stateParams', 'ConformanceService', 'SystemService', 'ErrorService', 'DataService']
+  constructor:(@$log, @$location, @$q, @$window, @$scope, @$state, @$stateParams, @ConformanceService, @SystemService, @ErrorService, @DataService) ->
     @$log.debug "Constructing CreateConformanceStatementController"
 
     @alerts = []
@@ -52,15 +52,15 @@ class CreateConformanceStatementController
     @steps = [
       {
         id: 1
-        title: 'Select domain'
+        title: 'Select ' + @DataService.labelDomainLower()
       }
       {
         id: 2
-        title: 'Select specification'
+        title: 'Select ' + @DataService.labelSpecificationLower()
       }
       {
         id: 3
-        title: 'Select actor'
+        title: 'Select ' + @DataService.labelActorLower()
       }
     ]
 
@@ -99,7 +99,7 @@ class CreateConformanceStatementController
     @showDomains = true
     @confirmAction = @confirmDomain
     @confirmButtonText = 'Next'
-    @headerText = 'Select domain'
+    @headerText = 'Select ' + @DataService.labelDomainLower()
     @showButtonPanel = true
 
   setSpecsView: () =>
@@ -107,7 +107,7 @@ class CreateConformanceStatementController
     @showSpecs = true
     @confirmAction = @confirmSpec
     @confirmButtonText = 'Next'
-    @headerText = 'Select specification'
+    @headerText = 'Select ' + @DataService.labelSpecificationLower()
     @showButtonPanel = true
 
   setActorsView: () =>
@@ -115,7 +115,7 @@ class CreateConformanceStatementController
     @showActors = true
     @confirmAction = @confirmActor
     @confirmButtonText = 'Next'
-    @headerText = 'Select actor'
+    @headerText = 'Select ' + @DataService.labelActorLower()
     @showButtonPanel = true
 
   setConfirmationView: () =>

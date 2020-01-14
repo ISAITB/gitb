@@ -1,7 +1,7 @@
 class CommunityParametersController
 
-  @$inject = ['$state', '$stateParams', 'CommunityService', 'ErrorService', '$q', '$uibModal']
-  constructor: (@$state, @$stateParams, @CommunityService, @ErrorService, @$q, @$uibModal) ->
+  @$inject = ['$state', '$stateParams', 'CommunityService', 'ErrorService', '$q', '$uibModal', 'DataService']
+  constructor: (@$state, @$stateParams, @CommunityService, @ErrorService, @$q, @$uibModal, @DataService) ->
     @communityId = @$stateParams.community_id
     @parameterTableColumns = [
       {
@@ -72,10 +72,10 @@ class CommunityParametersController
     resultDeferred.promise
 
   addOrganisationParameter: () =>
-    @addParameter('Create organisation property', @organisationParameterValues, @organisationReservedKeys, @CommunityService.createOrganisationParameter)
+    @addParameter('Create '+@DataService.labelOrganisationLower()+' property', @organisationParameterValues, @organisationReservedKeys, @CommunityService.createOrganisationParameter)
 
   addSystemParameter: () =>
-    @addParameter('Create system property', @systemParameterValues, @systemReservedKeys, @CommunityService.createSystemParameter)
+    @addParameter('Create '+@DataService.labelSystemLower()+' property', @systemParameterValues, @systemReservedKeys, @CommunityService.createSystemParameter)
 
   addParameter: (modalTitle, existingValues, reservedKeys, createMethod) =>
     options = {
@@ -110,10 +110,10 @@ class CommunityParametersController
     , angular.noop)
 
   onOrganisationParameterSelect: (parameter) =>
-    @onParameterSelect(parameter, 'Organisation property details', @organisationParameterValues, @organisationReservedKeys, @CommunityService.updateOrganisationParameter, @CommunityService.deleteOrganisationParameter)
+    @onParameterSelect(parameter, @DataService.labelOrganisation()+' property details', @organisationParameterValues, @organisationReservedKeys, @CommunityService.updateOrganisationParameter, @CommunityService.deleteOrganisationParameter)
 
   onSystemParameterSelect: (parameter) =>
-    @onParameterSelect(parameter, 'System property details', @systemParameterValues, @systemReservedKeys, @CommunityService.updateSystemParameter, @CommunityService.deleteSystemParameter)
+    @onParameterSelect(parameter, @DataService.labelSystem()+' property details', @systemParameterValues, @systemReservedKeys, @CommunityService.updateSystemParameter, @CommunityService.deleteSystemParameter)
 
   onParameterSelect: (parameter, modalTitle, existingValues, reservedKeys, updateMethod, deleteMethod) =>
     options = {

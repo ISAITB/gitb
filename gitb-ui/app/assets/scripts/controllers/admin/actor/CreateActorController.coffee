@@ -1,7 +1,7 @@
 class CreateActorController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', '$state', '$stateParams', 'ErrorService']
-	constructor: (@$log, @$scope, @ConformanceService, @$state, @$stateParams, @ErrorService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', '$state', '$stateParams', 'ErrorService', 'DataService']
+	constructor: (@$log, @$scope, @ConformanceService, @$state, @$stateParams, @ErrorService, @DataService) ->
 		@$log.debug "Constructing CreateActorController..."
 
 		@domainId = @$stateParams.id

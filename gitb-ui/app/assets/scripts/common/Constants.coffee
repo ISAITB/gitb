@@ -14,6 +14,31 @@ class Constants
 
 	@DEFAULT_COMMUNITY_ID = 0
 
+	@LABEL_TYPE = 
+		DOMAIN: 1
+		SPECIFICATION: 2
+		ACTOR: 3
+		ENDPOINT: 4
+		ORGANISATION: 5
+		SYSTEM: 6
+
+	@LABEL_TYPE_LABEL = 
+		1: "Domain"
+		2: "Specification"
+		3: "Actor"
+		4: "Endpoint"
+		5: "Organisation"
+		6: "System"
+
+	@LABEL_DEFAULT = {
+		1: {singularForm: "Domain", pluralForm: "Domains", fixedCase: false}
+		2: {singularForm: "Specification", pluralForm: "Specifications", fixedCase: false}
+		3: {singularForm: "Actor", pluralForm: "Actors", fixedCase: false}
+		4: {singularForm: "Endpoint", pluralForm: "Endpoints", fixedCase: false}
+		5: {singularForm: "Organisation", pluralForm: "Organisations", fixedCase: false}
+		6: {singularForm: "System", pluralForm: "Systems", fixedCase: false}
+	}
+
 	@SELF_REGISTRATION_TYPE = 
 		NOT_SUPPORTED: 1
 		PUBLIC_LISTING: 2

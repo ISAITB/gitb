@@ -17,6 +17,11 @@ public class ConformanceStatementOverview {
     private Boolean includeMessage = Boolean.FALSE;
     private Boolean includeTestStatus = Boolean.TRUE;
     private String message;
+    private String labelDomain;
+    private String labelSpecification;
+    private String labelActor;
+    private String labelOrganisation;
+    private String labelSystem;
     private List<TestCaseOverview> testCases;
 
     public String getTitle() {
@@ -129,5 +134,45 @@ public class ConformanceStatementOverview {
 
     public void setMessage(String message) {
         this.message = message;
+    }
+
+    public String getLabelDomain() {
+        return labelDomain;
+    }
+
+    public void setLabelDomain(String labelDomain) {
+        this.labelDomain = labelDomain;
+    }
+
+    public String getLabelSpecification() {
+        return labelSpecification;
+    }
+
+    public void setLabelSpecification(String labelSpecification) {
+        this.labelSpecification = labelSpecification;
+    }
+
+    public String getLabelActor() {
+        return labelActor;
+    }
+
+    public void setLabelActor(String labelActor) {
+        this.labelActor = labelActor;
+    }
+
+    public String getLabelOrganisation() {
+        return labelOrganisation;
+    }
+
+    public void setLabelOrganisation(String labelOrganisation) {
+        this.labelOrganisation = labelOrganisation;
+    }
+
+    public String getLabelSystem() {
+        return labelSystem;
+    }
+
+    public void setLabelSystem(String labelSystem) {
+        this.labelSystem = labelSystem;
     }
 }

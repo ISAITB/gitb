@@ -10,6 +10,7 @@ class CreateEditSystemController
 		@$scope.system = system
 		@$scope.organisationId = organisationId
 		@$scope.otherSystems = []
+		@$scope.DataService = @DataService
 
 		@$scope.propertyData = {
 			properties: []
@@ -42,9 +43,9 @@ class CreateEditSystemController
 		)
 
 		if system.id?
-			@$scope.title = 'Update system'
+			@$scope.title = 'Update ' + @DataService.labelSystemLower()
 		else 
-			@$scope.title = 'Create system'
+			@$scope.title = 'Create ' + @DataService.labelSystemLower()
 	
 		@$scope.saveEnabled = () =>
 			@$scope.system.sname? && @$scope.system.fname? && @$scope.system.version?
@@ -75,7 +76,7 @@ class CreateEditSystemController
 				if @$scope.system.id?
 					# Update
 					if @$scope.system.otherSystem? && @$scope.system.otherSystem.id?
-						@ConfirmationDialogService.confirm("Confirm test setup copy", "Copying the test setup from another system will remove current conformance statements and test results. Are you sure you want to proceed?", "Yes", "No")
+						@ConfirmationDialogService.confirm("Confirm test setup copy", "Copying the test setup from another "+ + @DataService.labelSystemLower()+" will remove current conformance statements and test results. Are you sure you want to proceed?", "Yes", "No")
 							.then(() =>
 								@$scope.doUpdate()
 							)
@@ -95,7 +96,7 @@ class CreateEditSystemController
 						)
 
 		@$scope.delete = () =>
-			@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this system?", "Yes", "No")
+			@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this "+ + @DataService.labelSystemLower()+"?", "Yes", "No")
 				.then () =>
 					@$scope.pending = true
 					@$scope.deletePending = true

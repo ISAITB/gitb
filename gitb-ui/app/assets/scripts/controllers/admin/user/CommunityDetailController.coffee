@@ -214,4 +214,7 @@ class CommunityDetailController
   updateParameters: () =>
     @$state.go 'app.admin.users.communities.detail.parameters'
 
+  editLabels: () =>
+    @$state.go 'app.admin.users.communities.detail.labels'
+
 @controllers.controller 'CommunityDetailController', CommunityDetailController

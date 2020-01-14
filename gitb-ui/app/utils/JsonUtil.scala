@@ -5,7 +5,7 @@ import java.util
 import com.gitb.tr._
 import config.Configurations
 import javax.xml.bind.JAXBElement
-import models.Enums.TestResultStatus
+import models.Enums.{LabelType, TestResultStatus}
 import models._
 import play.api.libs.json._
 
@@ -400,12 +400,15 @@ object JsonUtil {
     json
   }
 
-  def serializeCommunity(community:Community):String = {
+  def serializeCommunity(community:Community, labels: Option[List[CommunityLabels]]):String = {
     var jCommunity:JsObject = jsCommunity(community.toCaseObject)
     if(community.domain.isDefined){
       jCommunity = jCommunity ++ Json.obj("domain" -> jsDomain(community.domain.get))
     } else{
       jCommunity = jCommunity ++ Json.obj("domain" -> JsNull)
+    }
+    if (labels.isDefined) {
+      jCommunity = jCommunity ++ Json.obj("labels" -> jsCommunityLabels(labels.get))
     }
     jCommunity.toString
   }
@@ -640,6 +643,21 @@ object JsonUtil {
         -1, // Will be forced later
         (jsonConfig \ "parameter").as[Long],
         (jsonConfig \ "value").as[String]
+      )
+    }
+    list
+  }
+
+  def parseJsCommunityLabels(communityId: Long, json:String):List[CommunityLabels] = {
+    val jsArray = Json.parse(json).as[List[JsObject]]
+    var list:List[CommunityLabels] = List()
+    jsArray.foreach { jsonConfig =>
+      list ::= CommunityLabels(
+        communityId,
+        LabelType.apply((jsonConfig \ "labelType").as[Int]).id.toShort,
+        (jsonConfig \ "singularForm").as[String],
+        (jsonConfig \ "pluralForm").as[String],
+        (jsonConfig \ "fixedCase").as[Boolean]
       )
     }
     list
@@ -1045,7 +1063,8 @@ object JsonUtil {
         "communityId" -> option.communityId,
         "communityName" -> option.communityName,
         "selfRegType" -> option.selfRegType,
-        "templates" -> (if (option.templates.isDefined) jsSelfRegTemplates(option.templates.get) else JsNull)
+        "templates" -> (if (option.templates.isDefined) jsSelfRegTemplates(option.templates.get) else JsNull),
+        "labels" -> jsCommunityLabels(option.labels)
     )
     json
   }
@@ -1568,6 +1587,24 @@ object JsonUtil {
     if (includeValues && param.value.isDefined && param.parameter.kind != "SECRET") {
       json = json.+("value" -> JsString(param.value.get.value))
     }
+    json
+  }
+
+  def jsCommunityLabels(labels: List[CommunityLabels]): JsArray = {
+    var json = Json.arr()
+    labels.foreach { label =>
+      json = json.append(jsCommunityLabel(label))
+    }
+    json
+  }
+
+  def jsCommunityLabel(label: CommunityLabels): JsObject = {
+    val json = Json.obj(
+      "labelType"    -> label.labelType,
+      "singularForm"    -> label.singularForm,
+      "pluralForm"    -> label.pluralForm,
+      "fixedCase" -> JsBoolean(label.fixedCase)
+    )
     json
   }
 

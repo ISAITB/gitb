@@ -187,4 +187,20 @@ class CommunityService
       authenticate: true
     })
 
+  getCommunityLabels: (communityId) =>
+    @RestService.get({
+      path: jsRoutes.controllers.CommunityService.getCommunityLabels(communityId).url
+      authenticate: true
+    })    
+
+  setCommunityLabels: (communityId, labels) =>
+    data = {
+      values: labels
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.CommunityService.setCommunityLabels(communityId).url,
+      data: data,
+      authenticate: true
+    })
+
 services.service('CommunityService', CommunityService)

@@ -59,4 +59,9 @@ object Enums {
     val CANCEL = Value(2)
   }
 
+  object LabelType extends Enumeration(1) {
+    type LabelType = Value
+    val Domain, Specification, Actor, Endpoint, Organisation, System = Value
+  }
+
 }

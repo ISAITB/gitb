@@ -24,7 +24,7 @@
                         </div>
                         <div class="row" ng-if="lc.DataService.actualUser.accounts.length == 0">
                             <div class="bg-info div-rounded div-padded">
-                                <span>To use the Test Bed you need to first be assigned a role in one or more organisations. To link such a role to your account click the button below to view available options.</span>
+                                <span>To use the Test Bed you need to first be assigned a role in one or more communities. To link such a role to your account click the button below to view available options.</span>
                             </div>                        
                         </div>
                         <div class="row" ng-class="{'div-spaced-small': !$first, 'account-card-ou': account.role == lc.Constants.USER_ROLE.VENDOR_USER, 'account-card-oa': account.role == lc.Constants.USER_ROLE.VENDOR_ADMIN, 'account-card-ca': account.role == lc.Constants.USER_ROLE.COMMUNITY_ADMIN, 'account-card-ta': account.role == lc.Constants.USER_ROLE.SYSTEM_ADMIN}" ng-repeat="account in lc.DataService.actualUser.accounts">
@@ -54,7 +54,7 @@
                             <form class="form-horizontal">
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
-                                        <h4 class="title">{{lc.loginOption == lc.Constants.LOGIN_OPTION.REGISTER && lc.DataService.configuration['registration.enabled']?'Register your organisation':'Login'}}</h4>
+                                        <h4 class="title">{{lc.loginOption == lc.Constants.LOGIN_OPTION.REGISTER && lc.DataService.configuration['registration.enabled']?'Registration':'Login'}}</h4>
                                     </div>
                                     <div class="panel-body">
                                         <!-- Error messages -->

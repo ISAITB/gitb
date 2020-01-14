@@ -1,6 +1,6 @@
 class SystemController
-	@$inject = ['$stateParams', 'SystemService', 'ErrorService']
-	constructor:(@$stateParams, @SystemService, @ErrorService) ->
+	@$inject = ['$stateParams', 'SystemService', 'ErrorService', 'DataService']
+	constructor:(@$stateParams, @SystemService, @ErrorService, @DataService) ->
 		@systemId = @$stateParams["id"]
 		@propertyData = {
 			properties: []

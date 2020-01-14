@@ -20,8 +20,8 @@
             <table class="table">
                 <thead>
                 <tr>
-                    <th ng-if="systemTestsCtrl.community.domainId == undefined" class="col-md-2">Domain</th>
-                    <th class="col-md-2">Specification</th>
+                    <th ng-if="systemTestsCtrl.community.domainId == undefined" class="col-md-2">{{systemTestsCtrl.DataService.labelDomain()}}</th>
+                    <th class="col-md-2">{{systemTestsCtrl.DataService.labelSpecification()}}</th>
                     <th class="col-md-2">Test suite</th>
                     <th class="col-md-1">Test case</th>
                     <th class="col-md-1">Result</th>

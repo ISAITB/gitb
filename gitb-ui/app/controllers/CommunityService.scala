@@ -1,6 +1,7 @@
 package controllers
 
 import config.Configurations
+import controllers.util.ParameterExtractor.requiredBodyParameter
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
 import javax.inject.Inject
@@ -44,7 +45,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
   def getCommunityById(communityId: Long) = AuthorizedAction { request =>
     authorizationManager.canViewCommunityFull(request, communityId)
     val community = communityManager.getCommunityById(communityId)
-    val json: String = JsonUtil.serializeCommunity(community)
+    val json: String = JsonUtil.serializeCommunity(community, None)
     ResponseConstructor.constructJsonResponse(json)
   }
 
@@ -146,7 +147,8 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     authorizationManager.canViewOwnCommunity(request)
 
     val community = communityManager.getUserCommunity(userId)
-    val json: String = JsonUtil.serializeCommunity(community)
+    val labels = communityManager.getCommunityLabels(community.id)
+    val json: String = JsonUtil.serializeCommunity(community, Some(labels))
     ResponseConstructor.constructJsonResponse(json)
   }
 
@@ -216,6 +218,18 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
   def getSystemParameters(communityId: Long) = AuthorizedAction { request =>
     authorizationManager.canViewCommunityBasic(request, communityId)
     ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemParameters(communityManager.getSystemParameters(communityId)).toString)
+  }
+
+  def getCommunityLabels(communityId: Long) = AuthorizedAction { request =>
+    authorizationManager.canViewCommunityBasic(request, communityId)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsCommunityLabels(communityManager.getCommunityLabels(communityId)).toString)
+  }
+
+  def setCommunityLabels(communityId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageCommunity(request, communityId)
+    val labels = JsonUtil.parseJsCommunityLabels(communityId, requiredBodyParameter(request, Parameters.VALUES))
+    communityManager.setCommunityLabels(communityId, labels)
+    ResponseConstructor.constructEmptyResponse
   }
 
 }

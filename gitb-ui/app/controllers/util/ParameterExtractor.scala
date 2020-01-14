@@ -171,7 +171,7 @@ object ParameterExtractor {
     }
   }
 
-  def extractUserId(request:Request[AnyContent]):Long = {
+  def extractUserId(request:Request[_]):Long = {
     request.headers.get(Parameters.USER_ID).get.toLong
   }
 

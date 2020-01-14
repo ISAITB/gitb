@@ -9,14 +9,14 @@
             </div>
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h5 class="title">Organisation-level properties</h5>
+                    <h5 class="title">{{controller.DataService.labelOrganisation()}} level properties</h5>
                     <a href="" ng-click="controller.addOrganisationParameter()" class="btn btn-default pull-right">Create property</a>
                 </div>
                 <div table-directive columns="controller.parameterTableColumns" data="controller.organisationParameters" on-select="controller.onOrganisationParameterSelect"></div>
             </div>
             <div class="panel panel-default" style="margin-bottom: 0px;">
                 <div class="panel-heading">
-                    <h5 class="title">System-level properties</h5>
+                    <h5 class="title">{{controller.DataService.labelSystem()}} level properties</h5>
                     <a href="" ng-click="controller.addSystemParameter()" class="btn btn-default pull-right">Create property</a>
                 </div>
                 <div table-directive columns="controller.parameterTableColumns" data="controller.systemParameters" on-select="controller.onSystemParameterSelect"></div>

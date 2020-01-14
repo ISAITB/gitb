@@ -67,7 +67,7 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
       PersistenceSchema.communities
         .filter(x => x.selfRegType === SelfRegistrationType.PublicListing.id.toShort || x.selfRegType === SelfRegistrationType.PublicListingWithToken.id.toShort)
         .sortBy(_.shortname.asc).result
-    ).map(x => new SelfRegOption(x.id, x.shortname, x.selfRegType, organizationManager.getOrganisationTemplates(x.id))).toList
+    ).map(x => new SelfRegOption(x.id, x.shortname, x.selfRegType, organizationManager.getOrganisationTemplates(x.id), getCommunityLabels(x.id))).toList
   }
 
   def getById(id: Long): Option[Communities] = {
@@ -151,6 +151,7 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
           conformanceManager.deleteConformanceCertificateSettings(communityId) andThen
           deleteOrganisationParametersByCommunity(communityId) andThen
           deleteSystemParametersByCommunity(communityId) andThen
+          PersistenceSchema.communityLabels.filter(_.community === communityId).delete andThen
           PersistenceSchema.communities.filter(_.id === communityId).delete
         ).transactionally
     )
@@ -316,6 +317,21 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
       parameterMap.get(value._1._1._2.id) = value._1._1._1.value
     }
     valuesPerSystem
+  }
+
+  def setCommunityLabels(communityId: Long, labels: List[CommunityLabels]) = {
+    val actions = new ListBuffer[DBIO[_]]()
+    // Delete existing labels
+    actions += PersistenceSchema.communityLabels.filter(_.community === communityId).delete
+    // Add new labels
+    labels.foreach { label =>
+      actions += (PersistenceSchema.communityLabels += label)
+    }
+    exec(DBIO.seq(actions.map(a => a): _*).transactionally)
+  }
+
+  def getCommunityLabels(communityId: Long): List[CommunityLabels] = {
+    exec(PersistenceSchema.communityLabels.filter(_.community === communityId).result).toList
   }
 
 }

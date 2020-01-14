@@ -1,7 +1,7 @@
 <div class="page domains detail detail-spec">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h4 class="title">Specification details</h4>
+			<h4 class="title">{{specDetailsCtrl.DataService.labelSpecification()}} details</h4>
 		</div>
 		<div class="panel-body">
 			<div class="row">
@@ -28,8 +28,8 @@
 	</div>
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h4 class="title">Actors</h4>
-			<a ui-sref="app.admin.domains.detail.specifications.detail.actors.create" class="btn btn-default pull-right">Create actor</a>
+			<h4 class="title">{{specDetailsCtrl.DataService.labelActors()}}</h4>
+			<a ui-sref="app.admin.domains.detail.specifications.detail.actors.create" class="btn btn-default pull-right">Create {{specDetailsCtrl.DataService.labelActorLower()}}</a>
 		</div>
 		<div table-directive columns="specDetailsCtrl.actorTableColumns" data="specDetailsCtrl.actors" on-select="specDetailsCtrl.onActorSelect"></div>
 	</div>

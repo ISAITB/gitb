@@ -5,17 +5,17 @@
 		</div>
 		<div class="panel-body">
 			<div class="row row-display-first">
-				<div class="col-md-2"><strong>Domain</strong></div>
+				<div class="col-md-2"><strong>{{conformanceStatementDetailCtrl.DataService.labelDomain()}}</strong></div>
 				<div class="col-md-10">{{conformanceStatementDetailCtrl.domain.fname}}</div>
 				<div class="col-md-10 col-md-offset-2 row-display-inner" ng-if="conformanceStatementDetailCtrl.domain.description">{{conformanceStatementDetailCtrl.domain.description}}</div>
 			</div>
 			<div class="row row-display">
-				<div class="col-md-2"><strong>Specification</strong></div>
+				<div class="col-md-2"><strong>{{conformanceStatementDetailCtrl.DataService.labelSpecification()}}</strong></div>
 				<div class="col-md-10">{{conformanceStatementDetailCtrl.specification.fname}}</div>
 				<div class="col-md-10 col-md-offset-2 row-display-inner" ng-if="conformanceStatementDetailCtrl.specification.description">{{conformanceStatementDetailCtrl.specification.description}}</div>
 			</div>
 			<div class="row row-display">
-				<div class="col-md-2"><strong>Actor</strong></div>
+				<div class="col-md-2"><strong>{{conformanceStatementDetailCtrl.DataService.labelActor()}}</strong></div>
 				<div class="col-md-10">{{conformanceStatementDetailCtrl.actor.name}}</div>
 				<div class="col-md-10 col-md-offset-2 row-display-inner" ng-if="conformanceStatementDetailCtrl.actor.description">{{conformanceStatementDetailCtrl.actor.description}}</div>
 			</div>

@@ -50,11 +50,11 @@
                             <span class="col-sm-3 control-label"></span>
                             <div class="col-sm-8">
                                 <h4>Placeholders:</h4>
-                                <p><b>{{communityCertificateCtrl.placeholderDomain}}</b>: The full name of the domain.</p>
-                                <p><b>{{communityCertificateCtrl.placeholderSpecification}}</b>: The full name of the specification.</p>
-                                <p><b>{{communityCertificateCtrl.placeholderActor}}</b>: The full name of the actor linked to the conformance statement.</p>
-                                <p><b>{{communityCertificateCtrl.placeholderOrganisation}}</b>: The full name of the organisation to be granted the certificate.</p>
-                                <p><b>{{communityCertificateCtrl.placeholderSystem}}</b>: The full name of the organisation's system that was used in the tests.</p>
+                                <p><b>{{communityCertificateCtrl.placeholderDomain}}</b>: The full name of the {{communityCertificateCtrl.DataService.labelDomainLower()}}.</p>
+                                <p><b>{{communityCertificateCtrl.placeholderSpecification}}</b>: The full name of the {{communityCertificateCtrl.DataService.labelSpecificationLower()}}.</p>
+                                <p><b>{{communityCertificateCtrl.placeholderActor}}</b>: The full name of the {{communityCertificateCtrl.DataService.labelActorLower()}} linked to the conformance statement.</p>
+                                <p><b>{{communityCertificateCtrl.placeholderOrganisation}}</b>: The full name of the {{communityCertificateCtrl.DataService.labelOrganisationLower()}} to be granted the certificate.</p>
+                                <p><b>{{communityCertificateCtrl.placeholderSystem}}</b>: The full name of the {{communityCertificateCtrl.DataService.labelSystemLower()}} that was used in the tests.</p>
                             </div>
                         </div>
                     </form>

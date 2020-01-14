@@ -21,6 +21,12 @@ public class TestCaseOverview {
     private String testSuiteName;
     private String subReportRoot;
     private String id;
+    private String labelDomain;
+    private String labelSpecification;
+    private String labelActor;
+    private String labelOrganisation;
+    private String labelSystem;
+
     private List<Report> steps = new ArrayList<>();
 
     public String getId() {
@@ -141,5 +147,45 @@ public class TestCaseOverview {
 
     public void setTestSuiteName(String testSuiteName) {
         this.testSuiteName = testSuiteName;
+    }
+
+    public String getLabelDomain() {
+        return labelDomain;
+    }
+
+    public void setLabelDomain(String labelDomain) {
+        this.labelDomain = labelDomain;
+    }
+
+    public String getLabelSpecification() {
+        return labelSpecification;
+    }
+
+    public void setLabelSpecification(String labelSpecification) {
+        this.labelSpecification = labelSpecification;
+    }
+
+    public String getLabelActor() {
+        return labelActor;
+    }
+
+    public void setLabelActor(String labelActor) {
+        this.labelActor = labelActor;
+    }
+
+    public String getLabelOrganisation() {
+        return labelOrganisation;
+    }
+
+    public void setLabelOrganisation(String labelOrganisation) {
+        this.labelOrganisation = labelOrganisation;
+    }
+
+    public String getLabelSystem() {
+        return labelSystem;
+    }
+
+    public void setLabelSystem(String labelSystem) {
+        this.labelSystem = labelSystem;
     }
 }

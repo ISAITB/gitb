@@ -182,6 +182,8 @@ GET     /communities/admins/all             @controllers.UserService.getCommunit
 POST    /communities/admins/create          @controllers.UserService.createCommunityAdmin
 POST    /communities/admins/create          @controllers.UserService.createCommunityAdmin
 POST    /communities/admins/:id             @controllers.UserService.updateCommunityAdminProfile(id : Long)
+GET     /communities/labels/:id             @controllers.CommunityService.getCommunityLabels(id: Long)
+POST    /communities/labels/:id             @controllers.CommunityService.setCommunityLabels(id: Long)
 
 # Test Result management API
 POST    /tests/binaryMetadata                           @controllers.TestResultService.getBinaryMetadata()

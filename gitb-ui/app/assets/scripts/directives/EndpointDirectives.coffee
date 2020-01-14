@@ -35,7 +35,7 @@
 ]
 
 @directives.directive 'endpointDisplay', ['DataService'
-	(@DataService)->
+	(DataService)->
 		scope:
 			endpoint: '='
 			showValues: '='
@@ -44,7 +44,7 @@
 			onEdit: '='
 		template: ''+
 			'<div class="row endpoint-row">
-				<div class="col-md-1"><strong>Endpoint</strong></div>
+				<div class="col-md-1"><strong>{{DataService.labelEndpoint()}}</strong></div>
 				<div class="col-md-11">{{endpoint.name}}</div>
 			</div>
 			<div class="row endpoint-row">
@@ -54,6 +54,7 @@
 			<div class="parameter-div" parameter-display parameters="endpoint.parameters" show-values="showValues" editable="editable" can-edit="canEdit" on-edit="onEdit">
 			</div>'
 		link: (scope, element, attrs) =>
+			scope.DataService = DataService
 ]
 
 @directives.directive 'parameterDisplay', ['DataService'

@@ -482,4 +482,15 @@ object PersistenceSchema {
   }
   val systemParameterValues = TableQuery[SystemParameterValuesTable]
 
+  class CommunityLabelsTable(tag: Tag) extends Table[CommunityLabels](tag, "CommunityLabels") {
+    def community = column[Long] ("community")
+    def labelType = column[Short]("label_type")
+    def singularForm = column[String]("singular_form")
+    def pluralForm = column[String]("plural_form")
+    def fixedCase = column[Boolean]("fixed_case")
+    def * = (community, labelType, singularForm, pluralForm, fixedCase) <> (CommunityLabels.tupled, CommunityLabels.unapply)
+    def pk = primaryKey("cl_pk", (community, labelType))
+  }
+  val communityLabels = TableQuery[CommunityLabelsTable]
+
 }
