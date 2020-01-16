@@ -360,7 +360,7 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
 
   def createTestStepReport(sessionId: String, step: TestStepStatus) = {
     //save status reports only when step is concluded with either COMPLETED or ERROR state
-    if (step.getReport != null && (step.getStatus == StepStatus.COMPLETED || step.getStatus == StepStatus.ERROR)) {
+    if (step.getReport != null && (step.getStatus == StepStatus.COMPLETED || step.getStatus == StepStatus.ERROR || step.getStatus == StepStatus.WARNING)) {
       // Check to see if we have already recorded this to avoid potential concurrency errors popping up that
       // would just lead to unique constraint errors.
       val existingTestStepReport = exec(PersistenceSchema.testStepReports.filter(_.testSessionId === sessionId).filter(_.testStepId === step.getStepId).result.headOption)

@@ -29,6 +29,7 @@ public class WhileStepProcessorActor extends AbstractIterationStepActor<WhileSte
 	private Map<Integer, ActorRef> iterationIndexActorMap;
 
 	private boolean childrenHasError;
+	private boolean childrenHasWarning;
 
 	public WhileStepProcessorActor(WhileStep step, TestCaseScope scope, String stepId){
 		super(step, scope, stepId);
@@ -62,25 +63,25 @@ public class WhileStepProcessorActor extends AbstractIterationStepActor<WhileSte
 
 	@Override
 	protected void handleStatusEvent(StatusEvent event) throws Exception {
-//		super.handleStatusEvent(event);
         StepStatus status = event.getStatus();
-
-		switch (status) {
-			case ERROR:
-				childrenHasError = true; // intentional fall through - no break statement
-			case COMPLETED:
-				int senderUid = getSender().path().uid();
-				int iteration = childActorUidIndexMap.get(senderUid);
-
-				boolean started = loop(iteration+1);
-
-				if(!started) {
-					if(childrenHasError) {
-						childrenHasError();
-					} else {
-						completed();
-					}
+		if (status == StepStatus.ERROR) {
+			childrenHasError = true;
+		} else if (status == StepStatus.WARNING) {
+			childrenHasWarning = true;
+		}
+		if (status == StepStatus.ERROR || status == StepStatus.WARNING || status == StepStatus.COMPLETED) {
+			int senderUid = getSender().path().uid();
+			int iteration = childActorUidIndexMap.get(senderUid);
+			boolean started = loop(iteration+1);
+			if (!started) {
+				if (childrenHasError) {
+					childrenHasError();
+				} else if (childrenHasWarning) {
+					childrenHasWarning();
+				} else {
+					completed();
 				}
+			}
 		}
     }
 

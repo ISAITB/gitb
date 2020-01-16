@@ -47,7 +47,7 @@
             <dependency>
                 <groupId>eu.europa.ec.itb</groupId>
                 <artifactId>gitb-types</artifactId>
-                <version>1.7.2</version>
+                <version>1.8.0</version>
             </dependency>
             <dependency>
                 <groupId>org.kohsuke.metainf-services</groupId>

@@ -110,7 +110,8 @@ class Constants
 		SKIPPED : 1,
 		WAITING : 2,
 		ERROR : 3,
-		COMPLETED: 4
+		WARNING: 4,
+		COMPLETED: 5
 
 	@TEST_CASE_STATUS =
 		READY : 0,

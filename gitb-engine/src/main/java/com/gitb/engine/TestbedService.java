@@ -264,7 +264,7 @@ public class TestbedService {
             return;
         }
 
-        if (report == null && (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.SKIPPED)) {
+        if (report == null && (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.SKIPPED || status == StepStatus.WARNING)) {
 			report = new SR();
 			try {
 				report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
@@ -275,6 +275,8 @@ public class TestbedService {
 				report.setResult(TestResultType.SUCCESS);
 			} else if (status == StepStatus.ERROR) {
 				report.setResult(TestResultType.FAILURE);
+			} else if (status == StepStatus.WARNING) {
+				report.setResult(TestResultType.WARNING);
 			} else {
 				report.setResult(TestResultType.UNDEFINED);
 			}

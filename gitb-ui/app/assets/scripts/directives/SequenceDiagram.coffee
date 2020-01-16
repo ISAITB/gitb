@@ -257,6 +257,7 @@ extractSteps = (s, actorInfo) =>
           '\'skipped\': message.status == TEST_STATUS.SKIPPED, '+
           '\'waiting\': message.status == TEST_STATUS.WAITING, '+
           '\'error\': message.status == TEST_STATUS.ERROR, '+
+          '\'warning\': message.status == TEST_STATUS.WARNING, '+
           '\'completed\': message.status == TEST_STATUS.COMPLETED}">'+
           '<div class="message-type">'+
             '<span>{{message.type}}</span>'+
@@ -270,8 +271,9 @@ extractSteps = (s, actorInfo) =>
                   '\'skipped\': iteration.status == TEST_STATUS.SKIPPED, '+
                   '\'waiting\': iteration.status == TEST_STATUS.WAITING, '+
                   '\'error\': iteration.status == TEST_STATUS.ERROR, '+
-                  '\'completed\': iteration.status == TEST_STATUS.COMPLETED}"'+
-                  '>Iteration {{$index+1}}</li>'+
+                  '\'warning\': iteration.status == TEST_STATUS.WARNING, '+
+                  '\'completed\': iteration.status == TEST_STATUS.COMPLETED}">'+
+                  'Iteration {{$index+1}}</li>'+
               '</ul>'+
             '</span>'+
           '</div>'+
@@ -292,6 +294,7 @@ extractSteps = (s, actorInfo) =>
                 '<i class="fa fa-gear processing-icon"></i>'+
                 '<i class="fa fa-check completed-icon"></i>'+
                 '<i class="fa fa-times error-icon"></i>'+
+                '<i class="fa fa-exclamation warning-icon"></i>'+
               '</span>'+
             '</a>'+
           '</div>'+
@@ -316,6 +319,7 @@ extractSteps = (s, actorInfo) =>
       '</div>'
     compile: (element) =>
       RecursionHelper.compile element, (scope, element, attrs) =>
+        scope.TEST_STATUS = Constants.TEST_STATUS
         calculateDepth = (message) ->
           if message.type == 'loop'
             childDepths = _.map message.steps, calculateDepth
@@ -390,9 +394,7 @@ extractSteps = (s, actorInfo) =>
             if sequences? && sequences.length > 0
               $timeout showLastStatus, 0
           scope.$watch 'message.sequences', onLoopIterationUpdated, true
-
         scope.depth = calculateDepth scope.message
-        scope.TEST_STATUS = Constants.TEST_STATUS
 ]
 
 @directives.directive 'seqDiagramMessageStatus', (RecursionHelper, Constants) ->
@@ -408,6 +410,7 @@ extractSteps = (s, actorInfo) =>
         '\'skipped\': message.status == TEST_STATUS.SKIPPED, '+
         '\'waiting\': message.status == TEST_STATUS.WAITING, '+
         '\'error\': message.status == TEST_STATUS.ERROR, '+
+        '\'warning\': message.status == TEST_STATUS.WARNING, '+
         '\'completed\': message.status == TEST_STATUS.COMPLETED}">'+
       '</div>'+
     '</div>'
