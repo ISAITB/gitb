@@ -177,21 +177,25 @@ class CreateConformanceStatementController
     .then(
       (data) =>
         if data? 
+          _.remove(data, (actor) =>
+            actor.hidden == true
+          )
           if data.length == 1
             @actors = data
             @onActorSelect(@actors[0])
             @confirmActor()
-          else 
-            if data.length > 1
-              defaultActor = _.find(data, (actor) =>
-                actor.default == true
-              )
-              if defaultActor?
-                @onActorSelect(defaultActor)
-                @confirmActor()
-              else
-                @actors = data
-                @setActorsView()
+          else if data.length > 1
+            defaultActor = _.find(data, (actor) =>
+              actor.default == true
+            )
+            if defaultActor?
+              @onActorSelect(defaultActor)
+              @confirmActor()
+            else
+              @actors = data
+              @setActorsView()
+          else
+            @setActorsView()
       ,
       (error) =>
         @ErrorService.showErrorMessage(error)

@@ -31,6 +31,10 @@
 					'<label class="col-sm-3 control-label" for="default">Specification default:</label>'+
 					'<div class="col-sm-8"><input id="default" ng-model="actor.default" type="checkbox" class="form-check"></div>'+
 				'</div>'+
+				'<div class="form-group">'+
+					'<label class="col-sm-3 control-label" for="hidden">Hidden:</label>'+
+					'<div class="col-sm-8"><input id="hidden" ng-model="actor.hidden" type="checkbox" class="form-check"></div>'+
+				'</div>'+
 				'<div class="form-group" ng-if="showSaveButton">'+
 					'<div class="col-sm-offset-3 col-sm-10">'+
 						'<div class="btn-toolbar">'+

@@ -515,6 +515,7 @@ object JsonUtil {
       "name"   -> actor.name,
       "description" -> (if(actor.description.isDefined) actor.description.get else JsNull),
       "default" -> (if(actor.default.isDefined) actor.default.get else JsNull),
+      "hidden" -> actor.hidden,
       "displayOrder" -> (if(actor.displayOrder.isDefined) actor.displayOrder.get else JsNull),
       "domain"  -> actor.domain
     )
@@ -528,6 +529,7 @@ object JsonUtil {
       "name"   -> actor.name,
       "description" -> (if(actor.description.isDefined) actor.description.get else JsNull),
       "default" -> (if(actor.default.isDefined) actor.default.get else JsNull),
+      "hidden" -> actor.hidden,
       "displayOrder" -> (if(actor.displayOrder.isDefined) actor.displayOrder.get else JsNull),
       "domain"  -> (if(actor.domain.isDefined) actor.domain.get.id else JsNull),
       "specification"  -> (if(actor.specificationId.isDefined) actor.specificationId.get else JsNull)

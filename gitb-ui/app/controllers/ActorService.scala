@@ -23,7 +23,7 @@ class ActorService @Inject() (actorManager: ActorManager, authorizationManager: 
       val labels = communityLabelManager.getLabels(request)
       ResponseConstructor.constructBadRequestResponse(500, communityLabelManager.getLabel(labels, LabelType.Actor) + " with this ID already exists in the " + communityLabelManager.getLabel(labels, LabelType.Specification, true, true)+".")
     } else {
-      actorManager.updateActorWrapper(actorId, actor.actorId, actor.name, actor.description, actor.default, actor.displayOrder, specificationId)
+      actorManager.updateActorWrapper(actorId, actor.actorId, actor.name, actor.description, actor.default, actor.hidden, actor.displayOrder, specificationId)
       ResponseConstructor.constructEmptyResponse
     }
   }

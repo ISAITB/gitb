@@ -74,7 +74,7 @@ class ActorDetailsController
 				@ErrorService.showErrorMessage(error)
 
 	saveChanges: () =>
-		@ActorService.updateActor(@actorId, @actor.actorId, @actor.name, @actor.description, @actor.default, @actor.displayOrder, @domainId, @specificationId)
+		@ActorService.updateActor(@actorId, @actor.actorId, @actor.name, @actor.description, @actor.default, @actor.hidden, @actor.displayOrder, @domainId, @specificationId)
 		.then () =>
 			@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: @specificationId}
 		.catch (error) =>

@@ -111,12 +111,15 @@ class ConformanceService
       }
     })
 
-  createActor: (shortName, fullName, description, defaultActor, displayOrder, domainId, specificationId) =>
+  createActor: (shortName, fullName, description, defaultActor, hiddenActor, displayOrder, domainId, specificationId) =>
+    if hiddenActor == undefined
+      hiddenActor = false
     data = {
         actor_id: shortName
         name: fullName
         description: description
         default: defaultActor
+        hidden: hiddenActor
         domain_id: domainId
         spec_id: specificationId
     }
