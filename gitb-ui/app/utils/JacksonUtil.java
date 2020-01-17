@@ -286,6 +286,9 @@ public class JacksonUtil {
                 jsonGenerator.writeStartObject();
                 jsonGenerator.writeStringField("id",   step.getId());
                 jsonGenerator.writeStringField("desc", step.getDesc());
+                if (step.getDocumentation() != null) {
+                    jsonGenerator.writeStringField("documentation", HtmlUtil.sanitizeEditorContent(step.getDocumentation()));
+                }
 
                 if(step instanceof MessagingStep) {
                     jsonGenerator.writeStringField("type", "msg");

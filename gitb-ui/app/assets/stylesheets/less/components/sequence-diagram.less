@@ -1,5 +1,5 @@
 
-@actor-width: 200px+1;
+@actor-width: 240px+1;
 @line-color: #777;
 @line-height: 16px;
 @macro-limit: 10;
@@ -11,6 +11,11 @@
 @error-color: #D32F2F;
 @warning-color: #F0AD4E;
 @completed-color: #4CAF50;
+
+.icon-documentation {
+	font-size: 18px;
+	cursor: pointer;
+}
 
 .generate-padding-offsets(@width, @n, @i: 0) when (@i =< @n) {
     &.offset-@{i} {
@@ -74,7 +79,7 @@
 
 .generate-depth-spans(@width, @span, @n, @i: 0) when (@i =< @n) {
     &.depth-@{i} {
-	width: (@width * @span) + (2 * @i * @container-padding);
+	width: (@width * @span) + (2 * @i * @container-padding) + 10;
 
 	& > .child-steps.else::before, & > .child-steps.thread::before {
 	    width: (@width * @span) + (2 * @i * @container-padding) - 1;
