@@ -89,7 +89,7 @@
                         <button class="btn btn-primary pull-right" ng-if="testExecutionCtrl.testsToExecute.length > 1 && !testExecutionCtrl.started && !testExecutionCtrl.startAutomatically && !testExecutionCtrl.reload" ng-click="testExecutionCtrl.start(testExecutionCtrl.session)">Start</button>
                         <button class="btn btn-primary pull-right" ng-if="testExecutionCtrl.testsToExecute.length > 1 && testExecutionCtrl.started && test.id == testExecutionCtrl.currentTest.id" ng-click="testExecutionCtrl.stop(testExecutionCtrl.session)">Stop</button>
                     </div>
-                    <div class="panel-body">
+                    <div class="panel-body" style="overflow-x: auto; overflow-y: hidden;">
                         <div class="child" seq-diagram steps-of-tests="stepsOfTests" test="{{test.id}}" actor-info-of-tests="actorInfoOfTests"></div>
                     </div>
                 </div>
