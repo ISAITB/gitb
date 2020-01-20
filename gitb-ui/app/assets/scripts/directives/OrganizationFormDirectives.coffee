@@ -37,10 +37,10 @@
           '<label class="col-sm-3 control-label">Copy also:</label>'+
           '<div class="col-sm-9">'+
             '<label class="checkbox-inline">'+
-              '<input type="checkbox" ng-change="tbCopyChanged()" ng-model="tbOrganization.copyOrganisationParameters">Organisation properties'+
+              '<input type="checkbox" ng-change="tbCopyChanged()" ng-model="tbOrganization.copyOrganisationParameters">{{DataService.labelOrganisation()}} properties'+
             '</label>'+
             '<label class="checkbox-inline">'+
-              '<input type="checkbox" ng-change="tbCopyChanged()" ng-model="tbOrganization.copySystemParameters">System properties'+
+              '<input type="checkbox" ng-change="tbCopyChanged()" ng-model="tbOrganization.copySystemParameters">{{DataService.labelSystem()}} properties'+
             '</label>'+
             '<label class="checkbox-inline">'+
               '<input type="checkbox" ng-change="tbCopyChanged()" ng-model="tbOrganization.copyStatementParameters">Conformance statement configurations'+
@@ -61,4 +61,5 @@
     restrict: 'A'
     link: (scope, element, attrs) =>
       scope.selfRegEnabled = @DataService.configuration['registration.enabled']
+      scope.DataService = @DataService
 ]

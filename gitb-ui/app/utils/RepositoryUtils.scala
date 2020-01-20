@@ -169,7 +169,7 @@ object RepositoryUtils {
 							if (tdlActor.getDisplayOrder != null) {
 								displayOrder = Some(tdlActor.getDisplayOrder)
 							}
-							new Actor(Actors(0l, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), Option(tdlActor.isDefault), displayOrder,  0l), endpoints)
+							new Actor(Actors(0l, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), Option(tdlActor.isDefault), tdlActor.isHidden, displayOrder,  0l), endpoints)
 						}.toList
 
 						var testCaseCounter = 0

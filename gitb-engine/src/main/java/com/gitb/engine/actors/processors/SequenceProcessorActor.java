@@ -156,6 +156,7 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
         childStepStatuses.put(completedStepIndex, status);
 
         if (status == StepStatus.COMPLETED
+                || status == StepStatus.WARNING
                 || status == StepStatus.ERROR
                 || status == StepStatus.SKIPPED) {
 
@@ -165,14 +166,19 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
             }
             if (nextStep == null) {
                 boolean childrenHasError = false;
+                boolean childrenHasWarning = false;
                 for (Map.Entry<Integer, StepStatus> childStepStatus : childStepStatuses.entrySet()) {
                     if (childStepStatus.getValue() == StepStatus.ERROR) {
                         childrenHasError = true;
                         break;
+                    } else if (childStepStatus.getValue() == StepStatus.WARNING) {
+                        childrenHasWarning = true;
                     }
                 }
                 if (childrenHasError) {
                     childrenHasError();
+                } else if (childrenHasWarning) {
+                    childrenHasWarning();
                 } else {
                     completed();
                 }

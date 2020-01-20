@@ -14,6 +14,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.gitb.core.StepStatus.*;
+
 /**
  * Created by serbay on 9/12/14.
  *
@@ -30,6 +32,7 @@ public class FlowStepProcessorActor extends AbstractTestStepActor<FlowStep> {
 	private Map<Integer, ActorRef> stepIndexActorMap;
 
 	private boolean childrenHasError;
+	private boolean childrenHasWarning;
 
 	public FlowStepProcessorActor(FlowStep step, TestCaseScope scope, String stepId) {
 		super(step, scope, stepId);
@@ -74,23 +77,23 @@ public class FlowStepProcessorActor extends AbstractTestStepActor<FlowStep> {
 
 	@Override
 	protected void handleStatusEvent(StatusEvent event) throws Exception {
-//		super.handleStatusEvent(event);
-
         StepStatus status = event.getStatus();
-
-		switch (status) {
-			case ERROR:
-				childrenHasError = true; // intentional fall through - no break statement
-			case COMPLETED:
-				int remainingChildren = finishedChildren.decrementAndGet();
-
-				if(remainingChildren == 0) {
-					if(childrenHasError) {
-						childrenHasError();
-					} else {
-						completed();
-					}
+        if (status == ERROR) {
+			childrenHasError = true;
+		} else if (status == WARNING) {
+			childrenHasWarning = true;
+		}
+        if (status == ERROR || status == WARNING || status == COMPLETED) {
+			int remainingChildren = finishedChildren.decrementAndGet();
+			if (remainingChildren == 0) {
+				if (childrenHasError) {
+					childrenHasError();
+				} else if (childrenHasWarning) {
+					childrenHasWarning();
+				} else {
+					completed();
 				}
+			}
 		}
 	}
 

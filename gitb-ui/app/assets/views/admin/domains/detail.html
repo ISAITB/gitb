@@ -1,7 +1,7 @@
 <div class="page domains detail">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h4 class="title">Domain details</h4>
+			<h4 class="title">{{domainDetailsCtrl.DataService.labelDomain()}} details</h4>
 		</div>
 		<div class="panel-body">
 			<div class="row">
@@ -22,8 +22,8 @@
 	</div>
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h4 class="title">Specifications</h4>
-			<a ui-sref="app.admin.domains.detail.specifications.create" class="btn btn-default pull-right">Create specification</a>
+			<h4 class="title">{{domainDetailsCtrl.DataService.labelSpecifications()}}</h4>
+			<a ui-sref="app.admin.domains.detail.specifications.create" class="btn btn-default pull-right">Create {{domainDetailsCtrl.DataService.labelSpecificationLower()}}</a>
 		</div>
 		<div table-directive columns="domainDetailsCtrl.tableColumns" data="domainDetailsCtrl.specifications" on-select="domainDetailsCtrl.onSpecificationSelect"></div>
 	</div>

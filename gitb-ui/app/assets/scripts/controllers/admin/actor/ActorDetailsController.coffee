@@ -1,7 +1,7 @@
 class ActorDetailsController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', 'ActorService', 'ConfirmationDialogService', '$state', '$stateParams', 'ErrorService']
-	constructor: (@$log, @$scope, @ConformanceService, @ActorService, @ConfirmationDialogService, @$state, @$stateParams, @ErrorService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', 'ActorService', 'ConfirmationDialogService', '$state', '$stateParams', 'ErrorService', 'DataService']
+	constructor: (@$log, @$scope, @ConformanceService, @ActorService, @ConfirmationDialogService, @$state, @$stateParams, @ErrorService, @DataService) ->
 		@$log.debug "Constructing ActorDetailsController"
 
 		@actor = {}
@@ -65,7 +65,7 @@ class ActorDetailsController
 			@ErrorService.showErrorMessage(error)
 
 	delete: () =>
-		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this actor?", "Yes", "No")
+		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this "+@DataService.labelActorLower()+"?", "Yes", "No")
 		.then () =>
 			@ActorService.deleteActor(@actorId)
 			.then () =>
@@ -74,7 +74,7 @@ class ActorDetailsController
 				@ErrorService.showErrorMessage(error)
 
 	saveChanges: () =>
-		@ActorService.updateActor(@actorId, @actor.actorId, @actor.name, @actor.description, @actor.default, @actor.displayOrder, @domainId, @specificationId)
+		@ActorService.updateActor(@actorId, @actor.actorId, @actor.name, @actor.description, @actor.default, @actor.hidden, @actor.displayOrder, @domainId, @specificationId)
 		.then () =>
 			@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: @specificationId}
 		.catch (error) =>

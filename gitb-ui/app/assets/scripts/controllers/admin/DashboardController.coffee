@@ -6,12 +6,12 @@ class DashboardController
     @activeTestsColumns = [
       {
         field: 'specification',
-        title: 'Specification',
+        title: @DataService.labelSpecification(),
         sortable: true
       }
       {
         field: 'actor',
-        title: 'Actor',
+        title: @DataService.labelActor(),
         sortable: true
       }
       {
@@ -27,12 +27,12 @@ class DashboardController
       }
       {
         field: 'organization',
-        title: 'Organisation',
+        title: @DataService.labelOrganisation(),
         sortable: true
       }
       {
         field: 'system',
-        title: 'System',
+        title: @DataService.labelSystem(),
         sortable: true
       }
     ]
@@ -40,12 +40,12 @@ class DashboardController
     @completedTestsColumns = [
       {
         field: 'specification',
-        title: 'Specification',
+        title: @DataService.labelSpecification(),
         sortable: true
       }
       {
         field: 'actor',
-        title: 'Actor',
+        title: @DataService.labelActor(),
         sortable: true
       }
       {
@@ -66,12 +66,12 @@ class DashboardController
       }
       {
         field: 'organization',
-        title: 'Organisation',
+        title: @DataService.labelOrganisation(),
         sortable: true
       }
       {
         field: 'system',
-        title: 'System',
+        title: @DataService.labelSystem(),
         sortable: true
       }
       {
@@ -712,9 +712,9 @@ class DashboardController
     else
       # if test.domain? and test.specification? and test.testCase? and test.testSuite?
         data = [
-          {label: "Domain", value: test.domain}
-          {label: "Actor", value: test.actor}
-          {label: "Specification", value: test.specification}
+          {label: @DataService.labelDomain(), value: test.domain}
+          {label: @DataService.labelActor(), value: test.actor}
+          {label: @DataService.labelSpecification(), value: test.specification}
           {label: "Test suite", value: test.testSuite}
           {label: "Test case", value: test.testCase}
         ]
@@ -725,14 +725,14 @@ class DashboardController
 
     @ReportService.getCompletedTestResults(1, 1000000, params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.completedSortColumn, params.completedSortOrder, true)
     .then (data) =>
-      headers = ["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organisation"]
+      headers = ["Session", @DataService.labelDomain(), @DataService.labelSpecification(), @DataService.labelActor(), "Test suite", "Test case", @DataService.labelOrganisation()]
       if data.orgParameters?
         for param in data.orgParameters
-          headers.push("Organisation ("+param+")")
-      headers.push("System")
+          headers.push(@DataService.labelOrganisation() + " ("+param+")")
+      headers.push(@DataService.labelSystem())
       if data.sysParameters?
         for param in data.sysParameters
-          headers.push("System ("+param+")")
+          headers.push(@DataService.labelSystem() + " ("+param+")")
       headers = headers.concat(["Start time", "End time", "Result", "Obsolete"])
       testResultMapper = @newTestResult
       tests = _.map data.data, (t) -> testResultMapper(t, data.orgParameters, data.sysParameters)
@@ -745,14 +745,14 @@ class DashboardController
 
     @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.activeSortColumn, params.activeSortOrder, true)
     .then (data) =>
-      headers = ["Session", "Domain", "Specification", "Actor", "Test suite", "Test case", "Organisation"]
+      headers = ["Session", @DataService.labelDomain(), @DataService.labelSpecification(), @DataService.labelActor(), "Test suite", "Test case", @DataService.labelOrganisation()]
       if data.orgParameters?
         for param in data.orgParameters
-          headers.push("Organisation ("+param+")")
-      headers.push("System")
+          headers.push(@DataService.labelOrganisation() + " ("+param+")")
+      headers.push(@DataService.labelSystem())
       if data.sysParameters?
         for param in data.sysParameters
-          headers.push("System ("+param+")")
+          headers.push(@DataService.labelSystem() + " ("+param+")")
       headers = headers.concat(["Start time", "End time", "Result", "Obsolete"])
       testResultMapper = @newTestResult
       tests = _.map data.data, (testResult) -> testResultMapper(testResult, data.orgParameters, data.sysParameters)

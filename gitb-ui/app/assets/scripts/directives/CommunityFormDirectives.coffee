@@ -15,7 +15,7 @@
           '<div class="col-xs-8"><input id="fname" ng-model="tbCommunity.fname" class="form-control" type="text" required></div>'+
         '</div>'+
         '<div class="form-group" ng-if="tbAdmin">'+
-          '<label class="col-xs-3 control-label" for="domainChoice">Domain:</label>'+
+          '<label class="col-xs-3 control-label" for="domainChoice">{{DataService.labelDomain()}}:</label>'+
           '<div class="col-xs-8">'+
             '<select id="domainChoice" class="form-control" ng-model="tbCommunity.domain" ng-options="domain.sname for domain in tbDomains track by domain.id"><option value="">--Optional--</option></select>'+
           '</div>'+
@@ -40,6 +40,7 @@
       '</form>'
     restrict: 'A'
     link: (scope, element, attrs) =>
+      scope.DataService = @DataService
       scope.selfRegEnabled = @DataService.configuration['registration.enabled']
       scope.selfRegTypes = [
         {id: @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED, label: 'Not supported'}, 
@@ -102,7 +103,7 @@
         '<div class="row">'+
           '<div class="col-xs-12">'+
             '<div ng-class="{\'form-separator\': !tbPopup, \'form-separator-popup\': tbPopup}">'+
-              '<h4 class="title">Additional properties <span uib-tooltip="Properties specific to the organisation\'s community. Required properties will need to be completed before executing tests."><i class="fa fa-question-circle"></i></span></h4>'+
+              '<h4 class="title">Additional properties <span uib-tooltip="Properties specific to the community. Required properties will need to be completed before executing tests."><i class="fa fa-question-circle"></i></span></h4>'+
             '</div>'+
           '</div>'+
         '</div>'+

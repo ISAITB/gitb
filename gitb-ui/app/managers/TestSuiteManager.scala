@@ -279,6 +279,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		(Objects.equals(one.name, two.name)
 				&& Objects.equals(one.description, two.description)
 				&& Objects.equals(one.default, two.default)
+        && Objects.equals(one.hidden, two.hidden)
 				&& Objects.equals(one.displayOrder, two.displayOrder))
 	}
 
@@ -360,7 +361,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 				if (isActorReference(actorToSave) || theSameActor(savedActor.get, actorToSave)) {
 					result += new TestSuiteUploadItemResult(savedActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED)
 				} else {
-					updateAction = Some(actorManager.updateActor(savedActor.get.id, actorToSave.actorId, actorToSave.name, actorToSave.description, actorToSave.default, actorToSave.displayOrder, suite.specification))
+					updateAction = Some(actorManager.updateActor(savedActor.get.id, actorToSave.actorId, actorToSave.name, actorToSave.description, actorToSave.default, actorToSave.hidden, actorToSave.displayOrder, suite.specification))
 					result += new TestSuiteUploadItemResult(savedActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE)
 				}
 				savedActorId = DBIO.successful(savedActor.get.id)

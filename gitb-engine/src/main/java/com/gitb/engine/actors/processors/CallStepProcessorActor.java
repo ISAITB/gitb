@@ -78,6 +78,8 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 			report(StepStatus.COMPLETED);
 		} else if(status == StepStatus.ERROR) {
 			childrenHasError();
+		} else if(status == StepStatus.WARNING) {
+			childrenHasWarning();
 		}
 	}
 

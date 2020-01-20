@@ -11,12 +11,12 @@ class SystemTestsController
     @tableColumns = [
       {
         field: 'specification'
-        title: 'Specification'
+        title: @DataService.labelSpecification()
         sortable: true
       }
       {
         field: 'actor'
-        title: 'Actor'
+        title: @DataService.labelActor()
         sortable: true
       }
       {
@@ -479,7 +479,7 @@ class SystemTestsController
 
                       transformedObject
       if resultReportsCollection.value().length > 0
-        @DataService.exportAllAsCsv(["Domain", "Specification", "Actor", "Test suite", "Test case", "Start time", "End time", "Result", "Session", "Obsolete"], resultReportsCollection.value())
+        @DataService.exportAllAsCsv([@DataService.labelDomain(), @DataService.labelSpecification(), @DataService.labelActor(), "Test suite", "Test case", "Start time", "End time", "Result", "Session", "Obsolete"], resultReportsCollection.value())
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 

@@ -24,7 +24,7 @@ import utils._
 /**
  * Created by serbay on 10/16/14.
  */
-class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager) extends Controller {
+class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends Controller {
 	private val logger = LoggerFactory.getLogger(classOf[RepositoryService])
 	private val codec = new URLCodec()
 
@@ -145,7 +145,8 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
       val testCase = testCaseManager.getTestCase(testCaseId)
       if (!exportedReport.exists()) {
         val list = reportManager.getListOfTestSteps(testcasePresentation, folder)
-        reportManager.generateDetailedTestCaseReport(list, exportedReport.getAbsolutePath, testCase, session, false)
+        val labels = communityLabelManager.getLabels(request)
+        reportManager.generateDetailedTestCaseReport(list, exportedReport.getAbsolutePath, testCase, session, false, labels)
       }
       Ok.sendFile(
         content = exportedReport,
@@ -175,7 +176,8 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
         // Ignore these are anyway deleted every hour
       }
     }
-    reportManager.generateConformanceStatementReport(reportPath, includeTests, actorId.toLong, systemId.toLong)
+    val labels = communityLabelManager.getLabels(request)
+    reportManager.generateConformanceStatementReport(reportPath, includeTests, actorId.toLong, systemId.toLong, labels)
     Ok.sendFile(
       content = reportPath.toFile,
       fileName = _ => reportPath.toFile.getName
@@ -255,7 +257,7 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
         completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
         settings = completeSettings.toCaseObject
       }
-      reportManager.generateDemoConformanceCertificate(reportPath, settings)
+      reportManager.generateDemoConformanceCertificate(reportPath, settings, communityId)
       response = Ok.sendFile(
         content = reportPath.toFile,
         fileName = _ => reportPath.toFile.getName

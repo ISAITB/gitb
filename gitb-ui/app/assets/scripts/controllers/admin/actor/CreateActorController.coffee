@@ -1,7 +1,7 @@
 class CreateActorController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', '$state', '$stateParams', 'ErrorService']
-	constructor: (@$log, @$scope, @ConformanceService, @$state, @$stateParams, @ErrorService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', '$state', '$stateParams', 'ErrorService', 'DataService']
+	constructor: (@$log, @$scope, @ConformanceService, @$state, @$stateParams, @ErrorService, @DataService) ->
 		@$log.debug "Constructing CreateActorController..."
 
 		@domainId = @$stateParams.id
@@ -14,7 +14,7 @@ class CreateActorController
 
 	createActor: () =>
 		if !@saveDisabled()
-			@ConformanceService.createActor @actor.actorId, @actor.name, @actor.description, @actor.default, @actor.displayOrder, @domainId, @specificationId
+			@ConformanceService.createActor @actor.actorId, @actor.name, @actor.description, @actor.default, @actor.hidden, @actor.displayOrder, @domainId, @specificationId
 				.then () =>
 					@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: @specificationId}
 				.catch (error) =>

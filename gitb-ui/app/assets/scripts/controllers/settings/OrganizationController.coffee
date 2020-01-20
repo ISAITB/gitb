@@ -117,7 +117,7 @@ class OrganizationController
             @AccountService.updateVendorProfile(@$scope.vdata.fname, @$scope.vdata.sname, @propertyData.edit, @propertyData.properties) #call service op.
             .then(
                 (data) => #success handler
-                    @alerts.push({type:'success', msg:"Organisation information updated."})
+                    @alerts.push({type:'success', msg:@DataService.labelOrganisation()+" information updated."})
                     @ds.user.organization.fname = @$scope.vdata.fname
                     @ds.user.organization.sname = @$scope.vdata.sname
                     @ds.vendor.fname = @$scope.vdata.fname
@@ -142,10 +142,10 @@ class OrganizationController
         valid = true
 
         if @$scope.vdata.fname == undefined || @$scope.vdata.fname == ''
-            @alerts.push({type:'danger', msg:"Full name of your organisation can not be empty."})
+            @alerts.push({type:'danger', msg:"Full name of your "+@DataService.labelOrganisationLower()+" can not be empty."})
             valid = false
         else if @$scope.vdata.sname == undefined || @$scope.vdata.sname == ''
-            @alerts.push({type:'danger', msg:"Short name of your organisation can not be empty."})
+            @alerts.push({type:'danger', msg:"Short name of your "+@DataService.labelOrganisationLower()+" can not be empty."})
             valid = false
 
         valid

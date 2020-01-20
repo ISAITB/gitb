@@ -4,7 +4,7 @@ import config.Configurations
 import controllers.util._
 import exceptions._
 import javax.inject.Inject
-import managers.{AuthorizationManager, ParameterManager, SystemManager, TestCaseManager}
+import managers.{AuthorizationManager, CommunityLabelManager, ParameterManager, SystemManager, TestCaseManager}
 import models.Systems
 import org.apache.commons.codec.binary.Base64
 import org.slf4j._
@@ -13,7 +13,7 @@ import utils.{ClamAVClient, JsonUtil, MimeUtil}
 
 import scala.collection.mutable.ListBuffer
 
-class SystemService @Inject() (systemManager: SystemManager, parameterManager: ParameterManager, testCaseManager: TestCaseManager, authorizationManager: AuthorizationManager) extends Controller{
+class SystemService @Inject() (systemManager: SystemManager, parameterManager: ParameterManager, testCaseManager: TestCaseManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends Controller{
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemService])
 
   def deleteSystem(systemId:Long) = AuthorizedAction { request =>
@@ -72,7 +72,7 @@ class SystemService @Inject() (systemManager: SystemManager, parameterManager: P
       }
       response
     } else{
-      throw new NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, "System with ID '" + sut_id + "' not found")
+      throw new NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, models.Enums.LabelType.System) + " with ID '" + sut_id + "' not found.")
     }
   }
   /**
@@ -86,7 +86,7 @@ class SystemService @Inject() (systemManager: SystemManager, parameterManager: P
       val json:String = JsonUtil.serializeSystem(system)
       ResponseConstructor.constructJsonResponse(json)
     } else{
-      throw new NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, "System with ID '" + sut_id + "' not found")
+      throw new NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, models.Enums.LabelType.System)+ " with ID '" + sut_id + "' not found.")
     }
   }
 
@@ -108,7 +108,7 @@ class SystemService @Inject() (systemManager: SystemManager, parameterManager: P
         systemManager.defineConformanceStatementWrapper(sut_id, spec, actor, optionIds)
         ResponseConstructor.constructEmptyResponse
       } else {
-        ResponseConstructor.constructErrorResponse(ErrorCodes.NO_SUT_TEST_CASES_FOR_ACTOR, "No test cases are defined for the selected actor.")
+        ResponseConstructor.constructErrorResponse(ErrorCodes.NO_SUT_TEST_CASES_FOR_ACTOR, "No test cases are defined for the selected "+communityLabelManager.getLabel(request, models.Enums.LabelType.Actor, true, true)+".")
       }
     } else {
       ResponseConstructor.constructErrorResponse(ErrorCodes.CONFORMANCE_STATEMENT_EXISTS, "This conformance statement is already defined.")

@@ -1,8 +1,8 @@
 class CreateDomainController
 	name: 'CreateDomainController'
 
-	@$inject = ['$log', '$scope', 'ConformanceService', '$state', 'ErrorService']
-	constructor: (@$log, @$scope, @ConformanceService, @$state, @ErrorService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', '$state', 'ErrorService', 'DataService']
+	constructor: (@$log, @$scope, @ConformanceService, @$state, @ErrorService, @DataService) ->
 		@$log.debug "Constructing #{@name}..."
 
 		@domain = {}

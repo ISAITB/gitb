@@ -19,6 +19,7 @@
                         <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.updateCommunity()" ng-disabled="communityDetailCtrl.saveDisabled()">Save changes</button>
                         <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.updateConformanceCertificateSettings()">Edit conformance certificate settings</button>
                         <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.updateParameters()">Edit custom member properties</button>
+                        <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.editLabels()">Edit labels</button>
                         <button class="btn btn-default" type="button" ng-if="communityDetailCtrl.DataService.isSystemAdmin && !communityDetailCtrl.isDefaultCommunity()" ng-click="communityDetailCtrl.deleteCommunity()">Delete</button>
                         <button class="btn btn-default" type="button" ng-if="communityDetailCtrl.DataService.isSystemAdmin" ng-click="communityDetailCtrl.cancelCommunityDetail()">Back</button>
                     </div>
@@ -37,8 +38,8 @@
     <!-- organisations -->
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h4 class="title">Organisations</h4>
-            <a ui-sref="app.admin.users.communities.detail.organizations.create" class="btn btn-default pull-right">Create organisation</a>
+            <h4 class="title">{{communityDetailCtrl.DataService.labelOrganisations()}}</h4>
+            <a ui-sref="app.admin.users.communities.detail.organizations.create" class="btn btn-default pull-right">Create {{communityDetailCtrl.DataService.labelOrganisationLower()}}</a>
         </div>
         <div table-directive columns="communityDetailCtrl.organizationColumns" data="communityDetailCtrl.organizations" on-select="communityDetailCtrl.organizationSelect"></div>
     </div>

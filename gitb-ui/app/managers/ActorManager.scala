@@ -53,11 +53,11 @@ class ActorManager @Inject() (testResultManager: TestResultManager, endPointMana
     PersistenceSchema.actors.filter(_.id === actorId).delete
   }
 
-  def updateActorWrapper(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], displayOrder: Option[Short], specificationId: Long) = {
-    exec(updateActor(id, actorId, name, description, default, displayOrder, specificationId).transactionally)
+  def updateActorWrapper(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long) = {
+    exec(updateActor(id, actorId, name, description, default, hidden, displayOrder, specificationId).transactionally)
   }
 
-  def updateActor(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], displayOrder: Option[Short], specificationId: Long) = {
+  def updateActor(id: Long, actorId: String, name: String, description: Option[String], default: Option[Boolean], hidden: Boolean, displayOrder: Option[Short], specificationId: Long) = {
     var defaultToSet: Option[Boolean] = null
     if (default.isEmpty) {
       defaultToSet = Some(false)
@@ -66,8 +66,8 @@ class ActorManager @Inject() (testResultManager: TestResultManager, endPointMana
     }
     (for  {
       _ <- {
-        val q1 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.name, a.desc, a.actorId, a.default, a.displayOrder)
-        q1.update((name, description, actorId, defaultToSet, displayOrder))
+        val q1 = for {a <- PersistenceSchema.actors if a.id === id} yield (a.name, a.desc, a.actorId, a.default, a.hidden, a.displayOrder)
+        q1.update((name, description, actorId, defaultToSet, hidden, displayOrder))
       }
       _ <- {
         if (default.isDefined && default.get) {

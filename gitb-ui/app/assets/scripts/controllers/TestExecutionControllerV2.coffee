@@ -625,8 +625,9 @@ class TestExecutionControllerV2
       if current? && current.status != status
         if (status == @Constants.TEST_STATUS.COMPLETED) ||
         (status == @Constants.TEST_STATUS.ERROR) ||
-        (status == @Constants.TEST_STATUS.SKIPPED && (current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.PROCESSING)) ||
-        ((status == @Constants.TEST_STATUS.PROCESSING || status == @Constants.TEST_STATUS.WAITING) && (@started && current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.SKIPPED))
+        (status == @Constants.TEST_STATUS.WARNING) ||
+        (status == @Constants.TEST_STATUS.SKIPPED && (current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.WARNING && current.status != @Constants.TEST_STATUS.PROCESSING)) ||
+        ((status == @Constants.TEST_STATUS.PROCESSING || status == @Constants.TEST_STATUS.WAITING) && (@started && current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.SKIPPED && current.status != @Constants.TEST_STATUS.WARNING))
           current.status = status
           current.report = report
 

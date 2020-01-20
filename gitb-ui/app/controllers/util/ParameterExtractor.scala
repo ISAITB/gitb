@@ -171,7 +171,7 @@ object ParameterExtractor {
     }
   }
 
-  def extractUserId(request:Request[AnyContent]):Long = {
+  def extractUserId(request:Request[_]):Long = {
     request.headers.get(Parameters.USER_ID).get.toLong
   }
 
@@ -353,13 +353,14 @@ object ParameterExtractor {
     } else {
       default = Some(false)
     }
+    val hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
     var displayOrder:Option[Short] = None
     val displayOrderStr = ParameterExtractor.optionalBodyParameter(request, Parameters.DISPLAY_ORDER)
     if (displayOrderStr.isDefined) {
       displayOrder = Some(displayOrderStr.get.toShort)
     }
 		val domainId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
-		Actors(id, actorId, name, description, default, displayOrder, domainId)
+		Actors(id, actorId, name, description, default, hidden, displayOrder, domainId)
 	}
 
   def extractEndpoint(request:Request[AnyContent]):Endpoints = {

@@ -3,11 +3,12 @@ package controllers
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.{ErrorCodes, NotFoundException}
 import javax.inject.Inject
-import managers.{AuthorizationManager, ConformanceManager, SpecificationManager}
+import managers.{AuthorizationManager, CommunityLabelManager, ConformanceManager, SpecificationManager}
+import models.Enums.LabelType
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc.Controller
 
-class SpecificationService @Inject() (specificationManager: SpecificationManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager) extends Controller {
+class SpecificationService @Inject() (specificationManager: SpecificationManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SpecificationService])
 
   def deleteSpecification(specId: Long) = AuthorizedAction { request =>
@@ -33,7 +34,7 @@ class SpecificationService @Inject() (specificationManager: SpecificationManager
       specificationManager.updateSpecification(specId, sname, fname, urls, diagram, descr, specificationType)
       ResponseConstructor.constructEmptyResponse
     } else{
-      throw NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, "Specification with ID '" + specId + "' not found")
+      throw NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, LabelType.Specification) + " with ID '" + specId + "' not found.")
     }
   }
 

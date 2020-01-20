@@ -203,6 +203,10 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		updateTestStepStatus(StepStatus.COMPLETED, testStepReport);
 	}
 
+	protected void childrenHasWarning() {
+		updateTestStepStatus(new StatusEvent(StepStatus.WARNING), null);
+	}
+
 	protected void childrenHasError() {
 		updateTestStepStatus(new StatusEvent(StepStatus.ERROR), null);
 	}

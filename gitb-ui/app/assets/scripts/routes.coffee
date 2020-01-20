@@ -402,6 +402,11 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/users/community-detail-parameters.html'
 				controller: 'CommunityParametersController'
 				controllerAs: 'controller'
+			'app.admin.users.communities.detail.labels':
+				url: '/labels'
+				templateUrl: 'assets/views/admin/users/community-detail-labels.html'
+				controller: 'CommunityLabelsController'
+				controllerAs: 'controller'
 			'app.admin.users.communities.detail.admins':
 				url: '/admin'
 				abstract: true

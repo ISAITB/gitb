@@ -228,7 +228,7 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 	def deleteActorByDomain(domainId: Long) = {
 		val action = (for {
 			ids <- PersistenceSchema.actors.filter(_.domain === domainId).map(_.id).result
-			_ <- DBIO.seq(ids.map(id => delete(id)): _*)
+			_ <- DBIO.seq(ids.map(id => actorManager.deleteActor(id)): _*)
 		} yield()).transactionally
 		action
 	}

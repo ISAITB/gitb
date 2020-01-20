@@ -1,7 +1,7 @@
 class EndpointDetailsController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', 'EndPointService', 'ParameterService', 'ConfirmationDialogService', '$state', '$stateParams', '$uibModal', 'ErrorService']
-	constructor: (@$log, @$scope, @ConformanceService, @EndPointService, @ParameterService, @ConfirmationDialogService, @$state, @$stateParams, @$uibModal, @ErrorService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', 'EndPointService', 'ParameterService', 'ConfirmationDialogService', '$state', '$stateParams', '$uibModal', 'ErrorService', 'DataService']
+	constructor: (@$log, @$scope, @ConformanceService, @EndPointService, @ParameterService, @ConfirmationDialogService, @$state, @$stateParams, @$uibModal, @ErrorService, @DataService) ->
 		@$log.debug "Constructing EndpointDetailsController"
 		@endpointId = @$stateParams.endpoint_id
 		@actorId = @$stateParams.actor_id
@@ -50,7 +50,7 @@ class EndpointDetailsController
 			@ErrorService.showErrorMessage(error)
 
 	delete: () =>
-		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this endpoint?", "Yes", "No")
+		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this "+@DataService.labelEndpointLower()+"?", "Yes", "No")
 		.then () =>
 			@EndPointService.deleteEndPoint(@endpointId)
 			.then () =>

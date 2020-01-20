@@ -1,7 +1,7 @@
 class SpecificationDetailsController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', 'TestSuiteService', 'ConfirmationDialogService', 'SpecificationService', '$state', '$stateParams', '$uibModal', 'PopupService', 'ErrorService']
-	constructor: (@$log, @$scope, @ConformanceService, @TestSuiteService, @ConfirmationDialogService, @SpecificationService, @$state, @$stateParams, @$uibModal, @PopupService, @ErrorService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', 'TestSuiteService', 'ConfirmationDialogService', 'SpecificationService', '$state', '$stateParams', '$uibModal', 'PopupService', 'ErrorService', 'DataService']
+	constructor: (@$log, @$scope, @ConformanceService, @TestSuiteService, @ConfirmationDialogService, @SpecificationService, @$state, @$stateParams, @$uibModal, @PopupService, @ErrorService, @DataService) ->
 		@$log.debug "Constructing SpecificationDetailsController"
 
 		@specification = {}
@@ -57,6 +57,10 @@ class SpecificationDetailsController
 			{
 				field: 'default',
 				title: 'Default'
+			}			
+			{
+				field: 'hidden',
+				title: 'Hidden'
 			}			
 		]
 
@@ -199,8 +203,8 @@ class SpecificationDetailsController
 			data = [
 				{label: "Test suite:"}, 
 				{label: "Test cases:"},
-				{label: "Actors:"},
-				{label: "Endpoints:"},
+				{label: @DataService.labelActors()+":"},
+				{label: @DataService.labelEndpoints()+":"},
 				{label: "Parameters:"}
 			]
 			collect item, data for item in result.items
@@ -234,7 +238,7 @@ class SpecificationDetailsController
 		@$state.go 'app.admin.domains.detail.specifications.detail.actors.detail.list', {id: @domainId, spec_id: @specificationId, actor_id: actor.id}
 
 	deleteSpecification: () =>
-		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this specification?", "Yes", "No")
+		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this "+@DataService.labelSpecificationLower()+"?", "Yes", "No")
 		.then () =>
 			@SpecificationService.deleteSpecification(@specificationId)
 			.then () =>

@@ -20,11 +20,11 @@
 				<thead>
 				<tr>
 					<th class="col-md-1" ng-if="!adminConformanceCtrl.DataService.isCommunityAdmin">Community</th>
-					<th class="col-md-1">Organisation</th>
-					<th class="col-md-1">System</th>
-					<th class="col-md-1" ng-if="adminConformanceCtrl.DataService.isSystemAdmin || (adminConformanceCtrl.DataService.isCommunityAdmin && adminConformanceCtrl.DataService.community.domain === null)">Domain</th>
-					<th class="col-md-1">Specification</th>
-					<th class="col-md-1">Actor</th>
+					<th class="col-md-1">{{adminConformanceCtrl.DataService.labelOrganisation()}}</th>
+					<th class="col-md-1">{{adminConformanceCtrl.DataService.labelSystem()}}</th>
+					<th class="col-md-1" ng-if="adminConformanceCtrl.DataService.isSystemAdmin || (adminConformanceCtrl.DataService.isCommunityAdmin && adminConformanceCtrl.DataService.community.domain === null)">{{adminConformanceCtrl.DataService.labelDomain()}}</th>
+					<th class="col-md-1">{{adminConformanceCtrl.DataService.labelSpecification()}}</th>
+					<th class="col-md-1">{{adminConformanceCtrl.DataService.labelActor()}}</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -103,11 +103,11 @@
 			<thead>
 			<tr>
 				<th ng-if="!adminConformanceCtrl.DataService.isCommunityAdmin">Community</th>
-				<th>Organisation</th>
-				<th>System</th>
-				<th ng-if="adminConformanceCtrl.DataService.isSystemAdmin || (adminConformanceCtrl.DataService.isCommunityAdmin && adminConformanceCtrl.DataService.community.domain === null)">Domain</th>
-				<th>Specification</th>
-				<th>Actor</th>
+				<th>{{adminConformanceCtrl.DataService.labelOrganisation()}}</th>
+				<th>{{adminConformanceCtrl.DataService.labelSystem()}}</th>
+				<th ng-if="adminConformanceCtrl.DataService.isSystemAdmin || (adminConformanceCtrl.DataService.isCommunityAdmin && adminConformanceCtrl.DataService.community.domain === null)">{{adminConformanceCtrl.DataService.labelDomain()}}</th>
+				<th>{{adminConformanceCtrl.DataService.labelSpecification()}}</th>
+				<th>{{adminConformanceCtrl.DataService.labelActor()}}</th>
 				<th width="20%">Status</th>
 				<th width="1%">Export</th>
 			</tr>

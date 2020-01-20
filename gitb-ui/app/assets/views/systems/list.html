@@ -1,8 +1,8 @@
 <div class="container page domains">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h4 class="title">Systems</h4>
-			<button ng-click="systemsCtrl.createSystem()" class="btn btn-default pull-right" ng-if="systemsCtrl.showCreate()">Create system</button>
+			<h4 class="title">{{systemsCtrl.DataService.labelSystems()}}</h4>
+			<button ng-click="systemsCtrl.createSystem()" class="btn btn-default pull-right" ng-if="systemsCtrl.showCreate()">Create {{systemsCtrl.DataService.labelSystemLower()}}</button>
 		</div>
 		<div id="systems-table" table-directive columns="systemsCtrl.tableColumns" data="systemsCtrl.systems" action-visible="systemsCtrl.showAction()" action-icon="'fa-pencil'" on-action="systemsCtrl.onSystemEdit" on-select="systemsCtrl.onSystemSelect"></div>
 	</div>

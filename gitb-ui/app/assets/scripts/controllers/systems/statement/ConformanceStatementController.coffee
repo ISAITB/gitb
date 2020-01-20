@@ -10,15 +10,15 @@ class ConformanceStatementController
     @tableColumns = [
       {
         field: 'domainFull'
-        title: 'Domain'
+        title: @DataService.labelDomain()
       }
       {
         field: 'specificationFull'
-        title: 'Specification'
+        title: @DataService.labelSpecification()
       }
       {
         field: 'actorFull'
-        title: 'Actor'
+        title: @DataService.labelActor()
       }
       {
         field: 'results'

@@ -103,9 +103,10 @@ object PersistenceSchema {
     def name    = column[String]("name")
     def desc    = column[Option[String]]("description", O.SqlType("TEXT"))
     def default = column[Option[Boolean]]("is_default")
+    def hidden = column[Boolean]("is_hidden")
     def displayOrder = column[Option[Short]]("display_order")
     def domain  = column[Long]("domain")
-    def * = (id, actorId, name, desc, default, displayOrder, domain) <> (Actors.tupled, Actors.unapply)
+    def * = (id, actorId, name, desc, default, hidden, displayOrder, domain) <> (Actors.tupled, Actors.unapply)
     def actorIdUniqueIdx = index("actors_aid_unq_idx", actorId, unique = true)
     //def fk = foreignKey("actors_fk", domain, Domains)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
@@ -481,5 +482,16 @@ object PersistenceSchema {
     def pk = primaryKey("spv_pk", (system, parameter))
   }
   val systemParameterValues = TableQuery[SystemParameterValuesTable]
+
+  class CommunityLabelsTable(tag: Tag) extends Table[CommunityLabels](tag, "CommunityLabels") {
+    def community = column[Long] ("community")
+    def labelType = column[Short]("label_type")
+    def singularForm = column[String]("singular_form")
+    def pluralForm = column[String]("plural_form")
+    def fixedCase = column[Boolean]("fixed_case")
+    def * = (community, labelType, singularForm, pluralForm, fixedCase) <> (CommunityLabels.tupled, CommunityLabels.unapply)
+    def pk = primaryKey("cl_pk", (community, labelType))
+  }
+  val communityLabels = TableQuery[CommunityLabelsTable]
 
 }

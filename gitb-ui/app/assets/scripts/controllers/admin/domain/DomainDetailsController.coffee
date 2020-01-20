@@ -60,7 +60,7 @@ class DomainDetailsController
 		saveAs(blob, parameter.name+extension)
 
 	deleteDomain: () =>
-		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this domain?", "Yes", "No")
+		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this "+@DataService.labelDomainLower()+"?", "Yes", "No")
 		.then () =>
 			@ConformanceService.deleteDomain(@domainId)
 			.then () =>

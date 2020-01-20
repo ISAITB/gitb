@@ -1,7 +1,7 @@
 class CreateEndpointController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', '$state', '$stateParams', 'ErrorService']
-	constructor: (@$log, @$scope, @ConformanceService, @$state, @$stateParams, @ErrorService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', '$state', '$stateParams', 'ErrorService', 'DataService']
+	constructor: (@$log, @$scope, @ConformanceService, @$state, @$stateParams, @ErrorService, @DataService) ->
 		@domainId = @$stateParams.id
 		@specificationId = @$stateParams.spec_id
 		@actorId = @$stateParams.actor_id

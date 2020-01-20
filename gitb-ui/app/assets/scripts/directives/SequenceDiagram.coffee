@@ -242,8 +242,8 @@ extractSteps = (s, actorInfo) =>
         else
           scope.actor = info.id + " (" + info.role + ")"
 
-@directives.directive 'seqDiagramMessage', ['RecursionHelper', 'ReportService', 'Constants', '$uibModal', '$timeout',
-  (RecursionHelper, ReportService, Constants, $uibModal, $timeout) =>
+@directives.directive 'seqDiagramMessage', ['RecursionHelper', 'ReportService', 'Constants', '$uibModal', '$timeout', '$sce', 'HtmlService'
+  (RecursionHelper, ReportService, Constants, $uibModal, $timeout, $sce, HtmlService) =>
     scope:
       message: '='
       actorInfo: '='
@@ -257,6 +257,7 @@ extractSteps = (s, actorInfo) =>
           '\'skipped\': message.status == TEST_STATUS.SKIPPED, '+
           '\'waiting\': message.status == TEST_STATUS.WAITING, '+
           '\'error\': message.status == TEST_STATUS.ERROR, '+
+          '\'warning\': message.status == TEST_STATUS.WARNING, '+
           '\'completed\': message.status == TEST_STATUS.COMPLETED}">'+
           '<div class="message-type">'+
             '<span>{{message.type}}</span>'+
@@ -270,8 +271,9 @@ extractSteps = (s, actorInfo) =>
                   '\'skipped\': iteration.status == TEST_STATUS.SKIPPED, '+
                   '\'waiting\': iteration.status == TEST_STATUS.WAITING, '+
                   '\'error\': iteration.status == TEST_STATUS.ERROR, '+
-                  '\'completed\': iteration.status == TEST_STATUS.COMPLETED}"'+
-                  '>Iteration {{$index+1}}</li>'+
+                  '\'warning\': iteration.status == TEST_STATUS.WARNING, '+
+                  '\'completed\': iteration.status == TEST_STATUS.COMPLETED}">'+
+                  'Iteration {{$index+1}}</li>'+
               '</ul>'+
             '</span>'+
           '</div>'+
@@ -282,7 +284,7 @@ extractSteps = (s, actorInfo) =>
             '<div class="step-icon" ng-if="message.type == \'exit\'">'+
               '<i class="fa fa-dot-circle-o""></i>'+
             '</div>'+
-            '<span class="title">{{message.desc}}</span>'+
+            '<div><span class="title">{{message.desc}}<span ng-if="message.documentation" ng-click="showStepDocumentation(message.documentation)"><i ng-style="{ \'margin-left\': message.desc?\'5px\':\'0px\'}" class="fa fa-question-circle icon-documentation"/></span></span></div>'+
           '</div>'+
           '<div class="message-report" ng-if="message.report != null">'+
             '<a href="" class="report-link" ng-click="showReport()">'+
@@ -292,6 +294,7 @@ extractSteps = (s, actorInfo) =>
                 '<i class="fa fa-gear processing-icon"></i>'+
                 '<i class="fa fa-check completed-icon"></i>'+
                 '<i class="fa fa-times error-icon"></i>'+
+                '<i class="fa fa-exclamation warning-icon"></i>'+
               '</span>'+
             '</a>'+
           '</div>'+
@@ -316,6 +319,7 @@ extractSteps = (s, actorInfo) =>
       '</div>'
     compile: (element) =>
       RecursionHelper.compile element, (scope, element, attrs) =>
+        scope.TEST_STATUS = Constants.TEST_STATUS
         calculateDepth = (message) ->
           if message.type == 'loop'
             childDepths = _.map message.steps, calculateDepth
@@ -356,6 +360,10 @@ extractSteps = (s, actorInfo) =>
             else
               showTestStepReportModal scope.message.report
 
+        scope.showStepDocumentation = (documentation) =>
+          html = $sce.trustAsHtml(documentation)
+          HtmlService.showHtml("Step information", html)
+
         scope.showLoopIteration = (iterationIndex) =>
           setStatusesAndReports = (message, iteration) ->
             applyStatusesAndReportsToChildSteps = (childSteps, childStepIterations) =>
@@ -390,9 +398,7 @@ extractSteps = (s, actorInfo) =>
             if sequences? && sequences.length > 0
               $timeout showLastStatus, 0
           scope.$watch 'message.sequences', onLoopIterationUpdated, true
-
         scope.depth = calculateDepth scope.message
-        scope.TEST_STATUS = Constants.TEST_STATUS
 ]
 
 @directives.directive 'seqDiagramMessageStatus', (RecursionHelper, Constants) ->
@@ -408,6 +414,7 @@ extractSteps = (s, actorInfo) =>
         '\'skipped\': message.status == TEST_STATUS.SKIPPED, '+
         '\'waiting\': message.status == TEST_STATUS.WAITING, '+
         '\'error\': message.status == TEST_STATUS.ERROR, '+
+        '\'warning\': message.status == TEST_STATUS.WARNING, '+
         '\'completed\': message.status == TEST_STATUS.COMPLETED}">'+
       '</div>'+
     '</div>'

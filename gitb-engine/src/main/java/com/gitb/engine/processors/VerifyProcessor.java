@@ -9,9 +9,10 @@ import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.engine.remote.validation.RemoteValidationModuleClient;
 import com.gitb.tdl.Binding;
+import com.gitb.tdl.ErrorLevel;
 import com.gitb.tdl.Verify;
-import com.gitb.tr.TestResultType;
-import com.gitb.tr.TestStepReportType;
+import com.gitb.tr.*;
+import com.gitb.tr.ObjectFactory;
 import com.gitb.types.BooleanType;
 import com.gitb.types.DataType;
 import com.gitb.utils.BindingUtils;
@@ -21,13 +22,12 @@ import com.gitb.validation.common.AbstractValidator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.bind.JAXBElement;
+import java.math.BigInteger;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 /**
  * Created by senan on 9/12/14.
@@ -36,6 +36,7 @@ public class VerifyProcessor implements IProcessor {
 	private static Logger logger = LoggerFactory.getLogger(VerifyProcessor.class);
 
 	private final TestCaseScope scope;
+	protected ObjectFactory objectFactory = new ObjectFactory();
 
 	public VerifyProcessor(TestCaseScope scope) {
 		this.scope = scope;
@@ -113,8 +114,14 @@ public class VerifyProcessor implements IProcessor {
 
 		// Validate content with given configurations and inputs; and return the report
 		TestStepReportType report = validator.validate(verify.getConfig(), inputs);
+		// Processing if step is at warning level
+		if (verify.getLevel() == ErrorLevel.WARNING && report.getResult().equals(TestResultType.FAILURE)) {
+			// Failed report but with step at warning level - mark as success and convert reported error items to warnings
+			convertErrorItemsToWarnings(report);
+		}
+
         if(verify.getId() != null && verify.getId().length() > 0) {
-            boolean result = report.getResult().equals(TestResultType.SUCCESS);
+            boolean result = report.getResult().equals(TestResultType.SUCCESS) || report.getResult().equals(TestResultType.WARNING);
 
             if(scope.getVariable(verify.getId()).isDefined()) {
                 scope.getVariable(verify.getId()).setValue(new BooleanType(result));
@@ -123,6 +130,42 @@ public class VerifyProcessor implements IProcessor {
             }
         }
 		return report;
+	}
+
+	private void convertErrorItemsToWarnings(TestStepReportType report) {
+		report.setResult(TestResultType.WARNING);
+		if (report instanceof TAR) {
+			// Set errors to warnings in counters.
+			ValidationCounters counters = ((TAR)report).getCounters();
+			if (counters != null) {
+				int errorCount = 0;
+				if (counters.getNrOfErrors() != null) {
+					errorCount = counters.getNrOfErrors().intValue();
+				}
+				int warningCount = 0;
+				if (counters.getNrOfWarnings() != null) {
+					warningCount = counters.getNrOfWarnings().intValue();
+				}
+				counters.setNrOfErrors(BigInteger.ZERO);
+				counters.setNrOfWarnings(BigInteger.valueOf(errorCount + warningCount));
+			}
+			// Set errors to warnings in report items.
+			TestAssertionGroupReportsType reportsType = ((TAR)report).getReports();
+			if (reportsType != null) {
+				List<JAXBElement<TestAssertionReportType>> newReports = new ArrayList<>(reportsType.getInfoOrWarningOrError().size());
+				for (JAXBElement<TestAssertionReportType> item: reportsType.getInfoOrWarningOrError()) {
+					if (item.getValue() instanceof BAR) {
+						if (item.getName().getLocalPart().equals("error")) {
+							newReports.add(objectFactory.createTestAssertionGroupReportsTypeWarning(item.getValue()));
+						} else {
+							newReports.add(item);
+						}
+					}
+				}
+				reportsType.getInfoOrWarningOrError().clear();
+				reportsType.getInfoOrWarningOrError().addAll(newReports);
+			}
+		}
 	}
 
 	private boolean isURL(String handler) {

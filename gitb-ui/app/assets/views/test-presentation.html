@@ -1,27 +1,31 @@
-<div class="row">
-    <div ng-include="'testSteps'"></div>
-</div>
-<div class="row">
-    <div class="col-md-12">
-        <button class="btn btn-default pull-right" type="button" ng-click="testPresentationCtrl.back()">Back</button>    
+<div>
+    <div class="row">
+        <div class="col-xs-12">
+            <div ng-include="'testSteps'"></div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <button class="btn btn-default pull-right" type="button" ng-click="testPresentationCtrl.back()">Back</button>    
+        </div>
     </div>
 </div>
 <script type="text/ng-template" id="testSteps">
 
-    <div ng-repeat="step in steps" ng-switch on="step.type" style='margin-top:10px;' ng-class="testPresentationCtrl.divClassForStatus(step.status)">
+    <div ng-repeat="step in steps" ng-switch on="step.type" style='margin-top:10px; min-width:400px;' ng-class="testPresentationCtrl.divClassForStatus(step.status)">
 
         <!-- messaging step -->
         <div ng-switch-when="msg">
-            <div class="col-md-7">
+            <div class="col-xs-7">
                 <span class="mini-tab"><i title="{{testPresentationCtrl.tooltipForStatus(step.status)}}" ng-class="testPresentationCtrl.iconClassForStatus(step.status)"></i></span>
                 <strong>{{step.id}}. </strong> {{step.desc}}
             </div>
-            <div class="col-md-4 right">
+            <div class="col-xs-4 right">
                 <span ng-class="testPresentationCtrl.labelClassForStatus(step.status)">{{step.from}}</span>
                 <span><i class="fa fa-long-arrow-right fa-lg"></i></span>
                 <span ng-class="testPresentationCtrl.labelClassForStatus(step.status)">{{step.to}}</span>
             </div>
-            <div class="col-md-1">
+            <div class="col-xs-1">
                 <!-- TODO handle reporting -->
                 <a class="pull-right" ng-if="step.report" href="" ng-click="testPresentationCtrl.showStepReport(step)">
                     <i class="fa fa-file-text-o fa-lg"></i>
@@ -31,11 +35,11 @@
 
         <!-- verify step -->
         <div ng-switch-when="verify">
-            <div class="col-md-11">
+            <div class="col-xs-11">
                 <span class="mini-tab"><i title="{{testPresentationCtrl.tooltipForStatus(step.status)}}" ng-class="testPresentationCtrl.iconClassForStatus(step.status)"></i></span>
                 <strong>{{step.id}}. </strong> {{step.desc}}
             </div>
-            <div class="col-md-1">
+            <div class="col-xs-1">
                 <!-- TODO handle reporting -->
                 <a class="pull-right" ng-if="step.report"  href="" ng-click="testPresentationCtrl.showStepReport(step)">
                     <i class="fa fa-file-text-o fa-lg"></i>
@@ -45,7 +49,7 @@
 
         <!-- decision step -->
         <div ng-switch-when="decision">
-            <div class="col-md-11 absolute" >
+            <div class="col-xs-11 absolute" >
                 <span class="mini-tab"><i title="{{testPresentationCtrl.tooltipForStatus(step.status)}}" ng-class="testPresentationCtrl.iconClassForStatus(step.status)"></i></span>
                 <strong>{{step.id}}. </strong> {{step.desc}}
             </div>
@@ -74,9 +78,9 @@
 
         <!-- loop step -->
         <div ng-switch-when="loop">
-            <div class="col-md-12" >
+            <div class="col-xs-12" >
 
-                <div class="btn-group pull-right" style="top:5px;" uib-dropdown >
+                <div class="btn-group pull-right" style="top:5px; margin-left:10px" uib-dropdown >
                     <button type="button" class="btn btn-default btn-sm uib-dropdown-toggle" uib-dropdown-toggle ng-disabled="disabled">
                         Iterations <span class="caret"></span>
                     </button>
@@ -91,7 +95,7 @@
                 <strong>{{step.id}}. </strong> {{step.desc}}
             </div> <br>
 
-            <div class="tab-content">
+            <div class="tab-content col-xs-12">
                 <div class="tab-pane" id="tab{{step.id}}[{{$index + 1}}]" ng-repeat="sequence in step.sequences" ng-class="{active: testPresentationCtrl.getSelection(step, $index)}">
                     <div ng-if="sequence" ng-init="steps = sequence" ng-include="'testSteps'"></div>
                 </div>
@@ -101,7 +105,7 @@
 
         <!-- flow step -->
         <div ng-switch-when="flow">
-            <div class="col-md-12">
+            <div class="col-xs-12">
                 <div class="btn-group pull-right" style="top:5px;" uib-dropdown >
                     <button type="button" class="btn btn-default btn-sm uib-dropdown-toggle" uib-dropdown-toggle ng-disabled="disabled">
                         Threads <span class="caret"></span>
@@ -127,7 +131,7 @@
 
         <!-- interact step -->
         <div ng-switch-when="interact">
-            <div class="col-md-11">
+            <div class="col-xs-11">
                 <span class="mini-tab"><i title="{{testPresentationCtrl.tooltipForStatus(step.status)}}" ng-class="testPresentationCtrl.iconClassForStatus(step.status)"></i></span>
                 <strong>{{step.id}}. </strong> {{step.desc}}
             </div>
@@ -135,7 +139,7 @@
 
         <!-- exit step -->
         <div ng-switch-when="exit">
-            <div class="col-md-12">
+            <div class="col-xs-12">
                 <span class="mini-tab"><i class="fa fa-ban fa-fw fa-lg"></i></span>
                 <strong>{{step.id}}. </strong> {{step.desc}}
             </div>

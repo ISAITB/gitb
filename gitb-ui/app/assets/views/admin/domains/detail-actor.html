@@ -1,7 +1,7 @@
 <div class="page domains detail detail-actor">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h4 class="title">Actor details</h4>
+			<h4 class="title">{{actorDetailsCtrl.DataService.labelActor()}} details</h4>
 		</div>
 		<div class="panel-body">
 			<div class="row">
@@ -21,8 +21,8 @@
 	</div>
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h4 class="title">Endpoints</h4>
-			<a ui-sref="app.admin.domains.detail.specifications.detail.actors.detail.endpoints.create({id: actorDetailsCtrl.domainId, spec_id: actorDetailsCtrl.specificationId, actor_id: actorDetailsCtrl.actorId})" class="btn btn-default pull-right">Create endpoint</a>
+			<h4 class="title">{{actorDetailsCtrl.DataService.labelEndpoints()}}</h4>
+			<a ui-sref="app.admin.domains.detail.specifications.detail.actors.detail.endpoints.create({id: actorDetailsCtrl.domainId, spec_id: actorDetailsCtrl.specificationId, actor_id: actorDetailsCtrl.actorId})" class="btn btn-default pull-right">Create {{actorDetailsCtrl.DataService.labelEndpointLower()}}</a>
 		</div>
 		<div table-directive columns="actorDetailsCtrl.endpointTableColumns" data="actorDetailsCtrl.endpointRepresentations" on-select="actorDetailsCtrl.onEndpointSelect"></div>
 	</div>

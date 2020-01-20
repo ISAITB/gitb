@@ -19,13 +19,13 @@
             <table class="table" ng-if="dashboardCtrl.showFilters">
                 <thead>
                 <tr>
-                    <th class="col-md-1" ng-if="dashboardCtrl.DataService.isSystemAdmin || (dashboardCtrl.DataService.isCommunityAdmin && dashboardCtrl.DataService.community.domain === null)">Domain</th>
-                    <th class="col-md-1">Specification</th>
+                    <th class="col-md-1" ng-if="dashboardCtrl.DataService.isSystemAdmin || (dashboardCtrl.DataService.isCommunityAdmin && dashboardCtrl.DataService.community.domain === null)">{{dashboardCtrl.DataService.labelDomain()}}</th>
+                    <th class="col-md-1">{{dashboardCtrl.DataService.labelSpecification()}}</th>
                     <th class="col-md-1">Test suite</th>
                     <th class="col-md-1">Test case</th>
                     <th class="col-md-1" ng-if="!dashboardCtrl.DataService.isCommunityAdmin">Community</th>
-                    <th class="col-md-1">Organisation</th>
-                    <th class="col-md-1">System</th>
+                    <th class="col-md-1">{{dashboardCtrl.DataService.labelOrganisation()}}</th>
+                    <th class="col-md-1">{{dashboardCtrl.DataService.labelSystem()}}</th>
                     <th class="col-md-1">Result</th>
                     <th class="col-md-2">Start time</th>
                     <th class="col-md-2">End time</th>

@@ -14,6 +14,31 @@ class Constants
 
 	@DEFAULT_COMMUNITY_ID = 0
 
+	@LABEL_TYPE = 
+		DOMAIN: 1
+		SPECIFICATION: 2
+		ACTOR: 3
+		ENDPOINT: 4
+		ORGANISATION: 5
+		SYSTEM: 6
+
+	@LABEL_TYPE_LABEL = 
+		1: "Domain"
+		2: "Specification"
+		3: "Actor"
+		4: "Endpoint"
+		5: "Organisation"
+		6: "System"
+
+	@LABEL_DEFAULT = {
+		1: {singularForm: "Domain", pluralForm: "Domains", fixedCase: false}
+		2: {singularForm: "Specification", pluralForm: "Specifications", fixedCase: false}
+		3: {singularForm: "Actor", pluralForm: "Actors", fixedCase: false}
+		4: {singularForm: "Endpoint", pluralForm: "Endpoints", fixedCase: false}
+		5: {singularForm: "Organisation", pluralForm: "Organisations", fixedCase: false}
+		6: {singularForm: "System", pluralForm: "Systems", fixedCase: false}
+	}
+
 	@SELF_REGISTRATION_TYPE = 
 		NOT_SUPPORTED: 1
 		PUBLIC_LISTING: 2
@@ -85,7 +110,8 @@ class Constants
 		SKIPPED : 1,
 		WAITING : 2,
 		ERROR : 3,
-		COMPLETED: 4
+		WARNING: 4,
+		COMPLETED: 5
 
 	@TEST_CASE_STATUS =
 		READY : 0,
@@ -126,6 +152,6 @@ class Constants
 	@DATA_URL_REGEX: /^data:.+\/(.+);base64,(.*)$/
 	@VARIABLE_NAME_REGEX: /^[a-zA-Z][a-zA-Z\-_\.0-9]*$/
 
-	@VERSION = "v1.7.2"
+	@VERSION = "v1.8.0"
 
 common.value('Constants', Constants)

@@ -4,7 +4,7 @@ import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
 import javax.inject.Inject
-import managers.{AuthorizationManager, UserManager}
+import managers.{AuthorizationManager, CommunityLabelManager, UserManager}
 import models.Constants
 import models.Enums.UserRole
 import org.slf4j.{Logger, LoggerFactory}
@@ -14,7 +14,7 @@ import utils.JsonUtil
 /**
  * Created by VWYNGAET on 25/10/2016.
  */
-class UserService @Inject() (userManager: UserManager, authorizationManager: AuthorizationManager) extends Controller {
+class UserService @Inject() (userManager: UserManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[UserService])
 
   /**
@@ -155,7 +155,7 @@ class UserService @Inject() (userManager: UserManager, authorizationManager: Aut
     val isLastAdmin = userManager.isLastAdmin(userId)
     val authUserId = ParameterExtractor.extractUserId(request)
     if (isLastAdmin) {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.CANNOT_DELETE, "Cannot delete the only administrator of the organization.")
+      ResponseConstructor.constructErrorResponse(ErrorCodes.CANNOT_DELETE, "Cannot delete the only administrator of the "+communityLabelManager.getLabel(request, models.Enums.LabelType.Organisation, true, true)+".")
     } else if (authUserId == userId) {
       ResponseConstructor.constructErrorResponse(ErrorCodes.CANNOT_DELETE, "Cannot delete your own account.")
     } else if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT == userId) {

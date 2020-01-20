@@ -127,7 +127,7 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
 	            if(getSender().equals(sequenceProcessorActor)) {
 		            StepStatus status = ((StatusEvent) message).getStatus();
 
-		            if(status == StepStatus.COMPLETED || status == StepStatus.ERROR) {
+		            if(status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.WARNING) {
 
 			            TestbedService.updateStatus(sessionId, TEST_CASE_STEP_ID, status, constructResultReport(status));
 		            }
@@ -143,8 +143,9 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
 
 	private TestStepReportType constructResultReport(StepStatus status) {
 		SR report = new SR();
-		if(status == StepStatus.COMPLETED) {
-			report.setResult(TestResultType.SUCCESS);
+		// We treat a final result of "WARNING" as a "SUCCESS". This is the overall test session result.
+		if (status == StepStatus.COMPLETED || status == StepStatus.WARNING) {
+            report.setResult(TestResultType.SUCCESS);
 		} else {
 			report.setResult(TestResultType.FAILURE);
 		}

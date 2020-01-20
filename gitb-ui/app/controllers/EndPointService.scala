@@ -2,11 +2,11 @@ package controllers
 
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import javax.inject.Inject
-import managers.{AuthorizationManager, EndPointManager}
+import managers.{AuthorizationManager, CommunityLabelManager, EndPointManager}
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc.Controller
 
-class EndPointService @Inject() (endPointManager: EndPointManager, authorizationManager: AuthorizationManager) extends Controller {
+class EndPointService @Inject() (endPointManager: EndPointManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[EndPointService])
 
   def deleteEndPoint(endPointId: Long) = AuthorizedAction { request =>
@@ -21,7 +21,8 @@ class EndPointService @Inject() (endPointManager: EndPointManager, authorization
     val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
     val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
     if (endPointManager.checkEndPointExistsForActor(name, actorId, Some(endPointId))) {
-      ResponseConstructor.constructBadRequestResponse(500, "An endpoint with this name already exists for the actor")
+      val labels = communityLabelManager.getLabels(request)
+      ResponseConstructor.constructBadRequestResponse(500, communityLabelManager.getLabel(labels, models.Enums.LabelType.Endpoint) + " with this name already exists for the " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor, true, true)+".")
     } else{
       endPointManager.updateEndPointWrapper(endPointId, name, description)
       ResponseConstructor.constructEmptyResponse
