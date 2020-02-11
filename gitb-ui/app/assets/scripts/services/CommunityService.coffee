@@ -16,15 +16,18 @@ class CommunityService
       authenticate: true
       params: params
 
-  createCommunity: (shortName, fullName, email, selfRegType, selfRegToken, domainId) ->
+  createCommunity: (shortName, fullName, email, selfRegType, selfRegToken, selfRegNotification, domainId) ->
     data = {
       community_sname: shortName,
       community_fname: fullName,
       community_email: email
     }
     if @DataService.configuration['registration.enabled']
+      if selfRegNotification == undefined
+        selfRegNotification = false
       data.community_selfreg_type = selfRegType
       data.community_selfreg_token = selfRegToken
+      data.community_selfreg_notification = selfRegNotification
 
     if domainId?
       data.domain_id = domainId
@@ -40,15 +43,18 @@ class CommunityService
       authenticate: true
     })
 
-  updateCommunity: (communityId, shortName, fullName, email, selfRegType, selfRegToken, domainId) ->
+  updateCommunity: (communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegNotification, domainId) ->
     data = {
       community_sname: shortName,
       community_fname: fullName,
       community_email: email
     }
     if @DataService.configuration['registration.enabled']
+      if selfRegNotification == undefined
+        selfRegNotification = false
       data.community_selfreg_type = selfRegType
       data.community_selfreg_token = selfRegToken
+      data.community_selfreg_notification = selfRegNotification
 
     if domainId?
       data.domain_id = domainId

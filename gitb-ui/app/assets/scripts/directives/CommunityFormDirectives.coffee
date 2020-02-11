@@ -35,6 +35,10 @@
             '<label class="col-xs-3 control-label" for="selfRegToken">* Self-registration token:</label>'+
             '<div class="col-xs-8"><input id="selfRegToken" ng-model="tbCommunity.selfRegToken" class="form-control" type="text" required></div>'+
           '</div>'+
+          '<div class="form-group" ng-if="emailEnabled && tbCommunity.selfRegType != '+@Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED+'">'+
+            '<label class="col-xs-3 control-label" for="notifications">Self-registration notifications:</label>'+
+            '<div class="col-xs-8"><input id="notifications" ng-model="tbCommunity.selfRegNotification" type="checkbox" class="form-check"></div>'+
+          '</div>'+
         '</div>'+
         '<input id="domain" ng-if="!tbAdmin" ng-model="tbCommunity.domain" type="hidden">'+
       '</form>'
@@ -42,6 +46,7 @@
     link: (scope, element, attrs) =>
       scope.DataService = @DataService
       scope.selfRegEnabled = @DataService.configuration['registration.enabled']
+      scope.emailEnabled = @DataService.configuration['email.enabled']
       scope.selfRegTypes = [
         {id: @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED, label: 'Not supported'}, 
         {id: @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING, label: 'Select from public communities'}, 

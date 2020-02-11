@@ -51,7 +51,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
       .map(x => new UserAccount(
         Users(x._1, x._2, x._3, null, false, x._4, x._5, None, None, UserSSOStatus.NotLinked.id.toShort),
         Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, false, None, x._9),
-        Communities(x._9, x._10, x._11, None, -1, None, None)
+        Communities(x._9, x._10, x._11, None, -1, None, false, None)
       ))
     results.sorted
   }
@@ -82,7 +82,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
     .map(x => new UserAccount(
       Users(x._1, x._2, x._3, null, false, x._4, x._5, None, None, UserSSOStatus.Linked.id.toShort),
       Organizations(x._5, x._6, x._7, -1, x._8, null, null, null, false, None, x._9),
-      Communities(x._9, x._10, x._11, None, -1, None, None)
+      Communities(x._9, x._10, x._11, None, -1, None, false, None)
     ))
     results.sorted
   }
@@ -245,12 +245,12 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
       if (user.organization.isDefined) {
         community = getCommunityById(user.organization.get.community)
       }
-      content += "<b>User:</b> " + user.id + " - " + user.name + " [" + userEmail + "]<br/>"
+      content += "<b>User:</b> " + user.name + " [" + userEmail + "]<br/>"
       if (user.organization.isDefined) {
-        content += "<b>Organisation:</b> " + user.organization.get.id + " - " + user.organization.get.fullname + "<br/>"
+        content += "<b>Organisation:</b> " + user.organization.get.fullname + "<br/>"
       }
       if (community != null) {
-        content += "<b>Community:</b> " + community.id + " - " + community.fullname + "<br/>"
+        content += "<b>Community:</b> " + community.fullname + "<br/>"
         if (community.supportEmail.isDefined) {
           toAddresses = Array[String](community.supportEmail.get)
           ccAddresses = Configurations.EMAIL_TO
@@ -258,11 +258,11 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
       }
     } else {
       // Form submission before an account is selected
-      content += "<b>User:</b> " + userEmail + "]<br/>"
+      content += "<b>User:</b>[ " + userEmail + "]<br/>"
     }
     content += "<b>Message type:</b> " + messageTypeId + " - " + messageTypeDescription + "<br/>"
     content += "<h2>Message content</h2>"
     content += "<p>" + messageContent + "</p>"
-    EmailUtil.sendEmail(Configurations.EMAIL_FROM, toAddresses, ccAddresses, subject, content, attachments, Configurations.SMTP_PROPERTIES, Configurations.EMAIL_SMTP_AUTH_USERNAME, Configurations.EMAIL_SMTP_AUTH_PASSWORD)
+    EmailUtil.sendEmail(Configurations.EMAIL_FROM, toAddresses, ccAddresses, subject, content, attachments)
   }
 }

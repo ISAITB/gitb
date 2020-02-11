@@ -203,6 +203,7 @@ object ParameterExtractor {
     val email = optionalBodyParameter(request, Parameters.COMMUNITY_EMAIL)
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
     var selfRegToken: Option[String] = None
+    var selfRegNotification: Boolean = false
     if (Configurations.REGISTRATION_ENABLED) {
       selfRegType = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
       if (!validCommunitySelfRegType(selfRegType)) {
@@ -216,11 +217,15 @@ object ParameterExtractor {
       } else {
         selfRegToken = None
       }
+      if (selfRegType != SelfRegistrationType.NotSupported.id.toShort && Configurations.EMAIL_ENABLED) {
+        selfRegNotification = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
+      }
     } else {
       selfRegType = SelfRegistrationType.NotSupported.id.toShort
     }
+
     val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    Communities(0L, sname, fname, email, selfRegType, selfRegToken, domainId)
+    Communities(0L, sname, fname, email, selfRegType, selfRegToken, selfRegNotification, domainId)
   }
 
   def extractSystemAdminInfo(request:Request[AnyContent]):Users = {

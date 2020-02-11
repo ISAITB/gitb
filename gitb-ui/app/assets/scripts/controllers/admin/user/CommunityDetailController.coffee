@@ -151,15 +151,22 @@ class CommunityDetailController
       @ErrorService.showErrorMessage(error)
 
   saveDisabled: () =>
-    !(@community?.sname? && @community?.fname? && (!@DataService.configuration?['registration.enabled'] || 
-    (@community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED || @community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || (@community?.selfRegToken?.trim().length > 0))))
+    !(@community?.sname? && @community?.fname? && 
+    (!@DataService.configuration?['registration.enabled'] || 
+      ((@community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED || 
+        @community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || 
+        (@community?.selfRegToken?.trim().length > 0)) && 
+        (!@DataService.configuration?['email.enabled'] || 
+        (!@community?.selfRegNotification || @community?.email? && @community.email.trim() != '')))
+    ))
 
   updateCommunity: () =>
     @ValidationService.clearAll()
     if @ValidationService.requireNonNull(@community.sname, "Please enter short name of the community.") &
     @ValidationService.requireNonNull(@community.fname, "Please enter full name of the community.") &
-    (!(@community.email? && @community.email.trim() != '') || @ValidationService.validateEmail(@community.email, "Please enter a valid support email."))
-      @CommunityService.updateCommunity(@communityId, @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegToken, @community.domain?.id)
+    (!(@community.email? && @community.email.trim() != '') || @ValidationService.validateEmail(@community.email, "Please enter a valid support email.")) &
+    (!@community.selfRegNotification || @ValidationService.requireNonNull(@community.email, "A support email needs to be defined to support notifications."))
+      @CommunityService.updateCommunity(@communityId, @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegToken, @community.selfRegNotification, @community.domain?.id)
       .then (data) =>
         if data? && data.error_code?
           @ValidationService.pushAlert({type:'danger', msg:data.error_description})

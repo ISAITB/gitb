@@ -112,7 +112,7 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   /**
     * Update community
     */
-  def updateCommunity(communityId: Long, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], domainId: Option[Long]) = {
+  def updateCommunity(communityId: Long, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], selfRegNotification: Boolean, domainId: Option[Long]) = {
     val actions = new ListBuffer[DBIO[_]]()
 
     val community = exec(PersistenceSchema.communities.filter(_.id === communityId).result.headOption)
@@ -128,8 +128,8 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
         val q = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.fullname)
         actions += q.update(fullName)
       }
-      val qs = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.supportEmail, c.domain, c.selfRegType, c.selfRegToken)
-      actions += qs.update(supportEmail, domainId, selfRegType, selfRegToken)
+      val qs = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.supportEmail, c.domain, c.selfRegType, c.selfRegToken, c.selfregNotification)
+      actions += qs.update(supportEmail, domainId, selfRegType, selfRegToken, selfRegNotification)
 
       exec(DBIO.seq(actions.map(a => a): _*).transactionally)
     } else {

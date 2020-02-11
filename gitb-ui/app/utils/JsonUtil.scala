@@ -395,6 +395,7 @@ object JsonUtil {
       "email" -> community.supportEmail,
       "selfRegType" -> community.selfRegType,
       "selfRegToken" -> (if(community.selfRegToken.isDefined) community.selfRegToken.get else JsNull),
+      "selfRegNotification" -> community.selfregNotification,
       "domainId" -> community.domain
     )
     json

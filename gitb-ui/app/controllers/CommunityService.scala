@@ -7,12 +7,14 @@ import exceptions.ErrorCodes
 import javax.inject.Inject
 import managers.{AuthorizationManager, CommunityManager, OrganizationManager}
 import models.Enums.SelfRegistrationType
-import models.{ActualUserInfo, Users}
+import models.{ActualUserInfo, Communities, Organizations, Users}
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.AuthenticationManager
 import play.api.mvc.{Controller, Result}
-import utils.JsonUtil
+import utils.{EmailUtil, JsonUtil}
+
+import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
 class CommunityService @Inject() (communityManager: CommunityManager, authorizationManager: AuthorizationManager, organisationManager: OrganizationManager, authenticationManager: AuthenticationManager) extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[CommunityService])
@@ -58,22 +60,27 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
     val email = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_EMAIL)
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
+    var selfRegToken: Option[String] = None
+    var selfRegNotification: Boolean = false
     if (Configurations.REGISTRATION_ENABLED) {
       selfRegType = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
       if (!ParameterExtractor.validCommunitySelfRegType(selfRegType)) {
         throw new IllegalArgumentException("Unsupported value [" + selfRegType + "] for self-registration type")
       }
-    }
-    var selfRegToken = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
-    if (selfRegType == SelfRegistrationType.Token.id.toShort || selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort) {
-      if (selfRegToken.isEmpty || StringUtils.isBlank(selfRegToken.get)) {
-        throw new IllegalArgumentException("Missing self-registration token")
+      selfRegToken = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
+      if (selfRegType == SelfRegistrationType.Token.id.toShort || selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort) {
+        if (selfRegToken.isEmpty || StringUtils.isBlank(selfRegToken.get)) {
+          throw new IllegalArgumentException("Missing self-registration token")
+        }
+      } else {
+        selfRegToken = None
       }
-    } else {
-      selfRegToken = None
+      if (selfRegType != SelfRegistrationType.NotSupported.id.toShort && Configurations.EMAIL_ENABLED) {
+        selfRegNotification = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
+      }
     }
     val domainId: Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    communityManager.updateCommunity(communityId, shortName, fullName, email, selfRegType, selfRegToken, domainId)
+    communityManager.updateCommunity(communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegNotification, domainId)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -124,12 +131,38 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
         } else {
           response = ResponseConstructor.constructJsonResponse(JsonUtil.jsId(userId).toString)
         }
+        // Self registration successful - notify support email if configured to do so.
+        if (Configurations.EMAIL_ENABLED && community.get.selfregNotification) {
+          notifyForSelfRegistration(community.get, organisation)
+        }
       }
     }
     if (response == null) {
       response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_SELFREG_DATA, "Unable to self-register due to error in provided configuration.")
     }
     response
+  }
+
+  private def notifyForSelfRegistration(community: Communities, organisation: Organizations) = {
+    if (Configurations.EMAIL_ENABLED && community.selfregNotification && community.supportEmail.isDefined) {
+      implicit val executionContext: ExecutionContextExecutor = ExecutionContext.global
+      scala.concurrent.Future {
+        val subject = "Self-registration notification"
+        var content = "<h2>New community member</h2>"
+        // User information not included to avoid data privacy statements
+        content +=
+          "A new organisation has joined your Test Bed community through the self-registration process.<br/>" +
+            "<br/><b>Organisation:</b> "+organisation.fullname+
+            "<br/><b>Community:</b> "+community.fullname
+        try {
+          EmailUtil.sendEmail(Configurations.EMAIL_FROM, Array[String](community.supportEmail.get), null, subject, content, null)
+        } catch {
+          case e:Exception => {
+            logger.error("Error while sending self registration notification for community ["+community.id+"]", e)
+          }
+        }
+      }
+    }
   }
 
   def getSelfRegistrationOptions() = AuthorizedAction { request =>
