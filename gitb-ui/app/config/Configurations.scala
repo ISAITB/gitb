@@ -36,6 +36,8 @@ object Configurations {
   var EMAIL_TO: Array[String] = null
   var EMAIL_SMTP_HOST = ""
   var EMAIL_SMTP_PORT = -1
+  var EMAIL_SMTP_SSL_ENABLED = false
+  var EMAIL_SMTP_STARTTLS_ENABLED = false
   var EMAIL_SMTP_AUTH_ENABLED = true
   var EMAIL_SMTP_AUTH_USERNAME = ""
   var EMAIL_SMTP_AUTH_PASSWORD = ""
@@ -137,6 +139,14 @@ object Configurations {
         // Collect as Properties object
         if (EMAIL_SMTP_AUTH_ENABLED) {
           SMTP_PROPERTIES.setProperty("mail.smtp.auth", "true")
+        }
+        EMAIL_SMTP_SSL_ENABLED = fromEnv("EMAIL_SMTP_SSL_ENABLED", conf.getString("email.smtp.ssl.enabled")).toBoolean
+        if (EMAIL_SMTP_SSL_ENABLED) {
+          SMTP_PROPERTIES.setProperty("mail.smtp.ssl.enable", "true");
+        }
+        EMAIL_SMTP_STARTTLS_ENABLED = fromEnv("EMAIL_SMTP_STARTTLS_ENABLED", conf.getString("email.smtp.starttls.enabled")).toBoolean
+        if (EMAIL_SMTP_STARTTLS_ENABLED) {
+          SMTP_PROPERTIES.setProperty("mail.smtp.starttls.enable", "true")
         }
         SMTP_PROPERTIES.setProperty("mail.smtp.host", EMAIL_SMTP_HOST)
         SMTP_PROPERTIES.setProperty("mail.smtp.port", EMAIL_SMTP_PORT.toString)
