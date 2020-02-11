@@ -74,8 +74,9 @@ class TestPresentationController
 		else if step.threads?
 			step.threads.length-1 == index
 
-	select: (stepId, index) ->
-		@selectedIndices[stepId] = index
+	select: (step, index) ->
+		step.currentIndex = index
+		@selectedIndices[step.id] = index
 
 	back: () ->
 		@$window.history.back();

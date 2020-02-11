@@ -262,7 +262,7 @@ extractSteps = (s, actorInfo) =>
           '<div class="message-type">'+
             '<span>{{message.type}}</span>'+
             '<span class="uib-dropdown iterations" uib-dropdown ng-if="message.type == \'loop\' && message.sequences != null && message.sequences.length > 0">'+
-              '<span href="" class="uib-dropdown-toggle" uib-dropdown-toggle>Show Iterations</span>'+
+              '<span href="" class="uib-dropdown-toggle" uib-dropdown-toggle>Iteration {{message.currentIterationIndex+1}} of {{message.sequences.length}}</span>'+
               '<ul uib-dropdown-menu class="uib-dropdown-menu">'+
                 '<li class="uib-dropdown-item"'+
                   'ng-repeat="iteration in message.sequences track by $index" ng-click="showLoopIteration($index)" '+
@@ -365,6 +365,7 @@ extractSteps = (s, actorInfo) =>
           HtmlService.showHtml("Step information", html)
 
         scope.showLoopIteration = (iterationIndex) =>
+          scope.message.currentIterationIndex = iterationIndex
           setStatusesAndReports = (message, iteration) ->
             applyStatusesAndReportsToChildSteps = (childSteps, childStepIterations) =>
 

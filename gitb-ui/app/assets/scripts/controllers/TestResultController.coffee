@@ -64,5 +64,6 @@ class TestResultController
 			sequence = angular.fromJson(sequence)
 			loopStep.sequences.push(sequence)
 			i = i+1
+		loopStep.currentIndex = loopStep.sequences.length - 1
 
 controllers.controller('TestResultController', TestResultController)
