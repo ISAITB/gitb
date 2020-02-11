@@ -672,11 +672,12 @@ class TestExecutionControllerV2
       else
         return null
 
-    for step in steps
-      if step?
-        parentOrCurrentNode = filter step
-        if parentOrCurrentNode?
-          return parentOrCurrentNode
+    if steps?
+      for step in steps
+        if step?
+          parentOrCurrentNode = filter step
+          if parentOrCurrentNode?
+            return parentOrCurrentNode
 
     return null
 

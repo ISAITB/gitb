@@ -12,7 +12,7 @@
 </div>
 <script type="text/ng-template" id="testSteps">
 
-    <div ng-repeat="step in steps" ng-switch on="step.type" style='margin-top:10px; min-width:400px;' ng-class="testPresentationCtrl.divClassForStatus(step.status)">
+    <div ng-repeat="step in steps" ng-if="!step.hide" ng-switch on="step.type" style='margin-top:10px; min-width:400px;' ng-class="testPresentationCtrl.divClassForStatus(step.status)">
 
         <!-- messaging step -->
         <div ng-switch-when="msg">
@@ -48,32 +48,31 @@
         </div>
 
         <!-- decision step -->
-        <div ng-switch-when="decision">
+        <div ng-switch-when="decision" class="decision-step">
             <div class="col-xs-11 absolute" >
                 <span class="mini-tab"><i title="{{testPresentationCtrl.tooltipForStatus(step.status)}}" ng-class="testPresentationCtrl.iconClassForStatus(step.status)"></i></span>
                 <strong>{{step.id}}. </strong> {{step.desc}}
             </div>
 
-            <tabset>
-                <tab class="pull-right" active="!step.condition" disabled="step.condition">
-                    <tab-heading>
+            <uib-tabset active="activeTab" ng-init="activeTab = (step.condition?1:0)">
+                <uib-tab class="pull-right" disable="step.condition">
+                    <uib-tab-heading>
                         <strong>Else</strong>
                         <span class="tab"><i title="Else" class="fa fa-share fa-rotate-90 fa-fw fa-lg"></i></span>
-                    </tab-heading>
+                    </uib-tab-heading>
                     <!-- use ng-if to create a new scope -->
                     <div ng-if="step.else" ng-init="steps = step.else" ng-include="'testSteps'"></div>
-                </tab>
+                </uib-tab>
 
-                <tab class="pull-right" active="step.condition" disabled="!step.condition">
-                    <tab-heading>
+                <uib-tab class="pull-right" disable="!step.condition">
+                    <uib-tab-heading>
                         <span class="tab"><i title="Then" class="fa fa-reply fa-rotate-270 fa-fw fa-lg"></i></span>
                         <strong>Then</strong>
-                    </tab-heading>
+                    </uib-tab-heading>
                     <!-- use ng-if to create a new scope -->
                     <div ng-if="step.then" ng-init="steps = step.then" ng-include="'testSteps'"></div>
-                </tab>
-            </tabset>
-
+                </uib-tab>
+            </uib-tabset>
         </div>
 
         <!-- loop step -->

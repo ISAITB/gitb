@@ -27,6 +27,26 @@ class TestResultController
 		for result in results
 			@testResultFlat[result.stepId] = result
 
+	visibleStepContents: (step) ->
+		visible = false
+		if Array.isArray(step)
+			visible = @visibleSequenceContents(step)
+		else
+			if step.type == "decision"
+				visible = @visibleSequenceContents(step.then) || @visibleSequenceContents(step.else)
+			else if step.type == "loop"
+				visible = @visibleSequenceContents(step.sequences)
+			else
+				visible = true
+		visible
+
+	visibleSequenceContents: (steps) ->
+		if steps? && steps.length > 0
+			for step in steps
+				if @visibleStepContents(step)
+					return true
+		return false
+
 	traverseTestCaseSteps: (steps) ->
 		if steps?
 			for step in steps
@@ -42,7 +62,6 @@ class TestResultController
 						else if @testResultFlat[step.id+"[F]"]?
 							@testResultFlat[step.id].condition = false
 							step.condition = false
-
 						@traverseTestCaseSteps(step.then)
 						@traverseTestCaseSteps(step.else)
 					else if step.type == "flow"
@@ -52,6 +71,7 @@ class TestResultController
 						@traverseLoops(step)
 						for sequence in step.sequences
 							@traverseTestCaseSteps(sequence)
+					step.hide = !@visibleStepContents(step)
 
 	traverseLoops : (loopStep) ->
 		loopStep.sequences = []
@@ -62,7 +82,8 @@ class TestResultController
 			if i > 1
 				sequence = sequence.split(loopStep.id+"[1]").join(loopStep.id + "[" + i + "]")
 			sequence = angular.fromJson(sequence)
-			loopStep.sequences.push(sequence)
+			if sequence.length > 0
+				loopStep.sequences.push(sequence)
 			i = i+1
 		loopStep.currentIndex = loopStep.sequences.length - 1
 
