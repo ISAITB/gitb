@@ -239,7 +239,7 @@
 		}
 
 		.message-info {
-		    position: relative;
+			position: relative;
 		}
 
 		.message-report {
@@ -284,7 +284,11 @@
 		.title {
 		    display: block;
 		    text-align: center;
-		    padding: 0 8px;
+			padding: 0 8px;
+
+			&.skipped {
+				text-decoration: line-through;
+			}
 		}
 
 		.child-steps {

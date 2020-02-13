@@ -559,10 +559,6 @@ class TestExecutionControllerV2
       , angular.noop)
 
   updateStatus: (step, stepId, status, report) =>
-
-    endsWith = (str, suffix) ->
-      str.indexOf suffix, (str.length - suffix.length) != -1
-
     if step?
       if step.id != stepId
         current = step
@@ -626,10 +622,38 @@ class TestExecutionControllerV2
         if (status == @Constants.TEST_STATUS.COMPLETED) ||
         (status == @Constants.TEST_STATUS.ERROR) ||
         (status == @Constants.TEST_STATUS.WARNING) ||
-        (status == @Constants.TEST_STATUS.SKIPPED && (current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.WARNING && current.status != @Constants.TEST_STATUS.PROCESSING)) ||
+        (status == @Constants.TEST_STATUS.SKIPPED && (current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.WARNING)) ||
         ((status == @Constants.TEST_STATUS.PROCESSING || status == @Constants.TEST_STATUS.WAITING) && (@started && current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.SKIPPED && current.status != @Constants.TEST_STATUS.WARNING))
           current.status = status
           current.report = report
+          # If skipped, marked all children as skipped.
+          if status == @Constants.TEST_STATUS.SKIPPED
+            @setChildrenAsSkipped(current, stepId, stepId)
+
+  escapeRegExp: (text) ->
+    text.replace(/\./g, "\\.").replace(/\[/g, "\\[").replace(/\]/g, "\\]")
+
+  setChildrenSequenceAsSkipped: (sequence, parentStepId) ->
+    if sequence?
+      for childStep in sequence
+        if Array.isArray(childStep)
+          for childStepItem in childStep
+            @setChildrenAsSkipped(childStepItem, childStepItem.id, parentStepId)
+        else
+          @setChildrenAsSkipped(childStep, childStep.id, parentStepId)
+
+  setChildrenAsSkipped: (step, idToCheck, parentStepId) ->
+    regex = new RegExp(@escapeRegExp(parentStepId)+"(\\[.+\\])?\\.?", "g");
+    console.log("Checking ["+idToCheck+"] vs ["+parentStepId+"]")
+    if step? && idToCheck? && (idToCheck == parentStepId || idToCheck.match(regex) != null)
+      if step.type == 'loop'
+        @setChildrenSequenceAsSkipped(step.steps, idToCheck)
+      else if step.type == 'decision'
+        @setChildrenSequenceAsSkipped(step.then, idToCheck)
+        @setChildrenSequenceAsSkipped(step.else, idToCheck)
+      else if step.type == 'flow'
+        @setChildrenSequenceAsSkipped(step.threads, idToCheck)
+      step.status = @Constants.TEST_STATUS.SKIPPED
 
   isParent: (id, parentId) ->
     periodIndex = id.indexOf '.', parentId.length
