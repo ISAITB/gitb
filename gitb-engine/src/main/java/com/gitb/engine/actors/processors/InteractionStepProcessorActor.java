@@ -104,6 +104,9 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                                 if (variableResolver.isVariableReference(instructionOrRequest.getValue())) {
                                     // If a target variable is referenced we can use this to determine the type.
                                     DataType targetVariable = variableResolver.resolveVariable(instructionOrRequest.getValue());
+                                    if (targetVariable == null) {
+                                        throw new GITBEngineInternalError("No variable could be found based on expression ["+instructionOrRequest.getValue()+"]");
+                                    }
                                     instructionOrRequest.setType(targetVariable.getType());
                                 } else {
                                     // Set "string" if no other type can be determined.
@@ -139,7 +142,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     TestbedService.interactWithUsers(scope.getContext().getSessionId(), stepId, userInteractionRequest);
                     return null;
                 } catch (Exception e) {
-                    logger.error(addMarker(), "Error in preliminary step", e);
+                    logger.error(addMarker(), "Error in interaction step", e);
                     throw new GITBEngineInternalError(e);
                 }
             }

@@ -62,6 +62,9 @@ public class ListType extends ContainerType {
 
 	@Override
     public DataType processXPath(XPathExpression expression, String returnType) {
+        if (returnType == null) {
+            returnType = DataType.STRING_DATA_TYPE;
+        }
         DataTypeFactory dataTypeFactory = DataTypeFactory.getInstance();
         //TODO Check is return type is list type and handle the casting exception
         ListType result = (ListType) DataTypeFactory.getInstance().create(returnType);
@@ -73,7 +76,11 @@ public class ListType extends ContainerType {
 
     @Override
     public String getType() {
-        return DataType.LIST_DATA_TYPE + DataType.CONTAINER_TYPE_PARENTHESIS[0] + containedType + DataType.CONTAINER_TYPE_PARENTHESIS[1];
+        if (containedType == null) {
+            return DataType.LIST_DATA_TYPE;
+        } else {
+            return DataType.LIST_DATA_TYPE + DataType.CONTAINER_TYPE_PARENTHESIS[0] + containedType + DataType.CONTAINER_TYPE_PARENTHESIS[1];
+        }
     }
 
     @Override

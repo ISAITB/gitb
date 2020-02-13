@@ -46,6 +46,9 @@ public class ObjectType extends DataType {
 
     @Override
     public DataType processXPath(XPathExpression expression, String returnType) {
+        if (returnType == null) {
+            returnType = DataType.STRING_DATA_TYPE;
+        }
         QName type = XPathConstantForDataType(returnType);
         if(type == null) {
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Expression cannot return the expected ["+returnType+"] return type..."));

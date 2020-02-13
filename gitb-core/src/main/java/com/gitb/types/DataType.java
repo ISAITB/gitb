@@ -55,7 +55,7 @@ public abstract class DataType {
     }
 
     public DataType convertTo(String targetType) {
-        if (this.getType().equals(targetType)) {
+        if (targetType == null || this.getType().equals(targetType)) {
             return this;
         }
         switch (targetType) {
