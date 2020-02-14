@@ -166,27 +166,32 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     private void checkToken(String token, TokenType expectedType) {
         if (StringUtils.isNotBlank(token)) {
             boolean isVariableExpression = Utils.isVariableExpression(token);
-            if (expectedType == TokenType.VARIABLE_REFERENCE) {
-                if (isVariableExpression) {
-                    variableResolver.checkVariablesInToken(token);
-                } else {
-                    addReportItem(ErrorCode.INVALID_VARIABLE_REFERENCE, currentTestCase.getId(), Utils.getStepName(currentStep), token);
-                }
-            } else if (expectedType == TokenType.STRING_OR_VARIABLE_REFERENCE) {
-                if (isVariableExpression) {
-                    variableResolver.checkVariablesInToken(token);
-                }
-            } else if (expectedType == TokenType.EXPRESSION) {
-                if (isVariableExpression) {
-                    variableResolver.checkVariablesInToken(token);
-                } else {
-                    try {
-                        XPathExpression expression = createXPathExpression(token);
-                        expression.evaluate(DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument());
-                    } catch (XPathExpressionException e) {
-                        addReportItem(ErrorCode.INVALID_EXPRESSION, currentTestCase.getId(), Utils.getStepName(currentStep), token);
-                    } catch (ParserConfigurationException e) {
-                        throw new IllegalStateException(e);
+            if (token.startsWith("$") &&
+                    (!isVariableExpression || StringUtils.countMatches(token, '{') != StringUtils.countMatches(token, '}'))) {
+                addReportItem(ErrorCode.INVALID_VARIABLE_REFERENCE, currentTestCase.getId(), Utils.getStepName(currentStep), token);
+            } else {
+                if (expectedType == TokenType.VARIABLE_REFERENCE) {
+                    if (isVariableExpression) {
+                        variableResolver.checkVariablesInToken(token);
+                    } else {
+                        addReportItem(ErrorCode.INVALID_VARIABLE_REFERENCE, currentTestCase.getId(), Utils.getStepName(currentStep), token);
+                    }
+                } else if (expectedType == TokenType.STRING_OR_VARIABLE_REFERENCE) {
+                    if (isVariableExpression) {
+                        variableResolver.checkVariablesInToken(token);
+                    }
+                } else if (expectedType == TokenType.EXPRESSION) {
+                    if (isVariableExpression) {
+                        variableResolver.checkVariablesInToken(token);
+                    } else {
+                        try {
+                            XPathExpression expression = createXPathExpression(token);
+                            expression.evaluate(DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument());
+                        } catch (XPathExpressionException e) {
+                            addReportItem(ErrorCode.INVALID_EXPRESSION, currentTestCase.getId(), Utils.getStepName(currentStep), token);
+                        } catch (ParserConfigurationException e) {
+                            throw new IllegalStateException(e);
+                        }
                     }
                 }
             }
