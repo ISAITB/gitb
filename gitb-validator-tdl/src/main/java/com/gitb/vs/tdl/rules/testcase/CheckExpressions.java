@@ -20,8 +20,12 @@ import javax.xml.xpath.XPathExpressionException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class CheckExpressions extends AbstractTestCaseObserver implements VariableResolverProvider {
+
+    private static final Pattern MAP_APPEND_EXPRESSION_PATTERN = Pattern.compile("(\\$?[a-zA-Z][a-zA-Z\\-_0-9]*(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*)\\{(\\$?[a-zA-Z][a-zA-Z\\-\\._0-9]*)\\}");
 
     private Map<String, Boolean> scope;
     private VariableResolver variableResolver;
@@ -95,7 +99,21 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         } else if (step instanceof ExitStep) {
             checkToken(((ExitStep)step).getSuccess(), TokenType.STRING_OR_VARIABLE_REFERENCE);
         } else if (step instanceof Assign) {
-            checkToken(((Assign)step).getTo(), TokenType.VARIABLE_REFERENCE);
+            String toToken = ((Assign)step).getTo();
+            checkToken(toToken, TokenType.STRING_OR_VARIABLE_REFERENCE);
+            if (toToken != null) {
+                if (!toToken.startsWith("$")) {
+                    // A new variable is defined.
+                    Matcher mapMatcher = MAP_APPEND_EXPRESSION_PATTERN.matcher(toToken);
+                    if (mapMatcher.matches()) {
+                        String mapName = mapMatcher.group(1);
+                        recordVariable(mapName, true);
+                    } else {
+                        // Always add this as a container as this is more flexible (we can't know at validation time if it is simple or not.
+                        recordVariable(toToken, true);
+                    }
+                }
+            }
             checkToken(((Assign)step).getSource(), TokenType.VARIABLE_REFERENCE);
             checkToken(((Assign)step).getValue(), TokenType.EXPRESSION);
         } else if (step instanceof Verify) {
