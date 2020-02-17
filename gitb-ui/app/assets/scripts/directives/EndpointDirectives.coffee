@@ -51,7 +51,7 @@
 				<div class="col-md-1"><strong>Description</strong></div>
 				<div class="col-md-11">{{endpoint.description}}</div>
 			</div>
-			<div class="parameter-div" parameter-display parameters="endpoint.parameters" show-values="showValues" editable="editable" can-edit="canEdit" on-edit="onEdit">
+			<div class="parameter-div" parameter-display parameters="endpoint.parameters" only-missing="false" show-values="showValues" editable="editable" can-edit="canEdit" on-edit="onEdit">
 			</div>'
 		link: (scope, element, attrs) =>
 			scope.DataService = DataService
@@ -62,6 +62,7 @@
 		scope:
 			parameters: '='
 			showValues: '='
+			onlyMissing: '='
 			editable: '='
 			canEdit: '='
 			onEdit: '='
@@ -71,7 +72,7 @@
 				<table id="parameter-table" class="table table-directive" ng-if="parameters && parameters.length > 0">
 					<thead>
 						<tr>
-							<th width="1%" style="padding-right:30px;">Set?</th>
+							<th width="1%" style="padding-right:30px;" ng-if="!onlyMissing">Set?</th>
 							<th width="20%">{{parameterLabel}}</th>
 							<th ng-if="showValues">Configured value</th>
 							<th>Description</th>
@@ -80,8 +81,8 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr ng-repeat="parameter in parameters">
-							<td style="text-align: center;padding-right:30px;"><i class="glyphicon" ng-class="{\'glyphicon-ok\': parameter.configured, \'glyphicon-remove\': !parameter.configured}"></i></td>
+						<tr ng-repeat="parameter in parameters | filter: showParameter">
+							<td style="text-align: center;padding-right:30px;" ng-if="!onlyMissing"><i class="glyphicon" ng-class="{\'glyphicon-ok\': parameter.configured, \'glyphicon-remove\': !parameter.configured}"></i></td>
 							<td style="font-weight: bold;" ng-if="parameter.use == \'R\'">*&nbsp;{{parameter.name}}</td>
 							<td ng-if="parameter.use != \'R\'">{{parameter.name}}</td>
 							<td ng-if="showValues && parameter.kind == \'BINARY\'"><a ng-if="parameter.value" href="" ng-click="downloadBinaryParameter(parameter)">{{parameter.fileName}}</a></td>
@@ -95,8 +96,12 @@
 			</div>'
 		restrict: 'A'
 		link: (scope, element, attrs) =>
+			if scope.onlyMissing == undefined
+				scope.onlyMissing = false
 			if scope.parameterLabel == undefined
 				scope.parameterLabel = 'Parameter'
+			scope.showParameter = (parameter) =>
+				!scope.onlyMissing || !parameter.configured
 			scope.downloadBinaryParameter = (parameter) =>
 				blob = @DataService.b64toBlob(@DataService.base64FromDataURL(parameter.value), parameter.mimeType)
 				saveAs(blob, parameter.fileName)

@@ -38,7 +38,7 @@
                             <button class="btn btn-default" ng-click="testExecutionCtrl.toOrganisationProperties()">View</button>
                         </div>
                     </div>
-                    <div parameter-display parameters="testExecutionCtrl.organisationProperties" editable="false" show-values="false" parameter-label="Property"></div>
+                    <div parameter-display parameters="testExecutionCtrl.organisationProperties" editable="false" only-missing="true" show-values="false" parameter-label="Property"></div>
                 </div>
                 <div class="panel panel-default" ng-if="!testExecutionCtrl.systemConfigurationValid">
                     <div class="panel-heading">
@@ -47,7 +47,7 @@
                             <button class="btn btn-default" ng-click="testExecutionCtrl.toSystemProperties()">View</button>
                         </div>
                     </div>
-                    <div parameter-display parameters="testExecutionCtrl.systemProperties" editable="false" show-values="false" parameter-label="Property"></div>
+                    <div parameter-display parameters="testExecutionCtrl.systemProperties" editable="false" only-missing="true" show-values="false" parameter-label="Property"></div>
                 </div>
                 <div class="panel panel-default" ng-if="!testExecutionCtrl.configurationValid">
                     <div class="panel-heading">
@@ -56,7 +56,7 @@
                             <button class="btn btn-default" ng-click="testExecutionCtrl.toConfigurationProperties()">View</button>
                         </div>
                     </div>
-                    <div parameter-display parameters="testExecutionCtrl.endpointRepresentations[0].parameters" editable="false" show-values="false"></div>
+                    <div parameter-display parameters="testExecutionCtrl.endpointRepresentations[0].parameters" only-missing="true" editable="false" show-values="false"></div>
                 </div>
             </div>
             <div class="panel panel-default" ng-if="testExecutionCtrl.wizardStep == 2">
