@@ -146,19 +146,31 @@ openEditorWindow = ($uibModal, name, value, report, lineNumber) ->
       template: ''+
         '<div class="step-report test-assertion-step-report">'+
           '<div class="col-md-12" ng-if="report.context != null">'+
-            #'<span class="title" ng-if="report.id != null"><strong>{{report.id}}:</strong></span>'+
             '<div any-content-view context="report.context" report="report"></div>'+
           '</div>'+
-          '<div class="col-md-12 test-assertion-group-report" ng-if="report.reports != null">'+
-            '<div class="assertion-reports" ng-if="report.reports.assertionReports != null && report.reports.assertionReports.length > 0">'+
-              '<span class="title"><strong>Reports: </strong></span>'+
-              '<div>'+
-                '<div ng-repeat="assertionReport in report.reports.assertionReports" ng-click="openAssertionReport(assertionReport)" test-assertion-report assertion-report="assertionReport"></div>'+
+          '<div ng-if="report.counters != null || report.reports != null">'+
+            '<div class="col-md-12" style="margin-bottom:8px;">'+
+              '<span class="report-item"><strong>Details: </strong></span>'+
+            '</div>'+
+            '<div class="col-md-12" ng-if="report.counters != null && (report.counters.nrOfErrors > 0 || report.counters.nrOfWarnings > 0 || report.counters.nrOfAssertions > 0)" style="padding-bottom:10px;">'+
+              '<div class="col-md-12 bordered">'+
+                '<div class="col-xs-4">'+
+                  '<span class="report-item"><strong>Errors: </strong>{{report.counters.nrOfErrors}}</span>'+
+                '</div>'+
+                '<div class="col-xs-4">'+
+                  '<span class="report-item"><strong>Warnings: </strong>{{report.counters.nrOfWarnings}}</span>'+
+                '</div>'+
+                '<div class="col-xs-4">'+
+                  '<span class="report-item"><strong>Messages: </strong>{{report.counters.nrOfAssertions}}</span>'+
+                '</div>'+
               '</div>'+
             '</div>'+
-            '<div class="sub-test-assertion-step-reports" ng-if="report.reports.reports != null && report.reports.reports.length > 0">'+
-              '<span class="title"><strong>Sub Reports: </strong></span>'+
-              '<div ng-repeat="subReport in report.reports.reports" ng-click="open(subReport)" tar-step-report report="subReport"></div>'+
+            '<div class="col-md-12 test-assertion-group-report">'+
+              '<div class="assertion-reports" ng-if="report.reports.assertionReports != null && report.reports.assertionReports.length > 0">'+
+                '<div>'+
+                  '<div ng-repeat="assertionReport in report.reports.assertionReports" ng-click="openAssertionReport(assertionReport)" test-assertion-report assertion-report="assertionReport"></div>'+
+                '</div>'+
+              '</div>'+
             '</div>'+
           '</div>'+
         '</div>'

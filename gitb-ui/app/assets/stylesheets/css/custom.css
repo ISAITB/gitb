@@ -174,3 +174,6 @@ div.execution {
   display: none !important;
 }
 
+.bordered {
+	border: 1px solid #e5e5e5;
+}
