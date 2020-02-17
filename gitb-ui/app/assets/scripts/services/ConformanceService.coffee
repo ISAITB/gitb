@@ -131,7 +131,9 @@ class ConformanceService
       data: data
     })
 
-  createSpecification: (shortName, fullName, urls, diagram, description, specificationType, domainId) ->
+  createSpecification: (shortName, fullName, urls, diagram, description, specificationType, hidden, domainId) ->
+    if hidden == undefined
+      hidden = false  
     @RestService.post 
       path: jsRoutes.controllers.ConformanceService.createSpecification().url
       authenticate: true
@@ -142,6 +144,7 @@ class ConformanceService
         diagram: diagram
         description: description
         spec_type: specificationType
+        hidden: hidden
         domain_id: domainId
 
   getSpecificationsWithIds: (ids) =>

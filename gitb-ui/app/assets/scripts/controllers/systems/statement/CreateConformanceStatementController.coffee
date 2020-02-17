@@ -159,12 +159,16 @@ class CreateConformanceStatementController
     @ConformanceService.getSpecifications(domainId)
     .then(
       (data) =>
-        @specs = data
-        if @specs? && @specs.length == 1
-          @onSpecificationSelect(@specs[0])
-          @confirmSpec()
-        else
-          @setSpecsView()
+        if data?
+          _.remove(data, (spec) =>
+            spec.hidden == true
+          )          
+          @specs = data
+          if data.length == 1
+            @onSpecificationSelect(@specs[0])
+            @confirmSpec()
+          else
+            @setSpecsView()
       ,
       (error) =>
         @ErrorService.showErrorMessage(error)

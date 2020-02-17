@@ -46,6 +46,10 @@
 						'</select>'+
 					'</div>'+
 				'</div>'+
+				'<div class="form-group">'+
+					'<label class="col-sm-3 control-label" for="hidden">Hidden:</label>'+
+					'<div class="col-sm-8"><input id="hidden" ng-model="specification.hidden" type="checkbox" class="form-check"></div>'+
+				'</div>'+
 				'<div class="form-group" ng-if="showSaveButton">'+
 					'<div class="col-sm-offset-3 col-sm-10">'+
 						'<div class="btn-toolbar">'+

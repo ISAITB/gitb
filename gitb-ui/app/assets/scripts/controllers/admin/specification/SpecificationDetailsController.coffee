@@ -247,7 +247,7 @@ class SpecificationDetailsController
 				@ErrorService.showErrorMessage(error)
 
 	saveSpecificationChanges: () =>
-		@SpecificationService.updateSpecification(@specificationId, @specification.sname, @specification.fname, @specification.urls, @specification. diagram, @specification.description, @specification.spec_type)
+		@SpecificationService.updateSpecification(@specificationId, @specification.sname, @specification.fname, @specification.urls, @specification. diagram, @specification.description, @specification.spec_type, @specification.hidden)
 		.then () =>
 			@$state.go 'app.admin.domains.detail.list', {id: @domainId}
 		.catch (error) =>

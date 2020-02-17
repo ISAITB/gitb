@@ -30,8 +30,9 @@ class SpecificationService @Inject() (specificationManager: SpecificationManager
         case Some(str) => Some(str.toShort)
         case _ => None
       }
+      val hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
 
-      specificationManager.updateSpecification(specId, sname, fname, urls, diagram, descr, specificationType)
+      specificationManager.updateSpecification(specId, sname, fname, urls, diagram, descr, specificationType, hidden)
       ResponseConstructor.constructEmptyResponse
     } else{
       throw NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, LabelType.Specification) + " with ID '" + specId + "' not found.")

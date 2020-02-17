@@ -486,6 +486,7 @@ object JsonUtil {
       "diagram" -> (if(spec.diagram.isDefined) spec.diagram.get else JsNull),
       "description" -> (if(spec.description.isDefined) spec.description.get else JsNull),
       "spec_type"    -> spec.specificationType,
+      "hidden" -> spec.hidden,
       "domain"  -> spec.domain
     )
     return json;
@@ -1122,11 +1123,6 @@ object JsonUtil {
   def serializeSystemConfig(sc:SystemConfiguration):String = {
     var jConfig:JsObject = jsSystemConfiguration(sc.toCaseObject)
     jConfig.toString
-  }
-
-  def serializeSpecification(spec:Specification):String = {
-    var jSpec:JsObject = jsSpecification(spec.toCaseObject)
-    jSpec.toString
   }
 
   /**

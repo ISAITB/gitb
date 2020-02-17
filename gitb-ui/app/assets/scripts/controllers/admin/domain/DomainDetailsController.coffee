@@ -22,6 +22,10 @@ class DomainDetailsController
 				field: 'description',
 				title: 'Description'
 			}
+			{
+				field: 'hidden',
+				title: 'Hidden'
+			}
 		]
 
 		@ConformanceService.getDomains([@domainId])

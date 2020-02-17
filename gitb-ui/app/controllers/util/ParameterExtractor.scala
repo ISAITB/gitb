@@ -335,12 +335,13 @@ object ParameterExtractor {
 			case Some(str) => Some(str.toShort)
 			case _ => None
 		}
+    val hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
 		val domain = ParameterExtractor.optionalBodyParameter(request, Parameters.DOMAIN_ID) match {
 			case Some(str) => Some(str.toLong)
 			case _ => None
 		}
 
-		Specifications(0l, sname, fname, urls, diagram, descr, specificationType.getOrElse(0), domain.getOrElse(0l))
+		Specifications(0l, sname, fname, urls, diagram, descr, specificationType.getOrElse(0), hidden, domain.getOrElse(0l))
 	}
 
 	def extractActor(request:Request[AnyContent]):Actors = {
