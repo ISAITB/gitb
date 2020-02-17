@@ -2,25 +2,29 @@
 
 .test-step-report {
     .report-item {
-	display: block;
-	padding: 10px 15px;
-
-	&.assertion-report-item {
-	    line-height: 16px;
-	    .report-item-icon {	
-		padding: 0 4px;
-		&.info-icon {
-		    color: @success-green;
-		}
-		&.warning-icon {
-		    color: @warning-yellow;
-		}
-		&.error-icon {
-		    color: @error-red;
-		}
-	    }
+		display: block;
+		padding: 10px 15px;
 	}
 
+	.report-item-element {
+		display: block;
+		padding: 8px 15px;
+
+		&.assertion-report-item {
+			line-height: 16px;
+			.report-item-icon {	
+				padding: 0 4px;
+				&.info-icon {
+					color: @success-green;
+				}
+				&.warning-icon {
+					color: @warning-yellow;
+				}
+				&.error-icon {
+					color: @error-red;
+				}
+			}
+		}
     }
     .step-report {
 	&.decision-step-report {

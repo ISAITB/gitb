@@ -98,12 +98,12 @@ extractRelatedIndicators = (name, report) ->
     return []
   relatedAssertionReports = _.filter report.reports.assertionReports, (assertionReport) =>
 
-    location = extractLocationInfo assertionReport.value.location
+    location = assertionReport.extractedLocation
 
     return name? && location? && location.name.toLowerCase() == name.toLowerCase()
 
   indicators = _.map relatedAssertionReports, (assertionReport) ->
-    location = extractLocationInfo assertionReport.value.location
+    location = assertionReport.extractedLocation
     indicator =
       location: location
       type: assertionReport.type
@@ -192,19 +192,23 @@ openEditorWindow = ($uibModal, name, value, report, lineNumber) ->
       restrict: 'A'
       replace: true
       template: ''+
-        '<span class="assertion-report" ng-class="{'+
+        '<span ng-class="{'+
           '\'error-assertion-report\': assertionReport.type == types.ERROR'+
           ', \'warning-assertion-report\': assertionReport.type == types.WARNING'+
-          ', \'info-assertion-report\': assertionReport.type == types.INFO}">'+
-          '<span class="report-item assertion-report-item" ng-if="assertionReport.value.assertionID != null"><strong>Assertion ID:</strong> {{assertionReport.value.assertionID}}</span>'+
-          '<span class="report-item assertion-report-item">'+
+          ', \'info-assertion-report\': assertionReport.type == types.INFO'+
+          ', \'assertion-report\': assertionReport.extractedLocation != null'+
+          ', \'assertion-report-nolink\': assertionReport.extractedLocation == null'+
+          '}">'+
+          '<span class="report-item report-item-element assertion-report-item" ng-if="assertionReport.value.assertionID != null"><strong>Assertion ID:</strong> {{assertionReport.value.assertionID}}</span>'+
+          '<span class="report-item report-item-element assertion-report-item">'+
             '<i class="fa fa-info-circle report-item-icon info-icon" ng-if="assertionReport.type == types.INFO"></i>'+
             '<i class="fa fa-warning report-item-icon warning-icon" ng-if="assertionReport.type == types.WARNING"></i>'+
             '<i class="fa fa-times-circle report-item-icon error-icon" ng-if="assertionReport.type == types.ERROR"></i>'+
             '<span class="description" ng-bind="description"></span>'+
           '</span>'+
-          '<span class="report-item assertion-report-item" ng-if="assertionReport.value.value != null"><strong>Value:</strong> {{assertionReport.value.value}}</span>'+
-          '<span class="report-item assertion-report-item" ng-if="assertionReport.value.test != null"><strong>Test:</strong> {{assertionReport.value.test}}</span>'+
+          '<span class="report-item report-item-element assertion-report-item" ng-if="assertionReport.value.value != null"><strong>Value:</strong> {{assertionReport.value.value}}</span>'+
+          '<span class="report-item report-item-element assertion-report-item" ng-if="assertionReport.extractedLocation == null && assertionReport.value.location"><strong>Location:</strong> {{assertionReport.value.location}}</span>'+
+          '<span class="report-item report-item-element assertion-report-item" ng-if="assertionReport.value.test != null"><strong>Test:</strong> {{assertionReport.value.test}}</span>'+
         '</span>'
       link: (scope, element, attrs) =>
         htmlDecode = (value) ->
@@ -216,6 +220,8 @@ openEditorWindow = ($uibModal, name, value, report, lineNumber) ->
           ERROR: 'error'
 
         scope.description = htmlDecode scope.assertionReport.value.description
+        if scope.assertionReport.value?.location? 
+          scope.assertionReport.extractedLocation = extractLocationInfo scope.assertionReport.value.location
 
     directive
 ]
@@ -266,7 +272,7 @@ openEditorWindow = ($uibModal, name, value, report, lineNumber) ->
             scope.isValueTooLong = scope.value.length > 100
 
             scope.$on 'assertion-report.open', (event, assertionReport) =>
-              location = extractLocationInfo assertionReport.value.location
+              location = assertionReport.extractedLocation
               if location? && location.name? && scope.context.name? && location.name.toLowerCase() == scope.context.name.toLowerCase()
                 scope.open location.line
 
@@ -309,7 +315,7 @@ openEditorWindow = ($uibModal, name, value, report, lineNumber) ->
         scope.isValueTooLong = scope.value.length > 100
 
         scope.$on 'assertion-report.open', (event, assertionReport) =>
-          location = extractLocationInfo assertionReport.value.location
+          location = assertionReport.extractedLocation
           if location? && location.name? && location.name == scope.content.name
             scope.open location.line
 
@@ -406,7 +412,7 @@ openEditorWindow = ($uibModal, name, value, report, lineNumber) ->
           scope.content.value = '-'
 
         scope.$on 'assertion-report.open', (event, assertionReport) =>
-          location = extractLocationInfo assertionReport.value.location
+          location = assertionReport.extractedLocation
           if location? && location.name? && location.name == scope.content.name
             scope.open location.line
 
