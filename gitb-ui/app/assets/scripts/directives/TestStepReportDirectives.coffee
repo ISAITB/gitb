@@ -148,7 +148,7 @@ openEditorWindow = ($uibModal, name, value, report, lineNumber) ->
           '<div class="col-md-12" ng-if="report.context != null">'+
             '<div any-content-view context="report.context" report="report"></div>'+
           '</div>'+
-          '<div ng-if="report.counters != null || report.reports != null">'+
+          '<div ng-if="report.reports != null && report.reports.assertionReports != null && report.reports.assertionReports.length > 0">'+
             '<div class="col-md-12" style="margin-bottom:8px;">'+
               '<span class="report-item"><strong>Details: </strong></span>'+
             '</div>'+
