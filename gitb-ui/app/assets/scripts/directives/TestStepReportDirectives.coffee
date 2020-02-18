@@ -153,15 +153,16 @@ openEditorWindow = ($uibModal, name, value, report, lineNumber) ->
               '<span class="report-item"><strong>Details: </strong></span>'+
             '</div>'+
             '<div class="col-md-12" ng-if="report.counters != null && (report.counters.nrOfErrors > 0 || report.counters.nrOfWarnings > 0 || report.counters.nrOfAssertions > 0)" style="padding-bottom:10px;">'+
-              '<div class="col-md-12 bordered">'+
-                '<div class="col-xs-4">'+
-                  '<span class="report-item"><strong>Errors: </strong>{{report.counters.nrOfErrors}}</span>'+
-                '</div>'+
-                '<div class="col-xs-4">'+
-                  '<span class="report-item"><strong>Warnings: </strong>{{report.counters.nrOfWarnings}}</span>'+
-                '</div>'+
-                '<div class="col-xs-4">'+
-                  '<span class="report-item"><strong>Messages: </strong>{{report.counters.nrOfAssertions}}</span>'+
+              '<div class="col-md-12 summary">'+
+                '<div class="row">'+
+                  '<div class="col-xs-2 summary-cell summary-cell-title">Summary</div>'+
+                  '<div class="col-xs-10">'+
+                    '<div class="row">'+
+                      '<div class="col-xs-4 summary-cell"><span class="summary-item-label">Errors:</span> {{report.counters.nrOfErrors}}</div>'+
+                      '<div class="col-xs-4 summary-cell"><span class="summary-item-label">Warnings:</span> {{report.counters.nrOfWarnings}}</div>'+
+                      '<div class="col-xs-4 summary-cell"><span class="summary-item-label">Messages:</span> {{report.counters.nrOfAssertions}}</div>'+
+                    '</div>'+
+                  '</div>'+
                 '</div>'+
               '</div>'+
             '</div>'+

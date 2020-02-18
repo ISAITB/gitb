@@ -1,6 +1,28 @@
 @import "../_common.less";
 
 .test-step-report {
+
+	.summary {
+		border: 1px solid @gray-light;
+
+		.summary-cell {
+			padding-top: 5px;
+			padding-bottom: 5px;
+			text-align: center;
+
+			&.summary-cell-title {
+				background: @gray-light;
+				font-weight: bold;
+				text-align: left;
+			}
+
+			.summary-item-label {
+				font-weight: bold;
+			}
+		}
+
+	}
+
     .report-item {
 		display: block;
 		padding: 10px 15px;
