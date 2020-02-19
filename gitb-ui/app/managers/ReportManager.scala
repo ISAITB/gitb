@@ -312,7 +312,7 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
     val system = systemManager.getSystemById(systemId).get
     val organisation = organizationManager.getById(system.owner).get
     val community = communityManager.getById(organisation.community).get
-    val testCase = testCaseManager.getTestCaseForId(testId).get
+    val testCase = testCaseManager.getTestCase(testId).get
     val testSuite = testSuiteManager.getTestSuiteOfTestCase(testCase.id)
     val actor = actorManager.getById(actorId).get
     val specification = specificationManager.getSpecificationOfActor(actor.id)

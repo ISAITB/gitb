@@ -45,10 +45,26 @@ class WebSocketActor @Inject() (actorSystem: ActorSystem) {
     }
   }
 
-  def testSessionEnded(sessionId:String, msg:String):Unit = {
-    broadcast(sessionId, msg)
-    if (WebSocketActor.activeSessions.contains(sessionId)) {
-      WebSocketActor.activeSessions -= sessionId
+  def testSessionStarted(sessionId:String): Unit = {
+    WebSocketActor.activeSessions.synchronized {
+      if (!WebSocketActor.activeSessions.contains(sessionId)) {
+        WebSocketActor.activeSessions += sessionId
+      }
+    }
+  }
+
+  def testSessionEnded(sessionId:String):Unit = {
+    testSessionEnded(sessionId, null)
+  }
+
+  def testSessionEnded(sessionId:String, msg: String):Unit = {
+    if (msg != null) {
+      broadcast(sessionId, msg)
+    }
+    WebSocketActor.activeSessions.synchronized {
+      if (WebSocketActor.activeSessions.contains(sessionId)) {
+        WebSocketActor.activeSessions -= sessionId
+      }
     }
   }
 
@@ -133,8 +149,7 @@ class WebSocketActorHandler (out: ActorRef, webSocketActor: WebSocketActor) exte
               actors += (actorId -> out)
 
               WebSocketActor.webSockets = WebSocketActor.webSockets.updated(sessionId, actors)
-              WebSocketActor.activeSessions += sessionId
-
+              webSocketActor.testSessionStarted(sessionId)
             }
           case NOTIFY =>
             val message = msg.as[JsObject] - "command" //remove command field from msg

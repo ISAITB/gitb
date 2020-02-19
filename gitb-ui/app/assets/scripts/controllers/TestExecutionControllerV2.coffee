@@ -56,11 +56,7 @@ class TestExecutionControllerV2
     @$scope.actorInfoOfTests = {}
     @logMessages = {}
     @$scope.$on '$destroy', () =>
-      if @ws? and @session?
-        @$log.debug 'Closing websocket in $destroy event handler'
-        @ws.close()
-
-      return
+      @leavingTestExecutionPage()
     @stopped = false
     @currentTestIndex = 0
     @currentTest = @testsToExecute[@currentTestIndex]
@@ -758,5 +754,18 @@ class TestExecutionControllerV2
   
   toConfigurationProperties: () =>
     @$state.go 'app.systems.detail.conformance.detail', {actor_id: @actorId, specId: @specId, id: @systemId, editEndpoints: true}
+
+  leavingTestExecutionPage: () =>
+    if @ws? and @session?
+      @ws.close()
+    if @firstTestStarted && !@stopped
+      pendingTests = _.filter(@testsToExecute, (test) =>
+        @testCaseStatus[test.id] == @Constants.TEST_CASE_STATUS.READY || @testCaseStatus[test.id] == @Constants.TEST_CASE_STATUS.PENDING
+      )
+      pendingTestIds = _.map(pendingTests, (test) =>
+        test.id
+      )
+      if pendingTestIds.length > 0
+        @TestService.startHeadlessTestSessions(pendingTestIds, @specId, @systemId, @actorId)
 
 controllers.controller('TestExecutionControllerV2', TestExecutionControllerV2)

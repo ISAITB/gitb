@@ -198,6 +198,7 @@ POST	/tests/:session_id/preliminary      @controllers.TestService.initiatePrelim
 POST	/tests/:session_id/start            @controllers.TestService.start(session_id:String)
 POST	/tests/:session_id/stop             @controllers.TestService.stop(session_id:String)
 POST	/tests/:session_id/restart          @controllers.TestService.restart(session_id:String)
+POST    /tests/startHeadless                @controllers.TestService.startHeadlessTestSessions
 
 # WebSocket management API
 GET     /ws                                 @controllers.WebSocketService.socket

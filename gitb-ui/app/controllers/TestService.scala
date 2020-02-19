@@ -1,7 +1,11 @@
 package controllers
 
+import actors.WebSocketActor
+import akka.actor.ActorSystem
 import com.gitb.core.{ActorConfiguration, Configuration, ValueEmbeddingEnumeration}
 import com.gitb.tbs._
+import com.gitb.tpl.ObjectFactory
+import com.gitb.utils.XMLUtils
 import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
@@ -9,11 +13,19 @@ import javax.inject.{Inject, Singleton}
 import managers._
 import models.Constants
 import org.apache.commons.codec.binary.Base64
+import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import utils.{ClamAVClient, JacksonUtil, JsonUtil, MimeUtil}
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.util.{Failure, Success}
+
 @Singleton
-class TestService @Inject() (reportManager: ReportManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager, organisationManager: OrganizationManager, systemManager: SystemManager, testbedClient: managers.TestbedBackendClient) extends Controller {
+class TestService @Inject() (reportManager: ReportManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager, organisationManager: OrganizationManager, systemManager: SystemManager, testbedClient: managers.TestbedBackendClient, actorSystem: ActorSystem, webSocketActor: WebSocketActor) extends Controller {
+
+  private final val logger: Logger = LoggerFactory.getLogger(classOf[TestService])
 
   def getTestCasePresentation(testId:String): GetTestCaseDefinitionResponse = {
     val request:BasicRequest = new BasicRequest
@@ -55,30 +67,40 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
    */
   def initiate(test_id:String) = AuthorizedAction { request =>
     authorizationManager.canExecuteTestCase(request, test_id)
-    val requestData: BasicRequest = new BasicRequest
-    requestData.setTcId(test_id)
-
-    val response = testbedClient.service().initiate(requestData)
-    ResponseConstructor.constructStringResponse(response.getTcInstanceId)
+    ResponseConstructor.constructStringResponse(initiateInternal(test_id.toLong))
   }
+
+  private def initiateInternal(test_id: Long) = {
+    val requestData: BasicRequest = new BasicRequest
+    requestData.setTcId(test_id.toString)
+    val response = testbedClient.service().initiate(requestData)
+    response.getTcInstanceId
+  }
+
   /**
    * Sends the required data on preliminary steps
    */
-  def configure(session_id:String) = AuthorizedAction { request =>
-    authorizationManager.canExecuteTestSession(request, session_id)
-
+  def configure(sessionId:String) = AuthorizedAction { request =>
+    authorizationManager.canExecuteTestSession(request, sessionId)
     val specId = ParameterExtractor.requiredQueryParameter(request, Parameters.SPECIFICATION_ID).toLong
     val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
     val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
+    val response = configureInternal(
+      sessionId,
+      loadConformanceStatementParameters(systemId, actorId),
+      loadDomainParameters(specId),
+      loadOrganisationParameters(systemId),
+      loadSystemParameters(systemId)
+    )
+    val json = JacksonUtil.serializeConfigureResponse(response)
+    ResponseConstructor.constructJsonResponse(json)
+  }
 
-    val cRequest: ConfigureRequest = new ConfigureRequest
-    cRequest.setTcInstanceId(session_id)
+  private def loadConformanceStatementParameters(systemId: Long, actorId: Long) = {
+    conformanceManager.getSystemConfigurationParameters(systemId, actorId)
+  }
 
-    // Load system configuration parameters.
-    val systemParameters = conformanceManager.getSystemConfigurationParameters(systemId, actorId)
-    import scala.collection.JavaConversions._
-    cRequest.getConfigs.addAll(systemParameters)
-    // Load domain configuration parameters.
+  private def loadDomainParameters(specId: Long): Option[ActorConfiguration] = {
     val domainId = conformanceManager.getSpecifications(Some(List(specId))).head.domain
     val parameters = conformanceManager.getDomainParameters(domainId)
     if (parameters.nonEmpty) {
@@ -88,9 +110,13 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
       parameters.foreach { parameter =>
         addConfig(domainConfiguration, parameter.name, parameter.value.get)
       }
-      cRequest.getConfigs.add(domainConfiguration)
+      Some(domainConfiguration)
+    } else {
+      None
     }
-    // Load organisation parameters.
+  }
+
+  private def loadOrganisationParameters(systemId: Long): ActorConfiguration = {
     val organisation = organisationManager.getOrganizationBySystemId(systemId)
     val organisationConfiguration = new ActorConfiguration()
     organisationConfiguration.setActor(Constants.organisationConfigurationName)
@@ -108,8 +134,10 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
         }
       }
     }
-    cRequest.getConfigs.add(organisationConfiguration)
-    // Load system parameters.
+    organisationConfiguration
+  }
+
+  private def loadSystemParameters(systemId: Long): ActorConfiguration = {
     val system = systemManager.getSystemById(systemId).get
     val systemConfiguration = new ActorConfiguration()
     systemConfiguration.setActor(Constants.systemConfigurationName)
@@ -128,11 +156,21 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
         }
       }
     }
-    cRequest.getConfigs.add(systemConfiguration)
+    systemConfiguration
+  }
 
+  private def configureInternal(sessionId: String, statementParameters: List[ActorConfiguration], domainParameters: Option[ActorConfiguration], organisationParameters: ActorConfiguration, systemParameters: ActorConfiguration) = {
+    val cRequest: ConfigureRequest = new ConfigureRequest
+    cRequest.setTcInstanceId(sessionId)
+    import scala.collection.JavaConversions._
+    cRequest.getConfigs.addAll(statementParameters)
+    if (domainParameters.nonEmpty) {
+      cRequest.getConfigs.add(domainParameters.get)
+    }
+    cRequest.getConfigs.add(organisationParameters)
+    cRequest.getConfigs.add(systemParameters)
     val response = testbedClient.service().configure(cRequest)
-    val json = JacksonUtil.serializeConfigureResponse(response)
-    ResponseConstructor.constructJsonResponse(json)
+    response
   }
 
   private def addConfig(configuration: ActorConfiguration, key: String, value: String) =  {
@@ -210,14 +248,16 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
   /**
    * Starts the test case
    */
-  def start(session_id:String) = AuthorizedAction { request =>
-    authorizationManager.canExecuteTestSession(request, session_id)
-
-    val bRequest: BasicCommand = new BasicCommand
-    bRequest.setTcInstanceId(session_id)
-
-    testbedClient.service().start(bRequest)
+  def start(sessionId:String) = AuthorizedAction { request =>
+    authorizationManager.canExecuteTestSession(request, sessionId)
+    startInternal(sessionId)
     ResponseConstructor.constructEmptyResponse
+  }
+
+  private def startInternal(sessionId: String) = {
+    val bRequest: BasicCommand = new BasicCommand
+    bRequest.setTcInstanceId(sessionId)
+    testbedClient.service().start(bRequest)
   }
 
   /**
@@ -240,6 +280,51 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
 
     testbedClient.service().restart(bRequest)
     ResponseConstructor.constructEmptyResponse
+  }
+
+  def startHeadlessTestSessions() = AuthorizedAction { request =>
+    val testCaseIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_CASE_IDS)
+    val specId = ParameterExtractor.requiredBodyParameter(request, Parameters.SPECIFICATION_ID).toLong
+    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    if (testCaseIds.isDefined && testCaseIds.get.nonEmpty) {
+      authorizationManager.canExecuteTestCases(request, testCaseIds.get, specId, systemId, actorId)
+      // Load information common to all test sessions
+      val statementParameters = loadConformanceStatementParameters(systemId, actorId)
+      val domainParameters = loadDomainParameters(specId)
+      val organisationParameters = loadOrganisationParameters(systemId)
+      val systemParameters = loadSystemParameters(systemId)
+      // Schedule test sessions in sequence
+      startHeadlessTestSession(testCaseIds.get, systemId, actorId, statementParameters, domainParameters, organisationParameters, systemParameters)
+    }
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  private def startHeadlessTestSession(testCaseIds: List[Long], systemId: Long, actorId: Long, statementParameters: List[ActorConfiguration], domainParameters: Option[ActorConfiguration], organisationParameters: ActorConfiguration, systemParameters: ActorConfiguration): Unit = {
+    // Schedule each test session with a delay of 1 seconds.
+    akka.pattern.after(duration = 1.seconds, using = actorSystem.scheduler) {
+      val testCaseId = testCaseIds.head
+      val testSessionId = initiateInternal(testCaseId)
+      webSocketActor.testSessionStarted(testSessionId)
+      try {
+        configureInternal(testSessionId, statementParameters, domainParameters, organisationParameters, systemParameters)
+        // Preliminary step is skipped as this is a headless session. If input was expected during this step the test session will fail.
+        val testCasePresentation = getTestCasePresentation(testCaseId.toString)
+        val presentation = XMLUtils.marshalToString(new ObjectFactory().createTestcase(testCasePresentation.getTestcase))
+        reportManager.createTestReport(testSessionId, systemId, testCaseId.toString, actorId, presentation)
+        startInternal(testSessionId)
+        Future.successful((testCaseIds.drop(1), systemId, actorId, statementParameters, domainParameters, organisationParameters, systemParameters))
+      } finally {
+        webSocketActor.testSessionEnded(testSessionId)
+      }
+    } onComplete {
+      case Success(result) =>
+        if (result._1.nonEmpty) {
+          startHeadlessTestSession(result._1, result._2, result._3, result._4, result._5, result._6, result._7)
+        }
+      case Failure(e) =>
+        logger.error("A headless session raised an uncaught error", e)
+    }
   }
 
 }

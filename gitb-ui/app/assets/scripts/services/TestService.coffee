@@ -80,7 +80,21 @@ class TestService
             data: {
                 data: data
                 is_base64: base64
-            }            
+            }
+        })
+
+    startHeadlessTestSessions: (testCaseIds, specId, systemId, actorId) ->
+        data = {}
+        if testCaseIds? and testCaseIds.length > 0
+            data.test_case_ids = testCaseIds.join ','
+        data.spec_id = specId
+        data.system_id = systemId
+        data.actor_id = actorId
+
+        @RestService.post({
+            path: jsRoutes.controllers.TestService.startHeadlessTestSessions().url,
+            authenticate: true
+            data: data            
         })
 
 services.service('TestService', TestService)

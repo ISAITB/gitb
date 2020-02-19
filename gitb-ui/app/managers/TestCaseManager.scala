@@ -26,17 +26,11 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 	}
 
 	def getTestCaseForIdWrapper(testCaseId:String) = {
-		getTestCaseForId(testCaseId)
+		getTestCase(testCaseId)
 	}
 
-	def getTestCaseForId(testCaseId:String) = {
-		try {
-			val tc = exec(PersistenceSchema.testCases.filter(_.id === testCaseId.toLong).result.head)
-			Some(new TestCase(tc))
-		}
-		catch {
-			case e: Exception => None
-		}
+	def getTestCasesForIds(testCaseIds: List[Long]): List[TestCases] = {
+		exec(PersistenceSchema.testCases.filter(_.id inSet testCaseIds).result.map(_.toList))
 	}
 
 	def getTestCase(testCaseId:String) = {

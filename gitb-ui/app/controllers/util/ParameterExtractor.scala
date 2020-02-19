@@ -492,4 +492,13 @@ object ParameterExtractor {
     list
   }
 
+  def optionalLongListBodyParameter(request:Request[AnyContent],parameter:String): Option[List[Long]] = {
+    val listStr = ParameterExtractor.optionalBodyParameter(request, parameter)
+    val list = listStr match {
+      case Some(str) => Some(str.split(",").map(_.toLong).toList)
+      case None => None
+    }
+    list
+  }
+
 }

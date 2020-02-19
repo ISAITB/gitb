@@ -341,6 +341,29 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canViewTestCase(request, test_id)
   }
 
+  def canExecuteTestCases(request: RequestWithAttributes[AnyContent], testCaseIds: List[Long], specId: Long, systemId: Long, actorId: Long): Boolean = {
+    var ok = false
+    val userInfo = getUser(getRequestUserId(request))
+    if (isTestBedAdmin(userInfo)) {
+      ok = true
+    } else {
+      val testCases = testCaseManager.getTestCasesForIds(testCaseIds)
+      if (testCases.nonEmpty) {
+        ok = true
+      } else {
+        var specificationIds: Set[Long] = Set()
+        testCases.foreach { testCase =>
+          specificationIds += testCase.targetSpec
+        }
+        if (specificationIds.size == 1 && specificationIds.head == specId) {
+          // All test cases must relate to a single specification (the requested one)
+          ok = canViewSpecifications(request, userInfo, Some(specificationIds.toList)) && canViewSystemsById(request, userInfo, Some(List(systemId)))
+        }
+      }
+    }
+    setAuthResult(request, ok, "Cannot view the requested test case(s)")
+  }
+
   def canGetBinaryFileMetadata(request: RequestWithAttributes[_]):Boolean = {
     checkIsAuthenticated(request)
   }
