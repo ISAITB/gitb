@@ -17,6 +17,7 @@ dependencies = [
 	'angularFileUpload'
 	'isteven-multi-select'
 	'daterangepicker'
+	'ui.toggle'
 ]
 
 @app = angular.module 'app', dependencies

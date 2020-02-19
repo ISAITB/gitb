@@ -314,8 +314,10 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
         reportManager.createTestReport(testSessionId, systemId, testCaseId.toString, actorId, presentation)
         startInternal(testSessionId)
         Future.successful((testCaseIds.drop(1), systemId, actorId, statementParameters, domainParameters, organisationParameters, systemParameters))
-      } finally {
-        webSocketActor.testSessionEnded(testSessionId)
+      } catch {
+        case e:Exception =>
+          webSocketActor.testSessionEnded(testSessionId)
+          Future.failed(e)
       }
     } onComplete {
       case Success(result) =>

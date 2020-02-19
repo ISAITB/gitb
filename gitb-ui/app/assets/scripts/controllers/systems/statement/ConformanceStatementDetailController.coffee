@@ -1,7 +1,7 @@
 class ConformanceStatementDetailController
 
-  @$inject = ['$log', '$scope', '$state', '$stateParams', '$uibModal', 'SystemService', 'ConformanceService', 'ErrorService', 'Constants', 'ConfirmationDialogService', 'DataService', 'ReportService']
-  constructor: (@$log, @$scope, @$state, @$stateParams, @$uibModal, @SystemService, @ConformanceService, @ErrorService, @Constants, @ConfirmationDialogService, @DataService, @ReportService) ->
+  @$inject = ['$log', '$scope', '$state', '$stateParams', '$uibModal', 'SystemService', 'ConformanceService', 'ErrorService', 'Constants', 'ConfirmationDialogService', 'DataService', 'ReportService', 'TestService']
+  constructor: (@$log, @$scope, @$state, @$stateParams, @$uibModal, @SystemService, @ConformanceService, @ErrorService, @Constants, @ConfirmationDialogService, @DataService, @ReportService, @TestService) ->
     @$log.debug "Constructing ConformanceStatementDetailController"
 
     @systemId = @$stateParams['id']
@@ -17,6 +17,7 @@ class ConformanceStatementDetailController
     @runTestClicked = false
     @endpointsCollapsed = @$stateParams['editEndpoints'] == undefined || !@$stateParams['editEndpoints']
     @testStatus = ''
+    @backgroundMode = false
 
     @parameterTableColumns = [
       {
@@ -165,9 +166,23 @@ class ConformanceStatementDetailController
     testSuite.expanded = !testSuite.expanded if !@runTestClicked
     @runTestClicked = false
 
+  executeHeadless: (testCases) =>
+    testCaseIds = _.map(testCases, (test) =>
+      test.id
+    )
+    @TestService.startHeadlessTestSessions(testCaseIds, @specId, @systemId, @actorId)
+      .then(
+        (data) =>
+        (error) =>
+          @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop)
+      )
+
   onTestSelect: (test) =>
-    @DataService.setTestsToExecute [test]
-    @$state.go 'app.tests.execution', {systemId: @systemId, actorId: @actorId, specId:@specId, testCaseId: test.id}
+    if @backgroundMode
+      @executeHeadless([test])
+    else
+      @DataService.setTestsToExecute [test]
+      @$state.go 'app.tests.execution', {systemId: @systemId, actorId: @actorId, specId:@specId, testCaseId: test.id}
 
   onTestSuiteSelect: (testSuite) =>
     if (!testSuite?)
@@ -175,8 +190,11 @@ class ConformanceStatementDetailController
     testsToExecute = []
     for testCase in testSuite.testCases
       testsToExecute.push testCase
-    @DataService.setTestsToExecute testsToExecute
-    @$state.go 'app.tests.execution', {systemId: @systemId, actorId: @actorId, specId:@specId, testSuiteId: testSuite.id}
+    if @backgroundMode
+      @executeHeadless(testsToExecute)
+    else
+      @DataService.setTestsToExecute testsToExecute
+      @$state.go 'app.tests.execution', {systemId: @systemId, actorId: @actorId, specId:@specId, testSuiteId: testSuite.id}
 
   onParameterSelect: (parameter) =>
     @$log.debug "Editing parameter: ", parameter
