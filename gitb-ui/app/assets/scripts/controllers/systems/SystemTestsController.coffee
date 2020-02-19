@@ -351,8 +351,10 @@ class SystemTestsController
 
                       transformedObject
       @activeTests = resultReportsCollection.value()
+      @refreshActivePending = false
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @refreshActivePending = false
 
   getTestResults:() ->
     params = @getCurrentSearchCriteria()
@@ -375,8 +377,10 @@ class SystemTestsController
                         hideExportButton: report.result.obsolete
                       transformedObject
       @testResults = resultReportsCollection.value()
+      @refreshCompletedPending = false
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @refreshCompletedPending = false
 
   getTestResultsCount: () ->
     params = @getCurrentSearchCriteria()
@@ -384,10 +388,13 @@ class SystemTestsController
     @ReportService.getTestResultsCount(params.systemId, params.specIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr)
     .then (data) =>
       @testResultsCount = data.count
+      @refreshCompletedCountPending = false
     .then () =>
       @setPaginationStatus()
+      @refreshCompletedCountPending = false
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @refreshCompletedCountPending = false
 
   clearFiltering: () =>
     @showFiltering = false
@@ -590,5 +597,13 @@ class SystemTestsController
       .catch (error) =>
           @deletePending = false
           @ErrorService.showErrorMessage(error)
+
+  refresh: () =>
+    @refreshActivePending = true
+    @refreshCompletedPending = true
+    @refreshCompletedCountPending = true
+    @getActiveTests()
+    @getTestResults()
+    @getTestResultsCount()
 
 @controllers.controller 'SystemTestsController', SystemTestsController

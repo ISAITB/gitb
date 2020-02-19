@@ -2,17 +2,20 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Filters</h4>
-            <div class="btn-group btn-toggle pull-right">
-                <button ng-disabled="dashboardCtrl.showFilters"
-                        ng-class="{true: 'btn btn-primary active', false : 'btn btn-default'}[dashboardCtrl.showFilters]"
-                        ng-click="dashboardCtrl.showFilter()">
-                    APPLY
-                </button>
-                <button ng-disabled="!dashboardCtrl.showFilters"
-                        ng-class="{true: 'btn btn-default', false : 'btn btn-primary active'}[dashboardCtrl.showFilters]"
-                        ng-click="dashboardCtrl.clearFilter()">
-                    CLEAR
-                </button>
+            <div class="btn-toolbar pull-right">
+                <button class="btn btn-default" ng-click="dashboardCtrl.refresh()" ng-disabled="dashboardCtrl.refreshActivePending || dashboardCtrl.refreshCompletedPending || dashboardCtrl.refreshCompletedCountPending"><span class="tab" ng-if="dashboardCtrl.refreshActivePending || dashboardCtrl.refreshCompletedPending || dashboardCtrl.refreshCompletedCountPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Refresh</button>
+                <div class="btn-group btn-toggle">
+                    <button ng-disabled="dashboardCtrl.showFilters"
+                            ng-class="{true: 'btn btn-primary active', false : 'btn btn-default'}[dashboardCtrl.showFilters]"
+                            ng-click="dashboardCtrl.showFilter()">
+                        APPLY
+                    </button>
+                    <button ng-disabled="!dashboardCtrl.showFilters"
+                            ng-class="{true: 'btn btn-default', false : 'btn btn-primary active'}[dashboardCtrl.showFilters]"
+                            ng-click="dashboardCtrl.clearFilter()">
+                        CLEAR
+                    </button>
+                </div>
             </div>
         </div>
         <div class="table-responsive">
@@ -124,7 +127,7 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Active test sessions</h4>
-            <div class="pull-right">
+            <div class="btn-toolbar pull-right">
                 <button class="btn btn-default" ng-click="dashboardCtrl.exportActiveSessionsToCsv()">Export CSV</button>
             </div>
         </div>

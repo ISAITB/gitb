@@ -3,17 +3,20 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Filters</h4>
-            <div class="btn-group pull-right">
-                <button ng-disabled="systemTestsCtrl.showFiltering"
-                        ng-class="{true: 'btn btn-primary active', false : 'btn btn-default'}[systemTestsCtrl.showFiltering]"
-                        ng-click="systemTestsCtrl.applyFiltering()">
-                    APPLY
-                </button>
-                <button ng-disabled="!systemTestsCtrl.showFiltering"
-                        ng-class="{true: 'btn btn-default', false : 'btn btn-primary active'}[systemTestsCtrl.showFiltering]"
-                        ng-click="systemTestsCtrl.clearFiltering()">
-                    CLEAR
-                </button>
+            <div class="btn-toolbar pull-right">
+                <button class="btn btn-default" ng-click="systemTestsCtrl.refresh()" ng-disabled="systemTestsCtrl.refreshActivePending || systemTestsCtrl.refreshCompletedPending || systemTestsCtrl.refreshCompletedCountPending"><span class="tab" ng-if="systemTestsCtrl.refreshActivePending || systemTestsCtrl.refreshCompletedPending || systemTestsCtrl.refreshCompletedCountPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Refresh</button>
+                <div class="btn-group">
+                    <button ng-disabled="systemTestsCtrl.showFiltering"
+                            ng-class="{true: 'btn btn-primary active', false : 'btn btn-default'}[systemTestsCtrl.showFiltering]"
+                            ng-click="systemTestsCtrl.applyFiltering()">
+                        APPLY
+                    </button>
+                    <button ng-disabled="!systemTestsCtrl.showFiltering"
+                            ng-class="{true: 'btn btn-default', false : 'btn btn-primary active'}[systemTestsCtrl.showFiltering]"
+                            ng-click="systemTestsCtrl.clearFiltering()">
+                        CLEAR
+                    </button>
+                </div>
             </div>
         </div>
         <div class="table-responsive" ng-if="systemTestsCtrl.showFiltering">
@@ -129,7 +132,7 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Active test sessions</h4>
-            <div class="pull-right">
+            <div class="btn-toolbar pull-right">
                 <button class="btn btn-default" ng-click="systemTestsCtrl.exportActiveSessionsToCsv()">Export CSV</button>
             </div>
         </div>

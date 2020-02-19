@@ -516,8 +516,10 @@ class DashboardController
     .then (data) =>
       testResultMapper = @newTestResult
       @activeTests = _.map data.data, (testResult) -> testResultMapper(testResult)
+      @refreshActivePending = false
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @refreshActivePending = false
 
   domainClicked: (domain) =>
     @setSpecificationFilter(@filters.domain.selection, @filters.domain.filter, true)
@@ -590,10 +592,13 @@ class DashboardController
     @ReportService.getCompletedTestResultsCount(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr)
     .then (data) =>
       @completedTestsTotalCount = data.count
+      @refreshCompletedCountPending = false
     .then () =>
       @updatePagination()
+      @refreshCompletedCountPending = false
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @refreshCompletedCountPending = false
 
   getCompletedTests: () =>
     params = @getCurrentSearchCriteria()
@@ -602,8 +607,10 @@ class DashboardController
     .then (data) =>
       testResultMapper = @newTestResult
       @completedTests = _.map data.data, (t) -> testResultMapper(t)
+      @refreshCompletedPending = false
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @refreshCompletedPending = false
 
   newTestResult: (testResult, orgParameters, sysParameters) ->
     result = {}
@@ -780,5 +787,13 @@ class DashboardController
       .catch (error) =>
           @deletePending = false
           @ErrorService.showErrorMessage(error)
+
+  refresh: () =>
+    @refreshActivePending = true
+    @refreshCompletedPending = true
+    @refreshCompletedCountPending = true
+    @getActiveTests()
+    @getCompletedTests()
+    @getTotalTestCount()
 
 @controllers.controller 'DashboardController', DashboardController
