@@ -1,44 +1,54 @@
 package actors
 
-import akka.actor.{Actor, ActorRef, Props}
-import com.gitb.core.TestCaseType
-import controllers.TestService
+import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import javax.inject.{Inject, Singleton}
-import play.api.libs.json._
 import org.slf4j.{Logger, LoggerFactory}
+import play.api.libs.json._
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.duration._
 
 object WebSocketActor {
 
   //references to all the connection handling actors
   //[sessionId -> [actorId -> Actor]]
-  var webSockets = Map[String, Map[String, ActorRef]]()
-  var testTypes  = Map[String, Short]()
-
-  /**
-    * Returns all sessions in JSON format
-    */
-  def getSessions() = {
-    //convert websockets into map of ("session" -> list("actorId") by filtering by type first
-    val interopabilitySessions = testTypes.filter(_._2 == TestCaseType.INTEROPERABILITY.ordinal().toShort).map(_._1).toList
-    val list = webSockets
-      .filter(interopabilitySessions contains _._1)
-      .map(entry => Json.obj("session" -> entry._1, "actors" -> entry._2.map(_._1)))
-    Json.stringify(Json.toJson(list))
-  }
+  var webSockets: Map[String, Map[String, ActorRef]] = Map[String, Map[String, ActorRef]]()
+  var activeSessions: Set[String] = Set[String]()
 
 }
 
 @Singleton
-class WebSocketActor @Inject() (TestService: TestService) {
+class WebSocketActor @Inject() (actorSystem: ActorSystem) {
 
   private final val logger = LoggerFactory.getLogger("WebSocketActor")
 
+  private def broadcastAttempt(sessionId:String, msg:String, attempt: Int): Unit = {
+    if (attempt <= 10) {
+      if (!broadcastMessage(sessionId, msg)) {
+        akka.pattern.after(duration = 1.seconds, using = actorSystem.scheduler) {
+          Future.successful(true)
+        } andThen {
+          case _ => broadcastAttempt(sessionId, msg, attempt+1)
+        }
+      }
+    } else {
+      logger.warn("Unable to send message for session ["+sessionId+"] after 10 attempts")
+    }
+  }
+
   def broadcast(sessionId:String, msg:String, retry: Boolean):Unit = {
-    var attempts = 0
-    while (attempts < 10 && !broadcastMessage(sessionId, msg) && retry) {
-      attempts += 1
-      logger.warn("Unable to send message ["+msg+"] for session ["+sessionId+"] - attempt " + attempts)
-      Thread.sleep(1000)
+    if (retry) {
+      broadcastAttempt(sessionId, msg, 1)
+    } else {
+      broadcastMessage(sessionId, msg)
+    }
+  }
+
+  def testSessionEnded(sessionId:String, msg:String):Unit = {
+    broadcast(sessionId, msg)
+    if (WebSocketActor.activeSessions.contains(sessionId)) {
+      WebSocketActor.activeSessions -= sessionId
     }
   }
 
@@ -50,15 +60,21 @@ class WebSocketActor @Inject() (TestService: TestService) {
   }
 
   def broadcastMessage(sessionId:String, msg:String):Boolean = {
-    if (WebSocketActor.webSockets.get(sessionId).isDefined) {
-      WebSocketActor.webSockets.get(sessionId).get.foreach {
+    val webSocketInfo = WebSocketActor.webSockets.get(sessionId)
+    if (webSocketInfo.isDefined) {
+      webSocketInfo.get.foreach {
         case (actorId, out) =>
           //send message to each ActorRef of the same session ID
           out ! Json.parse(msg)
       }
       true
     } else {
-      false
+      if (WebSocketActor.activeSessions.contains(sessionId)) {
+        // This is a headless session (active but without an open web socket)
+        true
+      } else {
+        false
+      }
     }
   }
 
@@ -67,19 +83,19 @@ class WebSocketActor @Inject() (TestService: TestService) {
    */
   def push(sessionId:String, actorId:String, msg:String) = {
     if(WebSocketActor.webSockets.get(sessionId).isDefined) {
-      val actors = WebSocketActor.webSockets.get(sessionId).get
+      val actors = WebSocketActor.webSockets(sessionId)
       if (actors.get(actorId).isDefined) {
-        val out = actors.get(actorId).get
+        val out = actors(actorId)
         //send message to the client with given session and actor IDs
         out ! Json.parse(msg)
       }
     }
   }
 
-  def props(out: ActorRef) = Props(new WebSocketActorHandler(out, TestService, this)).withDispatcher("blocking-processor-dispatcher")
+  def props(out: ActorRef) = Props(new WebSocketActorHandler(out, this)).withDispatcher("blocking-processor-dispatcher")
 }
 
-class WebSocketActorHandler (out: ActorRef, TestService: TestService, webSocketActor: WebSocketActor) extends Actor{
+class WebSocketActorHandler (out: ActorRef, webSocketActor: WebSocketActor) extends Actor{
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[WebSocketActor])
 
@@ -89,7 +105,6 @@ class WebSocketActorHandler (out: ActorRef, TestService: TestService, webSocketA
 
   var sessionId:String = null
   var actorId:String = null
-  var testCaseType:Short = -1;
 
   def receive = {
 
@@ -104,28 +119,22 @@ class WebSocketActorHandler (out: ActorRef, TestService: TestService, webSocketA
           case REGISTER =>
             val jsSessionId = msg \ "sessionId"
             val jsActorId   = msg \ "actorId"
-            val jsType      = msg \ "type"
             val jsConfigurations = msg \ "configurations"
 
             //this check is necessary since browser might send other stuff
-            if(!jsSessionId.isInstanceOf[JsUndefined] && !jsActorId.isInstanceOf[JsUndefined] && !jsType.isInstanceOf[JsUndefined]){
+            if(!jsSessionId.isInstanceOf[JsUndefined] && !jsActorId.isInstanceOf[JsUndefined]){
               sessionId = jsSessionId.as[String]
               actorId   = jsActorId.as[String]
-              testCaseType = jsType.as[Short]
 
-              var actors = WebSocketActor.webSockets.get(sessionId) getOrElse  {
+              var actors = WebSocketActor.webSockets.getOrElse(sessionId, {
                 //create a new map if there is no actor with the given sessionId
                 Map[String, ActorRef]()
-              }
+              })
               actors += (actorId -> out)
 
               WebSocketActor.webSockets = WebSocketActor.webSockets.updated(sessionId, actors)
-              WebSocketActor.testTypes  = WebSocketActor.testTypes.updated(sessionId, testCaseType)
+              WebSocketActor.activeSessions += sessionId
 
-              //if any actor sends its configurations, broadcast it.
-//              if(!jsConfigurations.isInstanceOf[JsUndefined] && jsConfigurations.toOption.isDefined) {
-//                webSocketActor.broadcast(sessionId, Json.obj("configuration" -> jsConfigurations.get).toString())
-//              }
             }
           case NOTIFY =>
             val message = msg.as[JsObject] - "command" //remove command field from msg
@@ -144,11 +153,7 @@ class WebSocketActorHandler (out: ActorRef, TestService: TestService, webSocketA
       } else {
         logger.error("Command not found")
       }
-
-
-
     case _ =>
-      //TODO throw exception here
       logger.error("Communication Failure")
   }
 
@@ -158,16 +163,12 @@ class WebSocketActorHandler (out: ActorRef, TestService: TestService, webSocketA
   override def postStop() = {
     WebSocketActor.webSockets.synchronized {
       //remove the actor
-      if(WebSocketActor.webSockets.get(sessionId).isDefined){
-        var actors = WebSocketActor.webSockets.get(sessionId).get
+      if(WebSocketActor.webSockets.get(sessionId).isDefined) {
+        var actors = WebSocketActor.webSockets(sessionId)
         actors -= actorId
-
         //if all actors are gone within a session, remove the session as well
-        if(actors.size == 0) {
+        if(actors.isEmpty) {
           WebSocketActor.webSockets -= sessionId
-
-          //also tell engine to end the session
-          TestService.endSession(sessionId)
         }
         //otherwise, update the webSockets map
         else {

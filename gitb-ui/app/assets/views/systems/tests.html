@@ -126,10 +126,20 @@
             </table>
         </div>
     </div>
-
     <div class="panel panel-default">
         <div class="panel-heading">
-            <h4 class="title">Performed tests</h4>
+            <h4 class="title">Active test sessions</h4>
+            <div class="pull-right">
+                <button class="btn btn-default" ng-click="systemTestsCtrl.exportActiveSessionsToCsv()">Export CSV</button>
+            </div>
+        </div>
+        <div id="system-tests-table-active" table-directive columns="systemTestsCtrl.activeTestsColumns" data="systemTestsCtrl.activeTests"
+             on-select="systemTestsCtrl.onTestSelect" on-sort="systemTestsCtrl.sortActiveSessions" on-delete="systemTestsCtrl.stopSession"
+             operations-visible="true" row-style="systemTestsCtrl.rowStyle"></div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Completed test sessions</h4>
             <div class="btn-toolbar pull-right">
                 <button class="btn btn-default" ng-if="systemTestsCtrl.canDelete()" ng-disabled="systemTestsCtrl.deletePending" ng-click="systemTestsCtrl.deleteObsolete()"><span class="tab" ng-if="systemTestsCtrl.deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete obsolete results</button>
                 <button class="btn btn-default" ng-click="systemTestsCtrl.exportToCsv()">Export CSV</button>

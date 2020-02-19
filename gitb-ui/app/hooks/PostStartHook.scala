@@ -9,7 +9,7 @@ import controllers.TestService
 import javax.inject.{Inject, Singleton}
 import javax.xml.ws.Endpoint
 import jaxws.TestbedService
-import managers.{ReportManager, SystemConfigurationManager, TestResultManager, TestSuiteManager}
+import managers.{ReportManager, SystemConfigurationManager, TestResultManager, TestSuiteManager, TestbedBackendClient}
 import models.Constants
 import org.apache.commons.io.FileUtils
 import play.api.Logger
@@ -20,7 +20,7 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class PostStartHook @Inject() (appLifecycle: ApplicationLifecycle, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testService: TestService, testSuiteManager: TestSuiteManager, reportManager: ReportManager, webSocketActor: WebSocketActor) {
+class PostStartHook @Inject() (appLifecycle: ApplicationLifecycle, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testService: TestService, testSuiteManager: TestSuiteManager, reportManager: ReportManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient) {
 
   onStart()
 
@@ -28,7 +28,7 @@ class PostStartHook @Inject() (appLifecycle: ApplicationLifecycle, actorSystem: 
     Logger.info("Starting Application")
     System.setProperty("java.io.tmpdir", System.getProperty("user.dir"))
     //start TestbedClient service
-    TestbedService.endpoint = Endpoint.publish(Configurations.TESTBED_CLIENT_URL, new TestbedService(reportManager, webSocketActor))
+    TestbedService.endpoint = Endpoint.publish(Configurations.TESTBED_CLIENT_URL, new TestbedService(reportManager, webSocketActor, testbedBackendClient))
     destroyIdleSessions()
     cleanupPendingTestSuiteUploads()
     cleanupTempReports()

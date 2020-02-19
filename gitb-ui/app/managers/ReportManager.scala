@@ -89,6 +89,20 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
 
   private val generator = new ReportGenerator()
 
+  def getSystemActiveTestResults(systemId: Long,
+                                 domainIds: Option[List[Long]],
+                                 specIds: Option[List[Long]],
+                                 testSuiteIds: Option[List[Long]],
+                                 testCaseIds: Option[List[Long]],
+                                 startTimeBegin: Option[String],
+                                 startTimeEnd: Option[String],
+                                 sortColumn: Option[String],
+                                 sortOrder: Option[String]): List[TestResult] = {
+    val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, None, startTimeBegin, startTimeEnd, None, None, sortColumn, sortOrder)
+    val testResults = exec(query.filter(_.sutId === systemId).filter(_.endTime.isEmpty).result.map(_.toList))
+    testResults
+  }
+
   def getTestResults(page: Long,
                      limit: Long,
                      systemId: Long,
@@ -104,7 +118,7 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
                      sortColumn: Option[String],
                      sortOrder: Option[String]): List[TestResult] = {
     val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
-    val testResults = exec(query.filter(_.sutId === systemId).drop((page - 1) * limit).take(limit).result.map(_.toList))
+    val testResults = exec(query.filter(_.sutId === systemId).filter(_.endTime.isDefined).drop((page - 1) * limit).take(limit).result.map(_.toList))
     testResults
   }
 
@@ -119,7 +133,7 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
                           endTimeBegin: Option[String],
                           endTimeEnd: Option[String]): Long = {
     val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, None, None)
-    val count = exec(query.filter(_.sutId === systemId).size.result)
+    val count = exec(query.filter(_.sutId === systemId).filter(_.endTime.isDefined).size.result)
     count
   }
 

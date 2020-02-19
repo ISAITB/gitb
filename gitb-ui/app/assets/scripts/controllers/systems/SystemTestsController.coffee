@@ -1,12 +1,37 @@
 class SystemTestsController
-  @$inject = ['$log', '$q', '$scope', '$stateParams', '$state', '$uibModal', 'CommunityService', '$window', 'ReportService', 'Constants', 'TestSuiteService', 'ConformanceService', 'ErrorService', 'DataService', 'ConfirmationDialogService']
-  constructor: (@$log, @$q, @$scope, @$stateParams, @$state, @$uibModal, @CommunityService, @$window, @ReportService, @Constants, @TestSuiteService, @ConformanceService, @ErrorService, @DataService, @ConfirmationDialogService)->
+  @$inject = ['$log', '$q', '$scope', '$stateParams', '$state', '$uibModal', 'CommunityService', '$window', 'ReportService', 'Constants', 'TestSuiteService', 'ConformanceService', 'ErrorService', 'DataService', 'ConfirmationDialogService', 'TestService']
+  constructor: (@$log, @$q, @$scope, @$stateParams, @$state, @$uibModal, @CommunityService, @$window, @ReportService, @Constants, @TestSuiteService, @ConformanceService, @ErrorService, @DataService, @ConfirmationDialogService, @TestService)->
     @$log.debug 'Constructing SystemTestsController...'
 
     @systemId = @$stateParams["id"]
     @export = false
 
+    @activeTests = []
     @testResults = []
+
+    @activeTestsColumns = [
+      {
+        field: 'specification',
+        title: @DataService.labelSpecification(),
+        sortable: true
+      }
+      {
+        field: 'actor',
+        title: @DataService.labelActor(),
+        sortable: true
+      }
+      {
+        field: 'testCaseName',
+        title: 'Test case',
+        sortable: true
+      }
+      {
+        field: 'startTime',
+        title: 'Start time',
+        sortable: true
+        order: 'asc'
+      }
+    ]
 
     @tableColumns = [
       {
@@ -66,7 +91,9 @@ class SystemTestsController
       eventHandlers:
         'apply.daterangepicker': @applyTimeFiltering
         'cancel.daterangepicker': @clearEndTimeFiltering
-
+    
+    @activeSortColumn = "startTime"
+    @activeSortOrder = "asc"
     @sortColumn = 'startTime'
     @sortOrder = 'desc'
 
@@ -136,6 +163,13 @@ class SystemTestsController
       @endTime.endDate = @savedSearchState.endTimeEnd
       @currentPage = @savedSearchState.currentPage
       @limit = @savedSearchState.limit
+      @activeSortColumn = @savedSearchState.activeSortColumn
+      @activeSortOrder = @savedSearchState.activeSortOrder
+      for column in @activeTestsColumns
+        if column.field == @activeSortColumn
+          column.order = @activeSortOrder
+        else
+          column.order = undefined
       @sortColumn = @savedSearchState.sortColumn
       @sortOrder = @savedSearchState.sortOrder
       for column in @tableColumns
@@ -293,10 +327,32 @@ class SystemTestsController
     searchCriteria.systemId = @systemId
     searchCriteria.currentPage = @currentPage
     searchCriteria.limit = @limit
+    searchCriteria.activeSortColumn = @activeSortColumn
+    searchCriteria.activeSortOrder = @activeSortOrder
     searchCriteria.sortColumn = @sortColumn
     searchCriteria.sortOrder = @sortOrder
     searchCriteria.showFiltering = @showFiltering
     searchCriteria
+
+  getActiveTests: () ->
+    params = @getCurrentSearchCriteria()
+
+    @ReportService.getSystemActiveTestResults(@systemId, params.specIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.activeSortColumn, params.activeSortOrder)
+    .then (testResultReports) =>
+      resultReportsCollection = _ testResultReports
+      resultReportsCollection = resultReportsCollection
+                    .map (report) ->
+                      transformedObject =
+                        specification: if report.test? then report.specification.sname else '-'
+                        actor: if report.actor? then report.actor.name else '-'
+                        testCaseName: if report.test? then report.test.sname else '-'
+                        startTime: report.result.startTime
+                        sessionId: report.result.sessionId
+
+                      transformedObject
+      @activeTests = resultReportsCollection.value()
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
 
   getTestResults:() ->
     params = @getCurrentSearchCriteria()
@@ -372,6 +428,11 @@ class SystemTestsController
     @sortOrder = column.order
     @getTestResults()
 
+  sortActiveSessions: (column) =>
+    @activeSortColumn = column.field
+    @activeSortOrder = column.order
+    @getActiveTests()
+
   navigateFirstPage: () =>
     @currentPage = 1
     @queryDatabase()
@@ -389,6 +450,7 @@ class SystemTestsController
     @queryDatabase()
 
   queryDatabase: () ->
+    @getActiveTests()
     @getTestResults()
     @getTestResultsCount()
 
@@ -457,6 +519,28 @@ class SystemTestsController
       .catch (error) =>
           @ErrorService.showErrorMessage(error)
 
+  exportActiveSessionsToCsv: () =>
+    params = @getCurrentSearchCriteria()
+
+    @ReportService.getSystemActiveTestResults(@systemId, params.specIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.activeSortColumn, params.activeSortOrder)
+    .then (testResultReports) =>
+      resultReportsCollection = _ testResultReports
+      resultReportsCollection = resultReportsCollection
+                    .map (report) ->
+                      transformedObject =
+                        domain: if report.domain? then report.domain.sname else '-'
+                        specification: if report.specification? then report.specification.sname else '-'
+                        actor: if report.actor? then report.actor.name else '-'
+                        testSuite: if report.testSuite? then report.testSuite.sname else '-'
+                        testCase: if report.test? then report.test.sname else '-'
+                        startTime: report.result.startTime
+                        sessionId: report.result.sessionId
+                      transformedObject
+      if resultReportsCollection.value().length > 0
+        @DataService.exportAllAsCsv([@DataService.labelDomain(), @DataService.labelSpecification(), @DataService.labelActor(), "Test suite", "Test case", "Start time", "Session"], resultReportsCollection.value())
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
   exportToCsv: () =>
     params = @getCurrentSearchCriteria()
 
@@ -485,6 +569,15 @@ class SystemTestsController
 
   canDelete: () =>
     !@DataService.isVendorUser
+
+  stopSession: (session) =>
+    @ConfirmationDialogService.confirm("Confirm delete", "Are you certain you want to terminate this session?", "Yes", "No")
+    .then () =>
+      @TestService.stop(session.sessionId)
+      .then (data) =>
+        @$state.go @$state.current, {}, {reload: true}
+      .catch (error) =>
+        @ErrorService.showErrorMessage(error)
 
   deleteObsolete: () ->
     @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete all obsolete test results?", "Yes", "No")
