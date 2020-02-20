@@ -166,8 +166,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     private void checkToken(String token, TokenType expectedType) {
         if (StringUtils.isNotBlank(token)) {
             boolean isVariableExpression = Utils.isVariableExpression(token);
-            if (token.startsWith("$") &&
-                    (!isVariableExpression || StringUtils.countMatches(token, '{') != StringUtils.countMatches(token, '}'))) {
+            if (isVariableExpression && StringUtils.countMatches(token, '{') != StringUtils.countMatches(token, '}')) {
                 addReportItem(ErrorCode.INVALID_VARIABLE_REFERENCE, currentTestCase.getId(), Utils.getStepName(currentStep), token);
             } else {
                 if (expectedType == TokenType.VARIABLE_REFERENCE) {
