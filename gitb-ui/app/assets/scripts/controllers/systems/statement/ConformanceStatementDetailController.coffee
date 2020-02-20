@@ -1,7 +1,7 @@
 class ConformanceStatementDetailController
 
-  @$inject = ['$log', '$scope', '$state', '$stateParams', '$uibModal', 'SystemService', 'ConformanceService', 'ErrorService', 'Constants', 'ConfirmationDialogService', 'DataService', 'ReportService', 'TestService']
-  constructor: (@$log, @$scope, @$state, @$stateParams, @$uibModal, @SystemService, @ConformanceService, @ErrorService, @Constants, @ConfirmationDialogService, @DataService, @ReportService, @TestService) ->
+  @$inject = ['$log', '$scope', '$state', '$stateParams', '$uibModal', 'SystemService', 'ConformanceService', 'ErrorService', 'Constants', 'ConfirmationDialogService', 'DataService', 'ReportService', 'TestService', 'PopupService']
+  constructor: (@$log, @$scope, @$state, @$stateParams, @$uibModal, @SystemService, @ConformanceService, @ErrorService, @Constants, @ConfirmationDialogService, @DataService, @ReportService, @TestService, @PopupService) ->
     @$log.debug "Constructing ConformanceStatementDetailController"
 
     @systemId = @$stateParams['id']
@@ -173,6 +173,10 @@ class ConformanceStatementDetailController
     @TestService.startHeadlessTestSessions(testCaseIds, @specId, @systemId, @actorId)
       .then(
         (data) =>
+          if testCaseIds.length == 1
+            @PopupService.success('Started test session. Check <b>Test Sessions</b> for progress.')
+          else
+            @PopupService.success('Started '+testCaseIds.length+' test sessions. Check <b>Test Sessions</b> for progress.')
         (error) =>
           @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop)
       )
@@ -250,6 +254,7 @@ class ConformanceStatementDetailController
       @SystemService.deleteConformanceStatement(@systemId, [@actorId])
       .then () =>
           @$state.go("app.systems.detail.conformance.list", {id: @systemId})
+          @PopupService.success('Conformance statement deleted.')
       .catch (error) =>
           @ErrorService.showErrorMessage(error)
 

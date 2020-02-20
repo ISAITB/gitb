@@ -1,12 +1,13 @@
 class CommunityCreateController
 
-  @$inject = ['$log', '$state', 'ValidationService', 'CommunityService', 'ConformanceService', 'ErrorService', 'Constants', 'DataService']
-  constructor: (@$log, @$state, @ValidationService, @CommunityService, @ConformanceService, @ErrorService, @Constants, @DataService) ->
+  @$inject = ['$log', '$state', 'ValidationService', 'CommunityService', 'ConformanceService', 'ErrorService', 'Constants', 'DataService', 'PopupService']
+  constructor: (@$log, @$state, @ValidationService, @CommunityService, @ConformanceService, @ErrorService, @Constants, @DataService, @PopupService) ->
 
     @alerts = []
     @community = {}
     @community.selfRegType = @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED
     @domains = []
+    @DataService.focus('sname')
 
     @ConformanceService.getDomains()
     .then (data) =>
@@ -37,6 +38,7 @@ class CommunityCreateController
           @alerts = @ValidationService.getAlerts()          
         else
           @cancelCreateCommunity()
+          @PopupService.success('Community created.')
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
     else

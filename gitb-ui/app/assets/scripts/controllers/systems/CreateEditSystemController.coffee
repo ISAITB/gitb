@@ -1,7 +1,7 @@
 class CreateEditSystemController
 
-	@$inject = ['$log', '$scope', '$uibModalInstance', 'ConfirmationDialogService', 'SystemService', 'ErrorService', 'system', 'organisationId', 'CommunityService', 'DataService', 'viewProperties']
-	constructor:(@$log, @$scope, @$uibModalInstance, @ConfirmationDialogService, @SystemService, @ErrorService, system, organisationId, @CommunityService, @DataService, viewProperties) ->
+	@$inject = ['$log', '$scope', '$uibModalInstance', 'ConfirmationDialogService', 'SystemService', 'ErrorService', 'system', 'organisationId', 'CommunityService', 'DataService', 'viewProperties', 'PopupService']
+	constructor:(@$log, @$scope, @$uibModalInstance, @ConfirmationDialogService, @SystemService, @ErrorService, system, organisationId, @CommunityService, @DataService, viewProperties, @PopupService) ->
 		@$log.debug "Constructing SystemController"
 
 		@$scope.pending = false
@@ -24,6 +24,7 @@ class CreateEditSystemController
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 		else
+			@$uibModalInstance.rendered.then () => @DataService.focus('sname')
 			@CommunityService.getSystemParameters(@DataService.community.id)
 			.then (data) =>
 				@$scope.propertyData.properties = data
@@ -65,6 +66,7 @@ class CreateEditSystemController
 						@$scope.pending = false
 						@$scope.savePending = false
 						@$uibModalInstance.close(data)
+						@PopupService.success(@DataService.labelSystem() + ' updated.')
 				, (error) =>
 					@$scope.pending = false
 					@$scope.savePending = false
@@ -89,6 +91,7 @@ class CreateEditSystemController
 							@$scope.pending = false
 							@$scope.savePending = false
 							@$uibModalInstance.close(data)
+							@PopupService.success(@DataService.labelSystem() + ' created.')
 						, (error) =>
 							@$scope.pending = false
 							@$scope.savePending = false
@@ -96,7 +99,7 @@ class CreateEditSystemController
 						)
 
 		@$scope.delete = () =>
-			@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this "+ + @DataService.labelSystemLower()+"?", "Yes", "No")
+			@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this "+ @DataService.labelSystemLower() + "?", "Yes", "No")
 				.then () =>
 					@$scope.pending = true
 					@$scope.deletePending = true
@@ -105,6 +108,7 @@ class CreateEditSystemController
 								@$scope.pending = false
 								@$scope.deletePending = false
 								@$uibModalInstance.close(data)
+								@PopupService.success(@DataService.labelSystem() + ' deleted.')
 						, (error) =>
 							@$scope.pending = false
 							@$scope.deletePending = false

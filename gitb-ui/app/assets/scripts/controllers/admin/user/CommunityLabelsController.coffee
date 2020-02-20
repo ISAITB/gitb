@@ -1,7 +1,7 @@
 class CommunityLabelsController
 
-  @$inject = ['$state', '$stateParams', 'CommunityService', 'ErrorService', 'DataService', 'Constants']
-  constructor: (@$state, @$stateParams, @CommunityService, @ErrorService, @DataService, @Constants) ->
+  @$inject = ['$state', '$stateParams', 'CommunityService', 'ErrorService', 'DataService', 'Constants', 'PopupService']
+  constructor: (@$state, @$stateParams, @CommunityService, @ErrorService, @DataService, @Constants, @PopupService) ->
     @communityId = @$stateParams.community_id
     @busy = false
     @labelTypeDescription = {}
@@ -45,6 +45,7 @@ class CommunityLabelsController
       if @DataService.isCommunityAdmin || (@DataService.isSystemAdmin && Number(@communityId) == Number(@Constants.DEFAULT_COMMUNITY_ID))
         @DataService.setupLabels(@labelsToSave)
       @cancel()
+      @PopupService.success('Community labels updated.')
     .catch (error) =>
       @busy = false
       @ErrorService.showErrorMessage(error)

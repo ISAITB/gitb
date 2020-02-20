@@ -94,7 +94,7 @@ class AccountService
         @RestService.post({
             path: jsRoutes.controllers.AccountService.submitFeedback().url,
             data: data
-            authenticate: true
+            authenticate: @DataService.user?
         })
 
 services.service('AccountService', AccountService)

@@ -1,7 +1,7 @@
 class CommunityCertificateController
 
-  @$inject = ['$state', '$scope', '$stateParams', 'WebEditorService', 'Constants', 'ConformanceService', 'ErrorService', '$q', 'DataService', 'ConfirmationDialogService']
-  constructor: (@$state, @$scope, @$stateParams, @WebEditorService, @Constants, @ConformanceService, @ErrorService, @$q, @DataService, @ConfirmationDialogService) ->
+  @$inject = ['$state', '$scope', '$stateParams', 'WebEditorService', 'Constants', 'ConformanceService', 'ErrorService', '$q', 'DataService', 'ConfirmationDialogService', 'PopupService']
+  constructor: (@$state, @$scope, @$stateParams, @WebEditorService, @Constants, @ConformanceService, @ErrorService, @$q, @DataService, @ConfirmationDialogService, @PopupService) ->
     @communityId = @$stateParams.community_id
     @editorReady = @$q.defer()
     tinyMCE.remove('.mce-message')
@@ -116,6 +116,7 @@ class CommunityCertificateController
     @ConformanceService.updateConformanceCertificateSettings(@communityId, @settings, @updatePasswords, @removeKeystore)
     .then () =>
       @$state.go 'app.admin.users.communities.detail.list', { community_id : @communityId }
+      @PopupService.success('Conformance certificate settings updated.')
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 

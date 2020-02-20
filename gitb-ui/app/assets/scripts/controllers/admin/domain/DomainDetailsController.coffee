@@ -1,7 +1,7 @@
 class DomainDetailsController
 
-	@$inject = ['$log', '$scope', '$state', '$stateParams', 'ConfirmationDialogService', 'ConformanceService', 'ErrorService', '$uibModal', 'DataService']
-	constructor: (@$log, @$scope, @$state, @$stateParams, @ConfirmationDialogService, @ConformanceService, @ErrorService, @$uibModal, @DataService) ->
+	@$inject = ['$log', '$scope', '$state', '$stateParams', 'ConfirmationDialogService', 'ConformanceService', 'ErrorService', '$uibModal', 'DataService', 'PopupService']
+	constructor: (@$log, @$scope, @$state, @$stateParams, @ConfirmationDialogService, @ConformanceService, @ErrorService, @$uibModal, @DataService, @PopupService) ->
 		@$log.debug "Constructing DomainDetailsController..."
 
 		@domain = {}
@@ -69,6 +69,7 @@ class DomainDetailsController
 			@ConformanceService.deleteDomain(@domainId)
 			.then () =>
 				@$state.go 'app.admin.domains.list'
+				@PopupService.success(@DataService.labelDomain()+' deleted.')
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 
@@ -78,7 +79,8 @@ class DomainDetailsController
 	saveDomainChanges: () =>
 		@ConformanceService.updateDomain(@domainId, @domain.sname, @domain.fname, @domain.description)
 		.then () =>
-			@$state.go 'app.admin.domains.list'
+			@$state.go @$state.current, {}, {reload: true}
+			@PopupService.success(@DataService.labelDomain()+' updated.')
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 

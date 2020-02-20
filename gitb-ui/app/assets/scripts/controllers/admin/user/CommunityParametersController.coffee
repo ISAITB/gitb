@@ -1,7 +1,7 @@
 class CommunityParametersController
 
-  @$inject = ['$state', '$stateParams', 'CommunityService', 'ErrorService', '$q', '$uibModal', 'DataService']
-  constructor: (@$state, @$stateParams, @CommunityService, @ErrorService, @$q, @$uibModal, @DataService) ->
+  @$inject = ['$state', '$stateParams', 'CommunityService', 'ErrorService', '$q', '$uibModal', 'DataService', 'PopupService']
+  constructor: (@$state, @$stateParams, @CommunityService, @ErrorService, @$q, @$uibModal, @DataService, @PopupService) ->
     @communityId = @$stateParams.community_id
     @parameterTableColumns = [
       {
@@ -72,12 +72,12 @@ class CommunityParametersController
     resultDeferred.promise
 
   addOrganisationParameter: () =>
-    @addParameter('Create '+@DataService.labelOrganisationLower()+' property', @organisationParameterValues, @organisationReservedKeys, @CommunityService.createOrganisationParameter)
+    @addParameter('Create '+@DataService.labelOrganisationLower()+' property', @organisationParameterValues, @organisationReservedKeys, @CommunityService.createOrganisationParameter, @DataService.labelOrganisation())
 
   addSystemParameter: () =>
-    @addParameter('Create '+@DataService.labelSystemLower()+' property', @systemParameterValues, @systemReservedKeys, @CommunityService.createSystemParameter)
+    @addParameter('Create '+@DataService.labelSystemLower()+' property', @systemParameterValues, @systemReservedKeys, @CommunityService.createSystemParameter, @DataService.labelSystem())
 
-  addParameter: (modalTitle, existingValues, reservedKeys, createMethod) =>
+  addParameter: (modalTitle, existingValues, reservedKeys, createMethod, propertyLabel) =>
     options = {
       nameLabel: 'Label'
       notForTests: true
@@ -104,22 +104,23 @@ class CommunityParametersController
         createMethod(parameter)
         .then () =>
           @$state.go(@$state.$current, null, { reload: true });
+          @PopupService.success(propertyLabel + ' property created.')
         .catch (error) =>
           @ErrorService.showErrorMessage(error)
 
     , angular.noop)
 
   onOrganisationParameterSelect: (parameter) =>
-    @onParameterSelect(parameter, @DataService.labelOrganisation()+' property details', @organisationParameterValues, @organisationReservedKeys, @CommunityService.updateOrganisationParameter, @CommunityService.deleteOrganisationParameter)
+    @onParameterSelect(parameter, @organisationParameterValues, @organisationReservedKeys, @CommunityService.updateOrganisationParameter, @CommunityService.deleteOrganisationParameter, @DataService.labelOrganisation())
 
   onSystemParameterSelect: (parameter) =>
-    @onParameterSelect(parameter, @DataService.labelSystem()+' property details', @systemParameterValues, @systemReservedKeys, @CommunityService.updateSystemParameter, @CommunityService.deleteSystemParameter)
+    @onParameterSelect(parameter, @systemParameterValues, @systemReservedKeys, @CommunityService.updateSystemParameter, @CommunityService.deleteSystemParameter, @DataService.labelSystem())
 
-  onParameterSelect: (parameter, modalTitle, existingValues, reservedKeys, updateMethod, deleteMethod) =>
+  onParameterSelect: (parameter, existingValues, reservedKeys, updateMethod, deleteMethod, propertyLabel) =>
     options = {
       nameLabel: 'Label'
       hasKey: true
-      modalTitle: modalTitle
+      modalTitle: propertyLabel + ' property details'
       confirmMessage: 'Are you sure you want to delete this property?'
       existingValues: existingValues
       reservedKeys: reservedKeys
@@ -143,12 +144,14 @@ class CommunityParametersController
           updateMethod(data.parameter)
           .then () =>
             @$state.go(@$state.$current, null, { reload: true });
+            @PopupService.success(propertyLabel + ' property updated.')
           .catch (error) =>
             @ErrorService.showErrorMessage(error)
         else
           deleteMethod(data.parameter.id)
           .then () =>
             @$state.go(@$state.$current, null, { reload: true });
+            @PopupService.success(propertyLabel + ' property deleted.')
           .catch (error) =>
             @ErrorService.showErrorMessage(error)
       , angular.noop)

@@ -1,7 +1,7 @@
 class EndpointDetailsController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', 'EndPointService', 'ParameterService', 'ConfirmationDialogService', '$state', '$stateParams', '$uibModal', 'ErrorService', 'DataService']
-	constructor: (@$log, @$scope, @ConformanceService, @EndPointService, @ParameterService, @ConfirmationDialogService, @$state, @$stateParams, @$uibModal, @ErrorService, @DataService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', 'EndPointService', 'ParameterService', 'ConfirmationDialogService', '$state', '$stateParams', '$uibModal', 'ErrorService', 'DataService', 'PopupService']
+	constructor: (@$log, @$scope, @ConformanceService, @EndPointService, @ParameterService, @ConfirmationDialogService, @$state, @$stateParams, @$uibModal, @ErrorService, @DataService, @PopupService) ->
 		@$log.debug "Constructing EndpointDetailsController"
 		@endpointId = @$stateParams.endpoint_id
 		@actorId = @$stateParams.actor_id
@@ -55,13 +55,15 @@ class EndpointDetailsController
 			@EndPointService.deleteEndPoint(@endpointId)
 			.then () =>
 				@$state.go 'app.admin.domains.detail.specifications.detail.actors.detail.list', {id: @domainId, spec_id: @specificationId, actor_id: @actorId}
+				@PopupService.success(@DataService.labelEndpoint()+' deleted.')
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 
 	saveChanges: () =>
 		@EndPointService.updateEndPoint(@endpointId, @endpoint.name, @endpoint.description, @actorId)
 		.then () =>
-			@$state.go 'app.admin.domains.detail.specifications.detail.actors.detail.list', {id: @domainId, spec_id: @specificationId, actor_id: @actorId}
+			@$state.go @$state.current, {}, {reload: true}
+			@PopupService.success(@DataService.labelEndpoint()+' updated.')
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
@@ -86,7 +88,8 @@ class EndpointDetailsController
 			.then((parameter) => 
 				@ConformanceService.createParameter parameter.name, parameter.description, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, @endpointId
 					.then () =>
-						@$state.go(@$state.$current, null, { reload: true });
+						@$state.go(@$state.$current, null, { reload: true })
+						@PopupService.success('Parameter created.')
 					.catch (error) =>
 						@ErrorService.showErrorMessage(error)
 		, angular.noop)
@@ -108,13 +111,15 @@ class EndpointDetailsController
 				if data.action == 'update'
 					@ParameterService.updateParameter(data.parameter.id, data.parameter.name, data.parameter.desc, data.parameter.use, data.parameter.kind, data.parameter.adminOnly, data.parameter.notForTests, @endpointId)
 					.then () =>
-						@$state.go(@$state.$current, null, { reload: true });
+						@$state.go(@$state.$current, null, { reload: true })
+						@PopupService.success('Parameter updated.')
 					.catch (error) =>
 						@ErrorService.showErrorMessage(error)
 				else
 					@ParameterService.deleteParameter(data.parameter.id)
 					.then () =>
-						@$state.go(@$state.$current, null, { reload: true });
+						@$state.go(@$state.$current, null, { reload: true })
+						@PopupService.success('Parameter deleted.')
 					.catch (error) =>
 						@ErrorService.showErrorMessage(error)
 			, angular.noop)

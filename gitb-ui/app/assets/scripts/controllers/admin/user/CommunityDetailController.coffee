@@ -1,7 +1,7 @@
 class CommunityDetailController
 
-  @$inject = ['$log', '$state', '$window', '$stateParams', 'UserService', 'DataService', 'Constants', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'CommunityService', 'ConformanceService', 'ErrorService']
-  constructor: (@$log, @$state, @$window, @$stateParams, @UserService, @DataService, @Constants, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @CommunityService, @ConformanceService, @ErrorService) ->
+  @$inject = ['$log', '$state', '$window', '$stateParams', 'UserService', 'DataService', 'Constants', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'CommunityService', 'ConformanceService', 'ErrorService', 'PopupService']
+  constructor: (@$log, @$state, @$window, @$stateParams, @UserService, @DataService, @Constants, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @CommunityService, @ConformanceService, @ErrorService, @PopupService) ->
 
     @communityId = @$stateParams.community_id
 
@@ -172,10 +172,8 @@ class CommunityDetailController
           @ValidationService.pushAlert({type:'danger', msg:data.error_description})
           @alerts = @ValidationService.getAlerts()          
         else
-          if @DataService.isSystemAdmin
-            @cancelCommunityDetail()
-          else
-            @$state.go(@$state.$current, null, { reload: true });
+          @$state.go(@$state.$current, null, { reload: true });
+          @PopupService.success('Community updated.')
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
     else
@@ -187,6 +185,7 @@ class CommunityDetailController
       @CommunityService.deleteCommunity(@communityId)
       .then () =>
         @cancelCommunityDetail()
+        @PopupService.success('Community deleted.')
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
 

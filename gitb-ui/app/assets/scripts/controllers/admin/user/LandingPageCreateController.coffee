@@ -1,7 +1,7 @@
 class LandingPageCreateController
 
-  @$inject = ['$log', '$state', '$stateParams', '$scope', 'WebEditorService', 'LandingPageService', 'ValidationService', 'ConfirmationDialogService', 'ErrorService']
-  constructor: (@$log, @$state, @$stateParams, @$scope, @WebEditorService, @LandingPageService, @ValidationService, @ConfirmationDialogService, @ErrorService) ->
+  @$inject = ['$log', '$state', '$stateParams', '$scope', 'WebEditorService', 'LandingPageService', 'ValidationService', 'ConfirmationDialogService', 'ErrorService', 'PopupService', 'DataService']
+  constructor: (@$log, @$state, @$stateParams, @$scope, @WebEditorService, @LandingPageService, @ValidationService, @ConfirmationDialogService, @ErrorService, @PopupService, @DataService) ->
 
     @communityId = @$stateParams.community_id
 
@@ -9,6 +9,7 @@ class LandingPageCreateController
     @page = {}
 
     @initialize()
+    @DataService.focus('name')
 
   initialize: () ->
     @page.name = @$stateParams.name
@@ -38,6 +39,7 @@ class LandingPageCreateController
         @ValidationService.pushAlert({type:'danger', msg:data.error_description})
       else
         @cancelCreateLandingPage()
+        @PopupService.success('Landing page created.')
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 

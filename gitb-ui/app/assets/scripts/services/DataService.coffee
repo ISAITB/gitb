@@ -4,8 +4,8 @@
 # change will be reflected to a different view that is controlled by a different controller.
 class DataService
 	
-	@$inject = ['Constants', '$q']
-	constructor: (@Constants, @$q) ->
+	@$inject = ['Constants', '$q', '$timeout']
+	constructor: (@Constants, @$q, @$timeout) ->
 		@destroy() #we call destroy inside the constructor to create objects :)
 
 	#should be called after logout, since no user data should be kept any more
@@ -407,5 +407,13 @@ class DataService
 
 	labelSystemsLower: () =>
 		if @labels[@Constants.LABEL_TYPE.SYSTEM].fixedCase then @labels[@Constants.LABEL_TYPE.SYSTEM].pluralForm else @labels[@Constants.LABEL_TYPE.SYSTEM].pluralForm.toLowerCase()
+
+	focus: (inputId) =>
+		if inputId?
+			if !inputId.startsWith('#')
+				inputId = '#' + inputId
+			@$timeout(() =>
+				document.querySelector(inputId)?.focus()
+			, 1)
 
 services.service('DataService', DataService)

@@ -1,7 +1,7 @@
 class ActorDetailsController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', 'ActorService', 'ConfirmationDialogService', '$state', '$stateParams', 'ErrorService', 'DataService']
-	constructor: (@$log, @$scope, @ConformanceService, @ActorService, @ConfirmationDialogService, @$state, @$stateParams, @ErrorService, @DataService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', 'ActorService', 'ConfirmationDialogService', '$state', '$stateParams', 'ErrorService', 'DataService', 'PopupService']
+	constructor: (@$log, @$scope, @ConformanceService, @ActorService, @ConfirmationDialogService, @$state, @$stateParams, @ErrorService, @DataService, @PopupService) ->
 		@$log.debug "Constructing ActorDetailsController"
 
 		@actor = {}
@@ -70,13 +70,15 @@ class ActorDetailsController
 			@ActorService.deleteActor(@actorId)
 			.then () =>
 				@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: @specificationId}
+				@PopupService.success(@DataService.labelActor()+' deleted.')
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 
 	saveChanges: () =>
 		@ActorService.updateActor(@actorId, @actor.actorId, @actor.name, @actor.description, @actor.default, @actor.hidden, @actor.displayOrder, @domainId, @specificationId)
 		.then () =>
-			@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: @specificationId}
+			@$state.go @$state.current, {}, {reload: true}
+			@PopupService.success(@DataService.labelActor()+' updated.')
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 

@@ -1,6 +1,6 @@
 class SystemTestsController
-  @$inject = ['$log', '$q', '$scope', '$stateParams', '$state', '$uibModal', 'CommunityService', '$window', 'ReportService', 'Constants', 'TestSuiteService', 'ConformanceService', 'ErrorService', 'DataService', 'ConfirmationDialogService', 'TestService']
-  constructor: (@$log, @$q, @$scope, @$stateParams, @$state, @$uibModal, @CommunityService, @$window, @ReportService, @Constants, @TestSuiteService, @ConformanceService, @ErrorService, @DataService, @ConfirmationDialogService, @TestService)->
+  @$inject = ['$log', '$q', '$scope', '$stateParams', '$state', '$uibModal', 'CommunityService', '$window', 'ReportService', 'Constants', 'TestSuiteService', 'ConformanceService', 'ErrorService', 'DataService', 'ConfirmationDialogService', 'TestService', 'PopupService']
+  constructor: (@$log, @$q, @$scope, @$stateParams, @$state, @$uibModal, @CommunityService, @$window, @ReportService, @Constants, @TestSuiteService, @ConformanceService, @ErrorService, @DataService, @ConfirmationDialogService, @TestService, @PopupService)->
     @$log.debug 'Constructing SystemTestsController...'
 
     @systemId = @$stateParams["id"]
@@ -583,6 +583,7 @@ class SystemTestsController
       @TestService.stop(session.sessionId)
       .then (data) =>
         @$state.go @$state.current, {}, {reload: true}
+        @PopupService.success('Test session terminated.')
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
 
@@ -594,6 +595,7 @@ class SystemTestsController
       .then () =>
         @deletePending = false
         @$state.go @$state.current, {}, {reload: true}
+        @PopupService.success('Obsolete test results deleted.')
       .catch (error) =>
           @deletePending = false
           @ErrorService.showErrorMessage(error)

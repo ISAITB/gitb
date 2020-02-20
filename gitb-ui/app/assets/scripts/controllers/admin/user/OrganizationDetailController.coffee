@@ -1,7 +1,7 @@
 class OrganizationDetailController
 
-  @$inject = ['$log', '$state', '$stateParams', '$window', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'UserManagementService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'UserService', 'ErrorService', '$q', 'DataService']
-  constructor: (@$log, @$state, @$stateParams, @$window, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @UserManagementService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @UserService, @ErrorService, @$q, @DataService) ->
+  @$inject = ['$log', '$state', '$stateParams', '$window', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'UserManagementService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'UserService', 'ErrorService', '$q', 'DataService', 'PopupService']
+  constructor: (@$log, @$state, @$stateParams, @$window, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @UserManagementService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @UserService, @ErrorService, @$q, @DataService, @PopupService) ->
 
     @userColumns = [
       {
@@ -92,6 +92,7 @@ class OrganizationDetailController
       @OrganizationService.deleteOrganization(@orgId)
       .then () =>
         @cancelDetailOrganization()
+        @PopupService.success(@DataService.labelOrganisation()+" deleted.")
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
 
@@ -108,7 +109,8 @@ class OrganizationDetailController
         @ValidationService.pushAlert({type:'danger', msg:data.error_description})
         @alerts = @ValidationService.getAlerts()          
       else
-        @cancelDetailOrganization()
+        @$state.go @$state.current, {}, {reload: true}
+        @PopupService.success(@DataService.labelOrganisation()+" updated.")
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 

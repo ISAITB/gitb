@@ -1,7 +1,7 @@
 class DashboardController
 
-  @$inject = ['$log', '$state', '$q', 'CommunityService', 'TestService', 'DataService', 'ReportService', 'Constants', 'SystemConfigurationService', 'PopupService', 'ConfirmationDialogService', 'SpecificationService', 'MessageService', 'ConformanceService', 'TestSuiteService', 'OrganizationService', 'SystemService', 'ErrorService']
-  constructor: (@$log, @$state, @$q, @CommunityService, @TestService, @DataService, @ReportService, @Constants, @SystemConfigurationService, @PopupService, @ConfirmationDialogService, @SpecificationService, @MessageService, @ConformanceService, @TestSuiteService, @OrganizationService, @SystemService, @ErrorService) ->
+  @$inject = ['$log', '$state', '$q', 'CommunityService', 'TestService', 'DataService', 'ReportService', 'Constants', 'SystemConfigurationService', 'PopupService', 'ConfirmationDialogService', 'SpecificationService', 'ConformanceService', 'TestSuiteService', 'OrganizationService', 'SystemService', 'ErrorService']
+  constructor: (@$log, @$state, @$q, @CommunityService, @TestService, @DataService, @ReportService, @Constants, @SystemConfigurationService, @PopupService, @ConfirmationDialogService, @SpecificationService, @ConformanceService, @TestSuiteService, @OrganizationService, @SystemService, @ErrorService) ->
 
     @activeTestsColumns = [
       {
@@ -657,6 +657,7 @@ class DashboardController
       @TestService.stop(session.session)
       .then (data) =>
         @$state.go @$state.current, {}, {reload: true}
+        @PopupService.success('Test session terminated.')
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
 
@@ -704,7 +705,7 @@ class DashboardController
       @SystemConfigurationService.updateSessionAliveTime(@config.parameter)
       .then () =>
         @prevParameter = @config.parameter
-        @MessageService.showMessage("Update successful", "Maximum session alive time set to #{@config.parameter} seconds.")
+        @PopupService.success("Maximum session time set to #{@config.parameter} seconds.")
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
     else
@@ -784,6 +785,7 @@ class DashboardController
       promise.then () =>
         @deletePending = false
         @$state.go @$state.current, {}, {reload: true}
+        @PopupService.success('Obsolete test results deleted.')
       .catch (error) =>
           @deletePending = false
           @ErrorService.showErrorMessage(error)

@@ -208,7 +208,7 @@ class SpecificationDetailsController
 				{label: "Parameters:"}
 			]
 			collect item, data for item in result.items
-			@PopupService.show("Test suite upload overview", data)
+			@PopupService.show("Test suite upload overview", data, () => @PopupService.success('Test suite uploaded.'))
 		else
 			data = []
 			data.push {
@@ -231,6 +231,7 @@ class SpecificationDetailsController
 			@TestSuiteService.undeployTestSuite data.id
 			.then () =>
 				@$state.go(@$state.$current, null, { reload: true });
+				@PopupService.success('Test suite deleted.')
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 
@@ -243,13 +244,15 @@ class SpecificationDetailsController
 			@SpecificationService.deleteSpecification(@specificationId)
 			.then () =>
 				@$state.go 'app.admin.domains.detail.list', {id: @domainId}
+				@PopupService.success(@DataService.labelSpecification()+' deleted.')
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 
 	saveSpecificationChanges: () =>
 		@SpecificationService.updateSpecification(@specificationId, @specification.sname, @specification.fname, @specification.urls, @specification. diagram, @specification.description, @specification.spec_type, @specification.hidden)
 		.then () =>
-			@$state.go 'app.admin.domains.detail.list', {id: @domainId}
+			@$state.go @$state.current, {}, {reload: true}
+			@PopupService.success(@DataService.labelSpecification()+' updated.')
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 

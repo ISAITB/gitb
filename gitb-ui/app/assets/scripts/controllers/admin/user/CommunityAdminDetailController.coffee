@@ -1,7 +1,7 @@
 class CommunityAdminDetailController
 
-  @$inject = ['$log', '$state', '$stateParams','UserManagementService', 'UserService', 'ValidationService', 'DataService', 'ConfirmationDialogService', 'ErrorService']
-  constructor: (@$log, @$state, @$stateParams, @UserManagementService, @UserService, @ValidationService, @DataService, @ConfirmationDialogService, @ErrorService) ->
+  @$inject = ['$log', '$state', '$stateParams','UserManagementService', 'UserService', 'ValidationService', 'DataService', 'ConfirmationDialogService', 'ErrorService', 'PopupService']
+  constructor: (@$log, @$state, @$stateParams, @UserManagementService, @UserService, @ValidationService, @DataService, @ConfirmationDialogService, @ErrorService, @PopupService) ->
 
     @communityId = @$stateParams.community_id
     @userId = @$stateParams.admin_id
@@ -30,6 +30,7 @@ class CommunityAdminDetailController
       @UserService.updateCommunityAdminProfile(@userId, @user.name, newPassword)
       .then () =>
         @cancelDetailAdmin()
+        @PopupService.success('Administrator updated.')
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
     else
@@ -41,6 +42,7 @@ class CommunityAdminDetailController
       @UserService.deleteAdmin(@userId)
       .then (data) =>
         @cancelDetailAdmin()
+        @PopupService.success('Administrator deleted.')
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
 

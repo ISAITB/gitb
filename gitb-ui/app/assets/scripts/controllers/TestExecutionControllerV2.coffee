@@ -1,6 +1,6 @@
 class TestExecutionControllerV2
-  @$inject = ['$window','$log', '$scope', '$location', '$uibModal', '$state', '$stateParams', 'Constants', 'TestService', 'SystemService', 'ConformanceService', 'WebSocketService', 'ReportService', 'ErrorService', 'DataService', '$q', '$timeout', '$interval', 'OrganizationService']
-  constructor: (@$window, @$log, @$scope, @$location, @$uibModal, @$state, @$stateParams, @Constants, @TestService, @SystemService, @ConformanceService, @WebSocketService, @ReportService, @ErrorService, @DataService, @$q, @$timeout, @$interval, @OrganizationService) ->
+  @$inject = ['$window','$log', '$scope', '$location', '$uibModal', '$state', '$stateParams', 'Constants', 'TestService', 'SystemService', 'ConformanceService', 'WebSocketService', 'ReportService', 'ErrorService', 'DataService', '$q', '$timeout', '$interval', 'OrganizationService', 'PopupService']
+  constructor: (@$window, @$log, @$scope, @$location, @$uibModal, @$state, @$stateParams, @Constants, @TestService, @SystemService, @ConformanceService, @WebSocketService, @ReportService, @ErrorService, @DataService, @$q, @$timeout, @$interval, @OrganizationService, @PopupService) ->
     @testsToExecute = @DataService.tests
     if (!@testsToExecute?)
       # We lost our state following a refresh - recreate state.
@@ -767,5 +767,9 @@ class TestExecutionControllerV2
       )
       if pendingTestIds.length > 0
         @TestService.startHeadlessTestSessions(pendingTestIds, @specId, @systemId, @actorId)
+        @PopupService.success('Continuing test sessions in background. Check <b>Test Sessions</b> for progress.')
+      else
+        if @testCaseStatus[@currentTest.id] == @Constants.TEST_CASE_STATUS.PROCESSING
+          @PopupService.success('Continuing test session in background. Check <b>Test Sessions</b> for progress.')
 
 controllers.controller('TestExecutionControllerV2', TestExecutionControllerV2)

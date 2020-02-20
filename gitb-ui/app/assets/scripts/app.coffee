@@ -18,6 +18,7 @@ dependencies = [
 	'isteven-multi-select'
 	'daterangepicker'
 	'ui.toggle'
+	'angular-growl'
 ]
 
 @app = angular.module 'app', dependencies
@@ -28,3 +29,10 @@ dependencies = [
 @controllers = angular.module 'app.controllers', []
 @directives = angular.module 'app.directives', []
 @filters = angular.module 'app.filters', []
+
+@app.config(['growlProvider', (growlProvider) =>
+	growlProvider.globalTimeToLive(2000)
+	growlProvider.globalDisableCountDown(true)
+	growlProvider.onlyUniqueMessages(false)
+	growlProvider.globalDisableCloseButton(true)
+])

@@ -147,13 +147,14 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     if (Configurations.EMAIL_ENABLED && community.selfregNotification && community.supportEmail.isDefined) {
       implicit val executionContext: ExecutionContextExecutor = ExecutionContext.global
       scala.concurrent.Future {
-        val subject = "Self-registration notification"
-        var content = "<h2>New community member</h2>"
+        val subject = "Test Bed self-registration notification"
+        var content = "<h2>New Test Bed community member</h2>"
         // User information not included to avoid data privacy statements
         content +=
           "A new organisation has joined your Test Bed community through the self-registration process.<br/>" +
-            "<br/><b>Organisation:</b> "+organisation.fullname+
-            "<br/><b>Community:</b> "+community.fullname
+          "<br/><b>Organisation:</b> "+organisation.fullname +
+          "<br/><b>Community:</b> "+community.fullname +
+          "<br/><br/>Click <a href=\""+Configurations.TESTBED_HOME_LINK+"\">here</a> to connect and view the update on the Test Bed."
         try {
           EmailUtil.sendEmail(Configurations.EMAIL_FROM, Array[String](community.supportEmail.get), null, subject, content, null)
         } catch {

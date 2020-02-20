@@ -172,5 +172,6 @@
             scope.model.selfRegOption = scope.selfRegOptions[0]
       
       scope.communityChanged = () =>
-        scope.DataService.setupLabels(scope.model.selfRegOption.labels)
+        if scope.model?.selfRegOption?
+          scope.DataService.setupLabels(scope.model.selfRegOption.labels)
 ]

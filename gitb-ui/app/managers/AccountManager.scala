@@ -235,7 +235,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
   }
 
   def submitFeedback(userId: Option[Long], userEmail: String, messageTypeId: String, messageTypeDescription: String, messageContent: String, attachments: Array[AttachmentType]): Unit = {
-    val subject = "Feedback form submission"
+    val subject = "Test Bed feedback form submission"
     var content = "<h2>Message information</h2>"
     var toAddresses: Array[String] = Configurations.EMAIL_TO
     var ccAddresses: Array[String] = null
@@ -258,7 +258,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
       }
     } else {
       // Form submission before an account is selected
-      content += "<b>User:</b>[ " + userEmail + "]<br/>"
+      content += "<b>User: </b>" + userEmail + "<br/>"
     }
     content += "<b>Message type:</b> " + messageTypeId + " - " + messageTypeDescription + "<br/>"
     content += "<h2>Message content</h2>"

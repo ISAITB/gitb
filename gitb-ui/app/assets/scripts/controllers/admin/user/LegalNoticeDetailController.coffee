@@ -1,7 +1,7 @@
 class LegalNoticeDetailController
 
-  @$inject = ['$log', '$state', '$stateParams', 'WebEditorService', 'ValidationService', 'LegalNoticeService', 'ConfirmationDialogService', 'ErrorService']
-  constructor: (@$log, @$state, @$stateParams, @WebEditorService, @ValidationService, @LegalNoticeService, @ConfirmationDialogService, @ErrorService) ->
+  @$inject = ['$log', '$state', '$stateParams', 'WebEditorService', 'ValidationService', 'LegalNoticeService', 'ConfirmationDialogService', 'ErrorService', 'PopupService']
+  constructor: (@$log, @$state, @$stateParams, @WebEditorService, @ValidationService, @LegalNoticeService, @ConfirmationDialogService, @ErrorService, @PopupService) ->
 
     @communityId = @$stateParams.community_id
     @noticeId = @$stateParams.notice_id
@@ -42,6 +42,7 @@ class LegalNoticeDetailController
           @copyLegalNotice()
         else
           @cancelDetailLegalNotice()
+          @PopupService.success('Legal notice updated.')
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -59,6 +60,7 @@ class LegalNoticeDetailController
       @LegalNoticeService.deleteLegalNotice(@noticeId)
       .then () =>
         @cancelDetailLegalNotice()
+        @PopupService.success('Legal notice deleted.')
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
 

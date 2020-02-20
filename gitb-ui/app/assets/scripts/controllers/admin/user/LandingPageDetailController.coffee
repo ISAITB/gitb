@@ -1,7 +1,7 @@
 class LandingPageDetailController
 
-  @$inject = ['$log', '$state', '$stateParams', 'WebEditorService', 'ValidationService', 'LandingPageService', 'ConfirmationDialogService', 'ErrorService']
-  constructor: (@$log, @$state, @$stateParams, @WebEditorService, @ValidationService, @LandingPageService, @ConfirmationDialogService, @ErrorService) ->
+  @$inject = ['$log', '$state', '$stateParams', 'WebEditorService', 'ValidationService', 'LandingPageService', 'ConfirmationDialogService', 'ErrorService', 'PopupService']
+  constructor: (@$log, @$state, @$stateParams, @WebEditorService, @ValidationService, @LandingPageService, @ConfirmationDialogService, @ErrorService, @PopupService) ->
 
     @communityId = @$stateParams.community_id
     @pageId = @$stateParams.page_id
@@ -41,6 +41,7 @@ class LandingPageDetailController
           @copyLandingPage()
         else
           @cancelDetailLandingPage()
+          @PopupService.success('Landing page updated.')
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -56,6 +57,7 @@ class LandingPageDetailController
       @LandingPageService.deleteLandingPage(@pageId)
       .then () =>
         @cancelDetailLandingPage()
+        @PopupService.success('Landing page deleted.')
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
 

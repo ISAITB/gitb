@@ -1,7 +1,7 @@
 class LegalNoticeCreateController
 
-  @$inject = ['$log', '$state', '$stateParams', '$scope', 'WebEditorService', 'LegalNoticeService', 'ValidationService', 'ConfirmationDialogService', 'ErrorService']
-  constructor: (@$log, @$state, @$stateParams, @$scope, @WebEditorService, @LegalNoticeService, @ValidationService, @ConfirmationDialogService, @ErrorService) ->
+  @$inject = ['$log', '$state', '$stateParams', '$scope', 'WebEditorService', 'LegalNoticeService', 'ValidationService', 'ConfirmationDialogService', 'ErrorService', 'PopupService', 'DataService']
+  constructor: (@$log, @$state, @$stateParams, @$scope, @WebEditorService, @LegalNoticeService, @ValidationService, @ConfirmationDialogService, @ErrorService, @PopupService, @DataService) ->
 
     @communityId = @$stateParams.community_id
 
@@ -9,6 +9,7 @@ class LegalNoticeCreateController
     @notice = {}
 
     @initialize()
+    @DataService.focus('name')
 
   initialize: () ->
     @notice.name = @$stateParams.name
@@ -37,6 +38,7 @@ class LegalNoticeCreateController
         @ValidationService.pushAlert({type:'danger', msg:data.error_description})
       else
         @cancelCreateLegalNotice()
+        @PopupService.success('Legal notice created.')
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 

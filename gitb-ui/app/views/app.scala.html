@@ -32,6 +32,7 @@
 		<link rel="stylesheet" href='@routes.Assets.at("components/isteven-multi-select/isteven-multi-select.css")'>
 		<link rel="stylesheet" href='@routes.Assets.at("components/date-range-picker/daterangepicker.css")'>
 		<link rel="stylesheet" href='@routes.Assets.at("components/angular-bootstrap-toggle/angular-bootstrap-toggle.min.css")'>
+		<link rel="stylesheet" href='@routes.Assets.at("components/angular-growl-2/angular-growl.min.css")'>
 
 		<script src='@routes.Assets.at("components/modernizr.js")'></script>
 		<script src='@routes.Assets.at("components/FileSaver.min.js")'></script>
@@ -41,6 +42,7 @@
 	</head>
 
 	<body>
+		<div id="notification-container" growl></div>
 		<div class="app" ui-view></div>
 		<!-- WebJars -->
 		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("jquery.min.js"))'></script>
@@ -87,7 +89,6 @@
 		<script src='@routes.Assets.at("scripts/services/ConfirmationDialogService.js")?v=@config.versionNumber'></script>
 		<script src='@routes.Assets.at("scripts/services/HtmlService.js")?v=@config.versionNumber'></script>
 		<script src='@routes.Assets.at("scripts/services/PopupService.js")?v=@config.versionNumber'></script>
-		<script src='@routes.Assets.at("scripts/services/MessageService.js")?v=@config.versionNumber'></script>
 		<script src='@routes.Assets.at("scripts/services/RestService.js")?v=@config.versionNumber'></script>
 		<script src='@routes.Assets.at("scripts/services/WebSocketService.js")?v=@config.versionNumber'></script>
 		<script src='@routes.Assets.at("scripts/services/AccountService.js")?v=@config.versionNumber'></script>
@@ -184,7 +185,6 @@
         <script src='@routes.Assets.at("scripts/controllers/components/ConfirmationDialogController.js")?v=@config.versionNumber'></script>
         <script src='@routes.Assets.at("scripts/controllers/components/HtmlController.js")?v=@config.versionNumber'></script>
         <script src='@routes.Assets.at("scripts/controllers/components/PopupController.js")?v=@config.versionNumber'></script>
-        <script src='@routes.Assets.at("scripts/controllers/components/MessageController.js")?v=@config.versionNumber'></script>
 		<script src='@routes.Assets.at("scripts/controllers/components/LinkAccountModalController.js")?v=@config.versionNumber'></script>
 
 		<script src='@routes.Assets.at("scripts/directives/TableDirectives.js")?v=@config.versionNumber'></script>
@@ -209,6 +209,7 @@
 		<script src='@routes.Assets.at("components/date-range-picker/daterangepicker.js")'></script>
 		<script src='@routes.Assets.at("components/date-range-picker/angular-daterangepicker.min.js")'></script>
 		<script src='@routes.Assets.at("components/angular-bootstrap-toggle/angular-bootstrap-toggle.min.js")'></script>
+		<script src='@routes.Assets.at("components/angular-growl-2/angular-growl.min.js")'></script>
 		<script src='@routes.Assets.at("components/isteven-multi-select/isteven-multi-select.js")'></script>
 	</body>
 </html>

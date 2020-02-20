@@ -1,7 +1,7 @@
 class UserProfileController
 
-	@$inject = ['$log', '$scope', '$rootScope', '$location', 'DataService', 'AccountService', 'AuthService', 'ErrorService', 'Constants', 'Events', 'ConfirmationDialogService', '$cookies']
-	constructor: (@$log, @$scope, @$rootScope, @$location, @DataService, @AccountService, @AuthService, @ErrorService, @Constants, @Events, @ConfirmationDialogService, @$cookies) ->
+	@$inject = ['$log', '$scope', '$rootScope', '$location', 'DataService', 'AccountService', 'AuthService', 'ErrorService', 'Constants', 'Events', 'ConfirmationDialogService', '$cookies', 'PopupService']
+	constructor: (@$log, @$scope, @$rootScope, @$location, @DataService, @AccountService, @AuthService, @ErrorService, @Constants, @Events, @ConfirmationDialogService, @$cookies, @PopupService) ->
 
 		@$log.debug "Constructing UserProfileController..."
 
@@ -23,6 +23,7 @@ class UserProfileController
 				(data) => #success handler
 					@$cookies.put(@Constants.LOGIN_OPTION_COOKIE_KEY, @Constants.LOGIN_OPTION.FORCE_CHOICE)
 					@$rootScope.$emit(@Events.onLogout, {full: false, keepLoginOption: true})
+					@PopupService.success("Role removed from your account.")
 				,
 				(error) => #error handler
 					@ErrorService.showErrorMessage(error)
@@ -57,10 +58,10 @@ class UserProfileController
 			@AccountService.updateUserProfile(@$scope.data.name, null, null)
 			.then(
 				(data) => #success handler
-					@alerts.push({type:'success', msg:"Your name has been updated."})
 					@ds.user.name = @$scope.data.name #update real value
 					@spinner = false #stop spinner
 					@cancelEdit()    #cancel edit mode
+					@PopupService.success("Your name has been updated.")
 				,
 				(error) => #error handler
 					@ErrorService.showErrorMessage(error)

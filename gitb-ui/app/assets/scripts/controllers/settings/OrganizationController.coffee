@@ -1,7 +1,7 @@
 class OrganizationController
 
-    @$inject = ['$log', '$scope', '$location', '$uibModal', 'DataService', 'AccountService', 'AuthService', 'ErrorService', 'Constants', 'UserService', 'ConfirmationDialogService', 'OrganizationService', '$stateParams']
-    constructor: (@$log, @$scope, @$location, @$uibModal, @DataService, @AccountService, @AuthService, @ErrorService, @Constants, @UserService, @ConfirmationDialogService, @OrganizationService, @$stateParams) ->
+    @$inject = ['$log', '$scope', '$location', '$uibModal', 'DataService', 'AccountService', 'AuthService', 'ErrorService', 'Constants', 'UserService', 'ConfirmationDialogService', 'OrganizationService', '$stateParams', 'PopupService']
+    constructor: (@$log, @$scope, @$location, @$uibModal, @DataService, @AccountService, @AuthService, @ErrorService, @Constants, @UserService, @ConfirmationDialogService, @OrganizationService, @$stateParams, @PopupService) ->
         @$log.debug 'Constructing OrganizationController'
 
         @ds = @DataService #shorten service name
@@ -64,6 +64,7 @@ class OrganizationController
                     @ErrorService.showErrorMessage(data.error_description)
                 else
                     @getVendorUsers() #get users list again
+                    @PopupService.success('User deleted.')
                 @memberSpinner = false # stop spinner        
             .catch (error) =>
                 @ErrorService.showErrorMessage(error)
@@ -117,13 +118,13 @@ class OrganizationController
             @AccountService.updateVendorProfile(@$scope.vdata.fname, @$scope.vdata.sname, @propertyData.edit, @propertyData.properties) #call service op.
             .then(
                 (data) => #success handler
-                    @alerts.push({type:'success', msg:@DataService.labelOrganisation()+" information updated."})
                     @ds.user.organization.fname = @$scope.vdata.fname
                     @ds.user.organization.sname = @$scope.vdata.sname
                     @ds.vendor.fname = @$scope.vdata.fname
                     @ds.vendor.sname = @$scope.vdata.sname
                     #stop spinner
                     @organizationSpinner = false
+                    @PopupService.success(@DataService.labelOrganisation()+" information updated.")
                 ,
                 (error) => #error handler
                     @ErrorService.showErrorMessage(error)
@@ -181,6 +182,7 @@ class OrganizationController
             (data) => #success handler
                 @getVendorUsers() #get users list again
                 @memberSpinner = false # stop spinner
+                @PopupService.success("User created.")
             ,
             (error) => #error handler
                 @ErrorService.showErrorMessage(error)

@@ -181,7 +181,7 @@
         if property.changeValue
           property.value = ''
           property.showValue = false
-          document.querySelector('#prop-'+property.id).focus()
+          @DataService.focus('prop-'+property.id)
         else
           if property.configured
             property.value = '*****'

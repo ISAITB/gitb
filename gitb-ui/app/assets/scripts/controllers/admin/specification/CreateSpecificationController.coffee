@@ -1,10 +1,10 @@
 class CreateSpecificationController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', '$state', '$stateParams', 'ErrorService', 'DataService']
-	constructor: (@$log, @$scope, @ConformanceService, @$state, @$stateParams, @ErrorService, @DataService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', '$state', '$stateParams', 'ErrorService', 'DataService', 'PopupService']
+	constructor: (@$log, @$scope, @ConformanceService, @$state, @$stateParams, @ErrorService, @DataService, @PopupService) ->
 		@$log.debug "Constructing CreateSpecificationController"
-
 		@specification = {}
+		@DataService.focus('shortName')
 
 	saveDisabled: () =>
 		!(@specification?.sname? and @specification?.fname?)
@@ -15,6 +15,7 @@ class CreateSpecificationController
 			@ConformanceService.createSpecification @specification.sname, @specification.fname, @specification.urls, @specification.diagram, @specification.description, @specification.spec_type, @specification.hidden, domainId
 			.then () =>
 				@$state.go 'app.admin.domains.detail.list'
+				@PopupService.success(@DataService.labelSpecification()+' created.')
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 

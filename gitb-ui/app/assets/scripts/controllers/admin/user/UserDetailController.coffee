@@ -1,7 +1,7 @@
 class UserDetailController
 
-  @$inject = ['$log', '$state', '$stateParams', 'ValidationService', 'UserManagementService', 'ConfirmationDialogService', 'UserService', 'Constants', 'ErrorService', 'DataService', 'AuthService', '$q']
-  constructor: (@$log, @$state, @$stateParams,  @ValidationService, @UserManagementService, @ConfirmationDialogService, @UserService, @Constants, @ErrorService, @DataService, @AuthService, @$q) ->
+  @$inject = ['$log', '$state', '$stateParams', 'ValidationService', 'UserManagementService', 'ConfirmationDialogService', 'UserService', 'Constants', 'ErrorService', 'DataService', 'AuthService', '$q', 'PopupService']
+  constructor: (@$log, @$state, @$stateParams,  @ValidationService, @UserManagementService, @ConfirmationDialogService, @UserService, @Constants, @ErrorService, @DataService, @AuthService, @$q, @PopupService) ->
 
     @orgId = @$stateParams.org_id
     @userId = @$stateParams.user_id
@@ -59,6 +59,7 @@ class UserDetailController
         .then (data) =>
           if (!data)
             @cancelDetailUser()
+            @PopupService.success('User updated.')
           else
             @ValidationService.pushAlert({type:'danger', msg:data.error_description})
         .catch (error) =>
@@ -74,6 +75,7 @@ class UserDetailController
       .then (data) =>
         if (!data)
           @cancelDetailUser()
+          @PopupService.success('User deleted.')
         else
           @ValidationService.pushAlert({type:'danger', msg:data.error_description})
           @alerts = @ValidationService.getAlerts()

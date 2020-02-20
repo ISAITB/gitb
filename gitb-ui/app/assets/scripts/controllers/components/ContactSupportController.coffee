@@ -1,7 +1,7 @@
 class ContactSupportController
 
-    @$inject = ['$scope', '$uibModalInstance', 'WebEditorService', '$timeout', 'DataService', 'AccountService', 'ErrorService', 'ValidationService']
-    constructor: (@$scope, @$uibModalInstance, @WebEditorService, @$timeout, @DataService, @AccountService, @ErrorService, @ValidationService) ->
+    @$inject = ['$scope', '$uibModalInstance', 'WebEditorService', '$timeout', 'DataService', 'AccountService', 'ErrorService', 'ValidationService', 'PopupService']
+    constructor: (@$scope, @$uibModalInstance, @WebEditorService, @$timeout, @DataService, @AccountService, @ErrorService, @ValidationService, @PopupService) ->
         @$uibModalInstance.opened.then(
             @$timeout(() =>
                 tinymce.remove('.mce-editor-contact')
@@ -9,10 +9,12 @@ class ContactSupportController
                 @editorReady = true
             , 1)
         )
-        @contactAddress = @DataService.user.email
+        if @DataService.user?
+            @contactAddress = @DataService.user.email
         @surveyAddress = @DataService.configuration?["survey.address"]
         @attachments = []
         @feedbackTypes = [
+            {id: undefined, description: "--Select one--"},
             {id: 0, description: "Technical issue"},
             {id: 1, description: "Feature request"},
             {id: 2, description: "Question on usage"},
@@ -60,7 +62,6 @@ class ContactSupportController
         valid
 
     send: () =>
-        @clearSuccess()
         @ValidationService.clearAll()
         if (!@sendDisabled() & 
             @ValidationService.validateEmail(@contactAddress, "Please enter a valid email address.") &
@@ -69,15 +70,15 @@ class ContactSupportController
             @validateAttachments()
         ) 
             @sendPending = true
-            @AccountService.submitFeedback(@contactAddress, @feedback.id, @feedback.description, @getRichTextEditor().getContent(), @attachments)
+            @AccountService.submitFeedback(@contactAddress, feedbackId, @feedback.description, @getRichTextEditor().getContent(), @attachments)
             .then (data) =>
                 if (data? && data.error_code?)
                     @ValidationService.alerts.push({type:'danger', msg:data.error_description})
                     @sendPending = false
                     @alerts = @ValidationService.getAlerts()
                 else
-                    @successMessage = "Your feedback was submitted successfully."
-                    @resetState()                
+                    @cancel()                
+                    @PopupService.success("Your feedback was submitted successfully.")
             .catch (error) =>
                 @sendPending = false
                 @ErrorService.showErrorMessage(error)
@@ -90,9 +91,6 @@ class ContactSupportController
     closeAlert: (index) =>
         @ValidationService.clearAlert(index)
         @alerts = @ValidationService.getAlerts()
-
-    clearSuccess: () =>
-        @successMessage = undefined
 
     attachFile: (files) =>
         file = _.head files

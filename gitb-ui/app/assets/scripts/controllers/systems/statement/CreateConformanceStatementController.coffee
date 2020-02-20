@@ -1,7 +1,7 @@
 class CreateConformanceStatementController
 
-  @$inject = ['$log', '$location', '$q', '$window', '$scope', '$state', '$stateParams', 'ConformanceService', 'SystemService', 'ErrorService', 'DataService']
-  constructor:(@$log, @$location, @$q, @$window, @$scope, @$state, @$stateParams, @ConformanceService, @SystemService, @ErrorService, @DataService) ->
+  @$inject = ['$log', '$location', '$q', '$window', '$scope', '$state', '$stateParams', 'ConformanceService', 'SystemService', 'ErrorService', 'DataService', 'PopupService']
+  constructor:(@$log, @$location, @$q, @$window, @$scope, @$state, @$stateParams, @ConformanceService, @SystemService, @ErrorService, @DataService, @PopupService) ->
     @$log.debug "Constructing CreateConformanceStatementController"
 
     @alerts = []
@@ -82,6 +82,7 @@ class CreateConformanceStatementController
         @ErrorService.showErrorMessage(error)
       else
         @$state.go "app.systems.detail.conformance.list", {id: @systemId}
+        @PopupService.success("Conformance statement created.")
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 

@@ -1,11 +1,12 @@
 class CreateEndpointController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', '$state', '$stateParams', 'ErrorService', 'DataService']
-	constructor: (@$log, @$scope, @ConformanceService, @$state, @$stateParams, @ErrorService, @DataService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', '$state', '$stateParams', 'ErrorService', 'DataService', 'PopupService']
+	constructor: (@$log, @$scope, @ConformanceService, @$state, @$stateParams, @ErrorService, @DataService, @PopupService) ->
 		@domainId = @$stateParams.id
 		@specificationId = @$stateParams.spec_id
 		@actorId = @$stateParams.actor_id
 		@endpoint = {}
+		@DataService.focus('name')
 
 	saveDisabled: () =>
 		!(@endpoint.name?.length > 0)
@@ -15,6 +16,7 @@ class CreateEndpointController
 			@ConformanceService.createEndpoint @endpoint.name, @endpoint.description, @actorId
 				.then () =>
 					@$state.go 'app.admin.domains.detail.specifications.detail.actors.detail.list', {id: @domainId, spec_id: @specificationId, actor_id: @actorId}
+					@PopupService.success(@DataService.labelEndpoint()+' created.')
 				.catch (error) =>
 					@ErrorService.showErrorMessage(error)
 

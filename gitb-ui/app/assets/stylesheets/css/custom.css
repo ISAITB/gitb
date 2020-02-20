@@ -182,3 +182,13 @@ div.execution {
 	margin: 0 auto;
 	float: none; 
 }
+
+#notification-container > .growl-container {
+	top: 74px;
+    right: 10px;	
+}
+
+#notification-container >.growl-container > .growl-item {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}

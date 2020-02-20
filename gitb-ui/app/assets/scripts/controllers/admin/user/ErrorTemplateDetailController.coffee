@@ -1,7 +1,7 @@
 class ErrorTemplateDetailController
 
-  @$inject = ['$log', '$state', '$stateParams', 'WebEditorService', 'ValidationService', 'ErrorTemplateService', 'ConfirmationDialogService', 'ErrorService']
-  constructor: (@$log, @$state, @$stateParams, @WebEditorService, @ValidationService, @ErrorTemplateService, @ConfirmationDialogService, @ErrorService) ->
+  @$inject = ['$log', '$state', '$stateParams', 'WebEditorService', 'ValidationService', 'ErrorTemplateService', 'ConfirmationDialogService', 'ErrorService', 'PopupService']
+  constructor: (@$log, @$state, @$stateParams, @WebEditorService, @ValidationService, @ErrorTemplateService, @ConfirmationDialogService, @ErrorService, @PopupService) ->
 
     @communityId = @$stateParams.community_id
     @templateId = @$stateParams.template_id
@@ -41,6 +41,7 @@ class ErrorTemplateDetailController
           @copyErrorTemplate()
         else
           @cancelDetailErrorTemplate()
+          @PopupService.success('Error template updated.')
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -56,6 +57,7 @@ class ErrorTemplateDetailController
       @ErrorTemplateService.deleteErrorTemplate(@templateId)
       .then () =>
         @cancelDetailErrorTemplate()
+        @PopupService.success('Error template deleted.')
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
 
