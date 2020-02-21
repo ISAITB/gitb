@@ -4,22 +4,11 @@
             <h4 class="title">Filters</h4>
             <div class="btn-toolbar pull-right">
                 <button class="btn btn-default" ng-click="dashboardCtrl.refresh()" ng-disabled="dashboardCtrl.refreshActivePending || dashboardCtrl.refreshCompletedPending || dashboardCtrl.refreshCompletedCountPending"><span class="tab" ng-if="dashboardCtrl.refreshActivePending || dashboardCtrl.refreshCompletedPending || dashboardCtrl.refreshCompletedCountPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Refresh</button>
-                <div class="btn-group btn-toggle">
-                    <button ng-disabled="dashboardCtrl.showFilters"
-                            ng-class="{true: 'btn btn-primary active', false : 'btn btn-default'}[dashboardCtrl.showFilters]"
-                            ng-click="dashboardCtrl.showFilter()">
-                        APPLY
-                    </button>
-                    <button ng-disabled="!dashboardCtrl.showFilters"
-                            ng-class="{true: 'btn btn-default', false : 'btn btn-primary active'}[dashboardCtrl.showFilters]"
-                            ng-click="dashboardCtrl.clearFilter()">
-                        CLEAR
-                    </button>
-                </div>
+                <toggle id="dashboard-toggle-filter" class="btn-group" ng-model="dashboardCtrl.showFilters" on="Enabled" off="Disabled" ng-change="dashboardCtrl.DataService.async(dashboardCtrl.showFilters?dashboardCtrl.showFilter:dashboardCtrl.clearFilter)"/>
             </div>
         </div>
-        <div class="table-responsive">
-            <table class="table" ng-if="dashboardCtrl.showFilters">
+        <div class="table-responsive" uib-collapse="!dashboardCtrl.showFilters">
+            <table class="table">
                 <thead>
                 <tr>
                     <th class="col-md-1" ng-if="dashboardCtrl.DataService.isSystemAdmin || (dashboardCtrl.DataService.isCommunityAdmin && dashboardCtrl.DataService.community.domain === null)">{{dashboardCtrl.DataService.labelDomain()}}</th>
@@ -158,27 +147,21 @@
     <div class="panel panel-default" ng-if="dashboardCtrl.DataService.isSystemAdmin">
         <div class="panel-heading">
             <h4 class="title">Automatically terminate idle sessions</h4>
-            <div class="btn-group btn-toggle pull-right">
-                <button ng-disabled="!dashboardCtrl.onOff"
-                        ng-class="{true: 'btn btn-primary active', false : 'btn btn-default'}[!dashboardCtrl.onOff]"
-                        ng-click="dashboardCtrl.onOff ? (dashboardCtrl.onOff = !dashboardCtrl.onOff) : ''">ON
-                </button>
-                <button ng-disabled="dashboardCtrl.onOff"
-                        ng-class="{true: 'btn btn-default', false : 'btn btn-primary active'}[!dashboardCtrl.onOff]"
-                        ng-click="!dashboardCtrl.onOff ? (dashboardCtrl.onOff = !dashboardCtrl.onOff) : ''; dashboardCtrl.turnOff()">
-                    OFF
-                </button>
+            <div class="btn-group pull-right">
+                <toggle id="dashboard-toggle-ttl" class="btn-group" ng-model="dashboardCtrl.ttlEnabled" on="Enabled" off="Disabled" ng-change="dashboardCtrl.ttlEnabled?dashboardCtrl.DataService.focus('parameter'):dashboardCtrl.turnOff()"/>
             </div>
         </div>
         <!-- configuration form -->
-        <form ng-if="!dashboardCtrl.onOff" class="form-inline" ng-submit="dashboardCtrl.apply()">
-            <div class="form-group">
-                <input type="number" min="1" ng-model="dashboardCtrl.config.parameter" class="form-control"
-                       id="parameter" placeholder="Seconds">
-            </div>
-            <button type="submit" class="btn btn-default"
-                    ng-disabled="dashboardCtrl.prevParameter == dashboardCtrl.config.parameter">Apply
-            </button>
-        </form>
+        <div uib-collapse="!dashboardCtrl.ttlEnabled">
+            <form class="form-inline" ng-submit="dashboardCtrl.apply()">
+                <div class="form-group">
+                    <input type="number" min="1" ng-model="dashboardCtrl.config.parameter" class="form-control"
+                           id="parameter" placeholder="Seconds">
+                </div>
+                <button type="submit" class="btn btn-default"
+                        ng-disabled="dashboardCtrl.prevParameter == dashboardCtrl.config.parameter">Apply
+                </button>
+            </form>
+        </div>
     </div>
 </div>

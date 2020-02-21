@@ -99,7 +99,7 @@ class DashboardController
     @action = false
     @stop = false
     @config = {}
-    @onOff = false
+    @ttlEnabled = false
     @prevParameter = null
     @showFilters = false
 
@@ -169,7 +169,7 @@ class DashboardController
         @config = data
         @config.parameter = parseInt(@config.parameter, 10)
         @prevParameter = @config.parameter
-        @onOff = !(data.parameter? && !isNaN(data.parameter))
+        @ttlEnabled = (data.parameter? && !isNaN(data.parameter))
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
 
@@ -460,8 +460,6 @@ class DashboardController
 
   showFilter: () =>
     @showFilters = true
-    @goFirstPage()
-    @getActiveTests()
 
   clearFilter: () =>
     @showFilters = false
@@ -693,12 +691,14 @@ class DashboardController
       @isPreviousPageDisabled = false
 
   turnOff: () =>
-    @SystemConfigurationService.updateSessionAliveTime()
-    .then (data) =>
-      @prevParameter = NaN
-      @config.parameter = NaN
-    .catch (error) =>
-      @ErrorService.showErrorMessage(error)
+    if @config.parameter? && !isNaN(@config.parameter)
+      @SystemConfigurationService.updateSessionAliveTime()
+      .then (data) =>
+        @prevParameter = NaN
+        @config.parameter = NaN
+        @PopupService.success("Automatic session termination disabled.")
+      .catch (error) =>
+        @ErrorService.showErrorMessage(error)
 
   apply: () =>
     if @config.parameter? && !isNaN(@config.parameter)
@@ -710,7 +710,7 @@ class DashboardController
         @ErrorService.showErrorMessage(error)
     else
       @turnOff()
-      @onOff = true
+      @ttlEnabled = false
 
   testSelect: (test) =>
     if @action

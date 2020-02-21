@@ -416,4 +416,9 @@ class DataService
 				document.querySelector(inputId)?.focus()
 			, 1)
 
+	async: (fn) =>
+		@$timeout(() =>
+			fn()
+		, 1)
+
 services.service('DataService', DataService)

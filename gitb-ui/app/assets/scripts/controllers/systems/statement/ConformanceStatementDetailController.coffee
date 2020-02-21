@@ -15,7 +15,7 @@ class ConformanceStatementDetailController
     @configurations = []
     @testSuites = []
     @runTestClicked = false
-    @endpointsCollapsed = @$stateParams['editEndpoints'] == undefined || !@$stateParams['editEndpoints']
+    @endpointsExpanded = @$stateParams['editEndpoints']? && @$stateParams['editEndpoints']
     @testStatus = ''
     @backgroundMode = false
 
@@ -280,8 +280,5 @@ class ConformanceStatementDetailController
         @ErrorService.showErrorMessage(error)
         @exportPending = false
     )
-
-  toggleEndpointDisplay: () =>
-    @endpointsCollapsed = !@endpointsCollapsed
 
 @controllers.controller 'ConformanceStatementDetailController', ConformanceStatementDetailController

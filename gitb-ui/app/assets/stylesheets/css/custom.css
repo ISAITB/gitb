@@ -178,11 +178,6 @@ div.execution {
 	border: 1px solid #e5e5e5;
 }
 
-#conformance-toggle > div.toggle > div.toggle-group > .btn {
-	margin: 0 auto;
-	float: none; 
-}
-
 #notification-container > .growl-container {
 	top: 74px;
     right: 10px;	
