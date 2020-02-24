@@ -163,15 +163,28 @@
       if scope.selfRegOptions == undefined
         CommunityService.getSelfRegistrationOptions()
         .then((data) =>
-          if data.length == 1
-              scope.model.selfRegOption = data[0]
           scope.selfRegOptions = data
+          if data.length == 1
+            scope.model.selfRegOption = data[0]
+            scope.DataService.setupLabels(scope.model.selfRegOption.labels)
+            scope.setFormFocus()
+          else
+            scope.DataService.focus('community')
         )
       else
         if scope.selfRegOptions.length == 1
-            scope.model.selfRegOption = scope.selfRegOptions[0]
+          scope.model.selfRegOption = scope.selfRegOptions[0]
+          scope.DataService.setupLabels(scope.model.selfRegOption.labels)
+          scope.setFormFocus()
       
       scope.communityChanged = () =>
         if scope.model?.selfRegOption?
           scope.DataService.setupLabels(scope.model.selfRegOption.labels)
+          scope.setFormFocus()
+      scope.setFormFocus = () =>
+        if scope.model?.selfRegOption?
+          if scope.model.selfRegOption.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN
+            scope.DataService.focus('token')
+          else 
+            scope.DataService.focus('orgShortName')
 ]
