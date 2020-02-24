@@ -13,6 +13,8 @@ class UserProfileController
 		@$scope.data.name  = @ds.user.name
 		@$scope.data.email = @ds.user.email
 		@$scope.data.role = @Constants.USER_ROLE_LABEL[@ds.user.role]
+		if !@DataService.configuration['sso.enabled']
+			@DataService.focus('name')
 
 	disconnect: () ->
 		@ConfirmationDialogService.confirm("Confirmation", "Removing this role from your account will also end your current session. Are you sure you want to proceed?", "Yes", "No")

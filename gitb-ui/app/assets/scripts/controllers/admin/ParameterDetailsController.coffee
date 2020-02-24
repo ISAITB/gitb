@@ -1,7 +1,7 @@
 class ParameterDetailsController
 
-	@$inject = ['$log', '$scope', '$uibModalInstance', 'parameter', 'ConfirmationDialogService', 'options', 'ErrorService', 'Constants']
-	constructor: (@$log, @$scope, @$uibModalInstance, parameter, @ConfirmationDialogService, options, @ErrorService, @Constants) ->
+	@$inject = ['$log', '$scope', '$uibModalInstance', 'parameter', 'ConfirmationDialogService', 'options', 'ErrorService', 'Constants', 'DataService']
+	constructor: (@$log, @$scope, @$uibModalInstance, parameter, @ConfirmationDialogService, options, @ErrorService, @Constants, @DataService) ->
 		@$log.debug "Constructing ParameterDetailsController"
 		@$scope.parameter = _.cloneDeep parameter
 
@@ -12,6 +12,7 @@ class ParameterDetailsController
 		@$scope.existingValues = options.existingValues
 		@$scope.reservedKeys = options.reservedKeys
 		@$scope.hideInExport = options.hideInExport? && options.hideInExport
+		@$uibModalInstance.rendered.then () => @DataService.focus('name')
 
 		@$scope.saveDisabled= () =>
 			!(@$scope.parameter.name?.length > 0 && @$scope.parameter.kind?.length > 0 && (!@$scope.hasKey || @$scope.parameter.key?.length > 0))

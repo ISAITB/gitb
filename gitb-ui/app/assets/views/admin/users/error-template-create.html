@@ -3,14 +3,14 @@
         <div class="panel-heading">
             <h4 class="title">Create error template</h4>
         </div>
-        <div class="panel-body">
-            <!-- Error messages -->
-            <div class="row col-md-10 col-md-offset-1">
-                <div uib-alert ng-repeat="alert in errorTemplateCreateCtrl.alerts" ng-class="'alert-' + alert.type" close="errorTemplateCreateCtrl.closeAlert($index)">{{alert.msg}}</div>
-            </div>
-            <!-- error template form -->
-            <div class="row col-md-10 col-md-offset-1">
-                <form class="form-horizontal">
+        <form class="form-horizontal">
+            <div class="panel-body">
+                <!-- Error messages -->
+                <div class="row col-md-10 col-md-offset-1">
+                    <div uib-alert ng-repeat="alert in errorTemplateCreateCtrl.alerts" ng-class="'alert-' + alert.type" close="errorTemplateCreateCtrl.closeAlert($index)">{{alert.msg}}</div>
+                </div>
+                <!-- error template form -->
+                <div class="row col-md-10 col-md-offset-1">
                     <div class="form-group">
                         <label class="col-sm-3 control-label" for="name">* Name:</label>
                         <div class="col-sm-8"><input id="name" ng-model="errorTemplateCreateCtrl.template.name" class="form-control" type="text" required></div>
@@ -23,19 +23,19 @@
                         <label class="col-sm-3 control-label" for="default">Default:</label>
                         <div class="col-sm-8"><input id="default" ng-model="errorTemplateCreateCtrl.template.default" type="checkbox" class="form-check"></div>
                     </div>
-                </form>
-            </div>
-        </div>
-        <div class="panel-footer">
-            <div class="row">
-                <div class="col-md-3"></div>
-                <div class="col-md-8 btn-toolbar">
-                    <button class="btn btn-default" type="button" ng-click="errorTemplateCreateCtrl.preview()" ng-disabled="errorTemplateCreateCtrl.saveDisabled()">Preview</button>
-                    <button class="btn btn-default" type="button" ng-click="errorTemplateCreateCtrl.createErrorTemplate()" ng-disabled="errorTemplateCreateCtrl.saveDisabled()">Save</button>
-                    <button class="btn btn-default" type="button" ng-click="errorTemplateCreateCtrl.cancelCreateErrorTemplate()">Cancel</button>
                 </div>
             </div>
-        </div>        
+            <div class="panel-footer">
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-8 btn-toolbar">
+                        <button class="btn btn-default" type="button" ng-click="errorTemplateCreateCtrl.preview()" ng-disabled="errorTemplateCreateCtrl.saveDisabled()">Preview</button>
+                        <button class="btn btn-default" type="submit" ng-click="errorTemplateCreateCtrl.createErrorTemplate()" ng-disabled="errorTemplateCreateCtrl.saveDisabled()">Save</button>
+                        <button class="btn btn-default" type="button" ng-click="errorTemplateCreateCtrl.cancelCreateErrorTemplate()">Cancel</button>
+                    </div>
+                </div>
+            </div>        
+        </form>
     </div>
     <div error-template-editor></div>
 </div>

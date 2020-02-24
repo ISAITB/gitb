@@ -3,29 +3,31 @@
         <div class="panel-heading">
             <h4 class="title">Community details</h4>
         </div>
-        <div class="panel-body">
-            <!-- Error messages -->
-            <div class="row col-md-10 col-md-offset-1">
-                <div uib-alert ng-repeat="alert in communityDetailCtrl.alerts" ng-class="'alert-' + alert.type" close="communityDetailCtrl.closeAlert($index)">{{alert.msg}}</div>
+        <form class="form-horizontal">
+            <div class="panel-body">
+                <!-- Error messages -->
+                <div class="row col-md-10 col-md-offset-1">
+                    <div uib-alert ng-repeat="alert in communityDetailCtrl.alerts" ng-class="'alert-' + alert.type" close="communityDetailCtrl.closeAlert($index)">{{alert.msg}}</div>
+                </div>
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1" tb-community-form tb-community="communityDetailCtrl.community" tb-domains="communityDetailCtrl.domains" tb-admin="communityDetailCtrl.DataService.isSystemAdmin"></div>
+                </div>
             </div>
-            <div class="row">
-                <div class="col-md-10 col-md-offset-1" tb-community-form tb-community="communityDetailCtrl.community" tb-domains="communityDetailCtrl.domains" tb-admin="communityDetailCtrl.DataService.isSystemAdmin"></div>
-            </div>
-        </div>
-        <div class="panel-footer">
-            <div class="row">
-                <div class="col-lg-offset-2 col-xs-12">
-                    <div class="btn-toolbar">
-                        <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.updateCommunity()" ng-disabled="communityDetailCtrl.saveDisabled()">Save changes</button>
-                        <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.updateConformanceCertificateSettings()">Edit conformance certificate settings</button>
-                        <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.updateParameters()">Edit custom member properties</button>
-                        <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.editLabels()">Edit labels</button>
-                        <button class="btn btn-default" type="button" ng-if="communityDetailCtrl.DataService.isSystemAdmin && !communityDetailCtrl.isDefaultCommunity()" ng-click="communityDetailCtrl.deleteCommunity()">Delete</button>
-                        <button class="btn btn-default" type="button" ng-if="communityDetailCtrl.DataService.isSystemAdmin" ng-click="communityDetailCtrl.cancelCommunityDetail()">Back</button>
+            <div class="panel-footer">
+                <div class="row">
+                    <div class="col-lg-offset-2 col-xs-12">
+                        <div class="btn-toolbar">
+                            <button class="btn btn-default" type="submit" ng-click="communityDetailCtrl.updateCommunity()" ng-disabled="communityDetailCtrl.saveDisabled()">Save changes</button>
+                            <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.updateConformanceCertificateSettings()">Edit conformance certificate settings</button>
+                            <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.updateParameters()">Edit custom member properties</button>
+                            <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.editLabels()">Edit labels</button>
+                            <button class="btn btn-default" type="button" ng-if="communityDetailCtrl.DataService.isSystemAdmin && !communityDetailCtrl.isDefaultCommunity()" ng-click="communityDetailCtrl.deleteCommunity()">Delete</button>
+                            <button class="btn btn-default" type="button" ng-if="communityDetailCtrl.DataService.isSystemAdmin" ng-click="communityDetailCtrl.cancelCommunityDetail()">Back</button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
     <!-- Administrators -->
     <div class="panel panel-default" ng-if="communityDetailCtrl.communityId != communityDetailCtrl.Constants.DEFAULT_COMMUNITY_ID">

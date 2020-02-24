@@ -1,9 +1,9 @@
 <div class="clearfix modal-header">
 	<h5 class="pull-left" ng-if="isNameVisible">{{documentName}}</h5>
 	<div class="btn-toolbar">
-		<button class="pull-right btn btn-default" ng-click="close()">Close</button>
-		<button class="pull-right btn btn-default" ng-click="download()" ng-if="isDownloadVisible">Download</button>
-		<button class="pull-right btn btn-default" ng-click="copyToClipboard()">Copy to clipboard</button>
+		<button type="button" class="pull-right btn btn-default" ng-click="close()">Close</button>
+		<button type="button" class="pull-right btn btn-default" ng-click="download()" ng-if="isDownloadVisible">Download</button>
+		<button type="button" class="pull-right btn btn-default" ng-click="copyToClipboard()">Copy to clipboard</button>
 	</div>
 </div>
 <div class="modal-body">

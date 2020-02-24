@@ -3,14 +3,14 @@
         <div class="panel-heading">
             <h4 class="title">Legal notice details</h4>
         </div>
-        <div class="panel-body">
-            <!-- Error messages -->
-            <div class="row col-md-10 col-md-offset-1">
-                <div uib-alert ng-repeat="alert in legalNoticeDetailCtrl.alerts" ng-class="'alert-' + alert.type" close="legalNoticeDetailCtrl.closeAlert($index)">{{alert.msg}}</div>
-            </div>
-            <!-- legal notice form -->
-            <div class="row col-md-10 col-md-offset-1">
-                <form class="form-horizontal">
+        <form class="form-horizontal">
+            <div class="panel-body">
+                <!-- Error messages -->
+                <div class="row col-md-10 col-md-offset-1">
+                    <div uib-alert ng-repeat="alert in legalNoticeDetailCtrl.alerts" ng-class="'alert-' + alert.type" close="legalNoticeDetailCtrl.closeAlert($index)">{{alert.msg}}</div>
+                </div>
+                <!-- legal notice form -->
+                <div class="row col-md-10 col-md-offset-1">
                     <div class="form-group">
                         <label class="col-sm-3 control-label" for="name">* Name:</label>
                         <div class="col-sm-8"><input id="name" ng-model="legalNoticeDetailCtrl.notice.name" class="form-control" type="text" required></div>
@@ -23,20 +23,20 @@
                         <label class="col-sm-3 control-label" for="default">Default:</label>
                         <div class="col-sm-8"><input id="default" ng-model="legalNoticeDetailCtrl.notice.default" ng-disabled="legalNoticeDetailCtrl.isDefault" type="checkbox" class="form-check"></div>
                     </div>
-                </form>
-            </div>
-        </div>
-        <div class="panel-footer">
-            <div class="row">
-                <div class="col-md-3"></div>
-                <div class="col-md-8 btn-toolbar">
-                    <button class="btn btn-default" type="button" ng-click="legalNoticeDetailCtrl.updateLegalNotice(false)" ng-disabled="legalNoticeDetailCtrl.saveDisabled()">Update</button>
-                    <button class="btn btn-default" type="button" ng-click="legalNoticeDetailCtrl.updateLegalNotice(true)">Copy</button>
-                    <button class="btn btn-default" type="button" ng-click="legalNoticeDetailCtrl.deleteLegalNotice()">Delete</button>
-                    <button class="btn btn-default" type="button" ng-click="legalNoticeDetailCtrl.cancelDetailLegalNotice()">Back</button>
                 </div>
             </div>
-        </div>        
+            <div class="panel-footer">
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-8 btn-toolbar">
+                        <button class="btn btn-default" type="submit" ng-click="legalNoticeDetailCtrl.updateLegalNotice(false)" ng-disabled="legalNoticeDetailCtrl.saveDisabled()">Update</button>
+                        <button class="btn btn-default" type="button" ng-click="legalNoticeDetailCtrl.updateLegalNotice(true)">Copy</button>
+                        <button class="btn btn-default" type="button" ng-click="legalNoticeDetailCtrl.deleteLegalNotice()">Delete</button>
+                        <button class="btn btn-default" type="button" ng-click="legalNoticeDetailCtrl.cancelDetailLegalNotice()">Back</button>
+                    </div>
+                </div>
+            </div>
+        </form>
     </div>
     <div class="panel panel-default">
         <textarea class="mce-editor">

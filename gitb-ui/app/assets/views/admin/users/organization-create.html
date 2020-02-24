@@ -3,25 +3,27 @@
         <div class="panel-heading">
             <h4 class="title">Create {{orgCreateCtrl.DataService.labelOrganisationLower()}}</h4>
         </div>
-        <div class="panel-body">
-            <!-- Error messages -->
-            <div class="row col-md-10 col-md-offset-1">
-                <div uib-alert ng-repeat="alert in orgCreateCtrl.alerts" ng-class="'alert-' + alert.type" close="orgCreateCtrl.closeAlert($index)">{{alert.msg}}</div>
+        <form class="form-horizontal">
+            <div class="panel-body">
+                <!-- Error messages -->
+                <div class="row col-md-10 col-md-offset-1">
+                    <div uib-alert ng-repeat="alert in orgCreateCtrl.alerts" ng-class="'alert-' + alert.type" close="orgCreateCtrl.closeAlert($index)">{{alert.msg}}</div>
+                </div>
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1" tb-organization-form tb-organization="orgCreateCtrl.organization" tb-landing-pages="orgCreateCtrl.landingPages" tb-legal-notices="orgCreateCtrl.legalNotices" tb-error-templates="orgCreateCtrl.errorTemplates" tb-other-organisations="orgCreateCtrl.otherOrganisations" tb-copy-changed="orgCreateCtrl.copyChanged"></div>
+                </div>
+                <div ng-if="!orgCreateCtrl.organization.copyOrganisationParameters" tb-optional-custom-properties-form tb-property-data="orgCreateCtrl.propertyData">
+                </div>            
             </div>
-            <div class="row">
-                <div class="col-md-10 col-md-offset-1" tb-organization-form tb-organization="orgCreateCtrl.organization" tb-landing-pages="orgCreateCtrl.landingPages" tb-legal-notices="orgCreateCtrl.legalNotices" tb-error-templates="orgCreateCtrl.errorTemplates" tb-other-organisations="orgCreateCtrl.otherOrganisations" tb-copy-changed="orgCreateCtrl.copyChanged"></div>
-            </div>
-            <div ng-if="!orgCreateCtrl.organization.copyOrganisationParameters" tb-optional-custom-properties-form tb-property-data="orgCreateCtrl.propertyData">
-            </div>            
-        </div>
-        <div class="panel-footer">
-            <div class="row">
-                <div class="col-md-3"></div>
-                <div class="col-md-8 btn-toolbar">
-                    <button class="btn btn-default" type="button" ng-click="orgCreateCtrl.createOrganization()" ng-disabled="orgCreateCtrl.saveDisabled()">Save</button>
-                    <button class="btn btn-default" type="button" ng-click="orgCreateCtrl.cancelCreateOrganization()">Cancel</button>
+            <div class="panel-footer">
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-8 btn-toolbar">
+                        <button class="btn btn-default" type="submit" ng-click="orgCreateCtrl.createOrganization()" ng-disabled="orgCreateCtrl.saveDisabled()">Save</button>
+                        <button class="btn btn-default" type="button" ng-click="orgCreateCtrl.cancelCreateOrganization()">Cancel</button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
 </div>

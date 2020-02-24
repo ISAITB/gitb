@@ -19,6 +19,7 @@ class CommunityCertificateController
     @removeKeystore = false
     @exportPending = false
     @settings = {}
+    @DataService.focus('title')
 
     @ConformanceService.getConformanceCertificateSettings(@communityId, true)
     .then (data) =>

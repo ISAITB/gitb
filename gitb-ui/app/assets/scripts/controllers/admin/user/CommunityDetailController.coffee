@@ -150,6 +150,8 @@ class CommunityDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+    @DataService.focus('sname')
+
   saveDisabled: () =>
     !(@community?.sname? && @community?.fname? && 
     (!@DataService.configuration?['registration.enabled'] || 

@@ -49,6 +49,8 @@ class EndpointDetailsController
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
+		@DataService.focus('name')
+
 	delete: () =>
 		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this "+@DataService.labelEndpointLower()+"?", "Yes", "No")
 		.then () =>

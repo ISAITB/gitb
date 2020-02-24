@@ -1,7 +1,7 @@
 class ConformanceCertificateModalController
 
-    @$inject = ['$scope', '$timeout', '$uibModalInstance', 'WebEditorService', 'settings', 'conformanceStatement', 'ConformanceService', 'ErrorService', 'Constants', 'ReportService']
-    constructor: (@$scope, @$timeout, @$uibModalInstance, @WebEditorService, @settings, @conformanceStatement, @ConformanceService, @ErrorService, @Constants, @ReportService) ->
+    @$inject = ['$scope', '$timeout', '$uibModalInstance', 'WebEditorService', 'settings', 'conformanceStatement', 'ConformanceService', 'ErrorService', 'Constants', 'ReportService', 'DataService']
+    constructor: (@$scope, @$timeout, @$uibModalInstance, @WebEditorService, @settings, @conformanceStatement, @ConformanceService, @ErrorService, @Constants, @ReportService, @DataService) ->
         @exportPending = false
         @choice = @Constants.REPORT_OPTION_CHOICE.REPORT
         if @settings.message? 
@@ -19,6 +19,9 @@ class ConformanceCertificateModalController
                 @WebEditorService.editorForPdfInput(200, @settings.message, "mce-message")
             , 1)
         )
+
+    certificateChoice: () =>
+        @DataService.focus('title')
 
     generate: () =>
         @exportPending = true

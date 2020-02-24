@@ -86,8 +86,8 @@
 		<div class="panel-heading">
 			<h4 id="conformance-statements-title" class="title">Conformance statements</h4>
 			<div class="btn-toolbar pull-right padded">
-				<button class="btn btn-default" ng-if="adminConformanceCtrl.conformanceStatements.length > 0" ng-click="adminConformanceCtrl.onExportConformanceStatementsAsCsv()">Export CSV</button>
-				<button class="btn btn-default" ng-if="adminConformanceCtrl.showCollapseAll()" ng-click="adminConformanceCtrl.onCollapseAll()">Collapse all</button>
+				<button type="button" class="btn btn-default" ng-if="adminConformanceCtrl.conformanceStatements.length > 0" ng-click="adminConformanceCtrl.onExportConformanceStatementsAsCsv()">Export CSV</button>
+				<button type="button" class="btn btn-default" ng-if="adminConformanceCtrl.showCollapseAll()" ng-click="adminConformanceCtrl.onCollapseAll()">Collapse all</button>
 			</div>
 		</div>
 		<div>
@@ -113,16 +113,16 @@
 					<div class="col-xs-12 expandable-placeholder" uib-collapse="!adminConformanceCtrl.isExpanded(statement)">
 						<div class="container-fluid div-table non-expandable inner">
 							<div class="row div-table-row-header non-expandable">
-								<div class="col-xs-5 div-table-cell wordwrap">Test suite</div>
-								<div class="col-xs-5 div-table-cell wordwrap">Test case</div>
-								<div class="col-xs-1 div-table-cell wordwrap">Result</div>
-								<div class="col-xs-1 div-table-cell">&nbsp;</div>
+								<div class="col-xs-4 div-table-cell wordwrap">Test suite</div>
+								<div class="col-xs-4 div-table-cell wordwrap">Test case</div>
+								<div class="col-xs-2 div-table-cell wordwrap">Result</div>
+								<div class="col-xs-2 div-table-cell">&nbsp;</div>
 							</div>
 							<div class="row div-table-row non-expandable row-cells" ng-repeat="testCase in statement.testCases">
-								<div class="col-xs-5 div-table-cell wordwrap">{{testCase.testSuiteName}}</div>
-								<div class="col-xs-5 div-table-cell wordwrap">{{testCase.testCaseName}}</div>
-								<div class="col-xs-1 div-table-cell wordwrap">{{testCase.result}}</div>
-								<div class="col-xs-1 div-table-cell">
+								<div class="col-xs-4 div-table-cell wordwrap">{{testCase.testSuiteName}}</div>
+								<div class="col-xs-4 div-table-cell wordwrap">{{testCase.testCaseName}}</div>
+								<div class="col-xs-2 div-table-cell wordwrap">{{testCase.result}}</div>
+								<div class="col-xs-2 div-table-cell">
 									<button ng-if="adminConformanceCtrl.showExportTestCase(testCase)" class="btn btn-default pull-right" ng-click="adminConformanceCtrl.onExportTestCase(statement, testCase); $event.stopPropagation();"><i class="fa fa-file-pdf-o"></i></button>
 								</div>
 							</div>

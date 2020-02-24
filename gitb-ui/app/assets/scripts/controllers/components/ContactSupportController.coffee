@@ -9,6 +9,7 @@ class ContactSupportController
                 @editorReady = true
             , 1)
         )
+
         if @DataService.user?
             @contactAddress = @DataService.user.email
         @surveyAddress = @DataService.configuration?["survey.address"]
@@ -21,6 +22,7 @@ class ContactSupportController
             {id: 3, description: "Other"}
         ]
         @resetState()
+        @$uibModalInstance.rendered.then @DataService.focus('contact')
 
     resetState: () =>
         @feedback = {}

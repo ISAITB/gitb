@@ -16,7 +16,7 @@ class EditEndpointConfigurationController
     @isBinary = @parameter.kind == "BINARY"
     @isConfigurationSet = @configuration.value?
 
-    if !@isConfigurationSet && !@isBinary
+    if !@isBinary
       @$uibModalInstance.rendered.then () => @DataService.focus('value')
 
   onFileSelect: (files) =>

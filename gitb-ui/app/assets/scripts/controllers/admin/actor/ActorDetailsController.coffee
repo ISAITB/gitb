@@ -64,6 +64,8 @@ class ActorDetailsController
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
+		@DataService.focus('id')
+
 	delete: () =>
 		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this "+@DataService.labelActorLower()+"?", "Yes", "No")
 		.then () =>

@@ -1,14 +1,14 @@
 <div class="modal-header">
     <h4>Report generation options</h4>
 </div>
-<div class="modal-body">
-    <form class="form-horizontal">
+<form class="form-horizontal">
+    <div class="modal-body">
         <div class="form-group">
             <label class="col-sm-3 control-label" for="choice_report">* Report type:</label>
             <div class="col-sm-8">
                 <label class="radio-inline"><input type="radio" ng-model="controller.choice" name="choice" id="choice_report" ng-value="controller.Constants.REPORT_OPTION_CHOICE.REPORT">Conformance statement report</label><br/>
                 <label class="radio-inline"><input type="radio" ng-model="controller.choice" name="choice" id="choice_detailed" ng-value="controller.Constants.REPORT_OPTION_CHOICE.DETAILED_REPORT">Conformance statement report (with test case results)</label><br/>
-                <label class="radio-inline"><input type="radio" ng-model="controller.choice" name="choice" id="choice_cert" ng-value="controller.Constants.REPORT_OPTION_CHOICE.CERTIFICATE">Conformance certificate</label>
+                <label class="radio-inline"><input type="radio" ng-model="controller.choice" ng-change="controller.certificateChoice()" name="choice" id="choice_cert" ng-value="controller.Constants.REPORT_OPTION_CHOICE.CERTIFICATE">Conformance certificate</label>
             </div>
         </div>
         <div ng-show="controller.choice == controller.Constants.REPORT_OPTION_CHOICE.CERTIFICATE">
@@ -41,9 +41,9 @@
                 <div class="col-sm-8"><textarea id="mce-message" class="mce-message"></textarea></div>
             </div>
         </div>
-    </form>
-</div>
-<div class="modal-footer">
-    <button class="btn btn-default" ng-click="controller.generate()" ng-disabled="controller.exportPending"><span class="tab" ng-if="controller.exportPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Generate report</button>
-    <button class="btn btn-default" ng-click="controller.cancel()">Cancel</button>
-</div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-default" type="submit" ng-click="controller.generate()" ng-disabled="controller.exportPending"><span class="tab" ng-if="controller.exportPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Generate report</button>
+        <button class="btn btn-default" type="button" ng-click="controller.cancel()">Cancel</button>
+    </div>
+</form>

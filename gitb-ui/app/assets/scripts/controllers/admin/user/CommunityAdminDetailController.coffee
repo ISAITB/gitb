@@ -8,6 +8,9 @@ class CommunityAdminDetailController
     @alerts = []
     @user = {}
 
+    if !@DataService.configuration['sso.enabled']
+      @DataService.focus('name')
+
     @disableDeleteButton = Number(@DataService.user.id) == Number(@userId)
 
     @UserService.getUserById(@userId)

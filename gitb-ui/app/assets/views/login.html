@@ -35,7 +35,7 @@
                             </div>
                         </div>
                         <div class="row account-list-new">
-                            <button class="btn btn-primary" ng-click="lc.createAccount()" ng-disabled="lc.createPending"><span class="tab" ng-if="lc.createPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>
+                            <button type="button" class="btn btn-primary" ng-click="lc.createAccount()" ng-disabled="lc.createPending"><span class="tab" ng-if="lc.createPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>
                                 <span ng-if="lc.DataService.actualUser.accounts.length > 0">Link another role to your account</span>
                                 <span ng-if="lc.DataService.actualUser.accounts.length == 0">Link a role to your account</span>
                             </button>
@@ -98,7 +98,7 @@
                                     <div class="panel-footer">
                                         <button ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.NONE" type="submit" ng-click="lc.login()" class="btn btn-default" ng-disabled="lc.loginDisabled()"><span class="tab" ng-if="lc.spinner"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i> </span>Log in</button>
                                         <button ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.REGISTER" type="submit" ng-click="lc.register()" class="btn btn-default" ng-disabled="lc.registerDisabled()"><span class="tab" ng-if="lc.spinner"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i> </span>Register</button>
-                                        <button ng-click="lc.cancelLogin()" class="btn btn-default">Cancel</button>
+                                        <button ng-click="lc.cancelLogin()" type="button" class="btn btn-default">Cancel</button>
                                     </div>
                                 </form>
                             </div>

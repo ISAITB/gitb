@@ -4,7 +4,7 @@
         <div class="panel-heading">
             <h4 class="title">Filters</h4>
             <div class="btn-toolbar pull-right">
-                <button class="btn btn-default" ng-click="systemTestsCtrl.refresh()" ng-disabled="systemTestsCtrl.refreshActivePending || systemTestsCtrl.refreshCompletedPending || systemTestsCtrl.refreshCompletedCountPending"><span class="tab" ng-if="systemTestsCtrl.refreshActivePending || systemTestsCtrl.refreshCompletedPending || systemTestsCtrl.refreshCompletedCountPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Refresh</button>
+                <button type="button" class="btn btn-default" ng-click="systemTestsCtrl.refresh()" ng-disabled="systemTestsCtrl.refreshActivePending || systemTestsCtrl.refreshCompletedPending || systemTestsCtrl.refreshCompletedCountPending"><span class="tab" ng-if="systemTestsCtrl.refreshActivePending || systemTestsCtrl.refreshCompletedPending || systemTestsCtrl.refreshCompletedCountPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Refresh</button>
                 <toggle id="sessions-toggle-filter" class="btn-group" ng-model="systemTestsCtrl.showFiltering" on="Enabled" off="Disabled" ng-change="systemTestsCtrl.DataService.async(systemTestsCtrl.showFiltering?systemTestsCtrl.applyFiltering:systemTestsCtrl.clearFiltering)"/>
             </div>
         </div>
@@ -122,7 +122,7 @@
         <div class="panel-heading">
             <h4 class="title">Active test sessions</h4>
             <div class="btn-toolbar pull-right">
-                <button class="btn btn-default" ng-click="systemTestsCtrl.exportActiveSessionsToCsv()">Export CSV</button>
+                <button type="button" class="btn btn-default" ng-click="systemTestsCtrl.exportActiveSessionsToCsv()">Export CSV</button>
             </div>
         </div>
         <div id="system-tests-table-active" table-directive columns="systemTestsCtrl.activeTestsColumns" data="systemTestsCtrl.activeTests"
@@ -133,8 +133,8 @@
         <div class="panel-heading">
             <h4 class="title">Completed test sessions</h4>
             <div class="btn-toolbar pull-right">
-                <button class="btn btn-default" ng-if="systemTestsCtrl.canDelete()" ng-disabled="systemTestsCtrl.deletePending" ng-click="systemTestsCtrl.deleteObsolete()"><span class="tab" ng-if="systemTestsCtrl.deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete obsolete results</button>
-                <button class="btn btn-default" ng-click="systemTestsCtrl.exportToCsv()">Export CSV</button>
+                <button type="button" class="btn btn-default" ng-if="systemTestsCtrl.canDelete()" ng-disabled="systemTestsCtrl.deletePending" ng-click="systemTestsCtrl.deleteObsolete()"><span class="tab" ng-if="systemTestsCtrl.deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete obsolete results</button>
+                <button type="button" class="btn btn-default" ng-click="systemTestsCtrl.exportToCsv()">Export CSV</button>
             </div>
         </div>
         <div id="system-tests-table" ng-if="systemTestsCtrl.testResults.length > 0" table-directive

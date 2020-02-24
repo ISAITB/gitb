@@ -7,6 +7,9 @@ class AdminDetailController
     @userId = @$stateParams.id
     @user = {}
 
+    if !@DataService.configuration['sso.enabled']
+      @DataService.focus('name')
+
     @disableDeleteButton = Number(@DataService.user.id) == Number(@userId)
 
     # get selected user

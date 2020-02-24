@@ -8,6 +8,11 @@ class UserDetailController
     @alerts = []
     @user = {}
 
+    if @DataService.configuration['sso.enabled']
+      @DataService.focus('role')
+    else
+      @DataService.focus('name')
+
     @roleChoices = @Constants.VENDOR_USER_ROLES
 
     # get selected user

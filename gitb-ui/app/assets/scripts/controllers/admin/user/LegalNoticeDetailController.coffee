@@ -1,7 +1,7 @@
 class LegalNoticeDetailController
 
-  @$inject = ['$log', '$state', '$stateParams', 'WebEditorService', 'ValidationService', 'LegalNoticeService', 'ConfirmationDialogService', 'ErrorService', 'PopupService']
-  constructor: (@$log, @$state, @$stateParams, @WebEditorService, @ValidationService, @LegalNoticeService, @ConfirmationDialogService, @ErrorService, @PopupService) ->
+  @$inject = ['$log', '$state', '$stateParams', 'WebEditorService', 'ValidationService', 'LegalNoticeService', 'ConfirmationDialogService', 'ErrorService', 'PopupService', 'DataService']
+  constructor: (@$log, @$state, @$stateParams, @WebEditorService, @ValidationService, @LegalNoticeService, @ConfirmationDialogService, @ErrorService, @PopupService, @DataService) ->
 
     @communityId = @$stateParams.community_id
     @noticeId = @$stateParams.notice_id
@@ -16,6 +16,8 @@ class LegalNoticeDetailController
       @WebEditorService.editor(300, data.content)
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+
+    @DataService.focus('name')
 
   saveDisabled: () =>
     !(@notice?.name?)

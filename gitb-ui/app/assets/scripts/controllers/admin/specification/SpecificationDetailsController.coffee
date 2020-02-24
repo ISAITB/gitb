@@ -82,6 +82,8 @@ class SpecificationDetailsController
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
+		@DataService.focus('shortName')
+
 	hasErrorsOrWarnings: (report) =>
 		if report?.counters?.errors? && report?.counters?.warnings?
 			parseInt(report.counters.errors) > 0 || parseInt(report.counters.warnings) > 0

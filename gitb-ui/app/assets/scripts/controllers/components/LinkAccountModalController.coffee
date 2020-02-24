@@ -47,6 +47,8 @@ class LinkAccountModalController
         @email = undefined
         @password = undefined
         @resetSelfRegOptions()
+        if @DataService.configuration['sso.inMigration'] && @choice == @Constants.CREATE_ACCOUNT_OPTION.MIGRATE
+            @DataService.focus('username')
 
     handleError: (title, response) =>
         handled = false

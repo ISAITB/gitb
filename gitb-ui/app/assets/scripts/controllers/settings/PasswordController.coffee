@@ -30,6 +30,7 @@ class PasswordController
                         @DataService.user.onetime = false
                         @$state.go 'app.home'
                     @PopupService.success('Your password has been updated.')
+                    @DataService.focus('current')
                 ,
                 (error) => #error handler
                     if error.data.error_code == @ErrorCodes.INVALID_CREDENTIALS

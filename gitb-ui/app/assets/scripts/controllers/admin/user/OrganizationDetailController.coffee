@@ -85,6 +85,8 @@ class OrganizationDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+    @DataService.focus('sname')
+
   # delete and cancel detail
   deleteOrganization: () =>
     @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this "+@DataService.labelOrganisationLower()+"?", "Yes", "No")

@@ -1,7 +1,7 @@
 class LandingPageDetailController
 
-  @$inject = ['$log', '$state', '$stateParams', 'WebEditorService', 'ValidationService', 'LandingPageService', 'ConfirmationDialogService', 'ErrorService', 'PopupService']
-  constructor: (@$log, @$state, @$stateParams, @WebEditorService, @ValidationService, @LandingPageService, @ConfirmationDialogService, @ErrorService, @PopupService) ->
+  @$inject = ['$log', '$state', '$stateParams', 'WebEditorService', 'ValidationService', 'LandingPageService', 'ConfirmationDialogService', 'ErrorService', 'PopupService', 'DataService']
+  constructor: (@$log, @$state, @$stateParams, @WebEditorService, @ValidationService, @LandingPageService, @ConfirmationDialogService, @ErrorService, @PopupService, @DataService) ->
 
     @communityId = @$stateParams.community_id
     @pageId = @$stateParams.page_id
@@ -16,6 +16,8 @@ class LandingPageDetailController
       @WebEditorService.editor(300, data.content)
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+
+    @DataService.focus('name')
 
   saveDisabled: () =>
     !(@page?.name?)

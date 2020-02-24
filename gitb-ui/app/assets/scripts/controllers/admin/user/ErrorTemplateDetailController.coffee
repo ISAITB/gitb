@@ -1,13 +1,14 @@
 class ErrorTemplateDetailController
 
-  @$inject = ['$log', '$state', '$stateParams', 'WebEditorService', 'ValidationService', 'ErrorTemplateService', 'ConfirmationDialogService', 'ErrorService', 'PopupService']
-  constructor: (@$log, @$state, @$stateParams, @WebEditorService, @ValidationService, @ErrorTemplateService, @ConfirmationDialogService, @ErrorService, @PopupService) ->
+  @$inject = ['$log', '$state', '$stateParams', 'WebEditorService', 'ValidationService', 'ErrorTemplateService', 'ConfirmationDialogService', 'ErrorService', 'PopupService', 'DataService']
+  constructor: (@$log, @$state, @$stateParams, @WebEditorService, @ValidationService, @ErrorTemplateService, @ConfirmationDialogService, @ErrorService, @PopupService, @DataService) ->
 
     @communityId = @$stateParams.community_id
     @templateId = @$stateParams.template_id
     @alerts = []
     @template = {}
     @isDefault
+    @DataService.focus('name')
 
     @ErrorTemplateService.getErrorTemplateById(@templateId)
     .then (data) =>

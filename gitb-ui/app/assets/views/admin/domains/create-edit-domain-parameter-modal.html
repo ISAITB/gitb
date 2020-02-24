@@ -1,8 +1,8 @@
 <div class="modal-header">
 		<h4>{{title}}</h4>
-	</div>
-	<div class="modal-body">
-		<form class="form-horizontal">
+</div>
+	<form class="form-horizontal">
+		<div class="modal-body">
 			<div class="alert alert-danger" role="alert" ng-if="errorMessage">{{errorMessage}}</div>			
 			<div class="form-group">
 				<label class="col-sm-3 control-label" for="name">* Name:</label>
@@ -44,14 +44,14 @@
 				<label class="col-sm-3 control-label" for="value">* Value:</label>
 				<div class="col-sm-8">
 					<a class="form-control-static" href="" ng-if="showFileName()" ng-click="download()" style="padding-right:10px;">{{fileName()}}</a>
-					<button class="btn btn-default" ng-file-select="onFileSelect($files)">Upload</button>
+					<button class="btn btn-default" type="button" ng-file-select="onFileSelect($files)">Upload</button>
 				</div>
 			</div>
-		</form>		
-	</div>
-	<div class="modal-footer">
-		<button class="btn btn-default" ng-click="save()" ng-disabled="pending || !saveAllowed()"><span class="tab" ng-if="savePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Save</button>
-		<button class="btn btn-default" ng-click="delete()" ng-if="domainParameter.id" ng-disabled="pending"><span class="tab" ng-if="deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete</button>
-		<button class="btn btn-default" ng-click="cancel()" ng-disabled="pending">Cancel</button>
-	</div>
+		</div>
+		<div class="modal-footer">
+			<button class="btn btn-default" type="submit" ng-click="save()" ng-disabled="pending || !saveAllowed()"><span class="tab" ng-if="savePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Save</button>
+			<button class="btn btn-default" type="button" ng-click="delete()" ng-if="domainParameter.id" ng-disabled="pending"><span class="tab" ng-if="deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete</button>
+			<button class="btn btn-default" type="button" ng-click="cancel()" ng-disabled="pending">Cancel</button>
+		</div>
+	</form>		
 </div>

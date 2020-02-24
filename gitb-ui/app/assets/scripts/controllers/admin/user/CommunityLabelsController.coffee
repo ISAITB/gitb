@@ -28,6 +28,9 @@ class CommunityLabelsController
   labelTypeLabel: (labelType) =>
     @Constants.LABEL_TYPE_LABEL[labelType]
 
+  customChecked: (labelType) =>
+    @DataService.focus('label-singular-'+labelType)
+
   save: () =>
     @busy = true
     @labelsToSave = []

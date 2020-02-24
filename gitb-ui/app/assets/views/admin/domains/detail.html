@@ -3,22 +3,24 @@
 		<div class="panel-heading">
 			<h4 class="title">{{domainDetailsCtrl.DataService.labelDomain()}} details</h4>
 		</div>
-		<div class="panel-body">
-			<div class="row">
-				<div class="col-md-10 col-md-offset-1" domain-details-form domain="domainDetailsCtrl.domain">
+		<form class="form-horizontal">
+			<div class="panel-body">
+				<div class="row">
+					<div class="col-md-10 col-md-offset-1" domain-details-form domain="domainDetailsCtrl.domain">
+					</div>
 				</div>
 			</div>
-		</div>
-        <div class="panel-footer">
-            <div class="row">
-                <div class="col-md-3"></div>
-                <div class="col-md-8 btn-toolbar">
-					<button ng-click="domainDetailsCtrl.saveDomainChanges()" class="btn btn-default" ng-disabled="domainDetailsCtrl.saveDisabled()">Save changes</button>
-					<button ng-click="domainDetailsCtrl.deleteDomain()" class="btn btn-default">Delete</button>
-					<button ng-click="domainDetailsCtrl.back()" class="btn btn-default">Back</button>
-                </div>
-            </div>
-        </div>
+			<div class="panel-footer">
+				<div class="row">
+					<div class="col-md-3"></div>
+					<div class="col-md-8 btn-toolbar">
+						<button type="submit" ng-click="domainDetailsCtrl.saveDomainChanges()" class="btn btn-default" ng-disabled="domainDetailsCtrl.saveDisabled()">Save changes</button>
+						<button type="button" ng-click="domainDetailsCtrl.deleteDomain()" class="btn btn-default">Delete</button>
+						<button type="button" ng-click="domainDetailsCtrl.back()" class="btn btn-default">Back</button>
+					</div>
+				</div>
+			</div>
+		</form>
 	</div>
 	<div class="panel panel-default">
 		<div class="panel-heading">

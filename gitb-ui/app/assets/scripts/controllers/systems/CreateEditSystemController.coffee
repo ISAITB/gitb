@@ -17,6 +17,8 @@ class CreateEditSystemController
 			edit: viewProperties
 		}
 
+		@$uibModalInstance.rendered.then () => @DataService.focus('sname')
+
 		if system.id?
 			@SystemService.getSystemParameterValues(system.id)
 			.then (data) =>
@@ -24,7 +26,6 @@ class CreateEditSystemController
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 		else
-			@$uibModalInstance.rendered.then () => @DataService.focus('sname')
 			@CommunityService.getSystemParameters(@DataService.community.id)
 			.then (data) =>
 				@$scope.propertyData.properties = data

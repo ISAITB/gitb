@@ -1,8 +1,8 @@
 <div class="modal-header">
 	<h4>Link a new role to your account</h4>
 </div>
-<div class="modal-body">
-	<form class="form-horizontal">
+<form class="form-horizontal">
+	<div class="modal-body">
 		<div class="form-group">
 			<label class="col-xs-3 control-label" for="choice_report">I want to ...</label>
 			<div class="col-xs-8">
@@ -50,9 +50,9 @@
 		<div ng-if="controller.choice == controller.Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER">
 			<div tb-self-reg-form model="controller.selfRegData" self-reg-options="controller.selfRegOptions"></div>
 		</div>
-	</form>
-</div>
-<div class="modal-footer">
-	<button class="btn btn-default" ng-click="controller.create()" ng-disabled="!controller.createEnabled()"><span class="tab" ng-if="controller.createPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Complete</button>
-	<button class="btn btn-default" ng-click="controller.cancel()">Cancel</button>
-</div>
+	</div>
+	<div class="modal-footer">
+		<button class="btn btn-default" type="submit" ng-click="controller.create()" ng-disabled="!controller.createEnabled()"><span class="tab" ng-if="controller.createPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Complete</button>
+		<button class="btn btn-default" type="button" ng-click="controller.cancel()">Cancel</button>
+	</div>
+</form>

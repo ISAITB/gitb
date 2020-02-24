@@ -162,13 +162,13 @@
 				'</div>'+
 			'</td>'+
 			'<td class="operations" ng-if="actionVisible">'+
-				'<button class="btn btn-default" ng-click="action(); $event.stopPropagation();"><i class="fa {{actionIcon}}"></i></button>'+
+				'<button type="button" class="btn btn-default" ng-click="action(); $event.stopPropagation();"><i class="fa {{actionIcon}}"></i></button>'+
 			'</td>' +
 			'<td class="operations" ng-if="operationsVisible">'+
-				'<button ng-if="!deleteVisibleForRow || deleteVisibleForRow(data)" class="btn btn-default" ng-click="delete(); $event.stopPropagation();"><i class="fa fa-times"></i></button>'+
+				'<button type="button" ng-if="!deleteVisibleForRow || deleteVisibleForRow(data)" class="btn btn-default" ng-click="delete(); $event.stopPropagation();"><i class="fa fa-times"></i></button>'+
 			'</td>' +
 			'<td class="operations" ng-if="exportVisible">'+
-				'<button ng-if="!data.hideExportButton" class="btn btn-default" ng-click="export(); $event.stopPropagation();" ng-disabled="data.disableExportButton"><i ng-class="exportClass()"></i></button>'+
+				'<button type="button" ng-if="!data.hideExportButton" class="btn btn-default" ng-click="export(); $event.stopPropagation();" ng-disabled="data.disableExportButton"><i ng-class="exportClass()"></i></button>'+
 			'</td>'
 		link: (scope, element, attrs) ->
 			scope.rows = _.map scope.columns, (column)->

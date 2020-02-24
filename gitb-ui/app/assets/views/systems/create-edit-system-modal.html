@@ -1,52 +1,51 @@
 <div class="modal-header">
-		<h4>{{title}}</h4>
-	</div>
+	<h4>{{title}}</h4>
+</div>
+<form class="form-horizontal">
 	<div class="modal-body">
 		<div class="row">
 			<div class="col-md-10 col-md-offset-1">
-				<form class="form-horizontal">
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="sname">* Short name:</label>
-						<div class="col-sm-8"><input id="sname" ng-model="system.sname" class="form-control" type="text" required></div>
+				<div class="form-group">
+					<label class="col-sm-3 control-label" for="sname">* Short name:</label>
+					<div class="col-sm-8"><input id="sname" ng-model="system.sname" class="form-control" type="text" required></div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-3 control-label" for="fname">* Full name:</label>
+					<div class="col-sm-8"><input id="fname" ng-model="system.fname" class="form-control" type="text" required></div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-3 control-label" for="description">Description:</label>
+					<div class="col-sm-8">
+						<textarea id="description" ng-model="system.description" class="form-control"></textarea>
 					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="fname">* Full name:</label>
-						<div class="col-sm-8"><input id="fname" ng-model="system.fname" class="form-control" type="text" required></div>
+				</div>
+				<div class="form-group">
+					<label class="col-sm-3 control-label" for="version">* Version:</label>
+					<div class="col-sm-8"><input id="version" ng-model="system.version" class="form-control" type="text" required></div>
+				</div>
+				<div class="form-group" ng-if="otherSystems.length">
+					<label class="col-sm-3 control-label" for="version">Copy test setup from:</label>
+					<div class="col-sm-8"><select class="form-control" ng-model="system.otherSystem" ng-options="sys.sname for sys in otherSystems track by sys.id"><option value=""></option></select></div>
+				</div>
+				<div class="form-group" ng-if="system.otherSystem">
+					<label class="col-sm-3 control-label">Copy also:</label>
+					<div class="col-sm-9">
+						<label class="checkbox-inline">
+							<input type="checkbox" ng-change="copyChanged()" ng-model="system.copySystemParameters">{{DataService.labelSystem()}} properties
+						</label>
+						<label class="checkbox-inline">
+							<input type="checkbox" ng-change="copyChanged()" ng-model="system.copyStatementParameters">Conformance statement configurations
+						</label>
 					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="description">Description:</label>
-						<div class="col-sm-8">
-							<textarea id="description" ng-model="system.description" class="form-control"></textarea>
-						</div>
-					</div>
-					<div class="form-group">
-						<label class="col-sm-3 control-label" for="version">* Version:</label>
-						<div class="col-sm-8"><input id="version" ng-model="system.version" class="form-control" type="text" required></div>
-					</div>
-					<div class="form-group" ng-if="otherSystems.length">
-						<label class="col-sm-3 control-label" for="version">Copy test setup from:</label>
-						<div class="col-sm-8"><select class="form-control" ng-model="system.otherSystem" ng-options="sys.sname for sys in otherSystems track by sys.id"><option value=""></option></select></div>
-					</div>
-					<div class="form-group" ng-if="system.otherSystem">
-						<label class="col-sm-3 control-label">Copy also:</label>
-						<div class="col-sm-9">
-							<label class="checkbox-inline">
-								<input type="checkbox" ng-change="copyChanged()" ng-model="system.copySystemParameters">{{DataService.labelSystem()}} properties
-							</label>
-							<label class="checkbox-inline">
-								<input type="checkbox" ng-change="copyChanged()" ng-model="system.copyStatementParameters">Conformance statement configurations
-							</label>
-						</div>
-					</div>
-				</form>
+				</div>
 			</div>
 		</div>
 		<div ng-if="!system.copySystemParameters" tb-optional-custom-properties-form tb-property-data="propertyData" tb-popup="true">
 		</div>            
 	</div>
 	<div class="modal-footer">
-		<button class="btn btn-default" ng-click="save()" ng-disabled="!saveEnabled() || pending"><span class="tab" ng-if="savePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Save</button>
-		<button class="btn btn-default" ng-click="delete()" ng-if="system.id" ng-disabled="pending"><span class="tab" ng-if="deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete</button>
-		<button class="btn btn-default" ng-click="cancel()" ng-disabled="pending">Cancel</button>
+		<button class="btn btn-default" type="submit" ng-click="save()" ng-disabled="!saveEnabled() || pending"><span class="tab" ng-if="savePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Save</button>
+		<button class="btn btn-default" type="button" ng-click="delete()" ng-if="system.id" ng-disabled="pending"><span class="tab" ng-if="deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete</button>
+		<button class="btn btn-default" type="button" ng-click="cancel()" ng-disabled="pending">Cancel</button>
 	</div>
-</div>
+</form>

@@ -56,6 +56,8 @@ class DomainDetailsController
 				@domainParameters.push(parameter)
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
+		
+		@DataService.focus('shortName')
 
 	downloadParameter: (parameter) =>
 		mimeType = @DataService.mimeTypeFromDataURL(parameter.value)
