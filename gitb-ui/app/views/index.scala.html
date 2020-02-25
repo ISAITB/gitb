@@ -25,24 +25,10 @@
 		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/gitb.css")?v=@config.versionNumber'>
 		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("jquery.min.js"))'></script>
 		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("bootstrap.min.js"))'></script>
-		<script type='text/javascript'>
-			function option(value) {
-				if (value) {
-					document.cookie = 'LOGIN_OPTION='+value;
-				} else {
-					document.cookie = 'LOGIN_OPTION=none';
-				}
-				window.location.href = 'app';
-			}
-			function eraseCookies() {
-				document.cookie = 'LOGIN_OPTION=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-				document.cookie = 'tat=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-				document.cookie = 'tat=;path=@config.cookiePath;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-			}
-			eraseCookies();
-		</script>
+		<script type='text/javascript' src='@routes.Assets.at("components/gitb-cookie-cleanup.js")?v=@config.versionNumber'></script>
 	</head>
 	<body class="sticky-menu-active">
+		<div id="cp-div" style="display:none">@config.cookiePath</div>
 		<div class="page index">
 			<header>
 				<div class="navbar-collapse nav-main-collapse collapse">
@@ -68,18 +54,18 @@
 							<div style="padding-top:20px">
 								<div style="display:flex; align-items:center;">
 									<div>
-										<button type="button" class="btn btn-primary" onclick="option()" style="padding:20px">Click to log in</button>
+										<button id="loginOption" type="button" class="btn btn-primary" style="padding:20px">Click to log in</button>
 									</div>
 									<div style="margin-left:20px;">
 										@if(config.ssoEnabled) {
-										<p><b style="margin-right:10px;">Assigned a new role by an administrator?</b><a href="#" onclick="option('link')">Confirm your new role</a>.</p>
+										<p><b style="margin-right:10px;">Assigned a new role by an administrator?</b><a id="linkOption" href="#">Confirm your new role</a>.</p>
 										}
 										@if(config.demosEnabled && config.registrationEnabled) {
-										<span><b style="margin-right:10px;">New to the Test Bed?</b><a href="#" onclick="option('register')">Create an account</a> or <a href="#" onclick="option('demo')">try out our demos</a></span>.
+										<span><b style="margin-right:10px;">New to the Test Bed?</b><a id="registerOption" href="#">Create an account</a> or <a id="demoOption" href="#">try out our demos</a></span>.
 										} else {@if(config.demosEnabled && !config.registrationEnabled) {
-										<span><b style="margin-right:10px;">New to the Test Bed?</b><a href="#" onclick="option('demo')">Try out our demos</a>.</span>
+										<span><b style="margin-right:10px;">New to the Test Bed?</b><a id="demoOption" href="#">Try out our demos</a>.</span>
 										} else {@if(!config.demosEnabled && config.registrationEnabled) {
-										<span><b style="margin-right:10px;">New to the Test Bed?</b><a href="#" onclick="option('register')">Create an account</a>.</span>
+										<span><b style="margin-right:10px;">New to the Test Bed?</b><a id="registerOption" href="#">Create an account</a>.</span>
 										}}}
 									</div>
 								</div>
@@ -90,7 +76,7 @@
 								}
 								<p style="margin-bottom: 0px"><b>Privacy note:</b> By connecting you consent to the use of cookies to manage your session. Please refer to our <a href="#" data-toggle="modal" data-target="#legalModal">legal notice</a> for more information.</p>
 								@if(config.ssoEnabled && config.inMigrationPeriod) {
-									<p style="margin-top: 10px; margin-bottom: 0px"><b>Migration note:</b> If you have been using a functional account to log in click <a href="#" onclick="option('migrate')">here</a> to migrate it to EU Login. Step-by-step instructions are available in <a href="@config.euLoginMigrationGuideLink" target="blank">this guide</a>.</p>
+									<p style="margin-top: 10px; margin-bottom: 0px"><b>Migration note:</b> If you have been using a functional account to log in click <a id="migrateOption" href="#">here</a> to migrate it to EU Login. Step-by-step instructions are available in <a href="@config.euLoginMigrationGuideLink" target="blank">this guide</a>.</p>
 								}
 							</div>
 						</div>
@@ -130,7 +116,6 @@
 						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
 					</div>
 				</div>
-
 			</div>
 		</div>
 	</body>

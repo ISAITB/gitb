@@ -8,5 +8,6 @@ class Filters @Inject() (
   error: ErrorFilter,
   auth: AuthenticationFilter,
   timeout: TimeoutFilter,
-  securityFilter: SecurityFilter
-) extends DefaultHttpFilters(securityFilter, cors, error, auth, timeout)
+  securityFilter: SecurityFilter,
+  headerFilter: HeaderFilter
+) extends DefaultHttpFilters(securityFilter, cors, error, auth, timeout, headerFilter)
