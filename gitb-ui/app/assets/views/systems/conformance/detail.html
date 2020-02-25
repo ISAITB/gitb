@@ -51,53 +51,60 @@
 				<button type="button" class="btn btn-primary" ng-if="conformanceStatementDetailCtrl.testSuites.length == 1 && conformanceStatementDetailCtrl.testSuites[0].testCases.length > 1" ng-click="conformanceStatementDetailCtrl.onTestSuiteSelect()"><i class="fa fa-play"></i></button>
 			</div>
 		</div>
-		<div>
-			<div class="container-fluid div-table" ng-class="{'expandable': conformanceStatementDetailCtrl.testSuites.length > 1}">
-				<div class="row div-table-row-header">
-					<div class="col-xs-3 div-table-cell wordwrap">{{conformanceStatementDetailCtrl.testSuites.length == 1?"Test case":"Test suite"}}</div>
-					<div class="col-xs-6 div-table-cell wordwrap">Description</div>
-					<div class="col-xs-2 div-table-cell wordwrap">Result</div>
-					<div class="col-xs-1 div-table-cell">&nbsp;</div>
-				</div>
-				<div class="row div-table-row non-expandable row-cells" ng-repeat="testCase in conformanceStatementDetailCtrl.testSuites[0].testCases" ng-if="conformanceStatementDetailCtrl.testSuites.length == 1">
-					<div class="col-xs-3 div-table-cell wordwrap">{{testCase.sname}}</div>
-					<div class="col-xs-6 div-table-cell wordwrap">{{testCase.description}}</div>
-					<div class="col-xs-2 div-table-cell wordwrap">{{testCase.result}}</div>
-					<div class="col-xs-1 div-table-cell">
-						<button type="button" class="btn btn-primary pull-right" ng-click="conformanceStatementDetailCtrl.onTestSelect(testCase)"><i class="fa fa-play"></i></button>
-					</div>
-				</div>
-				<div ng-repeat="testSuite in conformanceStatementDetailCtrl.testSuites" ng-if="conformanceStatementDetailCtrl.testSuites.length > 1">
-					<div class="row div-table-row expandable" ng-click="conformanceStatementDetailCtrl.onExpand(testSuite)">
-						<div class="row-cells">
-							<div class="col-xs-3 div-table-cell wordwrap">{{testSuite.sname}}</div>
-							<div class="col-xs-6 div-table-cell wordwrap">{{testSuite.description}}</div>
-							<div class="col-xs-2 div-table-cell wordwrap">{{testSuite.result}}</div>
-							<div class="col-xs-1 div-table-cell padded">
-								<button type="button" class="btn btn-primary pull-right" ng-click="conformanceStatementDetailCtrl.onTestSuiteSelect(testSuite);$event.stopPropagation()"><i class="fa fa-play"></i></button>
-							</div>
+
+		<table class="table table-directive" ng-class="{'expandable-table': (conformanceStatementDetailCtrl.testSuites.length > 1),'padded-table': (conformanceStatementDetailCtrl.testSuites.length == 1)}">
+			<thead>
+				<th width="10%">{{conformanceStatementDetailCtrl.testSuites.length == 1?"Test case":"Test suite"}}</th>
+				<th>Description</th>
+				<th width="10%">Result</th>
+				<th width="10%"></th>
+			</thead>
+			<tbody ng-if="conformanceStatementDetailCtrl.testSuites.length == 1">
+				<tr ng-repeat="testCase in conformanceStatementDetailCtrl.testSuites[0].testCases">
+					<td>{{testCase.sname}}</td>
+					<td>{{testCase.description}}</td>
+					<td>{{testCase.result}}</td>
+					<td class="operation-cell">
+						<button class="btn btn-primary pull-right" ng-click="conformanceStatementDetailCtrl.onTestSelect(testCase)"><i class="fa fa-play"></i></button>
+					</td>
+				</tr>
+			</tbody>
+			<tbody ng-if="conformanceStatementDetailCtrl.testSuites.length > 1">
+				<tr ng-repeat-start="testSuite in conformanceStatementDetailCtrl.testSuites"
+					ng-click="conformanceStatementDetailCtrl.onExpand(testSuite)"
+					class="expandable-table-row-collapsed">
+					<td>{{testSuite.sname}}</td>
+					<td>{{testSuite.description}}</td>
+					<td>{{testSuite.result}}</td>
+					<td style="padding-right: 17px;">
+						<button class="btn btn-primary pull-right" ng-click="conformanceStatementDetailCtrl.onTestSuiteSelect(testSuite)"><i class="fa fa-play"></i></button>
+					</td>
+				</tr>
+				<tr ng-repeat-end class="expandable-table-row-expanded">
+					<td colspan="8" class="expandable-table-expandable-cell">
+						<div uib-collapse="!testSuite.expanded">
+							<table class="table table-directive expandable-table">
+								<thead>
+									<th width="10%">Test&nbsp;case</th>
+									<th>Description</th>
+									<th width="10%">Result</th>
+									<th width="10%"></th>
+								</thead>
+								<tbody>
+									<tr ng-repeat="testCase in testSuite.testCases">
+										<td>{{testCase.sname}}</td>
+										<td>{{testCase.description}}</td>
+										<td>{{testCase.result}}</td>
+										<td>
+											<button class="btn btn-primary pull-right" ng-click="conformanceStatementDetailCtrl.onTestSelect(testCase)"><i class="fa fa-play"></i></button>
+										</td>
+									</tr>
+								</tbody>
+							</table>
 						</div>
-						<div class="col-xs-12 expandable-placeholder" uib-collapse="!testSuite.expanded">
-							<div class="container-fluid div-table non-expandable inner">
-								<div class="row div-table-row-header non-expandable">
-									<div class="col-xs-3 div-table-cell wordwrap">Test&nbsp;case</div>
-									<div class="col-xs-6 div-table-cell wordwrap">Description</div>
-									<div class="col-xs-2 div-table-cell wordwrap">Result</div>
-									<div class="col-xs-1 div-table-cell">&nbsp;</div>
-								</div>
-								<div class="row div-table-row non-expandable row-cells" ng-repeat="testCase in testSuite.testCases">
-									<div class="col-xs-3 div-table-cell wordwrap">{{testCase.sname}}</div>
-									<div class="col-xs-6 div-table-cell wordwrap">{{testCase.description}}</div>
-									<div class="col-xs-2 div-table-cell wordwrap">{{testCase.result}}</div>
-									<div class="col-xs-1 div-table-cell">
-										<button type="button" class="btn btn-primary pull-right" ng-click="conformanceStatementDetailCtrl.onTestSelect(testCase);$event.stopPropagation()"><i class="fa fa-play"></i></button>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
+					</td>
+				</tr>
+			</tbody>
+		</table>
 	</div>
 </div>
