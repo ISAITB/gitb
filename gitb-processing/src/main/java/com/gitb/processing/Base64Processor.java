@@ -28,7 +28,7 @@ public class Base64Processor extends AbstractProcessingHandler {
     @Override
     public ProcessingModule getModuleDefinition() {
         ProcessingModule module = new ProcessingModule();
-        module.setId("Base64");
+        module.setId("Base64Processor");
         module.setMetadata(new Metadata());
         module.getMetadata().setName(module.getId());
         module.getMetadata().setVersion("1.0");
