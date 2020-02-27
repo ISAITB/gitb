@@ -2,11 +2,15 @@ package utils
 
 import java.util
 
+import com.gitb.core.ValueEmbeddingEnumeration
+import com.gitb.tbs.UserInput
 import com.gitb.tr._
 import config.Configurations
 import javax.xml.bind.JAXBElement
+import managers.AttachmentType
 import models.Enums.{LabelType, TestResultStatus}
 import models._
+import org.apache.commons.codec.binary.Base64
 import play.api.libs.json._
 
 import scala.collection.JavaConverters._
@@ -630,10 +634,14 @@ object JsonUtil {
     val jsArray = Json.parse(json).as[List[JsObject]]
     var list:List[OrganisationParameterValues] = List()
     jsArray.foreach { jsonConfig =>
+      var value = (jsonConfig \ "value").asOpt[String]
+      if (value.isEmpty) {
+        value = Some((jsonConfig \ "valueBinary").as[String])
+      }
       list ::= OrganisationParameterValues(
         -1, // Will be forced later
         (jsonConfig \ "parameter").as[Long],
-        (jsonConfig \ "value").as[String]
+        value.get
       )
     }
     list
@@ -643,10 +651,14 @@ object JsonUtil {
     val jsArray = Json.parse(json).as[List[JsObject]]
     var list:List[SystemParameterValues] = List()
     jsArray.foreach { jsonConfig =>
+      var value = (jsonConfig \ "value").asOpt[String]
+      if (value.isEmpty) {
+        value = Some((jsonConfig \ "valueBinary").as[String])
+      }
       list ::= SystemParameterValues(
         -1, // Will be forced later
         (jsonConfig \ "parameter").as[Long],
-        (jsonConfig \ "value").as[String]
+        value.get
       )
     }
     list
@@ -667,28 +679,57 @@ object JsonUtil {
     list
   }
 
-  def parseJsConfigs(json:String):List[Configs] = {
+  def parseJsAttachments(json: String):List[AttachmentType] = {
     val jsArray = Json.parse(json).as[List[JsObject]]
-    var list:List[Configs] = List()
-    jsArray.foreach { jsonConfig =>
-      list ::= Configs(
-        (jsonConfig \ "system").as[Long],
-	      (jsonConfig \ "parameter").as[Long],
-	      (jsonConfig \ "endpoint").as[Long],
-	      (jsonConfig \ "value").as[String]
-      )
+    var list:List[AttachmentType] = List()
+    jsArray.foreach { jsonAttachment =>
+      val attachmentName = (jsonAttachment \ "name").as[String]
+      val attachmentData = stringContentToByteArray((jsonAttachment \ "data").as[String])
+      list ::= new AttachmentType(attachmentName, attachmentData)
     }
     list
   }
 
+  private def stringContentToByteArray(stringContent: String): Array[Byte] = {
+    if (stringContent.startsWith("data:")) {
+      // Data URL
+      Base64.decodeBase64(stringContent.substring(stringContent.indexOf(",") + 1))
+    } else {
+      Base64.decodeBase64(stringContent)
+    }
+  }
+
   def parseJsConfig(json:String):Configs = {
     val jsonConfig = Json.parse(json).as[JsObject]
+    var value: Option[String] = (jsonConfig \ "value").asOpt[String]
+    if (value.isEmpty) {
+      value = Some((jsonConfig \ "valueBinary").as[String])
+    }
     Configs(
       (jsonConfig \ "system").as[Long],
 	    (jsonConfig \ "parameter").as[Long],
 	    (jsonConfig \ "endpoint").as[Long],
-	    (jsonConfig \ "value").as[String]
+      value.get
     )
+  }
+
+  def parseJsUserInputs(json:String): List[UserInput] = {
+    val jsArray = Json.parse(json).as[List[JsObject]]
+    var list:List[UserInput] = List()
+    jsArray.foreach { jsonInput =>
+      val input = new UserInput()
+      input.setId((jsonInput \ "id").as[String])
+      input.setName((jsonInput \ "name").as[String])
+      input.setType((jsonInput \ "type").as[String])
+      input.setEmbeddingMethod(ValueEmbeddingEnumeration.fromValue((jsonInput \ "embeddingMethod").as[String]))
+      if (input.getEmbeddingMethod == ValueEmbeddingEnumeration.BASE_64) {
+        input.setValue((jsonInput \ "valueBinary").as[String])
+      } else {
+        input.setValue((jsonInput \ "value").as[String])
+      }
+      list ::= input
+    }
+    list
   }
 
   def parseJsDomainParameter(json:String, domainParameterId: Option[Long], domainId: Long): DomainParameter = {
@@ -697,12 +738,19 @@ object JsonUtil {
     if (domainParameterId.isDefined) {
       idToUse = domainParameterId.get
     }
+    val kind = (jsonConfig \ "kind").as[String]
+    var value: Option[String] = None
+    if (kind.equals("BINARY")) {
+      value = (jsonConfig \ "valueBinary").asOpt[String]
+    } else {
+      value = (jsonConfig \ "value").asOpt[String]
+    }
     DomainParameter(
       idToUse,
       (jsonConfig \ "name").as[String],
       (jsonConfig \ "desc").asOpt[String],
-      (jsonConfig \ "kind").as[String],
-      (jsonConfig \ "value").asOpt[String],
+      kind,
+      value,
       domainId
     )
   }

@@ -296,8 +296,11 @@ class DataService
 				else if !property.changeValue && property.configured
 					propValue.value = ''
 			else if property.value? && property.value.trim().length > 0
-				propValue.value = property.value.trim()
-			if propValue.value?
+				if property.kind == 'BINARY'
+					propValue.valueBinary = property.value.trim()
+				else
+					propValue.value = property.value.trim()
+			if propValue.value? || propValue.valueBinary?
 				propValues.push(propValue)
 		JSON.stringify(propValues)
 

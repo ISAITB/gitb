@@ -1,26 +1,24 @@
 package utils;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.Version;
 import com.fasterxml.jackson.databind.*;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 import com.gitb.core.Actor;
-import com.gitb.core.ActorConfiguration;
 import com.gitb.core.StepStatus;
 import com.gitb.core.TestCaseType;
-import com.gitb.tbs.*;
-import com.gitb.tpl.Instruction;
+import com.gitb.tbs.ConfigureResponse;
+import com.gitb.tbs.InputRequest;
+import com.gitb.tbs.InteractWithUsersRequest;
+import com.gitb.tbs.TestStepStatus;
 import com.gitb.tpl.*;
 import com.gitb.tr.*;
 
 import javax.xml.bind.JAXBElement;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.util.List;
 
 /**
  * A Jackson wrapper for converting JAVA objects into JSON and vice versa
@@ -79,19 +77,6 @@ public class JacksonUtil {
 
     public static String serializeInteractionRequest (InteractWithUsersRequest request) throws JsonProcessingException {
         return mapper.writeValueAsString(request);
-    }
-
-    public static List<ActorConfiguration> parseActorConfigurations(String json) throws IOException {
-        CollectionType type = mapper.getTypeFactory().constructCollectionType(List.class, ActorConfiguration.class);
-        List<ActorConfiguration> configs = mapper.readValue(json, type);
-        return configs;
-    }
-
-    @JsonCreator
-    public static List<UserInput> parseUserInputs(String json) throws IOException {
-        CollectionType type = mapper.getTypeFactory().constructCollectionType(List.class, UserInput.class);
-        List<UserInput> inputs = mapper.readValue(json, type);
-        return inputs;
     }
 
     private static class StatusSerializer extends JsonSerializer<StepStatus> {

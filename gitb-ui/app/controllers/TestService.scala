@@ -209,14 +209,13 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
 
     val inputs = ParameterExtractor.requiredBodyParameter(request, Parameters.INPUTS)
     val step   = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_STEP)
-    val userInputs = JacksonUtil.parseUserInputs(inputs)
+    val userInputs = JsonUtil.parseJsUserInputs(inputs)
 
     var response: Result = null
     if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
       // Check for viruses in the uploaded file(s)
       val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-      import scala.collection.JavaConversions._
-      if (scanForVirus(userInputs.toList, virusScanner)) {
+      if (scanForVirus(userInputs, virusScanner)) {
         response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Provided file failed virus scan.")
       }
     }
@@ -224,6 +223,7 @@ class TestService @Inject() (reportManager: ReportManager, conformanceManager: C
       val pRequest: ProvideInputRequest = new ProvideInputRequest
       pRequest.setTcInstanceId(session_id)
       pRequest.setStepId(step)
+      import scala.collection.JavaConversions._
       pRequest.getInput.addAll(userInputs)
 
       testbedClient.service().provideInput(pRequest)

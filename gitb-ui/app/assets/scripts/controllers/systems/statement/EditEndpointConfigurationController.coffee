@@ -112,7 +112,7 @@ class EditEndpointConfigurationController
           reader.onload = (event) =>
             result = event.target.result
             @configuration.value = result
-            @SystemService.saveEndpointConfiguration @endpoint.id, @configuration
+            @SystemService.saveEndpointConfiguration @endpoint.id, @configuration, true
             .then (metadata) => 
               if metadata?
                 @configuration.extension = metadata.extension

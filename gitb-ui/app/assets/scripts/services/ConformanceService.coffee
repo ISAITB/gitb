@@ -200,8 +200,11 @@ class ConformanceService
       name: domainParameterName,
       desc: domainParameterDescription,
       kind: domainParameterKind,
-      value: domainParameterValue
     }
+    if domainParameterKind == 'BINARY'
+      params.valueBinary = domainParameterValue
+    else
+      params.value = domainParameterValue
     @RestService.post({
       path: jsRoutes.controllers.ConformanceService.updateDomainParameter(domainId, domainParameterId).url,
       authenticate: true,
@@ -214,8 +217,11 @@ class ConformanceService
       name: domainParameterName,
       desc: domainParameterDescription,
       kind: domainParameterKind,
-      value: domainParameterValue
     }
+    if domainParameterKind == 'BINARY'
+      params.valueBinary = domainParameterValue
+    else
+      params.value = domainParameterValue
     @RestService.post({
       path: jsRoutes.controllers.ConformanceService.createDomainParameter(domainId).url,
       authenticate: true,

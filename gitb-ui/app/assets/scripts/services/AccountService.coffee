@@ -89,8 +89,7 @@ class AccountService
         data["msg_type_description"] = messageTypeDescription
         data["msg_content"] = messageContent
         if (messageAttachments?)
-            data["msg_attachments_count"] = messageAttachments.length
-            data["msg_attachments"] = messageAttachments
+            data["msg_attachments"] = JSON.stringify(messageAttachments)
         @RestService.post({
             path: jsRoutes.controllers.AccountService.submitFeedback().url,
             data: data

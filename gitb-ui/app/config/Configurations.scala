@@ -5,6 +5,8 @@ import java.util.Properties
 import com.gitb.utils.HmacUtils
 import com.typesafe.config.{Config, ConfigFactory}
 
+import scala.util.matching.Regex
+
 object Configurations {
 
   var _IS_LOADED = false
@@ -100,6 +102,14 @@ object Configurations {
 
   var SMTP_PROPERTIES = new Properties()
 
+  var INPUT_SANITIZER__ENABLED = true
+  var INPUT_SANITIZER__METHODS_TO_CHECK_STR:String = _
+  var INPUT_SANITIZER__METHODS_TO_CHECK:Set[String] = _
+  var INPUT_SANITIZER__DEFAULT_BLACKLIST_EXPRESSION:Regex = _
+  var INPUT_SANITIZER__PARAMETER_WHITELIST_EXPRESSIONS:Map[String, Regex] = _
+  var INPUT_SANITIZER__PARAMETERS_TO_SKIP:Set[String] = _
+  var INPUT_SANITIZER__PARAMETERS_AS_JSON:Set[String] = _
+
   def loadConfigurations() = {
     if (!_IS_LOADED) {
       //Load configuration file
@@ -163,7 +173,7 @@ object Configurations {
       EMAIL_ATTACHMENTS_MAX_SIZE = fromEnv("EMAIL_ATTACHMENTS_MAX_SIZE", conf.getString("email.attachments.maxSize")).toInt
       EMAIL_ATTACHMENTS_MAX_COUNT = fromEnv("EMAIL_ATTACHMENTS_MAX_COUNT", conf.getString("email.attachments.maxCount")).toInt
       EMAIL_ATTACHMENTS_ALLOWED_TYPES_STR = fromEnv("EMAIL_ATTACHMENTS_ALLOWED_TYPES", conf.getString("email.attachments.allowedTypes"))
-      val tempSet = new scala.collection.mutable.HashSet[String]()
+      var tempSet = new scala.collection.mutable.HashSet[String]()
       EMAIL_ATTACHMENTS_ALLOWED_TYPES_STR.split(",").map(_.trim).foreach{ mimeType =>
         tempSet += mimeType
       }
@@ -227,6 +237,44 @@ object Configurations {
 
       GUIDES_EULOGIN_USE = fromEnv("GUIDES_EULOGIN_USE", conf.getString("guides.eulogin.use")).toString
       GUIDES_EULOGIN_MIGRATION = fromEnv("GUIDES_EULOGIN_MIGRATION", conf.getString("guides.eulogin.migration")).toString
+
+      // Input sanitiser - START
+      INPUT_SANITIZER__ENABLED = fromEnv("INPUT_SANITIZER__ENABLED", conf.getString("inputSanitizer.enabled")).toBoolean
+      INPUT_SANITIZER__METHODS_TO_CHECK_STR = fromEnv("INPUT_SANITIZER__METHODS_TO_CHECK", conf.getString("inputSanitizer.methodsToCheck"))
+      tempSet = new scala.collection.mutable.HashSet[String]()
+      INPUT_SANITIZER__METHODS_TO_CHECK_STR.split(",").map(_.trim).foreach{ method =>
+        tempSet += method
+      }
+      INPUT_SANITIZER__METHODS_TO_CHECK = tempSet.toSet
+      INPUT_SANITIZER__DEFAULT_BLACKLIST_EXPRESSION = new Regex(fromEnv("INPUT_SANITIZER__DEFAULT_BLACKLIST_EXPRESSION", conf.getString("inputSanitizer.defaultBlacklistExpression")).toString)
+      val sanitizerExpressionsConfig = conf.getObjectList("inputSanitizer.parameterWhitelistExpressions")
+      if (sanitizerExpressionsConfig == null) {
+        INPUT_SANITIZER__PARAMETER_WHITELIST_EXPRESSIONS = Map()
+      } else {
+        val tempMap: scala.collection.mutable.Map[String, Regex] = scala.collection.mutable.Map()
+        import scala.collection.JavaConversions._
+        sanitizerExpressionsConfig.foreach { entry =>
+          entry.entrySet().foreach { mapping =>
+            tempMap(mapping.getKey) = new Regex(mapping.getValue.unwrapped.asInstanceOf[String])
+          }
+        }
+        INPUT_SANITIZER__PARAMETER_WHITELIST_EXPRESSIONS = tempMap.toMap
+      }
+      val sanitizerSkipped = conf.getStringList("inputSanitizer.parametersToSkip")
+      if (sanitizerSkipped == null) {
+        INPUT_SANITIZER__PARAMETERS_TO_SKIP = Set()
+      } else {
+        import scala.collection.JavaConversions._
+        INPUT_SANITIZER__PARAMETERS_TO_SKIP = sanitizerSkipped.toSet
+      }
+      val sanitizerJsonParameters = conf.getStringList("inputSanitizer.parametersAsJson")
+      if (sanitizerJsonParameters == null) {
+        INPUT_SANITIZER__PARAMETERS_AS_JSON = Set()
+      } else {
+        import scala.collection.JavaConversions._
+        INPUT_SANITIZER__PARAMETERS_AS_JSON = sanitizerJsonParameters.toSet
+      }
+      // Input sanitiser - END
 
       _IS_LOADED = true
     }
