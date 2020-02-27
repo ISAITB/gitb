@@ -32,7 +32,7 @@
 		</div>
 	</div>
 	<div class="modal-footer">
-		<button class="btn btn-default" type="submit" ng-click="editEndpointConfigurationCtrl.save()">Save</button>
+		<button class="btn btn-default" type="submit" ng-click="editEndpointConfigurationCtrl.save()" ng-disabled="editEndpointConfigurationCtrl.parameter.kind == 'BINARY' && !editEndpointConfigurationCtrl.file">Save</button>
 		<button class="btn btn-default" type="button" ng-click="editEndpointConfigurationCtrl.delete()" ng-if="editEndpointConfigurationCtrl.isConfigurationSet">Delete</button>
 		<button class="btn btn-default" type="button" ng-click="editEndpointConfigurationCtrl.cancel()">Cancel</button>
 	</div>

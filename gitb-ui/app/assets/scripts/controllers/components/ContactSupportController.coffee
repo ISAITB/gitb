@@ -72,7 +72,7 @@ class ContactSupportController
             @validateAttachments()
         ) 
             @sendPending = true
-            @AccountService.submitFeedback(@contactAddress, feedbackId, @feedback.description, @getRichTextEditor().getContent(), @attachments)
+            @AccountService.submitFeedback(@contactAddress, @feedback.id, @feedback.description, @getRichTextEditor().getContent(), @attachments)
             .then (data) =>
                 if (data? && data.error_code?)
                     @ValidationService.alerts.push({type:'danger', msg:data.error_description})
