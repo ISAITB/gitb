@@ -240,7 +240,15 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canDeleteAdministrator(request: RequestWithAttributes[_], userId: Long):Boolean = {
-    checkTestBedAdmin(request)
+    var ok = false
+    val userInfo = getUser(getRequestUserId(request))
+    if (isTestBedAdmin(userInfo)) {
+      ok = true
+    } else if (isCommunityAdmin(userInfo)) {
+      val targetUserOrganisation = getUserOrganisation(userId).get
+      ok = targetUserOrganisation.community == userInfo.organization.get.community
+    }
+    setAuthResult(request, ok, "User cannot delete the requested administrator")
   }
 
   def canUpdateOrganisationUser(request: RequestWithAttributes[_], userId: Long):Boolean = {
