@@ -32,6 +32,10 @@
             <artifactId>generex</artifactId>
             <version>1.0.2</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+        </dependency>
     </dependencies>
 
 </project>
