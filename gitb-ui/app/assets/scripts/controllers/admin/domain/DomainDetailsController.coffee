@@ -81,7 +81,6 @@ class DomainDetailsController
 	saveDomainChanges: () =>
 		@ConformanceService.updateDomain(@domainId, @domain.sname, @domain.fname, @domain.description)
 		.then () =>
-			@$state.go @$state.current, {}, {reload: true}
 			@PopupService.success(@DataService.labelDomain()+' updated.')
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)

@@ -64,7 +64,6 @@ class EndpointDetailsController
 	saveChanges: () =>
 		@EndPointService.updateEndPoint(@endpointId, @endpoint.name, @endpoint.description, @actorId)
 		.then () =>
-			@$state.go @$state.current, {}, {reload: true}
 			@PopupService.success(@DataService.labelEndpoint()+' updated.')
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)

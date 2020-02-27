@@ -174,7 +174,6 @@ class CommunityDetailController
           @ValidationService.pushAlert({type:'danger', msg:data.error_description})
           @alerts = @ValidationService.getAlerts()          
         else
-          @$state.go(@$state.$current, null, { reload: true });
           @PopupService.success('Community updated.')
       .catch (error) =>
         @ErrorService.showErrorMessage(error)

@@ -111,7 +111,6 @@ class OrganizationDetailController
         @ValidationService.pushAlert({type:'danger', msg:data.error_description})
         @alerts = @ValidationService.getAlerts()          
       else
-        @$state.go @$state.current, {}, {reload: true}
         @PopupService.success(@DataService.labelOrganisation()+" updated.")
     .catch (error) =>
       @ErrorService.showErrorMessage(error)

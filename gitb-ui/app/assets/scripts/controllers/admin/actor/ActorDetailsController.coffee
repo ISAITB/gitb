@@ -79,7 +79,6 @@ class ActorDetailsController
 	saveChanges: () =>
 		@ActorService.updateActor(@actorId, @actor.actorId, @actor.name, @actor.description, @actor.default, @actor.hidden, @actor.displayOrder, @domainId, @specificationId)
 		.then () =>
-			@$state.go @$state.current, {}, {reload: true}
 			@PopupService.success(@DataService.labelActor()+' updated.')
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)

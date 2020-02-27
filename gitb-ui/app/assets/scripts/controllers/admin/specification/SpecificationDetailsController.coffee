@@ -253,7 +253,6 @@ class SpecificationDetailsController
 	saveSpecificationChanges: () =>
 		@SpecificationService.updateSpecification(@specificationId, @specification.sname, @specification.fname, @specification.urls, @specification. diagram, @specification.description, @specification.spec_type, @specification.hidden)
 		.then () =>
-			@$state.go @$state.current, {}, {reload: true}
 			@PopupService.success(@DataService.labelSpecification()+' updated.')
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
