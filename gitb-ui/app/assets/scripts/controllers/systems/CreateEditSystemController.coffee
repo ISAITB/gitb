@@ -1,7 +1,7 @@
 class CreateEditSystemController
 
-	@$inject = ['$log', '$scope', '$uibModalInstance', 'ConfirmationDialogService', 'SystemService', 'ErrorService', 'system', 'organisationId', 'CommunityService', 'DataService', 'viewProperties', 'PopupService']
-	constructor:(@$log, @$scope, @$uibModalInstance, @ConfirmationDialogService, @SystemService, @ErrorService, system, organisationId, @CommunityService, @DataService, viewProperties, @PopupService) ->
+	@$inject = ['$log', '$scope', '$uibModalInstance', 'ConfirmationDialogService', 'SystemService', 'ErrorService', 'system', 'organisationId', 'communityId', 'CommunityService', 'DataService', 'viewProperties', 'PopupService']
+	constructor:(@$log, @$scope, @$uibModalInstance, @ConfirmationDialogService, @SystemService, @ErrorService, system, organisationId, communityId, @CommunityService, @DataService, viewProperties, @PopupService) ->
 		@$log.debug "Constructing SystemController"
 
 		@$scope.pending = false
@@ -26,7 +26,7 @@ class CreateEditSystemController
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 		else
-			@CommunityService.getSystemParameters(@DataService.community.id)
+			@CommunityService.getSystemParameters(communityId)
 			.then (data) =>
 				@$scope.propertyData.properties = data
 			.catch (error) =>
