@@ -77,7 +77,7 @@
 					<td>{{testSuite.description}}</td>
 					<td>{{testSuite.result}}</td>
 					<td style="padding-right: 17px;">
-						<button class="btn btn-primary pull-right" ng-click="conformanceStatementDetailCtrl.onTestSuiteSelect(testSuite)"><i class="fa fa-play"></i></button>
+						<button class="btn btn-primary pull-right" ng-click="conformanceStatementDetailCtrl.onTestSuiteSelect(testSuite); $event.stopPropagation();"><i class="fa fa-play"></i></button>
 					</td>
 				</tr>
 				<tr ng-repeat-end class="expandable-table-row-expanded">
