@@ -7,7 +7,9 @@ import akka.actor.Props;
 import akka.japi.Creator;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.SessionManager;
+import com.gitb.engine.TestEngine;
 import com.gitb.engine.TestbedService;
+import com.gitb.engine.actors.SessionActor;
 import com.gitb.engine.actors.util.ActorUtils;
 import com.gitb.engine.commands.interaction.*;
 import com.gitb.engine.events.model.StatusEvent;
@@ -97,7 +99,7 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
             }
             //Stop command for test case processing
             else if (message instanceof StopCommand || message instanceof RestartCommand) {
-	            logger.debug("Received stop command, stopping test case sequence.");
+	            logger.debug(MarkerFactory.getDetachedMarker(sessionId), "Received stop command, stopping test case sequence.");
 	            //Stop child sequence processor
 	            if (sequenceProcessorActor != null) {
 		            sequenceProcessorActor.tell(message, self());
@@ -116,20 +118,25 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
             //Initiate the preliminary phase execution
             else if (message instanceof InitiatePreliminaryCommand) {
 	            if (preliminaryProcessorActor != null) {
-		            logger.debug("Initiating preliminary phase.");
+		            logger.debug(MarkerFactory.getDetachedMarker(sessionId), "Initiating preliminary phase.");
 		            //Start the processing of preliminary phase
 		            preliminaryProcessorActor.tell(new StartCommand(sessionId), self());
 	            }
             }
             //Handle the Status events
             else if (message instanceof StatusEvent) {
-                // TODO stop the sequenceProcessorActor sequence if it is completed or gets error
 	            if(getSender().equals(sequenceProcessorActor)) {
 		            StepStatus status = ((StatusEvent) message).getStatus();
-
-		            if(status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.WARNING) {
-
+		            if (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.WARNING) {
 			            TestbedService.updateStatus(sessionId, TEST_CASE_STEP_ID, status, constructResultReport(status));
+                        if (SessionManager.getInstance().exists(sessionId)) {
+                            TestEngine
+                                    .getInstance()
+                                    .getEngineActorSystem()
+                                    .getActorSystem()
+                                    .actorSelection(SessionActor.getPath(sessionId))
+                                    .tell(new StopCommand(sessionId), self());
+                        }
 		            }
 	            }
             } else {

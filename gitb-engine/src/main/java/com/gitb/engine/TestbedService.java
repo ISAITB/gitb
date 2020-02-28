@@ -195,8 +195,6 @@ public class TestbedService {
 					.getActorSystem()
 					.actorSelection(SessionActor.getPath(sessionId))
 					.tell(new StopCommand(sessionId), ActorRef.noSender());
-
-			SessionManager.getInstance().endSession(sessionId);
 		}
 	}
 

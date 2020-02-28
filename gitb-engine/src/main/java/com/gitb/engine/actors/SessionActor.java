@@ -2,6 +2,7 @@ package com.gitb.engine.actors;
 
 import akka.actor.ActorContext;
 import akka.actor.ActorRef;
+import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.dispatch.Futures;
 import com.gitb.core.StepStatus;
@@ -12,8 +13,8 @@ import com.gitb.engine.actors.supervisors.SessionSupervisor;
 import com.gitb.engine.actors.util.ActorUtils;
 import com.gitb.engine.commands.interaction.*;
 import com.gitb.engine.events.model.TestStepStatusEvent;
-import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.engine.testcase.TestCaseContext;
+import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tbs.SUTConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -198,11 +199,12 @@ public class SessionActor extends Actor {
                         }
                         getSender().tell(Boolean.TRUE, self());
                     } else if (message instanceof StopCommand) {
-                        ActorRef child = getContext()
-                                .getChild(TestCaseProcessorActor.NAME);
+                        ActorRef child = getContext().getChild(TestCaseProcessorActor.NAME);
                         child.tell(message, self());
                         context.destroy();
                         context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPED);
+                        SessionManager.getInstance().endSession(((StopCommand) message).getSessionId());
+                        self().tell(PoisonPill.getInstance(), self());
                     } else {
                         unexpectedCommand(message, context);
                     }
@@ -213,7 +215,7 @@ public class SessionActor extends Actor {
                                 .getChild(TestCaseProcessorActor.NAME);
                         child.tell(message, self());
                     } else if (message instanceof TestStepStatusEvent) {
-                        ignoredStatusUpdate(message);
+                        ignoredStatusUpdate((TestStepStatusEvent)message);
                     } else {
                         unexpectedCommand(message, context);
                     }
@@ -233,8 +235,8 @@ public class SessionActor extends Actor {
 		}, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER));
 	}
 
-	private void ignoredStatusUpdate(Object message) {
-		logger.debug("Ignoring the status update ["+message+"]");
+	private void ignoredStatusUpdate(TestStepStatusEvent message) {
+		logger.debug(MarkerFactory.getDetachedMarker(message.getSessionId()), "Ignoring the status update ["+message+"]");
 	}
 
 	private void unexpectedCommand(Object message, TestCaseContext context) {
