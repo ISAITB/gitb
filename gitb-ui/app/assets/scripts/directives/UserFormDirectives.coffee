@@ -158,6 +158,12 @@
       scope.Constants = Constants
       scope.DataService = DataService
       scope.sso = DataService.configuration['sso.enabled']
+      scope.setFormFocus = () =>
+        if scope.model?.selfRegOption?
+          if scope.model.selfRegOption.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN
+            scope.DataService.focus('token')
+          else 
+            scope.DataService.focus('orgShortName')
       if scope.selfRegOptions == undefined
         CommunityService.getSelfRegistrationOptions()
         .then((data) =>
@@ -179,10 +185,4 @@
         if scope.model?.selfRegOption?
           scope.DataService.setupLabels(scope.model.selfRegOption.labels)
           scope.setFormFocus()
-      scope.setFormFocus = () =>
-        if scope.model?.selfRegOption?
-          if scope.model.selfRegOption.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN
-            scope.DataService.focus('token')
-          else 
-            scope.DataService.focus('orgShortName')
 ]
