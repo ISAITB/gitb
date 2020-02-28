@@ -23,6 +23,7 @@ function eraseCookies() {
 $(document).ready(function() {
     eraseCookies();
     setupLoginOptionElement('loginOption');
+    setupLoginOptionElement('linkOption', 'link');
     setupLoginOptionElement('registerOption', 'register');
     setupLoginOptionElement('demoOption', 'demo');
     setupLoginOptionElement('migrateOption', 'migrate');
