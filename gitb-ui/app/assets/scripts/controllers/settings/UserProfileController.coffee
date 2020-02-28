@@ -1,7 +1,7 @@
 class UserProfileController
 
-	@$inject = ['$log', '$scope', '$rootScope', '$location', 'DataService', 'AccountService', 'AuthService', 'ErrorService', 'Constants', 'Events', 'ConfirmationDialogService', '$cookies', 'PopupService']
-	constructor: (@$log, @$scope, @$rootScope, @$location, @DataService, @AccountService, @AuthService, @ErrorService, @Constants, @Events, @ConfirmationDialogService, @$cookies, @PopupService) ->
+	@$inject = ['$log', '$scope', '$rootScope', '$location', 'DataService', 'AccountService', 'AuthService', 'ErrorService', 'Constants', 'Events', 'ConfirmationDialogService', '$cookies', 'PopupService', '$uibModal']
+	constructor: (@$log, @$scope, @$rootScope, @$location, @DataService, @AccountService, @AuthService, @ErrorService, @Constants, @Events, @ConfirmationDialogService, @$cookies, @PopupService, @$uibModal) ->
 
 		@$log.debug "Constructing UserProfileController..."
 
@@ -17,19 +17,19 @@ class UserProfileController
 			@DataService.focus('name')
 
 	disconnect: () ->
-		@ConfirmationDialogService.confirm("Confirmation", "Removing this role from your account will also end your current session. Are you sure you want to proceed?", "Yes", "No")
-		.finally(angular.noop)
-		.then () =>
-			@AuthService.disconnectFunctionalAccount()
-			.then(
-				(data) => #success handler
-					@$cookies.put(@Constants.LOGIN_OPTION_COOKIE_KEY, @Constants.LOGIN_OPTION.FORCE_CHOICE)
-					@$rootScope.$emit(@Events.onLogout, {full: false, keepLoginOption: true})
-					@PopupService.success("Role removed from your account.")
-				,
-				(error) => #error handler
-					@ErrorService.showErrorMessage(error)
-			)
+		modalOptions =
+			templateUrl: 'assets/views/settings/disconnect-role-modal.html'
+			controller: 'DisconnectRoleModalController as controller'
+		@$uibModal.open(modalOptions).result.finally(angular.noop).then((choice) =>
+			@$cookies.put(@Constants.LOGIN_OPTION_COOKIE_KEY, @Constants.LOGIN_OPTION.FORCE_CHOICE)
+			@$rootScope.$emit(@Events.onLogout, {full: false, keepLoginOption: true})
+			if choice == @Constants.DISCONNECT_ROLE_OPTION.CURRENT_PARTIAL
+				@PopupService.success("Role disconnected from your account.")
+			else if choice == @Constants.DISCONNECT_ROLE_OPTION.CURRENT_FULL
+				@PopupService.success("Role fully removed from your account.")
+			else
+				@PopupService.success("All your role assignments were removed and information deleted.")
+		, angular.noop)
 
 	linkOtherRole: () ->
 		@ConfirmationDialogService.confirm("Confirmation", "Before linking another role to your account your current session will be closed. Are you sure you want to proceed?", "Yes", "No")

@@ -41,7 +41,7 @@
             </div>
             <div class="panel-footer">
                 <button type="submit" class="btn btn-default" ng-if="!pc.DataService.configuration['sso.enabled']"  ng-click="pc.updateProfile()">Save changes</button>
-                <button type="button" class="btn btn-default" ng-if="pc.DataService.configuration['sso.enabled']"  ng-click="pc.disconnect()">Remove current role from your account</button>
+                <button type="button" class="btn btn-default" ng-if="pc.DataService.configuration['sso.enabled']"  ng-click="pc.disconnect()">Remove role from your account</button>
                 <button type="button" class="btn btn-default" ng-if="pc.DataService.configuration['sso.enabled']"  ng-click="pc.linkOtherRole()">Link another role to your account</button>
                 <button type="button" class="btn btn-default" ng-if="pc.DataService.configuration['registration.enabled']" ng-click="pc.register()">Register another {{pc.DataService.labelOrganisationLower()}}</button>
             </div>

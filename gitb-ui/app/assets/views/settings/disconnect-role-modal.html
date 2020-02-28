@@ -1,0 +1,23 @@
+<div class="modal-header">
+    <h4>Role removal options</h4>
+</div>
+<form class="form-horizontal">
+    <div class="modal-body">
+        <div class="form-group">
+            <label class="col-sm-5 control-label" for="choice_partial">* Select how to proceed:</label>
+            <div class="col-sm-7">
+                <label style="padding-right:10px" class="radio-inline"><input type="radio" ng-model="controller.choice" name="choice" id="choice_partial" ng-value="controller.Constants.DISCONNECT_ROLE_OPTION.CURRENT_PARTIAL">Deactivate current role</label><span class="tooltip-for-radio-label" uib-tooltip="The current role will be disconnected from your EU Login account but can be linked to it again if you choose to do so."><i class="fa fa-question-circle"></i></span><br/>
+                <label ng-if="!controller.DataService.isSystemAdmin" style="padding-right:10px" class="radio-inline"><input type="radio" ng-model="controller.choice" name="choice" id="choice_full" ng-value="controller.Constants.DISCONNECT_ROLE_OPTION.CURRENT_FULL">Delete current role</label><span ng-if="!controller.DataService.isSystemAdmin" class="tooltip-for-radio-label" uib-tooltip="The current role will be permanently removed from your EU Login account."><i class="fa fa-question-circle"></i></span><br ng-if="!controller.DataService.isSystemAdmin"/>
+                <label ng-if="controller.DataService.isSystemAdmin" style="padding-right:10px" class="radio-inline"><input type="radio" ng-model="controller.choice" name="choice" id="choice_all" ng-value="controller.Constants.DISCONNECT_ROLE_OPTION.ALL">Delete all other roles</label><span ng-if="controller.DataService.isSystemAdmin" class="tooltip-for-radio-label" uib-tooltip="All other roles linked to your EU Login account (active and inactive) will be permanently removed."><i class="fa fa-question-circle"></i></span>
+                <label ng-if="!controller.DataService.isSystemAdmin" style="padding-right:10px" class="radio-inline"><input type="radio" ng-model="controller.choice" name="choice" id="choice_all" ng-value="controller.Constants.DISCONNECT_ROLE_OPTION.ALL">Delete all roles</label><span ng-if="!controller.DataService.isSystemAdmin" class="tooltip-for-radio-label" uib-tooltip="All Test Bed roles linked to your EU Login account (active and inactive) will be permanently removed."><i class="fa fa-question-circle"></i></span>
+            </div>
+        </div>
+        <div class="bg-info div-rounded div-padded">
+            <b>Privacy note:</b> Option <i>"Delete all roles"</i> removes all your recorded information. This does not affect or remove your conformance testing history.
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-default" type="submit" ng-click="controller.disconnect()" ng-disabled="controller.disconnectPending"><span class="tab" ng-if="controller.disconnectPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Proceed</button>
+        <button class="btn btn-default" type="button" ng-click="controller.cancel()">Cancel</button>
+    </div>    
+</form>

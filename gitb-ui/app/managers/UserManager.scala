@@ -158,6 +158,33 @@ class UserManager @Inject() (accountManager: AccountManager, organizationManager
     exec(PersistenceSchema.users.filter(_.id === userId).delete.transactionally)
   }
 
+  def deleteUsersByUidExceptTestBedAdmin(ssoUid: String, ssoEmail: String) = {
+    exec(
+      // Delete active roles
+      PersistenceSchema.users
+        .filter(_.ssoUid === ssoUid)
+        .filter(_.role =!= Enums.UserRole.SystemAdmin.id.toShort)
+        .delete andThen
+      // Delete inactive roles
+      PersistenceSchema.users
+        .filter(_.ssoEmail.isDefined)
+        .filter(_.ssoEmail.toLowerCase === ssoEmail.toLowerCase)
+        .filter(_.role =!= Enums.UserRole.SystemAdmin.id.toShort)
+        .delete
+      .transactionally
+    )
+  }
+
+  /**
+   * Deletes user
+   */
+  def deleteUserExceptTestBedAdmin(userId: Long) = {
+    exec(PersistenceSchema.users
+      .filter(_.id === userId)
+      .filter(_.role =!= Enums.UserRole.SystemAdmin.id.toShort)
+      .delete.transactionally)
+  }
+
   /**
    * Checks if user exists
    */
