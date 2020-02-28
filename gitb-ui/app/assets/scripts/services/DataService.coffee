@@ -22,7 +22,6 @@ class DataService
 		@isDomainUser = false
 		@acceptedEmailAttachmentTypes = undefined
 		@searchState = undefined
-		@labels = undefined
 
 	clearSearchState: () =>
 		@searchState = undefined
