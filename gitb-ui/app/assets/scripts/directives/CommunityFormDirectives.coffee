@@ -16,7 +16,7 @@
       '<div class="form-group" ng-if="tbAdmin">'+
         '<label class="col-xs-3 control-label" for="domainChoice">{{DataService.labelDomain()}}:</label>'+
         '<div class="col-xs-8">'+
-          '<select id="domainChoice" class="form-control" ng-model="tbCommunity.domain" ng-options="domain.sname for domain in tbDomains track by domain.id"><option value="">--Optional--</option></select>'+
+          '<select id="domainChoice" class="form-control" ng-change="domainChanged()" ng-model="tbCommunity.domain" ng-options="domain.sname for domain in tbDomains track by domain.id"><option value="">--Optional--</option></select>'+
         '</div>'+
       '</div>'+
       '<div class="form-group">'+
@@ -34,9 +34,23 @@
           '<label class="col-xs-3 control-label" for="selfRegToken">* Self-registration token:</label>'+
           '<div class="col-xs-8"><input id="selfRegToken" ng-model="tbCommunity.selfRegToken" class="form-control" type="text" required></div>'+
         '</div>'+
-        '<div class="form-group" ng-if="emailEnabled && tbCommunity.selfRegType != '+@Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED+'">'+
-          '<label class="col-xs-3 control-label" for="notifications">Self-registration notifications:</label>'+
-          '<div class="col-xs-8"><input id="notifications" ng-model="tbCommunity.selfRegNotification" type="checkbox" class="form-check"></div>'+
+        '<div ng-if="tbCommunity.selfRegType != '+@Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED+'">'+
+          '<div class="form-group" ng-if="tbCommunity.domain">'+
+            '<label class="col-xs-3 control-label" for="description">Description:</label>'+
+            '<div class="col-xs-8">'+
+              '<label class="checkbox-inline"><input type="checkbox" ng-change="descriptionCheckChanged()" ng-model="tbCommunity.sameDescriptionAsDomain" ng-true-value="true" ng-false-value="false">Same as domain</label>'+
+            '</div>'+
+          '</div>'+
+          '<div class="form-group">'+
+            '<label ng-if="!tbCommunity.domain" class="col-xs-3 control-label" for="description">Description:</label>'+
+            '<div ng-class="{\'col-xs-offset-3\': tbCommunity.domain}" class="col-xs-8">'+
+              '<textarea id="description" ng-model="tbCommunity.activeDescription" class="form-control" ng-readonly="tbCommunity.sameDescriptionAsDomain" ng-blur="setSameDescription()"></textarea>'+
+            '</div>'+
+          '</div>'+
+          '<div class="form-group" ng-if="emailEnabled">'+
+            '<label class="col-xs-3 control-label" for="notifications">Self-registration notifications:</label>'+
+            '<div class="col-xs-8"><input id="notifications" ng-model="tbCommunity.selfRegNotification" type="checkbox" class="form-check"></div>'+
+          '</div>'+
         '</div>'+
       '</div>'+
       '<input id="domain" ng-if="!tbAdmin" ng-model="tbCommunity.domain" type="hidden">'
@@ -50,11 +64,39 @@
         {id: @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING, label: 'Select from public communities'}, 
         {id: @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN, label: 'Select from public communities and provide token'} 
       ]
+
       scope.showToken = () =>
         scope.tbCommunity.selfRegType == @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN || scope.tbCommunity.selfRegType == @Constants.SELF_REGISTRATION_TYPE.TOKEN
+
       scope.selfRegTypeChanged = () =>
         if scope.showToken()
           scope.DataService.focus('selfRegToken')
+
+      scope.domainChanged = () =>
+        if scope.tbCommunity.domain?
+          if scope.tbCommunity.sameDescriptionAsDomain
+            scope.tbCommunity.activeDescription = scope.tbCommunity.domain.description
+        else
+          if scope.tbCommunity.sameDescriptionAsDomain
+            scope.tbCommunity.activeDescription = ''
+            scope.tbCommunity.sameDescriptionAsDomain = false
+
+      scope.descriptionCheckChanged = () =>
+        if scope.tbCommunity.sameDescriptionAsDomain
+          scope.tbCommunity.activeDescription = scope.tbCommunity.domain.description
+
+      scope.setSameDescription = () =>
+        scope.tbCommunity.sameDescriptionAsDomain = scope.tbCommunity.domain && !(scope.tbCommunity.activeDescription? && scope.tbCommunity.activeDescription.trim().length > 0)
+        if scope.tbCommunity.sameDescriptionAsDomain
+          scope.tbCommunity.activeDescription = scope.tbCommunity.domain.description
+
+      scope.$watch('tbCommunity', () => 
+        scope.tbCommunity.sameDescriptionAsDomain = scope.tbCommunity.domain && !(scope.tbCommunity.description? && scope.tbCommunity.description.trim().length > 0)
+        if scope.tbCommunity.sameDescriptionAsDomain
+          scope.tbCommunity.activeDescription = scope.tbCommunity.domain.description
+        else 
+          scope.tbCommunity.activeDescription = scope.tbCommunity.description
+      )
 
 ]
 

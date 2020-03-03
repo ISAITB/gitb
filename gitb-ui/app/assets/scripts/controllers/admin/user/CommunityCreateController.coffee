@@ -31,7 +31,9 @@ class CommunityCreateController
     @ValidationService.requireNonNull(@community.fname, "Please enter full name of the community.") &
     (!(@community.email? && @community.email.trim() != '') || @ValidationService.validateEmail(@community.email, "Please enter a valid support email.")) &
     (!@community.selfRegNotification || @ValidationService.requireNonNull(@community.email, "A support email needs to be defined to support notifications."))
-      @CommunityService.createCommunity @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegToken, @community.selfRegNotification, @community.domain?.id
+      if !@community.sameDescriptionAsDomain
+        descriptionToUse = @community.activeDescription
+      @CommunityService.createCommunity @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegToken, @community.selfRegNotification, descriptionToUse, @community.domain?.id
       .then (data) =>
         if data? && data.error_code?
           @ValidationService.pushAlert({type:'danger', msg:data.error_description})

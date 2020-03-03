@@ -400,6 +400,7 @@ object JsonUtil {
       "selfRegType" -> community.selfRegType,
       "selfRegToken" -> (if(community.selfRegToken.isDefined) community.selfRegToken.get else JsNull),
       "selfRegNotification" -> community.selfregNotification,
+      "description" -> (if(community.description.isDefined) community.description.get else JsNull),
       "domainId" -> community.domain
     )
     json
@@ -1114,6 +1115,8 @@ object JsonUtil {
     val json = Json.obj(
         "communityId" -> option.communityId,
         "communityName" -> option.communityName,
+        "communityDescription" -> (if (option.communityDescription.isDefined) option.communityDescription.get else JsNull),
+        "communityEmail" -> (if (option.communityEmail.isDefined) option.communityEmail.get else JsNull),
         "selfRegType" -> option.selfRegType,
         "templates" -> (if (option.templates.isDefined) jsSelfRegTemplates(option.templates.get) else JsNull),
         "labels" -> jsCommunityLabels(option.labels)

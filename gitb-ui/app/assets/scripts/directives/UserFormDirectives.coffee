@@ -75,23 +75,24 @@
                   '<span ng-if="!sso"><b>Privacy note:</b> By registering you grant your consent to link the provided information to your new administrator account.</span>'+
               '</div>'+
           '</div>'+
-          '<div class="form-group">'+
-              '<label class="col-xs-3 control-label" for="community">* Community:</label>'+
-              '<div class="col-xs-7">'+
-                  '<select ng-if="selfRegOptions.length > 1" ng-change="communityChanged()" id="community" class="form-control" ng-model="model.selfRegOption" ng-options="option as option.communityName for option in selfRegOptions"><option value=""></option></select>'+
-                  '<div ng-if="selfRegOptions.length == 1">'+
-                      '<input type="text" id="community" class="form-control" ng-model="model.selfRegOption.communityName" readonly="true"/>'+
-                      '<input type="hidden" id="communityId" ng-model="model.selfRegOption"/>'+
+          '<div ng-class="{\'form-separator-popup\': sso, \'form-separator\': !sso}">'+
+              '<h4 class="title">Community</h4>'+
+          '</div>'+
+          '<div table-directive row-style="optionRowStyle" ng-class="{\'self-reg-option-table-popup\': sso}" class="self-reg-option-table" columns="communityColumns" data="selfRegOptions" on-select="communitySelected"/>'+
+          '<div ng-if="model.selfRegOption.communityId">' +
+            '<div ng-if="model.selfRegOption.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN">'+
+              '<div class="form-group">'+
+                  '<label class="col-xs-3 control-label" for="token">* Registration token:</label>'+
+                  '<div class="col-xs-7">'+
+                      '<input id="token" ng-model="model.selfRegToken" class="form-control" type="text"/>'+
+                  '</div>'+
+                  '<div class="form-control-static"><span uib-tooltip="A community-specific token needs to be provided to allow registration. You need to request this from the community\'s administrator."><i class="fa fa-question-circle"></i></span></div>'+
+              '</div>'+
+              '<div class="form-group" ng-if="model.selfRegOption.communityEmail">'+
+                  '<div class="col-xs-offset-3 col-xs-7">'+
+                      '<div class="form-control-static inline-form-text">You can request this from the community\'s support team at <a ng-href="mailto:{{model.selfRegOption.communityEmail}}">{{model.selfRegOption.communityEmail}}</a>.</div>'+
                   '</div>'+
               '</div>'+
-          '</div>'+
-          '<div ng-if="model.selfRegOption.communityId">' +
-            '<div class="form-group" ng-if="model.selfRegOption.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN">'+
-                '<label class="col-xs-3 control-label" for="token">* Token:</label>'+
-                '<div class="col-xs-7">'+
-                    '<input id="token" ng-model="model.selfRegToken" class="form-control" type="text"/>'+
-                '</div>'+
-                '<div class="form-control-static"><span uib-tooltip="A community-specific token needs to be provided to allow registration. You need to request this from the community\'s administrator."><i class="fa fa-question-circle"></i></span></div>'+
             '</div>'+
             '<div ng-class="{\'form-separator-popup\': sso, \'form-separator\': !sso}">'+
                 '<h4 class="title">{{DataService.labelOrganisation()}} details <span uib-tooltip="This information defines the member of the selected community through which will you be testing for conformance"><i class="fa fa-question-circle"></i></span></h4>'+
@@ -158,6 +159,20 @@
       scope.Constants = Constants
       scope.DataService = DataService
       scope.sso = DataService.configuration['sso.enabled']
+      scope.communityColumns = [
+        {
+          field: 'communityName',
+          title: 'Name'
+        }
+        {
+          field: 'communityDescription',
+          title: 'Description'
+        }
+      ]
+      scope.communitySelected = (option) =>
+        scope.model.selfRegOption = option
+        scope.communityChanged()
+
       scope.setFormFocus = () =>
         if scope.model?.selfRegOption?
           if scope.model.selfRegOption.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN
@@ -172,8 +187,6 @@
             scope.model.selfRegOption = data[0]
             scope.DataService.setupLabels(scope.model.selfRegOption.labels)
             scope.setFormFocus()
-          else
-            scope.DataService.focus('community')
         )
       else
         if scope.selfRegOptions.length == 1
@@ -185,4 +198,11 @@
         if scope.model?.selfRegOption?
           scope.DataService.setupLabels(scope.model.selfRegOption.labels)
           scope.setFormFocus()
+
+      scope.optionRowStyle = () =>
+        if scope.selfRegOptions.length > 1
+          ""
+        else
+          "selected"
+
 ]

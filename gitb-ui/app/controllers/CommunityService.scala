@@ -59,6 +59,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
     val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
     val email = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_EMAIL)
+    val description = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
     var selfRegToken: Option[String] = None
     var selfRegNotification: Boolean = false
@@ -80,7 +81,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
       }
     }
     val domainId: Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    communityManager.updateCommunity(communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegNotification, domainId)
+    communityManager.updateCommunity(communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegNotification, description, domainId)
     ResponseConstructor.constructEmptyResponse
   }
 

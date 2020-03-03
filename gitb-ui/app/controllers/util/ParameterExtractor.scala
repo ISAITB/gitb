@@ -201,6 +201,7 @@ object ParameterExtractor {
     val sname = requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
     val fname = requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
     val email = optionalBodyParameter(request, Parameters.COMMUNITY_EMAIL)
+    val description = optionalBodyParameter(request, Parameters.DESCRIPTION)
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
     var selfRegToken: Option[String] = None
     var selfRegNotification: Boolean = false
@@ -225,7 +226,7 @@ object ParameterExtractor {
     }
 
     val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    Communities(0L, sname, fname, email, selfRegType, selfRegToken, selfRegNotification, domainId)
+    Communities(0L, sname, fname, email, selfRegType, selfRegToken, selfRegNotification, description, domainId)
   }
 
   def extractSystemAdminInfo(request:Request[AnyContent]):Users = {

@@ -65,9 +65,22 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   def getSelfRegistrationOptions(): List[SelfRegOption] = {
     exec(
       PersistenceSchema.communities
-        .filter(x => x.selfRegType === SelfRegistrationType.PublicListing.id.toShort || x.selfRegType === SelfRegistrationType.PublicListingWithToken.id.toShort)
-        .sortBy(_.shortname.asc).result
-    ).map(x => new SelfRegOption(x.id, x.shortname, x.selfRegType, organizationManager.getOrganisationTemplates(x.id), getCommunityLabels(x.id))).toList
+        .joinLeft(PersistenceSchema.domains).on(_.domain === _.id)
+        .filter(x => x._1.selfRegType === SelfRegistrationType.PublicListing.id.toShort || x._1.selfRegType === SelfRegistrationType.PublicListingWithToken.id.toShort)
+        .sortBy(_._1.shortname.asc).result
+    ).map(x => new SelfRegOption(x._1.id, x._1.shortname, selfRegDescriptionToUse(x._1.description, x._2), x._1.supportEmail, x._1.selfRegType, organizationManager.getOrganisationTemplates(x._1.id), getCommunityLabels(x._1.id))).toList
+  }
+
+  private def selfRegDescriptionToUse(communityDescription: Option[String], communityDomain: Option[Domain]): Option[String] = {
+    if (communityDescription.isDefined) {
+      communityDescription
+    } else {
+      if (communityDomain.isDefined) {
+        communityDomain.get.description
+      } else {
+        None
+      }
+    }
   }
 
   def getById(id: Long): Option[Communities] = {
@@ -112,7 +125,7 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   /**
     * Update community
     */
-  def updateCommunity(communityId: Long, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], selfRegNotification: Boolean, domainId: Option[Long]) = {
+  def updateCommunity(communityId: Long, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], selfRegNotification: Boolean, description: Option[String], domainId: Option[Long]) = {
     val actions = new ListBuffer[DBIO[_]]()
 
     val community = exec(PersistenceSchema.communities.filter(_.id === communityId).result.headOption)
@@ -128,8 +141,8 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
         val q = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.fullname)
         actions += q.update(fullName)
       }
-      val qs = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.supportEmail, c.domain, c.selfRegType, c.selfRegToken, c.selfregNotification)
-      actions += qs.update(supportEmail, domainId, selfRegType, selfRegToken, selfRegNotification)
+      val qs = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.supportEmail, c.domain, c.selfRegType, c.selfRegToken, c.selfregNotification, c.description)
+      actions += qs.update(supportEmail, domainId, selfRegType, selfRegToken, selfRegNotification, description)
 
       exec(DBIO.seq(actions.map(a => a): _*).transactionally)
     } else {
