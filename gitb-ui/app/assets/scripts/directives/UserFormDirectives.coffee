@@ -89,7 +89,7 @@
                   '<div class="form-control-static"><span uib-tooltip="A community-specific token needs to be provided to allow registration. You need to request this from the community\'s administrator."><i class="fa fa-question-circle"></i></span></div>'+
               '</div>'+
               '<div class="form-group" ng-if="model.selfRegOption.communityEmail" style="margin-bottom: -20px;">'+
-                  '<div class="col-xs-offset-3 col-xs-7">'+
+                  '<div class="col-xs-offset-3 col-xs-8">'+
                       '<div class="form-control-static inline-form-text">You can request this from the community\'s support team at <a ng-href="mailto:{{model.selfRegOption.communityEmail}}">{{model.selfRegOption.communityEmail}}</a>.</div>'+
                   '</div>'+
               '</div>'+
