@@ -1113,7 +1113,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canDeleteDomain(request: RequestWithAttributes[_], domain_id: Long):Boolean = {
-    canUpdateDomain(request, domain_id)
+    checkTestBedAdmin(request)
   }
 
   def canViewEndpointsById(request: RequestWithAttributes[_], ids: Option[List[Long]]):Boolean = {
