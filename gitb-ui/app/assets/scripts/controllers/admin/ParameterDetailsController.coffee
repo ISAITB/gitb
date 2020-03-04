@@ -12,6 +12,7 @@ class ParameterDetailsController
 		@$scope.existingValues = options.existingValues
 		@$scope.reservedKeys = options.reservedKeys
 		@$scope.hideInExport = options.hideInExport? && options.hideInExport
+		@$scope.hideInRegistration = !@DataService.configuration['registration.enabled'] || (options.hideInRegistration? && options.hideInRegistration)
 		@$uibModalInstance.rendered.then () => @DataService.focus('name')
 
 		@$scope.saveDisabled= () =>

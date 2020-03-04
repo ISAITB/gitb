@@ -75,7 +75,7 @@
                   '<span ng-if="!sso"><b>Privacy note:</b> By registering you grant your consent to link the provided information to your new administrator account.</span>'+
               '</div>'+
           '</div>'+
-          '<div ng-class="{\'form-separator-popup\': sso, \'form-separator\': !sso}">'+
+          '<div ng-class="{\'form-separator-popup\': sso, \'form-separator form-separator-top-padding\': !sso}">'+
               '<h4 class="title">Community</h4>'+
           '</div>'+
           '<div table-directive row-style="optionRowStyle" ng-class="{\'self-reg-option-table-popup\': sso}" class="self-reg-option-table" columns="communityColumns" data="selfRegOptions" on-select="communitySelected"/>'+
@@ -88,13 +88,13 @@
                   '</div>'+
                   '<div class="form-control-static"><span uib-tooltip="A community-specific token needs to be provided to allow registration. You need to request this from the community\'s administrator."><i class="fa fa-question-circle"></i></span></div>'+
               '</div>'+
-              '<div class="form-group" ng-if="model.selfRegOption.communityEmail">'+
+              '<div class="form-group" ng-if="model.selfRegOption.communityEmail" style="margin-bottom: -20px;">'+
                   '<div class="col-xs-offset-3 col-xs-7">'+
                       '<div class="form-control-static inline-form-text">You can request this from the community\'s support team at <a ng-href="mailto:{{model.selfRegOption.communityEmail}}">{{model.selfRegOption.communityEmail}}</a>.</div>'+
                   '</div>'+
               '</div>'+
             '</div>'+
-            '<div ng-class="{\'form-separator-popup\': sso, \'form-separator\': !sso}">'+
+            '<div ng-class="{\'form-separator-popup\': sso, \'form-separator\': !sso}" class="form-separator-top-padding">'+
                 '<h4 class="title">{{DataService.labelOrganisation()}} details <span uib-tooltip="This information defines the member of the selected community through which will you be testing for conformance"><i class="fa fa-question-circle"></i></span></h4>'+
             '</div>'+
             '<div class="form-group">'+
@@ -118,8 +118,16 @@
                 '</div>'+
                 '<div class="form-control-static"><span uib-tooltip="Predefined test configuration(s) curated by the community administrator"><i class="fa fa-question-circle"></i></span></div>'+
             '</div>'+
+
+            '<div class="row" ng-if="model.selfRegOption.organisationProperties.length > 0">'+
+              '<div class="col-xs-12">'+
+                '<div ng-class="{\'form-separator-popup selfreg\': sso, \'form-separator\': !sso}"/>'+
+              '</div>'+
+            '</div>'+
+
+            '<div tb-custom-properties-form tb-properties="model.selfRegOption.organisationProperties" tb-show-form-header="false" tb-form-padded="false" tb-col-input-less="1"/>'+
             '<div ng-if="!sso">'+
-              '<div class="form-separator">'+
+              '<div class="form-separator form-separator-top-padding">'+
                   '<h4 class="title">Administrator account details <span uib-tooltip="Through your administrator account you can manage your {{DataService.labelOrganisationLower()}}  users, configure your conformance statements and execute tests"><i class="fa fa-question-circle"></i></span></h4>'+
               '</div>'+
               '<div class="form-group">'+

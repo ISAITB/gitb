@@ -147,7 +147,7 @@ class LoginController
 				token = @selfRegData.selfRegToken
 			if @selfRegData.template?
 				templateId = @selfRegData.template.id
-			@CommunityService.selfRegister(@selfRegData.selfRegOption.communityId, token, @selfRegData.orgShortName, @selfRegData.orgFullName, templateId, @selfRegData.adminName, @selfRegData.adminEmail, @selfRegData.adminPassword)
+			@CommunityService.selfRegister(@selfRegData.selfRegOption.communityId, token, @selfRegData.orgShortName, @selfRegData.orgFullName, templateId, @selfRegData.selfRegOption.organisationProperties, @selfRegData.adminName, @selfRegData.adminEmail, @selfRegData.adminPassword)
 			.then (data) =>
 				if data?.error_code?
 					@alerts.push({type:'danger', msg:data.error_description})

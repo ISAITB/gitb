@@ -40,6 +40,9 @@
 					<label class="checkbox-inline" ng-if="!hideInExport && parameter.kind == 'SIMPLE'">
 						<input type="checkbox" ng-model="parameter.inExports">Included in exports
 					</label>
+					<label class="checkbox-inline" ng-if="!parameter.adminOnly && !hideInRegistration">
+						<input type="checkbox" ng-model="parameter.inSelfRegistration">Requested in self-registration
+					</label>
 				</div>
 			</div>
 		</div>

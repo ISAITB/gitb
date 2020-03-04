@@ -132,6 +132,7 @@ object Parameters {
   val ADMIN_ONLY  = "admin_only"
   val NOT_FOR_TESTS  = "not_for_tests"
   val IN_EXPORTS  = "in_exports"
+  val IN_SELFREG  = "in_selfreg"
   val HIDDEN = "hidden"
 
   val FILE       = "file"

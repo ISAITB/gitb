@@ -81,7 +81,8 @@ class EndpointDetailsController
 			size: 'lg'
 			resolve:
 				options: () => {
-					hideInExport: true
+					hideInExport: true,
+					hideInRegistration: true
 				}
 		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result
@@ -102,7 +103,8 @@ class EndpointDetailsController
 			resolve:
 				parameter: () => parameter
 				options: () => {
-					hideInExport: true
+					hideInExport: true,
+					hideInRegistration: true
 				}
 			size: 'lg'
 		modalInstance = @$uibModal.open(modalOptions)

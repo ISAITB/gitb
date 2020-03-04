@@ -82,14 +82,15 @@ class CommunityService
       path: jsRoutes.controllers.CommunityService.getSelfRegistrationOptions().url
     })
 
-  selfRegister: (communityId, token, organisationShortName, organisationFullName, templateId, userName, userEmail, userPassword) ->
+  selfRegister: (communityId, token, organisationShortName, organisationFullName, templateId, organisationProperties, userName, userEmail, userPassword) ->
     data = {
       community_id: communityId,
       vendor_sname: organisationShortName,
       vendor_fname: organisationFullName,
       user_name: userName,
       user_email: userEmail,
-      password: userPassword
+      password: userPassword,
+      properties: @DataService.customPropertiesForPost(organisationProperties)
     }
     if token?
       data.community_selfreg_token = token
@@ -131,6 +132,7 @@ class CommunityService
       admin_only: parameter.adminOnly,
       not_for_tests: parameter.notForTests,
       in_exports: parameter.inExports,
+      in_selfreg: parameter.inSelfRegistration,
       community_id: parameter.community
     }
     @RestService.post({
@@ -168,6 +170,7 @@ class CommunityService
       admin_only: parameter.adminOnly,
       not_for_tests: parameter.notForTests,
       in_exports: parameter.inExports,
+      in_selfreg: parameter.inSelfRegistration,
       community_id: parameter.community
     }
     @RestService.post({

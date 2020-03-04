@@ -446,8 +446,9 @@ object PersistenceSchema {
     def adminOnly = column[Boolean]("admin_only")
     def notForTests = column[Boolean]("not_for_tests")
     def inExports = column[Boolean]("in_exports")
+    def inSelfRegistration = column[Boolean]("in_selfreg")
     def community = column[Long]("community")
-    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, community) <> (OrganisationParameters.tupled, OrganisationParameters.unapply)
+    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, community) <> (OrganisationParameters.tupled, OrganisationParameters.unapply)
   }
   val organisationParameters = TableQuery[OrganisationParametersTable]
   val insertOrganisationParameters = organisationParameters returning organisationParameters.map(_.id)

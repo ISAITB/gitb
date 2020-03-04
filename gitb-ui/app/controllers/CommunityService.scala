@@ -125,16 +125,20 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
         }
       }
       if (response == null) {
-        val userId = communityManager.selfRegister(organisation, organisationAdmin, templateId, actualUserInfo)
-        if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-          val json: String = JsonUtil.jsActualUserInfo(authorizationManager.getAccountInfo(request)).toString
-          response = ResponseConstructor.constructJsonResponse(json)
-        } else {
-          response = ResponseConstructor.constructJsonResponse(JsonUtil.jsId(userId).toString)
-        }
-        // Self registration successful - notify support email if configured to do so.
-        if (Configurations.EMAIL_ENABLED && community.get.selfregNotification) {
-          notifyForSelfRegistration(community.get, organisation)
+        val customPropertyValues = ParameterExtractor.extractOrganisationParameterValues(request, Parameters.PROPERTIES, true)
+        response = ParameterExtractor.checkOrganisationParameterValues(customPropertyValues)
+        if (response == null) {
+          val userId = communityManager.selfRegister(organisation, organisationAdmin, templateId, actualUserInfo, customPropertyValues)
+          if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+            val json: String = JsonUtil.jsActualUserInfo(authorizationManager.getAccountInfo(request)).toString
+            response = ResponseConstructor.constructJsonResponse(json)
+          } else {
+            response = ResponseConstructor.constructJsonResponse(JsonUtil.jsId(userId).toString)
+          }
+          // Self registration successful - notify support email if configured to do so.
+          if (Configurations.EMAIL_ENABLED && community.get.selfregNotification) {
+            notifyForSelfRegistration(community.get, organisation)
+          }
         }
       }
     }

@@ -174,6 +174,7 @@ object JsonUtil {
       "adminOnly" -> parameter.adminOnly,
       "notForTests" -> parameter.notForTests,
       "inExports" -> parameter.inExports,
+      "inSelfRegistration" -> parameter.inSelfRegistration,
       "community" -> parameter.community
     )
     json
@@ -1119,7 +1120,8 @@ object JsonUtil {
         "communityEmail" -> (if (option.communityEmail.isDefined) option.communityEmail.get else JsNull),
         "selfRegType" -> option.selfRegType,
         "templates" -> (if (option.templates.isDefined) jsSelfRegTemplates(option.templates.get) else JsNull),
-        "labels" -> jsCommunityLabels(option.labels)
+        "labels" -> jsCommunityLabels(option.labels),
+        "organisationProperties" -> jsOrganisationParameters(option.customOrganisationProperties)
     )
     json
   }

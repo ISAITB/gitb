@@ -410,7 +410,8 @@ object ParameterExtractor {
     val adminOnly = ParameterExtractor.requiredBodyParameter(request, Parameters.ADMIN_ONLY).toBoolean
     val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
     val inExports:Boolean = (kind == "SIMPLE") && ParameterExtractor.requiredBodyParameter(request, Parameters.IN_EXPORTS).toBoolean
-    models.OrganisationParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, communityId)
+    val inSelfRegistration: Boolean = Configurations.REGISTRATION_ENABLED && (!adminOnly) && ParameterExtractor.requiredBodyParameter(request, Parameters.IN_SELFREG).toBoolean
+    models.OrganisationParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, communityId)
   }
 
   def extractSystemParameter(request:Request[AnyContent]):models.SystemParameters = {

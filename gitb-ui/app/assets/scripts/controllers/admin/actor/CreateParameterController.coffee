@@ -9,6 +9,7 @@ class CreateParameterController
 		@$scope.parameter.notForTests = options.notForTests? && options.notForTests
 		@$scope.parameter.adminOnly = options.adminOnly? && options.adminOnly
 		@$scope.parameter.inExports = false
+		@$scope.parameter.inSelfRegistration = false
 
 		@$scope.nameLabel = if options.nameLabel? then options.nameLabel else 'Name'
 		@$scope.hasKey = options.hasKey? && options.hasKey
@@ -16,6 +17,7 @@ class CreateParameterController
 		@$scope.existingValues = options.existingValues
 		@$scope.reservedKeys = options.reservedKeys
 		@$scope.hideInExport = options.hideInExport? && options.hideInExport
+		@$scope.hideInRegistration = !@DataService.configuration['registration.enabled'] || (options.hideInRegistration? && options.hideInRegistration)
 
 		@$uibModalInstance.rendered.then () => @DataService.focus('name')
 

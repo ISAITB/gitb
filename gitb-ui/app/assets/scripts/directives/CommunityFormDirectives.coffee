@@ -146,27 +146,30 @@
       tbPopup: '<?'
       tbColLabel: '<?'
       tbColOffset: '<?'
+      tbColInputLess: '<?'
       tbReadonly: '<?'
+      tbFormPadded: '<?'
+      tbShowFormHeader: '<?'
     template: ''+
       '<div ng-if="tbProperties.length > 0">'+
-        '<div class="row">'+
+        '<div class="row" ng-if="tbShowFormHeader">'+
           '<div class="col-xs-12">'+
             '<div ng-class="{\'form-separator\': !tbPopup, \'form-separator-popup\': tbPopup}">'+
               '<h4 class="title">Additional properties <span uib-tooltip="Properties specific to the community. Required properties will need to be completed before executing tests."><i class="fa fa-question-circle"></i></span></h4>'+
             '</div>'+
           '</div>'+
         '</div>'+
-        '<div class="row">'+
-          '<div ng-class="\'col-xs-\'+(11-tbColOffset)+\' col-xs-offset-\'+tbColOffset">'+
+        '<div ng-class="{\'row\': tbFormPadded}">'+
+          '<div ng-class="innerDivStyle">'+
             '<form class="form-horizontal">'+
               '<div class="form-group" ng-repeat="property in tbProperties">'+
                 '<label ng-class="\'col-xs-\'+tbColLabel" class="control-label" ng-attr-for="{{\'prop-\'+property.id}}"><span ng-if="property.use == \'R\'">* </span>{{property.name}}:</label>'+
-                '<div ng-class="\'col-xs-\'+(11-tbColLabel)" ng-if="property.kind == \'SIMPLE\'">'+
+                '<div ng-class="\'col-xs-\'+(11-tbColLabel-tbColInputLess)" ng-if="property.kind == \'SIMPLE\'">'+
                   '<p ng-if="isReadonly" class="form-control-static">{{property.value}}<span ng-if="property.desc" ng-style="{\'margin-left\':(property.value?\'20px\':\'0px\')}" uib-tooltip="{{property.desc}}"><i class="fa fa-question-circle"></i></span></p>'+
                   '<input ng-if="!isReadonly" ng-attr-id="{{\'prop-\'+property.id}}" ng-model="property.value" ng-readonly="property.adminOnly && !isAdmin" class="form-control" type="text"/>'+
                 '</div>'+
                 '<div ng-if="property.kind == \'SECRET\'">'+
-                  '<div ng-class="\'col-xs-\'+(9-tbColLabel)">'+
+                  '<div ng-class="\'col-xs-\'+(9-tbColLabel-tbColInputLess)">'+
                     '<p ng-if="isReadonly" class="form-control-static">{{property.value}}<span ng-if="property.desc" ng-style="{\'margin-left\':(property.value?\'20px\':\'0px\')}" uib-tooltip="{{property.desc}}"><i class="fa fa-question-circle"></i></span></p>'+
                     '<input ng-if="!isReadonly" ng-attr-id="{{\'prop-\'+property.id}}" ng-model="property.value" ng-readonly="!property.changeValue" class="form-control" ng-attr-type="{{property.showValue?\'text\':\'password\'}}"/>'+
                     '<div class="checkbox" ng-if="property.changeValue" ng-disabled="property.adminOnly && !isAdmin">'+
@@ -182,7 +185,7 @@
                     '</label>'+
                   '</div>'+
                 '</div>'+
-                '<div ng-class="\'col-xs-\'+(11-tbColLabel)" ng-if="property.kind == \'BINARY\'">'+
+                '<div ng-class="\'col-xs-\'+(11-tbColLabel-tbColInputLess)" ng-if="property.kind == \'BINARY\'">'+
                   '<div ng-if="isReadonly">'+
                     '<p class="form-control-static"><a ng-if="property.value" href="" ng-click="downloadProperty(property)" style="padding-right:10px;">{{fileName(property)}}</a><span ng-if="isReadonly && property.desc" ng-style="{\'margin-left\':(property.value?\'20px\':\'0px\')}" uib-tooltip="{{property.desc}}"><i class="fa fa-question-circle"></i></span></p>'+
                   '</div>'+
@@ -206,6 +209,10 @@
         scope.tbPopup = false
       if scope.tbReadonly == undefined
         scope.tbReadonly = false
+      if scope.tbFormPadded == undefined
+        scope.tbFormPadded = true
+      if scope.tbShowFormHeader == undefined
+        scope.tbShowFormHeader = true
       if scope.tbColOffset == undefined
         scope.tbColOffset = 1
       else
@@ -214,8 +221,16 @@
         scope.tbColLabel = 3
       else
         scope.tbColLabel = Number(scope.tbColLabel)
+      if scope.tbColInputLess == undefined
+        scope.tbColInputLess = 0
+      else
+        scope.tbColInputLess = Number(scope.tbColInputLess)
       scope.isAdmin = @DataService.isSystemAdmin || @DataService.isCommunityAdmin
       scope.isReadonly = @DataService.isVendorUser || scope.tbReadonly
+      if scope.tbFormPadded
+        scope.innerDivStyle = 'col-xs-'+(11-scope.tbColOffset)+' col-xs-offset-'+scope.tbColOffset
+      else
+        scope.innerDivStyle = ''
       if scope.tbProperties?
         for property in scope.tbProperties
           if property.kind == 'SECRET' && property.configured

@@ -27,12 +27,23 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
     result.isEmpty
   }
 
-  def selfRegister(organisation: Organizations, organisationAdmin: Users, templateId: Option[Long], actualUserInfo: Option[ActualUserInfo]): Long = {
+  def selfRegister(organisation: Organizations, organisationAdmin: Users, templateId: Option[Long], actualUserInfo: Option[ActualUserInfo], customPropertyValues: Option[List[OrganisationParameterValues]]): Long = {
     val userId = exec(
       (
         for {
+          // Save organisation
           organisationId <- organizationManager.createOrganizationInTrans(organisation, templateId, None, true, true, true)
+          // Save custom organisation property values
+          _ <- {
+            if (customPropertyValues.isDefined) {
+              organizationManager.saveOrganisationParameterValues(organisationId, organisation.community, false, customPropertyValues.get)
+            } else {
+              DBIO.successful(())
+            }
+          }
+          // Save admin user account
           userId <- PersistenceSchema.insertUser += organisationAdmin.withOrganizationId(organisationId)
+          // Link current session user with created admin user account
           _ <-
             if (actualUserInfo.isDefined) {
               accountManager.linkAccountInternal(userId, actualUserInfo.get)
@@ -68,7 +79,7 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
         .joinLeft(PersistenceSchema.domains).on(_.domain === _.id)
         .filter(x => x._1.selfRegType === SelfRegistrationType.PublicListing.id.toShort || x._1.selfRegType === SelfRegistrationType.PublicListingWithToken.id.toShort)
         .sortBy(_._1.shortname.asc).result
-    ).map(x => new SelfRegOption(x._1.id, x._1.shortname, selfRegDescriptionToUse(x._1.description, x._2), x._1.supportEmail, x._1.selfRegType, organizationManager.getOrganisationTemplates(x._1.id), getCommunityLabels(x._1.id))).toList
+    ).map(x => new SelfRegOption(x._1.id, x._1.shortname, selfRegDescriptionToUse(x._1.description, x._2), x._1.supportEmail, x._1.selfRegType, organizationManager.getOrganisationTemplates(x._1.id), getCommunityLabels(x._1.id), getOrganisationParametersForSelfRegistration(x._1.id))).toList
   }
 
   private def selfRegDescriptionToUse(communityDescription: Option[String], communityDomain: Option[Domain]): Option[String] = {
@@ -175,8 +186,8 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   }
 
   def updateOrganisationParameter(parameter: OrganisationParameters) = {
-    val q = for {p <- PersistenceSchema.organisationParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports)
-    exec(q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports).transactionally)
+    val q = for {p <- PersistenceSchema.organisationParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.inSelfRegistration)
+    exec(q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.inSelfRegistration).transactionally)
   }
 
   def deleteOrganisationParameterWrapper(parameterId: Long) = {
@@ -260,6 +271,14 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
       .filter(_.community === communityId)
       .filter(_.inExports === true)
       .filter(_.kind === "SIMPLE")
+      .sortBy(_.testKey.asc)
+      .result).toList
+  }
+
+  def getOrganisationParametersForSelfRegistration(communityId: Long): List[OrganisationParameters] = {
+    exec(PersistenceSchema.organisationParameters
+      .filter(_.community === communityId)
+      .filter(_.inSelfRegistration === true)
       .sortBy(_.testKey.asc)
       .result).toList
   }

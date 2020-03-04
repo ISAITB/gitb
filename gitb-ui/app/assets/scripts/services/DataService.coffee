@@ -276,31 +276,26 @@ class DataService
 			'Active'
 
 	customPropertiesValid: (properties) =>
-		# if properties?
-		# 	for property in properties
-		# 		if property.use == 'R'
-		# 			if !(((property.kind == 'BINARY' || property.kind == 'SIMPLE') && property.value? && property.value.trim().length > 0) || (property.kind == 'SECRET') && ((property.changeValue && property.value? && property.value.trim().length > 0) || (!property.changeValue && property.configured)))
-		# 				if !property.adminOnly || (@isSystemAdmin || @isCommunityAdmin)
-		# 					return false
 		return true
 
 	customPropertiesForPost: (properties) =>
 		propValues = []
-		for property in properties
-			propValue = {}
-			propValue.parameter = Number(property.id)
-			if property.kind == 'SECRET'
-				if property.changeValue && property.value? && property.value.trim().length > 0
-					propValue.value = property.value.trim()
-				else if !property.changeValue && property.configured
-					propValue.value = ''
-			else if property.value? && property.value.trim().length > 0
-				if property.kind == 'BINARY'
-					propValue.valueBinary = property.value.trim()
-				else
-					propValue.value = property.value.trim()
-			if propValue.value? || propValue.valueBinary?
-				propValues.push(propValue)
+		if properties?
+			for property in properties
+				propValue = {}
+				propValue.parameter = Number(property.id)
+				if property.kind == 'SECRET'
+					if property.changeValue && property.value? && property.value.trim().length > 0
+						propValue.value = property.value.trim()
+					else if !property.changeValue && property.configured
+						propValue.value = ''
+				else if property.value? && property.value.trim().length > 0
+					if property.kind == 'BINARY'
+						propValue.valueBinary = property.value.trim()
+					else
+						propValue.value = property.value.trim()
+				if propValue.value? || propValue.valueBinary?
+					propValues.push(propValue)
 		JSON.stringify(propValues)
 
 	createLabels: (customLabels) =>
