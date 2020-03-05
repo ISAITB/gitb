@@ -23,16 +23,10 @@ class SpecificationService @Inject() (specificationManager: SpecificationManager
     if(specExists) {
       val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
       val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
-      val urls = ParameterExtractor.optionalBodyParameter(request, Parameters.URLS)
-      val diagram:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DIAGRAM)
       val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-      val specificationType: Option[Short] = ParameterExtractor.optionalBodyParameter(request, Parameters.SPEC_TYPE) match {
-        case Some(str) => Some(str.toShort)
-        case _ => None
-      }
       val hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
 
-      specificationManager.updateSpecification(specId, sname, fname, urls, diagram, descr, specificationType, hidden)
+      specificationManager.updateSpecification(specId, sname, fname, descr, hidden)
       ResponseConstructor.constructEmptyResponse
     } else{
       throw NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, LabelType.Specification) + " with ID '" + specId + "' not found.")

@@ -130,6 +130,7 @@ class OrganizationController
         modalOptions =
             templateUrl: 'assets/views/settings/add-member-modal.html'
             controller: 'AddMemberController as controller'
+            size: 'lg'
         modalInstance = @$uibModal.open(modalOptions)
         modalInstance.result
             .finally(angular.noop)

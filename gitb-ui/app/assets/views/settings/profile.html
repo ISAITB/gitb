@@ -16,6 +16,7 @@
                                 <p ng-if="pc.DataService.configuration['sso.enabled']" class="form-control-static">{{data.name}}</p>
                                 <input id="name" ng-if="!pc.DataService.configuration['sso.enabled']" type="text" class="form-control" ng-model="data.name" required>
                             </div>
+                            <div ng-if="!pc.DataService.configuration['sso.enabled']" tb-tooltip="Your full name. This is used only when listing the members of your {{pc.DataService.labelOrganisationLower()}}."></div>
                         </div>
                         <div class="form-group">
                             <label class="col-sm-2 control-label" for="fullName">Email:</label>

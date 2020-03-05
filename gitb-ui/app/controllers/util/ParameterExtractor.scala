@@ -329,20 +329,14 @@ object ParameterExtractor {
 	def extractSpecification(request:Request[AnyContent]): Specifications = {
 		val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
 		val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
-		val urls = ParameterExtractor.optionalBodyParameter(request, Parameters.URLS)
-		val diagram:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DIAGRAM)
 		val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-		val specificationType: Option[Short] = ParameterExtractor.optionalBodyParameter(request, Parameters.SPEC_TYPE) match {
-			case Some(str) => Some(str.toShort)
-			case _ => None
-		}
     val hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
 		val domain = ParameterExtractor.optionalBodyParameter(request, Parameters.DOMAIN_ID) match {
 			case Some(str) => Some(str.toLong)
 			case _ => None
 		}
 
-		Specifications(0l, sname, fname, urls, diagram, descr, specificationType.getOrElse(0), hidden, domain.getOrElse(0l))
+		Specifications(0l, sname, fname, descr, hidden, domain.getOrElse(0l))
 	}
 
 	def extractActor(request:Request[AnyContent]):Actors = {

@@ -131,7 +131,7 @@ class ConformanceService
       data: data
     })
 
-  createSpecification: (shortName, fullName, urls, diagram, description, specificationType, hidden, domainId) ->
+  createSpecification: (shortName, fullName, description, hidden, domainId) ->
     if hidden == undefined
       hidden = false  
     @RestService.post 
@@ -140,10 +140,7 @@ class ConformanceService
       data:
         sname: shortName
         fname: fullName
-        urls: urls
-        diagram: diagram
         description: description
-        spec_type: specificationType
         hidden: hidden
         domain_id: domainId
 

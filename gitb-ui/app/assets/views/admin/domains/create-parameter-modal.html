@@ -4,30 +4,36 @@
 	<form class="form-horizontal">
 		<div class="modal-body">
 			<div class="form-group">
-				<label class="col-sm-3 control-label" for="name">* {{nameLabel}}:</label>
-				<div class="col-sm-8"><input id="name" ng-model="parameter.name" class="form-control" type="text" required></div>
+				<label class="col-xs-3 control-label" for="name">* {{nameLabel}}:</label>
+				<div class="col-xs-7"><input id="name" ng-model="parameter.name" class="form-control" type="text" required></div>
+				<div ng-if="hasKey" tb-tooltip="This will be displayed as a label for the property in data collection forms."></div>
+				<div ng-if="!hasKey" tb-tooltip="An identifier for the parameter within the current endpoint. This is displayed to users in the conformance statement detail screen and used within test cases to refer to the parameter."></div>
 			</div>
 			<div class="form-group" ng-if="hasKey">
-				<label class="col-sm-3 control-label" for="key">* Key:</label>
-				<div class="col-sm-8"><input id="key" ng-model="parameter.key" class="form-control" type="text" required></div>
+				<label class="col-xs-3 control-label" for="key">* Key:</label>
+				<div class="col-xs-7"><input id="key" ng-model="parameter.key" class="form-control" type="text" required></div>
+				<div tb-tooltip="An identifier used to distinguish this property and refer to it from within test cases (if included in tests)."></div>
 			</div>
 			<div class="form-group">
-				<label class="col-sm-3 control-label" for="description">Description:</label>
-				<div class="col-sm-8">
+				<label class="col-xs-3 control-label" for="description">Description:</label>
+				<div class="col-xs-7">
 					<textarea id="description" ng-model="parameter.description" class="form-control"></textarea>
 				</div>
+				<div ng-if="hasKey" tb-tooltip="This text will be included in a tooltip displayed for this property in data collection forms to explain its purpose."></div>
+				<div ng-if="!hasKey" tb-tooltip="This is presented to users when requesting a value for this parameter to explain its purpose."></div>
 			</div>
 			<div class="form-group">
-				<label class="col-sm-3 control-label" for="kind_1">* Value type:</label>
-				<div class="col-sm-8">
+				<label class="col-xs-3 control-label" for="kind_1">* Value type:</label>
+				<div class="col-xs-7">
 					<label class="radio-inline"><input type="radio" ng-model="parameter.kind" name="kinds" id="kind_1" value="SIMPLE">Simple</label>
 					<label class="radio-inline"><input type="radio" ng-model="parameter.kind" name="kinds" id="kind_2" value="BINARY">Binary</label>
 					<label class="radio-inline"><input type="radio" ng-model="parameter.kind" name="kinds" id="kind_3" value="SECRET">Hidden</label>
+					<div tb-inline="true" tb-tooltip="'Simple' represents a text value, 'binary' a file and 'hidden' a secret text value."></div>
 				</div>
 			</div>
 			<div class="form-group">
-				<label class="col-sm-3 control-label">* Properties:</label>
-				<div class="col-sm-8">
+				<label class="col-xs-3 control-label">* Properties:</label>
+				<div class="col-xs-8">
 					<label class="checkbox-inline">
 						<input type="checkbox" ng-model="parameter.use" ng-true-value="'R'" ng-false-value="'O'">Required
 					</label>

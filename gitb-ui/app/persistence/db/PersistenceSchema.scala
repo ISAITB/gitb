@@ -89,13 +89,10 @@ object PersistenceSchema {
 	def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
-    def urls = column[Option[String]]("urls") //comma seperated
-    def diagram = column[Option[String]]("diagram")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
-    def stype = column[Short]("type")
     def hidden = column[Boolean]("is_hidden")
     def domain = column[Long]("domain")
-    def * = (id, shortname, fullname, urls, diagram, description, stype, hidden, domain) <> (Specifications.tupled, Specifications.unapply)
+    def * = (id, shortname, fullname, description, hidden, domain) <> (Specifications.tupled, Specifications.unapply)
     //def fk = foreignKey("specs_fk", domain, Domains)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
   val specifications = TableQuery[SpecificationsTable]

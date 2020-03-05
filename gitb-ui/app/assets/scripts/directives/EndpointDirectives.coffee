@@ -4,14 +4,16 @@
 			endpoint: '='
 		template: ''+
 			'<div class="form-group">'+
-				'<label class="col-sm-3 control-label" for="name">* Name:</label>'+
-				'<div class="col-sm-8"><input id="name" ng-model="endpoint.name" class="form-control" type="text" required></div>'+
+				'<label class="col-xs-3 control-label" for="name">* Name:</label>'+
+				'<div class="col-xs-7"><input id="name" ng-model="endpoint.name" class="form-control" type="text" required></div>'+
+				'<div tb-tooltip="A name used to refer to this set of configuration properties. This is displayed when viewing a conformance statement\'s details."></div>'+
 			'</div>'+
 			'<div class="form-group">'+
-				'<label class="col-sm-3 control-label" for="description">Description:</label>'+
-				'<div class="col-sm-8">'+
+				'<label class="col-xs-3 control-label" for="description">Description:</label>'+
+				'<div class="col-xs-7">'+
 					'<textarea id="description" ng-model="endpoint.description" class="form-control"></textarea>'+
 				'</div>'+
+				'<div tb-tooltip="A descriptive text for the purpose of these configuration properties. This is displayed when viewing a conformance statement\'s details."></div'+
 			'</div>'
 		restrict: 'A'
 		link: (scope, element, attrs) ->

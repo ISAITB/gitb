@@ -251,7 +251,7 @@ class SpecificationDetailsController
 				@ErrorService.showErrorMessage(error)
 
 	saveSpecificationChanges: () =>
-		@SpecificationService.updateSpecification(@specificationId, @specification.sname, @specification.fname, @specification.urls, @specification. diagram, @specification.description, @specification.spec_type, @specification.hidden)
+		@SpecificationService.updateSpecification(@specificationId, @specification.sname, @specification.fname, @specification.description, @specification.hidden)
 		.then () =>
 			@PopupService.success(@DataService.labelSpecification()+' updated.')
 		.catch (error) =>

@@ -153,15 +153,17 @@
         </div>
         <!-- configuration form -->
         <div uib-collapse="!dashboardCtrl.ttlEnabled">
-            <form class="form-inline" ng-submit="dashboardCtrl.apply()">
-                <div class="form-group">
-                    <input type="number" min="1" ng-model="dashboardCtrl.config.parameter" class="form-control"
-                           id="parameter" placeholder="Seconds">
-                </div>
-                <button type="submit" class="btn btn-default"
-                        ng-disabled="dashboardCtrl.prevParameter == dashboardCtrl.config.parameter">Apply
-                </button>
-            </form>
+            <div style="padding: 10px">
+                <form class="form-inline" ng-submit="dashboardCtrl.apply()">
+                    <div class="form-group">
+                        <input type="number" min="1" ng-model="dashboardCtrl.config.parameter" class="form-control"
+                               id="parameter" placeholder="Seconds">
+                    </div>
+                    <button type="submit" class="btn btn-default"
+                            ng-disabled="dashboardCtrl.prevParameter == dashboardCtrl.config.parameter">Apply
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </div>

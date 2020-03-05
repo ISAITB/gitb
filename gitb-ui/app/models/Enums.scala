@@ -16,16 +16,6 @@ object Enums {
     val NotSupported, PublicListing, PublicListingWithToken, Token = Value
   }
 
-  object SpecificationType extends Enumeration(1) {
-    type SpecificationType = Value
-    val IntegrationProfile, ContentSpecification = Value
-  }
-
-  object Protocol extends Enumeration(1) {
-    type Protocol = Value
-    val HTTP, UDP, DICOM = Value
-  }
-
   object ParameterType extends Enumeration(1) {
     type ParameterType = Value
     val Simple, SimpleList, Binary, BinaryList = Value

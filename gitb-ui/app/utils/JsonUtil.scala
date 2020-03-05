@@ -488,10 +488,7 @@ object JsonUtil {
       "id"      -> spec.id,
       "sname"   -> spec.shortname,
       "fname"   -> spec.fullname,
-      "urls"    -> (if(spec.urls.isDefined) spec.urls.get else JsNull),
-      "diagram" -> (if(spec.diagram.isDefined) spec.diagram.get else JsNull),
       "description" -> (if(spec.description.isDefined) spec.description.get else JsNull),
-      "spec_type"    -> spec.specificationType,
       "hidden" -> spec.hidden,
       "domain"  -> spec.domain
     )
