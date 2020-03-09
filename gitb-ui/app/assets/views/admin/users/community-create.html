@@ -9,7 +9,7 @@
                 <div class="row col-md-10 col-md-offset-1">
                     <div uib-alert ng-repeat="alert in communityCreateCtrl.alerts" ng-class="'alert-' + alert.type" close="communityCreateCtrl.closeAlert($index)">{{alert.msg}}</div>
                 </div>
-                <div class="col-md-10 col-md-offset-1" tb-community-form tb-community="communityCreateCtrl.community" tb-domains="communityCreateCtrl.domains"></div>
+                <div class="col-md-10 col-md-offset-1" tb-community-form tb-community="communityCreateCtrl.community" tb-admin="true" tb-domains="communityCreateCtrl.domains"></div>
             </div>
             <div class="panel-footer">
                 <div class="row">
