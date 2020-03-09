@@ -225,16 +225,19 @@
 
 ]
 
-@directives.directive 'tbTooltip', ['$compile'
-  ($compile) ->
+@directives.directive 'tbTooltip', [
+  () ->
     scope:
       tbTooltip: '@'
       tbInline: '<?'
+      tbInlineType: '@?'
     restrict: 'A'
-    template: '<div ng-class="{\'form-control-static\': !tbInline}"><span uib-tooltip="{{tbTooltip}}"><i class="fa fa-question-circle"></i></span></div>'
+    template: '<div ng-class="{\'form-control-static\': !tbInline, \'check\': (tbInline && tbInlineType == \'check\'), \'radio\': (tbInline && tbInlineType == \'radio\')}"><span uib-tooltip="{{tbTooltip}}"><i class="fa fa-question-circle"></i></span></div>'
     link: (scope, element, attrs) ->
       if scope.tbInline == undefined
         scope.tbInline = false
+      if scope.tbInlineType == undefined
+        scope.tbInlineType = 'check'
       if scope.tbInline
         angular.element(element).addClass('inline-tooltip');
       
