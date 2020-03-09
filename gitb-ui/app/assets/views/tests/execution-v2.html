@@ -18,6 +18,7 @@
                         <tr>
                             <th width="10%">Name</th>
                             <th>Description</th>
+                            <th class="td-doc" ng-if="testExecutionCtrl.documentationExists" width="1%"></th>
                             <th class="td-centered" width="1%">Status</th>
                         </tr>
                     </thead>
@@ -25,7 +26,8 @@
                         <tr ng-repeat="testCase in testExecutionCtrl.testsToExecute" ng-click="testExecutionCtrl.viewTestCase(testCase)" ng-class="testExecutionCtrl.tableRowClass(testCase)">
                             <td>{{testCase.sname}}</td>
                             <td>{{testCase.description}}</td>
-                            <td class="td-centered"><i class="fa testsuite-progress-icon" ng-class="testExecutionCtrl.progressIcon(testCase.id)"></i></td>
+                            <td class="td-doc" ng-if="testExecutionCtrl.documentationExists"><button ng-if="testCase.hasDocumentation" type="button" class="btn btn-primary" ng-click="testExecutionCtrl.showTestCaseDocumentation(testCase.id)"><i class="fa fa-info-circle"></i></button></td>
+                            <td class="td-centered"><i class="fa testsuite-progress-icon" style="vertical-align:middle" ng-class="testExecutionCtrl.progressIcon(testCase.id)"></i></td>
                         </tr>
                     </tbody>
                 </table>

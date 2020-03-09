@@ -109,14 +109,26 @@
 .test-case-table {
 	padding:0; margin:0;
 	tbody {
-		tr.clickable-row {
-			&:hover {
-				cursor: pointer;
-				background-color: fade(@gray-light, 50%);
+		tr {
+			&.clickable-row {
+				&:hover {
+					cursor: pointer;
+					background-color: fade(@gray-light, 50%);
+				}
 			}
-		}
-		tr.selected-row {
-			background-color: fade(@blue, 20%);
+			&.selected-row {
+				background-color: fade(@blue, 20%);
+			}
+			td {
+				vertical-align: middle;
+				line-height: 36px;
+				&.td-doc {
+					padding-right:20px;
+					padding-left:10px;
+					padding-top:8px;
+					padding-bottom:8px;
+				}
+			}
 		}
 	}	
 }

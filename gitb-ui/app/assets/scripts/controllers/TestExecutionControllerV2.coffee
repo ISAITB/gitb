@@ -1,6 +1,6 @@
 class TestExecutionControllerV2
-  @$inject = ['$window','$log', '$scope', '$location', '$uibModal', '$state', '$stateParams', 'Constants', 'TestService', 'SystemService', 'ConformanceService', 'WebSocketService', 'ReportService', 'ErrorService', 'DataService', '$q', '$timeout', '$interval', 'OrganizationService', 'PopupService']
-  constructor: (@$window, @$log, @$scope, @$location, @$uibModal, @$state, @$stateParams, @Constants, @TestService, @SystemService, @ConformanceService, @WebSocketService, @ReportService, @ErrorService, @DataService, @$q, @$timeout, @$interval, @OrganizationService, @PopupService) ->
+  @$inject = ['$window','$log', '$scope', '$location', '$uibModal', '$state', '$stateParams', 'Constants', 'TestService', 'SystemService', 'ConformanceService', 'WebSocketService', 'ReportService', 'ErrorService', 'DataService', '$q', '$timeout', '$interval', 'OrganizationService', 'PopupService', 'HtmlService', '$sce']
+  constructor: (@$window, @$log, @$scope, @$location, @$uibModal, @$state, @$stateParams, @Constants, @TestService, @SystemService, @ConformanceService, @WebSocketService, @ReportService, @ErrorService, @DataService, @$q, @$timeout, @$interval, @OrganizationService, @PopupService, @HtmlService, @$sce) ->
     @testsToExecute = @DataService.tests
     if (!@testsToExecute?)
       # We lost our state following a refresh - recreate state.
@@ -17,6 +17,7 @@ class TestExecutionControllerV2
                 testCase.id = result.testCaseId
                 testCase.sname = result.testCaseName
                 testCase.description = result.testCaseDescription
+                testCase.hasDocumentation = result.testCaseHasDocumentation
                 tests.push(testCase)
               @testsToExecute = tests
               @initialiseState()
@@ -38,6 +39,7 @@ class TestExecutionControllerV2
       @initialiseState()
 
   initialiseState: () =>
+    @documentationExists = @testCasesHaveDocumentation()
     @systemId = parseInt(@$stateParams['systemId'], 10)
     @actorId  = parseInt(@$stateParams['actorId'], 10)
     @specId   = parseInt(@$stateParams['specId'], 10)
@@ -771,5 +773,20 @@ class TestExecutionControllerV2
       else
         if @testCaseStatus[@currentTest.id] == @Constants.TEST_CASE_STATUS.PROCESSING
           @PopupService.success('Continuing test session in background. Check <b>Test Sessions</b> for progress.')
+
+  testCasesHaveDocumentation: () =>
+    if @testsToExecute?
+      for test in @testsToExecute
+        if test.hasDocumentation
+          return true
+    return false
+
+  showTestCaseDocumentation: (testCaseId) ->
+    @ConformanceService.getTestCaseDocumentation(testCaseId)
+    .then (data) =>
+      html = @$sce.trustAsHtml(data)
+      @HtmlService.showHtml("Test case documentation", data)
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
 
 controllers.controller('TestExecutionControllerV2', TestExecutionControllerV2)
