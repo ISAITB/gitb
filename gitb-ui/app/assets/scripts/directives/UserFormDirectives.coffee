@@ -45,21 +45,26 @@
       '</div>'+
       '<div class="form-group" ng-if="!tbNew && !sso">'+
         '<label class="col-xs-4 control-label" for="changePassword">Set one-time password?</label>'+
-        '<div class="col-xs-6"><input id="changePassword" ng-model="tbUser.changePassword" class="form-check" type="checkbox" class="form-check"></div>'+
+        '<div class="col-xs-6"><input id="changePassword" ng-model="tbUser.changePassword" class="form-check" type="checkbox" class="form-check" ng-change="setPasswordClicked()"></div>'+
       '</div>'+
-      '<div class="form-group" ng-if="!sso && (tbNew || tbUser.changePassword)">'+
-        '<label class="col-xs-4 control-label" for="password">* One-time password:</label>'+
-        '<div class="col-xs-6"><input id="password" ng-model="tbUser.password" class="form-control" type="password" required></div>'+
-        '<div tb-tooltip="This password can only be used once at first login and will then need to be changed."></div>'+
-      '</div>'+
-      '<div class="form-group" ng-if="!sso && (tbNew || tbUser.changePassword)">'+
-        '<label class="col-xs-4 control-label" for="cpassword">* Confirm one-time password:</label>'+
-        '<div class="col-xs-6"><input id="cpassword" ng-model="tbUser.cpassword" class="form-control" type="password" required></div>'+
-        '<div tb-tooltip="Repeat the password to ensure it is correctly provided."></div>'+
+      '<div ng-if="!sso" uib-collapse="!tbNew && !tbUser.changePassword">' +
+        '<div class="form-group">'+
+          '<label class="col-xs-4 control-label" for="password">* One-time password:</label>'+
+          '<div class="col-xs-6"><input id="password" ng-model="tbUser.password" class="form-control" type="password" required></div>'+
+          '<div tb-tooltip="This password can only be used once at first login and will then need to be changed."></div>'+
+        '</div>'+
+        '<div class="form-group">'+
+          '<label class="col-xs-4 control-label" for="cpassword">* Confirm one-time password:</label>'+
+          '<div class="col-xs-6"><input id="cpassword" ng-model="tbUser.cpassword" class="form-control" type="password" required></div>'+
+          '<div tb-tooltip="Repeat the password to ensure it is correctly provided."></div>'+
+        '</div>'+
       '</div>'
     restrict: 'A'
     link: (scope, element, attrs) ->
       scope.DataService = DataService
+      scope.setPasswordClicked = () ->
+        if scope.tbUser.changePassword
+          scope.DataService.focus('password', 200)
 
 ]
 
@@ -89,7 +94,7 @@
               '<h4 class="title">Community</h4>'+
           '</div>'+
           '<div table-directive row-style="optionRowStyle" ng-class="{\'self-reg-option-table-popup\': sso}" class="self-reg-option-table" columns="communityColumns" data="selfRegOptions" on-select="communitySelected"/>'+
-          '<div ng-if="model.selfRegOption.communityId">' +
+          '<div uib-collapse="!model.selfRegOption.communityId">' +
             '<div ng-if="model.selfRegOption.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN">'+
               '<div class="form-group">'+
                   '<label class="col-xs-3 control-label" for="token">* Registration token:</label>'+
@@ -99,7 +104,7 @@
                   '<div tb-tooltip="A community-specific token needs to be provided to allow registration. You need to request this from the community\'s administrator."></div>'+
               '</div>'+
               '<div class="form-group" ng-if="model.selfRegOption.communityEmail" style="margin-bottom: -20px;">'+
-                  '<div class="col-xs-offset-3 col-xs-8">'+
+                  '<div class="col-xs-offset-3 col-xs-9">'+
                       '<div class="form-control-static inline-form-text">You can request this from the community\'s support team at <a ng-href="mailto:{{model.selfRegOption.communityEmail}}">{{model.selfRegOption.communityEmail}}</a>.</div>'+
                   '</div>'+
               '</div>'+
@@ -187,6 +192,7 @@
           title: 'Description'
         }
       ]
+      scope.DataService.setupLabels()
       scope.communitySelected = (option) =>
         scope.model.selfRegOption = option
         scope.communityChanged()
@@ -194,9 +200,9 @@
       scope.setFormFocus = () =>
         if scope.model?.selfRegOption?
           if scope.model.selfRegOption.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN
-            scope.DataService.focus('token')
+            scope.DataService.focus('token', 200)
           else 
-            scope.DataService.focus('orgShortName')
+            scope.DataService.focus('orgShortName', 200)
       if scope.selfRegOptions == undefined
         CommunityService.getSelfRegistrationOptions()
         .then((data) =>

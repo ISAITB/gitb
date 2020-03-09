@@ -11,7 +11,7 @@
                 <label class="radio-inline"><input type="radio" ng-model="controller.choice" ng-change="controller.certificateChoice()" name="choice" id="choice_cert" ng-value="controller.Constants.REPORT_OPTION_CHOICE.CERTIFICATE">Conformance certificate</label>
             </div>
         </div>
-        <div ng-show="controller.choice == controller.Constants.REPORT_OPTION_CHOICE.CERTIFICATE">
+        <div uib-collapse="controller.choice != controller.Constants.REPORT_OPTION_CHOICE.CERTIFICATE">
             <div class="form-group">
                 <label class="col-xs-3 control-label" for="title">Title:</label>
                 <div class="col-xs-7"><input id="title" ng-model="controller.settings.title" class="form-control" type="text"></div>
@@ -37,7 +37,7 @@
                     </label>
                 </div>
             </div>
-            <div class="form-group" ng-show="controller.settings.includeMessage">
+            <div class="form-group" uib-collapse="!controller.settings.includeMessage">
                 <label class="col-xs-3 control-label" for="mce-message" >Message content:</label>
                 <div class="col-xs-8"><textarea id="mce-message" class="mce-message"></textarea></div>
             </div>

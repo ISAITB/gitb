@@ -32,7 +32,7 @@
 					<div class="col-xs-7"><select class="form-control" ng-model="system.otherSystem" ng-options="sys.sname for sys in otherSystems track by sys.id"><option value=""></option></select></div>
 					<div tb-tooltip="Select another {{DataService.labelSystemLower()}} to serve as a template for this one. The configuration from the selected {{DataService.labelSystemLower()}} will be copied to the current one."></div>
 				</div>
-				<div class="form-group" ng-if="system.otherSystem">
+				<div class="form-group" uib-collapse="!system.otherSystem">
 					<label class="col-xs-3 control-label">Copy also:</label>
 					<div class="col-xs-8">
 						<label class="checkbox-inline">

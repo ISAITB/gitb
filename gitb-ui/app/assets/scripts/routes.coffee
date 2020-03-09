@@ -120,6 +120,34 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				deferred.promise
 		]
 
+		community = [
+			'$q', '$window', 'CommunityService', 'ErrorService', '$stateParams'
+			($q, $window, CommunityService, Errorservice, $stateParams) ->
+				deferred = $q.defer()
+				CommunityService.getCommunityById($stateParams.community_id)
+				.then (data) =>
+					$window.localStorage['community'] = angular.toJson data
+					deferred.resolve(data)
+				.catch (error) =>
+					ErrorService.showErrorMessage(error)
+				deferred.promise
+		]
+
+		conformanceCertificate = [
+			'$q', 'ConformanceService', 'ErrorService', '$stateParams'
+			($q, ConformanceService, Errorservice, $stateParams) ->
+				deferred = $q.defer()
+				ConformanceService.getConformanceCertificateSettings($stateParams.community_id, true)
+				.then (data) =>
+					if data? && data?.id?
+						deferred.resolve(data)
+					else
+						deferred.resolve({})
+				.catch (error) =>
+					ErrorService.showErrorMessage(error)
+				deferred.promise
+		]
+
 		$urlRouterProvider.when('', '/')
 		$urlRouterProvider.otherwise('/')
 
@@ -392,11 +420,17 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/users/community-detail.html'
 				controller: 'CommunityDetailController'
 				controllerAs: 'communityDetailCtrl'
+				resolve: {
+					community: community
+				}
 			'app.admin.users.communities.detail.certificate':
 				url: '/cert'
 				templateUrl: 'assets/views/admin/users/community-detail-certificate.html'
 				controller: 'CommunityCertificateController'
 				controllerAs: 'communityCertificateCtrl'
+				resolve: {
+					settings: conformanceCertificate
+				}
 			'app.admin.users.communities.detail.parameters':
 				url: '/params'
 				templateUrl: 'assets/views/admin/users/community-detail-parameters.html'

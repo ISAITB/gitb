@@ -1,9 +1,9 @@
 class CommunityDetailController
 
-  @$inject = ['$log', '$state', '$window', '$stateParams', 'UserService', 'DataService', 'Constants', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'CommunityService', 'ConformanceService', 'ErrorService', 'PopupService']
-  constructor: (@$log, @$state, @$window, @$stateParams, @UserService, @DataService, @Constants, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @CommunityService, @ConformanceService, @ErrorService, @PopupService) ->
+  @$inject = ['$log', '$state', '$window', '$stateParams', 'UserService', 'DataService', 'Constants', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'CommunityService', 'ConformanceService', 'ErrorService', 'PopupService', 'community']
+  constructor: (@$log, @$state, @$window, @$stateParams, @UserService, @DataService, @Constants, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @CommunityService, @ConformanceService, @ErrorService, @PopupService, @community) ->
 
-    @communityId = @$stateParams.community_id
+    @communityId = @community.id
 
     @adminColumns = [
       {
@@ -76,7 +76,6 @@ class CommunityDetailController
       }
     ]
 
-    @community = {}
     @domains = {}
     @admins = []
     @organizations = []
@@ -108,14 +107,6 @@ class CommunityDetailController
       for admin in data
         admin.ssoStatusText = @DataService.userStatus(admin.ssoStatus)
       @admins = data
-    .catch (error) =>
-      @ErrorService.showErrorMessage(error)
-
-    @CommunityService.getCommunityById(@communityId)
-    .then (data) =>
-      @community = data
-      # @community.selfRegType = @community.selfRegType+''
-      @$window.localStorage['community'] = angular.toJson data
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 

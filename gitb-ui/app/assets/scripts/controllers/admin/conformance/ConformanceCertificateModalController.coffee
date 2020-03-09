@@ -21,7 +21,7 @@ class ConformanceCertificateModalController
         )
 
     certificateChoice: () =>
-        @DataService.focus('title')
+        @DataService.focus('title', 200)
 
     generate: () =>
         @exportPending = true

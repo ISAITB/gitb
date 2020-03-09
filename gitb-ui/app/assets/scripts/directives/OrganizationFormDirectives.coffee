@@ -38,7 +38,7 @@
         '<div class="col-xs-7"><select ng-change="tbCopyChanged()" class="form-control" ng-model="tbOrganization.otherOrganisations" ng-options="organisation.sname for organisation in tbOtherOrganisations track by organisation.id"><option value=""></option></select></div>'+
         '<div tb-tooltip="Select another {{DataService.labelOrganisationLower()}} to serve as a template for this one. The configuration from the selected {{DataService.labelOrganisationLower()}} will be copied to the current one."></div>'+
       '</div>'+
-      '<div class="form-group" ng-if="tbOrganization.otherOrganisations">'+
+      '<div class="form-group" uib-collapse="!tbOrganization.otherOrganisations">'+
         '<label class="col-xs-3 control-label">Copy also:</label>'+
         '<div class="col-xs-8">'+
           '<label class="checkbox-inline">'+
@@ -60,7 +60,7 @@
             '<div tb-inline="true" tb-tooltip="You can define the configuration of this {{DataService.labelOrganisationLower()}} as a template that will be presented to users self-registering for the community (if self-registration is enabled). Do this to offer new users preconfigured {{DataService.labelSystemsLower()}} and conformance statements."></div>'+
           '</div>'+
         '</div>'+
-        '<div class="form-group" ng-if="tbOrganization.template">'+
+        '<div class="form-group" uib-collapse="!tbOrganization.template">'+
           '<label class="col-xs-3 control-label" for="templateName">* Template name:</label>'+
           '<div class="col-xs-7"><input id="templateName" ng-model="tbOrganization.templateName" class="form-control" type="text" required></div>'+
           '<div tb-tooltip="The name to display in the self-registration screen for this template configuration."></div>'+
@@ -73,5 +73,5 @@
       scope.DataService = @DataService
       scope.templateChoiceChanged = () =>
         if scope.tbOrganization.template
-          scope.DataService.focus('templateName')
+          scope.DataService.focus('templateName', 200)
 ]

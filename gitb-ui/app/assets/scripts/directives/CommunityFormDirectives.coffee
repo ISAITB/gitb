@@ -35,21 +35,20 @@
           '</div>'+
           '<div tb-tooltip="This option determines whether users are allowed to self-register as new community members. Disabling self-registration means that new members can only be added by an administrator."></div>'+
         '</div>'+
-        '<div class="form-group" ng-if="tbCommunity.selfRegType == '+@Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN+' || tbCommunity.selfRegType == '+@Constants.SELF_REGISTRATION_TYPE.TOKEN+'">'+
+        '<div class="form-group" uib-collapse="tbCommunity.selfRegType != '+@Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN+'">'+
           '<label class="col-xs-3 control-label" for="selfRegToken">* Self-registration token:</label>'+
           '<div class="col-xs-7"><input id="selfRegToken" ng-model="tbCommunity.selfRegToken" class="form-control" type="text" required></div>'+
           '<div tb-tooltip="This serves as a password for new users to provide during self-registration so that the community is not fully public. Ensure your community members are aware of this or that you provide a support email for relevant requests."></div>'+
         '</div>'+
-        '<div ng-if="tbCommunity.selfRegType != '+@Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED+'">'+
-          '<div class="form-group" ng-if="tbCommunity.domain">'+
+        '<div uib-collapse="!selfRegOptionsVisible">'+
+          '<div class="form-group">'+
             '<label class="col-xs-3 control-label" for="description">Description:</label>'+
             '<div class="col-xs-7">'+
-              '<label class="checkbox-inline"><input type="checkbox" ng-change="descriptionCheckChanged()" ng-model="tbCommunity.sameDescriptionAsDomain" ng-true-value="true" ng-false-value="false">Same as domain</label>'+
+              '<label class="checkbox-inline"><input type="checkbox" ng-change="descriptionCheckChanged()" ng-disabled="!tbCommunity.domain" ng-model="tbCommunity.sameDescriptionAsDomain" ng-true-value="true" ng-false-value="false">Same as domain</label>'+
             '</div>'+
           '</div>'+
           '<div class="form-group">'+
-            '<label ng-if="!tbCommunity.domain" class="col-xs-3 control-label" for="description">Description:</label>'+
-            '<div ng-class="{\'col-xs-offset-3\': tbCommunity.domain}" class="col-xs-7">'+
+            '<div class="col-xs-offset-3 col-xs-7">'+
               '<textarea id="description" ng-model="tbCommunity.activeDescription" class="form-control" ng-readonly="tbCommunity.sameDescriptionAsDomain" ng-blur="setSameDescription()"></textarea>'+
             '</div>'+
             '<div tb-tooltip="This description will be displayed in the self-registration screen to explain to prospective members the community\'s context and purpose."></div>'+
@@ -58,8 +57,8 @@
             '<label class="col-xs-3 control-label" for="notifications">Self-registration notifications:</label>'+
             '<div class="col-xs-7">'+
               '<input id="notifications" ng-model="tbCommunity.selfRegNotification" type="checkbox" class="form-check">'+
-                '<div tb-inline="true" tb-tooltip="Check this if you want new self-registrations to send a notification email to the configured support mailbox."></div>'+
-              '</div>'+
+              '<div tb-inline="true" tb-tooltip="Check this if you want new self-registrations to send a notification email to the configured support mailbox."></div>'+
+            '</div>'+
           '</div>'+
         '</div>'+
       '</div>'+
@@ -79,8 +78,9 @@
         scope.tbCommunity.selfRegType == @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN || scope.tbCommunity.selfRegType == @Constants.SELF_REGISTRATION_TYPE.TOKEN
 
       scope.selfRegTypeChanged = () =>
+        scope.selfRegOptionsVisible = scope.tbCommunity.selfRegType != @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED
         if scope.showToken()
-          scope.DataService.focus('selfRegToken')
+          scope.DataService.focus('selfRegToken', 200)
 
       scope.domainChanged = () =>
         if scope.tbCommunity.domain?
@@ -100,13 +100,12 @@
         if scope.tbCommunity.sameDescriptionAsDomain
           scope.tbCommunity.activeDescription = scope.tbCommunity.domain.description
 
-      scope.$watch('tbCommunity', () => 
-        scope.tbCommunity.sameDescriptionAsDomain = scope.tbCommunity.domain && !(scope.tbCommunity.description? && scope.tbCommunity.description.trim().length > 0)
-        if scope.tbCommunity.sameDescriptionAsDomain
-          scope.tbCommunity.activeDescription = scope.tbCommunity.domain.description
-        else 
-          scope.tbCommunity.activeDescription = scope.tbCommunity.description
-      )
+      scope.selfRegOptionsVisible = scope.tbCommunity.selfRegType != @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED
+      scope.tbCommunity.sameDescriptionAsDomain = scope.tbCommunity.domain && !(scope.tbCommunity.description? && scope.tbCommunity.description.trim().length > 0)
+      if scope.tbCommunity.sameDescriptionAsDomain
+        scope.tbCommunity.activeDescription = scope.tbCommunity.domain.description
+      else 
+        scope.tbCommunity.activeDescription = scope.tbCommunity.description
 
 ]
 
@@ -131,7 +130,7 @@
             '</form>'+
           '</div>'+
         '</div>'+
-        '<div ng-show="tbPropertyData.edit" tb-custom-properties-form tb-properties="tbPropertyData.properties" tb-popup="tbPopup" tb-col-offset="tbColOffset" tb-col-label="tbColLabel" tb-col-input-less="tbColInputLess" tb-readonly="tbReadonly">'+
+        '<div uib-collapse="!tbPropertyData.edit" tb-custom-properties-form tb-properties="tbPropertyData.properties" tb-popup="tbPopup" tb-col-offset="tbColOffset" tb-col-label="tbColLabel" tb-col-input-less="tbColInputLess" tb-readonly="tbReadonly">'+
         '</div>'+
       '</div>'
     restrict: 'A'

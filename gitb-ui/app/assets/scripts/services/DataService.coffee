@@ -405,13 +405,16 @@ class DataService
 	labelSystemsLower: () =>
 		if @labels[@Constants.LABEL_TYPE.SYSTEM].fixedCase then @labels[@Constants.LABEL_TYPE.SYSTEM].pluralForm else @labels[@Constants.LABEL_TYPE.SYSTEM].pluralForm.toLowerCase()
 
-	focus: (inputId) =>
+	focus: (inputId, delay) =>
 		if inputId?
 			if !inputId.startsWith('#')
 				inputId = '#' + inputId
+			timeToWait = 1
+			if delay?
+				timeToWait = Number(delay)
 			@$timeout(() =>
 				document.querySelector(inputId)?.focus()
-			, 1)
+			, timeToWait)
 
 	async: (fn) =>
 		@$timeout(() =>

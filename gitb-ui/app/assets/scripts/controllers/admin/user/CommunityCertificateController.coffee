@@ -1,7 +1,7 @@
 class CommunityCertificateController
 
-  @$inject = ['$state', '$scope', '$stateParams', 'WebEditorService', 'Constants', 'ConformanceService', 'ErrorService', '$q', 'DataService', 'ConfirmationDialogService', 'PopupService']
-  constructor: (@$state, @$scope, @$stateParams, @WebEditorService, @Constants, @ConformanceService, @ErrorService, @$q, @DataService, @ConfirmationDialogService, @PopupService) ->
+  @$inject = ['$state', '$scope', '$stateParams', 'WebEditorService', 'Constants', 'ConformanceService', 'ErrorService', '$q', 'DataService', 'ConfirmationDialogService', 'PopupService', 'settings']
+  constructor: (@$state, @$scope, @$stateParams, @WebEditorService, @Constants, @ConformanceService, @ErrorService, @$q, @DataService, @ConfirmationDialogService, @PopupService, @settings) ->
     @communityId = @$stateParams.community_id
     @editorReady = @$q.defer()
     tinyMCE.remove('.mce-message')
@@ -18,25 +18,17 @@ class CommunityCertificateController
     @updatePasswords = true
     @removeKeystore = false
     @exportPending = false
-    @settings = {}
     @DataService.focus('title')
-
-    @ConformanceService.getConformanceCertificateSettings(@communityId, true)
-    .then (data) =>
-      if data? && data?.id?
-        @settings = data
-        if !@settings.passwordsSet? || !@settings.passwordsSet
-          @updatePasswords = true
-        else 
-          @updatePasswords = false
-        if @settings.message?
-          @editorReady.promise.then () =>
-            tinymce.activeEditor.setContent(data.message)
-      else
-        @settings = {}
+    if @settings.id?
+      if !@settings.passwordsSet? || !@settings.passwordsSet
         @updatePasswords = true
-    .catch (error) =>
-      @ErrorService.showErrorMessage(error)
+      else 
+        @updatePasswords = false
+      if @settings.message?
+        @editorReady.promise.then () =>
+          tinymce.activeEditor.setContent(@settings.message)
+    else
+      @updatePasswords = true
 
     @$scope.attachKeystore = (files) =>
       file = _.head files
