@@ -274,6 +274,16 @@ class ConformanceService
       }
     })
 
+  getTestSuiteDocumentation: (id) ->
+    @RestService.get
+      path: jsRoutes.controllers.ConformanceService.getTestSuiteDocumentation(id).url
+      authenticate: true
+
+  getTestCaseDocumentation: (id) ->
+    @RestService.get
+      path: jsRoutes.controllers.ConformanceService.getTestCaseDocumentation(id).url
+      authenticate: true
+
   getTestSuites: (specificationId) ->
     @RestService.get
       path: jsRoutes.controllers.ConformanceService.getSpecTestSuites(specificationId).url

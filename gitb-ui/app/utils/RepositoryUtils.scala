@@ -11,7 +11,7 @@ import config.Configurations
 import managers.TestSuiteManager
 import models._
 import org.apache.commons.io.{FileUtils, IOUtils}
-import org.apache.commons.lang3.RandomStringUtils
+import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
@@ -153,11 +153,16 @@ object RepositoryUtils {
 						val tdlActors = tdlTestSuite.getActors.getActor.asScala
 						val tdlTestCaseEntries = tdlTestSuite.getTestcase.asScala
 						val fileName = "ts_"+RandomStringUtils.random(10, false, true)
-
+						var documentation: Option[String] = null
+						if (tdlTestSuite.getMetadata.getDocumentation != null) {
+							documentation = Some(HtmlUtil.sanitizeEditorContent(tdlTestSuite.getMetadata.getDocumentation))
+						} else {
+							documentation = None
+						}
 						logger.info("Test suite has tdlActors ["+tdlActors.map(_.getId)+"]")
 						logger.info("Test suite has tdlTestCases ["+tdlTestCaseEntries.map(_.getId)+"]")
 
-						val caseObject = TestSuites(0l, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification, fileName)
+						val caseObject = TestSuites(0l, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification, fileName, documentation.isDefined, documentation)
 						val actors = tdlActors.map { tdlActor =>
 							val endpoints = tdlActor.getEndpoint.asScala.map { tdlEndpoint => // construct actor endpoints
 								val parameters = tdlEndpoint.getConfig.asScala
@@ -196,12 +201,18 @@ object RepositoryUtils {
 								if (Option(tdlTestCase.getMetadata.getType).isDefined) {
 									testCaseType = tdlTestCase.getMetadata.getType
 								}
+								var documentation: Option[String] = null
+								if (tdlTestCase.getMetadata.getDocumentation != null) {
+									documentation = Some(HtmlUtil.sanitizeEditorContent(tdlTestCase.getMetadata.getDocumentation))
+								} else {
+									documentation = None
+								}
 								TestCases(
 									0l, tdlTestCase.getId, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getVersion,
 									Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
 									Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
 									None, testCaseType.ordinal().toShort, null, specification, Some(actorString.toString()), None,
-									testCaseCounter.toShort
+									testCaseCounter.toShort, documentation.isDefined, documentation
 								)
 						}.toList
 						new TestSuite(caseObject, Some(actors), Some(testCases))

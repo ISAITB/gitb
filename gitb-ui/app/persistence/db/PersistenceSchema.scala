@@ -208,7 +208,9 @@ object PersistenceSchema {
     def targetActors = column[Option[String]]("target_actors")
     def targetOptions = column[Option[String]]("target_options")
     def testSuiteOrder = column[Short]("testsuite_order")
-	  def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, testCaseType, path, targetSpec, targetActors, targetOptions, testSuiteOrder) <> (TestCases.tupled, TestCases.unapply)
+    def hasDocumentation = column[Boolean]("has_documentation")
+    def documentation = column[Option[String]]("documentation")
+	  def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, testCaseType, path, targetSpec, targetActors, targetOptions, testSuiteOrder, hasDocumentation, documentation) <> (TestCases.tupled, TestCases.unapply)
     def shortNameVersionUniqueIdx = index("tc_sn_vsn_idx", (shortname, version), unique = true)
     //def fk1 = foreignKey("tc_fk_1", targetSpec, Specifications)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
     //def fk2 = foreignKey("tc_fk_2", targetActor, Actors)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
@@ -227,7 +229,9 @@ object PersistenceSchema {
 		def keywords = column[Option[String]]("keywords")
     def specification = column[Long]("specification")
     def filename = column[String]("file_name")
-		def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, specification, filename) <> (TestSuites.tupled, TestSuites.unapply)
+    def hasDocumentation = column[Boolean]("has_documentation")
+    def documentation = column[Option[String]]("documentation")
+		def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, specification, filename, hasDocumentation, documentation) <> (TestSuites.tupled, TestSuites.unapply)
     def shortNameVersionUniqueIdx = index("ts_sn_vsn_idx", (shortname, version), unique = true)
 	}
 	val testSuites = TableQuery[TestSuitesTable]

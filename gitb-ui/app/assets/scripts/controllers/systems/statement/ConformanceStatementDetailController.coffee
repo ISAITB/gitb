@@ -1,7 +1,7 @@
 class ConformanceStatementDetailController
 
-  @$inject = ['$log', '$scope', '$state', '$stateParams', '$uibModal', 'SystemService', 'ConformanceService', 'ErrorService', 'Constants', 'ConfirmationDialogService', 'DataService', 'ReportService', 'TestService', 'PopupService']
-  constructor: (@$log, @$scope, @$state, @$stateParams, @$uibModal, @SystemService, @ConformanceService, @ErrorService, @Constants, @ConfirmationDialogService, @DataService, @ReportService, @TestService, @PopupService) ->
+  @$inject = ['$log', '$scope', '$state', '$stateParams', '$uibModal', 'SystemService', 'ConformanceService', 'ErrorService', 'Constants', 'ConfirmationDialogService', 'DataService', 'ReportService', 'TestService', 'PopupService', '$sce', 'HtmlService']
+  constructor: (@$log, @$scope, @$state, @$stateParams, @$uibModal, @SystemService, @ConformanceService, @ErrorService, @Constants, @ConfirmationDialogService, @DataService, @ReportService, @TestService, @PopupService, @$sce, @HtmlService) ->
     @$log.debug "Constructing ConformanceStatementDetailController"
 
     @systemId = @$stateParams['id']
@@ -55,6 +55,7 @@ class ConformanceStatementDetailController
         testCase.id = result.testCaseId
         testCase.sname = result.testCaseName
         testCase.description = result.testCaseDescription
+        testCase.hasDocumentation = result.testCaseHasDocumentation
         testCase.result = result.result
         totalCount += 1
         if testCase.result == @Constants.TEST_CASE_RESULT.FAILURE
@@ -70,6 +71,7 @@ class ConformanceStatementDetailController
           currentTestSuite.sname = result.testSuiteName
           currentTestSuite.description = result.testSuiteDescription
           currentTestSuite.result = result.result
+          currentTestSuite.hasDocumentation = result.testSuiteHasDocumentation
           currentTestSuite.testCases = []
           testSuiteData[result.testSuiteId] = currentTestSuite
         else
@@ -280,5 +282,23 @@ class ConformanceStatementDetailController
         @ErrorService.showErrorMessage(error)
         @exportPending = false
     )
+
+  showDocumentation: (title, content) ->
+    html = @$sce.trustAsHtml(content)
+    @HtmlService.showHtml(title, html)
+
+  showTestCaseDocumentation: (testCaseId) ->
+    @ConformanceService.getTestCaseDocumentation(testCaseId)
+    .then (data) =>
+      @showDocumentation("Test case documentation", data)
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+  showTestSuiteDocumentation: (testSuiteId) ->
+    @ConformanceService.getTestSuiteDocumentation(testSuiteId)
+    .then (data) =>
+      @showDocumentation("Test suite documentation", data)
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
 
 @controllers.controller 'ConformanceStatementDetailController', ConformanceStatementDetailController

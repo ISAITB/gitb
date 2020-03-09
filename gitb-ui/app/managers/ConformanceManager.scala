@@ -409,7 +409,7 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 		exec(PersistenceSchema.domains.filter(_.id === id).result.head)
 	}
 
-	def getConformanceStatus(actorId: Long, sutId: Long, testSuiteId: Option[Long]) = {
+	def getConformanceStatus(actorId: Long, sutId: Long, testSuiteId: Option[Long]): List[ConformanceStatusItem] = {
 		var query = PersistenceSchema.conformanceResults
   			.join(PersistenceSchema.testCases).on(_.testcase === _.id)
   			.join(PersistenceSchema.testSuites).on(_._1.testsuite === _.id)
@@ -419,10 +419,11 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 		if (testSuiteId.isDefined) {
 			query = query.filter(_._1._1.testsuite === testSuiteId.get)
 		}
-		query = query
+		val finalQuery = query
 			.sortBy(x => (x._2.shortname, x._1._2.testSuiteOrder))
-		val results = exec(query.result.map(_.toList)).map(r => {
-			(r._1._1.copy(), r._1._2.copy(), r._2.copy())
+			.map(x => (x._2.id, x._2.shortname, x._2.description, x._2.hasDocumentation, x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._1.result, x._1._1.testsession))
+		val results = exec(finalQuery.result.map(_.toList)).map(r => {
+			ConformanceStatusItem(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10)
 		})
 		results
 	}

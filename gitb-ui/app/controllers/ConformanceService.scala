@@ -549,4 +549,25 @@ class ConformanceService @Inject() (communityManager: CommunityManager, conforma
     val json = JsonUtil.jsSystemConfigurationEndpoints(status, false)
     ResponseConstructor.constructJsonResponse(json.toString)
   }
+
+  def getTestCaseDocumentation(id: Long) = AuthorizedAction { request =>
+    authorizationManager.canViewTestCase(request, id.toString)
+    val documentation = testCaseManager.getTestCaseDocumentation(id)
+    if (documentation.isDefined) {
+      ResponseConstructor.constructStringResponse(documentation.get)
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  def getTestSuiteDocumentation(id: Long) = AuthorizedAction { request =>
+    authorizationManager.canViewTestSuite(request, id)
+    val documentation = testSuiteManager.getTestSuiteDocumentation(id)
+    if (documentation.isDefined) {
+      ResponseConstructor.constructStringResponse(documentation.get)
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
 }

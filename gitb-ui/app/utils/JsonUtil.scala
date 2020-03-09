@@ -27,7 +27,8 @@ object JsonUtil {
       "description"       -> (if(suite.description.isDefined) suite.description.get else JsNull),
       "keywords"          -> (if(suite.keywords.isDefined) suite.keywords.get else JsNull),
       "modificationDate"  -> (if(suite.modificationDate.isDefined) suite.modificationDate.get else JsNull),
-      "originalDate"      -> (if(suite.originalDate.isDefined) suite.originalDate.get else JsNull)
+      "originalDate"      -> (if(suite.originalDate.isDefined) suite.originalDate.get else JsNull),
+      "hasDocumentation"  -> suite.hasDocumentation
     )
     json
   }
@@ -838,7 +839,8 @@ object JsonUtil {
       "keywords" -> (if(testCase.keywords.isDefined) testCase.keywords.get else JsNull),
       "type" -> testCase.testCaseType,
       "path" -> testCase.path,
-      "targetSpec"  -> testCase.targetSpec
+      "targetSpec"  -> testCase.targetSpec,
+      "hasDocumentation"  -> testCase.hasDocumentation
     )
     json;
   }
@@ -1478,7 +1480,7 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceResultList(list: List[(ConformanceResult, TestCases, TestSuites)]): JsArray = {
+  def jsConformanceResultList(list: List[ConformanceStatusItem]): JsArray = {
     var json = Json.arr()
     list.foreach{ info =>
       json = json.append(jsConformanceResult(info))
@@ -1486,16 +1488,18 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceResult(listItem: (ConformanceResult, TestCases, TestSuites)): JsObject = {
+  def jsConformanceResult(listItem: ConformanceStatusItem): JsObject = {
     val json = Json.obj(
-      "testSuiteId"    -> listItem._1.testsuite,
-      "testSuiteName"    -> listItem._3.shortname,
-      "testSuiteDescription"    -> listItem._3.description,
-      "testCaseId"    -> listItem._1.testcase,
-      "testCaseName"    -> listItem._2.shortname,
-      "testCaseDescription"    -> listItem._2.description,
-      "result"    -> listItem._1.result,
-      "sessionId"    -> listItem._1.testsession
+      "testSuiteId"    -> listItem.testSuiteId,
+      "testSuiteName"    -> listItem.testSuiteName,
+      "testSuiteDescription"    -> listItem.testSuiteDescription,
+      "testSuiteHasDocumentation"    -> listItem.testSuiteHasDocumentation,
+      "testCaseId"    -> listItem.testCaseId,
+      "testCaseName"    -> listItem.testCaseName,
+      "testCaseDescription"    -> listItem.testCaseDescription,
+      "testCaseHasDocumentation"    -> listItem.testCaseHasDocumentation,
+      "result"    -> listItem.result,
+      "sessionId"    -> listItem.sessionId
     )
     json
   }
