@@ -29,9 +29,9 @@ class CreateEditDomainParameterController
 	
 		@$scope.saveAllowed = () =>
 			@$scope.domainParameter.name? && @$scope.domainParameter.kind? && 
-				(@$scope.domainParameter.kind == 'SIMPLE' && @$scope.domainParameter.value?) ||
+				((@$scope.domainParameter.kind == 'SIMPLE' && @$scope.domainParameter.value?) ||
 				(@$scope.domainParameter.kind == 'BINARY' && @$scope.formData.data?) ||
-				(@$scope.domainParameter.kind == 'HIDDEN' && (!@$scope.formData.updateValue || (@$scope.formData.hiddenValue? && @$scope.formData.hiddenValueRepeat?)))
+				(@$scope.domainParameter.kind == 'HIDDEN' && (!@$scope.formData.updateValue || (@$scope.formData.hiddenValue? && @$scope.formData.hiddenValueRepeat?))))
 
 		@$scope.save = () =>
 			if @$scope.domainParameter.kind == 'HIDDEN' && @$scope.formData.hiddenValue != @$scope.formData.hiddenValueRepeat
