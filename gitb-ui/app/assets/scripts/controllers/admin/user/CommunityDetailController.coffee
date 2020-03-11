@@ -163,7 +163,7 @@ class CommunityDetailController
       if !@community.sameDescriptionAsDomain
         descriptionToUse = @community.activeDescription
       updateCall = () => 
-        @CommunityService.updateCommunity(@communityId, @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegToken, @community.selfRegNotification, descriptionToUse, @community.domain?.id)
+        @CommunityService.updateCommunity(@communityId, @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegRestriction, @community.selfRegToken, @community.selfRegNotification, descriptionToUse, @community.domain?.id)
           .then (data) =>
             if data? && data.error_code?
               @ValidationService.pushAlert({type:'danger', msg:data.error_description})

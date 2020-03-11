@@ -60,6 +60,13 @@
               '<div tb-inline="true" tb-tooltip="Check this if you want new self-registrations to send a notification email to the configured support mailbox."></div>'+
             '</div>'+
           '</div>'+
+          '<div class="form-group" ng-if="ssoEnabled">'+
+            '<label class="col-xs-3 control-label" for="selfRegRestriction">* Self-registration restrictions:</label>'+
+            '<div class="col-xs-7">'+
+              '<select id="selfRegRestriction" class="form-control" ng-model="tbCommunity.selfRegRestriction" ng-options="+(type.id) as type.label for type in selfRegRestrictions"></select>'+
+            '</div>'+
+            '<div tb-tooltip="Use this option to restrict multiple registrations to the community. Restrictions are applied considering the email address of the user that is in the process of self-registering."></div>'+
+          '</div>'+
         '</div>'+
       '</div>'+
       '<input id="domain" ng-if="!tbAdmin" ng-model="tbCommunity.domain" type="hidden">'
@@ -67,12 +74,19 @@
     link: (scope, element, attrs) =>
       scope.DataService = @DataService
       scope.selfRegEnabled = @DataService.configuration['registration.enabled']
+      scope.ssoEnabled = @DataService.configuration['sso.enabled']
       scope.emailEnabled = @DataService.configuration['email.enabled']
       scope.selfRegTypes = [
         {id: @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED, label: 'Not supported'}, 
         {id: @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING, label: 'Select from public communities'}, 
         {id: @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN, label: 'Select from public communities and provide token'} 
       ]
+      if scope.ssoEnabled
+        scope.selfRegRestrictions = [
+          {id: @Constants.SELF_REGISTRATION_RESTRICTION.NO_RESTRICTION, label: 'No restrictions'}, 
+          {id: @Constants.SELF_REGISTRATION_RESTRICTION.USER_EMAIL, label: 'One registration allowed per user'}, 
+          {id: @Constants.SELF_REGISTRATION_RESTRICTION.USER_EMAIL_DOMAIN, label: 'One registration allowed per user email domain'} 
+        ]
 
       scope.showToken = () =>
         scope.tbCommunity.selfRegType == @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN || scope.tbCommunity.selfRegType == @Constants.SELF_REGISTRATION_TYPE.TOKEN

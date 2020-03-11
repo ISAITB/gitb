@@ -400,6 +400,7 @@ object JsonUtil {
       "fname" -> community.fullname,
       "email" -> community.supportEmail,
       "selfRegType" -> community.selfRegType,
+      "selfRegRestriction" -> community.selfRegRestriction,
       "selfRegToken" -> (if(community.selfRegToken.isDefined) community.selfRegToken.get else JsNull),
       "selfRegNotification" -> community.selfregNotification,
       "description" -> (if(community.description.isDefined) community.description.get else JsNull),

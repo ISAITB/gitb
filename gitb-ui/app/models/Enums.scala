@@ -16,6 +16,11 @@ object Enums {
     val NotSupported, PublicListing, PublicListingWithToken, Token = Value
   }
 
+  object SelfRegistrationRestriction extends Enumeration(1) {
+    type SelfRegistrationType = Value
+    val NoRestriction, UserEmail, UserEmailDomain = Value
+  }
+
   object ParameterType extends Enumeration(1) {
     type ParameterType = Value
     val Simple, SimpleList, Binary, BinaryList = Value

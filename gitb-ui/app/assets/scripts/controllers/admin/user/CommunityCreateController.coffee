@@ -6,6 +6,7 @@ class CommunityCreateController
     @alerts = []
     @community = {}
     @community.selfRegType = @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED
+    @community.selfRegRestriction = @Constants.SELF_REGISTRATION_RESTRICTION.NO_RESTRICTION
     @domains = []
     @DataService.focus('sname')
 
@@ -33,7 +34,7 @@ class CommunityCreateController
     (!@community.selfRegNotification || @ValidationService.requireNonNull(@community.email, "A support email needs to be defined to support notifications."))
       if !@community.sameDescriptionAsDomain
         descriptionToUse = @community.activeDescription
-      @CommunityService.createCommunity @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegToken, @community.selfRegNotification, descriptionToUse, @community.domain?.id
+      @CommunityService.createCommunity @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegRestriction, @community.selfRegToken, @community.selfRegNotification, descriptionToUse, @community.domain?.id
       .then (data) =>
         if data? && data.error_code?
           @ValidationService.pushAlert({type:'danger', msg:data.error_description})

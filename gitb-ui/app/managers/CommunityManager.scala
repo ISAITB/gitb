@@ -5,6 +5,7 @@ import java.util
 import javax.inject.{Inject, Singleton}
 import models.Enums._
 import models._
+import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import persistence.AccountManager
 import persistence.db._
@@ -19,6 +20,38 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   import dbConfig.profile.api._
 
   def logger = LoggerFactory.getLogger("CommunityManager")
+
+  def existsOrganisationWithSameUserEmail(communityId: Long, email: String): Boolean = {
+    exec(PersistenceSchema.users
+      .join(PersistenceSchema.organizations).on(_.organization === _.id)
+      .filter(_._2.community === communityId)
+      .filter(_._1.ssoEmail.toLowerCase === email.toLowerCase)
+      .result
+      .headOption
+    ).isDefined
+  }
+
+  def existsOrganisationWithSameUserEmailDomain(communityId: Long, email: String): Boolean = {
+    val existingUsers = exec(PersistenceSchema.users
+      .join(PersistenceSchema.organizations).on(_.organization === _.id)
+      .filter(_._2.community === communityId)
+      .filter(_._1.ssoEmail.isDefined)
+      .map(x => x._1.ssoEmail)
+      .distinct
+      .result
+      .map(_.toSet)
+    )
+    val newUserEmailDomain = StringUtils.substringAfter(email.toLowerCase, "@")
+    existingUsers.foreach { existingUserEmail =>
+      if (existingUserEmail.isDefined) {
+        val userEmailDomain = StringUtils.substringAfter(existingUserEmail.get.toLowerCase, "@")
+        if (newUserEmailDomain.equals(userEmailDomain)) {
+          return true
+        }
+      }
+    }
+    false
+  }
 
   def isSelfRegTokenUnique(token: String, communityIdToIgnore: Option[Long]): Boolean = {
     var q = PersistenceSchema.communities.filter(_.selfRegToken === token)
@@ -138,7 +171,7 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   /**
     * Update community
     */
-  def updateCommunity(communityId: Long, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], selfRegNotification: Boolean, description: Option[String], domainId: Option[Long]) = {
+  def updateCommunity(communityId: Long, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], selfRegNotification: Boolean, description: Option[String], selfRegRestriction: Short, domainId: Option[Long]) = {
     val actions = new ListBuffer[DBIO[_]]()
 
     val community = exec(PersistenceSchema.communities.filter(_.id === communityId).result.headOption)
@@ -192,8 +225,8 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
         val q = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.fullname)
         actions += q.update(fullName)
       }
-      val qs = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.supportEmail, c.domain, c.selfRegType, c.selfRegToken, c.selfregNotification, c.description)
-      actions += qs.update(supportEmail, domainId, selfRegType, selfRegToken, selfRegNotification, description)
+      val qs = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.supportEmail, c.domain, c.selfRegType, c.selfRegToken, c.selfregNotification, c.description, c.selfRegRestriction)
+      actions += qs.update(supportEmail, domainId, selfRegType, selfRegToken, selfRegNotification, description, selfRegRestriction)
 
       exec(DBIO.seq(actions.map(a => a): _*).transactionally)
     } else {
