@@ -4,6 +4,7 @@ class CommunityDetailController
   constructor: (@$log, @$state, @$window, @$stateParams, @UserService, @DataService, @Constants, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @CommunityService, @ConformanceService, @ErrorService, @PopupService, @community) ->
 
     @communityId = @community.id
+    @originalDomainId = @community.domain
 
     @adminColumns = [
       {
@@ -144,7 +145,7 @@ class CommunityDetailController
     @DataService.focus('sname')
 
   saveDisabled: () =>
-    !(@community?.sname? && @community?.fname? && 
+    !(@community?.sname? && @community?.fname? && @community.sname.trim() != '' && @community.fname.trim() != '' &&
     (!@DataService.configuration?['registration.enabled'] || 
       ((@community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED || 
         @community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || 
@@ -155,21 +156,33 @@ class CommunityDetailController
 
   updateCommunity: () =>
     @ValidationService.clearAll()
-    if @ValidationService.requireNonNull(@community.sname, "Please enter short name of the community.") &
-    @ValidationService.requireNonNull(@community.fname, "Please enter full name of the community.") &
+    if @ValidationService.requireNonNull(@community.sname, "Please enter the short name of the community.") &
+    @ValidationService.requireNonNull(@community.fname, "Please enter the full name of the community.") &
     (!(@community.email? && @community.email.trim() != '') || @ValidationService.validateEmail(@community.email, "Please enter a valid support email.")) &
     (!@community.selfRegNotification || @ValidationService.requireNonNull(@community.email, "A support email needs to be defined to support notifications."))
       if !@community.sameDescriptionAsDomain
         descriptionToUse = @community.activeDescription
-      @CommunityService.updateCommunity(@communityId, @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegToken, @community.selfRegNotification, descriptionToUse, @community.domain?.id)
-      .then (data) =>
-        if data? && data.error_code?
-          @ValidationService.pushAlert({type:'danger', msg:data.error_description})
-          @alerts = @ValidationService.getAlerts()          
+      updateCall = () => 
+        @CommunityService.updateCommunity(@communityId, @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegToken, @community.selfRegNotification, descriptionToUse, @community.domain?.id)
+          .then (data) =>
+            if data? && data.error_code?
+              @ValidationService.pushAlert({type:'danger', msg:data.error_description})
+              @alerts = @ValidationService.getAlerts()          
+            else
+              @originalDomainId = @community.domain
+              @PopupService.success('Community updated.')
+          .catch (error) =>
+            @ErrorService.showErrorMessage(error)
+      if (!@originalDomainId? && @community.domain?) || (@originalDomainId? && @community.domain? && @originalDomainId != @community.domain)
+        if !@originalDomainId?
+          confirmationMessage = "Setting the "+@DataService.labelDomainLower()+" will remove existing conformance statements linked to other "+@DataService.labelDomainsLower()+". Are you sure you want to proceed?"
         else
-          @PopupService.success('Community updated.')
-      .catch (error) =>
-        @ErrorService.showErrorMessage(error)
+          confirmationMessage = "Changing the "+@DataService.labelDomainLower()+" will remove all existing conformance statements. Are you sure you want to proceed?"
+        @ConfirmationDialogService.confirm("Confirm "+@DataService.labelDomainLower()+" change", confirmationMessage, "Yes", "No")
+        .then () =>
+          updateCall()
+      else
+        updateCall()
     else
       @alerts = @ValidationService.getAlerts()
 

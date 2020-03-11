@@ -1,5 +1,7 @@
 package managers
 
+import java.util
+
 import javax.inject.{Inject, Singleton}
 import models.Enums._
 import models._
@@ -146,6 +148,44 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
         val q = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.shortname)
         actions += q.update(shortName)
         actions += testResultManager.updateForUpdatedCommunity(communityId, shortName)
+      }
+
+      if (community.get.domain.isDefined && domainId.isDefined && community.get.domain.get != domainId.get) {
+        // New domain doesn't match previous domain. Remove conformance statements for previous domain.
+        actions += conformanceManager.deleteConformanceStatementsForDomainAndCommunity(community.get.domain.get, communityId)
+      } else if (community.get.domain.isEmpty && domainId.isDefined) {
+        // Domain set for community that was not previously linked to a domain. Remove statements for other domains.
+        val action = for {
+          systemActors <- {
+            // Get the conformance statement information to delete (system and actor IDs).
+            PersistenceSchema.systemImplementsActors
+              .join(PersistenceSchema.systems).on(_.systemId === _.id)
+              .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
+              .join(PersistenceSchema.actors).on(_._1._1.actorId === _.id)
+              .filter(_._1._2.community === communityId)
+              .filter(_._2.domain =!= domainId.get)
+              .map(x => (x._1._1._1.actorId, x._1._1._1.systemId))
+              .result
+              .map(_.toList)
+          }
+          systemAndActorIds <- {
+            // Put IDs in sets for easier processing (no need for deletion per each match).
+            val actorIds = new util.HashSet[Long]
+            val systemIds = new util.HashSet[Long]
+            systemActors.foreach { systemActorPair =>
+              actorIds.add(systemActorPair._1)
+              systemIds.add(systemActorPair._2)
+            }
+            import scala.collection.JavaConversions._
+            DBIO.successful((actorIds.toSet, systemIds.toSet))
+          }
+          _ <- {
+            // Delete conformance statement data for collected IDs.
+            PersistenceSchema.systemImplementsActors.filter(_.systemId inSet systemAndActorIds._2).filter(_.actorId inSet systemAndActorIds._1).delete andThen
+            PersistenceSchema.conformanceResults.filter(_.sut inSet systemAndActorIds._2).filter(_.actor inSet systemAndActorIds._1).delete
+          }
+        } yield ()
+        actions += action
       }
 
       if (!fullName.isEmpty && community.get.fullname != fullName) {

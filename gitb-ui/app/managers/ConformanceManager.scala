@@ -723,4 +723,17 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 		endpointList
 	}
 
+	def deleteConformanceStatementsForDomainAndCommunity(domainId: Long, communityId: Long) = {
+		val action = for {
+			actorIds <- PersistenceSchema.actors.filter(_.domain === domainId).map(x => x.id).result.map(_.toList)
+			systemIds <- PersistenceSchema.systems.join(PersistenceSchema.organizations).on(_.owner === _.id).filter(_._2.community === communityId).map(x => x._1.id).result.map(_.toList)
+			_ <- {
+				PersistenceSchema.systemImplementsActors.filter(_.systemId inSet systemIds).filter(_.actorId inSet actorIds).delete andThen
+				PersistenceSchema.conformanceResults.filter(_.sut inSet systemIds).filter(_.actor inSet actorIds).delete
+			}
+		} yield ()
+		action
+	}
+
+
 }
