@@ -29,7 +29,7 @@ class UserDetailController
     if @DataService.configuration['sso.enabled']
       !(@user.role?)
     else
-      !(@user.name? && @user.role?)
+      !(@user.name? && @user.name.trim() != '' && @user.role?)
 
   # update and cancel detail
   updateUser: () =>

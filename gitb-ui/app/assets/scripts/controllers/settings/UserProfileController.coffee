@@ -54,6 +54,9 @@ class UserProfileController
 	editProfile: () ->
 		@edit = true;
 
+	saveDisabled: () ->
+		@$scope.data.name == undefined || @$scope.data.name.trim() == ''	
+
 	updateProfile: () ->
 		if @checkForm()
 			@spinner = true #start spinner before calling service operation

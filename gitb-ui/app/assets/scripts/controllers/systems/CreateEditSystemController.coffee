@@ -50,7 +50,7 @@ class CreateEditSystemController
 			@$scope.title = 'Create ' + @DataService.labelSystemLower()
 	
 		@$scope.saveEnabled = () =>
-			@$scope.system.sname? && @$scope.system.fname? && @$scope.system.version?
+			@$scope.system.sname? && @$scope.system.sname.trim() != '' && @$scope.system.fname? && @$scope.system.fname.trim() != '' && @$scope.system.version? && @$scope.system.version.trim() != ''
 
 		@$scope.copyChanged = () =>
 			if @$scope.system.otherSystem == undefined || @$scope.system.otherSystem == null

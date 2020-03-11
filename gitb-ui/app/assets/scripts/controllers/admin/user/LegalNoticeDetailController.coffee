@@ -20,7 +20,7 @@ class LegalNoticeDetailController
     @DataService.focus('name')
 
   saveDisabled: () =>
-    !(@notice?.name?)
+    !(@notice?.name? && @notice.name.trim() != '')
 
   # update and cancel detail
   updateLegalNotice: (copy) =>

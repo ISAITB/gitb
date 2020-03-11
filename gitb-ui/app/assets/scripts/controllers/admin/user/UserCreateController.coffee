@@ -15,9 +15,9 @@ class UserCreateController
 
   saveDisabled: () =>
     if @DataService.configuration['sso.enabled']
-      !(@user.email? && @user.role?)
+      !(@user.email? && @user.email.trim() != '' && @user.role?)
     else
-      !(@user.name? && @user.password? && @user.cpassword? && @user.email? && @user.role?)
+      !(@user.name? && @user.password? && @user.cpassword? && @user.email? && @user.name.trim() != '' && @user.password.trim() != '' && @user.cpassword.trim() != '' && @user.email.trim() != '' && @user.role?)
 
   # create user and cancel screen
   createUser: () =>

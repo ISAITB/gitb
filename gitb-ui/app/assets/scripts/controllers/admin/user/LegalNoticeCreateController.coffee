@@ -18,7 +18,7 @@ class LegalNoticeCreateController
     @WebEditorService.editor(300, @$stateParams.content ? "")
 
   saveDisabled: () =>
-    !(@notice?.name?)
+    !(@notice?.name? && @notice.name.trim() != '')
 
   createLegalNotice: () =>
     @ValidationService.clearAll()

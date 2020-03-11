@@ -68,7 +68,7 @@ class TestCase(
 	var targetOptions: Option[List[models.Options]] = _targetOptions
 	var testSuiteOrder: Short = _testSuiteOrder
 	var hasDocumentation: Boolean = _hasDocumentation
-	var documentation: Option[String] = documentation
+	var documentation: Option[String] = _documentation
 
 
 	def this(_case: TestCases, targetActors: Option[List[Actors]], targetOptions: Option[List[models.Options]]) = {

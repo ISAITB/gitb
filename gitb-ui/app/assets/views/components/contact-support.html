@@ -9,13 +9,13 @@
         </div>
         <div class="form-group">
             <label class="col-xs-3 control-label">* Contact email:</label>
-            <div class="col-xs-7"><input id="contact" ng-model="controller.contactAddress" class="form-control" type="text" required></div>
+            <div class="col-xs-7"><input id="contact" ng-model="controller.contactAddress" class="form-control" type="text"></div>
             <div tb-tooltip="Specify the email at which you would like to receive feedback regarding your request."></div>
         </div>
         <div class="form-group">
             <label class="col-xs-3 control-label">* Feedback type:</label>
             <div class="col-xs-7">
-                <select class="form-control" ng-model="controller.feedback" ng-options="feedbackType.description for feedbackType in controller.feedbackTypes track by feedbackType.id" required></select>
+                <select class="form-control" ng-model="controller.feedback" ng-options="feedbackType.description for feedbackType in controller.feedbackTypes track by feedbackType.id"></select>
             </div>
             <div tb-tooltip="Select the nature of your request to facilitate its processing by support staff."></div>
         </div>

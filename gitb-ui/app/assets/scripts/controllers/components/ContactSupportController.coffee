@@ -37,7 +37,7 @@ class ContactSupportController
         tinymce.get('mce-editor-contact')
 
     sendDisabled: () =>
-        !(@contactAddress? && @feedback? && @feedback?.id? && !@sendPending)
+        !(@contactAddress? && @contactAddress.trim() != '' && @feedback? && @feedback?.id? && !@sendPending)
 
     showSurveyLink: () =>
         @DataService.configuration?["survey.enabled"] == true

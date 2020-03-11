@@ -22,7 +22,7 @@ class AdminDetailController
       @ErrorService.showErrorMessage(error)
 
   saveDisabled: () =>
-    !(@user.name?)
+    !(@user.name? && @user.name.trim() != '')
 
   # update and cancel detail
   updateAdmin: () =>

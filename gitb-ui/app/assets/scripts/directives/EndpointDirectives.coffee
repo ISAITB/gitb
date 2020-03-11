@@ -5,7 +5,7 @@
 		template: ''+
 			'<div class="form-group">'+
 				'<label class="col-xs-3 control-label" for="name">* Name:</label>'+
-				'<div class="col-xs-7"><input id="name" ng-model="endpoint.name" class="form-control" type="text" required></div>'+
+				'<div class="col-xs-7"><input id="name" ng-model="endpoint.name" class="form-control" type="text"></div>'+
 				'<div tb-tooltip="A name used to refer to this set of configuration properties. This is displayed when viewing a conformance statement\'s details."></div>'+
 			'</div>'+
 			'<div class="form-group">'+

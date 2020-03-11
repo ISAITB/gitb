@@ -12,9 +12,9 @@ class AdminCreateController
 
   saveDisabled: () =>
     if @DataService.configuration['sso.enabled']
-      !(@user.email?)
+      !(@user.email? && @user.email.trim() != '')
     else
-      !(@user.name? && @user.password? && @user.cpassword? && @user.email?)
+      !(@user.name? && @user.password? && @user.cpassword? && @user.email? && @user.name.trim() != '' && @user.password.trim() != '' && @user.cpassword.trim() != '' && @user.email.trim() != '')
 
   # create system administrator and cancel screen
   createAdmin: () =>

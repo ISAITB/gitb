@@ -76,7 +76,7 @@ class DomainDetailsController
 				@ErrorService.showErrorMessage(error)
 
 	saveDisabled: () =>
-		!(@domain?.sname? && @domain?.fname?)
+		!(@domain.sname? && @domain.sname.trim() != '' and @domain.fname? && @domain.fname.trim() != '')
 
 	saveDomainChanges: () =>
 		@ConformanceService.updateDomain(@domainId, @domain.sname, @domain.fname, @domain.description)

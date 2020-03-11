@@ -14,23 +14,23 @@
       '</div>'+
       '<div class="form-group" ng-if="!sso">'+
         '<label class="col-xs-4 control-label" for="name">* Name:</label>'+
-        '<div class="col-xs-6"><input id="name" ng-model="tbUser.name" class="form-control" type="text" required></div>'+
+        '<div class="col-xs-6"><input id="name" ng-model="tbUser.name" class="form-control" type="text"></div>'+
         '<div tb-tooltip="The name of the user. This is used for display purposes when listing users."></div>'+
       '</div>'+
       '<div class="form-group">'+
         '<label ng-class="{\'col-xs-3\': sso, \'col-xs-4\': !sso}" class="control-label" for="email"><span ng-if="tbNew">* </span>Email:</label>'+
-        '<div class="col-xs-6"><input id="email" ng-model="tbUser.email" class="form-control" type="text" ng-readOnly="!tbNew" required></div>'+
+        '<div class="col-xs-6"><input id="email" ng-model="tbUser.email" class="form-control" type="text" ng-readOnly="!tbNew"></div>'+
         '<div ng-if="sso" tb-tooltip="The email address linked to the user\'s EU Login account."></div>'+
         '<div ng-if="!sso" tb-tooltip="An email-formatted username for this user that is used for logging in. No emails are ever sent to this."></div>'+
       '</div>'+
       '<div class="form-group" ng-if="tbAdmin && !tbNew">'+
         '<label ng-class="{\'col-xs-3\': sso, \'col-xs-4\': !sso}" class="control-label" for="role"><span ng-if="tbNew">* </span>Role:</label>'+
-        '<div class="col-xs-6"><input id="role" ng-model="tbUser.role.label" class="form-control" type="text" ng-readOnly="!tbNew" required></div>'+
+        '<div class="col-xs-6"><input id="role" ng-model="tbUser.role.label" class="form-control" type="text" ng-readOnly="!tbNew"></div>'+
         '<div tb-tooltip="The user\'s assigned role."></div>'+
       '</div>'+
       '<div class="form-group" ng-if="!tbAdmin">'+
         '<label ng-class="{\'col-xs-3\': sso, \'col-xs-4\': !sso}" class="control-label" for="role">* Role:</label>'+
-        '<div class="col-xs-6"><select id="role" class="form-control" ng-model="tbUser.role" ng-options="role.label for role in tbRoles track by role.id" required></select></div>'+
+        '<div class="col-xs-6"><select id="role" class="form-control" ng-model="tbUser.role" ng-options="role.label for role in tbRoles track by role.id"></select></div>'+
         '<div tb-tooltip="The user\'s assigned role. A \'user\' can view information and execute test sessions whereas an \'administrator\' can also manage users and edit test configuration."></div>'+
       '</div>'+
       '<div class="form-group" ng-if="!tbNew">'+
@@ -40,7 +40,7 @@
       '</div>'+
       '<div class="form-group" ng-if="!tbAdmin && !tbNew">'+
         '<label ng-class="{\'col-xs-3\': sso, \'col-xs-4\': !sso}" class="control-label" for="organization"><span ng-if="!sso">* </span>{{DataService.labelOrganisation()}}:</label>'+
-        '<div class="col-xs-6"><input id="organization" ng-model="tbUser.organization.fname" class="form-control" type="text" ng-readOnly="true" required></div>'+
+        '<div class="col-xs-6"><input id="organization" ng-model="tbUser.organization.fname" class="form-control" type="text" ng-readOnly="true"></div>'+
         '<div tb-tooltip="The {{DataService.labelOrganisationLower()}} this user is a member of."></div>'+
       '</div>'+
       '<div class="form-group" ng-if="!tbNew && !sso">'+
@@ -50,12 +50,12 @@
       '<div ng-if="!sso" uib-collapse="!tbNew && !tbUser.changePassword">' +
         '<div class="form-group">'+
           '<label class="col-xs-4 control-label" for="password">* One-time password:</label>'+
-          '<div class="col-xs-6"><input id="password" ng-model="tbUser.password" class="form-control" type="password" required></div>'+
+          '<div class="col-xs-6"><input id="password" ng-model="tbUser.password" class="form-control" type="password"></div>'+
           '<div tb-tooltip="This password can only be used once at first login and will then need to be changed."></div>'+
         '</div>'+
         '<div class="form-group">'+
           '<label class="col-xs-4 control-label" for="cpassword">* Confirm one-time password:</label>'+
-          '<div class="col-xs-6"><input id="cpassword" ng-model="tbUser.cpassword" class="form-control" type="password" required></div>'+
+          '<div class="col-xs-6"><input id="cpassword" ng-model="tbUser.cpassword" class="form-control" type="password"></div>'+
           '<div tb-tooltip="Repeat the password to ensure it is correctly provided."></div>'+
         '</div>'+
       '</div>'

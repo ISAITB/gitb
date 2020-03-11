@@ -18,7 +18,7 @@ class LandingPageCreateController
     @WebEditorService.editor(300, @$stateParams.content ? "")
 
   saveDisabled: () =>
-    !(@page?.name?)
+    !(@page?.name? && @page.name.trim() != '')
 
   # create landing page and cancel screen
   createLandingPage: () =>

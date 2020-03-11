@@ -9,7 +9,7 @@ class CreateDomainController
 		@DataService.focus('shortName')
 
 	saveDisabled: () =>
-		!(@domain.sname?.length > 0 and @domain.fname?.length > 0)
+		!(@domain.sname? && @domain.sname.trim() != '' and @domain.fname? && @domain.fname.trim() != '')
 
 	createDomain: () =>
 		if !@saveDisabled()

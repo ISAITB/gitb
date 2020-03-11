@@ -87,7 +87,7 @@ class ActorDetailsController
 		@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: @specificationId}
 
 	saveDisabled: () =>
-		!(@actor?.actorId? && @actor?.name?) || (@actor.displayOrder? && isNaN(@actor.displayOrder))
+		!(@actor?.actorId? && @actor?.name? && @actor.actorId.trim() != '' && @actor.name.trim() != '') || (@actor.displayOrder? && isNaN(@actor.displayOrder))
 
 	onEndpointSelect: (endpoint) =>
 		@$state.go 'app.admin.domains.detail.specifications.detail.actors.detail.endpoints.detail', {id: @domainId, spec_id: @specificationId, actor_id: @actorId, endpoint_id: endpoint.id}

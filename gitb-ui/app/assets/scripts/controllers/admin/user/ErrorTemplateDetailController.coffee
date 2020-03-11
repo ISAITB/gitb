@@ -19,7 +19,7 @@ class ErrorTemplateDetailController
       @ErrorService.showErrorMessage(error)
 
   saveDisabled: () =>
-    !(@template?.name?)
+    !(@template?.name? && @template.name.trim() != '')
 
   updateErrorTemplate: (copy) =>
     @ValidationService.clearAll()

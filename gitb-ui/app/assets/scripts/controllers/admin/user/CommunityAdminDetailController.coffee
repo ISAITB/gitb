@@ -22,7 +22,7 @@ class CommunityAdminDetailController
       @ErrorService.showErrorMessage(error)
 
   saveDisabled: () =>
-    !(@user.name?)
+    !(@user.name? && @user.name.trim() != '')
 
   updateAdmin: () =>
     @ValidationService.clearAll()

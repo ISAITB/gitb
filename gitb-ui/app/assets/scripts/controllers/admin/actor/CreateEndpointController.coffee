@@ -9,7 +9,7 @@ class CreateEndpointController
 		@DataService.focus('name')
 
 	saveDisabled: () =>
-		!(@endpoint.name?.length > 0)
+		!(@endpoint?.name? && @endpoint.name.trim() != '')
 
 	createEndpoint: () =>
 		if !@saveDisabled()

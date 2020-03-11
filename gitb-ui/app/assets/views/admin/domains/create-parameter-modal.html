@@ -5,13 +5,13 @@
 		<div class="modal-body">
 			<div class="form-group">
 				<label class="col-xs-3 control-label" for="name">* {{nameLabel}}:</label>
-				<div class="col-xs-7"><input id="name" ng-model="parameter.name" class="form-control" type="text" required></div>
+				<div class="col-xs-7"><input id="name" ng-model="parameter.name" class="form-control" type="text"></div>
 				<div ng-if="hasKey" tb-tooltip="This will be displayed as a label for the property in data collection forms."></div>
 				<div ng-if="!hasKey" tb-tooltip="An identifier for the parameter within the current endpoint. This is displayed to users in the conformance statement detail screen and used within test cases to refer to the parameter."></div>
 			</div>
 			<div class="form-group" ng-if="hasKey">
 				<label class="col-xs-3 control-label" for="key">* Key:</label>
-				<div class="col-xs-7"><input id="key" ng-model="parameter.key" class="form-control" type="text" required></div>
+				<div class="col-xs-7"><input id="key" ng-model="parameter.key" class="form-control" type="text"></div>
 				<div tb-tooltip="An identifier used to distinguish this property and refer to it from within test cases (if included in tests)."></div>
 			</div>
 			<div class="form-group">

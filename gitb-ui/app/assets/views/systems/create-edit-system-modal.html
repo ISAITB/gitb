@@ -7,12 +7,12 @@
 			<div class="col-xs-10 col-md-offset-1">
 				<div class="form-group">
 					<label class="col-xs-3 control-label" for="sname">* Short name:</label>
-					<div class="col-xs-7"><input id="sname" ng-model="system.sname" class="form-control" type="text" required></div>
+					<div class="col-xs-7"><input id="sname" ng-model="system.sname" class="form-control" type="text"></div>
 					<div tb-tooltip="A short name used to refer to this {{DataService.labelSystemLower()}} in lists and tabular displays where space is limited."></div>
 				</div>
 				<div class="form-group">
 					<label class="col-xs-3 control-label" for="fname">* Full name:</label>
-					<div class="col-xs-7"><input id="fname" ng-model="system.fname" class="form-control" type="text" required></div>
+					<div class="col-xs-7"><input id="fname" ng-model="system.fname" class="form-control" type="text"></div>
 					<div tb-tooltip="The full name for this {{DataService.labelSystemLower()}} used in reports and detail screens."></div>
 				</div>
 				<div class="form-group">
@@ -24,7 +24,7 @@
 				</div>
 				<div class="form-group">
 					<label class="col-xs-3 control-label" for="version">* Version:</label>
-					<div class="col-xs-7"><input id="version" ng-model="system.version" class="form-control" type="text" required></div>
+					<div class="col-xs-7"><input id="version" ng-model="system.version" class="form-control" type="text"></div>
 					<div tb-tooltip="An arbitrary text to serve as a version number for this {{DataService.labelSystemLower()}}. Apart from being displayed here this is not currenty used, however it is reserved for potential future needs."></div>
 				</div>
 				<div class="form-group" ng-if="otherSystems.length">

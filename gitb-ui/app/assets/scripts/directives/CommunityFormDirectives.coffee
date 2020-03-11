@@ -7,12 +7,12 @@
     template: ''+
       '<div class="form-group">'+
         '<label class="col-xs-3 control-label" for="sname">* Short name:</label>'+
-        '<div class="col-xs-7"><input id="sname" ng-model="tbCommunity.sname" class="form-control" type="text" required></div>'+
+        '<div class="col-xs-7"><input id="sname" ng-model="tbCommunity.sname" class="form-control" type="text"></div>'+
         '<div tb-tooltip="A short name used to refer to the community in selection lists and tabular displays where space is limited. If self-registration is enabled this is also displayed as the community\'s name along with its description."></div>'+
       '</div>'+
       '<div class="form-group">'+
         '<label class="col-xs-3 control-label" for="fname">* Full name:</label>'+
-        '<div class="col-xs-7"><input id="fname" ng-model="tbCommunity.fname" class="form-control" type="text" required></div>'+
+        '<div class="col-xs-7"><input id="fname" ng-model="tbCommunity.fname" class="form-control" type="text"></div>'+
         '<div tb-tooltip="The full name used to refer to the community in reports and detail screens."></div>'+
       '</div>'+
       '<div class="form-group" ng-if="tbAdmin">'+
@@ -37,7 +37,7 @@
         '</div>'+
         '<div class="form-group" uib-collapse="tbCommunity.selfRegType != '+@Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN+'">'+
           '<label class="col-xs-3 control-label" for="selfRegToken">* Self-registration token:</label>'+
-          '<div class="col-xs-7"><input id="selfRegToken" ng-model="tbCommunity.selfRegToken" class="form-control" type="text" required></div>'+
+          '<div class="col-xs-7"><input id="selfRegToken" ng-model="tbCommunity.selfRegToken" class="form-control" type="text"></div>'+
           '<div tb-tooltip="This serves as a password for new users to provide during self-registration so that the community is not fully public. Ensure your community members are aware of this or that you provide a support email for relevant requests."></div>'+
         '</div>'+
         '<div uib-collapse="!selfRegOptionsVisible">'+

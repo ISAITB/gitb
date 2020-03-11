@@ -6,16 +6,16 @@
         <form class="form-horizontal">
             <div class="panel-body">
                 <!-- Error messages -->
-                <div class="row col-md-10 col-md-offset-1">
+                <div class="row col-xs-10 col-xs-offset-1">
                     <div uib-alert ng-repeat="alert in communityDetailCtrl.alerts" ng-class="'alert-' + alert.type" close="communityDetailCtrl.closeAlert($index)">{{alert.msg}}</div>
                 </div>
                 <div class="row">
-                    <div class="col-md-10 col-md-offset-1" tb-community-form tb-community="communityDetailCtrl.community" tb-domains="communityDetailCtrl.domains" tb-admin="communityDetailCtrl.DataService.isSystemAdmin"></div>
+                    <div class="col-xs-10 col-xs-offset-1" tb-community-form tb-community="communityDetailCtrl.community" tb-domains="communityDetailCtrl.domains" tb-admin="communityDetailCtrl.DataService.isSystemAdmin"></div>
                 </div>
             </div>
             <div class="panel-footer">
                 <div class="row">
-                    <div class="col-lg-offset-2 col-xs-12">
+                    <div class="col-lg-offset-2 col-lg-10 col-xs-12">
                         <div class="btn-toolbar">
                             <button class="btn btn-default" type="submit" ng-click="communityDetailCtrl.updateCommunity()" ng-disabled="communityDetailCtrl.saveDisabled()">Save changes</button>
                             <button class="btn btn-default" type="button" ng-click="communityDetailCtrl.updateConformanceCertificateSettings()">Edit conformance certificate settings</button>

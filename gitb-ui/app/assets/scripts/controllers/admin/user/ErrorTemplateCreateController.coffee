@@ -18,7 +18,7 @@ class ErrorTemplateCreateController
     @WebEditorService.editor(300, @$stateParams.content ? "")
 
   saveDisabled: () =>
-    !(@template?.name?)
+    !(@template?.name? && @template.name.trim() != '')
 
   # create error template and cancel screen
   createErrorTemplate: () =>

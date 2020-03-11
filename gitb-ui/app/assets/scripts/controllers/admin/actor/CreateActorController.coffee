@@ -11,7 +11,7 @@ class CreateActorController
 		@DataService.focus('id')
 
 	saveDisabled: () =>
-		!(@actor.actorId?.length > 0 && @actor.name?.length > 0) || (@actor.displayOrder? && isNaN(@actor.displayOrder))
+		!(@actor?.actorId? && @actor?.name? && @actor.actorId.trim() != '' && @actor.name.trim() != '') || (@actor.displayOrder? && isNaN(@actor.displayOrder))
 
 	createActor: () =>
 		if !@saveDisabled()

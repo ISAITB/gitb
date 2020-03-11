@@ -20,7 +20,7 @@ class LandingPageDetailController
     @DataService.focus('name')
 
   saveDisabled: () =>
-    !(@page?.name?)
+    !(@page?.name? && @page.name.trim() != '')
 
   updateLandingPage: (copy) =>
     @ValidationService.clearAll()

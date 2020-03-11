@@ -7,7 +7,7 @@ class CreateSpecificationController
 		@DataService.focus('shortName')
 
 	saveDisabled: () =>
-		!(@specification?.sname? and @specification?.fname?)
+		!(@specification?.sname? && @specification?.fname? && @specification.sname.trim() != '' && @specification.fname.trim() != '')
 
 	createSpecification: ()=>
 		if !@saveDisabled()

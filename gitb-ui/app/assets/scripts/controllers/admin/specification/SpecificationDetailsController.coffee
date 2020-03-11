@@ -258,7 +258,7 @@ class SpecificationDetailsController
 			@ErrorService.showErrorMessage(error)
 
 	saveDisabled: () =>
-		!(@specification?.sname? && @specification?.fname?)
+		!(@specification?.sname? && @specification?.fname? && @specification.sname.trim() != '' && @specification.fname.trim() != '')
 
 	back: () =>
 		@$state.go 'app.admin.domains.detail.list', {id: @domainId}
