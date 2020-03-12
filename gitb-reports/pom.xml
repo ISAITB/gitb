@@ -15,17 +15,14 @@
         <dependency>
             <groupId>com.alexnederlof</groupId>
             <artifactId>jasperreports-plugin</artifactId>
-            <version>2.3</version>
         </dependency>
         <dependency>
             <groupId>net.sf.jasperreports</groupId>
             <artifactId>jasperreports</artifactId>
-            <version>6.5.0</version>
         </dependency>
         <dependency>
             <groupId>net.sf.jasperreports</groupId>
             <artifactId>jasperreports-fonts</artifactId>
-            <version>6.0.0</version>
         </dependency>
         <dependency>
             <groupId>eu.europa.ec.itb</groupId>
@@ -59,8 +56,6 @@
                     <xmlValidation>true</xmlValidation>
                     <verbose>false</verbose>
                     <numberOfThreads>4</numberOfThreads>
-                    <!--<failOnMissingSourceDirectory>true</failOnMissingSourceDirectory>-->
-                    <!--<sourceScanner>org.codehaus.plexus.compiler.util.scan.StaleSourceScanner</sourceScanner>-->
                 </configuration>
             </plugin>
         </plugins>
