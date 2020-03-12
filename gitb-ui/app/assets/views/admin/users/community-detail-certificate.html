@@ -17,18 +17,23 @@
                             <div class="col-xs-8">
                                 <label class="checkbox-inline">
                                     <input type="checkbox" ng-model="communityCertificateCtrl.settings.includeDetails">Details
+                                    <div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="Add the conformance statement details. These are the information on the {{communityCertificateCtrl.DataService.labelDomainLower()}}, {{communityCertificateCtrl.DataService.labelSpecificationLower()}}, {{communityCertificateCtrl.DataService.labelActorLower()}}, {{communityCertificateCtrl.DataService.labelOrganisationLower()}} and {{communityCertificateCtrl.DataService.labelSystemLower()}}."></div>
                                 </label>
                                 <label class="checkbox-inline">
                                     <input type="checkbox" ng-model="communityCertificateCtrl.settings.includeTestStatus">Result overview
+                                    <div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="Add a summary text on the number of successfully passed and failed test cases."></div>
                                 </label>
                                 <label class="checkbox-inline">
                                     <input type="checkbox" ng-model="communityCertificateCtrl.settings.includeTestCases">Test cases
+                                    <div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="Add the individual test cases. Doing so will include a table showing the status for each test case in the conformance statement."></div>
                                 </label>
                                 <label class="checkbox-inline">
                                     <input type="checkbox" ng-model="communityCertificateCtrl.settings.includeMessage">Message
+                                    <div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="Add a custom rich-text message following the title and before including other details."></div>
                                 </label>
                                 <label class="checkbox-inline">
                                     <input type="checkbox" ng-model="communityCertificateCtrl.settings.includeSignature">Signature
+                                    <div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="Add a digital signature and timestamp for proof of authenticity."></div>
                                 </label>
                             </div>
                         </div>
@@ -76,6 +81,7 @@
                                     <button class="btn btn-default" type="button" ng-file-select="attachKeystore($files)" ng-if="!communityCertificateCtrl.settings.keystoreFile">Upload</button>
                                     <button class="btn btn-default" type="button" ng-click="communityCertificateCtrl.downloadKeystore()" ng-if="communityCertificateCtrl.settings.keystoreFile">Download</button>
                                     <button class="btn btn-default" type="button" ng-click="communityCertificateCtrl.clearKeystore()" ng-if="communityCertificateCtrl.settings.keystoreFile">Remove</button>
+                                    <div tb-inline="true" tb-inline-type="button" tb-tooltip="The keystore file that includes the keypair (private and public key) that will be used. The keystore should contain a single keypair."></div>
                                 </div>
                             </div>
                             <div class="form-group">
