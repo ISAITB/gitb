@@ -25,10 +25,15 @@
 			<div class="form-group">
 				<label class="col-xs-3 control-label" for="kind_1">* Kind:</label>
 				<div class="col-xs-7">
-					<label class="radio-inline"><input type="radio" ng-model="parameter.kind" name="kinds" id="kind_1" value="SIMPLE">Simple</label>
-					<label class="radio-inline"><input type="radio" ng-model="parameter.kind" name="kinds" id="kind_2" value="BINARY">Binary</label>
-					<label class="radio-inline"><input type="radio" ng-model="parameter.kind" name="kinds" id="kind_3" value="SECRET">Hidden</label>
-					<div tb-inline="true" tb-inline-type="radio" tb-tooltip="'Simple' represents a text value, 'binary' a file and 'hidden' a secret text value."></div>
+					<label class="radio-inline"><input type="radio" ng-model="parameter.kind" name="kinds" id="kind_1" value="SIMPLE">Simple
+						<div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="A plain text value."></div>
+					</label>
+					<label class="radio-inline"><input type="radio" ng-model="parameter.kind" name="kinds" id="kind_2" value="BINARY">Binary
+						<div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="A file."></div>
+					</label>
+					<label class="radio-inline"><input type="radio" ng-model="parameter.kind" name="kinds" id="kind_3" value="SECRET">Hidden
+						<div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="A secret text value such as a password."></div>
+					</label>
 				</div>
 			</div>
 			<div class="form-group">

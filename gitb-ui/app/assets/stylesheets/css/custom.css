@@ -193,3 +193,7 @@ div.execution {
 	display: inline-block;
 	padding-top: 7px;	
 }
+
+.tooltip-inner {
+	min-width: 200px !important;
+}
