@@ -1,12 +1,13 @@
 package com.gitb.utils;
 
+import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;
+import org.apache.xerces.jaxp.SAXParserFactoryImpl;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-import org.xml.sax.Attributes;
-import org.xml.sax.Locator;
-import org.xml.sax.SAXException;
+import org.xml.sax.*;
 import org.xml.sax.helpers.DefaultHandler;
 
+import javax.xml.XMLConstants;
 import javax.xml.bind.*;
 import javax.xml.crypto.dsig.*;
 import javax.xml.crypto.dsig.dom.DOMSignContext;
@@ -17,6 +18,9 @@ import javax.xml.crypto.dsig.spec.C14NMethodParameterSpec;
 import javax.xml.crypto.dsig.spec.TransformParameterSpec;
 import javax.xml.namespace.QName;
 import javax.xml.parsers.*;
+import javax.xml.stream.XMLInputFactory;
+import javax.xml.stream.XMLStreamException;
+import javax.xml.stream.XMLStreamReader;
 import javax.xml.transform.Transformer;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactory;
@@ -53,8 +57,21 @@ public class XMLUtils {
     public static <T> T unmarshal(Class<T> clazz, StreamSource source) throws JAXBException {
         JAXBContext context       = JAXBContext.newInstance(clazz);
         Unmarshaller unmarshaller = context.createUnmarshaller();
-        JAXBElement<T> element    =  unmarshaller.unmarshal(source, clazz);
-
+        /*
+         Use a factory that disables XML External Entity (XXE) attacks.
+         This cannot be done by defining a bean since the XMLInputFactory
+         is not thread safe.
+         */
+        XMLInputFactory xif = XMLInputFactory.newFactory();
+        xif.setProperty(XMLInputFactory.IS_SUPPORTING_EXTERNAL_ENTITIES, false);
+        xif.setProperty(XMLInputFactory.SUPPORT_DTD, false);
+        XMLStreamReader xsr;
+        try {
+            xsr = xif.createXMLStreamReader(source);
+        } catch (XMLStreamException e) {
+            throw new IllegalStateException(e);
+        }
+        JAXBElement<T> element    =  unmarshaller.unmarshal(xsr, clazz);
 	    return (T) element.getValue();
     }
 
@@ -127,6 +144,31 @@ public class XMLUtils {
 
     public static String LINE_NUMBER_KEY_NAME = "lineNumber";
 
+    public static SAXParserFactory getSecureSAXParserFactory() throws ParserConfigurationException, SAXNotRecognizedException, SAXNotSupportedException {
+        // Use Xerces implementation for its advanced security features.
+        SAXParserFactoryImpl saxParserFactory = new SAXParserFactoryImpl();
+        saxParserFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        saxParserFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        saxParserFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        saxParserFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        saxParserFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        saxParserFactory.setXIncludeAware(false);
+        return saxParserFactory;
+    }
+
+    public static DocumentBuilderFactory getSecureDocumentBuilderFactory() throws ParserConfigurationException {
+        // Use Xerces implementation for its advanced security features.
+        DocumentBuilderFactoryImpl docBuilderFactory = new DocumentBuilderFactoryImpl();
+        docBuilderFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        docBuilderFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        docBuilderFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        docBuilderFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        docBuilderFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        docBuilderFactory.setXIncludeAware(false);
+        docBuilderFactory.setExpandEntityReferences(false);
+        return docBuilderFactory;
+    }
+
     /**
      * Parses an XML document from a provided InputStream and sets a "lineNumber" attribute for each node
      * @param is InputStream of XML document to be parsed
@@ -138,10 +180,9 @@ public class XMLUtils {
         final Document doc;
         SAXParser parser;
         try {
-            final SAXParserFactory factory = SAXParserFactory.newInstance();
+            final SAXParserFactory factory = getSecureSAXParserFactory();
             parser = factory.newSAXParser();
-            final DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
-            final DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
+            final DocumentBuilder docBuilder = getSecureDocumentBuilderFactory().newDocumentBuilder();
             doc = docBuilder.newDocument();
         } catch (final ParserConfigurationException e) {
             throw new RuntimeException("Can't create SAX parser / DOM builder.", e);
@@ -267,8 +308,12 @@ public class XMLUtils {
         return doc;
     }
 
+    public static TransformerFactory getSecureTransformerFactory() {
+        return TransformerFactory.newInstance();
+    }
+
     public static byte[] convertDocumentToByteArray(Document document) throws TransformerException {
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        TransformerFactory transformerFactory = getSecureTransformerFactory();
         Transformer transformer = transformerFactory.newTransformer();
         DOMSource source = new DOMSource(document);
 

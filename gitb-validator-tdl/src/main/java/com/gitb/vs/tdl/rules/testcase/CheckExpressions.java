@@ -185,7 +185,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                     } else {
                         try {
                             XPathExpression expression = createXPathExpression(token);
-                            expression.evaluate(DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument());
+                            expression.evaluate(Utils.getSecureDocumentBuilderFactory().newDocumentBuilder().newDocument());
                         } catch (XPathExpressionException e) {
                             addReportItem(ErrorCode.INVALID_EXPRESSION, currentTestCase.getId(), Utils.getStepName(currentStep), token);
                         } catch (ParserConfigurationException e) {

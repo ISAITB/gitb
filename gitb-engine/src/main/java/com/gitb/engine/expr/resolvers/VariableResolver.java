@@ -6,6 +6,7 @@ import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.types.*;
 import com.gitb.utils.ErrorUtils;
+import com.gitb.utils.XMLUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +17,6 @@ import org.w3c.dom.NodeList;
 
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathVariableResolver;
 import java.util.ArrayList;
@@ -60,7 +60,7 @@ public class VariableResolver implements XPathVariableResolver{
     public VariableResolver(TestCaseScope scope) {
         this.scope = scope;
         try {
-            documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            documentBuilder = XMLUtils.getSecureDocumentBuilderFactory().newDocumentBuilder();
         } catch (ParserConfigurationException e) {
             e.printStackTrace();
         }

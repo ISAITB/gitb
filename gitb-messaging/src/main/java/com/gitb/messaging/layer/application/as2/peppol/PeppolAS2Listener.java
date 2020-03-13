@@ -8,6 +8,7 @@ import com.gitb.messaging.layer.application.https.HttpsListener;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
 import com.gitb.types.ObjectType;
+import com.gitb.utils.XMLUtils;
 import org.apache.http.impl.BHttpConnectionBase;
 import org.apache.http.impl.DefaultBHttpClientConnection;
 import org.apache.http.impl.DefaultBHttpServerConnection;
@@ -63,7 +64,7 @@ public class PeppolAS2Listener extends HttpsListener{
         ObjectType businessMessage = (ObjectType) incomingMessage.getFragments().get(PeppolAS2MessagingHandler.BUSINESS_MESSAGE_FIELD_NAME);
 
         //merge SBDH and business message
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory factory = XMLUtils.getSecureDocumentBuilderFactory();
         Document doc = factory.newDocumentBuilder().newDocument();
 
         Element root = doc.createElementNS(DEFAULT_SBD_NAMESPACE, SBD_NODE_NAME);

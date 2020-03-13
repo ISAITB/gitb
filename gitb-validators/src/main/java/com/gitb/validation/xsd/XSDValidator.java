@@ -7,18 +7,26 @@ import com.gitb.types.BinaryType;
 import com.gitb.types.DataType;
 import com.gitb.types.ObjectType;
 import com.gitb.types.SchemaType;
+import com.gitb.utils.XMLUtils;
 import com.gitb.validation.IValidationHandler;
 import com.gitb.validation.common.AbstractValidator;
+import org.apache.xerces.jaxp.validation.XMLSchemaFactory;
+import org.kohsuke.MetaInfServices;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
-import org.xml.sax.*;
-import org.kohsuke.MetaInfServices;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamSource;
-import javax.xml.validation.*;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.Map;
@@ -57,7 +65,12 @@ public class XSDValidator extends AbstractValidator {
         //create error handler
         XSDReportHandler handler = new XSDReportHandler(contentToProcess, xsd);
 
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilderFactory factory = null;
+        try {
+            factory = XMLUtils.getSecureDocumentBuilderFactory();
+        } catch (ParserConfigurationException e) {
+            throw new IllegalStateException(e);
+        }
         factory.setNamespaceAware(true);
 
         //resolve schema

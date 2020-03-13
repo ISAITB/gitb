@@ -1,7 +1,7 @@
 package com.gitb.vs.tdl.util;
 
-import com.gitb.tdl.*;
 import com.gitb.tdl.Process;
+import com.gitb.tdl.*;
 import com.gitb.vs.tdl.Context;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;
@@ -79,19 +79,30 @@ public class Utils {
         return destFile;
     }
 
+    public static DocumentBuilderFactory getSecureDocumentBuilderFactory() throws ParserConfigurationException {
+        // Use Xerces implementation for its advanced security features.
+        DocumentBuilderFactoryImpl docBuilderFactory = new DocumentBuilderFactoryImpl();
+        docBuilderFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        docBuilderFactory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        docBuilderFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        docBuilderFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
+        docBuilderFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        docBuilderFactory.setXIncludeAware(false);
+        docBuilderFactory.setExpandEntityReferences(false);
+        return docBuilderFactory;
+    }
+
     public static Document readAsXML(InputStream is) {
         Document document = null;
-        DocumentBuilderFactory dbFactory = new DocumentBuilderFactoryImpl();
+        DocumentBuilderFactory dbFactory = null;
+        try {
+            dbFactory = getSecureDocumentBuilderFactory();
+            dbFactory.setNamespaceAware(true);
+        } catch (ParserConfigurationException e) {
+            throw new IllegalStateException(e);
+        }
         DocumentBuilder builder;
         try {
-            dbFactory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            dbFactory.setFeature("http://xml.org/sax/features/external-general-entities", true);
-            dbFactory.setFeature("http://xml.org/sax/features/external-parameter-entities", true);
-            dbFactory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", true);
-            dbFactory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            dbFactory.setXIncludeAware(false);
-            dbFactory.setExpandEntityReferences(false);
-            dbFactory.setNamespaceAware(true);
             builder = dbFactory.newDocumentBuilder();
             builder.setErrorHandler(new ErrorHandler() {
                 @Override
