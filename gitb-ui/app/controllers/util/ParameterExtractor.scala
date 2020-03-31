@@ -344,7 +344,7 @@ object ParameterExtractor {
 	}
 
 	def extractActor(request:Request[AnyContent]):Actors = {
-    val id:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ID) match {
+    val id:Long = ParameterExtractor. optionalBodyParameter(request, Parameters.ID) match {
       case Some(i) => i.toLong
       case _ => 0l
     }

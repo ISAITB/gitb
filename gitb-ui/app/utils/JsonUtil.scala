@@ -8,6 +8,7 @@ import com.gitb.tr._
 import config.Configurations
 import javax.xml.bind.JAXBElement
 import managers.AttachmentType
+import managers.export.ExportSettings
 import models.Enums.{LabelType, TestResultStatus}
 import models._
 import org.apache.commons.codec.binary.Base64
@@ -663,6 +664,32 @@ object JsonUtil {
       )
     }
     list
+  }
+
+  def parseJsExportSettings(json:String):ExportSettings = {
+    val jsonConfig = Json.parse(json).as[JsObject]
+    val settings = new ExportSettings()
+    settings.landingPages = (jsonConfig \ "landingPages").as[Boolean]
+    settings.errorTemplates = (jsonConfig \ "errorTemplates").as[Boolean]
+    settings.legalNotices = (jsonConfig \ "legalNotices").as[Boolean]
+    settings.legalNotices = (jsonConfig \ "legalNotices").as[Boolean]
+    settings.certificateSettings = (jsonConfig \ "certificateSettings").as[Boolean]
+    settings.customLabels = (jsonConfig \ "customLabels").as[Boolean]
+    settings.customProperties = (jsonConfig \ "customProperties").as[Boolean]
+    settings.organisations = (jsonConfig \ "organisations").as[Boolean]
+    settings.organisationPropertyValues = (jsonConfig \ "organisationPropertyValues").as[Boolean]
+    settings.systems = (jsonConfig \ "systems").as[Boolean]
+    settings.systemPropertyValues = (jsonConfig \ "systemPropertyValues").as[Boolean]
+    settings.statements = (jsonConfig \ "statements").as[Boolean]
+    settings.statementConfigurations = (jsonConfig \ "statementConfigurations").as[Boolean]
+    settings.domain = (jsonConfig \ "domain").as[Boolean]
+    settings.domainParameters = (jsonConfig \ "domainParameters").as[Boolean]
+    settings.specifications = (jsonConfig \ "specifications").as[Boolean]
+    settings.actors = (jsonConfig \ "actors").as[Boolean]
+    settings.endpoints = (jsonConfig \ "endpoints").as[Boolean]
+    settings.testSuites = (jsonConfig \ "testSuites").as[Boolean]
+    settings.encryptionKey = (jsonConfig \ "encryptionKey").asOpt[String]
+    settings
   }
 
   def parseJsCommunityLabels(communityId: Long, json:String):List[CommunityLabels] = {

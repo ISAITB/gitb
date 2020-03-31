@@ -144,7 +144,7 @@
     margin-top: 5px;	
 }
 .form-check {
-	margin-top:10px !important;
+	margin-top:11px !important;
 }
 .form-separator {
 	border-bottom: 1px solid @gray-light; margin-bottom: 20px;
@@ -167,4 +167,53 @@
 
 .test-suite-validation-summary {
 	margin-bottom: 15px;
+}
+
+#exportSettingsTable {
+	border: 1px solid @gray-dark-1;
+	margin-top: 2px;
+	th {
+		background: @gray-light-1;
+		&:last-child {
+			span {
+				margin-left: 10px;
+				margin-right: 10px;
+			}
+		}
+	}
+	td {
+		border-right: 1px solid @gray-dark-1;
+		&.row-header {
+			background: @gray-light-1;
+			font-weight: bold;
+			padding-top: 15px;
+		}
+		&:last-child {
+			border-right: 0px;
+		}
+		table {
+			margin-left: 10px;
+			margin-right: 10px;
+			margin-bottom: 5px;
+		}
+	}
+}
+
+div.inline-checkbox-container {
+	display: flex;
+}
+label.inline-checkbox {
+	display: inline-flex;
+	margin-left: 20px;
+	font-weight: normal;
+	margin-top: 7px;
+	cursor: pointer;
+	input {
+		margin-top: 5px;
+		margin-right: 8px;
+	}
+}
+
+li.menu-section-start {
+	border-top: 1px solid @gray-dark-1;
 }

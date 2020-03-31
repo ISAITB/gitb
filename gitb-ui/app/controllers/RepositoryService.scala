@@ -5,14 +5,19 @@ import java.nio.file.{Files, Paths}
 
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl.TestCase
-import com.gitb.utils.XMLUtils
+import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
+import com.gitb.xml.export.Export
 import config.Configurations
+import controllers.util.ParameterExtractor.requiredBodyParameter
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
 import javax.inject.Inject
+import javax.xml.bind.JAXBElement
+import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
 import managers._
-import models.ConformanceCertificate
+import managers.export.{ExportManager, ExportSettings}
+import models.{ConformanceCertificate, Constants}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
@@ -24,10 +29,11 @@ import utils._
 /**
  * Created by serbay on 10/16/14.
  */
-class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends Controller {
+class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager) extends Controller {
+
 	private val logger = LoggerFactory.getLogger(classOf[RepositoryService])
 	private val codec = new URLCodec()
-
+  private val EXPORT_QNAME:QName = new QName("http://www.gitb.com/export/v1/", "export")
   private val TESTCASE_STEP_REPORT_NAME = "step.pdf"
 
 	def getTestSuiteResource(testId: String, filePath:String) = AuthorizedAction { request =>
@@ -301,6 +307,62 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     val testCases = testCaseManager.getTestCasesForCommunity(communityId)
     val json = JsonUtil.jsTestCasesList(testCases).toString()
     ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def exportDomain(domainId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageDomain(request, domainId)
+    exportInternal(request, (exportSettings: ExportSettings) => {
+      exportManager.exportDomain(domainId, exportSettings)
+    })
+  }
+
+  def exportCommunity(communityId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageCommunity(request, communityId)
+    exportInternal(request, (exportSettings: ExportSettings) => {
+      exportManager.exportCommunity(communityId, exportSettings)
+    })
+  }
+
+  private def exportInternal(request: Request[AnyContent], fnExportData: ExportSettings => Export) = {
+    // Get export settings to apply.
+    val exportSettings = JsonUtil.parseJsExportSettings(requiredBodyParameter(request, Parameters.VALUES))
+    val exportData = fnExportData.apply(exportSettings)
+    exportData.setVersion(Constants.VersionNumber)
+    exportData.setTimestamp(XMLDateTimeUtils.getXMLGregorianCalendarDateTime)
+    // Define temp file paths.
+    val exportPathXml = Paths.get(
+      ReportManager.getTempFolderPath().toFile.getAbsolutePath,
+      "export",
+      "data."+System.currentTimeMillis()+".xml"
+    )
+    val exportPathZip = Paths.get(
+      ReportManager.getTempFolderPath().toFile.getAbsolutePath,
+      "export",
+      "data."+System.currentTimeMillis()+".zip"
+    )
+    Files.createDirectories(exportPathXml.getParent)
+    // Serialise to temp XML file.
+    val xmlOS = Files.newOutputStream(exportPathXml)
+    try {
+      XMLUtils.marshalToStream(new JAXBElement(EXPORT_QNAME, classOf[com.gitb.xml.export.Export], exportData), xmlOS)
+      xmlOS.flush()
+      xmlOS.close()
+      // Compress
+      new ZipArchiver(exportPathXml, exportPathZip, exportSettings.encryptionKey.get.toCharArray).zip()
+      Ok.sendFile(
+        content = exportPathZip.toFile,
+        inline = false,
+        fileName = _ => exportPathZip.toFile.getName,
+        onClose = () => FileUtils.deleteQuietly(exportPathZip.toFile)
+      )
+    } catch {
+      case e:Exception => {
+        FileUtils.deleteQuietly(exportPathZip.toFile)
+        throw e
+      }
+    } finally {
+      FileUtils.deleteQuietly(exportPathXml.toFile)
+    }
   }
 
 }

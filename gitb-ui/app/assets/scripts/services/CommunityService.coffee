@@ -218,4 +218,15 @@ class CommunityService
       authenticate: true
     })
 
+  exportCommunity: (communityId, settings) =>
+    data = {
+      values: settings
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.RepositoryService.exportCommunity(communityId).url,
+      data: data,
+      authenticate: true,
+      responseType: "arraybuffer"
+    })
+
 services.service('CommunityService', CommunityService)

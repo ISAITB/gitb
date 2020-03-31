@@ -1,14 +1,12 @@
 package controllers
 
-import java.nio.file.Paths
-
 import controllers.util.{AuthorizedAction, ResponseConstructor}
 import javax.inject.Inject
 import managers._
 import org.apache.commons.io.FileUtils
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc.Controller
-import utils.{JsonUtil, RepositoryUtils, ZipArchiver}
+import utils.JsonUtil
 
 
 /**
@@ -51,15 +49,7 @@ class TestSuiteService @Inject() (testSuiteManager: TestSuiteManager, specificat
 	def downloadTestSuite(testSuiteId: Long) = AuthorizedAction { request =>
 		authorizationManager.canDownloadTestSuite(request, testSuiteId)
 		val testSuite = testSuiteManager.getTestSuites(Some(List(testSuiteId))).head
-		val testSuiteFolder = RepositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(testSuite.specification), testSuite.filename, None)
-		val testSuiteOutputPath = Paths.get(
-			ReportManager.getTempFolderPath().toFile.getAbsolutePath,
-			"test_suite",
-			"test_suite."+testSuiteId.toString+"."+System.currentTimeMillis()+".zip"
-		)
-		val zipArchiver = new ZipArchiver(testSuiteFolder.toPath, testSuiteOutputPath)
-		zipArchiver.zip()
-
+		val testSuiteOutputPath = testSuiteManager.extractTestSuite(testSuite, specificationManager.getSpecificationById(testSuite.specification), None)
 		Ok.sendFile(
 			content = testSuiteOutputPath.toFile,
 			inline = false,

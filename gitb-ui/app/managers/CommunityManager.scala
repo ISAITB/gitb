@@ -15,7 +15,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class CommunityManager @Inject() (testResultManager: TestResultManager, organizationManager: OrganizationManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, conformanceManager: ConformanceManager, accountManager: AccountManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class CommunityManager @Inject() (testResultManager: TestResultManager, organizationManager: OrganizationManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, conformanceManager: ConformanceManager, accountManager: AccountManager, testSuiteManager: TestSuiteManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -130,7 +130,11 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   }
 
   def getById(id: Long): Option[Communities] = {
-    exec(PersistenceSchema.communities.filter(_.id === id).result.headOption)
+    exec(getByIdInternal(id))
+  }
+
+  private def getByIdInternal(id: Long) = {
+    PersistenceSchema.communities.filter(_.id === id).result.headOption
   }
 
   /**

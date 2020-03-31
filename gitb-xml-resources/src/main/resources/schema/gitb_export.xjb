@@ -1,0 +1,46 @@
+<jxb:bindings version="1.0"
+            xmlns:jxb="http://java.sun.com/xml/ns/jaxb"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            schemaLocation="gitb_export.xsd"
+            node="/xsd:schema">
+    <jxb:bindings node="//xsd:complexType[@name='Organisation']/xsd:attribute[@name='landingPage']">
+        <jxb:property name="landingPage">
+            <jxb:baseType name="com.gitb.xml.export.LandingPage"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='Organisation']/xsd:attribute[@name='legalNotice']">
+        <jxb:property name="legalNotice">
+            <jxb:baseType name="com.gitb.xml.export.LegalNotice"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='Organisation']/xsd:attribute[@name='errorTemplate']">
+        <jxb:property name="errorTemplate">
+            <jxb:baseType name="com.gitb.xml.export.ErrorTemplate"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='OrganisationPropertyValue']/xsd:attribute[@name='property']">
+        <jxb:property name="property">
+            <jxb:baseType name="com.gitb.xml.export.OrganisationProperty"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='SystemPropertyValue']/xsd:attribute[@name='property']">
+        <jxb:property name="property">
+            <jxb:baseType name="com.gitb.xml.export.SystemProperty"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='ConformanceStatement']/xsd:attribute[@name='actor']">
+        <jxb:property name="actor">
+            <jxb:baseType name="com.gitb.xml.export.Actor"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='Configuration']/xsd:attribute[@name='parameter']">
+        <jxb:property name="parameter">
+            <jxb:baseType name="com.gitb.xml.export.EndpointParameter"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='Community']/xsd:attribute[@name='domain']">
+        <jxb:property name="domain">
+            <jxb:baseType name="com.gitb.xml.export.Domain"/>
+        </jxb:property>
+    </jxb:bindings>
+</jxb:bindings>

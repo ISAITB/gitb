@@ -1,12 +1,12 @@
 package managers
 
 import java.io.File
+import java.nio.file.{Path, Paths}
 import java.util
 import java.util.Objects
 
 import com.gitb.tr.{TAR, TestResultType}
 import javax.inject.{Inject, Singleton}
-import managers.TestCaseManager.TestCaseValueTuple
 import models.Enums.TestSuiteReplacementChoice.{TestSuiteReplacementChoice, _}
 import models.Enums.{TestResultStatus, TestSuiteReplacementChoice}
 import models.{TestSuiteUploadResult, _}
@@ -15,7 +15,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.lifted.Rep
-import utils.RepositoryUtils
+import utils.{RepositoryUtils, ZipArchiver}
 import utils.tdlvalidator.tdl.{FileSource, TestSuiteValidationAdapter}
 
 import scala.collection.JavaConversions._
@@ -803,6 +803,20 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		} else {
 			None
 		}
+	}
+
+	def extractTestSuite(testSuite: TestSuites, specification: Specifications, testSuiteOutputPath: Option[Path]): Path = {
+		val testSuiteFolder = RepositoryUtils.getTestSuitesResource(specification, testSuite.filename, None)
+		var outputPathToUse = testSuiteOutputPath
+		if (testSuiteOutputPath.isEmpty) {
+			outputPathToUse = Some(Paths.get(
+				ReportManager.getTempFolderPath().toFile.getAbsolutePath,
+				"test_suite",
+				"test_suite."+testSuite.id.toString+"."+System.currentTimeMillis()+".zip"
+			))
+		}
+		new ZipArchiver(testSuiteFolder.toPath, outputPathToUse.get).zip()
+		outputPathToUse.get
 	}
 
 }

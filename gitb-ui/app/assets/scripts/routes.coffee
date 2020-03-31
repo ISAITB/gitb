@@ -315,6 +315,16 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/conformance/index.html'
 				controller: 'AdminConformanceController'
 				controllerAs: 'adminConformanceCtrl'
+			'app.admin.export':
+				url: '/export'
+				templateUrl: 'assets/views/admin/importexport/export.html'
+				controller: 'ExportController'
+				controllerAs: 'controller'
+			'app.admin.import':
+				url: '/import'
+				templateUrl: 'assets/views/admin/importexport/import.html'
+				controller: 'ImportController'
+				controllerAs: 'controller'
 			'app.admin.domains.create':
 				url: '/create'
 				templateUrl: 'assets/views/admin/domains/create.html'

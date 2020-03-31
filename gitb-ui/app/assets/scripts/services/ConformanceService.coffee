@@ -441,4 +441,15 @@ class ConformanceService
       authenticate: true
     })
 
+  exportDomain: (domainId, settings) =>
+    data = {
+      values: settings
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.RepositoryService.exportDomain(domainId).url,
+      data: data,
+      authenticate: true,
+      responseType: "arraybuffer"
+    })
+
 services.service('ConformanceService', ConformanceService)
