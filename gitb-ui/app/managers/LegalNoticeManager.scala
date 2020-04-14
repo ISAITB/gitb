@@ -59,60 +59,72 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
    * Creates new legal notice
    */
   def createLegalNotice(legalNotice: LegalNotices) = {
-    val actions = new ListBuffer[DBIO[_]]()
+    exec(createLegalNoticeInternal(legalNotice).transactionally)
+  }
 
-    if (legalNotice.default) {
-      val q = for {l <- PersistenceSchema.legalNotices if l.default === true && l.community === legalNotice.community} yield (l.default)
-      actions += q.update(false)
-    }
-
-    actions += (PersistenceSchema.insertLegalNotice += legalNotice)
-
-    exec(DBIO.seq(actions.map(a => a): _*).transactionally)
+  def createLegalNoticeInternal(legalNotice: LegalNotices) = {
+    for {
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        if (legalNotice.default) {
+          val q = for {l <- PersistenceSchema.legalNotices if l.default === true && l.community === legalNotice.community} yield (l.default)
+          actions += q.update(false)
+        }
+        toDBIO(actions)
+      }
+      newId <- PersistenceSchema.insertLegalNotice += legalNotice
+    } yield newId
   }
 
   /**
    * Updates legal notice
    */
   def updateLegalNotice(noticeId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long) = {
-    val legalNoticeOption = exec(PersistenceSchema.legalNotices.filter(_.id === noticeId).result.headOption)
-    if (legalNoticeOption.isDefined) {
-      val actions = new ListBuffer[DBIO[_]]()
+    exec(updateLegalNoticeInternal(noticeId, name, description, content, default, communityId).transactionally)
+  }
 
-      val legalNotice = legalNoticeOption.get
+  def updateLegalNoticeInternal(noticeId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long) = {
+    for {
+      legalNoticeOption <- PersistenceSchema.legalNotices.filter(_.id === noticeId).result.headOption
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        if (legalNoticeOption.isDefined) {
+          val legalNotice = legalNoticeOption.get
+          if (!name.isEmpty && legalNotice.name != name) {
+            val q = for {l <- PersistenceSchema.legalNotices if l.id === noticeId} yield (l.name)
+            actions += q.update(name)
+          }
+          if (content != legalNotice.content) {
+            val q = for {l <- PersistenceSchema.legalNotices if l.id === noticeId} yield (l.content)
+            actions += q.update(content)
+          }
 
-      if (!name.isEmpty && legalNotice.name != name) {
-        val q = for {l <- PersistenceSchema.legalNotices if l.id === noticeId} yield (l.name)
-        actions += q.update(name)
+          if (!legalNotice.default && default) {
+            var q = for {l <- PersistenceSchema.legalNotices if l.default === true && l.community === communityId} yield (l.default)
+            actions += q.update(false)
+
+            q = for {l <- PersistenceSchema.legalNotices if l.id === noticeId} yield (l.default)
+            actions += q.update(default)
+          }
+
+          val q = for {l <- PersistenceSchema.legalNotices if l.id === noticeId} yield (l.description)
+          actions += q.update(description)
+        }
+        toDBIO(actions)
       }
-
-      if (content != legalNotice.content) {
-        val q = for {l <- PersistenceSchema.legalNotices if l.id === noticeId} yield (l.content)
-        actions += q.update(content)
-      }
-
-      if (!legalNotice.default && default) {
-        var q = for {l <- PersistenceSchema.legalNotices if l.default === true && l.community === communityId} yield (l.default)
-        actions += q.update(false)
-
-        q = for {l <- PersistenceSchema.legalNotices if l.id === noticeId} yield (l.default)
-        actions += q.update(default)
-      }
-
-      val q = for {l <- PersistenceSchema.legalNotices if l.id === noticeId} yield (l.description)
-      actions += q.update(description)
-
-      exec(DBIO.seq(actions.map(a => a): _*).transactionally)
-    }
+    } yield ()
   }
 
   /**
    * Deletes legal notice with specified id
    */
-  def deleteLegalNotice(pageId: Long) = {
-    exec(PersistenceSchema.legalNotices.filter(_.id === pageId).delete.transactionally)
+  def deleteLegalNotice(noticeId: Long) = {
+    exec(deleteLegalNoticeInternal(noticeId).transactionally)
   }
 
+  def deleteLegalNoticeInternal(noticeId: Long): DBIO[_] = {
+    PersistenceSchema.legalNotices.filter(_.id === noticeId).delete
+  }
 
   /**
    * Gets the default legal notice for given community

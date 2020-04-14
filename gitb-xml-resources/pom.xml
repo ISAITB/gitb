@@ -51,10 +51,10 @@
                 </executions>
                 <configuration>
                     <sources>
-                        <source>src/main/resources/schema/gitb_export.xsd</source>
+                        <source>src/main/resources/schema/export/gitb_export.xsd</source>
                     </sources>
                     <xjbSources>
-                        <xjbSource>src/main/resources/schema/gitb_export.xjb</xjbSource>
+                        <xjbSource>src/main/resources/schema/export/gitb_export.xjb</xjbSource>
                     </xjbSources>
                     <packageName>com.gitb.xml.export</packageName>
                 </configuration>

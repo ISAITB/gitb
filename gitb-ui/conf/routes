@@ -240,8 +240,17 @@ GET     /repository/export/conformance                      @controllers.Reposit
 POST    /repository/export/certificatedemo                  @controllers.RepositoryService.exportDemoConformanceCertificateReport(community_id: Long)
 POST    /repository/export/certificate                      @controllers.RepositoryService.exportConformanceCertificateReport()
 GET     /repository/resource/:test_id/*file                 @controllers.RepositoryService.getTestSuiteResource(test_id: String, file: String)
+
 POST    /communities/export/:id                             @controllers.RepositoryService.exportCommunity(id: Long)
+POST    /communities/import/preview/:id                     @controllers.RepositoryService.uploadCommunityExport(id: Long)
+POST    /communities/import/cancel/:id                      @controllers.RepositoryService.cancelCommunityImport(id: Long)
+POST    /communities/import/confirm/:id                     @controllers.RepositoryService.confirmCommunityImportCommunityAdmin(id: Long)
+POST    /communities/import/confirm/admin/:id               @controllers.RepositoryService.confirmCommunityImportTestBedAdmin(id: Long)
 POST    /domains/export/:id                                 @controllers.RepositoryService.exportDomain(id: Long)
+POST    /domains/import/preview/:id                         @controllers.RepositoryService.uploadDomainExport(id: Long)
+POST    /domains/import/cancel/:id                          @controllers.RepositoryService.cancelDomainImport(id: Long)
+POST    /domains/import/confirm/:id                         @controllers.RepositoryService.confirmDomainImportCommunityAdmin(id: Long)
+POST    /domains/import/confirm/admin/:id                   @controllers.RepositoryService.confirmDomainImportTestBedAdmin(id: Long)
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

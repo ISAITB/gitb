@@ -1,7 +1,7 @@
 package controllers
 
 import java.io._
-import java.nio.file.{Files, Paths}
+import java.nio.file.{Files, Path, Paths}
 
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl.TestCase
@@ -16,12 +16,12 @@ import javax.xml.bind.JAXBElement
 import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
 import managers._
-import managers.export.{ExportManager, ExportSettings}
+import managers.export.{ExportManager, ExportSettings, ImportItem, ImportManager, ImportSettings}
 import models.{ConformanceCertificate, Constants}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
-import org.apache.commons.lang3.StringUtils
+import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.slf4j.LoggerFactory
 import play.api.mvc._
 import utils._
@@ -29,12 +29,14 @@ import utils._
 /**
  * Created by serbay on 10/16/14.
  */
-class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager) extends Controller {
+class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager, importManager: ImportManager) extends Controller {
 
 	private val logger = LoggerFactory.getLogger(classOf[RepositoryService])
 	private val codec = new URLCodec()
   private val EXPORT_QNAME:QName = new QName("http://www.gitb.com/export/v1/", "export")
   private val TESTCASE_STEP_REPORT_NAME = "step.pdf"
+
+  import scala.collection.JavaConversions._
 
 	def getTestSuiteResource(testId: String, filePath:String) = AuthorizedAction { request =>
     authorizationManager.canViewTestSuiteResource(request, testId)
@@ -330,15 +332,16 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     exportData.setVersion(Constants.VersionNumber)
     exportData.setTimestamp(XMLDateTimeUtils.getXMLGregorianCalendarDateTime)
     // Define temp file paths.
+    val randomToken = RandomStringUtils.random(10, false, true)
     val exportPathXml = Paths.get(
       ReportManager.getTempFolderPath().toFile.getAbsolutePath,
       "export",
-      "data."+System.currentTimeMillis()+".xml"
+      "data."+randomToken+".xml"
     )
     val exportPathZip = Paths.get(
       ReportManager.getTempFolderPath().toFile.getAbsolutePath,
       "export",
-      "data."+System.currentTimeMillis()+".zip"
+      "data."+randomToken+".zip"
     )
     Files.createDirectories(exportPathXml.getParent)
     // Serialise to temp XML file.
@@ -363,6 +366,226 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     } finally {
       FileUtils.deleteQuietly(exportPathXml.toFile)
     }
+  }
+
+  private def processImport(request: Request[AnyContent], isDomain: Boolean, fnImportData: (Export, ImportSettings) => List[ImportItem]) = {
+    // Get import settings.
+    val importSettings = JsonUtil.parseJsImportSettings(ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS))
+    var archiveData = ParameterExtractor.requiredBinaryBodyParameter(request, Parameters.DATA)
+    var response:Result = null
+    if (importSettings.encryptionKey.isEmpty) {
+      response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "The archive encryption key was missing.")
+    }
+    if (response == null) {
+      // Get import file.
+      if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
+        val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+        val scanResult = virusScanner.scan(archiveData)
+        if (!ClamAVClient.isCleanReply(scanResult)) {
+          response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Archive failed virus scan.")
+        }
+      }
+    }
+    if (response == null) {
+      val importFileName = "export_"+RandomStringUtils.random(10, false, true)+".zip"
+      val pendingImportId = RandomStringUtils.random(10, false, true)
+      val zipFile = Paths.get(
+        importManager.getPendingFolder().getAbsolutePath,
+        pendingImportId,
+        importFileName
+      )
+      val uploadFolder = zipFile.getParent
+      uploadFolder.toFile.mkdirs()
+      var deleteUploadFolder = false
+      try {
+        // Write file.
+        FileUtils.writeByteArrayToFile(zipFile.toFile, archiveData)
+        archiveData = null
+        // Extract the XML document.
+        var extractedFiles: java.util.Map[String, Path] = null
+        try {
+          extractedFiles = new ZipArchiver(zipFile, zipFile.getParent, importSettings.encryptionKey.get.toCharArray).unzip()
+        } catch {
+          case e: Exception => {
+            deleteUploadFolder = true
+            logger.warn("Unable to extract data archive", e)
+            response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "The provided archive could not be successfully extracted.")
+          }
+        } finally {
+          // We don't need the ZIP archive anymore.
+          FileUtils.deleteQuietly(zipFile.toFile)
+        }
+        if (response == null) {
+          if (extractedFiles.size() != 1) {
+            deleteUploadFolder = true
+            response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "The provided archive must contain a single data file.")
+          }
+        }
+        if (response == null) {
+          val xmlFile: Path = extractedFiles.values().head
+          // XSD validation
+          try {
+            XMLUtils.validateAgainstSchema(Files.newInputStream(xmlFile), Thread.currentThread().getContextClassLoader.getResourceAsStream("schema/export/gitb_export.xsd"))
+          } catch {
+            case e:Exception => {
+              deleteUploadFolder = true
+              logger.warn("Validation failure for uploaded import file", e)
+              response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "The provided data archive failed validation. Ensure the file is not tampered and that it matches the current Test Bed version ["+Constants.VersionNumber+"].")
+            }
+          }
+          if (response == null) {
+            val exportData: Export = XMLUtils.unmarshal(classOf[com.gitb.xml.export.Export], new StreamSource(Files.newInputStream(xmlFile)))
+            if (isDomain) {
+              if (exportData.getDomains != null && exportData.getDomains.getDomain.nonEmpty) {
+                if (exportData.getDomains.getDomain.size() > 1) {
+                  deleteUploadFolder = true
+                  response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "The provided archive includes multiple domains.")
+                }
+              } else {
+                deleteUploadFolder = true
+                response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "The provided archive does not include a domain to process.")
+              }
+            } else {
+              if (exportData.getCommunities != null && exportData.getCommunities.getCommunity.nonEmpty) {
+                if (exportData.getCommunities.getCommunity.size() > 1) {
+                  deleteUploadFolder = true
+                  response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "The provided archive includes multiple communities.")
+                }
+              } else {
+                deleteUploadFolder = true
+                response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "The provided archive does not include a community to process.")
+              }
+            }
+            if (response == null) {
+              val result = fnImportData.apply(exportData, importSettings)
+              val json = JsonUtil.jsImportPreviewResult(pendingImportId, result).toString()
+              response = ResponseConstructor.constructJsonResponse(json)
+            }
+          }
+        }
+      } catch {
+        case e: Exception => {
+          deleteUploadFolder = true
+          logger.error("An unexpected error occurred while processing the provided archive.", e)
+          response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "An error occurred while processing the provided archive.")
+        }
+      } finally {
+        if (deleteUploadFolder) {
+          FileUtils.deleteQuietly(uploadFolder.toFile)
+        }
+      }
+    }
+    response
+  }
+
+  def uploadCommunityExport(communityId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageCommunity(request, communityId)
+    processImport(request, false, (exportData: Export, settings: ImportSettings) => {
+      val result = importManager.previewCommunityImport(exportData.getCommunities.getCommunity.get(0), Some(communityId))
+      if (result._2.isDefined) {
+        List(result._2.get, result._1)
+      } else {
+        List(result._1)
+      }
+    })
+  }
+
+  def uploadDomainExport(domainId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageDomain(request, domainId)
+    processImport(request, true, (exportData: Export, settings: ImportSettings) => {
+      val result = importManager.previewDomainImport(exportData.getDomains.getDomain.get(0), Some(domainId))
+      List(result)
+    })
+  }
+
+  private def cancelImportInternal(request: Request[AnyContent]) = {
+    val pendingImportId = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ID)
+    val pendingFolder = Paths.get(importManager.getPendingFolder().getAbsolutePath, pendingImportId)
+    // Delete temporary folder (if exists)
+    FileUtils.deleteQuietly(pendingFolder.toFile)
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def cancelDomainImport(domainId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageDomain(request, domainId)
+    cancelImportInternal(request)
+  }
+
+  def cancelCommunityImport(communityId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageCommunity(request, communityId)
+    cancelImportInternal(request)
+  }
+
+  private def getPendingImportFile(folder: Path, pendingImportId: String): Option[File] = {
+    if (Files.exists(folder) && Files.isDirectory(folder)) {
+      val files = folder.toFile.listFiles()
+      if (files != null && files.length > 0) {
+        files.foreach { file =>
+          if (Files.isRegularFile(file.toPath)) {
+            val fileName = file.getName.toLowerCase
+            if (fileName.endsWith(".xml")) {
+              return Some(file)
+            }
+          }
+        }
+      }
+    }
+    logger.warn("No export file found for pending import ID ["+pendingImportId+"]")
+    None
+  }
+
+  private def confirmImportInternal(request: Request[AnyContent], fnImportData: (Export, ImportSettings, List[ImportItem]) => _) = {
+    val pendingImportId = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ID)
+    val pendingFolder = Paths.get(importManager.getPendingFolder().getAbsolutePath, pendingImportId)
+    try {
+      // Get XML file and deserialize.
+      val xmlFile = getPendingImportFile(pendingFolder, pendingImportId)
+      if (xmlFile.isDefined) {
+        // We can skip XSD validation this time as the time was checked previously (at initial upload).
+        val exportData: Export = XMLUtils.unmarshal(classOf[com.gitb.xml.export.Export], new StreamSource(Files.newInputStream(xmlFile.get.toPath)))
+        val importSettings = JsonUtil.parseJsImportSettings(ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS))
+        importSettings.dataFilePath = Some(xmlFile.get.toPath)
+        val importItems = JsonUtil.parseJsImportItems(ParameterExtractor.requiredBodyParameter(request, Parameters.ITEMS))
+        fnImportData.apply(exportData, importSettings, importItems)
+        ResponseConstructor.constructEmptyResponse
+      } else {
+        ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "An unexpected failure occurred during the import process.")
+      }
+    } finally {
+      FileUtils.deleteQuietly(pendingFolder.toFile)
+    }
+  }
+
+  private def confirmDomainImportInternal(request: Request[AnyContent], domainId: Long, canAddOrDeleteDomain: Boolean) = {
+    confirmImportInternal(request, (export: Export, importSettings: ImportSettings, importItems: List[ImportItem]) => {
+      importManager.completeDomainImport(export.getDomains.getDomain.head, importSettings, importItems, Some(domainId), canAddOrDeleteDomain)
+    })
+  }
+
+  private def confirmCommunityImportInternal(request: Request[AnyContent], communityId: Long, canAddOrDeleteDomain: Boolean) = {
+    confirmImportInternal(request, (export: Export, importSettings: ImportSettings, importItems: List[ImportItem]) => {
+      importManager.completeCommunityImport(export.getCommunities.getCommunity.head, importSettings, importItems, Some(communityId), canAddOrDeleteDomain, Some(ParameterExtractor.extractUserId(request)))
+    })
+  }
+
+  def confirmDomainImportTestBedAdmin(domainId: Long) = AuthorizedAction { request =>
+    authorizationManager.canCreateDomain(request)
+    confirmDomainImportInternal(request, domainId, canAddOrDeleteDomain = true)
+  }
+
+  def confirmDomainImportCommunityAdmin(domainId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageDomain(request, domainId)
+    confirmDomainImportInternal(request, domainId, canAddOrDeleteDomain = false)
+  }
+
+  def confirmCommunityImportTestBedAdmin(communityId: Long) = AuthorizedAction { request =>
+    authorizationManager.canCreateCommunity(request)
+    confirmCommunityImportInternal(request, communityId, canAddOrDeleteDomain = true)
+  }
+
+  def confirmCommunityImportCommunityAdmin(communityId: Long) = AuthorizedAction { request =>
+    authorizationManager.canManageCommunity(request, communityId)
+    confirmCommunityImportInternal(request, communityId, canAddOrDeleteDomain = false)
   }
 
 }

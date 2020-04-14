@@ -173,39 +173,39 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     exec(DBIO.seq(actions.map(a => a): _*).transactionally)
   }
 
+  def updateOrganizationInternal(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], propertyValues: Option[List[OrganisationParameterValues]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
+    for {
+      org <- PersistenceSchema.organizations.filter(_.id === orgId).result.headOption
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        if (org.isDefined) {
+          var templateNameToSet: Option[String] = null
+          if (template) {
+            templateNameToSet = templateName
+          } else {
+            templateNameToSet = None
+          }
+          val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname, o.fullname, o.landingPage, o.legalNotice, o.errorTemplate, o.template, o.templateName)
+          actions += q.update(shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, template, templateNameToSet)
+          if (!shortName.isEmpty && !org.get.shortname.equals(shortName)) {
+            actions += testResultManager.updateForUpdatedOrganisation(orgId, shortName)
+          }
+          if (otherOrganisation.isDefined) {
+            // Replace the test setup for the organisation with the one from the provided one.
+            actions += systemManager.deleteSystemByOrganization(orgId)
+            actions += copyTestSetup(otherOrganisation.get, orgId, copyOrganisationParameters, copySystemParameters, copyStatementParameters)
+          }
+          if (propertyValues.isDefined && (otherOrganisation.isEmpty || !copyOrganisationParameters)) {
+            actions += saveOrganisationParameterValues(orgId, org.get.community, true, propertyValues.get)
+          }
+        }
+        toDBIO(actions)
+      }
+    } yield ()
+  }
+
   def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], propertyValues: Option[List[OrganisationParameterValues]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
-    val org = exec(PersistenceSchema.organizations.filter(_.id === orgId).result.headOption)
-    if (org.isDefined) {
-      val actions = new ListBuffer[DBIO[_]]()
-      if (!shortName.isEmpty && org.get.shortname != shortName) {
-        val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname)
-        actions += q.update(shortName)
-        actions += testResultManager.updateForUpdatedOrganisation(orgId, shortName)
-      }
-      if (!fullName.isEmpty && org.get.fullname != fullName) {
-        val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.fullname)
-        actions += q.update(fullName)
-      }
-      var templateNameToSet: Option[String] = null
-      if (template) {
-        templateNameToSet = templateName
-      } else {
-        templateNameToSet = None
-      }
-      val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.landingPage, o.legalNotice, o.errorTemplate, o.template, o.templateName)
-      actions += q.update(landingPageId, legalNoticeId, errorTemplateId, template, templateNameToSet)
-      if (otherOrganisation.isDefined) {
-        // Replace the test setup for the organisation with the one from the provided one.
-        actions += systemManager.deleteSystemByOrganization(orgId)
-        actions += copyTestSetup(otherOrganisation.get, orgId, copyOrganisationParameters, copySystemParameters, copyStatementParameters)
-      }
-      if (propertyValues.isDefined && (otherOrganisation.isEmpty || !copyOrganisationParameters)) {
-        actions += saveOrganisationParameterValues(orgId, org.get.community, true, propertyValues.get)
-      }
-      exec(DBIO.seq(actions.map(a => a): _*).transactionally)
-    } else {
-      throw new IllegalArgumentException("Organization with ID '" + orgId + "' not found")
-    }
+    exec(updateOrganizationInternal(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation, template, templateName, propertyValues, copyOrganisationParameters, copySystemParameters, copyStatementParameters).transactionally)
   }
 
   /**

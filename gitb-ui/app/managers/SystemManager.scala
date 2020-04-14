@@ -150,6 +150,10 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
   }
 
   def updateSystemProfile(userId: Long, systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
+    exec(updateSystemProfileInternal(Some(userId), None, systemId, sname, fname, description, version, otherSystem, propertyValues, copySystemParameters, copyStatementParameters).transactionally)
+  }
+
+  def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
     val actions = new ListBuffer[DBIO[_]]()
 
     //update short name of the system
@@ -179,16 +183,22 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
       actions += copyTestSetup(otherSystem.get, systemId, copySystemParameters, copyStatementParameters)
     }
     if (propertyValues.isDefined && (otherSystem.isEmpty || !copySystemParameters)) {
-      val communityId = getCommunityIdOfSystem(systemId)
-      val user = exec(PersistenceSchema.users.filter(_.id === userId).result.head)
-      val isAdmin = user.role == UserRole.SystemAdmin.id.toShort || user.role == UserRole.CommunityAdmin.id.toShort
-
-      actions += saveSystemParameterValues(systemId, communityId, isAdmin, propertyValues.get)
+      var isAdmin = false
+      if (userId.isEmpty) {
+        isAdmin = true
+      } else {
+        val user = exec(PersistenceSchema.users.filter(_.id === userId.get).result.head)
+        isAdmin = user.role == UserRole.SystemAdmin.id.toShort || user.role == UserRole.CommunityAdmin.id.toShort
+      }
+      var communityIdToUse: Option[Long] = None
+      if (communityId.isDefined) {
+        communityIdToUse = Some(communityId.get)
+      } else {
+        communityIdToUse = Some(getCommunityIdOfSystem(systemId))
+      }
+      actions += saveSystemParameterValues(systemId, communityIdToUse.get, isAdmin, propertyValues.get)
     }
-
-    if (actions.nonEmpty) {
-      exec(DBIO.seq(actions.map(a => a): _*).transactionally)
-    }
+    toDBIO(actions)
   }
 
   def getSystemProfile(systemId: Long): models.System = {
@@ -416,31 +426,48 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     exec(PersistenceSchema.configs.filter(_.endpoint === endpoint).filter(_.system === system).result.map(_.toList))
   }
 
-  def deleteEndpointConfiguration(systemId: Long, parameterId: Long, endpointId: Long) = {
-    exec(PersistenceSchema.configs
+  def deleteEndpointConfigurationInternal(systemId: Long, parameterId: Long, endpointId: Long) = {
+    PersistenceSchema.configs
       .filter(_.system === systemId)
       .filter(_.parameter === parameterId)
       .filter(_.endpoint === endpointId)
-      .delete.transactionally)
+      .delete
+  }
+
+  def deleteEndpointConfiguration(systemId: Long, parameterId: Long, endpointId: Long) = {
+    exec(deleteEndpointConfigurationInternal(systemId, parameterId, endpointId).transactionally)
+  }
+
+  def saveEndpointConfigurationInternal(forceAdd: Boolean, forceUpdate: Boolean, config: Configs) = {
+    require((!forceAdd && !forceUpdate) || (forceAdd != forceUpdate), "When forcing an action this must be either an addition or an update but not both")
+    for {
+      existingConfig <- {
+        if (!forceAdd && !forceUpdate) {
+          PersistenceSchema.configs
+            .filter(_.system === config.system)
+            .filter(_.parameter === config.parameter)
+            .filter(_.endpoint === config.endpoint)
+            .size.result
+        } else {
+          DBIO.successful(1)
+        }
+      }
+      _ <- {
+        if (forceAdd || existingConfig == 0) {
+          PersistenceSchema.configs += config
+        } else {
+          PersistenceSchema.configs
+            .filter(_.system === config.system)
+            .filter(_.parameter === config.parameter)
+            .filter(_.endpoint === config.endpoint)
+            .update(config)
+        }
+      }
+    } yield ()
   }
 
   def saveEndpointConfiguration(config: Configs) = {
-    val size = exec(PersistenceSchema.configs
-      .filter(_.system === config.system)
-      .filter(_.parameter === config.parameter)
-      .filter(_.endpoint === config.endpoint)
-      .size.result)
-    var action: DBIO[_] = null
-    if (size == 0) {
-      action = (PersistenceSchema.configs += config)
-    } else {
-      action = PersistenceSchema.configs
-        .filter(_.system === config.system)
-        .filter(_.parameter === config.parameter)
-        .filter(_.endpoint === config.endpoint)
-        .update(config)
-    }
-    exec(action.transactionally)
+    exec(saveEndpointConfigurationInternal(false, false, config).transactionally)
   }
 
   def getConfigurationsWithEndpointIds(system: Long, ids: List[Long]): List[Configs] = {

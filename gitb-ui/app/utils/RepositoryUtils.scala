@@ -126,6 +126,11 @@ object RepositoryUtils {
 		testCasePaths.toMap
 	}
 
+	def generateTestSuiteFileName(): String = {
+		val fileName = "ts_"+RandomStringUtils.random(10, false, true)
+		fileName
+	}
+
 	def getTestSuiteFromZip(specification:Long, file: File): Option[TestSuite] = {
 
 		var result: Option[TestSuite] = None
@@ -152,7 +157,7 @@ object RepositoryUtils {
 						val description: String = tdlTestSuite.getMetadata.getDescription
 						val tdlActors = tdlTestSuite.getActors.getActor.asScala
 						val tdlTestCaseEntries = tdlTestSuite.getTestcase.asScala
-						val fileName = "ts_"+RandomStringUtils.random(10, false, true)
+						val fileName = generateTestSuiteFileName()
 						var documentation: Option[String] = null
 						if (tdlTestSuite.getMetadata.getDocumentation != null) {
 							documentation = Some(HtmlUtil.sanitizeEditorContent(tdlTestSuite.getMetadata.getDocumentation))

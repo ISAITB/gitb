@@ -25,8 +25,8 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
   def getCommunities() = AuthorizedAction { request =>
     val communityIds = ParameterExtractor.extractLongIdsQueryParameter(request)
     authorizationManager.canViewCommunities(request, communityIds)
-
-    val communities = communityManager.getCommunities(communityIds)
+    val skipDefault = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SKIP_DEFAULT)
+    val communities = communityManager.getCommunities(communityIds, skipDefault.isDefined && skipDefault.get)
     val json = JsonUtil.jsCommunities(communities).toString()
     ResponseConstructor.constructJsonResponse(json)
   }

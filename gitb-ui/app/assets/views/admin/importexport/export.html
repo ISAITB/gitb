@@ -5,7 +5,7 @@
 		</div>
         <form class="form-horizontal">
             <div class="panel-body">
-				<div class="form-group">
+				<div class="form-group" ng-if="controller.showDomainOption">
 					<label class="col-xs-3 control-label" for="choice_domain">* Data to export:</label>
 					<div class="col-xs-8">
 						<label class="radio-inline">
@@ -49,9 +49,16 @@
 						<div class="col-xs-offset-1 col-xs-10">
 							<table id="exportSettingsTable" class="table">
 								<thead>
-									<th><span>Include</span><div tb-inline="true" tb-tooltip="The types of data to include in the export."></div></th>
+									<th>
+										<span>Include</span><div tb-inline="true" tb-tooltip="The types of data to include in the export."></div>
+									</th>
 									<th class="td-centered"><span>All</span></th>
-									<th><span>Specific</span></th>
+									<th>
+										<span class="withMargin">Specific</span>
+									</th>
+									<th>
+										<button class="btn btn-default pull-right btn-sm" type="button" ng-click="controller.clearIncludes()" ng-disabled="controller.showClearIncludes()">Clear</button>
+									</th>
 								</thead>
 								<tbody>
 									<tr ng-if="controller.exportType == 'community'">
@@ -59,10 +66,13 @@
 										<td class="td-centered">
 											<input type="checkbox" ng-model="controller.allCommunityData" class="form-check" ng-change="controller.allCommunityDataChanged()"/>
 										</td>
-										<td>
+										<td colspan="2">
 											<table>
 												<tr>
 													<td>
+														<label class="checkbox-inline" ng-if="!controller.DataService.configuration['sso.enabled']">
+															<input type="checkbox" ng-model="controller.settings.communityAdministrators" ng-disabled="controller.allCommunityData">Administrators
+														</label>
 														<label class="checkbox-inline">
 															<input type="checkbox" ng-model="controller.settings.landingPages" ng-disabled="controller.allCommunityData">Landing pages
 														</label>
@@ -90,10 +100,10 @@
 											</table>
 										</td>
 									</tr>
-									<tr>
+									<tr ng-if="controller.showDomainOption">
 										<td class="row-header"><span>{{controller.DataService.labelDomain()}} data</span><div tb-inline="true" tb-tooltip="Data linked to {{controller.DataService.labelSpecificationsLower()}} and the test suites available for testing."></div></td>
 										<td class="td-centered"><input type="checkbox" ng-model="controller.allDomainData" class="form-check" ng-change="controller.allDomainDataChanged()"/></td>
-										<td>
+										<td colspan="2">
 											<table>
 												<tr>
 													<td>
@@ -111,10 +121,10 @@
 												<tr>
 													<td>
 														<label class="checkbox-inline">
-															<input type="checkbox" ng-model="controller.settings.testSuites" ng-change="controller.testSuitesChanged()" ng-disabled="controller.allDomainData">Test suites
+															<input type="checkbox" ng-model="controller.settings.actors" ng-change="controller.actorsChanged()" ng-disabled="controller.allDomainData || controller.isPrerequisiteActors()">{{controller.DataService.labelActors()}}
 														</label>
 														<label class="checkbox-inline">
-															<input type="checkbox" ng-model="controller.settings.actors" ng-change="controller.actorsChanged()" ng-disabled="controller.allDomainData || controller.isPrerequisiteActors()">{{controller.DataService.labelActors()}}
+															<input type="checkbox" ng-model="controller.settings.testSuites" ng-change="controller.testSuitesChanged()" ng-disabled="controller.allDomainData">Test suites
 														</label>
 														<label class="checkbox-inline">
 															<input type="checkbox" ng-model="controller.settings.endpoints" ng-change="controller.endpointsChanged()" ng-disabled="controller.allDomainData || controller.isPrerequisiteEndpoints()">{{controller.DataService.labelEndpoints()}}
@@ -127,12 +137,15 @@
 									<tr ng-if="controller.exportType == 'community'">
 										<td class="row-header"><span>{{controller.DataService.labelOrganisation()}} data</span><div tb-inline="true" tb-tooltip="Data linked to the community's {{controller.DataService.labelOrganisationsLower()}} and their test configuration."></div></td>
 										<td class="td-centered"><input type="checkbox" ng-model="controller.allOrganisationData" class="form-check" ng-change="controller.allOrganisationDataChanged()"/></td>
-										<td>
+										<td colspan="2">
 											<table>
 												<tr>
 													<td>
 														<label class="checkbox-inline">
 															<input type="checkbox" ng-model="controller.settings.organisations" ng-disabled="controller.allOrganisationData || controller.isPrerequisiteOrganisations()">{{controller.DataService.labelOrganisations()}}
+														</label>
+														<label class="checkbox-inline" ng-if="!controller.DataService.configuration['sso.enabled']">
+															<input type="checkbox" ng-model="controller.settings.organisationUsers" ng-change="controller.organisationUsersChanged()" ng-disabled="controller.allOrganisationData">Users
 														</label>
 														<label class="checkbox-inline">
 															<input type="checkbox" ng-model="controller.settings.organisationPropertyValues" ng-change="controller.organisationPropertyValuesChanged()" ng-disabled="controller.allOrganisationData">Custom {{controller.DataService.labelOrganisationLower()}} property values
@@ -149,7 +162,7 @@
 														</label>
 													</td>
 												</tr>
-												<tr>
+												<tr ng-if="controller.showDomainOption">
 													<td>
 														<label class="checkbox-inline">
 															<input type="checkbox" ng-model="controller.settings.statements" ng-change="controller.statementsChanged()" ng-disabled="controller.allOrganisationData || controller.isPrerequisiteStatements()">Conformance statements

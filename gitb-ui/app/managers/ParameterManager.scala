@@ -27,7 +27,7 @@ class ParameterManager @Inject() (dbConfigProvider: DatabaseConfigProvider) exte
     exec(createParameter(parameter).transactionally)
   }
 
-  def createParameter(parameter: models.Parameters) = {
+  def createParameter(parameter: models.Parameters): DBIO[Long] = {
     PersistenceSchema.parameters.returning(PersistenceSchema.parameters.map(_.id)) += parameter
   }
 

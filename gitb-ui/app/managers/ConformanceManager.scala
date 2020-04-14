@@ -85,15 +85,27 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 		domain
 	}
 
-	def createDomain(domain:Domain) = {
-		exec(PersistenceSchema.domains.returning(PersistenceSchema.domains.map(_.id)) += domain)
+	def createDomainInternal(domain:Domain): DBIO[Long] = {
+		PersistenceSchema.domains.returning(PersistenceSchema.domains.map(_.id)) += domain
+	}
+
+	def createDomain(domain:Domain): Long = {
+		exec(createDomainInternal(domain))
+	}
+
+	def createDomainParameterInternal(parameter:DomainParameter): DBIO[_] = {
+		PersistenceSchema.domainParameters.returning(PersistenceSchema.domainParameters.map(_.id)) += parameter
 	}
 
 	def createDomainParameter(parameter:DomainParameter) = {
-		exec(PersistenceSchema.domainParameters.returning(PersistenceSchema.domainParameters.map(_.id)) += parameter)
+		exec(createDomainParameterInternal(parameter))
 	}
 
 	def updateDomainParameter(parameterId: Long, name: String, description: Option[String], kind: String, value: Option[String]) = {
+		exec(updateDomainParameterInternal(parameterId, name, description, kind, value).transactionally)
+	}
+
+	def updateDomainParameterInternal(parameterId: Long, name: String, description: Option[String], kind: String, value: Option[String]): DBIO[_] = {
 		val actions = new ListBuffer[DBIO[_]]()
 		val q1 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.name)
 		actions += q1.update(name)
@@ -109,14 +121,14 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 			val q4 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.value)
 			actions += q4.update(value)
 		}
-		exec(DBIO.seq(actions.map(a => a): _*).transactionally)
+		toDBIO(actions)
 	}
 
 	def deleteDomainParameterWrapper(domainParameter: Long) = {
 		exec(deleteDomainParameter(domainParameter).transactionally)
 	}
 
-	def deleteDomainParameter(domainParameter: Long) = {
+	def deleteDomainParameter(domainParameter: Long): DBIO[_] = {
 		PersistenceSchema.domainParameters.filter(_.id === domainParameter).delete
 	}
 
@@ -144,12 +156,13 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 	}
 
 	def updateDomain(domainId: Long, shortName: String, fullName: String, description: Option[String]) = {
+		exec(updateDomainInternal(domainId, shortName, fullName, description).transactionally)
+	}
+
+	def updateDomainInternal(domainId: Long, shortName: String, fullName: String, description: Option[String]) = {
 		val q = for {d <- PersistenceSchema.domains if d.id === domainId} yield (d.shortname, d.fullname, d.description)
-		exec((
-				q.update(shortName, fullName, description) andThen
-				testResultManager.updateForUpdatedDomain(domainId, shortName)
-			).transactionally
-		)
+		q.update(shortName, fullName, description) andThen
+			testResultManager.updateForUpdatedDomain(domainId, shortName)
 	}
 
 	def deleteSpecification(specId: Long) = {
@@ -237,16 +250,18 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 		PersistenceSchema.transactions.filter(_.domain === domainId).delete
 	}
 
+	def deleteDomainInternal(domain: Long): DBIO[_] = {
+		deleteActorByDomain(domain) andThen
+			deleteSpecificationByDomain(domain) andThen
+			deleteTransactionByDomain(domain) andThen
+			testResultManager.updateForDeletedDomain(domain) andThen
+			deleteDomainParameters(domain) andThen
+			PersistenceSchema.domains.filter(_.id === domain).delete
+	}
+
 	def deleteDomain(domain: Long) {
 		exec(
-			(
-				deleteActorByDomain(domain) andThen
-				deleteSpecificationByDomain(domain) andThen
-				deleteTransactionByDomain(domain) andThen
-				testResultManager.updateForDeletedDomain(domain) andThen
-				deleteDomainParameters(domain) andThen
-				PersistenceSchema.domains.filter(_.id === domain).delete
-			).transactionally
+			deleteDomainInternal(domain).transactionally
 		)
 		RepositoryUtils.deleteDomainTestSuiteFolder(domain)
 	}
@@ -275,15 +290,19 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 			exec(specs)
   }
 
+	def createSpecificationsInternal(specification: Specifications): DBIO[_] = {
+		PersistenceSchema.specifications.returning(PersistenceSchema.specifications.map(_.id)) += specification
+	}
+
 	def createSpecifications(specification: Specifications) = {
-		exec((PersistenceSchema.specifications.returning(PersistenceSchema.specifications.map(_.id)) += specification).transactionally)
+		exec(createSpecificationsInternal(specification).transactionally)
 	}
 
 	def createActorWrapper(actor: Actors, specificationId: Long) = {
 		exec(createActor(actor, specificationId).transactionally)
 	}
 
-	def createActor(actor: Actors, specificationId: Long) = {
+	def createActor(actor: Actors, specificationId: Long): DBIO[Long] = {
 		for {
 			savedActorId <- PersistenceSchema.actors.returning(PersistenceSchema.actors.map(_.id)) += actor
 			_ <- {
@@ -573,17 +592,61 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 		PersistenceSchema.conformanceCertificates.filter(_.community === communityId).result.headOption
 	}
 
-	def updateConformanceCertificateSettings(conformanceCertificate: ConformanceCertificates, updatePasswords: Boolean, removeKeystore: Boolean) = {
-		exec(
-			(for {
-				existingSettings <- getConformanceCertificateSettings(conformanceCertificate.community)
-				_ <- {
-					var action: DBIO[_] = null
-					if (existingSettings.isDefined) {
-						if (removeKeystore && conformanceCertificate.keystoreFile.isEmpty) {
+	def updateConformanceCertificateSettingsInternal(conformanceCertificate: ConformanceCertificates, updatePasswords: Boolean, removeKeystore: Boolean) = {
+		for {
+			existingSettings <- getConformanceCertificateSettings(conformanceCertificate.community)
+			_ <- {
+				var action: DBIO[_] = null
+				if (existingSettings.isDefined) {
+					if (removeKeystore && conformanceCertificate.keystoreFile.isEmpty) {
+						val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
+							c.message, c.title, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
+							c.includeSignature, c.keystoreFile, c.keystoreType, c.keystorePassword, c.keyPassword
+						)
+						action = q.update(
+							conformanceCertificate.message,
+							conformanceCertificate.title,
+							conformanceCertificate.includeMessage,
+							conformanceCertificate.includeTestStatus,
+							conformanceCertificate.includeTestCases,
+							conformanceCertificate.includeDetails,
+							conformanceCertificate.includeSignature,
+							None,
+							None,
+							None,
+							None
+						)
+					} else {
+						if (updatePasswords) {
 							val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
 								c.message, c.title, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
 								c.includeSignature, c.keystoreFile, c.keystoreType, c.keystorePassword, c.keyPassword
+							)
+							var keystorePasswordToUpdate = conformanceCertificate.keystorePassword
+							if (keystorePasswordToUpdate.isDefined) {
+								keystorePasswordToUpdate = Some(MimeUtil.encryptString(keystorePasswordToUpdate.get))
+							}
+							var keyPasswordToUpdate = conformanceCertificate.keyPassword
+							if (keyPasswordToUpdate.isDefined) {
+								keyPasswordToUpdate = Some(MimeUtil.encryptString(keyPasswordToUpdate.get))
+							}
+							action = q.update(
+								conformanceCertificate.message,
+								conformanceCertificate.title,
+								conformanceCertificate.includeMessage,
+								conformanceCertificate.includeTestStatus,
+								conformanceCertificate.includeTestCases,
+								conformanceCertificate.includeDetails,
+								conformanceCertificate.includeSignature,
+								conformanceCertificate.keystoreFile,
+								conformanceCertificate.keystoreType,
+								keystorePasswordToUpdate,
+								keyPasswordToUpdate
+							)
+						} else {
+							val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
+								c.message, c.title, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
+								c.includeSignature, c.keystoreFile, c.keystoreType
 							)
 							action = q.update(
 								conformanceCertificate.message,
@@ -593,63 +656,21 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 								conformanceCertificate.includeTestCases,
 								conformanceCertificate.includeDetails,
 								conformanceCertificate.includeSignature,
-								None,
-								None,
-								None,
-								None
+								conformanceCertificate.keystoreFile,
+								conformanceCertificate.keystoreType
 							)
-						} else {
-							if (updatePasswords) {
-								val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
-									c.message, c.title, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
-									c.includeSignature, c.keystoreFile, c.keystoreType, c.keystorePassword, c.keyPassword
-								)
-								var keystorePasswordToUpdate = conformanceCertificate.keystorePassword
-								if (keystorePasswordToUpdate.isDefined) {
-									keystorePasswordToUpdate = Some(MimeUtil.encryptString(keystorePasswordToUpdate.get))
-								}
-								var keyPasswordToUpdate = conformanceCertificate.keyPassword
-								if (keyPasswordToUpdate.isDefined) {
-									keyPasswordToUpdate = Some(MimeUtil.encryptString(keyPasswordToUpdate.get))
-								}
-								action = q.update(
-									conformanceCertificate.message,
-									conformanceCertificate.title,
-									conformanceCertificate.includeMessage,
-									conformanceCertificate.includeTestStatus,
-									conformanceCertificate.includeTestCases,
-									conformanceCertificate.includeDetails,
-									conformanceCertificate.includeSignature,
-									conformanceCertificate.keystoreFile,
-									conformanceCertificate.keystoreType,
-									keystorePasswordToUpdate,
-									keyPasswordToUpdate
-								)
-							} else {
-								val q = for {c <- PersistenceSchema.conformanceCertificates if c.id === existingSettings.get.id} yield (
-									c.message, c.title, c.includeMessage, c.includeTestStatus, c.includeTestCases, c.includeDetails,
-									c.includeSignature, c.keystoreFile, c.keystoreType
-								)
-								action = q.update(
-									conformanceCertificate.message,
-									conformanceCertificate.title,
-									conformanceCertificate.includeMessage,
-									conformanceCertificate.includeTestStatus,
-									conformanceCertificate.includeTestCases,
-									conformanceCertificate.includeDetails,
-									conformanceCertificate.includeSignature,
-									conformanceCertificate.keystoreFile,
-									conformanceCertificate.keystoreType
-								)
-							}
 						}
-					} else {
-						action = PersistenceSchema.insertConformanceCertificate += conformanceCertificate
 					}
-					action
+				} else {
+					action = PersistenceSchema.insertConformanceCertificate += conformanceCertificate
 				}
-			} yield()).transactionally
-		)
+				action
+			}
+		} yield ()
+	}
+
+	def updateConformanceCertificateSettings(conformanceCertificate: ConformanceCertificates, updatePasswords: Boolean, removeKeystore: Boolean) = {
+		exec(updateConformanceCertificateSettingsInternal(conformanceCertificate, updatePasswords, removeKeystore).transactionally)
 	}
 
   def deleteConformanceCertificateSettings(communityId: Long) = {

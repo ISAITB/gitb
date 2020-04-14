@@ -2,11 +2,12 @@ package managers.export
 
 import java.nio.file.Files
 
+import com.gitb.xml
 import com.gitb.xml.export._
 import javax.inject.{Inject, Singleton}
 import managers._
-import models.Enums.{LabelType, SelfRegistrationRestriction, SelfRegistrationType}
-import models.{Actors => _, Endpoints => _, Systems => _, _}
+import models.Enums.{LabelType, SelfRegistrationRestriction, SelfRegistrationType, UserRole}
+import models.{TestCases, Actors => _, Endpoints => _, Systems => _, _}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.slf4j.{Logger, LoggerFactory}
@@ -53,74 +54,305 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
     exportData
   }
 
+  private[export] def loadSpecificationTestSuiteMap(domainId: Long): scala.collection.mutable.Map[Long, ListBuffer[models.TestSuites]] = {
+    val specificationTestSuiteMap = scala.collection.mutable.Map[Long, ListBuffer[models.TestSuites]]()
+    exec(PersistenceSchema.testSuites
+      .join(PersistenceSchema.specifications).on(_.specification === _.id)
+      .filter(_._2.domain === domainId)
+      .map(x => x._1)
+      .result
+    ).foreach { x =>
+      var testSuites = specificationTestSuiteMap.get(x.specification)
+      if (testSuites.isEmpty) {
+        testSuites = Some(new ListBuffer[models.TestSuites])
+        specificationTestSuiteMap += (x.specification -> testSuites.get)
+      }
+      testSuites.get += x
+    }
+    specificationTestSuiteMap
+  }
+
+  private[export] def loadEndpointParameterMap(domainId: Long): scala.collection.mutable.Map[Long, ListBuffer[models.Parameters]] = {
+    val endpointParameterMap = scala.collection.mutable.Map[Long, ListBuffer[models.Parameters]]()
+    exec(PersistenceSchema.parameters
+      .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+      .join(PersistenceSchema.actors).on(_._2.actor === _.id)
+      .filter(_._2.domain === domainId)
+      .map(x => x._1._1)
+      .result
+    ).foreach { x =>
+      var parameters = endpointParameterMap.get(x.endpoint)
+      if (parameters.isEmpty) {
+        parameters = Some(new ListBuffer[models.Parameters])
+        endpointParameterMap += (x.endpoint -> parameters.get)
+      }
+      parameters.get += x
+    }
+    endpointParameterMap
+  }
+
+  private[export] def loadActorEndpointMap(domainId: Long): scala.collection.mutable.Map[Long, ListBuffer[models.Endpoints]] = {
+    val actorEndpointMap = scala.collection.mutable.Map[Long, ListBuffer[models.Endpoints]]()
+    exec(PersistenceSchema.endpoints
+      .join(PersistenceSchema.actors).on(_.actor === _.id)
+      .filter(_._2.domain === domainId)
+      .map(x => x._1)
+      .result
+    ).foreach { x =>
+      var endpoints = actorEndpointMap.get(x.actor)
+      if (endpoints.isEmpty) {
+        endpoints = Some(new ListBuffer[models.Endpoints]())
+        actorEndpointMap += (x.actor -> endpoints.get)
+      }
+      endpoints.get += x
+    }
+    actorEndpointMap
+  }
+
+  private[export] def loadOrganisations(communityId: Long): Seq[models.Organizations] = {
+    exec(PersistenceSchema.organizations.filter(_.community === communityId).filter(_.adminOrganization === false).result)
+  }
+
+  private[export] def loadAdministrators(communityId: Long): Seq[models.Users] = {
+    exec(PersistenceSchema.users
+      .join(PersistenceSchema.organizations).on(_.organization === _.id)
+      .filter(_._2.community === communityId)
+      .filter(_._2.adminOrganization === true)
+      .filter(_._1.role === UserRole.CommunityAdmin.id.toShort)
+      .map(x => x._1)
+      .result
+    )
+  }
+
+  private[export] def loadOrganisationProperties(communityId: Long): Seq[models.OrganisationParameters] = {
+    exec(PersistenceSchema.organisationParameters.filter(_.community === communityId).result)
+  }
+
+  private[export] def loadSystemProperties(communityId: Long): Seq[models.SystemParameters] = {
+    exec(PersistenceSchema.systemParameters.filter(_.community === communityId).result)
+  }
+
+  private[export] def loadOrganisationUserMap(communityId: Long): scala.collection.mutable.Map[Long, ListBuffer[models.Users]] ={
+    val organisationUserMap: scala.collection.mutable.Map[Long, ListBuffer[models.Users]] = scala.collection.mutable.Map()
+    exec(PersistenceSchema.users
+      .join(PersistenceSchema.organizations).on(_.organization === _.id)
+      .filter(_._2.adminOrganization === false)
+      .filter(_._2.community === communityId)
+      .map(x => x._1)
+      .result
+    ).foreach { x =>
+      var users = organisationUserMap.get(x.organization)
+      if (users.isEmpty) {
+        users = Some(new ListBuffer[models.Users])
+        organisationUserMap += (x.organization -> users.get)
+      }
+      users.get += x
+    }
+    organisationUserMap
+  }
+
+  private [export] def loadOrganisationParameterValueMap(communityId: Long): scala.collection.mutable.Map[Long, ListBuffer[models.OrganisationParameterValues]] = {
+    var organisationParameterValueMap: scala.collection.mutable.Map[Long, ListBuffer[models.OrganisationParameterValues]] = scala.collection.mutable.Map()
+    exec(PersistenceSchema.organisationParameterValues
+      .join(PersistenceSchema.organizations).on(_.organisation === _.id)
+      .filter(_._2.adminOrganization === false)
+      .filter(_._2.community === communityId)
+      .map(x => x._1)
+      .result
+    ).foreach { x =>
+      var organisationParameters = organisationParameterValueMap.get(x.organisation)
+      if (organisationParameters.isEmpty) {
+        organisationParameters = Some(new ListBuffer[OrganisationParameterValues])
+        organisationParameterValueMap += (x.organisation -> organisationParameters.get)
+      }
+      organisationParameters.get += x
+    }
+    organisationParameterValueMap
+  }
+
+  private[export] def loadOrganisationSystemMap(communityId:Long): scala.collection.mutable.Map[Long, ListBuffer[models.Systems]] = {
+    var organisationSystemMap: scala.collection.mutable.Map[Long, ListBuffer[models.Systems]] = scala.collection.mutable.Map()
+    exec(PersistenceSchema.systems
+      .join(PersistenceSchema.organizations).on(_.owner === _.id)
+      .filter(_._2.adminOrganization === false)
+      .filter(_._2.community === communityId)
+      .map(x => x._1)
+      .result
+    ).foreach { x =>
+      var systems = organisationSystemMap.get(x.owner)
+      if (systems.isEmpty) {
+        systems = Some(new ListBuffer[models.Systems]())
+        organisationSystemMap += (x.owner -> systems.get)
+      }
+      systems.get += x
+    }
+    organisationSystemMap
+  }
+
+  private[export] def loadSystemStatementsMap(communityId: Long, domainId: Option[Long]): scala.collection.mutable.Map[Long, ListBuffer[(String, models.Actors)]] = {
+    var systemStatementsMap: scala.collection.mutable.Map[Long, ListBuffer[(String, models.Actors)]] = scala.collection.mutable.Map()
+    var query = PersistenceSchema.systemImplementsActors
+      .join(PersistenceSchema.systems).on(_.systemId === _.id)
+      .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
+      .join(PersistenceSchema.actors).on(_._1._1.actorId === _.id)
+      .join(PersistenceSchema.specificationHasActors).on(_._2.id === _.actorId)
+      .join(PersistenceSchema.specifications).on(_._2.specId === _.id)
+      .filter(_._1._1._1._2.adminOrganization === false)
+      .filter(_._1._1._1._2.community === communityId)
+    if (domainId.isDefined) {
+      query = query.filter(_._2.domain === domainId.get)
+    }
+    exec(query
+        .map(x => (x._1._1._1._1._2.id, x._2.fullname, x._1._1._2))
+      .result
+    ).foreach { x =>
+      var statements = systemStatementsMap.get(x._1) // systemId
+      if (statements.isEmpty) {
+        statements = Some(new ListBuffer[(String, models.Actors)])
+        systemStatementsMap += (x._1 -> statements.get)
+      }
+      statements.get += ((x._2, x._3)) // (specification fullname, actor)
+    }
+    systemStatementsMap
+  }
+
+  private[export] def loadSystemConfigurationsMap(community: models.Communities): scala.collection.mutable.Map[String, ListBuffer[models.Configs]] = {
+    var systemConfigurationsMap: scala.collection.mutable.Map[String, ListBuffer[models.Configs]] = scala.collection.mutable.Map()
+    var query = PersistenceSchema.configs
+      .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+      .join(PersistenceSchema.actors).on(_._2.actor === _.id)
+      .join(PersistenceSchema.systems).on(_._1._1.system === _.id)
+      .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
+      .filter(_._2.adminOrganization === false)
+      .filter(_._2.community === community.id)
+    if (community.domain.isDefined) {
+      query = query.filter(_._1._1._2.domain === community.domain.get)
+    }
+    exec(query
+      .map(x => (x._1._1._1._1, x._1._2.id, x._1._1._2.id))
+      .result
+    ).foreach { x =>
+      val key = x._3+"_"+x._2+"_"+x._1.parameter // [Actor ID]_[System ID]_[Parameter ID]
+      var configs = systemConfigurationsMap.get(key)
+      if (configs.isEmpty) {
+        configs = Some(new ListBuffer[Configs])
+        systemConfigurationsMap += (key -> configs.get)
+      }
+      configs.get += x._1
+    }
+    systemConfigurationsMap
+  }
+
+  private[export] def loadSystemParameterValues(communityId:Long): scala.collection.mutable.Map[Long, ListBuffer[models.SystemParameterValues]] = {
+    var systemParameterValueMap: scala.collection.mutable.Map[Long, ListBuffer[models.SystemParameterValues]] = scala.collection.mutable.Map()
+    exec(PersistenceSchema.systemParameterValues
+      .join(PersistenceSchema.systems).on(_.system === _.id)
+      .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
+      .filter(_._2.adminOrganization === false)
+      .filter(_._2.community === communityId)
+      .map(x => x._1._1)
+      .result
+    ).foreach { x =>
+      var systemParameters = systemParameterValueMap.get(x.system)
+      if (systemParameters.isEmpty) {
+        systemParameters = Some(new ListBuffer[SystemParameterValues])
+        systemParameterValueMap += (x.system -> systemParameters.get)
+      }
+      systemParameters.get += x
+    }
+    systemParameterValueMap
+  }
+
+  private[export] def loadSpecificationActorMap(domainId: Long): scala.collection.mutable.Map[Long, ListBuffer[models.Actors]] = {
+    val specificationActorMap = scala.collection.mutable.Map[Long, ListBuffer[models.Actors]]()
+    exec(PersistenceSchema.actors
+      .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
+      .filter(_._1.domain === domainId)
+      .map(x => (x._1, x._2.specId))
+      .result
+    ).foreach { x =>
+      var actors = specificationActorMap.get(x._2)
+      if (actors.isEmpty) {
+        actors = Some(new ListBuffer[models.Actors]())
+        specificationActorMap += (x._2 -> actors.get)
+      }
+      actors.get += x._1
+    }
+    specificationActorMap
+  }
+
+  private def toId(uniqueNumber: Int): String = {
+    "_" + uniqueNumber
+  }
+
   private def exportDomainInternal(domainId: Long, exportSettings: ExportSettings): DomainExportInfo = {
     var idSequence: Int = 0
-    val specificationActorMap: scala.collection.mutable.Map[Long, ListBuffer[models.Actors]] = scala.collection.mutable.Map()
-    val actorEndpointMap: scala.collection.mutable.Map[Long, ListBuffer[models.Endpoints]] = scala.collection.mutable.Map()
-    val endpointParameterMap: scala.collection.mutable.Map[Long, ListBuffer[models.Parameters]] = scala.collection.mutable.Map()
-    val specificationTestSuiteMap: scala.collection.mutable.Map[Long, ListBuffer[models.TestSuites]] = scala.collection.mutable.Map()
+    var specificationActorMap: scala.collection.mutable.Map[Long, ListBuffer[models.Actors]] = null
+    var actorEndpointMap: scala.collection.mutable.Map[Long, ListBuffer[models.Endpoints]] = null
+    var endpointParameterMap: scala.collection.mutable.Map[Long, ListBuffer[models.Parameters]] = null
+    var specificationTestSuiteMap: scala.collection.mutable.Map[Long, ListBuffer[models.TestSuites]] = null
+    var testSuiteTestCaseMap: scala.collection.mutable.Map[Long, ListBuffer[models.TestCases]] = null
+    var testSuiteActorMap: scala.collection.mutable.Map[Long, ListBuffer[Long]] = null
+    var testCaseActorMap: scala.collection.mutable.Map[Long, ListBuffer[(Long, Boolean)]] = null
     if (exportSettings.specifications) {
       if (exportSettings.actors) {
         // Actors.
-        exec(PersistenceSchema.actors
-          .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
-          .filter(_._1.domain === domainId)
-          .map(x => (x._1, x._2.specId))
-          .result
-        ).foreach { x =>
-          var actors = specificationActorMap.get(x._2)
-          if (actors.isEmpty) {
-            actors = Some(new ListBuffer[models.Actors]())
-            specificationActorMap += (x._2 -> actors.get)
-          }
-          actors.get += x._1
-        }
+        specificationActorMap = loadSpecificationActorMap(domainId)
         if (exportSettings.endpoints) {
           // Endpoints.
-          exec(PersistenceSchema.endpoints
-            .join(PersistenceSchema.actors).on(_.actor === _.id)
-            .filter(_._2.domain === domainId)
-            .map(x => x._1)
-            .result
-          ).foreach { x =>
-            var endpoints = actorEndpointMap.get(x.actor)
-            if (endpoints.isEmpty) {
-              endpoints = Some(new ListBuffer[models.Endpoints]())
-              actorEndpointMap += (x.actor -> endpoints.get)
-            }
-            endpoints.get += x
-          }
+          actorEndpointMap = loadActorEndpointMap(domainId)
           // Endpoint parameters.
-          exec(PersistenceSchema.parameters
-            .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
-            .join(PersistenceSchema.actors).on(_._2.actor === _.id)
-            .filter(_._2.domain === domainId)
-            .map(x => x._1._1)
-            .result
-          ).foreach { x =>
-            var parameters = endpointParameterMap.get(x.endpoint)
-            if (parameters.isEmpty) {
-              parameters = Some(new ListBuffer[models.Parameters])
-              endpointParameterMap += (x.endpoint -> parameters.get)
-            }
-            parameters.get += x
-          }
+          endpointParameterMap = loadEndpointParameterMap(domainId)
         }
       }
       // Test suites.
       if (exportSettings.testSuites) {
+        testSuiteActorMap = scala.collection.mutable.Map[Long, ListBuffer[Long]]()
+        testSuiteTestCaseMap = scala.collection.mutable.Map[Long, ListBuffer[models.TestCases]]()
+        testCaseActorMap = scala.collection.mutable.Map[Long, ListBuffer[(Long, Boolean)]]()
+        specificationTestSuiteMap = loadSpecificationTestSuiteMap(domainId)
         exec(PersistenceSchema.testSuites
-          .join(PersistenceSchema.specifications)
+            .join(PersistenceSchema.testSuiteHasActors).on(_.id === _.testsuite)
+            .join(PersistenceSchema.specifications).on(_._1.specification === _.id)
+            .filter(_._2.domain === domainId)
+            .map(x => x._1._2)
+            .result
+        ).foreach { x =>
+          var actors = testSuiteActorMap.get(x._1) // Test suite
+          if (actors.isEmpty) {
+            actors = Some(new ListBuffer[Long])
+            testSuiteActorMap += (x._1 -> actors.get)
+          }
+          actors.get += x._2
+        }
+        // Test cases.
+        exec(PersistenceSchema.testCases
+          .join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
+          .join(PersistenceSchema.specifications).on(_._1.targetSpec === _.id)
           .filter(_._2.domain === domainId)
-          .map(x => x._1)
+          .map(x => (x._1._2.testsuite, x._1._1))
           .result
         ).foreach { x =>
-          var testSuites = specificationTestSuiteMap.get(x.specification)
-          if (testSuites.isEmpty) {
-            testSuites = Some(new ListBuffer[models.TestSuites])
-            specificationTestSuiteMap += (x.specification -> testSuites.get)
+          var testCases = testSuiteTestCaseMap.get(x._1)
+          if (testCases.isEmpty) {
+            testCases = Some(new ListBuffer[TestCases])
+            testSuiteTestCaseMap += (x._1 -> testCases.get)
           }
-          testSuites.get += x
+          testCases.get += x._2
+        }
+        exec(PersistenceSchema.testCases
+          .join(PersistenceSchema.testCaseHasActors).on(_.id === _.testcase)
+          .join(PersistenceSchema.specifications).on(_._1.targetSpec === _.id)
+          .filter(_._2.domain === domainId)
+          .map(x => x._1._2)
+          .result
+        ).foreach { x =>
+          var actors = testCaseActorMap.get(x._1) // Test case
+          if (actors.isEmpty) {
+            actors = Some(new ListBuffer[(Long, Boolean)])
+            testCaseActorMap += (x._1 -> actors.get)
+          }
+          actors.get += ((x._3, x._4)) // (actor, isSut)
         }
       }
     }
@@ -130,7 +362,7 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
     val domain = conformanceManager.getById(domainId)
     val exportedDomain = new com.gitb.xml.export.Domain
     idSequence += 1
-    exportedDomain.setId(idSequence.toString)
+    exportedDomain.setId(toId(idSequence))
     exportedDomain.setShortName(domain.shortname)
     exportedDomain.setFullName(domain.fullname)
     exportedDomain.setDescription(domain.description.orNull)
@@ -141,16 +373,20 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
         exportedDomain.setSpecifications(new com.gitb.xml.export.Specifications)
         specifications.foreach { specification =>
           val exportedSpecification = new com.gitb.xml.export.Specification
+          idSequence += 1
+          exportedSpecification.setId(toId(idSequence))
           exportedSpecification.setShortName(specification.shortname)
           exportedSpecification.setFullName(specification.fullname)
           exportedSpecification.setDescription(specification.description.orNull)
           exportedSpecification.setHidden(specification.hidden)
+          // Actors
           if (exportSettings.actors && specificationActorMap.contains(specification.id)) {
             exportedSpecification.setActors(new com.gitb.xml.export.Actors)
             specificationActorMap(specification.id).foreach { actor =>
               val exportedActor = new com.gitb.xml.export.Actor
               idSequence += 1
-              exportedActor.setId(idSequence.toString)
+              exportedActor.setId(toId(idSequence))
+              exportedActor.setSpecification(exportedSpecification)
               exportedActor.setActorId(actor.actorId)
               exportedActor.setName(actor.name)
               exportedActor.setDescription(actor.description.orNull)
@@ -165,6 +401,8 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
                 exportedActor.setEndpoints(new com.gitb.xml.export.Endpoints)
                 actorEndpointMap(actor.id).foreach { endpoint =>
                   val exportedEndpoint = new com.gitb.xml.export.Endpoint
+                  idSequence += 1
+                  exportedEndpoint.setId(toId(idSequence))
                   exportedEndpoint.setName(endpoint.name)
                   exportedEndpoint.setDescription(endpoint.desc.orNull)
                   // Endpoint parameters.
@@ -173,7 +411,8 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
                     endpointParameterMap(endpoint.id).foreach { parameter =>
                       val exportedParameter = new com.gitb.xml.export.EndpointParameter
                       idSequence += 1
-                      exportedParameter.setId(idSequence.toString)
+                      exportedParameter.setId(toId(idSequence))
+                      exportedParameter.setEndpoint(exportedEndpoint)
                       exportedParameter.setName(parameter.name)
                       exportedParameter.setDescription(parameter.desc.orNull)
                       exportedParameter.setType(propertyTypeForExport(parameter.kind))
@@ -194,15 +433,78 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
           if (exportSettings.testSuites && specificationTestSuiteMap.contains(specification.id)) {
             exportedSpecification.setTestSuites(new com.gitb.xml.export.TestSuites)
             specificationTestSuiteMap(specification.id).foreach { testSuite =>
+              val exportedTestSuite = new com.gitb.xml.export.TestSuite
+              idSequence += 1
+              exportedTestSuite.setId(toId(idSequence))
+              exportedTestSuite.setShortName(testSuite.shortname)
+              exportedTestSuite.setFullName(testSuite.fullname)
+              exportedTestSuite.setVersion(testSuite.version)
+              exportedTestSuite.setAuthors(testSuite.authors.orNull)
+              exportedTestSuite.setKeywords(testSuite.keywords.orNull)
+              exportedTestSuite.setDescription(testSuite.description.orNull)
+              exportedTestSuite.setDocumentation(testSuite.documentation.orNull)
+              exportedTestSuite.setHasDocumentation(testSuite.hasDocumentation)
+              exportedTestSuite.setModificationDate(testSuite.modificationDate.orNull)
+              exportedTestSuite.setOriginalDate(testSuite.originalDate.orNull)
+              exportedTestSuite.setSpecification(exportedSpecification)
+              if (testSuiteActorMap.contains(testSuite.id)) {
+                testSuiteActorMap(testSuite.id).foreach { actorId =>
+                  exportedTestSuite.getActors.add(exportedActorMap(actorId))
+                }
+              }
               // Zip the test suite's resources to a temporary archive and convert it to a BASE64 string.
               val testTestSuitePath = testSuiteManager.extractTestSuite(testSuite, specification, None)
               try {
-                exportedSpecification.getTestSuites.setTestSuite(
+                exportedTestSuite.setData(
                   Base64.encodeBase64String(IOUtils.toByteArray(Files.newInputStream(testTestSuitePath)))
                 )
               } finally {
                 FileUtils.deleteQuietly(testTestSuitePath.toFile)
               }
+              // Test cases.
+              if (testSuiteTestCaseMap.contains(testSuite.id)) {
+                exportedTestSuite.setTestCases(new xml.export.TestCases)
+                testSuiteTestCaseMap(testSuite.id).foreach { testCase =>
+                  val exportedTestCase = new com.gitb.xml.export.TestCase
+                  idSequence += 1
+                  exportedTestCase.setId(toId(idSequence))
+                  exportedTestCase.setShortName(testCase.shortname)
+                  exportedTestCase.setFullName(testCase.fullname)
+                  exportedTestCase.setVersion(testCase.version)
+                  exportedTestCase.setDescription(testCase.description.orNull)
+                  exportedTestCase.setAuthors(testCase.authors.orNull)
+                  exportedTestCase.setKeywords(testCase.keywords.orNull)
+                  exportedTestCase.setModificationDate(testCase.modificationDate.orNull)
+                  exportedTestCase.setOriginalDate(testCase.originalDate.orNull)
+                  exportedTestCase.setTestCaseType(testCase.testCaseType)
+                  exportedTestCase.setTestSuiteOrder(testCase.testSuiteOrder)
+                  exportedTestCase.setDocumentation(testCase.documentation.orNull)
+                  exportedTestCase.setHasDocumentation(testCase.hasDocumentation)
+                  exportedTestCase.setTargetActors(testCase.targetActors.orNull)
+                  exportedTestCase.setTestSuite(exportedTestSuite)
+                  exportedTestCase.setSpecification(exportedSpecification)
+                  // Test case path - remove first part which represents the test suite
+                  val firstPathSeparatorIndex = testCase.path.indexOf('/')
+                  if (firstPathSeparatorIndex != -1) {
+                    exportedTestCase.setPath(testCase.path.substring(firstPathSeparatorIndex))
+                  } else {
+                    exportedTestCase.setPath(testCase.path)
+                  }
+                  if (testCaseActorMap.contains(testCase.id)) {
+                    exportedTestCase.setActors(new TestCaseActors)
+                    testCaseActorMap(testCase.id).foreach { actorInfo =>
+                      val exportedTestCaseActor = new TestCaseActor
+                      idSequence += 1
+                      exportedTestCaseActor.setId(toId(idSequence))
+                      exportedTestCaseActor.setActor(exportedActorMap(actorInfo._1))
+                      exportedTestCaseActor.setSut(actorInfo._2)
+                      exportedTestCase.getActors.getActor.add(exportedTestCaseActor)
+                    }
+                  }
+                  exportedTestSuite.getTestCases.getTestCase.add(exportedTestCase)
+                }
+              }
+              exportedSpecification.getTestSuites.getTestSuite.add(exportedTestSuite)
             }
           }
           exportedDomain.getSpecifications.getSpecification.add(exportedSpecification)
@@ -216,6 +518,8 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
         exportedDomain.setParameters(new com.gitb.xml.export.DomainParameters)
         domainParameters.foreach { parameter =>
           val exportedParameter = new com.gitb.xml.export.DomainParameter
+          idSequence += 1
+          exportedParameter.setId(toId(idSequence))
           exportedParameter.setName(parameter.name)
           exportedParameter.setDescription(parameter.desc.orNull)
           exportedParameter.setType(propertyTypeForExport(parameter.kind))
@@ -232,6 +536,7 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
   }
 
   def exportCommunity(communityId: Long, exportSettings: ExportSettings): com.gitb.xml.export.Export = {
+    require(communityId != Constants.DefaultCommunityId, "The default community cannot be exported")
     val community = communityManager.getById(communityId)
     if (community.isEmpty) {
       logger.error("No community could be found for id ["+communityId+"]. Aborting export.")
@@ -241,7 +546,13 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
       logger.warn("Skipping domain-related information from community export as the requested community ["+communityId+"] is not linked to a domain.")
       exportSettings.domain = false
     }
+    if (config.Configurations.AUTHENTICATION_SSO_ENABLED && (exportSettings.communityAdministrators || exportSettings.organisationUsers)) {
+      logger.warn("Users can only be included when SSO is not enabled. Enforcing [admins, users] ["+exportSettings.communityAdministrators+", "+exportSettings.organisationUsers+"] to false")
+      exportSettings.communityAdministrators = false
+      exportSettings.organisationUsers = false
+    }
     val exportData = new Export
+    val communityData = new com.gitb.xml.export.Community
     var domainExportInfo: DomainExportInfo = null
     var idSequence: Int = 0
     if (community.get.domain.isDefined && exportSettings.domain) {
@@ -249,19 +560,16 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
       idSequence = domainExportInfo.latestSequenceId
       exportData.setDomains(new Domains)
       exportData.getDomains.getDomain.add(domainExportInfo.exportedDomain)
+      communityData.setDomain(domainExportInfo.exportedDomain)
     }
-    val communityData = new com.gitb.xml.export.Community
     exportData.setCommunities(new com.gitb.xml.export.Communities)
     exportData.getCommunities.getCommunity.add(communityData)
-
-
-
     // Collect data for subsequent use (single queries versus a query per item).
-    val specificationActorMap: scala.collection.mutable.Map[Long, ListBuffer[models.Actors]] = scala.collection.mutable.Map()
     val actorEndpointMap: scala.collection.mutable.Map[Long, ListBuffer[models.Endpoints]] = scala.collection.mutable.Map()
     val endpointParameterMap: scala.collection.mutable.Map[Long, ListBuffer[models.Parameters]] = scala.collection.mutable.Map()
-    val specificationTestSuiteMap: scala.collection.mutable.Map[Long, ListBuffer[models.TestSuites]] = scala.collection.mutable.Map()
     // Community basic info.
+    idSequence += 1
+    communityData.setId(toId(idSequence))
     communityData.setShortName(community.get.shortname)
     communityData.setFullName(community.get.fullname)
     communityData.setSupportEmail(community.get.supportEmail.orNull)
@@ -280,6 +588,23 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
       case SelfRegistrationRestriction.NoRestriction => communityData.getSelfRegistrationSettings.setRestriction(com.gitb.xml.export.SelfRegistrationRestriction.NO_RESTRICTION)
       case SelfRegistrationRestriction.UserEmail => communityData.getSelfRegistrationSettings.setRestriction(com.gitb.xml.export.SelfRegistrationRestriction.USER_EMAIL)
       case SelfRegistrationRestriction.UserEmailDomain => communityData.getSelfRegistrationSettings.setRestriction(com.gitb.xml.export.SelfRegistrationRestriction.USER_EMAIL_DOMAIN)
+    }
+    // Administrators.
+    if (exportSettings.communityAdministrators) {
+      val administrators = loadAdministrators(communityId)
+      if (administrators.nonEmpty) {
+        communityData.setAdministrators(new CommunityAdministrators)
+        administrators.foreach { user =>
+          val exportedAdmin = new CommunityAdministrator
+          idSequence += 1
+          exportedAdmin.setId(toId(idSequence))
+          exportedAdmin.setName(user.name)
+          exportedAdmin.setEmail(user.email)
+          exportedAdmin.setPassword(encryptText(Some(user.password), exportSettings.encryptionKey))
+          exportedAdmin.setOnetimePassword(user.onetimePassword)
+          communityData.getAdministrators.getAdministrator.add(exportedAdmin)
+        }
+      }
     }
     // Certificate settings.
     if (exportSettings.certificateSettings) {
@@ -314,13 +639,13 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
     val exportedOrganisationPropertyMap: scala.collection.mutable.Map[Long, OrganisationProperty] = scala.collection.mutable.Map()
     val exportedSystemPropertyMap: scala.collection.mutable.Map[Long, SystemProperty] = scala.collection.mutable.Map()
     if (exportSettings.customProperties) {
-      val organisationProperties = exec(PersistenceSchema.organisationParameters.filter(_.community === communityId).result)
+      val organisationProperties = loadOrganisationProperties(communityId)
       if (organisationProperties.nonEmpty) {
         communityData.setOrganisationProperties(new OrganisationProperties)
         organisationProperties.foreach { property =>
           val exportedProperty = new OrganisationProperty()
           idSequence += 1
-          exportedProperty.setId(idSequence.toString)
+          exportedProperty.setId(toId(idSequence))
           exportedProperty.setLabel(property.name)
           exportedProperty.setName(property.testKey)
           exportedProperty.setDescription(property.description.orNull)
@@ -334,13 +659,13 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
           exportedOrganisationPropertyMap += (property.id -> exportedProperty)
         }
       }
-      val systemProperties = exec(PersistenceSchema.systemParameters.filter(_.community === communityId).result)
+      val systemProperties = loadSystemProperties(community.get.id)
       if (systemProperties.nonEmpty) {
         communityData.setSystemProperties(new SystemProperties)
         systemProperties.foreach { property =>
           val exportedProperty = new SystemProperty()
           idSequence += 1
-          exportedProperty.setId(idSequence.toString)
+          exportedProperty.setId(toId(idSequence))
           exportedProperty.setLabel(property.name)
           exportedProperty.setName(property.testKey)
           exportedProperty.setDescription(property.description.orNull)
@@ -369,6 +694,8 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
             case LabelType.Organisation => exportedLabel.setLabelType(CustomLabelType.ORGANISATION)
             case LabelType.System => exportedLabel.setLabelType(CustomLabelType.SYSTEM)
           }
+          idSequence += 1
+          exportedLabel.setId(toId(idSequence))
           exportedLabel.setFixedCasing(label.fixedCase)
           exportedLabel.setSingularForm(label.singularForm)
           exportedLabel.setPluralForm(label.pluralForm)
@@ -385,7 +712,7 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
         richContents.foreach { content =>
           val exportedContent = new com.gitb.xml.export.LandingPage
           idSequence += 1
-          exportedContent.setId(idSequence.toString)
+          exportedContent.setId(toId(idSequence))
           exportedContent.setName(content.name)
           exportedContent.setDescription(content.description.orNull)
           exportedContent.setContent(content.content)
@@ -404,7 +731,7 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
         richContents.foreach { content =>
           val exportedContent = new com.gitb.xml.export.LegalNotice
           idSequence += 1
-          exportedContent.setId(idSequence.toString)
+          exportedContent.setId(toId(idSequence))
           exportedContent.setName(content.name)
           exportedContent.setDescription(content.description.orNull)
           exportedContent.setContent(content.content)
@@ -423,7 +750,7 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
         richContents.foreach { content =>
           val exportedContent = new com.gitb.xml.export.ErrorTemplate
           idSequence += 1
-          exportedContent.setId(idSequence.toString)
+          exportedContent.setId(toId(idSequence))
           exportedContent.setName(content.name)
           exportedContent.setDescription(content.description.orNull)
           exportedContent.setContent(content.content)
@@ -434,116 +761,66 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
       }
     }
     // Collect data for subsequent use (single queries versus a query per item).
-    val organisationParameterValueMap: scala.collection.mutable.Map[Long, ListBuffer[models.OrganisationParameterValues]] = scala.collection.mutable.Map()
-    val organisationSystemMap: scala.collection.mutable.Map[Long, ListBuffer[models.Systems]] = scala.collection.mutable.Map()
-    val systemParameterValueMap: scala.collection.mutable.Map[Long, ListBuffer[models.SystemParameterValues]] = scala.collection.mutable.Map()
-    val systemStatementsMap: scala.collection.mutable.Map[Long, ListBuffer[Long]] = scala.collection.mutable.Map()
-    val systemConfigurationsMap: scala.collection.mutable.Map[String, ListBuffer[models.Configs]] = scala.collection.mutable.Map()
+    var organisationParameterValueMap: scala.collection.mutable.Map[Long, ListBuffer[models.OrganisationParameterValues]] = scala.collection.mutable.Map()
+    var organisationSystemMap: scala.collection.mutable.Map[Long, ListBuffer[models.Systems]] = scala.collection.mutable.Map()
+    var systemParameterValueMap: scala.collection.mutable.Map[Long, ListBuffer[models.SystemParameterValues]] = scala.collection.mutable.Map()
+    var systemStatementsMap: scala.collection.mutable.Map[Long, ListBuffer[(String, models.Actors)]] = scala.collection.mutable.Map() // System ID to [specification name, actor]
+    var systemConfigurationsMap: scala.collection.mutable.Map[String, ListBuffer[models.Configs]] = scala.collection.mutable.Map()
+    var organisationUserMap: scala.collection.mutable.Map[Long, ListBuffer[models.Users]] = scala.collection.mutable.Map()
     if (exportSettings.organisations) {
+      if (exportSettings.organisationUsers) {
+        organisationUserMap = loadOrganisationUserMap(communityId)
+      }
       if (exportSettings.customProperties) {
         if (exportSettings.organisationPropertyValues) {
-          exec(PersistenceSchema.organisationParameterValues
-            .join(PersistenceSchema.organizations).on(_.organisation === _.id)
-            .filter(_._2.community === communityId)
-            .map(x => x._1)
-            .result
-          ).foreach { x =>
-            var organisationParameters = organisationParameterValueMap.get(x.organisation)
-            if (organisationParameters.isEmpty) {
-              organisationParameters = Some(new ListBuffer[OrganisationParameterValues])
-              organisationParameterValueMap += (x.organisation -> organisationParameters.get)
-            }
-            organisationParameters.get += x
-          }
+          organisationParameterValueMap = loadOrganisationParameterValueMap(communityId)
         }
         if (exportSettings.systemPropertyValues && exportSettings.systems) {
-          exec(PersistenceSchema.systemParameterValues
-            .join(PersistenceSchema.systems).on(_.system === _.id)
-            .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
-            .filter(_._2.community === communityId)
-            .map(x => x._1._1)
-            .result
-          ).foreach { x =>
-            var systemParameters = systemParameterValueMap.get(x.system)
-            if (systemParameters.isEmpty) {
-              systemParameters = Some(new ListBuffer[SystemParameterValues])
-              systemParameterValueMap += (x.system -> systemParameters.get)
-            }
-            systemParameters.get += x
-          }
+          systemParameterValueMap = loadSystemParameterValues(communityId)
         }
       }
       if (exportSettings.systems) {
-        exec(PersistenceSchema.systems
-          .join(PersistenceSchema.organizations).on(_.owner === _.id)
-          .filter(_._2.community === communityId)
-          .map(x => x._1)
-          .result
-        ).foreach { x =>
-          var systems = organisationSystemMap.get(x.owner)
-          if (systems.isEmpty) {
-            systems = Some(new ListBuffer[models.Systems]())
-            organisationSystemMap += (x.owner -> systems.get)
-          }
-          systems.get += x
-        }
+        organisationSystemMap = loadOrganisationSystemMap(communityId)
         if (exportSettings.statements && exportSettings.domain) {
-          var query = PersistenceSchema.systemImplementsActors
-            .join(PersistenceSchema.systems).on(_.systemId === _.id)
-            .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
-            .join(PersistenceSchema.actors).on(_._1._1.actorId === _.id)
-            .filter(_._1._2.community === communityId)
-          if (community.get.domain.isDefined) {
-            query = query.filter(_._2.domain === community.get.domain.get)
-          }
-          exec(query
-            .map(x => x._1._1._1)
-            .result
-          ).foreach { x =>
-            var statements = systemStatementsMap.get(x._1) // systemId
-            if (statements.isEmpty) {
-              statements = Some(new ListBuffer[Long])
-              systemStatementsMap += (x._1 -> statements.get)
-            }
-            statements.get += x._3 // actorId
-          }
+          systemStatementsMap = loadSystemStatementsMap(community.get.id, community.get.domain)
           if (exportSettings.statementConfigurations) {
-            var query = PersistenceSchema.configs
-              .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
-              .join(PersistenceSchema.actors).on(_._2.actor === _.id)
-              .join(PersistenceSchema.systems).on(_._1._1.system === _.id)
-              .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
-              .filter(_._2.community === communityId)
-            if (community.get.domain.isDefined) {
-              query = query.filter(_._1._1._2.domain === community.get.domain.get)
-            }
-            exec(query
-              .map(x => (x._1._1._1._1, x._1._2.id))
-              .result
-            ).foreach { x =>
-              val key = x._2+"_"+x._1.parameter // [System ID]_[Parameter ID]
-              var configs = systemConfigurationsMap.get(key)
-              if (configs.isEmpty) {
-                configs = Some(new ListBuffer[Configs])
-                systemConfigurationsMap += (key -> configs.get)
-              }
-              configs.get += x._1
-            }
+            systemConfigurationsMap = loadSystemConfigurationsMap(community.get)
           }
         }
       }
     }
     // Organisations.
     if (exportSettings.organisations) {
-      val organisations = organisationManager.getOrganizationsByCommunity(communityId)
+      val organisations = loadOrganisations(communityId)
       if (organisations.nonEmpty) {
         communityData.setOrganisations(new Organisations)
         organisations.foreach { organisation =>
           val exportedOrganisation = new Organisation
+          idSequence += 1
+          exportedOrganisation.setId(toId(idSequence))
+          require(!organisation.adminOrganization, "The community's admin organisation should not be exportable")
+          exportedOrganisation.setAdmin(organisation.adminOrganization)
           exportedOrganisation.setShortName(organisation.shortname)
           exportedOrganisation.setFullName(organisation.fullname)
           exportedOrganisation.setTemplate(organisation.template)
           exportedOrganisation.setTemplateName(organisation.templateName.orNull)
+          if (exportSettings.organisationUsers && !organisation.adminOrganization && organisationUserMap.contains(organisation.id)) {
+            exportedOrganisation.setUsers(new com.gitb.xml.export.Users)
+            organisationUserMap(organisation.id).foreach { user =>
+              val exportedUser = new OrganisationUser
+              idSequence += 1
+              exportedUser.setId(toId(idSequence))
+              exportedUser.setName(user.name)
+              exportedUser.setEmail(user.email)
+              exportedUser.setPassword(encryptText(Some(user.password), exportSettings.encryptionKey))
+              exportedUser.setOnetimePassword(user.onetimePassword)
+              UserRole.apply(user.role) match {
+                case UserRole.VendorAdmin => exportedUser.setRole(OrganisationRoleType.ORGANISATION_ADMIN)
+                case _ => exportedUser.setRole(OrganisationRoleType.ORGANISATION_USER)
+              }
+              exportedOrganisation.getUsers.getUser.add(exportedUser)
+            }
+          }
           if (exportSettings.landingPages && organisation.landingPage.isDefined) {
             exportedOrganisation.setLandingPage(exportedLandingPageMap(organisation.landingPage.get))
           }
@@ -558,6 +835,8 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
             exportedOrganisation.setPropertyValues(new OrganisationPropertyValues)
             organisationParameterValueMap(organisation.id).foreach { parameter =>
               val exportedProperty = new OrganisationPropertyValue
+              idSequence += 1
+              exportedProperty.setId(toId(idSequence))
               exportedProperty.setProperty(exportedOrganisationPropertyMap(parameter.parameter))
               if (exportedProperty.getProperty.getType == PropertyType.SECRET) {
                 exportedProperty.setValue(encryptText(Some(parameter.value), exportSettings.encryptionKey))
@@ -572,6 +851,8 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
             exportedOrganisation.setSystems(new com.gitb.xml.export.Systems)
             organisationSystemMap(organisation.id).foreach { system =>
               val exportedSystem = new com.gitb.xml.export.System
+              idSequence += 1
+              exportedSystem.setId(toId(idSequence))
               exportedSystem.setShortName(system.shortname)
               exportedSystem.setFullName(system.fullname)
               exportedSystem.setDescription(system.description.orNull)
@@ -581,6 +862,8 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
                 exportedSystem.setPropertyValues(new SystemPropertyValues)
                 systemParameterValueMap(system.id).foreach { parameter =>
                   val exportedProperty = new SystemPropertyValue
+                  idSequence += 1
+                  exportedProperty.setId(toId(idSequence))
                   exportedProperty.setProperty(exportedSystemPropertyMap(parameter.parameter))
                   if (exportedProperty.getProperty.getType == PropertyType.SECRET) {
                     exportedProperty.setValue(encryptText(Some(parameter.value), exportSettings.encryptionKey))
@@ -593,18 +876,20 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
               // Conformance statements.
               if (exportSettings.domain && exportSettings.statements && systemStatementsMap.contains(system.id)) {
                 exportedSystem.setStatements(new ConformanceStatements)
-                systemStatementsMap(system.id).foreach { actorId =>
+                systemStatementsMap(system.id).foreach { x =>
                   val exportedStatement = new com.gitb.xml.export.ConformanceStatement
-                  exportedStatement.setActor(domainExportInfo.exportedActorMap(actorId))
+                  idSequence += 1
+                  exportedStatement.setId(toId(idSequence))
+                  exportedStatement.setActor(domainExportInfo.exportedActorMap(x._2.id))
                   if (exportSettings.statementConfigurations) {
                     // From the statement's actor get its endpoints.
-                    if (actorEndpointMap.contains(actorId)) {
-                      actorEndpointMap(actorId).foreach { endpoint =>
+                    if (actorEndpointMap.contains(x._2.id)) {
+                      actorEndpointMap(x._2.id).foreach { endpoint =>
                         // For the endpoint get the parameters.
                         if (endpointParameterMap.contains(endpoint.id)) {
                           endpointParameterMap(endpoint.id).foreach { parameter =>
                             // Get the system configurations for the parameter.
-                            val key = system.id+"_"+parameter.id
+                            val key = x._2.id+"_"+system.id+"_"+parameter.id
                             if (systemConfigurationsMap.contains(key)) {
                               exportedStatement.setConfigurations(new com.gitb.xml.export.Configurations)
                               systemConfigurationsMap(key).foreach { config =>

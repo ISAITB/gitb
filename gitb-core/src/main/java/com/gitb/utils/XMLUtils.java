@@ -2,6 +2,7 @@ package com.gitb.utils;
 
 import org.apache.xerces.jaxp.DocumentBuilderFactoryImpl;
 import org.apache.xerces.jaxp.SAXParserFactoryImpl;
+import org.apache.xerces.jaxp.validation.XMLSchemaFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.xml.sax.*;
@@ -28,6 +29,9 @@ import javax.xml.transform.dom.DOMResult;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.Schema;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
 import java.io.*;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.NoSuchAlgorithmException;
@@ -90,6 +94,21 @@ public class XMLUtils {
         marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
         marshaller.marshal(element, writer);
         return writer.toString();
+    }
+
+    public static void validateAgainstSchema(InputStream contentToValidate, InputStream schema) throws IOException, SAXException {
+        SchemaFactory schemaFactory = new XMLSchemaFactory();
+        Schema schemaResource;
+        try {
+            schemaResource = schemaFactory.newSchema(new StreamSource(schema));
+        } catch (Exception e) {
+            throw new IllegalStateException("Unable to load schema resource", e);
+        }
+        Validator validator = schemaResource.newValidator();
+        validator.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        validator.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        StreamSource source = new StreamSource(contentToValidate);
+        validator.validate(source);
     }
 
     /**

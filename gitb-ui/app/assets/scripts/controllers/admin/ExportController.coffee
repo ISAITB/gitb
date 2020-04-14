@@ -1,15 +1,21 @@
 class ExportController
 
-    @$inject = ['CommunityService', 'ConformanceService', 'ConfirmationDialogService', 'ErrorService', 'DataService', 'PopupService']
-    constructor: (@CommunityService, @ConformanceService, @ConfirmationDialogService, @ErrorService, @DataService, @PopupService) ->
+    @$inject = ['CommunityService', 'ConformanceService', 'ErrorService', 'DataService']
+    constructor: (@CommunityService, @ConformanceService, @ErrorService, @DataService) ->
         @resetSettings()
+        @showDomainOption = true
         @pending = false
         if @DataService.isCommunityAdmin
             @community = @DataService.community
+            if @DataService.community.domain?
+                @domain = @DataService.community.domain
+            else
+                @exportType = 'community'
+                @showDomainOption = false
             @domain = @DataService.community.domain
         else if @DataService.isSystemAdmin
             # Get communities
-            @CommunityService.getCommunities()
+            @CommunityService.getCommunities([], true)
             .then (data) =>
                 @communities = data
             .catch (error) =>
@@ -21,28 +27,35 @@ class ExportController
             .catch (error) =>
                 @ErrorService.showErrorMessage(error)
 
+    resetIncludes: () =>
+        @allCommunityData = false
+        @allDomainData = false
+        @allOrganisationData = false
+        @settings.landingPages = false
+        @settings.errorTemplates = false
+        @settings.legalNotices = false
+        @settings.certificateSettings = false
+        @settings.customLabels = false
+        @settings.customProperties = false
+        @settings.organisations = false
+        @settings.organisationPropertyValues = false
+        @settings.systems = false
+        @settings.systemPropertyValues = false
+        @settings.statements = false
+        @settings.statementConfigurations = false
+        @settings.domain = false
+        @settings.domainParameters = false
+        @settings.specifications = false
+        @settings.actors = false
+        @settings.endpoints = false
+        @settings.testSuites = false
+        @settings.communityAdministrators = false
+        @settings.organisationUsers = false
+
     resetSettings: () =>
-        @settings = {
-            landingPages: false,
-            errorTemplates: false,
-            legalNotices: false,
-            certificateSettings: false,
-            customLabels: false,
-            customProperties: false,
-            organisations: false,
-            organisationPropertyValues: false,
-            systems: false,
-            systemPropertyValues: false,
-            statements: false,
-            statementConfigurations: false,
-            domain: false,
-            domainParameters: false,
-            specifications: false,
-            actors: false,
-            endpoints: false,
-            testSuites: false,
-            encryptionKey: undefined
-        }
+        @settings = {}
+        @resetIncludes()
+        @settings.encryptionKey = undefined
         if @DataService.isSystemAdmin
             @domain = undefined
             @community = undefined
@@ -65,6 +78,7 @@ class ExportController
 
     allCommunityDataChanged: () =>
         if @allCommunityData
+            @settings.communityAdministrators = @allCommunityData
             @settings.landingPages = @allCommunityData
             @settings.legalNotices = @allCommunityData
             @settings.errorTemplates = @allCommunityData
@@ -74,18 +88,20 @@ class ExportController
 
     allOrganisationDataChanged: () =>
         if @allOrganisationData
+            @settings.organisationUsers = @allOrganisationData
             @settings.organisations = @allOrganisationData
             @settings.organisationPropertyValues = @allOrganisationData
             @settings.systems = @allOrganisationData
             @settings.systemPropertyValues = @allOrganisationData
-            @settings.statements = @allOrganisationData
-            @settings.statementConfigurations = @allOrganisationData
-            # Prerequisites
-            @statementConfigurationsChanged()
+            if @showDomainOption
+                @settings.statements = @allOrganisationData
+                @settings.statementConfigurations = @allOrganisationData
+                # Prerequisites
+                @statementConfigurationsChanged()
             @systemPropertyValuesChanged()
 
     allDomainDataChanged: () =>
-        if @allDomainData
+        if @allDomainData && @showDomainOption
             @settings.domain = @allDomainData
             @settings.specifications = @allDomainData
             @settings.actors = @allDomainData
@@ -121,6 +137,8 @@ class ExportController
 
     testSuitesChanged: () =>
         if @settings.testSuites
+            @settings.actors = true
+            @actorsChanged()
             @settings.specifications = true
             @specificationsChanged()
 
@@ -138,6 +156,10 @@ class ExportController
         if @settings.domainParameters
             @settings.domain = true
 
+    organisationUsersChanged: () =>
+        if @settings.organisationUsers
+            @settings.organisations = true
+
     systemsChanged: () =>
         if @settings.systems
             @settings.organisations = true
@@ -149,13 +171,13 @@ class ExportController
         @settings.testSuites || @settings.actors || @isPrerequisiteActors()
 
     isPrerequisiteActors: () =>
-        @settings.endpoints || @isPrerequisiteEndpoints() || @settings.statements || @isPrerequisiteStatements()
+        @settings.endpoints || @isPrerequisiteEndpoints() || @settings.statements || @isPrerequisiteStatements() || @settings.testSuites
 
     isPrerequisiteEndpoints: () =>
         @settings.statementConfigurations
 
     isPrerequisiteOrganisations: () =>
-        @settings.organisationPropertyValues || @settings.systems || @isPrerequisiteSystems()
+        @settings.organisationPropertyValues || @settings.systems || @isPrerequisiteSystems() || @settings.organisationUsers
 
     isPrerequisiteSystems: () =>
         @settings.systemPropertyValues || @settings.statements || @isPrerequisiteStatements()
@@ -165,6 +187,34 @@ class ExportController
 
     isPrerequisiteCustomProperties: () =>
         @settings.organisationPropertyValues || @settings.systemPropertyValues
+
+    clearIncludes: () =>
+        @resetIncludes()
+
+    showClearIncludes: () =>
+        !(@allCommunityData ||
+        @allDomainData ||
+        @allOrganisationData ||
+        @settings.landingPages ||
+        @settings.errorTemplates ||
+        @settings.legalNotices ||
+        @settings.certificateSettings ||
+        @settings.customLabels ||
+        @settings.customProperties ||
+        @settings.organisations ||
+        @settings.organisationPropertyValues ||
+        @settings.systems ||
+        @settings.systemPropertyValues ||
+        @settings.statements ||
+        @settings.statementConfigurations ||
+        @settings.domain ||
+        @settings.domainParameters ||
+        @settings.specifications ||
+        @settings.actors ||
+        @settings.endpoints ||
+        @settings.testSuites ||
+        @settings.communityAdministrators ||
+        @settings.organisationUsers)
 
     exportDisabled: () =>
         @pending || !((@exportType == 'domain' && @domain? || @exportType == 'community' && @community?) && @settings.encryptionKey? && @settings.encryptionKey.trim().length > 0)

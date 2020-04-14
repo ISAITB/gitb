@@ -4,6 +4,7 @@
 @error-color: #D32F2F;
 @completed-color: #4CAF50;
 @basic-color: #777;
+@light-blue: #D9EDF7;
 
 .table-directive {
   	padding:0; margin:0;
@@ -174,11 +175,10 @@
 	margin-top: 2px;
 	th {
 		background: @gray-light-1;
-		&:last-child {
-			span {
-				margin-left: 10px;
-				margin-right: 10px;
-			}
+		vertical-align: middle;
+		span.withMargin {
+			margin-left: 10px;
+			margin-right: 10px;
 		}
 	}
 	td {
@@ -216,4 +216,170 @@ label.inline-checkbox {
 
 li.menu-section-start {
 	border-top: 1px solid @gray-dark-1;
+}
+
+.clickable {
+	&:hover {
+		cursor: pointer;
+	}
+}
+
+@item-add: @green-light;
+@item-add-dark: @success-green;
+@item-delete: @orange-light;
+@item-delete-dark: @warning-yellow;
+@item-update: @blue-light;
+@item-update-dark: @blue;
+
+@item-color: #F5F5F5;
+@item-color-border: #ddd;
+@item-color-dark: darken(@item-color, 10%);
+@item-color-hover: @item-color-dark;
+
+div.import-item {
+	// padding-left:15px;
+	display: table;
+	width: 100%;
+	border-radius: 5px;
+    border-bottom-right-radius: 5px;
+    border-top-right-radius: 5px;	
+	&:hover {
+		cursor: default;
+	}
+	&.add {
+		background-color: @item-add-dark;
+	}
+	&.update {
+		background-color: @item-update-dark;
+	}
+	&.delete {
+		background-color: @item-delete-dark;
+	}
+	div.import-item-icon {
+		display: table-cell;
+		width: 1%;
+		padding: 10px;
+		color: white;
+	}
+	div.import-item-container {
+		margin-left: 15px;
+		display: table-cell;
+		border-bottom-right-radius: 5px;
+		border-top-right-radius: 5px;	
+		background-color: @item-color;
+		div.import-item-title {
+			border-top: 1px solid @item-color-border;
+			border-right: 1px solid @item-color-border;
+			border-bottom: 1px solid @item-color-border;
+			background-color: @item-color;
+			border-top-right-radius: 5px;			
+			border-bottom-right-radius: 5px;
+			padding: 10px;
+			&.with-groups {
+				&:hover {
+					cursor: pointer;
+					background-color: @item-color-hover;
+				}	
+			}
+			&.without-groups {
+				&:hover {
+					cursor: default;
+					background-color: @item-color;
+				}
+			}
+			&.open {
+				border-bottom-right-radius: 0px;
+			}
+		}
+	}
+	div.import-item-group-container {
+		padding-top: 10px;
+		padding-left: 10px;
+    	padding-right: 10px;
+		border-bottom: 1px solid @item-color-border;
+		border-right: 1px solid @item-color-border;
+		border-bottom-right-radius: 5px;			
+	}
+}
+div.title-holder {
+	display: table;
+	width: 100%;
+}
+div.title-text {
+	display: table-cell;
+	vertical-align: middle;	
+	&.highlight {
+		font-weight: bold;
+	}
+	&.skip {
+		text-decoration: line-through;
+		opacity: 0.4;
+	}
+}
+div.title-icon {
+	display: table-cell;
+	text-align: right;
+	width: 25px;	
+}
+div.title-action {
+	display: table-cell;
+	text-align: right;
+	.control {
+		padding: 6px 12px;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		font-size: 12px;
+		width: 200px;
+	}
+	button {
+		margin-right: 10px;
+	}
+}
+div.import-item-group {
+	background-color: @item-color;
+	padding-bottom: 10px;			
+	div.import-item-group-label {
+		min-height: 50px;
+		padding: 10px;
+		border-radius: 5px;
+		border: 1px solid @item-color-border;
+		&.open {
+			border-top-left-radius: 5px;
+			border-top-right-radius: 5px;
+			border-bottom-left-radius: 0px;
+			border-bottom-right-radius: 0px;
+			border-top: 1px solid @item-color-border;
+			border-left: 1px solid @item-color-border;
+			border-right: 1px solid @item-color-border;
+		}
+		&:hover {
+			cursor: pointer;
+			background-color: @item-color-hover;
+		}
+	}
+	div.import-item-group-items {
+		padding-left: 10px;
+		padding-right: 10px;
+		padding-bottom: 10px;
+		padding-top: 5px;
+		border-bottom-left-radius: 5px;
+		border-bottom-right-radius: 5px;
+		border-bottom: 1px solid @item-color-border;
+		border-left: 1px solid @item-color-border;
+		border-right: 1px solid @item-color-border;
+		div.import-item-group-item {
+			padding-top: 5px;
+		}
+	}
+}
+div.import-item-root {
+	& > div.import-item-root-item {
+		&.padded {
+			margin-bottom: 10px;		
+		}
+		& > div.import-item-group {
+			padding-bottom: 0px;
+			border-radius: 5px;
+		}		
+	} 
 }

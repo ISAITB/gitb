@@ -8,14 +8,43 @@ import com.gitb.tr._
 import config.Configurations
 import javax.xml.bind.JAXBElement
 import managers.AttachmentType
-import managers.export.ExportSettings
-import models.Enums.{LabelType, TestResultStatus}
+import managers.export.{ExportSettings, ImportItem, ImportSettings}
+import models.Enums._
 import models._
 import org.apache.commons.codec.binary.Base64
-import play.api.libs.json._
+import play.api.libs.json.{JsObject, _}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 object JsonUtil {
+
+  def jsImportPreviewResult(pendingImportId: String, importItems: Iterable[ImportItem]): JsObject = {
+    val json = Json.obj(
+      "pendingImportId" -> pendingImportId,
+      "importItems" -> jsImportItems(importItems)
+    )
+    json
+  }
+
+  def jsImportItems(importItems: Iterable[ImportItem]): JsArray = {
+    var json = Json.arr()
+    importItems.foreach{ importItem =>
+      json = json.append(jsImportItem(importItem))
+    }
+    json
+  }
+
+  def jsImportItem(importItem: ImportItem): JsObject = {
+    val json = Json.obj(
+      "name" -> (if(importItem.itemName.isDefined) importItem.itemName.get else JsNull),
+      "type" -> importItem.itemType.id,
+      "match" -> importItem.itemMatch.id,
+      "target" -> (if(importItem.targetKey.isDefined) importItem.targetKey.get else JsNull),
+      "source" -> (if(importItem.sourceKey.isDefined) importItem.sourceKey.get else JsNull),
+      "children" -> jsImportItems(importItem.childrenItems)
+    )
+    json
+  }
 
   def jsTestSuite(suite: TestSuites): JsObject = {
     val json = Json.obj(
@@ -666,9 +695,45 @@ object JsonUtil {
     list
   }
 
+  private def parseJsImportItem(jsonConfig: JsObject, parentItem: Option[ImportItem]): ImportItem = {
+    val item = new ImportItem(
+      (jsonConfig \ "name").asOpt[String],
+      ImportItemType.apply((jsonConfig \ "type").as[Short]),
+      ImportItemMatch.apply((jsonConfig \ "match").as[Short]),
+      (jsonConfig \ "target").asOpt[String],
+      (jsonConfig \ "source").asOpt[String],
+      ImportItemChoice.apply((jsonConfig \ "process").as[Short])
+    )
+    item.parentItem = parentItem
+    val children = (jsonConfig \ "children").asOpt[List[JsObject]]
+    if (children.isDefined) {
+      children.get.foreach { childObj =>
+        item.childrenItems += parseJsImportItem(childObj, Some(item))
+      }
+    }
+    item
+  }
+
+  def parseJsImportItems(json:String): List[ImportItem] = {
+    val jsArray = Json.parse(json).as[List[JsObject]]
+    var list = ListBuffer[ImportItem]()
+    jsArray.foreach { jsonConfig =>
+      list += parseJsImportItem(jsonConfig, None)
+    }
+    list.toList
+  }
+
+  def parseJsImportSettings(json:String):ImportSettings = {
+    val jsonConfig = Json.parse(json).as[JsObject]
+    val settings = new ImportSettings()
+    settings.encryptionKey = (jsonConfig \ "encryptionKey").asOpt[String]
+    settings
+  }
+
   def parseJsExportSettings(json:String):ExportSettings = {
     val jsonConfig = Json.parse(json).as[JsObject]
     val settings = new ExportSettings()
+    settings.communityAdministrators = (jsonConfig \ "communityAdministrators").as[Boolean]
     settings.landingPages = (jsonConfig \ "landingPages").as[Boolean]
     settings.errorTemplates = (jsonConfig \ "errorTemplates").as[Boolean]
     settings.legalNotices = (jsonConfig \ "legalNotices").as[Boolean]
@@ -677,6 +742,7 @@ object JsonUtil {
     settings.customLabels = (jsonConfig \ "customLabels").as[Boolean]
     settings.customProperties = (jsonConfig \ "customProperties").as[Boolean]
     settings.organisations = (jsonConfig \ "organisations").as[Boolean]
+    settings.organisationUsers = (jsonConfig \ "organisationUsers").as[Boolean]
     settings.organisationPropertyValues = (jsonConfig \ "organisationPropertyValues").as[Boolean]
     settings.systems = (jsonConfig \ "systems").as[Boolean]
     settings.systemPropertyValues = (jsonConfig \ "systemPropertyValues").as[Boolean]

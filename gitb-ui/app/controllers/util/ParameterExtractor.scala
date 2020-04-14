@@ -110,9 +110,36 @@ object ParameterExtractor {
     false
   }
 
+  def requiredBodyParameterMulti(request:Request[MultipartFormData[_]], parameter:String):String = {
+      val param = request.body.dataParts.get(parameter)
+      if (param.isDefined) {
+        try {
+          param.get.head
+        } catch {
+          case e:NoSuchElementException =>
+            throw InvalidRequestException(ErrorCodes.MISSING_PARAMS, "Parameter '"+parameter+"' is missing in the request")
+        }
+      } else {
+        throw InvalidRequestException(ErrorCodes.MISSING_PARAMS, "Parameter '"+parameter+"' is missing in the request")
+      }
+  }
+
+  def requiredBinaryBodyParameter(request:Request[AnyContent], parameter:String):Array[Byte] = {
+    try {
+      var paramStr = request.body.asFormUrlEncoded.get(parameter).head
+      if (MimeUtil.isDataURL(paramStr)) {
+        paramStr = MimeUtil.getBase64FromDataURL(paramStr)
+      }
+      Base64.decodeBase64(paramStr)
+    } catch {
+      case e:NoSuchElementException =>
+        throw new InvalidRequestException(ErrorCodes.MISSING_PARAMS, "Parameter '"+parameter+"' is missing in the request")
+    }
+  }
+
   def requiredBodyParameter(request:Request[AnyContent], parameter:String):String = {
     try {
-      val param = request.body.asFormUrlEncoded.get(parameter)(0)
+      val param = request.body.asFormUrlEncoded.get(parameter).head
       param
     } catch {
       case e:NoSuchElementException =>

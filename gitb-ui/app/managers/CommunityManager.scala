@@ -94,8 +94,8 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   /**
     * Gets all communities with given ids or all if none specified
     */
-  def getCommunities(ids: Option[List[Long]]): List[Communities] = {
-    val q = ids match {
+  def getCommunities(ids: Option[List[Long]], skipDefault: Boolean): List[Communities] = {
+    var q = ids match {
       case Some(idList) => {
         PersistenceSchema.communities
           .filter(_.id inSet idList)
@@ -103,6 +103,9 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
       case None => {
         PersistenceSchema.communities
       }
+    }
+    if (skipDefault) {
+      q = q.filter(_.id =!= Constants.DefaultCommunityId)
     }
     exec(q.sortBy(_.shortname.asc)
       .result.map(_.toList))
@@ -153,13 +156,17 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
     * Creates new community
     */
   def createCommunity(community: Communities) = {
-    exec((for {
+    exec(createCommunityInternal(community).transactionally)
+  }
+
+  def createCommunityInternal(community: Communities) = {
+    for {
       communityId <- PersistenceSchema.insertCommunity += community
-      _ <- {
+      adminOrganisationId <- {
         val adminOrganization = Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, true, None, None, None, false, None, communityId)
         PersistenceSchema.insertOrganization += adminOrganization
       }
-    } yield ()).transactionally)
+    } yield (communityId, adminOrganisationId)
   }
 
   /**
@@ -172,67 +179,68 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
     community
   }
 
+  def updateCommunityInternal(community: Communities, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], selfRegNotification: Boolean, description: Option[String], selfRegRestriction: Short, domainId: Option[Long]) = {
+    val actions = new ListBuffer[DBIO[_]]()
+
+    if (!shortName.isEmpty && community.shortname != shortName) {
+      val q = for {c <- PersistenceSchema.communities if c.id === community.id} yield (c.shortname)
+      actions += q.update(shortName)
+      actions += testResultManager.updateForUpdatedCommunity(community.id, shortName)
+    }
+    if (community.domain.isDefined && domainId.isDefined && community.domain.get != domainId.get) {
+      // New domain doesn't match previous domain. Remove conformance statements for previous domain.
+      actions += conformanceManager.deleteConformanceStatementsForDomainAndCommunity(community.domain.get, community.id)
+    } else if (community.domain.isEmpty && domainId.isDefined) {
+      // Domain set for community that was not previously linked to a domain. Remove statements for other domains.
+      val action = for {
+        systemActors <- {
+          // Get the conformance statement information to delete (system and actor IDs).
+          PersistenceSchema.systemImplementsActors
+            .join(PersistenceSchema.systems).on(_.systemId === _.id)
+            .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
+            .join(PersistenceSchema.actors).on(_._1._1.actorId === _.id)
+            .filter(_._1._2.community === community.id)
+            .filter(_._2.domain =!= domainId.get)
+            .map(x => (x._1._1._1.actorId, x._1._1._1.systemId))
+            .result
+            .map(_.toList)
+        }
+        systemAndActorIds <- {
+          // Put IDs in sets for easier processing (no need for deletion per each match).
+          val actorIds = new util.HashSet[Long]
+          val systemIds = new util.HashSet[Long]
+          systemActors.foreach { systemActorPair =>
+            actorIds.add(systemActorPair._1)
+            systemIds.add(systemActorPair._2)
+          }
+          import scala.collection.JavaConversions._
+          DBIO.successful((actorIds.toSet, systemIds.toSet))
+        }
+        _ <- {
+          // Delete conformance statement data for collected IDs.
+          PersistenceSchema.systemImplementsActors.filter(_.systemId inSet systemAndActorIds._2).filter(_.actorId inSet systemAndActorIds._1).delete andThen
+            PersistenceSchema.conformanceResults.filter(_.sut inSet systemAndActorIds._2).filter(_.actor inSet systemAndActorIds._1).delete
+        }
+      } yield ()
+      actions += action
+    }
+
+    if (!fullName.isEmpty && community.fullname != fullName) {
+      val q = for {c <- PersistenceSchema.communities if c.id === community.id} yield (c.fullname)
+      actions += q.update(fullName)
+    }
+    val qs = for {c <- PersistenceSchema.communities if c.id === community.id} yield (c.supportEmail, c.domain, c.selfRegType, c.selfRegToken, c.selfregNotification, c.description, c.selfRegRestriction)
+    actions += qs.update(supportEmail, domainId, selfRegType, selfRegToken, selfRegNotification, description, selfRegRestriction)
+    toDBIO(actions)
+  }
+
   /**
     * Update community
     */
   def updateCommunity(communityId: Long, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], selfRegNotification: Boolean, description: Option[String], selfRegRestriction: Short, domainId: Option[Long]) = {
-    val actions = new ListBuffer[DBIO[_]]()
-
     val community = exec(PersistenceSchema.communities.filter(_.id === communityId).result.headOption)
-
     if (community.isDefined) {
-      if (!shortName.isEmpty && community.get.shortname != shortName) {
-        val q = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.shortname)
-        actions += q.update(shortName)
-        actions += testResultManager.updateForUpdatedCommunity(communityId, shortName)
-      }
-
-      if (community.get.domain.isDefined && domainId.isDefined && community.get.domain.get != domainId.get) {
-        // New domain doesn't match previous domain. Remove conformance statements for previous domain.
-        actions += conformanceManager.deleteConformanceStatementsForDomainAndCommunity(community.get.domain.get, communityId)
-      } else if (community.get.domain.isEmpty && domainId.isDefined) {
-        // Domain set for community that was not previously linked to a domain. Remove statements for other domains.
-        val action = for {
-          systemActors <- {
-            // Get the conformance statement information to delete (system and actor IDs).
-            PersistenceSchema.systemImplementsActors
-              .join(PersistenceSchema.systems).on(_.systemId === _.id)
-              .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
-              .join(PersistenceSchema.actors).on(_._1._1.actorId === _.id)
-              .filter(_._1._2.community === communityId)
-              .filter(_._2.domain =!= domainId.get)
-              .map(x => (x._1._1._1.actorId, x._1._1._1.systemId))
-              .result
-              .map(_.toList)
-          }
-          systemAndActorIds <- {
-            // Put IDs in sets for easier processing (no need for deletion per each match).
-            val actorIds = new util.HashSet[Long]
-            val systemIds = new util.HashSet[Long]
-            systemActors.foreach { systemActorPair =>
-              actorIds.add(systemActorPair._1)
-              systemIds.add(systemActorPair._2)
-            }
-            import scala.collection.JavaConversions._
-            DBIO.successful((actorIds.toSet, systemIds.toSet))
-          }
-          _ <- {
-            // Delete conformance statement data for collected IDs.
-            PersistenceSchema.systemImplementsActors.filter(_.systemId inSet systemAndActorIds._2).filter(_.actorId inSet systemAndActorIds._1).delete andThen
-            PersistenceSchema.conformanceResults.filter(_.sut inSet systemAndActorIds._2).filter(_.actor inSet systemAndActorIds._1).delete
-          }
-        } yield ()
-        actions += action
-      }
-
-      if (!fullName.isEmpty && community.get.fullname != fullName) {
-        val q = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.fullname)
-        actions += q.update(fullName)
-      }
-      val qs = for {c <- PersistenceSchema.communities if c.id === communityId} yield (c.supportEmail, c.domain, c.selfRegType, c.selfRegToken, c.selfregNotification, c.description, c.selfRegRestriction)
-      actions += qs.update(supportEmail, domainId, selfRegType, selfRegToken, selfRegNotification, description, selfRegRestriction)
-
-      exec(DBIO.seq(actions.map(a => a): _*).transactionally)
+      exec(updateCommunityInternal(community.get, shortName, fullName, supportEmail, selfRegType, selfRegToken, selfRegNotification, description, selfRegRestriction, domainId).transactionally)
     } else {
       throw new IllegalArgumentException("Community with ID '" + communityId + "' not found")
     }
@@ -258,13 +266,21 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
     )
   }
 
+  def createOrganisationParameterInternal(parameter: OrganisationParameters) = {
+    PersistenceSchema.organisationParameters.returning(PersistenceSchema.organisationParameters.map(_.id)) += parameter
+  }
+
   def createOrganisationParameter(parameter: OrganisationParameters) = {
-    exec((PersistenceSchema.organisationParameters.returning(PersistenceSchema.organisationParameters.map(_.id)) += parameter).transactionally)
+    exec(createOrganisationParameterInternal(parameter).transactionally)
+  }
+
+  def updateOrganisationParameterInternal(parameter: OrganisationParameters) = {
+    val q = for {p <- PersistenceSchema.organisationParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.inSelfRegistration)
+    q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.inSelfRegistration)
   }
 
   def updateOrganisationParameter(parameter: OrganisationParameters) = {
-    val q = for {p <- PersistenceSchema.organisationParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.inSelfRegistration)
-    exec(q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.inSelfRegistration).transactionally)
+    exec(updateOrganisationParameterInternal(parameter).transactionally)
   }
 
   def deleteOrganisationParameterWrapper(parameterId: Long) = {
@@ -281,13 +297,21 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
     PersistenceSchema.organisationParameters.filter(_.community === communityId).delete
   }
 
+  def createSystemParameterInternal(parameter: SystemParameters) = {
+    PersistenceSchema.systemParameters.returning(PersistenceSchema.systemParameters.map(_.id)) += parameter
+  }
+
   def createSystemParameter(parameter: SystemParameters) = {
-    exec((PersistenceSchema.systemParameters.returning(PersistenceSchema.systemParameters.map(_.id)) += parameter).transactionally)
+    exec(createSystemParameterInternal(parameter).transactionally)
+  }
+
+  def updateSystemParameterInternal(parameter: SystemParameters) = {
+    val q = for {p <- PersistenceSchema.systemParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports)
+    q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports)
   }
 
   def updateSystemParameter(parameter: SystemParameters) = {
-    val q = for {p <- PersistenceSchema.systemParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports)
-    exec(q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports).transactionally)
+    exec(updateSystemParameterInternal(parameter).transactionally)
   }
 
   def deleteSystemParameterWrapper(parameterId: Long) = {
@@ -428,7 +452,15 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
     valuesPerSystem
   }
 
-  def setCommunityLabels(communityId: Long, labels: List[CommunityLabels]) = {
+  def deleteCommunityLabel(communityId: Long, labelType: Short): DBIO[_] = {
+    PersistenceSchema.communityLabels.filter(_.community === communityId).filter(_.labelType === labelType).delete
+  }
+
+  def createCommunityLabel(label: CommunityLabels): DBIO[_] = {
+    PersistenceSchema.communityLabels += label
+  }
+
+  def setCommunityLabelsInternal(communityId: Long, labels: List[CommunityLabels]) = {
     val actions = new ListBuffer[DBIO[_]]()
     // Delete existing labels
     actions += PersistenceSchema.communityLabels.filter(_.community === communityId).delete
@@ -436,7 +468,11 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
     labels.foreach { label =>
       actions += (PersistenceSchema.communityLabels += label)
     }
-    exec(DBIO.seq(actions.map(a => a): _*).transactionally)
+    toDBIO(actions)
+  }
+
+  def setCommunityLabels(communityId: Long, labels: List[CommunityLabels]) = {
+    exec(setCommunityLabelsInternal(communityId, labels).transactionally)
   }
 
   def getCommunityLabels(communityId: Long): List[CommunityLabels] = {

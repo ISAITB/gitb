@@ -220,8 +220,8 @@ class ConformanceService @Inject() (communityManager: CommunityManager, conforma
 
   def resolvePendingTestSuite(specification_id: Long) = AuthorizedAction { request =>
     authorizationManager.canEditTestSuites(request, specification_id)
-    val pendingFolderId = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_TEST_SUITE_ID)
-    val pendingActionStr = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_TEST_SUITE_ACTION)
+    val pendingFolderId = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ID)
+    val pendingActionStr = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ACTION)
     var pendingAction: TestSuiteReplacementChoice = null
     if ("keep".equals(pendingActionStr)) {
       pendingAction = TestSuiteReplacementChoice.KEEP_TEST_HISTORY

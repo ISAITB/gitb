@@ -260,7 +260,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		result
 	}
 
-	private def getTestSuiteFile(specification: Long, testSuiteName: String): File = {
+	def getTestSuiteFile(specification: Long, testSuiteName: String): File = {
 		new File(RepositoryUtils.getTestSuitesPath(getSpecificationById(specification)), testSuiteName)
 	}
 
@@ -302,7 +302,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		}
 	}
 
-	private def updateTestSuiteInDb(testSuiteId: Long, newData: TestSuites) = {
+	def updateTestSuiteInDb(testSuiteId: Long, newData: TestSuites) = {
 		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.shortname, t.fullname, t.version, t.authors, t.keywords, t.description, t.filename, t.hasDocumentation, t.documentation)
 		q1.update(newData.shortname, newData.fullname, newData.version, newData.authors, newData.keywords, newData.description, newData.filename, newData.hasDocumentation, newData.documentation) andThen
 		testResultManager.updateForUpdatedTestSuite(testSuiteId, newData.shortname)
@@ -518,7 +518,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		combinedAction andThen DBIO.successful(result.toList)
 	}
 
-	private def stepProcessTestCases(specificationId: Long, savedTestSuiteId: Long, testCases: Option[List[TestCases]], resourcePaths: Map[String, String], existingTestCaseMap: util.HashMap[String, java.lang.Long], savedActorIds: util.Map[String, Long], existingActorToSystemMap: util.HashMap[Long, util.HashSet[Long]]): DBIO[(util.List[Long], List[TestSuiteUploadItemResult])] = {
+	def stepProcessTestCases(specificationId: Long, savedTestSuiteId: Long, testCases: Option[List[TestCases]], resourcePaths: Map[String, String], existingTestCaseMap: util.HashMap[String, java.lang.Long], savedActorIds: util.Map[String, Long], existingActorToSystemMap: util.HashMap[Long, util.HashSet[Long]]): DBIO[(util.List[Long], List[TestSuiteUploadItemResult])] = {
 		val savedTestCaseIds: util.List[Long] = new util.ArrayList[Long]
 		var combinedAction: DBIO[_] = DBIO.successful(())
 		val result = new ListBuffer[TestSuiteUploadItemResult]()
@@ -642,16 +642,18 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 							} else {
 								actorIdToSet = actorId
 							}
-							val actorInternalId = savedActorIds.get(actorIdToSet)
-							action = action andThen
-								(PersistenceSchema.testCaseHasActors += (existingTestCaseId.longValue(), specificationId, actorInternalId, isSut))
-							// All conformance results will be new. We need to add these for all systems that implement the actor.
-							if (isSut) {
-								val implementingSystems = existingActorToSystemMap.get(actorInternalId)
-								if (implementingSystems != null) {
-									for (implementingSystem <- implementingSystems) {
-										action = action andThen
-											(PersistenceSchema.conformanceResults += ConformanceResult(0L, implementingSystem, specificationId, actorInternalId, savedTestSuiteId, existingTestCaseId, TestResultStatus.UNDEFINED.toString, None))
+							if (savedActorIds.containsKey(actorIdToSet)) {
+								val actorInternalId = savedActorIds.get(actorIdToSet)
+								action = action andThen
+									(PersistenceSchema.testCaseHasActors += (existingTestCaseId.longValue(), specificationId, actorInternalId, isSut))
+								// All conformance results will be new. We need to add these for all systems that implement the actor.
+								if (isSut) {
+									val implementingSystems = existingActorToSystemMap.get(actorInternalId)
+									if (implementingSystems != null) {
+										for (implementingSystem <- implementingSystems) {
+											action = action andThen
+												(PersistenceSchema.conformanceResults += ConformanceResult(0L, implementingSystem, specificationId, actorInternalId, savedTestSuiteId, existingTestCaseId, TestResultStatus.UNDEFINED.toString, None))
+										}
 									}
 								}
 							}
@@ -665,7 +667,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		combinedAction andThen DBIO.successful((savedTestCaseIds, result.toList))
 	}
 
-	private def stepRemoveTestCases(existingTestCaseMap: util.HashMap[String, java.lang.Long]): DBIO[List[TestSuiteUploadItemResult]] = {
+	def stepRemoveTestCases(existingTestCaseMap: util.HashMap[String, java.lang.Long]): DBIO[List[TestSuiteUploadItemResult]] = {
 		// Remove test cases not in new test suite.
 		val actions = new ListBuffer[DBIO[_]]()
 		val results = new ListBuffer[TestSuiteUploadItemResult]()
@@ -677,7 +679,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		DBIO.seq(actions.toList: _*) andThen DBIO.successful(results.toList)
 	}
 
-	private def stepUpdateTestSuiteActorLinks(savedTestSuiteId: Long, savedActorIds: util.Map[String, Long]): DBIO[_] = {
+	def stepUpdateTestSuiteActorLinks(savedTestSuiteId: Long, savedActorIds: util.Map[String, Long]): DBIO[_] = {
 		// Add new test suite actor links.
 		val actions = new ListBuffer[DBIO[_]]()
 		for (actorEntry <- savedActorIds.entrySet()) {
@@ -686,13 +688,52 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		DBIO.seq(actions.toList: _*)
 	}
 
-	private def stepUpdateTestSuiteTestCaseLinks(savedTestSuiteId: Long, savedTestCaseIds: util.List[Long]): DBIO[_] = {
+	def stepUpdateTestSuiteTestCaseLinks(savedTestSuiteId: Long, savedTestCaseIds: util.List[Long]): DBIO[_] = {
 		// Update test suite test case links.
 		val actions = new ListBuffer[DBIO[_]]()
 		for (testCaseId <- savedTestCaseIds) {
 			actions += (PersistenceSchema.testSuiteHasTestCases += (savedTestSuiteId, testCaseId))
 		}
 		DBIO.seq(actions.toList: _*)
+	}
+
+	def getSystemActors(specificationId: Long) = {
+		PersistenceSchema.systemImplementsActors.filter(_.specId === specificationId).result.map(_.toList)
+	}
+
+	def getExistingActorToSystemMap(systemActors: List[(Long, Long, Long)]) = {
+		// First get the map of existing actorIds to systems
+		val existingActorToSystemMap = new util.HashMap[Long, util.HashSet[Long]]()
+		systemActors.foreach { systemToActor =>
+			val systemId = systemToActor._1
+			val actorId = systemToActor._3
+			if (!existingActorToSystemMap.containsKey(actorId)) {
+				existingActorToSystemMap.put(actorId, new util.HashSet[Long])
+			}
+			existingActorToSystemMap.get(actorId).add(systemId)
+		}
+		DBIO.successful(existingActorToSystemMap)
+	}
+
+	def getExistingTestCasesForTestSuite(testSuiteId: Long) = {
+		PersistenceSchema.testCases
+			.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
+			.filter(_._2.testsuite === testSuiteId)
+			.map(r => (r._1.id, r._1.shortname))
+			.result
+			.map(_.toList)
+	}
+
+	def getExistingTestCaseMap(existingTestCasesForTestSuite: List[(Long, String)]): DBIO[util.HashMap[String, java.lang.Long]] = {
+		// Process test cases.
+		val existingTestCaseMap = new util.HashMap[String, java.lang.Long]()
+		if (existingTestCasesForTestSuite.nonEmpty) {
+			// This is an update - check for existing test cases.
+			for (existingTestCase <- existingTestCasesForTestSuite) {
+				existingTestCaseMap.put(existingTestCase._2, existingTestCase._1)
+			}
+		}
+		DBIO.successful(existingTestCaseMap)
 	}
 
 	/*
@@ -729,44 +770,17 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 			// Lookup the existing test cases for the test suite (if it already exists).
 			existingTestCasesForTestSuite <- {
 				if (existingSuite != null) {
-					PersistenceSchema.testCases
-						.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
-						.filter(_._2.testsuite === saveTestSuiteStep._1)
-  					.map(r => (r._1.id, r._1.shortname))
-						.result
-						.map(_.toList)
+					getExistingTestCasesForTestSuite(saveTestSuiteStep._1)
 				} else {
 					DBIO.successful(List[(Long, String)]())
 				}
 			}
 			// Place the existing test cases in a map for further processing.
-			existingTestCaseMap <- {
-				// Process test cases.
-				val existingTestCaseMap = new util.HashMap[String, java.lang.Long]()
-				if (existingSuite != null) {
-					// This is an update - check for existing test cases.
-					for (existingTestCase <- existingTestCasesForTestSuite) {
-						existingTestCaseMap.put(existingTestCase._2, existingTestCase._1)
-					}
-				}
-				DBIO.successful(existingTestCaseMap)
-			}
+			existingTestCaseMap <- getExistingTestCaseMap(existingTestCasesForTestSuite)
 			// Lookup the map of systems to actors for the specification
-			systemActors <- PersistenceSchema.systemImplementsActors.filter(_.specId === suite.specification).result.map(_.toList)
+			systemActors <- getSystemActors(suite.specification)
 			// Create a map of actors to systems.
-			existingActorToSystemMap <- {
-				// First get the map of existing actorIds to systems
-				val existingActorToSystemMap = new util.HashMap[Long, util.HashSet[Long]]()
-				systemActors.foreach { systemToActor =>
-					val systemId = systemToActor._1
-					val actorId = systemToActor._3
-					if (!existingActorToSystemMap.containsKey(actorId)) {
-						existingActorToSystemMap.put(actorId, new util.HashSet[Long])
-					}
-					existingActorToSystemMap.get(actorId).add(systemId)
-				}
-				DBIO.successful(existingActorToSystemMap)
-			}
+			existingActorToSystemMap <- getExistingActorToSystemMap(systemActors)
 			// Process the test cases.
 			processTestCasesStep <- stepProcessTestCases(spec.id, saveTestSuiteStep._1, testCases, resourcePaths, existingTestCaseMap, saveActorsStep._1, existingActorToSystemMap)
 			// Remove the test cases that are no longer in the test suite.

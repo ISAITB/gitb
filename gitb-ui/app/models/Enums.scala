@@ -59,4 +59,22 @@ object Enums {
     val Domain, Specification, Actor, Endpoint, Organisation, System = Value
   }
 
+  object ImportItemType extends Enumeration(1) {
+    type ImportItemType = Value
+    val Domain, DomainParameter, Specification, Actor, Endpoint, EndpointParameter, TestSuite,
+    Community, Administrator, CustomLabel, OrganisationProperty, SystemProperty, LandingPage, LegalNotice, ErrorTemplate,
+    Organisation, OrganisationUser, OrganisationPropertyValue, System, SystemPropertyValue,
+    Statement, StatementConfiguration = Value
+  }
+
+  object ImportItemMatch extends Enumeration(1) {
+    type ImportItemMatch = Value
+    val ArchiveOnly, Both, DBOnly = Value
+  }
+
+  object ImportItemChoice extends Enumeration(1) {
+    type ImportItemChoice = Value
+    val Skip, SkipProcessChildren, SkipDueToParent, Proceed = Value
+  }
+
 }

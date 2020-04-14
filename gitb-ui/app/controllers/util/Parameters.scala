@@ -94,10 +94,11 @@ object Parameters {
 	val SPEC_TYPE = "spec_type"
 	val DOMAIN_ID = "domain_id"
 	val SPECIFICATION_ID = "spec_id"
-  val PENDING_TEST_SUITE_ID = "pending_id"
-  val PENDING_TEST_SUITE_ACTION = "pending_action"
+  val PENDING_ID = "pending_id"
+  val PENDING_ACTION = "pending_action"
   val FULL = "full"
   val TESTS = "tests"
+  val ITEMS = "items"
 
   //Community Service parameters
   val COMMUNITY_ID = "community_id"
@@ -144,4 +145,6 @@ object Parameters {
   val MESSAGE_TYPE_ID = "msg_type_id"
   val MESSAGE_TYPE_DESCRIPTION = "msg_type_description"
   val MESSAGE_CONTENT = "msg_content"
+
+  val SKIP_DEFAULT = "skipDefault"
 }

@@ -6,8 +6,9 @@ class CommunityService
   @$inject = ['$log', 'RestService', 'DataService']
   constructor: (@$log, @RestService, @DataService) ->
 
-  getCommunities: (communityIds) ->
+  getCommunities: (communityIds, skipDefault) ->
     params = {}
+    params.skipDefault = skipDefault
     if communityIds? and communityIds.length > 0
         params.ids = communityIds.join ','
 
@@ -227,6 +228,43 @@ class CommunityService
       data: data,
       authenticate: true,
       responseType: "arraybuffer"
+    })
+
+  uploadCommunityExport: (communityId, settings, archiveData) =>
+    data = {
+      settings: settings
+      data: archiveData
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.RepositoryService.uploadCommunityExport(communityId).url,
+      data: data,
+      authenticate: true
+    })
+
+  cancelCommunityImport: (communityId, pendingImportId) =>
+    data = {
+      pending_id: pendingImportId
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.RepositoryService.cancelCommunityImport(communityId).url,
+      data: data,
+      authenticate: true
+    })
+
+  confirmCommunityImport: (communityId, pendingImportId, settings, items) =>
+    data = {
+      settings: settings
+      pending_id: pendingImportId
+      items: items
+    }
+    if @DataService.isCommunityAdmin
+      path = jsRoutes.controllers.RepositoryService.confirmCommunityImportCommunityAdmin(communityId).url
+    else
+      path = jsRoutes.controllers.RepositoryService.confirmCommunityImportTestBedAdmin(communityId).url
+    @RestService.post({
+      path: path,
+      data: data,
+      authenticate: true
     })
 
 services.service('CommunityService', CommunityService)

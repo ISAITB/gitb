@@ -452,4 +452,41 @@ class ConformanceService
       responseType: "arraybuffer"
     })
 
+  uploadDomainExport: (domainId, settings, archiveData) =>
+    data = {
+      settings: settings
+      data: archiveData
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.RepositoryService.uploadDomainExport(domainId).url,
+      data: data,
+      authenticate: true
+    })
+
+  cancelDomainImport: (domainId, pendingImportId) =>
+    data = {
+      pending_id: pendingImportId
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.RepositoryService.cancelDomainImport(domainId).url,
+      data: data,
+      authenticate: true
+    })
+
+  confirmDomainImport: (domainId, pendingImportId, settings, items) =>
+    data = {
+      settings: settings
+      pending_id: pendingImportId
+      items: items
+    }
+    if @DataService.isCommunityAdmin
+      path = jsRoutes.controllers.RepositoryService.confirmDomainImportCommunityAdmin(domainId).url
+    else
+      path = jsRoutes.controllers.RepositoryService.confirmDomainImportTestBedAdmin(domainId).url
+    @RestService.post({
+      path: path,
+      data: data,
+      authenticate: true
+    })
+
 services.service('ConformanceService', ConformanceService)

@@ -2,6 +2,7 @@ package utils;
 
 import net.lingala.zip4j.ZipFile;
 import net.lingala.zip4j.exception.ZipException;
+import net.lingala.zip4j.model.FileHeader;
 import net.lingala.zip4j.model.ZipParameters;
 import net.lingala.zip4j.model.enums.AesKeyStrength;
 import net.lingala.zip4j.model.enums.EncryptionMethod;
@@ -10,8 +11,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Class used to create a ZIP archive from a file.
@@ -86,6 +90,22 @@ public class ZipArchiver {
         } catch (ZipException e) {
             throw new IllegalStateException("Error while creating ZIP archive", e);
         }
+    }
+
+    public Map<String, Path> unzip() {
+        Map<String, Path> extractedFiles = new HashMap<>();
+        try {
+            ZipFile zipFile = new ZipFile(inputFile.toFile(), password);
+            if (zipFile.getFileHeaders() != null) {
+                for (FileHeader header: zipFile.getFileHeaders()) {
+                    zipFile.extractFile(header, outputFile.toFile().getAbsolutePath());
+                    extractedFiles.put(header.getFileName(), Paths.get(outputFile.toFile().getAbsolutePath(), header.getFileName()));
+                }
+            }
+        } catch (ZipException e) {
+            throw new IllegalStateException("Unable to extract ZIP archive", e);
+        }
+        return extractedFiles;
     }
 
 }

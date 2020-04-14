@@ -2,6 +2,7 @@ package managers.export
 
 class ExportSettings {
 
+  var communityAdministrators: Boolean = false
   var landingPages: Boolean = false
   var legalNotices: Boolean = false
   var errorTemplates: Boolean = false
@@ -9,6 +10,7 @@ class ExportSettings {
   var customLabels: Boolean = false
   var customProperties: Boolean = false
   var organisations: Boolean = false
+  var organisationUsers: Boolean = false
   var organisationPropertyValues: Boolean = false
   var systems: Boolean = false
   var systemPropertyValues: Boolean = false
