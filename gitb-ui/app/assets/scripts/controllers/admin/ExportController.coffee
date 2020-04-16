@@ -78,7 +78,7 @@ class ExportController
 
     allCommunityDataChanged: () =>
         if @allCommunityData
-            @settings.communityAdministrators = @allCommunityData
+            @settings.communityAdministrators = !@DataService.configuration['sso.enabled'] && @allCommunityData
             @settings.landingPages = @allCommunityData
             @settings.legalNotices = @allCommunityData
             @settings.errorTemplates = @allCommunityData
@@ -88,7 +88,7 @@ class ExportController
 
     allOrganisationDataChanged: () =>
         if @allOrganisationData
-            @settings.organisationUsers = @allOrganisationData
+            @settings.organisationUsers = !@DataService.configuration['sso.enabled'] && @allOrganisationData
             @settings.organisations = @allOrganisationData
             @settings.organisationPropertyValues = @allOrganisationData
             @settings.systems = @allOrganisationData

@@ -1873,7 +1873,7 @@ class ImportManager @Inject() (exportManager: ExportManager, communityManager: C
       // Administrators
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
-        if (exportedCommunity.getAdministrators != null) {
+        if (!Configurations.AUTHENTICATION_SSO_ENABLED && exportedCommunity.getAdministrators != null) {
           exportedCommunity.getAdministrators.getAdministrator.foreach { exportedUser =>
             dbActions += processFromArchive(ImportItemType.Administrator, exportedUser, exportedUser.getId, ctx,
               ImportCallbacks.set(
@@ -1893,17 +1893,21 @@ class ImportManager @Inject() (exportManager: ExportManager, communityManager: C
         toDBIO(dbActions)
       }
       _ <- {
-        processRemaining(ImportItemType.Administrator, ctx,
-          (targetKey: String) => {
-            val userId = targetKey.toLong
-            if (ownUserId.isDefined && ownUserId.get.longValue() != userId) {
-              // Avoid deleting self
-              PersistenceSchema.users.filter(_.id === userId).delete
-            } else {
-              DBIO.successful(())
+        if (!Configurations.AUTHENTICATION_SSO_ENABLED) {
+          processRemaining(ImportItemType.Administrator, ctx,
+            (targetKey: String) => {
+              val userId = targetKey.toLong
+              if (ownUserId.isDefined && ownUserId.get.longValue() != userId) {
+                // Avoid deleting self
+                PersistenceSchema.users.filter(_.id === userId).delete
+              } else {
+                DBIO.successful(())
+              }
             }
-          }
-        )
+          )
+        } else {
+          DBIO.successful(())
+        }
       }
       // Organisations
       _ <- {
@@ -1957,7 +1961,7 @@ class ImportManager @Inject() (exportManager: ExportManager, communityManager: C
       // Organisation users
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
-        if (exportedCommunity.getOrganisations != null) {
+        if (!Configurations.AUTHENTICATION_SSO_ENABLED && exportedCommunity.getOrganisations != null) {
           exportedCommunity.getOrganisations.getOrganisation.foreach { exportedOrganisation =>
             if (exportedOrganisation.getUsers != null) {
               exportedOrganisation.getUsers.getUser.foreach { exportedUser =>
@@ -1979,11 +1983,15 @@ class ImportManager @Inject() (exportManager: ExportManager, communityManager: C
         toDBIO(dbActions)
       }
       _ <- {
-        processRemaining(ImportItemType.OrganisationUser, ctx,
-          (targetKey: String) => {
-            PersistenceSchema.users.filter(_.id === targetKey.toLong).delete
-          }
-        )
+        if (!Configurations.AUTHENTICATION_SSO_ENABLED) {
+          processRemaining(ImportItemType.OrganisationUser, ctx,
+            (targetKey: String) => {
+              PersistenceSchema.users.filter(_.id === targetKey.toLong).delete
+            }
+          )
+        } else {
+          DBIO.successful(())
+        }
       }
       // Organisation property values
       _ <- {
