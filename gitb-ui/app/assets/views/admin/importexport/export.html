@@ -57,7 +57,10 @@
 										<span class="withMargin">Specific</span>
 									</th>
 									<th>
-										<button class="btn btn-default pull-right btn-sm" type="button" ng-click="controller.clearIncludes()" ng-disabled="controller.showClearIncludes()">Clear</button>
+										<div class="btn-toolbar pull-right">
+											<button class="btn btn-default btn-sm" type="button" ng-click="controller.allIncludes()" ng-disabled="controller.disableAllIncludes()">All</button>
+											<button class="btn btn-default btn-sm" type="button" ng-click="controller.clearIncludes()" ng-disabled="controller.disableClearIncludes()">None</button>
+										</div>
 									</th>
 								</thead>
 								<tbody>

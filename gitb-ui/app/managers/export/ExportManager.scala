@@ -189,8 +189,8 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
     organisationSystemMap
   }
 
-  private[export] def loadSystemStatementsMap(communityId: Long, domainId: Option[Long]): scala.collection.mutable.Map[Long, ListBuffer[(String, models.Actors)]] = {
-    var systemStatementsMap: scala.collection.mutable.Map[Long, ListBuffer[(String, models.Actors)]] = scala.collection.mutable.Map()
+  private[export] def loadSystemStatementsMap(communityId: Long, domainId: Option[Long]): scala.collection.mutable.Map[Long, ListBuffer[(models.Specifications, models.Actors)]] = {
+    var systemStatementsMap: scala.collection.mutable.Map[Long, ListBuffer[(models.Specifications, models.Actors)]] = scala.collection.mutable.Map()
     var query = PersistenceSchema.systemImplementsActors
       .join(PersistenceSchema.systems).on(_.systemId === _.id)
       .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
@@ -203,15 +203,15 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
       query = query.filter(_._2.domain === domainId.get)
     }
     exec(query
-        .map(x => (x._1._1._1._1._2.id, x._2.fullname, x._1._1._2))
+        .map(x => (x._1._1._1._1._2.id, x._2, x._1._1._2))
       .result
     ).foreach { x =>
       var statements = systemStatementsMap.get(x._1) // systemId
       if (statements.isEmpty) {
-        statements = Some(new ListBuffer[(String, models.Actors)])
+        statements = Some(new ListBuffer[(models.Specifications, models.Actors)])
         systemStatementsMap += (x._1 -> statements.get)
       }
-      statements.get += ((x._2, x._3)) // (specification fullname, actor)
+      statements.get += ((x._2, x._3)) // (specification, actor)
     }
     systemStatementsMap
   }
@@ -229,10 +229,10 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
       query = query.filter(_._1._1._2.domain === community.domain.get)
     }
     exec(query
-      .map(x => (x._1._1._1._1, x._1._2.id, x._1._1._2.id))
+      .map(x => (x._1._1._1._1, x._1._2.id, x._1._1._2.id, x._1._1._1._2.actor))
       .result
     ).foreach { x =>
-      val key = x._3+"_"+x._2+"_"+x._1.parameter // [Actor ID]_[System ID]_[Parameter ID]
+      val key = x._4+"_"+x._1.endpoint+"_"+x._2+"_"+x._1.parameter // [Actor ID]_[Endpoint ID]_[System ID]_[Endpoint parameter ID]
       var configs = systemConfigurationsMap.get(key)
       if (configs.isEmpty) {
         configs = Some(new ListBuffer[Configs])
@@ -532,7 +532,7 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
         }
       }
     }
-    DomainExportInfo(idSequence, exportedActorMap, exportedEndpointParameterMap, exportedDomain)
+    DomainExportInfo(idSequence, exportedActorMap, exportedEndpointParameterMap, exportedDomain, actorEndpointMap, endpointParameterMap)
   }
 
   def exportCommunity(communityId: Long, exportSettings: ExportSettings): com.gitb.xml.export.Export = {
@@ -564,9 +564,6 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
     }
     exportData.setCommunities(new com.gitb.xml.export.Communities)
     exportData.getCommunities.getCommunity.add(communityData)
-    // Collect data for subsequent use (single queries versus a query per item).
-    val actorEndpointMap: scala.collection.mutable.Map[Long, ListBuffer[models.Endpoints]] = scala.collection.mutable.Map()
-    val endpointParameterMap: scala.collection.mutable.Map[Long, ListBuffer[models.Parameters]] = scala.collection.mutable.Map()
     // Community basic info.
     idSequence += 1
     communityData.setId(toId(idSequence))
@@ -764,8 +761,8 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
     var organisationParameterValueMap: scala.collection.mutable.Map[Long, ListBuffer[models.OrganisationParameterValues]] = scala.collection.mutable.Map()
     var organisationSystemMap: scala.collection.mutable.Map[Long, ListBuffer[models.Systems]] = scala.collection.mutable.Map()
     var systemParameterValueMap: scala.collection.mutable.Map[Long, ListBuffer[models.SystemParameterValues]] = scala.collection.mutable.Map()
-    var systemStatementsMap: scala.collection.mutable.Map[Long, ListBuffer[(String, models.Actors)]] = scala.collection.mutable.Map() // System ID to [specification name, actor]
-    var systemConfigurationsMap: scala.collection.mutable.Map[String, ListBuffer[models.Configs]] = scala.collection.mutable.Map()
+    var systemStatementsMap: scala.collection.mutable.Map[Long, ListBuffer[(models.Specifications, models.Actors)]] = scala.collection.mutable.Map() // System ID to [specification, actor]
+    var systemConfigurationsMap: scala.collection.mutable.Map[String, ListBuffer[models.Configs]] = scala.collection.mutable.Map() // [Actor ID]_[Endpoint ID]_[System ID]_[Endpoint parameter ID]
     var organisationUserMap: scala.collection.mutable.Map[Long, ListBuffer[models.Users]] = scala.collection.mutable.Map()
     if (exportSettings.organisations) {
       if (exportSettings.organisationUsers) {
@@ -883,17 +880,21 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
                   exportedStatement.setActor(domainExportInfo.exportedActorMap(x._2.id))
                   if (exportSettings.statementConfigurations) {
                     // From the statement's actor get its endpoints.
-                    if (actorEndpointMap.contains(x._2.id)) {
-                      actorEndpointMap(x._2.id).foreach { endpoint =>
+                    if (domainExportInfo.actorEndpointMap.contains(x._2.id)) {
+                      domainExportInfo.actorEndpointMap(x._2.id).foreach { endpoint =>
                         // For the endpoint get the parameters.
-                        if (endpointParameterMap.contains(endpoint.id)) {
-                          endpointParameterMap(endpoint.id).foreach { parameter =>
+                        if (domainExportInfo.endpointParameterMap.contains(endpoint.id)) {
+                          domainExportInfo.endpointParameterMap(endpoint.id).foreach { parameter =>
                             // Get the system configurations for the parameter.
-                            val key = x._2.id+"_"+system.id+"_"+parameter.id
+                            val key = endpoint.actor+"_"+parameter.endpoint+"_"+system.id+"_"+parameter.id
                             if (systemConfigurationsMap.contains(key)) {
-                              exportedStatement.setConfigurations(new com.gitb.xml.export.Configurations)
+                              if (exportedStatement.getConfigurations == null) {
+                                exportedStatement.setConfigurations(new com.gitb.xml.export.Configurations)
+                              }
                               systemConfigurationsMap(key).foreach { config =>
                                 val exportedConfiguration = new com.gitb.xml.export.Configuration
+                                idSequence += 1
+                                exportedConfiguration.setId(toId(idSequence))
                                 exportedConfiguration.setParameter(domainExportInfo.exportedEndpointParameterMap(config.parameter))
                                 if (exportedConfiguration.getParameter.getType == PropertyType.SECRET) {
                                   exportedConfiguration.setValue(encryptText(Some(config.value), exportSettings.encryptionKey))

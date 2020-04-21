@@ -191,7 +191,22 @@ class ExportController
     clearIncludes: () =>
         @resetIncludes()
 
-    showClearIncludes: () =>
+    allIncludes: () =>
+        @allOrganisationData = true
+        @allCommunityData = true
+        @allCommunityDataChanged()
+        @allOrganisationDataChanged()
+        if @showDomainOption
+            @allDomainData = true
+            @allDomainDataChanged()
+
+    disableAllIncludes: () =>
+        if @exportType == 'community'
+            @allCommunityData && @allOrganisationData && (!@showDomainOption || @allDomainData)
+        else
+            @allDomainData
+
+    disableClearIncludes: () =>
         !(@allCommunityData ||
         @allDomainData ||
         @allOrganisationData ||

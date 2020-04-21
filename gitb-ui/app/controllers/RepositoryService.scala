@@ -16,7 +16,7 @@ import javax.xml.bind.JAXBElement
 import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
 import managers._
-import managers.export.{ExportManager, ExportSettings, ImportItem, ImportManager, ImportSettings}
+import managers.export.{ExportManager, ExportSettings, ImportCompleteManager, ImportItem, ImportPreviewManager, ImportSettings}
 import models.{ConformanceCertificate, Constants}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.net.URLCodec
@@ -29,7 +29,7 @@ import utils._
 /**
  * Created by serbay on 10/16/14.
  */
-class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager, importManager: ImportManager) extends Controller {
+class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager, importPreviewManager: ImportPreviewManager, importCompleteManager: ImportCompleteManager) extends Controller {
 
 	private val logger = LoggerFactory.getLogger(classOf[RepositoryService])
 	private val codec = new URLCodec()
@@ -390,7 +390,7 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
       val importFileName = "export_"+RandomStringUtils.random(10, false, true)+".zip"
       val pendingImportId = RandomStringUtils.random(10, false, true)
       val zipFile = Paths.get(
-        importManager.getPendingFolder().getAbsolutePath,
+        importPreviewManager.getPendingFolder().getAbsolutePath,
         pendingImportId,
         importFileName
       )
@@ -481,7 +481,7 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
   def uploadCommunityExport(communityId: Long) = AuthorizedAction { request =>
     authorizationManager.canManageCommunity(request, communityId)
     processImport(request, false, (exportData: Export, settings: ImportSettings) => {
-      val result = importManager.previewCommunityImport(exportData.getCommunities.getCommunity.get(0), Some(communityId))
+      val result = importPreviewManager.previewCommunityImport(exportData.getCommunities.getCommunity.get(0), Some(communityId))
       if (result._2.isDefined) {
         List(result._2.get, result._1)
       } else {
@@ -493,14 +493,14 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
   def uploadDomainExport(domainId: Long) = AuthorizedAction { request =>
     authorizationManager.canManageDomain(request, domainId)
     processImport(request, true, (exportData: Export, settings: ImportSettings) => {
-      val result = importManager.previewDomainImport(exportData.getDomains.getDomain.get(0), Some(domainId))
+      val result = importPreviewManager.previewDomainImport(exportData.getDomains.getDomain.get(0), Some(domainId))
       List(result)
     })
   }
 
   private def cancelImportInternal(request: Request[AnyContent]) = {
     val pendingImportId = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ID)
-    val pendingFolder = Paths.get(importManager.getPendingFolder().getAbsolutePath, pendingImportId)
+    val pendingFolder = Paths.get(importPreviewManager.getPendingFolder().getAbsolutePath, pendingImportId)
     // Delete temporary folder (if exists)
     FileUtils.deleteQuietly(pendingFolder.toFile)
     ResponseConstructor.constructEmptyResponse
@@ -536,7 +536,7 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
 
   private def confirmImportInternal(request: Request[AnyContent], fnImportData: (Export, ImportSettings, List[ImportItem]) => _) = {
     val pendingImportId = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ID)
-    val pendingFolder = Paths.get(importManager.getPendingFolder().getAbsolutePath, pendingImportId)
+    val pendingFolder = Paths.get(importPreviewManager.getPendingFolder().getAbsolutePath, pendingImportId)
     try {
       // Get XML file and deserialize.
       val xmlFile = getPendingImportFile(pendingFolder, pendingImportId)
@@ -558,13 +558,13 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
 
   private def confirmDomainImportInternal(request: Request[AnyContent], domainId: Long, canAddOrDeleteDomain: Boolean) = {
     confirmImportInternal(request, (export: Export, importSettings: ImportSettings, importItems: List[ImportItem]) => {
-      importManager.completeDomainImport(export.getDomains.getDomain.head, importSettings, importItems, Some(domainId), canAddOrDeleteDomain)
+      importCompleteManager.completeDomainImport(export.getDomains.getDomain.head, importSettings, importItems, Some(domainId), canAddOrDeleteDomain)
     })
   }
 
   private def confirmCommunityImportInternal(request: Request[AnyContent], communityId: Long, canAddOrDeleteDomain: Boolean) = {
     confirmImportInternal(request, (export: Export, importSettings: ImportSettings, importItems: List[ImportItem]) => {
-      importManager.completeCommunityImport(export.getCommunities.getCommunity.head, importSettings, importItems, Some(communityId), canAddOrDeleteDomain, Some(ParameterExtractor.extractUserId(request)))
+      importCompleteManager.completeCommunityImport(export.getCommunities.getCommunity.head, importSettings, importItems, Some(communityId), canAddOrDeleteDomain, Some(ParameterExtractor.extractUserId(request)))
     })
   }
 

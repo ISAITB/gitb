@@ -288,7 +288,7 @@
         '<div class="import-item-icon"><span uib-tooltip="{{iconTooltip}}"><i class="fa" ng-class="{\'fa-check-square\': tbImportItem.match == '+ Constants.IMPORT_ITEM_MATCH.BOTH+', \'fa-plus-square\': tbImportItem.match == '+ Constants.IMPORT_ITEM_MATCH.ARCHIVE_ONLY+', \'fa-minus-square\': tbImportItem.match == '+ Constants.IMPORT_ITEM_MATCH.DB_ONLY+'}"></i></span></div>'+
         '<div class="import-item-container">'+
           '<div ng-click="toggleItem(); $event.stopPropagation();" class="import-item-title title-holder" ng-class="{\'open\': tbImportItem.open, \'with-groups\': hasGroups, \'without-groups\': !hasGroups}">'+
-            '<div class="title-text" ng-class="{\'skip\': isSkipped()}">{{tbImportItem.name}}</div>'+
+            '<div class="title-text" ng-class="{\'skip\': isSkipped()}">{{itemName()}}</div>'+
             '<div class="title-action">'+
               '<button ng-if="showExpandAll()" type="button" ng-click="expandItem(tbImportItem); $event.stopPropagation();" class="btn btn-primary btn-sm">Expand all</button>'+
               '<select ng-if="!disableProcessChoice && tbImportItem.process != '+Constants.IMPORT_ITEM_CHOICE.SKIP_DUE_TO_PARENT+'" class="control" ng-click="$event.stopPropagation();" ng-model="tbImportItem.selectedProcessOption" ng-options="option.id as option.label for option in processOptions"></select>'+
@@ -305,6 +305,12 @@
     link: (scope, element, attrs) ->
       scope.Constants = Constants
       scope.DataService = DataService
+
+      scope.itemName = () =>
+        if scope.tbImportItem.type == scope.Constants.IMPORT_ITEM_TYPE.CUSTOM_LABEL
+          scope.Constants.LABEL_TYPE_LABEL[scope.tbImportItem.name]
+        else
+          scope.tbImportItem.name
 
       scope.toggleItem = () =>
         if scope.hasGroups
@@ -480,14 +486,14 @@
             scope.closeGroup(group)
 
       scope.showSkipAll = () =>
-        if scope.group.items.length > 1
+        if scope.group.items.length > 0
           for item in scope.group.items
             if item.process == Constants.IMPORT_ITEM_CHOICE.PROCEED || item.process == Constants.IMPORT_ITEM_CHOICE.SKIP_PROCESS_CHILDREN
               return true
         false
 
       scope.showProceedAll = () =>
-        if scope.group.items.length > 1
+        if scope.group.items.length > 0
           for item in scope.group.items
             if item.process == Constants.IMPORT_ITEM_CHOICE.SKIP || item.process == Constants.IMPORT_ITEM_CHOICE.SKIP_PROCESS_CHILDREN
               return true

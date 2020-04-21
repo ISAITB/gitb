@@ -57,7 +57,6 @@ class ImportController
                 delay = 0
             if @DataService.isSystemAdmin
                 @DataService.focus('community', delay)
-            @DataService.focus(focusOn, delay)
 
     uploadArchive: (files) =>
         file = _.head files

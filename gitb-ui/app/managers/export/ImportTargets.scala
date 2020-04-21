@@ -1,5 +1,9 @@
 package managers.export
 
+import models.Enums.{ImportItemChoice, ImportItemType}
+
+import scala.collection.mutable.ListBuffer
+
 object ImportTargets {
 
   import scala.collection.JavaConversions._
@@ -59,6 +63,52 @@ object ImportTargets {
           }
         }
       }
+    }
+  }
+
+  def fromImportItems(items: List[ImportItem]): ImportTargets = {
+    val result = new ImportTargets()
+    items.foreach { item =>
+      updateForImportItem(result, item)
+    }
+    result
+  }
+
+  private def updateForImportItemList(targets: ImportTargets, items: ListBuffer[ImportItem]): Unit = {
+    if (items != null && items.nonEmpty) {
+      items.foreach { item =>
+        updateForImportItem(targets, item)
+      }
+    }
+  }
+
+  private def updateForImportItem(targets: ImportTargets, item: ImportItem): Unit = {
+    if (item != null) {
+      item.itemType match {
+        case ImportItemType.Domain => targets.hasDomain = true
+        case ImportItemType.DomainParameter => targets.hasDomainParameters = true
+        case ImportItemType.Specification => targets.hasSpecifications = true
+        case ImportItemType.TestSuite => targets.hasTestSuites = true
+        case ImportItemType.Actor => targets.hasActors = true
+        case ImportItemType.Endpoint => targets.hasEndpoints = true
+        case ImportItemType.EndpointParameter => targets.hasEndpointParameters = true
+        case ImportItemType.Community => targets.hasCommunity = true
+        case ImportItemType.Administrator => targets.hasAdministrators = true
+        case ImportItemType.CustomLabel => targets.hasCustomLabels = true
+        case ImportItemType.OrganisationProperty => targets.hasOrganisationProperties = true
+        case ImportItemType.SystemProperty => targets.hasSystemProperties = true
+        case ImportItemType.LandingPage => targets.hasLandingPages = true
+        case ImportItemType.LegalNotice => targets.hasLegalNotices = true
+        case ImportItemType.ErrorTemplate => targets.hasErrorTemplates = true
+        case ImportItemType.Organisation  => targets.hasOrganisations = true
+        case ImportItemType.OrganisationUser => targets.hasOrganisationUsers = true
+        case ImportItemType.OrganisationPropertyValue => targets.hasOrganisationPropertyValues = true
+        case ImportItemType.System => targets.hasSystems = true
+        case ImportItemType.SystemPropertyValue => targets.hasSystemPropertyValues = true
+        case ImportItemType.Statement => targets.hasStatements = true
+        case ImportItemType.StatementConfiguration => targets.hasStatementConfigurations = true
+      }
+      updateForImportItemList(targets, item.childrenItems)
     }
   }
 
