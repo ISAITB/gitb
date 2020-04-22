@@ -19,6 +19,7 @@ import utils.{RepositoryUtils, ZipArchiver}
 import utils.tdlvalidator.tdl.{FileSource, TestSuiteValidationAdapter}
 
 import scala.collection.JavaConversions._
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -240,9 +241,10 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 						FileUtils.moveDirectoryToDirectory(tempTestSuiteArchive.getParentFile, getPendingFolder(), true)
 						result.pendingTestSuiteFolderName = tempTestSuiteArchive.getParentFile.getName
 					} else {
-						result.items.addAll(exec(
-							saveTestSuite(testSuite.get.toCaseObject, null, testSuite.get.actors, testSuite.get.testCases, tempTestSuiteArchive).transactionally
-						))
+						val onSuccessCalls = mutable.ListBuffer[() => _]()
+						val onFailureCalls = mutable.ListBuffer[() => _]()
+						val action = saveTestSuite(testSuite.get.toCaseObject, null, testSuite.get.actors, testSuite.get.testCases, tempTestSuiteArchive, onSuccessCalls, onFailureCalls)
+						result.items.addAll(exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), action).transactionally))
 						result.success = true
 					}
 				}
@@ -286,17 +288,17 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	}
 
 	private def replaceTestSuite(suite: TestSuites, testSuiteActors: Option[List[Actor]], testCases: Option[List[TestCases]], tempTestSuiteArchive: File, action: TestSuiteReplacementChoice): List[TestSuiteUploadItemResult] = {
+		val onSuccessCalls = mutable.ListBuffer[() => _]()
+		val onFailureCalls = mutable.ListBuffer[() => _]()
 		if (action == DROP_TEST_HISTORY) {
 			val existingTestSuite = getTestSuiteBySpecificationAndName(suite.specification, suite.shortname)
-			exec(
-				(
-					conformanceManager.undeployTestSuite(existingTestSuite.get.id) andThen
-					saveTestSuite(suite, null, testSuiteActors, testCases, tempTestSuiteArchive)
-				).transactionally
-			)
+			val action = conformanceManager.undeployTestSuite(existingTestSuite.get.id, onSuccessCalls) andThen
+				saveTestSuite(suite, null, testSuiteActors, testCases, tempTestSuiteArchive, onSuccessCalls, onFailureCalls)
+			exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), action).transactionally)
 		} else if (action == KEEP_TEST_HISTORY) {
 			val existingTestSuite = getTestSuiteBySpecificationAndName(suite.specification, suite.shortname)
-			exec(saveTestSuite(suite, existingTestSuite.orNull, testSuiteActors, testCases, tempTestSuiteArchive).transactionally)
+			val action = saveTestSuite(suite, existingTestSuite.orNull, testSuiteActors, testCases, tempTestSuiteArchive, onSuccessCalls, onFailureCalls)
+			exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), action).transactionally)
 		} else {
 			throw new IllegalStateException("Unexpected test suite replacement action ["+action+"]")
 		}
@@ -742,7 +744,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	flatmaps that execute preceding actions before processing the following ones. Its very ugly but its
 	the only way to do things now that Slick dropped support for implicit sessions.
 	 */
-	private def saveTestSuite(suite: TestSuites, existingSuite: TestSuites, testSuiteActors: Option[List[Actor]], testCases: Option[List[TestCases]], tempTestSuiteArchive: File): DBIO[List[TestSuiteUploadItemResult]] = {
+	private def saveTestSuite(suite: TestSuites, existingSuite: TestSuites, testSuiteActors: Option[List[Actor]], testCases: Option[List[TestCases]], tempTestSuiteArchive: File, onSuccessCalls: mutable.ListBuffer[() => _], onFailureCalls: mutable.ListBuffer[() => _]): DBIO[List[TestSuiteUploadItemResult]] = {
 		val targetFolder: File = getTestSuiteFile(suite.specification, suite.filename)
     var existingFolder: File = null
     if (existingSuite != null) {
@@ -790,19 +792,22 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 			// Update the test case links for the test suite.
 			_ <- stepUpdateTestSuiteTestCaseLinks(saveTestSuiteStep._1, processTestCasesStep._1)
 		} yield(saveTestSuiteStep, saveActorsStep, processTestCasesStep, removeTestCasesStep)
-
 		action.flatMap(results => {
 			// Finally, delete the backup folder
-			if (existingFolder != null && existingFolder.exists()) {
-				FileUtils.deleteDirectory(existingFolder)
-			}
+			onSuccessCalls += (() => {
+				if (existingFolder != null && existingFolder.exists()) {
+					FileUtils.deleteDirectory(existingFolder)
+				}
+			})
 			DBIO.successful(results._1._2 ++ results._2._2 ++ results._3._2 ++ results._4)
 		}).cleanUp(error => {
 			if (error.isDefined) {
-				// Cleanup operations in case an error occurred.
-        if (targetFolder.exists()) {
-          FileUtils.deleteDirectory(targetFolder)
-        }
+				onFailureCalls += (() => {
+					// Cleanup operations in case an error occurred.
+					if (targetFolder.exists()) {
+						FileUtils.deleteDirectory(targetFolder)
+					}
+				})
 				DBIO.failed(error.get)
 			} else {
 				DBIO.successful(())

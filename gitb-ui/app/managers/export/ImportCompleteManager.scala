@@ -39,9 +39,11 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       ExistingIds.init(),
       ImportTargets.fromImportItems(importItems),
       mutable.Map[ImportItemType, mutable.Map[String, String]](),
-      mutable.Map[Long, mutable.Map[String, Long]]()
+      mutable.Map[Long, mutable.Map[String, Long]](),
+      mutable.ListBuffer[() => _](),
+      mutable.ListBuffer[() => _]()
     )
-    exec(completeDomainImportInternal(exportedDomain, targetDomainId, ctx, canAddOrDeleteDomain).transactionally)
+    exec(completeFileSystemFinalisation(ctx, completeDomainImportInternal(exportedDomain, targetDomainId, ctx, canAddOrDeleteDomain)).transactionally)
   }
 
   private def toImportItemMaps(importItems: List[ImportItem], itemType: ImportItemType): ImportItemMaps = {
@@ -81,6 +83,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
     idMap.get += (xmlId -> dbId)
   }
 
+  @scala.annotation.tailrec
   private def allParentItemsAvailableInDb(importItem: ImportItem, ctx: ImportContext): Boolean = {
     if (importItem.parentItem.isEmpty) {
       // No parent - consider ok.
@@ -390,6 +393,12 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
     val specificationId = item.parentItem.get.targetKey.get.toLong
     // File system operations
     val testSuiteFile = saveTestSuiteFiles(data, item, domainId, specificationId, ctx)
+    ctx.onFailureCalls += (() => {
+      // Cleanup operation in case an error occurred.
+      if (testSuiteFile.exists()) {
+        FileUtils.deleteDirectory(testSuiteFile)
+      }
+    })
     // Process DB operations
     val action = for {
       // Save test suite
@@ -419,19 +428,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       // Update the test case links for the test suite.
       _ <- testSuiteManager.stepUpdateTestSuiteTestCaseLinks(testSuiteId, processTestCasesStep._1)
     } yield testSuiteId
-    action.flatMap(result => {
-      DBIO.successful(result)
-    }).cleanUp(error => {
-      if (error.isDefined) {
-        // Cleanup operations in case an error occurred.
-        if (testSuiteFile.exists()) {
-          FileUtils.deleteDirectory(testSuiteFile)
-        }
-        DBIO.failed(error.get)
-      } else {
-        DBIO.successful(())
-      }
-    })
+    action
   }
 
   def updateTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[_] = {
@@ -480,22 +477,20 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       _ <- testSuiteManager.stepUpdateTestSuiteTestCaseLinks(testSuiteId, processTestCasesStep._1)
     } yield existingTestSuiteFile
     action.flatMap(existingTestSuiteFile => {
-      // Finally, delete the backup folder
-      val existingTestSuiteFolder = new File(RepositoryUtils.getTestSuitesPath(domainId, specificationId), existingTestSuiteFile)
-      if (existingTestSuiteFolder != null && existingTestSuiteFolder.exists()) {
-        FileUtils.deleteDirectory(existingTestSuiteFolder)
-      }
-      DBIO.successful(())
-    }).cleanUp(error => {
-      if (error.isDefined) {
+      ctx.onSuccessCalls += (() => {
+        // Finally, delete the backup folder
+        val existingTestSuiteFolder = new File(RepositoryUtils.getTestSuitesPath(domainId, specificationId), existingTestSuiteFile)
+        if (existingTestSuiteFolder != null && existingTestSuiteFolder.exists()) {
+          FileUtils.deleteDirectory(existingTestSuiteFolder)
+        }
+      })
+      ctx.onFailureCalls += (() => {
         // Cleanup operations in case an error occurred.
         if (testSuiteFile.exists()) {
           FileUtils.deleteDirectory(testSuiteFile)
         }
-        DBIO.failed(error.get)
-      } else {
-        DBIO.successful(())
-      }
+      })
+      DBIO.successful(())
     })
   }
 
@@ -588,8 +583,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       _ <- {
         processRemaining(ImportItemType.Domain, ctx,
           (targetKey: String) => {
-            RepositoryUtils.deleteDomainTestSuiteFolder(targetKey.toLong)
-            conformanceManager.deleteDomainInternal(targetKey.toLong)
+            conformanceManager.deleteDomainInternal(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }
@@ -642,7 +636,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       _ <- {
         processRemaining(ImportItemType.Specification, ctx,
           (targetKey: String) => {
-            conformanceManager.delete(targetKey.toLong)
+            conformanceManager.delete(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }
@@ -799,7 +793,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       _ <- {
         processRemaining(ImportItemType.TestSuite, ctx,
           (targetKey: String) => {
-            conformanceManager.undeployTestSuite(targetKey.toLong)
+            conformanceManager.undeployTestSuite(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }
@@ -824,6 +818,10 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
     ctx.existingIds.map.containsKey(itemType) && ctx.existingIds.map(itemType).contains(key)
   }
 
+  private def completeFileSystemFinalisation(ctx: ImportContext, dbAction: DBIO[_]): DBIO[_] = {
+    dbActionFinalisation(Some(ctx.onSuccessCalls), Some(ctx.onFailureCalls), dbAction)
+  }
+
   def completeCommunityImport(exportedCommunity: com.gitb.xml.export.Community, importSettings: ImportSettings, importItems: List[ImportItem], targetCommunityId: Option[Long], canAddOrDeleteDomain: Boolean, ownUserId: Option[Long]): Unit = {
     val ctx = ImportContext(
       importSettings,
@@ -831,7 +829,9 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       ExistingIds.init(),
       ImportTargets.fromImportItems(importItems),
       mutable.Map[ImportItemType, mutable.Map[String, String]](),
-      mutable.Map[Long, mutable.Map[String, Long]]()
+      mutable.Map[Long, mutable.Map[String, Long]](),
+      mutable.ListBuffer[() => _](),
+      mutable.ListBuffer[() => _]()
     )
     // Load values pertinent to domain to ensure we are modifying items within (for security purposes).
     var targetCommunity: Option[models.Communities] = None
@@ -1004,7 +1004,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
         if (communityId.isDefined) {
           if (exportedCommunity.getConformanceCertificateSettings == null) {
             // Delete
-            conformanceManager.deleteConformanceCertificateSettings(communityId.get.toLong)
+            conformanceManager.deleteConformanceCertificateSettings(communityId.get)
           } else {
             // Update/Add
             var keystoreFile: Option[String] = None
@@ -1025,9 +1025,9 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
                   exportedCommunity.getConformanceCertificateSettings.isAddMessage, exportedCommunity.getConformanceCertificateSettings.isAddResultOverview,
                   exportedCommunity.getConformanceCertificateSettings.isAddTestCases, exportedCommunity.getConformanceCertificateSettings.isAddDetails,
                   exportedCommunity.getConformanceCertificateSettings.isAddSignature, keystoreFile, keystoreType, keystorePassword, keyPassword,
-                  communityId.get.toLong
+                  communityId.get
                 )
-              , true, false
+              , updatePasswords =true, removeKeystore =false
             )
           }
         } else {
@@ -1604,7 +1604,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
         )
       }
     } yield ()
-    exec(dbAction.transactionally)
+    exec(completeFileSystemFinalisation(ctx, dbAction).transactionally)
   }
 
 }

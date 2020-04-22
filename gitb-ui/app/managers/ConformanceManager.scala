@@ -6,11 +6,13 @@ import com.gitb.core.{ActorConfiguration, Configuration}
 import javax.inject.{Inject, Singleton}
 import models.Enums.TestResultStatus
 import models._
+import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{MimeUtil, RepositoryUtils}
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -166,7 +168,9 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 	}
 
 	def deleteSpecification(specId: Long) = {
-		exec(delete(specId).transactionally)
+		val onSuccessCalls = mutable.ListBuffer[() => _]()
+		val action = delete(specId, onSuccessCalls)
+		exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
 	}
 
 	private def getSpecificationById(specId: Long): Specifications = {
@@ -174,31 +178,32 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 		spec
 	}
 
-	def delete(specId: Long) = {
-		testResultManager.updateForDeletedSpecification(specId) andThen
+	def delete(specId: Long, onSuccessCalls: mutable.ListBuffer[() => _]) = {
+		for {
+			ids <- PersistenceSchema.specifications.filter(_.id === specId).map(x => (x.id, x.domain)).result.head
+			_ <- testResultManager.updateForDeletedSpecification(specId)
 			// Delete also actors from the domain (they are now linked only to specifications
-			(for {
-				actorIds <- PersistenceSchema.specificationHasActors.filter(_.specId === specId).map(_.actorId).result
-				_ <- DBIO.seq(actorIds.map(id => actorManager.deleteActor(id)): _*)
-			} yield ()) andThen
-			PersistenceSchema.specificationHasActors.filter(_.specId === specId).delete andThen
-			(for {
-				ids <- PersistenceSchema.testSuites.filter(_.specification === specId).map(_.id).result
-				_ <- DBIO.seq(ids.map(id => undeployTestSuite(id)): _*)
-			} yield ()) andThen
-			PersistenceSchema.conformanceResults.filter(_.spec === specId).delete andThen
-			{
-				RepositoryUtils.deleteSpecificationTestSuiteFolder(getSpecificationById(specId))
+			actorIds <- PersistenceSchema.specificationHasActors.filter(_.specId === specId).map(_.actorId).result
+			_ <- DBIO.seq(actorIds.map(id => actorManager.deleteActor(id)): _*)
+			_ <- PersistenceSchema.conformanceResults.filter(_.spec === specId).delete
+			_ <- PersistenceSchema.specifications.filter(_.id === specId).delete
+			_ <- {
+				onSuccessCalls += (() => {
+					val testSuiteFolder = RepositoryUtils.getTestSuitesPath(ids._2, ids._1)
+					FileUtils.deleteDirectory(testSuiteFolder)
+				})
 				DBIO.successful(())
-			} andThen
-			PersistenceSchema.specifications.filter(_.id === specId).delete
+			}
+		} yield ()
 	}
 
 	def undeployTestSuiteWrapper(testSuiteId: Long) = {
-		exec(undeployTestSuite(testSuiteId).transactionally)
+		val onSuccessCalls = mutable.ListBuffer[() => _]()
+		val action = undeployTestSuite(testSuiteId, onSuccessCalls)
+		exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
 	}
 
-	def undeployTestSuite(testSuiteId: Long) = {
+	def undeployTestSuite(testSuiteId: Long, onSuccessCalls: mutable.ListBuffer[() => _]) = {
 		testResultManager.updateForDeletedTestSuite(testSuiteId) andThen
 			PersistenceSchema.testSuiteHasActors.filter(_.testsuite === testSuiteId).delete andThen
 			PersistenceSchema.conformanceResults.filter(_.testsuite === testSuiteId).delete andThen
@@ -215,7 +220,9 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 			(for {
 				testSuite <- PersistenceSchema.testSuites.filter(_.id === testSuiteId).result.head
 				_ <- {
-					RepositoryUtils.undeployTestSuite(getSpecificationById(testSuite.specification), testSuite.filename)
+					onSuccessCalls += (() => {
+						RepositoryUtils.undeployTestSuite(getSpecificationById(testSuite.specification), testSuite.filename)
+					})
 					DBIO.successful(())
 				}
 			} yield testSuite) andThen
@@ -230,10 +237,10 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 		} yield()).transactionally
 	}
 
-	def deleteSpecificationByDomain(domainId: Long) = {
+	def deleteSpecificationByDomain(domainId: Long, onSuccessCalls: mutable.ListBuffer[() => _]) = {
 		val action = (for {
 			ids <- PersistenceSchema.specifications.filter(_.domain === domainId).map(_.id).result
-			_ <- DBIO.seq(ids.map(id => delete(id)): _*)
+			_ <- DBIO.seq(ids.map(id => delete(id, onSuccessCalls)): _*)
 		} yield ()).transactionally
 		action
 	}
@@ -250,20 +257,28 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 		PersistenceSchema.transactions.filter(_.domain === domainId).delete
 	}
 
-	def deleteDomainInternal(domain: Long): DBIO[_] = {
+	def deleteDomainInternal(domain: Long, onSuccessCalls: ListBuffer[() => _]): DBIO[_] = {
 		deleteActorByDomain(domain) andThen
-			deleteSpecificationByDomain(domain) andThen
+			deleteSpecificationByDomain(domain, onSuccessCalls) andThen
 			deleteTransactionByDomain(domain) andThen
 			testResultManager.updateForDeletedDomain(domain) andThen
 			deleteDomainParameters(domain) andThen
-			PersistenceSchema.domains.filter(_.id === domain).delete
+			PersistenceSchema.domains.filter(_.id === domain).delete andThen
+			{
+				onSuccessCalls += (() => {
+					RepositoryUtils.deleteDomainTestSuiteFolder(domain)
+				})
+				DBIO.successful(())
+			}
 	}
 
 	def deleteDomain(domain: Long) {
+		val onSuccessCalls = mutable.ListBuffer[() => _]()
+		val action = deleteDomainInternal(domain, onSuccessCalls)
 		exec(
-			deleteDomainInternal(domain).transactionally
+			dbActionFinalisation(Some(onSuccessCalls), None, action)
+			.transactionally
 		)
-		RepositoryUtils.deleteDomainTestSuiteFolder(domain)
 	}
 
 	def getSpecifications(ids: Option[List[Long]] = None): List[Specifications] = {
