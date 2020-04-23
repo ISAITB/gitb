@@ -23,7 +23,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class ImportCompleteManager @Inject()(exportManager: ExportManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, actorManager: ActorManager, endpointManager: EndPointManager, parameterManager: ParameterManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, systemManager: SystemManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ImportCompleteManager @Inject()(exportManager: ExportManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, actorManager: ActorManager, endpointManager: EndPointManager, parameterManager: ParameterManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, systemManager: SystemManager, importPreviewManager: ImportPreviewManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private def logger = LoggerFactory.getLogger("ImportCompleteManager")
 
@@ -106,40 +106,60 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
 
   private def processFromArchive[A](itemType: ImportItemType, data: A, itemId: String, ctx: ImportContext, importCallbacks: ImportCallbacks[A]): DBIO[_] = {
     var dbAction: Option[DBIO[_]] = None
-    val importItem = ctx.importItemMaps.sourceMap(itemType).get(itemId)
-    if (importItem.isDefined) {
-      if (importItem.get.itemChoice.get == ImportItemChoice.Proceed) {
-        if (allParentItemsAvailableInDb(importItem.get, ctx)) {
-          if (importItem.get.targetKey.isEmpty) {
-            // Create
-            dbAction = Some(for {
-              newId <- {
-                val result = importCallbacks.fnCreate.apply(data, importItem.get)
-                result
-              }
-              _ <- {
-                // Assign the ID generated for this from the DB. This will be used for FK associations from children.
-                importItem.get.targetKey = Some(newId.toString)
+    if (ctx.importItemMaps.sourceMap.containsKey(itemType)) {
+      /*
+       An import item type might be missing from the map if we have data that exists in the archive but is being forcibly
+       skipped in the import process. An example are users being skipped when SSO is active or when they would represent new
+       users but their email address is not unique.
+       */
+      val importItem = ctx.importItemMaps.sourceMap(itemType).get(itemId)
+      if (importItem.isDefined) {
+        if (importItem.get.itemChoice.get == ImportItemChoice.Proceed) {
+          if (allParentItemsAvailableInDb(importItem.get, ctx)) {
+            if (importItem.get.targetKey.isEmpty) {
+              // Create
+              dbAction = Some(for {
+                newId <- {
+                  val result = importCallbacks.fnCreate.apply(data, importItem.get)
+                  result
+                }
+                _ <- {
+                  // Maintain also a reference of all processed XML IDs to DB IDs (per type)
+                  if (importCallbacks.fnCreatedIdHandle.isDefined) {
+                    // Custom method to handle created IDs.
+                    importCallbacks.fnCreatedIdHandle.get.apply(data, itemId, newId, importItem.get)
+                  } else {
+                    // Default handling methods.
+                    // Assign the ID generated for this from the DB. This will be used for FK associations from children.
+                    importItem.get.targetKey = Some(newId.toString)
+                    // Add to processed ID map..
+                    addIdToProcessedIdMap(itemType, itemId, newId.toString, ctx)
+                  }
+                  // Custom post-create method.
+                  if (importCallbacks.fnPostCreate.isDefined) {
+                    importCallbacks.fnPostCreate.get.apply(data, newId, importItem.get)
+                  }
+                  DBIO.successful(())
+                }
+              } yield newId)
+            } else {
+              // Update - check also to see if this is one of the expected IDs.
+              if (ctx.existingIds.map(itemType).contains(importItem.get.targetKey.get)) {
+                dbAction = Some(importCallbacks.fnUpdate.apply(data, importItem.get.targetKey.get, importItem.get))
                 // Maintain also a reference of all processed XML IDs to DB IDs (per type)
-                if (importCallbacks.fnCreatedIdHandle.isDefined) {
-                  // Custom method to handle created IDs.
-                  importCallbacks.fnCreatedIdHandle.get.apply(data, itemId, newId.toString, importItem.get)
-                } else {
-                  // Default handling method.
-                  addIdToProcessedIdMap(itemType, itemId, newId.toString, ctx)
+                var idMap = ctx.processedIdMap.get(itemType)
+                if (idMap.isEmpty) {
+                  idMap = Some(mutable.Map[String, String]())
+                  ctx.processedIdMap += (itemType -> idMap.get)
                 }
-                // Custom post-create method.
-                if (importCallbacks.fnPostCreate.isDefined) {
-                  importCallbacks.fnPostCreate.get.apply(data, newId.toString, importItem.get)
-                }
-                DBIO.successful(())
+                idMap.get += (itemId -> importItem.get.targetKey.get)
               }
-            } yield newId)
-          } else {
-            // Update - check also to see if this is one of the expected IDs.
+            }
+          }
+        } else if (importItem.get.itemChoice.get == ImportItemChoice.Skip || importItem.get.itemChoice.get == ImportItemChoice.SkipProcessChildren) {
+          if (importItem.get.targetKey.isDefined) {
+            // A skipped update - add it to the processed ID map if it exists in the DB.
             if (ctx.existingIds.map(itemType).contains(importItem.get.targetKey.get)) {
-              dbAction = Some(importCallbacks.fnUpdate.apply(data, importItem.get.targetKey.get, importItem.get))
-              // Maintain also a reference of all processed XML IDs to DB IDs (per type)
               var idMap = ctx.processedIdMap.get(itemType)
               if (idMap.isEmpty) {
                 idMap = Some(mutable.Map[String, String]())
@@ -147,18 +167,6 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
               }
               idMap.get += (itemId -> importItem.get.targetKey.get)
             }
-          }
-        }
-      } else if (importItem.get.itemChoice.get == ImportItemChoice.Skip || importItem.get.itemChoice.get == ImportItemChoice.SkipProcessChildren) {
-        if (importItem.get.targetKey.isDefined) {
-          // A skipped update - add it to the processed ID map if it exists in the DB.
-          if (ctx.existingIds.map(itemType).contains(importItem.get.targetKey.get)) {
-            var idMap = ctx.processedIdMap.get(itemType)
-            if (idMap.isEmpty) {
-              idMap = Some(mutable.Map[String, String]())
-              ctx.processedIdMap += (itemType -> idMap.get)
-            }
-            idMap.get += (itemId -> importItem.get.targetKey.get)
           }
         }
       }
@@ -573,9 +581,16 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
             (data: com.gitb.xml.export.Domain, targetKey: String, item: ImportItem) => {
               conformanceManager.updateDomainInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription))
             },
-            (data: com.gitb.xml.export.Domain, targetKey: String, item: ImportItem) => {
+            (data: com.gitb.xml.export.Domain, targetKey: Any, item: ImportItem) => {
               // Record this in case we need to do a global cleanup.
-              createdDomainId = Some(targetKey.toLong)
+              createdDomainId = Some(targetKey.asInstanceOf[Long])
+              // In case of a failure delete the created domain test suite folder (if one was created later on).
+              ctx.onFailureCalls += (() => {
+                val domainFolder = RepositoryUtils.getDomainTestSuitesPath(createdDomainId.get)
+                if (domainFolder.exists()) {
+                  FileUtils.deleteQuietly(domainFolder)
+                }
+              })
             }
           )
         )
@@ -626,6 +641,16 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
                 },
                 (data: com.gitb.xml.export.Specification, targetKey: String, item: ImportItem) => {
                   specificationManager.updateSpecificationInternal(targetKey.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.isHidden)
+                },
+                (data: com.gitb.xml.export.Specification, targetKey: Any, item: ImportItem) => {
+                  // In case of a failure delete the created domain test suite folder (if one was created later on).
+                  ctx.onFailureCalls += (() => {
+                    val domainId = item.parentItem.get.targetKey.get.toLong
+                    val specificationFolder = RepositoryUtils.getTestSuitesPath(domainId, targetKey.asInstanceOf[Long])
+                    if (specificationFolder.exists()) {
+                      FileUtils.deleteQuietly(specificationFolder)
+                    }
+                  })
                 }
               )
             )
@@ -672,13 +697,13 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
                       }
                       actorManager.updateActor(targetKey.toLong, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, item.parentItem.get.targetKey.get.toLong)
                     },
-                    (data: com.gitb.xml.export.Actor, targetKey: String, item: ImportItem) => {
+                    (data: com.gitb.xml.export.Actor, targetKey: Any, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
                       val specificationId = item.parentItem.get.targetKey.get.toLong
                       if (!ctx.savedSpecificationActors.containsKey(specificationId)) {
                         ctx.savedSpecificationActors += (specificationId -> mutable.Map[String, Long]())
                       }
-                      ctx.savedSpecificationActors(specificationId) += (data.getActorId -> targetKey.toLong)
+                      ctx.savedSpecificationActors(specificationId) += (data.getActorId -> targetKey.asInstanceOf[Long])
                     }
                   )
                 )
@@ -873,7 +898,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
         exec(PersistenceSchema.errorTemplates.filter(_.community === targetCommunityId.get).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.ErrorTemplate) += x.toString)
       }
       // Administrators
-      if (ctx.importTargets.hasAdministrators) {
+      if (!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasAdministrators) {
         exportManager.loadAdministrators(targetCommunityId.get).foreach { x =>
           ctx.existingIds.map(ImportItemType.Administrator) += x.id.toString
         }
@@ -884,7 +909,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
           ctx.existingIds.map(ImportItemType.Organisation) += x.toString
         }
         // Organisation users
-        if (ctx.importTargets.hasOrganisationUsers) {
+        if (!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasOrganisationUsers) {
           exportManager.loadOrganisationUserMap(targetCommunityId.get).map { x =>
             x._2.foreach { user =>
               ctx.existingIds.map(ImportItemType.OrganisationUser) +=  user.id.toString
@@ -936,6 +961,12 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
         }
       }
     }
+    // Load also set of unique email emails to ensure these are unique.
+    var referenceUserEmails = mutable.Set[String]()
+    if (!Configurations.AUTHENTICATION_SSO_ENABLED && (ctx.importTargets.hasAdministrators || ctx.importTargets.hasOrganisationUsers)) {
+      referenceUserEmails = importPreviewManager.loadUserEmailSet()
+    }
+    // If we have users load their emails to ensure we don't end up with duplicates.
     val dbAction = for {
       // Domain
       _ <- {
@@ -990,6 +1021,8 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
             None,
             (data: com.gitb.xml.export.Community, targetKey: String, newId: Any, item: ImportItem) => {
               val ids: (Long, Long) = newId.asInstanceOf[(Long, Long)] // (community ID, admin organisation ID)
+              // Set on import item.
+              item.targetKey = Some(ids._1.toString)
               // Record community ID.
               addIdToProcessedIdMap(ImportItemType.Community, data.getId, ids._1.toString, ctx)
               // Record admin organisation ID.
@@ -1209,13 +1242,23 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
             dbActions += processFromArchive(ImportItemType.Administrator, exportedUser, exportedUser.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.CommunityAdministrator, item: ImportItem) => {
-                  PersistenceSchema.insertUser += toModelAdministrator(data, None, communityAdminOrganisationId.get, ctx.importSettings)
+                  if (!referenceUserEmails.contains(exportedUser.getEmail.toLowerCase)) {
+                    referenceUserEmails += exportedUser.getEmail.toLowerCase
+                    PersistenceSchema.insertUser += toModelAdministrator(data, None, communityAdminOrganisationId.get, ctx.importSettings)
+                  } else {
+                    DBIO.successful(())
+                  }
                 },
                 (data: com.gitb.xml.export.CommunityAdministrator, targetKey: String, item: ImportItem) => {
+                  /*
+                    We don't update the email as this must anyway be already matching (this was how the user was found
+                    to be existing. Not updating the email avoids the need to check that the email is unique with respect
+                    to other users.
+                   */
                   val query = for {
                     user <- PersistenceSchema.users.filter(_.id === targetKey.toLong)
-                  } yield (user.email, user.name, user.password, user.onetimePassword)
-                  query.update(data.getEmail, data.getName, decrypt(ctx.importSettings, data.getPassword), data.isOnetimePassword)
+                  } yield (user.name, user.password, user.onetimePassword)
+                  query.update(data.getName, decrypt(ctx.importSettings, data.getPassword), data.isOnetimePassword)
                 }
               )
             )
@@ -1299,11 +1342,21 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
                 dbActions += processFromArchive(ImportItemType.OrganisationUser, exportedUser, exportedUser.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.OrganisationUser, item: ImportItem) => {
-                      PersistenceSchema.insertUser += toModelOrganisationUser(data, None, toModelUserRole(data.getRole), item.parentItem.get.targetKey.get.toLong, ctx.importSettings)
+                      if (!referenceUserEmails.contains(exportedUser.getEmail.toLowerCase)) {
+                        referenceUserEmails += exportedUser.getEmail.toLowerCase
+                        PersistenceSchema.insertUser += toModelOrganisationUser(data, None, toModelUserRole(data.getRole), item.parentItem.get.targetKey.get.toLong, ctx.importSettings)
+                      } else {
+                        DBIO.successful(())
+                      }
                     },
                     (data: com.gitb.xml.export.OrganisationUser, targetKey: String, item: ImportItem) => {
-                      val q = for { u <- PersistenceSchema.users.filter(_.id === targetKey.toLong) } yield (u.name, u.email, u.password, u.onetimePassword, u.role)
-                      q.update(data.getName, data.getEmail, decrypt(ctx.importSettings, data.getPassword), data.isOnetimePassword, toModelUserRole(data.getRole))
+                      /*
+                        We don't update the email as this must anyway be already matching (this was how the user was found
+                        to be existing. Not updating the email avoids the need to check that the email is unique with respect
+                        to other users.
+                       */
+                      val q = for { u <- PersistenceSchema.users.filter(_.id === targetKey.toLong) } yield (u.name, u.password, u.onetimePassword, u.role)
+                      q.update(data.getName, decrypt(ctx.importSettings, data.getPassword), data.isOnetimePassword, toModelUserRole(data.getRole))
                     }
                   )
                 )

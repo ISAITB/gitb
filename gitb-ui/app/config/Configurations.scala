@@ -33,6 +33,8 @@ object Configurations {
   var TESTBED_CLIENT_URL = ""
 	var TEST_CASE_REPOSITORY_PATH = ""
 
+  var DATA_ARCHIVE_KEY = ""
+
   var EMAIL_ENABLED = false
   var EMAIL_FROM = ""
   var EMAIL_TO: Array[String] = null
@@ -275,6 +277,8 @@ object Configurations {
         INPUT_SANITIZER__PARAMETERS_AS_JSON = sanitizerJsonParameters.toSet
       }
       // Input sanitiser - END
+
+      DATA_ARCHIVE_KEY = fromEnv("DATA_ARCHIVE_KEY", "")
 
       _IS_LOADED = true
     }

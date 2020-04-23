@@ -8,19 +8,19 @@ object ImportCallbacks {
     new ImportCallbacks[A](_fnCreate, _fnUpdate, None, None)
   }
 
-  def set[A](_fnCreate: (A, ImportItem) => DBIO[Any], _fnUpdate: (A, String, ImportItem) => DBIO[_], _fnPostCreate: (A, String, ImportItem) => _): ImportCallbacks[A] = {
+  def set[A](_fnCreate: (A, ImportItem) => DBIO[Any], _fnUpdate: (A, String, ImportItem) => DBIO[_], _fnPostCreate: (A, Any, ImportItem) => _): ImportCallbacks[A] = {
     new ImportCallbacks[A](_fnCreate, _fnUpdate, Some(_fnPostCreate), None)
   }
 
-  def set[A](_fnCreate: (A, ImportItem) => DBIO[Any], _fnUpdate: (A, String, ImportItem) => DBIO[_], _fnPostCreate: Option[(A, String, ImportItem) => _], _fnCreatedIdHandle: (A, String, Any, ImportItem) => _): ImportCallbacks[A] = {
+  def set[A](_fnCreate: (A, ImportItem) => DBIO[Any], _fnUpdate: (A, String, ImportItem) => DBIO[_], _fnPostCreate: Option[(A, Any, ImportItem) => _], _fnCreatedIdHandle: (A, String, Any, ImportItem) => _): ImportCallbacks[A] = {
     new ImportCallbacks[A](_fnCreate, _fnUpdate, _fnPostCreate, Some(_fnCreatedIdHandle))
   }
 
 }
 
-class ImportCallbacks[A](_fnCreate: (A, ImportItem) => DBIO[Any], _fnUpdate: (A, String, ImportItem) => DBIO[_], _fnPostCreate: Option[(A, String, ImportItem) => _], _fnCreatedIdHandle: Option[(A, String, Any, ImportItem) => _]) {
+class ImportCallbacks[A](_fnCreate: (A, ImportItem) => DBIO[Any], _fnUpdate: (A, String, ImportItem) => DBIO[_], _fnPostCreate: Option[(A, Any, ImportItem) => _], _fnCreatedIdHandle: Option[(A, String, Any, ImportItem) => _]) {
   var fnCreate: (A, ImportItem) => DBIO[Any] = _fnCreate
   var fnUpdate: (A, String, ImportItem) => DBIO[_] = _fnUpdate
-  var fnPostCreate: Option[(A, String, ImportItem) => _] = _fnPostCreate
+  var fnPostCreate: Option[(A, Any, ImportItem) => _] = _fnPostCreate
   var fnCreatedIdHandle: Option[(A, String, Any, ImportItem) => _] = _fnCreatedIdHandle
 }

@@ -22,9 +22,25 @@ object RepositoryUtils {
 	private final val logger = LoggerFactory.getLogger("RepositoryUtils")
 
 	private final val TEST_SUITE_ELEMENT_LABEL: String = "testsuite"
-
 	private final val TEST_CASE_ELEMENT_LABEL: String = "testcase"
-	private final val ACTOR_ELEMENT_LABEL: String = "actor"
+	private final val DATA_PATH: String = "data"
+	private final val DATA_PATH_IN: String = "in"
+	private final val DATA_PATH_PROCESSED: String = "processed"
+
+	def getDataRootFolder(): File = {
+		val path = Paths.get(
+			Configurations.TEST_CASE_REPOSITORY_PATH, DATA_PATH
+		)
+		path.toFile
+	}
+
+	def getDataInFolder(): File = {
+		getDataRootFolder().toPath.resolve(DATA_PATH_IN).toFile
+	}
+
+	def getDataProcessedFolder(): File = {
+		getDataRootFolder().toPath.resolve(DATA_PATH_PROCESSED).toFile
+	}
 
 	def getTestSuitesRootFolder(): File = {
 		val path = Paths.get(
@@ -92,18 +108,18 @@ object RepositoryUtils {
 					val newFile = new File(targetFolder, zipEntry.getName)
 
 					if(zipEntry.isDirectory) {
-						logger.info("Creating folder ["+newFile+"]")
+						logger.debug("Creating folder ["+newFile+"]")
 						newFile.mkdirs()
 					} else {
 						if(!newFile.exists) {
 							newFile.getParentFile.mkdirs()
 							newFile.createNewFile()
-							logger.info("Creating new file ["+newFile+"]")
+							logger.debug("Creating new file ["+newFile+"]")
 
 							if(isTestCase(zip, zipEntry)) {
 								val testCase: com.gitb.tdl.TestCase = getTestCase(zip, zipEntry)
 
-								logger.info("File ["+newFile+"] is a test case file")
+								logger.debug("File ["+newFile+"] is a test case file")
 
 								testCasePaths.update(testCase.getId, targetFolder.getParentFile.toURI.relativize(newFile.toURI).getPath)
 							}
@@ -113,9 +129,9 @@ object RepositoryUtils {
 							fos.write(IOUtils.toByteArray(zip.getInputStream(zipEntry)))
 
 							fos.close()
-							logger.info("Wrote ["+newFile+"]")
+							logger.debug("Wrote ["+newFile+"]")
 						} else {
-							logger.info("File ["+newFile+"] is already exist")
+							logger.debug("File ["+newFile+"] is already exist")
 						}
 					}
 			}
@@ -146,7 +162,7 @@ object RepositoryUtils {
 				if(testSuiteEntries.hasNext) {
 					val tdlTestCases = zip.entries().asScala.filter(isTestCase(zip, _)).map(getTestCase(zip, _)).toList
 					val testSuiteEntry = testSuiteEntries.next()
-					logger.info("Test suite ["+testSuiteEntry.getName+"] has test cases ["+tdlTestCases.map(_.getId)+"]")
+					logger.debug("Test suite ["+testSuiteEntry.getName+"] has test cases ["+tdlTestCases.map(_.getId)+"]")
 					val testSuite = {
 						val tdlTestSuite: com.gitb.tdl.TestSuite = getTestSuite(zip, testSuiteEntry)
 						val name: String = tdlTestSuite.getMetadata.getName
@@ -164,8 +180,8 @@ object RepositoryUtils {
 						} else {
 							documentation = None
 						}
-						logger.info("Test suite has tdlActors ["+tdlActors.map(_.getId)+"]")
-						logger.info("Test suite has tdlTestCases ["+tdlTestCaseEntries.map(_.getId)+"]")
+						logger.debug("Test suite has tdlActors ["+tdlActors.map(_.getId)+"]")
+						logger.debug("Test suite has tdlTestCases ["+tdlTestCaseEntries.map(_.getId)+"]")
 
 						val caseObject = TestSuites(0l, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification, fileName, documentation.isDefined, documentation)
 						val actors = tdlActors.map { tdlActor =>

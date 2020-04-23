@@ -5,6 +5,7 @@ import filters.CorsFilter
 import javax.inject.Inject
 import managers.LegalNoticeManager
 import models.{Constants, PublicConfig}
+import org.apache.commons.lang3.StringUtils
 import play.api.mvc._
 import play.api.routing._
 
@@ -14,8 +15,10 @@ class Application @Inject() (webJarAssets: WebJarAssets, systemConfigurationServ
 
   def index() = Action {
     val legalNotice = legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId)
+    var hasDefaultLegalNotice = false
     var legalNoticeContent = ""
-    if (legalNotice.isDefined) {
+    if (legalNotice.isDefined && !StringUtils.isBlank(legalNotice.get.content)) {
+      hasDefaultLegalNotice = true
       legalNoticeContent = legalNotice.get.content
     }
     Ok(views.html.index(webJarAssets,
@@ -24,6 +27,7 @@ class Application @Inject() (webJarAssets: WebJarAssets, systemConfigurationServ
       systemConfigurationService.getLogoPath(),
       systemConfigurationService.getFooterLogoPath(),
       Constants.VersionNumber,
+      hasDefaultLegalNotice,
       legalNoticeContent,
       Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD,
       Configurations.DEMOS_ENABLED,

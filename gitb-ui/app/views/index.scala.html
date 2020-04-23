@@ -74,7 +74,11 @@
 								@if(config.ssoEnabled) {
 									<p>To connect to the Test Bed you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="@config.euLoginUseGuideLink" target="blank">this tutorial</a> to get started.</p>
 								}
-								<p style="margin-bottom: 0px"><b>Privacy note:</b> By connecting you consent to the use of cookies to manage your session. Please refer to our <a href="#" data-toggle="modal" data-target="#legalModal">legal notice</a> for more information.</p>
+								<p style="margin-bottom: 0px"><b>Privacy note:</b> By connecting you consent to the use of cookies to manage your session.
+									@if(config.hasDefaultLegalNotice) {
+										<span>Please refer to our <a href="#" data-toggle="modal" data-target="#legalModal">legal notice</a> for more information.</span>
+									}
+								</p>
 								@if(config.ssoEnabled && config.inMigrationPeriod) {
 									<p style="margin-top: 10px; margin-bottom: 0px"><b>Migration note:</b> If you have been using a functional account to log in click <a id="migrateOption" href="#">here</a> to migrate it to EU Login. Step-by-step instructions are available in <a href="@config.euLoginMigrationGuideLink" target="blank">this guide</a>.</p>
 								}
@@ -92,31 +96,37 @@
 						</div>
 						<div class="col-md-6 version-div">
 							<span class="pull-right">
-								<a href="@config.userGuideLink" target="blank">User guide</a><span class="version-text"> | </span><a href="#" data-toggle="modal" data-target="#legalModal">Legal notice</a><span class="version-text"> | </span><span class="version-text">@config.versionNumber</span>
+								<a href="@config.userGuideLink" target="blank">User guide</a><span class="version-text">
+								@if(config.hasDefaultLegalNotice) {
+									| </span><a href="#" data-toggle="modal" data-target="#legalModal">Legal notice</a><span class="version-text">
+								}
+								| </span><span class="version-text">@config.versionNumber</span>
 							</span>
 						</div>
 					</div>
 				</div>
 			</footer>
 		</div>
-		<!-- Modal -->
-		<div class="modal fade" id="legalModal" role="dialog">
-			<div class="modal-dialog modal-lg">
-				<!-- Modal content-->
-				<div class="modal-content">
-					<div class="modal-header">
-						<h3>Legal Notice</h3>
-					</div>
-					<div class="modal-body">
-						<div id="content">
-							@Html(config.defaultLegalNotice)
+		@if(config.hasDefaultLegalNotice) {
+			<!-- Modal -->
+			<div class="modal fade" id="legalModal" role="dialog">
+				<div class="modal-dialog modal-lg">
+					<!-- Modal content-->
+					<div class="modal-content">
+						<div class="modal-header">
+							<h3>Legal Notice</h3>
 						</div>
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						<div class="modal-body">
+							<div id="content">
+								@Html(config.defaultLegalNotice)
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+						</div>
 					</div>
 				</div>
 			</div>
-		</div>
+		}
 	</body>
 </html>

@@ -1,15 +1,25 @@
 package managers.export
 
 import java.io.File
+import java.nio.file.{Files, Path, Paths}
 
+import com.gitb.utils.XMLUtils
+import com.gitb.xml.export.Export
+import config.Configurations
+import controllers.util.ResponseConstructor
+import exceptions.ErrorCodes
 import javax.inject.{Inject, Singleton}
+import javax.xml.transform.stream.StreamSource
 import managers._
 import models.Enums.LabelType.LabelType
 import models.Enums.{ImportItemMatch, ImportItemType, LabelType}
 import models._
-import org.apache.commons.lang3.StringUtils
+import org.apache.commons.io.FileUtils
+import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
+import org.slf4j.LoggerFactory
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
+import utils.{ClamAVClient, JsonUtil, ZipArchiver}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -20,6 +30,8 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
   import dbConfig.profile.api._
 
   import scala.collection.JavaConversions._
+
+  private val logger = LoggerFactory.getLogger(classOf[ImportPreviewManager])
 
   def getTempFolder(): File = {
     new File("/tmp")
@@ -254,6 +266,15 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     (DomainImportInfo(referenceActorEndpointMap, referenceEndpointParameterMap, referenceActorToSpecificationMap, referenceEndpointParameterIdMap, actorXmlIdToImportItemMap), importItemDomain)
   }
 
+  private [export] def loadUserEmailSet(): mutable.Set[String] = {
+    val emails = mutable.Set[String]()
+    exec(PersistenceSchema.users.map(x => x.email).result).foreach { email =>
+      if (email != null) {
+        emails += email.toLowerCase
+      }
+    }
+    emails
+  }
 
   def previewDomainImport(exportedDomain: com.gitb.xml.export.Domain, targetDomainId: Option[Long]): ImportItem = {
     previewDomainImportInternal(exportedDomain, targetDomainId)._2
@@ -271,13 +292,14 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     }
     val importTargets = ImportTargets.fromCommunity(exportedCommunity)
     // Process first domain and get back reference maps.
-    var domainImportInfo: DomainImportInfo = null
-    var importItemDomain: Option[ImportItem] = None
+    var targetDomainId: Option[Long] = None
     if (targetCommunity.isDefined) {
-      val domainImportResult = previewDomainImportInternal(exportedCommunity.getDomain, targetCommunity.get.domain)
-      domainImportInfo = domainImportResult._1
-      importItemDomain = Some(domainImportResult._2)
+      targetDomainId = targetCommunity.get.domain
     }
+    val domainImportResult = previewDomainImportInternal(exportedCommunity.getDomain, targetDomainId)
+    val domainImportInfo = domainImportResult._1
+    val importItemDomain = Some(domainImportResult._2)
+
     var targetAdministratorsMap = mutable.Map[String, models.Users]()
     var targetOrganisationPropertyMap = mutable.Map[String, models.OrganisationParameters]()
     var targetOrganisationPropertyIdMap = mutable.Map[Long, models.OrganisationParameters]()
@@ -298,6 +320,11 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     var importItemMapOrganisation = mutable.Map[String, ImportItem]()
     var importItemMapSystem = mutable.Map[String, ImportItem]()
     var importItemMapStatement = mutable.Map[String, ImportItem]()
+    var referenceUserEmails = mutable.Set[String]()
+    // Load user emails for uniqueness checks.
+    if (!Configurations.AUTHENTICATION_SSO_ENABLED && (importTargets.hasAdministrators || importTargets.hasOrganisationUsers)) {
+      referenceUserEmails = loadUserEmailSet()
+    }
     if (targetCommunity.isDefined) {
       importItemCommunity = new ImportItem(Some(targetCommunity.get.fullname), ImportItemType.Community, ImportItemMatch.Both, Some(targetCommunity.get.id.toString), Some(exportedCommunity.getId))
       // Load data.
@@ -400,7 +427,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
       importItemCommunity = new ImportItem(Some(exportedCommunity.getFullName), ImportItemType.Community, ImportItemMatch.ArchiveOnly, None, Some(exportedCommunity.getId))
     }
     // Administrators.
-    if (importTargets.hasAdministrators) {
+    if (importTargets.hasAdministrators && !Configurations.AUTHENTICATION_SSO_ENABLED) {
       exportedCommunity.getAdministrators.getAdministrator.foreach { exportedAdministrator =>
         var targetAdministrator: Option[models.Users] = None
         if (targetCommunity.isDefined) {
@@ -409,7 +436,10 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         if (targetAdministrator.isDefined) {
           new ImportItem(Some(targetAdministrator.get.name), ImportItemType.Administrator, ImportItemMatch.Both, Some(targetAdministrator.get.id.toString), Some(exportedAdministrator.getId), importItemCommunity)
         } else {
-          new ImportItem(Some(exportedAdministrator.getName), ImportItemType.Administrator, ImportItemMatch.ArchiveOnly, None, Some(exportedAdministrator.getId), importItemCommunity)
+          if (!referenceUserEmails.contains(exportedAdministrator.getEmail.toLowerCase)) {
+            new ImportItem(Some(exportedAdministrator.getName), ImportItemType.Administrator, ImportItemMatch.ArchiveOnly, None, Some(exportedAdministrator.getId), importItemCommunity)
+            referenceUserEmails += exportedAdministrator.getEmail.toLowerCase
+          }
         }
       }
     }
@@ -546,7 +576,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
           importItemOrganisation = new ImportItem(Some(exportedOrganisation.getFullName), ImportItemType.Organisation, ImportItemMatch.ArchiveOnly, None, Some(exportedOrganisation.getId), importItemCommunity)
         }
         // Users.
-        if (exportedOrganisation.getUsers != null) {
+        if (!Configurations.AUTHENTICATION_SSO_ENABLED && exportedOrganisation.getUsers != null) {
           exportedOrganisation.getUsers.getUser.foreach { exportedUser =>
             var targetUser: Option[models.Users] = None
             if (targetOrganisation.isDefined && targetOrganisationUserMap.containsKey(targetOrganisation.get.id)) {
@@ -555,7 +585,10 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
             if (targetUser.isDefined) {
               new ImportItem(Some(targetUser.get.name), ImportItemType.OrganisationUser, ImportItemMatch.Both, Some(targetUser.get.id.toString), Some(exportedUser.getId), importItemOrganisation)
             } else {
-              new ImportItem(Some(exportedUser.getName), ImportItemType.OrganisationUser, ImportItemMatch.ArchiveOnly, None, Some(exportedUser.getId), importItemOrganisation)
+              if (!referenceUserEmails.contains(exportedUser.getEmail.toLowerCase)) {
+                referenceUserEmails += exportedUser.getEmail.toLowerCase
+                new ImportItem(Some(exportedUser.getName), ImportItemType.OrganisationUser, ImportItemMatch.ArchiveOnly, None, Some(exportedUser.getId), importItemOrganisation)
+              }
             }
           }
         }
@@ -747,6 +780,128 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
       }
     }
     (importItemCommunity, importItemDomain)
+  }
+
+  def prepareImportPreview(archiveData: Array[Byte], importSettings: ImportSettings, requireDomain: Boolean, requireCommunity: Boolean): (Option[(Int, String)], Option[Export], Option[String], Option[Path]) = {
+    var errorInformation: Option[(Int, String)] = None
+    var exportData: Option[Export] = None
+    var pendingImportId: Option[String] = None
+    var tempFolder: Option[Path] = None
+    if (importSettings.encryptionKey.isEmpty) {
+      errorInformation = Some((ErrorCodes.INVALID_REQUEST, "The archive encryption key was missing."))
+    }
+    if (errorInformation.isEmpty) {
+      // Get import file.
+      if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
+        val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+        val scanResult = virusScanner.scan(archiveData)
+        if (!ClamAVClient.isCleanReply(scanResult)) {
+          errorInformation = Some((ErrorCodes.VIRUS_FOUND, "Archive failed virus scan."))
+        }
+      }
+      if (errorInformation.isEmpty) {
+        val importFileName = "export_"+RandomStringUtils.random(10, false, true)+".zip"
+        pendingImportId = Some(RandomStringUtils.random(10, false, true))
+        val zipFile = Paths.get(
+          getPendingFolder().getAbsolutePath,
+          pendingImportId.get,
+          importFileName
+        )
+        tempFolder = Some(zipFile.getParent)
+        tempFolder.get.toFile.mkdirs()
+        var deleteUploadFolder = false
+        try {
+          // Write file.
+          FileUtils.writeByteArrayToFile(zipFile.toFile, archiveData)
+          // Extract the XML document.
+          var extractedFiles: java.util.Map[String, Path] = null
+          try {
+            extractedFiles = new ZipArchiver(zipFile, zipFile.getParent, importSettings.encryptionKey.get.toCharArray).unzip()
+          } catch {
+            case e: Exception => {
+              deleteUploadFolder = true
+              logger.warn("Unable to extract data archive", e)
+              errorInformation = Some((ErrorCodes.INVALID_REQUEST, "The provided archive could not be successfully extracted."))
+            }
+          } finally {
+            // We don't need the ZIP archive anymore.
+            FileUtils.deleteQuietly(zipFile.toFile)
+          }
+          if (errorInformation.isEmpty) {
+            if (extractedFiles.size() != 1) {
+              deleteUploadFolder = true
+              errorInformation = Some((ErrorCodes.INVALID_REQUEST, "The provided archive must contain a single data file."))
+            }
+            if (errorInformation.isEmpty) {
+              val xmlFile: Path = extractedFiles.values().head
+              // XSD validation
+              try {
+                XMLUtils.validateAgainstSchema(Files.newInputStream(xmlFile), Thread.currentThread().getContextClassLoader.getResourceAsStream("schema/export/gitb_export.xsd"))
+              } catch {
+                case e: Exception => {
+                  deleteUploadFolder = true
+                  logger.warn("Validation failure for uploaded import file", e)
+                  errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided data archive failed validation. Ensure the file is not tampered and that it matches the current Test Bed version [" + Constants.VersionNumber + "].")
+                }
+              }
+              if (errorInformation.isEmpty) {
+                exportData = Some(XMLUtils.unmarshal(classOf[com.gitb.xml.export.Export], new StreamSource(Files.newInputStream(xmlFile))))
+                if (requireDomain) {
+                  if (exportData.get.getDomains != null && exportData.get.getDomains.getDomain.nonEmpty) {
+                    if (exportData.get.getDomains.getDomain.size() > 1) {
+                      deleteUploadFolder = true
+                      errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive includes multiple domains.")
+                    }
+                  } else {
+                    deleteUploadFolder = true
+                    errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive does not include a domain to process.")
+                  }
+                } else if (requireCommunity) {
+                  if (exportData.get.getCommunities != null && exportData.get.getCommunities.getCommunity.nonEmpty) {
+                    if (exportData.get.getCommunities.getCommunity.size() > 1) {
+                      deleteUploadFolder = true
+                      errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive includes multiple communities.")
+                    }
+                  } else {
+                    deleteUploadFolder = true
+                    errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive does not include a community to process.")
+                  }
+                }
+              }
+            }
+          }
+        } catch {
+          case e: Exception => {
+            deleteUploadFolder = true
+            logger.error("An unexpected error occurred while processing the provided archive.", e)
+            errorInformation = Some(ErrorCodes.INVALID_REQUEST, "An error occurred while processing the provided archive.")
+          }
+        } finally {
+          if (deleteUploadFolder && tempFolder.isDefined) {
+            FileUtils.deleteQuietly(tempFolder.get.toFile)
+          }
+        }
+      }
+    }
+    (errorInformation, exportData, pendingImportId, tempFolder)
+  }
+
+  def getPendingImportFile(folder: Path, pendingImportId: String): Option[File] = {
+    if (Files.exists(folder) && Files.isDirectory(folder)) {
+      val files = folder.toFile.listFiles()
+      if (files != null && files.nonEmpty) {
+        files.foreach { file =>
+          if (Files.isRegularFile(file.toPath)) {
+            val fileName = file.getName.toLowerCase
+            if (fileName.endsWith(".xml")) {
+              return Some(file)
+            }
+          }
+        }
+      }
+    }
+    logger.warn("No export file found for pending import ID ["+pendingImportId+"]")
+    None
   }
 
 }
