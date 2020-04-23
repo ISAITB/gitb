@@ -24,15 +24,23 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
 
   import dbConfig.profile.api._
 
-  private def encryptText(value: Option[String], encryptionKey: Option[String]): String = {
+  private def encryptText(value: Option[String], isAlreadyEncrypted: Boolean, encryptionKey: Option[String]): String = {
     if (value.isDefined) {
       if (encryptionKey.isEmpty) {
         throw new IllegalArgumentException("No encryption key was provided to encrypt sensitive properties")
       }
-      MimeUtil.encryptString(value.get, encryptionKey.get.toCharArray)
+      var valueToProcess = value.get
+      if (isAlreadyEncrypted) {
+        valueToProcess = MimeUtil.decryptString(valueToProcess)
+      }
+      MimeUtil.encryptString(valueToProcess, encryptionKey.get.toCharArray)
     } else {
       null
     }
+  }
+
+  private def encryptText(value: Option[String], encryptionKey: Option[String]): String = {
+    encryptText(value, isAlreadyEncrypted = false, encryptionKey)
   }
 
   private def propertyTypeForExport(modelType: String): PropertyType = {
@@ -622,8 +630,9 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
           && certificateSettings.get.keystoreFile.isDefined) {
           communityData.getConformanceCertificateSettings.setSignature(new SignatureSettings)
           communityData.getConformanceCertificateSettings.getSignature.setKeystore(certificateSettings.get.keystoreFile.get)
-          communityData.getConformanceCertificateSettings.getSignature.setKeyPassword(encryptText(certificateSettings.get.keyPassword, exportSettings.encryptionKey))
-          communityData.getConformanceCertificateSettings.getSignature.setKeystorePassword(encryptText(certificateSettings.get.keystorePassword, exportSettings.encryptionKey))
+          // These values are stored encrypted using the master password that is unique per instance.
+          communityData.getConformanceCertificateSettings.getSignature.setKeyPassword(encryptText(certificateSettings.get.keyPassword, isAlreadyEncrypted = true, exportSettings.encryptionKey))
+          communityData.getConformanceCertificateSettings.getSignature.setKeystorePassword(encryptText(certificateSettings.get.keystorePassword, isAlreadyEncrypted = true, exportSettings.encryptionKey))
           certificateSettings.get.keystoreType.get match {
             case "PKCS_12" => communityData.getConformanceCertificateSettings.getSignature.setKeystoreType(KeystoreType.PKCS_12)
             case "JCEKS" => communityData.getConformanceCertificateSettings.getSignature.setKeystoreType(KeystoreType.JCEKS)
