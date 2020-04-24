@@ -11,7 +11,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import persistence.cache.TokenCache
 import persistence.{AccountManager, AuthenticationManager}
 import play.api.mvc._
-import utils.JsonUtil
+import utils.{JsonUtil, RepositoryUtils}
 
 class AuthenticationService @Inject() (accountManager: AccountManager, authManager: AuthenticationManager, authorizationManager: AuthorizationManager, playSessionStore: PlaySessionStore, userManager: UserManager) extends Controller {
 
@@ -70,6 +70,7 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
     val userId = ParameterExtractor.requiredBodyParameter(request, Parameters.ID).toLong
     authorizationManager.canSelectFunctionalAccount(request, userId)
     val tokens = authManager.generateTokens(userId)
+    disableDataBootstrap()
     ResponseConstructor.constructOauthResponse(tokens)
   }
 
@@ -103,6 +104,7 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
     //user found
     if (result.isDefined) {
       val tokens = authManager.generateTokens(result.get.id)
+      disableDataBootstrap()
       ResponseConstructor.constructOauthResponse(tokens)
     }
     //no user with given credentials
@@ -188,6 +190,12 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
       ResponseConstructor.constructEmptyResponse.withNewSession
     } else {
       ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  private def disableDataBootstrap() = {
+    if (Configurations.DATA_WEB_INIT_ENABLED) {
+      RepositoryUtils.createDataLockFile()
     }
   }
 }

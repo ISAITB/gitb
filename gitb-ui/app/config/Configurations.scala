@@ -33,8 +33,6 @@ object Configurations {
   var TESTBED_CLIENT_URL = ""
 	var TEST_CASE_REPOSITORY_PATH = ""
 
-  var DATA_ARCHIVE_KEY = ""
-
   var EMAIL_ENABLED = false
   var EMAIL_FROM = ""
   var EMAIL_TO: Array[String] = null
@@ -112,6 +110,9 @@ object Configurations {
   var INPUT_SANITIZER__PARAMETERS_TO_SKIP:Set[String] = _
   var INPUT_SANITIZER__PARAMETERS_AS_JSON:Set[String] = _
 
+  var DATA_ARCHIVE_KEY = ""
+  var DATA_WEB_INIT_ENABLED = false
+
   def loadConfigurations() = {
     if (!_IS_LOADED) {
       //Load configuration file
@@ -133,7 +134,7 @@ object Configurations {
       AUTHENTICATION_SESSION_MAX_IDLE_TIME = fromEnv("AUTHENTICATION_SESSION_MAX_IDLE_TIME", conf.getString("authentication.session.maxIdleTime")).toInt
       AUTHENTICATION_SESSION_MAX_TOTAL_TIME = fromEnv("AUTHENTICATION_SESSION_MAX_TOTAL_TIME", conf.getString("authentication.session.maxTotalTime")).toInt
       TOKEN_LENGTH = conf.getInt("token.length")
-      SERVER_REQUEST_TIMEOUT_IN_SECONDS = conf.getInt("server.request.timeout.seconds")
+      SERVER_REQUEST_TIMEOUT_IN_SECONDS = fromEnv("SERVER_REQUEST_TIMEOUT_IN_SECONDS", conf.getString("server.request.timeout.seconds")).toInt
       TESTBED_SERVICE_URL = conf.getString("testbed.service.url")
       TESTBED_CLIENT_URL  = conf.getString("testbed.client.url")
 
@@ -279,6 +280,7 @@ object Configurations {
       // Input sanitiser - END
 
       DATA_ARCHIVE_KEY = fromEnv("DATA_ARCHIVE_KEY", "")
+      DATA_WEB_INIT_ENABLED = fromEnv("DATA_WEB_INIT_ENABLED", "false").toBoolean
 
       _IS_LOADED = true
     }

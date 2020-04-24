@@ -15,6 +15,7 @@ import persistence.AccountManager
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.Files
 import play.api.mvc.{AnyContent, MultipartFormData}
+import utils.RepositoryUtils
 
 object AuthorizationManager {
   val AUTHORIZATION_OK = "AUTH_OK"
@@ -1177,6 +1178,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canManageDomain(request: RequestWithAttributes[_], domainId: Long):Boolean = {
     canManageDomain(request, getUser(getRequestUserId(request)), domainId)
+  }
+
+  def canApplySandboxDataMulti(request: RequestWithAttributes[MultipartFormData[Files.TemporaryFile]]): Boolean = {
+    setAuthResult(request, Configurations.DATA_WEB_INIT_ENABLED && !RepositoryUtils.getDataLockFile().exists(), "Web-based data initialisation is not enabled")
   }
 
   private def isCommunityAdmin(userInfo: User): Boolean = {

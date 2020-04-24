@@ -8,6 +8,7 @@ import models.{Constants, PublicConfig}
 import org.apache.commons.lang3.StringUtils
 import play.api.mvc._
 import play.api.routing._
+import utils.RepositoryUtils
 
 import scala.collection.mutable.ListBuffer
 
@@ -21,6 +22,7 @@ class Application @Inject() (webJarAssets: WebJarAssets, systemConfigurationServ
       hasDefaultLegalNotice = true
       legalNoticeContent = legalNotice.get.content
     }
+    val enableWebInit = Configurations.DATA_WEB_INIT_ENABLED && !RepositoryUtils.getDataLockFile().exists()
     Ok(views.html.index(webJarAssets,
       new PublicConfig(
       Configurations.AUTHENTICATION_SSO_ENABLED,
@@ -35,7 +37,8 @@ class Application @Inject() (webJarAssets: WebJarAssets, systemConfigurationServ
       Configurations.REGISTRATION_ENABLED,
       Configurations.GUIDES_EULOGIN_USE,
       Configurations.GUIDES_EULOGIN_MIGRATION,
-      Configurations.AUTHENTICATION_COOKIE_PATH
+      Configurations.AUTHENTICATION_COOKIE_PATH,
+      enableWebInit
     )))
   }
 

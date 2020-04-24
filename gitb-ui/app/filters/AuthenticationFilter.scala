@@ -98,6 +98,7 @@ class AuthenticationFilter @Inject() (implicit val mat: Materializer, accountMan
       request.path.startsWith("/sso/") ||
       request.path.startsWith("/oauth/") ||
       request.path.startsWith("/theme/") ||
+      request.path.equals("/initdata") ||
       //public assets
       request.path.startsWith("/assets/") ||
       request.path.startsWith("/webjars/") ||

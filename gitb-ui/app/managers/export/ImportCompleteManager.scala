@@ -847,6 +847,15 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
     dbActionFinalisation(Some(ctx.onSuccessCalls), Some(ctx.onFailureCalls), dbAction)
   }
 
+  private def prepareCertificateSettingKey(archiveValue: String, importSettings: ImportSettings): Option[String] = {
+    if (archiveValue != null) {
+      // Decrypt using archive password and then encrypt for local storage
+      Some(MimeUtil.encryptString(decrypt(importSettings, archiveValue)))
+    } else {
+      None
+    }
+  }
+
   def completeCommunityImport(exportedCommunity: com.gitb.xml.export.Community, importSettings: ImportSettings, importItems: List[ImportItem], targetCommunityId: Option[Long], canAddOrDeleteDomain: Boolean, ownUserId: Option[Long]): Unit = {
     val ctx = ImportContext(
       importSettings,
@@ -1049,8 +1058,8 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
               if (exportedCommunity.getConformanceCertificateSettings.getSignature.getKeystoreType != null) {
                 keystoreType = Some(exportedCommunity.getConformanceCertificateSettings.getSignature.getKeystoreType.value())
               }
-              keystorePassword = Option(exportedCommunity.getConformanceCertificateSettings.getSignature.getKeystorePassword)
-              keyPassword = Option(exportedCommunity.getConformanceCertificateSettings.getSignature.getKeyPassword)
+              keystorePassword = prepareCertificateSettingKey(exportedCommunity.getConformanceCertificateSettings.getSignature.getKeystorePassword, importSettings)
+              keyPassword = prepareCertificateSettingKey(exportedCommunity.getConformanceCertificateSettings.getSignature.getKeyPassword, importSettings)
             }
             conformanceManager.updateConformanceCertificateSettingsInternal(
                 models.ConformanceCertificates(
@@ -1658,6 +1667,79 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       }
     } yield ()
     exec(completeFileSystemFinalisation(ctx, dbAction).transactionally)
+  }
+
+  def importSandboxData(archive: File, archiveKey: String): (Boolean, Option[String]) = {
+    var processingComplete = false
+    var errorMessage: Option[String] = None
+    logger.info("Processing data archive ["+archive.getName+"]")
+    val importSettings = new ImportSettings()
+    importSettings.encryptionKey = Some(archiveKey)
+    var archiveData = FileUtils.readFileToByteArray(archive)
+    val preparationResult = importPreviewManager.prepareImportPreview(archiveData, importSettings, requireDomain = false, requireCommunity = false)
+    archiveData = null // GC
+    try {
+      if (preparationResult._1.isDefined) {
+        errorMessage = Some(preparationResult._1.get._2)
+        logger.warn("Unable to process data archive ["+archive.getName+"]: " + preparationResult._1.get._2)
+      } else {
+        if (preparationResult._2.get.getCommunities != null && !preparationResult._2.get.getCommunities.getCommunity.isEmpty) {
+          // Community import.
+          val exportedCommunity = preparationResult._2.get.getCommunities.getCommunity.get(0)
+          // Step 1 - prepare import.
+          var importItems: List[ImportItem] = null
+          val previewResult = importPreviewManager.previewCommunityImport(exportedCommunity, None)
+          if (previewResult._2.isDefined) {
+            importItems = List(previewResult._2.get, previewResult._1)
+          } else {
+            importItems = List(previewResult._1)
+          }
+          // Set all import items to proceed.
+          approveImportItems(importItems)
+          // Step 2 - Import.
+          importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
+          completeCommunityImport(exportedCommunity, importSettings, importItems, None, canAddOrDeleteDomain = true, None)
+          // Avoid processing this archive again.
+          processingComplete = true
+        } else if (preparationResult._2.get.getDomains != null && !preparationResult._2.get.getDomains.getDomain.isEmpty) {
+          // Domain import.
+          val exportedDomain = preparationResult._2.get.getDomains.getDomain.get(0)
+          // Step 1 - prepare import.
+          val importItems = List(importPreviewManager.previewDomainImport(exportedDomain, None))
+          // Set all import items to proceed.
+          approveImportItems(importItems)
+          // Step 2 - Import.
+          importSettings.dataFilePath = Some(importPreviewManager.getPendingImportFile(preparationResult._4.get, preparationResult._3.get).get.toPath)
+          completeDomainImport(exportedDomain, importSettings, importItems, None, canAddOrDeleteDomain = true)
+          // Avoid processing this archive again.
+          processingComplete = true
+        } else {
+          errorMessage = Some("Provided data archive is empty")
+          logger.warn(errorMessage.get)
+        }
+      }
+    } catch {
+      case e:Exception => {
+        logger.warn("Unexpected exception while processing data archive ["+archive.getName+"]", e)
+      }
+    } finally {
+      if (preparationResult._4.isDefined) {
+        FileUtils.deleteQuietly(preparationResult._4.get.toFile)
+      }
+    }
+    logger.info("Finished processing data archive ["+archive.getName+"]")
+    (processingComplete, errorMessage)
+  }
+
+  private def approveImportItems(items: List[ImportItem]): Unit = {
+    items.foreach { item =>
+      if (item.itemChoice.isEmpty) {
+        item.itemChoice = Some(ImportItemChoice.Proceed)
+        if (item.childrenItems.nonEmpty) {
+          approveImportItems(item.childrenItems.toList)
+        }
+      }
+    }
   }
 
 }

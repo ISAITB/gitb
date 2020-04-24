@@ -26,6 +26,9 @@
 		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("jquery.min.js"))'></script>
 		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("bootstrap.min.js"))'></script>
 		<script type='text/javascript' src='@routes.Assets.at("components/gitb-cookie-cleanup.js")?v=@config.versionNumber'></script>
+		@if(config.initialSandboxRun) {
+		<script type='text/javascript' src='@routes.Assets.at("components/gitb-init-sandbox.js")?v=@config.versionNumber'></script>
+		}
 	</head>
 	<body class="sticky-menu-active">
 		<div id="cp-div" style="display:none">@config.cookiePath</div>
@@ -108,7 +111,7 @@
 			</footer>
 		</div>
 		@if(config.hasDefaultLegalNotice) {
-			<!-- Modal -->
+			<!-- Legal notice modal -->
 			<div class="modal fade" id="legalModal" role="dialog">
 				<div class="modal-dialog modal-lg">
 					<!-- Modal content-->
@@ -124,6 +127,55 @@
 						<div class="modal-footer">
 							<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
 						</div>
+					</div>
+				</div>
+			</div>
+		}
+		@if(config.initialSandboxRun) {
+			<!-- Legal notice modal -->
+			<div class="modal fade" id="sandboxModal" role="dialog">
+				<div class="modal-dialog modal-lg">
+					<!-- Modal content-->
+					<div class="modal-content">
+						<div class="modal-header">
+							<h3>Initial setup</h3>
+						</div>
+						<form id="initForm" enctype="multipart/form-data" class="form-horizontal">
+							<div class="modal-body">
+								<div class="bg-info div-rounded div-padded bottom-margin">
+									<span>Please provide the data archive and its password to initialise the Test Bed's configuration. If you would prefer to proceed with an empty installation close this dialog and make an initial login.</span>
+								</div>
+								<div id="initFormAlerts"></div>
+								<div class="form-group">
+									<label class="col-xs-3 control-label">* Data archive:</label>
+									<div class="col-xs-7">
+										<div class="input-group">
+											<div class="input-group-btn">
+												<button id="fileInputButton" class="btn btn-default" type="button"><i class="fa fa-folder-open-o"></i></button>
+											</div>
+											<input id="fileInputText" type="text" class="form-control clickable" placeholder="Select data archive ..." readonly="readonly"/>
+										</div>
+										<input id="fileInputControl" name="file" type="file" style="display: none" />
+									</div>
+									<div class="form-control-static"><span data-toggle="tooltip" class="check" title="The archive containing the data to import."><i class="fa fa-question-circle"></i></span></div>
+								</div>
+								<div class="form-group">
+									<label class="col-xs-3 control-label" for="encryptionPassword">* Archive password:</label>
+									<div class="col-xs-6 inline-checkbox-container">
+										<input id="encryptionPasswordVisible" name="passwordVisible" type="text" class="form-control"/>
+										<input id="encryptionPassword" name="passwordHidden" type="password" class="form-control"/>
+										<label class="inline-checkbox">
+											<input id="encryptionPasswordCheck" type="checkbox" class="checkinput">Show
+											<div class="inline-tooltip"><div class="check"><span data-toggle="tooltip" class="check" title="Provide the password that was used to encrypt the data archive."><i class="fa fa-question-circle"></i></span></div></div>
+										</label>
+									</div>
+								</div>
+							</div>
+							<div class="modal-footer">
+								<button id="buttonImport" type="submit" class="btn btn-default"><span id="initDataSpinner" class="tab"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Import archive</button>
+								<button id="buttonNoImport" type="button" class="btn btn-default">Close</button>
+							</div>
+						</form>
 					</div>
 				</div>
 			</div>

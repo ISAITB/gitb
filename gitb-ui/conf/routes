@@ -251,6 +251,7 @@ POST    /domains/import/preview/:id                         @controllers.Reposit
 POST    /domains/import/cancel/:id                          @controllers.RepositoryService.cancelDomainImport(id: Long)
 POST    /domains/import/confirm/:id                         @controllers.RepositoryService.confirmDomainImportCommunityAdmin(id: Long)
 POST    /domains/import/confirm/admin/:id                   @controllers.RepositoryService.confirmDomainImportTestBedAdmin(id: Long)
+POST    /initdata                                           @controllers.RepositoryService.applySandboxData
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

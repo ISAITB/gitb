@@ -26,12 +26,27 @@ object RepositoryUtils {
 	private final val DATA_PATH: String = "data"
 	private final val DATA_PATH_IN: String = "in"
 	private final val DATA_PATH_PROCESSED: String = "processed"
+	private final val DATA_PATH_LOCK: String = "data.lock"
 
 	def getDataRootFolder(): File = {
 		val path = Paths.get(
 			Configurations.TEST_CASE_REPOSITORY_PATH, DATA_PATH
 		)
 		path.toFile
+	}
+
+	def createDataLockFile(): Boolean = {
+		val lockFile = RepositoryUtils.getDataLockFile()
+		if (!lockFile.exists()) {
+			lockFile.getParentFile.mkdirs()
+			lockFile.createNewFile()
+		} else {
+			false
+		}
+	}
+
+	def getDataLockFile(): File = {
+		getDataRootFolder().toPath.resolve(DATA_PATH_LOCK).toFile
 	}
 
 	def getDataInFolder(): File = {

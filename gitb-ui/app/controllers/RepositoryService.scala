@@ -487,4 +487,37 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     confirmCommunityImportInternal(request, communityId, canAddOrDeleteDomain = false)
   }
 
+  def applySandboxData() = AuthorizedAction(parse.multipartFormData) { request =>
+    authorizationManager.canApplySandboxDataMulti(request)
+    var response:Result = null
+    val archivePassword = ParameterExtractor.requiredBodyParameterMulti(request, Parameters.PASSWORD)
+    request.body.file(Parameters.FILE) match {
+      case Some(archive) => {
+        val archiveFile = archive.ref.file
+        try {
+          val importResult = importCompleteManager.importSandboxData(archiveFile, archivePassword)
+          if (importResult._1) {
+            // Successful - prevent other imports to take place and return
+            RepositoryUtils.createDataLockFile()
+            response = ResponseConstructor.constructEmptyResponse
+          } else {
+            // Unsuccessful.
+            var message: Option[String] = None
+            if (importResult._2.isDefined) {
+              message = importResult._2
+            } else {
+              message = Some("An error occurred while processing the archive")
+            }
+            response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, message.get)
+          }
+        } finally {
+          FileUtils.deleteQuietly(archiveFile)
+        }
+      }
+      case None =>
+        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + Parameters.FILE + "] parameter is missing.")
+    }
+    response
+  }
+
 }
