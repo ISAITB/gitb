@@ -14,7 +14,7 @@ import managers.{ReportManager, SystemConfigurationManager, TestResultManager, T
 import models.Constants
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.RandomStringUtils
-import play.api.{Application, Logger}
+import play.api.Logger
 import play.api.inject.ApplicationLifecycle
 import utils.{RepositoryUtils, TimeUtil}
 
@@ -22,7 +22,7 @@ import scala.concurrent.duration.DurationInt
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class PostStartHook @Inject() (app: Application, appLifecycle: ApplicationLifecycle, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testService: TestService, testSuiteManager: TestSuiteManager, reportManager: ReportManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient, importCompleteManager: ImportCompleteManager) {
+class PostStartHook @Inject() (appLifecycle: ApplicationLifecycle, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testService: TestService, testSuiteManager: TestSuiteManager, reportManager: ReportManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient, importCompleteManager: ImportCompleteManager) {
 
   onStart()
 
