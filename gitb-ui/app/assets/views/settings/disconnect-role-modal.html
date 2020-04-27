@@ -13,7 +13,7 @@
             </div>
         </div>
         <div class="bg-info div-rounded div-padded">
-            <b>Privacy note:</b> Option <i>"Delete all roles"</i> removes all your recorded information. This does not affect or remove your conformance testing history.
+            <b>Privacy note:</b> Option <i>"Delete all <span ng-if="controller.DataService.isSystemAdmin">other </span>roles"</i> removes all your recorded information<span ng-if="controller.DataService.isSystemAdmin"> except for your administrator account</span>. This does not affect or remove your conformance testing history.
         </div>
     </div>
     <div class="modal-footer">

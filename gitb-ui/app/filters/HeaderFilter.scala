@@ -17,7 +17,7 @@ class HeaderFilter @Inject() (implicit val mat: Materializer, ec: ExecutionConte
         "X-Frame-Options" -> "deny",
         "X-Xss-Protection" -> "X-XSS-Protection: 1; mode=block",
         "Feature-Policy" -> "accelerometer 'none'; ambient-light-sensor 'none'; autoplay 'none'; battery 'none'; camera 'none'; display-capture 'none'; document-domain 'none'; encrypted-media 'none'; fullscreen 'none'; geolocation 'none'; gyroscope 'none'; magnetometer 'none'; microphone 'none'; midi 'none'; oversized-images 'self'; payment 'none'; picture-in-picture 'none'; sync-xhr 'self'; use 'none'; wake-lock 'none'; xr-spatial-tracking 'none';",
-        "Content-Security-Policy" -> "default-src 'none'; font-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self'; style-src 'unsafe-inline' 'self'; img-src 'self' data:; base-uri 'self'; frame-ancestors 'none';"
+        "Content-Security-Policy" -> "default-src 'none'; font-src 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self'; style-src 'unsafe-inline' 'self'; img-src * data:; base-uri 'self'; frame-ancestors 'none';"
       )
     }
   }

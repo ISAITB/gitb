@@ -41,10 +41,12 @@
 			<div class="form-group">
 				<label class="col-xs-3 control-label" for="username">* Username:</label>
 				<div class="col-xs-7"><input id="username" ng-model="controller.email" class="form-control" type="text"></div>
+				<div tb-tooltip="The email-formatted username you have been using up to now to log in."></div>
 			</div>
 			<div class="form-group">
 				<label class="col-xs-3 control-label" for="password">* Password:</label>
 				<div class="col-xs-7"><input id="password" ng-model="controller.password" class="form-control" type="password"></div>
+				<div tb-tooltip="The password you have been using up to now."></div>
 			</div>
 		</div>
 		<div ng-if="controller.choice == controller.Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER">
