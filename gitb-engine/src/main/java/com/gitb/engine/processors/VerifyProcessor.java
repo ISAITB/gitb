@@ -119,7 +119,9 @@ public class VerifyProcessor implements IProcessor {
 			// Failed report but with step at warning level - mark as success and convert reported error items to warnings
 			convertErrorItemsToWarnings(report);
 		}
-
+		if (report instanceof TAR) {
+			completeReportCounters((TAR)report);
+		}
         if(verify.getId() != null && verify.getId().length() > 0) {
             boolean result = report.getResult().equals(TestResultType.SUCCESS) || report.getResult().equals(TestResultType.WARNING);
 
@@ -130,6 +132,38 @@ public class VerifyProcessor implements IProcessor {
             }
         }
 		return report;
+	}
+
+	private void completeReportCounters(TAR report) {
+		int errorCount = 0;
+		int warningCount = 0;
+		int infoCount = 0;
+		TestAssertionGroupReportsType reportsType = report.getReports();
+		if (reportsType != null) {
+			for (JAXBElement<TestAssertionReportType> item : reportsType.getInfoOrWarningOrError()) {
+				if (item.getValue() instanceof BAR) {
+					if (item.getName().getLocalPart().equals("error")) {
+						errorCount += 1;
+					} else if (item.getName().getLocalPart().equals("warning")) {
+						warningCount += 1;
+					} else {
+						infoCount += 1;
+					}
+				}
+			}
+		}
+		if (report.getCounters() == null) {
+			report.setCounters(new ValidationCounters());
+		}
+		if (report.getCounters().getNrOfErrors() == null) {
+			report.getCounters().setNrOfErrors(BigInteger.valueOf(errorCount));
+		}
+		if (report.getCounters().getNrOfWarnings() == null) {
+			report.getCounters().setNrOfWarnings(BigInteger.valueOf(warningCount));
+		}
+		if (report.getCounters().getNrOfAssertions() == null) {
+			report.getCounters().setNrOfAssertions(BigInteger.valueOf(infoCount));
+		}
 	}
 
 	private void convertErrorItemsToWarnings(TestStepReportType report) {
