@@ -421,4 +421,22 @@ class DataService
 			fn()
 		, 1)
 
+	isMemberConfigurationValid: (properties) ->
+		valid = true
+		if properties?
+			for property in properties
+				if property.use == 'R' && !property.configured
+					return false
+		valid
+
+	isConfigurationValid: (endpointRepresentations) ->
+		valid = true
+		if endpointRepresentations?
+			for endpoint in endpointRepresentations
+				for parameter in endpoint.parameters
+					if !parameter.configured && parameter.use == "R"
+						return false
+		valid
+
+
 services.service('DataService', DataService)

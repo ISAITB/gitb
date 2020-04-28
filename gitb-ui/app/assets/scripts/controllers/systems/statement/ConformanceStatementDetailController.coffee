@@ -1,7 +1,7 @@
 class ConformanceStatementDetailController
 
-  @$inject = ['$log', '$scope', '$state', '$stateParams', '$uibModal', 'SystemService', 'ConformanceService', 'ErrorService', 'Constants', 'ConfirmationDialogService', 'DataService', 'ReportService', 'TestService', 'PopupService', '$sce', 'HtmlService']
-  constructor: (@$log, @$scope, @$state, @$stateParams, @$uibModal, @SystemService, @ConformanceService, @ErrorService, @Constants, @ConfirmationDialogService, @DataService, @ReportService, @TestService, @PopupService, @$sce, @HtmlService) ->
+  @$inject = ['$log', '$scope', '$state', '$stateParams', '$uibModal', 'SystemService', 'ConformanceService', 'ErrorService', 'Constants', 'ConfirmationDialogService', 'DataService', 'ReportService', 'TestService', 'PopupService', '$sce', 'HtmlService', 'OrganizationService', '$window', '$q']
+  constructor: (@$log, @$scope, @$state, @$stateParams, @$uibModal, @SystemService, @ConformanceService, @ErrorService, @Constants, @ConfirmationDialogService, @DataService, @ReportService, @TestService, @PopupService, @$sce, @HtmlService, @OrganizationService, @$window, @$q) ->
     @$log.debug "Constructing ConformanceStatementDetailController"
 
     @systemId = @$stateParams['id']
@@ -168,20 +168,97 @@ class ConformanceStatementDetailController
     testSuite.expanded = !testSuite.expanded if !@runTestClicked
     @runTestClicked = false
 
+  getOrganisation : () =>
+    organisation = @DataService.vendor
+    if @DataService.isCommunityAdmin || @DataService.isSystemAdmin
+      organisation = JSON.parse(@$window.localStorage['organization'])
+    organisation
+
   executeHeadless: (testCases) =>
-    testCaseIds = _.map(testCases, (test) =>
-      test.id
+    # Check configurations
+    @organisationConfigurationChecked = @$q.defer()
+    @systemConfigurationChecked = @$q.defer()
+    @configurationChecked = @$q.defer()
+    # Organisation parameter values.
+    @OrganizationService.getOrganisationParameterValues(@getOrganisation().id, false)
+    .then (data) =>
+      @organisationProperties = data
+      @organisationConfigurationChecked.resolve()
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+    # System parameter values.
+    @SystemService.getSystemParameterValues(@systemId, false)
+    .then (data) =>
+      @systemProperties = data
+      @systemConfigurationChecked.resolve()
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+    # Statement parameter values.
+    @ConformanceService.checkConfigurations(@actorId, @systemId)
+    .then (data) =>
+      @endpointRepresentations = data
+      @configurationChecked.resolve()
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+    # Check status once everything is loaded.
+    @$q.all([@organisationConfigurationChecked.promise, @systemConfigurationChecked.promise, @configurationChecked.promise]).then(() =>
+      @configurationValid = @DataService.isConfigurationValid(@endpointRepresentations)
+      @systemConfigurationValid = @DataService.isMemberConfigurationValid(@systemProperties)
+      @organisationConfigurationValid = @DataService.isMemberConfigurationValid(@organisationProperties)
+      if (!@configurationValid || !@systemConfigurationValid || !@organisationConfigurationValid)
+        # Missing configuration.
+        options =
+          templateUrl: 'assets/views/systems/conformance/missing-configuration-modal.html'
+          controller: 'MissingConfigurationModalController as controller'
+          resolve:
+            organisationProperties: () => @organisationProperties
+            organisationConfigurationValid: () => @organisationConfigurationValid
+            systemProperties: () => @systemProperties
+            systemConfigurationValid: () => @systemConfigurationValid
+            endpointRepresentations: () => @endpointRepresentations
+            configurationValid: () => @configurationValid
+          size: 'lg'
+        instance = @$uibModal.open options
+        instance.result
+          .finally(angular.noop)
+          .then((data) => 
+            if data.action == 'statement'
+              @endpointsExpanded = true
+            else if data.action == 'organisation'
+              if @DataService.isVendorUser || @DataService.isVendorAdmin
+                @$state.go 'app.settings.organisation', {viewProperties: true}
+              else
+                organisation = @getOrganisation()
+                if @DataService.vendor.id == organisation.id
+                  @$state.go 'app.settings.organisation', {viewProperties: true}
+                else
+                  @OrganizationService.getOrganizationBySystemId(@systemId)
+                  .then (org) =>
+                    @$state.go 'app.admin.users.communities.detail.organizations.detail.list', {org_id: org.id, community_id: org.community, viewProperties: true}
+                  .catch (error) =>
+                    @ErrorService.showErrorMessage(error)
+            else if data.action == 'system'
+              if @DataService.isVendorUser
+                @$state.go 'app.systems.detail.info', {id: Number(@systemId), viewProperties: true}
+              else
+                @$state.go 'app.systems.list', {id: Number(@systemId), viewProperties: true}
+          , angular.noop)
+      else 
+        # Proceed with execution.
+        testCaseIds = _.map(testCases, (test) =>
+          test.id
+        )
+        @TestService.startHeadlessTestSessions(testCaseIds, @specId, @systemId, @actorId)
+          .then(
+            (data) =>
+              if testCaseIds.length == 1
+                @PopupService.success('Started test session. Check <b>Test Sessions</b> for progress.')
+              else
+                @PopupService.success('Started '+testCaseIds.length+' test sessions. Check <b>Test Sessions</b> for progress.')
+            (error) =>
+              @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop)
+          )
     )
-    @TestService.startHeadlessTestSessions(testCaseIds, @specId, @systemId, @actorId)
-      .then(
-        (data) =>
-          if testCaseIds.length == 1
-            @PopupService.success('Started test session. Check <b>Test Sessions</b> for progress.')
-          else
-            @PopupService.success('Started '+testCaseIds.length+' test sessions. Check <b>Test Sessions</b> for progress.')
-        (error) =>
-          @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop)
-      )
 
   onTestSelect: (test) =>
     if @backgroundMode

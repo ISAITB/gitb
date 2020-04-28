@@ -156,9 +156,9 @@ class TestExecutionControllerV2
         stepToConsider = @wizardStep
       if (stepToConsider == 0)
         # Before starting
-        @configurationValid = @isConfigurationValid()
-        @systemConfigurationValid = @isMemberConfigurationValid(@systemProperties)
-        @organisationConfigurationValid = @isMemberConfigurationValid(@organisationProperties)
+        @configurationValid = @DataService.isConfigurationValid(@endpointRepresentations)
+        @systemConfigurationValid = @DataService.isMemberConfigurationValid(@systemProperties)
+        @organisationConfigurationValid = @DataService.isMemberConfigurationValid(@organisationProperties)
         if (!@configurationValid || !@systemConfigurationValid || !@organisationConfigurationValid)
           @wizardStep = 1
         else 
@@ -241,23 +241,6 @@ class TestExecutionControllerV2
       .then(() =>
         @$state.go @$state.current, {}, {reload: true})
       .catch(angular.noop)
-
-  isMemberConfigurationValid: (properties) ->
-    valid = true
-    if properties?
-      for property in properties
-        if property.use == 'R' && !property.configured
-          return false
-    valid
-
-  isConfigurationValid: () ->
-    valid = true
-    if @endpointRepresentations?
-      for endpoint in @endpointRepresentations
-        for parameter in endpoint.parameters
-          if !parameter.configured && parameter.use == "R"
-            return false
-    valid
 
   getTestCaseDefinition: (testCaseToLookup) ->
     @TestService.getTestCaseDefinition(testCaseToLookup)
