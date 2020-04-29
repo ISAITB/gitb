@@ -185,6 +185,9 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 			// Delete also actors from the domain (they are now linked only to specifications
 			actorIds <- PersistenceSchema.specificationHasActors.filter(_.specId === specId).map(_.actorId).result
 			_ <- DBIO.seq(actorIds.map(id => actorManager.deleteActor(id)): _*)
+			_ <- PersistenceSchema.specificationHasActors.filter(_.specId === specId).delete
+			testSuiteIds <- PersistenceSchema.testSuites.filter(_.specification === specId).map(_.id).result
+			_ <- DBIO.seq(testSuiteIds.map(id => undeployTestSuite(id, onSuccessCalls)): _*)
 			_ <- PersistenceSchema.conformanceResults.filter(_.spec === specId).delete
 			_ <- PersistenceSchema.specifications.filter(_.id === specId).delete
 			_ <- {
