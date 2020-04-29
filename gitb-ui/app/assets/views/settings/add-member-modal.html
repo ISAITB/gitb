@@ -23,7 +23,8 @@
                 <div class="col-xs-7">
                     <input id="email" type="text" class="form-control" ng-model="controller.udata.email">
                 </div>
-                <div tb-tooltip="This is used only during login as the user's email-formatted username (no emails will ever be sent to this address)."></div>
+                <div ng-if="!controller.DataService.configuration['sso.enabled']" tb-tooltip="This is used only during login as the user's email-formatted username (no emails will ever be sent to this address)."></div>
+                <div ng-if="controller.DataService.configuration['sso.enabled']" tb-tooltip="This is the email address linked to the user's EU Login account."></div>
             </div>
             <div ng-if="!controller.DataService.configuration['sso.enabled']">
                 <div class="form-group">
