@@ -14,14 +14,19 @@
                     <div class="form-group">
                         <label class="col-sm-3 control-label" for="name">* Name:</label>
                         <div class="col-sm-8"><input id="name" ng-model="LegalNoticeCreateCtrl.notice.name" class="form-control" type="text"></div>
+                        <div tb-tooltip="The name of the legal notice that will identify it and be displayed in selection lists."></div>
                     </div>
                     <div class="form-group">
                         <label class="col-sm-3 control-label" for="description">Description:</label>
                         <div class="col-sm-8"><textarea id="description" ng-model="LegalNoticeCreateCtrl.notice.description" class="form-control"></textarea></div>
+                        <div tb-tooltip="A description that will be visible only to administrators to help distinguish this legal notice and summarise its purpose."></div>
                     </div>
                     <div class="form-group">
                         <label class="col-sm-3 control-label" for="default">Default:</label>
-                        <div class="col-sm-8"><input id="default" ng-model="LegalNoticeCreateCtrl.notice.default" type="checkbox" class="form-check"></div>
+                        <div class="col-sm-8">
+                            <input id="default" ng-model="LegalNoticeCreateCtrl.notice.default" type="checkbox" class="form-check">
+                            <div tb-inline="true" tb-tooltip="Check this to make this legal notice the default one assumed for the community's {{LegalNoticeCreateCtrl.DataService.labelOrganisationsLower()}}."></div>
+                        </div>
                     </div>
                 </div>
             </div>
