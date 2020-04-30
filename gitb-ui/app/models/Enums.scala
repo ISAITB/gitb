@@ -16,14 +16,9 @@ object Enums {
     val NotSupported, PublicListing, PublicListingWithToken, Token = Value
   }
 
-  object SpecificationType extends Enumeration(1) {
-    type SpecificationType = Value
-    val IntegrationProfile, ContentSpecification = Value
-  }
-
-  object Protocol extends Enumeration(1) {
-    type Protocol = Value
-    val HTTP, UDP, DICOM = Value
+  object SelfRegistrationRestriction extends Enumeration(1) {
+    type SelfRegistrationType = Value
+    val NoRestriction, UserEmail, UserEmailDomain = Value
   }
 
   object ParameterType extends Enumeration(1) {
@@ -57,6 +52,29 @@ object Enums {
     val KEEP_TEST_HISTORY = Value(0)
     val DROP_TEST_HISTORY = Value(1)
     val CANCEL = Value(2)
+  }
+
+  object LabelType extends Enumeration(1) {
+    type LabelType = Value
+    val Domain, Specification, Actor, Endpoint, Organisation, System = Value
+  }
+
+  object ImportItemType extends Enumeration(1) {
+    type ImportItemType = Value
+    val Domain, DomainParameter, Specification, Actor, Endpoint, EndpointParameter, TestSuite,
+    Community, Administrator, CustomLabel, OrganisationProperty, SystemProperty, LandingPage, LegalNotice, ErrorTemplate,
+    Organisation, OrganisationUser, OrganisationPropertyValue, System, SystemPropertyValue,
+    Statement, StatementConfiguration = Value
+  }
+
+  object ImportItemMatch extends Enumeration(1) {
+    type ImportItemMatch = Value
+    val ArchiveOnly, Both, DBOnly = Value
+  }
+
+  object ImportItemChoice extends Enumeration(1) {
+    type ImportItemChoice = Value
+    val Skip, SkipProcessChildren, SkipDueToParent, Proceed = Value
   }
 
 }

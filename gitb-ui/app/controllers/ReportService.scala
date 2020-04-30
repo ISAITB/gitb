@@ -21,6 +21,26 @@ class ReportService @Inject() (reportManager: ReportManager, testService: TestSe
   val defaultPage = 1L
   val defaultLimit = 10L
 
+  def getSystemActiveTestResults = AuthorizedAction { request =>
+    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+
+    authorizationManager.canViewTestResultsForSystem(request, systemId)
+
+    val domainIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.DOMAIN_IDS)
+    val specIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SPEC_IDS)
+    val testSuiteIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.TEST_SUITE_IDS)
+    val testCaseIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.TEST_CASE_IDS)
+    val startTimeBegin = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_BEGIN)
+    val startTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_END)
+    val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
+    val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
+
+    val testResultReports = reportManager.getSystemActiveTestResults(systemId, domainIds, specIds, testSuiteIds, testCaseIds, startTimeBegin, startTimeEnd, sortColumn, sortOrder)
+    val json = JsonUtil.jsTestResultReports(testResultReports).toString()
+    ResponseConstructor.constructJsonResponse(json)
+
+  }
+
   def getTestResults = AuthorizedAction { request =>
     val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
 

@@ -1,7 +1,7 @@
 class EditEndpointConfigurationController
 
-  @$inject = ['$log', '$window', 'ErrorService', 'ConfirmationDialogService', 'SystemService', 'DataService', 'Constants', '$uibModalInstance', 'systemId', 'endpoint', 'parameter', 'configuration']
-  constructor: (@$log, @$window, @ErrorService, @ConfirmationDialogService, @SystemService, @DataService, @Constants, @$uibModalInstance, @systemId, @endpoint, @parameter, @oldConfiguration) ->
+  @$inject = ['$log', '$window', 'ErrorService', 'ConfirmationDialogService', 'SystemService', 'DataService', 'Constants', '$uibModalInstance', 'systemId', 'endpoint', 'parameter', 'configuration', 'PopupService']
+  constructor: (@$log, @$window, @ErrorService, @ConfirmationDialogService, @SystemService, @DataService, @Constants, @$uibModalInstance, @systemId, @endpoint, @parameter, @oldConfiguration, @PopupService) ->
     @$log.debug "Constructing EditEndpointConfigurationController"
     @file = null
 
@@ -14,7 +14,10 @@ class EditEndpointConfigurationController
       @configuration = _.cloneDeep @oldConfiguration
 
     @isBinary = @parameter.kind == "BINARY"
-    @isConfiugrationSet = @configuration.value?
+    @isConfigurationSet = @configuration.value?
+
+    if !@isBinary
+      @$uibModalInstance.rendered.then () => @DataService.focus('value')
 
   onFileSelect: (files) =>
     tempFile = _.head files
@@ -66,6 +69,7 @@ class EditEndpointConfigurationController
       .then () => 
         @configuration.deleted = true
         @closeDialog()
+        @PopupService.success('Parameter deleted.')
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
 
@@ -78,7 +82,9 @@ class EditEndpointConfigurationController
       if !@configuration.value?
         @configuration.value = ''
       @SystemService.saveEndpointConfiguration @endpoint.id, @configuration
-      .then () => @closeDialog()
+      .then () => 
+        @closeDialog()
+        @PopupService.success('Parameter updated.')
       .catch (error) => @ErrorService.showErrorMessage(error)
     else if @parameter.kind == "SECRET"
       if !@configuration.value?
@@ -97,6 +103,7 @@ class EditEndpointConfigurationController
           @configuration.value = undefined
           @configuration.valueConfirm = undefined
           @closeDialog()
+          @PopupService.success('Parameter updated.')
         .catch (error) => @ErrorService.showErrorMessage(error)
     else if @parameter.kind == "BINARY"
       if @file?
@@ -105,12 +112,13 @@ class EditEndpointConfigurationController
           reader.onload = (event) =>
             result = event.target.result
             @configuration.value = result
-            @SystemService.saveEndpointConfiguration @endpoint.id, @configuration
+            @SystemService.saveEndpointConfiguration @endpoint.id, @configuration, true
             .then (metadata) => 
               if metadata?
                 @configuration.extension = metadata.extension
                 @configuration.mimeType = metadata.mimeType
               @closeDialog()
+              @PopupService.success('Parameter updated.')
             .catch (error) => 
               @ErrorService.showErrorMessage(error)
           reader.onerror = (event) =>

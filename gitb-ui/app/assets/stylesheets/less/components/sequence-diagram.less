@@ -1,5 +1,5 @@
 
-@actor-width: 200px+1;
+@actor-width: 240px+1;
 @line-color: #777;
 @line-height: 16px;
 @macro-limit: 10;
@@ -9,7 +9,13 @@
 @processing-color: #03A9F4;
 @waiting-color: darken(@processing-color, 20%);
 @error-color: #D32F2F;
+@warning-color: #F0AD4E;
 @completed-color: #4CAF50;
+
+.icon-documentation {
+	font-size: 18px;
+	cursor: pointer;
+}
 
 .generate-padding-offsets(@width, @n, @i: 0) when (@i =< @n) {
     &.offset-@{i} {
@@ -73,7 +79,7 @@
 
 .generate-depth-spans(@width, @span, @n, @i: 0) when (@i =< @n) {
     &.depth-@{i} {
-	width: (@width * @span) + (2 * @i * @container-padding);
+	width: (@width * @span) + (2 * @i * @container-padding) + 10;
 
 	& > .child-steps.else::before, & > .child-steps.thread::before {
 	    width: (@width * @span) + (2 * @i * @container-padding) - 1;
@@ -216,6 +222,10 @@
 				    .add-status-bar(@error-color);
 				}
 
+				&.warning {
+				    .add-status-bar(@warning-color);
+				}
+
 				&.completed {
 				    .add-status-bar(@completed-color);
 				}
@@ -229,7 +239,7 @@
 		}
 
 		.message-info {
-		    position: relative;
+			position: relative;
 		}
 
 		.message-report {
@@ -252,7 +262,7 @@
 			    font-size: 28px;
 			}
 
-			&.processing-icon, &.completed-icon, &.error-icon, &.status-background-icon {
+			&.processing-icon, &.completed-icon, &.error-icon, &.warning-icon, &.status-background-icon {
 			    display: none;
 			    position: absolute;
 			    left: 35%;
@@ -266,7 +276,7 @@
 			    vertical-align: middle;
 			}
 
-			&.processing-icon, &.completed-icon, &.error-icon {
+			&.processing-icon, &.completed-icon, &.error-icon, &.warning-icon {
 			}
 		    }
 		}
@@ -274,7 +284,11 @@
 		.title {
 		    display: block;
 		    text-align: center;
-		    padding: 0 8px;
+			padding: 0 8px;
+
+			&.skipped {
+				text-decoration: line-through;
+			}
 		}
 
 		.child-steps {
@@ -416,6 +430,35 @@
 		    }
 		}
 
+		&.warning {
+		    & > .arrow {
+			border-color: @warning-color;
+			&::after {
+			    border-left-color: @warning-color !important;
+                            border-right-color: @warning-color !important;
+			}
+		    }
+		    & > .message-report {
+			i {
+			    &.status-background-icon {
+				display: block;
+				color: @warning-color;
+			    }
+
+			    &.warning-icon {
+				display: block;
+			    }
+			}
+		    }
+		    &.self-message > .arrow::after {
+			border-left-color: transparent;
+			border-right-color: @warning-color;
+		    }
+		    & > .message-info > .step-icon {
+			color: @warning-color;
+		    }
+		}
+
 		&.completed {
 		    & > .arrow {
 			border-color: @completed-color;
@@ -497,6 +540,10 @@
 			background-color: @error-color;
 		    }
 
+			&.warning {
+				background-color: @warning-color;
+			}
+	
 		    &.completed {
 			background-color: @completed-color;
 		    }

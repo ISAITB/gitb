@@ -4,8 +4,8 @@
 # change will be reflected to a different view that is controlled by a different controller.
 class DataService
 	
-	@$inject = ['Constants', '$q']
-	constructor: (@Constants, @$q) ->
+	@$inject = ['Constants', '$q', '$timeout']
+	constructor: (@Constants, @$q, @$timeout) ->
 		@destroy() #we call destroy inside the constructor to create objects :)
 
 	#should be called after logout, since no user data should be kept any more
@@ -92,6 +92,9 @@ class DataService
 
 	setCommunity: (community) ->
 		@community = community
+		if (community?.labels?)
+			@setupLabels(community.labels)
+			delete community.labels
 
 	setTestsToExecute: (tests) ->
 		@tests = tests
@@ -273,28 +276,167 @@ class DataService
 			'Active'
 
 	customPropertiesValid: (properties) =>
-		# if properties?
-		# 	for property in properties
-		# 		if property.use == 'R'
-		# 			if !(((property.kind == 'BINARY' || property.kind == 'SIMPLE') && property.value? && property.value.trim().length > 0) || (property.kind == 'SECRET') && ((property.changeValue && property.value? && property.value.trim().length > 0) || (!property.changeValue && property.configured)))
-		# 				if !property.adminOnly || (@isSystemAdmin || @isCommunityAdmin)
-		# 					return false
 		return true
 
 	customPropertiesForPost: (properties) =>
 		propValues = []
-		for property in properties
-			propValue = {}
-			propValue.parameter = Number(property.id)
-			if property.kind == 'SECRET'
-				if property.changeValue && property.value? && property.value.trim().length > 0
-					propValue.value = property.value.trim()
-				else if !property.changeValue && property.configured
-					propValue.value = ''
-			else if property.value? && property.value.trim().length > 0
-				propValue.value = property.value.trim()
-			if propValue.value?
-				propValues.push(propValue)
+		if properties?
+			for property in properties
+				propValue = {}
+				propValue.parameter = Number(property.id)
+				if property.kind == 'SECRET'
+					if property.changeValue && property.value? && property.value.trim().length > 0
+						propValue.value = property.value.trim()
+					else if !property.changeValue && property.configured
+						propValue.value = ''
+				else if property.value? && property.value.trim().length > 0
+					if property.kind == 'BINARY'
+						propValue.valueBinary = property.value.trim()
+					else
+						propValue.value = property.value.trim()
+				if propValue.value? || propValue.valueBinary?
+					propValues.push(propValue)
 		JSON.stringify(propValues)
+
+	createLabels: (customLabels) =>
+		labels = {}
+		if customLabels?
+			for label in customLabels
+				labels[label.labelType] = {
+					labelType: label.labelType
+					singularForm: label.singularForm
+					pluralForm: label.pluralForm
+					fixedCase: label.fixedCase
+					custom: true
+				}
+		@setDefaultLabel(labels, @Constants.LABEL_TYPE.DOMAIN)
+		@setDefaultLabel(labels, @Constants.LABEL_TYPE.SPECIFICATION)
+		@setDefaultLabel(labels, @Constants.LABEL_TYPE.ACTOR)
+		@setDefaultLabel(labels, @Constants.LABEL_TYPE.ENDPOINT)
+		@setDefaultLabel(labels, @Constants.LABEL_TYPE.ORGANISATION)
+		@setDefaultLabel(labels, @Constants.LABEL_TYPE.SYSTEM)
+		labels
+
+	setupLabels: (customLabels) =>
+		@labels = @createLabels(customLabels)
+
+	setDefaultLabel: (labels, labelType) =>
+		if labels[labelType] == undefined
+			labels[labelType] = {
+				labelType: labelType,
+				singularForm: @Constants.LABEL_DEFAULT[labelType].singularForm,
+				pluralForm: @Constants.LABEL_DEFAULT[labelType].pluralForm,
+				fixedCase: @Constants.LABEL_DEFAULT[labelType].fixedCase,
+				custom: false
+			}
+
+	labelDomain: () =>
+		@labels[@Constants.LABEL_TYPE.DOMAIN].singularForm
+
+	labelDomainLower: () =>
+		if @labels[@Constants.LABEL_TYPE.DOMAIN].fixedCase then @labels[@Constants.LABEL_TYPE.DOMAIN].singularForm else @labels[@Constants.LABEL_TYPE.DOMAIN].singularForm.toLowerCase()
+
+	labelDomains: () =>
+		@labels[@Constants.LABEL_TYPE.DOMAIN].pluralForm
+
+	labelDomainsLower: () =>
+		@labels[@Constants.LABEL_TYPE.DOMAIN].pluralForm
+
+	labelDomainsLower: () =>
+		if @labels[@Constants.LABEL_TYPE.DOMAIN].fixedCase then @labels[@Constants.LABEL_TYPE.DOMAIN].pluralForm else @labels[@Constants.LABEL_TYPE.DOMAIN].pluralForm.toLowerCase()
+
+	labelSpecification: () =>
+		@labels[@Constants.LABEL_TYPE.SPECIFICATION].singularForm
+
+	labelSpecificationLower: () =>
+		if @labels[@Constants.LABEL_TYPE.SPECIFICATION].fixedCase then @labels[@Constants.LABEL_TYPE.SPECIFICATION].singularForm else @labels[@Constants.LABEL_TYPE.SPECIFICATION].singularForm.toLowerCase()
+
+	labelSpecifications: () =>
+		@labels[@Constants.LABEL_TYPE.SPECIFICATION].pluralForm
+
+	labelSpecificationsLower: () =>
+		if @labels[@Constants.LABEL_TYPE.SPECIFICATION].fixedCase then @labels[@Constants.LABEL_TYPE.SPECIFICATION].pluralForm else @labels[@Constants.LABEL_TYPE.SPECIFICATION].pluralForm.toLowerCase()
+
+	labelActor: () =>
+		@labels[@Constants.LABEL_TYPE.ACTOR].singularForm
+
+	labelActorLower: () =>
+		if @labels[@Constants.LABEL_TYPE.ACTOR].fixedCase then @labels[@Constants.LABEL_TYPE.ACTOR].singularForm else @labels[@Constants.LABEL_TYPE.ACTOR].singularForm.toLowerCase()
+
+	labelActors: () =>
+		@labels[@Constants.LABEL_TYPE.ACTOR].pluralForm
+
+	labelActorsLower: () =>
+		if @labels[@Constants.LABEL_TYPE.ACTOR].fixedCase then @labels[@Constants.LABEL_TYPE.ACTOR].pluralForm else @labels[@Constants.LABEL_TYPE.ACTOR].pluralForm.toLowerCase()
+
+	labelEndpoint: () =>
+		@labels[@Constants.LABEL_TYPE.ENDPOINT].singularForm
+
+	labelEndpointLower: () =>
+		if @labels[@Constants.LABEL_TYPE.ENDPOINT].fixedCase then @labels[@Constants.LABEL_TYPE.ENDPOINT].singularForm else @labels[@Constants.LABEL_TYPE.ENDPOINT].singularForm.toLowerCase()
+
+	labelEndpoints: () =>
+		@labels[@Constants.LABEL_TYPE.ENDPOINT].pluralForm
+
+	labelEndpointsLower: () =>
+		if @labels[@Constants.LABEL_TYPE.ENDPOINT].fixedCase then @labels[@Constants.LABEL_TYPE.ENDPOINT].pluralForm else @labels[@Constants.LABEL_TYPE.ENDPOINT].pluralForm.toLowerCase()
+
+	labelOrganisation: () =>
+		@labels[@Constants.LABEL_TYPE.ORGANISATION].singularForm
+
+	labelOrganisationLower: () =>
+		if @labels[@Constants.LABEL_TYPE.ORGANISATION].fixedCase then @labels[@Constants.LABEL_TYPE.ORGANISATION].singularForm else @labels[@Constants.LABEL_TYPE.ORGANISATION].singularForm.toLowerCase()
+
+	labelOrganisations: () =>
+		@labels[@Constants.LABEL_TYPE.ORGANISATION].pluralForm
+
+	labelOrganisationsLower: () =>
+		if @labels[@Constants.LABEL_TYPE.ORGANISATION].fixedCase then @labels[@Constants.LABEL_TYPE.ORGANISATION].pluralForm else @labels[@Constants.LABEL_TYPE.ORGANISATION].pluralForm.toLowerCase()
+
+	labelSystem: () =>
+		@labels[@Constants.LABEL_TYPE.SYSTEM].singularForm
+
+	labelSystemLower: () =>
+		if @labels[@Constants.LABEL_TYPE.SYSTEM].fixedCase then @labels[@Constants.LABEL_TYPE.SYSTEM].singularForm else @labels[@Constants.LABEL_TYPE.SYSTEM].singularForm.toLowerCase()
+
+	labelSystems: () =>
+		@labels[@Constants.LABEL_TYPE.SYSTEM].pluralForm
+
+	labelSystemsLower: () =>
+		if @labels[@Constants.LABEL_TYPE.SYSTEM].fixedCase then @labels[@Constants.LABEL_TYPE.SYSTEM].pluralForm else @labels[@Constants.LABEL_TYPE.SYSTEM].pluralForm.toLowerCase()
+
+	focus: (inputId, delay) =>
+		if inputId?
+			if !inputId.startsWith('#')
+				inputId = '#' + inputId
+			timeToWait = 1
+			if delay?
+				timeToWait = Number(delay)
+			@$timeout(() =>
+				document.querySelector(inputId)?.focus()
+			, timeToWait)
+
+	async: (fn) =>
+		@$timeout(() =>
+			fn()
+		, 1)
+
+	isMemberConfigurationValid: (properties) ->
+		valid = true
+		if properties?
+			for property in properties
+				if property.use == 'R' && !property.configured
+					return false
+		valid
+
+	isConfigurationValid: (endpointRepresentations) ->
+		valid = true
+		if endpointRepresentations?
+			for endpoint in endpointRepresentations
+				for parameter in endpoint.parameters
+					if !parameter.configured && parameter.use == "R"
+						return false
+		valid
+
 
 services.service('DataService', DataService)

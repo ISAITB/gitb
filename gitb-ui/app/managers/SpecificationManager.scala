@@ -25,14 +25,14 @@ class SpecificationManager @Inject() (actorManager: ActorManager, testResultMana
     spec
   }
 
-  def updateSpecification(specId: Long, sname: String, fname: String, urls: Option[String], diagram: Option[String], descr: Option[String], specificationType: Option[Short]) = {
-    val q = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.shortname, s.fullname, s.urls, s.diagram, s.description, s.stype)
-    exec(
-      (
-        q.update(sname, fname, urls, diagram, descr, specificationType.get) andThen
-        testResultManager.updateForUpdatedSpecification(specId, sname)
-      ).transactionally
-    )
+  def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean): DBIO[_] = {
+    val q = for {s <- PersistenceSchema.specifications if s.id === specId} yield (s.shortname, s.fullname, s.description, s.hidden)
+    q.update(sname, fname, descr, hidden) andThen
+      testResultManager.updateForUpdatedSpecification(specId, sname)
+  }
+
+  def updateSpecification(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean) = {
+    exec(updateSpecificationInternal(specId, sname, fname, descr, hidden).transactionally)
   }
 
   def getSpecificationIdOfActor(actorId: Long) = {

@@ -1,0 +1,1 @@
+ALTER TABLE `specifications` ADD COLUMN `is_hidden` TINYINT DEFAULT 0 NOT NULL;

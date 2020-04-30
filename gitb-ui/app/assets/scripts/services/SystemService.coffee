@@ -115,12 +115,21 @@ class SystemService
         system_id: systemId
         parameter_id: parameterId
 
-  saveEndpointConfiguration: (endpoint, config) ->
+  saveEndpointConfiguration: (endpoint, config, isBinary) ->
+    configToSend = {}
+    configToSend.system = config.system
+    configToSend.parameter =  config.parameter
+    configToSend.endpoint =  config.endpoint
+    if isBinary? && isBinary
+      configToSend.valueBinary = config.value
+    else
+      configToSend.value = config.value
+
     @RestService.post
       path: jsRoutes.controllers.SystemService.saveEndpointConfiguration(endpoint).url
       authenticate: true
       data:
-        config: angular.toJson config
+        config: angular.toJson configToSend
 
   getConfigurationsWithEndpointIds: (endpointIds, systemId) ->
     @RestService.get

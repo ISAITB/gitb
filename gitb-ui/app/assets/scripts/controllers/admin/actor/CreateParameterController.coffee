@@ -1,14 +1,15 @@
 class CreateParameterController
 
-	@$inject = ['$log', '$scope', '$uibModalInstance', 'options', 'ErrorService', 'Constants']
+	@$inject = ['$log', '$scope', '$uibModalInstance', 'options', 'ErrorService', 'Constants', 'DataService']
 
-	constructor: (@$log, @$scope, @$uibModalInstance, options, @ErrorService, @Constants) ->
+	constructor: (@$log, @$scope, @$uibModalInstance, options, @ErrorService, @Constants, @DataService) ->
 		@$scope.parameter = {}
 		@$scope.parameter.use = 'O'
 		@$scope.parameter.kind = 'SIMPLE'
 		@$scope.parameter.notForTests = options.notForTests? && options.notForTests
 		@$scope.parameter.adminOnly = options.adminOnly? && options.adminOnly
 		@$scope.parameter.inExports = false
+		@$scope.parameter.inSelfRegistration = false
 
 		@$scope.nameLabel = if options.nameLabel? then options.nameLabel else 'Name'
 		@$scope.hasKey = options.hasKey? && options.hasKey
@@ -16,6 +17,9 @@ class CreateParameterController
 		@$scope.existingValues = options.existingValues
 		@$scope.reservedKeys = options.reservedKeys
 		@$scope.hideInExport = options.hideInExport? && options.hideInExport
+		@$scope.hideInRegistration = !@DataService.configuration['registration.enabled'] || (options.hideInRegistration? && options.hideInRegistration)
+
+		@$uibModalInstance.rendered.then () => @DataService.focus('name')
 
 		@$scope.saveDisabled = () =>
 			!(@$scope.parameter.name?.length > 0 && @$scope.parameter.kind?.length > 0 && (!@$scope.hasKey || @$scope.parameter.key?.length > 0))

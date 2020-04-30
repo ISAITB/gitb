@@ -4,16 +4,16 @@ import config.Configurations
 import controllers.util._
 import exceptions._
 import javax.inject.Inject
-import managers.AuthorizationManager
+import managers.{AuthorizationManager, UserManager}
 import models.Enums
 import org.pac4j.play.store.PlaySessionStore
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.cache.TokenCache
 import persistence.{AccountManager, AuthenticationManager}
 import play.api.mvc._
-import utils.JsonUtil
+import utils.{JsonUtil, RepositoryUtils}
 
-class AuthenticationService @Inject() (accountManager: AccountManager, authManager: AuthenticationManager, authorizationManager: AuthorizationManager, playSessionStore: PlaySessionStore) extends Controller {
+class AuthenticationService @Inject() (accountManager: AccountManager, authManager: AuthenticationManager, authorizationManager: AuthorizationManager, playSessionStore: PlaySessionStore, userManager: UserManager) extends Controller {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthenticationService])
   private final val BEARER = "Bearer"
@@ -70,14 +70,25 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
     val userId = ParameterExtractor.requiredBodyParameter(request, Parameters.ID).toLong
     authorizationManager.canSelectFunctionalAccount(request, userId)
     val tokens = authManager.generateTokens(userId)
+    disableDataBootstrap()
     ResponseConstructor.constructOauthResponse(tokens)
   }
 
   def disconnectFunctionalAccount = AuthorizedAction { request =>
     authorizationManager.canDisconnectFunctionalAccount(request)
     val userId = ParameterExtractor.extractUserId(request)
-    val uid = authorizationManager.getPrincipal(request).uid
-    accountManager.disconnectAccount(userId, uid)
+    val userInfo = authorizationManager.getPrincipal(request)
+    val option = ParameterExtractor.requiredBodyParameter(request, Parameters.TYPE).toShort
+    if (option == 1) {
+      // Current partial.
+      accountManager.disconnectAccount(userId, userInfo.uid)
+    } else if (option == 2) {
+      // Current full.
+      userManager.deleteUserExceptTestBedAdmin(userId)
+    } else if (option == 3) {
+      // All.
+      userManager.deleteUsersByUidExceptTestBedAdmin(userInfo.uid, userInfo.email)
+    }
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -93,6 +104,7 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
     //user found
     if (result.isDefined) {
       val tokens = authManager.generateTokens(result.get.id)
+      disableDataBootstrap()
       ResponseConstructor.constructOauthResponse(tokens)
     }
     //no user with given credentials
@@ -178,6 +190,12 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
       ResponseConstructor.constructEmptyResponse.withNewSession
     } else {
       ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  private def disableDataBootstrap() = {
+    if (Configurations.DATA_WEB_INIT_ENABLED) {
+      RepositoryUtils.createDataLockFile()
     }
   }
 }

@@ -1,9 +1,9 @@
 class PopupService
 
-  @$inject = ['$q', '$uibModal']
-  constructor: (@$q, @$uibModal) ->
+  @$inject = ['$uibModal', 'growl']
+  constructor: (@$uibModal, @growl) ->
 
-  show: (headerText, data) =>
+  show: (headerText, data, fnSuccessCallback) =>
     modalOptions =
       templateUrl: 'assets/views/components/popup-modal.html'
       controller: 'PopupController'
@@ -12,7 +12,15 @@ class PopupService
       resolve:
         headerText: () => headerText
         data: () => data
+    @$uibModal.open(modalOptions).result.finally(() =>
+      if fnSuccessCallback?
+        fnSuccessCallback()
+    ).then(angular.noop, angular.noop)
 
-    @$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
+  success: (message) =>
+    if message?
+      if !message.endsWith(".")
+        message = message + "."
+      @growl.success(message)
 
 services.service('PopupService', PopupService)

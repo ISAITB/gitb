@@ -11,16 +11,16 @@ class SpecificationService
       path: jsRoutes.controllers.SpecificationService.deleteSpecification(specId).url
       authenticate: true
 
-  updateSpecification: (specId, shortName, fullName, urls, diagram, description, specType) ->
+  updateSpecification: (specId, shortName, fullName, description, hidden) ->
+    if hidden == undefined
+      hidden = false
     @RestService.post({
       path: jsRoutes.controllers.SpecificationService.updateSpecification(specId).url,
       data: {
         sname: shortName
         fname: fullName
-        urls: urls
-        diagram: diagram
         description: description
-        spec_type: specType
+        hidden: hidden
       }
       authenticate: true
     })

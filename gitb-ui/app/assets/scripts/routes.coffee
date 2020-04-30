@@ -120,6 +120,34 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				deferred.promise
 		]
 
+		community = [
+			'$q', '$window', 'CommunityService', 'ErrorService', '$stateParams'
+			($q, $window, CommunityService, Errorservice, $stateParams) ->
+				deferred = $q.defer()
+				CommunityService.getCommunityById($stateParams.community_id)
+				.then (data) =>
+					$window.localStorage['community'] = angular.toJson data
+					deferred.resolve(data)
+				.catch (error) =>
+					ErrorService.showErrorMessage(error)
+				deferred.promise
+		]
+
+		conformanceCertificate = [
+			'$q', 'ConformanceService', 'ErrorService', '$stateParams'
+			($q, ConformanceService, Errorservice, $stateParams) ->
+				deferred = $q.defer()
+				ConformanceService.getConformanceCertificateSettings($stateParams.community_id, true)
+				.then (data) =>
+					if data? && data?.id?
+						deferred.resolve(data)
+					else
+						deferred.resolve({})
+				.catch (error) =>
+					ErrorService.showErrorMessage(error)
+				deferred.promise
+		]
+
 		$urlRouterProvider.when('', '/')
 		$urlRouterProvider.otherwise('/')
 
@@ -287,6 +315,16 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/conformance/index.html'
 				controller: 'AdminConformanceController'
 				controllerAs: 'adminConformanceCtrl'
+			'app.admin.export':
+				url: '/export'
+				templateUrl: 'assets/views/admin/importexport/export.html'
+				controller: 'ExportController'
+				controllerAs: 'controller'
+			'app.admin.import':
+				url: '/import'
+				templateUrl: 'assets/views/admin/importexport/import.html'
+				controller: 'ImportController'
+				controllerAs: 'controller'
 			'app.admin.domains.create':
 				url: '/create'
 				templateUrl: 'assets/views/admin/domains/create.html'
@@ -392,15 +430,26 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/users/community-detail.html'
 				controller: 'CommunityDetailController'
 				controllerAs: 'communityDetailCtrl'
+				resolve: {
+					community: community
+				}
 			'app.admin.users.communities.detail.certificate':
 				url: '/cert'
 				templateUrl: 'assets/views/admin/users/community-detail-certificate.html'
 				controller: 'CommunityCertificateController'
 				controllerAs: 'communityCertificateCtrl'
+				resolve: {
+					settings: conformanceCertificate
+				}
 			'app.admin.users.communities.detail.parameters':
 				url: '/params'
 				templateUrl: 'assets/views/admin/users/community-detail-parameters.html'
 				controller: 'CommunityParametersController'
+				controllerAs: 'controller'
+			'app.admin.users.communities.detail.labels':
+				url: '/labels'
+				templateUrl: 'assets/views/admin/users/community-detail-labels.html'
+				controller: 'CommunityLabelsController'
 				controllerAs: 'controller'
 			'app.admin.users.communities.detail.admins':
 				url: '/admin'

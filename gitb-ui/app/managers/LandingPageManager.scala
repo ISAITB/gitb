@@ -41,13 +41,22 @@ class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
     * Creates new landing page
     */
   def createLandingPage(landingPage: LandingPages) = {
-    val actions = new ListBuffer[DBIO[_]]()
-    if (landingPage.default) {
-      val q = for {l <- PersistenceSchema.landingPages if l.default === true && l.community === landingPage.community} yield (l.default)
-      actions += q.update(false)
-    }
-    actions += (PersistenceSchema.insertLandingPage += landingPage)
-    exec(DBIO.seq(actions.map(a => a): _*).transactionally)
+    exec(createLandingPageInternal(landingPage).transactionally)
+  }
+
+  def createLandingPageInternal(landingPage: LandingPages) = {
+    for {
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        if (landingPage.default) {
+          val q = for {l <- PersistenceSchema.landingPages if l.default === true && l.community === landingPage.community} yield (l.default)
+          actions += q.update(false)
+        }
+        toDBIO(actions)
+      }
+      newId <- PersistenceSchema.insertLandingPage += landingPage
+    } yield newId
+
   }
 
   /**
@@ -75,42 +84,51 @@ class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
    * Updates landing page
    */
   def updateLandingPage(pageId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long) = {
-    val landingPageOption = exec(PersistenceSchema.landingPages.filter(_.id === pageId).result.headOption)
-    if (landingPageOption.isDefined) {
-      val actions = new ListBuffer[DBIO[_]]()
+    exec(updateLandingPageInternal(pageId, name, description, content, default, communityId).transactionally)
+  }
 
-      val landingPage = landingPageOption.get
+  def updateLandingPageInternal(pageId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long) = {
+    for {
+      landingPageOption <- PersistenceSchema.landingPages.filter(_.id === pageId).result.headOption
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        if (landingPageOption.isDefined) {
+          val landingPage = landingPageOption.get
+          if (!name.isEmpty && landingPage.name != name) {
+            val q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.name)
+            actions += q.update(name)
+          }
 
-      if (!name.isEmpty && landingPage.name != name) {
-        val q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.name)
-        actions += q.update(name)
+          if (content != landingPage.content) {
+            val q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.content)
+            actions += q.update(content)
+          }
+
+          if (!landingPage.default && default) {
+            var q = for {l <- PersistenceSchema.landingPages if l.default === true && l.community === communityId} yield (l.default)
+            actions += q.update(false)
+
+            q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.default)
+            actions += q.update(default)
+          }
+
+          val q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.description)
+          actions += q.update(description)
+        }
+        toDBIO(actions)
       }
-
-      if (content != landingPage.content) {
-        val q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.content)
-        actions += q.update(content)
-      }
-
-      if (!landingPage.default && default) {
-        var q = for {l <- PersistenceSchema.landingPages if l.default === true && l.community === communityId} yield (l.default)
-        actions += q.update(false)
-
-        q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.default)
-        actions += q.update(default)
-      }
-
-      val q = for {l <- PersistenceSchema.landingPages if l.id === pageId} yield (l.description)
-      actions += q.update(description)
-
-      exec(DBIO.seq(actions.map(a => a): _*).transactionally)
-    }
+    } yield ()
   }
 
   /**
    * Deletes landing page with specified id
    */
-  def deleteLandingPage(pageId: Long) {
-    exec(PersistenceSchema.landingPages.filter(_.id === pageId).delete.transactionally)
+  def deleteLandingPage(pageId: Long) = {
+    exec(deleteLandingPageInternal(pageId).transactionally)
+  }
+
+  def deleteLandingPageInternal(pageId: Long): DBIO[_] = {
+    PersistenceSchema.landingPages.filter(_.id === pageId).delete
   }
 
   /**

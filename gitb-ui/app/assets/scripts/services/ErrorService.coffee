@@ -27,6 +27,9 @@ class ErrorService
           errorObj = {}
           errorObj.data = {}
           errorObj.data.error_description = error
+        else if error?.data? && (typeof error.data == 'ArrayBuffer' || error.data instanceof ArrayBuffer)
+          errorObj = {}        
+          errorObj.data = JSON.parse(String.fromCharCode.apply(null, new Uint8Array(error.data)))
         else
           errorObj = error
       if errorObj.data?.error_id?

@@ -1,0 +1,57 @@
+<div class="modal-content">
+    <div class="modal-header">
+        <h4 class="modal-title" id="myModalLabel">Member information</h4>
+    </div>
+    <div class="modal-body">
+        <form class="form-horizontal">
+            <div class="row">
+                <div class="form-group">
+                    <div class="col-xs-11 col-centered">
+                        <div uib-alert ng-repeat="alert in controller.modalAlerts" ng-class="'alert-' + alert.type" close="controller.closeModalAlert($index)">{{alert.msg}}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group" ng-if="!controller.DataService.configuration['sso.enabled']">
+                <label class="col-xs-3 control-label" for="name">* User name:</label>
+                <div class="col-xs-7">
+                    <input id="name" type="text" class="form-control" ng-model="controller.udata.name">
+                </div>
+                <div tb-tooltip="This is the full name of the user. It is only used only when displaying the list of members for the {{controller.DataService.labelOrganisationLower()}}."></div>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-3 control-label" for="email">* Email:</label>
+                <div class="col-xs-7">
+                    <input id="email" type="text" class="form-control" ng-model="controller.udata.email">
+                </div>
+                <div ng-if="!controller.DataService.configuration['sso.enabled']" tb-tooltip="This is used only during login as the user's email-formatted username (no emails will ever be sent to this address)."></div>
+                <div ng-if="controller.DataService.configuration['sso.enabled']" tb-tooltip="This is the email address linked to the user's EU Login account."></div>
+            </div>
+            <div ng-if="!controller.DataService.configuration['sso.enabled']">
+                <div class="form-group">
+                    <label class="col-xs-3 control-label" for="password">* One-time password:</label>
+                    <div class="col-xs-7">
+                        <input type="password" class="form-control" ng-model="controller.udata.password" >
+                    </div>
+                    <div tb-tooltip="This password will only be used once upon first login at which point it will need to be changed."></div>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-3 control-label" for="confirm">* Confirm password:</label>
+                    <div class="col-xs-7">
+                        <input type="confirm" class="form-control" ng-model="controller.udata.cpassword" >
+                    </div>
+                    <div tb-tooltip="Provide again the password to ensure it is correct."></div>
+                </div>
+            </div>
+            <div class="col-xs-11 col-centered">
+                <div class="form-control-static bg-info div-padded div-rounded">
+                    <p ng-if="controller.DataService.configuration['sso.enabled']">The user's new role assignment will need to be confirmed by the user upon login.</p>
+                    <p style="margin-bottom: 0px;"><b>Privacy note:</b> By clicking 'Save changes' you grant the user's consent on his/her behalf to record the provided information. This is used only for internal identification purposes and is never shared with other parties. <span ng-if="!controller.DataService.configuration['sso.enabled']">Alternatively you may also complete this form with information that is not personally identifiable. </span>Please refer to the legal notice (link available in the screen's footer) for more information.</p>
+                </div>
+            </div>
+            <div class="modal-footer" style="margin-top:10px">
+                <input type="submit" value="Save changes" ng-disabled="controller.saveMemberDisabled()" ng-click="controller.checkEmail()" class="btn btn-default" >
+                <button type="button" class="btn btn-default" ng-click="controller.close()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>

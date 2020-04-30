@@ -1,7 +1,7 @@
 class ConformanceStatementDetailController
 
-  @$inject = ['$log', '$scope', '$state', '$stateParams', '$uibModal', 'SystemService', 'ConformanceService', 'ErrorService', 'Constants', 'ConfirmationDialogService', 'DataService', 'ReportService']
-  constructor: (@$log, @$scope, @$state, @$stateParams, @$uibModal, @SystemService, @ConformanceService, @ErrorService, @Constants, @ConfirmationDialogService, @DataService, @ReportService) ->
+  @$inject = ['$log', '$scope', '$state', '$stateParams', '$uibModal', 'SystemService', 'ConformanceService', 'ErrorService', 'Constants', 'ConfirmationDialogService', 'DataService', 'ReportService', 'TestService', 'PopupService', '$sce', 'HtmlService', 'OrganizationService', '$window', '$q']
+  constructor: (@$log, @$scope, @$state, @$stateParams, @$uibModal, @SystemService, @ConformanceService, @ErrorService, @Constants, @ConfirmationDialogService, @DataService, @ReportService, @TestService, @PopupService, @$sce, @HtmlService, @OrganizationService, @$window, @$q) ->
     @$log.debug "Constructing ConformanceStatementDetailController"
 
     @systemId = @$stateParams['id']
@@ -15,8 +15,9 @@ class ConformanceStatementDetailController
     @configurations = []
     @testSuites = []
     @runTestClicked = false
-    @endpointsCollapsed = @$stateParams['editEndpoints'] == undefined || !@$stateParams['editEndpoints']
+    @endpointsExpanded = @$stateParams['editEndpoints']? && @$stateParams['editEndpoints']
     @testStatus = ''
+    @backgroundMode = false
 
     @parameterTableColumns = [
       {
@@ -54,6 +55,7 @@ class ConformanceStatementDetailController
         testCase.id = result.testCaseId
         testCase.sname = result.testCaseName
         testCase.description = result.testCaseDescription
+        testCase.hasDocumentation = result.testCaseHasDocumentation
         testCase.result = result.result
         totalCount += 1
         if testCase.result == @Constants.TEST_CASE_RESULT.FAILURE
@@ -69,6 +71,7 @@ class ConformanceStatementDetailController
           currentTestSuite.sname = result.testSuiteName
           currentTestSuite.description = result.testSuiteDescription
           currentTestSuite.result = result.result
+          currentTestSuite.hasDocumentation = result.testSuiteHasDocumentation
           currentTestSuite.testCases = []
           testSuiteData[result.testSuiteId] = currentTestSuite
         else
@@ -142,13 +145,14 @@ class ConformanceStatementDetailController
           repr = _.cloneDeep parameter
 
           relevantConfig = _.find(@configurations, (config) => 
-            parameter.id == config.parameter && Number(parameter.endpoint) == Number(config.endpoint)
+            Number(parameter.id) == Number(config.parameter) && Number(parameter.endpoint) == Number(config.endpoint)
           );
           if relevantConfig?
             repr.value = relevantConfig.value
             repr.configured = relevantConfig.configured
           else
             repr.configured = false
+            repr.value = undefined
 
           if repr.configured
             if parameter.kind == 'BINARY'
@@ -164,9 +168,104 @@ class ConformanceStatementDetailController
     testSuite.expanded = !testSuite.expanded if !@runTestClicked
     @runTestClicked = false
 
+  getOrganisation : () =>
+    organisation = @DataService.vendor
+    if @DataService.isCommunityAdmin || @DataService.isSystemAdmin
+      organisation = JSON.parse(@$window.localStorage['organization'])
+    organisation
+
+  executeHeadless: (testCases) =>
+    # Check configurations
+    @organisationConfigurationChecked = @$q.defer()
+    @systemConfigurationChecked = @$q.defer()
+    @configurationChecked = @$q.defer()
+    # Organisation parameter values.
+    @OrganizationService.getOrganisationParameterValues(@getOrganisation().id, false)
+    .then (data) =>
+      @organisationProperties = data
+      @organisationConfigurationChecked.resolve()
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+    # System parameter values.
+    @SystemService.getSystemParameterValues(@systemId, false)
+    .then (data) =>
+      @systemProperties = data
+      @systemConfigurationChecked.resolve()
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+    # Statement parameter values.
+    @ConformanceService.checkConfigurations(@actorId, @systemId)
+    .then (data) =>
+      @endpointRepresentations = data
+      @configurationChecked.resolve()
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+    # Check status once everything is loaded.
+    @$q.all([@organisationConfigurationChecked.promise, @systemConfigurationChecked.promise, @configurationChecked.promise]).then(() =>
+      @configurationValid = @DataService.isConfigurationValid(@endpointRepresentations)
+      @systemConfigurationValid = @DataService.isMemberConfigurationValid(@systemProperties)
+      @organisationConfigurationValid = @DataService.isMemberConfigurationValid(@organisationProperties)
+      if (!@configurationValid || !@systemConfigurationValid || !@organisationConfigurationValid)
+        # Missing configuration.
+        options =
+          templateUrl: 'assets/views/systems/conformance/missing-configuration-modal.html'
+          controller: 'MissingConfigurationModalController as controller'
+          resolve:
+            organisationProperties: () => @organisationProperties
+            organisationConfigurationValid: () => @organisationConfigurationValid
+            systemProperties: () => @systemProperties
+            systemConfigurationValid: () => @systemConfigurationValid
+            endpointRepresentations: () => @endpointRepresentations
+            configurationValid: () => @configurationValid
+          size: 'lg'
+        instance = @$uibModal.open options
+        instance.result
+          .finally(angular.noop)
+          .then((data) => 
+            if data.action == 'statement'
+              @endpointsExpanded = true
+            else if data.action == 'organisation'
+              if @DataService.isVendorUser || @DataService.isVendorAdmin
+                @$state.go 'app.settings.organisation', {viewProperties: true}
+              else
+                organisation = @getOrganisation()
+                if @DataService.vendor.id == organisation.id
+                  @$state.go 'app.settings.organisation', {viewProperties: true}
+                else
+                  @OrganizationService.getOrganizationBySystemId(@systemId)
+                  .then (org) =>
+                    @$state.go 'app.admin.users.communities.detail.organizations.detail.list', {org_id: org.id, community_id: org.community, viewProperties: true}
+                  .catch (error) =>
+                    @ErrorService.showErrorMessage(error)
+            else if data.action == 'system'
+              if @DataService.isVendorUser
+                @$state.go 'app.systems.detail.info', {id: Number(@systemId), viewProperties: true}
+              else
+                @$state.go 'app.systems.list', {id: Number(@systemId), viewProperties: true}
+          , angular.noop)
+      else 
+        # Proceed with execution.
+        testCaseIds = _.map(testCases, (test) =>
+          test.id
+        )
+        @TestService.startHeadlessTestSessions(testCaseIds, @specId, @systemId, @actorId)
+          .then(
+            (data) =>
+              if testCaseIds.length == 1
+                @PopupService.success('Started test session. Check <b>Test Sessions</b> for progress.')
+              else
+                @PopupService.success('Started '+testCaseIds.length+' test sessions. Check <b>Test Sessions</b> for progress.')
+            (error) =>
+              @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop)
+          )
+    )
+
   onTestSelect: (test) =>
-    @DataService.setTestsToExecute [test]
-    @$state.go 'app.tests.execution', {systemId: @systemId, actorId: @actorId, specId:@specId, testCaseId: test.id}
+    if @backgroundMode
+      @executeHeadless([test])
+    else
+      @DataService.setTestsToExecute [test]
+      @$state.go 'app.tests.execution', {systemId: @systemId, actorId: @actorId, specId:@specId, testCaseId: test.id}
 
   onTestSuiteSelect: (testSuite) =>
     if (!testSuite?)
@@ -174,8 +273,11 @@ class ConformanceStatementDetailController
     testsToExecute = []
     for testCase in testSuite.testCases
       testsToExecute.push testCase
-    @DataService.setTestsToExecute testsToExecute
-    @$state.go 'app.tests.execution', {systemId: @systemId, actorId: @actorId, specId:@specId, testSuiteId: testSuite.id}
+    if @backgroundMode
+      @executeHeadless(testsToExecute)
+    else
+      @DataService.setTestsToExecute testsToExecute
+      @$state.go 'app.tests.execution', {systemId: @systemId, actorId: @actorId, specId:@specId, testSuiteId: testSuite.id}
 
   onParameterSelect: (parameter) =>
     @$log.debug "Editing parameter: ", parameter
@@ -231,6 +333,7 @@ class ConformanceStatementDetailController
       @SystemService.deleteConformanceStatement(@systemId, [@actorId])
       .then () =>
           @$state.go("app.systems.detail.conformance.list", {id: @systemId})
+          @PopupService.success('Conformance statement deleted.')
       .catch (error) =>
           @ErrorService.showErrorMessage(error)
 
@@ -257,7 +360,22 @@ class ConformanceStatementDetailController
         @exportPending = false
     )
 
-  toggleEndpointDisplay: () =>
-    @endpointsCollapsed = !@endpointsCollapsed
+  showDocumentation: (title, content) ->
+    html = @$sce.trustAsHtml(content)
+    @HtmlService.showHtml(title, html)
+
+  showTestCaseDocumentation: (testCaseId) ->
+    @ConformanceService.getTestCaseDocumentation(testCaseId)
+    .then (data) =>
+      @showDocumentation("Test case documentation", data)
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+  showTestSuiteDocumentation: (testSuiteId) ->
+    @ConformanceService.getTestSuiteDocumentation(testSuiteId)
+    .then (data) =>
+      @showDocumentation("Test suite documentation", data)
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
 
 @controllers.controller 'ConformanceStatementDetailController', ConformanceStatementDetailController

@@ -1,9 +1,9 @@
 <div class="page domains">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h4 class="title">Domains</h4>
-			<a ng-if="adminDomainsCtrl.DataService.isSystemAdmin" ui-sref="app.admin.domains.create" class="btn btn-default pull-right">Create domain</a>
+			<h4 class="title">{{adminDomainsCtrl.DataService.labelDomains()}}</h4>
+			<a ng-if="adminDomainsCtrl.DataService.isSystemAdmin" ui-sref="app.admin.domains.create" class="btn btn-default pull-right">Create {{adminDomainsCtrl.DataService.labelDomainLower()}}</a>
 		</div>
-		<div table-directive columns="adminDomainsCtrl.tableColumns" data="adminDomainsCtrl.domains" on-select="adminDomainsCtrl.onDomainSelect"><div/>
+		<div table-directive columns="adminDomainsCtrl.tableColumns" data="adminDomainsCtrl.domains" on-select="adminDomainsCtrl.onDomainSelect"></div>
 	</div>
 </div>

@@ -25,24 +25,13 @@
 		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/gitb.css")?v=@config.versionNumber'>
 		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("jquery.min.js"))'></script>
 		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("bootstrap.min.js"))'></script>
-		<script type='text/javascript'>
-			function option(value) {
-				if (value) {
-					document.cookie = 'LOGIN_OPTION='+value;
-				} else {
-					document.cookie = 'LOGIN_OPTION=none';
-				}
-				window.location.href = 'app';
-			}
-			function eraseCookies() {
-				document.cookie = 'LOGIN_OPTION=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-				document.cookie = 'tat=;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-				document.cookie = 'tat=;path=@config.cookiePath;expires=Thu, 01 Jan 1970 00:00:01 GMT;';
-			}
-			eraseCookies();
-		</script>
+		<script type='text/javascript' src='@routes.Assets.at("components/gitb-cookie-cleanup.js")?v=@config.versionNumber'></script>
+		@if(config.initialSandboxRun) {
+		<script type='text/javascript' src='@routes.Assets.at("components/gitb-init-sandbox.js")?v=@config.versionNumber'></script>
+		}
 	</head>
 	<body class="sticky-menu-active">
+		<div id="cp-div" style="display:none">@config.cookiePath</div>
 		<div class="page index">
 			<header>
 				<div class="navbar-collapse nav-main-collapse collapse">
@@ -68,18 +57,18 @@
 							<div style="padding-top:20px">
 								<div style="display:flex; align-items:center;">
 									<div>
-										<button type="button" class="btn btn-primary" onclick="option()" style="padding:20px">Click to log in</button>
+										<button id="loginOption" type="button" class="btn btn-primary" style="padding:20px">Click to log in</button>
 									</div>
 									<div style="margin-left:20px;">
 										@if(config.ssoEnabled) {
-										<p><b style="margin-right:10px;">Assigned a new role by an administrator?</b><a href="#" onclick="option('link')">Confirm your new role</a>.</p>
+										<p><b style="margin-right:10px;">Assigned a new role by an administrator?</b><a id="linkOption" href="#">Confirm your new role</a>.</p>
 										}
 										@if(config.demosEnabled && config.registrationEnabled) {
-										<span><b style="margin-right:10px;">New to the Test Bed?</b><a href="#" onclick="option('register')">Create an account</a> or <a href="#" onclick="option('demo')">try out our demos</a></span>.
+										<span><b style="margin-right:10px;">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a> or <a id="demoOption" href="#">try out our demos</a></span>.
 										} else {@if(config.demosEnabled && !config.registrationEnabled) {
-										<span><b style="margin-right:10px;">New to the Test Bed?</b><a href="#" onclick="option('demo')">Try out our demos</a>.</span>
+										<span><b style="margin-right:10px;">New to the Test Bed?</b><a id="demoOption" href="#">Try out our demos</a>.</span>
 										} else {@if(!config.demosEnabled && config.registrationEnabled) {
-										<span><b style="margin-right:10px;">New to the Test Bed?</b><a href="#" onclick="option('register')">Create an account</a>.</span>
+										<span><b style="margin-right:10px;">New to the Test Bed?</b><a id="registerOption" href="#">Register in a public community</a>.</span>
 										}}}
 									</div>
 								</div>
@@ -88,9 +77,13 @@
 								@if(config.ssoEnabled) {
 									<p>To connect to the Test Bed you need to first authenticate using your EU Login account. If you are new to EU Login follow <a href="@config.euLoginUseGuideLink" target="blank">this tutorial</a> to get started.</p>
 								}
-								<p style="margin-bottom: 0px"><b>Privacy note:</b> By connecting you consent to the use of cookies to manage your session. Please refer to our <a href="#" data-toggle="modal" data-target="#legalModal">legal notice</a> for more information.</p>
+								<p style="margin-bottom: 0px"><b>Privacy note:</b> By connecting you consent to the use of cookies to manage your session.
+									@if(config.hasDefaultLegalNotice) {
+										<span>Please refer to our <a href="#" data-toggle="modal" data-target="#legalModal">legal notice</a> for more information.</span>
+									}
+								</p>
 								@if(config.ssoEnabled && config.inMigrationPeriod) {
-									<p style="margin-top: 10px; margin-bottom: 0px"><b>Migration note:</b> If you have been using a functional account to log in click <a href="#" onclick="option('migrate')">here</a> to migrate it to EU Login. Step-by-step instructions are available in <a href="@config.euLoginMigrationGuideLink" target="blank">this guide</a>.</p>
+									<p style="margin-top: 10px; margin-bottom: 0px"><b>Migration note:</b> If you have been using a functional account to log in click <a id="migrateOption" href="#">here</a> to migrate it to EU Login. Step-by-step instructions are available in <a href="@config.euLoginMigrationGuideLink" target="blank">this guide</a>.</p>
 								}
 							</div>
 						</div>
@@ -106,32 +99,86 @@
 						</div>
 						<div class="col-md-6 version-div">
 							<span class="pull-right">
-								<a href="@config.userGuideLink" target="blank">User guide</a><span class="version-text"> | </span><a href="#" data-toggle="modal" data-target="#legalModal">Legal notice</a><span class="version-text"> | </span><span class="version-text">@config.versionNumber</span>
+								<a href="@config.userGuideLink" target="blank">User guide</a><span class="version-text">
+								@if(config.hasDefaultLegalNotice) {
+									| </span><a href="#" data-toggle="modal" data-target="#legalModal">Legal notice</a><span class="version-text">
+								}
+								| </span><span class="version-text">@config.versionNumber</span>
 							</span>
 						</div>
 					</div>
 				</div>
 			</footer>
 		</div>
-		<!-- Modal -->
-		<div class="modal fade" id="legalModal" role="dialog">
-			<div class="modal-dialog modal-lg">
-				<!-- Modal content-->
-				<div class="modal-content">
-					<div class="modal-header">
-						<h3>Legal Notice</h3>
-					</div>
-					<div class="modal-body">
-						<div id="content">
-							@Html(config.defaultLegalNotice)
+		@if(config.hasDefaultLegalNotice) {
+			<!-- Legal notice modal -->
+			<div class="modal fade" id="legalModal" role="dialog">
+				<div class="modal-dialog modal-lg">
+					<!-- Modal content-->
+					<div class="modal-content">
+						<div class="modal-header">
+							<h3>Legal Notice</h3>
+						</div>
+						<div class="modal-body">
+							<div id="content">
+								@Html(config.defaultLegalNotice)
+							</div>
+						</div>
+						<div class="modal-footer">
+							<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
 						</div>
 					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+				</div>
+			</div>
+		}
+		@if(config.initialSandboxRun) {
+			<!-- Legal notice modal -->
+			<div class="modal fade" id="sandboxModal" role="dialog">
+				<div class="modal-dialog modal-lg">
+					<!-- Modal content-->
+					<div class="modal-content">
+						<div class="modal-header">
+							<h3>Initial setup</h3>
+						</div>
+						<form id="initForm" enctype="multipart/form-data" class="form-horizontal">
+							<div class="modal-body">
+								<div class="bg-info div-rounded div-padded bottom-margin">
+									<span>Please provide the data archive and its password to initialise the Test Bed's configuration. If you would prefer to proceed with an empty installation close this dialog and make an initial login.</span>
+								</div>
+								<div id="initFormAlerts"></div>
+								<div class="form-group">
+									<label class="col-xs-3 control-label">* Data archive:</label>
+									<div class="col-xs-7">
+										<div class="input-group">
+											<div class="input-group-btn">
+												<button id="fileInputButton" class="btn btn-default" type="button"><i class="fa fa-folder-open-o"></i></button>
+											</div>
+											<input id="fileInputText" type="text" class="form-control clickable" placeholder="Select data archive ..." readonly="readonly"/>
+										</div>
+										<input id="fileInputControl" name="file" type="file" style="display: none" />
+									</div>
+									<div class="form-control-static"><span data-toggle="tooltip" class="check" title="The archive containing the data to import."><i class="fa fa-question-circle"></i></span></div>
+								</div>
+								<div class="form-group">
+									<label class="col-xs-3 control-label" for="encryptionPassword">* Archive password:</label>
+									<div class="col-xs-6 inline-checkbox-container">
+										<input id="encryptionPasswordVisible" name="passwordVisible" type="text" class="form-control"/>
+										<input id="encryptionPassword" name="passwordHidden" type="password" class="form-control"/>
+										<label class="inline-checkbox">
+											<input id="encryptionPasswordCheck" type="checkbox" class="checkinput">Show
+											<div class="inline-tooltip"><div class="check"><span data-toggle="tooltip" class="check" title="Provide the password that was used to encrypt the data archive."><i class="fa fa-question-circle"></i></span></div></div>
+										</label>
+									</div>
+								</div>
+							</div>
+							<div class="modal-footer">
+								<button id="buttonImport" type="submit" class="btn btn-default"><span id="initDataSpinner" class="tab"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Import archive</button>
+								<button id="buttonNoImport" type="button" class="btn btn-default">Close</button>
+							</div>
+						</form>
 					</div>
 				</div>
-
 			</div>
-		</div>
+		}
 	</body>
 </html>

@@ -1,9 +1,9 @@
 class CommunityParametersController
 
-  @$inject = ['$state', '$stateParams', 'CommunityService', 'ErrorService', '$q', '$uibModal']
-  constructor: (@$state, @$stateParams, @CommunityService, @ErrorService, @$q, @$uibModal) ->
+  @$inject = ['$state', '$stateParams', 'CommunityService', 'ErrorService', '$q', '$uibModal', 'DataService', 'PopupService']
+  constructor: (@$state, @$stateParams, @CommunityService, @ErrorService, @$q, @$uibModal, @DataService, @PopupService) ->
     @communityId = @$stateParams.community_id
-    @parameterTableColumns = [
+    @systemParameterTableColumns = [
       {
         field: 'name'
         title: 'Label'
@@ -37,6 +37,15 @@ class CommunityParametersController
         title: 'In exports'
       }
     ]
+
+    @organisationParameterTableColumns = @systemParameterTableColumns.slice()
+    if @DataService.configuration['registration.enabled']
+      @organisationParameterTableColumns.push(
+        {
+          field: 'inSelfRegistration'
+          title: 'In registration'
+        }
+      )
 
     @organisationReservedKeys = ['fullName', 'shortName']
     @systemReservedKeys = ['fullName', 'shortName', 'version']
@@ -72,17 +81,18 @@ class CommunityParametersController
     resultDeferred.promise
 
   addOrganisationParameter: () =>
-    @addParameter('Create organisation property', @organisationParameterValues, @organisationReservedKeys, @CommunityService.createOrganisationParameter)
+    @addParameter('Create '+@DataService.labelOrganisationLower()+' property', @organisationParameterValues, @organisationReservedKeys, @CommunityService.createOrganisationParameter, @DataService.labelOrganisation(), false)
 
   addSystemParameter: () =>
-    @addParameter('Create system property', @systemParameterValues, @systemReservedKeys, @CommunityService.createSystemParameter)
+    @addParameter('Create '+@DataService.labelSystemLower()+' property', @systemParameterValues, @systemReservedKeys, @CommunityService.createSystemParameter, @DataService.labelSystem(), true)
 
-  addParameter: (modalTitle, existingValues, reservedKeys, createMethod) =>
+  addParameter: (modalTitle, existingValues, reservedKeys, createMethod, propertyLabel, hideInRegistration) =>
     options = {
       nameLabel: 'Label'
       notForTests: true
       adminOnly: false
       hasKey: true
+      hideInRegistration: hideInRegistration
       modalTitle: modalTitle
       confirmMessage: 'Are you sure you want to delete this property?'
       existingValues: existingValues
@@ -104,22 +114,24 @@ class CommunityParametersController
         createMethod(parameter)
         .then () =>
           @$state.go(@$state.$current, null, { reload: true });
+          @PopupService.success(propertyLabel + ' property created.')
         .catch (error) =>
           @ErrorService.showErrorMessage(error)
 
     , angular.noop)
 
   onOrganisationParameterSelect: (parameter) =>
-    @onParameterSelect(parameter, 'Organisation property details', @organisationParameterValues, @organisationReservedKeys, @CommunityService.updateOrganisationParameter, @CommunityService.deleteOrganisationParameter)
+    @onParameterSelect(parameter, @organisationParameterValues, @organisationReservedKeys, @CommunityService.updateOrganisationParameter, @CommunityService.deleteOrganisationParameter, @DataService.labelOrganisation(), false)
 
   onSystemParameterSelect: (parameter) =>
-    @onParameterSelect(parameter, 'System property details', @systemParameterValues, @systemReservedKeys, @CommunityService.updateSystemParameter, @CommunityService.deleteSystemParameter)
+    @onParameterSelect(parameter, @systemParameterValues, @systemReservedKeys, @CommunityService.updateSystemParameter, @CommunityService.deleteSystemParameter, @DataService.labelSystem(), true)
 
-  onParameterSelect: (parameter, modalTitle, existingValues, reservedKeys, updateMethod, deleteMethod) =>
+  onParameterSelect: (parameter, existingValues, reservedKeys, updateMethod, deleteMethod, propertyLabel, hideInRegistration) =>
     options = {
       nameLabel: 'Label'
       hasKey: true
-      modalTitle: modalTitle
+      hideInRegistration: hideInRegistration
+      modalTitle: propertyLabel + ' property details'
       confirmMessage: 'Are you sure you want to delete this property?'
       existingValues: existingValues
       reservedKeys: reservedKeys
@@ -143,12 +155,14 @@ class CommunityParametersController
           updateMethod(data.parameter)
           .then () =>
             @$state.go(@$state.$current, null, { reload: true });
+            @PopupService.success(propertyLabel + ' property updated.')
           .catch (error) =>
             @ErrorService.showErrorMessage(error)
         else
           deleteMethod(data.parameter.id)
           .then () =>
             @$state.go(@$state.$current, null, { reload: true });
+            @PopupService.success(propertyLabel + ' property deleted.')
           .catch (error) =>
             @ErrorService.showErrorMessage(error)
       , angular.noop)

@@ -4,6 +4,7 @@
 @error-color: #D32F2F;
 @completed-color: #4CAF50;
 @basic-color: #777;
+@light-blue: #D9EDF7;
 
 .table-directive {
   	padding:0; margin:0;
@@ -14,13 +15,17 @@
 				background-color: fade(@gray-light, 50%);
 			}
 			&.selected {
-				background-color: fade(@blue, 20%);
+				background-color: fade(@gray-light, 50%);
 			}
 		}
 	}
 }
 
-#dashboard-table, #dashboard-table-active, #systems-table, #system-tests-table, #system-tests-execution, #test-suites-table, #parameter-table, #members-table {
+#dashboard-table, #dashboard-table-active, #systems-table, #system-tests-table, #system-tests-table-active, #test-suites-table, #parameter-table, #members-table {
+	td.operations {
+		padding-top: 8px;
+		padding-bottom: 8px;
+	}
 	td {
 		padding-top: 15px;
 		padding-bottom: 15px;
@@ -105,14 +110,26 @@
 .test-case-table {
 	padding:0; margin:0;
 	tbody {
-		tr.clickable-row {
-			&:hover {
-				cursor: pointer;
-				background-color: fade(@gray-light, 50%);
+		tr {
+			&.clickable-row {
+				&:hover {
+					cursor: pointer;
+					background-color: fade(@gray-light, 50%);
+				}
 			}
-		}
-		tr.selected-row {
-			background-color: fade(@blue, 20%);
+			&.selected-row {
+				background-color: fade(@blue, 20%);
+			}
+			td {
+				vertical-align: middle;
+				line-height: 36px;
+				&.td-doc {
+					padding-right:20px;
+					padding-left:10px;
+					padding-top:8px;
+					padding-bottom:8px;
+				}
+			}
 		}
 	}	
 }
@@ -128,7 +145,7 @@
     margin-top: 5px;	
 }
 .form-check {
-	margin-top:10px !important;
+	margin-top:11px !important;
 }
 .form-separator {
 	border-bottom: 1px solid @gray-light; margin-bottom: 20px;
@@ -138,9 +155,234 @@
     margin-bottom: 20px;
     margin-left: 40px;
     margin-top: 20px;
-    margin-right: 40px;
+	margin-right: 40px;
+	
+	&.selfreg {
+		margin-top: 3px;
+	}
+}
+
+.form-separator-top-padding {
+	padding-top: 5px;
 }
 
 .test-suite-validation-summary {
 	margin-bottom: 15px;
+}
+
+#exportSettingsTable {
+	border: 1px solid @gray-dark-1;
+	margin-top: 2px;
+	th {
+		background: @gray-light-1;
+		vertical-align: middle;
+		span.withMargin {
+			margin-left: 10px;
+			margin-right: 10px;
+		}
+	}
+	td {
+		border-right: 1px solid @gray-dark-1;
+		&.row-header {
+			background: @gray-light-1;
+			font-weight: bold;
+			padding-top: 15px;
+		}
+		&:last-child {
+			border-right: 0px;
+		}
+		table {
+			margin-left: 10px;
+			margin-right: 10px;
+			margin-bottom: 5px;
+		}
+	}
+}
+
+div.inline-checkbox-container {
+	display: flex;
+}
+label.inline-checkbox {
+	display: inline-flex;
+	margin-left: 20px;
+	font-weight: normal;
+	margin-top: 7px;
+	cursor: pointer;
+	input {
+		margin: 0px;
+	}
+	input[type="checkbox"] {
+		-webkit-margin-before: 5px;
+		margin-right: 8px;
+	}
+}
+
+li.menu-section-start {
+	border-top: 1px solid @gray-dark-1;
+}
+
+.clickable {
+	&:hover {
+		cursor: pointer;
+	}
+}
+
+@item-add: @green-light;
+@item-add-dark: @success-green;
+@item-delete: @orange-light;
+@item-delete-dark: @warning-yellow;
+@item-update: @blue-light;
+@item-update-dark: @blue;
+
+@item-color: #F5F5F5;
+@item-color-border: #ddd;
+@item-color-dark: darken(@item-color, 10%);
+@item-color-hover: @item-color-dark;
+
+div.import-item {
+	// padding-left:15px;
+	display: table;
+	width: 100%;
+	border-radius: 5px;
+    border-bottom-right-radius: 5px;
+    border-top-right-radius: 5px;	
+	&:hover {
+		cursor: default;
+	}
+	&.add {
+		background-color: @item-add-dark;
+	}
+	&.update {
+		background-color: @item-update-dark;
+	}
+	&.delete {
+		background-color: @item-delete-dark;
+	}
+	div.import-item-icon {
+		display: table-cell;
+		width: 1%;
+		padding: 10px;
+		color: white;
+	}
+	div.import-item-container {
+		margin-left: 15px;
+		display: table-cell;
+		border-bottom-right-radius: 5px;
+		border-top-right-radius: 5px;	
+		background-color: @item-color;
+		div.import-item-title {
+			border-top: 1px solid @item-color-border;
+			border-right: 1px solid @item-color-border;
+			border-bottom: 1px solid @item-color-border;
+			background-color: @item-color;
+			border-top-right-radius: 5px;			
+			border-bottom-right-radius: 5px;
+			padding: 10px;
+			&.with-groups {
+				&:hover {
+					cursor: pointer;
+					background-color: @item-color-hover;
+				}	
+			}
+			&.without-groups {
+				&:hover {
+					cursor: default;
+					background-color: @item-color;
+				}
+			}
+			&.open {
+				border-bottom-right-radius: 0px;
+			}
+		}
+	}
+	div.import-item-group-container {
+		padding-top: 10px;
+		padding-left: 10px;
+    	padding-right: 10px;
+		border-bottom: 1px solid @item-color-border;
+		border-right: 1px solid @item-color-border;
+		border-bottom-right-radius: 5px;			
+	}
+}
+div.title-holder {
+	display: table;
+	width: 100%;
+}
+div.title-text {
+	display: table-cell;
+	vertical-align: middle;	
+	&.highlight {
+		font-weight: bold;
+	}
+	&.skip {
+		text-decoration: line-through;
+		opacity: 0.4;
+	}
+}
+div.title-icon {
+	display: table-cell;
+	text-align: right;
+	width: 25px;	
+}
+div.title-action {
+	display: table-cell;
+	text-align: right;
+	.control {
+		padding: 6px 12px;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		font-size: 12px;
+		width: 200px;
+	}
+	button {
+		margin-right: 10px;
+	}
+}
+div.import-item-group {
+	background-color: @item-color;
+	padding-bottom: 10px;			
+	div.import-item-group-label {
+		min-height: 50px;
+		padding: 10px;
+		border-radius: 5px;
+		border: 1px solid @item-color-border;
+		&.open {
+			border-top-left-radius: 5px;
+			border-top-right-radius: 5px;
+			border-bottom-left-radius: 0px;
+			border-bottom-right-radius: 0px;
+			border-top: 1px solid @item-color-border;
+			border-left: 1px solid @item-color-border;
+			border-right: 1px solid @item-color-border;
+		}
+		&:hover {
+			cursor: pointer;
+			background-color: @item-color-hover;
+		}
+	}
+	div.import-item-group-items {
+		padding-left: 10px;
+		padding-right: 10px;
+		padding-bottom: 10px;
+		padding-top: 5px;
+		border-bottom-left-radius: 5px;
+		border-bottom-right-radius: 5px;
+		border-bottom: 1px solid @item-color-border;
+		border-left: 1px solid @item-color-border;
+		border-right: 1px solid @item-color-border;
+		div.import-item-group-item {
+			padding-top: 5px;
+		}
+	}
+}
+div.import-item-root {
+	& > div.import-item-root-item {
+		&.padded {
+			margin-bottom: 10px;		
+		}
+		& > div.import-item-group {
+			padding-bottom: 0px;
+			border-radius: 5px;
+		}		
+	} 
 }

@@ -52,6 +52,7 @@ class SystemsController
 			resolve: 
 				system: () => {}
 				organisationId: () => @organization.id
+				communityId: () => @organization.community
 				viewProperties: () => false
 			size: 'lg'
 		modalInstance = @$uibModal.open(modalOptions)
@@ -73,6 +74,7 @@ class SystemsController
 			resolve: 
 				system: () => system
 				organisationId: () => @organization.id
+				communityId: () => @organization.community
 				viewProperties: () => @$stateParams['viewProperties']? && @$stateParams['viewProperties']
 			size: 'lg'
 		modalInstance = @$uibModal.open(modalOptions)

@@ -1,9 +1,10 @@
 class CommunityDetailController
 
-  @$inject = ['$log', '$state', '$window', '$stateParams', 'UserService', 'DataService', 'Constants', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'CommunityService', 'ConformanceService', 'ErrorService']
-  constructor: (@$log, @$state, @$window, @$stateParams, @UserService, @DataService, @Constants, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @CommunityService, @ConformanceService, @ErrorService) ->
+  @$inject = ['$log', '$state', '$window', '$stateParams', 'UserService', 'DataService', 'Constants', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'CommunityService', 'ConformanceService', 'ErrorService', 'PopupService', 'community']
+  constructor: (@$log, @$state, @$window, @$stateParams, @UserService, @DataService, @Constants, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @CommunityService, @ConformanceService, @ErrorService, @PopupService, @community) ->
 
-    @communityId = @$stateParams.community_id
+    @communityId = @community.id
+    @originalDomainId = @community.domain
 
     @adminColumns = [
       {
@@ -76,7 +77,6 @@ class CommunityDetailController
       }
     ]
 
-    @community = {}
     @domains = {}
     @admins = []
     @organizations = []
@@ -111,14 +111,6 @@ class CommunityDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-    @CommunityService.getCommunityById(@communityId)
-    .then (data) =>
-      @community = data
-      # @community.selfRegType = @community.selfRegType+''
-      @$window.localStorage['community'] = angular.toJson data
-    .catch (error) =>
-      @ErrorService.showErrorMessage(error)
-
     if @DataService.isSystemAdmin
       @ConformanceService.getDomains()
       .then (data) =>
@@ -150,27 +142,47 @@ class CommunityDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+    @DataService.focus('sname')
+
   saveDisabled: () =>
-    !(@community?.sname? && @community?.fname? && (!@DataService.configuration?['registration.enabled'] || 
-    (@community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED || @community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || (@community?.selfRegToken?.trim().length > 0))))
+    !(@community?.sname? && @community?.fname? && @community.sname.trim() != '' && @community.fname.trim() != '' &&
+    (!@DataService.configuration?['registration.enabled'] || 
+      ((@community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED || 
+        @community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || 
+        (@community?.selfRegToken?.trim().length > 0)) && 
+        (!@DataService.configuration?['email.enabled'] || 
+        (!@community?.selfRegNotification || @community?.email? && @community.email.trim() != '')))
+    ))
 
   updateCommunity: () =>
     @ValidationService.clearAll()
-    if @ValidationService.requireNonNull(@community.sname, "Please enter short name of the community.") &
-    @ValidationService.requireNonNull(@community.fname, "Please enter full name of the community.") &
-    (!(@community.email? && @community.email.trim() != '') || @ValidationService.validateEmail(@community.email, "Please enter a valid support email."))
-      @CommunityService.updateCommunity(@communityId, @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegToken, @community.domain?.id)
-      .then (data) =>
-        if data? && data.error_code?
-          @ValidationService.pushAlert({type:'danger', msg:data.error_description})
-          @alerts = @ValidationService.getAlerts()          
+    if @ValidationService.requireNonNull(@community.sname, "Please enter the short name of the community.") &
+    @ValidationService.requireNonNull(@community.fname, "Please enter the full name of the community.") &
+    (!(@community.email? && @community.email.trim() != '') || @ValidationService.validateEmail(@community.email, "Please enter a valid support email.")) &
+    (!@community.selfRegNotification || @ValidationService.requireNonNull(@community.email, "A support email needs to be defined to support notifications."))
+      if !@community.sameDescriptionAsDomain
+        descriptionToUse = @community.activeDescription
+      updateCall = () => 
+        @CommunityService.updateCommunity(@communityId, @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegRestriction, @community.selfRegToken, @community.selfRegNotification, descriptionToUse, @community.domain?.id)
+          .then (data) =>
+            if data? && data.error_code?
+              @ValidationService.pushAlert({type:'danger', msg:data.error_description})
+              @alerts = @ValidationService.getAlerts()          
+            else
+              @originalDomainId = @community.domain
+              @PopupService.success('Community updated.')
+          .catch (error) =>
+            @ErrorService.showErrorMessage(error)
+      if (!@originalDomainId? && @community.domain?) || (@originalDomainId? && @community.domain? && @originalDomainId != @community.domain)
+        if !@originalDomainId?
+          confirmationMessage = "Setting the "+@DataService.labelDomainLower()+" will remove existing conformance statements linked to other "+@DataService.labelDomainsLower()+". Are you sure you want to proceed?"
         else
-          if @DataService.isSystemAdmin
-            @cancelCommunityDetail()
-          else
-            @$state.go(@$state.$current, null, { reload: true });
-      .catch (error) =>
-        @ErrorService.showErrorMessage(error)
+          confirmationMessage = "Changing the "+@DataService.labelDomainLower()+" will remove all existing conformance statements. Are you sure you want to proceed?"
+        @ConfirmationDialogService.confirm("Confirm "+@DataService.labelDomainLower()+" change", confirmationMessage, "Yes", "No")
+        .then () =>
+          updateCall()
+      else
+        updateCall()
     else
       @alerts = @ValidationService.getAlerts()
 
@@ -180,6 +192,7 @@ class CommunityDetailController
       @CommunityService.deleteCommunity(@communityId)
       .then () =>
         @cancelCommunityDetail()
+        @PopupService.success('Community deleted.')
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
 
@@ -213,5 +226,8 @@ class CommunityDetailController
 
   updateParameters: () =>
     @$state.go 'app.admin.users.communities.detail.parameters'
+
+  editLabels: () =>
+    @$state.go 'app.admin.users.communities.detail.labels'
 
 @controllers.controller 'CommunityDetailController', CommunityDetailController

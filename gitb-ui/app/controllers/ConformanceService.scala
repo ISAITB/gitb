@@ -11,7 +11,7 @@ import exceptions.{ErrorCodes, NotFoundException}
 import javax.inject.Inject
 import managers._
 import models.{ConformanceStatementFull, OrganisationParameters, SystemParameters}
-import models.Enums.TestSuiteReplacementChoice
+import models.Enums.{LabelType, TestSuiteReplacementChoice}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.FileUtils
@@ -22,7 +22,7 @@ import play.api.mvc._
 import utils.signature.SigUtils
 import utils.{ClamAVClient, JsonUtil, MimeUtil}
 
-class ConformanceService @Inject() (communityManager: CommunityManager, conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, systemManager: SystemManager, testResultManager: TestResultManager, organizationManager: OrganizationManager, testCaseManager: TestCaseManager, endPointManager: EndPointManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager) extends Controller {
+class ConformanceService @Inject() (communityManager: CommunityManager, conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, systemManager: SystemManager, testResultManager: TestResultManager, organizationManager: OrganizationManager, testCaseManager: TestCaseManager, endPointManager: EndPointManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends Controller {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ConformanceService])
 
   /**
@@ -150,7 +150,7 @@ class ConformanceService @Inject() (communityManager: CommunityManager, conforma
       conformanceManager.updateDomain(domainId, shortName, fullName, description)
       ResponseConstructor.constructEmptyResponse
     } else{
-      throw new NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, "Domain with ID '" + domainId + "' not found")
+      throw new NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, LabelType.Domain) + " with ID '" + domainId + "' not found.")
     }
   }
 
@@ -159,7 +159,8 @@ class ConformanceService @Inject() (communityManager: CommunityManager, conforma
     authorizationManager.canCreateActor(request, specificationId)
     val actor = ParameterExtractor.extractActor(request)
     if (actorManager.checkActorExistsInSpecification(actor.actorId, specificationId, None)) {
-      ResponseConstructor.constructBadRequestResponse(500, "An actor with this ID already exists in the specification")
+      val labels = communityLabelManager.getLabels(request)
+      ResponseConstructor.constructBadRequestResponse(500, communityLabelManager.getLabel(labels, LabelType.Actor)+" already exists for this ID in the " + communityLabelManager.getLabel(labels, LabelType.Specification, true, true)+".")
     } else {
       conformanceManager.createActorWrapper(actor, specificationId)
       ResponseConstructor.constructEmptyResponse
@@ -170,7 +171,8 @@ class ConformanceService @Inject() (communityManager: CommunityManager, conforma
     val endpoint = ParameterExtractor.extractEndpoint(request)
     authorizationManager.canCreateEndpoint(request, endpoint.actor)
     if (endPointManager.checkEndPointExistsForActor(endpoint.name, endpoint.actor, None)) {
-      ResponseConstructor.constructBadRequestResponse(500, "An endpoint with this name already exists for the actor")
+      val labels = communityLabelManager.getLabels(request)
+      ResponseConstructor.constructBadRequestResponse(500, communityLabelManager.getLabel(labels, LabelType.Endpoint)+" with this name already exists for the "+communityLabelManager.getLabel(labels, LabelType.Actor, true, true))
     } else{
       endPointManager.createEndpointWrapper(endpoint)
       ResponseConstructor.constructEmptyResponse
@@ -181,7 +183,7 @@ class ConformanceService @Inject() (communityManager: CommunityManager, conforma
     val parameter = ParameterExtractor.extractParameter(request)
     authorizationManager.canCreateParameter(request, parameter.endpoint)
     if (parameterManager.checkParameterExistsForEndpoint(parameter.name, parameter.endpoint, None)) {
-      ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the endpoint")
+      ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the "+communityLabelManager.getLabel(request, LabelType.Endpoint, true, true)+".")
     } else{
       parameterManager.createParameterWrapper(parameter)
       ResponseConstructor.constructEmptyResponse
@@ -218,8 +220,8 @@ class ConformanceService @Inject() (communityManager: CommunityManager, conforma
 
   def resolvePendingTestSuite(specification_id: Long) = AuthorizedAction { request =>
     authorizationManager.canEditTestSuites(request, specification_id)
-    val pendingFolderId = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_TEST_SUITE_ID)
-    val pendingActionStr = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_TEST_SUITE_ACTION)
+    val pendingFolderId = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ID)
+    val pendingActionStr = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ACTION)
     var pendingAction: TestSuiteReplacementChoice = null
     if ("keep".equals(pendingActionStr)) {
       pendingAction = TestSuiteReplacementChoice.KEEP_TEST_HISTORY
@@ -309,7 +311,7 @@ class ConformanceService @Inject() (communityManager: CommunityManager, conforma
     val jsDomainParameter = ParameterExtractor.requiredBodyParameter(request, Parameters.CONFIG)
     val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, None, domainId)
     if (conformanceManager.getDomainParameterByDomainAndName(domainId, domainParameter.name).isDefined) {
-      ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the domain")
+      ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the "+communityLabelManager.getLabel(request, models.Enums.LabelType.Domain, true, true)+".")
     } else if (domainParameter.kind == "BINARY" && Configurations.ANTIVIRUS_SERVER_ENABLED && domainParameter.value.isDefined && ParameterExtractor.virusPresent(List(domainParameter.value.get))) {
       ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
     } else {
@@ -331,7 +333,7 @@ class ConformanceService @Inject() (communityManager: CommunityManager, conforma
 
     val existingDomainParameter = conformanceManager.getDomainParameterByDomainAndName(domainId, domainParameter.name)
     if (existingDomainParameter.isDefined && (existingDomainParameter.get.id != domainParameterId)) {
-      ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the domain")
+      ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the "+communityLabelManager.getLabel(request, models.Enums.LabelType.Domain, true, true)+".")
     } else if (domainParameter.kind == "BINARY" && Configurations.ANTIVIRUS_SERVER_ENABLED && domainParameter.value.isDefined && ParameterExtractor.virusPresent(List(domainParameter.value.get))) {
       ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
     } else {
@@ -547,4 +549,25 @@ class ConformanceService @Inject() (communityManager: CommunityManager, conforma
     val json = JsonUtil.jsSystemConfigurationEndpoints(status, false)
     ResponseConstructor.constructJsonResponse(json.toString)
   }
+
+  def getTestCaseDocumentation(id: Long) = AuthorizedAction { request =>
+    authorizationManager.canViewTestCase(request, id.toString)
+    val documentation = testCaseManager.getTestCaseDocumentation(id)
+    if (documentation.isDefined) {
+      ResponseConstructor.constructStringResponse(documentation.get)
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
+  def getTestSuiteDocumentation(id: Long) = AuthorizedAction { request =>
+    authorizationManager.canViewTestSuite(request, id)
+    val documentation = testSuiteManager.getTestSuiteDocumentation(id)
+    if (documentation.isDefined) {
+      ResponseConstructor.constructStringResponse(documentation.get)
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
 }

@@ -14,11 +14,41 @@ class Constants
 
 	@DEFAULT_COMMUNITY_ID = 0
 
+	@LABEL_TYPE = 
+		DOMAIN: 1
+		SPECIFICATION: 2
+		ACTOR: 3
+		ENDPOINT: 4
+		ORGANISATION: 5
+		SYSTEM: 6
+
+	@LABEL_TYPE_LABEL = 
+		1: "Domain"
+		2: "Specification"
+		3: "Actor"
+		4: "Endpoint"
+		5: "Organisation"
+		6: "System"
+
+	@LABEL_DEFAULT = {
+		1: {singularForm: "Domain", pluralForm: "Domains", fixedCase: false}
+		2: {singularForm: "Specification", pluralForm: "Specifications", fixedCase: false}
+		3: {singularForm: "Actor", pluralForm: "Actors", fixedCase: false}
+		4: {singularForm: "Endpoint", pluralForm: "Endpoints", fixedCase: false}
+		5: {singularForm: "Organisation", pluralForm: "Organisations", fixedCase: false}
+		6: {singularForm: "System", pluralForm: "Systems", fixedCase: false}
+	}
+
 	@SELF_REGISTRATION_TYPE = 
 		NOT_SUPPORTED: 1
 		PUBLIC_LISTING: 2
 		PUBLIC_LISTING_WITH_TOKEN: 3
 		TOKEN: 4
+
+	@SELF_REGISTRATION_RESTRICTION = 
+		NO_RESTRICTION: 1
+		USER_EMAIL: 2
+		USER_EMAIL_DOMAIN: 3
 
 	@TEST_ROLE =
 		SUT: "SUT"
@@ -85,7 +115,8 @@ class Constants
 		SKIPPED : 1,
 		WAITING : 2,
 		ERROR : 3,
-		COMPLETED: 4
+		WARNING: 4,
+		COMPLETED: 5
 
 	@TEST_CASE_STATUS =
 		READY : 0,
@@ -117,6 +148,46 @@ class Constants
 		SELF_REGISTER: 2
 		MIGRATE: 3
 
+	@DISCONNECT_ROLE_OPTION = 
+		CURRENT_PARTIAL: 1
+		CURRENT_FULL: 2
+		ALL: 3
+
+	@IMPORT_ITEM_TYPE =
+		DOMAIN: 1,
+		DOMAIN_PARAMETER: 2,
+		SPECIFICATION: 3,
+		ACTOR: 4,
+		ENDPOINT: 5,
+		ENDPOINT_PARAMETER: 6,
+		TEST_SUITE: 7,
+		COMMUNITY: 8,
+		ADMINISTRATOR: 9,
+		CUSTOM_LABEL: 10,
+		ORGANISATION_PROPERTY: 11,
+		SYSTEM_PROPERTY: 12,
+		LANDING_PAGE: 13,
+		LEGAL_NOTICE: 14,
+		ERROR_TEMPLATE: 15,
+		ORGANISATION: 16,
+		ORGANISATION_USER: 17,
+		ORGANISATION_PROPERTY_VALUE: 18,
+		SYSTEM: 19,
+		SYSTEM_PROPERTY_VALUE: 20,
+		STATEMENT: 21,
+		STATEMENT_CONFIGURATION: 22
+
+	@IMPORT_ITEM_MATCH =
+		ARCHIVE_ONLY: 1,
+		BOTH: 2,
+		DB_ONLY: 3
+
+	@IMPORT_ITEM_CHOICE =
+		SKIP: 1,
+		SKIP_PROCESS_CHILDREN: 2,
+		SKIP_DUE_TO_PARENT: 3,
+		PROCEED: 4
+
 	@TEST_CASE_RESULT =
 		SUCCESS : "SUCCESS"
 		FAILURE : "FAILURE"
@@ -126,6 +197,6 @@ class Constants
 	@DATA_URL_REGEX: /^data:.+\/(.+);base64,(.*)$/
 	@VARIABLE_NAME_REGEX: /^[a-zA-Z][a-zA-Z\-_\.0-9]*$/
 
-	@VERSION = "v1.7.2"
+	@VERSION = "v1.9.0"
 
 common.value('Constants', Constants)

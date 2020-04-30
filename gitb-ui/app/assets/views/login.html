@@ -24,7 +24,7 @@
                         </div>
                         <div class="row" ng-if="lc.DataService.actualUser.accounts.length == 0">
                             <div class="bg-info div-rounded div-padded">
-                                <span>To use the Test Bed you need to first be assigned a role in one or more organisations. To link such a role to your account click the button below to view available options.</span>
+                                <span>To use the Test Bed you need to first be assigned a role in one or more communities. To link such a role to your account click the button below to view available options.</span>
                             </div>                        
                         </div>
                         <div class="row" ng-class="{'div-spaced-small': !$first, 'account-card-ou': account.role == lc.Constants.USER_ROLE.VENDOR_USER, 'account-card-oa': account.role == lc.Constants.USER_ROLE.VENDOR_ADMIN, 'account-card-ca': account.role == lc.Constants.USER_ROLE.COMMUNITY_ADMIN, 'account-card-ta': account.role == lc.Constants.USER_ROLE.SYSTEM_ADMIN}" ng-repeat="account in lc.DataService.actualUser.accounts">
@@ -35,7 +35,7 @@
                             </div>
                         </div>
                         <div class="row account-list-new">
-                            <button class="btn btn-primary" ng-click="lc.createAccount()" ng-disabled="lc.createPending"><span class="tab" ng-if="lc.createPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>
+                            <button type="button" class="btn btn-primary" ng-click="lc.createAccount()" ng-disabled="lc.createPending"><span class="tab" ng-if="lc.createPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>
                                 <span ng-if="lc.DataService.actualUser.accounts.length > 0">Link another role to your account</span>
                                 <span ng-if="lc.DataService.actualUser.accounts.length == 0">Link a role to your account</span>
                             </button>
@@ -54,7 +54,7 @@
                             <form class="form-horizontal">
                                 <div class="panel panel-default">
                                     <div class="panel-heading">
-                                        <h4 class="title">{{lc.loginOption == lc.Constants.LOGIN_OPTION.REGISTER && lc.DataService.configuration['registration.enabled']?'Register your organisation':'Login'}}</h4>
+                                        <h4 class="title">{{lc.loginOption == lc.Constants.LOGIN_OPTION.REGISTER && lc.DataService.configuration['registration.enabled']?'Registration':'Login'}}</h4>
                                     </div>
                                     <div class="panel-body">
                                         <!-- Error messages -->
@@ -67,11 +67,15 @@
                                             <div class="col-xs-10 col-xs-offset-1">
                                                 <div class="form-group">
                                                     <label class="col-xs-3 control-label" for="email">Email address:</label>
-                                                    <div class="col-xs-7"><input id="email" ng-model="lc.email" class="form-control" required></div>
+                                                    <div class="col-xs-7"><input id="email" ng-model="lc.email" class="form-control"></div>
+                                                    <div tb-tooltip="The email-formatted username used to identify your account. This was either provided by you or by an administrator on your behalf."></div>
                                                 </div>
                                                 <div class="form-group">
                                                     <label class="col-xs-3 control-label" for="password">Password:</label>
-                                                    <div class="col-xs-7"><input id="password" ng-model="lc.password" class="form-control" type="password" required></div>
+                                                    <div class="col-xs-7">
+                                                        <input id="password" ng-model="lc.password" class="form-control" type="password">
+                                                    </div>
+                                                    <div tb-tooltip="The secret password used to authenticate your account. This was either selected by you or provided by an administrator as a one-time password."></div>
                                                 </div>
                                                 <div class="form-group">
                                                     <div class="col-xs-offset-3 col-xs-7">
@@ -85,7 +89,7 @@
                                             </div>
                                         </div>
                                         <div class="row" ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.REGISTER && lc.DataService.configuration['registration.enabled']">
-                                            <div class="col-xs-10 col-xs-offset-1">
+                                            <div class="col-xs-12">
                                                 <div tb-self-reg-form model="lc.selfRegData" self-reg-options=""></div>
                                             </div>
                                         </div>
@@ -98,7 +102,7 @@
                                     <div class="panel-footer">
                                         <button ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.NONE" type="submit" ng-click="lc.login()" class="btn btn-default" ng-disabled="lc.loginDisabled()"><span class="tab" ng-if="lc.spinner"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i> </span>Log in</button>
                                         <button ng-if="lc.loginOption == lc.Constants.LOGIN_OPTION.REGISTER" type="submit" ng-click="lc.register()" class="btn btn-default" ng-disabled="lc.registerDisabled()"><span class="tab" ng-if="lc.spinner"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i> </span>Register</button>
-                                        <button ng-click="lc.cancelLogin()" class="btn btn-default">Cancel</button>
+                                        <button ng-click="lc.cancelLogin()" type="button" class="btn btn-default">Cancel</button>
                                     </div>
                                 </form>
                             </div>

@@ -1,5 +1,6 @@
 package utils;
 
+import config.Configurations;
 import managers.AttachmentType;
 
 import javax.activation.DataHandler;
@@ -10,7 +11,6 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 import javax.mail.util.ByteArrayDataSource;
-import java.util.Properties;
 
 public class EmailUtil {
 
@@ -34,8 +34,8 @@ public class EmailUtil {
         return authenticator;
     }
 
-    public static void sendEmail(String from, String[] tos, String[] ccs, String subject, String content, AttachmentType[] attachments, Properties mailProperties, String username, String password) {
-        Session session = Session.getDefaultInstance(mailProperties, getAuthenticator(username, password));
+    public static void sendEmail(String from, String[] tos, String[] ccs, String subject, String content, AttachmentType[] attachments) {
+        Session session = Session.getDefaultInstance(Configurations.SMTP_PROPERTIES(), getAuthenticator(Configurations.EMAIL_SMTP_AUTH_USERNAME(), Configurations.EMAIL_SMTP_AUTH_PASSWORD()));
         MimeMessage message = new MimeMessage(session);
         try {
             message.setFrom(new InternetAddress(from));

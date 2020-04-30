@@ -1,12 +1,17 @@
 class UserDetailController
 
-  @$inject = ['$log', '$state', '$stateParams', 'ValidationService', 'UserManagementService', 'ConfirmationDialogService', 'UserService', 'Constants', 'ErrorService', 'DataService', 'AuthService', '$q']
-  constructor: (@$log, @$state, @$stateParams,  @ValidationService, @UserManagementService, @ConfirmationDialogService, @UserService, @Constants, @ErrorService, @DataService, @AuthService, @$q) ->
+  @$inject = ['$log', '$state', '$stateParams', 'ValidationService', 'UserManagementService', 'ConfirmationDialogService', 'UserService', 'Constants', 'ErrorService', 'DataService', 'AuthService', '$q', 'PopupService']
+  constructor: (@$log, @$state, @$stateParams,  @ValidationService, @UserManagementService, @ConfirmationDialogService, @UserService, @Constants, @ErrorService, @DataService, @AuthService, @$q, @PopupService) ->
 
     @orgId = @$stateParams.org_id
     @userId = @$stateParams.user_id
     @alerts = []
     @user = {}
+
+    if @DataService.configuration['sso.enabled']
+      @DataService.focus('role')
+    else
+      @DataService.focus('name')
 
     @roleChoices = @Constants.VENDOR_USER_ROLES
 
@@ -24,7 +29,7 @@ class UserDetailController
     if @DataService.configuration['sso.enabled']
       !(@user.role?)
     else
-      !(@user.name? && @user.role?)
+      !(@user.name? && @user.name.trim() != '' && @user.role?)
 
   # update and cancel detail
   updateUser: () =>
@@ -59,6 +64,7 @@ class UserDetailController
         .then (data) =>
           if (!data)
             @cancelDetailUser()
+            @PopupService.success('User updated.')
           else
             @ValidationService.pushAlert({type:'danger', msg:data.error_description})
         .catch (error) =>
@@ -74,6 +80,7 @@ class UserDetailController
       .then (data) =>
         if (!data)
           @cancelDetailUser()
+          @PopupService.success('User deleted.')
         else
           @ValidationService.pushAlert({type:'danger', msg:data.error_description})
           @alerts = @ValidationService.getAlerts()

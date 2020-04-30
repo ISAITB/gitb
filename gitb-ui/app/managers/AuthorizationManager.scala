@@ -15,6 +15,7 @@ import persistence.AccountManager
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.Files
 import play.api.mvc.{AnyContent, MultipartFormData}
+import utils.RepositoryUtils
 
 object AuthorizationManager {
   val AUTHORIZATION_OK = "AUTH_OK"
@@ -240,7 +241,15 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canDeleteAdministrator(request: RequestWithAttributes[_], userId: Long):Boolean = {
-    checkTestBedAdmin(request)
+    var ok = false
+    val userInfo = getUser(getRequestUserId(request))
+    if (isTestBedAdmin(userInfo)) {
+      ok = true
+    } else if (isCommunityAdmin(userInfo)) {
+      val targetUserOrganisation = getUserOrganisation(userId).get
+      ok = targetUserOrganisation.community == userInfo.organization.get.community
+    }
+    setAuthResult(request, ok, "User cannot delete the requested administrator")
   }
 
   def canUpdateOrganisationUser(request: RequestWithAttributes[_], userId: Long):Boolean = {
@@ -339,6 +348,29 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canExecuteTestCase(request: RequestWithAttributes[_], test_id: String):Boolean = {
     canViewTestCase(request, test_id)
+  }
+
+  def canExecuteTestCases(request: RequestWithAttributes[AnyContent], testCaseIds: List[Long], specId: Long, systemId: Long, actorId: Long): Boolean = {
+    var ok = false
+    val userInfo = getUser(getRequestUserId(request))
+    if (isTestBedAdmin(userInfo)) {
+      ok = true
+    } else {
+      val testCases = testCaseManager.getTestCasesForIds(testCaseIds)
+      if (testCases.nonEmpty) {
+        ok = true
+      } else {
+        var specificationIds: Set[Long] = Set()
+        testCases.foreach { testCase =>
+          specificationIds += testCase.targetSpec
+        }
+        if (specificationIds.size == 1 && specificationIds.head == specId) {
+          // All test cases must relate to a single specification (the requested one)
+          ok = canViewSpecifications(request, userInfo, Some(specificationIds.toList)) && canViewSystemsById(request, userInfo, Some(List(systemId)))
+        }
+      }
+    }
+    setAuthResult(request, ok, "Cannot view the requested test case(s)")
   }
 
   def canGetBinaryFileMetadata(request: RequestWithAttributes[_]):Boolean = {
@@ -1082,7 +1114,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canDeleteDomain(request: RequestWithAttributes[_], domain_id: Long):Boolean = {
-    canUpdateDomain(request, domain_id)
+    checkTestBedAdmin(request)
   }
 
   def canViewEndpointsById(request: RequestWithAttributes[_], ids: Option[List[Long]]):Boolean = {
@@ -1146,6 +1178,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canManageDomain(request: RequestWithAttributes[_], domainId: Long):Boolean = {
     canManageDomain(request, getUser(getRequestUserId(request)), domainId)
+  }
+
+  def canApplySandboxDataMulti(request: RequestWithAttributes[MultipartFormData[Files.TemporaryFile]]): Boolean = {
+    setAuthResult(request, Configurations.DATA_WEB_INIT_ENABLED && !RepositoryUtils.getDataLockFile().exists(), "Web-based data initialisation is not enabled")
   }
 
   private def isCommunityAdmin(userInfo: User): Boolean = {

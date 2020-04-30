@@ -1,7 +1,7 @@
 class CreateConformanceStatementController
 
-  @$inject = ['$log', '$location', '$q', '$window', '$scope', '$state', '$stateParams', 'ConformanceService', 'SystemService', 'ErrorService']
-  constructor:(@$log, @$location, @$q, @$window, @$scope, @$state, @$stateParams, @ConformanceService, @SystemService, @ErrorService) ->
+  @$inject = ['$log', '$location', '$q', '$window', '$scope', '$state', '$stateParams', 'ConformanceService', 'SystemService', 'ErrorService', 'DataService', 'PopupService']
+  constructor:(@$log, @$location, @$q, @$window, @$scope, @$state, @$stateParams, @ConformanceService, @SystemService, @ErrorService, @DataService, @PopupService) ->
     @$log.debug "Constructing CreateConformanceStatementController"
 
     @alerts = []
@@ -52,15 +52,15 @@ class CreateConformanceStatementController
     @steps = [
       {
         id: 1
-        title: 'Select domain'
+        title: 'Select ' + @DataService.labelDomainLower()
       }
       {
         id: 2
-        title: 'Select specification'
+        title: 'Select ' + @DataService.labelSpecificationLower()
       }
       {
         id: 3
-        title: 'Select actor'
+        title: 'Select ' + @DataService.labelActorLower()
       }
     ]
 
@@ -82,6 +82,7 @@ class CreateConformanceStatementController
         @ErrorService.showErrorMessage(error)
       else
         @$state.go "app.systems.detail.conformance.list", {id: @systemId}
+        @PopupService.success("Conformance statement created.")
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -99,7 +100,7 @@ class CreateConformanceStatementController
     @showDomains = true
     @confirmAction = @confirmDomain
     @confirmButtonText = 'Next'
-    @headerText = 'Select domain'
+    @headerText = 'Select ' + @DataService.labelDomainLower()
     @showButtonPanel = true
 
   setSpecsView: () =>
@@ -107,7 +108,7 @@ class CreateConformanceStatementController
     @showSpecs = true
     @confirmAction = @confirmSpec
     @confirmButtonText = 'Next'
-    @headerText = 'Select specification'
+    @headerText = 'Select ' + @DataService.labelSpecificationLower()
     @showButtonPanel = true
 
   setActorsView: () =>
@@ -115,7 +116,7 @@ class CreateConformanceStatementController
     @showActors = true
     @confirmAction = @confirmActor
     @confirmButtonText = 'Next'
-    @headerText = 'Select actor'
+    @headerText = 'Select ' + @DataService.labelActorLower()
     @showButtonPanel = true
 
   setConfirmationView: () =>
@@ -159,12 +160,16 @@ class CreateConformanceStatementController
     @ConformanceService.getSpecifications(domainId)
     .then(
       (data) =>
-        @specs = data
-        if @specs? && @specs.length == 1
-          @onSpecificationSelect(@specs[0])
-          @confirmSpec()
-        else
-          @setSpecsView()
+        if data?
+          _.remove(data, (spec) =>
+            spec.hidden == true
+          )          
+          @specs = data
+          if data.length == 1
+            @onSpecificationSelect(@specs[0])
+            @confirmSpec()
+          else
+            @setSpecsView()
       ,
       (error) =>
         @ErrorService.showErrorMessage(error)
@@ -177,21 +182,25 @@ class CreateConformanceStatementController
     .then(
       (data) =>
         if data? 
+          _.remove(data, (actor) =>
+            actor.hidden == true
+          )
           if data.length == 1
             @actors = data
             @onActorSelect(@actors[0])
             @confirmActor()
-          else 
-            if data.length > 1
-              defaultActor = _.find(data, (actor) =>
-                actor.default == true
-              )
-              if defaultActor?
-                @onActorSelect(defaultActor)
-                @confirmActor()
-              else
-                @actors = data
-                @setActorsView()
+          else if data.length > 1
+            defaultActor = _.find(data, (actor) =>
+              actor.default == true
+            )
+            if defaultActor?
+              @onActorSelect(defaultActor)
+              @confirmActor()
+            else
+              @actors = data
+              @setActorsView()
+          else
+            @setActorsView()
       ,
       (error) =>
         @ErrorService.showErrorMessage(error)

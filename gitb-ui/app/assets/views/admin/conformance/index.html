@@ -1,30 +1,21 @@
-<div class="page conformancedashboard">
+<div id="conformanceDashboardPage" class="page conformancedashboard">
 	<div class="panel panel-default">
         <div class="panel-heading">
 			<h4 class="title">Filters</h4>
-			<div class="btn-group btn-toggle pull-right">
-				<button ng-disabled="adminConformanceCtrl.showFilters"
-						ng-class="{true: 'btn btn-primary active', false : 'btn btn-default'}[adminConformanceCtrl.showFilters]"
-						ng-click="adminConformanceCtrl.showFilter()">
-					APPLY
-				</button>
-				<button ng-disabled="!adminConformanceCtrl.showFilters"
-						ng-class="{true: 'btn btn-default', false : 'btn btn-primary active'}[adminConformanceCtrl.showFilters]"
-						ng-click="adminConformanceCtrl.clearFilter()">
-					CLEAR
-				</button>
+			<div class="btn-toolbar pull-right padded">
+                <toggle id="conformance-toggle-filter" class="btn-group" ng-model="adminConformanceCtrl.showFilters" on="Enabled" off="Disabled" ng-change="adminConformanceCtrl.DataService.async(adminConformanceCtrl.showFilters?adminConformanceCtrl.showFilter:adminConformanceCtrl.clearFilter)"/>
 			</div>
 		</div>
-        <div class="table-responsive">
-			<table class="table" ng-if="adminConformanceCtrl.showFilters">
+        <div class="table-responsive" uib-collapse="!adminConformanceCtrl.showFilters">
+			<table class="table">
 				<thead>
 				<tr>
 					<th class="col-md-1" ng-if="!adminConformanceCtrl.DataService.isCommunityAdmin">Community</th>
-					<th class="col-md-1">Organisation</th>
-					<th class="col-md-1">System</th>
-					<th class="col-md-1" ng-if="adminConformanceCtrl.DataService.isSystemAdmin || (adminConformanceCtrl.DataService.isCommunityAdmin && adminConformanceCtrl.DataService.community.domain === null)">Domain</th>
-					<th class="col-md-1">Specification</th>
-					<th class="col-md-1">Actor</th>
+					<th class="col-md-1">{{adminConformanceCtrl.DataService.labelOrganisation()}}</th>
+					<th class="col-md-1">{{adminConformanceCtrl.DataService.labelSystem()}}</th>
+					<th class="col-md-1" ng-if="adminConformanceCtrl.DataService.isSystemAdmin || (adminConformanceCtrl.DataService.isCommunityAdmin && adminConformanceCtrl.DataService.community.domain === null)">{{adminConformanceCtrl.DataService.labelDomain()}}</th>
+					<th class="col-md-1">{{adminConformanceCtrl.DataService.labelSpecification()}}</th>
+					<th class="col-md-1">{{adminConformanceCtrl.DataService.labelActor()}}</th>
 				</tr>
 				</thead>
 				<tbody>
@@ -91,23 +82,23 @@
 			</div>
 		</div>
 	</div>
-	<div class="panel panel-default">
+	<div id="conformanceDashboardPageTable" class="panel panel-default">
 		<div class="panel-heading">
 			<h4 id="conformance-statements-title" class="title">Conformance statements</h4>
-			<div class="pull-right">
-				<button class="btn btn-default" ng-if="adminConformanceCtrl.conformanceStatements.length > 0" ng-click="adminConformanceCtrl.onExportConformanceStatementsAsCsv()">Export CSV</button>
-				<button class="btn btn-default" ng-if="adminConformanceCtrl.showCollapseAll()" ng-click="adminConformanceCtrl.onCollapseAll()">Collapse all</button>
+			<div class="btn-toolbar pull-right padded">
+				<button type="button" class="btn btn-default" ng-if="adminConformanceCtrl.conformanceStatements.length > 0" ng-click="adminConformanceCtrl.onExportConformanceStatementsAsCsv()">Export CSV</button>
+				<button type="button" class="btn btn-default" ng-if="adminConformanceCtrl.showCollapseAll()" ng-click="adminConformanceCtrl.onCollapseAll()">Collapse all</button>
 			</div>
 		</div>
-		<table class="table table-directive conformance-test-cases-table">
+		<table class="table table-directive expandable-table">
 			<thead>
 			<tr>
 				<th ng-if="!adminConformanceCtrl.DataService.isCommunityAdmin">Community</th>
-				<th>Organisation</th>
-				<th>System</th>
-				<th ng-if="adminConformanceCtrl.DataService.isSystemAdmin || (adminConformanceCtrl.DataService.isCommunityAdmin && adminConformanceCtrl.DataService.community.domain === null)">Domain</th>
-				<th>Specification</th>
-				<th>Actor</th>
+				<th>{{adminConformanceCtrl.DataService.labelOrganisation()}}</th>
+				<th>{{adminConformanceCtrl.DataService.labelSystem()}}</th>
+				<th ng-if="adminConformanceCtrl.DataService.isSystemAdmin || (adminConformanceCtrl.DataService.isCommunityAdmin && adminConformanceCtrl.DataService.community.domain === null)">{{adminConformanceCtrl.DataService.labelDomain()}}</th>
+				<th>{{adminConformanceCtrl.DataService.labelSpecification()}}</th>
+				<th>{{adminConformanceCtrl.DataService.labelActor()}}</th>
 				<th width="20%">Status</th>
 				<th width="1%">Export</th>
 			</tr>
@@ -115,7 +106,7 @@
 			<tbody ng-if="adminConformanceCtrl.conformanceStatements.length > 0">
 			<tr ng-repeat-start="statement in adminConformanceCtrl.conformanceStatements"
 				ng-click="adminConformanceCtrl.onExpand(statement)"
-				class="table-row-directive conformance-test-cases-row-collapsed">
+				class="table-row-directive expandable-table-row-collapsed">
 				<td ng-if="!adminConformanceCtrl.DataService.isCommunityAdmin">{{statement.communityName}}</td>
 				<td>{{statement.organizationName}}</td>
 				<td>{{statement.systemName}}</td>
@@ -123,29 +114,31 @@
 				<td>{{statement.specName}}</td>
 				<td>{{statement.actorName}}</td>
 				<td>{{statement.status}}</td>
-				<td align="center"><button class="btn btn-default" ng-click="adminConformanceCtrl.onExportConformanceStatement(statement); $event.stopPropagation();"><i class="fa fa-file-pdf-o"></i></button></td>
+				<td style="text-align: center"><button class="btn btn-default" ng-click="adminConformanceCtrl.onExportConformanceStatement(statement); $event.stopPropagation();"><i class="fa fa-file-pdf-o"></i></button></td>
 			</tr>
-			<tr ng-if="adminConformanceCtrl.isExpanded(statement)" ng-repeat-end class="conformance-test-cases-row-expanded">
-				<td colspan="8" class="conformance-test-cases-cell">
-					<table class="table table-directive conformance-test-cases-table">
-						<thead>
-							<th width="45%">Test suite</th>
-							<th width="45%">Test case</th>
-							<th>Result</th>
-							<th width="1%">Export</th>
-						</thead>
-						<tbody>
-							<tr ng-repeat="testCase in statement.testCases">
-								<td>{{testCase.testSuiteName}}</td>
-								<td>{{testCase.testCaseName}}</td>
-								<td>{{testCase.result}}</td>
-								<td align="center"><button ng-if="adminConformanceCtrl.showExportTestCase(testCase)" class="btn btn-default" ng-click="adminConformanceCtrl.onExportTestCase(statement, testCase)"><i class="fa fa-file-pdf-o"></i></button></td>
-							</tr>
-						</tbody>
-					</table>
+			<tr ng-repeat-end class="expandable-table-row-expanded">
+				<td colspan="8" class="expandable-table-expandable-cell">
+					<div uib-collapse="!adminConformanceCtrl.isExpanded(statement)">
+						<table class="table table-directive expandable-table">
+							<thead>
+								<th width="45%">Test suite</th>
+								<th width="45%">Test case</th>
+								<th>Result</th>
+								<th width="1%">Export</th>
+							</thead>
+							<tbody>
+								<tr ng-repeat="testCase in statement.testCases">
+									<td>{{testCase.testSuiteName}}</td>
+									<td>{{testCase.testCaseName}}</td>
+									<td>{{testCase.result}}</td>
+									<td style="text-align: center"><button ng-if="adminConformanceCtrl.showExportTestCase(testCase)" class="btn btn-default" ng-click="adminConformanceCtrl.onExportTestCase(statement, testCase)"><i class="fa fa-file-pdf-o"></i></button></td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
 				</td>
 			</tr>
 			</tbody>
-		</table>
+		</table>		
 	</div>
 </div>

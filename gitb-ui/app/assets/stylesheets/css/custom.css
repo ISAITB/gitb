@@ -174,3 +174,26 @@ div.execution {
   display: none !important;
 }
 
+.bordered {
+	border: 1px solid #e5e5e5;
+}
+
+#notification-container > .growl-container {
+	top: 74px;
+    right: 10px;	
+}
+
+#notification-container >.growl-container > .growl-item {
+    padding-top: 20px;
+    padding-bottom: 20px;
+}
+
+.tooltip-for-radio-label {
+	vertical-align: middle;
+	display: inline-block;
+	padding-top: 7px;	
+}
+
+.tooltip-inner {
+	min-width: 200px !important;
+}

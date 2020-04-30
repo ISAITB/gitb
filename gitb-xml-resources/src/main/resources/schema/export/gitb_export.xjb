@@ -1,0 +1,81 @@
+<jxb:bindings version="1.0"
+            xmlns:jxb="http://java.sun.com/xml/ns/jaxb"
+            xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+            schemaLocation="gitb_export.xsd"
+            node="/xsd:schema">
+    <jxb:bindings node="//xsd:complexType[@name='Organisation']/xsd:complexContent/xsd:extension/xsd:attribute[@name='landingPage']">
+        <jxb:property name="landingPage">
+            <jxb:baseType name="com.gitb.xml.export.LandingPage"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='Organisation']/xsd:complexContent/xsd:extension/xsd:attribute[@name='legalNotice']">
+        <jxb:property name="legalNotice">
+            <jxb:baseType name="com.gitb.xml.export.LegalNotice"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='Organisation']/xsd:complexContent/xsd:extension/xsd:attribute[@name='errorTemplate']">
+        <jxb:property name="errorTemplate">
+            <jxb:baseType name="com.gitb.xml.export.ErrorTemplate"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='OrganisationPropertyValue']/xsd:complexContent/xsd:extension/xsd:attribute[@name='property']">
+        <jxb:property name="property">
+            <jxb:baseType name="com.gitb.xml.export.OrganisationProperty"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='SystemPropertyValue']/xsd:complexContent/xsd:extension/xsd:attribute[@name='property']">
+        <jxb:property name="property">
+            <jxb:baseType name="com.gitb.xml.export.SystemProperty"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='Actor']/xsd:complexContent/xsd:extension/xsd:attribute[@name='specification']">
+        <jxb:property name="specification">
+            <jxb:baseType name="com.gitb.xml.export.Specification"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='TestSuite']/xsd:complexContent/xsd:extension/xsd:attribute[@name='specification']">
+        <jxb:property name="specification">
+            <jxb:baseType name="com.gitb.xml.export.Specification"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='TestSuite']/xsd:complexContent/xsd:extension/xsd:attribute[@name='actors']">
+        <jxb:property name="actors">
+            <jxb:baseType name="com.gitb.xml.export.Actor"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='TestCase']/xsd:complexContent/xsd:extension/xsd:attribute[@name='testSuite']">
+        <jxb:property name="testSuite">
+            <jxb:baseType name="com.gitb.xml.export.TestSuite"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='TestCase']/xsd:complexContent/xsd:extension/xsd:attribute[@name='specification']">
+        <jxb:property name="specification">
+            <jxb:baseType name="com.gitb.xml.export.Specification"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='TestCaseActor']/xsd:complexContent/xsd:extension/xsd:attribute[@name='actor']">
+        <jxb:property name="actor">
+            <jxb:baseType name="com.gitb.xml.export.Actor"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='EndpointParameter']/xsd:complexContent/xsd:extension/xsd:attribute[@name='endpoint']">
+        <jxb:property name="endpoint">
+            <jxb:baseType name="com.gitb.xml.export.Endpoint"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='ConformanceStatement']/xsd:complexContent/xsd:extension/xsd:attribute[@name='actor']">
+        <jxb:property name="actor">
+            <jxb:baseType name="com.gitb.xml.export.Actor"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='Configuration']/xsd:complexContent/xsd:extension/xsd:attribute[@name='parameter']">
+        <jxb:property name="parameter">
+            <jxb:baseType name="com.gitb.xml.export.EndpointParameter"/>
+        </jxb:property>
+    </jxb:bindings>
+    <jxb:bindings node="//xsd:complexType[@name='Community']/xsd:complexContent/xsd:extension/xsd:attribute[@name='domain']">
+        <jxb:property name="domain">
+            <jxb:baseType name="com.gitb.xml.export.Domain"/>
+        </jxb:property>
+    </jxb:bindings>
+</jxb:bindings>

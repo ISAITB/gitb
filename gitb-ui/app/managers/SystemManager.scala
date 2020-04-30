@@ -150,6 +150,10 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
   }
 
   def updateSystemProfile(userId: Long, systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
+    exec(updateSystemProfileInternal(Some(userId), None, systemId, sname, fname, description, version, otherSystem, propertyValues, copySystemParameters, copyStatementParameters).transactionally)
+  }
+
+  def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
     val actions = new ListBuffer[DBIO[_]]()
 
     //update short name of the system
@@ -179,16 +183,22 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
       actions += copyTestSetup(otherSystem.get, systemId, copySystemParameters, copyStatementParameters)
     }
     if (propertyValues.isDefined && (otherSystem.isEmpty || !copySystemParameters)) {
-      val communityId = getCommunityIdOfSystem(systemId)
-      val user = exec(PersistenceSchema.users.filter(_.id === userId).result.head)
-      val isAdmin = user.role == UserRole.SystemAdmin.id.toShort || user.role == UserRole.CommunityAdmin.id.toShort
-
-      actions += saveSystemParameterValues(systemId, communityId, isAdmin, propertyValues.get)
+      var isAdmin = false
+      if (userId.isEmpty) {
+        isAdmin = true
+      } else {
+        val user = exec(PersistenceSchema.users.filter(_.id === userId.get).result.head)
+        isAdmin = user.role == UserRole.SystemAdmin.id.toShort || user.role == UserRole.CommunityAdmin.id.toShort
+      }
+      var communityIdToUse: Option[Long] = None
+      if (communityId.isDefined) {
+        communityIdToUse = Some(communityId.get)
+      } else {
+        communityIdToUse = Some(getCommunityIdOfSystem(systemId))
+      }
+      actions += saveSystemParameterValues(systemId, communityIdToUse.get, isAdmin, propertyValues.get)
     }
-
-    if (actions.nonEmpty) {
-      exec(DBIO.seq(actions.map(a => a): _*).transactionally)
-    }
+    toDBIO(actions)
   }
 
   def getSystemProfile(systemId: Long): models.System = {
@@ -259,47 +269,59 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
   }
 
   def defineConformanceStatement(system: Long, spec: Long, actor: Long, options: Option[List[Long]]) = {
-    val actions = new ListBuffer[DBIO[_]]()
-    val query = PersistenceSchema.testCaseHasActors
+    for {
+      conformanceInfo <- PersistenceSchema.testCaseHasActors
         .join(PersistenceSchema.testSuiteHasTestCases).on(_.testcase === _.testcase)
         .filter(_._1.actor === actor)
         .filter(_._1.sut === true)
         .map(r => (r._1.testcase, r._2.testsuite))
-    val conformanceInfo = exec(query.result.map(_.toList))
-    if (conformanceInfo.isEmpty) {
-      actions += DBIO.successful(())
-    } else {
+        .result
       // Add the system to actor mapping. This may be missing due to test suite updates that changed actor roles.
-      val qCheck = PersistenceSchema.systemImplementsActors
-        .filter(_.systemId === system)
-        .filter(_.actorId === actor)
-        .filter(_.specId === spec)
-      val existingSystemMapping = exec(qCheck.result.headOption)
-      if (existingSystemMapping.isDefined) {
-        actions += DBIO.successful(())
-      } else {
-        actions += (PersistenceSchema.systemImplementsActors += (system, spec, actor))
+      existingSystemMapping <- {
+        if (conformanceInfo.isEmpty) {
+          DBIO.successful(None)
+        } else {
+          PersistenceSchema.systemImplementsActors
+            .filter(_.systemId === system)
+            .filter(_.actorId === actor)
+            .filter(_.specId === spec)
+            .result
+            .headOption
+        }
+      }
+      _ <- {
+        if (existingSystemMapping.isDefined) {
+          DBIO.successful(())
+        } else {
+          PersistenceSchema.systemImplementsActors += (system, spec, actor)
+        }
       }
       // Load any existing test results for the system and actor.
-      val existingResults = exec(PersistenceSchema.testResults.filter(_.sutId === system).filter(_.actorId === actor).filter(_.testCaseId.isDefined).result.map(_.toList))
-      val existingResultsMap = new util.HashMap[Long, (String, String)]
-      existingResults.foreach { existingResult =>
-        existingResultsMap.put(existingResult.testCaseId.get, (existingResult.sessionId, existingResult.result))
-      }
-      conformanceInfo.foreach { conformanceInfoEntry =>
-        val testCase = conformanceInfoEntry._1
-        val testSuite = conformanceInfoEntry._2
-        var result = TestResultStatus.UNDEFINED
-        var sessionId: Option[String] = None
-        if (existingResultsMap.containsKey(testCase)) {
-          val existingData = existingResultsMap.get(testCase)
-          sessionId = Some(existingData._1)
-          result = TestResultStatus.withName(existingData._2)
+      existingResults <- PersistenceSchema.testResults.filter(_.sutId === system).filter(_.actorId === actor).filter(_.testCaseId.isDefined).result
+      existingResultsMap <- {
+        val existingResultsMap = new util.HashMap[Long, (String, String)]
+        existingResults.foreach { existingResult =>
+          existingResultsMap.put(existingResult.testCaseId.get, (existingResult.sessionId, existingResult.result))
         }
-        actions += (PersistenceSchema.conformanceResults += ConformanceResult(0L, system, spec, actor, testSuite, testCase, result.toString, sessionId))
+        DBIO.successful(existingResultsMap)
       }
-    }
-    DBIO.seq(actions.map(a => a): _*)
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        conformanceInfo.foreach { conformanceInfoEntry =>
+          val testCase = conformanceInfoEntry._1
+          val testSuite = conformanceInfoEntry._2
+          var result = TestResultStatus.UNDEFINED
+          var sessionId: Option[String] = None
+          if (existingResultsMap.containsKey(testCase)) {
+            val existingData = existingResultsMap.get(testCase)
+            sessionId = Some(existingData._1)
+            result = TestResultStatus.withName(existingData._2)
+          }
+          actions += (PersistenceSchema.conformanceResults += ConformanceResult(0L, system, spec, actor, testSuite, testCase, result.toString, sessionId))
+        }
+        toDBIO(actions)
+      }
+    } yield ()
   }
 
   def getConformanceStatementReferences(systemId: Long) = {
@@ -377,6 +399,19 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
         .filter(_.sut === systemId)
         .delete
 
+      // Configs
+      exec(PersistenceSchema.configs
+        .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
+        .filter(_._2.actor === actorId)
+        .map(_._1).result.map(_.toList))
+        .foreach { config =>
+          actions += PersistenceSchema.configs
+            .filter(_.system === config.system)
+            .filter(_.endpoint === config.endpoint)
+            .filter(_.parameter === config.parameter)
+            .delete
+        }
+
       val optionIds = exec(PersistenceSchema.options
                       .filter(_.actor === actorId)
                       .map(_.id).result.map(_.toList))
@@ -416,31 +451,48 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     exec(PersistenceSchema.configs.filter(_.endpoint === endpoint).filter(_.system === system).result.map(_.toList))
   }
 
-  def deleteEndpointConfiguration(systemId: Long, parameterId: Long, endpointId: Long) = {
-    exec(PersistenceSchema.configs
+  def deleteEndpointConfigurationInternal(systemId: Long, parameterId: Long, endpointId: Long) = {
+    PersistenceSchema.configs
       .filter(_.system === systemId)
       .filter(_.parameter === parameterId)
       .filter(_.endpoint === endpointId)
-      .delete.transactionally)
+      .delete
+  }
+
+  def deleteEndpointConfiguration(systemId: Long, parameterId: Long, endpointId: Long) = {
+    exec(deleteEndpointConfigurationInternal(systemId, parameterId, endpointId).transactionally)
+  }
+
+  def saveEndpointConfigurationInternal(forceAdd: Boolean, forceUpdate: Boolean, config: Configs) = {
+    require((!forceAdd && !forceUpdate) || (forceAdd != forceUpdate), "When forcing an action this must be either an addition or an update but not both")
+    for {
+      existingConfig <- {
+        if (!forceAdd && !forceUpdate) {
+          PersistenceSchema.configs
+            .filter(_.system === config.system)
+            .filter(_.parameter === config.parameter)
+            .filter(_.endpoint === config.endpoint)
+            .size.result
+        } else {
+          DBIO.successful(1)
+        }
+      }
+      _ <- {
+        if (forceAdd || existingConfig == 0) {
+          PersistenceSchema.configs += config
+        } else {
+          PersistenceSchema.configs
+            .filter(_.system === config.system)
+            .filter(_.parameter === config.parameter)
+            .filter(_.endpoint === config.endpoint)
+            .update(config)
+        }
+      }
+    } yield ()
   }
 
   def saveEndpointConfiguration(config: Configs) = {
-    val size = exec(PersistenceSchema.configs
-      .filter(_.system === config.system)
-      .filter(_.parameter === config.parameter)
-      .filter(_.endpoint === config.endpoint)
-      .size.result)
-    var action: DBIO[_] = null
-    if (size == 0) {
-      action = (PersistenceSchema.configs += config)
-    } else {
-      action = PersistenceSchema.configs
-        .filter(_.system === config.system)
-        .filter(_.parameter === config.parameter)
-        .filter(_.endpoint === config.endpoint)
-        .update(config)
-    }
-    exec(action.transactionally)
+    exec(saveEndpointConfigurationInternal(false, false, config).transactionally)
   }
 
   def getConfigurationsWithEndpointIds(system: Long, ids: List[Long]): List[Configs] = {

@@ -21,6 +21,9 @@ public class TemplateUtils {
 	private static final Pattern placeholderPattern = Pattern.compile("\\$\\{("+VARIABLE_EXPRESSION__NO_DOLLAR+")\\}");
 
 	public static DataType generateDataTypeFromTemplate(TestCaseScope scope, byte[] templateBytes, String type, String encoding, boolean forceBinaryTemplateProcessing) {
+		if (type == null) {
+			type = DataType.STRING_DATA_TYPE;
+		}
 		if (type.equals(DataType.BINARY_DATA_TYPE) && !forceBinaryTemplateProcessing) {
 			// return immediately if dealing with binary data
 			BinaryType binary = new BinaryType();

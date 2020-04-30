@@ -1,26 +1,19 @@
 class CreateEditDomainParameterController
 
-	@$inject = ['$log', '$scope', '$uibModalInstance', 'ConfirmationDialogService', 'ConformanceService', 'ErrorService', 'domainParameter', 'domainId', 'DataService']
-	constructor:(@$log, @$scope, @$uibModalInstance, @ConfirmationDialogService, @ConformanceService, @ErrorService, domainParameter, domainId, @DataService) ->
+	@$inject = ['$log', '$scope', '$uibModalInstance', 'ConfirmationDialogService', 'ConformanceService', 'ErrorService', 'domainParameter', 'domainId', 'DataService', 'PopupService']
+	constructor:(@$log, @$scope, @$uibModalInstance, @ConfirmationDialogService, @ConformanceService, @ErrorService, domainParameter, domainId, @DataService, @PopupService) ->
 		@$log.debug "Constructing SystemController"
 
 		@$scope.pending = false
 		@$scope.savePending = false
 		@$scope.deletePending = false
-
-		# @$scope.domainParameter = domainParameter
-		# if domainParameter.id?
-		# 	# Update
-		# 	@$scope.oldDomainParameter = _.cloneDeep domainParameter
-
 		@$scope.domainParameter = _.cloneDeep domainParameter
-
 		@$scope.domainId = domainId
 		@$scope.formData = {}
 		@$scope.formData.initialKind = @$scope.domainParameter.kind
 		@$scope.formData.showUpdateValue = @$scope.domainParameter.id? && @$scope.formData.initialKind == 'HIDDEN'
 		@$scope.formData.updateValue = @$scope.formData.initialKind != 'HIDDEN'
-
+		@$uibModalInstance.rendered.then () => @DataService.focus('name')
 		if @$scope.domainParameter.id? && @$scope.domainParameter.kind == 'BINARY'
 			@$scope.formData.data = @$scope.domainParameter.value
 			delete @$scope.domainParameter.value
@@ -36,9 +29,9 @@ class CreateEditDomainParameterController
 	
 		@$scope.saveAllowed = () =>
 			@$scope.domainParameter.name? && @$scope.domainParameter.kind? && 
-				(@$scope.domainParameter.kind == 'SIMPLE' && @$scope.domainParameter.value?) ||
+				((@$scope.domainParameter.kind == 'SIMPLE' && @$scope.domainParameter.value?) ||
 				(@$scope.domainParameter.kind == 'BINARY' && @$scope.formData.data?) ||
-				(@$scope.domainParameter.kind == 'HIDDEN' && (!@$scope.formData.updateValue || (@$scope.formData.hiddenValue? && @$scope.formData.hiddenValueRepeat?)))
+				(@$scope.domainParameter.kind == 'HIDDEN' && (!@$scope.formData.updateValue || (@$scope.formData.hiddenValue? && @$scope.formData.hiddenValueRepeat?))))
 
 		@$scope.save = () =>
 			if @$scope.domainParameter.kind == 'HIDDEN' && @$scope.formData.hiddenValue != @$scope.formData.hiddenValueRepeat
@@ -62,6 +55,8 @@ class CreateEditDomainParameterController
 									@$scope.pending = false
 									@$scope.savePending = false
 									@$uibModalInstance.close(data)
+									@PopupService.success('Parameter updated.')
+
 							, (error) =>
 								@$scope.pending = false
 								@$scope.savePending = false
@@ -79,6 +74,7 @@ class CreateEditDomainParameterController
 								@$scope.pending = false
 								@$scope.savePending = false
 								@$uibModalInstance.close(data)
+								@PopupService.success('Parameter created.')
 							, (error) =>
 								@$scope.pending = false
 								@$scope.savePending = false
@@ -95,6 +91,7 @@ class CreateEditDomainParameterController
 								@$scope.pending = false
 								@$scope.deletePending = false
 								@$uibModalInstance.close(data)
+								@PopupService.success('Parameter deleted.')
 						, (error) =>
 							@$scope.pending = false
 							@$scope.deletePending = false

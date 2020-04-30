@@ -11,12 +11,15 @@ class ActorService
       path: jsRoutes.controllers.ActorService.deleteActor(actorId).url
       authenticate: true
 
-  updateActor: (id, actorId, name, description, defaultActor, displayOrder, domainId, specificationId) =>
+  updateActor: (id, actorId, name, description, defaultActor, hiddenActor, displayOrder, domainId, specificationId) =>
+    if hiddenActor == undefined
+      hiddenActor = false
     data = {
       actor_id: actorId
       name: name
       description: description
       default: defaultActor
+      hidden: hiddenActor
       domain_id: domainId
       spec_id: specificationId
     }

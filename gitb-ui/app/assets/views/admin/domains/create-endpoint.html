@@ -1,19 +1,21 @@
 <div class="page domains detail options create-option">
 	<div class="panel panel-default">
 		<div class="panel-heading">
-			<h4 class="title">Create endpoint</h4>
+			<h4 class="title">Create {{createEndpointCtrl.DataService.labelEndpointLower()}}</h4>
 		</div>
-		<div class="panel-body">
-			<div class="col-md-10 col-md-offset-1" endpoint-details-form endpoint="createEndpointCtrl.endpoint"></div>
-		</div>
-        <div class="panel-footer">
-			<div class="row">
-				<div class="col-md-3"></div>
-				<div class="col-md-8 btn-toolbar">
-					<button class="btn btn-default" type="button" ng-click="createEndpointCtrl.createEndpoint()" ng-disabled="createEndpointCtrl.saveDisabled()">Save</button>
-					<button class="btn btn-default" type="button" ng-click="createEndpointCtrl.cancel()">Cancel</button>
+		<form class="form-horizontal">
+			<div class="panel-body">
+				<div class="col-md-10 col-md-offset-1" endpoint-details-form endpoint="createEndpointCtrl.endpoint"></div>
+			</div>
+			<div class="panel-footer">
+				<div class="row">
+					<div class="col-md-3"></div>
+					<div class="col-md-8 btn-toolbar">
+						<button class="btn btn-default" type="submit" ng-click="createEndpointCtrl.createEndpoint()" ng-disabled="createEndpointCtrl.saveDisabled()">Save</button>
+						<button class="btn btn-default" type="button" ng-click="createEndpointCtrl.cancel()">Cancel</button>
+					</div>
 				</div>
 			</div>
-		</div>
+		</form>
 	</div>
 </div>

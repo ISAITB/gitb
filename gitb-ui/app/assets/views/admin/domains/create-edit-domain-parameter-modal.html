@@ -1,57 +1,69 @@
 <div class="modal-header">
 		<h4>{{title}}</h4>
-	</div>
-	<div class="modal-body">
-		<form class="form-horizontal">
+</div>
+	<form class="form-horizontal">
+		<div class="modal-body">
 			<div class="alert alert-danger" role="alert" ng-if="errorMessage">{{errorMessage}}</div>			
 			<div class="form-group">
-				<label class="col-sm-3 control-label" for="name">* Name:</label>
-				<div class="col-sm-8"><input id="name" ng-model="domainParameter.name" class="form-control" type="text"></div>
+				<label class="col-xs-3 control-label" for="name">* Name:</label>
+				<div class="col-xs-7"><input id="name" ng-model="domainParameter.name" class="form-control" type="text"></div>
+				<div tb-tooltip="An identifier for the parameter used to refer to it from within test cases."></div>
 			</div>
 			<div class="form-group">
-				<label class="col-sm-3 control-label" for="description">Description:</label>
-				<div class="col-sm-8">
+				<label class="col-xs-3 control-label" for="description">Description:</label>
+				<div class="col-xs-7">
 					<textarea id="description" ng-model="domainParameter.description" class="form-control"></textarea>
 				</div>
+				<div tb-tooltip="A text describing the purpose of this parameter."></div>
 			</div>
 			<div class="form-group">
-				<label class="col-sm-3 control-label" for="kind_1">* Kind:</label>
-				<div class="col-sm-8">
-					<label class="radio-inline"><input type="radio" ng-model="domainParameter.kind" name="kinds" id="kind_1" value="SIMPLE">Simple</label>
-					<label class="radio-inline"><input type="radio" ng-model="domainParameter.kind" name="kinds" id="kind_2" value="BINARY">Binary</label>
-					<label class="radio-inline"><input type="radio" ng-model="domainParameter.kind" name="kinds" id="kind_1" value="HIDDEN">Hidden</label>
+				<label class="col-xs-3 control-label" for="kind_1">* Kind:</label>
+				<div class="col-xs-7">
+					<label class="radio-inline"><input type="radio" ng-model="domainParameter.kind" name="kinds" id="kind_1" value="SIMPLE">Simple
+						<div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="A plain text value."></div>
+					</label>
+					<label class="radio-inline"><input type="radio" ng-model="domainParameter.kind" name="kinds" id="kind_2" value="BINARY">Binary
+						<div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="A file."></div>
+					</label>
+					<label class="radio-inline"><input type="radio" ng-model="domainParameter.kind" name="kinds" id="kind_3" value="HIDDEN">Hidden
+						<div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="A secret text value such as a password."></div>
+					</label>
 				</div>
 			</div>
 			<div class="form-group" ng-if="domainParameter.kind == 'SIMPLE'">
-				<label class="col-sm-3 control-label" for="value">* Value:</label>
-				<div class="col-sm-8"><input id="value" ng-model="domainParameter.value" class="form-control" type="text"/></div>
+				<label class="col-xs-3 control-label" for="value">* Value:</label>
+				<div class="col-xs-7"><input id="value" ng-model="domainParameter.value" class="form-control" type="text"/></div>
+				<div tb-tooltip="The value to consider for this parameter."></div>
 			</div>
 			<div class="form-group" ng-if="domainParameter.kind == 'HIDDEN' && formData.showUpdateValue">
-				<label class="col-sm-3 control-label" for="domain-parameter-checkbox">Update value?</label>
-				<div class="col-sm-8">
+				<label class="col-xs-3 control-label" for="domain-parameter-checkbox">Update value?</label>
+				<div class="col-xs-7">
 					<input id="domain-parameter-checkbox" ng-model="formData.updateValue" type="checkbox" class="form-check"/>
 				</div>
 			</div>
 			<div class="form-group" ng-if="domainParameter.kind == 'HIDDEN' && (!domainParameter.id || formData.updateValue)">
-				<label class="col-sm-3 control-label" for="value">* Value:</label>
-				<div class="col-sm-8"><input id="value" ng-model="formData.hiddenValue" class="form-control" type="password"/></div>
+				<label class="col-xs-3 control-label" for="value">* Value:</label>
+				<div class="col-xs-7"><input id="value" ng-model="formData.hiddenValue" class="form-control" type="password"/></div>
+				<div tb-tooltip="The value to consider for this parameter."></div>
 			</div>
 			<div class="form-group" ng-if="domainParameter.kind == 'HIDDEN' && (!domainParameter.id || formData.updateValue)">
-				<label class="col-sm-3 control-label" for="value">* Repeat value:</label>
-				<div class="col-sm-8"><input id="value" ng-model="formData.hiddenValueRepeat" class="form-control" type="password"/></div>
+				<label class="col-xs-3 control-label" for="repeat">* Repeat value:</label>
+				<div class="col-xs-7"><input id="repeat" ng-model="formData.hiddenValueRepeat" class="form-control" type="password"/></div>
+				<div tb-tooltip="Repeat the provided value to ensure it is correct."></div>
 			</div>
 			<div class="form-group" ng-if="domainParameter.kind == 'BINARY'">
-				<label class="col-sm-3 control-label" for="value">* Value:</label>
-				<div class="col-sm-8">
+				<label class="col-xs-3 control-label" for="value">* Value:</label>
+				<div class="col-xs-7">
 					<a class="form-control-static" href="" ng-if="showFileName()" ng-click="download()" style="padding-right:10px;">{{fileName()}}</a>
-					<button class="btn btn-default" ng-file-select="onFileSelect($files)">Upload</button>
+					<button class="btn btn-default" type="button" ng-file-select="onFileSelect($files)">Upload</button>
+					<div tb-inline="true" tb-tooltip="The file to consider as this parameter's value."></div>
 				</div>
 			</div>
-		</form>		
-	</div>
-	<div class="modal-footer">
-		<button class="btn btn-default" ng-click="save()" ng-disabled="pending || !saveAllowed()"><span class="tab" ng-if="savePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Save</button>
-		<button class="btn btn-default" ng-click="delete()" ng-if="domainParameter.id" ng-disabled="pending"><span class="tab" ng-if="deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete</button>
-		<button class="btn btn-default" ng-click="cancel()" ng-disabled="pending">Cancel</button>
-	</div>
+		</div>
+		<div class="modal-footer">
+			<button class="btn btn-default" type="submit" ng-click="save()" ng-disabled="pending || !saveAllowed()"><span class="tab" ng-if="savePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Save</button>
+			<button class="btn btn-default" type="button" ng-click="delete()" ng-if="domainParameter.id" ng-disabled="pending"><span class="tab" ng-if="deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete</button>
+			<button class="btn btn-default" type="button" ng-click="cancel()" ng-disabled="pending">Cancel</button>
+		</div>
+	</form>		
 </div>

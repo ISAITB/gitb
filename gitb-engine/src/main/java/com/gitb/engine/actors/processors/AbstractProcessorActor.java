@@ -49,6 +49,8 @@ public abstract class AbstractProcessorActor<T> extends AbstractTestStepActor<T>
 				if(result != null) {
 					if (result.getResult() == TestResultType.SUCCESS) {
 						updateTestStepStatus(context, StepStatus.COMPLETED, result);
+					} else if (result.getResult() == TestResultType.WARNING) {
+						updateTestStepStatus(context, StepStatus.WARNING, result);
 					} else {
 						updateTestStepStatus(context, StepStatus.ERROR, result);
 					}

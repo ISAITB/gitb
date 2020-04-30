@@ -4,6 +4,7 @@ import com.gitb.core.ErrorCode;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.utils.BomStrippingReader;
 import com.gitb.utils.ErrorUtils;
+import com.gitb.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -34,7 +35,7 @@ public class ObjectType extends DataType {
 
     public ObjectType() {
         try {
-            value =  DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+            value =  XMLUtils.getSecureDocumentBuilderFactory().newDocumentBuilder().newDocument();
         } catch (ParserConfigurationException e) {
 	        throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.DATATYPE_ERROR, "Document could not be constructed."), e);
         }
@@ -46,6 +47,9 @@ public class ObjectType extends DataType {
 
     @Override
     public DataType processXPath(XPathExpression expression, String returnType) {
+        if (returnType == null) {
+            returnType = DataType.STRING_DATA_TYPE;
+        }
         QName type = XPathConstantForDataType(returnType);
         if(type == null) {
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Expression cannot return the expected ["+returnType+"] return type..."));
@@ -124,7 +128,7 @@ public class ObjectType extends DataType {
 
     protected void deserialize(InputSource inputSource) {
         try {
-            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilderFactory factory = XMLUtils.getSecureDocumentBuilderFactory();
             factory.setNamespaceAware(true);
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document document;
@@ -210,7 +214,7 @@ public class ObjectType extends DataType {
     }
 
     protected Transformer constructTransformerForSerialization() throws TransformerConfigurationException {
-        Transformer transformer = TransformerFactory.newInstance().newTransformer();
+        Transformer transformer = XMLUtils.getSecureTransformerFactory().newTransformer();
         transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
         return transformer;

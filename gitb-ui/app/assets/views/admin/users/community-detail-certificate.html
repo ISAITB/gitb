@@ -3,115 +3,126 @@
         <div class="panel-heading">
             <h4 class="title">Conformance certificate settings</h4>
         </div>
-        <div class="panel-body">
-            <div class="row col-md-11">
-                <div class="col-md-10 col-md-offset-1">
-                    <form class="form-horizontal">
+        <form class="form-horizontal">
+            <div class="panel-body">
+                <div class="row">
+                    <div class="col-xs-10 col-xs-offset-1">
                         <div class="form-group">
-                            <label class="col-sm-3 control-label" for="title">Title:</label>
-                            <div class="col-sm-8"><input id="title" ng-model="communityCertificateCtrl.settings.title" class="form-control" type="text" required></div>
+                            <label class="col-xs-3 control-label" for="title">Title:</label>
+                            <div class="col-xs-7"><input id="title" ng-model="communityCertificateCtrl.settings.title" class="form-control" type="text"></div>
+                            <div tb-tooltip="The title to display for the certificate. If unspecified 'Conformance Certificate' is used."></div>
                         </div>
                         <div class="form-group">
-                            <label class="col-sm-3 control-label">Included sections:</label>
-                            <div class="col-sm-8">
+                            <label class="col-xs-3 control-label">Included sections:</label>
+                            <div class="col-xs-8">
                                 <label class="checkbox-inline">
                                     <input type="checkbox" ng-model="communityCertificateCtrl.settings.includeDetails">Details
+                                    <div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="Add the conformance statement details. These are the information on the {{communityCertificateCtrl.DataService.labelDomainLower()}}, {{communityCertificateCtrl.DataService.labelSpecificationLower()}}, {{communityCertificateCtrl.DataService.labelActorLower()}}, {{communityCertificateCtrl.DataService.labelOrganisationLower()}} and {{communityCertificateCtrl.DataService.labelSystemLower()}}."></div>
                                 </label>
                                 <label class="checkbox-inline">
                                     <input type="checkbox" ng-model="communityCertificateCtrl.settings.includeTestStatus">Result overview
+                                    <div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="Add a summary text on the number of successfully passed and failed test cases."></div>
                                 </label>
                                 <label class="checkbox-inline">
                                     <input type="checkbox" ng-model="communityCertificateCtrl.settings.includeTestCases">Test cases
+                                    <div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="Add the individual test cases. Doing so will include a table showing the status for each test case in the conformance statement."></div>
                                 </label>
                                 <label class="checkbox-inline">
                                     <input type="checkbox" ng-model="communityCertificateCtrl.settings.includeMessage">Message
+                                    <div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="Add a custom rich-text message following the title and before including other details."></div>
                                 </label>
                                 <label class="checkbox-inline">
                                     <input type="checkbox" ng-model="communityCertificateCtrl.settings.includeSignature">Signature
+                                    <div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="Add a digital signature and timestamp for proof of authenticity."></div>
                                 </label>
                             </div>
                         </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
-            <div class="row col-md-12" ng-show="communityCertificateCtrl.settings.includeMessage">
-                <div class="form-separator">
-                    <h4 class="title">Message configuration</h4>
-                </div>
-            </div>
-            <div class="row col-md-11" ng-show="communityCertificateCtrl.settings.includeMessage">
-                <div class="col-md-10 col-md-offset-1">
-                    <form class="form-horizontal">
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label" for="mce-message" >Message content:</label>
-                            <div class="col-sm-8"><textarea id="mce-message" class="mce-message"></textarea></div>
+                <div uib-collapse="!communityCertificateCtrl.settings.includeMessage">
+                    <div class="row">
+                        <div class="col-xs-12 form-separator">
+                            <h4 class="title">Message configuration</h4>
                         </div>
-                        <div class="form-group">
-                            <span class="col-sm-3 control-label"></span>
-                            <div class="col-sm-8">
-                                <h4>Placeholders:</h4>
-                                <p><b>{{communityCertificateCtrl.placeholderDomain}}</b>: The full name of the domain.</p>
-                                <p><b>{{communityCertificateCtrl.placeholderSpecification}}</b>: The full name of the specification.</p>
-                                <p><b>{{communityCertificateCtrl.placeholderActor}}</b>: The full name of the actor linked to the conformance statement.</p>
-                                <p><b>{{communityCertificateCtrl.placeholderOrganisation}}</b>: The full name of the organisation to be granted the certificate.</p>
-                                <p><b>{{communityCertificateCtrl.placeholderSystem}}</b>: The full name of the organisation's system that was used in the tests.</p>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-11">
+                            <div class="col-xs-10 col-xs-offset-1">
+                                <div class="form-group">
+                                    <label class="col-xs-3 control-label" for="mce-message" >Message content:</label>
+                                    <div class="col-xs-8"><textarea id="mce-message" class="mce-message"></textarea></div>
+                                </div>
+                                <div class="form-group">
+                                    <span class="col-xs-3 control-label"></span>
+                                    <div class="col-xs-8">
+                                        <h4>Placeholders:</h4>
+                                        <p><b>{{communityCertificateCtrl.placeholderDomain}}</b>: The full name of the {{communityCertificateCtrl.DataService.labelDomainLower()}}.</p>
+                                        <p><b>{{communityCertificateCtrl.placeholderSpecification}}</b>: The full name of the {{communityCertificateCtrl.DataService.labelSpecificationLower()}}.</p>
+                                        <p><b>{{communityCertificateCtrl.placeholderActor}}</b>: The full name of the {{communityCertificateCtrl.DataService.labelActorLower()}} linked to the conformance statement.</p>
+                                        <p><b>{{communityCertificateCtrl.placeholderOrganisation}}</b>: The full name of the {{communityCertificateCtrl.DataService.labelOrganisationLower()}} to be granted the certificate.</p>
+                                        <p><b>{{communityCertificateCtrl.placeholderSystem}}</b>: The full name of the {{communityCertificateCtrl.DataService.labelSystemLower()}} that was used in the tests.</p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
-            <div class="row col-md-12" ng-show="communityCertificateCtrl.settings.includeSignature">
-                <div class="form-separator">
-                    <h4 class="title">Signature configuration</h4>
-                </div>
-            </div>
-            <div class="row col-md-11" ng-show="communityCertificateCtrl.settings.includeSignature">
-                <div class="col-md-10 col-md-offset-1">
-                    <form class="form-horizontal">
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label" for="title">* Keystore:</label>
-                            <div class="col-sm-8">
-                                <button class="btn btn-default" ng-file-select="attachKeystore($files)" ng-if="!communityCertificateCtrl.settings.keystoreFile">Upload</button>
-                                <button class="btn btn-default" ng-click="communityCertificateCtrl.downloadKeystore()" ng-if="communityCertificateCtrl.settings.keystoreFile">Download</button>
-                                <button class="btn btn-default" ng-click="communityCertificateCtrl.clearKeystore()" ng-if="communityCertificateCtrl.settings.keystoreFile">Remove</button>
+                <div uib-collapse="!communityCertificateCtrl.settings.includeSignature">
+                    <div class="row">
+                        <div class="col-xs-12 form-separator">
+                            <h4 class="title">Signature configuration</h4>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-10 col-xs-offset-1">
+                            <div class="form-group">
+                                <label class="col-xs-3 control-label" for="title">* Keystore:</label>
+                                <div class="col-xs-8">
+                                    <button class="btn btn-default" type="button" ng-file-select="attachKeystore($files)" ng-if="!communityCertificateCtrl.settings.keystoreFile">Upload</button>
+                                    <button class="btn btn-default" type="button" ng-click="communityCertificateCtrl.downloadKeystore()" ng-if="communityCertificateCtrl.settings.keystoreFile">Download</button>
+                                    <button class="btn btn-default" type="button" ng-click="communityCertificateCtrl.clearKeystore()" ng-if="communityCertificateCtrl.settings.keystoreFile">Remove</button>
+                                    <div tb-inline="true" tb-inline-type="button" tb-tooltip="The keystore file that includes the keypair (private and public key) that will be used. The keystore should contain a single keypair."></div>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="col-xs-3 control-label" for="keystoreTypes">* Keystore type:</label>
+                                <div class="col-xs-8">
+                                    <label class="radio-inline"><input type="radio" ng-model="communityCertificateCtrl.settings.keystoreType" name="keystoreTypes" id="type_1" value="JCEKS">JCEKS</label>
+                                    <label class="radio-inline"><input type="radio" ng-model="communityCertificateCtrl.settings.keystoreType" name="keystoreTypes" id="type_2" value="JKS">JKS</label>
+                                    <label class="radio-inline"><input type="radio" ng-model="communityCertificateCtrl.settings.keystoreType" name="keystoreTypes" id="type_3" value="PKCS12">PKCS #12</label>
+                                </div>
+                            </div>
+                            <div class="form-group" ng-if="communityCertificateCtrl.settings.passwordsSet">
+                                <label class="col-xs-3 control-label" for="change-passwords">Change passwords?</label>
+                                <div class="col-xs-8">
+                                    <input id="change-passwords" ng-model="communityCertificateCtrl.updatePasswords" type="checkbox" class="form-check"/>
+                                </div>
+                            </div>
+                            <div class="form-group" ng-if="communityCertificateCtrl.updatePasswords">
+                                <label class="col-xs-3 control-label" for="keystorePassword">* Keystore password:</label>
+                                <div class="col-xs-3"><input id="keystorePassword" ng-model="communityCertificateCtrl.settings.keystorePassword" class="form-control" type="password"></div>
+                                <div tb-tooltip="The password to open the keystore."></div>
+                            </div>
+                            <div class="form-group" ng-if="communityCertificateCtrl.updatePasswords">
+                                <label class="col-xs-3 control-label" for="keyPassword">* Key password:</label>
+                                <div class="col-xs-3"><input id="keyPassword" ng-model="communityCertificateCtrl.settings.keyPassword" class="form-control" type="password"></div>
+                                <div tb-tooltip="The password to unlock the key used for signing."></div>
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label class="col-sm-3 control-label" for="keystoreTypes">* Keystore type:</label>
-                            <div class="col-sm-8">
-                                <label class="radio-inline"><input type="radio" ng-model="communityCertificateCtrl.settings.keystoreType" name="keystoreTypes" id="type_1" value="JCEKS">JCEKS</label>
-                                <label class="radio-inline"><input type="radio" ng-model="communityCertificateCtrl.settings.keystoreType" name="keystoreTypes" id="type_2" value="JKS">JKS</label>
-                                <label class="radio-inline"><input type="radio" ng-model="communityCertificateCtrl.settings.keystoreType" name="keystoreTypes" id="type_3" value="PKCS12">PKCS #12</label>
-                            </div>
-                        </div>
-                        <div class="form-group" ng-if="communityCertificateCtrl.settings.passwordsSet">
-                            <label class="col-sm-3 control-label" for="change-passwords">Change passwords?</label>
-                            <div class="col-sm-8">
-                                <input id="change-passwords" ng-model="communityCertificateCtrl.updatePasswords" type="checkbox" class="form-check"/>
-                            </div>
-                        </div>
-                        <div class="form-group" ng-if="communityCertificateCtrl.updatePasswords">
-                            <label class="col-sm-3 control-label" for="keystorePassword">* Keystore password:</label>
-                            <div class="col-sm-3"><input id="keystorePassword" ng-model="communityCertificateCtrl.settings.keystorePassword" class="form-control" type="password"></div>
-                        </div>
-                        <div class="form-group" ng-if="communityCertificateCtrl.updatePasswords">
-                            <label class="col-sm-3 control-label" for="keyPassword">* Key password:</label>
-                            <div class="col-sm-3"><input id="keyPassword" ng-model="communityCertificateCtrl.settings.keyPassword" class="form-control" type="password"></div>
-                        </div>
-                    </form>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="panel-footer">
-            <div class="row">
-                <div class="col-md-3"></div>
-                <div class="col-md-8 btn-toolbar">
-                    <button class="btn btn-default" type="button" ng-click="communityCertificateCtrl.update()" ng-disabled="!communityCertificateCtrl.settingsOk()">Update</button>
-                    <button class="btn btn-default" type="button" ng-click="communityCertificateCtrl.preview()" ng-disabled="!communityCertificateCtrl.settingsOk() || communityCertificateCtrl.exportPending"><span class="tab" ng-if="communityCertificateCtrl.exportPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Generate preview</button>
-                    <button class="btn btn-default" type="button" ng-click="communityCertificateCtrl.testKeystore()" ng-disabled="!communityCertificateCtrl.keystoreSettingsOk()" ng-if="communityCertificateCtrl.settings.includeSignature">Test keystore configuration</button>
-                    <button class="btn btn-default" type="button" ng-click="communityCertificateCtrl.cancel()">Cancel</button>
+            <div class="panel-footer">
+                <div class="row">
+                    <div class="col-xs-3"></div>
+                    <div class="col-xs-8 btn-toolbar">
+                        <button class="btn btn-default" type="submit" ng-click="communityCertificateCtrl.update()" ng-disabled="!communityCertificateCtrl.settingsOk()">Update</button>
+                        <button class="btn btn-default" type="button" ng-click="communityCertificateCtrl.preview()" ng-disabled="!communityCertificateCtrl.settingsOk() || communityCertificateCtrl.exportPending"><span class="tab" ng-if="communityCertificateCtrl.exportPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Generate preview</button>
+                        <button class="btn btn-default" type="button" ng-click="communityCertificateCtrl.testKeystore()" ng-disabled="!communityCertificateCtrl.keystoreSettingsOk()" ng-if="communityCertificateCtrl.settings.includeSignature">Test keystore configuration</button>
+                        <button class="btn btn-default" type="button" ng-click="communityCertificateCtrl.cancel()">Cancel</button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
 </div>

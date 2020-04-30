@@ -1,6 +1,6 @@
 class TestExecutionControllerV2
-  @$inject = ['$window','$log', '$scope', '$location', '$uibModal', '$state', '$stateParams', 'Constants', 'TestService', 'SystemService', 'ConformanceService', 'WebSocketService', 'ReportService', 'ErrorService', 'DataService', '$q', '$timeout', '$interval', 'OrganizationService']
-  constructor: (@$window, @$log, @$scope, @$location, @$uibModal, @$state, @$stateParams, @Constants, @TestService, @SystemService, @ConformanceService, @WebSocketService, @ReportService, @ErrorService, @DataService, @$q, @$timeout, @$interval, @OrganizationService) ->
+  @$inject = ['$window','$log', '$scope', '$location', '$uibModal', '$state', '$stateParams', 'Constants', 'TestService', 'SystemService', 'ConformanceService', 'WebSocketService', 'ReportService', 'ErrorService', 'DataService', '$q', '$timeout', '$interval', 'OrganizationService', 'PopupService', 'HtmlService', '$sce']
+  constructor: (@$window, @$log, @$scope, @$location, @$uibModal, @$state, @$stateParams, @Constants, @TestService, @SystemService, @ConformanceService, @WebSocketService, @ReportService, @ErrorService, @DataService, @$q, @$timeout, @$interval, @OrganizationService, @PopupService, @HtmlService, @$sce) ->
     @testsToExecute = @DataService.tests
     if (!@testsToExecute?)
       # We lost our state following a refresh - recreate state.
@@ -17,6 +17,7 @@ class TestExecutionControllerV2
                 testCase.id = result.testCaseId
                 testCase.sname = result.testCaseName
                 testCase.description = result.testCaseDescription
+                testCase.hasDocumentation = result.testCaseHasDocumentation
                 tests.push(testCase)
               @testsToExecute = tests
               @initialiseState()
@@ -38,6 +39,7 @@ class TestExecutionControllerV2
       @initialiseState()
 
   initialiseState: () =>
+    @documentationExists = @testCasesHaveDocumentation()
     @systemId = parseInt(@$stateParams['systemId'], 10)
     @actorId  = parseInt(@$stateParams['actorId'], 10)
     @specId   = parseInt(@$stateParams['specId'], 10)
@@ -56,11 +58,7 @@ class TestExecutionControllerV2
     @$scope.actorInfoOfTests = {}
     @logMessages = {}
     @$scope.$on '$destroy', () =>
-      if @ws? and @session?
-        @$log.debug 'Closing websocket in $destroy event handler'
-        @ws.close()
-
-      return
+      @leavingTestExecutionPage()
     @stopped = false
     @currentTestIndex = 0
     @currentTest = @testsToExecute[@currentTestIndex]
@@ -158,9 +156,9 @@ class TestExecutionControllerV2
         stepToConsider = @wizardStep
       if (stepToConsider == 0)
         # Before starting
-        @configurationValid = @isConfigurationValid()
-        @systemConfigurationValid = @isMemberConfigurationValid(@systemProperties)
-        @organisationConfigurationValid = @isMemberConfigurationValid(@organisationProperties)
+        @configurationValid = @DataService.isConfigurationValid(@endpointRepresentations)
+        @systemConfigurationValid = @DataService.isMemberConfigurationValid(@systemProperties)
+        @organisationConfigurationValid = @DataService.isMemberConfigurationValid(@organisationProperties)
         if (!@configurationValid || !@systemConfigurationValid || !@organisationConfigurationValid)
           @wizardStep = 1
         else 
@@ -243,23 +241,6 @@ class TestExecutionControllerV2
       .then(() =>
         @$state.go @$state.current, {}, {reload: true})
       .catch(angular.noop)
-
-  isMemberConfigurationValid: (properties) ->
-    valid = true
-    if properties?
-      for property in properties
-        if property.use == 'R' && !property.configured
-          return false
-    valid
-
-  isConfigurationValid: () ->
-    valid = true
-    if @endpointRepresentations?
-      for endpoint in @endpointRepresentations
-        for parameter in endpoint.parameters
-          if !parameter.configured && parameter.use == "R"
-            return false
-    valid
 
   getTestCaseDefinition: (testCaseToLookup) ->
     @TestService.getTestCaseDefinition(testCaseToLookup)
@@ -559,10 +540,6 @@ class TestExecutionControllerV2
       , angular.noop)
 
   updateStatus: (step, stepId, status, report) =>
-
-    endsWith = (str, suffix) ->
-      str.indexOf suffix, (str.length - suffix.length) != -1
-
     if step?
       if step.id != stepId
         current = step
@@ -625,10 +602,39 @@ class TestExecutionControllerV2
       if current? && current.status != status
         if (status == @Constants.TEST_STATUS.COMPLETED) ||
         (status == @Constants.TEST_STATUS.ERROR) ||
-        (status == @Constants.TEST_STATUS.SKIPPED && (current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.PROCESSING)) ||
-        ((status == @Constants.TEST_STATUS.PROCESSING || status == @Constants.TEST_STATUS.WAITING) && (@started && current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.SKIPPED))
+        (status == @Constants.TEST_STATUS.WARNING) ||
+        (status == @Constants.TEST_STATUS.SKIPPED && (current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.WARNING)) ||
+        ((status == @Constants.TEST_STATUS.PROCESSING || status == @Constants.TEST_STATUS.WAITING) && (@started && current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.SKIPPED && current.status != @Constants.TEST_STATUS.WARNING))
           current.status = status
           current.report = report
+          # If skipped, marked all children as skipped.
+          if status == @Constants.TEST_STATUS.SKIPPED
+            @setChildrenAsSkipped(current, stepId, stepId)
+
+  escapeRegExp: (text) ->
+    text.replace(/\./g, "\\.").replace(/\[/g, "\\[").replace(/\]/g, "\\]")
+
+  setChildrenSequenceAsSkipped: (sequence, parentStepId) ->
+    if sequence?
+      for childStep in sequence
+        if Array.isArray(childStep)
+          for childStepItem in childStep
+            @setChildrenAsSkipped(childStepItem, childStepItem.id, parentStepId)
+        else
+          @setChildrenAsSkipped(childStep, childStep.id, parentStepId)
+
+  setChildrenAsSkipped: (step, idToCheck, parentStepId) ->
+    regex = new RegExp(@escapeRegExp(parentStepId)+"(\\[.+\\])?\\.?", "g");
+    console.log("Checking ["+idToCheck+"] vs ["+parentStepId+"]")
+    if step? && idToCheck? && (idToCheck == parentStepId || idToCheck.match(regex) != null)
+      if step.type == 'loop'
+        @setChildrenSequenceAsSkipped(step.steps, idToCheck)
+      else if step.type == 'decision'
+        @setChildrenSequenceAsSkipped(step.then, idToCheck)
+        @setChildrenSequenceAsSkipped(step.else, idToCheck)
+      else if step.type == 'flow'
+        @setChildrenSequenceAsSkipped(step.threads, idToCheck)
+      step.status = @Constants.TEST_STATUS.SKIPPED
 
   isParent: (id, parentId) ->
     periodIndex = id.indexOf '.', parentId.length
@@ -671,11 +677,12 @@ class TestExecutionControllerV2
       else
         return null
 
-    for step in steps
-      if step?
-        parentOrCurrentNode = filter step
-        if parentOrCurrentNode?
-          return parentOrCurrentNode
+    if steps?
+      for step in steps
+        if step?
+          parentOrCurrentNode = filter step
+          if parentOrCurrentNode?
+            return parentOrCurrentNode
 
     return null
 
@@ -732,5 +739,37 @@ class TestExecutionControllerV2
   
   toConfigurationProperties: () =>
     @$state.go 'app.systems.detail.conformance.detail', {actor_id: @actorId, specId: @specId, id: @systemId, editEndpoints: true}
+
+  leavingTestExecutionPage: () =>
+    if @ws? and @session?
+      @ws.close()
+    if @firstTestStarted && !@stopped
+      pendingTests = _.filter(@testsToExecute, (test) =>
+        @testCaseStatus[test.id] == @Constants.TEST_CASE_STATUS.READY || @testCaseStatus[test.id] == @Constants.TEST_CASE_STATUS.PENDING
+      )
+      pendingTestIds = _.map(pendingTests, (test) =>
+        test.id
+      )
+      if pendingTestIds.length > 0
+        @TestService.startHeadlessTestSessions(pendingTestIds, @specId, @systemId, @actorId)
+        @PopupService.success('Continuing test sessions in background. Check <b>Test Sessions</b> for progress.')
+      else
+        if @testCaseStatus[@currentTest.id] == @Constants.TEST_CASE_STATUS.PROCESSING
+          @PopupService.success('Continuing test session in background. Check <b>Test Sessions</b> for progress.')
+
+  testCasesHaveDocumentation: () =>
+    if @testsToExecute?
+      for test in @testsToExecute
+        if test.hasDocumentation
+          return true
+    return false
+
+  showTestCaseDocumentation: (testCaseId) ->
+    @ConformanceService.getTestCaseDocumentation(testCaseId)
+    .then (data) =>
+      html = @$sce.trustAsHtml(data)
+      @HtmlService.showHtml("Test case documentation", data)
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
 
 controllers.controller('TestExecutionControllerV2', TestExecutionControllerV2)

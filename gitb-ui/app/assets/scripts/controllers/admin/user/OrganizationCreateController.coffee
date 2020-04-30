@@ -1,7 +1,7 @@
 class OrganizationCreateController
 
-  @$inject = ['$log', '$state', '$stateParams', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'ValidationService', 'OrganizationService', 'ErrorService', 'DataService', 'CommunityService']
-  constructor: (@$log, @$state, @$stateParams, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @OrganizationService, @ErrorService, @DataService, @CommunityService) ->
+  @$inject = ['$log', '$state', '$stateParams', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'ValidationService', 'OrganizationService', 'ErrorService', 'DataService', 'CommunityService', 'PopupService']
+  constructor: (@$log, @$state, @$stateParams, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @OrganizationService, @ErrorService, @DataService, @CommunityService, @PopupService) ->
 
     @communityId = @$stateParams.community_id
 
@@ -46,6 +46,8 @@ class OrganizationCreateController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+    @DataService.focus('sname')
+
   valueDefined: (value) =>
     value? && value.trim().length > 0
 
@@ -63,8 +65,8 @@ class OrganizationCreateController
   # create organization and cancel screen
   createOrganization: () =>
     @ValidationService.clearAll()
-    if @ValidationService.requireNonNull(@organization.sname, "Please enter short name of the organisation.") &
-    @ValidationService.requireNonNull(@organization.fname, "Please enter full name of the organisation.")
+    if @ValidationService.requireNonNull(@organization.sname, "Please enter short name of the "+@DataService.labelOrganisationLower()+".") &
+    @ValidationService.requireNonNull(@organization.fname, "Please enter full name of the "+@DataService.labelOrganisationLower()+".")
       @OrganizationService.createOrganization(@organization.sname, @organization.fname, @organization.landingPages, @organization.legalNotices, @organization.errorTemplates, @organization.otherOrganisations, @communityId, @organization.template, @organization.templateName, @propertyData.edit, @propertyData.properties, @organization.copyOrganisationParameters, @organization.copySystemParameters, @organization.copyStatementParameters)
       .then (data) =>
         if data? && data.error_code?
@@ -72,6 +74,7 @@ class OrganizationCreateController
           @alerts = @ValidationService.getAlerts()          
         else
           @cancelCreateOrganization()
+          @PopupService.success(@DataService.labelOrganisation()+" created.")
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
     else

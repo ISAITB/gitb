@@ -5,21 +5,21 @@
         </div>
         <div class="panel-body">
             <div class="bg-info div-rounded div-padded bottom-margin">
-                <span>The following custom properties will be presented to your community members for completion and, if configured, will also be made available as test session variables. Required properties must be completed before executing test sessions.</span>
+                <span>The following custom properties will be presented to your community members for completion and, if configured, will also be made available as test session variables. Required properties must be provided before executing test sessions.</span>
             </div>
             <div class="panel panel-default">
                 <div class="panel-heading">
-                    <h5 class="title">Organisation-level properties</h5>
+                    <h5 class="title">{{controller.DataService.labelOrganisation()}} level properties</h5>
                     <a href="" ng-click="controller.addOrganisationParameter()" class="btn btn-default pull-right">Create property</a>
                 </div>
-                <div table-directive columns="controller.parameterTableColumns" data="controller.organisationParameters" on-select="controller.onOrganisationParameterSelect"></div>
+                <div table-directive columns="controller.organisationParameterTableColumns" data="controller.organisationParameters" on-select="controller.onOrganisationParameterSelect"></div>
             </div>
             <div class="panel panel-default" style="margin-bottom: 0px;">
                 <div class="panel-heading">
-                    <h5 class="title">System-level properties</h5>
+                    <h5 class="title">{{controller.DataService.labelSystem()}} level properties</h5>
                     <a href="" ng-click="controller.addSystemParameter()" class="btn btn-default pull-right">Create property</a>
                 </div>
-                <div table-directive columns="controller.parameterTableColumns" data="controller.systemParameters" on-select="controller.onSystemParameterSelect"></div>
+                <div table-directive columns="controller.systemParameterTableColumns" data="controller.systemParameters" on-select="controller.onSystemParameterSelect"></div>
             </div>
         </div>
         <div class="panel-footer">

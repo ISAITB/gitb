@@ -5,20 +5,27 @@ class ProvideInputModalController
 
 		@$scope.interactions = interactions
 
+		i = 0
 		for interaction in @$scope.interactions
-			if interaction.type == "request" && interaction.options?
-				optionValues = interaction.options.split(',').map((item) =>
-					item.trim()
-				)
-				optionLabelValues = interaction.optionLabels.split(',').map((item) =>
-					item.trim()
-				)
-				interaction.optionData = []
-				for optionValue, index in optionValues
-					interaction.optionData.push({
-						value: optionValue
-						label: optionLabelValues[index]
-					})
+			if interaction.type == "request"
+				if interaction.options?
+					optionValues = interaction.options.split(',').map((item) =>
+						item.trim()
+					)
+					optionLabelValues = interaction.optionLabels.split(',').map((item) =>
+						item.trim()
+					)
+					interaction.optionData = []
+					for optionValue, index in optionValues
+						interaction.optionData.push({
+							value: optionValue
+							label: optionLabelValues[index]
+						})
+				if firstTextIndex == undefined
+					firstTextIndex = i
+			i += 1
+		if firstTextIndex?
+			@DataService.focus('input-'+firstTextIndex)
 
 		@$scope.reset = () =>
 			for interaction in @$scope.interactions

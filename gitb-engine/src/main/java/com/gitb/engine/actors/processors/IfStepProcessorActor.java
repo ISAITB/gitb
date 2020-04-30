@@ -91,13 +91,12 @@ public class IfStepProcessorActor extends AbstractTestStepActor<IfStep> {
 
 	@Override
 	protected void handleStatusEvent(StatusEvent event) throws Exception {
-//		super.handleStatusEvent(event);
-
         StepStatus status = event.getStatus();
-
 		if(status == StepStatus.COMPLETED) {
 			completed();
-		} else if(status == StepStatus.ERROR) {
+		} else if (status == StepStatus.WARNING) {
+			childrenHasWarning();
+		} else if (status == StepStatus.ERROR) {
 			childrenHasError();
 		}
     }

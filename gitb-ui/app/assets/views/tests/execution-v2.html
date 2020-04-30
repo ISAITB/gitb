@@ -3,12 +3,12 @@
         <div class="panel-heading">
             <h4 class="title">Test cases to execute</h4>
             <div class="pull-right">
-                <button class="btn btn-primary" ng-click="testExecutionCtrl.nextStep()" ng-if="testExecutionCtrl.wizardStep == 1 && testExecutionCtrl.isSystemConfigurationsValid(testExecutionCtrl.endpointRepresentations)" ng-disabled="testExecutionCtrl.testcase == null || testExecutionCtrl.actor == null">Next</button>
-                <button class="btn btn-primary" ng-click="testExecutionCtrl.nextStep()" ng-if="testExecutionCtrl.wizardStep == 2">Next</button>
-                <button class="btn btn-primary" ng-if="testExecutionCtrl.wizardStep == 3 && !testExecutionCtrl.started && !testExecutionCtrl.startAutomatically && testExecutionCtrl.reload" ng-click="testExecutionCtrl.reinitialise()">Reset</button>
-                <button class="btn btn-primary" ng-if="testExecutionCtrl.wizardStep == 3 && testExecutionCtrl.firstTestStarted && !testExecutionCtrl.reload && testExecutionCtrl.testsToExecute.length > 1" ng-click="testExecutionCtrl.stopAll()">Stop All</button>
-                <button class="btn btn-primary" ng-if="testExecutionCtrl.wizardStep == 3 && testExecutionCtrl.testsToExecute.length == 1 && !testExecutionCtrl.started && !testExecutionCtrl.startAutomatically && !testExecutionCtrl.reload" ng-click="testExecutionCtrl.start(testExecutionCtrl.session)">Start</button>
-                <button class="btn btn-primary" ng-if="testExecutionCtrl.wizardStep == 3 && testExecutionCtrl.testsToExecute.length == 1 && testExecutionCtrl.started" ng-click="testExecutionCtrl.stop(testExecutionCtrl.session)">Stop</button>
+                <button type="button" class="btn btn-primary" ng-click="testExecutionCtrl.nextStep()" ng-if="testExecutionCtrl.wizardStep == 1 && testExecutionCtrl.isSystemConfigurationsValid(testExecutionCtrl.endpointRepresentations)" ng-disabled="testExecutionCtrl.testcase == null || testExecutionCtrl.actor == null">Next</button>
+                <button type="button" class="btn btn-primary" ng-click="testExecutionCtrl.nextStep()" ng-if="testExecutionCtrl.wizardStep == 2">Next</button>
+                <button type="button" class="btn btn-primary" ng-if="testExecutionCtrl.wizardStep == 3 && !testExecutionCtrl.started && !testExecutionCtrl.startAutomatically && testExecutionCtrl.reload" ng-click="testExecutionCtrl.reinitialise()">Reset</button>
+                <button type="button" class="btn btn-primary" ng-if="testExecutionCtrl.wizardStep == 3 && testExecutionCtrl.firstTestStarted && !testExecutionCtrl.reload && testExecutionCtrl.testsToExecute.length > 1" ng-click="testExecutionCtrl.stopAll()">Stop All</button>
+                <button type="button" class="btn btn-primary" ng-if="testExecutionCtrl.wizardStep == 3 && testExecutionCtrl.testsToExecute.length == 1 && !testExecutionCtrl.started && !testExecutionCtrl.startAutomatically && !testExecutionCtrl.reload" ng-click="testExecutionCtrl.start(testExecutionCtrl.session)">Start</button>
+                <button type="button" class="btn btn-primary" ng-if="testExecutionCtrl.wizardStep == 3 && testExecutionCtrl.testsToExecute.length == 1 && testExecutionCtrl.started" ng-click="testExecutionCtrl.stop(testExecutionCtrl.session)">Stop</button>
             </div>
         </div>
         <div class="panel-body">
@@ -18,6 +18,7 @@
                         <tr>
                             <th width="10%">Name</th>
                             <th>Description</th>
+                            <th class="td-doc" ng-if="testExecutionCtrl.documentationExists" width="1%"></th>
                             <th class="td-centered" width="1%">Status</th>
                         </tr>
                     </thead>
@@ -25,7 +26,8 @@
                         <tr ng-repeat="testCase in testExecutionCtrl.testsToExecute" ng-click="testExecutionCtrl.viewTestCase(testCase)" ng-class="testExecutionCtrl.tableRowClass(testCase)">
                             <td>{{testCase.sname}}</td>
                             <td>{{testCase.description}}</td>
-                            <td class="td-centered"><i class="fa testsuite-progress-icon" ng-class="testExecutionCtrl.progressIcon(testCase.id)"></i></td>
+                            <td class="td-doc" ng-if="testExecutionCtrl.documentationExists"><button ng-if="testCase.hasDocumentation" type="button" class="btn btn-primary" ng-click="testExecutionCtrl.showTestCaseDocumentation(testCase.id)"><i class="fa fa-info-circle"></i></button></td>
+                            <td class="td-centered"><i class="fa testsuite-progress-icon" style="vertical-align:middle" ng-class="testExecutionCtrl.progressIcon(testCase.id)"></i></td>
                         </tr>
                     </tbody>
                 </table>
@@ -35,28 +37,28 @@
                     <div class="panel-heading">
                         <h5 class="title">Missing organisation properties</h5>
                         <div class="pull-right">
-                            <button class="btn btn-default" ng-click="testExecutionCtrl.toOrganisationProperties()">View</button>
+                            <button type="button" class="btn btn-default" ng-click="testExecutionCtrl.toOrganisationProperties()">View</button>
                         </div>
                     </div>
-                    <div parameter-display parameters="testExecutionCtrl.organisationProperties" editable="false" show-values="false" parameter-label="Property"></div>
+                    <div parameter-display parameters="testExecutionCtrl.organisationProperties" editable="false" only-missing="true" show-values="false" parameter-label="Property"></div>
                 </div>
                 <div class="panel panel-default" ng-if="!testExecutionCtrl.systemConfigurationValid">
                     <div class="panel-heading">
                         <h5 class="title">Missing system properties</h5>
                         <div class="pull-right">
-                            <button class="btn btn-default" ng-click="testExecutionCtrl.toSystemProperties()">View</button>
+                            <button type="button" class="btn btn-default" ng-click="testExecutionCtrl.toSystemProperties()">View</button>
                         </div>
                     </div>
-                    <div parameter-display parameters="testExecutionCtrl.systemProperties" editable="false" show-values="false" parameter-label="Property"></div>
+                    <div parameter-display parameters="testExecutionCtrl.systemProperties" editable="false" only-missing="true" show-values="false" parameter-label="Property"></div>
                 </div>
                 <div class="panel panel-default" ng-if="!testExecutionCtrl.configurationValid">
                     <div class="panel-heading">
                         <h5 class="title">Missing conformance statement parameters</h5>
                         <div class="pull-right">
-                            <button class="btn btn-default" ng-click="testExecutionCtrl.toConfigurationProperties()">View</button>
+                            <button type="button" class="btn btn-default" ng-click="testExecutionCtrl.toConfigurationProperties()">View</button>
                         </div>
                     </div>
-                    <div parameter-display parameters="testExecutionCtrl.endpointRepresentations[0].parameters" editable="false" show-values="false"></div>
+                    <div parameter-display parameters="testExecutionCtrl.endpointRepresentations[0].parameters" only-missing="true" editable="false" show-values="false"></div>
                 </div>
             </div>
             <div class="panel panel-default" ng-if="testExecutionCtrl.wizardStep == 2">
@@ -86,18 +88,18 @@
                 <div class="panel panel-default select-execution" ng-show="test.id == testExecutionCtrl.visibleTest.id">
                     <div class="panel-heading">
                         <h5 class="title">Test [{{test.sname}}] - Execution</h5>
-                        <button class="btn btn-primary pull-right" ng-if="testExecutionCtrl.testsToExecute.length > 1 && !testExecutionCtrl.started && !testExecutionCtrl.startAutomatically && !testExecutionCtrl.reload" ng-click="testExecutionCtrl.start(testExecutionCtrl.session)">Start</button>
-                        <button class="btn btn-primary pull-right" ng-if="testExecutionCtrl.testsToExecute.length > 1 && testExecutionCtrl.started && test.id == testExecutionCtrl.currentTest.id" ng-click="testExecutionCtrl.stop(testExecutionCtrl.session)">Stop</button>
+                        <button type="button" class="btn btn-primary pull-right" ng-if="testExecutionCtrl.testsToExecute.length > 1 && !testExecutionCtrl.started && !testExecutionCtrl.startAutomatically && !testExecutionCtrl.reload" ng-click="testExecutionCtrl.start(testExecutionCtrl.session)">Start</button>
+                        <button type="button" class="btn btn-primary pull-right" ng-if="testExecutionCtrl.testsToExecute.length > 1 && testExecutionCtrl.started && test.id == testExecutionCtrl.currentTest.id" ng-click="testExecutionCtrl.stop(testExecutionCtrl.session)">Stop</button>
                     </div>
-                    <div class="panel-body">
+                    <div class="panel-body" style="overflow-x: auto; overflow-y: hidden;">
                         <div class="child" seq-diagram steps-of-tests="stepsOfTests" test="{{test.id}}" actor-info-of-tests="actorInfoOfTests"></div>
                     </div>
                 </div>
             </div>
         </div>
         <div class="panel-footer">
-            <button class="btn btn-default" ng-disabled="testExecutionCtrl.backDisabled()" ng-click="testExecutionCtrl.back()">Back</button>
-            <button class="btn btn-default" ng-click="testExecutionCtrl.viewLog()" ng-if="testExecutionCtrl.showViewLog()">View log</button>
+            <button type="button" class="btn btn-default" ng-disabled="testExecutionCtrl.backDisabled()" ng-click="testExecutionCtrl.back()">Back</button>
+            <button type="button" class="btn btn-default" ng-click="testExecutionCtrl.viewLog()" ng-if="testExecutionCtrl.showViewLog()">View log</button>
         </div>
     </div>
 </div>

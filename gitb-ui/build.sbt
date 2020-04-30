@@ -8,11 +8,12 @@ scalaVersion := "2.11.12"
 
 libraryDependencies ++= Seq(
   cache,
-  "eu.europa.ec.itb" % "gitb-types" % "1.7.2",
+  "eu.europa.ec.itb" % "gitb-types" % "1.9.0",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-validator-tdl" % "1.0-SNAPSHOT",
+  "com.gitb" % "gitb-xml-resources" % "1.0-SNAPSHOT",
   "mysql" % "mysql-connector-java" % "5.1.47",
   "com.typesafe.akka" %% "akka-actor" % "2.5.19",
   "com.typesafe.akka" %% "akka-remote" % "2.5.19",
@@ -66,7 +67,8 @@ libraryDependencies ++= Seq(
   "org.jasypt" % "jasypt" % "1.9.2",
   "org.apache.httpcomponents" % "httpclient" % "4.5.7",
   "org.flywaydb" %% "flyway-play" % "3.2.0",
-  "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20190325.1"  
+  "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20190325.1",
+  "net.lingala.zip4j" % "zip4j" % "2.5.1"
 )
 
 //JsEngineKeys.engineType := JsEngineKeys.EngineType.Node

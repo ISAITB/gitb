@@ -1,0 +1,192 @@
+<div class="page">
+	<div class="panel panel-default">
+        <div class="panel-heading">
+			<h4 class="title">Data export</h4>
+		</div>
+        <form class="form-horizontal">
+            <div class="panel-body">
+				<div class="form-group" ng-if="controller.showDomainOption">
+					<label class="col-xs-3 control-label" for="choice_domain">* Data to export:</label>
+					<div class="col-xs-8">
+						<label class="radio-inline">
+							<input type="radio" ng-model="controller.exportType" name="choice" id="choice_domain" ng-value="'domain'" ng-change="controller.resetSettings()">{{controller.DataService.labelDomain()}} configuration
+							<div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="Export the data linked to the conformance testing scenarios, including {{controller.DataService.labelSpecificationsLower()}} and configured test suites. Select this if you want to fully skip the configuration linked to the community's members."></div>
+						</label>
+						<label class="radio-inline">
+							<input type="radio" ng-model="controller.exportType" name="choice" id="choice_community" ng-value="'community'" ng-change="controller.resetSettings()">Community configuration
+							<div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="Export the data linked to the community. As part of a community's data you may also select to export the data linked to its conformance testing scenarios. Select this to obtain a complete export of all information linked to a community's testing setup."></div>
+						</label>
+					</div>
+				</div>
+				<div uib-collapse="!controller.exportType">
+					<div class="form-group" ng-if="controller.exportType == 'domain'">
+						<label class="col-xs-3 control-label" for="domain">* {{controller.DataService.labelDomain()}}:</label>
+						<div class="col-xs-7">
+							<select ng-if="controller.DataService.isSystemAdmin" class="form-control" id="domain" ng-model="controller.domain" ng-options="domain.fname for domain in controller.domains track by domain.id"></select>
+							<input ng-if="controller.DataService.isCommunityAdmin" class="form-control" id="domain" ng-model="controller.domain.fname" readonly="true"/>
+						</div>
+						<div tb-tooltip="The {{controller.DataService.labelDomainLower()}} to export."></div>
+					</div>
+					<div class="form-group" ng-if="controller.exportType == 'community'">
+						<label class="col-xs-3 control-label" for="community">* Community:</label>
+						<div class="col-xs-7">
+							<select ng-if="controller.DataService.isSystemAdmin" class="form-control" id="community" ng-model="controller.community" ng-options="community.fname for community in controller.communities track by community.id"></select>
+							<input ng-if="controller.DataService.isCommunityAdmin" class="form-control" id="community" ng-model="controller.community.fname" readonly="true"/>
+						</div>
+						<div tb-tooltip="The community to export."></div>
+					</div>
+					<div class="form-group">
+						<label class="col-xs-3 control-label" for="encryptionPassword">* Export password:</label>
+						<div class="col-xs-4 inline-checkbox-container">
+							<input id="encryptionPassword" ng-model="controller.settings.encryptionKey" class="form-control" ng-attr-type="{{controller.showEncryptionKey?'text':'password'}}"/>
+							<label class="inline-checkbox">
+								<input type="checkbox" ng-model="controller.showEncryptionKey">Show
+								<div tb-inline="true" tb-tooltip="Used to encrypt the exported ZIP archive and also any sensitive values it may include. This password will need to be provided when importing or opening the archive."></div>
+							</label>
+						</div>
+					</div>
+					<div class="row">
+						<div class="col-xs-offset-1 col-xs-10">
+							<table id="exportSettingsTable" class="table">
+								<thead>
+									<th>
+										<span>Include</span><div tb-inline="true" tb-tooltip="The types of data to include in the export."></div>
+									</th>
+									<th class="td-centered"><span>All</span></th>
+									<th>
+										<span class="withMargin">Specific</span>
+									</th>
+									<th>
+										<div class="btn-toolbar pull-right">
+											<button class="btn btn-default btn-sm" type="button" ng-click="controller.allIncludes()" ng-disabled="controller.disableAllIncludes()">All</button>
+											<button class="btn btn-default btn-sm" type="button" ng-click="controller.clearIncludes()" ng-disabled="controller.disableClearIncludes()">None</button>
+										</div>
+									</th>
+								</thead>
+								<tbody>
+									<tr ng-if="controller.exportType == 'community'">
+										<td class="row-header"><span>Community data</span><div tb-inline="true" tb-tooltip="Data linked to the community and its members."></div></td>
+										<td class="td-centered">
+											<input type="checkbox" ng-model="controller.allCommunityData" class="form-check" ng-change="controller.allCommunityDataChanged()"/>
+										</td>
+										<td colspan="2">
+											<table>
+												<tr>
+													<td>
+														<label class="checkbox-inline" ng-if="!controller.DataService.configuration['sso.enabled']">
+															<input type="checkbox" ng-model="controller.settings.communityAdministrators" ng-disabled="controller.allCommunityData">Administrators
+														</label>
+														<label class="checkbox-inline">
+															<input type="checkbox" ng-model="controller.settings.landingPages" ng-disabled="controller.allCommunityData">Landing pages
+														</label>
+														<label class="checkbox-inline">
+															<input type="checkbox" ng-model="controller.settings.legalNotices" ng-disabled="controller.allCommunityData">Legal notices
+														</label>
+														<label class="checkbox-inline">
+															<input type="checkbox" ng-model="controller.settings.errorTemplates" ng-disabled="controller.allCommunityData">Error templates
+														</label>
+													</td>
+												</tr>
+												<tr>
+													<td>
+														<label class="checkbox-inline">
+															<input type="checkbox" ng-model="controller.settings.certificateSettings" ng-disabled="controller.allCommunityData">Certificate settings
+														</label>
+														<label class="checkbox-inline">
+															<input type="checkbox" ng-model="controller.settings.customLabels" ng-disabled="controller.allCommunityData">Custom labels
+														</label>
+														<label class="checkbox-inline">
+															<input type="checkbox" ng-model="controller.settings.customProperties" ng-disabled="controller.allCommunityData || controller.isPrerequisiteCustomProperties()">Custom property definitions
+														</label>
+													</td>
+												</tr>
+											</table>
+										</td>
+									</tr>
+									<tr ng-if="controller.showDomainOption">
+										<td class="row-header"><span>{{controller.DataService.labelDomain()}} data</span><div tb-inline="true" tb-tooltip="Data linked to {{controller.DataService.labelSpecificationsLower()}} and the test suites available for testing."></div></td>
+										<td class="td-centered"><input type="checkbox" ng-model="controller.allDomainData" class="form-check" ng-change="controller.allDomainDataChanged()"/></td>
+										<td colspan="2">
+											<table>
+												<tr>
+													<td>
+														<label class="checkbox-inline" ng-if="controller.exportType == 'community'">
+															<input type="checkbox" ng-model="controller.settings.domain" ng-disabled="controller.allDomainData || controller.isPrerequisiteDomain()">{{controller.DataService.labelDomain()}} configuration
+														</label>
+														<label class="checkbox-inline">
+															<input type="checkbox" ng-model="controller.settings.domainParameters" ng-change="controller.domainParametersChanged()" ng-disabled="controller.allDomainData">{{controller.DataService.labelDomain()}} parameters
+														</label>
+														<label class="checkbox-inline">
+															<input type="checkbox" ng-model="controller.settings.specifications" ng-change="controller.specificationsChanged()" ng-disabled="controller.allDomainData || controller.isPrerequisiteSpecifications()">{{controller.DataService.labelSpecifications()}}
+														</label>
+													</td>
+												</tr>
+												<tr>
+													<td>
+														<label class="checkbox-inline">
+															<input type="checkbox" ng-model="controller.settings.actors" ng-change="controller.actorsChanged()" ng-disabled="controller.allDomainData || controller.isPrerequisiteActors()">{{controller.DataService.labelActors()}}
+														</label>
+														<label class="checkbox-inline">
+															<input type="checkbox" ng-model="controller.settings.testSuites" ng-change="controller.testSuitesChanged()" ng-disabled="controller.allDomainData">Test suites
+														</label>
+														<label class="checkbox-inline">
+															<input type="checkbox" ng-model="controller.settings.endpoints" ng-change="controller.endpointsChanged()" ng-disabled="controller.allDomainData || controller.isPrerequisiteEndpoints()">{{controller.DataService.labelEndpoints()}}
+														</label>
+													</td>
+												</tr>
+											</table>
+										</td>
+									</tr>
+									<tr ng-if="controller.exportType == 'community'">
+										<td class="row-header"><span>{{controller.DataService.labelOrganisation()}} data</span><div tb-inline="true" tb-tooltip="Data linked to the community's {{controller.DataService.labelOrganisationsLower()}} and their test configuration."></div></td>
+										<td class="td-centered"><input type="checkbox" ng-model="controller.allOrganisationData" class="form-check" ng-change="controller.allOrganisationDataChanged()"/></td>
+										<td colspan="2">
+											<table>
+												<tr>
+													<td>
+														<label class="checkbox-inline">
+															<input type="checkbox" ng-model="controller.settings.organisations" ng-disabled="controller.allOrganisationData || controller.isPrerequisiteOrganisations()">{{controller.DataService.labelOrganisations()}}
+														</label>
+														<label class="checkbox-inline" ng-if="!controller.DataService.configuration['sso.enabled']">
+															<input type="checkbox" ng-model="controller.settings.organisationUsers" ng-change="controller.organisationUsersChanged()" ng-disabled="controller.allOrganisationData">Users
+														</label>
+														<label class="checkbox-inline">
+															<input type="checkbox" ng-model="controller.settings.organisationPropertyValues" ng-change="controller.organisationPropertyValuesChanged()" ng-disabled="controller.allOrganisationData">Custom {{controller.DataService.labelOrganisationLower()}} property values
+														</label>
+													</td>
+												</tr>
+												<tr>
+													<td>
+														<label class="checkbox-inline">
+															<input type="checkbox" ng-model="controller.settings.systems" ng-change="controller.systemsChanged()" ng-disabled="controller.allOrganisationData || controller.isPrerequisiteSystems()">{{controller.DataService.labelSystems()}}
+														</label>
+														<label class="checkbox-inline">
+															<input type="checkbox" ng-model="controller.settings.systemPropertyValues" ng-change="controller.systemPropertyValuesChanged()" ng-disabled="controller.allOrganisationData">Custom {{controller.DataService.labelSystemLower()}} property values
+														</label>
+													</td>
+												</tr>
+												<tr ng-if="controller.showDomainOption">
+													<td>
+														<label class="checkbox-inline">
+															<input type="checkbox" ng-model="controller.settings.statements" ng-change="controller.statementsChanged()" ng-disabled="controller.allOrganisationData || controller.isPrerequisiteStatements()">Conformance statements
+														</label>
+														<label class="checkbox-inline">
+															<input type="checkbox" ng-model="controller.settings.statementConfigurations" ng-change="controller.statementConfigurationsChanged()" ng-disabled="controller.allOrganisationData">Conformance statement property configurations
+														</label>
+													</td>
+												</tr>
+											</table>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+            <div class="panel-footer">
+				<button class="btn btn-default" type="submit" ng-click="controller.export()" ng-disabled="controller.exportDisabled()"><span class="tab" ng-if="controller.pending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Export</button>
+			</div>
+		</form>
+	</div>
+</div>

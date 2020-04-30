@@ -6,8 +6,9 @@ class CommunityService
   @$inject = ['$log', 'RestService', 'DataService']
   constructor: (@$log, @RestService, @DataService) ->
 
-  getCommunities: (communityIds) ->
+  getCommunities: (communityIds, skipDefault) ->
     params = {}
+    params.skipDefault = skipDefault
     if communityIds? and communityIds.length > 0
         params.ids = communityIds.join ','
 
@@ -16,15 +17,21 @@ class CommunityService
       authenticate: true
       params: params
 
-  createCommunity: (shortName, fullName, email, selfRegType, selfRegToken, domainId) ->
+  createCommunity: (shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegNotification, description, domainId) ->
     data = {
       community_sname: shortName,
       community_fname: fullName,
-      community_email: email
+      community_email: email,
+      description: description
     }
     if @DataService.configuration['registration.enabled']
+      if selfRegNotification == undefined
+        selfRegNotification = false
       data.community_selfreg_type = selfRegType
       data.community_selfreg_token = selfRegToken
+      data.community_selfreg_notification = selfRegNotification
+      if @DataService.configuration['sso.enabled']
+        data.community_selfreg_restriction = selfRegRestriction
 
     if domainId?
       data.domain_id = domainId
@@ -40,15 +47,21 @@ class CommunityService
       authenticate: true
     })
 
-  updateCommunity: (communityId, shortName, fullName, email, selfRegType, selfRegToken, domainId) ->
+  updateCommunity: (communityId, shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegNotification, description, domainId) ->
     data = {
       community_sname: shortName,
       community_fname: fullName,
-      community_email: email
+      community_email: email,
+      description: description
     }
     if @DataService.configuration['registration.enabled']
+      if selfRegNotification == undefined
+        selfRegNotification = false
       data.community_selfreg_type = selfRegType
       data.community_selfreg_token = selfRegToken
+      data.community_selfreg_notification = selfRegNotification
+      if @DataService.configuration['sso.enabled']
+        data.community_selfreg_restriction = selfRegRestriction
 
     if domainId?
       data.domain_id = domainId
@@ -74,14 +87,15 @@ class CommunityService
       path: jsRoutes.controllers.CommunityService.getSelfRegistrationOptions().url
     })
 
-  selfRegister: (communityId, token, organisationShortName, organisationFullName, templateId, userName, userEmail, userPassword) ->
+  selfRegister: (communityId, token, organisationShortName, organisationFullName, templateId, organisationProperties, userName, userEmail, userPassword) ->
     data = {
       community_id: communityId,
       vendor_sname: organisationShortName,
       vendor_fname: organisationFullName,
       user_name: userName,
       user_email: userEmail,
-      password: userPassword
+      password: userPassword,
+      properties: @DataService.customPropertiesForPost(organisationProperties)
     }
     if token?
       data.community_selfreg_token = token
@@ -123,6 +137,7 @@ class CommunityService
       admin_only: parameter.adminOnly,
       not_for_tests: parameter.notForTests,
       in_exports: parameter.inExports,
+      in_selfreg: parameter.inSelfRegistration,
       community_id: parameter.community
     }
     @RestService.post({
@@ -160,6 +175,7 @@ class CommunityService
       admin_only: parameter.adminOnly,
       not_for_tests: parameter.notForTests,
       in_exports: parameter.inExports,
+      in_selfreg: parameter.inSelfRegistration,
       community_id: parameter.community
     }
     @RestService.post({
@@ -183,6 +199,70 @@ class CommunityService
     }
     @RestService.post({
       path: jsRoutes.controllers.CommunityService.updateSystemParameter(parameter.id).url,
+      data: data,
+      authenticate: true
+    })
+
+  getCommunityLabels: (communityId) =>
+    @RestService.get({
+      path: jsRoutes.controllers.CommunityService.getCommunityLabels(communityId).url
+      authenticate: true
+    })    
+
+  setCommunityLabels: (communityId, labels) =>
+    data = {
+      values: labels
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.CommunityService.setCommunityLabels(communityId).url,
+      data: data,
+      authenticate: true
+    })
+
+  exportCommunity: (communityId, settings) =>
+    data = {
+      values: settings
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.RepositoryService.exportCommunity(communityId).url,
+      data: data,
+      authenticate: true,
+      responseType: "arraybuffer"
+    })
+
+  uploadCommunityExport: (communityId, settings, archiveData) =>
+    data = {
+      settings: settings
+      data: archiveData
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.RepositoryService.uploadCommunityExport(communityId).url,
+      data: data,
+      authenticate: true
+    })
+
+  cancelCommunityImport: (communityId, pendingImportId) =>
+    data = {
+      pending_id: pendingImportId
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.RepositoryService.cancelCommunityImport(communityId).url,
+      data: data,
+      authenticate: true
+    })
+
+  confirmCommunityImport: (communityId, pendingImportId, settings, items) =>
+    data = {
+      settings: settings
+      pending_id: pendingImportId
+      items: items
+    }
+    if @DataService.isCommunityAdmin
+      path = jsRoutes.controllers.RepositoryService.confirmCommunityImportCommunityAdmin(communityId).url
+    else
+      path = jsRoutes.controllers.RepositoryService.confirmCommunityImportTestBedAdmin(communityId).url
+    @RestService.post({
+      path: path,
       data: data,
       authenticate: true
     })

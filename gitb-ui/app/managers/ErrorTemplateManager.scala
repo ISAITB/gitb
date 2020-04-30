@@ -59,56 +59,74 @@ class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider) 
    * Creates new error template
    */
   def createErrorTemplate(errorTemplate: ErrorTemplates) = {
-    val actions = new ListBuffer[DBIO[_]]()
-    if (errorTemplate.default) {
-      val q = for {l <- PersistenceSchema.errorTemplates if l.default === true && l.community === errorTemplate.community} yield (l.default)
-      actions += q.update(false)
-    }
-    actions += (PersistenceSchema.insertErrorTemplate += errorTemplate)
-    exec(DBIO.seq(actions.map(a => a): _*).transactionally)
+    exec(createErrorTemplateInternal(errorTemplate).transactionally)
+  }
+
+  def createErrorTemplateInternal(errorTemplate: ErrorTemplates) = {
+    for {
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        if (errorTemplate.default) {
+          val q = for {l <- PersistenceSchema.errorTemplates if l.default === true && l.community === errorTemplate.community} yield (l.default)
+          actions += q.update(false)
+        }
+        toDBIO(actions)
+      }
+      newId <- PersistenceSchema.insertErrorTemplate += errorTemplate
+    } yield newId
   }
 
   /**
    * Updates error template
    */
   def updateErrorTemplate(templateId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long) = {
-    val errorTemplateOption = exec(PersistenceSchema.errorTemplates.filter(_.id === templateId).result.headOption)
-    if (errorTemplateOption.isDefined) {
-      val actions = new ListBuffer[DBIO[_]]()
-      val errorTemplate = errorTemplateOption.get
+    exec(updateErrorTemplateInternal(templateId, name, description, content, default, communityId).transactionally)
+  }
 
-      if (!name.isEmpty && errorTemplate.name != name) {
-        val q = for {l <- PersistenceSchema.errorTemplates if l.id === templateId} yield (l.name)
-        actions += q.update(name)
+  def updateErrorTemplateInternal(templateId: Long, name: String, description: Option[String], content: String, default: Boolean, communityId: Long) = {
+    for {
+      errorTemplateOption <- PersistenceSchema.errorTemplates.filter(_.id === templateId).result.headOption
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        if (errorTemplateOption.isDefined) {
+          val errorTemplate = errorTemplateOption.get
+
+          if (!name.isEmpty && errorTemplate.name != name) {
+            val q = for {l <- PersistenceSchema.errorTemplates if l.id === templateId} yield (l.name)
+            actions += q.update(name)
+          }
+
+          if (content != errorTemplate.content) {
+            val q = for {l <- PersistenceSchema.errorTemplates if l.id === templateId} yield (l.content)
+            actions += q.update(content)
+          }
+
+          if (!errorTemplate.default && default) {
+            var q = for {l <- PersistenceSchema.errorTemplates if l.default === true && l.community === communityId} yield (l.default)
+            actions += q.update(false)
+
+            q = for {l <- PersistenceSchema.errorTemplates if l.id === templateId} yield (l.default)
+            actions += q.update(default)
+          }
+
+          val q = for {l <- PersistenceSchema.errorTemplates if l.id === templateId} yield (l.description)
+          actions += q.update(description)
+        }
+        toDBIO(actions)
       }
-
-      if (content != errorTemplate.content) {
-        val q = for {l <- PersistenceSchema.errorTemplates if l.id === templateId} yield (l.content)
-        actions += q.update(content)
-      }
-
-      if (!errorTemplate.default && default) {
-        var q = for {l <- PersistenceSchema.errorTemplates if l.default === true && l.community === communityId} yield (l.default)
-        actions += q.update(false)
-
-        q = for {l <- PersistenceSchema.errorTemplates if l.id === templateId} yield (l.default)
-        actions += q.update(default)
-      }
-
-      val q = for {l <- PersistenceSchema.errorTemplates if l.id === templateId} yield (l.description)
-      actions += q.update(description)
-
-      exec(DBIO.seq(actions.map(a => a): _*).transactionally)
-    }
+    } yield ()
   }
 
   /**
    * Deletes error template with specified id
    */
   def deleteErrorTemplate(templateId: Long) = {
-    exec(PersistenceSchema.errorTemplates.filter(_.id === templateId).delete.transactionally)
+    exec(deleteErrorTemplateInternal(templateId).transactionally)
   }
 
+  def deleteErrorTemplateInternal(templateId: Long): DBIO[_] = {
+    PersistenceSchema.errorTemplates.filter(_.id === templateId).delete
+  }
 
   /**
    * Gets the default error template for given community

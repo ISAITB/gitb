@@ -98,12 +98,12 @@ extractRelatedIndicators = (name, report) ->
     return []
   relatedAssertionReports = _.filter report.reports.assertionReports, (assertionReport) =>
 
-    location = extractLocationInfo assertionReport.value.location
+    location = assertionReport.extractedLocation
 
     return name? && location? && location.name.toLowerCase() == name.toLowerCase()
 
   indicators = _.map relatedAssertionReports, (assertionReport) ->
-    location = extractLocationInfo assertionReport.value.location
+    location = assertionReport.extractedLocation
     indicator =
       location: location
       type: assertionReport.type
@@ -146,19 +146,32 @@ openEditorWindow = ($uibModal, name, value, report, lineNumber) ->
       template: ''+
         '<div class="step-report test-assertion-step-report">'+
           '<div class="col-md-12" ng-if="report.context != null">'+
-            #'<span class="title" ng-if="report.id != null"><strong>{{report.id}}:</strong></span>'+
             '<div any-content-view context="report.context" report="report"></div>'+
           '</div>'+
-          '<div class="col-md-12 test-assertion-group-report" ng-if="report.reports != null">'+
-            '<div class="assertion-reports" ng-if="report.reports.assertionReports != null && report.reports.assertionReports.length > 0">'+
-              '<span class="title"><strong>Reports: </strong></span>'+
-              '<div>'+
-                '<div ng-repeat="assertionReport in report.reports.assertionReports" ng-click="openAssertionReport(assertionReport)" test-assertion-report assertion-report="assertionReport"></div>'+
+          '<div ng-if="report.reports != null && report.reports.assertionReports != null && report.reports.assertionReports.length > 0">'+
+            '<div class="col-md-12" style="margin-bottom:8px;">'+
+              '<span class="report-item"><strong>Details: </strong></span>'+
+            '</div>'+
+            '<div class="col-md-12" ng-if="report.counters != null && (report.counters.nrOfErrors > 0 || report.counters.nrOfWarnings > 0 || report.counters.nrOfAssertions > 0)" style="padding-bottom:10px;">'+
+              '<div class="col-md-12 summary">'+
+                '<div class="row">'+
+                  '<div class="col-xs-2 summary-cell summary-cell-title">Summary</div>'+
+                  '<div class="col-xs-10">'+
+                    '<div class="row">'+
+                      '<div class="col-xs-4 summary-cell"><span class="summary-item-label">Errors:</span> {{report.counters.nrOfErrors}}</div>'+
+                      '<div class="col-xs-4 summary-cell"><span class="summary-item-label">Warnings:</span> {{report.counters.nrOfWarnings}}</div>'+
+                      '<div class="col-xs-4 summary-cell"><span class="summary-item-label">Messages:</span> {{report.counters.nrOfAssertions}}</div>'+
+                    '</div>'+
+                  '</div>'+
+                '</div>'+
               '</div>'+
             '</div>'+
-            '<div class="sub-test-assertion-step-reports" ng-if="report.reports.reports != null && report.reports.reports.length > 0">'+
-              '<span class="title"><strong>Sub Reports: </strong></span>'+
-              '<div ng-repeat="subReport in report.reports.reports" ng-click="open(subReport)" tar-step-report report="subReport"></div>'+
+            '<div class="col-md-12 test-assertion-group-report">'+
+              '<div class="assertion-reports" ng-if="report.reports.assertionReports != null && report.reports.assertionReports.length > 0">'+
+                '<div>'+
+                  '<div ng-repeat="assertionReport in report.reports.assertionReports" ng-click="openAssertionReport(assertionReport)" test-assertion-report assertion-report="assertionReport"></div>'+
+                '</div>'+
+              '</div>'+
             '</div>'+
           '</div>'+
         '</div>'
@@ -180,19 +193,23 @@ openEditorWindow = ($uibModal, name, value, report, lineNumber) ->
       restrict: 'A'
       replace: true
       template: ''+
-        '<span class="assertion-report" ng-class="{'+
+        '<span ng-class="{'+
           '\'error-assertion-report\': assertionReport.type == types.ERROR'+
           ', \'warning-assertion-report\': assertionReport.type == types.WARNING'+
-          ', \'info-assertion-report\': assertionReport.type == types.INFO}">'+
-          '<span class="report-item assertion-report-item" ng-if="assertionReport.value.assertionID != null"><strong>Assertion ID:</strong> {{assertionReport.value.assertionID}}</span>'+
-          '<span class="report-item assertion-report-item">'+
+          ', \'info-assertion-report\': assertionReport.type == types.INFO'+
+          ', \'assertion-report\': assertionReport.extractedLocation != null'+
+          ', \'assertion-report-nolink\': assertionReport.extractedLocation == null'+
+          '}">'+
+          '<span class="report-item report-item-element assertion-report-item" ng-if="assertionReport.value.assertionID != null"><strong>Assertion ID:</strong> {{assertionReport.value.assertionID}}</span>'+
+          '<span class="report-item report-item-element assertion-report-item">'+
             '<i class="fa fa-info-circle report-item-icon info-icon" ng-if="assertionReport.type == types.INFO"></i>'+
             '<i class="fa fa-warning report-item-icon warning-icon" ng-if="assertionReport.type == types.WARNING"></i>'+
             '<i class="fa fa-times-circle report-item-icon error-icon" ng-if="assertionReport.type == types.ERROR"></i>'+
             '<span class="description" ng-bind="description"></span>'+
           '</span>'+
-          '<span class="report-item assertion-report-item" ng-if="assertionReport.value.value != null"><strong>Value:</strong> {{assertionReport.value.value}}</span>'+
-          '<span class="report-item assertion-report-item" ng-if="assertionReport.value.test != null"><strong>Test:</strong> {{assertionReport.value.test}}</span>'+
+          '<span class="report-item report-item-element assertion-report-item" ng-if="assertionReport.value.value != null"><strong>Value:</strong> {{assertionReport.value.value}}</span>'+
+          '<span class="report-item report-item-element assertion-report-item" ng-if="assertionReport.extractedLocation == null && assertionReport.value.location"><strong>Location:</strong> {{assertionReport.value.location}}</span>'+
+          '<span class="report-item report-item-element assertion-report-item" ng-if="assertionReport.value.test != null"><strong>Test:</strong> {{assertionReport.value.test}}</span>'+
         '</span>'
       link: (scope, element, attrs) =>
         htmlDecode = (value) ->
@@ -204,6 +221,8 @@ openEditorWindow = ($uibModal, name, value, report, lineNumber) ->
           ERROR: 'error'
 
         scope.description = htmlDecode scope.assertionReport.value.description
+        if scope.assertionReport.value?.location? 
+          scope.assertionReport.extractedLocation = extractLocationInfo scope.assertionReport.value.location
 
     directive
 ]
@@ -254,7 +273,7 @@ openEditorWindow = ($uibModal, name, value, report, lineNumber) ->
             scope.isValueTooLong = scope.value.length > 100
 
             scope.$on 'assertion-report.open', (event, assertionReport) =>
-              location = extractLocationInfo assertionReport.value.location
+              location = assertionReport.extractedLocation
               if location? && location.name? && scope.context.name? && location.name.toLowerCase() == scope.context.name.toLowerCase()
                 scope.open location.line
 
@@ -297,7 +316,7 @@ openEditorWindow = ($uibModal, name, value, report, lineNumber) ->
         scope.isValueTooLong = scope.value.length > 100
 
         scope.$on 'assertion-report.open', (event, assertionReport) =>
-          location = extractLocationInfo assertionReport.value.location
+          location = assertionReport.extractedLocation
           if location? && location.name? && location.name == scope.content.name
             scope.open location.line
 
@@ -394,7 +413,7 @@ openEditorWindow = ($uibModal, name, value, report, lineNumber) ->
           scope.content.value = '-'
 
         scope.$on 'assertion-report.open', (event, assertionReport) =>
-          location = extractLocationInfo assertionReport.value.location
+          location = assertionReport.extractedLocation
           if location? && location.name? && location.name == scope.content.name
             scope.open location.line
 

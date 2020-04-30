@@ -7,6 +7,40 @@ class ReportService
   constructor: (@$log, @RestService, @DataService) ->
     @$log.debug "Constructing ReportService..."
 
+  getSystemActiveTestResults: (systemId, specIds, testSuiteIds, testCaseIds, domainIds, startTimeBegin, startTimeEnd, sortColumn, sortOrder) ->
+    params = {
+        system_id: systemId
+    }
+
+    if specIds? and specIds.length > 0
+      params.specification_ids = specIds.join ','
+
+    if testSuiteIds? and testSuiteIds.length > 0
+      params.test_suite_ids = testSuiteIds.join ','
+
+    if testCaseIds? and testCaseIds.length > 0
+      params.test_case_ids = testCaseIds.join ','
+
+    if domainIds? and domainIds.length > 0
+      params.domain_ids = domainIds.join ','
+
+    if startTimeBegin
+      params.start_time_begin = startTimeBegin
+
+    if startTimeEnd
+      params.start_time_end = startTimeEnd
+
+    if sortColumn
+      params.sort_column = sortColumn
+
+    if sortOrder
+      params.sort_order = sortOrder
+
+    @RestService.get
+      path: jsRoutes.controllers.ReportService.getSystemActiveTestResults().url
+      authenticate: true
+      params: params
+
   getTestResults: (systemId, page, limit, specIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder) ->
     params = {
         system_id: systemId

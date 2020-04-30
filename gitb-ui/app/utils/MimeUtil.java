@@ -62,20 +62,28 @@ public class MimeUtil {
     }
 
     public static String encryptString(String input) {
-        return new Encryptor().encryptor.encrypt(input);
+        return encryptString(input, Configurations.MASTER_PASSWORD());
+    }
+
+    public static String encryptString(String input, char[] key) {
+        return new Encryptor(key).encryptor.encrypt(input);
     }
 
     public static String decryptString(String input) {
-        return new Encryptor().encryptor.decrypt(input);
+        return new Encryptor(Configurations.MASTER_PASSWORD()).encryptor.decrypt(input);
+    }
+
+    public static String decryptString(String input, char[] key) {
+        return new Encryptor(key).encryptor.decrypt(input);
     }
 
     private static class Encryptor {
 
         private BasicTextEncryptor encryptor;
 
-        private Encryptor() {
+        private Encryptor(char[] key) {
             encryptor = new BasicTextEncryptor();
-            encryptor.setPasswordCharArray(Configurations.MASTER_PASSWORD());
+            encryptor.setPasswordCharArray(key);
         }
 
     }

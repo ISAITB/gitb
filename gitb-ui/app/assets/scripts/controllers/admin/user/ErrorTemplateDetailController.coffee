@@ -1,13 +1,14 @@
 class ErrorTemplateDetailController
 
-  @$inject = ['$log', '$state', '$stateParams', 'WebEditorService', 'ValidationService', 'ErrorTemplateService', 'ConfirmationDialogService', 'ErrorService']
-  constructor: (@$log, @$state, @$stateParams, @WebEditorService, @ValidationService, @ErrorTemplateService, @ConfirmationDialogService, @ErrorService) ->
+  @$inject = ['$log', '$state', '$stateParams', 'WebEditorService', 'ValidationService', 'ErrorTemplateService', 'ConfirmationDialogService', 'ErrorService', 'PopupService', 'DataService']
+  constructor: (@$log, @$state, @$stateParams, @WebEditorService, @ValidationService, @ErrorTemplateService, @ConfirmationDialogService, @ErrorService, @PopupService, @DataService) ->
 
     @communityId = @$stateParams.community_id
     @templateId = @$stateParams.template_id
     @alerts = []
     @template = {}
     @isDefault
+    @DataService.focus('name')
 
     @ErrorTemplateService.getErrorTemplateById(@templateId)
     .then (data) =>
@@ -18,7 +19,7 @@ class ErrorTemplateDetailController
       @ErrorService.showErrorMessage(error)
 
   saveDisabled: () =>
-    !(@template?.name?)
+    !(@template?.name? && @template.name.trim() != '')
 
   updateErrorTemplate: (copy) =>
     @ValidationService.clearAll()
@@ -41,6 +42,7 @@ class ErrorTemplateDetailController
           @copyErrorTemplate()
         else
           @cancelDetailErrorTemplate()
+          @PopupService.success('Error template updated.')
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -56,6 +58,7 @@ class ErrorTemplateDetailController
       @ErrorTemplateService.deleteErrorTemplate(@templateId)
       .then () =>
         @cancelDetailErrorTemplate()
+        @PopupService.success('Error template deleted.')
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
 

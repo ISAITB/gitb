@@ -12,7 +12,7 @@
 			<div class="col-md-12 test-assertion-group-report" ng-if="report.reports != null">
 				<div ng-repeat="assertionReport in report.reports">
 					<span class="assertion-report-nolink" ng-class="{'error-assertion-report': assertionReport.level == 'error', 'warning-assertion-report': assertionReport.level == 'warning', 'info-assertion-report': assertionReport.level == 'info'}">
-						<span class="report-item assertion-report-item">
+						<span class="report-item-element assertion-report-item">
 							<i class="fa fa-info-circle report-item-icon info-icon" ng-if="assertionReport.level == 'info'"></i>
 							<i class="fa fa-warning report-item-icon warning-icon" ng-if="assertionReport.level == 'warning'"></i>
 							<i class="fa fa-times-circle report-item-icon error-icon" ng-if="assertionReport.level == 'error'"></i>
@@ -26,6 +26,6 @@
 	</div>
 </div>
 <div class="modal-footer">
-    <button class="btn btn-default" ng-click="continue()" ng-if="report.result == 'SUCCESS'">Ignore warnings</button>
-	<button class="btn btn-default" ng-click="close()">Cancel</button>
+    <button type="button" class="btn btn-default" ng-click="continue()" ng-if="report.result == 'SUCCESS'">Ignore warnings</button>
+	<button type="button" class="btn btn-default" ng-click="close()">Cancel</button>
 </div>

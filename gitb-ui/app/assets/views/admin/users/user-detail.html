@@ -3,33 +3,35 @@
         <div class="panel-heading">
             <h4 class="title">User details</h4>
         </div>
-        <div class="panel-body">
-            <!-- Error messages -->
-            <div class="row">
-                <div class="col-md-10 col-md-offset-1">
-                    <div uib-alert ng-repeat="alert in userDetailCtrl.alerts" ng-class="'alert-' + alert.type" close="userDetailCtrl.closeAlert($index)">{{alert.msg}}</div>
+        <form class="form-horizontal">
+            <div class="panel-body">
+                <!-- Error messages -->
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1">
+                        <div uib-alert ng-repeat="alert in userDetailCtrl.alerts" ng-class="'alert-' + alert.type" close="userDetailCtrl.closeAlert($index)">{{alert.msg}}</div>
+                    </div>
                 </div>
-            </div>
-            <div class="row">
-                <div class="col-md-11" tb-user-form tb-user="userDetailCtrl.user" tb-new="false" tb-admin="false" tb-roles="userDetailCtrl.roleChoices" sso="userDetailCtrl.DataService.configuration['sso.enabled']"></div>
-            </div>
-            <div class="row" ng-if="!userDetailCtrl.DataService.configuration['sso.enabled']">
-                <div class="col-md-10 col-centered">
-                    <div class="form-control-static bg-info div-padded-sides div-rounded">
-                        <p style="margin-bottom: 0px;"><b>Privacy note:</b> By clicking 'Update' you grant the user's consent on his/her behalf to record the provided information. This is used only for internal identification purposes and is never shared with other parties. Alternatively you may also complete this form with information that is not personally identifiable. Please refer to the legal notice (link available in the screen's footer) for more information.</p>
+                <div class="row">
+                    <div class="col-md-11" tb-user-form tb-user="userDetailCtrl.user" tb-new="false" tb-admin="false" tb-roles="userDetailCtrl.roleChoices" sso="userDetailCtrl.DataService.configuration['sso.enabled']"></div>
+                </div>
+                <div class="row" ng-if="!userDetailCtrl.DataService.configuration['sso.enabled']">
+                    <div class="col-md-10 col-centered">
+                        <div class="form-control-static bg-info div-padded-sides div-rounded">
+                            <p style="margin-bottom: 0px;"><b>Privacy note:</b> By clicking 'Update' you grant the user's consent on his/her behalf to record the provided information. This is used only for internal identification purposes and is never shared with other parties. Alternatively you may also complete this form with information that is not personally identifiable. Please refer to the legal notice (link available in the screen's footer) for more information.</p>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-        <div class="panel-footer">
-            <div class="row">
-                <div class="col-md-3"></div>
-                <div class="col-md-8 btn-toolbar">
-                    <button class="btn btn-default" type="button" ng-click="userDetailCtrl.updateUser()" ng-disabled="userDetailCtrl.saveDisabled()">Update</button>
-                    <button class="btn btn-default" type="button" ng-click="userDetailCtrl.deleteUser()">Delete</button>
-                    <button class="btn btn-default" type="button" ng-click="userDetailCtrl.cancelDetailUser()">Back</button>
+            <div class="panel-footer">
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-8 btn-toolbar">
+                        <button class="btn btn-default" type="submit" ng-click="userDetailCtrl.updateUser()" ng-disabled="userDetailCtrl.saveDisabled()">Update</button>
+                        <button class="btn btn-default" type="button" ng-click="userDetailCtrl.deleteUser()">Delete</button>
+                        <button class="btn btn-default" type="button" ng-click="userDetailCtrl.cancelDetailUser()">Back</button>
+                    </div>
                 </div>
             </div>
-        </div>
+        </form>
     </div>
 </div>

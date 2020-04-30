@@ -2,10 +2,10 @@ package controllers
 
 import controllers.util.{AuthorizedAction, ParameterExtractor, ResponseConstructor}
 import javax.inject.Inject
-import managers.{AuthorizationManager, ParameterManager}
+import managers.{AuthorizationManager, CommunityLabelManager, ParameterManager}
 import play.api.mvc.Controller
 
-class ParameterService @Inject() (parameterManager: ParameterManager, authorizationManager: AuthorizationManager) extends Controller {
+class ParameterService @Inject() (parameterManager: ParameterManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends Controller {
 
   def deleteParameter(parameterId: Long) = AuthorizedAction { request =>
     authorizationManager.canDeleteParameter(request, parameterId)
@@ -17,7 +17,7 @@ class ParameterService @Inject() (parameterManager: ParameterManager, authorizat
     authorizationManager.canUpdateParameter(request, parameterId)
     val parameter = ParameterExtractor.extractParameter(request)
     if (parameterManager.checkParameterExistsForEndpoint(parameter.name, parameter.endpoint, Some(parameterId))) {
-      ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the endpoint")
+      ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the " + communityLabelManager.getLabel(request, models.Enums.LabelType.Endpoint, true, true)+".")
     } else{
       parameterManager.updateParameterWrapper(parameterId, parameter.name, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests)
       ResponseConstructor.constructEmptyResponse

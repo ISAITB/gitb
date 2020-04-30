@@ -1,0 +1,51 @@
+<div class="page users create">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Custom community labels</h4>
+        </div>
+        <form>
+            <div class="panel-body">
+                <div class="bg-info div-rounded div-padded bottom-margin">
+                    <span>Override the default labels of Test Bed concepts to align them with your community. The labels you provide will be used in all screens, reports and exports.</span>
+                </div>
+                <table id="labelTable" class="table">
+                    <thead>
+                        <th>Concept <span uib-tooltip="The Test Bed concept to describe with a custom label."><i class="fa fa-question-circle"></i></span></th>
+                        <th>Override? <span uib-tooltip="Whether or not to override the default label."><i class="fa fa-question-circle"></i></span></th>
+                        <th>Singular form <span uib-tooltip="The label when referring to a single element."><i class="fa fa-question-circle"></i></span></th>
+                        <th>Plural form <span uib-tooltip="The label when referring to a multiple elements."><i class="fa fa-question-circle"></i></span></th>
+                        <th>Fixed casing? <span uib-tooltip="Whether or not the label's casing should never be adapted."><i class="fa fa-question-circle"></i></span></th>
+                    </thead>
+                    <tbody>
+                        <tr ng-repeat="label in controller.labels">
+                            <td style="padding-top:14px">
+                                <span>{{controller.labelTypeLabel(label.labelType)}}</span>
+                                <span uib-tooltip="{{controller.labelTypeDescription[label.labelType]}}"><i class="fa fa-question-circle"></i></span>
+                            </td>
+                            <td><input type="checkbox" ng-model="label.custom" class="form-check" ng-change="controller.customChecked(label.labelType)"/></td>
+                            <td>
+                                <div ng-if="label.custom"><input ng-attr-id="{{'label-singular-'+label.labelType}}" type="text" ng-model="label.singularForm" class="form-control"/></div>
+                                <div ng-if="!label.custom"><input type="text" ng-value="controller.Constants.LABEL_DEFAULT[label.labelType].singularForm" class="form-control" readonly="true"/></div>
+                            </td>
+                            <td>
+                                <div ng-if="label.custom"><input type="text" ng-model="label.pluralForm" class="form-control"/></div>
+                                <div ng-if="!label.custom"><input type="text" ng-value="controller.Constants.LABEL_DEFAULT[label.labelType].pluralForm" class="form-control" readonly="true"/></div>
+                            </td>
+                            <td>
+                                <div ng-if="label.custom"><input type="checkbox" ng-model="label.fixedCase" class="form-check"/></div>
+                                <div ng-if="!label.custom"><input type="checkbox" ng-checked="controller.Constants.LABEL_DEFAULT[label.labelType].fixedCase" class="form-check" disabled="true"/></div>
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="panel-footer">
+                <div class="btn-toolbar">
+                    <button class="btn btn-default" type="submit" ng-click="controller.save()" ng-disabled="controller.saveDisabled()"><span class="tab" ng-if="controller.busy"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i> </span>Save</button>
+                    <button class="btn btn-default" type="button" ng-click="controller.cancel()">Back</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

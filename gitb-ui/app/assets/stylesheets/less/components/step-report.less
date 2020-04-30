@@ -1,26 +1,52 @@
 @import "../_common.less";
 
 .test-step-report {
-    .report-item {
-	display: block;
-	padding: 10px 15px;
 
-	&.assertion-report-item {
-	    line-height: 16px;
-	    .report-item-icon {	
-		padding: 0 4px;
-		&.info-icon {
-		    color: @success-green;
+	.summary {
+		border: 1px solid @gray-light;
+
+		.summary-cell {
+			padding-top: 5px;
+			padding-bottom: 5px;
+			text-align: center;
+
+			&.summary-cell-title {
+				background: @gray-light;
+				font-weight: bold;
+				text-align: left;
+			}
+
+			.summary-item-label {
+				font-weight: bold;
+			}
 		}
-		&.warning-icon {
-		    color: @warning-yellow;
-		}
-		&.error-icon {
-		    color: @error-red;
-		}
-	    }
+
 	}
 
+    .report-item {
+		display: block;
+		padding: 10px 15px;
+	}
+
+	.report-item-element {
+		display: block;
+		padding: 8px 15px;
+
+		&.assertion-report-item {
+			line-height: 16px;
+			.report-item-icon {	
+				padding: 0 4px;
+				&.info-icon {
+					color: @success-green;
+				}
+				&.warning-icon {
+					color: @warning-yellow;
+				}
+				&.error-icon {
+					color: @error-red;
+				}
+			}
+		}
     }
     .step-report {
 	&.decision-step-report {
@@ -91,10 +117,13 @@
 			display: block;
 			margin-bottom: 10px;
 			&.warning-assertion-report {
-				background-color: fade(@warning-yellow, 15%);
+				background-color: @orange-light;
 			}
 			&.error-assertion-report {
-				background-color: fade(@error-red, 15%);
+				background-color: @red-light;
+			}
+			&.info-assertion-report {
+				background-color: @gray-light-2;
 			}
 		}
 		.assertion-report {
@@ -104,10 +133,13 @@
 				cursor: pointer;
 			}
 			&.warning-assertion-report {
-				background-color: fade(@warning-yellow, 15%);
+				background-color: @orange-light;
 			}
 			&.error-assertion-report {
-				background-color: fade(@error-red, 15%);
+				background-color: @red-light;
+			}
+			&.info-assertion-report {
+				background-color: @gray-light-2;
 			}
 		}
 	}

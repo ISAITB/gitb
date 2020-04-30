@@ -2,10 +2,10 @@ class IndexController
 	@$inject = [
 		'$log', '$sce', '$scope', '$rootScope', '$location', '$state', '$window'
 		'AuthProvider', 'SystemConfigurationService', 'DataService', 'AccountService',
-		'Events', 'Constants', 'LegalNoticeService', 'HtmlService', 'ErrorService', '$uibModal', '$q', 'ConfirmationDialogService', '$cookies'
+		'Events', 'Constants', 'LegalNoticeService', 'HtmlService', 'ErrorService', '$uibModal', '$q', 'ConfirmationDialogService', '$cookies', 'UserGuideService'
 	]
 	constructor: (@$log, @$sce, @$scope, @$rootScope, @$location, @$state, @$window,
-		@AuthProvider, @SystemConfigurationService, @DataService, @AccountService, @Events, @Constants,@LegalNoticeService, @HtmlService, @ErrorService, @$uibModal, @$q, @ConfirmationDialogService, @$cookies) ->
+		@AuthProvider, @SystemConfigurationService, @DataService, @AccountService, @Events, @Constants,@LegalNoticeService, @HtmlService, @ErrorService, @$uibModal, @$q, @ConfirmationDialogService, @$cookies, @UserGuideService) ->
 
 		@$log.debug "Constructing MainController..."
 
@@ -134,17 +134,8 @@ class IndexController
 		@DataService.configuration?["survey.address"]
 
 	userGuideLink: () =>
-		if (@DataService.configuration?)
-			if @DataService.isVendorAdmin
-				@DataService.configuration['userguide.oa']
-			else if @DataService.isCommunityAdmin
-				@DataService.configuration['userguide.ca']
-			else if @DataService.isSystemAdmin
-				@DataService.configuration['userguide.ta']
-			else
-				@DataService.configuration['userguide.ou']
-		else
-			@DataService.configuration['userguide.ou']
+		link = @UserGuideService.userGuideLink()
+		@$window.open(link, '_blank')
 
 	showUserGuide: () =>
 		@DataService.configuration?

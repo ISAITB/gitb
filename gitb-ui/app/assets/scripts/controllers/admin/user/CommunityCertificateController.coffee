@@ -1,7 +1,7 @@
 class CommunityCertificateController
 
-  @$inject = ['$state', '$scope', '$stateParams', 'WebEditorService', 'Constants', 'ConformanceService', 'ErrorService', '$q', 'DataService', 'ConfirmationDialogService']
-  constructor: (@$state, @$scope, @$stateParams, @WebEditorService, @Constants, @ConformanceService, @ErrorService, @$q, @DataService, @ConfirmationDialogService) ->
+  @$inject = ['$state', '$scope', '$stateParams', 'WebEditorService', 'Constants', 'ConformanceService', 'ErrorService', '$q', 'DataService', 'ConfirmationDialogService', 'PopupService', 'settings']
+  constructor: (@$state, @$scope, @$stateParams, @WebEditorService, @Constants, @ConformanceService, @ErrorService, @$q, @DataService, @ConfirmationDialogService, @PopupService, @settings) ->
     @communityId = @$stateParams.community_id
     @editorReady = @$q.defer()
     tinyMCE.remove('.mce-message')
@@ -18,24 +18,17 @@ class CommunityCertificateController
     @updatePasswords = true
     @removeKeystore = false
     @exportPending = false
-    @settings = {}
-
-    @ConformanceService.getConformanceCertificateSettings(@communityId, true)
-    .then (data) =>
-      if data? && data?.id?
-        @settings = data
-        if !@settings.passwordsSet? || !@settings.passwordsSet
-          @updatePasswords = true
-        else 
-          @updatePasswords = false
-        if @settings.message?
-          @editorReady.promise.then () =>
-            tinymce.activeEditor.setContent(data.message)
-      else
-        @settings = {}
+    @DataService.focus('title')
+    if @settings.id?
+      if !@settings.passwordsSet? || !@settings.passwordsSet
         @updatePasswords = true
-    .catch (error) =>
-      @ErrorService.showErrorMessage(error)
+      else 
+        @updatePasswords = false
+      if @settings.message?
+        @editorReady.promise.then () =>
+          tinymce.activeEditor.setContent(@settings.message)
+    else
+      @updatePasswords = true
 
     @$scope.attachKeystore = (files) =>
       file = _.head files
@@ -116,6 +109,7 @@ class CommunityCertificateController
     @ConformanceService.updateConformanceCertificateSettings(@communityId, @settings, @updatePasswords, @removeKeystore)
     .then () =>
       @$state.go 'app.admin.users.communities.detail.list', { community_id : @communityId }
+      @PopupService.success('Conformance certificate settings updated.')
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 

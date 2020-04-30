@@ -55,24 +55,24 @@ class AdminConformanceController
 			}
 		tempColumns.push {
 			field: 'organizationName',
-			title: 'Organisation'
+			title: @DataService.labelOrganisation()
 		}
 		tempColumns.push {
 			field: 'systemName',
-			title: 'System'
+			title: @DataService.labelSystem()
 		}
 		if (!@DataService.community.domainId?)
 			tempColumns.push {
 				field: 'domainName',
-				title: 'Domain'
+				title: @DataService.labelDomain()
 			}
 		tempColumns.push {
 			field: 'specName',
-			title: 'Specification'
+			title: @DataService.labelSpecification()
 		}
 		tempColumns.push {
 			field: 'actorName',
-			title: 'Actor'
+			title: @DataService.labelActor()
 		}
 		tempColumns.push {
 			field: 'status',
@@ -369,22 +369,22 @@ class AdminConformanceController
 			if !@DataService.isCommunityAdmin
 				headers.push("Community")
 				columnMap.push("communityName")
-			headers.push("Organisation")
+			headers.push(@DataService.labelOrganisation())
 			columnMap.push("organizationName")
 			if data.orgParameters?
 				for param in data.orgParameters
-					headers.push("Organisation ("+param+")")
+					headers.push(@DataService.labelOrganisation() + " ("+param+")")
 					columnMap.push("orgparam_"+param)
-			headers.push("System")
+			headers.push(@DataService.labelSystem())
 			columnMap.push("systemName")
 			if data.sysParameters?
 				for param in data.sysParameters
-					headers.push("System ("+param+")")
+					headers.push(@DataService.labelSystem() + " ("+param+")")
 					columnMap.push("sysparam_"+param)
 			if !@DataService.isCommunityAdmin || @DataService.isCommunityAdmin && !@DataService.community.domain?
-				headers.push("Domain")
+				headers.push(@DataService.labelDomain())
 				columnMap.push("domainName")
-			headers = headers.concat(["Specification", "Actor", "Test suite", "Test case", "Result"])
+			headers = headers.concat([@DataService.labelSpecification(), @DataService.labelActor(), "Test suite", "Test case", "Result"])
 			columnMap = columnMap.concat(["specName", "actorName", "testSuiteName", "testCaseName", "result"])
 			@DataService.exportPropertiesAsCsv(headers, columnMap, data.data)
 		)

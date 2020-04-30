@@ -5,8 +5,10 @@ import filters.CorsFilter
 import javax.inject.Inject
 import managers.LegalNoticeManager
 import models.{Constants, PublicConfig}
+import org.apache.commons.lang3.StringUtils
 import play.api.mvc._
 import play.api.routing._
+import utils.RepositoryUtils
 
 import scala.collection.mutable.ListBuffer
 
@@ -14,16 +16,20 @@ class Application @Inject() (webJarAssets: WebJarAssets, systemConfigurationServ
 
   def index() = Action {
     val legalNotice = legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId)
+    var hasDefaultLegalNotice = false
     var legalNoticeContent = ""
-    if (legalNotice.isDefined) {
+    if (legalNotice.isDefined && !StringUtils.isBlank(legalNotice.get.content)) {
+      hasDefaultLegalNotice = true
       legalNoticeContent = legalNotice.get.content
     }
+    val enableWebInit = Configurations.DATA_WEB_INIT_ENABLED && !RepositoryUtils.getDataLockFile().exists()
     Ok(views.html.index(webJarAssets,
       new PublicConfig(
       Configurations.AUTHENTICATION_SSO_ENABLED,
       systemConfigurationService.getLogoPath(),
       systemConfigurationService.getFooterLogoPath(),
       Constants.VersionNumber,
+      hasDefaultLegalNotice,
       legalNoticeContent,
       Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD,
       Configurations.DEMOS_ENABLED,
@@ -31,7 +37,8 @@ class Application @Inject() (webJarAssets: WebJarAssets, systemConfigurationServ
       Configurations.REGISTRATION_ENABLED,
       Configurations.GUIDES_EULOGIN_USE,
       Configurations.GUIDES_EULOGIN_MIGRATION,
-      Configurations.AUTHENTICATION_COOKIE_PATH
+      Configurations.AUTHENTICATION_COOKIE_PATH,
+      enableWebInit
     )))
   }
 

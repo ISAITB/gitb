@@ -3,9 +3,11 @@ package jaxws;
 import actors.WebSocketActor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.gitb.core.ValueEmbeddingEnumeration;
+import com.gitb.tbs.Error;
 import com.gitb.tbs.Void;
 import com.gitb.tbs.*;
 import managers.ReportManager;
+import managers.TestbedBackendClient;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,12 +30,14 @@ public class TestbedService implements TestbedClient {
 
     private final Logger logger = LoggerFactory.getLogger(TestbedService.class);
 
-    private ReportManager ReportManager;
-    private WebSocketActor WebSocketActor;
+    private ReportManager reportManager;
+    private WebSocketActor webSocketActor;
+    private TestbedBackendClient testbedBackendClient;
 
-    public TestbedService(ReportManager ReportManager, WebSocketActor WebSocketActor) {
-        this.ReportManager = ReportManager;
-        this.WebSocketActor = WebSocketActor;
+    public TestbedService(ReportManager reportManager, WebSocketActor webSocketActor, TestbedBackendClient testbedBackendClient) {
+        this.reportManager = reportManager;
+        this.webSocketActor = webSocketActor;
+        this.testbedBackendClient = testbedBackendClient;
     }
 
     /**
@@ -50,25 +54,25 @@ public class TestbedService implements TestbedClient {
 
             //save report
             if(step.equals(END_STEP_ID)){
-                ReportManager.finishTestReport(session, testStepStatus.getReport().getResult());
+                reportManager.finishTestReport(session, testStepStatus.getReport().getResult());
                 // Send the end session message with a slight delay to avoid race conditions with other ending messages.
                 new java.util.Timer().schedule(
                         new java.util.TimerTask() {
                             @Override
                             public void run() {
                                 //send status updates
-                                WebSocketActor.broadcast(session, status);
+                                webSocketActor.testSessionEnded(session, status);
                             }
                         },
                         1000
                 );
             } else if (step.equals(LOG_EVENT_STEP_ID)) {
                 //send log event
-                WebSocketActor.broadcast(session, status, false);
+                webSocketActor.broadcast(session, status, false);
             } else {
-                ReportManager.createTestStepReport(session, testStepStatus);
+                reportManager.createTestStepReport(session, testStepStatus);
                 //send status updates
-                WebSocketActor.broadcast(session, status);
+                webSocketActor.broadcast(session, status);
             }
         } catch (JsonProcessingException e) {
             logger.error("Error during test session update for session ["+testStepStatus.getTcInstanceId()+"]", e);
@@ -95,18 +99,26 @@ public class TestbedService implements TestbedClient {
                     }
                 }
             }
-            String request = JacksonUtil.serializeInteractionRequest(interactWithUsersRequest);
             session = interactWithUsersRequest.getTcInstanceid();
-            String actor   = interactWithUsersRequest.getInteraction().getWith();
-            //if actor not specified, send the request to all actors. Let client side handle this.
-            if(actor == null) {
-                WebSocketActor.broadcast(session, request);
+            if (WebSocketActor.webSockets().contains(session)) {
+                String actor   = interactWithUsersRequest.getInteraction().getWith();
+                String request = JacksonUtil.serializeInteractionRequest(interactWithUsersRequest);
+                if (actor == null) {
+                    // if actor not specified, send the request to all actors. Let client side handle this.
+                    webSocketActor.broadcast(session, request);
+                } else {
+                    //send the request only to the given actor
+                    webSocketActor.push(session, actor, request);
+                }
+            } else {
+                // This is a headless session - automatically dismiss or complete with an empty request.
+                logger.warn("Headless session ["+session+"] expected interaction for step ["+interactWithUsersRequest.getStepId()+"]. Completed automatically with empty result.");
+                ProvideInputRequest interactionResult = new ProvideInputRequest();
+                interactionResult.setTcInstanceId(session);
+                interactionResult.setStepId(interactWithUsersRequest.getStepId());
+                testbedBackendClient.service().provideInput(interactionResult);
             }
-            //send the request only to the given actor
-            else {
-                WebSocketActor.push(session, actor, request);
-            }
-        } catch (JsonProcessingException e) {
+        } catch (Exception e) {
             logger.error("Error during user interaction for session ["+session+"]", e);
         }
         return new Void();

@@ -1,16 +1,20 @@
 class AdminCreateController
 
-  @$inject = ['$log', '$state', 'UserService', 'ValidationService', 'AuthService', 'Constants', 'ErrorService', 'DataService']
-  constructor: (@$log, @$state, @UserService, @ValidationService, @AuthService, @Constants, @ErrorService, @DataService) ->
+  @$inject = ['$log', '$state', 'UserService', 'ValidationService', 'AuthService', 'Constants', 'ErrorService', 'DataService', 'PopupService']
+  constructor: (@$log, @$state, @UserService, @ValidationService, @AuthService, @Constants, @ErrorService, @DataService, @PopupService) ->
 
     @alerts = []
     @user = {}
+    if @DataService.configuration['sso.enabled']
+      @DataService.focus('email')
+    else
+      @DataService.focus('name')
 
   saveDisabled: () =>
     if @DataService.configuration['sso.enabled']
-      !(@user.email?)
+      !(@user.email? && @user.email.trim() != '')
     else
-      !(@user.name? && @user.password? && @user.cpassword? && @user.email?)
+      !(@user.name? && @user.password? && @user.cpassword? && @user.email? && @user.name.trim() != '' && @user.password.trim() != '' && @user.cpassword.trim() != '' && @user.email.trim() != '')
 
   # create system administrator and cancel screen
   createAdmin: () =>
@@ -32,6 +36,7 @@ class AdminCreateController
           @UserService.createSystemAdmin(@user.name, @user.email, @user.password, @Constants.DEFAULT_COMMUNITY_ID)
           .then () =>
            @cancelCreateAdmin()
+           @PopupService.success('Administrator created.')
           .catch (error) =>
             @ErrorService.showErrorMessage(error)
         else

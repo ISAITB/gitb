@@ -3,41 +3,46 @@
         <div class="panel-heading">
             <h4 class="title">Error template details</h4>
         </div>
-        <div class="panel-body">
-            <!-- Error messages -->
-            <div class="row col-md-10 col-md-offset-1">
-                <div uib-alert ng-repeat="alert in errorTemplateDetailCtrl.alerts" ng-class="'alert-' + alert.type" close="errorTemplateDetailCtrl.closeAlert($index)">{{alert.msg}}</div>
-            </div>
-            <!-- Error template form -->
-            <div class="row col-md-10 col-md-offset-1">
-                <form class="form-horizontal">
+        <form class="form-horizontal">
+            <div class="panel-body">
+                <!-- Error messages -->
+                <div class="row col-md-10 col-md-offset-1">
+                    <div uib-alert ng-repeat="alert in errorTemplateDetailCtrl.alerts" ng-class="'alert-' + alert.type" close="errorTemplateDetailCtrl.closeAlert($index)">{{alert.msg}}</div>
+                </div>
+                <!-- Error template form -->
+                <div class="row col-md-10 col-md-offset-1">
                     <div class="form-group">
                         <label class="col-sm-3 control-label" for="name">* Name:</label>
-                        <div class="col-sm-8"><input id="name" ng-model="errorTemplateDetailCtrl.template.name" class="form-control" type="text" required></div>
+                        <div class="col-sm-8"><input id="name" ng-model="errorTemplateDetailCtrl.template.name" class="form-control" type="text"></div>
+                        <div tb-tooltip="The name of the error template that will identify it and be displayed in selection lists."></div>
                     </div>
                     <div class="form-group">
                         <label class="col-sm-3 control-label" for="description">Description:</label>
                         <div class="col-sm-8"><textarea id="description" ng-model="errorTemplateDetailCtrl.template.description" class="form-control"></textarea></div>
+                        <div tb-tooltip="A description that will be visible only to administrators to help distinguish this error template and summarise its purpose."></div>
                     </div>
                     <div class="form-group">
                         <label class="col-sm-3 control-label" for="default">Default:</label>
-                        <div class="col-sm-8"><input id="default" ng-model="errorTemplateDetailCtrl.template.default" ng-disabled="errorTemplateDetailCtrl.isDefault" type="checkbox" class="form-check"></div>
+                        <div class="col-sm-8">
+                            <input id="default" ng-model="errorTemplateDetailCtrl.template.default" ng-disabled="errorTemplateDetailCtrl.isDefault" type="checkbox" class="form-check">
+                            <div tb-inline="true" tb-tooltip="Check this to make this error template the default one assumed for the community's {{errorTemplateDetailCtrl.DataService.labelOrganisationsLower()}}."></div>
+                        </div>
                     </div>
-                </form>
-            </div>
-        </div>
-        <div class="panel-footer">
-            <div class="row">
-                <div class="col-md-3"></div>
-                <div class="col-md-8 btn-toolbar">
-                    <button class="btn btn-default" type="button" ng-click="errorTemplateDetailCtrl.preview()" ng-disabled="errorTemplateDetailCtrl.saveDisabled()">Preview</button>
-                    <button class="btn btn-default" type="button" ng-click="errorTemplateDetailCtrl.updateErrorTemplate(false)" ng-disabled="errorTemplateDetailCtrl.saveDisabled()">Update</button>
-                    <button class="btn btn-default" type="button" ng-click="errorTemplateDetailCtrl.updateErrorTemplate(true)">Copy</button>
-                    <button class="btn btn-default" type="button" ng-click="errorTemplateDetailCtrl.deleteErrorTemplate()">Delete</button>
-                    <button class="btn btn-default" type="button" ng-click="errorTemplateDetailCtrl.cancelDetailErrorTemplate()">Back</button>
                 </div>
             </div>
-        </div>        
+            <div class="panel-footer">
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-8 btn-toolbar">
+                        <button class="btn btn-default" type="button" ng-click="errorTemplateDetailCtrl.preview()" ng-disabled="errorTemplateDetailCtrl.saveDisabled()">Preview</button>
+                        <button class="btn btn-default" type="submit" ng-click="errorTemplateDetailCtrl.updateErrorTemplate(false)" ng-disabled="errorTemplateDetailCtrl.saveDisabled()">Update</button>
+                        <button class="btn btn-default" type="button" ng-click="errorTemplateDetailCtrl.updateErrorTemplate(true)">Copy</button>
+                        <button class="btn btn-default" type="button" ng-click="errorTemplateDetailCtrl.deleteErrorTemplate()">Delete</button>
+                        <button class="btn btn-default" type="button" ng-click="errorTemplateDetailCtrl.cancelDetailErrorTemplate()">Back</button>
+                    </div>
+                </div>
+            </div>
+        </form>
     </div>
     <div error-template-editor></div>
 </div>

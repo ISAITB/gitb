@@ -81,13 +81,27 @@ object ReportManager {
   * Created by senan on 03.12.2014.
   */
 @Singleton
-class ReportManager @Inject() (actorManager: ActorManager, systemManager: SystemManager, organizationManager: OrganizationManager, communityManager: CommunityManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ReportManager @Inject() (actorManager: ActorManager, systemManager: SystemManager, organizationManager: OrganizationManager, communityManager: CommunityManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
   val logger: Logger = LoggerFactory.getLogger("ReportManager")
 
   private val generator = new ReportGenerator()
+
+  def getSystemActiveTestResults(systemId: Long,
+                                 domainIds: Option[List[Long]],
+                                 specIds: Option[List[Long]],
+                                 testSuiteIds: Option[List[Long]],
+                                 testCaseIds: Option[List[Long]],
+                                 startTimeBegin: Option[String],
+                                 startTimeEnd: Option[String],
+                                 sortColumn: Option[String],
+                                 sortOrder: Option[String]): List[TestResult] = {
+    val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, None, startTimeBegin, startTimeEnd, None, None, sortColumn, sortOrder)
+    val testResults = exec(query.filter(_.sutId === systemId).filter(_.endTime.isEmpty).result.map(_.toList))
+    testResults
+  }
 
   def getTestResults(page: Long,
                      limit: Long,
@@ -104,7 +118,7 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
                      sortColumn: Option[String],
                      sortOrder: Option[String]): List[TestResult] = {
     val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
-    val testResults = exec(query.filter(_.sutId === systemId).drop((page - 1) * limit).take(limit).result.map(_.toList))
+    val testResults = exec(query.filter(_.sutId === systemId).filter(_.endTime.isDefined).drop((page - 1) * limit).take(limit).result.map(_.toList))
     testResults
   }
 
@@ -119,7 +133,7 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
                           endTimeBegin: Option[String],
                           endTimeEnd: Option[String]): Long = {
     val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, None, None)
-    val count = exec(query.filter(_.sutId === systemId).size.result)
+    val count = exec(query.filter(_.sutId === systemId).filter(_.endTime.isDefined).size.result)
     count
   }
 
@@ -298,7 +312,7 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
     val system = systemManager.getSystemById(systemId).get
     val organisation = organizationManager.getById(system.owner).get
     val community = communityManager.getById(organisation.community).get
-    val testCase = testCaseManager.getTestCaseForId(testId).get
+    val testCase = testCaseManager.getTestCase(testId).get
     val testSuite = testSuiteManager.getTestSuiteOfTestCase(testCase.id)
     val actor = actorManager.getById(actorId).get
     val specification = specificationManager.getSpecificationOfActor(actor.id)
@@ -360,7 +374,7 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
 
   def createTestStepReport(sessionId: String, step: TestStepStatus) = {
     //save status reports only when step is concluded with either COMPLETED or ERROR state
-    if (step.getReport != null && (step.getStatus == StepStatus.COMPLETED || step.getStatus == StepStatus.ERROR)) {
+    if (step.getReport != null && (step.getStatus == StepStatus.COMPLETED || step.getStatus == StepStatus.ERROR || step.getStatus == StepStatus.WARNING)) {
       // Check to see if we have already recorded this to avoid potential concurrency errors popping up that
       // would just lead to unique constraint errors.
       val existingTestStepReport = exec(PersistenceSchema.testStepReports.filter(_.testSessionId === sessionId).filter(_.testStepId === step.getStepId).result.headOption)
@@ -449,11 +463,17 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
     pdfReport
   }
 
-  def generateDetailedTestCaseReport(list: ListBuffer[TitledTestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String, addContext: Boolean): Path = {
+  def generateDetailedTestCaseReport(list: ListBuffer[TitledTestStepReportType], path: String, testCase: Option[models.TestCase], sessionId: String, addContext: Boolean, labels: Map[Short, CommunityLabels]): Path = {
     val reportPath = Paths.get(path)
     val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
     val overview = new TestCaseOverview()
     overview.setTitle("Test Case Report")
+    // Labels
+    overview.setLabelDomain(communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain))
+    overview.setLabelSpecification(communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification))
+    overview.setLabelActor(communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor))
+    overview.setLabelOrganisation(communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation))
+    overview.setLabelSystem(communityLabelManager.getLabel(labels, models.Enums.LabelType.System))
     // Result
     val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.head)
     overview.setReportResult(testResult.result)
@@ -524,25 +544,27 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
     reportPath
   }
 
-  private def getSampleConformanceStatement(index: Int): ConformanceStatementFull = {
+  private def getSampleConformanceStatement(index: Int, labels: Map[Short, CommunityLabels]): ConformanceStatementFull = {
     ConformanceStatementFull(
       0L, "Sample Community",
-      0L, "Sample Organisation",
-      0L, "Sample System",
-      0L, "Sample Domain", "Sample Domain",
-      0L, "Sample Specification Actor", "Sample Specification Actor",
-      0L, "Sample Specification", "Sample Specification",
+      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation),
+      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.System),
+      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain),
+      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor),
+      0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification),
       Some("Sample Test Suite "+index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), Some("SUCCESS"),
       None, 0L, 0L, 0L)
   }
 
-  def generateDemoConformanceCertificate(reportPath: Path, settings: ConformanceCertificates): Path = {
+  def generateDemoConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, communityId: Long): Path = {
     val conformanceInfo = new ListBuffer[ConformanceStatementFull]
-    conformanceInfo += getSampleConformanceStatement(1)
-    conformanceInfo += getSampleConformanceStatement(2)
-    conformanceInfo += getSampleConformanceStatement(3)
-    conformanceInfo += getSampleConformanceStatement(4)
-    conformanceInfo += getSampleConformanceStatement(5)
+    val labels = communityLabelManager.getLabels(communityId)
+
+    conformanceInfo += getSampleConformanceStatement(1, labels)
+    conformanceInfo += getSampleConformanceStatement(2, labels)
+    conformanceInfo += getSampleConformanceStatement(3, labels)
+    conformanceInfo += getSampleConformanceStatement(4, labels)
+    conformanceInfo += getSampleConformanceStatement(5, labels)
     generateConformanceCertificate(reportPath, settings, conformanceInfo.toList)
   }
 
@@ -560,7 +582,8 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
     if (settings.title.isDefined && !StringUtils.isBlank(settings.title.get)) {
       title = settings.title.get.trim
     }
-    generateCoreConformanceReport(pathToUseForPdf, false, title, settings.includeDetails, settings.includeTestCases, settings.includeTestStatus, settings.includeMessage, settings.message, conformanceInfo)
+    val labels = communityLabelManager.getLabels(settings.community)
+    generateCoreConformanceReport(pathToUseForPdf, false, title, settings.includeDetails, settings.includeTestCases, settings.includeTestStatus, settings.includeMessage, settings.message, conformanceInfo, labels)
     // Add signature is needed.
     if (settings.includeSignature) {
       val keystore = SigUtils.loadKeystore(
@@ -592,18 +615,25 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
     reportPath
   }
 
-  def generateConformanceStatementReport(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long): Path = {
-    generateCoreConformanceReport(reportPath, addTestCases, "Conformance Statement Report", true, true, true, false, None, actorId, systemId)
+  def generateConformanceStatementReport(reportPath: Path, addTestCases: Boolean, actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels]): Path = {
+    generateCoreConformanceReport(reportPath, addTestCases, "Conformance Statement Report", true, true, true, false, None, actorId, systemId, labels)
   }
 
-  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: String, addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, message: Option[String], actorId: Long, systemId: Long): Path = {
+  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: String, addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, message: Option[String], actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels]): Path = {
     val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)))
-    generateCoreConformanceReport(reportPath, addTestCases, title, addDetails, addTestCaseResults, addTestStatus, addMessage, message, conformanceInfo)
+    generateCoreConformanceReport(reportPath, addTestCases, title, addDetails, addTestCaseResults, addTestStatus, addMessage, message, conformanceInfo, labels)
   }
 
-  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: String, addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, message: Option[String], conformanceInfo: List[ConformanceStatementFull]): Path = {
+  private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: String, addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, message: Option[String], conformanceInfo: List[ConformanceStatementFull], labels: Map[Short, CommunityLabels]): Path = {
     val sdf = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss")
     val overview = new ConformanceStatementOverview()
+
+    // Labels
+    overview.setLabelDomain(communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain))
+    overview.setLabelSpecification(communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification))
+    overview.setLabelActor(communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor))
+    overview.setLabelOrganisation(communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation))
+    overview.setLabelSystem(communityLabelManager.getLabel(labels, models.Enums.LabelType.System))
 
     overview.setIncludeTestCases(addTestCases)
     overview.setTitle(title)

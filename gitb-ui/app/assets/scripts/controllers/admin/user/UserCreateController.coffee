@@ -1,19 +1,23 @@
 class UserCreateController
 
-  @$inject = ['$log', '$state', '$stateParams', 'ValidationService', 'UserService', 'Constants', 'AuthService', 'ErrorService', 'DataService']
-  constructor: (@$log, @$state, @$stateParams, @ValidationService, @UserService, @Constants, @AuthService, @ErrorService, @DataService) ->
+  @$inject = ['$log', '$state', '$stateParams', 'ValidationService', 'UserService', 'Constants', 'AuthService', 'ErrorService', 'DataService', 'PopupService']
+  constructor: (@$log, @$state, @$stateParams, @ValidationService, @UserService, @Constants, @AuthService, @ErrorService, @DataService, @PopupService) ->
 
     @orgId = @$stateParams.org_id
     @alerts = []
     @user = {}
 
     @roleCreateChoices = @Constants.VENDOR_USER_ROLES
+    if @DataService.configuration['sso.enabled']
+      @DataService.focus('email')
+    else
+      @DataService.focus('name')
 
   saveDisabled: () =>
     if @DataService.configuration['sso.enabled']
-      !(@user.email? && @user.role?)
+      !(@user.email? && @user.email.trim() != '' && @user.role?)
     else
-      !(@user.name? && @user.password? && @user.cpassword? && @user.email? && @user.role?)
+      !(@user.name? && @user.password? && @user.cpassword? && @user.email? && @user.name.trim() != '' && @user.password.trim() != '' && @user.cpassword.trim() != '' && @user.email.trim() != '' && @user.role?)
 
   # create user and cancel screen
   createUser: () =>
@@ -37,6 +41,7 @@ class UserCreateController
           @UserService.createVendorUser @user.name, @user.email, @user.password, @orgId, @user.role.id
           .then () =>
             @cancelCreateUser()
+            @PopupService.success('User created.')
           .catch (error) =>
             @ErrorService.showErrorMessage(error)
         else

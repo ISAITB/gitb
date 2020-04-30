@@ -15,22 +15,22 @@
         <dependency>
             <groupId>com.gitb</groupId>
             <artifactId>gitb-core</artifactId>
-            <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.gitb</groupId>
             <artifactId>gitb-lib</artifactId>
-            <version>1.0-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.kohsuke.metainf-services</groupId>
             <artifactId>metainf-services</artifactId>
-            <version>1.8</version>
         </dependency>
         <dependency>
             <groupId>com.github.mifmif</groupId>
             <artifactId>generex</artifactId>
-            <version>1.0.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
         </dependency>
     </dependencies>
 

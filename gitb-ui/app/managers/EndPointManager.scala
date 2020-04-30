@@ -18,7 +18,7 @@ class EndPointManager @Inject() (parameterManager: ParameterManager, dbConfigPro
     exec(createEndpoint(endpoint).transactionally)
   }
 
-  def createEndpoint(endpoint: models.Endpoints) = {
+  def createEndpoint(endpoint: models.Endpoints): DBIO[Long] = {
     PersistenceSchema.endpoints.returning(PersistenceSchema.endpoints.map(_.id)) += endpoint
   }
 
@@ -50,7 +50,7 @@ class EndPointManager @Inject() (parameterManager: ParameterManager, dbConfigPro
     exec(delete(endPointId).transactionally)
   }
 
-  def delete(endPointId: Long) = {
+  def delete(endPointId: Long): DBIO[_] = {
     (for {
       endPoint <- PersistenceSchema.endpoints.filter(_.id === endPointId).result.head
       _ <- PersistenceSchema.endpointSupportsTransactions.filter(_.endpoint === endPoint.name).delete
@@ -64,7 +64,7 @@ class EndPointManager @Inject() (parameterManager: ParameterManager, dbConfigPro
     exec(updateEndPoint(endPointId, name, description).transactionally)
   }
 
-  def updateEndPoint(endPointId: Long, name: String, description: Option[String]) =  {
+  def updateEndPoint(endPointId: Long, name: String, description: Option[String]): DBIO[_] =  {
     val q1 = for {e <- PersistenceSchema.endpoints if e.id === endPointId} yield (e.name)
     val q2 = for {e <- PersistenceSchema.endpoints if e.id === endPointId} yield (e.desc)
     q1.update(name) andThen

@@ -111,12 +111,15 @@ class ConformanceService
       }
     })
 
-  createActor: (shortName, fullName, description, defaultActor, displayOrder, domainId, specificationId) =>
+  createActor: (shortName, fullName, description, defaultActor, hiddenActor, displayOrder, domainId, specificationId) =>
+    if hiddenActor == undefined
+      hiddenActor = false
     data = {
         actor_id: shortName
         name: fullName
         description: description
         default: defaultActor
+        hidden: hiddenActor
         domain_id: domainId
         spec_id: specificationId
     }
@@ -128,17 +131,17 @@ class ConformanceService
       data: data
     })
 
-  createSpecification: (shortName, fullName, urls, diagram, description, specificationType, domainId) ->
+  createSpecification: (shortName, fullName, description, hidden, domainId) ->
+    if hidden == undefined
+      hidden = false  
     @RestService.post 
       path: jsRoutes.controllers.ConformanceService.createSpecification().url
       authenticate: true
       data:
         sname: shortName
         fname: fullName
-        urls: urls
-        diagram: diagram
         description: description
-        spec_type: specificationType
+        hidden: hidden
         domain_id: domainId
 
   getSpecificationsWithIds: (ids) =>
@@ -194,8 +197,11 @@ class ConformanceService
       name: domainParameterName,
       desc: domainParameterDescription,
       kind: domainParameterKind,
-      value: domainParameterValue
     }
+    if domainParameterKind == 'BINARY'
+      params.valueBinary = domainParameterValue
+    else
+      params.value = domainParameterValue
     @RestService.post({
       path: jsRoutes.controllers.ConformanceService.updateDomainParameter(domainId, domainParameterId).url,
       authenticate: true,
@@ -208,8 +214,11 @@ class ConformanceService
       name: domainParameterName,
       desc: domainParameterDescription,
       kind: domainParameterKind,
-      value: domainParameterValue
     }
+    if domainParameterKind == 'BINARY'
+      params.valueBinary = domainParameterValue
+    else
+      params.value = domainParameterValue
     @RestService.post({
       path: jsRoutes.controllers.ConformanceService.createDomainParameter(domainId).url,
       authenticate: true,
@@ -264,6 +273,16 @@ class ConformanceService
         pending_action: action
       }
     })
+
+  getTestSuiteDocumentation: (id) ->
+    @RestService.get
+      path: jsRoutes.controllers.ConformanceService.getTestSuiteDocumentation(id).url
+      authenticate: true
+
+  getTestCaseDocumentation: (id) ->
+    @RestService.get
+      path: jsRoutes.controllers.ConformanceService.getTestCaseDocumentation(id).url
+      authenticate: true
 
   getTestSuites: (specificationId) ->
     @RestService.get
@@ -419,6 +438,54 @@ class ConformanceService
   getTestSuiteTestCase: (testCaseId) ->
     @RestService.get({
       path: jsRoutes.controllers.ConformanceService.getTestSuiteTestCase(testCaseId).url,
+      authenticate: true
+    })
+
+  exportDomain: (domainId, settings) =>
+    data = {
+      values: settings
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.RepositoryService.exportDomain(domainId).url,
+      data: data,
+      authenticate: true,
+      responseType: "arraybuffer"
+    })
+
+  uploadDomainExport: (domainId, settings, archiveData) =>
+    data = {
+      settings: settings
+      data: archiveData
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.RepositoryService.uploadDomainExport(domainId).url,
+      data: data,
+      authenticate: true
+    })
+
+  cancelDomainImport: (domainId, pendingImportId) =>
+    data = {
+      pending_id: pendingImportId
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.RepositoryService.cancelDomainImport(domainId).url,
+      data: data,
+      authenticate: true
+    })
+
+  confirmDomainImport: (domainId, pendingImportId, settings, items) =>
+    data = {
+      settings: settings
+      pending_id: pendingImportId
+      items: items
+    }
+    if @DataService.isCommunityAdmin
+      path = jsRoutes.controllers.RepositoryService.confirmDomainImportCommunityAdmin(domainId).url
+    else
+      path = jsRoutes.controllers.RepositoryService.confirmDomainImportTestBedAdmin(domainId).url
+    @RestService.post({
+      path: path,
+      data: data,
       authenticate: true
     })
 

@@ -5,6 +5,8 @@ import java.util.Properties
 import com.gitb.utils.HmacUtils
 import com.typesafe.config.{Config, ConfigFactory}
 
+import scala.util.matching.Regex
+
 object Configurations {
 
   var _IS_LOADED = false
@@ -36,6 +38,8 @@ object Configurations {
   var EMAIL_TO: Array[String] = null
   var EMAIL_SMTP_HOST = ""
   var EMAIL_SMTP_PORT = -1
+  var EMAIL_SMTP_SSL_ENABLED = false
+  var EMAIL_SMTP_STARTTLS_ENABLED = false
   var EMAIL_SMTP_AUTH_ENABLED = true
   var EMAIL_SMTP_AUTH_USERNAME = ""
   var EMAIL_SMTP_AUTH_PASSWORD = ""
@@ -98,6 +102,17 @@ object Configurations {
 
   var SMTP_PROPERTIES = new Properties()
 
+  var INPUT_SANITIZER__ENABLED = true
+  var INPUT_SANITIZER__METHODS_TO_CHECK_STR:String = _
+  var INPUT_SANITIZER__METHODS_TO_CHECK:Set[String] = _
+  var INPUT_SANITIZER__DEFAULT_BLACKLIST_EXPRESSION:Regex = _
+  var INPUT_SANITIZER__PARAMETER_WHITELIST_EXPRESSIONS:Map[String, Regex] = _
+  var INPUT_SANITIZER__PARAMETERS_TO_SKIP:Set[String] = _
+  var INPUT_SANITIZER__PARAMETERS_AS_JSON:Set[String] = _
+
+  var DATA_ARCHIVE_KEY = ""
+  var DATA_WEB_INIT_ENABLED = false
+
   def loadConfigurations() = {
     if (!_IS_LOADED) {
       //Load configuration file
@@ -119,7 +134,7 @@ object Configurations {
       AUTHENTICATION_SESSION_MAX_IDLE_TIME = fromEnv("AUTHENTICATION_SESSION_MAX_IDLE_TIME", conf.getString("authentication.session.maxIdleTime")).toInt
       AUTHENTICATION_SESSION_MAX_TOTAL_TIME = fromEnv("AUTHENTICATION_SESSION_MAX_TOTAL_TIME", conf.getString("authentication.session.maxTotalTime")).toInt
       TOKEN_LENGTH = conf.getInt("token.length")
-      SERVER_REQUEST_TIMEOUT_IN_SECONDS = conf.getInt("server.request.timeout.seconds")
+      SERVER_REQUEST_TIMEOUT_IN_SECONDS = fromEnv("SERVER_REQUEST_TIMEOUT_IN_SECONDS", conf.getString("server.request.timeout.seconds")).toInt
       TESTBED_SERVICE_URL = conf.getString("testbed.service.url")
       TESTBED_CLIENT_URL  = conf.getString("testbed.client.url")
 
@@ -138,6 +153,14 @@ object Configurations {
         if (EMAIL_SMTP_AUTH_ENABLED) {
           SMTP_PROPERTIES.setProperty("mail.smtp.auth", "true")
         }
+        EMAIL_SMTP_SSL_ENABLED = fromEnv("EMAIL_SMTP_SSL_ENABLED", conf.getString("email.smtp.ssl.enabled")).toBoolean
+        if (EMAIL_SMTP_SSL_ENABLED) {
+          SMTP_PROPERTIES.setProperty("mail.smtp.ssl.enable", "true");
+        }
+        EMAIL_SMTP_STARTTLS_ENABLED = fromEnv("EMAIL_SMTP_STARTTLS_ENABLED", conf.getString("email.smtp.starttls.enabled")).toBoolean
+        if (EMAIL_SMTP_STARTTLS_ENABLED) {
+          SMTP_PROPERTIES.setProperty("mail.smtp.starttls.enable", "true")
+        }
         SMTP_PROPERTIES.setProperty("mail.smtp.host", EMAIL_SMTP_HOST)
         SMTP_PROPERTIES.setProperty("mail.smtp.port", EMAIL_SMTP_PORT.toString)
       }
@@ -153,7 +176,7 @@ object Configurations {
       EMAIL_ATTACHMENTS_MAX_SIZE = fromEnv("EMAIL_ATTACHMENTS_MAX_SIZE", conf.getString("email.attachments.maxSize")).toInt
       EMAIL_ATTACHMENTS_MAX_COUNT = fromEnv("EMAIL_ATTACHMENTS_MAX_COUNT", conf.getString("email.attachments.maxCount")).toInt
       EMAIL_ATTACHMENTS_ALLOWED_TYPES_STR = fromEnv("EMAIL_ATTACHMENTS_ALLOWED_TYPES", conf.getString("email.attachments.allowedTypes"))
-      val tempSet = new scala.collection.mutable.HashSet[String]()
+      var tempSet = new scala.collection.mutable.HashSet[String]()
       EMAIL_ATTACHMENTS_ALLOWED_TYPES_STR.split(",").map(_.trim).foreach{ mimeType =>
         tempSet += mimeType
       }
@@ -217,6 +240,47 @@ object Configurations {
 
       GUIDES_EULOGIN_USE = fromEnv("GUIDES_EULOGIN_USE", conf.getString("guides.eulogin.use")).toString
       GUIDES_EULOGIN_MIGRATION = fromEnv("GUIDES_EULOGIN_MIGRATION", conf.getString("guides.eulogin.migration")).toString
+
+      // Input sanitiser - START
+      INPUT_SANITIZER__ENABLED = fromEnv("INPUT_SANITIZER__ENABLED", conf.getString("inputSanitizer.enabled")).toBoolean
+      INPUT_SANITIZER__METHODS_TO_CHECK_STR = fromEnv("INPUT_SANITIZER__METHODS_TO_CHECK", conf.getString("inputSanitizer.methodsToCheck"))
+      tempSet = new scala.collection.mutable.HashSet[String]()
+      INPUT_SANITIZER__METHODS_TO_CHECK_STR.split(",").map(_.trim).foreach{ method =>
+        tempSet += method
+      }
+      INPUT_SANITIZER__METHODS_TO_CHECK = tempSet.toSet
+      INPUT_SANITIZER__DEFAULT_BLACKLIST_EXPRESSION = new Regex(fromEnv("INPUT_SANITIZER__DEFAULT_BLACKLIST_EXPRESSION", conf.getString("inputSanitizer.defaultBlacklistExpression")).toString)
+      val sanitizerExpressionsConfig = conf.getObjectList("inputSanitizer.parameterWhitelistExpressions")
+      if (sanitizerExpressionsConfig == null) {
+        INPUT_SANITIZER__PARAMETER_WHITELIST_EXPRESSIONS = Map()
+      } else {
+        val tempMap: scala.collection.mutable.Map[String, Regex] = scala.collection.mutable.Map()
+        import scala.collection.JavaConversions._
+        sanitizerExpressionsConfig.foreach { entry =>
+          entry.entrySet().foreach { mapping =>
+            tempMap(mapping.getKey) = new Regex(mapping.getValue.unwrapped.asInstanceOf[String])
+          }
+        }
+        INPUT_SANITIZER__PARAMETER_WHITELIST_EXPRESSIONS = tempMap.toMap
+      }
+      val sanitizerSkipped = conf.getStringList("inputSanitizer.parametersToSkip")
+      if (sanitizerSkipped == null) {
+        INPUT_SANITIZER__PARAMETERS_TO_SKIP = Set()
+      } else {
+        import scala.collection.JavaConversions._
+        INPUT_SANITIZER__PARAMETERS_TO_SKIP = sanitizerSkipped.toSet
+      }
+      val sanitizerJsonParameters = conf.getStringList("inputSanitizer.parametersAsJson")
+      if (sanitizerJsonParameters == null) {
+        INPUT_SANITIZER__PARAMETERS_AS_JSON = Set()
+      } else {
+        import scala.collection.JavaConversions._
+        INPUT_SANITIZER__PARAMETERS_AS_JSON = sanitizerJsonParameters.toSet
+      }
+      // Input sanitiser - END
+
+      DATA_ARCHIVE_KEY = fromEnv("DATA_ARCHIVE_KEY", "")
+      DATA_WEB_INIT_ENABLED = fromEnv("DATA_WEB_INIT_ENABLED", "false").toBoolean
 
       _IS_LOADED = true
     }

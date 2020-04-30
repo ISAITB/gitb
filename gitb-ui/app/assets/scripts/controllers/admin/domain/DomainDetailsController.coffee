@@ -1,7 +1,7 @@
 class DomainDetailsController
 
-	@$inject = ['$log', '$scope', '$state', '$stateParams', 'ConfirmationDialogService', 'ConformanceService', 'ErrorService', '$uibModal', 'DataService']
-	constructor: (@$log, @$scope, @$state, @$stateParams, @ConfirmationDialogService, @ConformanceService, @ErrorService, @$uibModal, @DataService) ->
+	@$inject = ['$log', '$scope', '$state', '$stateParams', 'ConfirmationDialogService', 'ConformanceService', 'ErrorService', '$uibModal', 'DataService', 'PopupService']
+	constructor: (@$log, @$scope, @$state, @$stateParams, @ConfirmationDialogService, @ConformanceService, @ErrorService, @$uibModal, @DataService, @PopupService) ->
 		@$log.debug "Constructing DomainDetailsController..."
 
 		@domain = {}
@@ -21,6 +21,10 @@ class DomainDetailsController
 			{
 				field: 'description',
 				title: 'Description'
+			}
+			{
+				field: 'hidden',
+				title: 'Hidden'
 			}
 		]
 
@@ -52,6 +56,8 @@ class DomainDetailsController
 				@domainParameters.push(parameter)
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
+		
+		@DataService.focus('shortName')
 
 	downloadParameter: (parameter) =>
 		mimeType = @DataService.mimeTypeFromDataURL(parameter.value)
@@ -60,21 +66,22 @@ class DomainDetailsController
 		saveAs(blob, parameter.name+extension)
 
 	deleteDomain: () =>
-		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this domain?", "Yes", "No")
+		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this "+@DataService.labelDomainLower()+"?", "Yes", "No")
 		.then () =>
 			@ConformanceService.deleteDomain(@domainId)
 			.then () =>
 				@$state.go 'app.admin.domains.list'
+				@PopupService.success(@DataService.labelDomain()+' deleted.')
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 
 	saveDisabled: () =>
-		!(@domain?.sname? && @domain?.fname?)
+		!(@domain.sname? && @domain.sname.trim() != '' and @domain.fname? && @domain.fname.trim() != '')
 
 	saveDomainChanges: () =>
 		@ConformanceService.updateDomain(@domainId, @domain.sname, @domain.fname, @domain.description)
 		.then () =>
-			@$state.go 'app.admin.domains.list'
+			@PopupService.success(@DataService.labelDomain()+' updated.')
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 

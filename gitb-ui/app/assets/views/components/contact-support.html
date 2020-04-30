@@ -1,64 +1,65 @@
 <div class="modal-header">
     <h4>Provide feedback</h4>
 </div>
-<div class="modal-body">
-    <form class="form-horizontal">
+<form class="form-horizontal">
+    <div class="modal-body">
         <!-- Error messages -->
-        <div class="row col-md-10 col-md-offset-1">
-            <div uib-alert ng-class="'alert-success'" close="controller.clearSuccess()" ng-if="controller.successMessage">{{controller.successMessage}}</div>
+        <div class="row col-xs-10 col-xs-offset-1">
             <div uib-alert ng-repeat="alert in controller.alerts" ng-class="'alert-' + alert.type" close="controller.closeAlert($index)">{{alert.msg}}</div>
         </div>
         <div class="form-group">
-            <label class="col-sm-3 control-label">* Contact email:</label>
-            <div class="col-sm-8"><input id="address" ng-model="controller.contactAddress" class="form-control" type="text" required></div>
+            <label class="col-xs-3 control-label">* Contact email:</label>
+            <div class="col-xs-7"><input id="contact" ng-model="controller.contactAddress" class="form-control" type="text"></div>
+            <div tb-tooltip="Specify the email at which you would like to receive feedback regarding your request."></div>
         </div>
         <div class="form-group">
-            <label class="col-sm-3 control-label">* Feedback type:</label>
-            <div class="col-sm-8">
-                <select class="form-control" ng-model="controller.feedback" ng-options="feedbackType.description for feedbackType in controller.feedbackTypes track by feedbackType.id" required><option value="">--Select one--</option></select>
+            <label class="col-xs-3 control-label">* Feedback type:</label>
+            <div class="col-xs-7">
+                <select class="form-control" ng-model="controller.feedback" ng-options="feedbackType.description for feedbackType in controller.feedbackTypes track by feedbackType.id"></select>
             </div>
+            <div tb-tooltip="Select the nature of your request to facilitate its processing by support staff."></div>
         </div>
         <div class="form-group">
-            <label class="col-sm-3 control-label">* Message:</label>
-            <div class="col-sm-8">
+            <label class="col-xs-3 control-label">* Message:</label>
+            <div class="col-xs-7">
                 <textarea ng-show="controller.editorReady" id="mce-editor-contact" class="mce-editor-contact"></textarea>
             </div>
         </div>
         <div class="form-group" ng-if="controller.showUpload() && controller.attachments.length == 0">
-            <label class="col-sm-3 control-label">Attachment(s):</label>
-            <div class="col-sm-8">
-                <button class="btn btn-default" ng-file-select="controller.attachFile($files)">Select file</button>
+            <label class="col-xs-3 control-label">Attachment(s):</label>
+            <div class="col-xs-8">
+                <button type="button" class="btn btn-default" ng-file-select="controller.attachFile($files)">Select file</button>
             </div>
         </div>
         <div class="form-group" ng-repeat="attachment in controller.attachments"> 
-            <label class="col-sm-3 control-label" ng-if="$first">Attachment(s):</label>
-            <div class="col-sm-8" ng-if="$first">
+            <label class="col-xs-3 control-label" ng-if="$first">Attachment(s):</label>
+            <div class="col-xs-8" ng-if="$first">
                 <span>{{attachment.name}} ({{attachment.size}} bytes)</span>
-                <button class="btn btn-default" ng-click="controller.removeAttachment($index)"><i class="fa fa-times"></i></button>
+                <button type="button" class="btn btn-default" ng-click="controller.removeAttachment($index)"><i class="fa fa-times"></i></button>
             </div>
-            <div class="col-sm-8 col-sm-offset-3" ng-if="!$first">
+            <div class="col-xs-8 col-xs-offset-3" ng-if="!$first">
                 <span>{{attachment.name}} ({{attachment.size}} bytes)</span>
-                <button class="btn btn-default" ng-click="controller.removeAttachment($index)"><i class="fa fa-times"></i></button>
+                <button type="button" class="btn btn-default" ng-click="controller.removeAttachment($index)"><i class="fa fa-times"></i></button>
             </div>
         </div>
         <div class="form-group" ng-if="controller.attachments.length > 0">
-            <div class="col-sm-8 col-sm-offset-3">
-                <button class="btn btn-default" ng-file-select="controller.attachFile($files)">Select file</button>
+            <div class="col-xs-8 col-xs-offset-3">
+                <button type="button" class="btn btn-default" ng-file-select="controller.attachFile($files)">Select file</button>
             </div>
         </div>
         <div class="form-group" ng-if="controller.showSurveyLink()">
-            <div class="col-sm-offset-1 col-sm-10 bg-info div-rounded">
+            <div class="col-xs-offset-1 col-xs-10 bg-info div-rounded">
                 <p class="form-control-static">If you have 10 minutes to spare we would much appreciate if you would complete our feedback survey. Click <a ng-href="{{controller.surveyAddress}}" target="blank">here</a> to open the survey in a separate window and start.</p>
             </div>
         </div>
         <div class="form-group">
-                <div class="col-sm-offset-1 col-sm-10 bg-info div-rounded">
-                    <p class="form-control-static"><b>Privacy note:</b> The information you provide is treated by the test bed support team and is never shared to other parties. The 'Contact email' you provide is used only to receive a response from the support team. Please refer to the legal notice (link available in the screen's footer) for more information.</p>
-                </div>
+            <div class="col-xs-offset-1 col-xs-10 bg-info div-rounded">
+                <p class="form-control-static"><b>Privacy note:</b> The information you provide is treated by the test bed support team and is never shared to other parties. The 'Contact email' you provide is used only to receive a response from the support team. Please refer to the legal notice (link available in the screen's footer) for more information.</p>
             </div>
-        </form>
-</div>
-<div class="modal-footer">
-    <button class="btn btn-default" ng-click="controller.send()" ng-disabled="controller.sendDisabled()"><span class="tab" ng-if="controller.sendPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Send feedback</button>
-    <button class="btn btn-default" ng-click="controller.cancel()">Close</button>
-</div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-default" type="submit" ng-click="controller.send()" ng-disabled="controller.sendDisabled()"><span class="tab" ng-if="controller.sendPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Send feedback</button>
+        <button class="btn btn-default" type="button" ng-click="controller.cancel()">Close</button>
+    </div>
+</form>

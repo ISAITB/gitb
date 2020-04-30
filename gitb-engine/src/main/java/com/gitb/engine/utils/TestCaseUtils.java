@@ -171,6 +171,7 @@ public class TestCaseUtils {
         TestStep verify = new TestStep();
         verify.setId(id);
         verify.setDesc(description.getDesc());
+        verify.setDocumentation(description.getDocumentation());
         return verify;
     }
 
@@ -180,6 +181,7 @@ public class TestCaseUtils {
         messaging.setDesc(description.getDesc());
         messaging.setFrom(description.getFrom());
         messaging.setTo(description.getTo());
+        messaging.setDocumentation(description.getDocumentation());
         return messaging;
     }
 
@@ -187,6 +189,7 @@ public class TestCaseUtils {
         DecisionStep decision = new DecisionStep();
         decision.setId(id);
         decision.setDesc(description.getDesc());
+        decision.setDocumentation(description.getDocumentation());
         decision.setThen(convertSequence(id + TRUE , scriptlets, description.getThen()));
         if (description.getElse() != null) {
             decision.setElse(convertSequence(id + FALSE, scriptlets, description.getElse()));
@@ -198,6 +201,7 @@ public class TestCaseUtils {
         Sequence loop = new Sequence();
         loop.setId(id);
         loop.setDesc(description.getDesc());
+        loop.setDocumentation(description.getDocumentation());
         loop.getSteps().addAll(
                 convertSequence(id+ITERATION_OPENING_TAG+1+ITERATION_CLOSING_TAG, scriptlets, description.getDo()).getSteps());
         return loop;
@@ -207,6 +211,7 @@ public class TestCaseUtils {
         Sequence loop = new Sequence();
         loop.setId(id);
         loop.setDesc(description.getDesc());
+        loop.setDocumentation(description.getDocumentation());
         loop.getSteps().addAll(
                 convertSequence(id+ITERATION_OPENING_TAG+1+ITERATION_CLOSING_TAG, scriptlets, description.getDo()).getSteps());
         return loop;
@@ -216,6 +221,7 @@ public class TestCaseUtils {
         Sequence loop = new Sequence();
         loop.setId(id);
         loop.setDesc(description.getDesc());
+        loop.setDocumentation(description.getDocumentation());
         loop.getSteps().addAll(
                 convertSequence(id+ITERATION_OPENING_TAG+1+ITERATION_CLOSING_TAG, scriptlets, description.getDo()).getSteps());
         return loop;
@@ -225,6 +231,7 @@ public class TestCaseUtils {
         FlowStep flow = new FlowStep();
         flow.setId(id);
         flow.setDesc(description.getDesc());
+        flow.setDesc(description.getDocumentation());
 
         for(int i=0; i<description.getThread().size(); i++) {
             com.gitb.tdl.Sequence thread = description.getThread().get(i);
@@ -246,6 +253,7 @@ public class TestCaseUtils {
         UserInteractionStep interactionStep = new UserInteractionStep();
         interactionStep.setId(id);
         interactionStep.setDesc(description.getDesc());
+        interactionStep.setDocumentation(description.getDocumentation());
         interactionStep.setWith(description.getWith());
 
         int childIndex = 1;
@@ -272,6 +280,7 @@ public class TestCaseUtils {
         ExitStep exit = new ExitStep();
         exit.setId(id);
         exit.setDesc(description.getDesc());
+        exit.setDocumentation(description.getDocumentation());
         return exit;
     }
 

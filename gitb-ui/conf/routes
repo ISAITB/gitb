@@ -89,6 +89,8 @@ POST    /actors/:actor_id                   @controllers.ActorService.updateActo
 GET	    /actors/:actor_id/conformance/:sut_id @controllers.ConformanceService.getConformanceStatus(actor_id : Long, sut_id : Long)
 GET	    /actors/:actor_id/conformance/:sut_id/:testsuite_id @controllers.ConformanceService.getConformanceStatusForTestSuite(actor_id : Long, sut_id : Long, testsuite_id : Long)
 GET	    /testcases/:testCaseId              @controllers.ConformanceService.getTestSuiteTestCase(testCaseId : Long)
+GET	    /testcases/:id/documentation        @controllers.ConformanceService.getTestCaseDocumentation(id : Long)
+GET	    /testsuites/:id/documentation       @controllers.ConformanceService.getTestSuiteDocumentation(id : Long)
 GET     /actors/:actor_id/endpoints         @controllers.ConformanceService.getEndpointsForActor(actor_id : Long)
 POST    /endpoints                          @controllers.ConformanceService.createEndpoint
 DELETE  /endpoints/:endpoint_id             @controllers.EndPointService.deleteEndPoint(endpoint_id : Long)
@@ -182,6 +184,8 @@ GET     /communities/admins/all             @controllers.UserService.getCommunit
 POST    /communities/admins/create          @controllers.UserService.createCommunityAdmin
 POST    /communities/admins/create          @controllers.UserService.createCommunityAdmin
 POST    /communities/admins/:id             @controllers.UserService.updateCommunityAdminProfile(id : Long)
+GET     /communities/labels/:id             @controllers.CommunityService.getCommunityLabels(id: Long)
+POST    /communities/labels/:id             @controllers.CommunityService.setCommunityLabels(id: Long)
 
 # Test Result management API
 POST    /tests/binaryMetadata                           @controllers.TestResultService.getBinaryMetadata()
@@ -196,6 +200,7 @@ POST	/tests/:session_id/preliminary      @controllers.TestService.initiatePrelim
 POST	/tests/:session_id/start            @controllers.TestService.start(session_id:String)
 POST	/tests/:session_id/stop             @controllers.TestService.stop(session_id:String)
 POST	/tests/:session_id/restart          @controllers.TestService.restart(session_id:String)
+POST    /tests/startHeadless                @controllers.TestService.startHeadlessTestSessions
 
 # WebSocket management API
 GET     /ws                                 @controllers.WebSocketService.socket
@@ -214,6 +219,7 @@ POST    /endpoints/:endpoint_id/config      @controllers.SystemService.saveEndpo
 DELETE  /endpoints/:endpoint_id/config      @controllers.SystemService.deleteEndpointConfiguration(endpoint_id: Long)
 
 # Report management API
+GET     /reports/active                     @controllers.ReportService.getSystemActiveTestResults
 GET     /reports                            @controllers.ReportService.getTestResults
 GET     /reports/count                      @controllers.ReportService.getTestResultsCount
 GET     /reports/:session_id                @controllers.ReportService.getTestResultOfSession(session_id: String)
@@ -234,6 +240,18 @@ GET     /repository/export/conformance                      @controllers.Reposit
 POST    /repository/export/certificatedemo                  @controllers.RepositoryService.exportDemoConformanceCertificateReport(community_id: Long)
 POST    /repository/export/certificate                      @controllers.RepositoryService.exportConformanceCertificateReport()
 GET     /repository/resource/:test_id/*file                 @controllers.RepositoryService.getTestSuiteResource(test_id: String, file: String)
+
+POST    /communities/export/:id                             @controllers.RepositoryService.exportCommunity(id: Long)
+POST    /communities/import/preview/:id                     @controllers.RepositoryService.uploadCommunityExport(id: Long)
+POST    /communities/import/cancel/:id                      @controllers.RepositoryService.cancelCommunityImport(id: Long)
+POST    /communities/import/confirm/:id                     @controllers.RepositoryService.confirmCommunityImportCommunityAdmin(id: Long)
+POST    /communities/import/confirm/admin/:id               @controllers.RepositoryService.confirmCommunityImportTestBedAdmin(id: Long)
+POST    /domains/export/:id                                 @controllers.RepositoryService.exportDomain(id: Long)
+POST    /domains/import/preview/:id                         @controllers.RepositoryService.uploadDomainExport(id: Long)
+POST    /domains/import/cancel/:id                          @controllers.RepositoryService.cancelDomainImport(id: Long)
+POST    /domains/import/confirm/:id                         @controllers.RepositoryService.confirmDomainImportCommunityAdmin(id: Long)
+POST    /domains/import/confirm/admin/:id                   @controllers.RepositoryService.confirmDomainImportTestBedAdmin(id: Long)
+POST    /initdata                                           @controllers.RepositoryService.applySandboxData
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)

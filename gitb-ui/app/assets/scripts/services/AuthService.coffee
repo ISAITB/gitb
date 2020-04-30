@@ -70,9 +70,12 @@ class AuthService
             path: jsRoutes.controllers.AuthenticationService.getUserUnlinkedFunctionalAccounts().url
         })
 
-    disconnectFunctionalAccount: () =>
+    disconnectFunctionalAccount: (option) =>
         @RestService.post({
             path: jsRoutes.controllers.AuthenticationService.disconnectFunctionalAccount().url
+            data: {
+                type: option
+            }
         })
     
     linkFunctionalAccount: (accountId) =>

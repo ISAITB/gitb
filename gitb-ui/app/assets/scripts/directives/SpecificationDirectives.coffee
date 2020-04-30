@@ -1,62 +1,33 @@
-@directives.directive 'specDetailsForm', [
-	()->
+@directives.directive 'specDetailsForm', ['DataService'
+	(DataService)->
 		scope:
 			specification: '='
-			showSaveButton: '='
-			showCancelButton: '='
-			onSubmit: '='
-			onCancel: '='
-			saveDisabled: '='
 		template: ''+
-			'<form class="form-horizontal" ng-submit="submit()">'+
-				'<div class="form-group">'+
-					'<label class="col-sm-3 control-label" for="shortName">* Short name:</label>'+
-					'<div class="col-sm-8"><input id="shortName" ng-model="specification.sname" class="form-control" type="text" required></div>'+
+			'<div class="form-group">'+
+				'<label class="col-sm-3 control-label" for="shortName">* Short name:</label>'+
+				'<div class="col-sm-7"><input id="shortName" ng-model="specification.sname" class="form-control" type="text"></div>'+
+				'<div tb-tooltip="This is used to display the {{DataService.labelSpecificationLower()}} in selection lists (e.g. search filters) and tables (e.g. conformance statement creation wizard) where space is limited. Ensure this is short but still understandable by users."></div>'+
+			'</div>'+
+			'<div class="form-group">'+
+				'<label class="col-sm-3 control-label" for="fullName">* Full name:</label>'+
+				'<div class="col-sm-7"><input id="fullName" ng-model="specification.fname" class="form-control" type="text"></div>'+
+				'<div tb-tooltip="This is used to display the {{DataService.labelSpecificationLower()}} in detail forms and reports."></div>'+
+			'</div>'+
+			'<div class="form-group">'+
+				'<label class="col-sm-3 control-label" for="description">Description:</label>'+
+				'<div class="col-sm-7">'+
+					'<textarea id="description" ng-model="specification.description" class="form-control"></textarea>'+
 				'</div>'+
-				'<div class="form-group">'+
-					'<label class="col-sm-3 control-label" for="fullName">* Full name:</label>'+
-					'<div class="col-sm-8"><input id="fullName" ng-model="specification.fname" class="form-control" type="text" required></div>'+
+				'<div tb-tooltip="This is used to describe the {{DataService.labelSpecificationLower()}}. It is visible to users when managing conformance statements."></div>'+
+			'</div>'+
+			'<div class="form-group">'+
+				'<label class="col-sm-3 control-label" for="hidden">Hidden:</label>'+
+				'<div class="col-sm-8">'+
+					'<input id="hidden" ng-model="specification.hidden" type="checkbox" class="form-check">'+
+					'<div tb-tooltip="Check this to hide the {{DataService.labelSpecificationLower()}} as an available option for new conformance statements. Doing so effectively deprecates the {{DataService.labelSpecificationLower()}} but keeps testing history intact." tb-inline="true"></div>'+
 				'</div>'+
-				'<div class="form-group">'+
-					'<label class="col-sm-3 control-label" for="urls">Related URLs:</label>'+
-					'<div class="col-sm-8">'+
-						'<textarea id="urls" ng-model="specification.urls" class="form-control"></textarea>'+
-						'<span class="help-block">URLs should be seperated with "," without spaces</span>'+
-					'</div>'+
-				'</div>'+
-				'<div class="form-group">'+
-					'<label class="col-sm-3 control-label" for="diagram">Diagram:</label>'+
-					'<div class="col-sm-8">'+
-						'<input id="diagram" ng-model="specification.diagram" class="form-control" type="text">'+
-						'<span class="help-block">URL of the diagram describing the specification</span>'+
-					'</div>'+
-				'</div>'+
-				'<div class="form-group">'+
-					'<label class="col-sm-3 control-label" for="description">Description:</label>'+
-					'<div class="col-sm-8">'+
-						'<textarea id="description" ng-model="specification.description" class="form-control"></textarea>'+
-					'</div>'+
-				'</div>'+
-				'<div class="form-group">'+
-					'<label class="col-sm-3 control-label" for="specificationType">Specification type:</label>'+
-					'<div class="col-sm-8">'+
-						'<select id="specificationType" ng-model="specification.spec_type" class="form-control">'+
-							'<option value="1">Integration Profile</option>'+
-							'<option value="2">Content Specification</option>'+
-						'</select>'+
-					'</div>'+
-				'</div>'+
-				'<div class="form-group" ng-if="showSaveButton">'+
-					'<div class="col-sm-offset-3 col-sm-10">'+
-						'<div class="btn-toolbar">'+
-							'<button class="btn btn-default" type="submit" ng-disabled="saveDisabled()">Save</button>'+
-							'<button class="btn btn-default" ng-if="showCancelButton" ng-click="onCancel()" type="button">Cancel</button>'+
-						'</div>'+
-					'</div>'+
-				'</div>'+
-			'</form>'
+			'</div>'
 		restrict: 'A'
 		link: (scope, element, attrs) ->
-			scope.submit = () ->
-				scope.onSubmit?()
+			scope.DataService = DataService
 ]

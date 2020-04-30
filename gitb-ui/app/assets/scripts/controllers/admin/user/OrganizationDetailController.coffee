@@ -1,7 +1,7 @@
 class OrganizationDetailController
 
-  @$inject = ['$log', '$state', '$stateParams', '$window', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'UserManagementService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'UserService', 'ErrorService', '$q', 'DataService']
-  constructor: (@$log, @$state, @$stateParams, @$window, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @UserManagementService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @UserService, @ErrorService, @$q, @DataService) ->
+  @$inject = ['$log', '$state', '$stateParams', '$window', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'UserManagementService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'UserService', 'ErrorService', '$q', 'DataService', 'PopupService']
+  constructor: (@$log, @$state, @$stateParams, @$window, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @UserManagementService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @UserService, @ErrorService, @$q, @DataService, @PopupService) ->
 
     @userColumns = [
       {
@@ -85,13 +85,16 @@ class OrganizationDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+    @DataService.focus('sname')
+
   # delete and cancel detail
   deleteOrganization: () =>
-    @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this organisation?", "Yes", "No")
+    @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this "+@DataService.labelOrganisationLower()+"?", "Yes", "No")
     .then () =>
       @OrganizationService.deleteOrganization(@orgId)
       .then () =>
         @cancelDetailOrganization()
+        @PopupService.success(@DataService.labelOrganisation()+" deleted.")
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
 
@@ -108,7 +111,7 @@ class OrganizationDetailController
         @ValidationService.pushAlert({type:'danger', msg:data.error_description})
         @alerts = @ValidationService.getAlerts()          
       else
-        @cancelDetailOrganization()
+        @PopupService.success(@DataService.labelOrganisation()+" updated.")
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -123,10 +126,10 @@ class OrganizationDetailController
   # update and cancel detail
   updateOrganization: () =>
     @ValidationService.clearAll()
-    if @ValidationService.requireNonNull(@organization.sname, "Please enter short name of the organisation.") &
-    @ValidationService.requireNonNull(@organization.fname, "Please enter full name of the organisation.")
+    if @ValidationService.requireNonNull(@organization.sname, "Please enter short name of the "+@DataService.labelOrganisationLower()+".") &
+    @ValidationService.requireNonNull(@organization.fname, "Please enter full name of the "+@DataService.labelOrganisationLower()+".")
       if @organization.otherOrganisations? && @organization.otherOrganisations.id?
-        @ConfirmationDialogService.confirm("Confirm test setup copy", "Copying the test setup from another organisation will remove current systems, conformance statements and test results. Are you sure you want to proceed?", "Yes", "No")
+        @ConfirmationDialogService.confirm("Confirm test setup copy", "Copying the test setup from another "+@DataService.labelOrganisationLower()+" will remove current "+@DataService.labelSystemsLower()+", conformance statements and test results. Are you sure you want to proceed?", "Yes", "No")
         .then(() =>
           @doUpdate()
         )

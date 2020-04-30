@@ -75,6 +75,21 @@
 	<parameter name="includeDetails" class="java.lang.Boolean">
 		<defaultValueExpression><![CDATA[Boolean.TRUE]]></defaultValueExpression>
 	</parameter>
+	<parameter name="labelDomain" class="java.lang.String">
+		<defaultValueExpression><![CDATA["Domain"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="labelSpecification" class="java.lang.String">
+		<defaultValueExpression><![CDATA["Specification"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="labelActor" class="java.lang.String">
+		<defaultValueExpression><![CDATA["Actor"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="labelOrganisation" class="java.lang.String">
+		<defaultValueExpression><![CDATA["Organisation"]]></defaultValueExpression>
+	</parameter>
+	<parameter name="labelSystem" class="java.lang.String">
+		<defaultValueExpression><![CDATA["System"]]></defaultValueExpression>
+	</parameter>
 	<queryString>
 		<![CDATA[]]>
 	</queryString>
@@ -102,74 +117,74 @@
 		<band height="127" splitType="Stretch">
 			<printWhenExpression><![CDATA[$P{includeDetails} != null && $P{includeDetails}]]></printWhenExpression>
 			<frame>
-				<reportElement positionType="Float" x="21" y="60" width="338" height="22" uuid="1da3e70a-e193-4d17-84a0-33eae3d63d7a"/>
-				<textField>
-					<reportElement x="10" y="1" width="80" height="15" uuid="63e59957-ca59-4540-89ec-f6a4af0c1649"/>
+				<reportElement positionType="Float" x="21" y="60" width="348" height="22" uuid="1da3e70a-e193-4d17-84a0-33eae3d63d7a"/>
+				<textField isStretchWithOverflow="true">
+					<reportElement x="0" y="1" width="120" height="15" uuid="63e59957-ca59-4540-89ec-f6a4af0c1649"/>
 					<textElement textAlignment="Right">
 						<font isBold="true"/>
 					</textElement>
-					<textFieldExpression><![CDATA["Domain:"]]></textFieldExpression>
+					<textFieldExpression><![CDATA[$P{labelDomain}+":"]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true">
-					<reportElement x="97" y="1" width="240" height="15" uuid="3de022ec-6c37-4f68-b1e1-7bfd008a5db0"/>
+					<reportElement x="130" y="1" width="218" height="15" uuid="3de022ec-6c37-4f68-b1e1-7bfd008a5db0"/>
 					<textFieldExpression><![CDATA[$P{testDomain}]]></textFieldExpression>
 				</textField>
 			</frame>
 			<frame>
-				<reportElement positionType="Float" x="21" y="82" width="338" height="22" uuid="cbc9e8b2-b1d4-4ae1-95e6-e7d7fd3ea41f"/>
-				<textField>
-					<reportElement x="10" y="1" width="80" height="15" uuid="d402e378-27ec-4d22-898d-8d4fada26ed6"/>
+				<reportElement positionType="Float" x="21" y="82" width="348" height="22" uuid="cbc9e8b2-b1d4-4ae1-95e6-e7d7fd3ea41f"/>
+				<textField isStretchWithOverflow="true">
+					<reportElement x="0" y="1" width="120" height="15" uuid="d402e378-27ec-4d22-898d-8d4fada26ed6"/>
 					<textElement textAlignment="Right">
 						<font isBold="true"/>
 					</textElement>
-					<textFieldExpression><![CDATA["Specification:"]]></textFieldExpression>
+					<textFieldExpression><![CDATA[$P{labelSpecification}+":"]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true">
-					<reportElement x="97" y="1" width="240" height="15" uuid="24513e86-fab5-411b-9b79-dcefe9d79c3d"/>
+					<reportElement x="130" y="1" width="218" height="15" uuid="24513e86-fab5-411b-9b79-dcefe9d79c3d"/>
 					<textFieldExpression><![CDATA[$P{testSpecification}]]></textFieldExpression>
 				</textField>
 			</frame>
 			<frame>
-				<reportElement positionType="Float" x="21" y="104" width="338" height="22" uuid="5bd49fd4-94ae-41d0-9fed-264835eb4978"/>
-				<textField>
-					<reportElement x="10" y="1" width="80" height="15" uuid="78707d81-7a26-4862-8fbe-e1a28dba4c74"/>
+				<reportElement positionType="Float" x="21" y="104" width="348" height="22" uuid="5bd49fd4-94ae-41d0-9fed-264835eb4978"/>
+				<textField isStretchWithOverflow="true">
+					<reportElement x="0" y="1" width="120" height="15" uuid="78707d81-7a26-4862-8fbe-e1a28dba4c74"/>
 					<textElement textAlignment="Right">
 						<font isBold="true"/>
 					</textElement>
-					<textFieldExpression><![CDATA["Actor:"]]></textFieldExpression>
+					<textFieldExpression><![CDATA[$P{labelActor}+":"]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true">
-					<reportElement x="97" y="1" width="240" height="15" uuid="c67fc845-8bc0-453a-8079-38260fa3043d"/>
+					<reportElement x="130" y="1" width="218" height="15" uuid="c67fc845-8bc0-453a-8079-38260fa3043d"/>
 					<textFieldExpression><![CDATA[$P{testActor}]]></textFieldExpression>
 				</textField>
 			</frame>
 			<frame>
-				<reportElement positionType="Float" x="371" y="60" width="410" height="22" uuid="104e0dc4-31ba-46f0-805d-50872cdc8972"/>
-				<textField>
-					<reportElement x="0" y="1" width="80" height="15" uuid="a4d45b66-42a4-4e95-a6b4-fd525c7b5cf4"/>
+				<reportElement positionType="Float" x="384" y="60" width="396" height="22" uuid="104e0dc4-31ba-46f0-805d-50872cdc8972"/>
+				<textField isStretchWithOverflow="true">
+					<reportElement x="0" y="1" width="140" height="15" uuid="a4d45b66-42a4-4e95-a6b4-fd525c7b5cf4"/>
 					<textElement textAlignment="Right">
 						<font isBold="true"/>
 					</textElement>
-					<textFieldExpression><![CDATA["Organisation:"]]></textFieldExpression>
+					<textFieldExpression><![CDATA[$P{labelOrganisation}+":"]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true">
-					<reportElement x="88" y="1" width="315" height="15" uuid="39e69103-6c40-471d-80e9-28f519d0a6ee"/>
+					<reportElement x="150" y="1" width="246" height="15" uuid="39e69103-6c40-471d-80e9-28f519d0a6ee"/>
 					<textFieldExpression><![CDATA[$P{organisation}]]></textFieldExpression>
 				</textField>
 			</frame>
 			<frame>
-				<reportElement positionType="Float" x="371" y="82" width="410" height="22" uuid="838ff642-b4e7-47e9-8d79-c6b59c326d2d">
+				<reportElement positionType="Float" x="384" y="82" width="396" height="22" uuid="838ff642-b4e7-47e9-8d79-c6b59c326d2d">
 					<printWhenExpression><![CDATA[$P{system} != null]]></printWhenExpression>
 				</reportElement>
-				<textField>
-					<reportElement x="0" y="1" width="80" height="15" uuid="0ba7e889-ec1e-40fd-9a44-4902251cd2aa"/>
+				<textField isStretchWithOverflow="true">
+					<reportElement x="0" y="1" width="140" height="15" uuid="0ba7e889-ec1e-40fd-9a44-4902251cd2aa"/>
 					<textElement textAlignment="Right">
 						<font isBold="true"/>
 					</textElement>
-					<textFieldExpression><![CDATA["System:"]]></textFieldExpression>
+					<textFieldExpression><![CDATA[$P{labelSystem}+":"]]></textFieldExpression>
 				</textField>
 				<textField isStretchWithOverflow="true">
-					<reportElement x="88" y="1" width="315" height="15" uuid="f4c9ea4e-7136-4dbb-88c1-396a30b66680"/>
+					<reportElement x="150" y="1" width="246" height="15" uuid="f4c9ea4e-7136-4dbb-88c1-396a30b66680"/>
 					<textFieldExpression><![CDATA[$P{system}]]></textFieldExpression>
 				</textField>
 			</frame>
@@ -186,14 +201,14 @@
 		</band>
 		<band height="43">
 			<textField>
-				<reportElement x="30" y="5" width="81" height="15" uuid="1f35fc4a-9f90-42be-bd0f-dd068599bcc6"/>
+				<reportElement x="60" y="0" width="81" height="15" uuid="1f35fc4a-9f90-42be-bd0f-dd068599bcc6"/>
 				<textElement textAlignment="Right">
 					<font isBold="true"/>
 				</textElement>
 				<textFieldExpression><![CDATA["Report date:"]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="30" y="24" width="81" height="15" uuid="75b8eb80-f4e7-483d-ab96-a094789ff375">
+				<reportElement x="60" y="19" width="81" height="15" uuid="75b8eb80-f4e7-483d-ab96-a094789ff375">
 					<printWhenExpression><![CDATA[$P{includeTestStatus} != null && $P{includeTestStatus}]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Right">
@@ -202,14 +217,14 @@
 				<textFieldExpression><![CDATA["Test status:"]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="118" y="5" width="341" height="15" uuid="da775b00-af56-40d5-b5ed-c539db9b0909"/>
+				<reportElement x="151" y="0" width="341" height="15" uuid="da775b00-af56-40d5-b5ed-c539db9b0909"/>
 				<textElement textAlignment="Left">
 					<font isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{reportDate}]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="118" y="24" width="341" height="15" uuid="98f6a5a7-5db1-490b-a020-1901d6d4f776">
+				<reportElement x="150" y="19" width="342" height="15" uuid="98f6a5a7-5db1-490b-a020-1901d6d4f776">
 					<printWhenExpression><![CDATA[$P{includeTestStatus} != null && $P{includeTestStatus}]]></printWhenExpression>
 				</reportElement>
 				<textElement textAlignment="Left">

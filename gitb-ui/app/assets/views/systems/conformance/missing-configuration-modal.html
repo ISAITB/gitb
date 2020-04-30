@@ -1,0 +1,38 @@
+<div class="modal-header">
+	<h4>Prerequisite information missing</h4>
+</div>
+<div class="modal-body panel-configuration">
+	<div class="bg-info div-rounded div-padded bottom-margin">
+		<span>Required information is needed before tests can be launched. Please review this below and complete it accordingly.</span>
+	</div>
+	<div class="panel panel-default" ng-if="!controller.organisationConfigurationValid">
+		<div class="panel-heading">
+			<h5 class="title">Organisation properties</h5>
+			<div class="pull-right">
+				<button type="button" class="btn btn-default" ng-click="controller.toOrganisationProperties()">View</button>
+			</div>
+		</div>
+		<div parameter-display parameters="controller.organisationProperties" editable="false" only-missing="true" show-values="false" parameter-label="Property"></div>
+	</div>
+	<div class="panel panel-default" ng-if="!controller.systemConfigurationValid">
+		<div class="panel-heading">
+			<h5 class="title">System properties</h5>
+			<div class="pull-right">
+				<button type="button" class="btn btn-default" ng-click="controller.toSystemProperties()">View</button>
+			</div>
+		</div>
+		<div parameter-display parameters="controller.systemProperties" editable="false" only-missing="true" show-values="false" parameter-label="Property"></div>
+	</div>
+	<div class="panel panel-default" ng-if="!controller.configurationValid">
+		<div class="panel-heading">
+			<h5 class="title">Conformance statement parameters</h5>
+			<div class="pull-right">
+				<button type="button" class="btn btn-default" ng-click="controller.toConfigurationProperties()">View</button>
+			</div>
+		</div>
+		<div parameter-display parameters="controller.endpointRepresentations[0].parameters" only-missing="true" editable="false" show-values="false"></div>
+	</div>
+</div>
+<div class="modal-footer">
+	<button type="button" class="btn btn-default" ng-click="controller.close()">Close</button>
+</div>

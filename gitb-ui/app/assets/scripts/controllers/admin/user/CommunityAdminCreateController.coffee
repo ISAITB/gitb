@@ -1,18 +1,22 @@
 class CommunityAdminCreateController
 
-  @$inject = ['$log', '$state', '$stateParams', 'UserService', 'ValidationService', 'AuthService', 'ErrorService', 'DataService']
-  constructor: (@$log, @$state, @$stateParams, @UserService, @ValidationService, @AuthService, @ErrorService, @DataService) ->
+  @$inject = ['$log', '$state', '$stateParams', 'UserService', 'ValidationService', 'AuthService', 'ErrorService', 'DataService', 'PopupService']
+  constructor: (@$log, @$state, @$stateParams, @UserService, @ValidationService, @AuthService, @ErrorService, @DataService, @PopupService) ->
 
     @communityId = @$stateParams.community_id
 
     @alerts = []
     @user = {}
+    if @DataService.configuration['sso.enabled']
+      @DataService.focus('email')
+    else
+      @DataService.focus('name')
 
   saveDisabled: () =>
     if @DataService.configuration['sso.enabled']
-      !(@user.email?)
+      !(@user.email? && @user.email.trim() != '')
     else
-      !(@user.name? && @user.password? && @user.cpassword? && @user.email?)
+      !(@user.name? && @user.password? && @user.cpassword? && @user.email? && @user.name.trim() != '' && @user.password.trim() != '' && @user.cpassword.trim() != '' && @user.email.trim() != '')
 
   createAdmin: () =>
     @alerts = @ValidationService.clearAll()
@@ -33,6 +37,7 @@ class CommunityAdminCreateController
           @UserService.createCommunityAdmin(@user.name, @user.email, @user.password, @communityId)
           .then () =>
            @cancelCreateAdmin()
+           @PopupService.success('Administrator created.')
           .catch (error) =>
             @ErrorService.showErrorMessage(error)
         else

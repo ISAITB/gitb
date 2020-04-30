@@ -1,13 +1,21 @@
 package modules
 
-import com.google.inject.AbstractModule
 import hooks.{BeforeStartHook, OnStopHook, PostStartHook}
+import org.flywaydb.play.PlayInitializer
 
-class Module extends AbstractModule{
+class Module extends play.api.inject.Module {
 
-  override def configure() = {
-    bind(classOf[BeforeStartHook]).asEagerSingleton()
-    bind(classOf[PostStartHook]).asEagerSingleton()
-    bind(classOf[OnStopHook]).asEagerSingleton()
+  def bindings(environment: play.api.Environment, configuration: play.api.Configuration) = {
+    Seq(
+      bind[BeforeStartHook].toSelf.eagerly,
+      /*
+       Calling here the initialisation of FlyWayDB (and not via its own module). The reason for this is to ensure a DB
+       is correctly created/migrated before we do other changes that may require DB interactions at start-up.
+       */
+      bind[PlayInitializer].toSelf.eagerly,
+      bind[PostStartHook].toSelf.eagerly,
+      bind[OnStopHook].toSelf.eagerly
+    )
   }
+
 }

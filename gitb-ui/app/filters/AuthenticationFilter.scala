@@ -29,7 +29,6 @@ class AuthenticationFilter @Inject() (implicit val mat: Materializer, accountMan
       // Check Authorization headers
       val authzHeader = requestHeader.headers.get(AUTHORIZATION)
       if(authzHeader.isDefined){
-
         try {
           //parse access token info
           val list = authzHeader.get.split(BEARER + " ")
@@ -57,22 +56,27 @@ class AuthenticationFilter @Inject() (implicit val mat: Materializer, accountMan
           }
         }
       } else {
-        if (isHmacAuthenticationAllowed(requestHeader)) {
-          val hmacHeader = requestHeader.headers.get(HmacUtils.HMAC_HEADER_TOKEN)
-          if (hmacHeader.isDefined) {
-            next(requestHeader)
+        if (isPublicWithOptionalAuthentication(requestHeader)) {
+          // No authentication token but not a problem.
+          next(requestHeader)
+        } else {
+          if (isHmacAuthenticationAllowed(requestHeader)) {
+            val hmacHeader = requestHeader.headers.get(HmacUtils.HMAC_HEADER_TOKEN)
+            if (hmacHeader.isDefined) {
+              next(requestHeader)
+            } else {
+              //Requires authorization to execute this service
+              logger.warn("Request blocked due to missing user or HMAC authentication token ["+requestHeader.path+"]")
+              Future{
+                ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.AUTHORIZATION_REQUIRED, "Needs authorization header")
+              }
+            }
           } else {
             //Requires authorization to execute this service
-            logger.warn("Request blocked due to missing user or HMAC authentication token ["+requestHeader.path+"]")
+            logger.warn("Request blocked due to missing user token ["+requestHeader.path+"]")
             Future{
               ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.AUTHORIZATION_REQUIRED, "Needs authorization header")
             }
-          }
-        } else {
-          //Requires authorization to execute this service
-          logger.warn("Request blocked due to missing user token ["+requestHeader.path+"]")
-          Future{
-            ResponseConstructor.constructUnauthorizedResponse(ErrorCodes.AUTHORIZATION_REQUIRED, "Needs authorization header")
           }
         }
       }
@@ -90,11 +94,11 @@ class AuthenticationFilter @Inject() (implicit val mat: Materializer, accountMan
       request.path.equals("/app") ||
       request.path.equals("/app/configuration") ||
       request.path.equals("/notices/tbdefault") ||
-      request.path.equals("/user/feedback") ||
       request.path.equals("/user/selfreg") ||
       request.path.startsWith("/sso/") ||
       request.path.startsWith("/oauth/") ||
       request.path.startsWith("/theme/") ||
+      request.path.equals("/initdata") ||
       //public assets
       request.path.startsWith("/assets/") ||
       request.path.startsWith("/webjars/") ||
@@ -102,6 +106,10 @@ class AuthenticationFilter @Inject() (implicit val mat: Materializer, accountMan
       request.path.equals("/favicon.ico") ||
       // CAS callback
       request.path.equals("/callback")
+  }
+
+  def isPublicWithOptionalAuthentication(request:RequestHeader):Boolean = {
+    request.path.equals("/user/feedback")
   }
 
 }

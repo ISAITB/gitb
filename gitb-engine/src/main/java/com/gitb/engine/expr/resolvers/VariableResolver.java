@@ -6,6 +6,7 @@ import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.types.*;
 import com.gitb.utils.ErrorUtils;
+import com.gitb.utils.XMLUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +17,6 @@ import org.w3c.dom.NodeList;
 
 import javax.xml.namespace.QName;
 import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPathVariableResolver;
 import java.util.ArrayList;
@@ -50,6 +50,7 @@ public class VariableResolver implements XPathVariableResolver{
 	public static final Pattern INDEX_OR_KEY_PATTERN = Pattern.compile(INDEX_OR_KEY);
 	public static final Pattern INDEX_PATTERN = Pattern.compile("("+NUMBERS+")");
 	public static final Pattern KEY_PATTERN = Pattern.compile("("+LITERAL_OR_VARIABLE+")");
+    public static final Pattern VARIABLE_PATTERN = Pattern.compile(VARIABLE);
 
 
     private TestCaseScope scope;
@@ -59,7 +60,7 @@ public class VariableResolver implements XPathVariableResolver{
     public VariableResolver(TestCaseScope scope) {
         this.scope = scope;
         try {
-            documentBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
+            documentBuilder = XMLUtils.getSecureDocumentBuilderFactory().newDocumentBuilder();
         } catch (ParserConfigurationException e) {
             e.printStackTrace();
         }
@@ -114,6 +115,36 @@ public class VariableResolver implements XPathVariableResolver{
         throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Variable ["+variableExpression +"] is not resolved!"));
     }
 
+    public DataType resolveVariable(String variableExpression, boolean tolerateMissing) {
+        Matcher matcher = VARIABLE_EXPRESSION_PATTERN.matcher(variableExpression);
+        if(!matcher.matches()){
+            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid variable reference ["+variableExpression+"]"));
+        }
+        try {
+            String containerVariableName = matcher.group(1);
+            //The remaining part
+            String indexOrKeyExpression = variableExpression.substring(matcher.end(1));
+            TestCaseScope.ScopedVariable scopeVariable = scope.getVariable(containerVariableName);
+            if (scopeVariable == null || !scopeVariable.isDefined()) {
+                // No variable could be matched.
+                if (tolerateMissing) {
+                    return null;
+                } else {
+                    ErrorInfo errorInfo = ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE);
+                    errorInfo.setDescription("No variable could be located in the session context for expression [" + variableExpression + "]");
+                    throw new GITBEngineInternalError(errorInfo);
+                }
+            } else {
+                DataType containerVariable = scopeVariable.getValue();
+                return resolveVariable(containerVariable, indexOrKeyExpression);
+            }
+        } catch (Exception e) {
+            ErrorInfo errorInfo = ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE);
+            errorInfo.setDescription("An exception occurred when resolving variable [" + variableExpression + "]");
+            throw new GITBEngineInternalError(errorInfo, e);
+        }
+    }
+
 	/**
 	 * Resolve variable value from the given variable expression ex: $x{2}, $y
 	 * This can be used externally by other types if they write their own implementation for Expression evaluation
@@ -121,22 +152,7 @@ public class VariableResolver implements XPathVariableResolver{
 	 * @return
 	 */
 	public DataType resolveVariable(String variableExpression) {
-		Matcher matcher = VARIABLE_EXPRESSION_PATTERN.matcher(variableExpression);
-		if(!matcher.matches()){
-			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid variable reference ["+variableExpression+"]"));
-		}
-		try {
-			String containerVariableName = matcher.group(1);
-			//The remaining part
-			String indexOrKeyExpression = variableExpression.substring(matcher.end(1));
-			TestCaseScope.ScopedVariable scopeVariable = scope.getVariable(containerVariableName);
-			DataType containerVariable = scopeVariable.getValue();
-			return resolveVariable(containerVariable, indexOrKeyExpression);
-		} catch (Exception e) {
-            ErrorInfo errorInfo = ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE);
-            errorInfo.setDescription("An exception occurred when resolving variable [" + variableExpression + "]");
-			throw new GITBEngineInternalError(errorInfo, e);
-		}
+	    return resolveVariable(variableExpression, false);
 	}
 
     public StringType resolveVariableAsString(String variableExpression) {

@@ -17,6 +17,8 @@ dependencies = [
 	'angularFileUpload'
 	'isteven-multi-select'
 	'daterangepicker'
+	'ui.toggle'
+	'angular-growl'
 ]
 
 @app = angular.module 'app', dependencies
@@ -27,3 +29,21 @@ dependencies = [
 @controllers = angular.module 'app.controllers', []
 @directives = angular.module 'app.directives', []
 @filters = angular.module 'app.filters', []
+
+@app.config(['growlProvider', (growlProvider) =>
+	growlProvider.globalTimeToLive(2000)
+	growlProvider.globalDisableCountDown(true)
+	growlProvider.onlyUniqueMessages(false)
+	growlProvider.globalDisableCloseButton(true)
+])
+
+if !String.prototype.startsWith
+  String.prototype.startsWith = (searchString, position) ->
+    position = position || 0;
+    return this.indexOf(searchString, position) == position;
+
+if !String.prototype.endsWith
+	String.prototype.endsWith = (search, this_len) ->
+		if this_len == undefined || this_len > this.length
+			this_len = this.length;
+		return this.substring(this_len - search.length, this_len) == search

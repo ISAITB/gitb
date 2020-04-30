@@ -2,10 +2,10 @@ class LoginController
 
 	@$inject = [
 		'$log', '$rootScope', '$location', '$http', '$uibModal'
-		'AuthService', 'AuthProvider', 'Events', 'Constants', 'ErrorService', 'RestService', 'DataService', '$cookies', '$window', 'CommunityService', 'ConfirmationDialogService'
+		'AuthService', 'AuthProvider', 'Events', 'Constants', 'ErrorService', 'RestService', 'DataService', '$cookies', '$window', 'CommunityService', 'ConfirmationDialogService', 'PopupService'
 	]
 	constructor: (@$log, @$rootScope, @$location, @$http, @$uibModal, @AuthService,
-		@AuthProvider, @Events, @Constants, @ErrorService, @RestService, @DataService, @$cookies, @$window, @CommunityService, @ConfirmationDialogService) ->
+		@AuthProvider, @Events, @Constants, @ErrorService, @RestService, @DataService, @$cookies, @$window, @CommunityService, @ConfirmationDialogService, @PopupService) ->
 		@$log.debug "Constructing LoginController..."
 		if (@AuthProvider.isAuthenticated())
 			@$location.path('/')
@@ -30,9 +30,12 @@ class LoginController
 		else if @loginOption == @Constants.LOGIN_OPTION.DEMO
 			@directLogin = true
 			@loginViaSelection(@DataService.configuration['demos.account'])
-		else if @DataService.actualUser?.accounts? && @DataService.actualUser.accounts.length == 1 && @loginOption != @Constants.LOGIN_OPTION.FORCE_CHOICE
-			@directLogin = true
-			@loginViaSelection(@DataService.actualUser.accounts[0].id)
+		else 
+			if @DataService.actualUser?.accounts? && @DataService.actualUser.accounts.length == 1 && @loginOption != @Constants.LOGIN_OPTION.FORCE_CHOICE
+				@directLogin = true
+				@loginViaSelection(@DataService.actualUser.accounts[0].id)
+			else if @loginOption == @Constants.LOGIN_OPTION.NONE && !@DataService.configuration['sso.enabled']
+				@DataService.focus('email')
 
 	createAccount:(loginOption) ->
 		if !loginOption?
@@ -144,7 +147,7 @@ class LoginController
 				token = @selfRegData.selfRegToken
 			if @selfRegData.template?
 				templateId = @selfRegData.template.id
-			@CommunityService.selfRegister(@selfRegData.selfRegOption.communityId, token, @selfRegData.orgShortName, @selfRegData.orgFullName, templateId, @selfRegData.adminName, @selfRegData.adminEmail, @selfRegData.adminPassword)
+			@CommunityService.selfRegister(@selfRegData.selfRegOption.communityId, token, @selfRegData.orgShortName, @selfRegData.orgFullName, templateId, @selfRegData.selfRegOption.organisationProperties, @selfRegData.adminName, @selfRegData.adminEmail, @selfRegData.adminPassword)
 			.then (data) =>
 				if data?.error_code?
 					@alerts.push({type:'danger', msg:data.error_description})
@@ -152,6 +155,7 @@ class LoginController
 				else
 					# All ok.
 					@loginViaCredentials(@selfRegData.adminEmail, @selfRegData.adminPassword)
+					@PopupService.success("Registration successful.")
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 				@spinner = false

@@ -1,0 +1,12 @@
+package managers.export
+
+import models.Enums.ImportItemType.ImportItemType
+
+import scala.collection.mutable
+
+/*
+Import items to facilitate lookup of actions:
+targetMap: items for which there are definitely relevant data in the DB (updates or deletes)
+sourceMap: items for which there are definitely data in the export archive (additions or updates)
+ */
+case class ImportItemMaps(sourceMap: mutable.Map[ImportItemType, mutable.Map[String, ImportItem]], targetMap: mutable.Map[ImportItemType, mutable.Map[String, ImportItem]])

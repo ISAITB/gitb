@@ -73,3 +73,83 @@
 
     }
 }
+
+.div-table {
+
+	.div-table-cell {
+		&.wordwrap {
+			white-space: pre-wrap;      /* CSS3 */   
+			white-space: -moz-pre-wrap; /* Firefox */    
+			white-space: -pre-wrap;     /* Opera <7 */   
+			white-space: -o-pre-wrap;   /* Opera 7 */    
+			word-wrap: break-word;		
+		}
+	}
+
+	.expandable-placeholder {
+		padding: 0px;
+	}
+
+	&.inner {
+		border: 1px solid #ddd;
+		margin-left: 8px;
+		margin-right: 8px;
+		margin-top: 15px;
+	}
+
+	&.non-expandable {
+		background-color: white;
+	}
+
+	&.expandable {
+		background-color: #f5f5f5;
+	}
+
+	.div-table-row {
+
+		&.expandable {
+			cursor: pointer;
+			&:hover {
+				background-color: #efefef;
+			}
+		}
+
+		&.non-expandable {
+			background-color: white;
+		}
+
+		padding-top:8px;
+		padding-bottom:8px;
+		border-top: 1px solid #ddd;
+		min-height: 51px;
+
+		.div-table-cell {
+			&.padded {
+				padding-right:24px;
+			}
+		}
+
+	}
+
+	.div-table-row-header {
+		font-weight: bold;
+		background-color: white;
+		border-bottom: 1px solid #ddd;
+		padding-top: 8px;
+		padding-bottom: 8px;
+	}
+
+	.row-cells {
+		display: flex;
+		align-items: center;
+	}
+}
+
+#conformanceDetailPage, #conformanceDashboardPage, #conformanceDashboardPageTable {
+	.panel-heading > .btn-toolbar {
+		&.padded {
+			margin-right: 1px;
+		}
+		margin-right: -8px;
+	}
+}

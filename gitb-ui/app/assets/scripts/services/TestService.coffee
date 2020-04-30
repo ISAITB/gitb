@@ -39,11 +39,24 @@ class TestService
         })
 
     provideInput: (session, step, inputs) ->
+        inputsToSend = []
+        for input in inputs
+            inputToSend = {}
+            inputToSend.id = input.id
+            inputToSend.name = input.name
+            inputToSend.type = input.type
+            inputToSend.embeddingMethod = input.embeddingMethod
+            if inputToSend.embeddingMethod == 'BASE64'
+                inputToSend.valueBinary = input.value
+            else
+                inputToSend.value = input.value
+            inputsToSend.push(inputToSend)
+
         @RestService.post({
             path: jsRoutes.controllers.TestService.provideInput(session).url,
             data: {
                 teststep: step,
-                inputs: angular.toJson(inputs)
+                inputs: angular.toJson(inputsToSend)
             },
             authenticate: true
         })
@@ -80,7 +93,21 @@ class TestService
             data: {
                 data: data
                 is_base64: base64
-            }            
+            }
+        })
+
+    startHeadlessTestSessions: (testCaseIds, specId, systemId, actorId) ->
+        data = {}
+        if testCaseIds? and testCaseIds.length > 0
+            data.test_case_ids = testCaseIds.join ','
+        data.spec_id = specId
+        data.system_id = systemId
+        data.actor_id = actorId
+
+        @RestService.post({
+            path: jsRoutes.controllers.TestService.startHeadlessTestSessions().url,
+            authenticate: true
+            data: data            
         })
 
 services.service('TestService', TestService)

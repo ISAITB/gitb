@@ -245,6 +245,11 @@ public class ReportGenerator {
             }
             parameters.put("includeTestStatus", overview.getIncludeTestStatus());
             parameters.put("includeDetails", overview.getIncludeDetails());
+            parameters.put("labelDomain", overview.getLabelDomain());
+            parameters.put("labelSpecification", overview.getLabelSpecification());
+            parameters.put("labelActor", overview.getLabelActor());
+            parameters.put("labelOrganisation", overview.getLabelOrganisation());
+            parameters.put("labelSystem", overview.getLabelSystem());
             writeClasspathReport("reports/ConformanceStatementOverview.jasper", parameters, outputStream);
         } catch (Exception e) {
             throw new IllegalStateException(e);
@@ -269,6 +274,11 @@ public class ReportGenerator {
             parameters.put("testName", testCaseOverview.getTestName());
             parameters.put("testDescription", testCaseOverview.getTestDescription());
             parameters.put("steps", testCaseOverview.getSteps());
+            parameters.put("labelDomain", testCaseOverview.getLabelDomain());
+            parameters.put("labelSpecification", testCaseOverview.getLabelSpecification());
+            parameters.put("labelActor", testCaseOverview.getLabelActor());
+            parameters.put("labelOrganisation", testCaseOverview.getLabelOrganisation());
+            parameters.put("labelSystem", testCaseOverview.getLabelSystem());
             writeClasspathReport("reports/TestCaseOverview.jasper", parameters, outputStream);
         } catch (Exception e) {
             throw new IllegalStateException(e);

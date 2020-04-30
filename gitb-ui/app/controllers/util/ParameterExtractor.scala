@@ -110,9 +110,36 @@ object ParameterExtractor {
     false
   }
 
+  def requiredBodyParameterMulti(request:Request[MultipartFormData[_]], parameter:String):String = {
+      val param = request.body.dataParts.get(parameter)
+      if (param.isDefined) {
+        try {
+          param.get.head
+        } catch {
+          case e:NoSuchElementException =>
+            throw InvalidRequestException(ErrorCodes.MISSING_PARAMS, "Parameter '"+parameter+"' is missing in the request")
+        }
+      } else {
+        throw InvalidRequestException(ErrorCodes.MISSING_PARAMS, "Parameter '"+parameter+"' is missing in the request")
+      }
+  }
+
+  def requiredBinaryBodyParameter(request:Request[AnyContent], parameter:String):Array[Byte] = {
+    try {
+      var paramStr = request.body.asFormUrlEncoded.get(parameter).head
+      if (MimeUtil.isDataURL(paramStr)) {
+        paramStr = MimeUtil.getBase64FromDataURL(paramStr)
+      }
+      Base64.decodeBase64(paramStr)
+    } catch {
+      case e:NoSuchElementException =>
+        throw new InvalidRequestException(ErrorCodes.MISSING_PARAMS, "Parameter '"+parameter+"' is missing in the request")
+    }
+  }
+
   def requiredBodyParameter(request:Request[AnyContent], parameter:String):String = {
     try {
-      val param = request.body.asFormUrlEncoded.get(parameter)(0)
+      val param = request.body.asFormUrlEncoded.get(parameter).head
       param
     } catch {
       case e:NoSuchElementException =>
@@ -171,7 +198,7 @@ object ParameterExtractor {
     }
   }
 
-  def extractUserId(request:Request[AnyContent]):Long = {
+  def extractUserId(request:Request[_]):Long = {
     request.headers.get(Parameters.USER_ID).get.toLong
   }
 
@@ -201,8 +228,11 @@ object ParameterExtractor {
     val sname = requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
     val fname = requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
     val email = optionalBodyParameter(request, Parameters.COMMUNITY_EMAIL)
+    val description = optionalBodyParameter(request, Parameters.DESCRIPTION)
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
+    var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
     var selfRegToken: Option[String] = None
+    var selfRegNotification: Boolean = false
     if (Configurations.REGISTRATION_ENABLED) {
       selfRegType = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
       if (!validCommunitySelfRegType(selfRegType)) {
@@ -216,11 +246,18 @@ object ParameterExtractor {
       } else {
         selfRegToken = None
       }
+      if (selfRegType != SelfRegistrationType.NotSupported.id.toShort && Configurations.EMAIL_ENABLED) {
+        selfRegNotification = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
+      }
+      if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+        selfRegRestriction = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_RESTRICTION).toShort
+      }
     } else {
       selfRegType = SelfRegistrationType.NotSupported.id.toShort
     }
+
     val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    Communities(0L, sname, fname, email, selfRegType, selfRegToken, domainId)
+    Communities(0L, sname, fname, email, selfRegType, selfRegToken, selfRegNotification, description, selfRegRestriction, domainId)
   }
 
   def extractSystemAdminInfo(request:Request[AnyContent]):Users = {
@@ -323,23 +360,18 @@ object ParameterExtractor {
 	def extractSpecification(request:Request[AnyContent]): Specifications = {
 		val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
 		val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
-		val urls = ParameterExtractor.optionalBodyParameter(request, Parameters.URLS)
-		val diagram:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DIAGRAM)
 		val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-		val specificationType: Option[Short] = ParameterExtractor.optionalBodyParameter(request, Parameters.SPEC_TYPE) match {
-			case Some(str) => Some(str.toShort)
-			case _ => None
-		}
+    val hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
 		val domain = ParameterExtractor.optionalBodyParameter(request, Parameters.DOMAIN_ID) match {
 			case Some(str) => Some(str.toLong)
 			case _ => None
 		}
 
-		Specifications(0l, sname, fname, urls, diagram, descr, specificationType.getOrElse(0), domain.getOrElse(0l))
+		Specifications(0l, sname, fname, descr, hidden, domain.getOrElse(0l))
 	}
 
 	def extractActor(request:Request[AnyContent]):Actors = {
-    val id:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ID) match {
+    val id:Long = ParameterExtractor. optionalBodyParameter(request, Parameters.ID) match {
       case Some(i) => i.toLong
       case _ => 0l
     }
@@ -353,13 +385,14 @@ object ParameterExtractor {
     } else {
       default = Some(false)
     }
+    val hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
     var displayOrder:Option[Short] = None
     val displayOrderStr = ParameterExtractor.optionalBodyParameter(request, Parameters.DISPLAY_ORDER)
     if (displayOrderStr.isDefined) {
       displayOrder = Some(displayOrderStr.get.toShort)
     }
 		val domainId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
-		Actors(id, actorId, name, description, default, displayOrder, domainId)
+		Actors(id, actorId, name, description, default, hidden, displayOrder, domainId)
 	}
 
   def extractEndpoint(request:Request[AnyContent]):Endpoints = {
@@ -402,7 +435,8 @@ object ParameterExtractor {
     val adminOnly = ParameterExtractor.requiredBodyParameter(request, Parameters.ADMIN_ONLY).toBoolean
     val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
     val inExports:Boolean = (kind == "SIMPLE") && ParameterExtractor.requiredBodyParameter(request, Parameters.IN_EXPORTS).toBoolean
-    models.OrganisationParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, communityId)
+    val inSelfRegistration: Boolean = Configurations.REGISTRATION_ENABLED && (!adminOnly) && ParameterExtractor.requiredBodyParameter(request, Parameters.IN_SELFREG).toBoolean
+    models.OrganisationParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, communityId)
   }
 
   def extractSystemParameter(request:Request[AnyContent]):models.SystemParameters = {
@@ -478,6 +512,15 @@ object ParameterExtractor {
 
   def optionalLongListQueryParameter(request:Request[AnyContent],parameter:String): Option[List[Long]] = {
     val listStr = ParameterExtractor.optionalQueryParameter(request, parameter)
+    val list = listStr match {
+      case Some(str) => Some(str.split(",").map(_.toLong).toList)
+      case None => None
+    }
+    list
+  }
+
+  def optionalLongListBodyParameter(request:Request[AnyContent],parameter:String): Option[List[Long]] = {
+    val listStr = ParameterExtractor.optionalBodyParameter(request, parameter)
     val list = listStr match {
       case Some(str) => Some(str.split(",").map(_.toLong).toList)
       case None => None

@@ -18,8 +18,11 @@ object PersistenceSchema {
     def supportEmail = column[Option[String]] ("support_email")
     def selfRegType = column[Short]("selfreg_type")
     def selfRegToken = column[Option[String]] ("selfreg_token")
+    def selfregNotification = column[Boolean]("selfreg_notification")
+    def selfRegRestriction = column[Short]("selfreg_restriction")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def domain = column[Option[Long]] ("domain")
-    def * = (id, shortname, fullname, supportEmail, selfRegType, selfRegToken, domain) <> (Communities.tupled, Communities.unapply)
+    def * = (id, shortname, fullname, supportEmail, selfRegType, selfRegToken, selfregNotification, description, selfRegRestriction, domain) <> (Communities.tupled, Communities.unapply)
   }
   val communities = TableQuery[CommunitiesTable]
   val insertCommunity = communities returning communities.map(_.id)
@@ -87,12 +90,10 @@ object PersistenceSchema {
 	def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
-    def urls = column[Option[String]]("urls") //comma seperated
-    def diagram = column[Option[String]]("diagram")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
-    def stype = column[Short]("type")
+    def hidden = column[Boolean]("is_hidden")
     def domain = column[Long]("domain")
-    def * = (id, shortname, fullname, urls, diagram, description, stype, domain) <> (Specifications.tupled, Specifications.unapply)
+    def * = (id, shortname, fullname, description, hidden, domain) <> (Specifications.tupled, Specifications.unapply)
     //def fk = foreignKey("specs_fk", domain, Domains)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
   val specifications = TableQuery[SpecificationsTable]
@@ -103,9 +104,10 @@ object PersistenceSchema {
     def name    = column[String]("name")
     def desc    = column[Option[String]]("description", O.SqlType("TEXT"))
     def default = column[Option[Boolean]]("is_default")
+    def hidden = column[Boolean]("is_hidden")
     def displayOrder = column[Option[Short]]("display_order")
     def domain  = column[Long]("domain")
-    def * = (id, actorId, name, desc, default, displayOrder, domain) <> (Actors.tupled, Actors.unapply)
+    def * = (id, actorId, name, desc, default, hidden, displayOrder, domain) <> (Actors.tupled, Actors.unapply)
     def actorIdUniqueIdx = index("actors_aid_unq_idx", actorId, unique = true)
     //def fk = foreignKey("actors_fk", domain, Domains)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
@@ -207,7 +209,9 @@ object PersistenceSchema {
     def targetActors = column[Option[String]]("target_actors")
     def targetOptions = column[Option[String]]("target_options")
     def testSuiteOrder = column[Short]("testsuite_order")
-	  def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, testCaseType, path, targetSpec, targetActors, targetOptions, testSuiteOrder) <> (TestCases.tupled, TestCases.unapply)
+    def hasDocumentation = column[Boolean]("has_documentation")
+    def documentation = column[Option[String]]("documentation")
+	  def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, testCaseType, path, targetSpec, targetActors, targetOptions, testSuiteOrder, hasDocumentation, documentation) <> (TestCases.tupled, TestCases.unapply)
     def shortNameVersionUniqueIdx = index("tc_sn_vsn_idx", (shortname, version), unique = true)
     //def fk1 = foreignKey("tc_fk_1", targetSpec, Specifications)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
     //def fk2 = foreignKey("tc_fk_2", targetActor, Actors)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
@@ -226,7 +230,9 @@ object PersistenceSchema {
 		def keywords = column[Option[String]]("keywords")
     def specification = column[Long]("specification")
     def filename = column[String]("file_name")
-		def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, specification, filename) <> (TestSuites.tupled, TestSuites.unapply)
+    def hasDocumentation = column[Boolean]("has_documentation")
+    def documentation = column[Option[String]]("documentation")
+		def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, specification, filename, hasDocumentation, documentation) <> (TestSuites.tupled, TestSuites.unapply)
     def shortNameVersionUniqueIdx = index("ts_sn_vsn_idx", (shortname, version), unique = true)
 	}
 	val testSuites = TableQuery[TestSuitesTable]
@@ -442,8 +448,9 @@ object PersistenceSchema {
     def adminOnly = column[Boolean]("admin_only")
     def notForTests = column[Boolean]("not_for_tests")
     def inExports = column[Boolean]("in_exports")
+    def inSelfRegistration = column[Boolean]("in_selfreg")
     def community = column[Long]("community")
-    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, community) <> (OrganisationParameters.tupled, OrganisationParameters.unapply)
+    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, community) <> (OrganisationParameters.tupled, OrganisationParameters.unapply)
   }
   val organisationParameters = TableQuery[OrganisationParametersTable]
   val insertOrganisationParameters = organisationParameters returning organisationParameters.map(_.id)
@@ -481,5 +488,16 @@ object PersistenceSchema {
     def pk = primaryKey("spv_pk", (system, parameter))
   }
   val systemParameterValues = TableQuery[SystemParameterValuesTable]
+
+  class CommunityLabelsTable(tag: Tag) extends Table[CommunityLabels](tag, "CommunityLabels") {
+    def community = column[Long] ("community")
+    def labelType = column[Short]("label_type")
+    def singularForm = column[String]("singular_form")
+    def pluralForm = column[String]("plural_form")
+    def fixedCase = column[Boolean]("fixed_case")
+    def * = (community, labelType, singularForm, pluralForm, fixedCase) <> (CommunityLabels.tupled, CommunityLabels.unapply)
+    def pk = primaryKey("cl_pk", (community, labelType))
+  }
+  val communityLabels = TableQuery[CommunityLabelsTable]
 
 }

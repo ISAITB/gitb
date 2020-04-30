@@ -1,7 +1,7 @@
 class PasswordController
 
-    @$inject = ['$log', '$scope', '$location', 'AccountService', 'ErrorService', 'ErrorCodes', 'DataService', '$state', '$rootScope', 'Events']
-    constructor: (@$log, @$scope, @$location, @AccountService, @ErrorService, @ErrorCodes, @DataService, @$state, @$rootScope, @Events) ->
+    @$inject = ['$log', '$scope', '$location', 'AccountService', 'ErrorService', 'ErrorCodes', 'DataService', '$state', '$rootScope', 'Events', 'PopupService']
+    constructor: (@$log, @$scope, @$location, @AccountService, @ErrorService, @ErrorCodes, @DataService, @$state, @$rootScope, @Events, @PopupService) ->
         @$log.debug 'Constructing PasswordController'
 
         @ds = @DataService #shorten service name
@@ -9,6 +9,7 @@ class PasswordController
         @alerts = []       # alerts to be displayed
         @$scope.data = {}  # holds scope bindings
         @passwordSpinner = false # spinner to be displayed for password operations
+        @DataService.focus('current')
 
     saveDisabled : () ->
         @$scope.data.currentPassword == undefined || @$scope.data.currentPassword == '' || 
@@ -24,11 +25,12 @@ class PasswordController
             @AccountService.updateUserProfile(null, @$scope.data.password1, @$scope.data.currentPassword)
             .then(
                 (data) => #success handler
-                    @alerts.push({type:'success', msg:"Your password has been updated."})
                     @passwordSpinner = false #stop spinner
                     if @DataService.user.onetime
                         @DataService.user.onetime = false
                         @$state.go 'app.home'
+                    @PopupService.success('Your password has been updated.')
+                    @DataService.focus('current')
                 ,
                 (error) => #error handler
                     if error.data.error_code == @ErrorCodes.INVALID_CREDENTIALS

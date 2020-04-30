@@ -1,7 +1,7 @@
 class ErrorTemplateCreateController
 
-  @$inject = ['$log', '$state', '$stateParams', '$scope', 'WebEditorService', 'ErrorTemplateService', 'ValidationService', 'ConfirmationDialogService', 'ErrorService']
-  constructor: (@$log, @$state, @$stateParams, @$scope, @WebEditorService, @ErrorTemplateService, @ValidationService, @ConfirmationDialogService, @ErrorService) ->
+  @$inject = ['$log', '$state', '$stateParams', '$scope', 'WebEditorService', 'ErrorTemplateService', 'ValidationService', 'ConfirmationDialogService', 'ErrorService', 'PopupService', 'DataService']
+  constructor: (@$log, @$state, @$stateParams, @$scope, @WebEditorService, @ErrorTemplateService, @ValidationService, @ConfirmationDialogService, @ErrorService, @PopupService, @DataService) ->
 
     @communityId = @$stateParams.community_id
 
@@ -9,6 +9,7 @@ class ErrorTemplateCreateController
     @template = {}
 
     @initialize()
+    @DataService.focus('name')
 
   initialize: () ->
     @template.name = @$stateParams.name
@@ -17,7 +18,7 @@ class ErrorTemplateCreateController
     @WebEditorService.editor(300, @$stateParams.content ? "")
 
   saveDisabled: () =>
-    !(@template?.name?)
+    !(@template?.name? && @template.name.trim() != '')
 
   # create error template and cancel screen
   createErrorTemplate: () =>
@@ -38,6 +39,7 @@ class ErrorTemplateCreateController
         @ValidationService.pushAlert({type:'danger', msg:data.error_description})
       else
         @cancelCreateErrorTemplate()
+        @PopupService.success('Error template created.')
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 

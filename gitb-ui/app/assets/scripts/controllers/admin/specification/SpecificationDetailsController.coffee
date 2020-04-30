@@ -1,7 +1,7 @@
 class SpecificationDetailsController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', 'TestSuiteService', 'ConfirmationDialogService', 'SpecificationService', '$state', '$stateParams', '$uibModal', 'PopupService', 'ErrorService']
-	constructor: (@$log, @$scope, @ConformanceService, @TestSuiteService, @ConfirmationDialogService, @SpecificationService, @$state, @$stateParams, @$uibModal, @PopupService, @ErrorService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', 'TestSuiteService', 'ConfirmationDialogService', 'SpecificationService', '$state', '$stateParams', '$uibModal', 'PopupService', 'ErrorService', 'DataService']
+	constructor: (@$log, @$scope, @ConformanceService, @TestSuiteService, @ConfirmationDialogService, @SpecificationService, @$state, @$stateParams, @$uibModal, @PopupService, @ErrorService, @DataService) ->
 		@$log.debug "Constructing SpecificationDetailsController"
 
 		@specification = {}
@@ -58,6 +58,10 @@ class SpecificationDetailsController
 				field: 'default',
 				title: 'Default'
 			}			
+			{
+				field: 'hidden',
+				title: 'Hidden'
+			}			
 		]
 
 		@ConformanceService.getSpecificationsWithIds([@specificationId])
@@ -77,6 +81,8 @@ class SpecificationDetailsController
 			@testSuites = data
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
+
+		@DataService.focus('shortName')
 
 	hasErrorsOrWarnings: (report) =>
 		if report?.counters?.errors? && report?.counters?.warnings?
@@ -199,12 +205,12 @@ class SpecificationDetailsController
 			data = [
 				{label: "Test suite:"}, 
 				{label: "Test cases:"},
-				{label: "Actors:"},
-				{label: "Endpoints:"},
+				{label: @DataService.labelActors()+":"},
+				{label: @DataService.labelEndpoints()+":"},
 				{label: "Parameters:"}
 			]
 			collect item, data for item in result.items
-			@PopupService.show("Test suite upload overview", data)
+			@PopupService.show("Test suite upload overview", data, () => @PopupService.success('Test suite uploaded.'))
 		else
 			data = []
 			data.push {
@@ -227,6 +233,7 @@ class SpecificationDetailsController
 			@TestSuiteService.undeployTestSuite data.id
 			.then () =>
 				@$state.go(@$state.$current, null, { reload: true });
+				@PopupService.success('Test suite deleted.')
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 
@@ -234,23 +241,24 @@ class SpecificationDetailsController
 		@$state.go 'app.admin.domains.detail.specifications.detail.actors.detail.list', {id: @domainId, spec_id: @specificationId, actor_id: actor.id}
 
 	deleteSpecification: () =>
-		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this specification?", "Yes", "No")
+		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this "+@DataService.labelSpecificationLower()+"?", "Yes", "No")
 		.then () =>
 			@SpecificationService.deleteSpecification(@specificationId)
 			.then () =>
 				@$state.go 'app.admin.domains.detail.list', {id: @domainId}
+				@PopupService.success(@DataService.labelSpecification()+' deleted.')
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 
 	saveSpecificationChanges: () =>
-		@SpecificationService.updateSpecification(@specificationId, @specification.sname, @specification.fname, @specification.urls, @specification. diagram, @specification.description, @specification.spec_type)
+		@SpecificationService.updateSpecification(@specificationId, @specification.sname, @specification.fname, @specification.description, @specification.hidden)
 		.then () =>
-			@$state.go 'app.admin.domains.detail.list', {id: @domainId}
+			@PopupService.success(@DataService.labelSpecification()+' updated.')
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
 	saveDisabled: () =>
-		!(@specification?.sname? && @specification?.fname?)
+		!(@specification?.sname? && @specification?.fname? && @specification.sname.trim() != '' && @specification.fname.trim() != '')
 
 	back: () =>
 		@$state.go 'app.admin.domains.detail.list', {id: @domainId}
