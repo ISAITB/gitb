@@ -52,6 +52,8 @@ class UserGuideService
         @paths['app.admin.users.communities.detail.admins.detail'] = @setPath('', '', 'communityDashboard/index.html#manage-administrators', 'communityDashboard/index.html#manage-community-administrators')
         @paths['app.admin.users.communities.detail.organizations.detail.users.create'] = @setPath('', '', 'communityDashboard/index.html#manage-the-organisation-s-users')
         @paths['app.admin.users.communities.detail.organizations.detail.users.detail.list'] = @setPath('', '', 'communityDashboard/index.html#manage-the-organisation-s-users')
+        @paths['app.admin.export'] = @setPath('', '', 'exportimport/index.html#export-data')
+        @paths['app.admin.import'] = @setPath('', '', 'exportimport/index.html#import-data')
 
         # Validate to ensure no missing states
         states = @$state.get()
