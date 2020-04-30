@@ -123,7 +123,15 @@ class LegalNoticeManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   }
 
   def deleteLegalNoticeInternal(noticeId: Long): DBIO[_] = {
-    PersistenceSchema.legalNotices.filter(_.id === noticeId).delete
+    for {
+      _ <- {
+        (for {
+          x <- PersistenceSchema.organizations if x.legalNotice === noticeId
+        } yield x.legalNotice).update(None)
+
+      }
+      _ <- PersistenceSchema.legalNotices.filter(_.id === noticeId).delete
+    } yield ()
   }
 
   /**

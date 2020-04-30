@@ -195,14 +195,24 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
     toDBIO(dbActions)
   }
 
-  private def propertyTypeToKind(propertyType: PropertyType): String = {
+  private def propertyTypeToKind(propertyType: PropertyType, isDomainParameter: Boolean): String = {
     require(propertyType != null, "Enum value cannot be null")
     propertyType match {
       case PropertyType.BINARY => "BINARY"
       case PropertyType.SIMPLE => "SIMPLE"
-      case PropertyType.SECRET => "SECRET"
+      case PropertyType.SECRET => {
+        if (isDomainParameter) {
+          "HIDDEN"
+        } else {
+          "SECRET"
+        }
+      }
       case _ => throw new IllegalArgumentException("Unknown enum value ["+propertyType+"]")
     }
+  }
+
+  private def propertyTypeToKind(propertyType: PropertyType): String = {
+    propertyTypeToKind(propertyType, isDomainParameter = false)
   }
 
   private def selfRegistrationMethodToModel(selfRegType: com.gitb.xml.export.SelfRegistrationMethod): Short = {
@@ -611,10 +621,10 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.DomainParameter, item: ImportItem) => {
                   val domainId = item.parentItem.get.targetKey.get.toLong
-                  conformanceManager.createDomainParameterInternal(models.DomainParameter(0L, data.getName, Option(data.getDescription), propertyTypeToKind(data.getType), decryptIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), domainId))
+                  conformanceManager.createDomainParameterInternal(models.DomainParameter(0L, data.getName, Option(data.getDescription), propertyTypeToKind(data.getType, isDomainParameter = true), decryptIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), domainId))
                 },
                 (data: com.gitb.xml.export.DomainParameter, targetKey: String, item: ImportItem) => {
-                  conformanceManager.updateDomainParameterInternal(targetKey.toLong, data.getName, Option(data.getDescription), propertyTypeToKind(data.getType), Option(data.getValue))
+                  conformanceManager.updateDomainParameterInternal(targetKey.toLong, data.getName, Option(data.getDescription), propertyTypeToKind(data.getType, isDomainParameter = true), Option(data.getValue))
                 }
               )
             )

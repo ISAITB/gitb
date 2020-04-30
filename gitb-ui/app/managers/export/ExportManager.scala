@@ -46,7 +46,7 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
   private def propertyTypeForExport(modelType: String): PropertyType = {
     if ("BINARY".equals(modelType)) {
       PropertyType.BINARY
-    } else if ("SECRET".equals(modelType)) {
+    } else if ("HIDDEN".equals(modelType) || "SECRET".equals(modelType)) {
       PropertyType.SECRET
     } else if ("SIMPLE".equals(modelType)) {
       PropertyType.SIMPLE

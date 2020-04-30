@@ -128,7 +128,15 @@ class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
   }
 
   def deleteLandingPageInternal(pageId: Long): DBIO[_] = {
-    PersistenceSchema.landingPages.filter(_.id === pageId).delete
+    for {
+      _ <- {
+        (for {
+          x <- PersistenceSchema.organizations if x.landingPage === pageId
+        } yield x.landingPage).update(None)
+
+      }
+      _ <- PersistenceSchema.landingPages.filter(_.id === pageId).delete
+    } yield ()
   }
 
   /**

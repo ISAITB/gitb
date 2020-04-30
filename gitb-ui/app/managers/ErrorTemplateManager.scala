@@ -125,7 +125,15 @@ class ErrorTemplateManager @Inject() (dbConfigProvider: DatabaseConfigProvider) 
   }
 
   def deleteErrorTemplateInternal(templateId: Long): DBIO[_] = {
-    PersistenceSchema.errorTemplates.filter(_.id === templateId).delete
+    for {
+      _ <- {
+        (for {
+          x <- PersistenceSchema.organizations if x.errorTemplate === templateId
+        } yield x.errorTemplate).update(None)
+
+      }
+      _ <- PersistenceSchema.errorTemplates.filter(_.id === templateId).delete
+    } yield ()
   }
 
   /**

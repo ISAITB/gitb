@@ -248,20 +248,12 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 		action
 	}
 
-	def deleteActorByDomain(domainId: Long) = {
-		val action = (for {
-			ids <- PersistenceSchema.actors.filter(_.domain === domainId).map(_.id).result
-			_ <- DBIO.seq(ids.map(id => actorManager.deleteActor(id)): _*)
-		} yield()).transactionally
-		action
-	}
-
 	def deleteTransactionByDomain(domainId: Long) = {
 		PersistenceSchema.transactions.filter(_.domain === domainId).delete
 	}
 
 	def deleteDomainInternal(domain: Long, onSuccessCalls: ListBuffer[() => _]): DBIO[_] = {
-		deleteActorByDomain(domain) andThen
+		removeDomainFromCommunities(domain) andThen
 			deleteSpecificationByDomain(domain, onSuccessCalls) andThen
 			deleteTransactionByDomain(domain) andThen
 			testResultManager.updateForDeletedDomain(domain) andThen
@@ -760,6 +752,22 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 			endpointStatus
 		})
 		endpointList
+	}
+
+	private def removeDomainFromCommunities(domainId: Long): DBIO[_] = {
+		for {
+			communityIds <- PersistenceSchema.communities.filter(_.domain === domainId).map(x => x.id).result
+			_ <- {
+				val actions = ListBuffer[DBIO[_]]()
+				communityIds.foreach { communityId =>
+					// Delete conformance statements
+					actions += deleteConformanceStatementsForDomainAndCommunity(communityId, domainId)
+					// Set domain of community to null
+					actions += (for {x <- PersistenceSchema.communities if x.domain === domainId} yield x.domain).update(None)
+				}
+				toDBIO(actions)
+			}
+		} yield ()
 	}
 
 	def deleteConformanceStatementsForDomainAndCommunity(domainId: Long, communityId: Long) = {
