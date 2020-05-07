@@ -18,7 +18,7 @@
 				'<div class="col-xs-7">'+
 					'<textarea id="description" ng-model="domain.description" class="form-control"></textarea>'+
 				'</div>'+
-				'<div tb-tooltip="This is used to describe and contextualise the {{DataService.labelSpecificationsLower}} included in the {{DataService.labelDomainLower()}}. It is visible to users when managing conformance statements and may also be used as a community\'s description during self-registration (if enabled)."></div>'+
+				'<div tb-tooltip="This is used to describe and contextualise the {{DataService.labelSpecificationsLower()}} included in the {{DataService.labelDomainLower()}}. It is visible to users when managing conformance statements and may also be used as a community\'s description during self-registration (if enabled)."></div>'+
 			'</div>'
 		restrict: 'A'
 		link: (scope, element, attrs) ->
