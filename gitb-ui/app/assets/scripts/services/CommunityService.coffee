@@ -17,7 +17,7 @@ class CommunityService
       authenticate: true
       params: params
 
-  createCommunity: (shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegNotification, description, domainId) ->
+  createCommunity: (shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, domainId) ->
     data = {
       community_sname: shortName,
       community_fname: fullName,
@@ -29,6 +29,7 @@ class CommunityService
         selfRegNotification = false
       data.community_selfreg_type = selfRegType
       data.community_selfreg_token = selfRegToken
+      data.community_selfreg_token_help_text = selfRegTokenHelpText
       data.community_selfreg_notification = selfRegNotification
       if @DataService.configuration['sso.enabled']
         data.community_selfreg_restriction = selfRegRestriction
@@ -47,7 +48,7 @@ class CommunityService
       authenticate: true
     })
 
-  updateCommunity: (communityId, shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegNotification, description, domainId) ->
+  updateCommunity: (communityId, shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, domainId) ->
     data = {
       community_sname: shortName,
       community_fname: fullName,
@@ -59,6 +60,7 @@ class CommunityService
         selfRegNotification = false
       data.community_selfreg_type = selfRegType
       data.community_selfreg_token = selfRegToken
+      data.community_selfreg_token_help_text = selfRegTokenHelpText
       data.community_selfreg_notification = selfRegNotification
       if @DataService.configuration['sso.enabled']
         data.community_selfreg_restriction = selfRegRestriction

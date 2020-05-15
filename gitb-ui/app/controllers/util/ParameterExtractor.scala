@@ -232,6 +232,7 @@ object ParameterExtractor {
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
     var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
     var selfRegToken: Option[String] = None
+    var selfRegTokenHelpText: Option[String] = None
     var selfRegNotification: Boolean = false
     if (Configurations.REGISTRATION_ENABLED) {
       selfRegType = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
@@ -239,12 +240,17 @@ object ParameterExtractor {
         throw new IllegalArgumentException("Unsupported value ["+selfRegType+"] for self-registration type")
       }
       selfRegToken = optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
+      selfRegTokenHelpText = optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN_HELP_TEXT)
+      if (selfRegTokenHelpText.isDefined) {
+        selfRegTokenHelpText = Some(HtmlUtil.sanitizeEditorContent(selfRegTokenHelpText.get))
+      }
       if (selfRegType == SelfRegistrationType.Token.id.toShort || selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort) {
         if (selfRegToken.isEmpty || StringUtils.isBlank(selfRegToken.get)) {
           throw new IllegalArgumentException("Missing self-registration token")
         }
       } else {
         selfRegToken = None
+        selfRegTokenHelpText = None
       }
       if (selfRegType != SelfRegistrationType.NotSupported.id.toShort && Configurations.EMAIL_ENABLED) {
         selfRegNotification = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
@@ -257,7 +263,7 @@ object ParameterExtractor {
     }
 
     val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    Communities(0L, sname, fname, email, selfRegType, selfRegToken, selfRegNotification, description, selfRegRestriction, domainId)
+    Communities(0L, sname, fname, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegRestriction, domainId)
   }
 
   def extractSystemAdminInfo(request:Request[AnyContent]):Users = {

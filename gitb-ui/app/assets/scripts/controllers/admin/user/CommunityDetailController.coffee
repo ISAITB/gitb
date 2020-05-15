@@ -1,10 +1,17 @@
 class CommunityDetailController
 
-  @$inject = ['$log', '$state', '$window', '$stateParams', 'UserService', 'DataService', 'Constants', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'CommunityService', 'ConformanceService', 'ErrorService', 'PopupService', 'community']
-  constructor: (@$log, @$state, @$window, @$stateParams, @UserService, @DataService, @Constants, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @CommunityService, @ConformanceService, @ErrorService, @PopupService, @community) ->
+  @$inject = ['$log', '$state', '$window', '$stateParams', 'UserService', 'DataService', 'Constants', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'CommunityService', 'ConformanceService', 'ErrorService', 'PopupService', 'community', 'WebEditorService', '$timeout']
+  constructor: (@$log, @$state, @$window, @$stateParams, @UserService, @DataService, @Constants, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @CommunityService, @ConformanceService, @ErrorService, @PopupService, @community, @WebEditorService, @$timeout) ->
 
     @communityId = @community.id
     @originalDomainId = @community.domain
+    @$timeout(() =>
+      tinymce.remove('.mce-message')
+      if @community.selfRegTokenHelpText
+        @WebEditorService.editorForSingleLineInput(@community.selfRegTokenHelpText, "mce-message")
+      else
+        @WebEditorService.editorForSingleLineInput("", "mce-message")
+    )
 
     @adminColumns = [
       {
@@ -163,7 +170,7 @@ class CommunityDetailController
       if !@community.sameDescriptionAsDomain
         descriptionToUse = @community.activeDescription
       updateCall = () => 
-        @CommunityService.updateCommunity(@communityId, @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegRestriction, @community.selfRegToken, @community.selfRegNotification, descriptionToUse, @community.domain?.id)
+        @CommunityService.updateCommunity(@communityId, @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegRestriction, @community.selfRegToken, tinymce.activeEditor.getContent(), @community.selfRegNotification, descriptionToUse, @community.domain?.id)
           .then (data) =>
             if data? && data.error_code?
               @ValidationService.pushAlert({type:'danger', msg:data.error_description})

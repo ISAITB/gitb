@@ -589,6 +589,7 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
     }
     communityData.getSelfRegistrationSettings.setNotifications(community.get.selfregNotification)
     communityData.getSelfRegistrationSettings.setToken(community.get.selfRegToken.orNull)
+    communityData.getSelfRegistrationSettings.setTokenHelpText(community.get.selfRegTokenHelpText.orNull)
     SelfRegistrationRestriction.apply(community.get.selfRegRestriction) match {
       case SelfRegistrationRestriction.NoRestriction => communityData.getSelfRegistrationSettings.setRestriction(com.gitb.xml.export.SelfRegistrationRestriction.NO_RESTRICTION)
       case SelfRegistrationRestriction.UserEmail => communityData.getSelfRegistrationSettings.setRestriction(com.gitb.xml.export.SelfRegistrationRestriction.USER_EMAIL)

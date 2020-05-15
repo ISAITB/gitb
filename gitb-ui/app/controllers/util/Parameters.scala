@@ -108,6 +108,7 @@ object Parameters {
   val COMMUNITY_SELFREG_TYPE = "community_selfreg_type"
   val COMMUNITY_SELFREG_RESTRICTION = "community_selfreg_restriction"
   val COMMUNITY_SELFREG_TOKEN = "community_selfreg_token"
+  val COMMUNITY_SELFREG_TOKEN_HELP_TEXT = "community_selfreg_token_help_text"
   val COMMUNITY_SELFREG_NOTIFICATION = "community_selfreg_notification"
 
   //TestService parameters

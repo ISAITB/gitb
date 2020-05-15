@@ -12,7 +12,7 @@ import org.apache.commons.lang3.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.AuthenticationManager
 import play.api.mvc.{Controller, Result}
-import utils.{EmailUtil, JsonUtil}
+import utils.{EmailUtil, HtmlUtil, JsonUtil}
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
@@ -63,6 +63,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
     var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
     var selfRegToken: Option[String] = None
+    var selfRegTokenHelpText: Option[String] = None
     var selfRegNotification: Boolean = false
     if (Configurations.REGISTRATION_ENABLED) {
       selfRegType = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
@@ -70,12 +71,17 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
         throw new IllegalArgumentException("Unsupported value [" + selfRegType + "] for self-registration type")
       }
       selfRegToken = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
+      selfRegTokenHelpText = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN_HELP_TEXT)
+      if (selfRegTokenHelpText.isDefined) {
+        selfRegTokenHelpText = Some(HtmlUtil.sanitizeEditorContent(selfRegTokenHelpText.get))
+      }
       if (selfRegType == SelfRegistrationType.Token.id.toShort || selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort) {
         if (selfRegToken.isEmpty || StringUtils.isBlank(selfRegToken.get)) {
           throw new IllegalArgumentException("Missing self-registration token")
         }
       } else {
         selfRegToken = None
+        selfRegTokenHelpText = None
       }
       if (selfRegType != SelfRegistrationType.NotSupported.id.toShort && Configurations.EMAIL_ENABLED) {
         selfRegNotification = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
@@ -85,7 +91,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
       }
     }
     val domainId: Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    communityManager.updateCommunity(communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegNotification, description, selfRegRestriction, domainId)
+    communityManager.updateCommunity(communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegRestriction, domainId)
     ResponseConstructor.constructEmptyResponse
   }
 

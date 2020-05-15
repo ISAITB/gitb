@@ -25,7 +25,7 @@
       '<div class="form-group">'+
         '<label class="col-xs-3 control-label" for="email">Support email:</label>'+
         '<div class="col-xs-7"><input id="email" ng-model="tbCommunity.email" class="form-control" type="text"></div>'+
-        '<div tb-tooltip="This email address is used to receive contact form submissions (if supported) from community members and other notifications. In case token-based self-registration is enabled this address is also displayed to help users providing the expected token value."></div>'+
+        '<div tb-tooltip="This email address is used to receive contact form submissions (if supported) from community members and other notifications."></div>'+
       '</div>'+
       '<div ng-if="selfRegEnabled">'+
         '<div class="form-group">'+
@@ -35,10 +35,17 @@
           '</div>'+
           '<div tb-tooltip="This option determines whether users are allowed to self-register as new community members. Disabling self-registration means that new members can only be added by an administrator."></div>'+
         '</div>'+
-        '<div class="form-group" uib-collapse="tbCommunity.selfRegType != '+@Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN+'">'+
-          '<label class="col-xs-3 control-label" for="selfRegToken">* Self-registration token:</label>'+
-          '<div class="col-xs-7"><input id="selfRegToken" ng-model="tbCommunity.selfRegToken" class="form-control" type="text"></div>'+
-          '<div tb-tooltip="This serves as a password for new users to provide during self-registration so that the community is not fully public. Ensure your community members are aware of this or that you provide a support email for relevant requests."></div>'+
+        '<div uib-collapse="tbCommunity.selfRegType != '+@Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN+'">'+
+          '<div class="form-group">'+
+            '<label class="col-xs-3 control-label" for="selfRegToken">* Self-registration token:</label>'+
+            '<div class="col-xs-7"><input id="selfRegToken" ng-model="tbCommunity.selfRegToken" class="form-control" type="text"></div>'+
+            '<div tb-tooltip="This serves as a password for new users to provide during self-registration so that the community is not fully public. Ensure your community members are aware of this or that you provide a support email for relevant requests."></div>'+
+          '</div>'+
+          '<div class="form-group">'+
+            '<label class="col-xs-3 control-label" for="selfRegToken">Token help text:</label>'+
+            '<div class="col-xs-7"><textarea id="mce-message" class="mce-message"></textarea></div>'+
+            '<div tb-tooltip="A short explanatory text to instruct users on how the token is to be retrieved (e.g. pointer to a link or email address). This is displayed in the self-registration form next to the token input."></div>'+
+          '</div>'+
         '</div>'+
         '<div uib-collapse="!selfRegOptionsVisible">'+
           '<div class="form-group">'+

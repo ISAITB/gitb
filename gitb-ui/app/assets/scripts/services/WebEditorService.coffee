@@ -28,7 +28,7 @@ class WebEditorService
       height: height
       menubar: false
       plugins: [
-        'advlist autolink lists link image charmap print preview anchor',
+        'advlist autolink lists link charmap print preview anchor',
         'searchreplace visualblocks code fullscreen',
         'insertdatetime media table contextmenu paste code'
       ]
@@ -44,11 +44,27 @@ class WebEditorService
       height: height
       menubar: false
       plugins: [
-        'autolink lists link image charmap anchor',
+        'autolink lists link charmap anchor',
         'visualblocks code fullscreen',
         'contextmenu paste code'
       ]
       toolbar: 'bold italic | charmap | bullist numlist | link'
+      init_instance_callback: () -> tinymce.activeEditor.setContent(initialContent)
+      content_css: 'assets/stylesheets/css/tinymce/tinymce.css'
+      branding: false
+
+  editorForSingleLineInput: (initialContent, className) =>
+    tinymce.init
+      mode: 'specific_textareas'
+      editor_selector: className
+      height: 25
+      menubar: false
+      plugins: [
+        'autolink link charmap anchor',
+        'visualblocks code fullscreen',
+        'contextmenu paste code'
+      ]
+      toolbar: 'bold italic | charmap | link'
       init_instance_callback: () -> tinymce.activeEditor.setContent(initialContent)
       content_css: 'assets/stylesheets/css/tinymce/tinymce.css'
       branding: false
