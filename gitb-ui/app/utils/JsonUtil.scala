@@ -817,11 +817,13 @@ object JsonUtil {
       input.setName((jsonInput \ "name").as[String])
       input.setType((jsonInput \ "type").as[String])
       input.setEmbeddingMethod(ValueEmbeddingEnumeration.fromValue((jsonInput \ "embeddingMethod").as[String]))
+      var inputValue: Option[String] = None
       if (input.getEmbeddingMethod == ValueEmbeddingEnumeration.BASE_64) {
-        input.setValue((jsonInput \ "valueBinary").as[String])
+        inputValue = (jsonInput \ "valueBinary").asOpt[String]
       } else {
-        input.setValue((jsonInput \ "value").as[String])
+        inputValue = (jsonInput \ "value").asOpt[String]
       }
+      input.setValue(inputValue.orNull)
       list ::= input
     }
     list
