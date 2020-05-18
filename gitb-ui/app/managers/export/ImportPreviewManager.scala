@@ -110,7 +110,6 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
 
     var importItemDomain: ImportItem = null
     if (targetDomain.isDefined) {
-      importItemDomain = new ImportItem(Some(targetDomain.get.fullname), ImportItemType.Domain, ImportItemMatch.Both, Some(targetDomain.get.id.toString), Some(exportedDomain.getId))
       // Load data.
       exec(PersistenceSchema.specifications
         .filter(_.domain === targetDomain.get.id)
@@ -151,10 +150,13 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         .filter(_.domain === targetDomain.get.id)
         .result
       ).map(x => targetDomainParametersMap += (x.name -> x))
-    } else {
-      if (importTargets.hasDomain) {
-        importItemDomain = new ImportItem(Some(exportedDomain.getFullName), ImportItemType.Domain, ImportItemMatch.ArchiveOnly, None, Some(exportedDomain.getId))
-      }
+    }
+    if (targetDomain.isDefined && importTargets.hasDomain) {
+      importItemDomain = new ImportItem(Some(targetDomain.get.fullname), ImportItemType.Domain, ImportItemMatch.Both, Some(targetDomain.get.id.toString), Some(exportedDomain.getId))
+    } else if (targetDomain.isDefined && !importTargets.hasDomain) {
+      importItemDomain = new ImportItem(Some(targetDomain.get.fullname), ImportItemType.Domain, ImportItemMatch.DBOnly, Some(targetDomain.get.id.toString), None)
+    } else if (targetDomain.isEmpty && importTargets.hasDomain) {
+      importItemDomain = new ImportItem(Some(exportedDomain.getFullName), ImportItemType.Domain, ImportItemMatch.ArchiveOnly, None, Some(exportedDomain.getId))
     }
     // Domain parameters.
     if (importTargets.hasDomainParameters) {
