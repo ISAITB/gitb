@@ -854,7 +854,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     var xsdPath = "schema/export/versions/gitb_export_"+dataVersion.toString+".xsd"
     if (Thread.currentThread().getContextClassLoader.getResource(xsdPath) == null) {
       // No XSD exists for the specific version - use latest one.
-      xsdPath = "schema/export/versions/gitb_export.xsd"
+      xsdPath = "schema/export/gitb_export.xsd"
     }
     Thread.currentThread().getContextClassLoader.getResourceAsStream(xsdPath)
   }
