@@ -1,6 +1,6 @@
 package managers.export
 
-import java.io.File
+import java.io.{File, InputStream}
 import java.nio.file.{Files, Path, Paths}
 import java.util.UUID
 import java.util.regex.Pattern
@@ -850,6 +850,15 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     xmlFileToUse
   }
 
+  private def getXsdToUse(dataVersion: Version): InputStream = {
+    var xsdPath = "schema/export/versions/gitb_export_"+dataVersion.toString+".xsd"
+    if (Thread.currentThread().getContextClassLoader.getResource(xsdPath) == null) {
+      // No XSD exists for the specific version - use latest one.
+      xsdPath = "schema/export/versions/gitb_export.xsd"
+    }
+    Thread.currentThread().getContextClassLoader.getResourceAsStream(xsdPath)
+  }
+
   def prepareImportPreview(archiveData: Array[Byte], importSettings: ImportSettings, requireDomain: Boolean, requireCommunity: Boolean): (Option[(Int, String)], Option[Export], Option[String], Option[Path]) = {
     var errorInformation: Option[(Int, String)] = None
     var exportData: Option[Export] = None
@@ -904,9 +913,9 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
               var xmlFile: Path = extractedFiles.values().head
               // Get export file version
               val dataVersion = getDataFileVersion(xmlFile)
-              // XSD validation against file version
+              // XSD validation
               try {
-                XMLUtils.validateAgainstSchema(Files.newInputStream(xmlFile), Thread.currentThread().getContextClassLoader.getResourceAsStream("schema/export/versions/gitb_export_"+dataVersion.toString+".xsd"))
+                XMLUtils.validateAgainstSchema(Files.newInputStream(xmlFile), getXsdToUse(dataVersion))
               } catch {
                 case e: Exception => {
                   deleteUploadFolder = true
