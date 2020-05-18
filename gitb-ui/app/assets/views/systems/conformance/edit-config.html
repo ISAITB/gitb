@@ -7,7 +7,7 @@
 			<label class="col-sm-3 control-label">Name:</label>
 			<div class="col-sm-8"><p class="form-control-static">{{editEndpointConfigurationCtrl.parameter.name}}</p></div>
 		</div>
-		<div class="form-group">
+		<div class="form-group" ng-if="editEndpointConfigurationCtrl.parameter.desc && editEndpointConfigurationCtrl.parameter.desc.length > 0">
 			<label class="col-sm-3 control-label">Description:</label>
 			<div class="col-sm-8"><p class="form-control-static">{{editEndpointConfigurationCtrl.parameter.desc}}</p></div>
 		</div>

@@ -103,9 +103,9 @@
                   '</div>'+
                   '<div tb-tooltip="A community-specific token needs to be provided to allow registration. You need to request this from the community\'s administrator."></div>'+
               '</div>'+
-              '<div class="form-group" ng-if="model.selfRegOption.communityEmail" style="margin-bottom: -20px;">'+
-                  '<div class="col-xs-offset-3 col-xs-9">'+
-                      '<div class="form-control-static inline-form-text">You can request this from the community\'s support team at <a ng-href="mailto:{{model.selfRegOption.communityEmail}}">{{model.selfRegOption.communityEmail}}</a>.</div>'+
+              '<div class="form-group" ng-if="model.selfRegOption.selfRegTokenHelpText" style="margin-bottom: -20px;">'+
+                  '<div class="col-xs-offset-3 col-xs-8">'+
+                      '<div class="form-control-static inline-form-text"><div ng-bind-html="model.selfRegOption.selfRegTokenHelpText"></div></div>'+
                   '</div>'+
               '</div>'+
             '</div>'+

@@ -1,25 +1,30 @@
 package managers.export
 
-import java.io.File
+import java.io.{File, InputStream}
 import java.nio.file.{Files, Path, Paths}
+import java.util.UUID
+import java.util.regex.Pattern
 
 import com.gitb.utils.XMLUtils
 import com.gitb.xml.export.Export
 import config.Configurations
-import controllers.util.ResponseConstructor
 import exceptions.ErrorCodes
 import javax.inject.{Inject, Singleton}
-import javax.xml.transform.stream.StreamSource
+import javax.xml.transform.TransformerFactory
+import javax.xml.transform.stream.{StreamResult, StreamSource}
+import javax.xml.xpath.XPathFactory
 import managers._
 import models.Enums.LabelType.LabelType
 import models.Enums.{ImportItemMatch, ImportItemType, LabelType}
 import models._
+import net.sf.saxon.xpath.XPathFactoryImpl
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.slf4j.LoggerFactory
+import org.xml.sax.InputSource
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{ClamAVClient, JsonUtil, ZipArchiver}
+import utils.{ClamAVClient, ZipArchiver}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -32,6 +37,13 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
   import scala.collection.JavaConversions._
 
   private val logger = LoggerFactory.getLogger(classOf[ImportPreviewManager])
+  private val VERSION_NUMBER_PATTERN = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+).*$")
+  /*
+  Contains in sequence the migrations to be applied (older versions to newer versions). For each such pair there has
+  to be a XSLT schema/export/migrations/from_[FROM_VERSION]_to_[TO_VERSION].xslt.
+   */
+  private val MIGRATIONS: List[(Version, Version)] = List()
+
 
   def getTempFolder(): File = {
     new File("/tmp")
@@ -140,7 +152,9 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         .result
       ).map(x => targetDomainParametersMap += (x.name -> x))
     } else {
-      importItemDomain = new ImportItem(Some(exportedDomain.getFullName), ImportItemType.Domain, ImportItemMatch.ArchiveOnly, None, Some(exportedDomain.getId))
+      if (importTargets.hasDomain) {
+        importItemDomain = new ImportItem(Some(exportedDomain.getFullName), ImportItemType.Domain, ImportItemMatch.ArchiveOnly, None, Some(exportedDomain.getId))
+      }
     }
     // Domain parameters.
     if (importTargets.hasDomainParameters) {
@@ -298,8 +312,10 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     }
     val domainImportResult = previewDomainImportInternal(exportedCommunity.getDomain, targetDomainId)
     val domainImportInfo = domainImportResult._1
-    val importItemDomain = Some(domainImportResult._2)
-
+    var importItemDomain: Option[ImportItem] = None
+    if (domainImportResult._2 != null) {
+      importItemDomain = Some(domainImportResult._2)
+    }
     var targetAdministratorsMap = mutable.Map[String, models.Users]()
     var targetOrganisationPropertyMap = mutable.Map[String, models.OrganisationParameters]()
     var targetOrganisationPropertyIdMap = mutable.Map[Long, models.OrganisationParameters]()
@@ -782,6 +798,67 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     (importItemCommunity, importItemDomain)
   }
 
+  private def getXPathFactory():XPathFactory = {
+    new XPathFactoryImpl
+  }
+
+  private def getDataFileVersion(xmlFile: Path): Version = {
+    val xPath = getXPathFactory().newXPath()
+    val expression: String = "string(/*:export/@version)"
+    val versionNumber = xPath.evaluate(expression, new InputSource(Files.newInputStream(xmlFile)))
+    val matcher = VERSION_NUMBER_PATTERN.matcher(versionNumber)
+    if (matcher.matches() && matcher.groupCount() == 3) {
+      val fileVersion = new Version(matcher.group(1).toInt, matcher.group(2).toInt, matcher.group(3).toInt)
+      fileVersion
+    } else {
+      throw new IllegalStateException("The data archive refers to an invalid version number ["+versionNumber+"]")
+    }
+  }
+
+  private def migrateToLatestVersion(xmlFile: Path, fileVersion: Version) = {
+    var xmlFileToUse = xmlFile
+    // Get the declared version number from the file.
+    val clearVersionNumber = fileVersion.toString
+    if (!clearVersionNumber.equals(Constants.VersionNumber)) {
+      logger.info("Data archive at version ["+clearVersionNumber+"] - migrating to ["+Constants.VersionNumber+"]")
+      // XML has a different version number than the current one.
+      val migrationsToApply = new ListBuffer[(Version, Version)]()
+      MIGRATIONS.foreach { migration =>
+        if (fileVersion.compareTo(migration._2) < 0) {
+          // Keep this migration as it targets a version greater to the file version
+          migrationsToApply += migration
+        }
+      }
+      if (migrationsToApply.isEmpty) {
+        logger.info("No migration needed")
+      } else {
+        val factory = TransformerFactory.newInstance
+        migrationsToApply.foreach { migration =>
+          val fromVersion = migration._1.toString
+          val toVersion = migration._2.toString
+          logger.info("Applying migration from ["+fromVersion+"] to ["+toVersion+"]")
+          val outputFile = new File(xmlFileToUse.getParent.toFile, UUID.randomUUID().toString + "_"+fromVersion+"_"+toVersion+".xml")
+          val transformer = factory.newTransformer(new StreamSource(Thread.currentThread.getContextClassLoader.getResourceAsStream("schema/export/migrations/from_"+fromVersion+"_to_"+toVersion+".xslt")))
+          transformer.transform(new StreamSource(xmlFileToUse.toFile), new StreamResult(outputFile))
+          // Delete the previous file - this is important given that to complete the import we need to have a single XML file in the pending import folder. If the delete fails we don't proceed.
+          FileUtils.forceDelete(xmlFileToUse.toFile)
+          xmlFileToUse = outputFile.toPath
+        }
+        logger.info("Migration complete")
+      }
+    }
+    xmlFileToUse
+  }
+
+  private def getXsdToUse(dataVersion: Version): InputStream = {
+    var xsdPath = "schema/export/versions/gitb_export_"+dataVersion.toString+".xsd"
+    if (Thread.currentThread().getContextClassLoader.getResource(xsdPath) == null) {
+      // No XSD exists for the specific version - use latest one.
+      xsdPath = "schema/export/versions/gitb_export.xsd"
+    }
+    Thread.currentThread().getContextClassLoader.getResourceAsStream(xsdPath)
+  }
+
   def prepareImportPreview(archiveData: Array[Byte], importSettings: ImportSettings, requireDomain: Boolean, requireCommunity: Boolean): (Option[(Int, String)], Option[Export], Option[String], Option[Path]) = {
     var errorInformation: Option[(Int, String)] = None
     var exportData: Option[Export] = None
@@ -833,10 +910,12 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
               errorInformation = Some((ErrorCodes.INVALID_REQUEST, "The provided archive must contain a single data file."))
             }
             if (errorInformation.isEmpty) {
-              val xmlFile: Path = extractedFiles.values().head
+              var xmlFile: Path = extractedFiles.values().head
+              // Get export file version
+              val dataVersion = getDataFileVersion(xmlFile)
               // XSD validation
               try {
-                XMLUtils.validateAgainstSchema(Files.newInputStream(xmlFile), Thread.currentThread().getContextClassLoader.getResourceAsStream("schema/export/gitb_export.xsd"))
+                XMLUtils.validateAgainstSchema(Files.newInputStream(xmlFile), getXsdToUse(dataVersion))
               } catch {
                 case e: Exception => {
                   deleteUploadFolder = true
@@ -845,26 +924,38 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
                 }
               }
               if (errorInformation.isEmpty) {
-                exportData = Some(XMLUtils.unmarshal(classOf[com.gitb.xml.export.Export], new StreamSource(Files.newInputStream(xmlFile))))
-                if (requireDomain) {
-                  if (exportData.get.getDomains != null && exportData.get.getDomains.getDomain.nonEmpty) {
-                    if (exportData.get.getDomains.getDomain.size() > 1) {
-                      deleteUploadFolder = true
-                      errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive includes multiple domains.")
-                    }
-                  } else {
+                // Migration to latest version (if needed)
+                try {
+                  xmlFile = migrateToLatestVersion(xmlFile, dataVersion)
+                } catch {
+                  case e: Exception => {
                     deleteUploadFolder = true
-                    errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive does not include a domain to process.")
+                    logger.warn("Migration failure for uploaded import file ["+dataVersion+"]", e)
+                    errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided data archive is stated to be at version ["+dataVersion.toString+"] but failed migration to the current Test Bed version [" + Constants.VersionNumber + "].")
                   }
-                } else if (requireCommunity) {
-                  if (exportData.get.getCommunities != null && exportData.get.getCommunities.getCommunity.nonEmpty) {
-                    if (exportData.get.getCommunities.getCommunity.size() > 1) {
+                }
+                if (errorInformation.isEmpty) {
+                  exportData = Some(XMLUtils.unmarshal(classOf[com.gitb.xml.export.Export], new StreamSource(Files.newInputStream(xmlFile))))
+                  if (requireDomain) {
+                    if (exportData.get.getDomains != null && exportData.get.getDomains.getDomain.nonEmpty) {
+                      if (exportData.get.getDomains.getDomain.size() > 1) {
+                        deleteUploadFolder = true
+                        errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive includes multiple domains.")
+                      }
+                    } else {
                       deleteUploadFolder = true
-                      errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive includes multiple communities.")
+                      errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive does not include a domain to process.")
                     }
-                  } else {
-                    deleteUploadFolder = true
-                    errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive does not include a community to process.")
+                  } else if (requireCommunity) {
+                    if (exportData.get.getCommunities != null && exportData.get.getCommunities.getCommunity.nonEmpty) {
+                      if (exportData.get.getCommunities.getCommunity.size() > 1) {
+                        deleteUploadFolder = true
+                        errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive includes multiple communities.")
+                      }
+                    } else {
+                      deleteUploadFolder = true
+                      errorInformation = Some(ErrorCodes.INVALID_REQUEST, "The provided archive does not include a community to process.")
+                    }
                   }
                 }
               }

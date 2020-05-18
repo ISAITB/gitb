@@ -117,7 +117,7 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
         .joinLeft(PersistenceSchema.domains).on(_.domain === _.id)
         .filter(x => x._1.selfRegType === SelfRegistrationType.PublicListing.id.toShort || x._1.selfRegType === SelfRegistrationType.PublicListingWithToken.id.toShort)
         .sortBy(_._1.shortname.asc).result
-    ).map(x => new SelfRegOption(x._1.id, x._1.shortname, selfRegDescriptionToUse(x._1.description, x._2), x._1.supportEmail, x._1.selfRegType, organizationManager.getOrganisationTemplates(x._1.id), getCommunityLabels(x._1.id), getOrganisationParametersForSelfRegistration(x._1.id))).toList
+    ).map(x => new SelfRegOption(x._1.id, x._1.shortname, selfRegDescriptionToUse(x._1.description, x._2), x._1.selfRegTokenHelpText, x._1.selfRegType, organizationManager.getOrganisationTemplates(x._1.id), getCommunityLabels(x._1.id), getOrganisationParametersForSelfRegistration(x._1.id))).toList
   }
 
   private def selfRegDescriptionToUse(communityDescription: Option[String], communityDomain: Option[Domain]): Option[String] = {
@@ -179,7 +179,7 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
     community
   }
 
-  def updateCommunityInternal(community: Communities, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], selfRegNotification: Boolean, description: Option[String], selfRegRestriction: Short, domainId: Option[Long]) = {
+  def updateCommunityInternal(community: Communities, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean, description: Option[String], selfRegRestriction: Short, domainId: Option[Long]) = {
     val actions = new ListBuffer[DBIO[_]]()
 
     if (!shortName.isEmpty && community.shortname != shortName) {
@@ -229,18 +229,18 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
       val q = for {c <- PersistenceSchema.communities if c.id === community.id} yield (c.fullname)
       actions += q.update(fullName)
     }
-    val qs = for {c <- PersistenceSchema.communities if c.id === community.id} yield (c.supportEmail, c.domain, c.selfRegType, c.selfRegToken, c.selfregNotification, c.description, c.selfRegRestriction)
-    actions += qs.update(supportEmail, domainId, selfRegType, selfRegToken, selfRegNotification, description, selfRegRestriction)
+    val qs = for {c <- PersistenceSchema.communities if c.id === community.id} yield (c.supportEmail, c.domain, c.selfRegType, c.selfRegToken, c.selfRegTokenHelpText, c.selfregNotification, c.description, c.selfRegRestriction)
+    actions += qs.update(supportEmail, domainId, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegRestriction)
     toDBIO(actions)
   }
 
   /**
     * Update community
     */
-  def updateCommunity(communityId: Long, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], selfRegNotification: Boolean, description: Option[String], selfRegRestriction: Short, domainId: Option[Long]) = {
+  def updateCommunity(communityId: Long, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean, description: Option[String], selfRegRestriction: Short, domainId: Option[Long]) = {
     val community = exec(PersistenceSchema.communities.filter(_.id === communityId).result.headOption)
     if (community.isDefined) {
-      exec(updateCommunityInternal(community.get, shortName, fullName, supportEmail, selfRegType, selfRegToken, selfRegNotification, description, selfRegRestriction, domainId).transactionally)
+      exec(updateCommunityInternal(community.get, shortName, fullName, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegRestriction, domainId).transactionally)
     } else {
       throw new IllegalArgumentException("Community with ID '" + communityId + "' not found")
     }

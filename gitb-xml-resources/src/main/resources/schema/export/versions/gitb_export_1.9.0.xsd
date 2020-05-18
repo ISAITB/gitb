@@ -51,7 +51,6 @@
     <xsd:complexType name="SelfRegistrationSettings">
         <xsd:sequence>
             <xsd:element name="token" type="xsd:string" minOccurs="0"/>
-            <xsd:element name="tokenHelpText" type="xsd:string" minOccurs="0"/>
         </xsd:sequence>
         <xsd:attribute name="method" type="SelfRegistrationMethod" default="NOT_SUPPORTED"/>
         <xsd:attribute name="restriction" type="SelfRegistrationRestriction" default="NO_RESTRICTION"/>

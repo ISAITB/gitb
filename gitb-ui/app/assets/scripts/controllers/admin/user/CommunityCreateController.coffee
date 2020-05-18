@@ -1,7 +1,7 @@
 class CommunityCreateController
 
-  @$inject = ['$log', '$state', 'ValidationService', 'CommunityService', 'ConformanceService', 'ErrorService', 'Constants', 'DataService', 'PopupService']
-  constructor: (@$log, @$state, @ValidationService, @CommunityService, @ConformanceService, @ErrorService, @Constants, @DataService, @PopupService) ->
+  @$inject = ['$log', '$state', 'ValidationService', 'CommunityService', 'ConformanceService', 'ErrorService', 'Constants', 'DataService', 'PopupService', 'WebEditorService', '$timeout']
+  constructor: (@$log, @$state, @ValidationService, @CommunityService, @ConformanceService, @ErrorService, @Constants, @DataService, @PopupService, @WebEditorService, @$timeout) ->
 
     @alerts = []
     @community = {}
@@ -9,6 +9,11 @@ class CommunityCreateController
     @community.selfRegRestriction = @Constants.SELF_REGISTRATION_RESTRICTION.NO_RESTRICTION
     @domains = []
     @DataService.focus('sname')
+
+    @$timeout(() =>
+      tinymce.remove('.mce-message')
+      @WebEditorService.editorForSingleLineInput("", "mce-message")
+    )
 
     @ConformanceService.getDomains()
     .then (data) =>
@@ -34,7 +39,7 @@ class CommunityCreateController
     (!@community.selfRegNotification || @ValidationService.requireNonNull(@community.email, "A support email needs to be defined to support notifications."))
       if !@community.sameDescriptionAsDomain
         descriptionToUse = @community.activeDescription
-      @CommunityService.createCommunity @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegRestriction, @community.selfRegToken, @community.selfRegNotification, descriptionToUse, @community.domain?.id
+      @CommunityService.createCommunity @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegRestriction, @community.selfRegToken, tinymce.activeEditor.getContent(), @community.selfRegNotification, descriptionToUse, @community.domain?.id
       .then (data) =>
         if data? && data.error_code?
           @ValidationService.pushAlert({type:'danger', msg:data.error_description})

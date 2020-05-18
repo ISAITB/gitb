@@ -217,30 +217,21 @@ class TestExecutionControllerV2
       @organisationProperties = data
       @organisationConfigurationChecked.resolve()
     .catch (error) =>
-      @ErrorService.showErrorMessage(error, true)
-      .then(() =>
-        @$state.go @$state.current, {}, {reload: true})
-      .catch(angular.noop)
+      @ErrorService.showErrorMessage(error)
 
     @SystemService.getSystemParameterValues(systemId, false)
     .then (data) =>
       @systemProperties = data
       @systemConfigurationChecked.resolve()
     .catch (error) =>
-      @ErrorService.showErrorMessage(error, true)
-      .then(() =>
-        @$state.go @$state.current, {}, {reload: true})
-      .catch(angular.noop)
+      @ErrorService.showErrorMessage(error)
 
     @ConformanceService.checkConfigurations(actorId, systemId)
     .then (data) =>
       @endpointRepresentations = data
       @configurationChecked.resolve()
     .catch (error) =>
-      @ErrorService.showErrorMessage(error, true)
-      .then(() =>
-        @$state.go @$state.current, {}, {reload: true})
-      .catch(angular.noop)
+      @ErrorService.showErrorMessage(error)
 
   getTestCaseDefinition: (testCaseToLookup) ->
     @TestService.getTestCaseDefinition(testCaseToLookup)
@@ -279,17 +270,11 @@ class TestExecutionControllerV2
           @testCaseLoaded.resolve()
         ,
         (error) =>
-          @ErrorService.showErrorMessage(error, true)
-          .then(() =>
-            @$state.go @$state.current, {}, {reload: true})
-          .catch(angular.noop)
+          @ErrorService.showErrorMessage(error)
         )
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error, true)
-        .then(() =>
-          @$state.go @$state.current, {}, {reload: true})
-        .catch(angular.noop)
+        @ErrorService.showErrorMessage(error)
     )
 
   getActorName: (actorId) ->
@@ -347,10 +332,7 @@ class TestExecutionControllerV2
           configureFinished.resolve()
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error, true)
-        .then(() =>
-          @$state.go @$state.current, {}, {reload: true})
-        .catch(angular.noop)
+        @ErrorService.showErrorMessage(error)
     )
 
   initiatePreliminary: (session, configureFinished) ->
@@ -360,10 +342,7 @@ class TestExecutionControllerV2
         configureFinished.resolve()
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error, true)
-        .then(() =>
-          @$state.go @$state.current, {}, {reload: true})
-        .catch(angular.noop)
+        @ErrorService.showErrorMessage(error)
     )
 
   backDisabled: () ->
@@ -387,10 +366,7 @@ class TestExecutionControllerV2
           @$log.debug data
         ,
         (error) =>
-          @ErrorService.showErrorMessage(error, true)
-          .then(() =>
-            @$state.go @$state.current, {}, {reload: true})
-          .catch(angular.noop)
+          @ErrorService.showErrorMessage(error)
       )
     )
 
@@ -406,10 +382,7 @@ class TestExecutionControllerV2
         @testCaseFinished()
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error, true)
-        .then(() =>
-          @$state.go @$state.current, {}, {reload: true})
-        .catch(angular.noop)
+        @ErrorService.showErrorMessage(error)
     )
 
   restart: (session) ->
@@ -419,10 +392,7 @@ class TestExecutionControllerV2
         @$log.debug data
       ,
       (error) =>
-        @ErrorService.showErrorMessage(error, true)
-        .then(() =>
-          @$state.go @$state.current, {}, {reload: true})
-        .catch(angular.noop)
+        @ErrorService.showErrorMessage(error)
     )
 
   onopen: (msg) =>
@@ -535,8 +505,7 @@ class TestExecutionControllerV2
       .finally(angular.noop)
       .then((result) => 
         if (!result.success)
-          @ErrorService.showErrorMessage(result.error, true).then () =>
-          @$state.go @$state.current, {}, {reload: true}
+          @ErrorService.showErrorMessage(result.error)
       , angular.noop)
 
   updateStatus: (step, stepId, status, report) =>

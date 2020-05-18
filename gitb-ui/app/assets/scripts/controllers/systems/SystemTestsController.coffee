@@ -5,6 +5,8 @@ class SystemTestsController
 
     @systemId = @$stateParams["id"]
     @export = false
+    @exportActivePending = false
+    @exportCompletedPending = false
 
     @activeTests = []
     @testResults = []
@@ -527,6 +529,7 @@ class SystemTestsController
           @ErrorService.showErrorMessage(error)
 
   exportActiveSessionsToCsv: () =>
+    @exportActivePending = true
     params = @getCurrentSearchCriteria()
 
     @ReportService.getSystemActiveTestResults(@systemId, params.specIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.activeSortColumn, params.activeSortOrder)
@@ -545,10 +548,13 @@ class SystemTestsController
                       transformedObject
       if resultReportsCollection.value().length > 0
         @DataService.exportAllAsCsv([@DataService.labelDomain(), @DataService.labelSpecification(), @DataService.labelActor(), "Test suite", "Test case", "Start time", "Session"], resultReportsCollection.value())
+      @exportActivePending = false
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @exportActivePending = false
 
   exportToCsv: () =>
+    @exportCompletedPending = true
     params = @getCurrentSearchCriteria()
 
     @ReportService.getTestResults(params.systemId, 1, 1000000, params.specIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sortColumn, params.sortOrder)
@@ -571,8 +577,10 @@ class SystemTestsController
                       transformedObject
       if resultReportsCollection.value().length > 0
         @DataService.exportAllAsCsv([@DataService.labelDomain(), @DataService.labelSpecification(), @DataService.labelActor(), "Test suite", "Test case", "Start time", "End time", "Result", "Session", "Obsolete"], resultReportsCollection.value())
+      @exportCompletedPending = false
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @exportCompletedPending = false
 
   canDelete: () =>
     !@DataService.isVendorUser

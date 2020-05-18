@@ -406,7 +406,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
     savedActorMap
   }
 
-  def createTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[Long] = {
+  private def createTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[Long] = {
     val domainId = item.parentItem.get.parentItem.get.targetKey.get.toLong
     val specificationId = item.parentItem.get.targetKey.get.toLong
     // File system operations
@@ -449,7 +449,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
     action
   }
 
-  def updateTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[_] = {
+  private def updateTestSuite(data: TestSuite, ctx: ImportContext, item: ImportItem): DBIO[_] = {
     val domainId = item.parentItem.get.parentItem.get.targetKey.get.toLong
     val specificationId = item.parentItem.get.targetKey.get.toLong
     val testSuiteId = item.targetKey.get.toLong
@@ -1014,7 +1014,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
               }
               // This returns a tuple: (community ID, admin organisation ID)
               communityManager.createCommunityInternal(models.Communities(0L, data.getShortName, data.getFullName, Option(data.getSupportEmail),
-                selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken),
+                selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText),
                 data.getSelfRegistrationSettings.isNotifications, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
                 domainId
               ))
@@ -1033,7 +1033,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
                 domainId = targetCommunity.get.domain
               }
               communityManager.updateCommunityInternal(targetCommunity.get, data.getShortName, data.getFullName, Option(data.getSupportEmail),
-                selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), data.getSelfRegistrationSettings.isNotifications,
+                selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText), data.getSelfRegistrationSettings.isNotifications,
                 Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction), domainId
               )
             },

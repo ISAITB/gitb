@@ -432,6 +432,7 @@ object JsonUtil {
       "selfRegType" -> community.selfRegType,
       "selfRegRestriction" -> community.selfRegRestriction,
       "selfRegToken" -> (if(community.selfRegToken.isDefined) community.selfRegToken.get else JsNull),
+      "selfRegTokenHelpText" -> (if(community.selfRegTokenHelpText.isDefined) community.selfRegTokenHelpText.get else JsNull),
       "selfRegNotification" -> community.selfregNotification,
       "description" -> (if(community.description.isDefined) community.description.get else JsNull),
       "domainId" -> community.domain
@@ -816,11 +817,13 @@ object JsonUtil {
       input.setName((jsonInput \ "name").as[String])
       input.setType((jsonInput \ "type").as[String])
       input.setEmbeddingMethod(ValueEmbeddingEnumeration.fromValue((jsonInput \ "embeddingMethod").as[String]))
+      var inputValue: Option[String] = None
       if (input.getEmbeddingMethod == ValueEmbeddingEnumeration.BASE_64) {
-        input.setValue((jsonInput \ "valueBinary").as[String])
+        inputValue = (jsonInput \ "valueBinary").asOpt[String]
       } else {
-        input.setValue((jsonInput \ "value").as[String])
+        inputValue = (jsonInput \ "value").asOpt[String]
       }
+      input.setValue(inputValue.orNull)
       list ::= input
     }
     list
@@ -1210,7 +1213,7 @@ object JsonUtil {
         "communityId" -> option.communityId,
         "communityName" -> option.communityName,
         "communityDescription" -> (if (option.communityDescription.isDefined) option.communityDescription.get else JsNull),
-        "communityEmail" -> (if (option.communityEmail.isDefined) option.communityEmail.get else JsNull),
+        "selfRegTokenHelpText" -> (if (option.selfRegTokenHelpText.isDefined) option.selfRegTokenHelpText.get else JsNull),
         "selfRegType" -> option.selfRegType,
         "templates" -> (if (option.templates.isDefined) jsSelfRegTemplates(option.templates.get) else JsNull),
         "labels" -> jsCommunityLabels(option.labels),

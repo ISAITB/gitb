@@ -86,7 +86,7 @@
 		<div class="panel-heading">
 			<h4 id="conformance-statements-title" class="title">Conformance statements</h4>
 			<div class="btn-toolbar pull-right padded">
-				<button type="button" class="btn btn-default" ng-if="adminConformanceCtrl.conformanceStatements.length > 0" ng-click="adminConformanceCtrl.onExportConformanceStatementsAsCsv()">Export CSV</button>
+				<button type="button" class="btn btn-default" ng-if="adminConformanceCtrl.conformanceStatements.length > 0" ng-click="adminConformanceCtrl.onExportConformanceStatementsAsCsv()" ng-disabled="adminConformanceCtrl.exportPending"><span class="tab" ng-if="adminConformanceCtrl.exportPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Export CSV</button>
 				<button type="button" class="btn btn-default" ng-if="adminConformanceCtrl.showCollapseAll()" ng-click="adminConformanceCtrl.onCollapseAll()">Collapse all</button>
 			</div>
 		</div>
