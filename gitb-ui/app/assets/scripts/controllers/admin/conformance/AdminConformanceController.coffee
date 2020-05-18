@@ -4,6 +4,7 @@ class AdminConformanceController
 	constructor: (@$log, @$scope, @$state, @DataService, @ConformanceService, @ErrorService, @Constants, @$q, @CommunityService, @OrganizationService, @SystemService, @ReportService, @ConfirmationDialogService, @$uibModal) ->
 		@$log.debug "Constructing AdminConformanceController..."
 		@showFilters = false
+		@exportPending = false
 		@filters =
 			community :
 				all : []
@@ -363,7 +364,9 @@ class AdminConformanceController
 		testCase.sessionId? && testCase.sessionId != ""
 
 	onExportConformanceStatementsAsCsv: () =>
-		@getConformanceStatementsInternal(true, true).then((data) =>
+		@exportPending = true
+		@getConformanceStatementsInternal(true, true)
+		.then (data) =>
 			headers = []
 			columnMap = []
 			if !@DataService.isCommunityAdmin
@@ -387,7 +390,10 @@ class AdminConformanceController
 			headers = headers.concat([@DataService.labelSpecification(), @DataService.labelActor(), "Test suite", "Test case", "Result"])
 			columnMap = columnMap.concat(["specName", "actorName", "testSuiteName", "testCaseName", "result"])
 			@DataService.exportPropertiesAsCsv(headers, columnMap, data.data)
-		)
+			@exportPending = false
+		.catch (error) =>
+			@ErrorService.showErrorMessage(error)
+			@exportPending = false		
 
 	onExportTestCase: (statement, testCase) =>
 		@ReportService.exportTestCaseReport(testCase.sessionId, testCase.id)

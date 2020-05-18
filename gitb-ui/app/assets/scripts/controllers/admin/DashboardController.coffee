@@ -3,6 +3,9 @@ class DashboardController
   @$inject = ['$log', '$state', '$q', 'CommunityService', 'TestService', 'DataService', 'ReportService', 'Constants', 'SystemConfigurationService', 'PopupService', 'ConfirmationDialogService', 'SpecificationService', 'ConformanceService', 'TestSuiteService', 'OrganizationService', 'SystemService', 'ErrorService']
   constructor: (@$log, @$state, @$q, @CommunityService, @TestService, @DataService, @ReportService, @Constants, @SystemConfigurationService, @PopupService, @ConfirmationDialogService, @SpecificationService, @ConformanceService, @TestSuiteService, @OrganizationService, @SystemService, @ErrorService) ->
 
+    @exportActivePending = false
+    @exportCompletedPending = false
+
     @activeTestsColumns = [
       {
         field: 'specification',
@@ -729,6 +732,7 @@ class DashboardController
         @PopupService.show("Session #{test.session}", data)
 
   exportCompletedSessionsToCsv: () =>
+    @exportCompletedPending = true
     params = @getCurrentSearchCriteria()
 
     @ReportService.getCompletedTestResults(1, 1000000, params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.completedSortColumn, params.completedSortOrder, true)
@@ -745,10 +749,13 @@ class DashboardController
       testResultMapper = @newTestResult
       tests = _.map data.data, (t) -> testResultMapper(t, data.orgParameters, data.sysParameters)
       @DataService.exportAllAsCsv(headers, tests)
+      @exportCompletedPending = false
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @exportCompletedPending = false
 
   exportActiveSessionsToCsv: () =>
+    @exportActivePending = true
     params = @getCurrentSearchCriteria()
 
     @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.activeSortColumn, params.activeSortOrder, true)
@@ -765,8 +772,10 @@ class DashboardController
       testResultMapper = @newTestResult
       tests = _.map data.data, (testResult) -> testResultMapper(testResult, data.orgParameters, data.sysParameters)
       @DataService.exportAllAsCsv(headers, tests)
+      @exportActivePending = false
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @exportActivePending = false
 
   rowStyle: (row) => 
     if row.obsolete
