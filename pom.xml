@@ -19,7 +19,38 @@
         <gitb.version>1.0-SNAPSHOT</gitb.version>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo1.maven.org/maven2/</url>
+        </repository>
+        <repository>
+            <id>itbRepoRead</id>
+            <url>${itbRepoReadUrl}</url>
+        </repository>
+    </repositories>
+
+    <distributionManagement>
+        <repository>
+            <id>itbRepoWrite</id>
+            <url>${itbRepoWriteUrl}</url>
+        </repository>
+        <snapshotRepository>
+            <id>itbRepoWrite</id>
+            <url>${itbRepoWriteUrl}</url>
+        </snapshotRepository>
+    </distributionManagement>
+
     <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-deploy-plugin</artifactId>
+                    <version>3.0.0-M1</version>
+                </plugin>
+            </plugins>
+        </pluginManagement>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

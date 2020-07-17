@@ -10,6 +10,18 @@
 	<name>gitb-core</name>
     <packaging>jar</packaging>
 
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-deploy-plugin</artifactId>
+				<configuration>
+					<skip>true</skip>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
 	<dependencies>
         <dependency>
             <groupId>eu.europa.ec.itb</groupId>
