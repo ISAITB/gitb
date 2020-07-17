@@ -30,7 +30,7 @@ import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
 import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.Future;
@@ -207,7 +207,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         if (instructionCommand.getContentType() == null) {
             inputRequest.setContentType(ValueEmbeddingEnumeration.STRING);
         }
-        if (instructionCommand.getValue() != null && !instructionCommand.getValue().equals("")) {
+        if (StringUtils.isNotBlank(instructionCommand.getValue())) {
             String assignedVariableExpression = instructionCommand.getValue();
             DataType assignedVariable = variableResolver.resolveVariable(assignedVariableExpression);
             inputRequest.setType(assignedVariable.getType());
@@ -294,7 +294,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         for (UserInput userInput : userInputs) {
             int stepIndex = Integer.parseInt(userInput.getId());
             InstructionOrRequest targetRequest = step.getInstructOrRequest().get(stepIndex - 1);
-            if (targetRequest.getValue() != null && !targetRequest.getValue().equals("")) {
+            if (StringUtils.isNotBlank(targetRequest.getValue())) {
                 //Find the variable that the given input content is assigned(bound) to
                 String assignedVariableExpression = targetRequest.getValue();
                 VariableResolver variableResolver = new VariableResolver(scope);
