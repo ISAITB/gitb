@@ -14,7 +14,7 @@ libraryDependencies ++= Seq(
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-validator-tdl" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-xml-resources" % "1.0-SNAPSHOT",
-  "mysql" % "mysql-connector-java" % "5.1.47",
+  "mysql" % "mysql-connector-java" % "5.1.49",
   "com.typesafe.akka" %% "akka-actor" % "2.5.19",
   "com.typesafe.akka" %% "akka-remote" % "2.5.19",
   "com.typesafe.akka" %% "akka-stream" % "2.5.19",
