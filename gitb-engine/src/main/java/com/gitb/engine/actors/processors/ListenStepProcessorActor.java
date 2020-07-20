@@ -5,7 +5,10 @@ import akka.actor.ActorRef;
 import akka.dispatch.Futures;
 import akka.dispatch.OnFailure;
 import akka.dispatch.OnSuccess;
-import com.gitb.core.*;
+import com.gitb.core.Configuration;
+import com.gitb.core.ErrorCode;
+import com.gitb.core.MessagingModule;
+import com.gitb.core.StepStatus;
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.expr.resolvers.VariableResolver;
@@ -23,13 +26,9 @@ import com.gitb.tr.TestStepReportType;
 import com.gitb.types.MapType;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Callable;
 
 /**
@@ -38,8 +37,6 @@ import java.util.concurrent.Callable;
  * Listen step executor actor
  */
 public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActor<Listen> {
-
-    private static final Logger logger = LoggerFactory.getLogger(ListenStepProcessorActor.class);
 
     public static final String NAME = "listen-p";
 
@@ -118,7 +115,7 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
                     }
                     MessagingModule moduleDefinition = messagingHandler.getModuleDefinition();
                     if (moduleDefinition.getReceiveConfigs() != null) {
-                        checkRequiredParametersAndSetDefaultValues(moduleDefinition.getReceiveConfigs().getParam(), step.getConfig());
+                        checkRequiredConfigsAndSetDefaultValues(moduleDefinition.getReceiveConfigs().getParam(), step.getConfig());
                     }
 
                     Message inputMessage = getMessageFromBindings(step.getInput());
@@ -143,17 +140,7 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
                             if(step.getOutput().size() == 0) {
                                 map = generateOutputWithMessageFields(message);
                             } else {
-                                List<TypedParameter> requiredOutputParameters = new ArrayList<TypedParameter>();
-                                if(moduleDefinition.getOutputs() != null) {
-                                    requiredOutputParameters.addAll(getRequiredOutputParameters(moduleDefinition.getOutputs().getParam()));
-                                }
-
-                                if(step.getOutput().size() != requiredOutputParameters.size()) {
-                                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Wrong number of outputs for ["+ moduleDefinition.getId()+"]"));
-                                }
-
                                 boolean isNameBinding = BindingUtils.isNameBinding(step.getOutput());
-
                                 if(isNameBinding) {
                                     map = generateOutputWithNameBinding(message, step.getOutput());
                                 } else {

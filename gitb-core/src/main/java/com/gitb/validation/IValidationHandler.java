@@ -1,6 +1,7 @@
 package com.gitb.validation;
 
 
+import com.gitb.StepHandler;
 import com.gitb.core.Configuration;
 import com.gitb.core.ValidationModule;
 import com.gitb.tr.TestStepReportType;
@@ -12,19 +13,19 @@ import java.util.Map;
 /**
  * Created by tuncay on 9/2/14.
  */
-public interface IValidationHandler {
+public interface IValidationHandler extends StepHandler {
 
 	/**
 	 * Returns the validation module definition
 	 * @return module definition
 	 */
-	public ValidationModule getModuleDefinition();
+	ValidationModule getModuleDefinition();
 
     /**
      * Validates the content with given validator
      * @param inputs
      * @return
      */
-    public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs);
+    TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs);
 
 }

@@ -39,6 +39,11 @@ public class RemoteValidationModuleClient implements IValidationHandler {
 		this.connectionProperties = connectionProperties;
 	}
 
+	@Override
+	public boolean isRemote() {
+		return true;
+	}
+
 	private <T> T call(Supplier<T> supplier) {
 		try {
 			RemoteCallContext.setCallProperties(connectionProperties);

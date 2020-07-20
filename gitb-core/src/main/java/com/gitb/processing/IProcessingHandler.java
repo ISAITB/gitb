@@ -1,11 +1,12 @@
 package com.gitb.processing;
 
+import com.gitb.StepHandler;
 import com.gitb.core.Configuration;
 import com.gitb.ps.ProcessingModule;
 
 import java.util.List;
 
-public interface IProcessingHandler {
+public interface IProcessingHandler extends StepHandler {
 
     ProcessingModule getModuleDefinition();
 

@@ -4,23 +4,21 @@ import com.gitb.ModuleManager;
 import com.gitb.core.*;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
+import com.gitb.engine.remote.validation.RemoteValidationModuleClient;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.engine.remote.validation.RemoteValidationModuleClient;
 import com.gitb.tdl.Binding;
 import com.gitb.tdl.ErrorLevel;
 import com.gitb.tdl.Verify;
-import com.gitb.tr.*;
 import com.gitb.tr.ObjectFactory;
+import com.gitb.tr.*;
 import com.gitb.types.BooleanType;
 import com.gitb.types.DataType;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.validation.IValidationHandler;
 import com.gitb.validation.common.AbstractValidator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.xml.bind.JAXBElement;
 import java.math.BigInteger;
@@ -33,7 +31,6 @@ import java.util.*;
  * Created by senan on 9/12/14.
  */
 public class VerifyProcessor implements IProcessor {
-	private static Logger logger = LoggerFactory.getLogger(VerifyProcessor.class);
 
 	private final TestCaseScope scope;
 	protected ObjectFactory objectFactory = new ObjectFactory();
@@ -78,39 +75,37 @@ public class VerifyProcessor implements IProcessor {
 		TestModule validatorDefinition = validator.getModuleDefinition();
 
 		//Construct the inputs
-		Map<String, DataType> inputs = new HashMap<String, DataType>();
+		Map<String, DataType> inputs = new HashMap<>();
 		List<Binding> inputExpressions = verify.getInput();
 
 		//If binding is expected in order
 		if (BindingUtils.isNameBinding(inputExpressions)) {
 			//Find expected inputs
-			HashMap<String, TypedParameter> expectedParamsMap = constructExpectedParameterMap(validatorDefinition);
+			Map<String, TypedParameter> expectedParamsMap = constructExpectedParameterMap(validatorDefinition);
 			//Evaluate each expression to supply the inputs
 			for (Binding inputExpression : inputExpressions) {
 				TypedParameter expectedParam = expectedParamsMap.get(inputExpression.getName());
+				DataType result;
 				if (expectedParam == null) {
-					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid parameter for the handler [" + inputExpression.getName() + "]"));
+					result = exprHandler.processExpression(inputExpression);
+				} else {
+					result = exprHandler.processExpression(inputExpression, expectedParam.getType());
 				}
-				//Evaluate Expression
-				DataType result = exprHandler.processExpression(inputExpression, expectedParam.getType());
 				//Add result to the input map
 				inputs.put(inputExpression.getName(), result);
 			}
 		} else {
 			List<TypedParameter> expectedParams = validatorDefinition.getInputs().getParam();
-			for (int i = 0; i < expectedParams.size() && i < inputExpressions.size(); i++) {
-				Binding inputExpression = inputExpressions.get(i);
-				TypedParameter expectedParam = expectedParams.get(i);
-				//Evaluate Expression
+			Iterator<TypedParameter> expectedParamsIterator = expectedParams.iterator();
+			Iterator<Binding> inputExpressionsIterator = inputExpressions.iterator();
+			while (expectedParamsIterator.hasNext() && inputExpressionsIterator.hasNext()) {
+				TypedParameter expectedParam = expectedParamsIterator.next();
+				Binding inputExpression = inputExpressionsIterator.next();
 				DataType result = exprHandler.processExpression(inputExpression, expectedParam.getType());
-				//Add result to the input map
 				inputs.put(expectedParam.getName(), result);
 			}
 		}
-
-		if (!checkIfExpectedParamsAreSupplied(inputs, validatorDefinition.getInputs().getParam())) {
-			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Some required parameters are not supplied for verification!"));
-		}
+		failIfMissingRequiredParameter(inputs, validatorDefinition.getInputs().getParam());
 
 		// Validate content with given configurations and inputs; and return the report
 		TestStepReportType report = validator.validate(verify.getConfig(), inputs);
@@ -222,19 +217,20 @@ public class VerifyProcessor implements IProcessor {
 	}
 
 	private HashMap<String, TypedParameter> constructExpectedParameterMap(TestModule moduleDefinition) {
-		HashMap<String, TypedParameter> expectedParamsMap = new HashMap<String, TypedParameter>();
-		List<TypedParameter> expectedParams = moduleDefinition.getInputs().getParam();
-		for (TypedParameter expectedParam : expectedParams) {
-			expectedParamsMap.put(expectedParam.getName(), expectedParam);
+		HashMap<String, TypedParameter> expectedParamsMap = new HashMap<>();
+		if (moduleDefinition.getInputs() != null) {
+			for (TypedParameter expectedParam : moduleDefinition.getInputs().getParam()) {
+				expectedParamsMap.put(expectedParam.getName(), expectedParam);
+			}
 		}
 		return expectedParamsMap;
 	}
 
-	private boolean checkIfExpectedParamsAreSupplied(Map<String, DataType> inputs, List<TypedParameter> expectedParams) {
+	private void failIfMissingRequiredParameter(Map<String, DataType> inputs, List<TypedParameter> expectedParams) {
 		for (TypedParameter expectedParam : expectedParams) {
-			if (expectedParam.getUse().equals(UsageEnumeration.R) && !inputs.containsKey(expectedParam.getName()))
-				return false;
+			if (expectedParam.getUse().equals(UsageEnumeration.R) && !inputs.containsKey(expectedParam.getName())) {
+				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Missing input parameter [" + expectedParam.getName() + "]"));
+			}
 		}
-		return true;
 	}
 }

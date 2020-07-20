@@ -38,6 +38,11 @@ public class RemoteProcessingModuleClient implements IProcessingHandler {
         this.transactionProperties = transactionProperties;
     }
 
+    @Override
+    public boolean isRemote() {
+        return true;
+    }
+
     private <T> T call(Supplier<T> supplier) {
         try {
             RemoteCallContext.setCallProperties(transactionProperties);
