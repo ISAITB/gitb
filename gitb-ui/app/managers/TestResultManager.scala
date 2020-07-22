@@ -5,7 +5,6 @@ import models._
 import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
-import play.api.Logger
 import play.api.db.slick.DatabaseConfigProvider
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -143,7 +142,7 @@ class TestResultManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ext
         FileUtils.deleteDirectory(path.toFile)
     } catch {
       case e:Exception => {
-        Logger.warn("Unable to delete folder ["+path.toFile.getAbsolutePath+"] for obsolete session [" + testResult.sessionId + "]")
+        logger.warn("Unable to delete folder ["+path.toFile.getAbsolutePath+"] for obsolete session [" + testResult.sessionId + "]")
       }
     }
   }

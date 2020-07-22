@@ -10,7 +10,7 @@ import org.pac4j.core.client.direct.AnonymousClient
 import org.pac4j.core.config.Config
 import org.pac4j.core.http.ajax.DefaultAjaxRequestResolver
 import org.pac4j.core.matching.PathMatcher
-import org.pac4j.play.http.DefaultHttpActionAdapter
+import org.pac4j.play.http.PlayHttpActionAdapter
 import org.pac4j.play.store.{PlayCacheSessionStore, PlaySessionStore}
 import org.pac4j.play.{CallbackController, LogoutController}
 
@@ -72,7 +72,7 @@ class SecurityModule extends AbstractModule {
     val config = new Config(clients)
     config.addAuthorizer("any", new BasicAuthorizer[Nothing])
     config.addMatcher("excludedPath", new PathMatcher().excludePath("/"))
-    config.setHttpActionAdapter(new DefaultHttpActionAdapter())
+    config.setHttpActionAdapter(new PlayHttpActionAdapter())
     config
   }
 }

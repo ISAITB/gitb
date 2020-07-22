@@ -9,25 +9,27 @@ import controllers.TestService
 import javax.inject.{Inject, Singleton}
 import javax.xml.ws.Endpoint
 import jaxws.TestbedService
+import managers._
 import managers.export.ImportCompleteManager
-import managers.{ReportManager, SystemConfigurationManager, TestResultManager, TestSuiteManager, TestbedBackendClient}
 import models.Constants
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.RandomStringUtils
-import play.api.Logger
+import org.slf4j.LoggerFactory
 import play.api.inject.ApplicationLifecycle
 import utils.{RepositoryUtils, TimeUtil}
 
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.DurationInt
 
 @Singleton
 class PostStartHook @Inject() (appLifecycle: ApplicationLifecycle, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testService: TestService, testSuiteManager: TestSuiteManager, reportManager: ReportManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient, importCompleteManager: ImportCompleteManager) {
 
+  private def logger = LoggerFactory.getLogger(this.getClass)
+
   onStart()
 
   def onStart(): Unit = {
-    Logger.info("Starting Application")
+    logger.info("Starting Application")
     System.setProperty("java.io.tmpdir", System.getProperty("user.dir"))
     //start TestbedClient service
     TestbedService.endpoint = Endpoint.publish(Configurations.TESTBED_CLIENT_URL, new TestbedService(reportManager, webSocketActor, testbedBackendClient))
@@ -35,7 +37,7 @@ class PostStartHook @Inject() (appLifecycle: ApplicationLifecycle, actorSystem: 
     cleanupPendingTestSuiteUploads()
     cleanupTempReports()
     loadDataExports()
-    Logger.info("Application has started")
+    logger.info("Application has started")
   }
 
   /**
@@ -53,7 +55,7 @@ class PostStartHook @Inject() (appLifecycle: ApplicationLifecycle, actorSystem: 
           if (difference >= aliveTime.get.toInt) {
             val sessionId = result.sessionId
             testService.endSession(sessionId)
-            Logger.info("Stopped idle session [" + sessionId + "]")
+            logger.info("Stopped idle session [" + sessionId + "]")
           }
         }
       }
@@ -83,7 +85,7 @@ class PostStartHook @Inject() (appLifecycle: ApplicationLifecycle, actorSystem: 
             FileUtils.deleteDirectory(file)
           } catch {
             case e:Exception => {
-              Logger.warn("Unable to delete temp folder [" + file.getAbsolutePath + "]")
+              logger.warn("Unable to delete temp folder [" + file.getAbsolutePath + "]")
             }
           }
         }
@@ -98,7 +100,7 @@ class PostStartHook @Inject() (appLifecycle: ApplicationLifecycle, actorSystem: 
       if (containedFiles != null && containedFiles.nonEmpty) {
         val archiveKey = Configurations.DATA_ARCHIVE_KEY
         if (archiveKey.isBlank) {
-          Logger.warn("No key was provided to open provided data archives. Skipping data import.")
+          logger.warn("No key was provided to open provided data archives. Skipping data import.")
         } else {
           containedFiles.foreach { file =>
             if (file.getName.toLowerCase.endsWith(".zip")) {

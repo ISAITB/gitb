@@ -7,6 +7,8 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 scalaVersion := "2.11.12"
 val akkaVersion = "2.5.31"
 
+useCoursier := false
+
 libraryDependencies ++= Seq(
   guice,
   ehcache,
@@ -22,10 +24,10 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-remote" % akkaVersion,
   "com.typesafe.akka" %% "akka-stream" % akkaVersion,
   "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
-  "com.typesafe.play" %% "play-slick" % "3.0.4",
-  "com.typesafe.play" %% "play-json" % "2.6.14",
-  "org.pac4j" %% "play-pac4j" % "6.1.0",
-  "org.pac4j" % "pac4j-cas" % "3.2.0",
+  "com.typesafe.play" %% "play-slick" % "4.0.2",
+  "com.typesafe.play" %% "play-json" % "2.7.4",
+  "org.pac4j" %% "play-pac4j" % "8.0.2",
+  "org.pac4j" % "pac4j-cas" % "3.7.0",
   "org.slf4j" % "slf4j-nop" % "1.7.30",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
   "org.apache.commons" % "commons-lang3" % "3.11",
@@ -39,7 +41,7 @@ libraryDependencies ++= Seq(
   "org.apache.cxf" % "cxf-rt-transports-http" % "3.3.7", //for calling jax-ws services
   "org.apache.cxf" % "cxf-rt-transports-http-jetty" % "3.3.7", //exporting jax-ws services
   "org.apache.tika" % "tika-core" % "1.24.1",
-  "org.webjars" %% "webjars-play" % "2.6.3",
+  "org.webjars" %% "webjars-play" % "2.7.3",
   "org.webjars" % "jquery" % "3.5.1",
   "org.webjars" % "jquery-cookie" % "1.4.1-1" exclude("org.webjars", "jquery"),
   "org.webjars" % "lodash" % "2.4.1-6",
@@ -70,7 +72,7 @@ libraryDependencies ++= Seq(
   "org.apache.pdfbox" % "pdfbox" % "2.0.20",
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.12",
-  "org.flywaydb" %% "flyway-play" % "5.2.0",
+  "org.flywaydb" %% "flyway-play" % "5.4.0",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20200713.1",
   "net.lingala.zip4j" % "zip4j" % "2.6.1"
 )
@@ -101,4 +103,3 @@ assemblyMergeStrategy in assembly := {
 resolvers += Resolver.mavenLocal
 
 routesGenerator := InjectedRoutesGenerator
-// routesImport += "extensions.Binders._"

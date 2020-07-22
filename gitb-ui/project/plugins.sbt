@@ -1,12 +1,12 @@
-resolvers += "Typesafe repository" at "http://repo.typesafe.com/typesafe/releases/"
+resolvers += "Typesafe repository" at "https://repo.typesafe.com/typesafe/releases/"
 
 resolvers += Resolver.url(
   "bintray-sbt-plugin-releases",
-   url("http://dl.bintray.com/content/sbt/sbt-plugin-releases"))(
+   url("https://dl.bintray.com/content/sbt/sbt-plugin-releases"))(
        Resolver.ivyStylePatterns)
 
 // The Play plugin
-addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.6.25")
+addSbtPlugin("com.typesafe.play" % "sbt-plugin" % "2.7.5")
 
 // web plugins
 

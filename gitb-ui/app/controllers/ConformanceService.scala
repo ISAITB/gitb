@@ -257,7 +257,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
           testSuiteFileName
         ).toFile
         file.getParentFile.mkdirs()
-        testSuite.ref.moveTo(file)
+        testSuite.ref.moveFileTo(file)
         val contentType = testSuite.contentType
         logger.debug("Test suite file uploaded - filename: [" + testSuiteFileName + "] content type: [" + contentType + "]")
         val result = testSuiteManager.deployTestSuiteFromZipFile(specification_id, file)
