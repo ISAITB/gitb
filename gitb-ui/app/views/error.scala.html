@@ -1,4 +1,4 @@
-@(webJarAssets: WebJarAssets, config: models.ErrorPageData)
+@(webJarsUtil: org.webjars.play.WebJarsUtil, config: models.ErrorPageData)
 <!DOCTYPE html>
 <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
@@ -12,8 +12,8 @@
     <title>GITB</title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width">
-    <link rel='stylesheet' href='@routes.WebJarAssets.at(webJarAssets.locate("css/bootstrap.min.css"))'>
-    <link rel="stylesheet" href='@routes.WebJarAssets.at(webJarAssets.locate("css/font-awesome.min.css"))'>
+    @webJarsUtil.locate("css/bootstrap.min.css").css()
+    @webJarsUtil.locate("css/font-awesome.min.css").css()
     <!-- Web Fonts  -->
     <link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/fonts/opensans/stylesheet.css")'>
     <link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/theme.css")'>
@@ -23,10 +23,11 @@
     <link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/custom.css")'>
     <link rel="stylesheet" href='theme/css'>
     <link rel="stylesheet" href='@routes.Assets.at("stylesheets/gitb.css")?v=@config.versionNumber'>
-    <script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("jquery.min.js"))'></script>
-    <script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("bootstrap.min.js"))'></script>
+
+    @webJarsUtil.locate("jquery.min.js").script()
+    @webJarsUtil.locate("ui-bootstrap.min.js").script()
 </head>
-<body class="sticky-menu-active">
+<body>
 <div class="page index">
     <header>
         <div class="navbar-collapse nav-main-collapse collapse">

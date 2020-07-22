@@ -4,17 +4,17 @@ import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, Respo
 import javax.inject.Inject
 import managers.{ActorManager, AuthorizationManager, CommunityLabelManager}
 import models.Enums.LabelType
-import play.api.mvc.Controller
+import play.api.mvc.{AbstractController, ControllerComponents}
 
-class ActorService @Inject() (actorManager: ActorManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends Controller {
+class ActorService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, actorManager: ActorManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
 
-  def deleteActor(actorId: Long) = AuthorizedAction { request =>
+  def deleteActor(actorId: Long) = authorizedAction { request =>
     authorizationManager.canDeleteActor(request, actorId)
     actorManager.deleteActorWrapper(actorId)
     ResponseConstructor.constructEmptyResponse
   }
 
-  def updateActor(actorId: Long) = AuthorizedAction { request =>
+  def updateActor(actorId: Long) = authorizedAction { request =>
     authorizationManager.canUpdateActor(request, actorId)
     val actor = ParameterExtractor.extractActor(request)
     val specificationId = ParameterExtractor.requiredBodyParameter(request, Parameters.SPECIFICATION_ID).toLong

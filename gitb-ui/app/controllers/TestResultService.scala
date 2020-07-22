@@ -7,10 +7,10 @@ import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import utils.{JsonUtil, MimeUtil}
 
-class TestResultService @Inject() (authorizationManager: AuthorizationManager) extends Controller{
+class TestResultService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[TestResultService])
 
-  def getBinaryMetadata = AuthorizedAction { request =>
+  def getBinaryMetadata = authorizedAction { request =>
     authorizationManager.canGetBinaryFileMetadata(request)
     val data:String= ParameterExtractor.requiredBodyParameter(request, Parameters.DATA)
     val isBase64:Boolean = java.lang.Boolean.valueOf(ParameterExtractor.requiredBodyParameter(request, Parameters.IS_BASE64))

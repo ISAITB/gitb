@@ -8,7 +8,7 @@ import org.pac4j.cas.config.CasProtocol
 import org.pac4j.core.client.Clients
 import org.pac4j.core.client.direct.AnonymousClient
 import org.pac4j.core.config.Config
-import org.pac4j.core.http.DefaultAjaxRequestResolver
+import org.pac4j.core.http.ajax.DefaultAjaxRequestResolver
 import org.pac4j.core.matching.PathMatcher
 import org.pac4j.play.http.DefaultHttpActionAdapter
 import org.pac4j.play.store.{PlayCacheSessionStore, PlaySessionStore}

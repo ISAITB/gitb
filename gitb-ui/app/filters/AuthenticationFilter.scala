@@ -8,13 +8,12 @@ import javax.inject.Inject
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.AccountManager
 import persistence.cache.TokenCache
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
 import play.api.mvc._
 import play.mvc.Http.HeaderNames._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class AuthenticationFilter @Inject() (implicit val mat: Materializer, accountManager: AccountManager) extends Filter {
+class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit val mat: Materializer, accountManager: AccountManager) extends Filter {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthenticationFilter])
 
@@ -39,7 +38,7 @@ class AuthenticationFilter @Inject() (implicit val mat: Materializer, accountMan
             val userId = TokenCache.checkAccessToken(accessToken)
             //a workaround of customizing request headers to add our userId data, so that controllers can process it
             val customHeaders = requestHeader.headers.add((Parameters.USER_ID,  "" + userId))
-            val customRequestHeader = requestHeader.copy(headers = customHeaders)
+            val customRequestHeader = requestHeader.withHeaders(customHeaders)
             next(customRequestHeader)
           } else{
             //There is a problem with the authorization header
