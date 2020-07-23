@@ -364,8 +364,8 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
       }
     }
     var statements = new ListBuffer[ConformanceStatement]
-    import scala.collection.JavaConversions._
-    for (conformanceEntry <- conformanceMap) {
+    import scala.collection.JavaConverters._
+    for (conformanceEntry <- mapAsScalaMap(conformanceMap)) {
       statements += conformanceEntry._2
     }
     statements.toList

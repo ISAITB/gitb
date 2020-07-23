@@ -6,14 +6,13 @@ import javax.inject.Inject
 import managers.{LegalNoticeManager, SystemConfigurationManager}
 import models.{Constants, PublicConfig}
 import org.apache.commons.lang3.StringUtils
-import org.webjars.play.{WebJarAssets, WebJarsUtil}
 import play.api.mvc._
 import play.api.routing._
 import utils.RepositoryUtils
 
 import scala.collection.mutable.ListBuffer
 
-class Application @Inject() (cc: ControllerComponents, defaultAction: DefaultActionBuilder, webjarAssets: WebJarAssets, webJarsUtil: WebJarsUtil, systemConfigurationManager: SystemConfigurationManager, legalNoticeManager: LegalNoticeManager) extends AbstractController(cc) {
+class Application @Inject() (cc: ControllerComponents, defaultAction: DefaultActionBuilder, systemConfigurationManager: SystemConfigurationManager, legalNoticeManager: LegalNoticeManager) extends AbstractController(cc) {
 
   def index() = defaultAction {
     val legalNotice = legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId)
@@ -24,7 +23,7 @@ class Application @Inject() (cc: ControllerComponents, defaultAction: DefaultAct
       legalNoticeContent = legalNotice.get.content
     }
     val enableWebInit = Configurations.DATA_WEB_INIT_ENABLED && !RepositoryUtils.getDataLockFile().exists()
-    Ok(views.html.index(webJarsUtil,
+    Ok(views.html.index(
       new PublicConfig(
       Configurations.AUTHENTICATION_SSO_ENABLED,
       systemConfigurationManager.getLogoPath(),
@@ -44,7 +43,7 @@ class Application @Inject() (cc: ControllerComponents, defaultAction: DefaultAct
   }
 
   def app() = defaultAction {
-    Ok(views.html.app(webJarsUtil, new PublicConfig(Constants.VersionNumber)))
+    Ok(views.html.app(new PublicConfig(Constants.VersionNumber)))
   }
 
   def preFlight(all: String) = defaultAction {

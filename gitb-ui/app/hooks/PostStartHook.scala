@@ -18,11 +18,11 @@ import org.slf4j.LoggerFactory
 import play.api.inject.ApplicationLifecycle
 import utils.{RepositoryUtils, TimeUtil}
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 
 @Singleton
-class PostStartHook @Inject() (appLifecycle: ApplicationLifecycle, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testService: TestService, testSuiteManager: TestSuiteManager, reportManager: ReportManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient, importCompleteManager: ImportCompleteManager) {
+class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: ApplicationLifecycle, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testService: TestService, testSuiteManager: TestSuiteManager, reportManager: ReportManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient, importCompleteManager: ImportCompleteManager) {
 
   private def logger = LoggerFactory.getLogger(this.getClass)
 
@@ -45,47 +45,18 @@ class PostStartHook @Inject() (appLifecycle: ApplicationLifecycle, actorSystem: 
     */
 
   private def destroyIdleSessions() = {
-    actorSystem.scheduler.schedule(1.days, 1.days) {
-      val config = systemConfigurationManager.getSystemConfiguration(Constants.SessionAliveTime)
-      val aliveTime = config.parameter
-      if (aliveTime.isDefined) {
-        val list = testResultManager.getRunningTestResults
-        list.foreach { result =>
-          val difference = TimeUtil.getTimeDifferenceInSeconds(result.startTime)
-          if (difference >= aliveTime.get.toInt) {
-            val sessionId = result.sessionId
-            testService.endSession(sessionId)
-            logger.info("Stopped idle session [" + sessionId + "]")
-          }
-        }
-      }
-    }
-  }
-
-  private def cleanupPendingTestSuiteUploads() = {
-    actorSystem.scheduler.schedule(1.hours, 1.hours) {
-      val pendingFolder = testSuiteManager.getPendingFolder
-      if (pendingFolder.exists() && pendingFolder.isDirectory) {
-        for (file <- pendingFolder.listFiles()) {
-          if (file.lastModified() + 3600000 < System.currentTimeMillis) {
-            // Delete pending test suite folders that were created min 1 hour ago
-            FileUtils.deleteDirectory(file)
-          }
-        }
-      }
-    }
-  }
-
-  private def cleanupTempReports() = {
-    actorSystem.scheduler.schedule(0.minutes, 5.minutes) {
-      val tempFolder = ReportManager.getTempFolderPath().toFile
-      if (tempFolder.exists() && tempFolder.isDirectory) {
-        for (file <- tempFolder.listFiles()) {
-          try {
-            FileUtils.deleteDirectory(file)
-          } catch {
-            case e:Exception => {
-              logger.warn("Unable to delete temp folder [" + file.getAbsolutePath + "]")
+    actorSystem.scheduler.scheduleWithFixedDelay(1.days, 1.days) {
+      () => {
+        val config = systemConfigurationManager.getSystemConfiguration(Constants.SessionAliveTime)
+        val aliveTime = config.parameter
+        if (aliveTime.isDefined) {
+          val list = testResultManager.getRunningTestResults
+          list.foreach { result =>
+            val difference = TimeUtil.getTimeDifferenceInSeconds(result.startTime)
+            if (difference >= aliveTime.get.toInt) {
+              val sessionId = result.sessionId
+              testService.endSession(sessionId)
+              logger.info("Stopped idle session [" + sessionId + "]")
             }
           }
         }
@@ -93,7 +64,41 @@ class PostStartHook @Inject() (appLifecycle: ApplicationLifecycle, actorSystem: 
     }
   }
 
-  private def loadDataExports() = {
+  private def cleanupPendingTestSuiteUploads() = {
+    actorSystem.scheduler.scheduleWithFixedDelay(1.hours, 1.hours) {
+      () => {
+        val pendingFolder = testSuiteManager.getPendingFolder()
+        if (pendingFolder.exists() && pendingFolder.isDirectory) {
+          for (file <- pendingFolder.listFiles()) {
+            if (file.lastModified() + 3600000 < System.currentTimeMillis) {
+              // Delete pending test suite folders that were created min 1 hour ago
+              FileUtils.deleteDirectory(file)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private def cleanupTempReports() = {
+    actorSystem.scheduler.scheduleAtFixedRate(0.minutes, 5.minutes) {
+      () => {
+        val tempFolder = ReportManager.getTempFolderPath().toFile
+        if (tempFolder.exists() && tempFolder.isDirectory) {
+          for (file <- tempFolder.listFiles()) {
+            try {
+              FileUtils.deleteDirectory(file)
+            } catch {
+              case e:Exception =>
+                logger.warn("Unable to delete temp folder [" + file.getAbsolutePath + "]", e)
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private def loadDataExports(): Unit = {
     val dataIn = RepositoryUtils.getDataInFolder()
     if (dataIn.exists() && dataIn.isDirectory && dataIn.canRead) {
       val containedFiles = dataIn.listFiles()

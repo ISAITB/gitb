@@ -15,10 +15,10 @@ import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.lifted.Rep
-import utils.{RepositoryUtils, ZipArchiver}
 import utils.tdlvalidator.tdl.{FileSource, TestSuiteValidationAdapter}
+import utils.{RepositoryUtils, ZipArchiver}
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -187,7 +187,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 						val testSuite = RepositoryUtils.getTestSuiteFromZip(specification, pendingFiles(0))
 						// Sanity check
 						if (testSuite.isDefined && testSuite.get.testCases.isDefined) {
-							result.items.addAll(replaceTestSuite(testSuite.get.toCaseObject, testSuite.get.actors, testSuite.get.testCases, pendingFiles(0), action))
+							result.items.addAll(asJavaCollection(replaceTestSuite(testSuite.get.toCaseObject, testSuite.get.actors, testSuite.get.testCases, pendingFiles(0), action)))
 							result.success = true
 						} else {
 							result.errorInformation = "The pending test suite archive ["+pendingTestSuiteIdentifier +"] was corrupted "
@@ -214,11 +214,11 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 
 	private def validateTestSuite(specification: Long, tempTestSuiteArchive: File): TAR = {
 		val actorSet = new util.HashSet[String]()
-		actorSet.addAll(conformanceManager.getActorsWithSpecificationId(None, Some(specification)).map(a => a.actorId))
+		actorSet.addAll(asJavaCollection(conformanceManager.getActorsWithSpecificationId(None, Some(specification)).map(a => a.actorId)))
 
 		val parameterSet = new util.HashSet[String]()
 		val domain = conformanceManager.getDomainOfSpecification(specification)
-		parameterSet.addAll(conformanceManager.getDomainParameters(domain.id).map(p => p.name))
+		parameterSet.addAll(asJavaCollection(conformanceManager.getDomainParameters(domain.id).map(p => p.name)))
 
 		val report = TestSuiteValidationAdapter.getInstance().doValidation(new FileSource(tempTestSuiteArchive), actorSet, parameterSet, getTmpValidationFolder().getAbsolutePath)
 		report
@@ -244,7 +244,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 						val onSuccessCalls = mutable.ListBuffer[() => _]()
 						val onFailureCalls = mutable.ListBuffer[() => _]()
 						val action = saveTestSuite(testSuite.get.toCaseObject, null, testSuite.get.actors, testSuite.get.testCases, tempTestSuiteArchive, onSuccessCalls, onFailureCalls)
-						result.items.addAll(exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), action).transactionally))
+						result.items.addAll(asJavaCollection(exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), action).transactionally)))
 						result.success = true
 					}
 				}
@@ -592,7 +592,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 						}
 					}
 					_ <- {
-						val actions = actorsToFurtherProcess.map(newTestCaseActor => {
+						val actions = asScalaSet(actorsToFurtherProcess).map(newTestCaseActor => {
 							var action: DBIO[_] = null
               if (actorsThatExistAndChangedToSut.contains(newTestCaseActor)) {
                 action = DBIO.successful(())
@@ -601,7 +601,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
               }
 							val implementingSystems = existingActorToSystemMap.get(newTestCaseActor)
 							if (implementingSystems != null) {
-								for (implementingSystem <- implementingSystems) {
+								for (implementingSystem <- asScalaSet(implementingSystems)) {
 									// Check to see if there are existing test sessions for this test case.
 									action = action andThen (for {
 										previousResult <- PersistenceSchema.testResults.filter(_.sutId === implementingSystem).filter(_.testCaseId === existingTestCaseId.toLong).sortBy(_.endTime.desc).result.headOption
@@ -652,7 +652,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 								if (isSut) {
 									val implementingSystems = existingActorToSystemMap.get(actorInternalId)
 									if (implementingSystems != null) {
-										for (implementingSystem <- implementingSystems) {
+										for (implementingSystem <- asScalaSet(implementingSystems)) {
 											action = action andThen
 												(PersistenceSchema.conformanceResults += ConformanceResult(0L, implementingSystem, specificationId, actorInternalId, savedTestSuiteId, existingTestCaseId, TestResultStatus.UNDEFINED.toString, None))
 										}
@@ -674,7 +674,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		val actions = new ListBuffer[DBIO[_]]()
 		val results = new ListBuffer[TestSuiteUploadItemResult]()
 
-		for (testCaseEntry <- existingTestCaseMap.entrySet()) {
+		for (testCaseEntry <- asScalaSet(existingTestCaseMap.entrySet())) {
 			actions += testCaseManager.delete(testCaseEntry.getValue)
 			results += new TestSuiteUploadItemResult(testCaseEntry.getKey, TestSuiteUploadItemResult.ITEM_TYPE_TEST_CASE, TestSuiteUploadItemResult.ACTION_TYPE_REMOVE)
 		}
@@ -684,7 +684,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	def stepUpdateTestSuiteActorLinks(savedTestSuiteId: Long, savedActorIds: util.Map[String, Long]): DBIO[_] = {
 		// Add new test suite actor links.
 		val actions = new ListBuffer[DBIO[_]]()
-		for (actorEntry <- savedActorIds.entrySet()) {
+		for (actorEntry <- asScalaSet(savedActorIds.entrySet())) {
 				actions += (PersistenceSchema.testSuiteHasActors += (savedTestSuiteId, actorEntry.getValue))
 		}
 		DBIO.seq(actions.toList: _*)
@@ -693,7 +693,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	def stepUpdateTestSuiteTestCaseLinks(savedTestSuiteId: Long, savedTestCaseIds: util.List[Long]): DBIO[_] = {
 		// Update test suite test case links.
 		val actions = new ListBuffer[DBIO[_]]()
-		for (testCaseId <- savedTestCaseIds) {
+		for (testCaseId <- collectionAsScalaIterable(savedTestCaseIds)) {
 			actions += (PersistenceSchema.testSuiteHasTestCases += (savedTestSuiteId, testCaseId))
 		}
 		DBIO.seq(actions.toList: _*)

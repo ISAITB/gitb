@@ -13,7 +13,7 @@ import play.api.mvc.{RequestHeader, Result}
 import scala.concurrent.Future
 
 @Singleton
-class ErrorHandler @Inject() (webJarsUtil: WebJarsUtil, systemConfigurationManager: SystemConfigurationManager, legalNoticeManager: LegalNoticeManager) extends HttpErrorHandler {
+class ErrorHandler @Inject() (systemConfigurationManager: SystemConfigurationManager, legalNoticeManager: LegalNoticeManager) extends HttpErrorHandler {
 
   private def logger = LoggerFactory.getLogger(this.getClass)
 
@@ -43,7 +43,7 @@ class ErrorHandler @Inject() (webJarsUtil: WebJarsUtil, systemConfigurationManag
           logger.error("Error while creating error page content", e)
         }
       }
-      Future.successful(BadRequest(views.html.error(webJarsUtil,
+      Future.successful(BadRequest(views.html.error(
         new ErrorPageData(
           systemConfigurationManager.getLogoPath(),
           systemConfigurationManager.getFooterLogoPath(),
