@@ -64,12 +64,6 @@ div.sort-source-wrapper .nav > li.active > a:focus {
   border-color: #0077b3;
   background-color: #0077b3;
 }
-.progress-bar-primary {
-  background-color: #0088cc;
-}
-body.boxed div.body {
-  border-top-color: #0088cc;
-}
 section.highlight {
   background-color: #0088cc;
   border-color: #0077b3;
@@ -82,31 +76,6 @@ section.toggle.active > label {
   background-color: #0088cc;
   border-color: #0088cc;
   color: #FFF;
-}
-section.page-top.custom-product {
-  background-color: #0077b3;
-  border-top-color: #0081c2;
-}
-div.feature-box div.feature-box-icon {
-  background-color: #0088cc;
-}
-ul.history li div.featured-box div.box-content {
-  border-top-color: #0088cc;
-}
-div.feature-box.secundary div.feature-box-icon i.icon {
-  color: #0088cc;
-}
-a.thumb-info span.thumb-info-type {
-  background-color: #0088cc;
-}
-a.thumb-info span.thumb-info-action-icon {
-  background-color: #0088cc;
-}
-.thumbnail span.zoom {
-  background-color: #0088cc;
-}
-span.thumb-info-social-icons a {
-  background-color: #0088cc;
 }
 .inverted {
   background-color: #0088cc;
@@ -125,143 +94,42 @@ div.tabs ul.nav-tabs li.active a {
 ul.list.icons li i {
   color: #0088cc;
 }
-i.icon-featured {
-  background-color: #0088cc;
-}
-.parallax blockquote i.icon-quote-left {
-  color: #0088cc;
-}
 section.video blockquote i.icon-quote-left {
   color: #0088cc;
 }
-header nav ul.nav-main ul.dropdown-menu,
-header nav ul.nav-main li.dropdown.open a.dropdown-toggle,
-header nav ul.nav-main li.active a,
-header nav ul.nav-main li > a:hover,
-header nav ul.nav-main li.dropdown:hover a {
+.header nav ul.nav-main ul.dropdown-menu,
+.header nav ul.nav-main li.dropdown.open a.dropdown-toggle,
+.header nav ul.nav-main li.active a,
+.header nav ul.nav-main li > a:hover,
+.header nav ul.nav-main li.dropdown:hover a {
   color: #FFF;
   background-color: #0088cc !important;
 }
-header nav ul.nav-main ul.dropdown-menu li:hover > a {
+.header nav ul.nav-main ul.dropdown-menu li:hover > a {
   background-color: #00aaff !important;
 }
-header nav ul.nav-main ul.dropdown-menu {
+.header nav ul.nav-main ul.dropdown-menu {
   color: #ffffff;
   text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
   background-color: #0088cc;
   border-color: #0044cc #0044cc #002a80;
   border-color: rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.25);
 }
-header nav ul.nav-main ul.dropdown-menu:hover {
+.header nav ul.nav-main ul.dropdown-menu:hover {
   border-color: #0099e6;
   background-color: #0099e6;
 }
-header nav ul.nav-main ul.dropdown-menu:active,
-header nav ul.nav-main ul.dropdown-menu:focus {
+.header nav ul.nav-main ul.dropdown-menu:active,
+.header nav ul.nav-main ul.dropdown-menu:focus {
   border-color: #0077b3;
   background-color: #0077b3;
 }
-header nav ul.nav-main li.dropdown:hover ul.dropdown-menu li > a {
+.header nav ul.nav-main li.dropdown:hover ul.dropdown-menu li > a {
   background: none !important;
 }
-header nav ul.nav-main li.dropdown:hover ul.dropdown-menu li > a:hover {
+.header nav ul.nav-main li.dropdown:hover ul.dropdown-menu li > a:hover {
   background: #0099e6 !important;
 }
-header.single-menu nav ul.nav-main li.active > a {
-  border-top: 5px solid #0088cc;
-}
-header.darken-top-border {
-  border-top: 5px solid #0077b3;
-}
-header.colored div.header-top {
-  background-color: #0088cc;
-}
-header.colored div.header-top ul.nav-top li a:hover {
-  background-color: #0099e6 !important;
-}
-header.flat-menu nav ul.nav-main li > a,
-header.flat-menu nav ul.nav-main li.active > a {
-  color: #666;
-}
-header.flat-menu nav ul.nav-main li.active > a {
-  color: #0088cc;
-  background-color: transparent !important;
-}
-header.flat-menu nav ul.nav-main li > a:hover,
-header.flat-menu nav ul.nav-main li.dropdown:hover a {
-  color: #FFF;
-  background-color: #0088cc !important;
-}
-header nav.mega-menu ul.nav-main li.mega-menu-item ul.dropdown-menu {
+.header nav.mega-menu ul.nav-main li.mega-menu-item ul.dropdown-menu {
   border-top-color: #0088cc;
-}
-div.slider div.tp-bannertimer {
-  background-color: #0088cc;
-}
-div.home-intro p em {
-  color: #00aaff;
-}
-div.home-concept strong {
-  color: #0088cc;
-}
-blockquote.testimonial {
-  background: #0099e6;
-}
-div.testimonial-arrow-down {
-  border-top-color: #0099e6;
-}
-div.recent-posts div.date span.month,
-article.post div.post-date span.month {
-  background-color: #0088cc;
-}
-div.recent-posts div.date span.day,
-article.post div.post-date span.day {
-  color: #0088cc;
-}
-div.shop ul.products li.product .onsale {
-  background-color: #0088cc;
-}
-div.featured-box-secundary i.icon-featured,
-div.featured-box-secundary i.image-icon {
-  background-color: #0088cc;
-}
-div.featured-box-secundary h4 {
-  color: #0088cc;
-}
-div.featured-box-secundary div.box-content {
-  border-top-color: #0088cc;
-}
-div.featured-box-green h4 {
-  color: #5cb85c;
-}
-div.featured-box-green a {
-  color: #5cb85c;
-}
-div.featured-box-green div.box-content {
-  border-top-color: #5cb85c;
-}
-div.pricing-table div.most-popular {
-  border-color: #0088cc;
-}
-div.pricing-table div.most-popular h3 {
-  background-color: #0088cc;
-}
-section.timeline .timeline-box.left:before,
-section.timeline .timeline-box.right:before {
-  background: #0088cc;
-  box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px #0088cc;
-}
-footer div.footer-ribon {
-  background: #0088cc;
-}
-footer div.footer-ribon:before {
-  border-right-color: #005580;
-}
-div.shop ul.products li.product .onsale {
-  background-color: #0088cc;
-  border-bottom-color: #006da3;
-}
-div.shop .star-rating span,
-div.shop .cart-totals tr.total .amount {
-  color: #0088cc;
 }

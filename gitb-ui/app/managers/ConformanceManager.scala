@@ -587,8 +587,8 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 			}
 		}
 		var statements = new ListBuffer[ConformanceStatementFull]
-		import scala.collection.JavaConversions._
-		for (conformanceEntry <- conformanceMap) {
+		import scala.collection.JavaConverters._
+		for (conformanceEntry <- mapAsScalaMap(conformanceMap)) {
 			statements += conformanceEntry._2
 		}
 		statements.toList
@@ -715,8 +715,8 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 			config.setValue(p._3)
 			actorConfig.getConfig.add(config)
 		}
-		import scala.collection.JavaConversions._
-		actorMap.values().toList
+		import scala.collection.JavaConverters._
+		collectionAsScalaIterable(actorMap.values()).toList
 	}
 
 	def getSystemConfigurationStatus(systemId: Long, actorId: Long): List[SystemConfigurationEndpoint] = {

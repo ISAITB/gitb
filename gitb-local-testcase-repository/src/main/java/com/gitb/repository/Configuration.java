@@ -1,9 +1,9 @@
 package com.gitb.repository;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.SystemConfiguration;
+import org.apache.commons.configuration2.builder.fluent.Configurations;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 
 /**
  * Created by senan on 10/2/14.
@@ -25,8 +25,8 @@ public class Configuration {
 
         try {
 	        config.addConfiguration(new SystemConfiguration());
-	        config.addConfiguration(new PropertiesConfiguration("local-testcase-repository-overridden.properties"));
-	        config.addConfiguration(new PropertiesConfiguration("local-testcase-repository.properties"));
+            config.addConfiguration(new Configurations().properties("local-testcase-repository-overridden.properties"));
+            config.addConfiguration(new Configurations().properties("local-testcase-repository.properties"));
 
             location  = config.getString("repository.location");
 

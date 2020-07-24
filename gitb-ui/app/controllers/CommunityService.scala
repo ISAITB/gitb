@@ -11,18 +11,18 @@ import models.{ActualUserInfo, Communities, Organizations, Users}
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.AuthenticationManager
-import play.api.mvc.{Controller, Result}
+import play.api.mvc.{AbstractController, ControllerComponents, Result}
 import utils.{EmailUtil, HtmlUtil, JsonUtil}
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
-class CommunityService @Inject() (communityManager: CommunityManager, authorizationManager: AuthorizationManager, organisationManager: OrganizationManager, authenticationManager: AuthenticationManager) extends Controller {
+class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, communityManager: CommunityManager, authorizationManager: AuthorizationManager, organisationManager: OrganizationManager, authenticationManager: AuthenticationManager) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[CommunityService])
 
   /**
     * Gets all communities with given ids or all if none specified
     */
-  def getCommunities() = AuthorizedAction { request =>
+  def getCommunities() = authorizedAction { request =>
     val communityIds = ParameterExtractor.extractLongIdsQueryParameter(request)
     authorizationManager.canViewCommunities(request, communityIds)
     val skipDefault = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SKIP_DEFAULT)
@@ -34,7 +34,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
   /**
     * Creates new community
     */
-  def createCommunity() = AuthorizedAction { request =>
+  def createCommunity() = authorizedAction { request =>
     authorizationManager.canCreateCommunity(request)
     val community = ParameterExtractor.extractCommunityInfo(request)
     communityManager.createCommunity(community)
@@ -44,7 +44,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
   /**
     * Gets the community with specified id
     */
-  def getCommunityById(communityId: Long) = AuthorizedAction { request =>
+  def getCommunityById(communityId: Long) = authorizedAction { request =>
     authorizationManager.canViewCommunityFull(request, communityId)
     val community = communityManager.getCommunityById(communityId)
     val json: String = JsonUtil.serializeCommunity(community, None)
@@ -54,7 +54,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
   /**
     * Updates community
     */
-  def updateCommunity(communityId: Long) = AuthorizedAction { request =>
+  def updateCommunity(communityId: Long) = authorizedAction { request =>
     authorizationManager.canUpdateCommunity(request, communityId)
     val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
     val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
@@ -98,13 +98,13 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
   /**
     * Deletes the community with specified id
     */
-  def deleteCommunity(communityId: Long) = AuthorizedAction { request =>
+  def deleteCommunity(communityId: Long) = authorizedAction { request =>
     authorizationManager.canDeleteCommunity(request, communityId)
     communityManager.deleteCommunity(communityId)
     ResponseConstructor.constructEmptyResponse
   }
 
-  def selfRegister() = AuthorizedAction { request =>
+  def selfRegister() = authorizedAction { request =>
     var response: Result = null
     val selfRegToken = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
     val organisation = ParameterExtractor.extractOrganizationInfo(request)
@@ -188,7 +188,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     }
   }
 
-  def getSelfRegistrationOptions() = AuthorizedAction { request =>
+  def getSelfRegistrationOptions() = authorizedAction { request =>
     authorizationManager.canViewSelfRegistrationOptions(request)
     val options = communityManager.getSelfRegistrationOptions()
     val json: String = JsonUtil.jsSelfRegOptions(options).toString
@@ -198,7 +198,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
   /**
     * Returns the community of the authenticated user
     */
-  def getUserCommunity = AuthorizedAction { request =>
+  def getUserCommunity = authorizedAction { request =>
     val userId = ParameterExtractor.extractUserId(request)
     authorizationManager.canViewOwnCommunity(request)
 
@@ -208,7 +208,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def createOrganisationParameter() = AuthorizedAction { request =>
+  def createOrganisationParameter() = authorizedAction { request =>
     val parameter = ParameterExtractor.extractOrganisationParameter(request)
     authorizationManager.canManageCommunity(request, parameter.community)
     if (communityManager.checkOrganisationParameterExists(parameter, false)) {
@@ -219,7 +219,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     }
   }
 
-  def createSystemParameter() = AuthorizedAction { request =>
+  def createSystemParameter() = authorizedAction { request =>
     val parameter = ParameterExtractor.extractSystemParameter(request)
     authorizationManager.canManageCommunity(request, parameter.community)
     if (communityManager.checkSystemParameterExists(parameter, false)) {
@@ -230,19 +230,19 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     }
   }
 
-  def deleteOrganisationParameter(parameterId: Long) = AuthorizedAction { request =>
+  def deleteOrganisationParameter(parameterId: Long) = authorizedAction { request =>
     authorizationManager.canManageOrganisationParameter(request, parameterId)
     communityManager.deleteOrganisationParameterWrapper(parameterId)
     ResponseConstructor.constructEmptyResponse
   }
 
-  def deleteSystemParameter(parameterId: Long) = AuthorizedAction { request =>
+  def deleteSystemParameter(parameterId: Long) = authorizedAction { request =>
     authorizationManager.canManageSystemParameter(request, parameterId)
     communityManager.deleteSystemParameterWrapper(parameterId)
     ResponseConstructor.constructEmptyResponse
   }
 
-  def updateOrganisationParameter(parameterId: Long) = AuthorizedAction { request =>
+  def updateOrganisationParameter(parameterId: Long) = authorizedAction { request =>
     val parameter = ParameterExtractor.extractOrganisationParameter(request)
     authorizationManager.canManageCommunity(request, parameter.community)
 
@@ -254,7 +254,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     }
   }
 
-  def updateSystemParameter(parameterId: Long) = AuthorizedAction { request =>
+  def updateSystemParameter(parameterId: Long) = authorizedAction { request =>
     val parameter = ParameterExtractor.extractSystemParameter(request)
     authorizationManager.canManageCommunity(request, parameter.community)
 
@@ -266,22 +266,22 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     }
   }
 
-  def getOrganisationParameters(communityId: Long) = AuthorizedAction { request =>
+  def getOrganisationParameters(communityId: Long) = authorizedAction { request =>
     authorizationManager.canManageCommunity(request, communityId)
     ResponseConstructor.constructJsonResponse(JsonUtil.jsOrganisationParameters(communityManager.getOrganisationParameters(communityId)).toString)
   }
 
-  def getSystemParameters(communityId: Long) = AuthorizedAction { request =>
+  def getSystemParameters(communityId: Long) = authorizedAction { request =>
     authorizationManager.canViewCommunityBasic(request, communityId)
     ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemParameters(communityManager.getSystemParameters(communityId)).toString)
   }
 
-  def getCommunityLabels(communityId: Long) = AuthorizedAction { request =>
+  def getCommunityLabels(communityId: Long) = authorizedAction { request =>
     authorizationManager.canViewCommunityBasic(request, communityId)
     ResponseConstructor.constructJsonResponse(JsonUtil.jsCommunityLabels(communityManager.getCommunityLabels(communityId)).toString)
   }
 
-  def setCommunityLabels(communityId: Long) = AuthorizedAction { request =>
+  def setCommunityLabels(communityId: Long) = authorizedAction { request =>
     authorizationManager.canManageCommunity(request, communityId)
     val labels = JsonUtil.parseJsCommunityLabels(communityId, requiredBodyParameter(request, Parameters.VALUES))
     communityManager.setCommunityLabels(communityId, labels)

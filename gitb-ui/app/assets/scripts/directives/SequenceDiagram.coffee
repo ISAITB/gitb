@@ -284,7 +284,7 @@ extractSteps = (s, actorInfo) =>
             '<div class="step-icon" ng-if="message.type == \'exit\'">'+
               '<i class="fa fa-dot-circle-o""></i>'+
             '</div>'+
-            '<div><span class="title" ng-class="{\'skipped\': message.status == TEST_STATUS.SKIPPED}">{{message.desc}}<span ng-if="message.documentation" ng-click="showStepDocumentation(message.documentation)"><i ng-style="{ \'margin-left\': message.desc?\'5px\':\'0px\'}" class="fa fa-question-circle icon-documentation"/></span></span></div>'+
+            '<div><span class="title" ng-class="{\'skipped\': message.status == TEST_STATUS.SKIPPED}">{{message.desc}}<span ng-if="message.documentation" ng-click="showStepDocumentation(message.documentation)"><i ng-style="{ \'margin-left\': message.desc?\'5px\':\'0px\'}" class="fa fa-question-circle icon-documentation"></i></span></span></div>'+
           '</div>'+
           '<div class="message-report" ng-if="message.report != null">'+
             '<a href="" class="report-link" ng-click="showReport()">'+

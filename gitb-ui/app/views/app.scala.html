@@ -1,4 +1,4 @@
-@(webJarAssets: WebJarAssets, config: models.PublicConfig)
+@(config: models.PublicConfig)
 <!DOCTYPE html>
 <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
@@ -13,14 +13,11 @@
 		<meta name="description" content="">
 		<meta name="viewport" content="width=device-width">
 		<script type="text/javascript" src="@routes.Application.javascriptRoutes"></script>
-
-		<link rel='stylesheet' href='@routes.WebJarAssets.at(webJarAssets.locate("css/bootstrap.min.css"))'>
-		<link rel="stylesheet" href='@routes.WebJarAssets.at(webJarAssets.locate("css/font-awesome.min.css"))'>
-		<link rel="stylesheet" href='@routes.WebJarAssets.at(webJarAssets.locate("lib/codemirror.css"))'>
-
+		<link rel="stylesheet" href='/webjars/bootstrap/3.3.7-1/css/bootstrap.min.css'>
+		<link rel="stylesheet" href='/webjars/font-awesome/4.7.0/css/font-awesome.min.css'>
+		<link rel="stylesheet" href='/webjars/codemirror/4.8/lib/codemirror.css'>
 		<!-- Web Fonts  -->
 		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/fonts/opensans/stylesheet.css")'>
-
 		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/theme.css")'>
 		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/theme-animate.css")'>
 		<link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/theme-responsive.css")'>
@@ -44,28 +41,28 @@
 	<body>
 		<div id="notification-container" growl></div>
 		<div class="app" ui-view></div>
-		<!-- WebJars -->
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("jquery.min.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at("jquery-cookie/1.4.1-1/jquery.cookie.js")'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("lodash.min.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at("angularjs/1.7.6/angular.min.js")'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at("angularjs/1.7.6/angular-route.min.js")'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at("angularjs/1.7.6/angular-resource.min.js")'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at("angularjs/1.7.6/angular-cookies.min.js")'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at("angularjs/1.7.6/angular-sanitize.min.js")'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at("angularjs/1.7.6/angular-animate.min.js")'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("ui-bootstrap.min.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("ui-bootstrap-tpls.min.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("angular-ui-router.min.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("angular-file-upload.min.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("lib/codemirror.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/xml/xml.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/xquery/xquery.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/http/http.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/htmlmixed/htmlmixed.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("mode/htmlembedded/htmlembedded.js"))'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("tinymce.min.js"))'></script>
-
+		<!-- WebJars START -->
+		<script type='text/javascript' src='/webjars/jquery/3.5.1/jquery.min.js'></script>
+		<script type='text/javascript' src='/webjars/jquery-cookie/1.4.1-1/jquery.cookie.js'></script>
+		<script type='text/javascript' src='/webjars/lodash/2.4.1-6/lodash.min.js'></script>
+		<script type='text/javascript' src='/webjars/angularjs/1.7.9/angular.min.js'></script>
+		<script type='text/javascript' src='/webjars/angularjs/1.7.9/angular-route.min.js'></script>
+		<script type='text/javascript' src='/webjars/angularjs/1.7.9/angular-resource.min.js'></script>
+		<script type='text/javascript' src='/webjars/angularjs/1.7.9/angular-cookies.min.js'></script>
+		<script type='text/javascript' src='/webjars/angularjs/1.7.9/angular-sanitize.min.js'></script>
+		<script type='text/javascript' src='/webjars/angularjs/1.7.9/angular-animate.min.js'></script>
+		<script type='text/javascript' src='/webjars/angular-ui-bootstrap/2.5.0/ui-bootstrap.min.js'></script>
+		<script type='text/javascript' src='/webjars/angular-ui-bootstrap/2.5.0/ui-bootstrap-tpls.min.js'></script>
+		<script type='text/javascript' src='/webjars/angular-ui-router/1.0.20/angular-ui-router.min.js'></script>
+		<script type='text/javascript' src='/webjars/angular-file-upload/1.6.12/angular-file-upload.min.js'></script>
+		<script type='text/javascript' src='/webjars/codemirror/4.8/lib/codemirror.js'></script>
+		<script type='text/javascript' src='/webjars/codemirror/4.8/mode/xml/xml.js'></script>
+		<script type='text/javascript' src='/webjars/codemirror/4.8/mode/xquery/xquery.js'></script>
+		<script type='text/javascript' src='/webjars/codemirror/4.8/mode/http/http.js'></script>
+		<script type='text/javascript' src='/webjars/codemirror/4.8/mode/htmlmixed/htmlmixed.js'></script>
+		<script type='text/javascript' src='/webjars/codemirror/4.8/mode/htmlembedded/htmlembedded.js'></script>
+		<script type='text/javascript' src='/webjars/tinymce/4.7.9/tinymce.min.js'></script>
+		<!-- WebJars END -->
 		<script src='@routes.Assets.at("components/jquery.easing.js")'></script>
 		<script src='@routes.Assets.at("components/jquery.appear.js")'></script>
 		<script src='@routes.Assets.at("components/jquery.cookie.js")'></script>
@@ -208,7 +205,7 @@
         <script src='@routes.Assets.at("scripts/directives/CommunityFormDirectives.js")?v=@config.versionNumber'></script>
 
 		<script src='@routes.Assets.at("components/plugins.js")'></script>
-		<script type='text/javascript' src='@routes.WebJarAssets.at(webJarAssets.locate("bootstrap.min.js"))'></script>
+		<script type='text/javascript' src='/webjars/bootstrap/3.3.7-1/js/bootstrap.min.js'></script>
 		<script src='@routes.Assets.at("components/theme.js")'></script>
 		<script src='@routes.Assets.at("components/momentjs/moment.min.js")'></script>
 		<script src='@routes.Assets.at("components/date-range-picker/daterangepicker.js")'></script>

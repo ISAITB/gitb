@@ -1543,8 +1543,8 @@ object JsonUtil {
   def jsTARReports(reports: TestAssertionGroupReportsType): JsArray = {
     var json = Json.arr()
     if (reports != null && reports.getInfoOrWarningOrError != null) {
-      import scala.collection.JavaConversions._
-      reports.getInfoOrWarningOrError.toList.foreach(item => {
+      import scala.collection.JavaConverters._
+      collectionAsScalaIterable(reports.getInfoOrWarningOrError).toList.foreach(item => {
         val jsItem = jsTestAssertionReportType(item)
         if (jsItem != null) {
           json = json.append(jsItem)

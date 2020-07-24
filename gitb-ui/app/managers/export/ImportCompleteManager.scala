@@ -29,7 +29,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
 
   import dbConfig.profile.api._
 
-  import scala.collection.JavaConversions._
+  import scala.collection.JavaConverters._
 
   def completeDomainImport(exportedDomain: com.gitb.xml.export.Domain, importSettings: ImportSettings, importItems: List[ImportItem], targetDomainId: Option[Long], canAddOrDeleteDomain: Boolean): Unit = {
     // Load context
@@ -57,19 +57,19 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
 
   private def mergeImportItemMaps(existingMap: ImportItemMaps, newMap: ImportItemMaps): Unit = {
     // Sources
-    newMap.sourceMap.entrySet.foreach { entry =>
-      if (existingMap.sourceMap.containsKey(entry.getKey)) {
-        existingMap.sourceMap(entry.getKey).addAll(entry.getValue)
+    newMap.sourceMap.foreach { entry =>
+      if (existingMap.sourceMap.contains(entry._1)) {
+        existingMap.sourceMap.update(entry._1, entry._2)
       } else {
-        existingMap.sourceMap += (entry.getKey -> entry.getValue)
+        existingMap.sourceMap += (entry._1 -> entry._2)
       }
     }
     // Targets
-    newMap.targetMap.entrySet.foreach { entry =>
-      if (existingMap.targetMap.containsKey(entry.getKey)) {
-        existingMap.targetMap(entry.getKey).addAll(entry.getValue)
+    newMap.targetMap.foreach { entry =>
+      if (existingMap.targetMap.contains(entry._1)) {
+        existingMap.targetMap.update(entry._1, entry._2)
       } else {
-        existingMap.targetMap += (entry.getKey -> entry.getValue)
+        existingMap.targetMap += (entry._1 -> entry._2)
       }
     }
   }
@@ -106,7 +106,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
 
   private def processFromArchive[A](itemType: ImportItemType, data: A, itemId: String, ctx: ImportContext, importCallbacks: ImportCallbacks[A]): DBIO[_] = {
     var dbAction: Option[DBIO[_]] = None
-    if (ctx.importItemMaps.sourceMap.containsKey(itemType)) {
+    if (ctx.importItemMaps.sourceMap.contains(itemType)) {
       /*
        An import item type might be missing from the map if we have data that exists in the archive but is being forcibly
        skipped in the import process. An example are users being skipped when SSO is active or when they would represent new
@@ -379,12 +379,12 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
   }
 
   private def isAvailableInDb(dataId: String, itemType: ImportItemType, ctx: ImportContext): Boolean = {
-    dataId != null && ctx.processedIdMap.containsKey(itemType) && ctx.processedIdMap(itemType).containsKey(dataId)
+    dataId != null && ctx.processedIdMap.contains(itemType) && ctx.processedIdMap(itemType).contains(dataId)
   }
 
   private def getProcessedDbId(data: com.gitb.xml.export.ExportType, itemType: ImportItemType, ctx: ImportContext): Option[Long] = {
     var dbId: Option[Long] = None
-    if (data != null && ctx.processedIdMap.containsKey(itemType) && ctx.processedIdMap(itemType).containsKey(data.getId)) {
+    if (data != null && ctx.processedIdMap.contains(itemType) && ctx.processedIdMap(itemType).contains(data.getId)) {
       dbId = Some(ctx.processedIdMap(itemType)(data.getId).toLong)
     }
     dbId
@@ -393,9 +393,9 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
   private def getSavedActorMap(exportedTestSuite: com.gitb.xml.export.TestSuite, specificationId: Long, ctx: ImportContext): java.util.Map[String, Long] = {
     val savedActorMap = new java.util.HashMap[String, Long]()
     if (exportedTestSuite.getTestCases != null) {
-      exportedTestSuite.getTestCases.getTestCase.foreach { exportedTestCase =>
+      collectionAsScalaIterable(exportedTestSuite.getTestCases.getTestCase).foreach { exportedTestCase =>
         if (exportedTestCase.getActors != null) {
-          exportedTestCase.getActors.getActor.foreach { actor =>
+          collectionAsScalaIterable(exportedTestCase.getActors.getActor).foreach { actor =>
             if (!savedActorMap.containsKey(actor.getActor.getActorId)) {
               savedActorMap.put(actor.getActor.getActorId, ctx.savedSpecificationActors(specificationId)(actor.getActor.getActorId))
             }
@@ -427,14 +427,14 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       existingActorToSystemMap <- testSuiteManager.getExistingActorToSystemMap(systemActors)
       // Save test cases
       processTestCasesStep <- {
-        if (ctx.savedSpecificationActors.containsKey(specificationId)) {
+        if (ctx.savedSpecificationActors.contains(specificationId)) {
           testSuiteManager.stepProcessTestCases(
             specificationId,
             testSuiteId,
-            Some(toModelTestCases(data.getTestCases.getTestCase.toList, specificationId)),
-            getResourcePaths(testSuiteFile.getName, data.getTestCases.getTestCase.toList),
+            Some(toModelTestCases(collectionAsScalaIterable(data.getTestCases.getTestCase).toList, specificationId)),
+            getResourcePaths(testSuiteFile.getName, collectionAsScalaIterable(data.getTestCases.getTestCase).toList),
             new java.util.HashMap[String, java.lang.Long](), // existingTestCaseMap
-            ctx.savedSpecificationActors(specificationId), // savedActorIds
+            mapAsJavaMap(ctx.savedSpecificationActors(specificationId)), // savedActorIds
             existingActorToSystemMap
           )
         } else {
@@ -473,14 +473,14 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       existingActorToSystemMap <- testSuiteManager.getExistingActorToSystemMap(systemActors)
       // Process the test cases.
       processTestCasesStep <- {
-        if (ctx.savedSpecificationActors.containsKey(specificationId)) {
+        if (ctx.savedSpecificationActors.contains(specificationId)) {
           testSuiteManager.stepProcessTestCases(
             specificationId,
             testSuiteId,
-            Some(toModelTestCases(data.getTestCases.getTestCase.toList, specificationId)),
-            getResourcePaths(testSuiteFile.getName, data.getTestCases.getTestCase.toList),
+            Some(toModelTestCases(collectionAsScalaIterable(data.getTestCases.getTestCase).toList, specificationId)),
+            getResourcePaths(testSuiteFile.getName, collectionAsScalaIterable(data.getTestCases.getTestCase).toList),
             existingTestCaseMap,
-            ctx.savedSpecificationActors(specificationId), // savedActorIds
+            mapAsJavaMap(ctx.savedSpecificationActors(specificationId)), // savedActorIds
             existingActorToSystemMap
           )
         } else {
@@ -517,9 +517,9 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
     // Ensure that a domain cannot be created or added without appropriate access.
     if (!canAddOrDeleteDomain) {
       var domainImportItem: Option[ImportItem] = None
-      if (ctx.importItemMaps.sourceMap.containsKey(ImportItemType.Domain) && ctx.importItemMaps.sourceMap(ImportItemType.Domain).nonEmpty) {
+      if (ctx.importItemMaps.sourceMap.contains(ImportItemType.Domain) && ctx.importItemMaps.sourceMap(ImportItemType.Domain).nonEmpty) {
         domainImportItem = Some(ctx.importItemMaps.sourceMap(ImportItemType.Domain).head._2)
-      } else if (ctx.importItemMaps.targetMap.containsKey(ImportItemType.Domain) && ctx.importItemMaps.targetMap(ImportItemType.Domain).nonEmpty) {
+      } else if (ctx.importItemMaps.targetMap.contains(ImportItemType.Domain) && ctx.importItemMaps.targetMap(ImportItemType.Domain).nonEmpty) {
         domainImportItem = Some(ctx.importItemMaps.targetMap(ImportItemType.Domain).head._2)
       }
       if (domainImportItem.isDefined) {
@@ -616,7 +616,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
         // Domain parameters
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedDomain.getParameters != null) {
-          exportedDomain.getParameters.getParameter.foreach { parameter =>
+          collectionAsScalaIterable(exportedDomain.getParameters.getParameter).foreach { parameter =>
             dbActions += processFromArchive(ImportItemType.DomainParameter, parameter, parameter.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.DomainParameter, item: ImportItem) => {
@@ -643,7 +643,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
         // Specifications
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedDomain.getSpecifications != null) {
-          exportedDomain.getSpecifications.getSpecification.foreach { exportedSpecification =>
+          collectionAsScalaIterable(exportedDomain.getSpecifications.getSpecification).foreach { exportedSpecification =>
             dbActions += processFromArchive(ImportItemType.Specification, exportedSpecification, exportedSpecification.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.Specification, item: ImportItem) => {
@@ -679,9 +679,9 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
         // Actors
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedDomain.getSpecifications != null) {
-          exportedDomain.getSpecifications.getSpecification.foreach { exportedSpecification =>
+          collectionAsScalaIterable(exportedDomain.getSpecifications.getSpecification).foreach { exportedSpecification =>
             if (exportedSpecification.getActors != null) {
-              exportedSpecification.getActors.getActor.foreach { exportedActor =>
+              collectionAsScalaIterable(exportedSpecification.getActors.getActor).foreach { exportedActor =>
                 dbActions += processFromArchive(ImportItemType.Actor, exportedActor, exportedActor.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.Actor, item: ImportItem) => {
@@ -696,7 +696,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
                     (data: com.gitb.xml.export.Actor, targetKey: String, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
                       val specificationId = item.parentItem.get.targetKey.get.toLong
-                      if (!ctx.savedSpecificationActors.containsKey(specificationId)) {
+                      if (!ctx.savedSpecificationActors.contains(specificationId)) {
                         ctx.savedSpecificationActors += (specificationId -> mutable.Map[String, Long]())
                       }
                       ctx.savedSpecificationActors(specificationId) += (data.getActorId -> targetKey.toLong)
@@ -710,7 +710,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
                     (data: com.gitb.xml.export.Actor, targetKey: Any, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
                       val specificationId = item.parentItem.get.targetKey.get.toLong
-                      if (!ctx.savedSpecificationActors.containsKey(specificationId)) {
+                      if (!ctx.savedSpecificationActors.contains(specificationId)) {
                         ctx.savedSpecificationActors += (specificationId -> mutable.Map[String, Long]())
                       }
                       ctx.savedSpecificationActors(specificationId) += (data.getActorId -> targetKey.asInstanceOf[Long])
@@ -734,11 +734,11 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
         // Endpoints
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedDomain.getSpecifications != null) {
-          exportedDomain.getSpecifications.getSpecification.foreach { exportedSpecification =>
+          collectionAsScalaIterable(exportedDomain.getSpecifications.getSpecification).foreach { exportedSpecification =>
             if (exportedSpecification.getActors != null) {
-              exportedSpecification.getActors.getActor.foreach { exportedActor =>
+              collectionAsScalaIterable(exportedSpecification.getActors.getActor).foreach { exportedActor =>
                 if (exportedActor.getEndpoints != null) {
-                  exportedActor.getEndpoints.getEndpoint.foreach { exportedEndpoint =>
+                  collectionAsScalaIterable(exportedActor.getEndpoints.getEndpoint).foreach { exportedEndpoint =>
                     dbActions += processFromArchive(ImportItemType.Endpoint, exportedEndpoint, exportedEndpoint.getId, ctx,
                       ImportCallbacks.set(
                         (data: com.gitb.xml.export.Endpoint, item: ImportItem) => {
@@ -768,13 +768,13 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
         // Endpoint parameters
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedDomain.getSpecifications != null) {
-          exportedDomain.getSpecifications.getSpecification.foreach { exportedSpecification =>
+          collectionAsScalaIterable(exportedDomain.getSpecifications.getSpecification).foreach { exportedSpecification =>
             if (exportedSpecification.getActors != null) {
-              exportedSpecification.getActors.getActor.foreach { exportedActor =>
+              collectionAsScalaIterable(exportedSpecification.getActors.getActor).foreach { exportedActor =>
                 if (exportedActor.getEndpoints != null) {
-                  exportedActor.getEndpoints.getEndpoint.foreach { exportedEndpoint =>
+                  collectionAsScalaIterable(exportedActor.getEndpoints.getEndpoint).foreach { exportedEndpoint =>
                     if (exportedEndpoint.getParameters != null) {
-                      exportedEndpoint.getParameters.getParameter.foreach { exportedParameter =>
+                      collectionAsScalaIterable(exportedEndpoint.getParameters.getParameter).foreach { exportedParameter =>
                         dbActions += processFromArchive(ImportItemType.EndpointParameter, exportedParameter, exportedParameter.getId, ctx,
                           ImportCallbacks.set(
                             (data: com.gitb.xml.export.EndpointParameter, item: ImportItem) => {
@@ -806,9 +806,9 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
         // Test suites
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedDomain.getSpecifications != null) {
-          exportedDomain.getSpecifications.getSpecification.foreach { exportedSpecification =>
+          collectionAsScalaIterable(exportedDomain.getSpecifications.getSpecification).foreach { exportedSpecification =>
             if (exportedSpecification.getTestSuites != null) {
-              exportedSpecification.getTestSuites.getTestSuite.foreach { exportedTestSuite =>
+              collectionAsScalaIterable(exportedSpecification.getTestSuites.getTestSuite).foreach { exportedTestSuite =>
                 dbActions += processFromArchive(ImportItemType.TestSuite, exportedTestSuite, exportedTestSuite.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.TestSuite, item: ImportItem) => {
@@ -850,7 +850,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
   }
 
   private def hasExisting(itemType: ImportItemType, key: String, ctx: ImportContext): Boolean = {
-    ctx.existingIds.map.containsKey(itemType) && ctx.existingIds.map(itemType).contains(key)
+    ctx.existingIds.map.contains(itemType) && ctx.existingIds.map(itemType).contains(key)
   }
 
   private def completeFileSystemFinalisation(ctx: ImportContext, dbAction: DBIO[_]): DBIO[_] = {
@@ -1006,7 +1006,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
           ImportCallbacks.set(
             (data: com.gitb.xml.export.Community, item: ImportItem) => {
               var domainId: Option[Long] = None
-              if (exportedCommunity.getDomain != null && ctx.processedIdMap.containsKey(ImportItemType.Domain)) {
+              if (exportedCommunity.getDomain != null && ctx.processedIdMap.contains(ImportItemType.Domain)) {
                 val processedDomainId = ctx.processedIdMap(ImportItemType.Domain).get(exportedCommunity.getDomain.getId)
                 if (processedDomainId.isDefined) {
                   domainId = Some(processedDomainId.get.toLong)
@@ -1022,7 +1022,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
             (data: com.gitb.xml.export.Community, targetKey: String, item: ImportItem) => {
               var domainId: Option[Long] = None
               if (exportedCommunity.getDomain != null) {
-                if (ctx.processedIdMap.containsKey(ImportItemType.Domain)) {
+                if (ctx.processedIdMap.contains(ImportItemType.Domain)) {
                   val processedDomainId = ctx.processedIdMap(ImportItemType.Domain).get(exportedCommunity.getDomain.getId)
                   if (processedDomainId.isDefined) {
                     domainId = Some(processedDomainId.get.toLong)
@@ -1090,7 +1090,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getCustomLabels != null) {
-          exportedCommunity.getCustomLabels.getLabel.foreach { exportedLabel =>
+          collectionAsScalaIterable(exportedCommunity.getCustomLabels.getLabel).foreach { exportedLabel =>
             dbActions += processFromArchive(ImportItemType.CustomLabel, exportedLabel, exportedLabel.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.CustomLabel, item: ImportItem) => {
@@ -1127,7 +1127,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getOrganisationProperties != null) {
-          exportedCommunity.getOrganisationProperties.getProperty.foreach { exportedProperty =>
+          collectionAsScalaIterable(exportedCommunity.getOrganisationProperties.getProperty).foreach { exportedProperty =>
             dbActions += processFromArchive(ImportItemType.OrganisationProperty, exportedProperty, exportedProperty.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.OrganisationProperty, item: ImportItem) => {
@@ -1153,7 +1153,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getSystemProperties != null) {
-          exportedCommunity.getSystemProperties.getProperty.foreach { exportedProperty =>
+          collectionAsScalaIterable(exportedCommunity.getSystemProperties.getProperty).foreach { exportedProperty =>
             dbActions += processFromArchive(ImportItemType.SystemProperty, exportedProperty, exportedProperty.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.SystemProperty, item: ImportItem) => {
@@ -1179,7 +1179,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getLandingPages != null) {
-          exportedCommunity.getLandingPages.getLandingPage.foreach { exportedContent =>
+          collectionAsScalaIterable(exportedCommunity.getLandingPages.getLandingPage).foreach { exportedContent =>
             dbActions += processFromArchive(ImportItemType.LandingPage, exportedContent, exportedContent.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.LandingPage, item: ImportItem) => {
@@ -1205,7 +1205,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getLegalNotices != null) {
-          exportedCommunity.getLegalNotices.getLegalNotice.foreach { exportedContent =>
+          collectionAsScalaIterable(exportedCommunity.getLegalNotices.getLegalNotice).foreach { exportedContent =>
             dbActions += processFromArchive(ImportItemType.LegalNotice, exportedContent, exportedContent.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.LegalNotice, item: ImportItem) => {
@@ -1231,7 +1231,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getErrorTemplates != null) {
-          exportedCommunity.getErrorTemplates.getErrorTemplate.foreach { exportedContent =>
+          collectionAsScalaIterable(exportedCommunity.getErrorTemplates.getErrorTemplate).foreach { exportedContent =>
             dbActions += processFromArchive(ImportItemType.ErrorTemplate, exportedContent, exportedContent.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.ErrorTemplate, item: ImportItem) => {
@@ -1257,7 +1257,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (!Configurations.AUTHENTICATION_SSO_ENABLED && exportedCommunity.getAdministrators != null) {
-          exportedCommunity.getAdministrators.getAdministrator.foreach { exportedUser =>
+          collectionAsScalaIterable(exportedCommunity.getAdministrators.getAdministrator).foreach { exportedUser =>
             dbActions += processFromArchive(ImportItemType.Administrator, exportedUser, exportedUser.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.CommunityAdministrator, item: ImportItem) => {
@@ -1306,7 +1306,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getOrganisations != null) {
-          exportedCommunity.getOrganisations.getOrganisation.foreach { exportedOrganisation =>
+          collectionAsScalaIterable(exportedCommunity.getOrganisations.getOrganisation).foreach { exportedOrganisation =>
             dbActions += processFromArchive(ImportItemType.Organisation, exportedOrganisation, exportedOrganisation.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.Organisation, item: ImportItem) => {
@@ -1355,9 +1355,9 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (!Configurations.AUTHENTICATION_SSO_ENABLED && exportedCommunity.getOrganisations != null) {
-          exportedCommunity.getOrganisations.getOrganisation.foreach { exportedOrganisation =>
+          collectionAsScalaIterable(exportedCommunity.getOrganisations.getOrganisation).foreach { exportedOrganisation =>
             if (exportedOrganisation.getUsers != null) {
-              exportedOrganisation.getUsers.getUser.foreach { exportedUser =>
+              collectionAsScalaIterable(exportedOrganisation.getUsers.getUser).foreach { exportedUser =>
                 dbActions += processFromArchive(ImportItemType.OrganisationUser, exportedUser, exportedUser.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.OrganisationUser, item: ImportItem) => {
@@ -1400,9 +1400,9 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getOrganisations != null) {
-          exportedCommunity.getOrganisations.getOrganisation.foreach { exportedOrganisation =>
+          collectionAsScalaIterable(exportedCommunity.getOrganisations.getOrganisation).foreach { exportedOrganisation =>
             if (exportedOrganisation.getPropertyValues != null) {
-              exportedOrganisation.getPropertyValues.getProperty.foreach { exportedValue =>
+              collectionAsScalaIterable(exportedOrganisation.getPropertyValues.getProperty).foreach { exportedValue =>
                 dbActions += processFromArchive(ImportItemType.OrganisationPropertyValue, exportedValue, exportedValue.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.OrganisationPropertyValue, item: ImportItem) => {
@@ -1454,9 +1454,9 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getOrganisations != null) {
-          exportedCommunity.getOrganisations.getOrganisation.foreach { exportedOrganisation =>
+          collectionAsScalaIterable(exportedCommunity.getOrganisations.getOrganisation).foreach { exportedOrganisation =>
             if (exportedOrganisation.getSystems != null) {
-              exportedOrganisation.getSystems.getSystem.foreach { exportedSystem =>
+              collectionAsScalaIterable(exportedOrganisation.getSystems.getSystem).foreach { exportedSystem =>
                 dbActions += processFromArchive(ImportItemType.System, exportedSystem, exportedSystem.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.System, item: ImportItem) => {
@@ -1490,11 +1490,11 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getOrganisations != null) {
-          exportedCommunity.getOrganisations.getOrganisation.foreach { exportedOrganisation =>
+          collectionAsScalaIterable(exportedCommunity.getOrganisations.getOrganisation).foreach { exportedOrganisation =>
             if (exportedOrganisation.getSystems != null) {
-              exportedOrganisation.getSystems.getSystem.foreach { exportedSystem =>
+              collectionAsScalaIterable(exportedOrganisation.getSystems.getSystem).foreach { exportedSystem =>
                 if (exportedSystem.getPropertyValues != null) {
-                  exportedSystem.getPropertyValues.getProperty.foreach { exportedValue =>
+                  collectionAsScalaIterable(exportedSystem.getPropertyValues.getProperty).foreach { exportedValue =>
                     dbActions += processFromArchive(ImportItemType.SystemPropertyValue, exportedValue, exportedValue.getId, ctx,
                       ImportCallbacks.set(
                         (data: com.gitb.xml.export.SystemPropertyValue, item: ImportItem) => {
@@ -1548,11 +1548,11 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getOrganisations != null) {
-          exportedCommunity.getOrganisations.getOrganisation.foreach { exportedOrganisation =>
+          collectionAsScalaIterable(exportedCommunity.getOrganisations.getOrganisation).foreach { exportedOrganisation =>
             if (exportedOrganisation.getSystems != null) {
-              exportedOrganisation.getSystems.getSystem.foreach { exportedSystem =>
+              collectionAsScalaIterable(exportedOrganisation.getSystems.getSystem).foreach { exportedSystem =>
                 if (exportedSystem.getStatements != null) {
-                  exportedSystem.getStatements.getStatement.foreach { exportedStatement =>
+                  collectionAsScalaIterable(exportedSystem.getStatements.getStatement).foreach { exportedStatement =>
                     dbActions += processFromArchive(ImportItemType.Statement, exportedStatement, exportedStatement.getId, ctx,
                       ImportCallbacks.set(
                         (data: com.gitb.xml.export.ConformanceStatement, item: ImportItem) => {
@@ -1603,13 +1603,13 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getOrganisations != null) {
-          exportedCommunity.getOrganisations.getOrganisation.foreach { exportedOrganisation =>
+          collectionAsScalaIterable(exportedCommunity.getOrganisations.getOrganisation).foreach { exportedOrganisation =>
             if (exportedOrganisation.getSystems != null) {
-              exportedOrganisation.getSystems.getSystem.foreach { exportedSystem =>
+              collectionAsScalaIterable(exportedOrganisation.getSystems.getSystem).foreach { exportedSystem =>
                 if (exportedSystem.getStatements != null) {
-                  exportedSystem.getStatements.getStatement.foreach { exportedStatement =>
+                  collectionAsScalaIterable(exportedSystem.getStatements.getStatement).foreach { exportedStatement =>
                     if (exportedStatement.getConfigurations != null) {
-                      exportedStatement.getConfigurations.getConfiguration.foreach { exportedValue =>
+                      collectionAsScalaIterable(exportedStatement.getConfigurations.getConfiguration).foreach { exportedValue =>
                         dbActions += processFromArchive(ImportItemType.StatementConfiguration, exportedValue, exportedValue.getId, ctx,
                           ImportCallbacks.set(
                             (data: com.gitb.xml.export.Configuration, item: ImportItem) => {

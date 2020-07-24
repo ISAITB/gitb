@@ -6,7 +6,7 @@ import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import play.api.libs.json._
 import play.api.mvc.{AnyContent, Request}
-import play.api.routing.Router.Tags
+import play.api.routing.Router
 
 /**
  * Singleton object to carry out sanitization checks on received requests.
@@ -59,13 +59,9 @@ object InputSanitizer {
   }
 
   private def requestTarget[A](request: Request[A]): String = {
-    val controller = request.tags.get(Tags.RouteController)
-    val method = request.tags.get(Tags.RouteActionMethod)
-    if (controller.isDefined && method.isDefined) {
-      controller.get + "." + method.get
-    } else {
-      ""
-    }
+    val controller = request.attrs(Router.Attrs.HandlerDef).controller
+    val method = request.attrs(Router.Attrs.HandlerDef).method
+    controller + "." + method
   }
 
   private def jsonPropertyNames(fullParameterKey: String, parameterValue: String): List[(String, String)] = {

@@ -4,18 +4,18 @@ import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, Respo
 import javax.inject.Inject
 import managers.{AuthorizationManager, CommunityLabelManager, EndPointManager}
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.mvc.Controller
+import play.api.mvc.{AbstractController, ControllerComponents}
 
-class EndPointService @Inject() (endPointManager: EndPointManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends Controller {
+class EndPointService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, endPointManager: EndPointManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[EndPointService])
 
-  def deleteEndPoint(endPointId: Long) = AuthorizedAction { request =>
+  def deleteEndPoint(endPointId: Long) = authorizedAction { request =>
     authorizationManager.canDeleteEndpoint(request, endPointId)
     endPointManager.deleteEndPoint(endPointId)
     ResponseConstructor.constructEmptyResponse
   }
 
-  def updateEndPoint(endPointId: Long) = AuthorizedAction { request =>
+  def updateEndPoint(endPointId: Long) = authorizedAction { request =>
     authorizationManager.canUpdateEndpoint(request, endPointId)
     val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
     val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)

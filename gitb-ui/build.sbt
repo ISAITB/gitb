@@ -1,13 +1,20 @@
 name := """GITB"""
-
 version := "1.0-SNAPSHOT"
+maintainer := "DIGIT-ITB@ec.europa.eu"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
-scalaVersion := "2.11.12"
+scalaVersion := "2.12.12"
+val akkaVersion = "2.6.8"
+val jacksonVersion = "2.10.5"
+val cxfVersion = "3.3.7"
+
+useCoursier := false
 
 libraryDependencies ++= Seq(
-  cache,
+  guice,
+  ehcache,
+  cacheApi,
   "eu.europa.ec.itb" % "gitb-types" % "1.9.1",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
@@ -15,35 +22,37 @@ libraryDependencies ++= Seq(
   "com.gitb" % "gitb-validator-tdl" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-xml-resources" % "1.0-SNAPSHOT",
   "mysql" % "mysql-connector-java" % "5.1.49",
-  "com.typesafe.akka" %% "akka-actor" % "2.5.19",
-  "com.typesafe.akka" %% "akka-remote" % "2.5.19",
-  "com.typesafe.akka" %% "akka-stream" % "2.5.19",
-  "com.typesafe.akka" %% "akka-slf4j" % "2.5.19",
-  "com.typesafe.play" %% "play-slick" % "2.1.1",
-  "org.pac4j" % "play-pac4j" % "3.1.0",
-  "org.pac4j" % "pac4j-cas" % "2.2.0",
-  "org.slf4j" % "slf4j-nop" % "1.7.25",
+  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+  "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
+  "com.typesafe.akka" %% "akka-remote" % akkaVersion,
+  "com.typesafe.akka" %% "akka-stream" % akkaVersion,
+  "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
+  "com.typesafe.akka" %% "akka-serialization-jackson" % akkaVersion,
+  "com.typesafe.play" %% "play-slick" % "5.0.0",
+  "com.typesafe.play" %% "play-json" % "2.8.1",
+  "org.pac4j" %% "play-pac4j" % "10.0.1",
+  "org.pac4j" % "pac4j-cas" % "4.0.3",
   "ch.qos.logback" % "logback-classic" % "1.2.3",
-  "org.apache.commons" % "commons-lang3" % "3.8.1",
-  "com.fasterxml.jackson.core" % "jackson-databind" % "2.9.8",
-  "com.fasterxml.jackson.core" % "jackson-core" % "2.9.8",
-  "com.fasterxml.jackson.core" % "jackson-annotations" % "2.9.8",
-  "com.fasterxml.jackson.module" % "jackson-module-jaxb-annotations" % "2.9.8",
+  "org.apache.commons" % "commons-lang3" % "3.11",
+  "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
+  "com.fasterxml.jackson.core" % "jackson-core" % jacksonVersion,
+  "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonVersion,
+  "com.fasterxml.jackson.module" % "jackson-module-jaxb-annotations" % jacksonVersion,
   "org.mindrot"  % "jbcrypt" % "0.4",  // For password encryption
-  "net.debasishg" %% "redisclient" % "3.9", // although this is the best one, maybe it could be changed into play-redis-plugin when sedis compiled for scala 2.11
-  "org.apache.cxf" % "cxf-rt-frontend-jaxws" % "3.3.0",     //for calling jax-ws services
-  "org.apache.cxf" % "cxf-rt-transports-http" % "3.3.0", //for calling jax-ws services
-  "org.apache.cxf" % "cxf-rt-transports-http-jetty" % "3.3.0", //exporting jax-ws services
-  "org.apache.tika" % "tika-core" % "1.22",
-  "org.webjars" %% "webjars-play" % "2.5.0",
-  "org.webjars" % "jquery" % "2.2.4",
+  "net.debasishg" %% "redisclient" % "3.30", // although this is the best one, maybe it could be changed into play-redis-plugin when sedis compiled for scala 2.11
+  "org.apache.cxf" % "cxf-rt-frontend-jaxws" % cxfVersion,     //for calling jax-ws services
+  "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion, //for calling jax-ws services
+  "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion, //exporting jax-ws services
+  "org.apache.tika" % "tika-core" % "1.24.1",
+  "org.webjars" %% "webjars-play" % "2.8.0-1",
+  "org.webjars" % "jquery" % "3.5.1",
   "org.webjars" % "jquery-cookie" % "1.4.1-1" exclude("org.webjars", "jquery"),
   "org.webjars" % "lodash" % "2.4.1-6",
-  "org.webjars" % "bootstrap" % "3.3.6" exclude("org.webjars", "jquery"),
-  "org.webjars" % "angularjs" % "1.7.6" exclude("org.webjars", "jquery"),
+  "org.webjars" % "bootstrap" % "3.3.7-1" exclude("org.webjars", "jquery"),
+  "org.webjars" % "angularjs" % "1.7.9" exclude("org.webjars", "jquery"),
   "org.webjars" % "angular-ui-bootstrap" % "2.5.0",
   "org.webjars" % "angular-ui-router" % "1.0.20",
-  "org.webjars" % "font-awesome" % "4.1.0" excludeAll(
+  "org.webjars" % "font-awesome" % "4.7.0" excludeAll(
       ExclusionRule(organization="org.webjars", name="jquery"),
       ExclusionRule(organization="org.webjars", name="bootstrap")
   ),
@@ -55,45 +64,30 @@ libraryDependencies ++= Seq(
   "javax.xml.ws" % "jaxws-api" % "2.3.1",
   "javax.jws" % "javax.jws-api" % "1.1",
   "javax.xml.bind" % "jaxb-api" % "2.3.1",
-  "org.glassfish.jaxb" % "jaxb-runtime" % "2.3.1",
-  "javax.xml.soap" % "javax.xml.soap-api" % "1.3.8",
-  "com.sun.xml.messaging.saaj" % "saaj-impl" % "1.5.1",
+  "org.glassfish.jaxb" % "jaxb-runtime" % "2.3.3",
+  "javax.xml.soap" % "javax.xml.soap-api" % "1.4.0",
+  "com.sun.xml.messaging.saaj" % "saaj-impl" % "1.5.2",
   "com.sun.org.apache.xml.internal" % "resolver" % "20050927",
-  "com.sun.xml.stream.buffer" % "streambuffer" % "1.5.7",
-  "com.sun.xml.ws" % "policy" % "2.7.6",
-  "org.glassfish.gmbal" % "gmbal-api-only" % "3.2.0-b003",
-  "org.bouncycastle" % "bcmail-jdk15on" % "1.60",
-  "org.apache.pdfbox" % "pdfbox" % "2.0.13",
-  "org.jasypt" % "jasypt" % "1.9.2",
-  "org.apache.httpcomponents" % "httpclient" % "4.5.7",
-  "org.flywaydb" %% "flyway-play" % "3.2.0",
-  "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20190325.1",
-  "net.lingala.zip4j" % "zip4j" % "2.5.1"
+  "com.sun.xml.stream.buffer" % "streambuffer" % "1.5.9",
+  "com.sun.xml.ws" % "policy" % "2.7.10",
+  "org.glassfish.gmbal" % "gmbal-api-only" % "4.0.2",
+  "org.bouncycastle" % "bcmail-jdk15on" % "1.66",
+  "org.apache.pdfbox" % "pdfbox" % "2.0.20",
+  "org.jasypt" % "jasypt" % "1.9.3",
+  "org.apache.httpcomponents" % "httpclient" % "4.5.12",
+  "org.flywaydb" %% "flyway-play" % "6.0.0",
+  "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20200713.1",
+  "net.lingala.zip4j" % "zip4j" % "2.6.1"
 )
-
-//JsEngineKeys.engineType := JsEngineKeys.EngineType.Node
 
 includeFilter in (Assets, LessKeys.less) := "*.less"
 
 excludeFilter in (Assets, LessKeys.less) := "_*.less"
 
-mainClass in assembly := Some("play.core.server.NettyServer")
-
-fullClasspath in assembly += Attributed.blank(PlayKeys.playPackageAssets.value)
-
-// Exclude commons-logging because it conflicts with the jcl-over-slf4j
-libraryDependencies ~= { _ map {
-	case m if m.organization == "com.typesafe.play" =>
-		m.exclude("commons-logging", "commons-logging")
-	case m => m
-}}
-
-// Take the first ServerWithStop because it's packaged into two jars
-assemblyMergeStrategy in assembly := {
-	case "play/core/server/ServerWithStop.class" => MergeStrategy.first
-	case other => (assemblyMergeStrategy in assembly).value(other)
-}
+// Exclude sources and documentation
+sources in (Compile, doc) := Seq.empty
+publishArtifact in (Compile, packageDoc) := false
 
 resolvers += Resolver.mavenLocal
 
-routesImport += "extensions.Binders._"
+routesGenerator := InjectedRoutesGenerator

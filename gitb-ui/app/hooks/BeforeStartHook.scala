@@ -2,16 +2,18 @@ package hooks
 
 import config.Configurations
 import javax.inject.Singleton
+import org.slf4j.LoggerFactory
 import persistence.db.PersistenceLayer
-import play.api.Logger
 
 @Singleton
 class BeforeStartHook {
+
+  private def logger = LoggerFactory.getLogger(this.getClass)
 
   //Load application configurations before the applications starts
   Configurations.loadConfigurations()
   //Create database if not exists.
   PersistenceLayer.preInitialize()
-  Logger.info("Application has been configured")
+  logger.info("Application has been configured")
 
 }

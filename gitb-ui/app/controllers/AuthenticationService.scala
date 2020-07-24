@@ -13,18 +13,18 @@ import persistence.{AccountManager, AuthenticationManager}
 import play.api.mvc._
 import utils.{JsonUtil, RepositoryUtils}
 
-class AuthenticationService @Inject() (accountManager: AccountManager, authManager: AuthenticationManager, authorizationManager: AuthorizationManager, playSessionStore: PlaySessionStore, userManager: UserManager) extends Controller {
+class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, accountManager: AccountManager, authManager: AuthenticationManager, authorizationManager: AuthorizationManager, playSessionStore: PlaySessionStore, userManager: UserManager) extends AbstractController(cc) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthenticationService])
   private final val BEARER = "Bearer"
 
-  def getUserFunctionalAccounts = AuthorizedAction { request =>
+  def getUserFunctionalAccounts = authorizedAction { request =>
     authorizationManager.canViewUserFunctionalAccounts(request)
     val json: String = JsonUtil.jsActualUserInfo(authorizationManager.getAccountInfo(request)).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def getUserUnlinkedFunctionalAccounts = AuthorizedAction { request =>
+  def getUserUnlinkedFunctionalAccounts = authorizedAction { request =>
     authorizationManager.canViewUserFunctionalAccounts(request)
     val accountInfo = authorizationManager.getPrincipal(request)
     val userAccounts = accountManager.getUnlinkedUserAccountsForEmail(accountInfo.email)
@@ -32,7 +32,7 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def linkFunctionalAccount = AuthorizedAction { request =>
+  def linkFunctionalAccount = authorizedAction { request =>
     val userId = ParameterExtractor.requiredBodyParameter(request, Parameters.ID).toLong
     authorizationManager.canLinkFunctionalAccount(request, userId)
     accountManager.linkAccount(userId, authorizationManager.getPrincipal(request))
@@ -41,7 +41,7 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def migrateFunctionalAccount = AuthorizedAction { request =>
+  def migrateFunctionalAccount = authorizedAction { request =>
     authorizationManager.canMigrateAccount(request)
     val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL)
     val password = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD)
@@ -66,7 +66,7 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
     }
   }
 
-  def selectFunctionalAccount = AuthorizedAction { request =>
+  def selectFunctionalAccount = authorizedAction { request =>
     val userId = ParameterExtractor.requiredBodyParameter(request, Parameters.ID).toLong
     authorizationManager.canSelectFunctionalAccount(request, userId)
     val tokens = authManager.generateTokens(userId)
@@ -74,7 +74,7 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
     ResponseConstructor.constructOauthResponse(tokens)
   }
 
-  def disconnectFunctionalAccount = AuthorizedAction { request =>
+  def disconnectFunctionalAccount = authorizedAction { request =>
     authorizationManager.canDisconnectFunctionalAccount(request)
     val userId = ParameterExtractor.extractUserId(request)
     val userInfo = authorizationManager.getPrincipal(request)
@@ -95,7 +95,7 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
   /**
     * OAuth2.0 request (Resource Owner Password Credentials Grant) for getting or refreshing access token
     */
-  def access_token = AuthorizedAction { request =>
+  def access_token = authorizedAction { request =>
     authorizationManager.canLogin(request)
     val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL)
     val passwd = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD)
@@ -116,7 +116,7 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
   /**
     * Check email availability
     */
-  def checkEmail = AuthorizedAction { request =>
+  def checkEmail = authorizedAction { request =>
     authorizationManager.canCheckAnyUserEmail(request)
     val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
     val isAvailable = authManager.checkEmailAvailability(email, None, None, Some(Enums.UserRole.VendorUser.id.toShort))
@@ -126,7 +126,7 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
   /**
     * Check email availability
     */
-  def checkEmailOfOrganisationMember = AuthorizedAction { request =>
+  def checkEmailOfOrganisationMember = authorizedAction { request =>
     val userId = ParameterExtractor.extractUserId(request)
     val userInfo = accountManager.getUserProfile(userId)
     authorizationManager.canCheckUserEmail(request, userInfo.organization.get.id)
@@ -138,7 +138,7 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
   /**
     * Check email availability
     */
-  def checkEmailOfSystemAdmin = AuthorizedAction { request =>
+  def checkEmailOfSystemAdmin = authorizedAction { request =>
     val userId = ParameterExtractor.extractUserId(request)
     val userInfo = accountManager.getUserProfile(userId)
     authorizationManager.canCheckSystemAdminEmail(request)
@@ -150,7 +150,7 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
   /**
     * Check email availability
     */
-  def checkEmailOfCommunityAdmin = AuthorizedAction { request =>
+  def checkEmailOfCommunityAdmin = authorizedAction { request =>
     val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
     authorizationManager.canCheckCommunityAdminEmail(request, communityId)
     val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
@@ -161,7 +161,7 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
   /**
     * Check email availability
     */
-  def checkEmailOfOrganisationUser = AuthorizedAction { request =>
+  def checkEmailOfOrganisationUser = authorizedAction { request =>
     val organisationId = ParameterExtractor.requiredQueryParameter(request, Parameters.ORGANIZATION_ID).toLong
     authorizationManager.canCheckOrganisationUserEmail(request, organisationId)
     val email = ParameterExtractor.requiredQueryParameter(request, Parameters.EMAIL)
@@ -175,7 +175,7 @@ class AuthenticationService @Inject() (accountManager: AccountManager, authManag
     *
     * @return
     */
-  def logout = AuthorizedAction { request =>
+  def logout = authorizedAction { request =>
     authorizationManager.canLogout(request)
     val isFullLogout = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL).toBoolean
     val authzHeader = request.headers.get(AUTHORIZATION)

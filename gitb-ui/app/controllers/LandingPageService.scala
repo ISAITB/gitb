@@ -6,19 +6,19 @@ import javax.inject.Inject
 import managers.{AuthorizationManager, LandingPageManager}
 import models.Constants
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.mvc.Controller
+import play.api.mvc.{AbstractController, ControllerComponents}
 import utils.{HtmlUtil, JsonUtil}
 
 /**
  * Created by VWYNGAET on 25/11/2016.
  */
-class LandingPageService @Inject() (landingPageManager: LandingPageManager, authorizationManager: AuthorizationManager) extends Controller {
+class LandingPageService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, landingPageManager: LandingPageManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[LandingPageService])
 
   /**
    * Gets all landing pages for the specified community
    */
-  def getLandingPagesByCommunity(communityId: Long) = AuthorizedAction { request =>
+  def getLandingPagesByCommunity(communityId: Long) = authorizedAction { request =>
     authorizationManager.canManageLandingPages(request, communityId)
     val list = landingPageManager.getLandingPagesByCommunity(communityId)
     val json: String = JsonUtil.jsLandingPages(list).toString
@@ -28,7 +28,7 @@ class LandingPageService @Inject() (landingPageManager: LandingPageManager, auth
   /**
    * Creates new landing page
    */
-  def createLandingPage() = AuthorizedAction { request =>
+  def createLandingPage() = authorizedAction { request =>
     val landingPage = ParameterExtractor.extractLandingPageInfo(request)
     authorizationManager.canManageLandingPages(request, landingPage.community)
     val name = landingPageManager.checkUniqueName(landingPage.name, landingPage.community)
@@ -43,7 +43,7 @@ class LandingPageService @Inject() (landingPageManager: LandingPageManager, auth
   /**
     * Gets the landing page with specified id
     */
-  def getLandingPageById(pageId: Long) = AuthorizedAction { request =>
+  def getLandingPageById(pageId: Long) = authorizedAction { request =>
     authorizationManager.canManageLandingPage(request, pageId)
     val landingPage = landingPageManager.getLandingPageById(pageId)
     val json: String = JsonUtil.serializeLandingPage(Some(landingPage))
@@ -53,7 +53,7 @@ class LandingPageService @Inject() (landingPageManager: LandingPageManager, auth
   /**
     * Updates landing page
     */
-  def updateLandingPage(pageId: Long) = AuthorizedAction { request =>
+  def updateLandingPage(pageId: Long) = authorizedAction { request =>
     authorizationManager.canManageLandingPage(request, pageId)
     val name = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
     val description = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
@@ -73,7 +73,7 @@ class LandingPageService @Inject() (landingPageManager: LandingPageManager, auth
   /**
    * Deletes landing page with specified id
    */
-  def deleteLandingPage(pageId: Long) = AuthorizedAction { request =>
+  def deleteLandingPage(pageId: Long) = authorizedAction { request =>
     authorizationManager.canManageLandingPage(request, pageId)
     landingPageManager.deleteLandingPage(pageId)
     ResponseConstructor.constructEmptyResponse
@@ -82,7 +82,7 @@ class LandingPageService @Inject() (landingPageManager: LandingPageManager, auth
   /**
    * Gets the default legal notice for given community
    */
-  def getCommunityDefaultLandingPage() = AuthorizedAction { request =>
+  def getCommunityDefaultLandingPage() = authorizedAction { request =>
     val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
     authorizationManager.canViewDefaultLandingPage(request, communityId)
     var landingPage = landingPageManager.getCommunityDefaultLandingPage(communityId)

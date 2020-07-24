@@ -6,18 +6,18 @@ import javax.inject.Inject
 import managers.{AuthorizationManager, CommunityLabelManager, ConformanceManager, SpecificationManager}
 import models.Enums.LabelType
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.mvc.Controller
+import play.api.mvc.{AbstractController, ControllerComponents}
 
-class SpecificationService @Inject() (specificationManager: SpecificationManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends Controller {
+class SpecificationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SpecificationService])
 
-  def deleteSpecification(specId: Long) = AuthorizedAction { request =>
+  def deleteSpecification(specId: Long) = authorizedAction { request =>
     authorizationManager.canDeleteSpecification(request, specId)
     conformanceManager.deleteSpecification(specId)
     ResponseConstructor.constructEmptyResponse
   }
 
-  def updateSpecification(specId: Long) = AuthorizedAction { request =>
+  def updateSpecification(specId: Long) = authorizedAction { request =>
     authorizationManager.canUpdateSpecification(request, specId)
     val specExists = specificationManager.checkSpecifiationExists(specId)
     if(specExists) {

@@ -5,7 +5,6 @@ import controllers.util._
 import exceptions.ErrorCodes
 import javax.inject.Inject
 import managers.{AttachmentType, AuthorizationManager, OrganizationManager, UserManager}
-import org.apache.commons.codec.binary.Base64
 import org.apache.tika.Tika
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.AccountManager
@@ -13,14 +12,14 @@ import play.api.mvc._
 import utils.{ClamAVClient, HtmlUtil, JsonUtil}
 
 
-class AccountService @Inject() (accountManager: AccountManager, userManager: UserManager, organisationManager: OrganizationManager, authorizationManager: AuthorizationManager) extends Controller{
+class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, accountManager: AccountManager, userManager: UserManager, organisationManager: OrganizationManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AccountService])
   private final val tika = new Tika()
 
   /**
    * Gets the company profile for the authenticated user
    */
-  def getVendorProfile = AuthorizedAction { request =>
+  def getVendorProfile = authorizedAction { request =>
     authorizationManager.canViewOwnOrganisation(request)
     val userId = ParameterExtractor.extractUserId(request)
 
@@ -32,7 +31,7 @@ class AccountService @Inject() (accountManager: AccountManager, userManager: Use
   /**
    * Updates the company profile
    */
-  def updateVendorProfile = AuthorizedAction { request =>
+  def updateVendorProfile = authorizedAction { request =>
     authorizationManager.canUpdateOwnOrganisation(request)
     val adminId = ParameterExtractor.extractUserId(request)
 
@@ -50,7 +49,7 @@ class AccountService @Inject() (accountManager: AccountManager, userManager: Use
   /**
    * Gets the all users for the vendor
    */
-  def getVendorUsers = AuthorizedAction { request =>
+  def getVendorUsers = authorizedAction { request =>
     authorizationManager.canViewOwnOrganisationnUsers(request)
     val userId = ParameterExtractor.extractUserId(request)
 
@@ -62,7 +61,7 @@ class AccountService @Inject() (accountManager: AccountManager, userManager: Use
   /**
    * The authenticated admin registers new user for the organization
    */
-  def registerUser = AuthorizedAction { request =>
+  def registerUser = authorizedAction { request =>
     authorizationManager.canCreateUserInOwnOrganisation(request)
     val adminId = ParameterExtractor.extractUserId(request)
     val user = ParameterExtractor.extractUserInfo(request)
@@ -74,7 +73,7 @@ class AccountService @Inject() (accountManager: AccountManager, userManager: Use
   /**
    * Returns the user profile of the authenticated user
    */
-  def getUserProfile = AuthorizedAction { request =>
+  def getUserProfile = authorizedAction { request =>
     authorizationManager.canViewOwnProfile(request)
     val userId = ParameterExtractor.extractUserId(request)
 
@@ -85,7 +84,7 @@ class AccountService @Inject() (accountManager: AccountManager, userManager: Use
   /**
    * Updates the user profile of the authenticated user
    */
-  def updateUserProfile = AuthorizedAction { request =>
+  def updateUserProfile = authorizedAction { request =>
     authorizationManager.canUpdateOwnProfile(request)
     val userId = ParameterExtractor.extractUserId(request)
 
@@ -97,7 +96,7 @@ class AccountService @Inject() (accountManager: AccountManager, userManager: Use
     ResponseConstructor.constructEmptyResponse
   }
 
-  def getConfiguration = AuthorizedAction { request =>
+  def getConfiguration = authorizedAction { request =>
     authorizationManager.canViewConfiguration(request)
     val configProperties = new java.util.HashMap[String, String]()
     configProperties.put("email.enabled", String.valueOf(Configurations.EMAIL_ENABLED))
@@ -120,7 +119,7 @@ class AccountService @Inject() (accountManager: AccountManager, userManager: Use
     ResponseConstructor.constructJsonResponse(json.toString())
   }
 
-  def submitFeedback = AuthorizedAction { request =>
+  def submitFeedback = authorizedAction { request =>
     authorizationManager.canSubmitFeedback(request)
     val userId = ParameterExtractor.extractOptionalUserId(request)
     val userEmail: String = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_EMAIL)

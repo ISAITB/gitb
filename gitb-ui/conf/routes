@@ -6,8 +6,8 @@
 
 GET      /favicon.ico   @controllers.SystemConfigurationService.getFaviconForTheme
 
-GET      /callback      org.pac4j.play.CallbackController.callback()
-POST     /callback      org.pac4j.play.CallbackController.callback()
+GET      /callback      @org.pac4j.play.CallbackController.callback(request: Request)
+POST     /callback      @org.pac4j.play.CallbackController.callback(request: Request)
 
 # Single endpoint for serving AngularJS
 GET     /                                   @controllers.Application.index
@@ -188,7 +188,7 @@ GET     /communities/labels/:id             @controllers.CommunityService.getCom
 POST    /communities/labels/:id             @controllers.CommunityService.setCommunityLabels(id: Long)
 
 # Test Result management API
-POST    /tests/binaryMetadata                           @controllers.TestResultService.getBinaryMetadata()
+POST    /tests/binaryMetadata               @controllers.TestResultService.getBinaryMetadata()
 
 # Test management API
 GET	    /tests/:test_id/definition          @controllers.TestService.getTestCaseDefinition(test_id : String)
@@ -255,4 +255,4 @@ POST    /initdata                                           @controllers.Reposit
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
-GET     /webjars/*file              controllers.WebJarAssets.at(file)
+GET     /webjars/*file              @org.webjars.play.WebJarAssets.at(file)

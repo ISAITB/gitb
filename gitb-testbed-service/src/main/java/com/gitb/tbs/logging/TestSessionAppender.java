@@ -3,7 +3,6 @@ package com.gitb.tbs.logging;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
-import ch.qos.logback.classic.spi.LoggingEvent;
 import ch.qos.logback.core.AppenderBase;
 import com.gitb.core.AnyContent;
 import com.gitb.core.StepStatus;
@@ -13,9 +12,6 @@ import com.gitb.engine.actors.processors.AbstractTestStepActor;
 import com.gitb.tbs.TestStepStatus;
 import com.gitb.tbs.TestbedClient;
 import com.gitb.tr.TAR;
-import org.apache.commons.lang.StringUtils;
-
-import java.util.regex.Pattern;
 
 /**
  * Custom logging appender that is used session-specific log messages to the test bed client.

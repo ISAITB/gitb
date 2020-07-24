@@ -3,17 +3,17 @@ package controllers
 import controllers.util.{AuthorizedAction, ParameterExtractor, ResponseConstructor}
 import javax.inject.Inject
 import managers.{AuthorizationManager, CommunityLabelManager, ParameterManager}
-import play.api.mvc.Controller
+import play.api.mvc.{AbstractController, ControllerComponents}
 
-class ParameterService @Inject() (parameterManager: ParameterManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends Controller {
+class ParameterService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, parameterManager: ParameterManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
 
-  def deleteParameter(parameterId: Long) = AuthorizedAction { request =>
+  def deleteParameter(parameterId: Long) = authorizedAction { request =>
     authorizationManager.canDeleteParameter(request, parameterId)
     parameterManager.deleteParameter(parameterId)
     ResponseConstructor.constructEmptyResponse
   }
 
-  def updateParameter(parameterId: Long) = AuthorizedAction { request =>
+  def updateParameter(parameterId: Long) = authorizedAction { request =>
     authorizationManager.canUpdateParameter(request, parameterId)
     val parameter = ParameterExtractor.extractParameter(request)
     if (parameterManager.checkParameterExistsForEndpoint(parameter.name, parameter.endpoint, Some(parameterId))) {
