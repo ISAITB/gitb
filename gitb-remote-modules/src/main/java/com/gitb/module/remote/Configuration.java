@@ -3,10 +3,10 @@ package com.gitb.module.remote;
 import com.gitb.core.ErrorCode;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.utils.ErrorUtils;
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.SystemConfiguration;
+import org.apache.commons.configuration2.builder.fluent.Configurations;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 
 /**
  * Created by root on 3/11/15.
@@ -32,7 +32,7 @@ public class Configuration {
         try {
             CompositeConfiguration config = new CompositeConfiguration();
             config.addConfiguration(new SystemConfiguration());
-            config.addConfiguration(new PropertiesConfiguration("remote-modules.properties"));
+            config.addConfiguration(new Configurations().properties("remote-modules.properties"));
 
             return new Configuration(
                     config.getString("module.messaging.folder"),

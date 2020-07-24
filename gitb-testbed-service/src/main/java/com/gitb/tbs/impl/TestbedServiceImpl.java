@@ -8,7 +8,7 @@ import com.gitb.tbs.Void;
 import com.gitb.tbs.*;
 import com.gitb.tpl.TestCase;
 import com.gitb.utils.ErrorUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;

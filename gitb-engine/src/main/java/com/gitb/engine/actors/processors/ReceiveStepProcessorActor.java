@@ -1,6 +1,5 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import akka.dispatch.Futures;
 import akka.dispatch.OnFailure;
@@ -22,14 +21,13 @@ import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
 import com.gitb.messaging.utils.MessagingHandlerUtils;
-import com.gitb.tdl.Receive;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.BooleanType;
 import com.gitb.types.MapType;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.Future;
@@ -43,7 +41,7 @@ import java.util.concurrent.Callable;
  *
  * Receive step executor actor
  */
-public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorActor<Receive> {
+public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorActor<com.gitb.tdl.Receive> {
 
     private static final Logger logger = LoggerFactory.getLogger(ReceiveStepProcessorActor.class);
 
@@ -55,7 +53,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 	private Promise<TestStepReportType> promise;
 	private Future<TestStepReportType> future;
 
-	public ReceiveStepProcessorActor(Receive step, TestCaseScope scope, String stepId) {
+	public ReceiveStepProcessorActor(com.gitb.tdl.Receive step, TestCaseScope scope, String stepId) {
 		super(step, scope, stepId);
 	}
 
@@ -257,7 +255,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
         return transactionContext;
     }
 
-	public static ActorRef create(ActorContext context, Receive step, TestCaseScope scope, String stepId) throws Exception {
+	public static ActorRef create(ActorContext context, com.gitb.tdl.Receive step, TestCaseScope scope, String stepId) throws Exception {
 		return context.actorOf(props(ReceiveStepProcessorActor.class, step, scope, stepId).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
 	}
 

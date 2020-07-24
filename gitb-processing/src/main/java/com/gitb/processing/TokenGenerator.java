@@ -6,7 +6,7 @@ import com.gitb.tr.TestResultType;
 import com.gitb.types.NumberType;
 import com.gitb.types.StringType;
 import com.mifmif.common.regex.Generex;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.MetaInfServices;
 
 import java.time.Instant;

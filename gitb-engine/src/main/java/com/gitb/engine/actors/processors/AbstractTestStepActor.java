@@ -1,6 +1,5 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
@@ -28,9 +27,9 @@ import com.gitb.tr.*;
 import com.gitb.types.BooleanType;
 import com.gitb.types.MapType;
 import com.gitb.utils.XMLDateTimeUtils;
-import org.apache.commons.lang.RandomStringUtils;
-import org.apache.commons.lang.reflect.ConstructorUtils;
-import org.apache.commons.lang.reflect.FieldUtils;
+import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.reflect.ConstructorUtils;
+import org.apache.commons.lang3.reflect.FieldUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
@@ -151,8 +150,8 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	 */
 	@Override
 	public void onReceive(Object message) {
-		super.onReceive(message);
 		try {
+			super.onReceive(message);
 			if (message instanceof ErrorStatusEvent) {
 //				inform((StatusEvent) message);
 				handleStatusEvent((StatusEvent) message);
@@ -369,14 +368,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	}
 
 	public static <T, S extends AbstractTestStepActor<T>> Props props(final Class<S> clazz, final T step, final TestCaseScope scope, final String stepId) throws Exception {
-		return Props.create(new Creator<S>() {
-			@Override
-			public S create() throws Exception {
-				@SuppressWarnings("unchecked")
-				S s = (S) ConstructorUtils.invokeConstructor(clazz, new Object[]{step, scope, stepId});
-				return s;
-			}
-		});
+		return Props.create(clazz, (Creator<S>) () -> ConstructorUtils.invokeConstructor(clazz, step, scope, stepId));
 	}
 
 	public static String getName(String actorName) {

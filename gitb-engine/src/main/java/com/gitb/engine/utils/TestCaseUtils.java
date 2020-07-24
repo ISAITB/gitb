@@ -16,7 +16,7 @@ import com.gitb.tpl.ObjectFactory;
 import com.gitb.tpl.Sequence;
 import com.gitb.tpl.TestCase;
 import com.gitb.tpl.TestStep;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;

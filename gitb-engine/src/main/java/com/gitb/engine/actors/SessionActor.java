@@ -1,6 +1,5 @@
 package com.gitb.engine.actors;
 
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
@@ -105,7 +104,7 @@ public class SessionActor extends Actor {
     }
 
     @Override
-    public void onReceive(Object message) {
+    public void onReceive(Object message) throws Exception {
         super.onReceive(message);
         TestCaseContext context = SessionManager
                 .getInstance()
@@ -166,12 +165,12 @@ public class SessionActor extends Actor {
                 case READY:
                     if (message instanceof StartCommand) {
                         ActorRef child = getContext()
-                                .getChild(TestCaseProcessorActor.NAME);
+                                .findChild(TestCaseProcessorActor.NAME).orElseThrow(() -> new IllegalStateException("TestCaseProcessorActor actorRef not found"));
                         child.tell(message, self());
                         context.setCurrentState(TestCaseContext.TestCaseStateEnum.EXECUTION);
                     } else if (message instanceof StopCommand) {
                         ActorRef child = getContext()
-                                .getChild(TestCaseProcessorActor.NAME);
+                                .findChild(TestCaseProcessorActor.NAME).orElseThrow(() -> new IllegalStateException("TestCaseProcessorActor actorRef not found"));
                         child.tell(message, self());
                         context.destroy();
                         context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPED);
@@ -191,7 +190,7 @@ public class SessionActor extends Actor {
 
                         sendStatusUpdate(event);
                     } else if (message instanceof PrepareForStopCommand) {
-                        ActorRef child = getContext().getChild(TestCaseProcessorActor.NAME);
+                        ActorRef child = getContext().findChild(TestCaseProcessorActor.NAME).orElseThrow(() -> new IllegalStateException("TestCaseProcessorActor actorRef not found"));
                         try {
                             ActorUtils.askBlocking(child, message);
                         } catch (Exception e) {
@@ -199,7 +198,7 @@ public class SessionActor extends Actor {
                         }
                         getSender().tell(Boolean.TRUE, self());
                     } else if (message instanceof StopCommand) {
-                        ActorRef child = getContext().getChild(TestCaseProcessorActor.NAME);
+                        ActorRef child = getContext().findChild(TestCaseProcessorActor.NAME).orElseThrow(() -> new IllegalStateException("TestCaseProcessorActor actorRef not found"));
                         child.tell(message, self());
                         context.destroy();
                         context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPED);
@@ -212,7 +211,7 @@ public class SessionActor extends Actor {
                 case STOPPED:
                     if (message instanceof RestartCommand) {
                         ActorRef child = getContext()
-                                .getChild(TestCaseProcessorActor.NAME);
+                                .findChild(TestCaseProcessorActor.NAME).orElseThrow(() -> new IllegalStateException("TestCaseProcessorActor actorRef not found"));
                         child.tell(message, self());
                     } else if (message instanceof TestStepStatusEvent) {
                         ignoredStatusUpdate((TestStepStatusEvent)message);

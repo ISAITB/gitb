@@ -73,11 +73,15 @@
 			<optional>true</optional>
 		</dependency>
 		<dependency>
-			<groupId>commons-configuration</groupId>
-			<artifactId>commons-configuration</artifactId>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-configuration2</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>commons-beanutils</groupId>
+			<artifactId>commons-beanutils</artifactId>
 		</dependency>
         <dependency>
-            <groupId>org.dnsjava</groupId>
+            <groupId>dnsjava</groupId>
             <artifactId>dnsjava</artifactId>
         </dependency>
 		<dependency>
