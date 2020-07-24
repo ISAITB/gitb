@@ -6,7 +6,7 @@ import com.gitb.tr.TestResultType;
 import com.gitb.types.BinaryType;
 import com.gitb.types.BooleanType;
 import com.gitb.types.StringType;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.Tika;
 import org.kohsuke.MetaInfServices;
 

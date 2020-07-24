@@ -1,9 +1,9 @@
 package com.gitb;
 
-import org.apache.commons.configuration.CompositeConfiguration;
-import org.apache.commons.configuration.ConfigurationException;
-import org.apache.commons.configuration.PropertiesConfiguration;
-import org.apache.commons.configuration.SystemConfiguration;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.SystemConfiguration;
+import org.apache.commons.configuration2.builder.fluent.Configurations;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 
 /**
  * Created by serbay on 9/8/14.
@@ -20,12 +20,12 @@ public class CoreConfiguration {
 		try {
 			CompositeConfiguration config = new CompositeConfiguration();
 			config.addConfiguration(new SystemConfiguration());
-			config.addConfiguration(new PropertiesConfiguration("core-module.properties"));
+			config.addConfiguration(new Configurations().properties("core-module.properties"));
 
 			TEST_CASE_REPOSITORY = config.getString("gitb.test-case-repository");
 			// TODO load configuration parameters
 		} catch (ConfigurationException e) {
-			e.printStackTrace();
+			throw new IllegalStateException("Error loading configuration", e);
 		}
 
 	}

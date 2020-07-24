@@ -2,11 +2,12 @@ package com.gitb.engine;
 
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.tdl.TestCase;
-import org.apache.commons.lang.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
