@@ -1,6 +1,6 @@
 package com.gitb.engine.actors;
 
-import akka.actor.UntypedActor;
+import akka.actor.UntypedAbstractActor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,12 +10,12 @@ import org.slf4j.LoggerFactory;
  * Base actor implementation that is used to track the actor instance's lifetime and incoming
  * messages.
  */
-public abstract class Actor extends UntypedActor {
+public abstract class Actor extends UntypedAbstractActor {
 
 	Logger logger = LoggerFactory.getLogger(Actor.class);
 
 	@Override
-	public void onReceive(Object message) {
+	public void onReceive(Object message) throws Exception {
 //		logger.debug(self().path() + " - received - " + message + " - from " + getSender().path());
 	}
 

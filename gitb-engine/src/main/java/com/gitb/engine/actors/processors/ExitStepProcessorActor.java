@@ -1,6 +1,5 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.actors.SessionActor;
@@ -50,7 +49,7 @@ public class ExitStepProcessorActor extends AbstractTestStepActor<ExitStep> {
 			status = new StatusEvent(StepStatus.ERROR);
 		}
 		// Prepare the rest of the test case for the stop.
-		ActorUtils.askBlocking(getContext().system().actorFor(SessionActor.getPath(sessionId)), new PrepareForStopCommand(sessionId, self()));
+		ActorUtils.askBlocking(getContext().system().actorSelection(SessionActor.getPath(sessionId)), new PrepareForStopCommand(sessionId, self()));
 		// Send the step's report.
 		updateTestStepStatus(getContext(), status, report, true, false);
 	}

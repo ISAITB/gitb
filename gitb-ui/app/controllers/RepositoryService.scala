@@ -38,7 +38,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
   private val EXPORT_QNAME:QName = new QName("http://www.gitb.com/export/v1/", "export")
   private val TESTCASE_STEP_REPORT_NAME = "step.pdf"
 
-  import scala.collection.JavaConversions._
+  import scala.collection.JavaConverters._
 
 	def getTestSuiteResource(testId: String, filePath:String) = authorizedAction { request =>
     authorizationManager.canViewTestSuiteResource(request, testId)
@@ -126,7 +126,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     } else {
       Ok.sendFile(
         content = pdf,
-        fileName = _ => TESTCASE_STEP_REPORT_NAME
+        fileName = _ => Some(TESTCASE_STEP_REPORT_NAME)
       )
     }
   }
@@ -160,7 +160,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       }
       Ok.sendFile(
         content = exportedReport,
-        fileName = _ => exportedReport.getName
+        fileName = _ => Some(exportedReport.getName)
       )
     } else {
       NotFound
@@ -190,7 +190,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     reportManager.generateConformanceStatementReport(reportPath, includeTests, actorId.toLong, systemId.toLong, labels)
     Ok.sendFile(
       content = reportPath.toFile,
-      fileName = _ => reportPath.toFile.getName
+      fileName = _ => Some(reportPath.toFile.getName)
     )
   }
 
@@ -228,7 +228,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     reportManager.generateConformanceCertificate(reportPath, settings, actorId, systemId)
     Ok.sendFile(
       content = reportPath.toFile,
-      fileName = _ => reportPath.toFile.getName
+      fileName = _ => Some(reportPath.toFile.getName)
     )
   }
 
@@ -270,7 +270,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       reportManager.generateDemoConformanceCertificate(reportPath, settings, communityId)
       response = Ok.sendFile(
         content = reportPath.toFile,
-        fileName = _ => reportPath.toFile.getName
+        fileName = _ => Some(reportPath.toFile.getName)
       )
     }
     response
@@ -357,7 +357,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       Ok.sendFile(
         content = exportPathZip.toFile,
         inline = false,
-        fileName = _ => exportPathZip.toFile.getName,
+        fileName = _ => Some(exportPathZip.toFile.getName),
         onClose = () => FileUtils.deleteQuietly(exportPathZip.toFile)
       )
     } catch {
@@ -459,13 +459,13 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 
   private def confirmDomainImportInternal(request: Request[AnyContent], domainId: Long, canAddOrDeleteDomain: Boolean) = {
     confirmImportInternal(request, (export: Export, importSettings: ImportSettings, importItems: List[ImportItem]) => {
-      importCompleteManager.completeDomainImport(export.getDomains.getDomain.head, importSettings, importItems, Some(domainId), canAddOrDeleteDomain)
+      importCompleteManager.completeDomainImport(collectionAsScalaIterable(export.getDomains.getDomain).head, importSettings, importItems, Some(domainId), canAddOrDeleteDomain)
     })
   }
 
   private def confirmCommunityImportInternal(request: Request[AnyContent], communityId: Long, canAddOrDeleteDomain: Boolean) = {
     confirmImportInternal(request, (export: Export, importSettings: ImportSettings, importItems: List[ImportItem]) => {
-      importCompleteManager.completeCommunityImport(export.getCommunities.getCommunity.head, importSettings, importItems, Some(communityId), canAddOrDeleteDomain, Some(ParameterExtractor.extractUserId(request)))
+      importCompleteManager.completeCommunityImport(collectionAsScalaIterable(export.getCommunities.getCommunity).head, importSettings, importItems, Some(communityId), canAddOrDeleteDomain, Some(ParameterExtractor.extractUserId(request)))
     })
   }
 

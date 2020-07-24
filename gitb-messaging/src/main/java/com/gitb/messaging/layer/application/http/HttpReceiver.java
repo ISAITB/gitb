@@ -13,7 +13,7 @@ import com.gitb.types.MapType;
 import com.gitb.types.StringType;
 import com.gitb.utils.ConfigurationUtils;
 import org.apache.commons.fileupload.MultipartStream;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.*;
 import org.apache.http.config.ConnectionConfig;
 import org.apache.http.impl.BHttpConnectionBase;

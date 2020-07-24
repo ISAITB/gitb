@@ -213,8 +213,8 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
             actorIds.add(systemActorPair._1)
             systemIds.add(systemActorPair._2)
           }
-          import scala.collection.JavaConversions._
-          DBIO.successful((actorIds.toSet, systemIds.toSet))
+          import scala.collection.JavaConverters._
+          DBIO.successful((collectionAsScalaIterable(actorIds).toSet, collectionAsScalaIterable(systemIds).toSet))
         }
         _ <- {
           // Delete conformance statement data for collected IDs.

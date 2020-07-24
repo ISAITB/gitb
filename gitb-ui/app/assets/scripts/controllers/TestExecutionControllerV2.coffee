@@ -594,7 +594,6 @@ class TestExecutionControllerV2
 
   setChildrenAsSkipped: (step, idToCheck, parentStepId) ->
     regex = new RegExp(@escapeRegExp(parentStepId)+"(\\[.+\\])?\\.?", "g");
-    console.log("Checking ["+idToCheck+"] vs ["+parentStepId+"]")
     if step? && idToCheck? && (idToCheck == parentStepId || idToCheck.match(regex) != null)
       if step.type == 'loop'
         @setChildrenSequenceAsSkipped(step.steps, idToCheck)

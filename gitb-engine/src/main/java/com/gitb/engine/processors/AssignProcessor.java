@@ -9,7 +9,7 @@ import com.gitb.tdl.Assign;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.*;
 import com.gitb.utils.ErrorUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
