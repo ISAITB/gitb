@@ -255,9 +255,9 @@ object Configurations {
         INPUT_SANITIZER__PARAMETER_WHITELIST_EXPRESSIONS = Map()
       } else {
         val tempMap: scala.collection.mutable.Map[String, Regex] = scala.collection.mutable.Map()
-        import scala.collection.JavaConversions._
-        sanitizerExpressionsConfig.foreach { entry =>
-          entry.entrySet().foreach { mapping =>
+        import scala.collection.JavaConverters._
+        collectionAsScalaIterable(sanitizerExpressionsConfig).foreach { entry =>
+          collectionAsScalaIterable(entry.entrySet()).foreach { mapping =>
             tempMap(mapping.getKey) = new Regex(mapping.getValue.unwrapped.asInstanceOf[String])
           }
         }
@@ -267,15 +267,15 @@ object Configurations {
       if (sanitizerSkipped == null) {
         INPUT_SANITIZER__PARAMETERS_TO_SKIP = Set()
       } else {
-        import scala.collection.JavaConversions._
-        INPUT_SANITIZER__PARAMETERS_TO_SKIP = sanitizerSkipped.toSet
+        import scala.collection.JavaConverters._
+        INPUT_SANITIZER__PARAMETERS_TO_SKIP = collectionAsScalaIterable(sanitizerSkipped).toSet
       }
       val sanitizerJsonParameters = conf.getStringList("inputSanitizer.parametersAsJson")
       if (sanitizerJsonParameters == null) {
         INPUT_SANITIZER__PARAMETERS_AS_JSON = Set()
       } else {
-        import scala.collection.JavaConversions._
-        INPUT_SANITIZER__PARAMETERS_AS_JSON = sanitizerJsonParameters.toSet
+        import scala.collection.JavaConverters._
+        INPUT_SANITIZER__PARAMETERS_AS_JSON = collectionAsScalaIterable(sanitizerJsonParameters).toSet
       }
       // Input sanitiser - END
 

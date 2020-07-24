@@ -3,7 +3,11 @@ package com.gitb.messaging.server;
 import com.gitb.core.ErrorCode;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.utils.ErrorUtils;
-import org.apache.commons.configuration.*;
+import org.apache.commons.configuration2.CompositeConfiguration;
+import org.apache.commons.configuration2.EnvironmentConfiguration;
+import org.apache.commons.configuration2.SystemConfiguration;
+import org.apache.commons.configuration2.builder.fluent.Configurations;
+import org.apache.commons.configuration2.ex.ConfigurationException;
 
 /**
  * Created by serbay on 9/24/14.
@@ -60,7 +64,7 @@ public class Configuration {
 			CompositeConfiguration config = new CompositeConfiguration();
 			config.addConfiguration(new SystemConfiguration());
 			config.addConfiguration(new EnvironmentConfiguration());
-			config.addConfiguration(new PropertiesConfiguration("messaging-module.properties"));
+			config.addConfiguration(new Configurations().properties("messaging-module.properties"));
 
 			return new Configuration(
 				config.getInt("gitb.messaging.start-port", 8080),

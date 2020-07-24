@@ -1,4 +1,4 @@
-@(webJarsUtil: org.webjars.play.WebJarsUtil, config: models.ErrorPageData)
+@(config: models.ErrorPageData)
 <!DOCTYPE html>
 <!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
 <!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
@@ -12,8 +12,8 @@
     <title>GITB</title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width">
-    @webJarsUtil.locate("css/bootstrap.min.css").css()
-    @webJarsUtil.locate("css/font-awesome.min.css").css()
+    <link rel="stylesheet" href='/webjars/bootstrap/3.3.7-1/css/bootstrap.min.css'>
+    <link rel="stylesheet" href='/webjars/font-awesome/4.7.0/css/font-awesome.min.css'>
     <!-- Web Fonts  -->
     <link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/fonts/opensans/stylesheet.css")'>
     <link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/theme.css")'>
@@ -23,19 +23,18 @@
     <link rel="stylesheet" href='@routes.Assets.at("stylesheets/css/custom.css")'>
     <link rel="stylesheet" href='theme/css'>
     <link rel="stylesheet" href='@routes.Assets.at("stylesheets/gitb.css")?v=@config.versionNumber'>
-
-    @webJarsUtil.locate("jquery.min.js").script()
-    @webJarsUtil.locate("ui-bootstrap.min.js").script()
+    <script type='text/javascript' src='/webjars/jquery/3.5.1/jquery.min.js'></script>
+    <script type='text/javascript' src='/webjars/angular-ui-bootstrap/2.5.0/ui-bootstrap.min.js'></script>
 </head>
 <body>
 <div class="page index">
-    <header>
+    <div class="header">
         <div class="navbar-collapse nav-main-collapse collapse">
             <div class="container">
                 <img src='@config.logoPath' class="logo"/>
             </div>
         </div>
-    </header>
+    </div>
     <div class="child">
         <section class="page-top">
             <div class="container">

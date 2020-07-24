@@ -13,7 +13,9 @@ import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc.{AbstractController, ControllerComponents}
 import utils.JsonUtil
 
-class SystemConfigurationService @Inject()(authorizedAction: AuthorizedAction, cc: ControllerComponents, systemConfigurationManager: SystemConfigurationManager, environment: play.api.Environment, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
+import scala.concurrent.ExecutionContext
+
+class SystemConfigurationService @Inject()(implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemConfigurationManager: SystemConfigurationManager, environment: play.api.Environment, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemConfigurationService])
 
   /**

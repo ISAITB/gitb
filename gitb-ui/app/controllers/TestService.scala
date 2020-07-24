@@ -162,8 +162,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   private def configureInternal(sessionId: String, statementParameters: List[ActorConfiguration], domainParameters: Option[ActorConfiguration], organisationParameters: ActorConfiguration, systemParameters: ActorConfiguration) = {
     val cRequest: ConfigureRequest = new ConfigureRequest
     cRequest.setTcInstanceId(sessionId)
-    import scala.collection.JavaConversions._
-    cRequest.getConfigs.addAll(statementParameters)
+    import scala.collection.JavaConverters._
+    cRequest.getConfigs.addAll(asJavaCollection(statementParameters))
     if (domainParameters.nonEmpty) {
       cRequest.getConfigs.add(domainParameters.get)
     }
@@ -190,8 +190,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
             found = true
           }
         } else if (input.getItem != null && !input.getItem.isEmpty) {
-          import scala.collection.JavaConversions._
-          found = scanForVirus(input.getItem.toList, scanner)
+          import scala.collection.JavaConverters._
+          found = scanForVirus(collectionAsScalaIterable(input.getItem).toList, scanner)
         }
         if (found) {
           return found
@@ -223,8 +223,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
       val pRequest: ProvideInputRequest = new ProvideInputRequest
       pRequest.setTcInstanceId(session_id)
       pRequest.setStepId(step)
-      import scala.collection.JavaConversions._
-      pRequest.getInput.addAll(userInputs)
+      import scala.collection.JavaConverters._
+      pRequest.getInput.addAll(asJavaCollection(userInputs))
 
       testbedClient.service().provideInput(pRequest)
       response = ResponseConstructor.constructEmptyResponse

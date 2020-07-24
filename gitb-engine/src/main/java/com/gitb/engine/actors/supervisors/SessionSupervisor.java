@@ -23,7 +23,7 @@ public class SessionSupervisor extends com.gitb.engine.actors.Actor {
     public static final String NAME = "session";
 
 	@Override
-	public void onReceive(Object message) {
+	public void onReceive(Object message) throws Exception {
 		super.onReceive(message);
         //Creating a session for Test Case Execution
 		if(message instanceof CreateCommand) {
@@ -37,7 +37,7 @@ public class SessionSupervisor extends com.gitb.engine.actors.Actor {
         //Closing a Test Case Execution session
         else if(message instanceof DestroyCommand) {
 			String sessionId = ((DestroyCommand) message).getSessionId();
-			ActorRef actor = getContext().getChild(sessionId);
+			ActorRef actor = getContext().findChild(sessionId).orElseThrow(() -> new IllegalStateException("Session actorRef not found"));
 
 			TestStepStatusEventBus
 				.getInstance()
@@ -45,7 +45,7 @@ public class SessionSupervisor extends com.gitb.engine.actors.Actor {
 
 			actor.tell(PoisonPill.getInstance(), ActorRef.noSender());
 		} else {
-            logger.error("InternalError", "Invalid command ["+message.getClass().getName()+"]");
+            logger.error("Invalid command ["+message.getClass().getName()+"]");
             throw new GITBEngineInternalError("Invalid command ["+message.getClass().getName()+"]");
 		}
 	}

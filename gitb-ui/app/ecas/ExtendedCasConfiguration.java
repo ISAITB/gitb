@@ -15,10 +15,12 @@ public class ExtendedCasConfiguration extends CasConfiguration {
     protected TicketValidator buildCas20TicketValidator(final WebContext context) {
         final Cas20ServiceTicketValidator cas20ServiceTicketValidator = new ExtendedCas20ServiceTicketValidator(computeFinalPrefixUrl(context));
         cas20ServiceTicketValidator.setEncoding(getEncoding());
+        cas20ServiceTicketValidator.setRenew(isRenew());
         if (getProxyReceptor() != null) {
             cas20ServiceTicketValidator.setProxyCallbackUrl(getProxyReceptor().computeFinalCallbackUrl(context));
             cas20ServiceTicketValidator.setProxyGrantingTicketStorage(new ProxyGrantingTicketStore(getProxyReceptor().getStore()));
         }
+        addPrivateKey(cas20ServiceTicketValidator);
         return cas20ServiceTicketValidator;
     }
 

@@ -13,7 +13,7 @@ import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.XMLDateTimeUtils;
 import com.gitb.utils.XMLUtils;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.xml.transform.stream.StreamSource;
 import java.io.InputStream;

@@ -2,7 +2,7 @@ package com.gitb.engine.remote;
 
 import com.gitb.engine.PropertyConstants;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.ws.rs.core.HttpHeaders;
 import javax.xml.namespace.QName;

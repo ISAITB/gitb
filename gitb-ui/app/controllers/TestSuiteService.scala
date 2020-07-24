@@ -55,7 +55,7 @@ class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedActio
 		Ok.sendFile(
 			content = testSuiteOutputPath.toFile,
 			inline = false,
-			fileName = _ => testSuiteOutputPath.toFile.getName,
+			fileName = _ => Some(testSuiteOutputPath.toFile.getName),
 			onClose = () => FileUtils.deleteQuietly(testSuiteOutputPath.toFile)
 		)
 	}
