@@ -38,16 +38,18 @@ class RestService
             (error) =>
                 if error? && error.status? && error.status == 401
                     # Handle only authorisation-related errors.
-                    promise = @ConfirmationDialogService.invalidSessionNotification()
-                    promise
-                        .then(
-                            () =>
-                                @$rootScope.$emit(@Events.onLogout, {full: true})
-                            ,
-                            angular.noop
-                        )
-                        .catch(angular.noop)
-                        .finally(angular.noop)
+                    if !@AuthProvider.logoutSignalled
+                        @AuthProvider.logoutSignalled = true
+                        promise = @ConfirmationDialogService.invalidSessionNotification()
+                        promise
+                            .then(
+                                () =>
+                                    @$rootScope.$emit(@Events.onLogout, {full: true})
+                                ,
+                                angular.noop
+                            )
+                            .catch(angular.noop)
+                            .finally(angular.noop)
                 else
                     throw error
         )
