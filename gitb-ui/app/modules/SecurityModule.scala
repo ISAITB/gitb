@@ -13,8 +13,9 @@ import org.pac4j.core.http.ajax.DefaultAjaxRequestResolver
 import org.pac4j.core.matching.matcher.PathMatcher
 import org.pac4j.core.profile.UserProfile
 import org.pac4j.play.http.PlayHttpActionAdapter
-import org.pac4j.play.store.{PlayCacheSessionStore, PlaySessionStore}
+import org.pac4j.play.store.PlaySessionStore
 import org.pac4j.play.{CallbackController, LogoutController}
+import play.cache.SyncCacheApi
 
 class SecurityModule extends AbstractModule {
 
@@ -24,7 +25,19 @@ class SecurityModule extends AbstractModule {
     // Make sure the configuration is loaded
     Configurations.loadConfigurations()
 
-    bind(classOf[PlaySessionStore]).to(classOf[PlayCacheSessionStore])
+    // Session store and idle/max session timeouts
+    val playCacheSessionStore = new CustomPlayEhCacheSessionStore(getProvider(classOf[SyncCacheApi]))
+    if (Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME < 0) {
+      playCacheSessionStore.setTimeout(0) // Infinite.
+    } else {
+      playCacheSessionStore.setTimeout(Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME)
+    }
+    if (Configurations.AUTHENTICATION_SESSION_MAX_TOTAL_TIME < 0) {
+      playCacheSessionStore.setMaxTimeout(0) // Infinite.
+    } else {
+      playCacheSessionStore.setMaxTimeout(Configurations.AUTHENTICATION_SESSION_MAX_TOTAL_TIME)
+    }
+    bind(classOf[PlaySessionStore]).toInstance(playCacheSessionStore)
 
     // callback
     val callbackController = new CallbackController()
