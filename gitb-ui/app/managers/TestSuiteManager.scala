@@ -109,6 +109,22 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		}
 	}
 
+	def getTestSuiteWithTestCases(testSuiteId: Long): TestSuite = {
+		val testSuite = exec(
+			PersistenceSchema.testSuites
+				.filter(_.id === testSuiteId)
+			  .result.head
+		)
+		val testCases = exec(PersistenceSchema.testCases
+		  .join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
+		  .filter(_._2.testsuite === testSuiteId)
+			.sortBy(_._1.shortname.asc)
+		  .map(x => TestCaseManager.withoutDocumentation(x._1))
+			.result.map(_.toList)
+		).map(TestCaseManager.tupleToTestCase)
+		new TestSuite(testSuite, testCases)
+	}
+
 	def getTestSuitesWithTestCasesForCommunity(communityId: Long): List[TestSuite] = {
 		val testSuites = exec(
 			PersistenceSchema.testSuites
@@ -302,6 +318,28 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		} else {
 			throw new IllegalStateException("Unexpected test suite replacement action ["+action+"]")
 		}
+	}
+
+	def updateTestSuiteMetadata(testSuiteId: Long, name: String, description: Option[String], documentation: Option[String]) = {
+		var hasDocumentationToSet = false
+		var documentationToSet: Option[String] = None
+		if (documentation.isDefined && !documentation.get.isBlank) {
+			hasDocumentationToSet = true
+			documentationToSet = documentation
+		}
+		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation)
+		exec(q1.update(name, name, description, documentationToSet, hasDocumentationToSet).transactionally)
+	}
+
+	def updateTestCaseMetadata(testCaseId: Long, name: String, description: Option[String], documentation: Option[String]) = {
+		var hasDocumentationToSet = false
+		var documentationToSet: Option[String] = None
+		if (documentation.isDefined && !documentation.get.isBlank) {
+			hasDocumentationToSet = true
+			documentationToSet = documentation
+		}
+		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation)
+		exec(q1.update(name, name, description, documentationToSet, hasDocumentationToSet).transactionally)
 	}
 
 	def updateTestSuiteInDb(testSuiteId: Long, newData: TestSuites) = {

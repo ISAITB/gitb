@@ -4,6 +4,28 @@ class TestSuiteService
 	constructor: (@$log, @RestService, @DataService) ->
 		@$log.debug "Constructing TestSuiteService..."
 
+	updateTestCaseMetadata: (testCaseId, name, description, documentation) ->
+		@RestService.post({
+			path: jsRoutes.controllers.TestSuiteService.updateTestCaseMetadata(testCaseId).url,
+			data: {
+				name: name
+				description: description
+				documentation: documentation
+			}
+			authenticate: true
+		})
+
+	updateTestSuiteMetadata: (testSuiteId, name, description, documentation) ->
+		@RestService.post({
+			path: jsRoutes.controllers.TestSuiteService.updateTestSuiteMetadata(testSuiteId).url,
+			data: {
+				name: name
+				description: description
+				documentation: documentation
+			}
+			authenticate: true
+		})
+
 	undeployTestSuite: (testSuiteId) ->
 		@RestService.delete
 			path: jsRoutes.controllers.TestSuiteService.undeployTestSuite(testSuiteId).url
@@ -28,6 +50,16 @@ class TestSuiteService
 	getTestSuitesWithTestCasesForSystem: (systemId) ->
 		@RestService.get
 			path: jsRoutes.controllers.TestSuiteService.getTestSuitesWithTestCasesForSystem(systemId).url
+			authenticate: true
+
+	getTestSuiteWithTestCases: (testSuiteId) =>
+		@RestService.get
+			path: jsRoutes.controllers.TestSuiteService.getTestSuiteWithTestCases(testSuiteId).url
+			authenticate: true
+
+	getTestCase: (testCaseId) =>
+		@RestService.get
+			path: jsRoutes.controllers.TestSuiteService.getTestCase(testCaseId).url
 			authenticate: true
 
 services.service('TestSuiteService', TestSuiteService)

@@ -103,6 +103,10 @@ GET     /domains/:domain_id/parameters/:domain_parameter_id     @controllers.Con
 POST    /domains/:domain_id/parameters                          @controllers.ConformanceService.createDomainParameter(domain_id : Long)
 DELETE  /domains/:domain_id/parameters/:domain_parameter_id     @controllers.ConformanceService.deleteDomainParameter(domain_id : Long, domain_parameter_id : Long)
 POST    /domains/:domain_id/parameters/:domain_parameter_id     @controllers.ConformanceService.updateDomainParameter(domain_id : Long, domain_parameter_id : Long)
+GET     /testsuites/:test_suite_id                              @controllers.TestSuiteService.getTestSuiteWithTestCases(test_suite_id: Long)
+POST    /testsuites/:test_suite_id                              @controllers.TestSuiteService.updateTestSuiteMetadata(test_suite_id: Long)
+GET     /fulltestcases/:test_case_id                            @controllers.TestSuiteService.getTestCase(test_case_id: Long)
+POST    /fulltestcases/:test_case_id                            @controllers.TestSuiteService.updateTestCaseMetadata(test_case_id: Long)
 
 DELETE  /testresults/obsolete/all           @controllers.ConformanceService.deleteAllObsoleteTestResults
 DELETE  /testresults/obsolete/system        @controllers.ConformanceService.deleteObsoleteTestResultsForSystem

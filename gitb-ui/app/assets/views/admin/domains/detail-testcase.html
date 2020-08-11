@@ -1,0 +1,60 @@
+<div class="page domains detail detail-testcase">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">Test case details</h4>
+		</div>
+		<form class="form-horizontal">
+			<div class="panel-body">
+				<div class="row">
+                    <div class="col-xs-10 col-xs-offset-1">
+						<div class="form-group">
+							<label class="col-xs-3 control-label" for="name">* Name:</label>
+							<div class="col-xs-7"><input id="name" ng-model="testCaseDetailsCtrl.testCase.sname" class="form-control" type="text"></div>
+							<div tb-tooltip="A short and descriptive identifier for the test case. This is used for filtering purposes and also to distinguish the test case within its test suite."></div>
+						</div>
+						<div class="form-group">
+							<label class="col-xs-3 control-label" for="description">Description:</label>
+							<div class="col-xs-7">
+								<textarea id="description" ng-model="testCaseDetailsCtrl.testCase.description" class="form-control"></textarea>
+							</div>
+							<div tb-tooltip="A description for the test case presented to users when viewing a conformance statement. This should be informative enough for users to understand the purpose of the test case. Where extended information is needed consider complementing the description with the test case's documentation."></div>
+						</div>
+						<div class="form-group">
+							<label class="col-xs-3 control-label" for="showDocumentation">Show documentation:</label>
+							<div class="col-xs-7">
+								<input id="showDocumentation" ng-model="testCaseDetailsCtrl.showDocumentation" type="checkbox" class="form-check">
+							</div>
+						</div>
+					</div>
+				</div>
+				<div uib-collapse="!testCaseDetailsCtrl.showDocumentation">
+					<div class="row">
+						<div class="col-xs-12">
+							<div class="form-separator"><h4 class="title">Documentation</h4></div>
+						</div>
+					</div>
+					<div class="row form-group">
+						<div class="col-xs-offset-1 col-xs-10">
+							<textarea id="mce-editor" class="mce-editor"></textarea>
+						</div>
+						<div tb-tooltip="Extended documentation on the test case that users can click to view before and during test execution. Use this to provide detailed information, prerequisites, steps to follow and references to external resources."></div>
+					</div>
+					<div class="row form-group">
+						<div class="col-xs-offset-1 col-xs-10">
+							<button ng-click="testCaseDetailsCtrl.previewDocumentation()" type="button" class="btn btn-default">Preview documentation</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="panel-footer">
+				<div class="row">
+					<div class="col-xs-3"></div>
+					<div class="col-xs-8 btn-toolbar">
+						<button ng-click="testCaseDetailsCtrl.saveChanges()" type="submit" class="btn btn-default" ng-disabled="testCaseDetailsCtrl.saveDisabled()">Save changes</button>
+						<button ng-click="testCaseDetailsCtrl.back()" type="button" class="btn btn-default">Back</button>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+</div>

@@ -33,7 +33,7 @@
 		<div class="panel-heading panel-heading-tests">
 			<h4 class="title">Configuration parameters</h4>
             <div class="btn-toolbar pull-right" ng-class="{'padded': conformanceStatementDetailCtrl.testSuites.length > 1}">
-				<toggle id="conformance-toggle-configuration" class="btn-group" ng-model="conformanceStatementDetailCtrl.endpointsExpanded" on="Visible" off="Hidden"/>
+				<toggle id="conformance-toggle-configuration" class="btn-group" ng-model="conformanceStatementDetailCtrl.endpointsExpanded" on="Visible" off="Hidden"></toggle>
 			</div>
 		</div>
 		<div class="list-group" uib-collapse="!conformanceStatementDetailCtrl.endpointsExpanded">
@@ -47,7 +47,7 @@
 		<div class="panel-heading panel-heading-tests">
 			<h4 class="title">Conformance tests</h4>
             <div class="btn-toolbar pull-right" ng-class="{'padded': conformanceStatementDetailCtrl.testSuites.length > 1}">
-				<toggle id="conformance-toggle" class="btn-group" ng-model="conformanceStatementDetailCtrl.backgroundMode" on="Background execution" off="Interactive execution"/>
+				<toggle id="conformance-toggle" class="btn-group" ng-model="conformanceStatementDetailCtrl.backgroundMode" on="Background execution" off="Interactive execution"></toggle>
 				<button type="button" ng-style="{'margin-right':(conformanceStatementDetailCtrl.testSuites.length == 1 && conformanceStatementDetailCtrl.testSuites[0].testCases.length > 1)?'-3px':'8px'}" class="btn btn-primary" ng-if="conformanceStatementDetailCtrl.testSuites.length == 1 && conformanceStatementDetailCtrl.testSuites[0].hasDocumentation" ng-click="conformanceStatementDetailCtrl.showTestSuiteDocumentation(conformanceStatementDetailCtrl.testSuites[0].id)"><i class="fa fa-info-circle"></i></button>
 				<button type="button" class="btn btn-primary" ng-if="conformanceStatementDetailCtrl.testSuites.length == 1 && conformanceStatementDetailCtrl.testSuites[0].testCases.length > 1" ng-click="conformanceStatementDetailCtrl.onTestSuiteSelect()"><i class="fa fa-play"></i></button>
 			</div>

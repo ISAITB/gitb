@@ -31,6 +31,7 @@ object Parameters {
 	val IDS      = "ids"
   val TYPE     = "type"
   val DESCRIPTION = "description"
+  val DOCUMENTATION = "documentation"
   val USE = "use"
   val KIND = "kind"
   val TEST_KEY = "test_key"

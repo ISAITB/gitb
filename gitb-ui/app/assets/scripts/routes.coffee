@@ -366,6 +366,32 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/domains/create-actor.html'
 				controller: 'CreateActorController'
 				controllerAs: 'createActorCtrl'
+			'app.admin.domains.detail.specifications.detail.testsuites':
+				url: '/testsuites'
+				template: '<div ui-view/>'
+				abstract: true
+			'app.admin.domains.detail.specifications.detail.testsuites.detail':
+				url: '/:testsuite_id'
+				template: '<div ui-view/>'
+				abstract: true
+			'app.admin.domains.detail.specifications.detail.testsuites.detail.list':
+				url: ''
+				templateUrl: 'assets/views/admin/domains/detail-testsuite.html'
+				controller: 'TestSuiteDetailsController'
+				controllerAs: 'testSuiteDetailsCtrl'
+			'app.admin.domains.detail.specifications.detail.testsuites.detail.testcases':
+				url: '/testcases'
+				template: '<div ui-view/>'
+				abstract: true
+			'app.admin.domains.detail.specifications.detail.testsuites.detail.testcases.detail':
+				url: '/:testcase_id'
+				template: '<div ui-view/>'
+				abstract: true
+			'app.admin.domains.detail.specifications.detail.testsuites.detail.testcases.detail.list':
+				url: ''
+				templateUrl: 'assets/views/admin/domains/detail-testcase.html'
+				controller: 'TestCaseDetailsController'
+				controllerAs: 'testCaseDetailsCtrl'
 			'app.admin.domains.detail.specifications.detail.actors.detail':
 				url: '/:actor_id'
 				template: '<div ui-view/>'
@@ -590,6 +616,7 @@ app.run ['$log', '$transitions', 'AuthProvider', '$state'
 
 		$state.defaultErrorHandler((error) =>
 			# Do not log transitionTo errors.
+			console.log('ERROR')
 		)
 
 		return

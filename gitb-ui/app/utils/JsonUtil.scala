@@ -46,7 +46,7 @@ object JsonUtil {
     json
   }
 
-  def jsTestSuite(suite: TestSuites): JsObject = {
+  def jsTestSuite(suite: TestSuites, withDocumentation: Boolean): JsObject = {
     val json = Json.obj(
       "id"                -> suite.id,
       "sname"             -> suite.shortname,
@@ -58,7 +58,8 @@ object JsonUtil {
       "keywords"          -> (if(suite.keywords.isDefined) suite.keywords.get else JsNull),
       "modificationDate"  -> (if(suite.modificationDate.isDefined) suite.modificationDate.get else JsNull),
       "originalDate"      -> (if(suite.originalDate.isDefined) suite.originalDate.get else JsNull),
-      "hasDocumentation"  -> suite.hasDocumentation
+      "hasDocumentation"  -> suite.hasDocumentation,
+      "documentation"     -> (if(withDocumentation && suite.documentation.isDefined) suite.documentation else JsNull)
     )
     json
   }
@@ -113,13 +114,13 @@ object JsonUtil {
   def jsTestSuitesList(list: List[TestSuites]) = {
     var json = Json.arr()
     list.foreach { testSuite =>
-      json = json.append(jsTestSuite(testSuite))
+      json = json.append(jsTestSuite(testSuite, withDocumentation = false))
     }
     json
   }
 
-  def jsTestSuite(testSuite: TestSuite): JsObject = {
-    var jTestSuite: JsObject = jsTestSuite(testSuite.toCaseObject)
+  def jsTestSuite(testSuite: TestSuite, withDocumentation: Boolean): JsObject = {
+    var jTestSuite: JsObject = jsTestSuite(testSuite.toCaseObject, withDocumentation)
     if (testSuite.testCases.isDefined) {
       jTestSuite = jTestSuite ++ Json.obj("testCases" -> jsTestCasesList(testSuite.testCases.get))
     } else {
@@ -131,7 +132,7 @@ object JsonUtil {
   def jsTestSuiteList(testSuites: List[TestSuite]): JsArray = {
     var json = Json.arr()
     testSuites.foreach { testSuite =>
-      json = json.append(jsTestSuite(testSuite))
+      json = json.append(jsTestSuite(testSuite, withDocumentation = false))
     }
     json
   }
@@ -900,7 +901,7 @@ object JsonUtil {
    * @param testCase TestCase object to be converted
    * @return JsObject
    */
-  def jsTestCases(testCase:TestCases) : JsObject = {
+  def jsTestCases(testCase:TestCases, withDocumentation: Boolean) : JsObject = {
     val json = Json.obj(
       "id"      -> testCase.id,
       "sname"   -> testCase.shortname,
@@ -913,7 +914,9 @@ object JsonUtil {
       "keywords" -> (if(testCase.keywords.isDefined) testCase.keywords.get else JsNull),
       "type" -> testCase.testCaseType,
       "targetSpec"  -> testCase.targetSpec,
-      "path" -> testCase.path
+      "path" -> testCase.path,
+      "hasDocumentation" -> testCase.hasDocumentation,
+      "documentation" -> (if (withDocumentation && testCase.documentation.isDefined) testCase.documentation.get else JsNull)
     )
     return json;
   }
@@ -950,7 +953,7 @@ object JsonUtil {
   def jsTestCasesList(list:List[TestCases]):JsArray = {
     var json = Json.arr()
     list.foreach{ testCase =>
-      json = json.append(jsTestCases(testCase))
+      json = json.append(jsTestCases(testCase, withDocumentation = false))
     }
     json
   }

@@ -26,7 +26,7 @@
 			<h4 class="title">Test suites</h4>
 			<button class="btn btn-default pull-right" ng-file-select="specDetailsCtrl.onFileSelect($files)" accept="application/zip" onclick="this.value = null" ng-disabled="specDetailsCtrl.uploadPending"><span class="tab" ng-if="specDetailsCtrl.uploadPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Deploy test suite</button>
 		</div>
-		<div table-directive id="test-suites-table" columns="specDetailsCtrl.testSuiteTableColumns" data="specDetailsCtrl.testSuites" operations-visible="true" on-delete="specDetailsCtrl.onTestSuiteDelete"  on-select="specDetailsCtrl.onTestSuiteDownload"></div>
+		<div table-directive id="test-suites-table" columns="specDetailsCtrl.testSuiteTableColumns" data="specDetailsCtrl.testSuites" on-select="specDetailsCtrl.onTestSuiteSelect"></div>
 	</div>
 	<div class="panel panel-default">
 		<div class="panel-heading">

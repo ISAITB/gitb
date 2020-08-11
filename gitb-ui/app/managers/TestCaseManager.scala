@@ -61,6 +61,10 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		.map(TestCaseManager.tupleToTestCase)
 	}
 
+	def getTestCaseWithDocumentation(testCaseId: Long): TestCases = {
+		exec(PersistenceSchema.testCases.filter(_.id === testCaseId).result.head)
+	}
+
 	def getTestCase(testCaseId:String) = {
 		try {
 			val tc = exec(PersistenceSchema.testCases.filter(_.id === testCaseId.toLong).map(x => TestCaseManager.withoutDocumentation(x)).result.head)

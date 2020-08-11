@@ -1,7 +1,7 @@
 class SpecificationDetailsController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', 'TestSuiteService', 'ConfirmationDialogService', 'SpecificationService', '$state', '$stateParams', '$uibModal', 'PopupService', 'ErrorService', 'DataService']
-	constructor: (@$log, @$scope, @ConformanceService, @TestSuiteService, @ConfirmationDialogService, @SpecificationService, @$state, @$stateParams, @$uibModal, @PopupService, @ErrorService, @DataService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', 'ConfirmationDialogService', 'SpecificationService', '$state', '$stateParams', '$uibModal', 'PopupService', 'ErrorService', 'DataService']
+	constructor: (@$log, @$scope, @ConformanceService, @ConfirmationDialogService, @SpecificationService, @$state, @$stateParams, @$uibModal, @PopupService, @ErrorService, @DataService) ->
 		@$log.debug "Constructing SpecificationDetailsController"
 
 		@specification = {}
@@ -219,26 +219,11 @@ class SpecificationDetailsController
 			}
 			@PopupService.show("Test suite upload failed", data)
 
-	onTestSuiteDownload: (data) =>
-		@TestSuiteService.downloadTestSuite data.id
-		.then (data) =>
-			blobData = new Blob([data], {type: 'application/zip'});
-			saveAs(blobData, "test_suite.zip");
-		.catch (error) =>
-			@ErrorService.showErrorMessage(error)
-
-	onTestSuiteDelete: (data) =>
-		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this test suite?", "Yes", "No")
-		.then () =>
-			@TestSuiteService.undeployTestSuite data.id
-			.then () =>
-				@$state.go(@$state.$current, null, { reload: true });
-				@PopupService.success('Test suite deleted.')
-			.catch (error) =>
-				@ErrorService.showErrorMessage(error)
-
 	onActorSelect: (actor) =>
 		@$state.go 'app.admin.domains.detail.specifications.detail.actors.detail.list', {id: @domainId, spec_id: @specificationId, actor_id: actor.id}
+
+	onTestSuiteSelect: (testSuite) =>
+		@$state.go 'app.admin.domains.detail.specifications.detail.testsuites.detail.list', {id: @domainId, spec_id: @specificationId, testsuite_id: testSuite.id}
 
 	deleteSpecification: () =>
 		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this "+@DataService.labelSpecificationLower()+"?", "Yes", "No")

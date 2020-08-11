@@ -1109,6 +1109,16 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canManageSpecification(request, specification_id)
   }
 
+  def canEditTestSuite(request: RequestWithAttributes[AnyContent], testSuiteId: Long):Boolean = {
+    val testSuite = testSuiteManager.getById(testSuiteId)
+    canManageSpecification(request, testSuite.get.specification)
+  }
+
+  def canEditTestCase(request: RequestWithAttributes[AnyContent], testCaseId: Long):Boolean = {
+    val testCase = testCaseManager.getTestCase(testCaseId.toString)
+    canManageSpecification(request, testCase.get.targetSpec)
+  }
+
   def canEditTestSuites(request: RequestWithAttributes[_], specification_id: Long):Boolean = {
     canManageSpecification(request, specification_id)
   }
