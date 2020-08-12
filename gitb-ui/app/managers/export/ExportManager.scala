@@ -444,6 +444,7 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
               val exportedTestSuite = new com.gitb.xml.export.TestSuite
               idSequence += 1
               exportedTestSuite.setId(toId(idSequence))
+              exportedTestSuite.setIdentifier(testSuite.identifier)
               exportedTestSuite.setShortName(testSuite.shortname)
               exportedTestSuite.setFullName(testSuite.fullname)
               exportedTestSuite.setVersion(testSuite.version)
@@ -476,6 +477,7 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
                   val exportedTestCase = new com.gitb.xml.export.TestCase
                   idSequence += 1
                   exportedTestCase.setId(toId(idSequence))
+                  exportedTestCase.setIdentifier(testCase.identifier)
                   exportedTestCase.setShortName(testCase.shortname)
                   exportedTestCase.setFullName(testCase.fullname)
                   exportedTestCase.setVersion(testCase.version)

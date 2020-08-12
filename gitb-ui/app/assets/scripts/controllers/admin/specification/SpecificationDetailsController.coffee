@@ -28,6 +28,10 @@ class SpecificationDetailsController
 
 		@testSuiteTableColumns = [
 			{
+				field: 'identifier',
+				title: 'ID'
+			}
+			{
 				field: 'sname',
 				title: 'Name'
 			}
@@ -126,7 +130,7 @@ class SpecificationDetailsController
 				if (exists)
 					@showPendingOptions(pendingFolderId)
 				else
-					@ConformanceService.resolvePendingTestSuite(@specificationId, pendingFolderId, "keep")
+					@ConformanceService.resolvePendingTestSuite(@specificationId, pendingFolderId, "proceed", "keep", "update")
 					.then((pendingResolutionData) =>
 						@showTestSuiteUploadResult(pendingResolutionData)
 						@$state.go(@$state.$current, null, { reload: true });

@@ -1,37 +1,56 @@
 class TestSuiteUploadPendingModalController
 
-  @$inject = ['$scope', '$log', '$uibModalInstance', 'specificationId', 'pendingFolderId', 'ConformanceService', 'ConfirmationDialogService', 'ErrorService']
+  @$inject = ['$scope', '$q', '$uibModalInstance', 'specificationId', 'pendingFolderId', 'ConformanceService', 'ConfirmationDialogService', 'ErrorService', 'DataService']
 
-  constructor: (@$scope, @$log, @$uibModalInstance, specificationId, pendingFolderId, @ConformanceService, @ConfirmationDialogService, @ErrorService) ->
-    @$log.debug "Constructing TestSuiteUploadPendingModalController"
+  constructor: (@$scope, @$q, @$uibModalInstance, specificationId, pendingFolderId, @ConformanceService, @ConfirmationDialogService, @ErrorService, @DataService) ->
 
+    @$scope.DataService = @DataService
     @$scope.specificationId = specificationId
     @$scope.pendingFolderId = pendingFolderId
     @$scope.actionPending = false
-    @$scope.actionKeepPending = false
-    @$scope.actionDropPending = false
+    @$scope.actionProceedPending = false
     @$scope.actionCancelPending = false
+    @$scope.choiceMetadataReadonly = false
 
-    @$scope.keepHistory = () =>
-      @$scope.actionKeepPending = true
-      @$scope.performAction('keep')
+    @$scope.choiceHistory = 'keep'
+    @$scope.choiceMetadata = 'skip'
 
-    @$scope.dropHistory = () =>
-      @ConfirmationDialogService.confirm("Confirm test history deletion", "Are you sure you want to delete all existing test sessions for this test suite?", "Yes", "No")
-      .then () =>
-        @$scope.actionDropPending = true
-        @$scope.performAction('drop')
+    @$scope.historyChoiceChanged = () =>
+      if @$scope.choiceHistory == 'keep'
+        @$scope.choiceMetadataReadonly = false
+      else
+        @$scope.choiceMetadataReadonly = true
+        @$scope.choiceMetadata = 'update'
 
     @$scope.cancel = () =>
       @$scope.actionCancelPending = true
       @$uibModalInstance.dismiss()
 
-    @$scope.performAction = (action) =>
-      @$scope.actionPending = true
-      @ConformanceService.resolvePendingTestSuite(@$scope.specificationId, @$scope.pendingFolderId, action)
-          .then (data) =>
-            @$uibModalInstance.close(data)
-          .catch (error) =>
-            @ErrorService.showErrorMessage(error)
+    @$scope.proceed = () =>
+      deferred = @$q.defer()
+      if @$scope.choiceHistory == 'drop'
+        @ConfirmationDialogService.confirm("Confirm test history deletion", "Are you sure you want to delete all existing test sessions for this test suite?", "Yes", "No")
+        .then(
+          () =>
+            deferred.resolve()
+          , 
+          () =>
+            deferred.reject()
+        )
+      else
+        deferred.resolve()
+      @$q.all()
+      deferred.promise.then(
+        () =>
+          @$scope.actionPending = true
+          @$scope.actionProceedPending = true
+          @ConformanceService.resolvePendingTestSuite(@$scope.specificationId, @$scope.pendingFolderId, 'proceed', @$scope.choiceHistory, @$scope.choiceMetadata)
+              .then (data) =>
+                @$uibModalInstance.close(data)
+              .catch (error) =>
+                @ErrorService.showErrorMessage(error)
+                @$scope.actionPending = false
+                @$scope.actionProceedPending = false
+      )
 
 @controllers.controller 'TestSuiteUploadPendingModalController', TestSuiteUploadPendingModalController

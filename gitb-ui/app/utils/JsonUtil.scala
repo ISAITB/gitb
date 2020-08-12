@@ -49,6 +49,7 @@ object JsonUtil {
   def jsTestSuite(suite: TestSuites, withDocumentation: Boolean): JsObject = {
     val json = Json.obj(
       "id"                -> suite.id,
+      "identifier"        -> suite.identifier,
       "sname"             -> suite.shortname,
       "fname"             -> suite.fullname,
       "version"           -> suite.version,
@@ -59,7 +60,7 @@ object JsonUtil {
       "modificationDate"  -> (if(suite.modificationDate.isDefined) suite.modificationDate.get else JsNull),
       "originalDate"      -> (if(suite.originalDate.isDefined) suite.originalDate.get else JsNull),
       "hasDocumentation"  -> suite.hasDocumentation,
-      "documentation"     -> (if(withDocumentation && suite.documentation.isDefined) suite.documentation else JsNull)
+      "documentation"     -> (if(withDocumentation && suite.documentation.isDefined) suite.documentation else JsNull),
     )
     json
   }
@@ -904,6 +905,7 @@ object JsonUtil {
   def jsTestCases(testCase:TestCases, withDocumentation: Boolean) : JsObject = {
     val json = Json.obj(
       "id"      -> testCase.id,
+      "identifier"    -> testCase.identifier,
       "sname"   -> testCase.shortname,
       "fname"   -> testCase.fullname,
       "version" -> testCase.version,
@@ -929,6 +931,7 @@ object JsonUtil {
   def jsTestCase(testCase:TestCase) : JsObject = {
     val json = Json.obj(
       "id"      -> testCase.id,
+      "identifier"    -> testCase.identifier,
       "sname"   -> testCase.shortname,
       "fname"   -> testCase.fullname,
       "version" -> testCase.version,

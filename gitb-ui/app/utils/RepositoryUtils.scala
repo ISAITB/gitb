@@ -180,6 +180,7 @@ object RepositoryUtils {
 					logger.debug("Test suite ["+testSuiteEntry.getName+"] has test cases ["+tdlTestCases.map(_.getId)+"]")
 					val testSuite = {
 						val tdlTestSuite: com.gitb.tdl.TestSuite = getTestSuite(zip, testSuiteEntry)
+						val identifier: String = tdlTestSuite.getId
 						val name: String = tdlTestSuite.getMetadata.getName
 						val version: String = tdlTestSuite.getMetadata.getVersion
 						val authors: String = tdlTestSuite.getMetadata.getAuthors
@@ -198,19 +199,19 @@ object RepositoryUtils {
 						logger.debug("Test suite has tdlActors ["+tdlActors.map(_.getId)+"]")
 						logger.debug("Test suite has tdlTestCases ["+tdlTestCaseEntries.map(_.getId)+"]")
 
-						val caseObject = TestSuites(0l, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification, fileName, documentation.isDefined, documentation)
+						val caseObject = TestSuites(0L, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification, fileName, documentation.isDefined, documentation, identifier)
 						val actors = tdlActors.map { tdlActor =>
 							val endpoints = tdlActor.getEndpoint.asScala.map { tdlEndpoint => // construct actor endpoints
 								val parameters = tdlEndpoint.getConfig.asScala
-									.map(tdlParameter => Parameters(0l, tdlParameter.getName, Option(tdlParameter.getDesc), tdlParameter.getUse.value(), tdlParameter.getKind.value(), tdlParameter.isAdminOnly, tdlParameter.isNotForTests, 0l))
+									.map(tdlParameter => Parameters(0L, tdlParameter.getName, Option(tdlParameter.getDesc), tdlParameter.getUse.value(), tdlParameter.getKind.value(), tdlParameter.isAdminOnly, tdlParameter.isNotForTests, 0l))
 									.toList
-								new Endpoint(Endpoints(0l, tdlEndpoint.getName, Option(tdlEndpoint.getDesc), 0l), parameters)
+								new Endpoint(Endpoints(0L, tdlEndpoint.getName, Option(tdlEndpoint.getDesc), 0L), parameters)
 							}.toList
 							var displayOrder: Option[Short] = None
 							if (tdlActor.getDisplayOrder != null) {
 								displayOrder = Some(tdlActor.getDisplayOrder)
 							}
-							new Actor(Actors(0l, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), Option(tdlActor.isDefault), tdlActor.isHidden, displayOrder,  0l), endpoints)
+							new Actor(Actors(0L, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), Option(tdlActor.isDefault), tdlActor.isHidden, displayOrder,  0L), endpoints)
 						}.toList
 
 						var testCaseCounter = 0
@@ -244,11 +245,11 @@ object RepositoryUtils {
 									documentation = None
 								}
 								TestCases(
-									0l, tdlTestCase.getId, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getVersion,
+									0L, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getVersion,
 									Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
 									Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
 									None, testCaseType.ordinal().toShort, null, specification, Some(actorString.toString()), None,
-									testCaseCounter.toShort, documentation.isDefined, documentation
+									testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId
 								)
 						}.toList
 						new TestSuite(caseObject, Some(actors), Some(testCases))
@@ -311,7 +312,7 @@ object RepositoryUtils {
 
 				xml.label == tag
 			} catch {
-				case e: Exception => false
+				case _: Exception => false
 			}
 		} else {
 			false

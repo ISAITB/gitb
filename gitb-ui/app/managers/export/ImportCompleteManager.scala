@@ -286,7 +286,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
         Option(exportedTestCase.getOriginalDate), Option(exportedTestCase.getModificationDate), Option(exportedTestCase.getDescription),
         Option(exportedTestCase.getKeywords), exportedTestCase.getTestCaseType, "", specificationId,
         Option(exportedTestCase.getTargetActors), None, exportedTestCase.getTestSuiteOrder, exportedTestCase.isHasDocumentation,
-        Option(exportedTestCase.getDocumentation)
+        Option(exportedTestCase.getDocumentation), exportedTestCase.getIdentifier
       )
     }
     testCases.toList
@@ -324,7 +324,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
   private def toModelTestSuite(data: com.gitb.xml.export.TestSuite, specificationId: Long, testSuiteFileName: String): models.TestSuites = {
     models.TestSuites(0L, data.getShortName, data.getFullName, data.getVersion, Option(data.getAuthors),
       Option(data.getOriginalDate), Option(data.getModificationDate), Option(data.getDescription), Option(data.getKeywords),
-      specificationId, testSuiteFileName, data.isHasDocumentation, Option(data.getDocumentation))
+      specificationId, testSuiteFileName, data.isHasDocumentation, Option(data.getDocumentation), data.getIdentifier)
   }
 
   private def toModelCustomLabel(data: com.gitb.xml.export.CustomLabel, communityId: Long): models.CommunityLabels = {
@@ -433,9 +433,10 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
             testSuiteId,
             Some(toModelTestCases(collectionAsScalaIterable(data.getTestCases.getTestCase).toList, specificationId)),
             getResourcePaths(testSuiteFile.getName, collectionAsScalaIterable(data.getTestCases.getTestCase).toList),
-            new java.util.HashMap[String, java.lang.Long](), // existingTestCaseMap
+            new java.util.HashMap[String, (java.lang.Long, String)](), // existingTestCaseMap
             mapAsJavaMap(ctx.savedSpecificationActors(specificationId)), // savedActorIds
-            existingActorToSystemMap
+            existingActorToSystemMap,
+            updateMetadata = true
           )
         } else {
           DBIO.successful((new java.util.ArrayList[Long](), List[TestSuiteUploadItemResult]()))
@@ -481,7 +482,8 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
             getResourcePaths(testSuiteFile.getName, collectionAsScalaIterable(data.getTestCases.getTestCase).toList),
             existingTestCaseMap,
             mapAsJavaMap(ctx.savedSpecificationActors(specificationId)), // savedActorIds
-            existingActorToSystemMap
+            existingActorToSystemMap,
+            updateMetadata = true
           )
         } else {
           DBIO.successful((new java.util.ArrayList[Long](), List[TestSuiteUploadItemResult]()))

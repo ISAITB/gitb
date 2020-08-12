@@ -8,6 +8,10 @@ class TestSuiteDetailsController
 		@testSuiteId = @$stateParams.testsuite_id
 		@testCaseTableColumns = [
 			{
+				field: 'identifier'
+				title: 'ID'
+			}
+			{
 				field: 'sname'
 				title: 'Name'
 			}

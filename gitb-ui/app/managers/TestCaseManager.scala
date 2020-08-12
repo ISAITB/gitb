@@ -18,25 +18,25 @@ object TestCaseManager {
 		Rep[Long], Rep[String], Rep[String], Rep[String],
 			Rep[Option[String]], Rep[Option[String]], Rep[Option[String]], Rep[Option[String]],
 			Rep[Option[String]], Rep[Short], Rep[String], Rep[Long],
-			Rep[Option[String]], Rep[Option[String]], Rep[Short], Rep[Boolean]
+			Rep[Option[String]], Rep[Option[String]], Rep[Short], Rep[Boolean], Rep[String]
 		)
 
 	type TestCaseValueTuple = (
 		Long, String, String, String,
 			Option[String], Option[String], Option[String], Option[String],
 			Option[String], Short, String, Long,
-			Option[String], Option[String], Short, Boolean
+			Option[String], Option[String], Short, Boolean, String
 		)
 
 	def withoutDocumentation(dbTestCase: PersistenceSchema.TestCasesTable): TestCaseDbTuple = {
 		(dbTestCase.id, dbTestCase.shortname, dbTestCase.fullname, dbTestCase.version,
 			dbTestCase.authors, dbTestCase.originalDate, dbTestCase.modificationDate, dbTestCase.description,
 			dbTestCase.keywords, dbTestCase.testCaseType, dbTestCase.path, dbTestCase.targetSpec,
-			dbTestCase.targetActors, dbTestCase.targetOptions, dbTestCase.testSuiteOrder, dbTestCase.hasDocumentation)
+			dbTestCase.targetActors, dbTestCase.targetOptions, dbTestCase.testSuiteOrder, dbTestCase.hasDocumentation, dbTestCase.identifier)
 	}
 
-	def tupleToTestCase(x: TestCaseValueTuple) = {
-		TestCases(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9, x._10, x._11, x._12, x._13, x._14, x._15, x._16, None)
+	def tupleToTestCase(x: TestCaseValueTuple): TestCases = {
+		TestCases(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9, x._10, x._11, x._12, x._13, x._14, x._15, x._16, None, x._17)
 	}
 }
 
@@ -47,7 +47,7 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 
 	val TEST_CASES_PATH = "test-cases"
 
-	def getTestCaseForIdWrapper(testCaseId:String) = {
+	def getTestCaseForIdWrapper(testCaseId:String): Option[TestCase] = {
 		getTestCase(testCaseId)
 	}
 
@@ -65,13 +65,13 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		exec(PersistenceSchema.testCases.filter(_.id === testCaseId).result.head)
 	}
 
-	def getTestCase(testCaseId:String) = {
+	def getTestCase(testCaseId:String): Option[TestCase] = {
 		try {
 			val tc = exec(PersistenceSchema.testCases.filter(_.id === testCaseId.toLong).map(x => TestCaseManager.withoutDocumentation(x)).result.head)
 			Some(new TestCase(TestCaseManager.tupleToTestCase(tc)))
 		}
 		catch {
-			case e: Exception => None
+			case _: Exception => None
 		}
 	}
 
@@ -104,14 +104,19 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		).map(TestCaseManager.tupleToTestCase)
 	}
 
-	def updateTestCase(testCaseId: Long, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String, testSuiteOrder: Short, targetActors: String, hasDocumentation: Boolean, documentation: Option[String]) = {
-		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname, t.fullname, t.version, t.authors, t.description, t.keywords, t.testCaseType, t.path, t.testSuiteOrder, t.targetActors, t.hasDocumentation, t.documentation)
-		q1.update(shortName, fullName, version, authors, description, keywords, testCaseType, path, testSuiteOrder, Some(targetActors), hasDocumentation, documentation) andThen
+	def updateTestCaseWithoutMetadata(testCaseId: Long, path: String, testSuiteOrder: Short, targetActors: String): DBIO[_] = {
+		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.path, t.testSuiteOrder, t.targetActors)
+		q1.update(path, testSuiteOrder, Some(targetActors))
+	}
+
+	def updateTestCase(testCaseId: Long, identifier: String, shortName: String, fullName: String, version: String, authors: Option[String], description: Option[String], keywords: Option[String], testCaseType: Short, path: String, testSuiteOrder: Short, targetActors: String, hasDocumentation: Boolean, documentation: Option[String]): DBIO[_] = {
+		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.identifier, t.shortname, t.fullname, t.version, t.authors, t.description, t.keywords, t.testCaseType, t.path, t.testSuiteOrder, t.targetActors, t.hasDocumentation, t.documentation)
+		q1.update(identifier, shortName, fullName, version, authors, description, keywords, testCaseType, path, testSuiteOrder, Some(targetActors), hasDocumentation, documentation) andThen
 		testResultManager.updateForUpdatedTestCase(testCaseId, shortName)
 	}
 
-	def delete(testCaseId: Long) = {
-		deleteInternal(testCaseId, false)
+	def delete(testCaseId: Long): DBIO[_] = {
+		deleteInternal(testCaseId, skipConformanceResult = false)
 	}
 
 	private def deleteInternal(testCaseId: Long, skipConformanceResult: Boolean): DBIO[_] = {
@@ -127,11 +132,11 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 		DBIO.seq(actions.map(a => a): _*)
 	}
 
-	def removeActorLinksForTestCase(testCaseId: Long) = {
+	def removeActorLinksForTestCase(testCaseId: Long): DBIO[_] = {
 		PersistenceSchema.testCaseHasActors.filter(_.testcase === testCaseId).delete
 	}
 
-	def removeActorLinkForTestCase(testCaseId: Long, actorId: Long) = {
+	def removeActorLinkForTestCase(testCaseId: Long, actorId: Long): DBIO[_] = {
 		PersistenceSchema.testCaseHasActors
 			.filter(_.testcase === testCaseId)
 			.filter(_.actor === actorId)

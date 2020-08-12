@@ -4,27 +4,34 @@
 <div class="modal-body">
 	<form class="form-horizontal">
 		<div class="form-group">
-			<label class="col-sm-3 control-label">Keep history</label>
-			<div class="col-sm-8">
-				<p class="form-control-static">Replace and keep the existing conformance testing results</p>
+			<label class="col-xs-3 control-label" for="choice_history_keep">* Test history:</label>
+			<div class="col-xs-8">
+				<label class="radio-inline">
+					<input type="radio" ng-model="choiceHistory" name="choice_history" id="choice_history_keep" ng-value="'keep'" ng-change="historyChoiceChanged()">Keep existing test results
+					<div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="Existing conformance testing results for updated test cases are considered valid and are left unaffected."></div>
+				</label>
+				<label class="radio-inline">
+					<input type="radio" ng-model="choiceHistory" name="choice_history" id="choice_history_keep_drop" ng-value="'drop'" ng-change="historyChoiceChanged()">Drop existing test results
+					<div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="All existing conformance testing results for the test suite will be considered obsolete."></div>
+				</label>
 			</div>
 		</div>
 		<div class="form-group">
-			<label class="col-sm-3 control-label">Drop history</label>
-			<div class="col-sm-8">
-				<p class="form-control-static">Replace and make existing conformance testing results obsolete</p>
-			</div>
-		</div>
-		<div class="form-group">
-			<label class="col-sm-3 control-label">Cancel</label>
-			<div class="col-sm-8">
-				<p class="form-control-static">Keep the existing test suite without changes</p>
+			<label class="col-xs-3 control-label" for="choice_metadata_skip">* Test metadata:</label>
+			<div class="col-xs-8">
+				<label class="radio-inline">
+					<input type="radio" ng-model="choiceMetadata" name="choice_metadata" id="choice_metadata_skip" ng-value="'skip'" ng-disabled="choiceMetadataReadonly">Keep existing values
+					<div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="Keep the current {{DataService.labelDomainLower()}} values for matching data. This data includes {{DataService.labelActorsLower()}}, {{DataService.labelEndpointsLower()}} and parameters, as well as the name, description and documentation of test suites and test cases."></div>
+				</label>
+				<label class="radio-inline">
+					<input type="radio" ng-model="choiceMetadata" name="choice_metadata" id="choice_metadata_update" ng-value="'update'" ng-disabled="choiceMetadataReadonly">Use archive data to replace existing values
+					<div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="Replace the current {{DataService.labelDomainLower()}} values with data from the new archive. This data includes {{DataService.labelActorsLower()}}, {{DataService.labelEndpointsLower()}} and parameters, as well as the name, description and documentation of test suites and test cases."></div>
+				</label>
 			</div>
 		</div>
 	</form>
 </div>
 <div class="modal-footer">
-    <button type="button" class="btn btn-default" ng-click="keepHistory()" ng-disabled="actionPending"><span class="tab" ng-if="actionKeepPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Keep history</button>
-    <button type="button" class="btn btn-default" ng-click="dropHistory()" ng-disabled="actionPending"><span class="tab" ng-if="actionDropPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Drop history</button>
+    <button type="button" class="btn btn-default" ng-click="proceed()" ng-disabled="actionPending"><span class="tab" ng-if="actionProceedPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Proceed</button>
 	<button type="button" class="btn btn-default" ng-click="cancel()" ng-disabled="actionPending"><span class="tab" ng-if="actionCancelPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Cancel</button>
 </div>

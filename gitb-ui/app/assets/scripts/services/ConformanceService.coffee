@@ -264,13 +264,15 @@ class ConformanceService
     else
       null
 
-  resolvePendingTestSuite: (specificationId, pendingFolderId, action) ->
+  resolvePendingTestSuite: (specificationId, pendingFolderId, action, actionHistory, actionMetadata) ->
     @RestService.post({
       path: jsRoutes.controllers.ConformanceService.resolvePendingTestSuite(specificationId).url,
       authenticate: true
       data: {
         pending_id: pendingFolderId
         pending_action: action
+        pending_action_history: actionHistory
+        pending_action_metadata: actionMetadata
       }
     })
 

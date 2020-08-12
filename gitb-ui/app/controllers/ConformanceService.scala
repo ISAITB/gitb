@@ -11,8 +11,10 @@ import exceptions.{ErrorCodes, NotFoundException}
 import javax.inject.Inject
 import managers._
 import models.{ConformanceStatementFull, OrganisationParameters, SystemParameters}
-import models.Enums.{LabelType, TestSuiteReplacementChoice}
+import models.Enums.{LabelType, TestSuiteReplacementChoice, TestSuiteReplacementChoiceHistory, TestSuiteReplacementChoiceMetadata}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
+import models.Enums.TestSuiteReplacementChoiceHistory.TestSuiteReplacementChoiceHistory
+import models.Enums.TestSuiteReplacementChoiceMetadata.TestSuiteReplacementChoiceMetadata
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.RandomStringUtils
@@ -223,15 +225,31 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
     val pendingFolderId = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ID)
     val pendingActionStr = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ACTION)
     var pendingAction: TestSuiteReplacementChoice = null
-    if ("keep".equals(pendingActionStr)) {
-      pendingAction = TestSuiteReplacementChoice.KEEP_TEST_HISTORY
-    } else if ("drop".equals(pendingActionStr)) {
-      pendingAction = TestSuiteReplacementChoice.DROP_TEST_HISTORY
+    var pendingActionHistory: Option[TestSuiteReplacementChoiceHistory] = None
+    var pendingActionMetadata: Option[TestSuiteReplacementChoiceMetadata] = None
+    if ("proceed".equals(pendingActionStr)) {
+      pendingAction = TestSuiteReplacementChoice.PROCEED
+      val pendingActionHistoryStr = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ACTION_HISTORY)
+      if ("keep".equals(pendingActionHistoryStr)) {
+        // Keep testing history.
+        pendingActionHistory = Some(TestSuiteReplacementChoiceHistory.KEEP)
+      } else {
+        // Drop testing history.
+        pendingActionHistory = Some(TestSuiteReplacementChoiceHistory.DROP)
+      }
+      val pendingActionMetadataStr = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ACTION_METADATA)
+      if ("skip".equals(pendingActionMetadataStr)) {
+        // Skip metadata from archive.
+        pendingActionMetadata = Some(TestSuiteReplacementChoiceMetadata.SKIP)
+      } else {
+        // Use metadata from archive.
+        pendingActionMetadata = Some(TestSuiteReplacementChoiceMetadata.UPDATE)
+      }
     } else {
       // Cancel
       pendingAction = TestSuiteReplacementChoice.CANCEL
     }
-    val result = testSuiteManager.applyPendingTestSuiteAction(specification_id, pendingFolderId, pendingAction)
+    val result = testSuiteManager.applyPendingTestSuiteAction(specification_id, pendingFolderId, pendingAction, pendingActionHistory, pendingActionMetadata)
     val json = JsonUtil.jsTestSuiteUploadResult(result).toString()
     ResponseConstructor.constructJsonResponse(json)
   }

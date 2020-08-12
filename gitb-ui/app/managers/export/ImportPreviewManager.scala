@@ -42,7 +42,9 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
   Contains in sequence the migrations to be applied (older versions to newer versions). For each such pair there has
   to be a XSLT schema/export/migrations/from_[FROM_VERSION]_to_[TO_VERSION].xslt.
    */
-  private val MIGRATIONS: List[(Version, Version)] = List()
+  private val MIGRATIONS: List[(Version, Version)] = List(
+    (new Version(1, 9, 1), new Version(1, 10, 0))
+  )
 
 
   def getTempFolder(): File = {
@@ -191,7 +193,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
           collectionAsScalaIterable(exportedSpecification.getTestSuites.getTestSuite).foreach { exportedTestSuite =>
             var targetTestSuite: Option[models.TestSuites] = None
             if (targetSpecification.isDefined && targetSpecificationTestSuiteMap.contains(targetSpecification.get.id)) {
-              targetTestSuite = targetSpecificationTestSuiteMap(targetSpecification.get.id).remove(exportedTestSuite.getShortName)
+              targetTestSuite = targetSpecificationTestSuiteMap(targetSpecification.get.id).remove(exportedTestSuite.getIdentifier)
             }
             if (targetTestSuite.isDefined) {
               new ImportItem(Some(targetTestSuite.get.fullname), ImportItemType.TestSuite, ImportItemMatch.Both, Some(targetTestSuite.get.id.toString), Some(exportedTestSuite.getId), importItemSpecification)

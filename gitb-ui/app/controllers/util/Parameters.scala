@@ -97,6 +97,8 @@ object Parameters {
 	val SPECIFICATION_ID = "spec_id"
   val PENDING_ID = "pending_id"
   val PENDING_ACTION = "pending_action"
+  val PENDING_ACTION_HISTORY = "pending_action_history"
+  val PENDING_ACTION_METADATA = "pending_action_metadata"
   val FULL = "full"
   val TESTS = "tests"
   val ITEMS = "items"
