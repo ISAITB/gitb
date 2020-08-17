@@ -255,25 +255,30 @@ class ConformanceService
       params: params
     })
 
-  deployTestSuite: (specificationId, file) ->
+  deployTestSuite: (specificationIds, file) ->
     if file?
       options =
-        url: jsRoutes.controllers.ConformanceService.deployTestSuite(specificationId).url.substring(1)
+        url: jsRoutes.controllers.ConformanceService.deployTestSuiteToSpecifications().url.substring(1)
         file: file
+        data: {
+          specification_ids: specificationIds.join ','
+        }
       @$upload.upload options
     else
       null
 
-  resolvePendingTestSuite: (specificationId, pendingFolderId, action, actionHistory, actionMetadata) ->
-    @RestService.post({
-      path: jsRoutes.controllers.ConformanceService.resolvePendingTestSuite(specificationId).url,
-      authenticate: true
-      data: {
+  resolvePendingTestSuite: (pendingFolderId, overallAction, specificationIds, specificationActions) ->
+    data = {
         pending_id: pendingFolderId
-        pending_action: action
-        pending_action_history: actionHistory
-        pending_action_metadata: actionMetadata
-      }
+        pending_action: overallAction
+        specification_ids: specificationIds.join ','
+    }
+    if specificationActions?
+      data.actions = JSON.stringify(specificationActions)
+    @RestService.post({
+      path: jsRoutes.controllers.ConformanceService.resolvePendingTestSuites().url,
+      authenticate: true
+      data: data
     })
 
   getTestSuiteDocumentation: (id) ->

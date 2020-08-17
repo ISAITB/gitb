@@ -121,4 +121,20 @@ class DomainDetailsController
 				@$state.go @$state.current, {}, {reload: true}
 			, angular.noop)
 
+	uploadTestSuite: () =>
+		modalOptions =
+			templateUrl: 'assets/views/components/test-suite-upload-modal.html'
+			controller: 'TestSuiteUploadModalController as controller'
+			backdrop: 'static'
+			keyboard: false
+			resolve:
+				availableSpecifications: () => @specifications
+				testSuitesVisible: () => false
+			size: 'lg'
+		modalInstance = @$uibModal.open(modalOptions)
+		modalInstance.result.finally(angular.noop).then(angular.noop, angular.noop)
+
+	createSpecification: () =>
+		@$state.go 'app.admin.domains.detail.specifications.create', {id: @domainId}
+
 @controllers.controller 'DomainDetailsController', DomainDetailsController

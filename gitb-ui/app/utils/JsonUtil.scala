@@ -9,6 +9,9 @@ import config.Configurations
 import javax.xml.bind.JAXBElement
 import managers.AttachmentType
 import managers.export.{ExportSettings, ImportItem, ImportSettings}
+import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
+import models.Enums.TestSuiteReplacementChoiceHistory.TestSuiteReplacementChoiceHistory
+import models.Enums.TestSuiteReplacementChoiceMetadata.TestSuiteReplacementChoiceMetadata
 import models.Enums._
 import models._
 import org.apache.commons.codec.binary.Base64
@@ -679,6 +682,46 @@ object JsonUtil {
       )
     }
     list
+  }
+
+  def parseJsPendingTestSuiteActions(json: String): List[PendingTestSuiteAction] = {
+    val jsArray = Json.parse(json).as[List[JsObject]]
+    val values = new ListBuffer[PendingTestSuiteAction]()
+    jsArray.foreach { jsonConfig =>
+      val pendingActionStr = (jsonConfig \ "action").as[String]
+      var pendingAction: TestSuiteReplacementChoice = null
+      var pendingActionHistory: Option[TestSuiteReplacementChoiceHistory] = None
+      var pendingActionMetadata: Option[TestSuiteReplacementChoiceMetadata] = None
+      if ("proceed".equals(pendingActionStr)) {
+        pendingAction = TestSuiteReplacementChoice.PROCEED
+        val pendingActionHistoryStr = (jsonConfig \ "pending_action_history").asOpt[String]
+        if (pendingActionHistoryStr.isDefined && "drop".equals(pendingActionHistoryStr.get)) {
+          // Drop testing history.
+          pendingActionHistory = Some(TestSuiteReplacementChoiceHistory.DROP)
+        } else {
+          // Keep testing history.
+          pendingActionHistory = Some(TestSuiteReplacementChoiceHistory.KEEP)
+        }
+        val pendingActionMetadataStr = (jsonConfig \ "pending_action_metadata").asOpt[String]
+        if (pendingActionMetadataStr.isDefined && "update".equals(pendingActionMetadataStr.get)) {
+          // Use metadata from archive.
+          pendingActionMetadata = Some(TestSuiteReplacementChoiceMetadata.UPDATE)
+        } else {
+          // Skip metadata from archive.
+          pendingActionMetadata = Some(TestSuiteReplacementChoiceMetadata.SKIP)
+        }
+      } else {
+        // Cancel
+        pendingAction = TestSuiteReplacementChoice.CANCEL
+      }
+      values += new PendingTestSuiteAction(
+        (jsonConfig \ "specification").as[Long],
+        pendingAction,
+        pendingActionHistory,
+        pendingActionMetadata
+      )
+    }
+    values.toList
   }
 
   def parseJsSystemParameterValues(json:String):List[SystemParameterValues] = {
@@ -1512,7 +1555,8 @@ object JsonUtil {
     val json = Json.obj(
       "name" -> item.itemName,
       "type" -> item.itemType,
-      "action" -> item.actionType
+      "action" -> item.actionType,
+      "specification" -> item.specification
     )
     json
   }
@@ -1525,14 +1569,26 @@ object JsonUtil {
     json
   }
 
+  private def toJsArray(values: Option[List[Long]]): JsArray = {
+    var json = Json.arr()
+    if (values.isDefined) {
+      values.get.foreach { value =>
+        json = json.append(JsNumber(value))
+      }
+    }
+    json
+  }
+
   def jsTestSuiteUploadResult(result: TestSuiteUploadResult):JsObject = {
     val json = Json.obj(
       "success"    -> result.success,
       "errorInformation"  -> result.errorInformation,
       "pendingFolderId"  -> result.pendingTestSuiteFolderName,
-      "exists" -> result.exists,
+      "existsForSpecs" -> toJsArray(result.existsForSpecs),
+      "matchingDataExists" -> toJsArray(result.matchingDataExists),
       "items" -> jsTestSuiteUploadItemResults(result.items),
-      "validationReport" -> (if (result.validationReport != null) jsTAR(result.validationReport) else JsNull)
+      "validationReport" -> (if (result.validationReport != null) jsTAR(result.validationReport) else JsNull),
+      "needsConfirmation" -> result.needsConfirmation
     )
     json
   }

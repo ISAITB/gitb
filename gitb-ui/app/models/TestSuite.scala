@@ -71,7 +71,7 @@ class TestSuite(
 		this(testSuite, None, None)
 	}
 
-	def toCaseObject = {
+	def toCaseObject: TestSuites = {
 		TestSuites(
 			this.id, this.shortname, this.fullname, this.version,
 			if(this.authors.isDefined) Some(this.authors.get.mkString(",")) else None,

@@ -77,8 +77,8 @@ GET     /specs/system                       @controllers.ConformanceService.getS
 POST    /specs                              @controllers.ConformanceService.createSpecification
 GET	    /specs/:spec_id/actors              @controllers.ConformanceService.getSpecActors(spec_id : Long)
 GET	    /specs/:spec_id/suites              @controllers.ConformanceService.getSpecTestSuites(spec_id : Long)
-POST    /specs/:spec_id/deploy              @controllers.ConformanceService.deployTestSuite(spec_id: Long)
-POST    /specs/:spec_id/deploy/resolve      @controllers.ConformanceService.resolvePendingTestSuite(spec_id: Long)
+POST    /specs/deploy                       @controllers.ConformanceService.deployTestSuiteToSpecifications()
+POST    /specs/deploy/resolve               @controllers.ConformanceService.resolvePendingTestSuites()
 DELETE  /specs/:spec_id                     @controllers.SpecificationService.deleteSpecification(spec_id: Long)
 POST    /specs/:spec_id                     @controllers.SpecificationService.updateSpecification(spec_id: Long)
 GET     /actors                             @controllers.ConformanceService.getActors

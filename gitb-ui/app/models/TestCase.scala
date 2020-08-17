@@ -21,6 +21,11 @@ case class TestCases(
 											identifier: String
 	                    ) {
 
+	def withSpecification(specification: Long): TestCases = {
+		TestCases(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate,
+			this.modificationDate, this.description, this.keywords, this.testCaseType, path, specification, this.targetActors, this.targetOptions, this.testSuiteOrder, this.hasDocumentation, this.documentation, this.identifier)
+	}
+
 	def withPath(path: String): TestCases = {
 		TestCases(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate,
 			this.modificationDate, this.description, this.keywords, this.testCaseType, path, this.targetSpec, this.targetActors, this.targetOptions, this.testSuiteOrder, this.hasDocumentation, this.documentation, this.identifier)

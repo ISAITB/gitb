@@ -1,0 +1,149 @@
+<div class="modal-header">
+	<h4>Test suite upload</h4>
+</div>
+<div class="modal-body">
+	<form class="form-horizontal">
+		<div ng-if="controller.step == 'initial'">
+			<div class="form-group">
+				<label class="col-xs-3 control-label" for="specification">* Target {{controller.DataService.labelSpecificationLower()}}:</label>
+				<div class="col-xs-8">
+					<input ng-if="controller.availableSpecifications.length == 1" class="form-control" id="specification" ng-value="controller.specifications[0].fname" ng-model="controller.specifications" readonly="readonly"/>
+					<select ng-if="controller.availableSpecifications.length > 1" multiple="multiple" class="form-control" id="specification" ng-model="controller.specifications" ng-options="specification as specification.fname for specification in controller.availableSpecifications"></select>
+				</div>
+				<div tb-tooltip="The {{controller.DataService.labelSpecificationLower()}} for which the test suite will be uploaded."></div>
+			</div>
+			<div class="form-group">
+				<label class="col-xs-3 control-label">* Test suite:</label>
+				<div class="col-xs-8">
+					<div class="input-group">
+						<div class="input-group-btn">
+							<button class="btn btn-default" type="button" ng-file-select="controller.selectArchive($files)" accept="application/zip"><i class="fa fa-folder-open-o"></i></button>
+						</div>
+						<input type="text" class="form-control clickable" ng-value="controller.file.name" placeholder="Select test suite archive ..." ng-file-select="controller.selectArchive($files)" accept="application/zip" readonly="readonly"/>
+					</div>
+				</div>
+				<div tb-tooltip="The test suite archive to upload."></div>
+			</div>
+		</div>
+		<div ng-if="controller.step == 'validation'">
+			<div class="container-fluid">
+				<div class="row">
+					<div class="bg-info div-rounded div-padded">
+						The provided test suite completed validation with <strong ng-if="controller.report.counters.errors > 0">{{controller.report.counters.errors}} error(s)</strong><span ng-if="controller.report.counters.errors > 0 && controller.report.counters.warnings > 0"> and </span><strong ng-if="controller.report.counters.warnings > 0">{{controller.report.counters.warnings}} warning(s)</strong>.						
+					</div>                        
+				</div>
+			</div>
+			<div class="row test-step-report ts-upload-validation-report">
+				<div class="step-report test-assertion-step-report">
+					<div class="col-xs-12 test-assertion-group-report" ng-if="controller.report.reports != null">
+						<div ng-repeat="assertionReport in controller.report.reports">
+							<span class="assertion-report-nolink" ng-class="{'error-assertion-report': assertionReport.level == 'error', 'warning-assertion-report': assertionReport.level == 'warning', 'info-assertion-report': assertionReport.level == 'info'}">
+								<span class="report-item-element assertion-report-item">
+									<i class="fa fa-info-circle report-item-icon info-icon" ng-if="assertionReport.level == 'info'"></i>
+									<i class="fa fa-warning report-item-icon warning-icon" ng-if="assertionReport.level == 'warning'"></i>
+									<i class="fa fa-times-circle report-item-icon error-icon" ng-if="assertionReport.level == 'error'"></i>
+									<span class="description">{{assertionReport.description}}</span>
+								</span>
+								<span class="report-item assertion-report-item" ng-if="assertionReport.location != null"><strong>Location:</strong> {{assertionReport.location}}</span>
+							</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div ng-if="controller.step == 'replace'">
+			<div class="container-fluid">
+				<div class="row">
+					<div class="bg-info div-rounded div-padded">
+						<span ng-if="!controller.hasMultipleChoices && controller.hasMatchingTestSuite">The selected {{controller.DataService.labelSpecificationLower()}} already contains this test suite and its data. Select how the update should take place.</span>
+						<span ng-if="!controller.hasMultipleChoices && !controller.hasMatchingTestSuite">The selected {{controller.DataService.labelSpecificationLower()}} defines matching data. Select how the update should take place.</span>
+						<span ng-if="controller.hasMultipleChoices && controller.hasMatchingTestSuite">Selected {{controller.DataService.labelSpecificationsLower()}} already contain this test suite and its data. Select how the update should take place.</span>
+						<span ng-if="controller.hasMultipleChoices && !controller.hasMatchingTestSuite">Selected {{controller.DataService.labelSpecificationsLower()}} define matching data. Select how the update should take place.</span>
+					</div>                        
+				</div>
+			</div>
+			<div class="container-fluid ts-upload-result-container">
+				<div ng-repeat="choice in controller.specificationChoices" class="row" ng-class="{'ts-upload-result-first': $first, 'ts-upload-result-last': $last}">
+					<div class="col-xs-12 ts-upload-result-spec">
+						<div class="ts-upload-result-spec-name" ng-class="{'ts-upload-skipped': choice.skipUpdate}">{{controller.specificationName(choice.specification)}}</div>
+						<div class="btn-toolbar pull-right ts-upload-result-spec-controls" ng-if="controller.hasMultipleChoices">
+							<button ng-if="!choice.skipUpdate" class="btn btn-default btn-sm" type="button" ng-click="controller.applyChoiceToAll(choice.specification)">Apply to all</button>
+							<button ng-if="!choice.skipUpdate" class="btn btn-default btn-sm" type="button" ng-click="controller.skipUpdate(choice.specification)">Skip</button>
+							<button ng-if="choice.skipUpdate" class="btn btn-default btn-sm" type="button" ng-click="controller.processUpdate(choice.specification)">Process</button>
+						</div>
+					</div>
+					<div uib-collapse="choice.skipUpdate" class="ts-upload-result-actions col-xs-12">
+						<div class="form-group" ng-if="choice.testSuiteExists">
+							<label class="col-xs-3 control-label" ng-attr-for="{{'choice_history_keep_'+choice.specification}}">* Test history:</label>
+							<div class="col-xs-8">
+								<label class="radio-inline">
+									<input type="radio" ng-model="choice.history" ng-attr-id="{{'choice_history_keep_'+choice.specification}}" ng-value="'keep'">Keep existing test results
+									<div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="Existing conformance testing results for updated test cases are considered valid and are left unaffected."></div>
+								</label>
+								<label class="radio-inline">
+									<input type="radio" ng-model="choice.history" ng-attr-id="{{'choice_history_keep_drop_'+choice.specification}}" ng-value="'drop'">Drop existing test results
+									<div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="All existing conformance testing results for the test suite will be considered obsolete."></div>
+								</label>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-xs-3 control-label" ng-attr-for="{{'choice_metadata_skip_'+choice.specification}}">* {{controller.DataService.labelSpecification()}} data:</label>
+							<div class="col-xs-8">
+								<label class="radio-inline">
+									<input type="radio" ng-model="choice.metadata" ng-attr-id="{{'choice_metadata_skip_'+choice.specification}}" ng-value="'skip'">Keep existing values
+									<div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="Keep the current {{controller.DataService.labelSpecificationLower()}} data when matching values are defined in the new archive. This data includes {{controller.DataService.labelActorsLower()}}, {{controller.DataService.labelEndpointsLower()}} and parameters, as well as the name, description and documentation of test suites and test cases."></div>
+								</label>
+								<label class="radio-inline">
+									<input type="radio" ng-model="choice.metadata" ng-attr-id="{{'choice_metadata_update_'+choice.specification}}" ng-value="'update'">Use archive data to replace existing values
+									<div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="Replace matching {{controller.DataService.labelSpecificationLower()}} data with the values from the new archive. This data includes {{controller.DataService.labelActorsLower()}}, {{controller.DataService.labelEndpointsLower()}} and parameters, as well as the name, description and documentation of test suites and test cases."></div>
+								</label>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div ng-if="controller.step == 'results'">
+			<div class="container-fluid">
+				<div class="row">
+					<div class="bg-info div-rounded div-padded">
+						<span>The test suite has been successfully uploaded. You can review below the changes that were applied.</span>
+					</div>                        
+				</div>
+			</div>
+			<div class="container-fluid ts-upload-result-container">
+				<div ng-repeat="result in controller.results" class="row" ng-class="{'ts-upload-result-first': $first, 'ts-upload-result-last': $last}">
+					<div class="col-xs-12 ts-upload-result-spec">
+						<div class="ts-upload-result-spec-name">{{controller.specificationName(result.specification)}}</div
+					></div>
+					<div class="ts-upload-result-actions col-xs-12">
+						<div ng-if="result.testSuites.length > 0">
+							<label class="col-xs-3 control-label">Test suite:</label>
+							<div class="col-xs-9"><p class="form-control-static">{{result.testSuiteSummary}}</p></div>
+						</div>
+						<div ng-if="result.testCases.length > 0">
+							<label class="col-xs-3 control-label">Test cases:</label>
+							<div class="col-xs-9"><p class="form-control-static">{{result.testCaseSummary}}</p></div>
+						</div>
+						<div ng-if="result.actors.length > 0">
+							<label class="col-xs-3 control-label">{{controller.DataService.labelActors()}}:</label>
+							<div class="col-xs-9"><p class="form-control-static">{{result.actorSummary}}</p></div>
+						</div>
+						<div ng-if="result.endpoints.length > 0">
+							<label class="col-xs-3 control-label">{{controller.DataService.labelEndpoints()}}:</label>
+							<div class="col-xs-9"><p class="form-control-static">{{result.endpointSummary}}</p></div>
+						</div>
+						<div ng-if="result.parameters.length > 0">
+							<label class="col-xs-3 control-label">Parameters:</label>
+							<div class="col-xs-9"><p class="form-control-static">{{result.parameterSummary}}</p></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</form>
+</div>
+<div class="modal-footer">
+    <button ng-if="controller.proceedVisible()" type="button" class="btn btn-default" ng-click="controller.proceed()" ng-disabled="controller.proceedDisabled()"><span class="tab" ng-if="controller.actionProceedPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Proceed</button>
+	<button type="button" class="btn btn-default" ng-click="controller.close()" ng-disabled="controller.actionPending">{{controller.step == 'results'?'Close':'Cancel'}}</button>
+</div>

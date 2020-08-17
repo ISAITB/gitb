@@ -10,8 +10,9 @@ class TestSuiteUploadResult {
   var success: Boolean = false
   var pendingTestSuiteFolderName: String = null
   var errorInformation: String = null
-  var exists: Boolean = false
-
+  var needsConfirmation: Boolean = false
+  var matchingDataExists: Option[List[Long]] = None
+  var existsForSpecs: Option[List[Long]] = None
   val items = new util.ArrayList[TestSuiteUploadItemResult]()
 
 }

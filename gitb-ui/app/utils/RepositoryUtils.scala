@@ -162,7 +162,7 @@ object RepositoryUtils {
 		fileName
 	}
 
-	def getTestSuiteFromZip(specification:Long, file: File): Option[TestSuite] = {
+	def getTestSuiteFromZip(specification:Option[Long], file: File): Option[TestSuite] = {
 
 		var result: Option[TestSuite] = None
 
@@ -199,7 +199,7 @@ object RepositoryUtils {
 						logger.debug("Test suite has tdlActors ["+tdlActors.map(_.getId)+"]")
 						logger.debug("Test suite has tdlTestCases ["+tdlTestCaseEntries.map(_.getId)+"]")
 
-						val caseObject = TestSuites(0L, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification, fileName, documentation.isDefined, documentation, identifier)
+						val caseObject = TestSuites(0L, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification.getOrElse(0L), fileName, documentation.isDefined, documentation, identifier)
 						val actors = tdlActors.map { tdlActor =>
 							val endpoints = tdlActor.getEndpoint.asScala.map { tdlEndpoint => // construct actor endpoints
 								val parameters = tdlEndpoint.getConfig.asScala
@@ -248,7 +248,7 @@ object RepositoryUtils {
 									0L, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getVersion,
 									Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
 									Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
-									None, testCaseType.ordinal().toShort, null, specification, Some(actorString.toString()), None,
+									None, testCaseType.ordinal().toShort, null, specification.getOrElse(0L), Some(actorString.toString()), None,
 									testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId
 								)
 						}.toList

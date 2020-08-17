@@ -14,8 +14,10 @@ import org.slf4j.{Logger, LoggerFactory}
 import persistence.AccountManager
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.Files
-import play.api.mvc.{AnyContent, MultipartFormData}
+import play.api.mvc.{AnyContent, MultipartFormData, Result}
 import utils.RepositoryUtils
+
+import scala.collection.mutable
 
 object AuthorizationManager {
   val AUTHORIZATION_OK = "AUTH_OK"
@@ -1166,6 +1168,26 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     val spec = specificationManager.getSpecificationById(specificationId)
     canManageDomain(request, spec.domain)
   }
+
+  def canManageSpecifications(request: RequestWithAttributes[_], specIds: List[Long]): Boolean = {
+    val userInfo = getUser(getRequestUserId(request))
+    var ok = false
+    if (isTestBedAdmin(userInfo)) {
+      ok = true
+    } else {
+      if (isCommunityAdmin(userInfo)) {
+        val specDomainIds = mutable.Set[Long]()
+        val specs = specificationManager.getSpecificationsById(specIds)
+        specs.foreach(spec => specDomainIds += spec.domain)
+        specDomainIds.foreach{ domainId =>
+          canManageDomain(request, userInfo, domainId)
+        }
+        ok = true
+      }
+    }
+    setAuthResult(request, ok, "User cannot manage the requested specifications")
+  }
+
 
   def canCreateActor(request: RequestWithAttributes[_], specificationId: Long):Boolean = {
     canManageSpecification(request, specificationId)

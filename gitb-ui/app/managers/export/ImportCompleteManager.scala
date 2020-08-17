@@ -490,7 +490,7 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
         }
       }
       // Remove the test cases that are no longer in the test suite.
-      _ <- testSuiteManager.stepRemoveTestCases(existingTestCaseMap)
+      _ <- testSuiteManager.stepRemoveTestCases(existingTestCaseMap, specificationId)
       // Update the actor links for the  test suite.
       _ <- testSuiteManager.stepUpdateTestSuiteActorLinks(testSuiteId, getSavedActorMap(data, specificationId, ctx))
       // Update the test case links for the test suite.

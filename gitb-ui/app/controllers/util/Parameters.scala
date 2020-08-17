@@ -95,6 +95,7 @@ object Parameters {
 	val SPEC_TYPE = "spec_type"
 	val DOMAIN_ID = "domain_id"
 	val SPECIFICATION_ID = "spec_id"
+  val ACTIONS = "actions"
   val PENDING_ID = "pending_id"
   val PENDING_ACTION = "pending_action"
   val PENDING_ACTION_HISTORY = "pending_action_history"

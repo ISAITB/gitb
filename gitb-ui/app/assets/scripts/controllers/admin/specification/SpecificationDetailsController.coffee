@@ -9,7 +9,6 @@ class SpecificationDetailsController
 		@testSuites = []
 		@domainId = @$stateParams.id
 		@specificationId = @$stateParams.spec_id
-		@uploadPending = false
 
 		@tableColumns = [
 			{
@@ -88,140 +87,18 @@ class SpecificationDetailsController
 
 		@DataService.focus('shortName')
 
-	hasErrorsOrWarnings: (report) =>
-		if report?.counters?.errors? && report?.counters?.warnings?
-			parseInt(report.counters.errors) > 0 || parseInt(report.counters.warnings) > 0
-		else
-			false
-		
-	showPendingOptions: (pendingFolderId) =>
+	uploadTestSuite: () =>
 		modalOptions =
-			templateUrl: 'assets/views/components/test-suite-upload-pending-modal.html'
-			controller: 'TestSuiteUploadPendingModalController as TestSuiteUploadPendingModalController'
+			templateUrl: 'assets/views/components/test-suite-upload-modal.html'
+			controller: 'TestSuiteUploadModalController as controller'
+			backdrop: 'static'
+			keyboard: false
 			resolve:
-				specificationId: () => @specificationId
-				pendingFolderId: () => pendingFolderId
+				availableSpecifications: () => [@specification]
+				testSuitesVisible: () => true
 			size: 'lg'
 		modalInstance = @$uibModal.open(modalOptions)
-		modalInstance.result
-			.finally(angular.noop)
-			.then((pendingResolutionData) => 
-				# Closed
-				@showTestSuiteUploadResult(pendingResolutionData)
-				@$state.go(@$state.$current, null, { reload: true });
-			, () => 
-				# Dismissed
-				@uploadPending = false
-				@ConformanceService.resolvePendingTestSuite(@specificationId, pendingFolderId, 'cancel')
-			)
-	
-	showTestSuiteValidationReport: (report, pendingFolderId, exists) =>
-		modalOptions =
-			templateUrl: 'assets/views/components/test-suite-validation-report-modal.html'
-			controller: 'TestSuiteValidationReportModalController as controller'
-			resolve:
-				report: () => report
-			size: 'lg'
-		modalInstance = @$uibModal.open(modalOptions)
-		modalInstance.result
-			.finally(angular.noop)
-			.then((data) => 
-				# Proceed
-				if (exists)
-					@showPendingOptions(pendingFolderId)
-				else
-					@ConformanceService.resolvePendingTestSuite(@specificationId, pendingFolderId, "proceed", "keep", "update")
-					.then((pendingResolutionData) =>
-						@showTestSuiteUploadResult(pendingResolutionData)
-						@$state.go(@$state.$current, null, { reload: true });
-					, () =>
-						@uploadPending = false
-					)
-			, () =>
-				# Cancel
-				@uploadPending = false
-				if (pendingFolderId?)
-					@ConformanceService.resolvePendingTestSuite(@specificationId, pendingFolderId, "cancel")
-			)
-
-	onFileSelect: (files) =>
-		@$log.debug "Test suite zip files is selected to deploy: ", files
-		if files.length > 0
-			@uploadPending = true
-			@ConformanceService.deployTestSuite @specificationId, files[0]
-			.then((result) => 
-				if (result && result.data && result.data.validationReport)
-					hasErrorsOrWarnings = @hasErrorsOrWarnings(result.data.validationReport)
-					if (hasErrorsOrWarnings)
-						@showTestSuiteValidationReport(result.data.validationReport, result.data.pendingFolderId, result.data.exists)
-					else
-						if (result.data.exists)
-							@showPendingOptions(result.data.pendingFolderId)
-						else if (result.data.success)
-							@showTestSuiteUploadResult(result.data)
-							@$state.go(@$state.$current, null, { reload: true });
-						else
-							error = { 
-								statusText: "Upload error",
-								data: {error_description: "An error occurred while processing the test suite: "+result.data.errorInformation}
-							}
-							@ErrorService.showErrorMessage(error)
-							@uploadPending = false
-				else
-					@ErrorService.showErrorMessage("An error occurred while processing the test suite: Response was empty")
-					@uploadPending = false
-			, (error) =>
-				@ErrorService.showErrorMessage(error)
-				@uploadPending = false
-			)
-
-	showTestSuiteUploadResult: (result) =>
-		@uploadPending = false
-		if (result.success)
-			collect = (item, data) => 
-				getAction = (itemAction) -> 
-					if (itemAction == "update") 
-						"(updated)"
-					else if (itemAction == "add") 
-						"(added)"
-					else if (itemAction == "unchanged") 
-						"(unchanged)"
-					else 
-						"(deleted)"
-
-				getIndex = (itemType) -> 
-					if (itemType == 'testSuite') 
-						0
-					else if (itemType == 'testCase') 
-						1
-					else if (itemType == 'actor') 
-						2
-					else if (itemType == 'endpoint') 
-						3
-					else 
-						4
-				append = (currentVal, newVal) ->
-					if (!currentVal) 
-						newVal
-					else
-						currentVal + ", " + newVal
-				data[getIndex(item.type)].value = append(data[getIndex(item.type)].value, item.name+" "+getAction(item.action))
-			data = [
-				{label: "Test suite:"}, 
-				{label: "Test cases:"},
-				{label: @DataService.labelActors()+":"},
-				{label: @DataService.labelEndpoints()+":"},
-				{label: "Parameters:"}
-			]
-			collect item, data for item in result.items
-			@PopupService.show("Test suite upload overview", data, () => @PopupService.success('Test suite uploaded.'))
-		else
-			data = []
-			data.push {
-				label: "Error:",
-				value: result.errorInformation
-			}
-			@PopupService.show("Test suite upload failed", data)
+		modalInstance.result.finally(angular.noop).then(angular.noop, angular.noop)
 
 	onActorSelect: (actor) =>
 		@$state.go 'app.admin.domains.detail.specifications.detail.actors.detail.list', {id: @domainId, spec_id: @specificationId, actor_id: actor.id}

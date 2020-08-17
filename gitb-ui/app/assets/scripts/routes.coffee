@@ -616,7 +616,6 @@ app.run ['$log', '$transitions', 'AuthProvider', '$state'
 
 		$state.defaultErrorHandler((error) =>
 			# Do not log transitionTo errors.
-			console.log('ERROR')
 		)
 
 		return

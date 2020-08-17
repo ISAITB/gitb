@@ -341,6 +341,33 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 		actors
 	}
 
+	def getActorIdsOfSpecifications(specIds:List[Long]): Map[Long, Set[String]] = {
+		val results = exec(
+			PersistenceSchema.actors
+			.join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
+		  .filter(_._2.specId inSet specIds)
+		  .map(x => (x._1.actorId, x._2.specId))
+		  .result
+		  .map(_.toList)
+		)
+		val specMap = mutable.Map[Long, mutable.Set[String]]()
+		results.foreach { result =>
+			var actorIdSet = specMap.get(result._2)
+			if (actorIdSet.isEmpty) {
+				actorIdSet = Some(mutable.Set[String]())
+				specMap += (result._2 -> actorIdSet.get)
+			}
+			actorIdSet.get += result._1
+		}
+		// Add empty sets for spec IDs with no results.
+		specIds.foreach { specId =>
+			if (!specMap.contains(specId)) {
+				specMap += (specId -> mutable.Set[String]())
+			}
+		}
+		specMap.toMap.map(x => (x._1, x._2.toSet))
+	}
+
   def getActorsWithSpecificationId(actorIds:Option[List[Long]], spec:Option[Long]): List[Actor] = {
 		var actors: List[Actor] = List()
 

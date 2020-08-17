@@ -10,11 +10,9 @@ import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, Respo
 import exceptions.{ErrorCodes, NotFoundException}
 import javax.inject.Inject
 import managers._
-import models.{ConformanceStatementFull, OrganisationParameters, SystemParameters}
-import models.Enums.{LabelType, TestSuiteReplacementChoice, TestSuiteReplacementChoiceHistory, TestSuiteReplacementChoiceMetadata}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
-import models.Enums.TestSuiteReplacementChoiceHistory.TestSuiteReplacementChoiceHistory
-import models.Enums.TestSuiteReplacementChoiceMetadata.TestSuiteReplacementChoiceMetadata
+import models.Enums.{LabelType, TestSuiteReplacementChoice, TestSuiteReplacementChoiceHistory, TestSuiteReplacementChoiceMetadata}
+import models._
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.RandomStringUtils
@@ -220,71 +218,84 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
     ResponseConstructor.constructEmptyResponse
   }
 
-  def resolvePendingTestSuite(specification_id: Long) = authorizedAction { request =>
-    authorizationManager.canEditTestSuites(request, specification_id)
-    val pendingFolderId = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ID)
-    val pendingActionStr = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ACTION)
-    var pendingAction: TestSuiteReplacementChoice = null
-    var pendingActionHistory: Option[TestSuiteReplacementChoiceHistory] = None
-    var pendingActionMetadata: Option[TestSuiteReplacementChoiceMetadata] = None
-    if ("proceed".equals(pendingActionStr)) {
-      pendingAction = TestSuiteReplacementChoice.PROCEED
-      val pendingActionHistoryStr = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ACTION_HISTORY)
-      if ("keep".equals(pendingActionHistoryStr)) {
-        // Keep testing history.
-        pendingActionHistory = Some(TestSuiteReplacementChoiceHistory.KEEP)
-      } else {
-        // Drop testing history.
-        pendingActionHistory = Some(TestSuiteReplacementChoiceHistory.DROP)
+  private def specsMatch(allowedIds: Set[Long], actions: List[PendingTestSuiteAction]): Boolean = {
+    actions.foreach { action =>
+      if (allowedIds.contains(action.specification)) {
+        return false
       }
-      val pendingActionMetadataStr = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ACTION_METADATA)
-      if ("skip".equals(pendingActionMetadataStr)) {
-        // Skip metadata from archive.
-        pendingActionMetadata = Some(TestSuiteReplacementChoiceMetadata.SKIP)
-      } else {
-        // Use metadata from archive.
-        pendingActionMetadata = Some(TestSuiteReplacementChoiceMetadata.UPDATE)
-      }
-    } else {
-      // Cancel
-      pendingAction = TestSuiteReplacementChoice.CANCEL
     }
-    val result = testSuiteManager.applyPendingTestSuiteAction(specification_id, pendingFolderId, pendingAction, pendingActionHistory, pendingActionMetadata)
-    val json = JsonUtil.jsTestSuiteUploadResult(result).toString()
-    ResponseConstructor.constructJsonResponse(json)
+    true
   }
 
-  def deployTestSuite(specification_id: Long) = authorizedAction(parse.multipartFormData) { request =>
-    authorizationManager.canEditTestSuitesMulti(request, specification_id)
-    var response:Result = null
-    val testSuiteFileName = "ts_"+RandomStringUtils.random(10, false, true)+".zip"
-    request.body.file(Parameters.FILE) match {
-    case Some(testSuite) => {
-      if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
-        val fileBytes = FileUtils.readFileToByteArray(testSuite.ref.path.toFile)
-        val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-        val scanResult = virusScanner.scan(fileBytes)
-        if (!ClamAVClient.isCleanReply(scanResult)) {
-          response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Test suite failed virus scan.")
+  def resolvePendingTestSuites(): Action[AnyContent] = authorizedAction { request =>
+    val specificationIds = ParameterExtractor.requiredBodyParameter(request, Parameters.SPEC_IDS).split(',').map(s => s.toLong).toList
+    authorizationManager.canManageSpecifications(request, specificationIds)
+    val pendingFolderId = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ID)
+    val overallActionStr = ParameterExtractor.requiredBodyParameter(request, Parameters.PENDING_ACTION)
+    var overallAction: TestSuiteReplacementChoice = TestSuiteReplacementChoice.CANCEL
+    if ("proceed".equals(overallActionStr)) {
+      overallAction = TestSuiteReplacementChoice.PROCEED
+    }
+    var response: Result = null
+    var result: TestSuiteUploadResult = null
+    if (overallAction == TestSuiteReplacementChoice.CANCEL) {
+      result = testSuiteManager.cancelPendingTestSuiteActions(pendingFolderId)
+    } else {
+      val actionsStr = ParameterExtractor.optionalBodyParameter(request, Parameters.ACTIONS)
+      var actions: List[PendingTestSuiteAction] = null
+      if (actionsStr.isDefined) {
+        actions = JsonUtil.parseJsPendingTestSuiteActions(actionsStr.get)
+        // Ensure that the specification IDs in the individual actions match the list of specification IDs
+        if (specsMatch(specificationIds.toSet, actions)) {
+          response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_PARAM, "Provided actions don't match selected specifications")
+        }
+      } else {
+        actions = specificationIds.map { specId =>
+          new PendingTestSuiteAction(specId, TestSuiteReplacementChoice.PROCEED, Some(TestSuiteReplacementChoiceHistory.KEEP), Some(TestSuiteReplacementChoiceMetadata.SKIP))
         }
       }
       if (response == null) {
-        val file = Paths.get(
-          testSuiteManager.getTempFolder().getAbsolutePath,
-          RandomStringUtils.random(10, false, true),
-          testSuiteFileName
-        ).toFile
-        file.getParentFile.mkdirs()
-        testSuite.ref.moveTo(file, replace = true)
-        val contentType = testSuite.contentType
-        logger.debug("Test suite file uploaded - filename: [" + testSuiteFileName + "] content type: [" + contentType + "]")
-        val result = testSuiteManager.deployTestSuiteFromZipFile(specification_id, file)
-        val json = JsonUtil.jsTestSuiteUploadResult(result).toString()
-        response = ResponseConstructor.constructJsonResponse(json)
+        result = testSuiteManager.completePendingTestSuiteActions(pendingFolderId, actions)
       }
     }
-    case None =>
-      response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + Parameters.FILE + "] parameter is missing.")
+    if (response == null) {
+      val json = JsonUtil.jsTestSuiteUploadResult(result).toString()
+      response = ResponseConstructor.constructJsonResponse(json)
+    }
+    response
+  }
+
+  def deployTestSuiteToSpecifications() = authorizedAction(parse.multipartFormData) { request =>
+    val specIds: List[Long] = ParameterExtractor.requiredBodyParameterMulti(request, Parameters.SPEC_IDS).split(",").map(_.toLong).toList
+    authorizationManager.canManageSpecifications(request, specIds)
+    var response:Result = null
+    val testSuiteFileName = "ts_"+RandomStringUtils.random(10, false, true)+".zip"
+    request.body.file(Parameters.FILE) match {
+      case Some(testSuite) =>
+        if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
+          val fileBytes = FileUtils.readFileToByteArray(testSuite.ref.path.toFile)
+          val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+          val scanResult = virusScanner.scan(fileBytes)
+          if (!ClamAVClient.isCleanReply(scanResult)) {
+            response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Test suite failed virus scan.")
+          }
+        }
+        if (response == null) {
+          val file = Paths.get(
+            testSuiteManager.getTempFolder().getAbsolutePath,
+            RandomStringUtils.random(10, false, true),
+            testSuiteFileName
+          ).toFile
+          file.getParentFile.mkdirs()
+          testSuite.ref.moveTo(file, replace = true)
+          val contentType = testSuite.contentType
+          logger.debug("Test suite file uploaded - filename: [" + testSuiteFileName + "] content type: [" + contentType + "]")
+          val result = testSuiteManager.deployTestSuiteFromZipFile(specIds, file)
+          val json = JsonUtil.jsTestSuiteUploadResult(result).toString()
+          response = ResponseConstructor.constructJsonResponse(json)
+        }
+      case None =>
+        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + Parameters.FILE + "] parameter is missing.")
     }
     response
   }
