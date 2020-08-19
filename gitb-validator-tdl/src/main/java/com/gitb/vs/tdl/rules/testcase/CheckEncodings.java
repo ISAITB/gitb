@@ -1,5 +1,6 @@
 package com.gitb.vs.tdl.rules.testcase;
 
+import com.gitb.core.Documentation;
 import com.gitb.tdl.InstructionOrRequest;
 import com.gitb.tdl.TestArtifact;
 import com.gitb.tdl.UserInteraction;
@@ -20,6 +21,14 @@ public class CheckEncodings extends AbstractTestCaseObserver {
     public void initialise(Context context, ValidationReport report) {
         super.initialise(context, report);
         availableCharsets = Charset.availableCharsets().keySet();
+    }
+
+    @Override
+    public void handleDocumentation(Documentation documentation) {
+        super.handleDocumentation(documentation);
+        if (documentation != null) {
+            checkEncoding(documentation.getEncoding());
+        }
     }
 
     @Override
@@ -48,6 +57,8 @@ public class CheckEncodings extends AbstractTestCaseObserver {
             String stepToReport;
             if (section == TestCaseSection.IMPORTS) {
                 stepToReport = "import";
+            } else if (section == TestCaseSection.METADATA) {
+                stepToReport = "documentation";
             } else if (currentStep != null) {
                 stepToReport = Utils.getStepName(currentStep);
             } else {

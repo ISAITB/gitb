@@ -69,8 +69,13 @@ public enum ErrorCode {
     VALUE_OF_NON_MAP_VARIABLE_WITH_NAME_OR_TYPE(        "TDL-061", "Test case [%s] defines for variable [%s] a value with name and type information that will be ignored.", WARNING),
     MULTIPLE_VALUES_FOR_PRIMITIVE_VARIABLE(             "TDL-062", "Test case [%s] defines a simple variable [%s] with multiple values.", ERROR),
     POTENTIALLY_INVALID_ORGANISATION_VARIABLE(          "TDL-063", "Test case [%s] references an organisation property [%s] in step [%s] that will need to be defined.", WARNING),
-    POTENTIALLY_INVALID_SYSTEM_VARIABLE(                "TDL-064", "Test case [%s] references a system property [%s] in step [%s] that will need to be defined.", WARNING);
-
+    POTENTIALLY_INVALID_SYSTEM_VARIABLE(                "TDL-064", "Test case [%s] references a system property [%s] in step [%s] that will need to be defined.", WARNING),
+    TEST_SUITE_DOCUMENTATION_BOTH_AS_VALUE_AND_IMPORT(  "TDL-065", "The test suite defines for its documentation both a value and a resource import.", WARNING),
+    TEST_SUITE_DOCUMENTATION_REFERENCE_INVALID(         "TDL-066", "The test suite defines its documentation via import [%s] that cannot be resolved.", ERROR),
+    TEST_CASE_DOCUMENTATION_BOTH_AS_VALUE_AND_IMPORT(   "TDL-067", "Test case [%s] defines for its documentation both a value and a resource import.", WARNING),
+    TEST_CASE_DOCUMENTATION_REFERENCE_INVALID(          "TDL-068", "Test case [%s] defines its documentation via import [%s] that cannot be resolved.", ERROR),
+    TEST_STEP_DOCUMENTATION_BOTH_AS_VALUE_AND_IMPORT(   "TDL-069", "Test case [%s] defines a step [%s] with documentation both as a value and a resource import.", WARNING),
+    TEST_STEP_DOCUMENTATION_REFERENCE_INVALID(          "TDL-070", "Test case [%s] defines a step [%s] with a documentation import [%s] that cannot be resolved.", ERROR);
 
     private String code;
     private String message;

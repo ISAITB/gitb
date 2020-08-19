@@ -287,8 +287,9 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 			result.validationReport = validateTestSuite(specifications, tempTestSuiteArchive)
 			if (result.validationReport.getResult == TestResultType.SUCCESS) {
 				val noWarnings = result.validationReport.getCounters.getNrOfWarnings.intValue() == 0
-				val testSuite = RepositoryUtils.getTestSuiteFromZip(None, tempTestSuiteArchive)
-				if (testSuite.isDefined && testSuite.get.testCases.isDefined) {
+				// If we have warnings we don't need to make a full parse (i.e. test cases and documentation).
+				val testSuite = RepositoryUtils.getTestSuiteFromZip(None, tempTestSuiteArchive, noWarnings)
+				if (testSuite.isDefined) {
 					var definedActorsIdentifiers: Option[List[String]] = None
 					if (testSuite.get.actors.isDefined) {
 						definedActorsIdentifiers = Some(testSuite.get.actors.get.map(actor => actor.actorId))
@@ -298,7 +299,6 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 					}
 					val specsWithExistingTestSuite = new ListBuffer[Long]()
 					val specsWithMatchingData = new ListBuffer[Long]()
-					logger.debug("Extracted test suite [" + testSuite + "] with the test cases [" + testSuite.get.testCases.get.map(_.identifier) + "]")
 					specifications.foreach { specification =>
 						setTestSuiteSpecification(testSuite.get, specification)
 						val testSuiteExists = checkTestSuiteExists(testSuite.get)

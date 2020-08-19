@@ -15,7 +15,7 @@ libraryDependencies ++= Seq(
   guice,
   ehcache,
   cacheApi,
-  "eu.europa.ec.itb" % "gitb-types" % "1.9.1",
+  "eu.europa.ec.itb" % "gitb-types" % "1.10.0",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",

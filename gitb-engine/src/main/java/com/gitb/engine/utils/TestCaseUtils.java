@@ -1,26 +1,32 @@
 package com.gitb.engine.utils;
 
+import com.gitb.ModuleManager;
 import com.gitb.core.Configuration;
+import com.gitb.core.Documentation;
 import com.gitb.engine.PropertyConstants;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.remote.RemoteCallContext;
-import com.gitb.tdl.*;
+import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tdl.Instruction;
 import com.gitb.tdl.UserRequest;
-import com.gitb.tpl.*;
+import com.gitb.tdl.*;
 import com.gitb.tpl.ExitStep;
 import com.gitb.tpl.FlowStep;
 import com.gitb.tpl.InstructionOrRequest;
 import com.gitb.tpl.MessagingStep;
-import com.gitb.tpl.ObjectFactory;
 import com.gitb.tpl.Sequence;
 import com.gitb.tpl.TestCase;
 import com.gitb.tpl.TestStep;
+import com.gitb.tpl.*;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.InputStream;
 import java.net.Authenticator;
 import java.net.PasswordAuthentication;
+import java.nio.charset.Charset;
 import java.util.List;
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -75,7 +81,7 @@ public class TestCaseUtils {
         }
     }
 
-    public static TestCase convertTestCase(com.gitb.tdl.TestCase description) {
+    public static TestCase convertTestCase(String testCaseId, com.gitb.tdl.TestCase description) {
         TestCase presentation = new TestCase();
         presentation.setId(description.getId());
         presentation.setMetadata(description.getMetadata());
@@ -83,7 +89,7 @@ public class TestCaseUtils {
         if(description.getPreliminary() != null) {
             presentation.setPreliminary(convertPreliminary(description.getPreliminary()));
         }
-        presentation.setSteps(convertSequence("", description.getScriptlets(), description.getSteps()));
+        presentation.setSteps(convertSequence(testCaseId, "", description.getScriptlets(), description.getSteps()));
 
         return presentation;
     }
@@ -102,7 +108,7 @@ public class TestCaseUtils {
 		return false;
 	}
 
-    private static Sequence convertSequence(String id, Scriptlets scriptlets, com.gitb.tdl.Sequence description) {
+    private static Sequence convertSequence(String testCaseId, String id, Scriptlets scriptlets, com.gitb.tdl.Sequence description) {
         Sequence sequence = new Sequence();
         sequence.setId(id);
         int index = 1;
@@ -114,36 +120,36 @@ public class TestCaseUtils {
 
             if(step instanceof Verify) {
                 String childId = childIdPrefix + index++;
-                sequence.getSteps().add(convertVerifyStep(childId, (Verify) step));
+                sequence.getSteps().add(convertVerifyStep(testCaseId, childId, (Verify) step));
             } else if (step instanceof com.gitb.tdl.MessagingStep) {
                 String childId = childIdPrefix + index++;
-                sequence.getSteps().add(convertMessagingStep(childId, (com.gitb.tdl.MessagingStep) step));
+                sequence.getSteps().add(convertMessagingStep(testCaseId, childId, (com.gitb.tdl.MessagingStep) step));
             } else if (step instanceof IfStep) {
                 String childId = childIdPrefix + index++;
-                sequence.getSteps().add(convertDecisionStep(childId, scriptlets, (IfStep) step));
+                sequence.getSteps().add(convertDecisionStep(testCaseId, childId, scriptlets, (IfStep) step));
             } else if (step instanceof RepeatUntilStep) {
                 String childId = childIdPrefix + index++;
-                sequence.getSteps().add(convertRepUntilStep(childId, scriptlets, (RepeatUntilStep) step));
+                sequence.getSteps().add(convertRepUntilStep(testCaseId, childId, scriptlets, (RepeatUntilStep) step));
             } else if (step instanceof ForEachStep) {
                 String childId = childIdPrefix + index++;
-                sequence.getSteps().add(convertForEachStep(childId, scriptlets, (ForEachStep) step));
+                sequence.getSteps().add(convertForEachStep(testCaseId, childId, scriptlets, (ForEachStep) step));
             } else if (step instanceof WhileStep) {
                 String childId = childIdPrefix + index++;
-                sequence.getSteps().add(convertWhileStep(childId, scriptlets, (WhileStep) step));
+                sequence.getSteps().add(convertWhileStep(testCaseId, childId, scriptlets, (WhileStep) step));
             } else if (step instanceof com.gitb.tdl.FlowStep) {
                 String childId = childIdPrefix + index++;
-                sequence.getSteps().add(convertFlowStep(childId, scriptlets, (com.gitb.tdl.FlowStep) step));
+                sequence.getSteps().add(convertFlowStep(testCaseId, childId, scriptlets, (com.gitb.tdl.FlowStep) step));
             } else if (step instanceof CallStep) {
                 String childId = childIdPrefix + index++;
-                sequence.getSteps().addAll(convertCallStep(childId, scriptlets, (CallStep)step).getSteps());
+                sequence.getSteps().addAll(convertCallStep(testCaseId, childId, scriptlets, (CallStep)step).getSteps());
             } else if (step instanceof UserInteraction) {
                 String childId = childIdPrefix + index++;
-                sequence.getSteps().add(convertUserInteraction(childId, (UserInteraction) step));
+                sequence.getSteps().add(convertUserInteraction(testCaseId, childId, (UserInteraction) step));
             } else if (step instanceof com.gitb.tdl.ExitStep) {
                 String childId = childIdPrefix + index++;
-                sequence.getSteps().add(convertExitStep(childId, (com.gitb.tdl.ExitStep) step));
+                sequence.getSteps().add(convertExitStep(testCaseId, childId, (com.gitb.tdl.ExitStep) step));
             } else if (step instanceof Group) {
-
+                // Nothing.
             }
         }
 
@@ -152,7 +158,6 @@ public class TestCaseUtils {
 
     private static Preliminary convertPreliminary(UserInteraction description) {
         Preliminary preliminary = new Preliminary();
-        ObjectFactory factory   = new ObjectFactory();
         for(com.gitb.tdl.InstructionOrRequest interaction : description.getInstructOrRequest()){
             InstructionOrRequest ior = new InstructionOrRequest();
             ior.setDesc(interaction.getDesc());
@@ -167,93 +172,111 @@ public class TestCaseUtils {
         return preliminary;
     }
 
-    private static TestStep convertVerifyStep(String id, Verify description) {
+    private static String getDocumentation(String testCaseId, Documentation documentation) {
+        String result = null;
+        if (documentation != null) {
+            if (documentation.getValue() != null && !documentation.getValue().isBlank()) {
+                result = documentation.getValue().trim();
+            } else if (documentation.getImport() != null && !documentation.getImport().isBlank()) {
+                ITestCaseRepository repository = ModuleManager.getInstance().getTestCaseRepository();
+                try (InputStream in = repository.getTestArtifact(testCaseId, documentation.getImport())) {
+                    byte[] bytes = IOUtils.toByteArray(in);
+                    result = new String(bytes, (documentation.getEncoding() == null)? Charset.defaultCharset(): Charset.forName(documentation.getEncoding()));
+                } catch (Exception e) {
+                    throw new IllegalStateException("Unable to read imported documentation artifact", e);
+                }
+            }
+        }
+        return result;
+    }
+
+    private static TestStep convertVerifyStep(String testCaseId, String id, Verify description) {
         TestStep verify = new TestStep();
         verify.setId(id);
         verify.setDesc(description.getDesc());
-        verify.setDocumentation(description.getDocumentation());
+        verify.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         return verify;
     }
 
-    private static MessagingStep convertMessagingStep(String id, com.gitb.tdl.MessagingStep description) {
+    private static MessagingStep convertMessagingStep(String testCaseId, String id, com.gitb.tdl.MessagingStep description) {
         MessagingStep messaging = new MessagingStep();
         messaging.setId(id);
         messaging.setDesc(description.getDesc());
         messaging.setFrom(description.getFrom());
         messaging.setTo(description.getTo());
-        messaging.setDocumentation(description.getDocumentation());
+        messaging.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         return messaging;
     }
 
-    private static DecisionStep convertDecisionStep(String id, Scriptlets scriptlets, IfStep description) {
+    private static DecisionStep convertDecisionStep(String testCaseId, String id, Scriptlets scriptlets, IfStep description) {
         DecisionStep decision = new DecisionStep();
         decision.setId(id);
         decision.setDesc(description.getDesc());
-        decision.setDocumentation(description.getDocumentation());
-        decision.setThen(convertSequence(id + TRUE , scriptlets, description.getThen()));
+        decision.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
+        decision.setThen(convertSequence(testCaseId, id + TRUE , scriptlets, description.getThen()));
         if (description.getElse() != null) {
-            decision.setElse(convertSequence(id + FALSE, scriptlets, description.getElse()));
+            decision.setElse(convertSequence(testCaseId, id + FALSE, scriptlets, description.getElse()));
         }
         return decision;
     }
 
-    private static Sequence convertRepUntilStep(String id, Scriptlets scriptlets, RepeatUntilStep description) {
+    private static Sequence convertRepUntilStep(String testCaseId, String id, Scriptlets scriptlets, RepeatUntilStep description) {
         Sequence loop = new Sequence();
         loop.setId(id);
         loop.setDesc(description.getDesc());
-        loop.setDocumentation(description.getDocumentation());
+        loop.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         loop.getSteps().addAll(
-                convertSequence(id+ITERATION_OPENING_TAG+1+ITERATION_CLOSING_TAG, scriptlets, description.getDo()).getSteps());
+                convertSequence(testCaseId, id+ITERATION_OPENING_TAG+1+ITERATION_CLOSING_TAG, scriptlets, description.getDo()).getSteps());
         return loop;
     }
 
-    private static Sequence convertForEachStep(String id, Scriptlets scriptlets, ForEachStep description) {
+    private static Sequence convertForEachStep(String testCaseId, String id, Scriptlets scriptlets, ForEachStep description) {
         Sequence loop = new Sequence();
         loop.setId(id);
         loop.setDesc(description.getDesc());
-        loop.setDocumentation(description.getDocumentation());
+        loop.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         loop.getSteps().addAll(
-                convertSequence(id+ITERATION_OPENING_TAG+1+ITERATION_CLOSING_TAG, scriptlets, description.getDo()).getSteps());
+                convertSequence(testCaseId, id+ITERATION_OPENING_TAG+1+ITERATION_CLOSING_TAG, scriptlets, description.getDo()).getSteps());
         return loop;
     }
 
-    private static Sequence convertWhileStep(String id, Scriptlets scriptlets, WhileStep description) {
+    private static Sequence convertWhileStep(String testCaseId, String id, Scriptlets scriptlets, WhileStep description) {
         Sequence loop = new Sequence();
         loop.setId(id);
         loop.setDesc(description.getDesc());
-        loop.setDocumentation(description.getDocumentation());
+        loop.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         loop.getSteps().addAll(
-                convertSequence(id+ITERATION_OPENING_TAG+1+ITERATION_CLOSING_TAG, scriptlets, description.getDo()).getSteps());
+                convertSequence(testCaseId, id+ITERATION_OPENING_TAG+1+ITERATION_CLOSING_TAG, scriptlets, description.getDo()).getSteps());
         return loop;
     }
 
-    private static FlowStep convertFlowStep(String id, Scriptlets scriptlets, com.gitb.tdl.FlowStep description) {
+    private static FlowStep convertFlowStep(String testCaseId, String id, Scriptlets scriptlets, com.gitb.tdl.FlowStep description) {
         FlowStep flow = new FlowStep();
         flow.setId(id);
         flow.setDesc(description.getDesc());
-        flow.setDesc(description.getDocumentation());
+        flow.setDesc(getDocumentation(testCaseId, description.getDocumentation()));
 
         for(int i=0; i<description.getThread().size(); i++) {
             com.gitb.tdl.Sequence thread = description.getThread().get(i);
-            flow.getThread().add(convertSequence(id+ITERATION_OPENING_TAG+(i+1)+ITERATION_CLOSING_TAG, scriptlets, thread));
+            flow.getThread().add(convertSequence(testCaseId, id+ITERATION_OPENING_TAG+(i+1)+ITERATION_CLOSING_TAG, scriptlets, thread));
         }
 
         return flow;
     }
 
-    private static Sequence convertCallStep(String id, Scriptlets scriptlets, CallStep description) {
+    private static Sequence convertCallStep(String testCaseId, String id, Scriptlets scriptlets, CallStep description) {
         if(scriptlets != null) {
             Scriptlet scriptlet = getScriptlet(description.getPath(), scriptlets);
-            return convertSequence(id, scriptlets, scriptlet.getSteps());
+            return convertSequence(testCaseId, id, scriptlets, Objects.requireNonNull(scriptlet, "Scriptlet is null").getSteps());
         }
         return new Sequence();
     }
 
-    private static UserInteractionStep convertUserInteraction(String id, UserInteraction description) {
+    private static UserInteractionStep convertUserInteraction(String testCaseId, String id, UserInteraction description) {
         UserInteractionStep interactionStep = new UserInteractionStep();
         interactionStep.setId(id);
         interactionStep.setDesc(description.getDesc());
-        interactionStep.setDocumentation(description.getDocumentation());
+        interactionStep.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         interactionStep.setWith(description.getWith());
 
         int childIndex = 1;
@@ -276,11 +299,11 @@ public class TestCaseUtils {
         return interactionStep;
     }
 
-    private static ExitStep convertExitStep(String id, com.gitb.tdl.ExitStep description) {
+    private static ExitStep convertExitStep(String testCaseId, String id, com.gitb.tdl.ExitStep description) {
         ExitStep exit = new ExitStep();
         exit.setId(id);
         exit.setDesc(description.getDesc());
-        exit.setDocumentation(description.getDocumentation());
+        exit.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         return exit;
     }
 

@@ -1,5 +1,6 @@
 package com.gitb.vs.tdl.rules;
 
+import com.gitb.core.Documentation;
 import com.gitb.core.TestRole;
 import com.gitb.tdl.*;
 import com.gitb.vs.tdl.Context;
@@ -15,11 +16,20 @@ public class CheckTestCaseContent extends AbstractCheck {
         observers = RuleFactory.getInstance().getTestCaseObservers();
     }
 
+    public short getOrder() {
+        // Ensure this check runs later.
+        return 1;
+    }
+
     @Override
     public void doCheck(Context context, ValidationReport report) {
         initialise(context, report);
         for (TestCase testCase: context.getTestCases().values()) {
             initialiseTestCase(testCase);
+            sectionChanged(TestCaseSection.METADATA);
+            if (testCase.getMetadata() != null) {
+                handleDocumentation(testCase.getMetadata().getDocumentation());
+            }
             sectionChanged(TestCaseSection.START);
             sectionChanged(TestCaseSection.IMPORTS);
             if (testCase.getImports() != null && testCase.getImports().getArtifactOrModule() != null) {
@@ -142,6 +152,11 @@ public class CheckTestCaseContent extends AbstractCheck {
         for (TestCaseObserver observer: observers) {
             observer.handleStep(step);
         }
+        if (step instanceof TestStep) {
+            handleDocumentation(((TestStep)step).getDocumentation());
+        } else if (step instanceof Group) {
+            handleDocumentation(((Group)step).getDocumentation());
+        }
     }
 
     private void handleActor(TestRole testRole) {
@@ -153,6 +168,12 @@ public class CheckTestCaseContent extends AbstractCheck {
     private void handleImport(Object artifactObj) {
         for (TestCaseObserver observer: observers) {
             observer.handleImport(artifactObj);
+        }
+    }
+
+    private void handleDocumentation(Documentation documentation) {
+        for (TestCaseObserver observer: observers) {
+            observer.handleDocumentation(documentation);
         }
     }
 

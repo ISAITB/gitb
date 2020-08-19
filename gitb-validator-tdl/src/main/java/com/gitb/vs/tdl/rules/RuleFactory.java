@@ -5,19 +5,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class RuleFactory {
 
-    private static Logger LOG = LoggerFactory.getLogger(RuleFactory.class);
+    private final static Logger LOG = LoggerFactory.getLogger(RuleFactory.class);
     private static RuleFactory INSTANCE;
     private final static Object MUTEX = new Object();
 
-    private List<Class<? extends AbstractCheck>> checkClasses = new ArrayList<>();
-    private List<Class<? extends TestCaseObserver>> testCaseObserverClasses = new ArrayList<>();
+    private final List<Class<? extends AbstractCheck>> checkClasses = new ArrayList<>();
+    private final List<Class<? extends TestCaseObserver>> testCaseObserverClasses = new ArrayList<>();
 
     public static RuleFactory getInstance() {
         if (INSTANCE == null) {
@@ -49,12 +46,20 @@ public class RuleFactory {
 
     public List<AbstractCheck> getChecks() {
         List<AbstractCheck> checks = new ArrayList<>(checkClasses.size());
+        boolean needsSorting = false;
         for (Class<? extends AbstractCheck> checkClass: checkClasses) {
             try {
-                checks.add(checkClass.newInstance());
+                AbstractCheck check = checkClass.getDeclaredConstructor().newInstance();
+                if (check.getOrder() != AbstractCheck.DEFAULT_ORDER) {
+                    needsSorting = true;
+                }
+                checks.add(check);
             } catch (Exception e) {
                 throw new IllegalStateException("Error while creating check instances", e);
             }
+        }
+        if (needsSorting) {
+            checks.sort(Comparator.comparingInt(AbstractCheck::getOrder));
         }
         return Collections.unmodifiableList(checks);
     }
@@ -63,7 +68,7 @@ public class RuleFactory {
         List<TestCaseObserver> observers = new ArrayList<>(testCaseObserverClasses.size());
         for (Class<? extends TestCaseObserver> observerClass: testCaseObserverClasses) {
             try {
-                observers.add(observerClass.newInstance());
+                observers.add(observerClass.getDeclaredConstructor().newInstance());
             } catch (Exception e) {
                 throw new IllegalStateException("Error while creating test case observer instances", e);
             }

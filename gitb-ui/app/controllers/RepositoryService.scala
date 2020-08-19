@@ -46,12 +46,12 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     val testSuite = testSuiteManager.getTestSuiteOfTestCaseWrapper(testCase.id)
     var filePathToLookup = codec.decode(filePath)
     var filePathToAlsoCheck: Option[String] = null
-    if (!filePath.startsWith(testSuite.shortname) && !filePath.startsWith("/"+testSuite.shortname)) {
+    if (!filePath.startsWith(testSuite.identifier) && !filePath.startsWith("/"+testSuite.identifier)) {
       filePathToLookup = testSuite.filename + "/" + filePathToLookup
       filePathToAlsoCheck = None
     } else {
       filePathToAlsoCheck = Some(testSuite.filename + "/" + filePathToLookup)
-      filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.shortname, testSuite.filename)
+      filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.identifier, testSuite.filename)
     }
     // Ensure that the requested resource is within the test suite folder (to avoid path traversal)
     val spec = specificationManager.getSpecificationById(testSuite.specification)

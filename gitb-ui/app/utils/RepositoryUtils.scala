@@ -1,17 +1,18 @@
 package utils
 
 import java.io.{File, FileOutputStream}
+import java.nio.charset.Charset
 import java.nio.file.Paths
 import java.util.zip.{ZipEntry, ZipFile}
 
-import javax.xml.transform.stream.StreamSource
-import com.gitb.core.{TestCaseType, TestRoleEnumeration}
+import com.gitb.core.{Documentation, TestCaseType, TestRoleEnumeration}
 import com.gitb.utils.XMLUtils
 import config.Configurations
+import javax.xml.transform.stream.StreamSource
 import managers.TestSuiteManager
 import models._
 import org.apache.commons.io.{FileUtils, IOUtils}
-import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
+import org.apache.commons.lang3.RandomStringUtils
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
@@ -162,22 +163,53 @@ object RepositoryUtils {
 		fileName
 	}
 
+	private def getDocumentation(testSuiteId: String, documentation: Documentation, testSuiteArchive: ZipFile): Option[String] = {
+		var documentationText: Option[String] = None
+		if (documentation != null) {
+			if (documentation.getValue != null && !documentation.getValue.isBlank) {
+				documentationText = Some(documentation.getValue.trim)
+			} else if (documentation.getImport != null) {
+				var referencedEntry = testSuiteArchive.getEntry(documentation.getImport)
+				if (referencedEntry == null) {
+					// It might be prefixed with the testSuiteId.
+					val testSuiteIdPath = testSuiteId+"/"
+					if (documentation.getImport.startsWith(testSuiteIdPath) && documentation.getImport.length() > testSuiteIdPath.length()) {
+						referencedEntry = testSuiteArchive.getEntry(documentation.getImport.substring(testSuiteIdPath.length()))
+					}
+				}
+				if (referencedEntry == null) {
+					logger.warn("Documentation import resource ["+documentation.getImport+"] was not found in the test suite archive. This should have been caught at validation time.")
+				} else {
+					val documentationBytes = IOUtils.toByteArray(testSuiteArchive.getInputStream(referencedEntry))
+					var encoding = Charset.defaultCharset()
+					if (documentation.getEncoding != null && !documentation.getEncoding.isBlank) {
+						encoding = Charset.forName(documentation.getEncoding)
+					}
+					documentationText = Some(new String(documentationBytes, encoding))
+				}
+			}
+		}
+		if (documentationText.isDefined) {
+			Some(HtmlUtil.sanitizeEditorContent(documentationText.get))
+		} else {
+			None
+		}
+	}
+
 	def getTestSuiteFromZip(specification:Option[Long], file: File): Option[TestSuite] = {
+		getTestSuiteFromZip(specification, file, completeParse = true)
+	}
 
+	def getTestSuiteFromZip(specification:Option[Long], file: File, completeParse: Boolean): Option[TestSuite] = {
 		var result: Option[TestSuite] = None
-
-		logger.debug("Trying to extract test suite from the file ["+file+"] - file exists: ["+file.exists+"]")
-
 		if(file.exists) {
 			var zip: ZipFile = null
 			try {
 				zip = new ZipFile(file)
-				logger.debug("Zip file entries: " + zip.entries().asScala.map((entry) => entry.getName).mkString(", "))
 				val testSuiteEntries = zip.entries().asScala.filter(isTestSuite(zip, _))
 				if(testSuiteEntries.hasNext) {
 					val tdlTestCases = zip.entries().asScala.filter(isTestCase(zip, _)).map(getTestCase(zip, _)).toList
 					val testSuiteEntry = testSuiteEntries.next()
-					logger.debug("Test suite ["+testSuiteEntry.getName+"] has test cases ["+tdlTestCases.map(_.getId)+"]")
 					val testSuite = {
 						val tdlTestSuite: com.gitb.tdl.TestSuite = getTestSuite(zip, testSuiteEntry)
 						val identifier: String = tdlTestSuite.getId
@@ -190,15 +222,10 @@ object RepositoryUtils {
 						val tdlActors = tdlTestSuite.getActors.getActor.asScala
 						val tdlTestCaseEntries = tdlTestSuite.getTestcase.asScala
 						val fileName = generateTestSuiteFileName()
-						var documentation: Option[String] = null
-						if (tdlTestSuite.getMetadata.getDocumentation != null) {
-							documentation = Some(HtmlUtil.sanitizeEditorContent(tdlTestSuite.getMetadata.getDocumentation))
-						} else {
-							documentation = None
+						var documentation: Option[String] = None
+						if (completeParse && tdlTestSuite.getMetadata.getDocumentation != null) {
+							documentation = getDocumentation(tdlTestSuite.getId, tdlTestSuite.getMetadata.getDocumentation, zip)
 						}
-						logger.debug("Test suite has tdlActors ["+tdlActors.map(_.getId)+"]")
-						logger.debug("Test suite has tdlTestCases ["+tdlTestCaseEntries.map(_.getId)+"]")
-
 						val caseObject = TestSuites(0L, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification.getOrElse(0L), fileName, documentation.isDefined, documentation, identifier)
 						val actors = tdlActors.map { tdlActor =>
 							val endpoints = tdlActor.getEndpoint.asScala.map { tdlEndpoint => // construct actor endpoints
@@ -214,45 +241,41 @@ object RepositoryUtils {
 							new Actor(Actors(0L, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), Option(tdlActor.isDefault), tdlActor.isHidden, displayOrder,  0L), endpoints)
 						}.toList
 
-						var testCaseCounter = 0
-						val testCases = tdlTestCaseEntries.map {
-							entry =>
-								testCaseCounter += 1
+						var testCases: Option[List[TestCases]] = None
+						if (completeParse) {
+							var testCaseCounter = 0
+							testCases = Some(tdlTestCaseEntries.map {
+								entry =>
+									testCaseCounter += 1
+									val tdlTestCase = tdlTestCases.find(_.getId == entry.getId).get
+									val actorString = new StringBuilder
+									tdlTestCase.getActors.getActor.asScala.foreach(role => {
+										actorString.append(role.getId)
+										if (role.getRole == TestRoleEnumeration.SUT) {
+											actorString.append("[SUT]")
+										}
+										actorString.append(',')
+									})
+									actorString.deleteCharAt(actorString.length - 1)
 
-								logger.debug("Searching for the test case ["+entry.getId+"]")
-								val tdlTestCase = tdlTestCases.find(_.getId == entry.getId).get
-
-								logger.debug("Test case ["+tdlTestCase.getId+"] has actors ["+tdlTestCase.getActors.getActor.asScala.map(_.getId).mkString(",")+"]")
-
-								val actorString = new StringBuilder
-								tdlTestCase.getActors.getActor.asScala.foreach(role => {
-									actorString.append(role.getId)
-									if (role.getRole == TestRoleEnumeration.SUT) {
-										actorString.append("[SUT]")
+									var testCaseType = TestCaseType.CONFORMANCE
+									if (Option(tdlTestCase.getMetadata.getType).isDefined) {
+										testCaseType = tdlTestCase.getMetadata.getType
 									}
-									actorString.append(',')
-								})
-								actorString.deleteCharAt(actorString.length - 1)
-
-								var testCaseType = TestCaseType.CONFORMANCE
-								if (Option(tdlTestCase.getMetadata.getType).isDefined) {
-									testCaseType = tdlTestCase.getMetadata.getType
-								}
-								var documentation: Option[String] = null
-								if (tdlTestCase.getMetadata.getDocumentation != null) {
-									documentation = Some(HtmlUtil.sanitizeEditorContent(tdlTestCase.getMetadata.getDocumentation))
-								} else {
-									documentation = None
-								}
-								TestCases(
-									0L, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getVersion,
-									Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
-									Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
-									None, testCaseType.ordinal().toShort, null, specification.getOrElse(0L), Some(actorString.toString()), None,
-									testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId
-								)
-						}.toList
-						new TestSuite(caseObject, Some(actors), Some(testCases))
+									var documentation: Option[String] = None
+									if (tdlTestCase.getMetadata.getDocumentation != null) {
+										documentation = getDocumentation(tdlTestSuite.getId, tdlTestCase.getMetadata.getDocumentation, zip)
+									}
+									TestCases(
+										0L, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getVersion,
+										Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
+										Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
+										None, testCaseType.ordinal().toShort, null, specification.getOrElse(0L), Some(actorString.toString()), None,
+										testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId
+									)
+							}.toList)
+						}
+						new TestSuite(caseObject, Some(actors), testCases)
 					}
 					result = Some(testSuite)
 				}
@@ -263,23 +286,7 @@ object RepositoryUtils {
 			}
 
 		}
-
 		result
-	}
-
-	def getTestCasesFromZip(file: File): Option[List[com.gitb.tdl.TestCase]] = {
-		if(file.exists) {
-			val zip = new ZipFile(file)
-
-			val tdlTestCases = zip.entries().asScala
-				.filter(isTestCase(zip, _))
-				.map(getTestCase(zip, _))
-				.toList
-
-			Some(tdlTestCases)
-		} else {
-			None
-		}
 	}
 
 	private def getTestSuite(zip: ZipFile, entry: ZipEntry): com.gitb.tdl.TestSuite = {

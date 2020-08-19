@@ -8,7 +8,13 @@ import java.nio.file.Path;
 
 public abstract class AbstractCheck {
 
+    public static final short DEFAULT_ORDER = 0;
+
     public abstract void doCheck(Context context, ValidationReport report);
+
+    public short getOrder() {
+        return DEFAULT_ORDER;
+    }
 
     public String getResourceLocation(Context context, Path... resources) {
         StringBuilder str = new StringBuilder();
