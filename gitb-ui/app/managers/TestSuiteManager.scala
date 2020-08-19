@@ -11,7 +11,7 @@ import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoiceHistory.TestSuiteReplacementChoiceHistory
 import models.Enums.TestSuiteReplacementChoiceMetadata.TestSuiteReplacementChoiceMetadata
 import models.Enums.{TestResultStatus, TestSuiteReplacementChoice, TestSuiteReplacementChoiceHistory, TestSuiteReplacementChoiceMetadata}
-import models.{TestSuiteUploadResult, _}
+import models.{TestArtifactMetadata, TestSuiteUploadResult, _}
 import org.apache.commons.io.FileUtils
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
@@ -365,6 +365,14 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		count > 0
 	}
 
+	private def getTestSuiteIdBySpecificationAndIdentifier(specId: Long, identifier: String): Option[Long] = {
+		exec(PersistenceSchema.testSuites
+			.filter(_.identifier === identifier)
+			.filter(_.specification === specId)
+			.map(_.id)
+			.result.headOption)
+	}
+
 	private def getTestSuiteBySpecificationAndIdentifier(specId: Long, identifier: String): Option[TestSuites] = {
 		val testSuite = exec(PersistenceSchema.testSuites
 			.filter(_.identifier === identifier)
@@ -378,13 +386,75 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		}
 	}
 
+	private def getTestSuiteMetadataForReplacement(testSuiteId: Long): Option[TestArtifactMetadata] = {
+		var result: Option[TestArtifactMetadata] = None
+		val testSuiteData = exec(PersistenceSchema.testSuites.filter(_.id === testSuiteId).map(x => (x.shortname, x.fullname, x.description, x.documentation)).result.headOption)
+		if (testSuiteData.isDefined) {
+			result = Some(new TestArtifactMetadata(testSuiteData.get._1, testSuiteData.get._2, testSuiteData.get._3, testSuiteData.get._4))
+			val testCaseMap = mutable.Map[String, TestArtifactMetadata]()
+			exec(PersistenceSchema.testCases
+				.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
+				.filter(_._2.testsuite === testSuiteId)
+				.map(x => (x._1.identifier, x._1.shortname, x._1.fullname, x._1.description, x._1.documentation))
+				.result
+			).foreach { x =>
+				testCaseMap += (x._1 -> new TestArtifactMetadata(x._2, x._3, x._4, x._5))
+			}
+			result.get.testCases = testCaseMap.toMap
+		}
+		result
+	}
+
+	private def applyMetadataToTestSuite(metadata: TestArtifactMetadata, testSuite: TestSuites, testCases: Option[List[TestCases]]): (TestSuites, Option[List[TestCases]]) = {
+		val updatedTestSuite = TestSuites(testSuite.id, metadata.shortName, metadata.fullName, testSuite.version, testSuite.authors,
+			testSuite.originalDate, testSuite.modificationDate, metadata.description, testSuite.keywords, testSuite.specification,
+			testSuite.filename, metadata.documentation.isDefined, metadata.documentation, testSuite.identifier)
+		var updatedTestCases: Option[List[TestCases]] = None
+		if (testCases.isDefined) {
+			val testCasesList = ListBuffer[TestCases]()
+			testCases.get.foreach { testCase =>
+				var shortName = testCase.shortname
+				var fullName = testCase.fullname
+				var description = testCase.description
+				var documentation = testCase.documentation
+				val testCaseMetadata = metadata.testCases.get(testCase.identifier)
+				if (testCaseMetadata.isDefined) {
+					shortName = testCaseMetadata.get.shortName
+					fullName = testCaseMetadata.get.fullName
+					description = testCaseMetadata.get.description
+					documentation = testCaseMetadata.get.documentation
+				}
+				testCasesList += TestCases(testCase.id, shortName, fullName, testCase.version, testCase.authors, testCase.originalDate,
+					testCase.modificationDate, description, testCase.keywords, testCase.testCaseType, testCase.path, testCase.targetSpec,
+					testCase.targetActors, testCase.targetOptions, testCase.testSuiteOrder, documentation.isDefined, documentation,
+					testCase.identifier)
+			}
+			updatedTestCases = Some(testCasesList.toList)
+		}
+		(updatedTestSuite, updatedTestCases)
+	}
+
 	private def replaceTestSuiteInternal(suite: TestSuites, testSuiteActors: Option[List[Actor]], testCases: Option[List[TestCases]], tempTestSuiteArchive: File, actionHistory: TestSuiteReplacementChoiceHistory, actionMetadata: TestSuiteReplacementChoiceMetadata, onSuccessCalls: mutable.ListBuffer[() => _], onFailureCalls: mutable.ListBuffer[() => _]): DBIO[List[TestSuiteUploadItemResult]] = {
 		var action: DBIO[List[TestSuiteUploadItemResult]] = null
 		val updateMetadata = actionMetadata == TestSuiteReplacementChoiceMetadata.UPDATE
 		if (actionHistory == TestSuiteReplacementChoiceHistory.DROP) {
-			val existingTestSuite = getTestSuiteBySpecificationAndIdentifier(suite.specification, suite.identifier)
-			action = conformanceManager.undeployTestSuite(existingTestSuite.get.id, onSuccessCalls) andThen
-				saveTestSuite(suite, null, updateMetadata, testSuiteActors, testCases, tempTestSuiteArchive, onSuccessCalls, onFailureCalls)
+			val existingTestSuiteId = getTestSuiteIdBySpecificationAndIdentifier(suite.specification, suite.identifier)
+			var undeployDbAction: Option[DBIO[_]] = None
+			var testSuiteToUse: TestSuites = suite
+			var testCasesToUse: Option[List[TestCases]] = testCases
+			if (existingTestSuiteId.isDefined) {
+				if (!updateMetadata) {
+					val metadataToUse = getTestSuiteMetadataForReplacement(existingTestSuiteId.get)
+					if (metadataToUse.isDefined) {
+						val results = applyMetadataToTestSuite(metadataToUse.get, suite, testCases)
+						testSuiteToUse = results._1
+						testCasesToUse = results._2
+					}
+				}
+				undeployDbAction = Some(conformanceManager.undeployTestSuite(existingTestSuiteId.get, onSuccessCalls))
+			}
+			action = undeployDbAction.getOrElse(DBIO.successful(())) andThen
+				saveTestSuite(testSuiteToUse, null, updateMetadata, testSuiteActors, testCasesToUse, tempTestSuiteArchive, onSuccessCalls, onFailureCalls)
 		} else if (actionHistory == TestSuiteReplacementChoiceHistory.KEEP) {
 			val existingTestSuite = getTestSuiteBySpecificationAndIdentifier(suite.specification, suite.identifier)
 			action = saveTestSuite(suite, existingTestSuite.orNull, updateMetadata, testSuiteActors, testCases, tempTestSuiteArchive, onSuccessCalls, onFailureCalls)
