@@ -1,7 +1,8 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
-import akka.dispatch.*;
+import akka.dispatch.Futures;
+import akka.dispatch.OnFailure;
+import akka.dispatch.OnSuccess;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.events.model.ErrorStatusEvent;

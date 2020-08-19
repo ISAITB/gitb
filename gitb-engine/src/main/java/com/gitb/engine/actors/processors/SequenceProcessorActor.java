@@ -104,6 +104,8 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
             child = ExitStepProcessorActor.create(context, (ExitStep) childStep, scope, childStepId);
         } else if (childStep instanceof Assign) {
             child = AssignStepProcessorActor.create(context, (Assign) childStep, scope, childStepId);
+        } else if (childStep instanceof Log) {
+            child = LogStepProcessorActor.create(context, (Log) childStep, scope, childStepId);
         } else if (childStep instanceof Group) {
             child = GroupStepProcessorActor.create(context, (Group) childStep, scope, childStepId);
         } else if (childStep instanceof Verify) {

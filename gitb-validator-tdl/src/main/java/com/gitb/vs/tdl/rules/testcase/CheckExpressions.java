@@ -99,7 +99,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         } else if (step instanceof ExitStep) {
             checkToken(((ExitStep)step).getSuccess(), TokenType.STRING_OR_VARIABLE_REFERENCE);
         } else if (step instanceof Assign) {
-            String toToken = ((Assign)step).getTo();
+            String toToken = ((Assign) step).getTo();
             checkToken(toToken, TokenType.STRING_OR_VARIABLE_REFERENCE);
             if (toToken != null) {
                 if (!toToken.startsWith("$")) {
@@ -114,8 +114,11 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                     }
                 }
             }
-            checkToken(((Assign)step).getSource(), TokenType.VARIABLE_REFERENCE);
-            checkToken(((Assign)step).getValue(), TokenType.EXPRESSION);
+            checkToken(((Assign) step).getSource(), TokenType.VARIABLE_REFERENCE);
+            checkToken(((Assign) step).getValue(), TokenType.EXPRESSION);
+        } else if (step instanceof Log) {
+            checkToken(((Log) step).getSource(), TokenType.VARIABLE_REFERENCE);
+            checkToken(((Log) step).getValue(), TokenType.EXPRESSION);
         } else if (step instanceof Verify) {
             checkToken(((Verify)step).getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkConfigurations(((Verify) step).getProperty());
