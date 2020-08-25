@@ -1,7 +1,6 @@
 package managers
 
-import java.util
-
+import actors.events.{OrganisationCreatedEvent, OrganisationUpdatedEvent}
 import javax.inject.{Inject, Singleton}
 import models.Enums.UserRole
 import models._
@@ -16,7 +15,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * Created by VWYNGAET on 26/10/2016.
  */
 @Singleton
-class OrganizationManager @Inject() (systemManager: SystemManager, testResultManager: TestResultManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class OrganizationManager @Inject() (systemManager: SystemManager, testResultManager: TestResultManager, triggerHelper: TriggerHelper, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -122,7 +121,7 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
       newOrganisationId <- PersistenceSchema.insertOrganization += organization
       _ <- {
         if (propertyValues.isDefined && (otherOrganisationId.isEmpty || !copyOrganisationParameters)) {
-          saveOrganisationParameterValues(newOrganisationId, organization.community, true, propertyValues.get)
+          saveOrganisationParameterValues(newOrganisationId, organization.community, isAdmin = true, propertyValues.get)
         } else {
           DBIO.successful(())
         }
@@ -144,6 +143,7 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     val id: Long = exec(
       createOrganizationInTrans(organization, otherOrganisationId, propertyValues, copyOrganisationParameters, copySystemParameters, copyStatementParameters).transactionally
     )
+    triggerHelper.publishTriggerEvent(new OrganisationCreatedEvent(organization.community, id))
     id
   }
 
@@ -171,6 +171,7 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
       actions += saveOrganisationParameterValues(user.organization, organisation.community, isAdmin, propertyValues.get)
     }
     exec(DBIO.seq(actions.map(a => a): _*).transactionally)
+    triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(organisation.community, organisation.id))
   }
 
   def updateOrganizationInternal(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], propertyValues: Option[List[OrganisationParameterValues]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
@@ -204,8 +205,13 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     } yield ()
   }
 
+  private def getCommunityIdByOrganisationId(organisationId: Long): Long = {
+    exec(PersistenceSchema.organizations.filter(_.id === organisationId).map(x => x.community).result.head)
+  }
+
   def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], propertyValues: Option[List[OrganisationParameterValues]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
     exec(updateOrganizationInternal(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation, template, templateName, propertyValues, copyOrganisationParameters, copySystemParameters, copyStatementParameters).transactionally)
+    triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(getCommunityIdByOrganisationId(orgId), orgId))
   }
 
   /**

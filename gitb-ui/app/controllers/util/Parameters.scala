@@ -35,6 +35,10 @@ object Parameters {
   val USE = "use"
   val KIND = "kind"
   val TEST_KEY = "test_key"
+  val OPERATION = "operation"
+  val URL = "url"
+  val ACTIVE = "active"
+  val EVENT = "event"
 
   // Landing page Service
   val DEFAULT = "default_flag"

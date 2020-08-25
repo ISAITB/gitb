@@ -149,6 +149,12 @@ GET     /errortemplates/:id                 @controllers.ErrorTemplateService.ge
 DELETE  /errortemplates/:id                 @controllers.ErrorTemplateService.deleteErrorTemplate(id : Long)
 POST    /errortemplates/:id                 @controllers.ErrorTemplateService.updateErrorTemplate(id : Long)
 
+GET     /triggers/:id                       @controllers.TriggerService.getTriggerById(id : Long)
+DELETE  /triggers/:id                       @controllers.TriggerService.deleteTrigger(id : Long)
+POST    /triggers/:id                       @controllers.TriggerService.updateTrigger(id : Long)
+POST    /trigger/test                       @controllers.TriggerService.testTriggerEndpoint
+POST    /trigger/previewTriggerCall         @controllers.TriggerService.previewTriggerCall
+
 GET     /organizations/all                  @controllers.OrganizationService.getOrganizations
 POST    /organizations/create               @controllers.OrganizationService.createOrganization
 GET     /organizations/users                @controllers.UserService.getUsersByOrganization(id : Long)
@@ -184,6 +190,8 @@ GET     /communities/notices/:id            @controllers.LegalNoticeService.getL
 POST    /communities/notices/create         @controllers.LegalNoticeService.createLegalNotice
 GET     /communities/errortemplates/:id     @controllers.ErrorTemplateService.getErrorTemplatesByCommunity(id: Long)
 POST    /communities/errortemplates/create  @controllers.ErrorTemplateService.createErrorTemplate
+GET     /communities/triggers/:id           @controllers.TriggerService.getTriggersByCommunity(id: Long)
+POST    /communities/triggers/create        @controllers.TriggerService.createTrigger
 GET     /communities/admins/all             @controllers.UserService.getCommunityAdministrators
 POST    /communities/admins/create          @controllers.UserService.createCommunityAdmin
 POST    /communities/admins/create          @controllers.UserService.createCommunityAdmin

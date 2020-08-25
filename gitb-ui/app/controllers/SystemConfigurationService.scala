@@ -1,7 +1,7 @@
 package controllers
 
 import java.io.InputStream
-import java.nio.charset.Charset
+import java.nio.charset.StandardCharsets
 
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
@@ -71,9 +71,9 @@ class SystemConfigurationService @Inject()(implicit ec: ExecutionContext, author
 
   private def parseTheme(theme: Option[String]): String = {
     if (theme.isDefined && theme.get == Constants.EcTheme) {
-      IOUtils.toString(getInputStream("public/stylesheets/css/theme-ec.css"), Charset.forName("UTF-8"))
+      IOUtils.toString(getInputStream("public/stylesheets/css/theme-ec.css"), StandardCharsets.UTF_8)
     } else {
-      IOUtils.toString(getInputStream("public/stylesheets/css/theme-gitb.css"), Charset.forName("UTF-8"))
+      IOUtils.toString(getInputStream("public/stylesheets/css/theme-gitb.css"), StandardCharsets.UTF_8)
     }
   }
 

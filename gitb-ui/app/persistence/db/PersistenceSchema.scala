@@ -477,4 +477,30 @@ object PersistenceSchema {
   }
   val communityLabels = TableQuery[CommunityLabelsTable]
 
+  class TriggersTable(tag: Tag) extends Table[Triggers](tag, "Triggers") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def name = column[String]("name")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def url = column[String]("url")
+    def eventType = column[Short]("event_type")
+    def operation = column[Option[String]]("operation")
+    def active = column[Boolean]("active")
+    def latestResultOk = column[Option[Boolean]]("latest_result_ok")
+    def latestResultOutput = column[Option[String]]("latest_result_output", O.SqlType("TEXT"))
+    def community = column[Long] ("community")
+    def * = (id, name, description, url, eventType, operation, active, latestResultOk, latestResultOutput, community) <> (Triggers.tupled, Triggers.unapply)
+    def pk = primaryKey("triggers_pk", id)
+  }
+  val triggers = TableQuery[TriggersTable]
+  val insertTriggers = triggers returning triggers.map(_.id)
+
+  class TriggerDataTable(tag: Tag) extends Table[TriggerData](tag, "TriggerData") {
+    def dataType = column[Short]("data_type")
+    def dataId = column[Long]("data_id")
+    def trigger = column[Long] ("trigger")
+    def * = (dataType, dataId, trigger) <> (TriggerData.tupled, TriggerData.unapply)
+    def pk = primaryKey("cl_pk", (dataType, dataId, trigger))
+  }
+  val triggerData = TableQuery[TriggerDataTable]
+
 }

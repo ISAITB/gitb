@@ -572,6 +572,20 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/admin/users/error-template-detail.html'
 				controller: 'ErrorTemplateDetailController'
 				controllerAs: 'errorTemplateDetailCtrl'
+			'app.admin.users.communities.detail.triggers':
+				url: '/triggers'
+				abstract: true
+				template: '<div ui-view/>'
+			'app.admin.users.communities.detail.triggers.create':
+				url: '/create'
+				templateUrl: 'assets/views/admin/users/trigger-manage.html'
+				controller: 'TriggerManageController'
+				controllerAs: 'controller'
+			'app.admin.users.communities.detail.triggers.detail':
+				url: '/:trigger_id'
+				templateUrl: 'assets/views/admin/users/trigger-manage.html'
+				controller: 'TriggerManageController'
+				controllerAs: 'controller'
 
 		for state, value of states
 			$stateProvider.state state, value

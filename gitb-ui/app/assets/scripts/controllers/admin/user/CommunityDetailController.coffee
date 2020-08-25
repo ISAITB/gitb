@@ -1,7 +1,7 @@
 class CommunityDetailController
 
-  @$inject = ['$log', '$state', '$window', '$stateParams', 'UserService', 'DataService', 'Constants', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'CommunityService', 'ConformanceService', 'ErrorService', 'PopupService', 'community', 'WebEditorService', '$timeout']
-  constructor: (@$log, @$state, @$window, @$stateParams, @UserService, @DataService, @Constants, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @CommunityService, @ConformanceService, @ErrorService, @PopupService, @community, @WebEditorService, @$timeout) ->
+  @$inject = ['$log', '$state', '$window', '$stateParams', 'UserService', 'DataService', 'Constants', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'TriggerService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'CommunityService', 'ConformanceService', 'ErrorService', 'PopupService', 'community', 'WebEditorService', '$timeout']
+  constructor: (@$log, @$state, @$window, @$stateParams, @UserService, @DataService, @Constants, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @TriggerService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @CommunityService, @ConformanceService, @ErrorService, @PopupService, @community, @WebEditorService, @$timeout) ->
 
     @communityId = @community.id
     @originalDomainId = @community.domain
@@ -84,13 +84,35 @@ class CommunityDetailController
       }
     ]
 
+    @triggerColumns = [
+      {
+        field: 'name',
+        title: 'Name'
+      }
+      {
+        field: 'description',
+        title: 'Description'
+      }
+      {
+        field: 'eventTypeLabel',
+        title: 'Event type'
+      }
+      {
+        field: 'active',
+        title: 'Active'
+      }
+    ]
+
+
     @domains = {}
     @admins = []
     @organizations = []
     @landingPages = []
     @legalNotices = []
     @errorTemplates = []
+    @triggers = []
     @alerts = []
+    @triggerEventTypeMap = @DataService.idToLabelMap(@DataService.triggerEventTypes())
 
     @LegalNoticeService.getTestBedDefaultLegalNotice()
     .then (data) =>
@@ -140,6 +162,14 @@ class CommunityDetailController
     @ErrorTemplateService.getErrorTemplatesByCommunity(@communityId)
     .then (data) =>
       @errorTemplates = data
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
+    @TriggerService.getTriggersByCommunity(@communityId)
+    .then (data) =>
+      for trigger in data
+        trigger.eventTypeLabel = @triggerEventTypeMap[trigger.eventType]
+      @triggers = data
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -217,6 +247,9 @@ class CommunityDetailController
 
   errorTemplateSelect: (errorTemplate) =>
     @$state.go 'app.admin.users.communities.detail.errortemplates.detail', { template_id : errorTemplate.id }
+
+  triggerSelect: (trigger) =>
+    @$state.go 'app.admin.users.communities.detail.triggers.detail', { trigger_id : trigger.id }
 
   adminSelect: (admin) =>
     @$state.go 'app.admin.users.communities.detail.admins.detail', { admin_id : admin.id }

@@ -438,5 +438,84 @@ class DataService
 						return false
 		valid
 
+	triggerEventTypes: () ->
+		eventTypes = [
+			{id: @Constants.TRIGGER_EVENT_TYPE.ORGANISATION_CREATED, label: @labelOrganisation() + ' created'},
+			{id: @Constants.TRIGGER_EVENT_TYPE.ORGANISATION_UPDATED, label: @labelOrganisation() + ' updated'},
+			{id: @Constants.TRIGGER_EVENT_TYPE.SYSTEM_CREATED, label: @labelSystem() + ' created'},
+			{id: @Constants.TRIGGER_EVENT_TYPE.SYSTEM_UPDATED, label: @labelSystem() + ' updated'},
+			{id: @Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_CREATED, label: 'Conformance statement created'},
+			{id: @Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_UPDATED, label: 'Conformance statement updated'}
+		]
+
+	triggerDataTypes: () ->
+		dataTypes = [
+			{id: @Constants.TRIGGER_DATA_TYPE.COMMUNITY, label: 'Community'},
+			{id: @Constants.TRIGGER_DATA_TYPE.ORGANISATION, label: @labelOrganisation()},
+			{id: @Constants.TRIGGER_DATA_TYPE.SYSTEM, label: @labelSystem()},
+			{id: @Constants.TRIGGER_DATA_TYPE.SPECIFICATION, label: @labelSpecification()},
+			{id: @Constants.TRIGGER_DATA_TYPE.ACTOR, label: @labelActor()},
+			{id: @Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER, label: @labelOrganisation() + ' properties'},
+			{id: @Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER, label: @labelSystem() + ' properties'}
+		]
+
+	idToLabelMap: (items) ->
+		map = {}
+		for item in items
+			map[item.id] = item.label
+		map
+
+	triggerDataTypeAllowedForEvent: (eventType, dataType) =>
+		if @triggerEventToDataTypeMap == undefined
+			tempMap = {}
+			@addIdMapEntry(tempMap, @Constants.TRIGGER_EVENT_TYPE.ORGANISATION_CREATED, [
+				@Constants.TRIGGER_DATA_TYPE.COMMUNITY,
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION,
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER
+			])
+			@addIdMapEntry(tempMap, @Constants.TRIGGER_EVENT_TYPE.ORGANISATION_UPDATED, [
+				@Constants.TRIGGER_DATA_TYPE.COMMUNITY,
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION,
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER
+			])
+			@addIdMapEntry(tempMap, @Constants.TRIGGER_EVENT_TYPE.SYSTEM_CREATED, [
+				@Constants.TRIGGER_DATA_TYPE.COMMUNITY,
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION,
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER,
+				@Constants.TRIGGER_DATA_TYPE.SYSTEM,
+				@Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER
+			])
+			@addIdMapEntry(tempMap, @Constants.TRIGGER_EVENT_TYPE.SYSTEM_UPDATED, [
+				@Constants.TRIGGER_DATA_TYPE.COMMUNITY,
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION,
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER,
+				@Constants.TRIGGER_DATA_TYPE.SYSTEM,
+				@Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER
+			])
+			@addIdMapEntry(tempMap, @Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_CREATED, [
+				@Constants.TRIGGER_DATA_TYPE.COMMUNITY,
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION,
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER,
+				@Constants.TRIGGER_DATA_TYPE.SYSTEM,
+				@Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
+				@Constants.TRIGGER_DATA_TYPE.SPECIFICATION,
+				@Constants.TRIGGER_DATA_TYPE.ACTOR
+			])
+			@addIdMapEntry(tempMap, @Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_UPDATED, [
+				@Constants.TRIGGER_DATA_TYPE.COMMUNITY,
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION,
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER,
+				@Constants.TRIGGER_DATA_TYPE.SYSTEM,
+				@Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
+				@Constants.TRIGGER_DATA_TYPE.SPECIFICATION,
+				@Constants.TRIGGER_DATA_TYPE.ACTOR
+			])
+			@triggerEventToDataTypeMap = tempMap
+		@triggerEventToDataTypeMap[eventType][dataType]? == true
+				
+	addIdMapEntry: (map, id, ids) =>
+		map[id] = {}
+		for otherId in ids 
+			map[id][otherId] = true
 
 services.service('DataService', DataService)

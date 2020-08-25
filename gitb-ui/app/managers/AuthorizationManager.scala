@@ -38,6 +38,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      errorTemplateManager: ErrorTemplateManager,
                                      landingPageManager: LandingPageManager,
                                      legalNoticeManager: LegalNoticeManager,
+                                     triggerManager: TriggerManager,
                                      parameterManager: ParameterManager,
                                      testResultManager: TestResultManager,
                                      actorManager: ActorManager,
@@ -801,6 +802,15 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canManageLandingPages(request: RequestWithAttributes[_], communityId: Long):Boolean = {
+    canManageCommunity(request, communityId)
+  }
+
+  def canManageTrigger(request: RequestWithAttributes[_], triggerId: Long):Boolean = {
+    val load = () => {triggerManager.getCommunityId(triggerId)}
+    canManageCommunityArtifact(request, getUser(getRequestUserId(request)), load)
+  }
+
+  def canManageTriggers(request: RequestWithAttributes[_], communityId: Long):Boolean = {
     canManageCommunity(request, communityId)
   }
 

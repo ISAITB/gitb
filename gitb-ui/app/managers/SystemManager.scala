@@ -2,6 +2,7 @@ package managers
 
 import java.util
 
+import actors.events.{ConformanceStatementCreatedEvent, ConformanceStatementUpdatedEvent, SystemCreatedEvent, SystemUpdatedEvent}
 import javax.inject.{Inject, Singleton}
 import models.Enums.{TestResultStatus, UserRole}
 import models.{ConformanceResult, ConformanceStatement, _}
@@ -13,7 +14,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelper: TriggerHelper, triggerManager: TriggerManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -22,14 +23,6 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
   def checkSystemExists(sysId: Long): Boolean = {
     val firstOption = exec(PersistenceSchema.systems.filter(_.id === sysId).result.headOption)
     firstOption.isDefined
-  }
-
-  def registerSystem(adminId: Long, system: Systems) = {
-    //1) Get organization id of the admin
-    val orgId = exec(PersistenceSchema.users.filter(_.id === adminId).result.head).organization
-
-    //2) Persist new System
-    exec((PersistenceSchema.insertSystem += system.withOrganizationId(orgId)).transactionally)
   }
 
   def copyTestSetup(fromSystem: Long, toSystem: Long, copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
@@ -76,22 +69,29 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     DBIO.seq(actions.map(a => a): _*)
   }
 
+  private def getCommunityIdForOrganisationId(organisationId: Long): Long = {
+    exec(PersistenceSchema.organizations.filter(_.id === organisationId).map(x => x.community).result.head)
+  }
+
+  private def getCommunityIdForSystemId(systemId: Long): Long = {
+    exec(PersistenceSchema.organizations.join(PersistenceSchema.systems).on(_.id === _.owner).filter(_._2.id === systemId).map(x => x._1.community).result.head)
+  }
+
   def registerSystemWrapper(userId:Long, system: Systems, otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
     var isAdmin: Option[Boolean] = None
-    var communityId: Option[Long] = None
+    val communityId = getCommunityIdForOrganisationId(system.owner)
 
     var propertyValuesToUse = propertyValues
     if (propertyValues.isDefined && (otherSystem.isEmpty || !copySystemParameters)) {
       val user = exec(PersistenceSchema.users.filter(_.id === userId).result.head)
       isAdmin = Some(user.role == UserRole.SystemAdmin.id.toShort || user.role == UserRole.CommunityAdmin.id.toShort)
-      communityId = Some(exec(PersistenceSchema.organizations.filter(_.id === system.owner).result.head).community)
     } else {
       propertyValuesToUse = None
     }
     val id: Long = exec(
       (
         for {
-          newSystemId <- registerSystem(system, communityId, isAdmin, propertyValuesToUse)
+          newSystemId <- registerSystem(system, Some(communityId), isAdmin, propertyValuesToUse)
           _ <- {
             if (otherSystem.isDefined) {
               copyTestSetup(otherSystem.get, newSystemId, copySystemParameters, copyStatementParameters)
@@ -102,6 +102,7 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
         } yield newSystemId
       ).transactionally
     )
+    triggerHelper.publishTriggerEvent(new SystemCreatedEvent(communityId, id))
     id
   }
 
@@ -151,6 +152,7 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
 
   def updateSystemProfile(userId: Long, systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
     exec(updateSystemProfileInternal(Some(userId), None, systemId, sname, fname, description, version, otherSystem, propertyValues, copySystemParameters, copyStatementParameters).transactionally)
+    triggerHelper.publishTriggerEvent(new SystemUpdatedEvent(getCommunityIdForSystemId(systemId), systemId))
   }
 
   def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
@@ -255,8 +257,10 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     systems
   }
 
-  def defineConformanceStatementWrapper(system: Long, spec: Long, actor: Long, options: Option[List[Long]]) = {
+  def defineConformanceStatementWrapper(system: Long, spec: Long, actor: Long, options: Option[List[Long]]):Unit = {
     exec(defineConformanceStatement(system, spec, actor, options).transactionally)
+    val communityId = getCommunityIdForSystemId(system)
+    triggerHelper.publishTriggerEvent(new ConformanceStatementCreatedEvent(communityId, system, actor))
   }
 
   def sutTestCasesExistForActor(actor: Long): Boolean = {
@@ -461,6 +465,7 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
 
   def deleteEndpointConfiguration(systemId: Long, parameterId: Long, endpointId: Long) = {
     exec(deleteEndpointConfigurationInternal(systemId, parameterId, endpointId).transactionally)
+    triggerHelper.publishTriggerEvent(new ConformanceStatementUpdatedEvent(getCommunityIdForSystemId(systemId), systemId, getActorIdForEndpointId(endpointId)))
   }
 
   def saveEndpointConfigurationInternal(forceAdd: Boolean, forceUpdate: Boolean, config: Configs) = {
@@ -493,6 +498,11 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
 
   def saveEndpointConfiguration(config: Configs) = {
     exec(saveEndpointConfigurationInternal(false, false, config).transactionally)
+    triggerHelper.publishTriggerEvent(new ConformanceStatementUpdatedEvent(getCommunityIdForSystemId(config.system), config.system, getActorIdForEndpointId(config.endpoint)))
+  }
+
+  private def getActorIdForEndpointId(endpointId: Long): Long = {
+    exec(PersistenceSchema.endpoints.filter(_.id === endpointId).map(x => x.actor).result.head)
   }
 
   def getConfigurationsWithEndpointIds(system: Long, ids: List[Long]): List[Configs] = {

@@ -115,7 +115,7 @@ object JsonUtil {
     json
   }
 
-  def jsTestSuitesList(list: List[TestSuites]) = {
+  def jsTestSuitesList(list: List[TestSuites]): JsArray = {
     var json = Json.arr()
     list.foreach { testSuite =>
       json = json.append(jsTestSuite(testSuite, withDocumentation = false))
@@ -141,7 +141,7 @@ object JsonUtil {
     json
   }
 
-  def jsEndpoint(endpoint: Endpoint) = {
+  def jsEndpoint(endpoint: Endpoint): JsObject = {
 		val json = Json.obj(
 			"id" -> endpoint.id,
 			"name" -> endpoint.name,
@@ -161,7 +161,7 @@ object JsonUtil {
 		json
 	}
 
-	def jsEndpoints(list: List[Endpoint]) = {
+	def jsEndpoints(list: List[Endpoint]): JsArray = {
 		var json = Json.arr()
 		list.foreach { endpoint =>
 			json = json.append(jsEndpoint(endpoint))
@@ -169,7 +169,7 @@ object JsonUtil {
 		json
 	}
 
-	def jsParameter(parameter: Parameters) = {
+	def jsParameter(parameter: Parameters): JsObject = {
 		val json = Json.obj(
 			"id" -> parameter.id,
 			"name" -> parameter.name,
@@ -183,7 +183,7 @@ object JsonUtil {
 		json
 	}
 
-	def jsParameters(list: List[Parameters]) = {
+	def jsParameters(list: List[Parameters]): JsArray = {
 		var json = Json.arr()
 		list.foreach { parameter =>
 			json = json.append(jsParameter(parameter))
@@ -191,7 +191,7 @@ object JsonUtil {
 		json
 	}
 
-  def jsOrganisationParameters(list: List[OrganisationParameters]) = {
+  def jsOrganisationParameters(list: List[OrganisationParameters]): JsArray = {
     var json = Json.arr()
     list.foreach { parameter =>
       json = json.append(jsOrganisationParameter(parameter))
@@ -199,7 +199,7 @@ object JsonUtil {
     json
   }
 
-  def jsOrganisationParameter(parameter: OrganisationParameters) = {
+  def jsOrganisationParameter(parameter: OrganisationParameters): JsObject = {
     val json = Json.obj(
       "id" -> parameter.id,
       "name" -> parameter.name,
@@ -216,7 +216,7 @@ object JsonUtil {
     json
   }
 
-  def jsSystemParameters(list: List[SystemParameters]) = {
+  def jsSystemParameters(list: List[SystemParameters]): JsArray = {
     var json = Json.arr()
     list.foreach { parameter =>
       json = json.append(jsSystemParameter(parameter))
@@ -224,7 +224,7 @@ object JsonUtil {
     json
   }
 
-  def jsSystemParameter(parameter: SystemParameters) = {
+  def jsSystemParameter(parameter: SystemParameters): JsObject = {
     val json = Json.obj(
       "id" -> parameter.id,
       "name" -> parameter.name,
@@ -530,7 +530,7 @@ object JsonUtil {
       "hidden" -> spec.hidden,
       "domain"  -> spec.domain
     )
-    return json;
+    json
   }
 
   /**
@@ -562,7 +562,7 @@ object JsonUtil {
       "displayOrder" -> (if(actor.displayOrder.isDefined) actor.displayOrder.get else JsNull),
       "domain"  -> actor.domain
     )
-    return json;
+    json
   }
 
   def jsActor(actor:Actor) : JsObject = {
@@ -577,7 +577,7 @@ object JsonUtil {
       "domain"  -> (if(actor.domain.isDefined) actor.domain.get.id else JsNull),
       "specification"  -> (if(actor.specificationId.isDefined) actor.specificationId.get else JsNull)
     )
-    return json;
+    json
   }
 
   /**
@@ -636,7 +636,7 @@ object JsonUtil {
       "endpoint"  -> config.endpoint,
       "parameter" -> config.parameter
     )
-    return json;
+    json
   }
 
   def jsConfig(config:Config): JsObject = {
@@ -648,7 +648,7 @@ object JsonUtil {
       "mimeType" -> config.mimeType,
       "extension" -> config.extension
     )
-    return json;
+    json
   }
 
   def jsConfigList(list:List[Config]):JsArray = {
@@ -758,6 +758,32 @@ object JsonUtil {
       }
     }
     item
+  }
+
+  def parseJsTriggerDataItems(json:String, triggerId: Option[Long]): List[TriggerData] = {
+    val jsArray = Json.parse(json).as[List[JsObject]]
+    var list = ListBuffer[TriggerData]()
+    jsArray.foreach { jsonConfig =>
+      list += parseJsTriggerDataItem(jsonConfig, triggerId)
+    }
+    list.toList
+  }
+
+  private def parseJsTriggerDataItem(jsonConfig: JsObject, triggerId: Option[Long]): TriggerData = {
+    val dataType = (jsonConfig \ "dataType").as[Short]
+    val dataTypeEnum = TriggerDataType.apply(dataType)
+    var dataIdToUse: Long = -1
+    if (dataTypeEnum == TriggerDataType.OrganisationParameter || dataTypeEnum == TriggerDataType.SystemParameter) {
+      dataIdToUse = (jsonConfig \ "dataId").as[Long]
+    }
+    val data = TriggerData(
+      dataType,
+      dataIdToUse,
+      triggerId.getOrElse(0L)
+    )
+    // Check that this is a valid value (otherwise throw exception)
+    TriggerDataType.apply(data.dataType)
+    data
   }
 
   def parseJsImportItems(json:String): List[ImportItem] = {
@@ -927,11 +953,11 @@ object JsonUtil {
       0L,
       None,
       None,
-      false,
-      false,
-      false,
-      false,
-      false,
+      includeMessage = false,
+      includeTestStatus = false,
+      includeTestCases = false,
+      includeDetails = false,
+      includeSignature = false,
       (jsonConfig \ "keystoreFile").asOpt[String],
       (jsonConfig \ "keystoreType").asOpt[String],
       (jsonConfig \ "keystorePassword").asOpt[String],
@@ -963,7 +989,7 @@ object JsonUtil {
       "hasDocumentation" -> testCase.hasDocumentation,
       "documentation" -> (if (withDocumentation && testCase.documentation.isDefined) testCase.documentation.get else JsNull)
     )
-    return json;
+    json
   }
 
   /**
@@ -988,7 +1014,7 @@ object JsonUtil {
       "targetSpec"  -> testCase.targetSpec,
       "hasDocumentation"  -> testCase.hasDocumentation
     )
-    json;
+    json
   }
 
   /**
@@ -1128,7 +1154,7 @@ object JsonUtil {
 
   def jsTestResultReport(result: TestResult, orgParameterDefinitions: Option[List[OrganisationParameters]], orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], sysParameterDefinitions: Option[List[SystemParameters]], sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]]): JsObject = {
     val json = Json.obj(
-      "result" -> jsTestResult(result, false),
+      "result" -> jsTestResult(result, returnTPL = false),
       "test" ->  {
         Json.obj(
           "id"      -> (if (result.testCaseId.isDefined) result.testCaseId.get else JsNull),
@@ -1319,7 +1345,7 @@ object JsonUtil {
   }
 
   def serializeSystemConfig(sc:SystemConfiguration):String = {
-    var jConfig:JsObject = jsSystemConfiguration(sc.toCaseObject)
+    val jConfig:JsObject = jsSystemConfiguration(sc.toCaseObject)
     jConfig.toString
   }
 
@@ -1465,6 +1491,53 @@ object JsonUtil {
     list.foreach{ landingPage =>
       json = json.append(jsLandingPage(landingPage))
     }
+    json
+  }
+
+  def jsTrigger(trigger:Triggers):JsObject = {
+    val json = Json.obj(
+      "id"    -> trigger.id,
+      "name"  -> trigger.name,
+      "description" -> (if(trigger.description.isDefined) trigger.description.get else JsNull),
+      "url"  -> trigger.url,
+      "eventType" -> trigger.eventType,
+      "active" -> trigger.active,
+      "latestResultOk" -> (if(trigger.latestResultOk.isDefined) trigger.latestResultOk.get else JsNull),
+      "latestResultOutput" -> (if(trigger.latestResultOutput.isDefined) trigger.latestResultOutput.get else JsNull),
+      "operation" -> (if(trigger.operation.isDefined) trigger.operation.get else JsNull)
+    )
+    json
+  }
+
+  def jsTriggers(list:List[Triggers]):JsArray = {
+    var json = Json.arr()
+    list.foreach{ trigger =>
+      json = json.append(jsTrigger(trigger))
+    }
+    json
+  }
+
+  def jsTriggerDataItem(item:TriggerData):JsObject = {
+    val json = Json.obj(
+      "dataId"  -> item.dataId,
+      "dataType"  -> item.dataType
+    )
+    json
+  }
+
+  def jsTriggerDataItems(items:List[TriggerData]):JsArray = {
+    var json = Json.arr()
+    items.foreach { item =>
+      json = json.append(jsTriggerDataItem(item))
+    }
+    json
+  }
+
+  def jsTriggerInfo(trigger: Trigger): JsObject = {
+    val json = Json.obj(
+      "trigger"    -> jsTrigger(trigger.trigger),
+      "data"  -> (if (trigger.data.isDefined) jsTriggerDataItems(trigger.data.get) else JsNull)
+    )
     json
   }
 

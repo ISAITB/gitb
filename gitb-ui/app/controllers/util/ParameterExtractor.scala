@@ -471,6 +471,32 @@ object ParameterExtractor {
     LandingPages(0L, name, desc, content, default, communityId)
   }
 
+  def extractTriggerDataItems(request:Request[AnyContent], parameter: String, triggerId: Option[Long]): Option[List[TriggerData]] = {
+    val triggerDataStr = optionalBodyParameter(request, parameter)
+    var triggerData: Option[List[TriggerData]] = None
+    if (triggerDataStr.isDefined) {
+      triggerData = Some(JsonUtil.parseJsTriggerDataItems(triggerDataStr.get, triggerId))
+    }
+    triggerData
+  }
+
+  def extractTriggerInfo(request:Request[AnyContent], triggerId: Option[Long]): Trigger = {
+    // Trigger.
+    val name = requiredBodyParameter(request, Parameters.NAME)
+    val description = optionalBodyParameter(request, Parameters.DESCRIPTION)
+    val url = requiredBodyParameter(request, Parameters.URL)
+    val operation = optionalBodyParameter(request, Parameters.OPERATION)
+    val active = requiredBodyParameter(request, Parameters.ACTIVE).toBoolean
+    val eventType = requiredBodyParameter(request, Parameters.EVENT).toShort
+    // Check that this is a valid value (otherwise throw exception)
+    TriggerEventType.apply(eventType)
+    val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    new Trigger(
+      Triggers(triggerId.getOrElse(0L), name, description, url, eventType, operation, active, None, None, communityId),
+      extractTriggerDataItems(request, Parameters.DATA, triggerId)
+    )
+  }
+
   def extractLegalNoticeInfo(request:Request[AnyContent]):LegalNotices = {
     val name = requiredBodyParameter(request, Parameters.NAME)
     val desc = optionalBodyParameter(request, Parameters.DESCRIPTION)

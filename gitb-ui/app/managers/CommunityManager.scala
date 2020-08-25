@@ -15,7 +15,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class CommunityManager @Inject() (testResultManager: TestResultManager, organizationManager: OrganizationManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, conformanceManager: ConformanceManager, accountManager: AccountManager, testSuiteManager: TestSuiteManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class CommunityManager @Inject() (testResultManager: TestResultManager, organizationManager: OrganizationManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, conformanceManager: ConformanceManager, accountManager: AccountManager, triggerManager: TriggerManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -63,7 +63,7 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   }
 
   def selfRegister(organisation: Organizations, organisationAdmin: Users, templateId: Option[Long], actualUserInfo: Option[ActualUserInfo], customPropertyValues: Option[List[OrganisationParameterValues]]): Long = {
-    val userId = exec(
+    val ids = exec(
       (
         for {
           // Save organisation
@@ -85,10 +85,11 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
             } else {
               DBIO.successful(())
             }
-        } yield userId
+        } yield (userId, organisationId)
         ).transactionally
     )
-    userId
+    // TODO NOTIFY FOR TRIGGER
+    ids._1
   }
 
   /**
@@ -256,6 +257,7 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
           landingPageManager.deleteLandingPageByCommunity(communityId) andThen
           legalNoticeManager.deleteLegalNoticeByCommunity(communityId) andThen
           errorTemplateManager.deleteErrorTemplateByCommunity(communityId) andThen
+          triggerManager.deleteTriggersByCommunity(communityId) andThen
           testResultManager.updateForDeletedCommunity(communityId) andThen
           conformanceManager.deleteConformanceCertificateSettings(communityId) andThen
           deleteOrganisationParametersByCommunity(communityId) andThen
@@ -288,7 +290,8 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   }
 
   def deleteOrganisationParameter(parameterId: Long) = {
-    PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterId).delete andThen
+    triggerManager.deleteTriggerDataByDataType(parameterId, TriggerDataType.OrganisationParameter) andThen
+      PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterId).delete andThen
       PersistenceSchema.organisationParameters.filter(_.id === parameterId).delete
   }
 
@@ -319,6 +322,7 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
   }
 
   def deleteSystemParameter(parameterId: Long) = {
+    triggerManager.deleteTriggerDataByDataType(parameterId, TriggerDataType.SystemParameter) andThen
     PersistenceSchema.systemParameterValues.filter(_.parameter === parameterId).delete andThen
       PersistenceSchema.systemParameters.filter(_.id === parameterId).delete
   }

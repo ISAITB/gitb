@@ -2,8 +2,8 @@ package hooks
 
 import java.nio.file.Files
 
-import actors.WebSocketActor
-import akka.actor.ActorSystem
+import actors.{TriggerActor, WebSocketActor}
+import akka.actor.{ActorSystem, Props}
 import config.Configurations
 import controllers.TestService
 import javax.inject.{Inject, Singleton}
@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 
 @Singleton
-class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: ApplicationLifecycle, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testService: TestService, testSuiteManager: TestSuiteManager, reportManager: ReportManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient, importCompleteManager: ImportCompleteManager) {
+class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: ApplicationLifecycle, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testService: TestService, testSuiteManager: TestSuiteManager, reportManager: ReportManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient, importCompleteManager: ImportCompleteManager, triggerManager: TriggerManager) {
 
   private def logger = LoggerFactory.getLogger(this.getClass)
 
@@ -36,8 +36,13 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
     destroyIdleSessions()
     cleanupPendingTestSuiteUploads()
     cleanupTempReports()
+    initialiseActors(triggerManager)
     loadDataExports()
     logger.info("Application has started")
+  }
+
+  private def initialiseActors(triggerManager: TriggerManager): Unit = {
+    actorSystem.actorOf(Props(new TriggerActor(triggerManager)), "trigger-actor")
   }
 
   /**

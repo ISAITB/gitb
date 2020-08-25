@@ -88,4 +88,20 @@ object Enums {
     val Skip, SkipProcessChildren, SkipDueToParent, Proceed = Value
   }
 
+  object TriggerEventType extends Enumeration(1) {
+    type TriggerEventType = Value
+    val OrganisationCreated,
+        SystemCreated,
+        ConformanceStatementCreated,
+        OrganisationUpdated,
+        SystemUpdated,
+        ConformanceStatementUpdated
+        = Value
+  }
+
+  object TriggerDataType extends Enumeration(1) {
+    type TriggerDataType = Value
+    val Community, Organisation, System, Specification, Actor, OrganisationParameter, SystemParameter = Value
+  }
+
 }
