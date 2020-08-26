@@ -152,6 +152,7 @@ POST    /errortemplates/:id                 @controllers.ErrorTemplateService.up
 GET     /triggers/:id                       @controllers.TriggerService.getTriggerById(id : Long)
 DELETE  /triggers/:id                       @controllers.TriggerService.deleteTrigger(id : Long)
 POST    /triggers/:id                       @controllers.TriggerService.updateTrigger(id : Long)
+POST    /triggers/:id/clearStatus           @controllers.TriggerService.clearStatus(id : Long)
 POST    /trigger/test                       @controllers.TriggerService.testTriggerEndpoint
 POST    /trigger/previewTriggerCall         @controllers.TriggerService.previewTriggerCall
 

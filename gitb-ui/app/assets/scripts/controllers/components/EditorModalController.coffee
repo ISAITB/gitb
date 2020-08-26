@@ -15,6 +15,10 @@ class EditorModalController
       @$scope.isCopyVisible = true 
     else 
       @$scope.isCopyVisible = editorOptions.copy
+    if editorOptions.styleClass == undefined
+      @$scope.styleClass = 'editor-normal'
+    else 
+      @$scope.styleClass = editorOptions.styleClass
 
     @$scope.close = () =>
       @$uibModalInstance.dismiss()

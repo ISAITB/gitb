@@ -72,6 +72,12 @@ class TriggerService
       path: jsRoutes.controllers.TriggerService.deleteTrigger(triggerId).url,
       authenticate: true
 
+  clearStatus: (triggerId) ->
+    @RestService.post({
+      path: jsRoutes.controllers.TriggerService.clearStatus(triggerId).url,
+      authenticate: true
+    })
+
   testTriggerEndpoint: (url, communityId) ->
     @RestService.post
       path: jsRoutes.controllers.TriggerService.testTriggerEndpoint().url,

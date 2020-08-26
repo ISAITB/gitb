@@ -10,6 +10,10 @@ class TriggerManageController
     @testPending = false
     @deletePending = false
     @previewPending = false
+    @clearStatusPending = false
+    @statusTextOk = {id: 1, msg: 'Success'}
+    @statusTextError = {id: 2, msg: 'Error'}
+    @statusTextUnknown = {id: 0, msg: 'None'}
     
     @alerts = []
     @trigger = {}
@@ -65,6 +69,13 @@ class TriggerManageController
         .then (data) =>
           @trigger = data.trigger
           @trigger.event = {id: data.trigger.eventType}
+          if @trigger.latestResultOk?
+            if @trigger.latestResultOk
+              @applyStatusValues(@statusTextOk)
+            else
+              @applyStatusValues(@statusTextError)
+          else
+            @applyStatusValues(@statusTextUnknown)
           for item in data.data
             if item.dataType == @Constants.TRIGGER_DATA_TYPE.COMMUNITY
               @triggerData.community.selected = true
@@ -86,10 +97,8 @@ class TriggerManageController
         .catch (error) =>
           @ErrorService.showErrorMessage(error)
       )
-
     else
       @eventTypeChanged()      
-
     @DataService.focus('name')
 
   saveDisabled: () =>
@@ -104,6 +113,9 @@ class TriggerManageController
 
   previewDisabled: () =>
     @saveDisabled() || @previewPending
+
+  clearStatusDisabled: () =>
+    @saveDisabled() || @clearStatusPending
 
   dataItemsToSave: () => 
     dataItems = []
@@ -176,7 +188,7 @@ class TriggerManageController
           resolve:
             name: () => 'Test success'
             editorOptions: () =>
-              value: result.message
+              value: result.texts[0]
               readOnly: true
               copy: false
               lineNumbers: true
@@ -187,7 +199,7 @@ class TriggerManageController
           size: 'lg'
         @$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
       else
-        @ConfirmationDialogService.notify('Test failure', result.message, 'Close')
+        @popupErrorsArray(result.texts)
       @testPending = false
     .catch (error) =>
       @testPending = false
@@ -217,6 +229,62 @@ class TriggerManageController
     .catch (error) =>
       @previewPending = false
       @ErrorService.showErrorMessage(error)
+
+  clearStatus: () =>
+    @clearStatusPending = true
+    @TriggerService.clearStatus(@trigger.id)
+    .then (result) =>
+      @clearStatusPending = false
+      @trigger.latestResultOk = undefined
+      @applyStatusValues(@statusTextUnknown)
+      @PopupService.success('Trigger status cleared.')
+    .catch (error) =>
+      @clearStatusPending = false
+      @ErrorService.showErrorMessage(error)
+
+  popupErrors: (errorJson) =>
+    arrayToUse
+    if errorJson?
+      output = JSON.parse(errorJson)
+      arrayToUse = output.texts
+    @popupErrorsArray(arrayToUse)
+
+  popupErrorsArray: (errorArray) =>
+    content = ''
+    if errorArray?
+      counter = -1
+      padding = 4
+      for text in errorArray
+        if counter == -1
+          content += text
+        else
+          content += ('\n'+(' '.repeat(counter*padding))+'|\n')
+          content += (' '.repeat(counter*padding)+'+-- ' + text)
+        counter += 1
+    modalOptions =
+      templateUrl: 'assets/views/components/editor-modal.html'
+      controller: 'EditorModalController as editorModalCtrl'
+      resolve:
+        name: () => 'Error messages'
+        editorOptions: () =>
+          value: content
+          readOnly: true
+          copy: true
+          lineNumbers: false
+          smartIndent: false
+          electricChars: false
+          styleClass: 'editor-short'
+        indicators: () => []
+        lineNumber: () => []
+      size: 'lg'
+    @$uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
+
+  viewLatestErrors: () =>
+    @popupErrors(@trigger.latestResultOutput)
+
+  applyStatusValues: (statusToApply) =>
+    @trigger.status = statusToApply.id
+    @trigger.statusText = statusToApply.msg
 
   clearAlerts: () =>
     @alerts = []

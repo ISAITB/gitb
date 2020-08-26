@@ -101,6 +101,10 @@ class CommunityDetailController
         field: 'active',
         title: 'Active'
       }
+      {
+        field: 'status',
+        title: 'Status'
+      }
     ]
 
 
@@ -169,6 +173,14 @@ class CommunityDetailController
     .then (data) =>
       for trigger in data
         trigger.eventTypeLabel = @triggerEventTypeMap[trigger.eventType]
+        if trigger.latestResultOk?
+          if trigger.latestResultOk
+            trigger.status = 'Success'
+          else
+            trigger.status = 'Error'
+        else
+          trigger.status = '-'
+
       @triggers = data
     .catch (error) =>
       @ErrorService.showErrorMessage(error)

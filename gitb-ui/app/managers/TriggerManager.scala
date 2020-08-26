@@ -19,7 +19,7 @@ import models._
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.MimeUtil
+import utils.{JsonUtil, MimeUtil}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -49,10 +49,10 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
   def getTriggersByCommunity(communityId: Long): List[Triggers] = {
     exec(PersistenceSchema.triggers
       .filter(_.community === communityId)
-      .map(x => (x.id, x.name, x.description, x.url, x.eventType, x.active, x.community))
+      .map(x => (x.id, x.name, x.description, x.url, x.eventType, x.active, x.community, x.latestResultOk))
       .sortBy(_._2.asc)
       .result
-    ).map(x => Triggers(x._1, x._2, x._3, x._4, x._5, None, x._6, None, None, x._7)).toList
+    ).map(x => Triggers(x._1, x._2, x._3, x._4, x._5, None, x._6, x._8, None, x._7)).toList
   }
 
   def createTrigger(trigger: Trigger): Long = {
@@ -101,7 +101,7 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
       .filter(_.community === communityId)
       .filter(_.eventType === eventType.id.toShort)
       .filter(_.active === true)
-      .map(x => (x.id, x.url, x.operation))
+      .map(x => (x.id, x.url, x.operation, x.latestResultOk))
       .result)
     if (triggers.nonEmpty) {
       val triggerIds = triggers.map(t => t._1)
@@ -120,7 +120,7 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
           triggerData = Some(triggerDataItemMap(trigger._1).toList)
         }
         new Trigger(
-          Triggers(trigger._1, "", None, trigger._2, eventType.id.toShort, trigger._3, active = true, None, None, communityId),
+          Triggers(trigger._1, "", None, trigger._2, eventType.id.toShort, trigger._3, active = true, trigger._4, None, communityId),
           triggerData
         )
       }.toList)
@@ -130,6 +130,10 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
 
   def updateTrigger(trigger: Trigger): Unit = {
     exec(updateTriggerInternal(trigger).transactionally)
+  }
+
+  def clearStatus(triggerId: Long): Unit = {
+    exec((for { t <- PersistenceSchema.triggers.filter(_.id === triggerId) } yield (t.latestResultOk, t.latestResultOutput)).update(None, None).transactionally)
   }
 
   private[managers] def updateTriggerInternal(trigger: Trigger): DBIO[_] = {
@@ -428,27 +432,21 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
     new String(bos.toByteArray, StandardCharsets.UTF_8)
   }
 
-  def testTriggerEndpoint(url: String): (Boolean, String) = {
+  def testTriggerEndpoint(url: String): (Boolean, List[String]) = {
     var success = false
-    var result: String = null
+    var result: List[String] = null
     try {
       val service = new ProcessingServiceService(new java.net.URL(url))
       val response = service.getProcessingServicePort.getModuleDefinition(new com.gitb.ps.Void())
       val responseWrapper = new JAXBElement[GetModuleDefinitionResponse](new QName("http://www.gitb.com/ps/v1/", "GetModuleDefinitionResponse"), classOf[GetModuleDefinitionResponse], response)
       val bos = new ByteArrayOutputStream()
       XMLUtils.marshalToStream(responseWrapper, bos)
-      result = new String(bos.toByteArray, StandardCharsets.UTF_8)
+      result = List(new String(bos.toByteArray, StandardCharsets.UTF_8))
       success = true
     } catch {
-      case _:MalformedURLException =>
+      case e:Exception =>
         success = false
-        result = "Invalid URL provided."
-      case _:WebServiceException =>
-        success = false
-        result = "Web service failure occurred."
-      case _:Exception =>
-        success = false
-        result = "Service call failed."
+        result = extractFailureDetails(e)
     }
     (success, result)
   }
@@ -575,9 +573,9 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
       try {
         val service = new ProcessingServiceService(new java.net.URL(trigger.url))
         val response = service.getProcessingServicePort.process(request)
+        val dbActions = ListBuffer[DBIO[_]]()
         if (response != null) {
           val triggerEvent = TriggerEventType.apply(trigger.eventType)
-          val dbActions = ListBuffer[DBIO[_]]()
           collectionAsScalaIterable(response.getOutput).foreach { output =>
             if ("organisationProperties".equals(output.getName) &&
               (TriggerEventType.OrganisationCreated == triggerEvent || TriggerEventType.SystemCreated == triggerEvent || TriggerEventType.ConformanceStatementCreated == triggerEvent ||
@@ -605,12 +603,41 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
               }
             }
           }
-          exec(toDBIO(dbActions).transactionally)
         }
+        if (trigger.latestResultOk.isEmpty || !trigger.latestResultOk.get) {
+          // Update latest result if this is none is recorded or if the previous one was a failure.
+          dbActions += recordTriggerResultInternal(trigger.id, success = true, None)
+        }
+        exec(toDBIO(dbActions).transactionally)
       } catch {
         case e:Exception =>
           logger.warn("Trigger call resulted in error [community: "+trigger.community+"][type: "+trigger.eventType+"][url: "+trigger.url+"]", e)
+          recordTriggerResult(trigger.id, success = false, Some(JsonUtil.jsTextArray(extractFailureDetails(e)).toString()))
       }
+    }
+  }
+
+  private def recordTriggerResult(trigger: Long, success: Boolean, message: Option[String]): Unit = {
+    exec(recordTriggerResultInternal(trigger, success, message).transactionally)
+  }
+
+  private def recordTriggerResultInternal(triggerId: Long, success: Boolean, message: Option[String]): DBIO[_] = {
+    val q = for { t <- PersistenceSchema.triggers.filter(_.id === triggerId) } yield (t.latestResultOk, t.latestResultOutput)
+    q.update(Some(success), message)
+  }
+
+  private def extractFailureDetails(error: Throwable): List[String] = {
+    val messages = new ListBuffer[Option[String]]()
+    val handledErrors = new ListBuffer[Throwable]()
+    extractFailureDetailsInternal(error, handledErrors, messages)
+    messages.filter(_.isDefined).toList.map(_.get)
+  }
+
+  private def extractFailureDetailsInternal(error: Throwable, handledErrors: ListBuffer[Throwable], messages: ListBuffer[Option[String]]): Unit = {
+    if (error != null && !handledErrors.contains(error)) {
+      handledErrors += error
+      messages += Option(error.getMessage)
+      extractFailureDetailsInternal(error.getCause, handledErrors, messages)
     }
   }
 }

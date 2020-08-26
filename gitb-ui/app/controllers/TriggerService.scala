@@ -1,13 +1,10 @@
 package controllers
 
-import com.gitb.ps.ProcessingServiceService
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
 import javax.inject.Inject
 import managers.{AuthorizationManager, TriggerManager}
-import org.apache.http.client.HttpClient
-import org.apache.http.client.methods.HttpGet
-import play.api.libs.json.Json
+import play.api.libs.json.{JsBoolean, Json}
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import utils.JsonUtil
 
@@ -62,10 +59,8 @@ class TriggerService @Inject()(authorizedAction: AuthorizedAction, cc: Controlle
     authorizationManager.canManageCommunity(request, communityId)
     val url = ParameterExtractor.requiredBodyParameter(request, Parameters.URL)
     val result = triggerManager.testTriggerEndpoint(url)
-    val json = Json.obj(
-      "success"    -> result._1,
-      "message"    -> result._2
-    )
+    var json = JsonUtil.jsTextArray(result._2)
+    json = json+("success", JsBoolean(result._1))
     ResponseConstructor.constructJsonResponse(json.toString())
   }
 
@@ -79,6 +74,12 @@ class TriggerService @Inject()(authorizedAction: AuthorizedAction, cc: Controlle
       "message"    -> message
     )
     ResponseConstructor.constructJsonResponse(json.toString())
+  }
+
+  def clearStatus(triggerId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageTrigger(request, triggerId)
+    triggerManager.clearStatus(triggerId)
+    ResponseConstructor.constructEmptyResponse
   }
 
 }

@@ -21,6 +21,17 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 object JsonUtil {
 
+  def jsTextArray(texts: List[String]): JsObject = {
+    var textArray = Json.arr()
+    texts.foreach { text =>
+      textArray = textArray.append(JsString(text))
+    }
+    val json = Json.obj(
+      "texts" -> textArray
+    )
+    json
+  }
+
   def jsImportPreviewResult(pendingImportId: String, importItems: Iterable[ImportItem]): JsObject = {
     val json = Json.obj(
       "pendingImportId" -> pendingImportId,
