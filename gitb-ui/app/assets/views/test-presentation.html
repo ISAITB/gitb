@@ -26,7 +26,6 @@
                 <span ng-class="testPresentationCtrl.labelClassForStatus(step.status)">{{step.to}}</span>
             </div>
             <div class="col-xs-1">
-                <!-- TODO handle reporting -->
                 <a class="pull-right" ng-if="step.report" href="" ng-click="testPresentationCtrl.showStepReport(step)">
                     <i class="fa fa-file-text-o fa-lg"></i>
                 </a>
@@ -40,7 +39,6 @@
                 <strong>{{step.id}}. </strong> {{step.desc}}
             </div>
             <div class="col-xs-1">
-                <!-- TODO handle reporting -->
                 <a class="pull-right" ng-if="step.report"  href="" ng-click="testPresentationCtrl.showStepReport(step)">
                     <i class="fa fa-file-text-o fa-lg"></i>
                 </a>

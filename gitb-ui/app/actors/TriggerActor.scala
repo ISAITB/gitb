@@ -6,6 +6,10 @@ import javax.inject.Inject
 import managers.TriggerManager
 import org.slf4j.LoggerFactory
 
+object TriggerActor {
+  val actorName = "trigger-actor"
+}
+
 class TriggerActor @Inject() (triggerManager: TriggerManager) extends Actor {
 
   private def logger = LoggerFactory.getLogger(classOf[TriggerActor])

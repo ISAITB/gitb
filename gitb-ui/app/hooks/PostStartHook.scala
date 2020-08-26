@@ -42,7 +42,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
   }
 
   private def initialiseActors(triggerManager: TriggerManager): Unit = {
-    actorSystem.actorOf(Props(new TriggerActor(triggerManager)), "trigger-actor")
+    actorSystem.actorOf(Props(new TriggerActor(triggerManager)), TriggerActor.actorName)
   }
 
   /**

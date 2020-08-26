@@ -15,7 +15,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class CommunityManager @Inject() (testResultManager: TestResultManager, organizationManager: OrganizationManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, conformanceManager: ConformanceManager, accountManager: AccountManager, triggerManager: TriggerManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManager: TestResultManager, organizationManager: OrganizationManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, conformanceManager: ConformanceManager, accountManager: AccountManager, triggerManager: TriggerManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -67,17 +67,17 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
       (
         for {
           // Save organisation
-          organisationId <- organizationManager.createOrganizationInTrans(organisation, templateId, None, true, true, true)
+          organisationInfo <- organizationManager.createOrganizationInTrans(organisation, templateId, None, true, true, true)
           // Save custom organisation property values
           _ <- {
             if (customPropertyValues.isDefined) {
-              organizationManager.saveOrganisationParameterValues(organisationId, organisation.community, false, customPropertyValues.get)
+              organizationManager.saveOrganisationParameterValues(organisationInfo.organisationId, organisation.community, false, customPropertyValues.get)
             } else {
               DBIO.successful(())
             }
           }
           // Save admin user account
-          userId <- PersistenceSchema.insertUser += organisationAdmin.withOrganizationId(organisationId)
+          userId <- PersistenceSchema.insertUser += organisationAdmin.withOrganizationId(organisationInfo.organisationId)
           // Link current session user with created admin user account
           _ <-
             if (actualUserInfo.isDefined) {
@@ -85,10 +85,10 @@ class CommunityManager @Inject() (testResultManager: TestResultManager, organiza
             } else {
               DBIO.successful(())
             }
-        } yield (userId, organisationId)
+        } yield (userId, organisationInfo)
         ).transactionally
     )
-    // TODO NOTIFY FOR TRIGGER
+    triggerHelper.triggersFor(organisation.community, ids._2)
     ids._1
   }
 

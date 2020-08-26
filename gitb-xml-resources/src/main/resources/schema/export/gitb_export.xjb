@@ -3,6 +3,11 @@
             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
             schemaLocation="gitb_export.xsd"
             node="/xsd:schema">
+    <jxb:bindings node="//xsd:complexType[@name='TriggerDataItem']/xsd:complexContent/xsd:extension/xsd:attribute[@name='dataId']">
+        <jxb:property name="data">
+            <jxb:baseType name="com.gitb.xml.export.ExportType"/>
+        </jxb:property>
+    </jxb:bindings>
     <jxb:bindings node="//xsd:complexType[@name='Organisation']/xsd:complexContent/xsd:extension/xsd:attribute[@name='landingPage']">
         <jxb:property name="landingPage">
             <jxb:baseType name="com.gitb.xml.export.LandingPage"/>

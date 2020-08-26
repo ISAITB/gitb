@@ -29,6 +29,7 @@
                     <xsd:element name="landingPages" type="LandingPages" minOccurs="0"/>
                     <xsd:element name="legalNotices" type="LegalNotices" minOccurs="0"/>
                     <xsd:element name="errorTemplates" type="ErrorTemplates" minOccurs="0"/>
+                    <xsd:element name="triggers" type="Triggers" minOccurs="0"/>
                     <xsd:element name="organisations" type="Organisations" minOccurs="0"/>
                     <xsd:element name="administrators" type="CommunityAdministrators" minOccurs="0"/>
                 </xsd:sequence>
@@ -182,6 +183,11 @@
             <xsd:element name="errorTemplate" type="ErrorTemplate" maxOccurs="unbounded"/>
         </xsd:sequence>
     </xsd:complexType>
+    <xsd:complexType name="Triggers">
+        <xsd:sequence>
+            <xsd:element name="trigger" type="Trigger" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
     <xsd:complexType name="LegalNotices">
         <xsd:sequence>
             <xsd:element name="legalNotice" type="LegalNotice" maxOccurs="unbounded"/>
@@ -200,6 +206,34 @@
     <xsd:complexType name="ErrorTemplate">
         <xsd:complexContent>
             <xsd:extension base="RichCommunityContent"/>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="Trigger">
+        <xsd:complexContent>
+            <xsd:extension base="ExportType">
+                <xsd:sequence>
+                    <xsd:element name="name" type="xsd:string"/>
+                    <xsd:element name="description" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="url" type="xsd:string"/>
+                    <xsd:element name="operation" type="xsd:string" minOccurs="0"/>
+                    <xsd:element name="active" type="xsd:boolean"/>
+                    <xsd:element name="dataItems" type="TriggerDataItems" minOccurs="0"/>
+                </xsd:sequence>
+                <xsd:attribute name="eventType" type="TriggerEventType" use="required"/>
+            </xsd:extension>
+        </xsd:complexContent>
+    </xsd:complexType>
+    <xsd:complexType name="TriggerDataItems">
+        <xsd:sequence>
+            <xsd:element name="triggerDataItem" type="TriggerDataItem" maxOccurs="unbounded"/>
+        </xsd:sequence>
+    </xsd:complexType>
+    <xsd:complexType name="TriggerDataItem">
+        <xsd:complexContent>
+            <xsd:extension base="ExportType">
+                <xsd:attribute name="dataType" type="TriggerDataType" use="required"/>
+                <xsd:attribute name="dataId" type="xsd:IDREF"/>
+            </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
     <xsd:complexType name="RichCommunityContent" abstract="true">
@@ -463,6 +497,27 @@
         <xsd:restriction base="xsd:string">
             <xsd:enumeration value="ORGANISATION_USER"/>
             <xsd:enumeration value="ORGANISATION_ADMIN"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+    <xsd:simpleType name="TriggerEventType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="ORGANISATION_CREATED"/>
+            <xsd:enumeration value="ORGANISATION_UPDATED"/>
+            <xsd:enumeration value="SYSTEM_CREATED"/>
+            <xsd:enumeration value="SYSTEM_UPDATED"/>
+            <xsd:enumeration value="CONFORMANCE_STATEMENT_CREATED"/>
+            <xsd:enumeration value="CONFORMANCE_STATEMENT_UPDATED"/>
+        </xsd:restriction>
+    </xsd:simpleType>
+    <xsd:simpleType name="TriggerDataType">
+        <xsd:restriction base="xsd:string">
+            <xsd:enumeration value="COMMUNITY"/>
+            <xsd:enumeration value="ORGANISATION"/>
+            <xsd:enumeration value="SYSTEM"/>
+            <xsd:enumeration value="SPECIFICATION"/>
+            <xsd:enumeration value="ACTOR"/>
+            <xsd:enumeration value="ORGANISATION_PARAMETER"/>
+            <xsd:enumeration value="SYSTEM_PARAMETER"/>
         </xsd:restriction>
     </xsd:simpleType>
     <xsd:complexType name="TestSuite">

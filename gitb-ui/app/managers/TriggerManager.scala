@@ -59,7 +59,7 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
     exec(createTriggerInternal(trigger).transactionally)
   }
 
-  private def createTriggerInternal(trigger: Trigger): DBIO[Long] = {
+  private[managers] def createTriggerInternal(trigger: Trigger): DBIO[Long] = {
     for {
       triggerId <- PersistenceSchema.insertTriggers += trigger.trigger
       _ <- setTriggerDataInternal(triggerId, trigger.data, isNewTrigger = true)
@@ -71,6 +71,28 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
       exec(PersistenceSchema.triggers.filter(_.id === triggerId).result.head),
       Some(exec(PersistenceSchema.triggerData.filter(_.trigger === triggerId).result).toList)
     )
+  }
+
+  def getTriggerAndDataByCommunityId(communityId: Long): List[Trigger] = {
+    val triggerList = exec(PersistenceSchema.triggers.filter(_.community === communityId).result).toList
+    val triggerDataList = exec(PersistenceSchema.triggerData.join(PersistenceSchema.triggers).on(_.trigger === _.id).filter(_._2.community === communityId).map(x => x._1).result).toList
+    val triggerDataMap = mutable.Map[Long, ListBuffer[TriggerData]]()
+    triggerDataList.foreach { dataItem =>
+      var items = triggerDataMap.get(dataItem.trigger)
+      if (items.isEmpty) {
+        items = Some(ListBuffer[TriggerData]())
+        triggerDataMap += (dataItem.trigger -> items.get)
+      }
+      items.get += dataItem
+    }
+    triggerList.map { trigger =>
+      val items = triggerDataMap.get(trigger.id)
+      if (items.isDefined) {
+        new Trigger(trigger, Some(items.get.toList))
+      } else {
+        new Trigger(trigger, None)
+      }
+    }
   }
 
   def getTriggersAndDataByCommunityAndType(communityId: Long, eventType: TriggerEventType): Option[List[Trigger]] = {
@@ -110,7 +132,7 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
     exec(updateTriggerInternal(trigger).transactionally)
   }
 
-  private def updateTriggerInternal(trigger: Trigger): DBIO[_] = {
+  private[managers] def updateTriggerInternal(trigger: Trigger): DBIO[_] = {
     val q = for { t <- PersistenceSchema.triggers if t.id === trigger.trigger.id } yield (t.name, t.description, t.url, t.eventType, t.operation, t.active)
     q.update(trigger.trigger.name, trigger.trigger.description, trigger.trigger.url, trigger.trigger.eventType, trigger.trigger.operation, trigger.trigger.active) andThen
       setTriggerDataInternal(trigger.trigger.id, trigger.data, isNewTrigger = false)
@@ -133,7 +155,7 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
     } yield ()
   }
 
-  private def deleteTriggerInternal(triggerId: Long): DBIO[_] = {
+  private[managers] def deleteTriggerInternal(triggerId: Long): DBIO[_] = {
     deleteTriggerDataInternal(triggerId) andThen
       PersistenceSchema.triggers.filter(_.id === triggerId).delete
   }

@@ -79,7 +79,7 @@ class CreateEditSystemController
 				if @$scope.system.id?
 					# Update
 					if @$scope.system.otherSystem? && @$scope.system.otherSystem.id?
-						@ConfirmationDialogService.confirm("Confirm test setup copy", "Copying the test setup from another "+ + @DataService.labelSystemLower()+" will remove current conformance statements and test results. Are you sure you want to proceed?", "Yes", "No")
+						@ConfirmationDialogService.confirm("Confirm test setup copy", "Copying the test setup from another "+ @DataService.labelSystemLower()+" will remove current conformance statements and test results. Are you sure you want to proceed?", "Yes", "No")
 							.then(() =>
 								@$scope.doUpdate()
 							)

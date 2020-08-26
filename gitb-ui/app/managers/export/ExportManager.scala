@@ -18,7 +18,7 @@ import utils.MimeUtil
 import scala.collection.mutable.ListBuffer
 
 @Singleton
-class ExportManager @Inject() (communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ExportManager @Inject() (triggerManager: TriggerManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ExportManager])
 
@@ -766,6 +766,56 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
           exportedContent.setDefault(content.default)
           communityData.getErrorTemplates.getErrorTemplate.add(exportedContent)
           exportedErrorTemplateMap += (content.id -> exportedContent)
+        }
+      }
+    }
+    // Triggers
+    if (exportSettings.triggers) {
+      val triggers = triggerManager.getTriggerAndDataByCommunityId(communityId)
+      if (triggers.nonEmpty) {
+        communityData.setTriggers(new com.gitb.xml.export.Triggers)
+        triggers.foreach { trigger =>
+          val exportedTrigger = new com.gitb.xml.export.Trigger
+          idSequence += 1
+          exportedTrigger.setId(toId(idSequence))
+          exportedTrigger.setName(trigger.trigger.name)
+          exportedTrigger.setDescription(trigger.trigger.description.orNull)
+          exportedTrigger.setActive(trigger.trigger.active)
+          exportedTrigger.setUrl(trigger.trigger.url)
+          exportedTrigger.setOperation(trigger.trigger.operation.orNull)
+          models.Enums.TriggerEventType.apply(trigger.trigger.eventType) match {
+            case models.Enums.TriggerEventType.OrganisationCreated => exportedTrigger.setEventType(TriggerEventType.ORGANISATION_CREATED)
+            case models.Enums.TriggerEventType.OrganisationUpdated => exportedTrigger.setEventType(TriggerEventType.ORGANISATION_UPDATED)
+            case models.Enums.TriggerEventType.SystemCreated => exportedTrigger.setEventType(TriggerEventType.SYSTEM_CREATED)
+            case models.Enums.TriggerEventType.SystemUpdated => exportedTrigger.setEventType(TriggerEventType.SYSTEM_UPDATED)
+            case models.Enums.TriggerEventType.ConformanceStatementCreated => exportedTrigger.setEventType(TriggerEventType.CONFORMANCE_STATEMENT_CREATED)
+            case models.Enums.TriggerEventType.ConformanceStatementUpdated => exportedTrigger.setEventType(TriggerEventType.CONFORMANCE_STATEMENT_UPDATED)
+          }
+          if (trigger.data.isDefined && trigger.data.get.nonEmpty) {
+            exportedTrigger.setDataItems(new TriggerDataItems)
+            trigger.data.get.foreach { dataItem =>
+              val exportedDataItem = new TriggerDataItem
+              idSequence += 1
+              exportedDataItem.setId(toId(idSequence))
+              models.Enums.TriggerDataType.apply(dataItem.dataType) match {
+                case models.Enums.TriggerDataType.Community => exportedDataItem.setDataType(TriggerDataType.COMMUNITY)
+                case models.Enums.TriggerDataType.Organisation => exportedDataItem.setDataType(TriggerDataType.ORGANISATION)
+                case models.Enums.TriggerDataType.System => exportedDataItem.setDataType(TriggerDataType.SYSTEM)
+                case models.Enums.TriggerDataType.Specification => exportedDataItem.setDataType(TriggerDataType.SPECIFICATION)
+                case models.Enums.TriggerDataType.Actor => exportedDataItem.setDataType(TriggerDataType.ACTOR)
+                case models.Enums.TriggerDataType.OrganisationParameter => {
+                  exportedDataItem.setDataType(TriggerDataType.ORGANISATION_PARAMETER)
+                  exportedDataItem.setData(exportedOrganisationPropertyMap(dataItem.dataId))
+                }
+                case models.Enums.TriggerDataType.SystemParameter => {
+                  exportedDataItem.setDataType(TriggerDataType.SYSTEM_PARAMETER)
+                  exportedDataItem.setData(exportedSystemPropertyMap(dataItem.dataId))
+                }
+              }
+              exportedTrigger.getDataItems.getTriggerDataItem.add(exportedDataItem)
+            }
+          }
+          communityData.getTriggers.getTrigger.add(exportedTrigger)
         }
       }
     }

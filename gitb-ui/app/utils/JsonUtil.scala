@@ -809,7 +809,7 @@ object JsonUtil {
     settings.landingPages = (jsonConfig \ "landingPages").as[Boolean]
     settings.errorTemplates = (jsonConfig \ "errorTemplates").as[Boolean]
     settings.legalNotices = (jsonConfig \ "legalNotices").as[Boolean]
-    settings.legalNotices = (jsonConfig \ "legalNotices").as[Boolean]
+    settings.triggers = (jsonConfig \ "triggers").as[Boolean]
     settings.certificateSettings = (jsonConfig \ "certificateSettings").as[Boolean]
     settings.customLabels = (jsonConfig \ "customLabels").as[Boolean]
     settings.customProperties = (jsonConfig \ "customProperties").as[Boolean]

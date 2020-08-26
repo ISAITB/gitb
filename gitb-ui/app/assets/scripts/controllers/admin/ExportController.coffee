@@ -33,6 +33,7 @@ class ExportController
         @allOrganisationData = false
         @settings.landingPages = false
         @settings.errorTemplates = false
+        @settings.triggers = false
         @settings.legalNotices = false
         @settings.certificateSettings = false
         @settings.customLabels = false
@@ -82,6 +83,7 @@ class ExportController
             @settings.landingPages = @allCommunityData
             @settings.legalNotices = @allCommunityData
             @settings.errorTemplates = @allCommunityData
+            @settings.triggers = @allCommunityData
             @settings.certificateSettings = @allCommunityData
             @settings.customLabels = @allCommunityData
             @settings.customProperties = @allCommunityData
@@ -213,6 +215,7 @@ class ExportController
         @settings.landingPages ||
         @settings.errorTemplates ||
         @settings.legalNotices ||
+        @settings.triggers ||
         @settings.certificateSettings ||
         @settings.customLabels ||
         @settings.customProperties ||

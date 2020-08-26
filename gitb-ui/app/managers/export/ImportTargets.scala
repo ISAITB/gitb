@@ -38,6 +38,9 @@ object ImportTargets {
       if (community.getErrorTemplates != null && !community.getErrorTemplates.getErrorTemplate.isEmpty) {
         result.hasErrorTemplates = true
       }
+      if (community.getTriggers != null && !community.getTriggers.getTrigger.isEmpty) {
+        result.hasTriggers = true
+      }
       if (community.getOrganisations != null && !community.getOrganisations.getOrganisation.isEmpty) {
         result.hasOrganisations = true
         collectionAsScalaIterable(community.getOrganisations.getOrganisation).foreach { exportedOrganisation =>
@@ -102,6 +105,7 @@ object ImportTargets {
         case ImportItemType.LandingPage => targets.hasLandingPages = true
         case ImportItemType.LegalNotice => targets.hasLegalNotices = true
         case ImportItemType.ErrorTemplate => targets.hasErrorTemplates = true
+        case ImportItemType.Trigger => targets.hasTriggers = true
         case ImportItemType.Organisation  => targets.hasOrganisations = true
         case ImportItemType.OrganisationUser => targets.hasOrganisationUsers = true
         case ImportItemType.OrganisationPropertyValue => targets.hasOrganisationPropertyValues = true
@@ -177,6 +181,7 @@ class ImportTargets {
   var hasLandingPages: Boolean = false
   var hasLegalNotices: Boolean = false
   var hasErrorTemplates: Boolean = false
+  var hasTriggers: Boolean = false
   var hasAdministrators: Boolean = false
   var hasOrganisations: Boolean = false
   var hasOrganisationUsers: Boolean = false

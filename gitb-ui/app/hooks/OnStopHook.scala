@@ -1,13 +1,15 @@
 package hooks
 
 import actors.TriggerActor
-import akka.actor.{ActorSystem, Props}
+import akka.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
 import jaxws.TestbedService
 import org.slf4j.LoggerFactory
 import play.api.inject.ApplicationLifecycle
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 
 @Singleton
 class OnStopHook @Inject()(lifecycle: ApplicationLifecycle, actorSystem: ActorSystem) {
@@ -22,8 +24,11 @@ class OnStopHook @Inject()(lifecycle: ApplicationLifecycle, actorSystem: ActorSy
   })
   // Stop event listeners.
   lifecycle.addStopHook(() => {
-    val triggerListener = actorSystem.actorOf(Props(classOf[TriggerActor]))
-    Future.successful(actorSystem.stop(triggerListener))
+    Future.successful(
+      actorSystem.actorSelection("/user/"+TriggerActor.actorName).resolveOne(1.second).onComplete { ref =>
+        actorSystem.stop(ref.get)
+      }
+    )
   })
   logger.info("Application shutdown...")
 

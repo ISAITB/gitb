@@ -23,7 +23,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class ImportCompleteManager @Inject()(exportManager: ExportManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, actorManager: ActorManager, endpointManager: EndPointManager, parameterManager: ParameterManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, systemManager: SystemManager, importPreviewManager: ImportPreviewManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportManager: ExportManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, actorManager: ActorManager, endpointManager: EndPointManager, parameterManager: ParameterManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, systemManager: SystemManager, importPreviewManager: ImportPreviewManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private def logger = LoggerFactory.getLogger("ImportCompleteManager")
 
@@ -355,6 +355,57 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
 
   private def toModelErrorTemplate(data: com.gitb.xml.export.ErrorTemplate, communityId: Long): models.ErrorTemplates = {
     models.ErrorTemplates(0L, data.getName, Option(data.getDescription), data.getContent, data.isDefault, communityId)
+  }
+
+  private def toModelTriggerEventType(eventType: com.gitb.xml.export.TriggerEventType): Short = {
+    require(eventType != null, "Enum value cannot be null")
+    eventType match {
+      case com.gitb.xml.export.TriggerEventType.ORGANISATION_CREATED => Enums.TriggerEventType.OrganisationCreated.id.toShort
+      case com.gitb.xml.export.TriggerEventType.ORGANISATION_UPDATED => Enums.TriggerEventType.OrganisationUpdated.id.toShort
+      case com.gitb.xml.export.TriggerEventType.SYSTEM_CREATED => Enums.TriggerEventType.SystemCreated.id.toShort
+      case com.gitb.xml.export.TriggerEventType.SYSTEM_UPDATED => Enums.TriggerEventType.SystemUpdated.id.toShort
+      case com.gitb.xml.export.TriggerEventType.CONFORMANCE_STATEMENT_CREATED => Enums.TriggerEventType.ConformanceStatementCreated.id.toShort
+      case com.gitb.xml.export.TriggerEventType.CONFORMANCE_STATEMENT_UPDATED => Enums.TriggerEventType.ConformanceStatementUpdated.id.toShort
+      case _ => throw new IllegalArgumentException("Unknown enum value ["+eventType+"]")
+    }
+  }
+
+  private def toModelTriggerDataType(dataType: com.gitb.xml.export.TriggerDataType): Short = {
+    require(dataType != null, "Enum value cannot be null")
+    dataType match {
+      case com.gitb.xml.export.TriggerDataType.COMMUNITY => Enums.TriggerDataType.Community.id.toShort
+      case com.gitb.xml.export.TriggerDataType.ORGANISATION => Enums.TriggerDataType.Organisation.id.toShort
+      case com.gitb.xml.export.TriggerDataType.SYSTEM => Enums.TriggerDataType.System.id.toShort
+      case com.gitb.xml.export.TriggerDataType.SPECIFICATION => Enums.TriggerDataType.Specification.id.toShort
+      case com.gitb.xml.export.TriggerDataType.ACTOR => Enums.TriggerDataType.Actor.id.toShort
+      case com.gitb.xml.export.TriggerDataType.ORGANISATION_PARAMETER => Enums.TriggerDataType.OrganisationParameter.id.toShort
+      case com.gitb.xml.export.TriggerDataType.SYSTEM_PARAMETER => Enums.TriggerDataType.SystemParameter.id.toShort
+      case _ => throw new IllegalArgumentException("Unknown enum value ["+dataType+"]")
+    }
+  }
+
+  private def toModelTrigger(modelTriggerId: Option[Long], data: com.gitb.xml.export.Trigger, communityId: Long, ctx: ImportContext): models.Trigger = {
+    val modelTrigger = models.Triggers(modelTriggerId.getOrElse(0L), data.getName, Option(data.getDescription), data.getUrl, toModelTriggerEventType(data.getEventType), Option(data.getOperation), data.isActive, None, None, communityId)
+    var modelDataItems: Option[List[models.TriggerData]] = None
+    if (data.getDataItems != null) {
+      val modelDataItemsToProcess = ListBuffer[models.TriggerData]()
+      collectionAsScalaIterable(data.getDataItems.getTriggerDataItem).foreach { dataItem =>
+        var dataId: Option[Long] = None
+        if (dataItem.getDataType == com.gitb.xml.export.TriggerDataType.ORGANISATION_PARAMETER) {
+          dataId = getProcessedDbId(dataItem.getData, ImportItemType.OrganisationProperty, ctx)
+        } else if (dataItem.getDataType == com.gitb.xml.export.TriggerDataType.SYSTEM_PARAMETER) {
+          dataId = getProcessedDbId(dataItem.getData, ImportItemType.SystemProperty, ctx)
+        } else {
+          dataId = Some(-1)
+        }
+        // This might be referring to a organisation or system property that does not exist
+        if (dataId.isDefined) {
+          modelDataItemsToProcess += models.TriggerData(toModelTriggerDataType(dataItem.getDataType), dataId.get, modelTriggerId.getOrElse(0L))
+        }
+      }
+      modelDataItems = Some(modelDataItemsToProcess.toList)
+    }
+    new models.Trigger(modelTrigger, modelDataItems)
   }
 
   private def toModelAdministrator(data: com.gitb.xml.export.CommunityAdministrator, userId: Option[Long], organisationId: Long, importSettings: ImportSettings): models.Users = {
@@ -918,6 +969,10 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
       if (ctx.importTargets.hasErrorTemplates) {
         exec(PersistenceSchema.errorTemplates.filter(_.community === targetCommunityId.get).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.ErrorTemplate) += x.toString)
       }
+      // Triggers
+      if (ctx.importTargets.hasTriggers) {
+        exec(PersistenceSchema.triggers.filter(_.community === targetCommunityId.get).map(x => x.id).result).foreach(x => ctx.existingIds.map(ImportItemType.Trigger) += x.toString)
+      }
       // Administrators
       if (!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasAdministrators) {
         exportManager.loadAdministrators(targetCommunityId.get).foreach { x =>
@@ -1255,6 +1310,32 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
           }
         )
       }
+      // Triggers
+      _ <- {
+        val dbActions = ListBuffer[DBIO[_]]()
+        if (exportedCommunity.getTriggers != null) {
+          collectionAsScalaIterable(exportedCommunity.getTriggers.getTrigger).foreach { exportedContent =>
+            dbActions += processFromArchive(ImportItemType.Trigger, exportedContent, exportedContent.getId, ctx,
+              ImportCallbacks.set(
+                (data: com.gitb.xml.export.Trigger, item: ImportItem) => {
+                  triggerManager.createTriggerInternal(toModelTrigger(None, data, item.parentItem.get.targetKey.get.toLong, ctx))
+                },
+                (data: com.gitb.xml.export.Trigger, targetKey: String, item: ImportItem) => {
+                  triggerManager.updateTriggerInternal(toModelTrigger(Some(targetKey.toLong), data, item.parentItem.get.targetKey.get.toLong, ctx))
+                }
+              )
+            )
+          }
+        }
+        toDBIO(dbActions)
+      }
+      _ <- {
+        processRemaining(ImportItemType.Trigger, ctx,
+          (targetKey: String) => {
+            triggerManager.deleteTriggerInternal(targetKey.toLong)
+          }
+        )
+      }
       // Administrators
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
@@ -1312,15 +1393,19 @@ class ImportCompleteManager @Inject()(exportManager: ExportManager, communityMan
             dbActions += processFromArchive(ImportItemType.Organisation, exportedOrganisation, exportedOrganisation.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.Organisation, item: ImportItem) => {
-                  organisationManager.createOrganizationInTrans(
-                    models.Organizations(
-                      0L, data.getShortName, data.getFullName, OrganizationType.Vendor.id.toShort, adminOrganization = false,
-                      getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
-                      getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
-                      getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
-                      template = data.isTemplate, Option(data.getTemplateName), item.parentItem.get.targetKey.get.toLong
-                    ), None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false
-                  )
+                  for {
+                    orgInfo <- {
+                      organisationManager.createOrganizationInTrans(
+                        models.Organizations(
+                          0L, data.getShortName, data.getFullName, OrganizationType.Vendor.id.toShort, adminOrganization = false,
+                          getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
+                          getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
+                          getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
+                          template = data.isTemplate, Option(data.getTemplateName), item.parentItem.get.targetKey.get.toLong
+                        ), None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false
+                      )
+                    }
+                  } yield orgInfo.organisationId
                 },
                 (data: com.gitb.xml.export.Organisation, targetKey: String, item: ImportItem) => {
                   if (communityAdminOrganisationId.get.longValue() == targetKey.toLong.longValue()) {

@@ -232,7 +232,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				}
 			'app.systems.detail.conformance':
 				url: '/conformance'
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 				abstract: true
 			'app.systems.detail.conformance.list':
 				url: ''
@@ -291,7 +291,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.admin.dashboard':
 				url: '/dashboard'
 				abstract: true
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 			'app.admin.dashboard.list':
 				url: ''
 				templateUrl: 'assets/views/admin/dashboard/index.html'
@@ -300,7 +300,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.admin.domains':
 				url: '/domains'
 				abstract: true
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 			'app.admin.domains.list':
 				url: ''
 				templateUrl: 'assets/views/admin/domains/index.html'
@@ -309,7 +309,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.admin.conformance':
 				url: '/conformance'
 				abstract: true
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 			'app.admin.conformance.list':
 				url: ''
 				templateUrl: 'assets/views/admin/conformance/index.html'
@@ -332,7 +332,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				controllerAs: 'createDomainCtrl'
 			'app.admin.domains.detail':
 				url: '/:id'
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 				abstract: true
 			'app.admin.domains.detail.list':
 				url: ''
@@ -341,7 +341,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				controllerAs: 'domainDetailsCtrl'
 			'app.admin.domains.detail.specifications':
 				url: '/specifications'
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 				abstract: true
 			'app.admin.domains.detail.specifications.create':
 				url: '/create'
@@ -351,7 +351,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.admin.domains.detail.specifications.detail':
 				url: '/{spec_id:[0-9]+}'
 				abstract: true
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 			'app.admin.domains.detail.specifications.detail.list':
 				url: ''
 				templateUrl: 'assets/views/admin/domains/detail-spec.html'
@@ -359,7 +359,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				controllerAs: 'specDetailsCtrl'
 			'app.admin.domains.detail.specifications.detail.actors':
 				url: '/actors'
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 				abstract: true
 			'app.admin.domains.detail.specifications.detail.actors.create':
 				url: '/create'
@@ -368,11 +368,11 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				controllerAs: 'createActorCtrl'
 			'app.admin.domains.detail.specifications.detail.testsuites':
 				url: '/testsuites'
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 				abstract: true
 			'app.admin.domains.detail.specifications.detail.testsuites.detail':
 				url: '/:testsuite_id'
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 				abstract: true
 			'app.admin.domains.detail.specifications.detail.testsuites.detail.list':
 				url: ''
@@ -381,11 +381,11 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				controllerAs: 'testSuiteDetailsCtrl'
 			'app.admin.domains.detail.specifications.detail.testsuites.detail.testcases':
 				url: '/testcases'
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 				abstract: true
 			'app.admin.domains.detail.specifications.detail.testsuites.detail.testcases.detail':
 				url: '/:testcase_id'
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 				abstract: true
 			'app.admin.domains.detail.specifications.detail.testsuites.detail.testcases.detail.list':
 				url: ''
@@ -394,7 +394,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				controllerAs: 'testCaseDetailsCtrl'
 			'app.admin.domains.detail.specifications.detail.actors.detail':
 				url: '/:actor_id'
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 				abstract: true
 			'app.admin.domains.detail.specifications.detail.actors.detail.list':
 				url: ''
@@ -403,7 +403,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				controllerAs: 'actorDetailsCtrl'
 			'app.admin.domains.detail.specifications.detail.actors.detail.endpoints':
 				url: '/endpoints'
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 				abstract: true
 			'app.admin.domains.detail.specifications.detail.actors.detail.endpoints.create':
 				url: '/create'
@@ -418,7 +418,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.admin.users':
 				url: '/users'
 				abstract: true
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 			'app.admin.users.list':
 				url: ''
 				templateUrl: 'assets/views/admin/users/index.html'
@@ -427,7 +427,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.admin.users.admins':
 				url: '/admin'
 				abstract: true
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 			'app.admin.users.admins.create':
 				url: '/create'
 				templateUrl: 'assets/views/admin/users/admin-create.html'
@@ -441,7 +441,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.admin.users.communities':
 				url: '/community'
 				abstract: true
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 			'app.admin.users.communities.create':
 				url: '/create'
 				templateUrl: 'assets/views/admin/users/community-create.html'
@@ -450,7 +450,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.admin.users.communities.detail':
 				url: '/:community_id'
 				abstract: true
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 			'app.admin.users.communities.detail.list':
 				url: ''
 				templateUrl: 'assets/views/admin/users/community-detail.html'
@@ -480,7 +480,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.admin.users.communities.detail.admins':
 				url: '/admin'
 				abstract: true
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 			'app.admin.users.communities.detail.admins.create':
 				url: '/create'
 				templateUrl: 'assets/views/admin/users/community-admin-create.html'
@@ -494,7 +494,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.admin.users.communities.detail.organizations':
 				url: '/organization'
 				abstract: true
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 			'app.admin.users.communities.detail.organizations.create':
 				url: '/create'
 				templateUrl: 'assets/views/admin/users/organization-create.html'
@@ -502,7 +502,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				controllerAs: 'orgCreateCtrl'
 			'app.admin.users.communities.detail.organizations.detail':
 				url: '/:org_id'
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 				abstract: true
 			'app.admin.users.communities.detail.organizations.detail.list':
 				url: ''
@@ -514,7 +514,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				}
 			'app.admin.users.communities.detail.organizations.detail.users':
 				url: '/users'
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 				abstract: true
 			'app.admin.users.communities.detail.organizations.detail.users.create':
 				url: '/create'
@@ -523,7 +523,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				controllerAs: 'userCreateCtrl'
 			'app.admin.users.communities.detail.organizations.detail.users.detail':
 				url: '/:user_id'
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 				abstract: true
 			'app.admin.users.communities.detail.organizations.detail.users.detail.list':
 				url: ''
@@ -533,7 +533,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.admin.users.communities.detail.landingpages':
 				url: '/pages'
 				abstract: true
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 			'app.admin.users.communities.detail.landingpages.create':
 				url: '/create?name&description&content'
 				templateUrl: 'assets/views/admin/users/landing-page-create.html'
@@ -547,7 +547,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.admin.users.communities.detail.legalnotices':
 				url: '/notices'
 				abstract: true
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 			'app.admin.users.communities.detail.legalnotices.create':
 				url: '/create?name&description&content'
 				templateUrl: 'assets/views/admin/users/legal-notice-create.html'
@@ -561,7 +561,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.admin.users.communities.detail.errortemplates':
 				url: '/errortemplates'
 				abstract: true
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 			'app.admin.users.communities.detail.errortemplates.create':
 				url: '/create?name&description&content'
 				templateUrl: 'assets/views/admin/users/error-template-create.html'
@@ -575,7 +575,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 			'app.admin.users.communities.detail.triggers':
 				url: '/triggers'
 				abstract: true
-				template: '<div ui-view/>'
+				template: '<div ui-view></div>'
 			'app.admin.users.communities.detail.triggers.create':
 				url: '/create'
 				templateUrl: 'assets/views/admin/users/trigger-manage.html'
