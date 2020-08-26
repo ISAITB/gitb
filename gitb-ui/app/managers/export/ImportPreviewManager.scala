@@ -529,9 +529,9 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         var targetLandingPage: Option[Long] = None
         if (targetCommunity.isDefined) {
           val foundContent = targetLandingPageMap.get(exportedLandingPage.getName)
-          if (foundContent.nonEmpty) {
+          if (foundContent.isDefined && foundContent.get.nonEmpty) {
             targetLandingPage = Some(foundContent.get.remove(0))
-            if (foundContent.isEmpty) {
+            if (foundContent.get.isEmpty) {
               targetLandingPageMap.remove(exportedLandingPage.getName)
             }
           }
@@ -549,9 +549,9 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         var targetLegalNotice: Option[Long] = None
         if (targetCommunity.isDefined) {
           val foundContent = targetLegalNoticeMap.get(exportedLegalNotice.getName)
-          if (foundContent.nonEmpty) {
+          if (foundContent.isDefined && foundContent.get.nonEmpty) {
             targetLegalNotice = Some(foundContent.get.remove(0))
-            if (foundContent.isEmpty) {
+            if (foundContent.get.isEmpty) {
               targetLegalNoticeMap.remove(exportedLegalNotice.getName)
             }
           }
@@ -569,9 +569,9 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         var targetErrorTemplate: Option[Long] = None
         if (targetCommunity.isDefined) {
           val foundContent = targetErrorTemplateMap.get(exportedErrorTemplate.getName)
-          if (foundContent.nonEmpty) {
+          if (foundContent.isDefined && foundContent.get.nonEmpty) {
             targetErrorTemplate = Some(foundContent.get.remove(0))
-            if (foundContent.isEmpty) {
+            if (foundContent.get.isEmpty) {
               targetErrorTemplateMap.remove(exportedErrorTemplate.getName)
             }
           }
@@ -589,9 +589,9 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         var targetTrigger: Option[Long] = None
         if (targetCommunity.isDefined) {
           val foundContent = targetTriggerMap.get(exportedTrigger.getName)
-          if (foundContent.nonEmpty) {
+          if (foundContent.isDefined && foundContent.get.nonEmpty) {
             targetTrigger = Some(foundContent.get.remove(0))
-            if (foundContent.isEmpty) {
+            if (foundContent.get.isEmpty) {
               targetTriggerMap.remove(exportedTrigger.getName)
             }
           }
@@ -610,9 +610,9 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         var importItemOrganisation: ImportItem = null
         if (targetCommunity.isDefined) {
           val foundOrganisations = targetOrganisationMap.get(exportedOrganisation.getShortName)
-          if (foundOrganisations.nonEmpty) {
+          if (foundOrganisations.isDefined && foundOrganisations.get.nonEmpty) {
             targetOrganisation = Some(foundOrganisations.get.remove(0))
-            if (foundOrganisations.isEmpty) {
+            if (foundOrganisations.get.isEmpty) {
               targetOrganisationMap.remove(exportedOrganisation.getShortName)
             }
           }
