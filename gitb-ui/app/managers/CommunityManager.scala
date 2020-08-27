@@ -7,7 +7,6 @@ import models.Enums._
 import models._
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
-import persistence.AccountManager
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 
@@ -277,8 +276,8 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
   }
 
   def updateOrganisationParameterInternal(parameter: OrganisationParameters) = {
-    val q = for {p <- PersistenceSchema.organisationParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.inSelfRegistration)
-    q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.inSelfRegistration)
+    val q = for {p <- PersistenceSchema.organisationParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.inSelfRegistration, p.hidden)
+    q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.inSelfRegistration, parameter.hidden)
   }
 
   def updateOrganisationParameter(parameter: OrganisationParameters) = {
@@ -309,8 +308,8 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
   }
 
   def updateSystemParameterInternal(parameter: SystemParameters) = {
-    val q = for {p <- PersistenceSchema.systemParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports)
-    q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports)
+    val q = for {p <- PersistenceSchema.systemParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.hidden)
+    q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.hidden)
   }
 
   def updateSystemParameter(parameter: SystemParameters) = {

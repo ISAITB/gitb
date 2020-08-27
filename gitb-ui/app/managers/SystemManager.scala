@@ -131,7 +131,7 @@ class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelp
     // Make updates
     val actions = new ListBuffer[DBIO[_]]()
     parameterDefinitions.foreach{ parameterDefinition =>
-      if (!parameterDefinition.adminOnly || isAdmin) {
+      if ((!parameterDefinition.adminOnly && !parameterDefinition.hidden) || isAdmin) {
         val matchedProvidedParameter = providedParameters.get(parameterDefinition.id)
         if (matchedProvidedParameter.isDefined) {
           // Create or update

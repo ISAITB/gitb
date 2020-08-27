@@ -48,17 +48,17 @@ class ParameterManager @Inject() (dbConfigProvider: DatabaseConfigProvider) exte
       PersistenceSchema.parameters.filter(_.id === parameterId).delete
   }
 
-  def updateParameterWrapper(parameterId: Long, name: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean) = {
-    exec(updateParameter(parameterId, name, description, use, kind, adminOnly, notForTests).transactionally)
+  def updateParameterWrapper(parameterId: Long, name: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean, hidden: Boolean) = {
+    exec(updateParameter(parameterId, name, description, use, kind, adminOnly, notForTests, hidden).transactionally)
   }
 
   def getParameterById(parameterId: Long) = {
     exec(PersistenceSchema.parameters.filter(_.id === parameterId).result.headOption)
   }
 
-  def updateParameter(parameterId: Long, name: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean) = {
-    val q = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.desc, p.use, p.kind, p.name, p.adminOnly, p.notForTests)
-    q.update(description, use, kind, name, adminOnly, notForTests)
+  def updateParameter(parameterId: Long, name: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean, hidden: Boolean) = {
+    val q = for {p <- PersistenceSchema.parameters if p.id === parameterId} yield (p.desc, p.use, p.kind, p.name, p.adminOnly, p.notForTests, p.hidden)
+    q.update(description, use, kind, name, adminOnly, notForTests, hidden)
   }
 
 }

@@ -6,17 +6,13 @@ import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, Respo
 import javax.inject.Inject
 import managers.{AuthorizationManager, CommunityManager, ReportManager}
 import models.{OrganisationParameters, SystemParameters}
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import utils.JsonUtil
-
-import scala.collection.mutable.ListBuffer
 
 /**
  * Created by senan on 04.12.2014.
  */
 class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, reportManager: ReportManager, testService: TestService, authorizationManager: AuthorizationManager, communityManager: CommunityManager) extends AbstractController(cc) {
-  private final val logger: Logger = LoggerFactory.getLogger(classOf[ReportService])
 
   val defaultPage = 1L
   val defaultLimit = 10L

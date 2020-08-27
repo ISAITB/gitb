@@ -405,7 +405,7 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
               }
               exportedActor.setHidden(actor.hidden)
               // Endpoints.
-              if (exportSettings.endpoints && actorEndpointMap.get(actor.id).isDefined) {
+              if (exportSettings.endpoints && actorEndpointMap.contains(actor.id)) {
                 exportedActor.setEndpoints(new com.gitb.xml.export.Endpoints)
                 actorEndpointMap(actor.id).foreach { endpoint =>
                   val exportedEndpoint = new com.gitb.xml.export.Endpoint
@@ -414,7 +414,7 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
                   exportedEndpoint.setName(endpoint.name)
                   exportedEndpoint.setDescription(endpoint.desc.orNull)
                   // Endpoint parameters.
-                  if (endpointParameterMap.get(endpoint.id).isDefined) {
+                  if (endpointParameterMap.contains(endpoint.id)) {
                     exportedEndpoint.setParameters(new com.gitb.xml.export.EndpointParameters)
                     endpointParameterMap(endpoint.id).foreach { parameter =>
                       val exportedParameter = new com.gitb.xml.export.EndpointParameter
@@ -427,6 +427,7 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
                       exportedParameter.setEditable(!parameter.adminOnly)
                       exportedParameter.setInTests(!parameter.notForTests)
                       exportedParameter.setRequired(parameter.kind.equals("R"))
+                      exportedParameter.setHidden(parameter.hidden)
                       exportedEndpointParameterMap += (parameter.id -> exportedParameter)
                       exportedEndpoint.getParameters.getParameter.add(exportedParameter)
                     }
@@ -664,6 +665,7 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
           exportedProperty.setInExports(property.inExports)
           exportedProperty.setInTests(!property.notForTests)
           exportedProperty.setInSelfRegistration(property.inSelfRegistration)
+          exportedProperty.setHidden(property.hidden)
           communityData.getOrganisationProperties.getProperty.add(exportedProperty)
           exportedOrganisationPropertyMap += (property.id -> exportedProperty)
         }
@@ -683,6 +685,7 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
           exportedProperty.setEditable(!property.adminOnly)
           exportedProperty.setInExports(property.inExports)
           exportedProperty.setInTests(!property.notForTests)
+          exportedProperty.setHidden(property.hidden)
           communityData.getSystemProperties.getProperty.add(exportedProperty)
           exportedSystemPropertyMap += (property.id -> exportedProperty)
         }

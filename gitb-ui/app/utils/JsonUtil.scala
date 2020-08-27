@@ -79,38 +79,38 @@ object JsonUtil {
     json
   }
 
-  def jsSystemConfigurationEndpoints(endpoints: List[SystemConfigurationEndpoint], addValues: Boolean): JsArray = {
+  def jsSystemConfigurationEndpoints(endpoints: List[SystemConfigurationEndpoint], addValues: Boolean, isAdmin: Boolean): JsArray = {
     var json = Json.arr()
     endpoints.foreach{ endpoint =>
-      json = json.append(jsSystemConfigurationEndpoint(endpoint, addValues))
+      json = json.append(jsSystemConfigurationEndpoint(endpoint, addValues, isAdmin))
     }
     json
   }
 
-  def jsSystemConfigurationEndpoint(endpoint: SystemConfigurationEndpoint, addValues: Boolean): JsObject = {
+  def jsSystemConfigurationEndpoint(endpoint: SystemConfigurationEndpoint, addValues: Boolean, isAdmin: Boolean): JsObject = {
     val json = Json.obj(
       "id" -> endpoint.endpoint.id,
       "name" -> endpoint.endpoint.name,
       "description" -> (if(endpoint.endpoint.desc.isDefined) endpoint.endpoint.desc.get else JsNull),
-      "parameters" -> jsSystemConfigurationParameters(endpoint.endpointParameters, addValues)
+      "parameters" -> jsSystemConfigurationParameters(endpoint.endpointParameters, addValues, isAdmin)
     )
     json
   }
 
-  def jsSystemConfigurationParameters(parameters: Option[List[SystemConfigurationParameter]], addValues: Boolean): JsArray = {
+  def jsSystemConfigurationParameters(parameters: Option[List[SystemConfigurationParameter]], addValues: Boolean, isAdmin: Boolean): JsArray = {
     var json = Json.arr()
     if (parameters.isDefined) {
       parameters.get.foreach{ parameter =>
-        json = json.append(jsSystemConfigurationParameter(parameter, addValues))
+        json = json.append(jsSystemConfigurationParameter(parameter, addValues, isAdmin))
       }
     }
     json
   }
 
-  def jsSystemConfigurationParameter(parameter: SystemConfigurationParameter, addValues: Boolean): JsObject = {
+  def jsSystemConfigurationParameter(parameter: SystemConfigurationParameter, addValues: Boolean, isAdmin: Boolean): JsObject = {
     var json = jsParameter(parameter.parameter)
     json = json.+("configured" -> JsBoolean(parameter.configured))
-    if (addValues && parameter.config.isDefined) {
+    if (addValues && parameter.config.isDefined && (isAdmin || !parameter.parameter.hidden)) {
       if (parameter.parameter.kind != "SECRET") {
         json = json.+("value" -> JsString(parameter.config.get.value))
         if (parameter.parameter.kind == "BINARY") {
@@ -189,6 +189,7 @@ object JsonUtil {
 			"kind" -> parameter.kind,
       "adminOnly" -> parameter.adminOnly,
       "notForTests" -> parameter.notForTests,
+      "hidden" -> parameter.hidden,
 			"endpoint" -> parameter.endpoint
 		)
 		json
@@ -222,6 +223,7 @@ object JsonUtil {
       "notForTests" -> parameter.notForTests,
       "inExports" -> parameter.inExports,
       "inSelfRegistration" -> parameter.inSelfRegistration,
+      "hidden" -> parameter.hidden,
       "community" -> parameter.community
     )
     json
@@ -246,6 +248,7 @@ object JsonUtil {
       "adminOnly" -> parameter.adminOnly,
       "notForTests" -> parameter.notForTests,
       "inExports" -> parameter.inExports,
+      "hidden" -> parameter.hidden,
       "community" -> parameter.community
     )
     json

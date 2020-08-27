@@ -83,12 +83,13 @@
 			</div>'
 		restrict: 'A'
 		link: (scope, element, attrs) =>
+			scope.isAdmin = @DataService.isSystemAdmin || @DataService.isCommunityAdmin
 			if scope.onlyMissing == undefined
 				scope.onlyMissing = false
 			if scope.parameterLabel == undefined
 				scope.parameterLabel = 'Parameter'
 			scope.showParameter = (parameter) =>
-				!scope.onlyMissing || !parameter.configured
+				(!scope.onlyMissing || !parameter.configured) && (scope.isAdmin || !parameter.hidden)
 			scope.downloadBinaryParameter = (parameter) =>
 				blob = @DataService.b64toBlob(@DataService.base64FromDataURL(parameter.value), parameter.mimeType)
 				saveAs(blob, parameter.fileName)

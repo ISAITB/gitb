@@ -19,7 +19,7 @@ class ParameterService @Inject() (authorizedAction: AuthorizedAction, cc: Contro
     if (parameterManager.checkParameterExistsForEndpoint(parameter.name, parameter.endpoint, Some(parameterId))) {
       ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the " + communityLabelManager.getLabel(request, models.Enums.LabelType.Endpoint, true, true)+".")
     } else{
-      parameterManager.updateParameterWrapper(parameterId, parameter.name, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests)
+      parameterManager.updateParameterWrapper(parameterId, parameter.name, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden)
       ResponseConstructor.constructEmptyResponse
     }
   }

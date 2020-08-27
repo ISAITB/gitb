@@ -4,12 +4,11 @@ import config.Configurations
 import controllers.util._
 import exceptions._
 import javax.inject.Inject
-import managers.{AuthorizationManager, UserManager}
+import managers.{AuthorizationManager, UserManager, AccountManager, AuthenticationManager}
 import models.Enums
 import org.pac4j.play.store.PlaySessionStore
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.cache.TokenCache
-import persistence.{AccountManager, AuthenticationManager}
 import play.api.mvc._
 import utils.{JsonUtil, RepositoryUtils}
 

@@ -219,7 +219,7 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
       }
       _ <- {
         if (propertyValues.isDefined && (otherOrganisation.isEmpty || !copyOrganisationParameters)) {
-          saveOrganisationParameterValues(orgId, org.get.community, true, propertyValues.get)
+          saveOrganisationParameterValues(orgId, org.get.community, isAdmin = true, propertyValues.get)
         } else {
           DBIO.successful(())
         }
@@ -295,7 +295,7 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     // Make updates
     val actions = new ListBuffer[DBIO[_]]()
     parameterDefinitions.foreach { parameterDefinition =>
-      if (!parameterDefinition.adminOnly || isAdmin) {
+      if ((!parameterDefinition.adminOnly && !parameterDefinition.hidden) || isAdmin) {
         val matchedProvidedParameter = providedParameters.get(parameterDefinition.id)
         if (matchedProvidedParameter.isDefined) {
           // Create or update

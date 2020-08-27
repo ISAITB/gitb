@@ -415,7 +415,7 @@ object ParameterExtractor {
   def extractParameter(request:Request[AnyContent]):models.Parameters = {
       val id:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ID) match {
       case Some(i) => i.toLong
-      case _ => 0l
+      case _ => 0L
     }
     val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
     val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
@@ -424,13 +424,17 @@ object ParameterExtractor {
     val endpointId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.ENDPOINT_ID).toLong
     val adminOnly = ParameterExtractor.requiredBodyParameter(request, Parameters.ADMIN_ONLY).toBoolean
     val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
-    models.Parameters(id, name, desc, use, kind, adminOnly, notForTests, endpointId)
+    var hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
+    if (!adminOnly) {
+      hidden = false
+    }
+    models.Parameters(id, name, desc, use, kind, adminOnly, notForTests, hidden, endpointId)
   }
 
   def extractOrganisationParameter(request:Request[AnyContent]):models.OrganisationParameters = {
     val id:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ID) match {
       case Some(i) => i.toLong
-      case _ => 0l
+      case _ => 0L
     }
     val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
     val testKey:String = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_KEY)
@@ -442,13 +446,17 @@ object ParameterExtractor {
     val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
     val inExports:Boolean = (kind == "SIMPLE") && ParameterExtractor.requiredBodyParameter(request, Parameters.IN_EXPORTS).toBoolean
     val inSelfRegistration: Boolean = Configurations.REGISTRATION_ENABLED && (!adminOnly) && ParameterExtractor.requiredBodyParameter(request, Parameters.IN_SELFREG).toBoolean
-    models.OrganisationParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, communityId)
+    var hidden: Boolean = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
+    if (!adminOnly) {
+      hidden = false
+    }
+    models.OrganisationParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, hidden, communityId)
   }
 
   def extractSystemParameter(request:Request[AnyContent]):models.SystemParameters = {
     val id:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ID) match {
       case Some(i) => i.toLong
-      case _ => 0l
+      case _ => 0L
     }
     val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
     val testKey:String = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_KEY)
@@ -459,7 +467,11 @@ object ParameterExtractor {
     val adminOnly = ParameterExtractor.requiredBodyParameter(request, Parameters.ADMIN_ONLY).toBoolean
     val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
     val inExports = (kind == "SIMPLE") && ParameterExtractor.requiredBodyParameter(request, Parameters.IN_EXPORTS).toBoolean
-    models.SystemParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, communityId)
+    var hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
+    if (!adminOnly) {
+      hidden = false
+    }
+    models.SystemParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, hidden, communityId)
   }
 
   def extractLandingPageInfo(request:Request[AnyContent]):LandingPages = {

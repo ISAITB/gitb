@@ -6,7 +6,7 @@ import controllers.util.{Parameters, ResponseConstructor}
 import exceptions._
 import javax.inject.Inject
 import org.slf4j.{Logger, LoggerFactory}
-import persistence.AccountManager
+import managers.AccountManager
 import persistence.cache.TokenCache
 import play.api.mvc._
 import play.mvc.Http.HeaderNames._

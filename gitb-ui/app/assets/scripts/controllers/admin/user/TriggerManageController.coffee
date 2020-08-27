@@ -307,6 +307,6 @@ class TriggerManageController
     @triggerData.systemParameter.visible = eventType == undefined || @DataService.triggerDataTypeAllowedForEvent(eventType, @triggerData.systemParameter.dataType)
 
   parameterType: (parameter) =>
-    parameter.kindLabel = if parameter.kind == 'SIMPLE' then 'Simple' else if parameter.kind == 'BINARY' then 'Binary' else 'Hidden'
+    parameter.kindLabel = if parameter.kind == 'SIMPLE' then 'Simple' else if parameter.kind == 'BINARY' then 'Binary' else 'Secret'
 
 @controllers.controller 'TriggerManageController', TriggerManageController

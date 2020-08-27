@@ -1,0 +1,3 @@
+ALTER TABLE `organisationparameters` ADD COLUMN `hidden` TINYINT DEFAULT 0 NOT NULL;
+ALTER TABLE `systemparameters` ADD COLUMN `hidden` TINYINT DEFAULT 0 NOT NULL;
+ALTER TABLE `parameters` ADD COLUMN `hidden` TINYINT DEFAULT 0 NOT NULL;

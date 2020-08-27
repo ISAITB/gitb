@@ -1,9 +1,8 @@
-package persistence
+package managers
 
 import config.Configurations
 import javax.inject.{Inject, Singleton}
-import managers.BaseManager
-import models.{Constants, Enums, Token, Users}
+import models.{Enums, Token, Users}
 import org.apache.commons.lang3.RandomStringUtils
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory

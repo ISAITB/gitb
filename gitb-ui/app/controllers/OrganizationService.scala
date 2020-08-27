@@ -131,9 +131,15 @@ class OrganizationService @Inject() (authorizedAction: AuthorizedAction, cc: Con
 
   def getOrganisationParameterValues(orgId: Long) = authorizedAction { request =>
     authorizationManager.canViewOrganisation(request, orgId)
-    val includeValues = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.VALUES)
     val values = organizationManager.getOrganisationParameterValues(orgId)
-    val json: String = JsonUtil.jsOrganisationParametersWithValues(values, includeValues.getOrElse(true)).toString
+    val json: String = JsonUtil.jsOrganisationParametersWithValues(values, includeValues = true).toString
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def checkOrganisationParameterValues(orgId: Long) = authorizedAction { request =>
+    authorizationManager.canViewOrganisation(request, orgId)
+    val values = organizationManager.getOrganisationParameterValues(orgId)
+    val json: String = JsonUtil.jsOrganisationParametersWithValues(values, includeValues = false).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 

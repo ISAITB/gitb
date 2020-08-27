@@ -5,6 +5,7 @@ import controllers.util._
 import exceptions._
 import javax.inject.Inject
 import managers._
+import models.Enums.UserRole
 import models.Systems
 import org.apache.commons.codec.binary.Base64
 import org.slf4j._
@@ -13,7 +14,7 @@ import utils.{ClamAVClient, JsonUtil, MimeUtil}
 
 import scala.collection.mutable.ListBuffer
 
-class SystemService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, systemManager: SystemManager, parameterManager: ParameterManager, testCaseManager: TestCaseManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
+class SystemService @Inject() (accountManager: AccountManager, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemManager: SystemManager, parameterManager: ParameterManager, testCaseManager: TestCaseManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemService])
 
   def deleteSystem(systemId:Long) = authorizedAction { request =>
@@ -162,7 +163,6 @@ class SystemService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
 		val jsConfig = ParameterExtractor.requiredBodyParameter(request, Parameters.CONFIG)
     val config = JsonUtil.parseJsConfig(jsConfig)
     authorizationManager.canEditEndpointConfiguration(request, config)
-
     var response: Result = null
     if (Configurations.ANTIVIRUS_SERVER_ENABLED && MimeUtil.isDataURL(config.value)) {
       // Check for virus. Do this regardless of the type of parameter as this can be changed later on.
@@ -173,17 +173,29 @@ class SystemService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
       }
     }
     if (response == null) {
-      systemManager.saveEndpointConfiguration(config)
       val parameter = parameterManager.getParameterById(config.parameter)
-      if (parameter.isDefined && parameter.get.kind == "BINARY") {
-        // Get the metadata for the parameter.
-        val detectedMimeType = MimeUtil.getMimeType(config.value, false)
-        val extension = MimeUtil.getExtensionFromMimeType(detectedMimeType)
-        val json = JsonUtil.jsBinaryMetadata(detectedMimeType, extension).toString()
-        response = ResponseConstructor.constructJsonResponse(json)
-      } else {
-        response = ResponseConstructor.constructEmptyResponse
+      if (parameter.isDefined) {
+        if (parameter.get.hidden) {
+          val isAdmin = accountManager.checkUserRole(ParameterExtractor.extractUserId(request), UserRole.SystemAdmin, UserRole.CommunityAdmin)
+          if (!isAdmin) {
+            // Ignore
+            response = ResponseConstructor.constructEmptyResponse
+          }
+        }
+        if (response == null) {
+          systemManager.saveEndpointConfiguration(config)
+          if (parameter.get.kind == "BINARY") {
+            // Get the metadata for the parameter.
+            val detectedMimeType = MimeUtil.getMimeType(config.value, false)
+            val extension = MimeUtil.getExtensionFromMimeType(detectedMimeType)
+            val json = JsonUtil.jsBinaryMetadata(detectedMimeType, extension).toString()
+            response = ResponseConstructor.constructJsonResponse(json)
+          }
+        }
       }
+    }
+    if (response == null) {
+      response = ResponseConstructor.constructEmptyResponse
     }
     response
 	}
@@ -241,9 +253,15 @@ class SystemService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
 
   def getSystemParameterValues(systemId: Long) = authorizedAction { request =>
     authorizationManager.canViewSystemsById(request, Some(List(systemId)))
-    val includeValues = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.VALUES)
     val values = systemManager.getSystemParameterValues(systemId)
-    val json: String = JsonUtil.jsSystemParametersWithValues(values, includeValues.getOrElse(true)).toString
+    val json: String = JsonUtil.jsSystemParametersWithValues(values, includeValues = true).toString
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def checkSystemParameterValues(systemId: Long) = authorizedAction { request =>
+    authorizationManager.canViewSystemsById(request, Some(List(systemId)))
+    val values = systemManager.getSystemParameterValues(systemId)
+    val json: String = JsonUtil.jsSystemParametersWithValues(values, includeValues = false).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 

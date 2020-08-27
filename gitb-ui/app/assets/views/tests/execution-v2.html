@@ -33,7 +33,7 @@
                 </table>
             </div>
             <div ng-if="testExecutionCtrl.wizardStep == 1">
-                <div class="panel panel-default" ng-if="!testExecutionCtrl.organisationConfigurationValid">
+                <div class="panel panel-default" ng-if="!testExecutionCtrl.organisationConfigurationValid && testExecutionCtrl.missingOrganisationConfigurationVisible">
                     <div class="panel-heading">
                         <h5 class="title">Missing organisation properties</h5>
                         <div class="pull-right">
@@ -42,7 +42,7 @@
                     </div>
                     <div parameter-display parameters="testExecutionCtrl.organisationProperties" editable="false" only-missing="true" show-values="false" parameter-label="Property"></div>
                 </div>
-                <div class="panel panel-default" ng-if="!testExecutionCtrl.systemConfigurationValid">
+                <div class="panel panel-default" ng-if="!testExecutionCtrl.systemConfigurationValid && testExecutionCtrl.missingSystemConfigurationVisible">
                     <div class="panel-heading">
                         <h5 class="title">Missing system properties</h5>
                         <div class="pull-right">
@@ -51,7 +51,7 @@
                     </div>
                     <div parameter-display parameters="testExecutionCtrl.systemProperties" editable="false" only-missing="true" show-values="false" parameter-label="Property"></div>
                 </div>
-                <div class="panel panel-default" ng-if="!testExecutionCtrl.configurationValid">
+                <div class="panel panel-default" ng-if="!testExecutionCtrl.configurationValid && testExecutionCtrl.missingStatementConfigurationVisible">
                     <div class="panel-heading">
                         <h5 class="title">Missing conformance statement parameters</h5>
                         <div class="pull-right">
@@ -59,6 +59,16 @@
                         </div>
                     </div>
                     <div parameter-display parameters="testExecutionCtrl.endpointRepresentations[0].parameters" only-missing="true" editable="false" show-values="false"></div>
+                </div>
+                <div ng-if="!testExecutionCtrl.isAdmin && !testExecutionCtrl.missingOrganisationConfigurationVisible && !testExecutionCtrl.missingSystemConfigurationVisible && !testExecutionCtrl.missingStatementConfigurationVisible">
+                    <div class="bg-info div-rounded div-padded">
+                        <span>Certain configuration must be completed for you by an administrator before you can proceed with testing.</span>
+                    </div>                    
+                </div>
+                <div ng-if="!testExecutionCtrl.isAdmin && (!testExecutionCtrl.missingOrganisationConfigurationVisible || !testExecutionCtrl.missingSystemConfigurationVisible || !testExecutionCtrl.missingStatementConfigurationVisible) && (testExecutionCtrl.missingOrganisationConfigurationVisible || testExecutionCtrl.missingSystemConfigurationVisible || testExecutionCtrl.missingStatementConfigurationVisible)">
+                    <div class="bg-info div-rounded div-padded">
+                        <span><b>Note: </b></span><span>Certain additional configuration must be completed for you by an administrator before you can proceed with testing.</span>
+                    </div>                    
                 </div>
             </div>
             <div class="panel panel-default" ng-if="testExecutionCtrl.wizardStep == 2">

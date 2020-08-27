@@ -31,7 +31,7 @@
 					<label class="radio-inline"><input type="radio" ng-model="parameter.kind" name="kinds" id="kind_2" value="BINARY">Binary
 						<div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="A file."></div>
 					</label>
-					<label class="radio-inline"><input type="radio" ng-model="parameter.kind" name="kinds" id="kind_3" value="SECRET">Hidden
+					<label class="radio-inline"><input type="radio" ng-model="parameter.kind" name="kinds" id="kind_3" value="SECRET">Secret
 						<div tb-inline="true" tb-inline-type="checkLabel" tb-tooltip="A secret text value such as a password."></div>
 					</label>
 				</div>
@@ -50,6 +50,9 @@
 					</label>
 					<label class="checkbox-inline" ng-if="!hideInExport && parameter.kind == 'SIMPLE'">
 						<input type="checkbox" ng-model="parameter.inExports">Included in exports
+					</label>
+					<label class="checkbox-inline" ng-if="parameter.adminOnly">
+						<input type="checkbox" ng-model="parameter.hidden">Hidden
 					</label>
 					<label class="checkbox-inline" ng-if="!parameter.adminOnly && !hideInRegistration">
 						<input type="checkbox" ng-model="parameter.inSelfRegistration">Requested in self-registration

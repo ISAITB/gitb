@@ -39,6 +39,7 @@ class TestExecutionControllerV2
       @initialiseState()
 
   initialiseState: () =>
+    @isAdmin = @DataService.isCommunityAdmin || @DataService.isSystemAdmin
     @documentationExists = @testCasesHaveDocumentation()
     @systemId = parseInt(@$stateParams['systemId'], 10)
     @actorId  = parseInt(@$stateParams['actorId'], 10)
@@ -160,6 +161,9 @@ class TestExecutionControllerV2
         @systemConfigurationValid = @DataService.isMemberConfigurationValid(@systemProperties)
         @organisationConfigurationValid = @DataService.isMemberConfigurationValid(@organisationProperties)
         if (!@configurationValid || !@systemConfigurationValid || !@organisationConfigurationValid)
+          @missingOrganisationConfigurationVisible = !@organisationConfigurationValid && @DataService.checkMissingPropertiesVisible(@organisationProperties)
+          @missingSystemConfigurationVisible = !@systemConfigurationValid && @DataService.checkMissingPropertiesVisible(@systemProperties)
+          @missingStatementConfigurationVisible = !@configurationValid && @DataService.checkMissingPropertiesVisible(@endpointRepresentations[0].parameters)
           @wizardStep = 1
         else 
           @runInitiateStep()
@@ -207,19 +211,19 @@ class TestExecutionControllerV2
 
   getOrganisation : () =>
     organisation = @DataService.vendor
-    if @DataService.isCommunityAdmin || @DataService.isSystemAdmin
+    if @isAdmin
       organisation = JSON.parse(@$window.localStorage['organization'])
     organisation
 
   checkConfigurations : (actorId, systemId) ->
-    @OrganizationService.getOrganisationParameterValues(@getOrganisation().id, false)
+    @OrganizationService.checkOrganisationParameterValues(@getOrganisation().id)
     .then (data) =>
       @organisationProperties = data
       @organisationConfigurationChecked.resolve()
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-    @SystemService.getSystemParameterValues(systemId, false)
+    @SystemService.checkSystemParameterValues(systemId)
     .then (data) =>
       @systemProperties = data
       @systemConfigurationChecked.resolve()

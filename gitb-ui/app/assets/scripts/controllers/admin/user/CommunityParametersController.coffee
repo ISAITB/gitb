@@ -36,6 +36,10 @@ class CommunityParametersController
         field: 'inExports'
         title: 'In exports'
       }
+      {
+        field: 'hidden'
+        title: 'Hidden'
+      }
     ]
 
     @organisationParameterTableColumns = @systemParameterTableColumns.slice()
@@ -70,7 +74,7 @@ class CommunityParametersController
     serviceMethod(@communityId)
     .then (data) =>
       for item in data
-        item.kindLabel = if item.kind == 'SIMPLE' then 'Simple' else if item.kind == 'BINARY' then 'Binary' else 'Hidden'
+        item.kindLabel = if item.kind == 'SIMPLE' then 'Simple' else if item.kind == 'BINARY' then 'Binary' else 'Secret'
         item.useLabel = item.use == 'R'
         item.adminOnlyLabel = !item.adminOnly
         item.notForTestsLabel = !item.notForTests

@@ -35,6 +35,10 @@ class EndpointDetailsController
 				field: 'notForTestsLabel'
 				title: 'Included in tests'
 			}
+			{
+				field: 'hidden'
+				title: 'Hidden'
+			}
 		]
 
 		@ConformanceService.getEndpoints [@endpointId]
@@ -42,7 +46,7 @@ class EndpointDetailsController
 			@endpoint = _.head data
 			if @endpoint.parameters? && @endpoint.parameters.length > 0
 				for e in @endpoint.parameters
-					e.kindLabel = if e.kind == 'SIMPLE' then 'Simple' else if e.kind == 'BINARY' then 'Binary' else 'Hidden'
+					e.kindLabel = if e.kind == 'SIMPLE' then 'Simple' else if e.kind == 'BINARY' then 'Binary' else 'Secret'
 					e.useLabel = e.use == 'R'
 					e.adminOnlyLabel = !e.adminOnly
 					e.notForTestsLabel = !e.notForTests
@@ -88,7 +92,7 @@ class EndpointDetailsController
 		modalInstance.result
 			.finally(angular.noop)
 			.then((parameter) => 
-				@ConformanceService.createParameter parameter.name, parameter.description, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, @endpointId
+				@ConformanceService.createParameter parameter.name, parameter.description, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, @endpointId
 					.then () =>
 						@$state.go(@$state.$current, null, { reload: true })
 						@PopupService.success('Parameter created.')
@@ -112,7 +116,7 @@ class EndpointDetailsController
 			.finally(angular.noop)
 			.then((data) => 
 				if data.action == 'update'
-					@ParameterService.updateParameter(data.parameter.id, data.parameter.name, data.parameter.desc, data.parameter.use, data.parameter.kind, data.parameter.adminOnly, data.parameter.notForTests, @endpointId)
+					@ParameterService.updateParameter(data.parameter.id, data.parameter.name, data.parameter.desc, data.parameter.use, data.parameter.kind, data.parameter.adminOnly, data.parameter.notForTests, data.parameter.hidden, @endpointId)
 					.then () =>
 						@$state.go(@$state.$current, null, { reload: true })
 						@PopupService.success('Parameter updated.')

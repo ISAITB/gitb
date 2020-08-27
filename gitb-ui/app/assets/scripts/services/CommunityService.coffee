@@ -140,6 +140,7 @@ class CommunityService
       not_for_tests: parameter.notForTests,
       in_exports: parameter.inExports,
       in_selfreg: parameter.inSelfRegistration,
+      hidden: parameter.hidden,
       community_id: parameter.community
     }
     @RestService.post({
@@ -158,6 +159,7 @@ class CommunityService
       admin_only: parameter.adminOnly,
       not_for_tests: parameter.notForTests,
       in_exports: parameter.inExports,
+      hidden: parameter.hidden,
       community_id: parameter.community
     }
     @RestService.post({
@@ -178,6 +180,7 @@ class CommunityService
       not_for_tests: parameter.notForTests,
       in_exports: parameter.inExports,
       in_selfreg: parameter.inSelfRegistration,
+      hidden: parameter.hidden,
       community_id: parameter.community
     }
     @RestService.post({
@@ -197,6 +200,7 @@ class CommunityService
       admin_only: parameter.adminOnly,
       not_for_tests: parameter.notForTests,
       in_exports: parameter.inExports,
+      hidden: parameter.hidden,
       community_id: parameter.community
     }
     @RestService.post({

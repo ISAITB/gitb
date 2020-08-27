@@ -121,6 +121,7 @@
                 <xsd:attribute name="required" type="xsd:boolean" default="false"/>
                 <xsd:attribute name="editable" type="xsd:boolean" default="false"/>
                 <xsd:attribute name="inTests" type="xsd:boolean" default="false"/>
+                <xsd:attribute name="hidden" type="xsd:boolean" default="false"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

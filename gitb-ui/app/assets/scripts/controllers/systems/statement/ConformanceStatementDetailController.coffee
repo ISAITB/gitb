@@ -118,18 +118,20 @@ class ConformanceStatementDetailController
         endpoint.description = endpointConfig.description
         endpoint.parameters = []
         for parameterConfig in endpointConfig.parameters
-          endpoint.parameters.push(parameterConfig)
-          if parameterConfig.configured
-            configurations.push({
-              system: Number(@systemId),
-              value: parameterConfig.value
-              endpoint: endpointConfig.id
-              parameter: parameterConfig.id
-              mimeType: parameterConfig.mimeType
-              extension: parameterConfig.extension
-              configured: parameterConfig.configured
-            })
-        endpointsTemp.push(endpoint)
+          if !parameterConfig.hidden || @DataService.isSystemAdmin || @DataService.isCommunityAdmin
+            endpoint.parameters.push(parameterConfig)
+            if parameterConfig.configured
+              configurations.push({
+                system: Number(@systemId),
+                value: parameterConfig.value
+                endpoint: endpointConfig.id
+                parameter: parameterConfig.id
+                mimeType: parameterConfig.mimeType
+                extension: parameterConfig.extension
+                configured: parameterConfig.configured
+              })
+        if endpoint.parameters.length > 0
+          endpointsTemp.push(endpoint)
       @endpoints = endpointsTemp
       @configurations = configurations
       @constructEndpointRepresentations()
@@ -180,14 +182,14 @@ class ConformanceStatementDetailController
     @systemConfigurationChecked = @$q.defer()
     @configurationChecked = @$q.defer()
     # Organisation parameter values.
-    @OrganizationService.getOrganisationParameterValues(@getOrganisation().id, false)
+    @OrganizationService.checkOrganisationParameterValues(@getOrganisation().id)
     .then (data) =>
       @organisationProperties = data
       @organisationConfigurationChecked.resolve()
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
     # System parameter values.
-    @SystemService.getSystemParameterValues(@systemId, false)
+    @SystemService.checkSystemParameterValues(@systemId)
     .then (data) =>
       @systemProperties = data
       @systemConfigurationChecked.resolve()
@@ -207,6 +209,9 @@ class ConformanceStatementDetailController
       @organisationConfigurationValid = @DataService.isMemberConfigurationValid(@organisationProperties)
       if (!@configurationValid || !@systemConfigurationValid || !@organisationConfigurationValid)
         # Missing configuration.
+        missingOrganisationConfigurationVisible = !@organisationConfigurationValid && @DataService.checkMissingPropertiesVisible(@organisationProperties)
+        missingSystemConfigurationVisible = !@systemConfigurationValid && @DataService.checkMissingPropertiesVisible(@systemProperties)
+        missingStatementConfigurationVisible = !@configurationValid && @DataService.checkMissingPropertiesVisible(@endpointRepresentations[0].parameters)
         options =
           templateUrl: 'assets/views/systems/conformance/missing-configuration-modal.html'
           controller: 'MissingConfigurationModalController as controller'
@@ -217,6 +222,9 @@ class ConformanceStatementDetailController
             systemConfigurationValid: () => @systemConfigurationValid
             endpointRepresentations: () => @endpointRepresentations
             configurationValid: () => @configurationValid
+            missingOrganisationConfigurationVisible: () => missingOrganisationConfigurationVisible
+            missingSystemConfigurationVisible: () => missingSystemConfigurationVisible
+            missingStatementConfigurationVisible: () => missingStatementConfigurationVisible
           size: 'lg'
         instance = @$uibModal.open options
         instance.result

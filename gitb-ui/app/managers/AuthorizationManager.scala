@@ -11,10 +11,9 @@ import org.pac4j.core.profile.{CommonProfile, ProfileManager}
 import org.pac4j.play.PlayWebContext
 import org.pac4j.play.store.PlaySessionStore
 import org.slf4j.{Logger, LoggerFactory}
-import persistence.AccountManager
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.Files
-import play.api.mvc.{AnyContent, MultipartFormData, Result}
+import play.api.mvc.{AnyContent, MultipartFormData}
 import utils.RepositoryUtils
 
 import scala.collection.mutable

@@ -7,7 +7,6 @@ import models.Enums.UserRole._
 import models._
 import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
-import persistence.AccountManager
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 

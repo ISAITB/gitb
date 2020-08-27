@@ -101,14 +101,16 @@ class OrganizationService
       authenticate: true
     })
 
-  getOrganisationParameterValues: (orgId, includeValues) ->
-    params = {}
-    if includeValues?
-      params.values = includeValues
+  checkOrganisationParameterValues: (orgId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.OrganizationService.checkOrganisationParameterValues(orgId).url,
+      authenticate: true
+    })
+
+  getOrganisationParameterValues: (orgId) ->
     @RestService.get({
       path: jsRoutes.controllers.OrganizationService.getOrganisationParameterValues(orgId).url,
       authenticate: true
-      params: params
     })
 
   updateOrganisationParameterValues: (orgId, values) ->

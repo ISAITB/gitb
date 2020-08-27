@@ -4,10 +4,9 @@ import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
 import javax.inject.Inject
-import managers.{AttachmentType, AuthorizationManager, OrganizationManager, UserManager}
+import managers._
 import org.apache.tika.Tika
 import org.slf4j.{Logger, LoggerFactory}
-import persistence.AccountManager
 import play.api.mvc._
 import utils.{ClamAVClient, HtmlUtil, JsonUtil}
 

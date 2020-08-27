@@ -11,13 +11,12 @@ import exceptions.{ErrorCodes, NotFoundException}
 import javax.inject.Inject
 import managers._
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
-import models.Enums.{LabelType, TestSuiteReplacementChoice, TestSuiteReplacementChoiceHistory, TestSuiteReplacementChoiceMetadata}
+import models.Enums.{LabelType, TestSuiteReplacementChoice, TestSuiteReplacementChoiceHistory, TestSuiteReplacementChoiceMetadata, UserRole}
 import models._
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.RandomStringUtils
 import org.slf4j.{Logger, LoggerFactory}
-import persistence.AccountManager
 import play.api.mvc._
 import utils.signature.SigUtils
 import utils.{ClamAVClient, JsonUtil, MimeUtil}
@@ -566,7 +565,8 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
         }
       }
     }
-    val json = JsonUtil.jsSystemConfigurationEndpoints(configs, true)
+    val isAdmin = accountManager.checkUserRole(ParameterExtractor.extractUserId(request), UserRole.SystemAdmin, UserRole.CommunityAdmin)
+    val json = JsonUtil.jsSystemConfigurationEndpoints(configs, addValues = true, isAdmin)
     ResponseConstructor.constructJsonResponse(json.toString)
   }
 
@@ -575,7 +575,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
     authorizationManager.canViewEndpointConfigurationsForSystem(request, system)
     val actor = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
     val status = conformanceManager.getSystemConfigurationStatus(system, actor)
-    val json = JsonUtil.jsSystemConfigurationEndpoints(status, false)
+    val json = JsonUtil.jsSystemConfigurationEndpoints(status, addValues = false, isAdmin = false) // The isAdmin flag only affects whether or a hidden value will be added (i.e. not applicable is addValues is false)
     ResponseConstructor.constructJsonResponse(json.toString)
   }
 

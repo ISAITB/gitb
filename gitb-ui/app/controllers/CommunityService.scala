@@ -5,12 +5,11 @@ import controllers.util.ParameterExtractor.requiredBodyParameter
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
 import javax.inject.Inject
-import managers.{AuthorizationManager, CommunityManager, OrganizationManager}
+import managers.{AuthenticationManager, AuthorizationManager, CommunityManager, OrganizationManager}
 import models.Enums.{SelfRegistrationRestriction, SelfRegistrationType}
 import models.{ActualUserInfo, Communities, Organizations, Users}
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
-import persistence.AuthenticationManager
 import play.api.mvc.{AbstractController, ControllerComponents, Result}
 import utils.{EmailUtil, HtmlUtil, JsonUtil}
 

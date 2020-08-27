@@ -421,6 +421,13 @@ class DataService
 			fn()
 		, 1)
 
+	checkMissingPropertiesVisible: (properties) ->
+		for prop in properties
+			if !prop.configured && (@isSystemAdmin || @isCommunityAdmin || !prop.hidden)
+				return true
+		false
+
+
 	isMemberConfigurationValid: (properties) ->
 		valid = true
 		if properties?

@@ -77,7 +77,7 @@ class ConformanceService
         actor_id: actor
     })
 
-  createParameter: (name, description, use, kind, adminOnly, notForTests, endpointId) ->
+  createParameter: (name, description, use, kind, adminOnly, notForTests, hidden, endpointId) ->
     @RestService.post({
       path: jsRoutes.controllers.ConformanceService.createParameter().url
       authenticate: true
@@ -88,6 +88,7 @@ class ConformanceService
         kind: kind
         admin_only: adminOnly
         not_for_tests: notForTests
+        hidden: hidden
         endpoint_id: endpointId
     })
 

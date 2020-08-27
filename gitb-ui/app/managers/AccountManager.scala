@@ -1,4 +1,4 @@
-package persistence
+package managers
 
 import config.Configurations
 import exceptions._

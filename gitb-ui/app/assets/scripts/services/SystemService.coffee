@@ -166,14 +166,17 @@ class SystemService
       path: jsRoutes.controllers.SystemService.getSystemsByCommunity(@DataService.community.id).url
       authenticate: true
 
-  getSystemParameterValues: (systemId, includeValues) ->
+  checkSystemParameterValues: (systemId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.SystemService.checkSystemParameterValues(systemId).url,
+      authenticate: true
+    })
+
+  getSystemParameterValues: (systemId) ->
     params = {}
-    if includeValues?
-      params.values = includeValues
     @RestService.get({
       path: jsRoutes.controllers.SystemService.getSystemParameterValues(systemId).url,
       authenticate: true
-      params: params
     })
 
 services.service('SystemService', SystemService)
