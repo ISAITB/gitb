@@ -4,79 +4,108 @@
       tbCommunity: '='
       tbDomains: '='
       tbAdmin: '='
-    template: ''+
-      '<div class="form-group">'+
-        '<label class="col-xs-3 control-label" for="sname">* Short name:</label>'+
-        '<div class="col-xs-7"><input id="sname" ng-model="tbCommunity.sname" class="form-control" type="text"></div>'+
-        '<div tb-tooltip="A short name used to refer to the community in selection lists and tabular displays where space is limited. If self-registration is enabled this is also displayed as the community\'s name along with its description."></div>'+
-      '</div>'+
-      '<div class="form-group">'+
-        '<label class="col-xs-3 control-label" for="fname">* Full name:</label>'+
-        '<div class="col-xs-7"><input id="fname" ng-model="tbCommunity.fname" class="form-control" type="text"></div>'+
-        '<div tb-tooltip="The full name used to refer to the community in reports and detail screens."></div>'+
-      '</div>'+
-      '<div class="form-group" ng-if="tbAdmin">'+
-        '<label class="col-xs-3 control-label" for="domainChoice">{{DataService.labelDomain()}}:</label>'+
-        '<div class="col-xs-7">'+
-          '<select id="domainChoice" class="form-control" ng-change="domainChanged()" ng-model="tbCommunity.domain" ng-options="domain.sname for domain in tbDomains track by domain.id"><option value="">--Optional--</option></select>'+
-        '</div>'+
-        '<div tb-tooltip="The linked {{DataService.labelDomainLower()}} determines the specifications that will be made available for testing to the community\'s members."></div>'+
-      '</div>'+
-      '<div class="form-group">'+
-        '<label class="col-xs-3 control-label" for="email">Support email:</label>'+
-        '<div class="col-xs-7"><input id="email" ng-model="tbCommunity.email" class="form-control" type="text"></div>'+
-        '<div tb-tooltip="This email address is used to receive contact form submissions (if supported) from community members and other notifications."></div>'+
-      '</div>'+
-      '<div ng-if="selfRegEnabled">'+
-        '<div class="form-group">'+
-          '<label class="col-xs-3 control-label" for="selfRegType">* Self-registration method:</label>'+
-          '<div class="col-xs-7">'+
-            '<select id="selfRegType" class="form-control" ng-model="tbCommunity.selfRegType" ng-options="+(type.id) as type.label for type in selfRegTypes" ng-change="selfRegTypeChanged()"></select>'+
-          '</div>'+
-          '<div tb-tooltip="This option determines whether users are allowed to self-register as new community members. Disabling self-registration means that new members can only be added by an administrator."></div>'+
-        '</div>'+
-        '<div uib-collapse="tbCommunity.selfRegType != '+@Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN+'">'+
-          '<div class="form-group">'+
-            '<label class="col-xs-3 control-label" for="selfRegToken">* Self-registration token:</label>'+
-            '<div class="col-xs-7"><input id="selfRegToken" ng-model="tbCommunity.selfRegToken" class="form-control" type="text"></div>'+
-            '<div tb-tooltip="This serves as a password for new users to provide during self-registration so that the community is not fully public. Ensure your community members are aware of this or that you provide a support email for relevant requests."></div>'+
-          '</div>'+
-          '<div class="form-group">'+
-            '<label class="col-xs-3 control-label" for="selfRegToken">Token help text:</label>'+
-            '<div class="col-xs-7"><textarea id="mce-message" class="mce-message"></textarea></div>'+
-            '<div tb-tooltip="A short explanatory text to instruct users on how the token is to be retrieved (e.g. pointer to a link or email address). This is displayed in the self-registration form next to the token input."></div>'+
-          '</div>'+
-        '</div>'+
-        '<div uib-collapse="!selfRegOptionsVisible">'+
-          '<div class="form-group">'+
-            '<label class="col-xs-3 control-label" for="description">Description:</label>'+
-            '<div class="col-xs-7">'+
-              '<label class="checkbox-inline"><input type="checkbox" ng-change="descriptionCheckChanged()" ng-disabled="!tbCommunity.domain" ng-model="tbCommunity.sameDescriptionAsDomain" ng-true-value="true" ng-false-value="false">Same as domain</label>'+
-            '</div>'+
-          '</div>'+
-          '<div class="form-group">'+
-            '<div class="col-xs-offset-3 col-xs-7">'+
-              '<textarea id="description" ng-model="tbCommunity.activeDescription" class="form-control" ng-readonly="tbCommunity.sameDescriptionAsDomain" ng-blur="setSameDescription()"></textarea>'+
-            '</div>'+
-            '<div tb-tooltip="This description will be displayed in the self-registration screen to explain to prospective members the community\'s context and purpose."></div>'+
-          '</div>'+
-          '<div class="form-group" ng-if="emailEnabled">'+
-            '<label class="col-xs-3 control-label" for="notifications">Self-registration notifications:</label>'+
-            '<div class="col-xs-7">'+
-              '<input id="notifications" ng-model="tbCommunity.selfRegNotification" type="checkbox" class="form-check">'+
-              '<div tb-inline="true" tb-tooltip="Check this if you want new self-registrations to send a notification email to the configured support mailbox."></div>'+
-            '</div>'+
-          '</div>'+
-          '<div class="form-group" ng-if="ssoEnabled">'+
-            '<label class="col-xs-3 control-label" for="selfRegRestriction">* Self-registration restrictions:</label>'+
-            '<div class="col-xs-7">'+
-              '<select id="selfRegRestriction" class="form-control" ng-model="tbCommunity.selfRegRestriction" ng-options="+(type.id) as type.label for type in selfRegRestrictions"></select>'+
-            '</div>'+
-            '<div tb-tooltip="Use this option to restrict multiple registrations to the community. Restrictions are applied considering the email address of the user that is in the process of self-registering."></div>'+
-          '</div>'+
-        '</div>'+
-      '</div>'+
-      '<input id="domain" ng-if="!tbAdmin" ng-model="tbCommunity.domain" type="hidden">'
+    template: '
+      <div class="row">
+        <div class="col-xs-10 col-xs-offset-1">
+          <div class="form-group">
+            <label class="col-xs-3 control-label" for="sname">* Short name:</label>
+            <div class="col-xs-7"><input id="sname" ng-model="tbCommunity.sname" class="form-control" type="text"></div>
+            <div tb-tooltip="A short name used to refer to the community in selection lists and tabular displays where space is limited. If self-registration is enabled this is also displayed as the community\'s name along with its description."></div>
+          </div>
+          <div class="form-group">
+            <label class="col-xs-3 control-label" for="fname">* Full name:</label>
+            <div class="col-xs-7"><input id="fname" ng-model="tbCommunity.fname" class="form-control" type="text"></div>
+            <div tb-tooltip="The full name used to refer to the community in reports and detail screens."></div>
+          </div>
+          <div class="form-group" ng-if="tbAdmin">
+            <label class="col-xs-3 control-label" for="domainChoice">{{DataService.labelDomain()}}:</label>
+            <div class="col-xs-7">
+              <select id="domainChoice" class="form-control" ng-change="domainChanged()" ng-model="tbCommunity.domain" ng-options="domain.sname for domain in tbDomains track by domain.id"><option value="">--Optional--</option></select>
+            </div>
+            <div tb-tooltip="The linked {{DataService.labelDomainLower()}} determines the specifications that will be made available for testing to the community\'s members."></div>
+          </div>
+          <div class="form-group">
+            <label class="col-xs-3 control-label" for="email">Support email:</label>
+            <div class="col-xs-7"><input id="email" ng-model="tbCommunity.email" class="form-control" type="text"></div>
+            <div tb-tooltip="This email address is used to receive contact form submissions (if supported) from community members and other notifications."></div>
+          </div>
+          <div ng-if="selfRegEnabled" class="form-group">
+            <label class="col-xs-3 control-label" for="selfRegType">* Self-registration method:</label>
+            <div class="col-xs-7">
+              <select id="selfRegType" class="form-control" ng-model="tbCommunity.selfRegType" ng-options="+(type.id) as type.label for type in selfRegTypes" ng-change="selfRegTypeChanged()"></select>
+            </div>
+            <div tb-tooltip="This option determines whether users are allowed to self-register as new community members. Disabling self-registration means that new members can only be added by an administrator."></div>
+          </div>
+        </div>
+      </div>
+      <div uib-collapse="!selfRegOptionsVisible">
+        <div class="row">
+          <div class="col-xs-12">
+            <div class="form-separator">
+                <h4 class="title">Self-registration settings</h4>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-xs-10 col-xs-offset-1">
+            <div ng-show="tbCommunity.selfRegType == '+@Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN+'">
+              <div class="form-group">
+                <label class="col-xs-3 control-label" for="selfRegToken">* Self-registration token:</label>
+                <div class="col-xs-7"><input id="selfRegToken" ng-model="tbCommunity.selfRegToken" class="form-control" type="text"></div>
+                <div tb-tooltip="This serves as a password for new users to provide during self-registration so that the community is not fully public. Ensure your community members are aware of this or that you provide a support email for relevant requests."></div>
+              </div>
+              <div class="form-group">
+                <label class="col-xs-3 control-label" for="selfRegToken">Token help text:</label>
+                <div class="col-xs-7"><textarea id="mce-message" class="mce-message"></textarea></div>
+                <div tb-tooltip="A short explanatory text to instruct users on how the token is to be retrieved (e.g. pointer to a link or email address). This is displayed in the self-registration form next to the token input."></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-xs-3 control-label" for="description">Community description:</label>
+              <div class="col-xs-7">
+                <label class="checkbox-inline"><input type="checkbox" ng-change="descriptionCheckChanged()" ng-disabled="!tbCommunity.domain" ng-model="tbCommunity.sameDescriptionAsDomain" ng-true-value="true" ng-false-value="false">Same as {{DataService.labelDomainLower()}}</label>
+              </div>
+            </div>
+            <div class="form-group">
+              <div class="col-xs-offset-3 col-xs-7">
+                <textarea id="description" ng-model="tbCommunity.activeDescription" class="form-control" ng-readonly="tbCommunity.sameDescriptionAsDomain" ng-blur="setSameDescription()"></textarea>
+              </div>
+              <div tb-tooltip="This description will be displayed in the self-registration screen to explain to prospective members the community\'s context and purpose."></div>
+            </div>
+            <div class="form-group" ng-if="emailEnabled">
+              <label class="col-xs-3 control-label" for="notifications">Self-registration notifications:</label>
+              <div class="col-xs-7">
+                <input id="notifications" ng-model="tbCommunity.selfRegNotification" type="checkbox" class="form-check">
+                <div tb-inline="true" tb-tooltip="Check this if you want new self-registrations to send a notification email to the configured support mailbox."></div>
+              </div>
+            </div>
+            <div class="form-group" ng-if="ssoEnabled">
+              <label class="col-xs-3 control-label" for="selfRegRestriction">* Self-registration restrictions:</label>
+              <div class="col-xs-7">
+                <select id="selfRegRestriction" class="form-control" ng-model="tbCommunity.selfRegRestriction" ng-options="+(type.id) as type.label for type in selfRegRestrictions"></select>
+              </div>
+              <div tb-tooltip="Use this option to restrict multiple registrations to the community. Restrictions are applied considering the email address of the user that is in the process of self-registering."></div>
+            </div>
+            <div class="form-group">
+              <label class="col-xs-3 control-label" for="selfRegForceTemplateSelection">Require template selection:</label>
+              <div class="col-xs-7">
+                <input id="selfRegForceTemplateSelection" ng-model="tbCommunity.selfRegForceTemplateSelection" type="checkbox" class="form-check">
+                <div tb-inline="true" tb-tooltip="Check this to force users to select a configuration template when registering. This option applies only if configuration templates are defined."></div>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="col-xs-3 control-label" for="selfRegForceRequiredProperties">Require property values:</label>
+              <div class="col-xs-7">
+                <input id="selfRegForceRequiredProperties" ng-model="tbCommunity.selfRegForceRequiredProperties" type="checkbox" class="form-check">
+                <div tb-inline="true" tb-tooltip="Check this to force users to complete required custom {{DataService.labelOrganisationLower()}} properties on the self-registration screen. This option applies only if such properties are defined."></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <input id="domain" ng-if="!tbAdmin" ng-model="tbCommunity.domain" type="hidden">
+      '
     restrict: 'A'
     link: (scope, element, attrs) =>
       scope.DataService = @DataService
@@ -196,6 +225,7 @@
       tbReadonly: '<?'
       tbFormPadded: '<?'
       tbShowFormHeader: '<?'
+      tbShowRequiredAsterisks: '<?'
     template: ''+
       '<div ng-if="hasVisibleProperties()">'+
         '<div class="row" ng-if="tbShowFormHeader">'+
@@ -210,7 +240,7 @@
             '<form class="form-horizontal">'+
               '<div ng-repeat="property in tbProperties">'+
                 '<div ng-if="isAdmin || !property.hidden" class="form-group">'+
-                  '<label ng-class="\'col-xs-\'+tbColLabel" class="control-label" ng-attr-for="{{\'prop-\'+property.id}}"><span ng-if="property.use == \'R\'">* </span>{{property.name}}:</label>'+
+                  '<label ng-class="\'col-xs-\'+tbColLabel" class="control-label" ng-attr-for="{{\'prop-\'+property.id}}"><span ng-if="property.use == \'R\' && tbShowRequiredAsterisks">* </span>{{property.name}}:</label>'+
                   '<div ng-class="\'col-xs-\'+(11-tbColLabel-tbColInputLess)" ng-if="property.kind == \'SIMPLE\'">'+
                     '<p ng-if="isReadonly" class="form-control-static">{{property.value}}<span ng-if="property.desc" ng-style="{\'margin-left\':(property.value?\'20px\':\'0px\')}" uib-tooltip="{{property.desc}}"><i class="fa fa-question-circle"></i></span></p>'+
                     '<input ng-if="!isReadonly" ng-attr-id="{{\'prop-\'+property.id}}" ng-model="property.value" ng-readonly="property.adminOnly && !isAdmin" class="form-control" type="text"/>'+
@@ -257,6 +287,8 @@
         scope.tbPopup = false
       if scope.tbReadonly == undefined
         scope.tbReadonly = false
+      if scope.tbShowRequiredAsterisks == undefined
+        scope.tbShowRequiredAsterisks = true
       if scope.tbFormPadded == undefined
         scope.tbFormPadded = true
       if scope.tbShowFormHeader == undefined
@@ -286,7 +318,7 @@
 
       scope.hasVisibleProperties = () =>
         result = false
-        if scope.tbProperties.length > 0
+        if scope.tbProperties?.length > 0
           if scope.isAdmin
             result = true
           else

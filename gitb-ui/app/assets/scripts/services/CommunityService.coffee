@@ -17,7 +17,7 @@ class CommunityService
       authenticate: true
       params: params
 
-  createCommunity: (shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, domainId) ->
+  createCommunity: (shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegForceTemplate, selfRegForceProperties, domainId) ->
     data = {
       community_sname: shortName,
       community_fname: fullName,
@@ -31,6 +31,8 @@ class CommunityService
       data.community_selfreg_token = selfRegToken
       data.community_selfreg_token_help_text = selfRegTokenHelpText
       data.community_selfreg_notification = selfRegNotification
+      data.community_selfreg_force_template = selfRegForceTemplate
+      data.community_selfreg_force_properties = selfRegForceProperties
       if @DataService.configuration['sso.enabled']
         data.community_selfreg_restriction = selfRegRestriction
 
@@ -48,7 +50,7 @@ class CommunityService
       authenticate: true
     })
 
-  updateCommunity: (communityId, shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, domainId) ->
+  updateCommunity: (communityId, shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegForceTemplate, selfRegForceProperties, domainId) ->
     data = {
       community_sname: shortName,
       community_fname: fullName,
@@ -62,6 +64,8 @@ class CommunityService
       data.community_selfreg_token = selfRegToken
       data.community_selfreg_token_help_text = selfRegTokenHelpText
       data.community_selfreg_notification = selfRegNotification
+      data.community_selfreg_force_template = selfRegForceTemplate
+      data.community_selfreg_force_properties = selfRegForceProperties
       if @DataService.configuration['sso.enabled']
         data.community_selfreg_restriction = selfRegRestriction
 

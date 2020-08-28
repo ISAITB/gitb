@@ -64,6 +64,8 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: Contro
     var selfRegToken: Option[String] = None
     var selfRegTokenHelpText: Option[String] = None
     var selfRegNotification: Boolean = false
+    var selfRegForceTemplateSelection: Boolean = false
+    var selfRegForceRequiredProperties: Boolean = false
     if (Configurations.REGISTRATION_ENABLED) {
       selfRegType = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
       if (!ParameterExtractor.validCommunitySelfRegType(selfRegType)) {
@@ -82,15 +84,19 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: Contro
         selfRegToken = None
         selfRegTokenHelpText = None
       }
-      if (selfRegType != SelfRegistrationType.NotSupported.id.toShort && Configurations.EMAIL_ENABLED) {
-        selfRegNotification = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
-      }
-      if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-        selfRegRestriction = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_RESTRICTION).toShort
+      if (selfRegType != SelfRegistrationType.NotSupported.id.toShort) {
+        selfRegForceTemplateSelection = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_FORCE_TEMPLATE).toBoolean
+        selfRegForceRequiredProperties = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_FORCE_PROPERTIES).toBoolean
+        if (Configurations.EMAIL_ENABLED) {
+          selfRegNotification = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
+        }
+        if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+          selfRegRestriction = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_RESTRICTION).toShort
+        }
       }
     }
     val domainId: Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    communityManager.updateCommunity(communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegRestriction, domainId)
+    communityManager.updateCommunity(communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, domainId)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -119,11 +125,17 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: Contro
     authorizationManager.canSelfRegister(request, organisation, organisationAdmin, selfRegToken, templateId)
     val community = communityManager.getById(organisation.community)
     if (community.isDefined) {
-      // Check that the token (if required) matches
-      if (community.get.selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort
-        && selfRegToken.isDefined && community.get.selfRegToken.isDefined
-        && community.get.selfRegToken.get != selfRegToken.get) {
-        response = ResponseConstructor.constructErrorResponse(ErrorCodes.INCORRECT_SELFREG_TOKEN, "The provided token is incorrect.")
+      // Check in case template selection is required
+      if (community.get.selfRegForceTemplateSelection && templateId.isEmpty) {
+        response = ResponseConstructor.constructErrorResponse(ErrorCodes.MISSING_PARAMS, "A configuration template must be selected.")
+      }
+      if (response == null) {
+        // Check that the token (if required) matches
+        if (community.get.selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort
+          && selfRegToken.isDefined && community.get.selfRegToken.isDefined
+          && community.get.selfRegToken.get != selfRegToken.get) {
+          response = ResponseConstructor.constructErrorResponse(ErrorCodes.INCORRECT_SELFREG_TOKEN, "The provided token is incorrect.")
+        }
       }
       if (response == null) {
         if (Configurations.AUTHENTICATION_SSO_ENABLED) {
@@ -144,7 +156,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: Contro
         val customPropertyValues = ParameterExtractor.extractOrganisationParameterValues(request, Parameters.PROPERTIES, true)
         response = ParameterExtractor.checkOrganisationParameterValues(customPropertyValues)
         if (response == null) {
-          val userId = communityManager.selfRegister(organisation, organisationAdmin, templateId, actualUserInfo, customPropertyValues)
+          val userId = communityManager.selfRegister(organisation, organisationAdmin, templateId, actualUserInfo, customPropertyValues, community.get.selfRegForceRequiredProperties)
           if (Configurations.AUTHENTICATION_SSO_ENABLED) {
             val json: String = JsonUtil.jsActualUserInfo(authorizationManager.getAccountInfo(request)).toString
             response = ResponseConstructor.constructJsonResponse(json)

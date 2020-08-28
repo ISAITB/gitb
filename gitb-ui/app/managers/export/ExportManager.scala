@@ -598,6 +598,8 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
       case SelfRegistrationRestriction.UserEmail => communityData.getSelfRegistrationSettings.setRestriction(com.gitb.xml.export.SelfRegistrationRestriction.USER_EMAIL)
       case SelfRegistrationRestriction.UserEmailDomain => communityData.getSelfRegistrationSettings.setRestriction(com.gitb.xml.export.SelfRegistrationRestriction.USER_EMAIL_DOMAIN)
     }
+    communityData.getSelfRegistrationSettings.setForceTemplateSelection(community.get.selfRegForceTemplateSelection)
+    communityData.getSelfRegistrationSettings.setForceRequiredProperties(community.get.selfRegForceRequiredProperties)
     // Administrators.
     if (exportSettings.communityAdministrators) {
       val administrators = loadAdministrators(communityId)
@@ -806,14 +808,12 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
                 case models.Enums.TriggerDataType.System => exportedDataItem.setDataType(TriggerDataType.SYSTEM)
                 case models.Enums.TriggerDataType.Specification => exportedDataItem.setDataType(TriggerDataType.SPECIFICATION)
                 case models.Enums.TriggerDataType.Actor => exportedDataItem.setDataType(TriggerDataType.ACTOR)
-                case models.Enums.TriggerDataType.OrganisationParameter => {
+                case models.Enums.TriggerDataType.OrganisationParameter =>
                   exportedDataItem.setDataType(TriggerDataType.ORGANISATION_PARAMETER)
                   exportedDataItem.setData(exportedOrganisationPropertyMap(dataItem.dataId))
-                }
-                case models.Enums.TriggerDataType.SystemParameter => {
+                case models.Enums.TriggerDataType.SystemParameter =>
                   exportedDataItem.setDataType(TriggerDataType.SYSTEM_PARAMETER)
                   exportedDataItem.setData(exportedSystemPropertyMap(dataItem.dataId))
-                }
               }
               exportedTrigger.getDataItems.getTriggerDataItem.add(exportedDataItem)
             }

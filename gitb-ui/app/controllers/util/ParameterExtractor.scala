@@ -234,6 +234,8 @@ object ParameterExtractor {
     var selfRegToken: Option[String] = None
     var selfRegTokenHelpText: Option[String] = None
     var selfRegNotification: Boolean = false
+    var selfRegForceTemplateSelection: Boolean = false
+    var selfRegForceRequiredProperties: Boolean = false
     if (Configurations.REGISTRATION_ENABLED) {
       selfRegType = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
       if (!validCommunitySelfRegType(selfRegType)) {
@@ -252,18 +254,22 @@ object ParameterExtractor {
         selfRegToken = None
         selfRegTokenHelpText = None
       }
-      if (selfRegType != SelfRegistrationType.NotSupported.id.toShort && Configurations.EMAIL_ENABLED) {
-        selfRegNotification = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
-      }
-      if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-        selfRegRestriction = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_RESTRICTION).toShort
+      if (selfRegType != SelfRegistrationType.NotSupported.id.toShort) {
+        selfRegForceTemplateSelection = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_FORCE_TEMPLATE).toBoolean
+        selfRegForceRequiredProperties = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_FORCE_PROPERTIES).toBoolean
+        if (Configurations.EMAIL_ENABLED) {
+          selfRegNotification = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
+        }
+        if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+          selfRegRestriction = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_RESTRICTION).toShort
+        }
       }
     } else {
       selfRegType = SelfRegistrationType.NotSupported.id.toShort
     }
 
     val domainId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    Communities(0L, sname, fname, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegRestriction, domainId)
+    Communities(0L, sname, fname, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, domainId)
   }
 
   def extractSystemAdminInfo(request:Request[AnyContent]):Users = {

@@ -135,10 +135,15 @@ class LoginController
 		value? && value.trim().length > 0
 
 	registerDisabled: () ->
-		@spinner || !(@selfRegData.selfRegOption?.communityId? && 
+		@spinner || !(
+			@selfRegData.selfRegOption?.communityId? && 
 			(@selfRegData.selfRegOption.selfRegType != @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN || @textProvided(@selfRegData.selfRegToken)) && 
-			@textProvided(@selfRegData.orgShortName) && @textProvided(@selfRegData.orgFullName)
-			@textProvided(@selfRegData.adminName) && @textProvided(@selfRegData.adminEmail) && @textProvided(@selfRegData.adminPassword) && @textProvided(@selfRegData.adminPasswordConfirm))
+			(!@selfRegData.selfRegOption.forceTemplateSelection || @selfRegData.selfRegOption.templates?.length == 0 || @selfRegData.template?) &&
+			(!@selfRegData.selfRegOption.forceRequiredProperties || @DataService.customPropertiesValid(@selfRegData.selfRegOption.organisationProperties, true)) &&
+			@textProvided(@selfRegData.orgShortName) && @textProvided(@selfRegData.orgFullName) &&
+			@textProvided(@selfRegData.adminName) && @textProvided(@selfRegData.adminEmail) && 
+			@textProvided(@selfRegData.adminPassword) && @textProvided(@selfRegData.adminPasswordConfirm)
+		)
 
 	register: () =>
 		if @checkRegisterForm()

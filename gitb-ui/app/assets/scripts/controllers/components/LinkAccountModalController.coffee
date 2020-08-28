@@ -35,6 +35,8 @@ class LinkAccountModalController
             else if @choice == @Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER
                 @selfRegData.selfRegOption?.communityId? && 
                     (@selfRegData.selfRegOption.selfRegType != @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN || @textProvided(@selfRegData.selfRegToken)) && 
+                    (!@selfRegData.selfRegOption.forceTemplateSelection || @selfRegData.selfRegOption.templates?.length == 0 || @selfRegData.template?) &&
+                    (!@selfRegData.selfRegOption.forceRequiredProperties || @DataService.customPropertiesValid(@selfRegData.selfRegOption.organisationProperties, true)) &&
                     @textProvided(@selfRegData.orgShortName) && @textProvided(@selfRegData.orgFullName)
             else
                 false

@@ -285,7 +285,11 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     ).toList.map(r => new OrganisationParametersWithValue(r._1, r._2))
   }
 
-  def saveOrganisationParameterValues(orgId: Long, communityId: Long, isAdmin: Boolean, values: List[OrganisationParameterValues]) = {
+  def saveOrganisationParameterValues(orgId: Long, communityId: Long, isAdmin: Boolean, values: List[OrganisationParameterValues]): DBIO[_] = {
+    saveOrganisationParameterValues(orgId, communityId, isAdmin, isSelfRegistration = false, values, requireMandatoryPropertyValues = false)
+  }
+
+  def saveOrganisationParameterValues(orgId: Long, communityId: Long, isAdmin: Boolean, isSelfRegistration: Boolean, values: List[OrganisationParameterValues], requireMandatoryPropertyValues: Boolean): DBIO[_] = {
     var providedParameters: Map[Long, OrganisationParameterValues] = Map()
     values.foreach { v =>
       providedParameters += (v.parameter -> v)
@@ -295,6 +299,13 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     // Make updates
     val actions = new ListBuffer[DBIO[_]]()
     parameterDefinitions.foreach { parameterDefinition =>
+      if (requireMandatoryPropertyValues && "R".equals(parameterDefinition.use) && !providedParameters.contains(parameterDefinition.id)) {
+        if (isAdmin || (!parameterDefinition.adminOnly && !parameterDefinition.hidden && (!isSelfRegistration || parameterDefinition.inSelfRegistration))) {
+          // No need to check this case before as the UI normally enforces this. Only way we could reach this is if a request is tampered.
+          // Admins (if forced) should provide all values. Non-admins if forced would only be expected to provide values for parameters that are editable by them (non-admin, non-hidden).
+          throw new IllegalStateException("Required parameter ["+parameterDefinition.testKey+"] missing")
+        }
+      }
       if ((!parameterDefinition.adminOnly && !parameterDefinition.hidden) || isAdmin) {
         val matchedProvidedParameter = providedParameters.get(parameterDefinition.id)
         if (matchedProvidedParameter.isDefined) {

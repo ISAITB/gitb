@@ -127,7 +127,7 @@
                 '<div tb-tooltip="The complete name of your {{DataService.labelOrganisationLower()}}."></div>'+
             '</div>'+
             '<div class="form-group" ng-if="model.selfRegOption.templates.length > 0">'+
-                '<label class="col-xs-3 control-label" for="template">Configuration:</label>'+
+                '<label class="col-xs-3 control-label" for="template"><span ng-show="model.selfRegOption.forceTemplateSelection">* </span>Configuration:</label>'+
                 '<div class="col-xs-7">'+
                     '<select id="template" class="form-control" ng-model="model.template" ng-options="template as template.name for template in model.selfRegOption.templates"><option value=""></option></select>'+
                 '</div>'+
@@ -140,7 +140,7 @@
               '</div>'+
             '</div>'+
 
-            '<div tb-custom-properties-form tb-properties="model.selfRegOption.organisationProperties" tb-show-form-header="false" tb-form-padded="false" tb-col-input-less="1"></div>'+
+            '<div tb-custom-properties-form tb-properties="model.selfRegOption.organisationProperties" tb-show-form-header="false" tb-form-padded="false" tb-col-input-less="1" tb-show-required-asterisks="model.selfRegOption.forceRequiredProperties"></div>'+
             '<div ng-if="!sso">'+
               '<div class="form-separator form-separator-top-padding">'+
                   '<h4 class="title">Administrator account details <span uib-tooltip="Through your administrator account you can manage your {{DataService.labelOrganisationLower()}}  users, configure your conformance statements and execute tests"><i class="fa fa-question-circle"></i></span></h4>'+

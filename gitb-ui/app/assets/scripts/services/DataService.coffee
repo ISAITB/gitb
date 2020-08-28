@@ -275,8 +275,13 @@ class DataService
 		else
 			'Active'
 
-	customPropertiesValid: (properties) =>
-		return true
+	customPropertiesValid: (properties, forceRequiredValues) =>
+		valid = true
+		if forceRequiredValues?
+			for property in properties
+				if property.use == 'R' && !(property.value? && property.value.trim().length > 0)
+					valid = false
+		valid
 
 	customPropertiesForPost: (properties) =>
 		propValues = []

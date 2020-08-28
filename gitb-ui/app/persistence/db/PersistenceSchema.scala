@@ -22,8 +22,10 @@ object PersistenceSchema {
     def selfregNotification = column[Boolean]("selfreg_notification")
     def selfRegRestriction = column[Short]("selfreg_restriction")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def selfRegForceTemplateSelection = column[Boolean]("selfreg_force_template")
+    def selfRegForceRequiredProperties = column[Boolean]("selfreg_force_properties")
     def domain = column[Option[Long]] ("domain")
-    def * = (id, shortname, fullname, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText, selfregNotification, description, selfRegRestriction, domain) <> (Communities.tupled, Communities.unapply)
+    def * = (id, shortname, fullname, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText, selfregNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, domain) <> (Communities.tupled, Communities.unapply)
   }
   val communities = TableQuery[CommunitiesTable]
   val insertCommunity = communities returning communities.map(_.id)

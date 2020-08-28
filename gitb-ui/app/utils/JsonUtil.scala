@@ -453,6 +453,8 @@ object JsonUtil {
       "selfRegToken" -> (if(community.selfRegToken.isDefined) community.selfRegToken.get else JsNull),
       "selfRegTokenHelpText" -> (if(community.selfRegTokenHelpText.isDefined) community.selfRegTokenHelpText.get else JsNull),
       "selfRegNotification" -> community.selfregNotification,
+      "selfRegForceTemplateSelection" -> community.selfRegForceTemplateSelection,
+      "selfRegForceRequiredProperties" -> community.selfRegForceRequiredProperties,
       "description" -> (if(community.description.isDefined) community.description.get else JsNull),
       "domainId" -> community.domain
     )
@@ -1306,7 +1308,9 @@ object JsonUtil {
         "selfRegType" -> option.selfRegType,
         "templates" -> (if (option.templates.isDefined) jsSelfRegTemplates(option.templates.get) else JsNull),
         "labels" -> jsCommunityLabels(option.labels),
-        "organisationProperties" -> jsOrganisationParameters(option.customOrganisationProperties)
+        "organisationProperties" -> jsOrganisationParameters(option.customOrganisationProperties),
+        "forceTemplateSelection" -> option.forceTemplateSelection,
+        "forceRequiredProperties" -> option.forceRequiredProperties
     )
     json
   }

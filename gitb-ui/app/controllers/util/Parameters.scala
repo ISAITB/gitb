@@ -118,6 +118,8 @@ object Parameters {
   val COMMUNITY_SELFREG_TOKEN = "community_selfreg_token"
   val COMMUNITY_SELFREG_TOKEN_HELP_TEXT = "community_selfreg_token_help_text"
   val COMMUNITY_SELFREG_NOTIFICATION = "community_selfreg_notification"
+  val COMMUNITY_SELFREG_FORCE_TEMPLATE = "community_selfreg_force_template"
+  val COMMUNITY_SELFREG_FORCE_PROPERTIES = "community_selfreg_force_properties"
 
   //TestService parameters
   val ACTOR_ID   = "actor_id"

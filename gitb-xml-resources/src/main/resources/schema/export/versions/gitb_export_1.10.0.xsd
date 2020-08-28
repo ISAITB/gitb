@@ -57,6 +57,8 @@
         <xsd:attribute name="method" type="SelfRegistrationMethod" default="NOT_SUPPORTED"/>
         <xsd:attribute name="restriction" type="SelfRegistrationRestriction" default="NO_RESTRICTION"/>
         <xsd:attribute name="notifications" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="forceTemplateSelection" type="xsd:boolean" default="false"/>
+        <xsd:attribute name="forceRequiredProperties" type="xsd:boolean" default="false"/>
     </xsd:complexType>
     <xsd:simpleType name="SelfRegistrationMethod">
         <xsd:restriction base="xsd:string">
