@@ -97,8 +97,8 @@ object Configurations {
   var REGISTRATION_ENABLED = true
   var TESTBED_HOME_LINK: String = "/"
 
-  // 1024 KB default
-  var SAVED_FILE_MAX_SIZE: Long = 1024
+  // 10240 KB default (10 MBs)
+  var SAVED_FILE_MAX_SIZE: Long = 10240
 
   var SMTP_PROPERTIES = new Properties()
 
