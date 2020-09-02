@@ -29,17 +29,21 @@
 			editable: '='
 			canEdit: '='
 			onEdit: '='
-		template: ''+
-			'<div class="row endpoint-row">
-				<div class="col-md-1"><strong>{{DataService.labelEndpoint()}}</strong></div>
-				<div class="col-md-11">{{endpoint.name}}</div>
+			hideEndpointInfo: '='
+		template: '
+			<div ng-if="!hideEndpointInfo">
+				<div class="row endpoint-row">
+					<div class="col-md-1"><strong>{{DataService.labelEndpoint()}}</strong></div>
+					<div class="col-md-11">{{endpoint.name}}</div>
+				</div>
+				<div class="row endpoint-row" ng-if="endpoint.description && endpoint.description.trim() != \'\'">
+					<div class="col-md-1"><strong>Description</strong></div>
+					<div class="col-md-11">{{endpoint.description}}</div>
+				</div>
 			</div>
-			<div class="row endpoint-row">
-				<div class="col-md-1"><strong>Description</strong></div>
-				<div class="col-md-11">{{endpoint.description}}</div>
+			<div ng-class="{\'parameter-div\': !hideEndpointInfo}" parameter-display parameters="endpoint.parameters" only-missing="false" show-values="showValues" editable="editable" can-edit="canEdit" on-edit="onEdit">
 			</div>
-			<div class="parameter-div" parameter-display parameters="endpoint.parameters" only-missing="false" show-values="showValues" editable="editable" can-edit="canEdit" on-edit="onEdit">
-			</div>'
+			'
 		link: (scope, element, attrs) =>
 			scope.DataService = DataService
 ]
@@ -70,10 +74,10 @@
 					<tbody>
 						<tr ng-repeat="parameter in parameters | filter: showParameter">
 							<td style="text-align: center;padding-right:30px;" ng-if="!onlyMissing"><i class="glyphicon" ng-class="{\'glyphicon-ok\': parameter.configured, \'glyphicon-remove\': !parameter.configured}"></i></td>
-							<td style="font-weight: bold;" ng-if="parameter.use == \'R\'">*&nbsp;{{parameter.name}}</td>
-							<td ng-if="parameter.use != \'R\'">{{parameter.name}}</td>
+							<td style="font-weight: bold;" ng-if="isRequired(parameter)">*&nbsp;{{parameter.name}}</td>
+							<td ng-if="!isRequired(parameter)">{{parameter.name}}</td>
 							<td ng-if="showValues && parameter.kind == \'BINARY\'"><a ng-if="parameter.value" href="" ng-click="downloadBinaryParameter(parameter)">{{parameter.fileName}}</a></td>
-							<td ng-if="showValues && parameter.kind != \'BINARY\'">{{parameter.value}}</td>
+							<td ng-if="showValues && parameter.kind != \'BINARY\'"><span ng-if="parameter.valueToShow != undefined">{{parameter.valueToShow}}</span><span ng-if="parameter.valueToShow == undefined">{{parameter.value}}</span></td>
 							<td>{{parameter.desc}}</td>
 							<td style="text-align: center;" ng-if="editable && canEdit(parameter)"><button type="button" class="btn btn-default" ng-click="onEdit(parameter)"><i class="fa fa-pencil"></i></button></td>
 							<td ng-if="!editable || !canEdit(parameter)"></td>
@@ -88,8 +92,10 @@
 				scope.onlyMissing = false
 			if scope.parameterLabel == undefined
 				scope.parameterLabel = 'Parameter'
+			scope.isRequired = (parameter) =>
+				parameter.use == 'R'
 			scope.showParameter = (parameter) =>
-				(!scope.onlyMissing || !parameter.configured) && (scope.isAdmin || !parameter.hidden)
+				(!scope.onlyMissing || !parameter.configured) && (scope.isAdmin || !parameter.hidden) && (!parameter.prerequisiteOk? || parameter.prerequisiteOk)
 			scope.downloadBinaryParameter = (parameter) =>
 				blob = @DataService.b64toBlob(@DataService.base64FromDataURL(parameter.value), parameter.mimeType)
 				saveAs(blob, parameter.fileName)

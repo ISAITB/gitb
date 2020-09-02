@@ -110,7 +110,7 @@ object JsonUtil {
   def jsSystemConfigurationParameter(parameter: SystemConfigurationParameter, addValues: Boolean, isAdmin: Boolean): JsObject = {
     var json = jsParameter(parameter.parameter)
     json = json.+("configured" -> JsBoolean(parameter.configured))
-    if (addValues && parameter.config.isDefined && (isAdmin || !parameter.parameter.hidden)) {
+    if (addValues && parameter.config.isDefined) {
       if (parameter.parameter.kind != "SECRET") {
         json = json.+("value" -> JsString(parameter.config.get.value))
         if (parameter.parameter.kind == "BINARY") {
@@ -184,12 +184,15 @@ object JsonUtil {
 		val json = Json.obj(
 			"id" -> parameter.id,
 			"name" -> parameter.name,
-			"desc" -> parameter.desc,
+			"desc" -> (if (parameter.desc.isDefined) parameter.desc.get else JsNull),
 			"use" -> parameter.use,
 			"kind" -> parameter.kind,
       "adminOnly" -> parameter.adminOnly,
       "notForTests" -> parameter.notForTests,
       "hidden" -> parameter.hidden,
+      "allowedValues" -> (if (parameter.allowedValues.isDefined) parameter.allowedValues.get else JsNull),
+      "dependsOn" -> (if (parameter.dependsOn.isDefined) parameter.dependsOn.get else JsNull),
+      "dependsOnValue" -> (if (parameter.dependsOnValue.isDefined) parameter.dependsOnValue.get else JsNull),
 			"endpoint" -> parameter.endpoint
 		)
 		json
@@ -224,6 +227,9 @@ object JsonUtil {
       "inExports" -> parameter.inExports,
       "inSelfRegistration" -> parameter.inSelfRegistration,
       "hidden" -> parameter.hidden,
+      "allowedValues" -> (if (parameter.allowedValues.isDefined) parameter.allowedValues.get else JsNull),
+      "dependsOn" -> (if (parameter.dependsOn.isDefined) parameter.dependsOn.get else JsNull),
+      "dependsOnValue" -> (if (parameter.dependsOnValue.isDefined) parameter.dependsOnValue.get else JsNull),
       "community" -> parameter.community
     )
     json
@@ -249,6 +255,9 @@ object JsonUtil {
       "notForTests" -> parameter.notForTests,
       "inExports" -> parameter.inExports,
       "hidden" -> parameter.hidden,
+      "allowedValues" -> (if (parameter.allowedValues.isDefined) parameter.allowedValues.get else JsNull),
+      "dependsOn" -> (if (parameter.dependsOn.isDefined) parameter.dependsOn.get else JsNull),
+      "dependsOnValue" -> (if (parameter.dependsOnValue.isDefined) parameter.dependsOnValue.get else JsNull),
       "community" -> parameter.community
     )
     json

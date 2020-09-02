@@ -99,6 +99,7 @@ POST    /endpoints/:endpoint_id             @controllers.EndPointService.updateE
 POST    /parameters                         @controllers.ConformanceService.createParameter
 DELETE  /parameters/:parameter_id           @controllers.ParameterService.deleteParameter(parameter_id : Long)
 POST    /parameters/:parameter_id           @controllers.ParameterService.updateParameter(parameter_id : Long)
+POST    /parameters/order/:endpoint_id      @controllers.ParameterService.orderParameters(endpoint_id : Long)
 GET     /domains/:domain_id/parameters                          @controllers.ConformanceService.getDomainParameters(domain_id : Long)
 GET     /domains/:domain_id/parameters/:domain_parameter_id     @controllers.ConformanceService.getDomainParameter(domain_id : Long, domain_parameter_id : Long)
 POST    /domains/:domain_id/parameters                          @controllers.ConformanceService.createDomainParameter(domain_id : Long)
@@ -182,10 +183,12 @@ POST    /communities/orgparam/create        @controllers.CommunityService.create
 POST    /communities/orgparam/:id           @controllers.CommunityService.updateOrganisationParameter(id: Long)
 DELETE  /communities/orgparam/:id           @controllers.CommunityService.deleteOrganisationParameter(id: Long)
 GET     /communities/orgparam/:id           @controllers.CommunityService.getOrganisationParameters(id: Long)
+POST    /communities/orgparam/order/:id     @controllers.CommunityService.orderOrganisationParameters(id: Long)
 POST    /communities/sysparam/create        @controllers.CommunityService.createSystemParameter
 POST    /communities/sysparam/:id           @controllers.CommunityService.updateSystemParameter(id: Long)
 DELETE  /communities/sysparam/:id           @controllers.CommunityService.deleteSystemParameter(id: Long)
 GET     /communities/sysparam/:id           @controllers.CommunityService.getSystemParameters(id: Long)
+POST    /communities/sysparam/order/:id     @controllers.CommunityService.orderSystemParameters(id: Long)
 GET     /communities/organizations/:id      @controllers.OrganizationService.getOrganizationsByCommunity(id: Long)
 GET     /communities/pages/:id              @controllers.LandingPageService.getLandingPagesByCommunity(id: Long)
 POST    /communities/pages/create           @controllers.LandingPageService.createLandingPage

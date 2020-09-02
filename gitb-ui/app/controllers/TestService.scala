@@ -12,6 +12,7 @@ import exceptions.ErrorCodes
 import javax.inject.{Inject, Singleton}
 import managers._
 import models.Constants
+import models.prerequisites.PrerequisiteUtil
 import org.apache.commons.codec.binary.Base64
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
@@ -123,7 +124,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
     organisationConfiguration.setEndpoint(Constants.organisationConfigurationName)
     addConfig(organisationConfiguration, Constants.organisationConfiguration_fullName, organisation.fullname)
     addConfig(organisationConfiguration, Constants.organisationConfiguration_shortName, organisation.shortname)
-    val organisationProperties = organisationManager.getOrganisationParameterValues(organisation.id)
+    val organisationProperties = PrerequisiteUtil.withValidPrerequisites(organisationManager.getOrganisationParameterValues(organisation.id))
     if (organisationProperties.nonEmpty) {
       organisationProperties.foreach{ property =>
         if (property.parameter.use == "R" && property.value.isEmpty) {
@@ -145,7 +146,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
     addConfig(systemConfiguration, Constants.systemConfiguration_fullName, system.fullname)
     addConfig(systemConfiguration, Constants.systemConfiguration_shortName, system.shortname)
     addConfig(systemConfiguration, Constants.systemConfiguration_version, system.version)
-    val systemProperties = systemManager.getSystemParameterValues(systemId)
+    val systemProperties = PrerequisiteUtil.withValidPrerequisites(systemManager.getSystemParameterValues(systemId))
     if (systemProperties.nonEmpty) {
       systemProperties.foreach{ property =>
         if (property.parameter.use == "R" && property.value.isEmpty) {

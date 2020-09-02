@@ -124,6 +124,10 @@
                 <xsd:attribute name="editable" type="xsd:boolean" default="false"/>
                 <xsd:attribute name="inTests" type="xsd:boolean" default="false"/>
                 <xsd:attribute name="hidden" type="xsd:boolean" default="false"/>
+                <xsd:attribute name="allowedValues" type="xsd:string"/>
+                <xsd:attribute name="displayOrder" type="xsd:short"/>
+                <xsd:attribute name="dependsOn" type="xsd:string"/>
+                <xsd:attribute name="dependsOnValue" type="xsd:string"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>

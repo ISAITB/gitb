@@ -229,9 +229,21 @@ object RepositoryUtils {
 						val caseObject = TestSuites(0L, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification.getOrElse(0L), fileName, documentation.isDefined, documentation, identifier)
 						val actors = tdlActors.map { tdlActor =>
 							val endpoints = tdlActor.getEndpoint.asScala.map { tdlEndpoint => // construct actor endpoints
-								val parameters = tdlEndpoint.getConfig.asScala
-									.map(tdlParameter => Parameters(0L, tdlParameter.getName, Option(tdlParameter.getDesc), tdlParameter.getUse.value(), tdlParameter.getKind.value(), tdlParameter.isAdminOnly, tdlParameter.isNotForTests, tdlParameter.isHidden, 0L))
-									.toList
+								val parameters = tdlEndpoint.getConfig.asScala.map { tdlParameter =>
+									var dependsOn = Option(tdlParameter.getDependsOn)
+									var dependsOnValue = Option(tdlParameter.getDependsOnValue)
+									var allowedValues = Option(tdlParameter.getAllowedValues)
+									if (dependsOn.isDefined && dependsOn.get.trim.equals("")) {
+										dependsOn = None
+									}
+									if (dependsOn.isEmpty || (dependsOnValue.isDefined && dependsOnValue.get.trim.equals(""))) {
+										dependsOnValue = None
+									}
+									if (allowedValues.isDefined && allowedValues.get.trim.equals("")) {
+										allowedValues = None
+									}
+									Parameters(0L, tdlParameter.getName, Option(tdlParameter.getDesc), tdlParameter.getUse.value(), tdlParameter.getKind.value(), tdlParameter.isAdminOnly, tdlParameter.isNotForTests, tdlParameter.isHidden, allowedValues, 0, dependsOn, dependsOnValue, 0L)
+								}.toList
 								new Endpoint(Endpoints(0L, tdlEndpoint.getName, Option(tdlEndpoint.getDesc), 0L), parameters)
 							}.toList
 							var displayOrder: Option[Short] = None

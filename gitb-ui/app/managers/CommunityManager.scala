@@ -275,9 +275,46 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
     exec(createOrganisationParameterInternal(parameter).transactionally)
   }
 
-  def updateOrganisationParameterInternal(parameter: OrganisationParameters) = {
-    val q = for {p <- PersistenceSchema.organisationParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.inSelfRegistration, p.hidden)
-    q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.inSelfRegistration, parameter.hidden)
+  private def setOrganisationParameterPrerequisitesForKey(communityId: Long, key: String, newKey: Option[String]): DBIO[_] = {
+    if (newKey.isDefined) {
+      val q = for {p <- PersistenceSchema.organisationParameters.filter(_.community === communityId).filter(_.dependsOn === key)} yield p.dependsOn
+      q.update(newKey)
+    } else {
+      val q = for {p <- PersistenceSchema.organisationParameters.filter(_.community === communityId).filter(_.dependsOn === key)} yield (p.dependsOn, p.dependsOnValue)
+      q.update(None, None)
+    }
+  }
+
+  private def setSystemParameterPrerequisitesForKey(communityId: Long, key: String, newKey: Option[String]): DBIO[_] = {
+    if (newKey.isDefined) {
+      val q = for {p <- PersistenceSchema.systemParameters.filter(_.community === communityId).filter(_.dependsOn === key)} yield p.dependsOn
+      q.update(newKey)
+    } else {
+      val q = for {p <- PersistenceSchema.systemParameters.filter(_.community === communityId).filter(_.dependsOn === key)} yield (p.dependsOn, p.dependsOnValue)
+      q.update(None, None)
+    }
+  }
+
+  def updateOrganisationParameterInternal(parameter: OrganisationParameters): DBIO[_] = {
+    for {
+      existingParameter <- PersistenceSchema.organisationParameters.filter(_.id === parameter.id).map(x => (x.community, x.testKey, x.kind)).result.head
+      _ <- {
+        if (!existingParameter._2.equals(parameter.testKey)) {
+          // Update the dependsOn of other properties.
+          setOrganisationParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, Some(parameter.testKey))
+        } else if (existingParameter._3.equals("SIMPLE") && !existingParameter._3.equals(parameter.kind)) {
+          // Remove the dependsOn of other properties.
+          setOrganisationParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, None)
+        } else {
+          DBIO.successful(())
+        }
+      }
+      _ <- {
+        // Don't update display order here.
+        val q = for {p <- PersistenceSchema.organisationParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.inSelfRegistration, p.hidden, p.allowedValues, p.dependsOn, p.dependsOnValue)
+        q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.inSelfRegistration, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue)
+      }
+    } yield ()
   }
 
   def updateOrganisationParameter(parameter: OrganisationParameters) = {
@@ -288,15 +325,47 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
     exec(deleteOrganisationParameter(parameterId).transactionally)
   }
 
-  def deleteOrganisationParameter(parameterId: Long) = {
+  def deleteOrganisationParameter(parameterId: Long): DBIO[_] = {
     triggerManager.deleteTriggerDataByDataType(parameterId, TriggerDataType.OrganisationParameter) andThen
       PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterId).delete andThen
+      (for {
+        existingParameter <- PersistenceSchema.organisationParameters.filter(_.id === parameterId).map(x => (x.community, x.testKey, x.kind)).result.head
+        _ <- {
+          if (existingParameter._3.equals("SIMPLE")) {
+            setOrganisationParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, None)
+          } else {
+            DBIO.successful(())
+          }
+        }
+      } yield ()) andThen
       PersistenceSchema.organisationParameters.filter(_.id === parameterId).delete
   }
 
   def deleteOrganisationParametersByCommunity(communityId: Long) = {
     // The values are already deleted as part of the organisation deletes
     PersistenceSchema.organisationParameters.filter(_.community === communityId).delete
+  }
+
+  def orderOrganisationParameters(communityId: Long, orderedIds: List[Long]): Unit = {
+    val dbActions = ListBuffer[DBIO[_]]()
+    var counter = 0
+    orderedIds.foreach { id =>
+      counter += 1
+      val q = for { p <- PersistenceSchema.organisationParameters.filter(_.community === communityId).filter(_.id === id) } yield p.displayOrder
+      dbActions += q.update(counter.toShort)
+    }
+    exec(toDBIO(dbActions).transactionally)
+  }
+
+  def orderSystemParameters(communityId: Long, orderedIds: List[Long]): Unit = {
+    val dbActions = ListBuffer[DBIO[_]]()
+    var counter = 0
+    orderedIds.foreach { id =>
+      counter += 1
+      val q = for { p <- PersistenceSchema.systemParameters.filter(_.community === communityId).filter(_.id === id) } yield p.displayOrder
+      dbActions += q.update(counter.toShort)
+    }
+    exec(toDBIO(dbActions).transactionally)
   }
 
   def createSystemParameterInternal(parameter: SystemParameters) = {
@@ -307,9 +376,26 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
     exec(createSystemParameterInternal(parameter).transactionally)
   }
 
-  def updateSystemParameterInternal(parameter: SystemParameters) = {
-    val q = for {p <- PersistenceSchema.systemParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.hidden)
-    q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.hidden)
+  def updateSystemParameterInternal(parameter: SystemParameters): DBIO[_] = {
+    for {
+      existingParameter <- PersistenceSchema.systemParameters.filter(_.id === parameter.id).map(x => (x.community, x.testKey, x.kind)).result.head
+      _ <- {
+        if (!existingParameter._2.equals(parameter.testKey)) {
+          // Update the dependsOn of other properties.
+          setSystemParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, Some(parameter.testKey))
+        } else if (existingParameter._3.equals("SIMPLE") && !existingParameter._3.equals(parameter.kind)) {
+          // Remove the dependsOn of other properties.
+          setSystemParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, None)
+        } else {
+          DBIO.successful(())
+        }
+      }
+      _ <- {
+        // Don't update display order here.
+        val q = for {p <- PersistenceSchema.systemParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.hidden, p.allowedValues, p.dependsOn, p.dependsOnValue)
+        q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue)
+      }
+    } yield ()
   }
 
   def updateSystemParameter(parameter: SystemParameters) = {
@@ -320,9 +406,19 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
     exec(deleteSystemParameter(parameterId).transactionally)
   }
 
-  def deleteSystemParameter(parameterId: Long) = {
+  def deleteSystemParameter(parameterId: Long): DBIO[_] = {
     triggerManager.deleteTriggerDataByDataType(parameterId, TriggerDataType.SystemParameter) andThen
     PersistenceSchema.systemParameterValues.filter(_.parameter === parameterId).delete andThen
+      (for {
+        existingParameter <- PersistenceSchema.systemParameters.filter(_.id === parameterId).map(x => (x.community, x.testKey, x.kind)).result.head
+        _ <- {
+          if (existingParameter._3.equals("SIMPLE")) {
+            setSystemParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, None)
+          } else {
+            DBIO.successful(())
+          }
+        }
+      } yield ()) andThen
       PersistenceSchema.systemParameters.filter(_.id === parameterId).delete
   }
 
@@ -366,7 +462,7 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
   def getOrganisationParameters(communityId: Long): List[OrganisationParameters] = {
     exec(PersistenceSchema.organisationParameters
       .filter(_.community === communityId)
-      .sortBy(_.name.asc)
+      .sortBy(x => (x.displayOrder.asc, x.name.asc))
       .result).toList
   }
 
@@ -383,7 +479,7 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
     exec(PersistenceSchema.organisationParameters
       .filter(_.community === communityId)
       .filter(_.inSelfRegistration === true)
-      .sortBy(_.testKey.asc)
+      .sortBy(x => (x.displayOrder.asc, x.name.asc))
       .result).toList
   }
 
@@ -414,7 +510,7 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
   def getSystemParameters(communityId: Long): List[SystemParameters] = {
     exec(PersistenceSchema.systemParameters
       .filter(_.community === communityId)
-      .sortBy(_.name.asc)
+      .sortBy(x => (x.displayOrder.asc, x.name.asc))
       .result).toList
   }
 

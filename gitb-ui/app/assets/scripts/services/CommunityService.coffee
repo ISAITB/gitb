@@ -145,6 +145,9 @@ class CommunityService
       in_exports: parameter.inExports,
       in_selfreg: parameter.inSelfRegistration,
       hidden: parameter.hidden,
+      allowedValues: parameter.allowedValues,
+      dependsOn: parameter.dependsOn,
+      dependsOnValue: parameter.dependsOnValue,
       community_id: parameter.community
     }
     @RestService.post({
@@ -164,6 +167,9 @@ class CommunityService
       not_for_tests: parameter.notForTests,
       in_exports: parameter.inExports,
       hidden: parameter.hidden,
+      allowedValues: parameter.allowedValues,
+      dependsOn: parameter.dependsOn,
+      dependsOnValue: parameter.dependsOnValue,
       community_id: parameter.community
     }
     @RestService.post({
@@ -185,10 +191,33 @@ class CommunityService
       in_exports: parameter.inExports,
       in_selfreg: parameter.inSelfRegistration,
       hidden: parameter.hidden,
+      allowedValues: parameter.allowedValues,
+      dependsOn: parameter.dependsOn,
+      dependsOnValue: parameter.dependsOnValue,
       community_id: parameter.community
     }
     @RestService.post({
       path: jsRoutes.controllers.CommunityService.updateOrganisationParameter(parameter.id).url,
+      data: data,
+      authenticate: true
+    })
+
+  orderOrganisationParameters: (community, orderedIds) =>
+    data = {
+      ids: orderedIds.join ','
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.CommunityService.orderOrganisationParameters(community).url,
+      data: data,
+      authenticate: true
+    })
+
+  orderSystemParameters: (community, orderedIds) =>
+    data = {
+      ids: orderedIds.join ','
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.CommunityService.orderSystemParameters(community).url,
       data: data,
       authenticate: true
     })
@@ -205,6 +234,9 @@ class CommunityService
       not_for_tests: parameter.notForTests,
       in_exports: parameter.inExports,
       hidden: parameter.hidden,
+      allowedValues: parameter.allowedValues,
+      dependsOn: parameter.dependsOn,
+      dependsOnValue: parameter.dependsOnValue,
       community_id: parameter.community
     }
     @RestService.post({

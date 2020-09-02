@@ -11,7 +11,7 @@ class ParameterService
       path: jsRoutes.controllers.ParameterService.deleteParameter(parameterId).url
       authenticate: true
 
-  updateParameter: (parameterId, name, description, use, kind, adminOnly, notForTests, hidden, endpointId) ->
+  updateParameter: (parameterId, name, description, use, kind, adminOnly, notForTests, hidden, allowedValues, dependsOn, dependsOnValue, endpointId) ->
     @RestService.post({
       path: jsRoutes.controllers.ParameterService.updateParameter(parameterId).url,
       data: {
@@ -22,7 +22,19 @@ class ParameterService
         admin_only: adminOnly
         not_for_tests: notForTests
         hidden: hidden
+        allowedValues: allowedValues
+        dependsOn: dependsOn
+        dependsOnValue: dependsOnValue
         endpoint_id: endpointId
+      }
+      authenticate: true
+    })
+
+  orderParameters: (endpointId, orderedIds) ->
+    @RestService.post({
+      path: jsRoutes.controllers.ParameterService.orderParameters(endpointId).url,
+      data: {
+        ids: orderedIds.join ','
       }
       authenticate: true
     })

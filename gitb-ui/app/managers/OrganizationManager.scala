@@ -279,7 +279,7 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     exec(PersistenceSchema.organisationParameters
       .joinLeft(PersistenceSchema.organisationParameterValues).on((p, v) => p.id === v.parameter && v.organisation === orgId)
       .filter(_._1.community === communityId)
-      .sortBy(_._1.name.asc)
+      .sortBy(x => (x._1.displayOrder.asc, x._1.name.asc))
       .map(x => (x._1, x._2))
       .result
     ).toList.map(r => new OrganisationParametersWithValue(r._1, r._2))

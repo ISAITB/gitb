@@ -1,6 +1,6 @@
 <div class="modal-header">
-		<h4>{{modalTitle}}</h4>
-	</div>
+	<h4>{{modalTitle}}</h4>
+</div>
 	<form class="form-horizontal">
 		<div class="modal-body">
 			<div class="form-group">
@@ -57,6 +57,70 @@
 					<label class="checkbox-inline" ng-if="!parameter.adminOnly && !hideInRegistration">
 						<input type="checkbox" ng-model="parameter.inSelfRegistration">Requested in self-registration
 					</label>
+				</div>
+			</div>
+			<div class="form-group" ng-if="dependsOnTargets.length > 0">
+				<label class="col-xs-3 control-label" for="depends">Depends on:</label>
+				<div class="col-xs-3">
+					<select id="depends" class="form-control" ng-model="parameter.dependsOn" ng-change="dependsOnChanged()">
+						<option value=""></option>
+						<option ng-repeat="v in dependsOnTargets" ng-value="v.key">{{v.name}}</option>
+					</select>
+				</div>
+				<div class="col-xs-4 no-left-padding">
+					<div ng-if="parameter.dependsOn && parameter.dependsOn != ''">
+						<div ng-if="!dependsOnTargetsMap[parameter.dependsOn].hasPresetValues">
+							<input type="text" class="form-control" ng-model="parameter.dependsOnValue" placeholder="Property value"/>
+						</div>
+						<div ng-if="dependsOnTargetsMap[parameter.dependsOn].hasPresetValues">
+							<select ng-model="parameter.dependsOnValue" class="form-control">
+								<option ng-repeat="v in dependsOnTargetsMap[parameter.dependsOn].presetValues" ng-value="v.value">{{v.label}}</option>
+							</select>
+						</div>
+					</div>
+					<div ng-if="!(parameter.dependsOn && parameter.dependsOn != '')">
+						<input type="text" readonly="readonly" class="form-control" placeholder="Property value"/>
+					</div>
+				</div>
+				<div tb-tooltip="Define another simple property as a prerequisite. To do so select another property and define the value that is must have. If the prerequisite property's value does not match the provided value, then the current property is hidden and never considered as required."></div>
+			</div>
+			<div uib-collapse="parameter.kind != 'SIMPLE'">
+				<div class="form-group">
+					<label class="col-xs-3 control-label" for="hasPresetValues">Preset values:</label>
+					<div class="col-xs-8">
+						<input id="hasPresetValues" type="checkbox" class="form-check" ng-model="parameter.hasPresetValues">
+						<div tb-inline="true" tb-tooltip="Check this to define a set of allowed values for this property. The configured values will be displayed in the defined order as a single-selection dropdown list."></div>
+					</div>
+				</div>
+				<div class="form-group" uib-collapse="!parameter.hasPresetValues">
+					<div class="col-xs-8 col-xs-offset-3">
+						<div class="form-table" ng-show="parameter.presetValues.length > 0">
+							<table class="table">
+								<thead>
+									<th>* Value</th>
+									<th>* Label</th>
+									<th class="min-width"></th>
+									<th class="min-width"></th>
+								</thead>
+								<tbody>
+									<tr ng-repeat="presetValue in parameter.presetValues">
+										<td><input ng-attr-id="{{'presetValue-'+$index}}" class="form-control" type="text" ng-model="presetValue.value"/></td>
+										<td><input class="form-control" type="text" ng-model="presetValue.label"/></td>
+										<td class="btn-stacked-container">
+											<div class="btn-toolbar btn-stacked">
+												<button ng-if="!$first" class="btn btn-xs btn-default" type="button" ng-click="movePresetUp($index)"><i class="fa fa-chevron-up"></i></button>
+												<button ng-if="!$last" class="btn btn-xs btn-default" type="button" ng-click="movePresetDown($index)"><i class="fa fa-chevron-down"></i></button>
+											</div>
+										</td>
+										<td><button class="btn btn-default" type="button" ng-click="removePresetValue($index)"><i class="fa fa-times"></i></button></td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+					<div class="col-xs-8 col-xs-offset-3">
+						<button class="btn btn-default" type="button" ng-click="addPresetValue()"><i class="fa fa-plus"></i></button>					
+					</div>
 				</div>
 			</div>
 		</div>

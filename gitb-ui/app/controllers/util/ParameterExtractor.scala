@@ -164,13 +164,27 @@ object ParameterExtractor {
   def optionalLongBodyParameter(request:Request[AnyContent], parameter:String):Option[Long] = {
     try {
       val paramList = request.body.asFormUrlEncoded.get(parameter)
-      if(paramList.length > 0){
-        Some(paramList(0).toLong)
+      if(paramList.nonEmpty){
+        Some(paramList.head.toLong)
       } else{
         None
       }
     } catch {
-      case e:NoSuchElementException =>
+      case _:NoSuchElementException =>
+        None
+    }
+  }
+
+  def optionalShortBodyParameter(request:Request[AnyContent], parameter:String):Option[Short] = {
+    try {
+      val paramList = request.body.asFormUrlEncoded.get(parameter)
+      if(paramList.nonEmpty){
+        Some(paramList.head.toShort)
+      } else{
+        None
+      }
+    } catch {
+      case _:NoSuchElementException =>
         None
     }
   }
@@ -178,13 +192,13 @@ object ParameterExtractor {
   def optionalIntBodyParameter(request:Request[AnyContent], parameter:String):Option[Int] = {
     try {
       val paramList = request.body.asFormUrlEncoded.get(parameter)
-      if(paramList.length > 0){
-        Some(paramList(0).toInt)
+      if(paramList.nonEmpty){
+        Some(paramList.head.toInt)
       } else{
         None
       }
     } catch {
-      case e:NoSuchElementException =>
+      case _:NoSuchElementException =>
         None
     }
   }
@@ -431,10 +445,22 @@ object ParameterExtractor {
     val adminOnly = ParameterExtractor.requiredBodyParameter(request, Parameters.ADMIN_ONLY).toBoolean
     val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
     var hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
+    val allowedValues:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.ALLOWED_VALUES)
+    var dependsOn:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DEPENDS_ON)
+    var dependsOnValue:Option[String] = None
+    if (dependsOn.isDefined && dependsOn.get.trim.length == 0) {
+      dependsOn = None
+    }
+    if (dependsOn.isDefined) {
+      dependsOnValue = ParameterExtractor.optionalBodyParameter(request, Parameters.DEPENDS_ON_VALUE)
+    }
+    if (dependsOnValue.isDefined && dependsOnValue.get.trim.length == 0) {
+      dependsOnValue = None
+    }
     if (!adminOnly) {
       hidden = false
     }
-    models.Parameters(id, name, desc, use, kind, adminOnly, notForTests, hidden, endpointId)
+    models.Parameters(id, name, desc, use, kind, adminOnly, notForTests, hidden, allowedValues, 0, dependsOn, dependsOnValue, endpointId)
   }
 
   def extractOrganisationParameter(request:Request[AnyContent]):models.OrganisationParameters = {
@@ -453,10 +479,22 @@ object ParameterExtractor {
     val inExports:Boolean = (kind == "SIMPLE") && ParameterExtractor.requiredBodyParameter(request, Parameters.IN_EXPORTS).toBoolean
     val inSelfRegistration: Boolean = Configurations.REGISTRATION_ENABLED && (!adminOnly) && ParameterExtractor.requiredBodyParameter(request, Parameters.IN_SELFREG).toBoolean
     var hidden: Boolean = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
+    val allowedValues:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.ALLOWED_VALUES)
+    var dependsOn:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DEPENDS_ON)
+    var dependsOnValue:Option[String] = None
+    if (dependsOn.isDefined && dependsOn.get.trim.length == 0) {
+      dependsOn = None
+    }
+    if (dependsOn.isDefined) {
+      dependsOnValue = ParameterExtractor.optionalBodyParameter(request, Parameters.DEPENDS_ON_VALUE)
+    }
+    if (dependsOnValue.isDefined && dependsOnValue.get.trim.length == 0) {
+      dependsOnValue = None
+    }
     if (!adminOnly) {
       hidden = false
     }
-    models.OrganisationParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, hidden, communityId)
+    models.OrganisationParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, hidden, allowedValues, 0, dependsOn, dependsOnValue, communityId)
   }
 
   def extractSystemParameter(request:Request[AnyContent]):models.SystemParameters = {
@@ -474,10 +512,22 @@ object ParameterExtractor {
     val notForTests = ParameterExtractor.requiredBodyParameter(request, Parameters.NOT_FOR_TESTS).toBoolean
     val inExports = (kind == "SIMPLE") && ParameterExtractor.requiredBodyParameter(request, Parameters.IN_EXPORTS).toBoolean
     var hidden = ParameterExtractor.requiredBodyParameter(request, Parameters.HIDDEN).toBoolean
+    val allowedValues:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.ALLOWED_VALUES)
+    var dependsOn:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DEPENDS_ON)
+    var dependsOnValue:Option[String] = None
+    if (dependsOn.isDefined && dependsOn.get.trim.length == 0) {
+      dependsOn = None
+    }
+    if (dependsOn.isDefined) {
+      dependsOnValue = ParameterExtractor.optionalBodyParameter(request, Parameters.DEPENDS_ON_VALUE)
+    }
+    if (dependsOnValue.isDefined && dependsOnValue.get.trim.length == 0) {
+      dependsOnValue = None
+    }
     if (!adminOnly) {
       hidden = false
     }
-    models.SystemParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, hidden, communityId)
+    models.SystemParameters(id, name, testKey, desc, use, kind, adminOnly, notForTests, inExports, hidden, allowedValues, 0, dependsOn, dependsOnValue, communityId)
   }
 
   def extractLandingPageInfo(request:Request[AnyContent]):LandingPages = {
@@ -550,6 +600,15 @@ object ParameterExtractor {
 		}
 		ids
 	}
+
+  def extractLongIdsBodyParameter(request:Request[AnyContent]): Option[List[Long]] = {
+    val idsStr = ParameterExtractor.optionalBodyParameter(request, Parameters.IDS)
+    val ids = idsStr match {
+      case Some(str) => Some(str.split(",").map(_.toLong).toList)
+      case None => None
+    }
+    ids
+  }
 
   def optionalListQueryParameter(request:Request[AnyContent],parameter:String): Option[List[String]] = {
     val listStr = ParameterExtractor.optionalQueryParameter(request, parameter)

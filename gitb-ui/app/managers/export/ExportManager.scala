@@ -87,6 +87,7 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
       .join(PersistenceSchema.actors).on(_._2.actor === _.id)
       .filter(_._2.domain === domainId)
       .map(x => x._1._1)
+      .sortBy(x=> (x.endpoint.asc, x.displayOrder.asc, x.name.asc))
       .result
     ).foreach { x =>
       var parameters = endpointParameterMap.get(x.endpoint)
@@ -428,6 +429,10 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
                       exportedParameter.setInTests(!parameter.notForTests)
                       exportedParameter.setRequired(parameter.kind.equals("R"))
                       exportedParameter.setHidden(parameter.hidden)
+                      exportedParameter.setAllowedValues(parameter.allowedValues.orNull)
+                      exportedParameter.setDisplayOrder(parameter.displayOrder)
+                      exportedParameter.setDependsOn(parameter.dependsOn.orNull)
+                      exportedParameter.setDependsOnValue(parameter.dependsOnValue.orNull)
                       exportedEndpointParameterMap += (parameter.id -> exportedParameter)
                       exportedEndpoint.getParameters.getParameter.add(exportedParameter)
                     }
@@ -668,6 +673,10 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
           exportedProperty.setInTests(!property.notForTests)
           exportedProperty.setInSelfRegistration(property.inSelfRegistration)
           exportedProperty.setHidden(property.hidden)
+          exportedProperty.setAllowedValues(property.allowedValues.orNull)
+          exportedProperty.setDisplayOrder(property.displayOrder)
+          exportedProperty.setDependsOn(property.dependsOn.orNull)
+          exportedProperty.setDependsOnValue(property.dependsOnValue.orNull)
           communityData.getOrganisationProperties.getProperty.add(exportedProperty)
           exportedOrganisationPropertyMap += (property.id -> exportedProperty)
         }
@@ -688,6 +697,10 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
           exportedProperty.setInExports(property.inExports)
           exportedProperty.setInTests(!property.notForTests)
           exportedProperty.setHidden(property.hidden)
+          exportedProperty.setAllowedValues(property.allowedValues.orNull)
+          exportedProperty.setDisplayOrder(property.displayOrder)
+          exportedProperty.setDependsOn(property.dependsOn.orNull)
+          exportedProperty.setDependsOnValue(property.dependsOnValue.orNull)
           communityData.getSystemProperties.getProperty.add(exportedProperty)
           exportedSystemPropertyMap += (property.id -> exportedProperty)
         }

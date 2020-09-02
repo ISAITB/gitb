@@ -459,3 +459,50 @@ div.import-item-root {
 	border-radius: 5px;
 	text-align: center;
 }
+
+.form-table {
+	border: 1px solid @gray-dark-1;	
+	border-radius: 5px;
+	margin-bottom: 10px;
+	table.table {
+		margin-bottom: 0px;
+	}
+}
+
+th.min-width {
+	width: 1px !important;
+}
+table > tbody > tr > td.btn-stacked-container {
+	vertical-align: middle;
+	width: 1px;
+}
+.btn-stacked {
+	.btn-xs {
+		width: 40px;
+		font-size: 9px;
+	}
+}
+.centered {
+	text-align: center;
+}
+table.table {
+	&.thick {
+		tbody > tr {
+			td.centered > div {
+				justify-content: center;
+			}
+			td.btn-stacked-container > div {
+				display: grid;
+				display: -ms-grid;
+			}
+			td > div {
+				display: flex;
+				min-height: 34px;
+				span {
+					display: inline-flex;
+					align-items: center;
+				}
+			}
+		}
+	}
+}

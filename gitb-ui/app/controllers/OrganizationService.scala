@@ -5,6 +5,7 @@ import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, Respo
 import exceptions.ErrorCodes
 import javax.inject.Inject
 import managers.{AuthorizationManager, OrganizationManager, UserManager}
+import models.prerequisites.PrerequisiteUtil
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc.{AbstractController, ControllerComponents, Result}
 import utils.JsonUtil
@@ -138,8 +139,8 @@ class OrganizationService @Inject() (authorizedAction: AuthorizedAction, cc: Con
 
   def checkOrganisationParameterValues(orgId: Long) = authorizedAction { request =>
     authorizationManager.canViewOrganisation(request, orgId)
-    val values = organizationManager.getOrganisationParameterValues(orgId)
-    val json: String = JsonUtil.jsOrganisationParametersWithValues(values, includeValues = false).toString
+    val valuesWithValidPrerequisites = PrerequisiteUtil.withValidPrerequisites(organizationManager.getOrganisationParameterValues(orgId))
+    val json: String = JsonUtil.jsOrganisationParametersWithValues(valuesWithValidPrerequisites, includeValues = false).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 

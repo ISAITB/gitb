@@ -6,6 +6,7 @@ import com.gitb.core.{ActorConfiguration, Configuration}
 import javax.inject.{Inject, Singleton}
 import models.Enums.TestResultStatus
 import models._
+import models.prerequisites.PrerequisiteUtil
 import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
@@ -424,7 +425,7 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 		}
 		exec(q.sortBy(_.name.asc).result).map { caseObject =>
 			val actor = exec(PersistenceSchema.actors.filter(_.id === caseObject.actor).result.head)
-			val parameters = exec(PersistenceSchema.parameters.filter(_.endpoint === caseObject.id).result.map(_.toList))
+			val parameters = exec(PersistenceSchema.parameters.filter(_.endpoint === caseObject.id).sortBy(x => (x.displayOrder.asc, x.name.asc)).result.map(_.toList))
 			endpoints += new Endpoint(caseObject, actor, parameters)
 		}
 		endpoints.toList
@@ -435,13 +436,13 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 			case Some(ids) => PersistenceSchema.parameters.filter(_.id inSet ids)
 			case None => PersistenceSchema.parameters
 		}
-		exec(q.sortBy(_.name.asc).result.map(_.toList))
+		exec(q.sortBy(x => (x.displayOrder.asc, x.name.asc)).result.map(_.toList))
 	}
 
 	def getEndpointParameters(endpointId: Long): List[models.Parameters] = {
 		exec(
 			PersistenceSchema.parameters.filter(_.endpoint === endpointId)
-			  .sortBy(_.name.asc)
+			  .sortBy(x => (x.displayOrder.asc, x.name.asc))
 				.result
   			.map(_.toList)
 		)
@@ -716,7 +717,7 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 
 	def getSystemConfigurationParameters(systemId: Long, actorId: Long): List[ActorConfiguration] = {
 		val actor = actorManager.getById(actorId).get
-		val parameterData = exec(PersistenceSchema.configs
+		var parameterData = exec(PersistenceSchema.configs
   		.join(PersistenceSchema.parameters).on(_.parameter === _.id)
 			.join(PersistenceSchema.endpoints).on(_._2.endpoint === _.id)
   		.filter(_._1._1.system === systemId)
@@ -725,21 +726,26 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
   		.map(x => (
 				x._2.name, // Endpoint name
 				x._1._2.name, // Parameter name
-				x._1._1.value // Parameter value
-			)).result).toList
+				x._1._1.value, // Parameter value
+				x._1._2.dependsOn, // DependsOn
+				x._1._2.dependsOnValue // DependsOnValue
+			)).result).map(x => new SystemConfigurationParameterMinimal(x._1, x._2, Some(x._3), x._4, x._5))
+
+		// Keep only the values that have valid prerequisites defined.
+		parameterData = PrerequisiteUtil.withValidPrerequisites(parameterData)
 
 		val actorMap = new util.HashMap[String, ActorConfiguration]()
 		parameterData.foreach{ p =>
-			var actorConfig = actorMap.get(p._1)
+			var actorConfig = actorMap.get(p.endpointName)
 			if (actorConfig == null) {
 				actorConfig = new ActorConfiguration()
 				actorConfig.setActor(actor.actorId)
-				actorConfig.setEndpoint(p._1)
-				actorMap.put(p._1, actorConfig)
+				actorConfig.setEndpoint(p.endpointName)
+				actorMap.put(p.endpointName, actorConfig)
 			}
 			val config = new Configuration()
-			config.setName(p._2)
-			config.setValue(p._3)
+			config.setName(p.parameterName)
+			config.setValue(p.parameterValue.get)
 			actorConfig.getConfig.add(config)
 		}
 		import scala.collection.JavaConverters._

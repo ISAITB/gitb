@@ -13,6 +13,7 @@ import managers._
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import models.Enums.{LabelType, TestSuiteReplacementChoice, TestSuiteReplacementChoiceHistory, TestSuiteReplacementChoiceMetadata, UserRole}
 import models._
+import models.prerequisites.PrerequisiteUtil
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.RandomStringUtils
@@ -183,7 +184,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
     authorizationManager.canCreateParameter(request, parameter.endpoint)
     if (parameterManager.checkParameterExistsForEndpoint(parameter.name, parameter.endpoint, None)) {
       ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the "+communityLabelManager.getLabel(request, LabelType.Endpoint, true, true)+".")
-    } else{
+    } else {
       parameterManager.createParameterWrapper(parameter)
       ResponseConstructor.constructEmptyResponse
     }
@@ -574,7 +575,13 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
     val system = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
     authorizationManager.canViewEndpointConfigurationsForSystem(request, system)
     val actor = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
-    val status = conformanceManager.getSystemConfigurationStatus(system, actor)
+    val status = conformanceManager.getSystemConfigurationStatus(system, actor).map { configStatus =>
+      if (configStatus.endpointParameters.isDefined) {
+        // Filter out values with missing prerequisites.
+        configStatus.endpointParameters = Some(PrerequisiteUtil.withValidPrerequisites(configStatus.endpointParameters.get))
+      }
+      configStatus
+    }
     val json = JsonUtil.jsSystemConfigurationEndpoints(status, addValues = false, isAdmin = false) // The isAdmin flag only affects whether or a hidden value will be added (i.e. not applicable is addValues is false)
     ResponseConstructor.constructJsonResponse(json.toString)
   }

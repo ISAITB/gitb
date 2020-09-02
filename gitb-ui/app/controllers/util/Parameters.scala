@@ -136,6 +136,7 @@ object Parameters {
   val CONFIG     = "config"
   val INPUTS     = "inputs"
   val VALUES     = "values"
+  val ALLOWED_VALUES     = "allowedValues"
   val PROPERTIES = "properties"
   val TEST_STEP  = "teststep"
   val SETTINGS   = "settings"
@@ -147,6 +148,8 @@ object Parameters {
   val IN_EXPORTS  = "in_exports"
   val IN_SELFREG  = "in_selfreg"
   val HIDDEN = "hidden"
+  val DEPENDS_ON = "dependsOn"
+  val DEPENDS_ON_VALUE = "dependsOnValue"
 
   val FILE       = "file"
 	val LIMIT      = "limit"

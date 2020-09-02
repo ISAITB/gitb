@@ -10,7 +10,7 @@ import models.Enums.{SelfRegistrationRestriction, SelfRegistrationType}
 import models.{ActualUserInfo, Communities, Organizations, Users}
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.mvc.{AbstractController, ControllerComponents, Result}
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, Result}
 import utils.{EmailUtil, HtmlUtil, JsonUtil}
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
@@ -219,10 +219,24 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: Contro
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def createOrganisationParameter() = authorizedAction { request =>
+  def orderOrganisationParameters(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageCommunity(request, communityId)
+    val orderedIds = ParameterExtractor.extractLongIdsBodyParameter(request)
+    communityManager.orderOrganisationParameters(communityId, orderedIds.getOrElse(List[Long]()))
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def orderSystemParameters(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageCommunity(request, communityId)
+    val orderedIds = ParameterExtractor.extractLongIdsBodyParameter(request)
+    communityManager.orderSystemParameters(communityId, orderedIds.getOrElse(List[Long]()))
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def createOrganisationParameter(): Action[AnyContent] = authorizedAction { request =>
     val parameter = ParameterExtractor.extractOrganisationParameter(request)
     authorizationManager.canManageCommunity(request, parameter.community)
-    if (communityManager.checkOrganisationParameterExists(parameter, false)) {
+    if (communityManager.checkOrganisationParameterExists(parameter, isUpdate = false)) {
       ResponseConstructor.constructBadRequestResponse(ErrorCodes.NAME_EXISTS, "The name and key of the property must be unique.")
     } else {
       val id = communityManager.createOrganisationParameter(parameter)

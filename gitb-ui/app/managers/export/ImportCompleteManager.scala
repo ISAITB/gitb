@@ -334,14 +334,24 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
   }
 
   private def toModelOrganisationParameter(data: com.gitb.xml.export.OrganisationProperty, communityId: Long, modelId: Option[Long]): models.OrganisationParameters = {
+    var displayOrder: Short = 0
+    if (data.getDisplayOrder != null) {
+      displayOrder = data.getDisplayOrder.toShort
+    }
     models.OrganisationParameters(modelId.getOrElse(0L), data.getLabel, data.getName, Option(data.getDescription), requiredToUse(data.isRequired),
-      propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isInExports, data.isInSelfRegistration, data.isHidden, communityId
+      propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isInExports, data.isInSelfRegistration, data.isHidden, Option(data.getAllowedValues),
+      displayOrder, Option(data.getDependsOn), Option(data.getDependsOnValue), communityId
     )
   }
 
   private def toModelSystemParameter(data: com.gitb.xml.export.SystemProperty, communityId: Long, modelId: Option[Long]): models.SystemParameters = {
+    var displayOrder: Short = 0
+    if (data.getDisplayOrder != null) {
+      displayOrder = data.getDisplayOrder.toShort
+    }
     models.SystemParameters(modelId.getOrElse(0L), data.getLabel, data.getName, Option(data.getDescription), requiredToUse(data.isRequired),
-      propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isInExports, data.isHidden, communityId
+      propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isInExports, data.isHidden, Option(data.getAllowedValues),
+      displayOrder, Option(data.getDependsOn), Option(data.getDependsOnValue), communityId
     )
   }
 
@@ -826,15 +836,21 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
               collectionAsScalaIterable(exportedSpecification.getActors.getActor).foreach { exportedActor =>
                 if (exportedActor.getEndpoints != null) {
                   collectionAsScalaIterable(exportedActor.getEndpoints.getEndpoint).foreach { exportedEndpoint =>
+                    var defaultDisplayOrder = 0
                     if (exportedEndpoint.getParameters != null) {
                       collectionAsScalaIterable(exportedEndpoint.getParameters.getParameter).foreach { exportedParameter =>
+                        defaultDisplayOrder = defaultDisplayOrder + 1
+                        var displayOrderToUse = defaultDisplayOrder
+                        if (exportedParameter.getDisplayOrder != null) {
+                          displayOrderToUse = exportedParameter.getDisplayOrder.toShort
+                        }
                         dbActions += processFromArchive(ImportItemType.EndpointParameter, exportedParameter, exportedParameter.getId, ctx,
                           ImportCallbacks.set(
                             (data: com.gitb.xml.export.EndpointParameter, item: ImportItem) => {
-                              parameterManager.createParameter(models.Parameters(0L, data.getName, Option(data.getDescription), requiredToUse(data.isRequired), propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isHidden, item.parentItem.get.targetKey.get.toLong))
+                              parameterManager.createParameter(models.Parameters(0L, data.getName, Option(data.getDescription), requiredToUse(data.isRequired), propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isHidden, Option(data.getAllowedValues), displayOrderToUse.toShort, Option(data.getDependsOn), Option(data.getDependsOnValue), item.parentItem.get.targetKey.get.toLong))
                             },
                             (data: com.gitb.xml.export.EndpointParameter, targetKey: String, item: ImportItem) => {
-                              parameterManager.updateParameter(targetKey.toLong, data.getName, Option(data.getDescription), requiredToUse(data.isRequired), propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isHidden)
+                              parameterManager.updateParameter(targetKey.toLong, data.getName, Option(data.getDescription), requiredToUse(data.isRequired), propertyTypeToKind(data.getType), !data.isEditable, !data.isInTests, data.isHidden, Option(data.getAllowedValues), Option(data.getDependsOn), Option(data.getDependsOnValue))
                             }
                           )
                         )

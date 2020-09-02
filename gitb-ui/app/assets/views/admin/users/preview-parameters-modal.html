@@ -1,0 +1,51 @@
+<div class="modal-header">
+	<h4>{{controller.modalTitle}}</h4>
+</div>
+<form class="form-horizontal">
+	<div class="modal-body">
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="bg-info div-rounded div-padded bottom-margin">
+                    <span>The defined properties generate a form that differs depending on the connected user. Use the preview mode below to ensure this form matches your expectations for each case.</span>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-10 col-xs-offset-1">
+                <div class="form-group">
+                    <label class="col-xs-3 control-label" for="mode">Preview mode:</label>
+                    <div class="col-xs-8">
+                        <select class="form-control" id="mode" ng-model="controller.mode">
+                            <option value="user">{{controller.DataService.labelOrganisation()}} user</option>
+                            <option value="registration" ng-if="controller.hasRegistrationCase">Self-registration screen</option>
+                            <option value="admin">Community administrator</option>
+                        </select>
+                    </div>
+                    <div tb-tooltip="The mode to consider to generate the preview."></div>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col-xs-12">
+                <div class="form-separator">
+                    <h4 class="title">Property form</h4>
+                </div>
+            </div>
+        </div>
+        <div ng-show="controller.mode == 'user'" tb-custom-properties-form tb-properties="controller.parameters" tb-show-form-header="false" tb-admin="false"></div>
+        <div ng-show="controller.mode == 'admin'" tb-custom-properties-form tb-properties="controller.parameters" tb-show-form-header="false" tb-admin="true"></div>
+        <div ng-if="controller.hasRegistrationCase" ng-show="controller.mode == 'registration'" tb-custom-properties-form tb-properties="controller.parametersForRegistration" tb-show-form-header="false" tb-admin="false"></div>
+        <div ng-if="!controller.hasVisibleProperties()">
+            <div class="row">
+                <div class="col-xs-12">
+                    <div class="bg-info div-rounded div-padded bottom-margin">
+                        <span>The form resulting from the defined properties and selected preview mode is empty.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+	</div>
+	<div class="modal-footer">
+        <button class="btn btn-default" type="button" ng-click="controller.close()">Close</button>
+	</div>
+</form>

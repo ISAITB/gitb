@@ -226,104 +226,106 @@
       tbFormPadded: '<?'
       tbShowFormHeader: '<?'
       tbShowRequiredAsterisks: '<?'
-    template: ''+
-      '<div ng-if="hasVisibleProperties()">'+
-        '<div class="row" ng-if="tbShowFormHeader">'+
-          '<div class="col-xs-12">'+
-            '<div ng-class="{\'form-separator\': !tbPopup, \'form-separator-popup\': tbPopup}">'+
-              '<h4 class="title">Additional properties <span uib-tooltip="Properties specific to the community. Required properties will need to be completed before executing tests."><i class="fa fa-question-circle"></i></span></h4>'+
-            '</div>'+
-          '</div>'+
-        '</div>'+
-        '<div ng-class="{\'row\': tbFormPadded}">'+
-          '<div ng-class="innerDivStyle">'+
-            '<form class="form-horizontal">'+
-              '<div ng-repeat="property in tbProperties">'+
-                '<div ng-if="isAdmin || !property.hidden" class="form-group">'+
-                  '<label ng-class="\'col-xs-\'+tbColLabel" class="control-label" ng-attr-for="{{\'prop-\'+property.id}}"><span ng-if="property.use == \'R\' && tbShowRequiredAsterisks">* </span>{{property.name}}:</label>'+
-                  '<div ng-class="\'col-xs-\'+(11-tbColLabel-tbColInputLess)" ng-if="property.kind == \'SIMPLE\'">'+
-                    '<p ng-if="isReadonly" class="form-control-static">{{property.value}}<span ng-if="property.desc" ng-style="{\'margin-left\':(property.value?\'20px\':\'0px\')}" uib-tooltip="{{property.desc}}"><i class="fa fa-question-circle"></i></span></p>'+
-                    '<input ng-if="!isReadonly" ng-attr-id="{{\'prop-\'+property.id}}" ng-model="property.value" ng-readonly="property.adminOnly && !isAdmin" class="form-control" type="text"/>'+
-                  '</div>'+
-                  '<div ng-if="property.kind == \'SECRET\'">'+
-                    '<div ng-class="\'col-xs-\'+(9-tbColLabel-tbColInputLess)">'+
-                      '<p ng-if="isReadonly" class="form-control-static">{{property.value}}<span ng-if="property.desc" ng-style="{\'margin-left\':(property.value?\'20px\':\'0px\')}" uib-tooltip="{{property.desc}}"><i class="fa fa-question-circle"></i></span></p>'+
-                      '<input ng-if="!isReadonly" ng-attr-id="{{\'prop-\'+property.id}}" ng-model="property.value" ng-readonly="!property.changeValue" class="form-control" ng-attr-type="{{property.showValue?\'text\':\'password\'}}"/>'+
-                      '<div class="checkbox" ng-if="property.changeValue" ng-disabled="property.adminOnly && !isAdmin">'+
-                        '<label>'+
-                          '<input type="checkbox" ng-model="property.showValue">Show'+
-                        '</label>'+
-                      '</div>'+
-                    '</div>'+
-                    '<div class="col-xs-2" ng-if="!isReadonly">'+
-                      '<span ng-if="property.adminOnly && !isAdmin">&nbsp;</span>'+
-                      '<label class="checkbox-inline" ng-if="!property.adminOnly || isAdmin">'+
-                        '<input type="checkbox" ng-model="property.changeValue" ng-change="editSecret(property)">Update'+
-                      '</label>'+
-                    '</div>'+
-                  '</div>'+
-                  '<div ng-class="\'col-xs-\'+(11-tbColLabel-tbColInputLess)" ng-if="property.kind == \'BINARY\'">'+
-                    '<div ng-if="isReadonly">'+
-                      '<p class="form-control-static"><a ng-if="property.value" href="" ng-click="downloadProperty(property)" style="padding-right:10px;">{{fileName(property)}}</a><span ng-if="isReadonly && property.desc" ng-style="{\'margin-left\':(property.value?\'20px\':\'0px\')}" uib-tooltip="{{property.desc}}"><i class="fa fa-question-circle"></i></span></p>'+
-                    '</div>'+
-                    '<div ng-if="!isReadonly">'+
-                      '<span ng-if="!property.value && property.adminOnly && !isAdmin" class="form-control-static">&nbsp;</span>'+
-                      '<p ng-if="property.value && property.adminOnly && !isAdmin" class="form-control-static"><a href="" ng-click="downloadProperty(property)" style="padding-right:10px;">{{fileName(property)}}</a></p>'+
-                      '<span ng-if="property.value && (!property.adminOnly || isAdmin)" class="form-control-static"><a href="" ng-click="downloadProperty(property)" style="padding-right:10px;">{{fileName(property)}}</a></span>'+
-                      '<button type="button" class="btn btn-default" ng-if="!property.adminOnly || isAdmin" ng-file-select="onFileSelect(property, $files)">Upload</button>'+
-                      '<button type="button" class="btn btn-default" ng-if="property.value && (!property.adminOnly || isAdmin)" style="margin-left:5px" ng-click="removeFile(property)">Remove</button>'+
-                    '</div>'+
-                  '</div>'+
-                  '<div class="form-control-static" ng-if="!isReadonly && property.desc"><span uib-tooltip="{{property.desc}}"><i class="fa fa-question-circle"></i></span></div>'+
-                '</div>'+
-              '</div>'+
-            '</form>'+
-          '</div>'+
-        '</div>'+
-      '</div>'
+      tbAdmin: '<?'
+    template: '
+      <div ng-if="hasVisibleProperties()">
+        <div class="row" ng-if="tbShowFormHeader">
+          <div class="col-xs-12">
+            <div ng-class="{\'form-separator\': !tbPopup, \'form-separator-popup\': tbPopup}">
+              <h4 class="title">Additional properties <span uib-tooltip="Properties specific to the community. Required properties will need to be completed before executing tests."><i class="fa fa-question-circle"></i></span></h4>
+            </div>
+          </div>
+        </div>
+        <div ng-class="{\'row\': tbFormPadded}">
+          <div ng-class="innerDivStyle">
+            <form class="form-horizontal">
+              <div ng-repeat="property in tbProperties">
+                <div ng-if="(isAdmin || !property.hidden) && property.prerequisiteOk" class="form-group">
+                  <label ng-class="\'col-xs-\'+tbColLabel" class="control-label" ng-attr-for="{{\'prop-\'+property.id}}"><span ng-if="property.use == \'R\' && tbShowRequiredAsterisks">* </span>{{property.name}}:</label>
+                  <div ng-class="\'col-xs-\'+(11-tbColLabel-tbColInputLess)" ng-if="property.kind == \'SIMPLE\'">
+                    <div ng-if="property.hasPresetValues">
+                      <p ng-if="isReadonly" class="form-control-static">{{presetValueLabel(property)}}<span ng-if="property.desc" ng-style="{\'margin-left\':(property.value?\'20px\':\'0px\')}" uib-tooltip="{{property.desc}}"><i class="fa fa-question-circle"></i></span></p>
+                      <select ng-if="!isReadonly" ng-change="checkPrerequisites(property)" ng-attr-id="{{\'prop-\'+property.id}}" ng-model="property.value" ng-readonly="property.adminOnly && !isAdmin" class="form-control">
+                        <option ng-if="property.use == \'O\'" value=""></option>
+                        <option ng-repeat="v in property.presetValues" ng-value="v.value">{{v.label}}</option>
+                      </select>
+                    </div>
+                    <div ng-if="!property.hasPresetValues">
+                      <p ng-if="isReadonly" class="form-control-static">{{property.value}}<span ng-if="property.desc" ng-style="{\'margin-left\':(property.value?\'20px\':\'0px\')}" uib-tooltip="{{property.desc}}"><i class="fa fa-question-circle"></i></span></p>
+                      <input ng-if="!isReadonly" ng-change="checkPrerequisites(property)" ng-attr-id="{{\'prop-\'+property.id}}" ng-model="property.value" ng-readonly="property.adminOnly && !isAdmin" class="form-control" type="text"/>
+                    </div>
+                  </div>
+                  <div ng-if="property.kind == \'SECRET\'">
+                    <div ng-class="\'col-xs-\'+(9-tbColLabel-tbColInputLess)">
+                      <p ng-if="isReadonly" class="form-control-static">{{property.value}}<span ng-if="property.desc" ng-style="{\'margin-left\':(property.value?\'20px\':\'0px\')}" uib-tooltip="{{property.desc}}"><i class="fa fa-question-circle"></i></span></p>
+                      <input ng-if="!isReadonly" ng-change="checkPrerequisites(property)" ng-attr-id="{{\'prop-\'+property.id}}" ng-model="property.value" ng-readonly="!property.changeValue" class="form-control" ng-attr-type="{{property.showValue?\'text\':\'password\'}}"/>
+                      <div class="checkbox" ng-if="property.changeValue" ng-disabled="property.adminOnly && !isAdmin">
+                        <label>
+                          <input type="checkbox" ng-model="property.showValue">Show
+                        </label>
+                      </div>
+                    </div>
+                    <div class="col-xs-2" ng-if="!isReadonly">
+                      <span ng-if="property.adminOnly && !isAdmin">&nbsp;</span>
+                      <label class="checkbox-inline" ng-if="!property.adminOnly || isAdmin">
+                        <input type="checkbox" ng-model="property.changeValue" ng-change="editSecret(property)">Update
+                      </label>
+                    </div>
+                  </div>
+                  <div ng-class="\'col-xs-\'+(11-tbColLabel-tbColInputLess)" ng-if="property.kind == \'BINARY\'">
+                    <div ng-if="isReadonly">
+                      <p class="form-control-static"><a ng-if="property.value" href="" ng-click="downloadProperty(property)" style="padding-right:10px;">{{fileName(property)}}</a><span ng-if="isReadonly && property.desc" ng-style="{\'margin-left\':(property.value?\'20px\':\'0px\')}" uib-tooltip="{{property.desc}}"><i class="fa fa-question-circle"></i></span></p>
+                    </div>
+                    <div ng-if="!isReadonly">
+                      <span ng-if="!property.value && property.adminOnly && !isAdmin" class="form-control-static">&nbsp;</span>
+                      <p ng-if="property.value && property.adminOnly && !isAdmin" class="form-control-static"><a href="" ng-click="downloadProperty(property)" style="padding-right:10px;">{{fileName(property)}}</a></p>
+                      <span ng-if="property.value && (!property.adminOnly || isAdmin)" class="form-control-static"><a href="" ng-click="downloadProperty(property)" style="padding-right:10px;">{{fileName(property)}}</a></span>
+                      <button type="button" class="btn btn-default" ng-if="!property.adminOnly || isAdmin" ng-file-select="onFileSelect(property, $files)">Upload</button>
+                      <button type="button" class="btn btn-default" ng-if="property.value && (!property.adminOnly || isAdmin)" style="margin-left:5px" ng-click="removeFile(property)">Remove</button>
+                    </div>
+                  </div>
+                  <div class="form-control-static" ng-if="!isReadonly && property.desc"><span uib-tooltip="{{property.desc}}"><i class="fa fa-question-circle"></i></span></div>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>'
     restrict: 'A'
     link: (scope, element, attrs) =>
-      if scope.tbPopup == undefined
-        scope.tbPopup = false
-      if scope.tbReadonly == undefined
-        scope.tbReadonly = false
-      if scope.tbShowRequiredAsterisks == undefined
-        scope.tbShowRequiredAsterisks = true
-      if scope.tbFormPadded == undefined
-        scope.tbFormPadded = true
-      if scope.tbShowFormHeader == undefined
-        scope.tbShowFormHeader = true
-      if scope.tbColOffset == undefined
-        scope.tbColOffset = 1
-      else
-        scope.tbColOffset = Number(scope.tbColOffset)
-      if scope.tbColLabel == undefined
-        scope.tbColLabel = 3
-      else
-        scope.tbColLabel = Number(scope.tbColLabel)
-      if scope.tbColInputLess == undefined
-        scope.tbColInputLess = 0
-      else
-        scope.tbColInputLess = Number(scope.tbColInputLess)
-      scope.isAdmin = @DataService.isSystemAdmin || @DataService.isCommunityAdmin
-      scope.isReadonly = @DataService.isVendorUser || scope.tbReadonly
-      if scope.tbFormPadded
-        scope.innerDivStyle = 'col-xs-'+(11-scope.tbColOffset)+' col-xs-offset-'+scope.tbColOffset
-      else
-        scope.innerDivStyle = ''
-      if scope.tbProperties?
-        for property in scope.tbProperties
-          if property.kind == 'SECRET' && property.configured
-            property.value = '*****'
+
+      # Functions
+
+      scope.checkPrerequisite = (property) =>
+        if !property.checkedPrerequisites?
+          if property.dependsOn?
+            property.prerequisiteOk = scope.checkPrerequisite(scope.propertyMap[property.dependsOn]) && scope.propertyMap[property.dependsOn].value == property.dependsOnValue
+          else
+            property.prerequisiteOk = true
+          property.checkedPrerequisites = true
+        property.prerequisiteOk
+
+      scope.checkPrerequisites = (property) =>
+        if property == undefined || scope.propertiesInvolvedInPrerequisitesMap[property.testKey]?
+          if scope.hasPrerequisites
+            for propertyKey in scope.propertiesInvolvedInPrerequisites
+              scope.propertyMap[propertyKey].checkedPrerequisites = undefined
+            for propertyKey in scope.propertiesInvolvedInPrerequisites
+              scope.checkPrerequisite(scope.propertyMap[propertyKey])
+
+      scope.presetValueLabel = (property) =>
+        for v in property.presetValues
+          if v.value == property.value
+            return v.label
+        property.value
 
       scope.hasVisibleProperties = () =>
         result = false
+        if scope.hasPrerequisites
+          scope.checkPrerequisites()
         if scope.tbProperties?.length > 0
-          if scope.isAdmin
-            result = true
-          else
             for prop in scope.tbProperties
-              if !prop.hidden
+              if prop.prerequisiteOk && (scope.isAdmin || !prop.hidden)
                 result = true
         result
 
@@ -341,6 +343,7 @@
       scope.removeFile = (property) =>
         delete property.value
         delete property.file
+        scope.checkPrerequisites(property)
 
       scope.onFileSelect = (property, files) =>
         file = _.head files
@@ -354,6 +357,7 @@
             reader.onload = (event) =>
               property.value = event.target.result
               scope.$apply()
+              scope.checkPrerequisites(property)
             reader.onerror = (event) =>
               @ErrorService.showErrorMessage(error)
 
@@ -377,4 +381,70 @@
         else
           saveAs(blob, property.testKey+extension)
 
+      scope.init = () =>
+        scope.hasPrerequisites = false
+        if scope.tbProperties?
+          scope.propertyMap = {}
+          scope.propertiesInvolvedInPrerequisites = []
+          scope.propertiesInvolvedInPrerequisitesMap = {}
+          for property in scope.tbProperties
+            scope.propertyMap[property.testKey] = property
+            if property.dependsOn?
+              if scope.propertiesInvolvedInPrerequisitesMap[property.dependsOn] == undefined
+                scope.propertiesInvolvedInPrerequisites.push property.dependsOn
+                scope.propertiesInvolvedInPrerequisitesMap[property.dependsOn] = true
+              if scope.propertiesInvolvedInPrerequisitesMap[property.testKey] == undefined
+                scope.propertiesInvolvedInPrerequisites.push property.testKey
+                scope.propertiesInvolvedInPrerequisitesMap[property.testKey] = true
+              property.prerequisiteOk = false
+            else
+              property.prerequisiteOk = true
+            if property.kind == 'SECRET' && property.configured
+              property.value = '*****'
+            else if property.kind == 'SIMPLE'
+              property.hasPresetValues = false
+              if property.allowedValues?
+                property.presetValues = JSON.parse(property.allowedValues)
+                if property.presetValues?.length > 0
+                  property.hasPresetValues = true
+          scope.hasPrerequisites = scope.propertiesInvolvedInPrerequisites.length > 0
+
+      # Initialisation
+
+      if scope.tbAdmin == undefined
+        scope.isAdmin = @DataService.isSystemAdmin || @DataService.isCommunityAdmin
+      else 
+        scope.isAdmin = scope.tbAdmin
+      if scope.isAdmin
+        scope.isReadonly = false
+      else
+        scope.isReadonly = @DataService.isVendorUser || scope.tbReadonly
+      if scope.tbPopup == undefined
+        scope.tbPopup = false
+      if scope.tbReadonly == undefined
+        scope.tbReadonly = false
+      if scope.tbShowRequiredAsterisks == undefined
+        scope.tbShowRequiredAsterisks = true
+      if scope.tbFormPadded == undefined
+        scope.tbFormPadded = true
+      if scope.tbShowFormHeader == undefined
+        scope.tbShowFormHeader = true
+      if scope.tbColOffset == undefined
+        scope.tbColOffset = 1
+      else
+        scope.tbColOffset = Number(scope.tbColOffset)
+      if scope.tbColLabel == undefined
+        scope.tbColLabel = 3
+      else
+        scope.tbColLabel = Number(scope.tbColLabel)
+      if scope.tbColInputLess == undefined
+        scope.tbColInputLess = 0
+      else
+        scope.tbColInputLess = Number(scope.tbColInputLess)
+      if scope.tbFormPadded
+        scope.innerDivStyle = 'col-xs-'+(11-scope.tbColOffset)+' col-xs-offset-'+scope.tbColOffset
+      else
+        scope.innerDivStyle = ''
+      
+      scope.$watch('tbProperties', scope.init)
 ]

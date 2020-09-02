@@ -582,7 +582,7 @@ class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelp
     exec(PersistenceSchema.systemParameters
       .joinLeft(PersistenceSchema.systemParameterValues).on((p, v) => p.id === v.parameter && v.system === systemId)
       .filter(_._1.community === communityId)
-      .sortBy(_._1.name.asc)
+      .sortBy(x => (x._1.displayOrder.asc, x._1.name.asc))
       .map(x => (x._1, x._2))
       .result
     ).toList.map(r => new SystemParametersWithValue(r._1, r._2))

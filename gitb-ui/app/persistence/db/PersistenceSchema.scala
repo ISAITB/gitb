@@ -128,9 +128,13 @@ object PersistenceSchema {
     def adminOnly = column[Boolean]("admin_only")
     def notForTests = column[Boolean]("not_for_tests")
     def hidden = column[Boolean]("hidden")
+    def allowedValues  = column[Option[String]]("allowed_values", O.SqlType("TEXT"))
+    def displayOrder = column[Short]("display_order")
+    def dependsOn  = column[Option[String]]("depends_on")
+    def dependsOnValue  = column[Option[String]]("depends_on_value")
 		def endpoint = column[Long]("endpoint")
 
-		def * = (id, name, desc, use, kind, adminOnly, notForTests, hidden, endpoint) <> (models.Parameters.tupled, models.Parameters.unapply)
+		def * = (id, name, desc, use, kind, adminOnly, notForTests, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, endpoint) <> (models.Parameters.tupled, models.Parameters.unapply)
 	}
 	val parameters = TableQuery[ParametersTable]
 
@@ -430,8 +434,12 @@ object PersistenceSchema {
     def inExports = column[Boolean]("in_exports")
     def inSelfRegistration = column[Boolean]("in_selfreg")
     def hidden = column[Boolean]("hidden")
+    def allowedValues  = column[Option[String]]("allowed_values", O.SqlType("TEXT"))
+    def displayOrder = column[Short]("display_order")
+    def dependsOn  = column[Option[String]]("depends_on")
+    def dependsOnValue  = column[Option[String]]("depends_on_value")
     def community = column[Long]("community")
-    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, hidden, community) <> (OrganisationParameters.tupled, OrganisationParameters.unapply)
+    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, community) <> (OrganisationParameters.tupled, OrganisationParameters.unapply)
   }
   val organisationParameters = TableQuery[OrganisationParametersTable]
   val insertOrganisationParameters = organisationParameters returning organisationParameters.map(_.id)
@@ -447,8 +455,12 @@ object PersistenceSchema {
     def notForTests = column[Boolean]("not_for_tests")
     def inExports = column[Boolean]("in_exports")
     def hidden = column[Boolean]("hidden")
+    def allowedValues  = column[Option[String]]("allowed_values", O.SqlType("TEXT"))
+    def displayOrder = column[Short]("display_order")
+    def dependsOn  = column[Option[String]]("depends_on")
+    def dependsOnValue  = column[Option[String]]("depends_on_value")
     def community = column[Long]("community")
-    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, hidden, community) <> (SystemParameters.tupled, SystemParameters.unapply)
+    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, community) <> (SystemParameters.tupled, SystemParameters.unapply)
   }
   val systemParameters = TableQuery[SystemParametersTable]
   val insertSystemParameters = systemParameters returning systemParameters.map(_.id)

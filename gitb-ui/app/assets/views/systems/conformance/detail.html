@@ -29,16 +29,16 @@
 			<button type="button" class="btn btn-default" ng-if="conformanceStatementDetailCtrl.canDelete()" ng-click="conformanceStatementDetailCtrl.deleteConformanceStatement()">Delete statement</button>
         </div>		
 	</div>
-	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.endpoints.length > 0">
+	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.hasEndpoints">
 		<div class="panel-heading panel-heading-tests">
 			<h4 class="title">Configuration parameters</h4>
             <div class="btn-toolbar pull-right" ng-class="{'padded': conformanceStatementDetailCtrl.testSuites.length > 1}">
 				<toggle id="conformance-toggle-configuration" class="btn-group" ng-model="conformanceStatementDetailCtrl.endpointsExpanded" on="Visible" off="Hidden"></toggle>
 			</div>
 		</div>
-		<div class="list-group" uib-collapse="!conformanceStatementDetailCtrl.endpointsExpanded">
-			<div class="list-group-item endpoint" ng-repeat="endpoint in conformanceStatementDetailCtrl.endpointRepresentations">
-				<div endpoint-display endpoint="endpoint" editable="!conformanceStatementDetailCtrl.DataService.isVendorUser" can-edit="conformanceStatementDetailCtrl.canEditParameter" show-values="true" on-edit="conformanceStatementDetailCtrl.onParameterSelect"></div>
+		<div ng-class="{'list-group': conformanceStatementDetailCtrl.hasMultipleEndpoints}" uib-collapse="!conformanceStatementDetailCtrl.endpointsExpanded">
+			<div class="endpoint" ng-class="{'list-group-item': conformanceStatementDetailCtrl.hasMultipleEndpoints}" ng-repeat="endpoint in conformanceStatementDetailCtrl.endpointRepresentations">
+				<div endpoint-display endpoint="endpoint" hide-endpoint-info="!conformanceStatementDetailCtrl.hasMultipleEndpoints" editable="!conformanceStatementDetailCtrl.DataService.isVendorUser" can-edit="conformanceStatementDetailCtrl.canEditParameter" show-values="true" on-edit="conformanceStatementDetailCtrl.onParameterSelect"></div>
 			</div>
 		</div>
 	</div>

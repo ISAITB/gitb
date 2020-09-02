@@ -7,6 +7,7 @@ import javax.inject.Inject
 import managers._
 import models.Enums.UserRole
 import models.Systems
+import models.prerequisites.PrerequisiteUtil
 import org.apache.commons.codec.binary.Base64
 import org.slf4j._
 import play.api.mvc._
@@ -258,10 +259,10 @@ class SystemService @Inject() (accountManager: AccountManager, authorizedAction:
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def checkSystemParameterValues(systemId: Long) = authorizedAction { request =>
+  def checkSystemParameterValues(systemId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewSystemsById(request, Some(List(systemId)))
-    val values = systemManager.getSystemParameterValues(systemId)
-    val json: String = JsonUtil.jsSystemParametersWithValues(values, includeValues = false).toString
+    val valuesWithValidPrerequisites = PrerequisiteUtil.withValidPrerequisites(systemManager.getSystemParameterValues(systemId))
+    val json: String = JsonUtil.jsSystemParametersWithValues(valuesWithValidPrerequisites, includeValues = false).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 

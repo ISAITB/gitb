@@ -161,9 +161,16 @@ class TestExecutionControllerV2
         @systemConfigurationValid = @DataService.isMemberConfigurationValid(@systemProperties)
         @organisationConfigurationValid = @DataService.isMemberConfigurationValid(@organisationProperties)
         if (!@configurationValid || !@systemConfigurationValid || !@organisationConfigurationValid)
-          @missingOrganisationConfigurationVisible = !@organisationConfigurationValid && @DataService.checkMissingPropertiesVisible(@organisationProperties)
-          @missingSystemConfigurationVisible = !@systemConfigurationValid && @DataService.checkMissingPropertiesVisible(@systemProperties)
-          @missingStatementConfigurationVisible = !@configurationValid && @DataService.checkMissingPropertiesVisible(@endpointRepresentations[0].parameters)
+          @organisationPropertyVisibility = @DataService.checkPropertyVisibility(@organisationProperties)
+          @systemPropertyVisibility = @DataService.checkPropertyVisibility(@systemProperties)
+          @statementPropertyVisibility = @DataService.checkPropertyVisibility(@endpointRepresentations[0].parameters)
+
+          @showOrganisationProperties = @organisationPropertyVisibility.hasVisibleMissingRequiredProperties || @organisationPropertyVisibility.hasVisibleMissingOptionalProperties
+          @showSystemProperties = @systemPropertyVisibility.hasVisibleMissingRequiredProperties || @systemPropertyVisibility.hasVisibleMissingOptionalProperties
+          @showStatementProperties = @statementPropertyVisibility.hasVisibleMissingRequiredProperties || @statementPropertyVisibility.hasVisibleMissingOptionalProperties
+          @somethingIsVisible = @showOrganisationProperties || @showSystemProperties || @showStatementProperties
+          @requiredPropertiesAreHidden = @organisationPropertyVisibility.hasNonVisibleMissingRequiredProperties || @systemPropertyVisibility.hasNonVisibleMissingRequiredProperties || @statementPropertyVisibility.hasNonVisibleMissingRequiredProperties
+
           @wizardStep = 1
         else 
           @runInitiateStep()

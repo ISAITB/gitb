@@ -15,7 +15,17 @@
 			<label class="col-sm-3 control-label" for="value" ng-if="editEndpointConfigurationCtrl.parameter.use == 'R'" style="font-weight: bold;">{{editEndpointConfigurationCtrl.parameter.kind == 'SECRET'?'* New value:':'* Value:'}}</span></label>
 			<label class="col-sm-3 control-label" for="value" ng-if="editEndpointConfigurationCtrl.parameter.use != 'R'">{{editEndpointConfigurationCtrl.parameter.kind == 'SECRET'?'New value:':'Value:'}}</label>
 			<div class="col-sm-8">
-				<input id="value" ng-model="editEndpointConfigurationCtrl.configuration.value" class="form-control" type="text" ng-if="editEndpointConfigurationCtrl.parameter.kind == 'SIMPLE'"/>
+				<div ng-if="editEndpointConfigurationCtrl.parameter.kind == 'SIMPLE'">
+					<div ng-if="editEndpointConfigurationCtrl.hasPresetValues">
+						<select id="value" ng-model="editEndpointConfigurationCtrl.configuration.value" class="form-control">
+							<option ng-if="editEndpointConfigurationCtrl.parameter.use == 'O'" value=""></option>
+							<option ng-repeat="v in editEndpointConfigurationCtrl.presetValues" ng-value="v.value">{{v.label}}</option>
+						</select>
+					</div>
+					<div ng-if="!editEndpointConfigurationCtrl.hasPresetValues">
+						<input id="value" ng-model="editEndpointConfigurationCtrl.configuration.value" class="form-control" type="text"/>
+					</div>
+				</div>
 				<input id="value" ng-model="editEndpointConfigurationCtrl.configuration.value" class="form-control" type="password" ng-if="editEndpointConfigurationCtrl.parameter.kind == 'SECRET'"/>
 				<div ng-if="editEndpointConfigurationCtrl.parameter.kind == 'BINARY'">
 					<a class="form-control-static" href="" ng-if="editEndpointConfigurationCtrl.showFileName()" ng-click="editEndpointConfigurationCtrl.download()" style="padding-right:10px;">{{editEndpointConfigurationCtrl.fileName()}}</a>

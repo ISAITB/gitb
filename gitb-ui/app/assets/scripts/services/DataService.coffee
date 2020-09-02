@@ -279,8 +279,9 @@ class DataService
 		valid = true
 		if forceRequiredValues?
 			for property in properties
-				if property.use == 'R' && !(property.value? && property.value.trim().length > 0)
-					valid = false
+				if property.use == 'R' 
+					if property.prerequisiteOk && !(property.value? && property.value.trim().length > 0)
+						valid = false
 		valid
 
 	customPropertiesForPost: (properties) =>
@@ -426,12 +427,37 @@ class DataService
 			fn()
 		, 1)
 
-	checkMissingPropertiesVisible: (properties) ->
-		for prop in properties
-			if !prop.configured && (@isSystemAdmin || @isCommunityAdmin || !prop.hidden)
-				return true
-		false
-
+	checkPropertyVisibility: (properties) ->
+		results = {
+			hasProperties: false
+			hasMissingProperties: false
+			hasVisibleMissingRequiredProperties: false
+			hasVisibleMissingOptionalProperties: false
+			hasNonVisibleMissingRequiredProperties: false
+			hasNonVisibleMissingOptionalProperties: false
+		}
+		if properties? && properties.length > 0
+			results.hasProperties = true
+			for prop in properties
+				if !prop.configured
+					results.hasMissingProperties = true
+					if prop.hidden
+						if @isSystemAdmin || @isCommunityAdmin
+							if prop.use == 'O'
+								results.hasVisibleMissingOptionalProperties = true
+							else
+								results.hasVisibleMissingRequiredProperties = true
+						else
+							if prop.use == 'O'
+								results.hasNonVisibleMissingOptionalProperties = true
+							else
+								results.hasNonVisibleMissingRequiredProperties = true
+					else
+						if prop.use == 'O'
+							results.hasVisibleMissingOptionalProperties = true
+						else
+							results.hasVisibleMissingRequiredProperties = true
+		results
 
 	isMemberConfigurationValid: (properties) ->
 		valid = true

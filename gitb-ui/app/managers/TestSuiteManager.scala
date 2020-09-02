@@ -518,14 +518,19 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 				&& Objects.equals(one.desc, two.desc))
 	}
 
-	private def theSameParameter(one: models.Parameters, two: models.Parameters) = {
+	private def theSameParameter(one: models.Parameters, two: models.Parameters): Boolean = {
 		(Objects.equals(one.name, two.name)
 				&& Objects.equals(one.desc, two.desc)
 				&& Objects.equals(one.kind, two.kind)
 				&& Objects.equals(one.use, two.use)
 				&& Objects.equals(one.adminOnly, two.adminOnly)
 				&& Objects.equals(one.notForTests, two.notForTests)
-				&& Objects.equals(one.hidden, two.hidden))
+				&& Objects.equals(one.hidden, two.hidden)
+				&& Objects.equals(one.allowedValues, two.allowedValues)
+				&& Objects.equals(one.displayOrder, two.displayOrder)
+				&& Objects.equals(one.dependsOn, two.dependsOn)
+				&& Objects.equals(one.dependsOnValue, two.dependsOnValue)
+			)
 	}
 
 	def isActorReference(actorToSave: Actors) = {
@@ -700,12 +705,12 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 					if (!updateMetadata || theSameParameter(parameter, existingParameter)) {
 						result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.name, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED, suite.specification)
 					} else {
-						action = Some(parameterManager.updateParameter(parameterId, parameter.name, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden))
+						action = Some(parameterManager.updateParameter(parameterId, parameter.name, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue))
 						result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.name, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE, suite.specification)
 					}
 				} else {
 					// New parameter.
-					action = Some(parameterManager.createParameter(parameter.copy(endpoint = endpointId)))
+					action = Some(parameterManager.createParameter(parameter.withEndpoint(endpointId, Some(0))))
 					result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.name, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_ADD, suite.specification)
 				}
 				actions += action.getOrElse(DBIO.successful(()))
