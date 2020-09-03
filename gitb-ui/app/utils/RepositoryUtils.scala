@@ -1,26 +1,29 @@
 package utils
 
-import java.io.{File, FileOutputStream}
+import java.io.{File, FileOutputStream, StringWriter}
 import java.nio.charset.Charset
 import java.nio.file.Paths
 import java.util.zip.{ZipEntry, ZipFile}
 
-import com.gitb.core.{Documentation, TestCaseType, TestRoleEnumeration}
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.gitb.core.{Documentation, EndpointParameter, TestCaseType, TestRoleEnumeration}
 import com.gitb.utils.XMLUtils
 import config.Configurations
 import javax.xml.transform.stream.StreamSource
 import managers.TestSuiteManager
 import models._
 import org.apache.commons.io.{FileUtils, IOUtils}
-import org.apache.commons.lang3.RandomStringUtils
+import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.slf4j.LoggerFactory
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 import scala.xml.XML
 
 object RepositoryUtils {
 
 	private final val logger = LoggerFactory.getLogger("RepositoryUtils")
+	private final val objectMapper = new ObjectMapper()
 
 	private final val TEST_SUITE_ELEMENT_LABEL: String = "testsuite"
 	private final val TEST_CASE_ELEMENT_LABEL: String = "testcase"
@@ -232,16 +235,13 @@ object RepositoryUtils {
 								val parameters = tdlEndpoint.getConfig.asScala.map { tdlParameter =>
 									var dependsOn = Option(tdlParameter.getDependsOn)
 									var dependsOnValue = Option(tdlParameter.getDependsOnValue)
-									var allowedValues = Option(tdlParameter.getAllowedValues)
 									if (dependsOn.isDefined && dependsOn.get.trim.equals("")) {
 										dependsOn = None
 									}
 									if (dependsOn.isEmpty || (dependsOnValue.isDefined && dependsOnValue.get.trim.equals(""))) {
 										dependsOnValue = None
 									}
-									if (allowedValues.isDefined && allowedValues.get.trim.equals("")) {
-										allowedValues = None
-									}
+									val allowedValues = getAllowedValuesStr(tdlParameter)
 									Parameters(0L, tdlParameter.getName, Option(tdlParameter.getDesc), tdlParameter.getUse.value(), tdlParameter.getKind.value(), tdlParameter.isAdminOnly, tdlParameter.isNotForTests, tdlParameter.isHidden, allowedValues, 0, dependsOn, dependsOnValue, 0L)
 								}.toList
 								new Endpoint(Endpoints(0L, tdlEndpoint.getName, Option(tdlEndpoint.getDesc), 0L), parameters)
@@ -297,6 +297,37 @@ object RepositoryUtils {
 				}
 			}
 
+		}
+		result
+	}
+
+	private def getAllowedValuesStr(parameter: EndpointParameter): Option[String] = {
+		var result: Option[String] = None
+		if (parameter != null && parameter.getAllowedValues != null) {
+			val values = StringUtils.split(parameter.getAllowedValues, ',').map(s => s.trim)
+			var labels: Array[String] = null
+			if (parameter.getAllowedValueLabels == null || parameter.getAllowedValueLabels.isBlank) {
+				labels = values
+			} else {
+				labels = StringUtils.split(parameter.getAllowedValueLabels, ',').map(s => s.trim)
+			}
+			if (values.length == labels.length) {
+				var counter = 0
+				val pairs = ListBuffer[ValueWithLabel]()
+				values.foreach { value =>
+					pairs += new ValueWithLabel(value, labels(counter))
+					counter += 1
+				}
+				val writer = new StringWriter()
+				try {
+					objectMapper.writeValue(writer, pairs.toArray)
+					result = Some(writer.toString)
+				} catch {
+					case e: Exception =>
+						logger.warn("Failed to generate allowed values as JSON", e)
+						result = None
+				}
+			}
 		}
 		result
 	}
