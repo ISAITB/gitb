@@ -211,6 +211,7 @@ public class TestCaseUtils {
     private static DecisionStep convertDecisionStep(String testCaseId, String id, Scriptlets scriptlets, IfStep description) {
         DecisionStep decision = new DecisionStep();
         decision.setId(id);
+        decision.setTitle(description.getTitle());
         decision.setDesc(description.getDesc());
         decision.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         decision.setThen(convertSequence(testCaseId, id + TRUE , scriptlets, description.getThen()));
@@ -223,6 +224,7 @@ public class TestCaseUtils {
     private static Sequence convertRepUntilStep(String testCaseId, String id, Scriptlets scriptlets, RepeatUntilStep description) {
         Sequence loop = new Sequence();
         loop.setId(id);
+        loop.setTitle(description.getTitle());
         loop.setDesc(description.getDesc());
         loop.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         loop.getSteps().addAll(
@@ -233,6 +235,7 @@ public class TestCaseUtils {
     private static Sequence convertForEachStep(String testCaseId, String id, Scriptlets scriptlets, ForEachStep description) {
         Sequence loop = new Sequence();
         loop.setId(id);
+        loop.setTitle(description.getTitle());
         loop.setDesc(description.getDesc());
         loop.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         loop.getSteps().addAll(
@@ -243,6 +246,7 @@ public class TestCaseUtils {
     private static Sequence convertWhileStep(String testCaseId, String id, Scriptlets scriptlets, WhileStep description) {
         Sequence loop = new Sequence();
         loop.setId(id);
+        loop.setTitle(description.getTitle());
         loop.setDesc(description.getDesc());
         loop.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         loop.getSteps().addAll(
@@ -253,6 +257,7 @@ public class TestCaseUtils {
     private static FlowStep convertFlowStep(String testCaseId, String id, Scriptlets scriptlets, com.gitb.tdl.FlowStep description) {
         FlowStep flow = new FlowStep();
         flow.setId(id);
+        flow.setTitle(description.getTitle());
         flow.setDesc(description.getDesc());
         flow.setDesc(getDocumentation(testCaseId, description.getDocumentation()));
 
@@ -275,6 +280,7 @@ public class TestCaseUtils {
     private static UserInteractionStep convertUserInteraction(String testCaseId, String id, UserInteraction description) {
         UserInteractionStep interactionStep = new UserInteractionStep();
         interactionStep.setId(id);
+        interactionStep.setTitle(description.getTitle());
         interactionStep.setDesc(description.getDesc());
         interactionStep.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         interactionStep.setWith(description.getWith());
