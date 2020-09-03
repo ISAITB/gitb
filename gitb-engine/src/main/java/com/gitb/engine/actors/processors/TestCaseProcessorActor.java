@@ -1,6 +1,5 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
@@ -13,8 +12,8 @@ import com.gitb.engine.actors.SessionActor;
 import com.gitb.engine.actors.util.ActorUtils;
 import com.gitb.engine.commands.interaction.*;
 import com.gitb.engine.events.model.StatusEvent;
-import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.engine.testcase.TestCaseContext;
+import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.TestCase;
 import com.gitb.tr.SR;
 import com.gitb.tr.TestResultType;

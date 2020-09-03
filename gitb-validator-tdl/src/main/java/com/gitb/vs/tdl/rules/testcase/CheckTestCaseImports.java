@@ -17,13 +17,17 @@ public class CheckTestCaseImports extends AbstractTestCaseObserver {
 
     @Override
     public void handleImport(Object artifactObj) {
+        super.handleImport(artifactObj);
         if (artifactObj instanceof TestArtifact) {
             TestArtifact artifact = (TestArtifact)artifactObj;
-            Path resolvedPath = context.resolveTestSuiteResourceIfValid(artifact.getValue());
-            if (resolvedPath == null) {
-                addReportItem(ErrorCode.INVALID_TEST_CASE_IMPORT, currentTestCase.getId(), artifact.getValue());
-            } else {
-                context.getReferencedResourcePaths().add(resolvedPath.toAbsolutePath());
+            if (!Utils.isVariableExpression(artifact.getValue())) {
+                // Check only if not variable expression (case of a variable expression is handled in expression-specific rule).
+                Path resolvedPath = context.resolveTestSuiteResourceIfValid(artifact.getValue());
+                if (resolvedPath == null) {
+                    addReportItem(ErrorCode.INVALID_TEST_CASE_IMPORT, currentTestCase.getId(), artifact.getValue());
+                } else {
+                    context.getReferencedResourcePaths().add(resolvedPath.toAbsolutePath());
+                }
             }
         }
     }

@@ -9,6 +9,7 @@ public class CheckDataTypes extends AbstractTestCaseObserver {
 
     @Override
     public void handleImport(Object artifactObj) {
+        super.handleImport(artifactObj);
         if (artifactObj instanceof TestArtifact) {
             checkDataType(((TestArtifact)artifactObj).getType());
         }

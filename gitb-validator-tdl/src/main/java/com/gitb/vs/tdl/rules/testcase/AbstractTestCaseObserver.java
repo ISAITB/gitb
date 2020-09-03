@@ -55,7 +55,7 @@ public class AbstractTestCaseObserver implements TestCaseObserver {
 
     @Override
     public void handleImport(Object artifactObj) {
-        // Do nothing by default.
+        currentStep = artifactObj;
     }
 
     @Override

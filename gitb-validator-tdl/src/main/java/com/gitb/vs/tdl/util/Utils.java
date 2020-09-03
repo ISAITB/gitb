@@ -229,6 +229,8 @@ public class Utils {
             step = "call";
         } else if (stepObj instanceof UserInteraction) {
             step = "interact";
+        } else if (stepObj instanceof TestArtifact) {
+            step = "imports";
         } else {
             step = "";
         }
