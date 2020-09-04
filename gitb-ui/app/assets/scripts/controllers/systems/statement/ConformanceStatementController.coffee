@@ -53,6 +53,6 @@ class ConformanceStatementController
     @$state.go 'app.systems.detail.conformance.detail', {actor_id: conformanceStatementRepresentation.id, specId: conformanceStatementRepresentation.specificationId}
 
   showCreate: () =>
-    !@DataService.isVendorUser
+    @DataService.isSystemAdmin || @DataService.isCommunityAdmin || (@DataService.isVendorAdmin && @DataService.community.allowStatementManagement)
 
 @controllers.controller 'ConformanceStatementController', ConformanceStatementController

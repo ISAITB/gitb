@@ -50,7 +50,7 @@
 	</div>
 	<div class="modal-footer">
 		<button class="btn btn-default" type="submit" ng-click="save()" ng-disabled="!saveEnabled() || pending"><span class="tab" ng-if="savePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Save</button>
-		<button class="btn btn-default" type="button" ng-click="delete()" ng-if="system.id" ng-disabled="pending"><span class="tab" ng-if="deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete</button>
+		<button class="btn btn-default" type="button" ng-click="delete()" ng-if="system.id && canDelete()" ng-disabled="pending"><span class="tab" ng-if="deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete</button>
 		<button class="btn btn-default" type="button" ng-click="cancel()" ng-disabled="pending">Cancel</button>
 	</div>
 </form>

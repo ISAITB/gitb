@@ -87,18 +87,51 @@
               <div tb-tooltip="Use this option to restrict multiple registrations to the community. Restrictions are applied considering the email address of the user that is in the process of self-registering."></div>
             </div>
             <div class="form-group">
-              <label class="col-xs-3 control-label" for="selfRegForceTemplateSelection">Require template selection:</label>
+              <label class="col-xs-3 control-label" for="selfRegForceTemplateSelection">Require from users:</label>
               <div class="col-xs-7">
-                <input id="selfRegForceTemplateSelection" ng-model="tbCommunity.selfRegForceTemplateSelection" type="checkbox" class="form-check">
-                <div tb-inline="true" tb-tooltip="Check this to force users to select a configuration template when registering. This option applies only if configuration templates are defined."></div>
+                <label class="checkbox-inline">
+                  <input type="checkbox" ng-model="tbCommunity.selfRegForceTemplateSelection">Select one of the defined configuration templates
+                  <div tb-inline="true" tb-inline-type="checkLabelText" tb-tooltip="Check this to force users to select a configuration template when registering. This option applies only if configuration templates are defined."></div>
+                </label>
+              </div>
+              <div class="col-xs-offset-3 col-xs-7">
+                <label class="checkbox-inline">
+                  <input type="checkbox" ng-model="tbCommunity.selfRegForceRequiredProperties">Complete custom properties defined as required
+                  <div tb-inline="true" tb-inline-type="checkLabelText" tb-tooltip="Check this to force users to complete required custom {{DataService.labelOrganisationLower()}} properties on the self-registration screen. This option applies only if such properties are defined."></div>
+                </label>
               </div>
             </div>
-            <div class="form-group">
-              <label class="col-xs-3 control-label" for="selfRegForceRequiredProperties">Require property values:</label>
-              <div class="col-xs-7">
-                <input id="selfRegForceRequiredProperties" ng-model="tbCommunity.selfRegForceRequiredProperties" type="checkbox" class="form-check">
-                <div tb-inline="true" tb-tooltip="Check this to force users to complete required custom {{DataService.labelOrganisationLower()}} properties on the self-registration screen. This option applies only if such properties are defined."></div>
-              </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs-12">
+          <div class="form-separator">
+              <h4 class="title">User permissions</h4>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-xs-10 col-xs-offset-1">
+          <div class="form-group">
+            <label class="col-xs-3 control-label">{{DataService.labelOrganisation()}} users may:</label>
+            <div class="col-xs-7">
+              <label class="checkbox-inline">
+                <input type="checkbox" ng-model="tbCommunity.allowCertificateDownload">Download conformance certificates
+                <div tb-inline="true" tb-inline-type="checkLabelText" tb-tooltip="Check this to allow {{DataService.labelOrganisationLower()}} users to download a conformance certificate if they have successfully passed their tests. Otherwise only community administrators may create and share such certificates."></div>
+              </label>
+            </div>
+            <div class="col-xs-offset-3 col-xs-7">
+              <label class="checkbox-inline">
+                <input type="checkbox" ng-model="tbCommunity.allowSystemManagement">Create or delete {{DataService.labelSystemsLower()}}
+                <div tb-inline="true" tb-inline-type="checkLabelText" tb-tooltip="Check this to allow {{DataService.labelOrganisationLower()}} administrators to create and delete {{DataService.labelSystemsLower()}} (editing an existing {{DataService.labelSystemLower()}} is always possible). You may want to restrict this if you predefine fully the setup for your users, either through community administrator actions or via self-registration templates."></div>
+              </label>
+            </div>
+            <div class="col-xs-offset-3 col-xs-7">
+              <label class="checkbox-inline">
+                <input type="checkbox" ng-model="tbCommunity.allowStatementManagement">Create or delete conformance statements
+                <div tb-inline="true" tb-inline-type="checkLabelText" tb-tooltip="Check this to allow {{DataService.labelOrganisationLower()}} administrators to create and delete conformance statements. You may want to restrict this if you predefine fully the setup for your users, either through community administrator actions or via self-registration templates."></div>
+              </label>
             </div>
           </div>
         </div>

@@ -7,6 +7,9 @@ class CommunityCreateController
     @community = {}
     @community.selfRegType = @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED
     @community.selfRegRestriction = @Constants.SELF_REGISTRATION_RESTRICTION.NO_RESTRICTION
+    @community.allowCertificateDownload = false
+    @community.allowSystemManagement = true
+    @community.allowStatementManagement = true
     @domains = []
     @DataService.focus('sname')
 
@@ -39,7 +42,7 @@ class CommunityCreateController
     (!@community.selfRegNotification || @ValidationService.requireNonNull(@community.email, "A support email needs to be defined to support notifications."))
       if !@community.sameDescriptionAsDomain
         descriptionToUse = @community.activeDescription
-      @CommunityService.createCommunity @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegRestriction, @community.selfRegToken, tinymce.activeEditor.getContent(), @community.selfRegNotification, descriptionToUse, @community.selfRegForceTemplateSelection, @community.selfRegForceRequiredProperties, @community.domain?.id
+      @CommunityService.createCommunity @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegRestriction, @community.selfRegToken, tinymce.activeEditor.getContent(), @community.selfRegNotification, descriptionToUse, @community.selfRegForceTemplateSelection, @community.selfRegForceRequiredProperties, @community.allowCertificateDownload, @community.allowStatementManagement, @community.allowSystemManagement, @community.domain?.id
       .then (data) =>
         if data? && data.error_code?
           @ValidationService.pushAlert({type:'danger', msg:data.error_description})

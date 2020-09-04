@@ -446,32 +446,37 @@ object JsonUtil {
   def jsCommunities(list:List[Communities]):JsArray = {
     var json = Json.arr()
     list.foreach{ community =>
-      json = json.append(jsCommunity(community))
+      json = json.append(jsCommunity(community, includeAdminInfo = true))
     }
     json
   }
 
-  def jsCommunity(community:Communities):JsObject = {
-    val json = Json.obj(
+  def jsCommunity(community:Communities, includeAdminInfo: Boolean):JsObject = {
+    var json = Json.obj(
       "id"    -> community.id,
       "sname" -> community.shortname,
       "fname" -> community.fullname,
-      "email" -> community.supportEmail,
-      "selfRegType" -> community.selfRegType,
-      "selfRegRestriction" -> community.selfRegRestriction,
-      "selfRegToken" -> (if(community.selfRegToken.isDefined) community.selfRegToken.get else JsNull),
-      "selfRegTokenHelpText" -> (if(community.selfRegTokenHelpText.isDefined) community.selfRegTokenHelpText.get else JsNull),
-      "selfRegNotification" -> community.selfregNotification,
-      "selfRegForceTemplateSelection" -> community.selfRegForceTemplateSelection,
-      "selfRegForceRequiredProperties" -> community.selfRegForceRequiredProperties,
-      "description" -> (if(community.description.isDefined) community.description.get else JsNull),
+      "allowCertificateDownload" -> community.allowCertificateDownload,
+      "allowStatementManagement" -> community.allowStatementManagement,
+      "allowSystemManagement" -> community.allowSystemManagement,
       "domainId" -> community.domain
     )
+    if (includeAdminInfo) {
+      json = json.+("email" -> (if (community.supportEmail.isDefined) JsString(community.supportEmail.get) else JsNull))
+      json = json.+("selfRegType" -> JsNumber(community.selfRegType))
+      json = json.+("selfRegRestriction" -> JsNumber(community.selfRegRestriction))
+      json = json.+("selfRegToken" -> (if(community.selfRegToken.isDefined) JsString(community.selfRegToken.get) else JsNull))
+      json = json.+("selfRegTokenHelpText" -> (if(community.selfRegTokenHelpText.isDefined) JsString(community.selfRegTokenHelpText.get) else JsNull))
+      json = json.+("selfRegNotification" -> JsBoolean(community.selfregNotification))
+      json = json.+("selfRegForceTemplateSelection" -> JsBoolean(community.selfRegForceTemplateSelection))
+      json = json.+("selfRegForceRequiredProperties" -> JsBoolean(community.selfRegForceRequiredProperties))
+      json = json.+("description" -> (if(community.description.isDefined) JsString(community.description.get) else JsNull))
+    }
     json
   }
 
-  def serializeCommunity(community:Community, labels: Option[List[CommunityLabels]]):String = {
-    var jCommunity:JsObject = jsCommunity(community.toCaseObject)
+  def serializeCommunity(community:Community, labels: Option[List[CommunityLabels]], includeAdminInfo: Boolean):String = {
+    var jCommunity:JsObject = jsCommunity(community.toCaseObject, includeAdminInfo)
     if(community.domain.isDefined){
       jCommunity = jCommunity ++ Json.obj("domain" -> jsDomain(community.domain.get))
     } else{
@@ -1381,7 +1386,7 @@ object JsonUtil {
    * @param org Organization object to be converted
    * @return String
    */
-  def serializeOrganization(org:Organization):String = {
+  def serializeOrganization(org:Organization, includeAdminInfo: Boolean):String = {
     //1) Serialize Organization
     var jOrganization:JsObject = jsOrganization(org.toCaseObject)
     //2) If User exists, convert and append it to Organization
@@ -1420,7 +1425,7 @@ object JsonUtil {
     }
     //
     if(org.community.isDefined){
-      jOrganization = jOrganization ++ Json.obj("communities" -> jsCommunity(org.community.get))
+      jOrganization = jOrganization ++ Json.obj("communities" -> jsCommunity(org.community.get, includeAdminInfo))
     } else{
       jOrganization = jOrganization ++ Json.obj("communities" -> JsNull)
     }

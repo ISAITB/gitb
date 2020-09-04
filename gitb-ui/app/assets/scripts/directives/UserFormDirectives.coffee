@@ -238,7 +238,7 @@
       tbInline: '<?'
       tbInlineType: '@?'
     restrict: 'A'
-    template: '<div ng-class="{\'form-control-static\': (!tbInline || tbInlineType == \'button\'), \'checkLabel\': (tbInline && tbInlineType == \'checkLabel\'), \'check\': (tbInline && tbInlineType == \'check\'), \'radio\': (tbInline && tbInlineType == \'radio\')}"><span uib-tooltip="{{tbTooltip}}"><i class="fa fa-question-circle"></i></span></div>'
+    template: '<div ng-class="{\'form-control-static\': (!tbInline || tbInlineType == \'button\'), \'checkLabel\': (tbInline && tbInlineType == \'checkLabel\'), \'checkLabelText\': (tbInline && tbInlineType == \'checkLabelText\'), \'check\': (tbInline && tbInlineType == \'check\'), \'radio\': (tbInline && tbInlineType == \'radio\')}"><span uib-tooltip="{{tbTooltip}}"><i class="fa fa-question-circle"></i></span></div>'
     link: (scope, element, attrs) ->
       if scope.tbInline == undefined
         scope.tbInline = false

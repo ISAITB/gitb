@@ -23,7 +23,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
     val userId = ParameterExtractor.extractUserId(request)
 
     val organization = accountManager.getVendorProfile(userId)
-    val json:String = JsonUtil.serializeOrganization(organization)
+    val json:String = JsonUtil.serializeOrganization(organization, includeAdminInfo = false)
     ResponseConstructor.constructJsonResponse(json)
   }
 

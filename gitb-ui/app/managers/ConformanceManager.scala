@@ -622,7 +622,7 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 		statements.toList
 	}
 
-	def getConformanceCertificateSettingsWrapper(communityId: Long) = {
+	def getConformanceCertificateSettingsWrapper(communityId: Long): Option[ConformanceCertificates] = {
 		exec(getConformanceCertificateSettings(communityId))
 	}
 

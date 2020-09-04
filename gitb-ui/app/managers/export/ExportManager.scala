@@ -587,6 +587,9 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
     communityData.setFullName(community.get.fullname)
     communityData.setSupportEmail(community.get.supportEmail.orNull)
     communityData.setDescription(community.get.description.orNull)
+    communityData.setAllowCertificateDownload(community.get.allowCertificateDownload)
+    communityData.setAllowStatementManagement(community.get.allowStatementManagement)
+    communityData.setAllowSystemManagement(community.get.allowSystemManagement)
     // Self registration information.
     communityData.setSelfRegistrationSettings(new SelfRegistrationSettings)
     SelfRegistrationType.apply(community.get.selfRegType) match {

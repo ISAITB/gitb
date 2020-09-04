@@ -257,6 +257,7 @@ GET     /repository/export/teststep/:session_id/*path       @controllers.Reposit
 GET     /repository/export/conformance                      @controllers.RepositoryService.exportConformanceStatementReport
 POST    /repository/export/certificatedemo                  @controllers.RepositoryService.exportDemoConformanceCertificateReport(community_id: Long)
 POST    /repository/export/certificate                      @controllers.RepositoryService.exportConformanceCertificateReport()
+POST    /repository/exportOwn/certificate                   @controllers.RepositoryService.exportOwnConformanceCertificateReport()
 GET     /repository/resource/:test_id/*file                 @controllers.RepositoryService.getTestSuiteResource(test_id: String, file: String)
 
 POST    /communities/export/:id                             @controllers.RepositoryService.exportCommunity(id: Long)

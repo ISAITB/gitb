@@ -25,6 +25,7 @@
 			</div>
 		</div>
         <div class="panel-footer">
+			<button ng-if="conformanceStatementDetailCtrl.canExportConformanceCertificate()" type="button" class="btn btn-default" ng-click="conformanceStatementDetailCtrl.onExportConformanceCertificate()" ng-disabled="conformanceStatementDetailCtrl.exportCertificatePending"><span class="tab" ng-if="conformanceStatementDetailCtrl.exportCertificatePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Download conformance certificate</button>
 			<button type="button" class="btn btn-default" ng-click="conformanceStatementDetailCtrl.onExportConformanceStatement()" ng-disabled="conformanceStatementDetailCtrl.exportPending"><span class="tab" ng-if="conformanceStatementDetailCtrl.exportPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Download report</button>
 			<button type="button" class="btn btn-default" ng-if="conformanceStatementDetailCtrl.canDelete()" ng-click="conformanceStatementDetailCtrl.deleteConformanceStatement()">Delete statement</button>
         </div>		

@@ -462,7 +462,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canDeleteConformanceStatement(request: RequestWithAttributes[_], sut_id: Long):Boolean = {
-    canManageSystem(request, getUser(getRequestUserId(request)), sut_id)
+    canCreateConformanceStatement(request, sut_id)
   }
 
   def canViewConformanceStatements(request: RequestWithAttributes[_], sut_id: Long):Boolean = {
@@ -470,7 +470,24 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canCreateConformanceStatement(request: RequestWithAttributes[_], sut_id: Long):Boolean = {
-    canManageSystem(request, getUser(getRequestUserId(request)), sut_id)
+    var ok = false
+    val userInfo = getUser(getRequestUserId(request))
+    if (isTestBedAdmin(userInfo)) {
+      ok = true
+    } else if (isCommunityAdmin(userInfo)) {
+      // Own system or within community.
+      val system = systemManager.getSystemById(sut_id)
+      if (system.isDefined) {
+        ok = isOwnSystem(userInfo, system) || canManageOrganisationFull(request, userInfo, system.get.owner)
+      }
+    } else {
+      val community = communityManager.getById(userInfo.organization.get.community)
+      if (isOrganisationAdmin(userInfo) && community.isDefined && community.get.allowStatementManagement) {
+        // Has to be own system.
+        ok = isOwnSystem(userInfo, sut_id)
+      }
+    }
+    setAuthResult(request, ok, "User cannot manage the requested system")
   }
 
   def canViewSystem(request: RequestWithAttributes[_], sut_id: Long):Boolean = {
@@ -505,7 +522,6 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def canManageSystem(request: RequestWithAttributes[_], userInfo: User, sut_id: Long): Boolean = {
     var ok = false
-    val userInfo = getUser(getRequestUserId(request))
     if (isTestBedAdmin(userInfo)) {
       ok = true
     } else if (isCommunityAdmin(userInfo)) {
@@ -522,11 +538,44 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canCreateSystem(request: RequestWithAttributes[_], orgId: Long):Boolean = {
-    canManageOrganisationBasic(request, getUser(getRequestUserId(request)), orgId)
+    var ok = false
+    val userInfo = getUser(getRequestUserId(request))
+    if (isTestBedAdmin(userInfo)) {
+      ok = true
+    } else if (isCommunityAdmin(userInfo)) {
+      ok = userInfo.organization.isDefined && userInfo.organization.get.id == orgId
+      if (!ok) {
+        val org = organizationManager.getById(orgId)
+        ok = org.isDefined && userInfo.organization.isDefined && org.get.community == userInfo.organization.get.community
+      }
+    } else {
+      val community = communityManager.getById(userInfo.organization.get.community)
+      if (isOrganisationAdmin(userInfo) && community.isDefined && community.get.allowSystemManagement) {
+        ok = userInfo.organization.isDefined && userInfo.organization.get.id == orgId
+      }
+    }
+    setAuthResult(request, ok, "User cannot manage the requested organisation")
   }
 
   def canDeleteSystem(request: RequestWithAttributes[_], systemId: Long):Boolean = {
-    canManageSystem(request, getUser(getRequestUserId(request)), systemId)
+    var ok = false
+    val userInfo = getUser(getRequestUserId(request))
+    if (isTestBedAdmin(userInfo)) {
+      ok = true
+    } else if (isCommunityAdmin(userInfo)) {
+      // Own system or within community.
+      val system = systemManager.getSystemById(systemId)
+      if (system.isDefined) {
+        ok = isOwnSystem(userInfo, system) || canManageOrganisationFull(request, userInfo, system.get.owner)
+      }
+    } else {
+      val community = communityManager.getById(userInfo.organization.get.community)
+      if (isOrganisationAdmin(userInfo) && community.isDefined && community.get.allowSystemManagement) {
+        // Has to be own system.
+        ok = isOwnSystem(userInfo, systemId)
+      }
+    }
+    setAuthResult(request, ok, "User cannot manage the requested system")
   }
 
   def canAccessThemeData(request: RequestWithAttributes[_]):Boolean = {
@@ -595,8 +644,39 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "Cannot view requested test case")
   }
 
+  def canPreviewConformanceCertificateReport(request: RequestWithAttributes[_], communityId: Long):Boolean = {
+    canManageCommunity(request, communityId)
+  }
+
   def canViewConformanceCertificateReport(request: RequestWithAttributes[_], communityId: Long):Boolean = {
     canManageCommunity(request, communityId)
+  }
+
+  def canViewOwnConformanceCertificateReport(request: RequestWithAttributes[_], systemId: Long):Boolean = {
+    var ok = false
+    val userInfo = getUser(getRequestUserId(request))
+    if (isTestBedAdmin(userInfo)) {
+      ok = true
+    } else {
+      if (isCommunityAdmin(userInfo)) {
+        val communityIdOfSystem = systemManager.getCommunityIdOfSystem(systemId)
+        if (userInfo.organization.isDefined && userInfo.organization.get.community == communityIdOfSystem) {
+          ok = true
+        }
+      } else {
+        // Organisation user.
+        if (userInfo.organization.isDefined) {
+          val community = communityManager.getById(userInfo.organization.get.community)
+          if (community.isDefined && community.get.allowCertificateDownload) {
+            val system = systemManager.getSystemById(systemId)
+            if (system.isDefined && userInfo.organization.get.id == system.get.owner) {
+              ok = true
+            }
+          }
+        }
+      }
+    }
+    setAuthResult(request, ok, "User cannot download this conformance certificate")
   }
 
   def canViewConformanceStatementReport(request: RequestWithAttributes[_], systemId: String):Boolean = {

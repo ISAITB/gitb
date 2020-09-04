@@ -32,7 +32,7 @@ class OrganizationService @Inject() (authorizedAction: AuthorizedAction, cc: Con
   def getOrganizationById(orgId: Long) = authorizedAction { request =>
     authorizationManager.canViewOrganisation(request, orgId)
     val organization = organizationManager.getOrganizationById(orgId)
-    val json: String = JsonUtil.serializeOrganization(organization)
+    val json: String = JsonUtil.serializeOrganization(organization, includeAdminInfo = true)
     ResponseConstructor.constructJsonResponse(json)
   }
 

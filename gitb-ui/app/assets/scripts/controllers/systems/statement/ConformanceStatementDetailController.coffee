@@ -20,6 +20,7 @@ class ConformanceStatementDetailController
     @endpointsExpanded = @$stateParams['editEndpoints']? && @$stateParams['editEndpoints']
     @testStatus = ''
     @backgroundMode = false
+    @allTestsSuccessful = false
 
     @parameterTableColumns = [
       {
@@ -88,6 +89,7 @@ class ConformanceStatementDetailController
         testSuiteResults.push(testSuiteData[testSuiteId])
       @testSuites = testSuiteResults
       @testStatus = @DataService.testStatusText(completedCount, failedCount, undefinedCount)
+      @allTestsSuccessful = completedCount == totalCount
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -364,7 +366,7 @@ class ConformanceStatementDetailController
       , angular.noop)
 
   canDelete: () =>
-    !@DataService.isVendorUser
+    @DataService.isSystemAdmin || @DataService.isCommunityAdmin || (@DataService.isVendorAdmin && @DataService.community.allowStatementManagement)
 
   canEditParameter: (parameter) =>
     @DataService.isSystemAdmin || @DataService.isCommunityAdmin || (@DataService.isVendorAdmin && !parameter.adminOnly)
@@ -401,6 +403,20 @@ class ConformanceStatementDetailController
         @ErrorService.showErrorMessage(error)
         @exportPending = false
     )
+
+  onExportConformanceCertificate:() =>
+    @exportCertificatePending = true
+    @ConformanceService.exportOwnConformanceCertificateReport(@actorId, @systemId)
+    .then (data) =>
+        blobData = new Blob([data], {type: 'application/pdf'});
+        saveAs(blobData, "conformance_certificate.pdf");
+        @exportCertificatePending = false
+    .catch (error) =>
+        @ErrorService.showErrorMessage(error)
+        @exportCertificatePending = false
+
+  canExportConformanceCertificate: () =>
+    @allTestsSuccessful && (@DataService.isSystemAdmin || @DataService.isCommunityAdmin || @DataService.community.allowCertificateDownload)
 
   showDocumentation: (title, content) ->
     html = @$sce.trustAsHtml(content)

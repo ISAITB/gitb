@@ -1090,6 +1090,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                 selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText),
                 data.getSelfRegistrationSettings.isNotifications, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
                 data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
+                data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
                 domainId
               ))
             },
@@ -1110,6 +1111,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                 selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText), data.getSelfRegistrationSettings.isNotifications,
                 Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
                 data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
+                data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
                 domainId
               )
             },

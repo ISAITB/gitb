@@ -119,4 +119,7 @@ class CreateEditSystemController
 		@$scope.cancel = () =>
 			@$uibModalInstance.dismiss()
 
+		@$scope.canDelete = () =>
+			@DataService.isSystemAdmin || @DataService.isCommunityAdmin || (@DataService.isVendorAdmin && @DataService.community.allowSystemManagement)
+
 controllers.controller('CreateEditSystemController', CreateEditSystemController)

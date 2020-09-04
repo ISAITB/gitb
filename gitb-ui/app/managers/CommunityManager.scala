@@ -179,7 +179,7 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
     community
   }
 
-  def updateCommunityInternal(community: Communities, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean, description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean, domainId: Option[Long]) = {
+  def updateCommunityInternal(community: Communities, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean, description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean, allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean, domainId: Option[Long]) = {
     val actions = new ListBuffer[DBIO[_]]()
 
     if (!shortName.isEmpty && community.shortname != shortName) {
@@ -229,18 +229,18 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
       val q = for {c <- PersistenceSchema.communities if c.id === community.id} yield (c.fullname)
       actions += q.update(fullName)
     }
-    val qs = for {c <- PersistenceSchema.communities if c.id === community.id} yield (c.supportEmail, c.domain, c.selfRegType, c.selfRegToken, c.selfRegTokenHelpText, c.selfregNotification, c.description, c.selfRegRestriction, c.selfRegForceTemplateSelection, c.selfRegForceRequiredProperties)
-    actions += qs.update(supportEmail, domainId, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties)
+    val qs = for {c <- PersistenceSchema.communities if c.id === community.id} yield (c.supportEmail, c.domain, c.selfRegType, c.selfRegToken, c.selfRegTokenHelpText, c.selfregNotification, c.description, c.selfRegRestriction, c.selfRegForceTemplateSelection, c.selfRegForceRequiredProperties, c.allowCertificateDownload, c.allowStatementManagement, c.allowSystemManagement)
+    actions += qs.update(supportEmail, domainId, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement)
     toDBIO(actions)
   }
 
   /**
     * Update community
     */
-  def updateCommunity(communityId: Long, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean, description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean, domainId: Option[Long]) = {
+  def updateCommunity(communityId: Long, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean, description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean, allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean, domainId: Option[Long]) = {
     val community = exec(PersistenceSchema.communities.filter(_.id === communityId).result.headOption)
     if (community.isDefined) {
-      exec(updateCommunityInternal(community.get, shortName, fullName, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, domainId).transactionally)
+      exec(updateCommunityInternal(community.get, shortName, fullName, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, domainId).transactionally)
     } else {
       throw new IllegalArgumentException("Community with ID '" + communityId + "' not found")
     }

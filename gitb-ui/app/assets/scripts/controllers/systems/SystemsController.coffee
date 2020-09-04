@@ -95,7 +95,7 @@ class SystemsController
 		!@DataService.isVendorUser
 
 	showCreate: () =>
-		!@DataService.isVendorUser
+		@DataService.isSystemAdmin || @DataService.isCommunityAdmin || (@DataService.isVendorAdmin && @DataService.community.allowSystemManagement)
 
 	redirect: (address, systemId) ->
 		@$location.path(address + "/" + systemId)

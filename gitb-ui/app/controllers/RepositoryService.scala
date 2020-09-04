@@ -17,7 +17,7 @@ import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
 import managers._
 import managers.export._
-import models.{ConformanceCertificate, Constants}
+import models.{ConformanceCertificate, ConformanceCertificates, Constants}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
@@ -31,7 +31,7 @@ import scala.concurrent.ExecutionContext
 /**
  * Created by serbay on 10/16/14.
  */
-class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager, importPreviewManager: ImportPreviewManager, importCompleteManager: ImportCompleteManager) extends AbstractController(cc) {
+class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemManager: SystemManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager, importPreviewManager: ImportPreviewManager, importCompleteManager: ImportCompleteManager) extends AbstractController(cc) {
 
 	private val logger = LoggerFactory.getLogger(classOf[RepositoryService])
 	private val codec = new URLCodec()
@@ -194,14 +194,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     )
   }
 
-  def exportConformanceCertificateReport() = authorizedAction { request =>
-    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
-    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
-    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
-    authorizationManager.canViewConformanceCertificateReport(request, communityId)
-
-    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
-    var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
+  private def exportConformanceCertificateInternal(settings: ConformanceCertificates, communityId: Long, systemId: Long, actorId: Long) = {
     val reportPath = Paths.get(
       ReportManager.getTempFolderPath().toFile.getAbsolutePath,
       "conformance_reports",
@@ -211,10 +204,48 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     try {
       FileUtils.deleteDirectory(reportPath.toFile.getParentFile)
     } catch  {
-      case e:Exception => {
+      case _:Exception => {
         // Ignore these are anyway deleted every hour
       }
     }
+    reportManager.generateConformanceCertificate(reportPath, settings, actorId, systemId)
+    Ok.sendFile(
+      content = reportPath.toFile,
+      fileName = _ => Some(reportPath.toFile.getName)
+    )
+  }
+
+  def exportOwnConformanceCertificateReport() = authorizedAction { request =>
+    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    authorizationManager.canViewOwnConformanceCertificateReport(request, systemId)
+    val communityId = systemManager.getCommunityIdOfSystem(systemId)
+    var settingsToUse: Option[ConformanceCertificates] = None
+    val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+    if (storedSettings.isEmpty) {
+      // Use default settings.
+      settingsToUse = Some(ConformanceCertificates(0L, None, None, includeMessage = false, includeTestStatus = true, includeTestCases = true, includeDetails = true, includeSignature = false, None, None, None, None, communityId))
+    } else {
+      val completeSettings = new ConformanceCertificate(storedSettings.get)
+      if (storedSettings.get.includeSignature) {
+        completeSettings.keystoreFile = storedSettings.get.keystoreFile
+        completeSettings.keystoreType = storedSettings.get.keystoreType
+        completeSettings.keyPassword = Some(MimeUtil.decryptString(storedSettings.get.keyPassword.get))
+        completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
+        settingsToUse = Some(completeSettings.toCaseObject)
+      }
+    }
+    exportConformanceCertificateInternal(settingsToUse.get, communityId, systemId, actorId)
+  }
+
+  def exportConformanceCertificateReport() = authorizedAction { request =>
+    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    authorizationManager.canViewConformanceCertificateReport(request, communityId)
+
+    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
+    var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
     if (settings.includeSignature) {
       // The signature information needs to be looked up from the stored data.
       val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
@@ -225,15 +256,11 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
       settings = completeSettings.toCaseObject
     }
-    reportManager.generateConformanceCertificate(reportPath, settings, actorId, systemId)
-    Ok.sendFile(
-      content = reportPath.toFile,
-      fileName = _ => Some(reportPath.toFile.getName)
-    )
+    exportConformanceCertificateInternal(settings, communityId, systemId, actorId)
   }
 
   def exportDemoConformanceCertificateReport(communityId: Long) = authorizedAction { request =>
-    authorizationManager.canViewConformanceCertificateReport(request, communityId)
+    authorizationManager.canPreviewConformanceCertificateReport(request, communityId)
     val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
     var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
 

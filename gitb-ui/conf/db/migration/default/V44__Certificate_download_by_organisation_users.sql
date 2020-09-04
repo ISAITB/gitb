@@ -1,0 +1,1 @@
+ALTER TABLE `communities` ADD COLUMN `allow_certificate_download` TINYINT DEFAULT 0 NOT NULL;

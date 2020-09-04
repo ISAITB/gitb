@@ -120,6 +120,9 @@ object Parameters {
   val COMMUNITY_SELFREG_NOTIFICATION = "community_selfreg_notification"
   val COMMUNITY_SELFREG_FORCE_TEMPLATE = "community_selfreg_force_template"
   val COMMUNITY_SELFREG_FORCE_PROPERTIES = "community_selfreg_force_properties"
+  val ALLOW_CERTIFICATE_DOWNLOAD = "allow_certificate_download"
+  val ALLOW_STATEMENT_MANAGEMENT = "allow_statement_management"
+  val ALLOW_SYSTEM_MANAGEMENT = "allow_system_management"
 
   //TestService parameters
   val ACTOR_ID   = "actor_id"

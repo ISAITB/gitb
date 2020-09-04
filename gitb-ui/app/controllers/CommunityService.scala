@@ -46,7 +46,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: Contro
   def getCommunityById(communityId: Long) = authorizedAction { request =>
     authorizationManager.canViewCommunityFull(request, communityId)
     val community = communityManager.getCommunityById(communityId)
-    val json: String = JsonUtil.serializeCommunity(community, None)
+    val json: String = JsonUtil.serializeCommunity(community, None, includeAdminInfo = true)
     ResponseConstructor.constructJsonResponse(json)
   }
 
@@ -59,6 +59,9 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: Contro
     val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
     val email = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_EMAIL)
     val description = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
+    val allowCertificateDownload = ParameterExtractor.requiredBodyParameter(request, Parameters.ALLOW_CERTIFICATE_DOWNLOAD).toBoolean
+    val allowStatementManagement = requiredBodyParameter(request, Parameters.ALLOW_STATEMENT_MANAGEMENT).toBoolean
+    val allowSystemManagement = requiredBodyParameter(request, Parameters.ALLOW_SYSTEM_MANAGEMENT).toBoolean
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
     var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
     var selfRegToken: Option[String] = None
@@ -96,7 +99,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: Contro
       }
     }
     val domainId: Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    communityManager.updateCommunity(communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, domainId)
+    communityManager.updateCommunity(communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, domainId)
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -215,7 +218,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: Contro
 
     val community = communityManager.getUserCommunity(userId)
     val labels = communityManager.getCommunityLabels(community.id)
-    val json: String = JsonUtil.serializeCommunity(community, Some(labels))
+    val json: String = JsonUtil.serializeCommunity(community, Some(labels), includeAdminInfo = false)
     ResponseConstructor.constructJsonResponse(json)
   }
 

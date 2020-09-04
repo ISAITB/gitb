@@ -424,6 +424,16 @@ class ConformanceService
       authenticate: true
       responseType: "arraybuffer"
 
+  exportOwnConformanceCertificateReport: (actorId, systemId) ->
+    @RestService.post
+      path: jsRoutes.controllers.RepositoryService.exportOwnConformanceCertificateReport().url
+      data: {
+        actor_id: actorId
+        system_id: systemId
+      }
+      authenticate: true
+      responseType: "arraybuffer"
+
   exportConformanceCertificateReport: (communityId, actorId, systemId, settings) ->
     data = {}
     if settings?

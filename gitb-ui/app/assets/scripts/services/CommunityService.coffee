@@ -17,12 +17,15 @@ class CommunityService
       authenticate: true
       params: params
 
-  createCommunity: (shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegForceTemplate, selfRegForceProperties, domainId) ->
+  createCommunity: (shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegForceTemplate, selfRegForceProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, domainId) ->
     data = {
       community_sname: shortName,
       community_fname: fullName,
       community_email: email,
-      description: description
+      description: description,
+      allow_certificate_download: allowCertificateDownload,
+      allow_statement_management: allowStatementManagement,
+      allow_system_management: allowSystemManagement
     }
     if @DataService.configuration['registration.enabled']
       if selfRegNotification == undefined
@@ -50,12 +53,15 @@ class CommunityService
       authenticate: true
     })
 
-  updateCommunity: (communityId, shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegForceTemplate, selfRegForceProperties, domainId) ->
+  updateCommunity: (communityId, shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegForceTemplate, selfRegForceProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, domainId) ->
     data = {
       community_sname: shortName,
       community_fname: fullName,
       community_email: email,
-      description: description
+      description: description,
+      allow_certificate_download: allowCertificateDownload,
+      allow_statement_management: allowStatementManagement,
+      allow_system_management: allowSystemManagement
     }
     if @DataService.configuration['registration.enabled']
       if selfRegNotification == undefined
