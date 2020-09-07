@@ -49,6 +49,8 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
 
     /**
      * Initializing the children actors and the TestCaseContext
+     *
+     * @throws IllegalAccessException
      */
     private void init() throws Exception {
         TestCaseContext context = SessionManager
@@ -163,7 +165,7 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
 	}
 
     public static Props props(final String sessionId) {
-        return Props.create((Creator<TestCaseProcessorActor>) () -> new TestCaseProcessorActor(sessionId));
+        return Props.create(TestCaseProcessorActor.class, (Creator<TestCaseProcessorActor>) () -> new TestCaseProcessorActor(sessionId));
     }
 
     /**
