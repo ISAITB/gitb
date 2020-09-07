@@ -1,6 +1,5 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import akka.dispatch.Futures;
 import akka.dispatch.OnFailure;
@@ -21,14 +20,11 @@ import com.gitb.utils.ErrorUtils;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
-import java.util.concurrent.Callable;
-
 public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorActor<Process> {
 
     public static final String NAME = "process-p";
 
     private Promise<TestStepReportType> promise;
-    private Future<TestStepReportType> future;
 
     public ProcessStepProcessorActor(Process step, TestCaseScope scope, String stepId) {
         super(step, scope, stepId);
@@ -39,14 +35,14 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
     }
 
     @Override
-    protected void init() throws Exception {
+    protected void init() {
         final ActorContext context = getContext();
 
         promise = Futures.promise();
 
-        promise.future().onSuccess(new OnSuccess<TestStepReportType>() {
+        promise.future().foreach(new OnSuccess<>() {
             @Override
-            public void onSuccess(TestStepReportType result) throws Throwable {
+            public void onSuccess(TestStepReportType result) {
                 if (result != null) {
                     if (result.getResult() == TestResultType.SUCCESS) {
                         updateTestStepStatus(context, StepStatus.COMPLETED, result);
@@ -61,16 +57,16 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             }
         }, context.dispatcher());
 
-        promise.future().onFailure(new OnFailure() {
+        promise.future().failed().foreach(new OnFailure() {
             @Override
-            public void onFailure(Throwable failure) throws Throwable {
+            public void onFailure(Throwable failure) {
                 updateTestStepStatus(context, new ErrorStatusEvent(failure), null, true);
             }
         }, context.dispatcher());
     }
 
     @Override
-    protected void start() throws Exception {
+    protected void start() {
         processing();
 
         ProcessingContext context;
@@ -90,29 +86,26 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             context = this.scope.getContext().getProcessingContext(step.getTxnId());
         }
 
-        future = Futures.future(new Callable<TestStepReportType>() {
-            @Override
-            public TestStepReportType call() throws Exception {
-                IProcessingHandler handler = context.getHandler();
-                String operation = step.getOperation();
-                ProcessingReport report = handler.process(context.getSession(), operation, getData(handler, operation));
-                if (step.getId() != null) {
-                    scope.createVariable(step.getId()).setValue(getValue(report.getData()));
-                }
-                return report.getReport();
+        Future<TestStepReportType> future = Futures.future(() -> {
+            IProcessingHandler handler = context.getHandler();
+            String operation = step.getOperation();
+            ProcessingReport report = handler.process(context.getSession(), operation, getData(handler, operation));
+            if (step.getId() != null) {
+                scope.createVariable(step.getId()).setValue(getValue(report.getData()));
             }
+            return report.getReport();
         }, getContext().dispatcher());
 
-        future.onSuccess(new OnSuccess<TestStepReportType>() {
+        future.foreach(new OnSuccess<>() {
             @Override
-            public void onSuccess(TestStepReportType result) throws Throwable {
+            public void onSuccess(TestStepReportType result) {
                 promise.trySuccess(result);
             }
         }, getContext().dispatcher());
 
-        future.onFailure(new OnFailure() {
+        future.failed().foreach(new OnFailure() {
             @Override
-            public void onFailure(Throwable failure) throws Throwable {
+            public void onFailure(Throwable failure) {
                 promise.tryFailure(failure);
             }
         }, getContext().dispatcher());
@@ -121,7 +114,7 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
     @Override
     protected void stop() {
         if (promise != null) {
-            boolean stopped = promise.tryFailure(new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.CANCELLATION, "Test step [" + stepId + "] is cancelled.")));
+            promise.tryFailure(new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.CANCELLATION, "Test step [" + stepId + "] is cancelled.")));
         }
     }
 

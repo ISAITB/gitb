@@ -88,7 +88,7 @@ public class DNSSender extends UDPSender {
 
 	private org.xbill.DNS.Message generateResponse(org.xbill.DNS.Message query, List<Configuration> configurations) throws TextParseException, UnknownHostException {
 		if(query.getHeader().getOpcode() != Opcode.QUERY) {
-			return ErrorMessages.makeErrorMessage(query, Rcode.NOTIMPL);
+			return ErrorMessages.makeErrorMessage(query, Rcode.NOTIMP);
 		}
 
 		Record queryRecord = query.getQuestion();
@@ -100,7 +100,7 @@ public class DNSSender extends UDPSender {
 
 		if(query.getTSIG() != null) {
 			logger.debug(addMarker(), "TSIG is not null. Returning error response for the query ["+name+"]");
-			return ErrorMessages.makeErrorMessage(query, Rcode.NOTIMPL);
+			return ErrorMessages.makeErrorMessage(query, Rcode.NOTIMP);
 		}
 
 		org.xbill.DNS.Message response = new org.xbill.DNS.Message();
@@ -115,12 +115,12 @@ public class DNSSender extends UDPSender {
 
 		if(!Type.isRR(type) && type != Type.ANY) {
 			logger.debug(addMarker(), "Record type is not RR or ANY. Returning error response for the query ["+name+"]");
-			return ErrorMessages.makeErrorMessage(query, Rcode.NOTIMPL);
+			return ErrorMessages.makeErrorMessage(query, Rcode.NOTIMP);
 		}
 
 		if(type == Type.SIG) {
 			logger.debug(addMarker(), "Record type is SIG. Returning error response for the query ["+name+"]");
-			return ErrorMessages.makeErrorMessage(query, Rcode.NOTIMPL);
+			return ErrorMessages.makeErrorMessage(query, Rcode.NOTIMP);
 		}
 
 		response.getHeader().setFlag(Flags.AA);

@@ -1,9 +1,5 @@
 package com.gitb.types;
 
-import com.gitb.core.ErrorCode;
-import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.utils.ErrorUtils;
-
 import javax.xml.xpath.XPathExpression;
 import java.util.ArrayList;
 import java.util.List;

@@ -7,7 +7,7 @@ import javax.xml.xpath.XPathExpression;
  */
 public class NumberType extends PrimitiveType {
 
-    private Double value = new Double(0);
+    private Double value = (double) 0;
 
     @Override
     public String getType() {
