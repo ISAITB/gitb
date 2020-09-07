@@ -143,26 +143,28 @@
                         </div>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-xs-12">
-                        <div class="form-separator">
-                            <h4 class="title">Trigger status <span uib-tooltip="The presented result is the trigger's latest outcome from calling the configured web service. In case of failure you can also view the incremental error messages that were reported when the service call was attempted."><i class="fa fa-question-circle"></i></span></h4>
+                <div ng-if="controller.update">
+                    <div class="row">
+                        <div class="col-xs-12">
+                            <div class="form-separator">
+                                <h4 class="title">Trigger status <span uib-tooltip="The presented result is the trigger's latest outcome from calling the configured web service. In case of failure you can also view the incremental error messages that were reported when the service call was attempted."><i class="fa fa-question-circle"></i></span></h4>
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-xs-10 col-xs-offset-1">
-                        <div class="form-group">
-                            <label class="col-xs-3 control-label" for="url">Latest result:</label>
-                            <div class="col-xs-1">
-                                <p class="form-control-static status-display" ng-class="{'bg-info': controller.trigger.status == controller.statusTextUnknown.id,'bg-success': controller.trigger.status == controller.statusTextOk.id,'bg-danger': controller.trigger.status == controller.statusTextError.id}">
-                                    {{controller.trigger.statusText}}
-                                </p>
-                            </div>
-                            <div class="col-xs-7">
-                                <div class="btn-toolbar">
-                                    <button class="btn btn-default" type="button" ng-click="controller.viewLatestErrors()" ng-if="controller.trigger.status == controller.statusTextError.id">View errors</button>
-                                    <button class="btn btn-default" type="button" ng-click="controller.clearStatus()" ng-if="controller.trigger.status == controller.statusTextOk.id || controller.trigger.status == controller.statusTextError.id" ng-disabled="controller.clearStatusDisabled()"><span class="tab" ng-if="controller.clearStatusPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span><span ng-if="!controller.clearStatusPending">Clear</span></button>
+                    <div class="row">
+                        <div class="col-xs-10 col-xs-offset-1">
+                            <div class="form-group">
+                                <label class="col-xs-3 control-label" for="url">Latest result:</label>
+                                <div class="col-xs-2">
+                                    <p class="form-control-static status-display" ng-class="{'bg-info': controller.trigger.status == controller.statusTextUnknown.id,'bg-success': controller.trigger.status == controller.statusTextOk.id,'bg-danger': controller.trigger.status == controller.statusTextError.id}">
+                                        {{controller.trigger.statusText}}
+                                    </p>
+                                </div>
+                                <div class="col-xs-6">
+                                    <div class="btn-toolbar">
+                                        <button class="btn btn-default" type="button" ng-click="controller.viewLatestErrors()" ng-if="controller.trigger.status == controller.statusTextError.id">View errors</button>
+                                        <button class="btn btn-default" type="button" ng-click="controller.clearStatus()" ng-if="controller.trigger.status == controller.statusTextOk.id || controller.trigger.status == controller.statusTextError.id" ng-disabled="controller.clearStatusDisabled()"><span class="tab" ng-if="controller.clearStatusPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span><span ng-if="!controller.clearStatusPending">Clear</span></button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
