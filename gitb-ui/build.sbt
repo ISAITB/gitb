@@ -7,7 +7,7 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 scalaVersion := "2.12.12"
 val akkaVersion = "2.6.8"
 val jacksonVersion = "2.10.5"
-val cxfVersion = "3.3.7"
+val cxfVersion = "3.4.0"
 
 useCoursier := false
 
