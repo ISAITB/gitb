@@ -25,14 +25,12 @@ class CommunityCreateController
       @ErrorService.showErrorMessage(error)
 
   saveDisabled: () =>
-    !(@community?.sname? && @community?.fname? && 
-    (!@DataService.configuration?['registration.enabled'] || 
-      ((@community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED || 
-        @community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || 
-        (@community?.selfRegToken?.trim().length > 0)) && 
-        (!@DataService.configuration?['email.enabled'] || 
-        (!@community?.selfRegNotification || @community?.email? && @community.email.trim() != '')))
-    ))
+    !(@community?.sname? && @community?.fname? && @community.sname.trim() != '' && @community.fname.trim() != '' &&
+      (!@DataService.configuration?['registration.enabled'] || 
+        (@community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED || 
+          ((@community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || (@community?.selfRegToken?.trim().length > 0)) && 
+          (!@DataService.configuration?['email.enabled'] || (!@community?.selfRegNotification || (@community?.email? && @community.email.trim() != '')))))
+    ))  
 
   createCommunity: () =>
     @ValidationService.clearAll()
