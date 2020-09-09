@@ -82,7 +82,7 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
 
         if (childStep instanceof Send) {
             child = SendStepProcessorActor.create(context, (Send) childStep, scope, childStepId);
-        } else if (childStep instanceof Receive) {
+        } else if (childStep instanceof com.gitb.tdl.Receive) {
             child = ReceiveStepProcessorActor.create(context, (com.gitb.tdl.Receive) childStep, scope, childStepId);
         } else if (childStep instanceof Listen) {
             child = ListenStepProcessorActor.create(context, (Listen) childStep, scope, childStepId);
