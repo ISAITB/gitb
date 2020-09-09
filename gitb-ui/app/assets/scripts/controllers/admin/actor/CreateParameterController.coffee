@@ -10,11 +10,21 @@ class CreateParameterController
 		@$scope.parameter.adminOnly = options.adminOnly? && options.adminOnly
 		@$scope.parameter.inExports = false
 		@$scope.parameter.inSelfRegistration = false
+		@$scope.parameter.hidden = false
+		@$scope.parameter.hasPresetValues = false
+		@$scope.parameter.presetValues = []
 
 		@$scope.nameLabel = if options.nameLabel? then options.nameLabel else 'Name'
 		@$scope.hasKey = options.hasKey? && options.hasKey
 		@$scope.modalTitle = if options.modalTitle? then options.modalTitle else 'Create parameter'
 		@$scope.existingValues = options.existingValues
+
+		@$scope.dependsOnTargets = []
+		@$scope.dependsOnTargetsMap = {}
+		for v in @$scope.existingValues
+			if v.kind == 'SIMPLE'
+				@$scope.dependsOnTargets.push v
+				@$scope.dependsOnTargetsMap[v.key] = v
 		@$scope.reservedKeys = options.reservedKeys
 		@$scope.hideInExport = options.hideInExport? && options.hideInExport
 		@$scope.hideInRegistration = !@DataService.configuration['registration.enabled'] || (options.hideInRegistration? && options.hideInRegistration)
@@ -22,7 +32,7 @@ class CreateParameterController
 		@$uibModalInstance.rendered.then () => @DataService.focus('name')
 
 		@$scope.saveDisabled = () =>
-			!(@$scope.parameter.name?.length > 0 && @$scope.parameter.kind?.length > 0 && (!@$scope.hasKey || @$scope.parameter.key?.length > 0))
+			!(@$scope.parameter.name?.length > 0 && @$scope.parameter.kind?.length > 0 && (!@$scope.hasKey || @$scope.parameter.key?.length > 0) && @presetValuesValid() && @dependencyValid())
 
 		@$scope.createParameter = () =>
 			if !@$scope.saveDisabled() && @validName(@$scope.parameter.name) && @validKey(@$scope.parameter.key)
@@ -31,13 +41,46 @@ class CreateParameterController
 		@$scope.cancel = () =>
 			@$uibModalInstance.dismiss()
 
+		@$scope.removePresetValue = (index) =>
+			@$scope.parameter.presetValues.splice(index, 1)
+
+		@$scope.addPresetValue = () =>
+			@$scope.parameter.presetValues.push({value: '', label:''})
+			@DataService.focus('presetValue-'+(@$scope.parameter.presetValues.length - 1))
+
+		@$scope.movePresetUp = (index) =>
+			item = @$scope.parameter.presetValues.splice(index, 1)[0]
+			@$scope.parameter.presetValues.splice(index-1, 0, item)
+
+		@$scope.movePresetDown = (index) =>
+			item = @$scope.parameter.presetValues.splice(index, 1)[0]
+			@$scope.parameter.presetValues.splice(index+1, 0, item)
+
+		@$scope.dependsOnChanged = () =>
+			if @$scope.parameter.dependsOn == undefined || @$scope.parameter.dependsOn == ''
+				@$scope.parameter.dependsOnValue = undefined
+
+	presetValuesValid: () =>
+		if @$scope.parameter.kind == 'SIMPLE' && @$scope.parameter.hasPresetValues
+			for v in @$scope.parameter.presetValues
+				if (v.value == undefined || v.value.trim().length == 0) || (v.label == undefined || v.label.trim().length == 0)
+					return false
+		return true
+
+	dependencyValid: () =>
+		valid = true
+		if @$scope.parameter.dependsOn? && @$scope.parameter.dependsOn != ''
+			if !@$scope.parameter.dependsOnValue? || @$scope.parameter.dependsOnValue.trim() == ''
+				valid = false
+		valid
+
 	validName: (nameValue) =>
 		finder = (value) =>
 			_.find @$scope.existingValues, (v) => 
 				v.name == value
 		if @$scope.existingValues? && finder(nameValue)
 			nameToShow = @$scope.nameLabel.toLowerCase()
-			@ErrorService.showSimpleErrorMessage('Invalid '+nameToShow, 'The provided '+nameToShow+' is already defined.')
+			@ErrorService.showSimpleErrorMessage('Invalid '+nameToShow, 'The provided '+nameToShow+' is already defined.', 10)
 			false
 		else
 			true

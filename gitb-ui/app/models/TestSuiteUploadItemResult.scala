@@ -1,6 +1,6 @@
 package models
 
-class TestSuiteUploadItemResult(var itemName: String, var itemType: String, var actionType: String) {
+class TestSuiteUploadItemResult(var itemName: String, var itemType: String, var actionType: String, var specification: Long) {
 }
 
 object TestSuiteUploadItemResult {

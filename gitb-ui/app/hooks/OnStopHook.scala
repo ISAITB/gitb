@@ -1,21 +1,35 @@
 package hooks
 
+import actors.TriggerActor
+import akka.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
 import jaxws.TestbedService
-import play.api.Logger
+import org.slf4j.LoggerFactory
 import play.api.inject.ApplicationLifecycle
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 
 @Singleton
-class OnStopHook @Inject()(lifecycle: ApplicationLifecycle) {
+class OnStopHook @Inject()(lifecycle: ApplicationLifecycle, actorSystem: ActorSystem) {
 
+  private def logger = LoggerFactory.getLogger(this.getClass)
+
+  // Stop backend service.
   lifecycle.addStopHook(() => {
-    if (TestbedService.endpoint != null) {
+    Future.successful(if (TestbedService.endpoint != null) {
       TestbedService.endpoint.stop()
-    }
-    Logger.info("Application shutdown...")
-    Future.successful(())
+    })
   })
+  // Stop event listeners.
+  lifecycle.addStopHook(() => {
+    Future.successful(
+      actorSystem.actorSelection("/user/"+TriggerActor.actorName).resolveOne(1.second).onComplete { ref =>
+        actorSystem.stop(ref.get)
+      }
+    )
+  })
+  logger.info("Application shutdown...")
 
 }

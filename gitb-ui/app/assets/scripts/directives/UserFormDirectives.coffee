@@ -93,7 +93,7 @@
           '<div ng-class="{\'form-separator-popup\': sso, \'form-separator form-separator-top-padding\': !sso}">'+
               '<h4 class="title">Community</h4>'+
           '</div>'+
-          '<div table-directive row-style="optionRowStyle" ng-class="{\'self-reg-option-table-popup\': sso}" class="self-reg-option-table" columns="communityColumns" data="selfRegOptions" on-select="communitySelected"/>'+
+          '<div table-directive row-style="optionRowStyle" ng-class="{\'self-reg-option-table-popup\': sso}" class="self-reg-option-table" columns="communityColumns" data="selfRegOptions" on-select="communitySelected"></div>'+
           '<div uib-collapse="!model.selfRegOption.communityId">' +
             '<div ng-if="model.selfRegOption.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN">'+
               '<div class="form-group">'+
@@ -127,7 +127,7 @@
                 '<div tb-tooltip="The complete name of your {{DataService.labelOrganisationLower()}}."></div>'+
             '</div>'+
             '<div class="form-group" ng-if="model.selfRegOption.templates.length > 0">'+
-                '<label class="col-xs-3 control-label" for="template">Configuration:</label>'+
+                '<label class="col-xs-3 control-label" for="template"><span ng-show="model.selfRegOption.forceTemplateSelection">* </span>Configuration:</label>'+
                 '<div class="col-xs-7">'+
                     '<select id="template" class="form-control" ng-model="model.template" ng-options="template as template.name for template in model.selfRegOption.templates"><option value=""></option></select>'+
                 '</div>'+
@@ -136,11 +136,11 @@
 
             '<div class="row" ng-if="model.selfRegOption.organisationProperties.length > 0">'+
               '<div class="col-xs-12">'+
-                '<div ng-class="{\'form-separator-popup selfreg\': sso, \'form-separator\': !sso}"/>'+
+                '<div ng-class="{\'form-separator-popup selfreg\': sso, \'form-separator\': !sso}"></div>'+
               '</div>'+
             '</div>'+
 
-            '<div tb-custom-properties-form tb-properties="model.selfRegOption.organisationProperties" tb-show-form-header="false" tb-form-padded="false" tb-col-input-less="1"/>'+
+            '<div tb-custom-properties-form tb-properties="model.selfRegOption.organisationProperties" tb-show-form-header="false" tb-form-padded="false" tb-col-input-less="1" tb-show-required-asterisks="model.selfRegOption.forceRequiredProperties"></div>'+
             '<div ng-if="!sso">'+
               '<div class="form-separator form-separator-top-padding">'+
                   '<h4 class="title">Administrator account details <span uib-tooltip="Through your administrator account you can manage your {{DataService.labelOrganisationLower()}}  users, configure your conformance statements and execute tests"><i class="fa fa-question-circle"></i></span></h4>'+
@@ -238,7 +238,7 @@
       tbInline: '<?'
       tbInlineType: '@?'
     restrict: 'A'
-    template: '<div ng-class="{\'form-control-static\': (!tbInline || tbInlineType == \'button\'), \'checkLabel\': (tbInline && tbInlineType == \'checkLabel\'), \'check\': (tbInline && tbInlineType == \'check\'), \'radio\': (tbInline && tbInlineType == \'radio\')}"><span uib-tooltip="{{tbTooltip}}"><i class="fa fa-question-circle"></i></span></div>'
+    template: '<div ng-class="{\'form-control-static\': (!tbInline || tbInlineType == \'button\'), \'checkLabel\': (tbInline && tbInlineType == \'checkLabel\'), \'checkLabelText\': (tbInline && tbInlineType == \'checkLabelText\'), \'check\': (tbInline && tbInlineType == \'check\'), \'radio\': (tbInline && tbInlineType == \'radio\')}"><span uib-tooltip="{{tbTooltip}}"><i class="fa fa-question-circle"></i></span></div>'
     link: (scope, element, attrs) ->
       if scope.tbInline == undefined
         scope.tbInline = false
@@ -294,7 +294,7 @@
               '<select ng-if="!disableProcessChoice && tbImportItem.process != '+Constants.IMPORT_ITEM_CHOICE.SKIP_DUE_TO_PARENT+'" class="control" ng-click="$event.stopPropagation();" ng-model="tbImportItem.selectedProcessOption" ng-options="option.id as option.label for option in processOptions"></select>'+
               '<input type="text" value="Skip" ng-if="disableProcessChoice || tbImportItem.process == '+Constants.IMPORT_ITEM_CHOICE.SKIP_DUE_TO_PARENT+'" class="control" ng-click="$event.stopPropagation();" disabled="true"/>'+
             '</div>'+
-            '<div class="title-icon" ng-if="hasGroups"><i class="fa" ng-class="{\'fa-chevron-down\': tbImportItem.open, \'fa-chevron-right\': !tbImportItem.open}"/></div>'+
+            '<div class="title-icon" ng-if="hasGroups"><i class="fa" ng-class="{\'fa-chevron-down\': tbImportItem.open, \'fa-chevron-right\': !tbImportItem.open}"></i></div>'+
           '</div>'+
           '<div class="import-item-group-container" uib-collapse="!tbImportItem.open" ng-if="tbImportItem.groups.length > 0">'+
             '<div ng-repeat="group in tbImportItem.groups" tb-import-item-group="group" tb-default-action-fn="tbDefaultActionFn" tb-type-label-fn="tbTypeLabelFn">'+
@@ -459,7 +459,7 @@
             '<button type="button" ng-if="showSkipAll()" ng-click="skipAll(); $event.stopPropagation();" class="btn btn-primary btn-sm">Skip all</button>'+
             '<button type="button" ng-if="showProceedAll()" ng-click="proceedAll(); $event.stopPropagation();" class="btn btn-primary btn-sm">Process all</button>'+
           '</div>'+
-          '<div class="title-icon"><i class="fa" ng-class="{\'fa-chevron-down\': group.open, \'fa-chevron-right\': !group.open}"/></div>'+
+          '<div class="title-icon"><i class="fa" ng-class="{\'fa-chevron-down\': group.open, \'fa-chevron-right\': !group.open}"></i></div>'+
         '</div>'+
         '<div class="import-item-group-items" uib-collapse="!group.open">'+
           '<div class="import-item-group-item" ng-repeat="groupItem in group.items" tb-import-item="groupItem" tb-default-action-fn="tbDefaultActionFn" tb-type-label-fn="tbTypeLabelFn"></div>'+

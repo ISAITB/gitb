@@ -6,6 +6,7 @@ class AuthProvider
 	constructor: (@$httpProvider) ->
 		@authenticated = false
 		@logoutOngoing = false
+		@logoutSignalled = false
 
 	# Overriding $get method of $httpProvider
 	$get: () ->
@@ -14,6 +15,7 @@ class AuthProvider
 	# Sets the Authorization header with access token
 	authenticate: (accessToken, cookiePath) =>
 		@authenticated = true
+		@logoutSignalled = false
 		@cookiePath = cookiePath
 		@$httpProvider.defaults.headers.common.Authorization = 'Bearer ' + accessToken
 
@@ -54,7 +56,6 @@ providers.run ['$log', '$rootScope', '$location', '$window', '$cookies', 'AuthPr
 				cookieOptions.expires = expiryDate
 
 			$cookies.put(atKey, accessToken, cookieOptions)
-
 			authProvider.authenticate(accessToken, data.path)
 			$rootScope.$emit(Events.afterLogin)
 

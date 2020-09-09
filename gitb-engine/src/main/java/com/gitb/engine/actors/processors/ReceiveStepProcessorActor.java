@@ -1,11 +1,13 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import akka.dispatch.Futures;
 import akka.dispatch.OnFailure;
 import akka.dispatch.OnSuccess;
-import com.gitb.core.*;
+import com.gitb.core.Configuration;
+import com.gitb.core.ErrorCode;
+import com.gitb.core.MessagingModule;
+import com.gitb.core.StepStatus;
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.expr.resolvers.VariableResolver;
@@ -19,32 +21,24 @@ import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
 import com.gitb.messaging.utils.MessagingHandlerUtils;
-import com.gitb.tdl.Receive;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.BooleanType;
 import com.gitb.types.MapType;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.commons.lang3.StringUtils;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 
 /**
  * Created by serbay on 9/30/14.
  *
  * Receive step executor actor
  */
-public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorActor<Receive> {
-
-    private static final Logger logger = LoggerFactory.getLogger(ReceiveStepProcessorActor.class);
+public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorActor<com.gitb.tdl.Receive> {
 
 	public static final String NAME = "receive-p";
 
@@ -52,22 +46,21 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 	private TransactionContext transactionContext;
 
 	private Promise<TestStepReportType> promise;
-	private Future<TestStepReportType> future;
 
-	public ReceiveStepProcessorActor(Receive step, TestCaseScope scope, String stepId) {
+	public ReceiveStepProcessorActor(com.gitb.tdl.Receive step, TestCaseScope scope, String stepId) {
 		super(step, scope, stepId);
 	}
 
 	@Override
-	protected void init() throws Exception {
+	protected void init() {
 		final ActorContext context = getContext();
 
 		promise = Futures.promise();
 
-		promise.future().onSuccess(new OnSuccess<TestStepReportType>() {
+		promise.future().foreach(new OnSuccess<>() {
 			@Override
-			public void onSuccess(TestStepReportType result) throws Throwable {
-				if(result != null) {
+			public void onSuccess(TestStepReportType result) {
+				if (result != null) {
 					if (result.getResult() == TestResultType.SUCCESS) {
 						updateTestStepStatus(context, StepStatus.COMPLETED, result);
 					} else if (result.getResult() == TestResultType.WARNING) {
@@ -81,16 +74,16 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 			}
 		}, context.dispatcher());
 
-		promise.future().onFailure(new OnFailure() {
+		promise.future().failed().foreach(new OnFailure() {
 			@Override
-			public void onFailure(Throwable failure) throws Throwable {
+			public void onFailure(Throwable failure) {
                 updateTestStepStatus(context, new ErrorStatusEvent(failure), null, true);
 			}
 		}, context.dispatcher());
 	}
 
 	@Override
-	protected void start() throws Exception {
+	protected void start() {
 		processing();
 
         TestCaseContext testCaseContext = scope.getContext();
@@ -110,136 +103,127 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 		waiting();
 
 		if(messagingHandler != null) {
-			future = Futures.future(new Callable<TestStepReportType>() {
-				@Override
-				public TestStepReportType call() throws Exception {
-
-					VariableResolver resolver = new VariableResolver(scope);
-					if (step.getConfig() != null) {
-						for (Configuration config: step.getConfig()) {
-							if (resolver.isVariableReference(config.getValue())) {
-								config.setValue(resolver.resolveVariableAsString(config.getValue()).toString());
-							}
+			// This call will block until there is a callback response.
+			/*
+								The response was not triggered by a timeout but we have a timeout flag defined
+								Make sure we have the flag set as false in the response.
+								 */
+			Future<TestStepReportType> future = Futures.future(() -> {
+				VariableResolver resolver = new VariableResolver(scope);
+				if (step.getConfig() != null) {
+					for (Configuration config : step.getConfig()) {
+						if (resolver.isVariableReference(config.getValue())) {
+							config.setValue(resolver.resolveVariableAsString(config.getValue()).toString());
 						}
 					}
+				}
 
-					MessagingModule moduleDefinition = messagingHandler.getModuleDefinition();
-					if (moduleDefinition.getReceiveConfigs() != null) {
-						checkRequiredParametersAndSetDefaultValues(moduleDefinition.getReceiveConfigs().getParam(), step.getConfig());
+				MessagingModule moduleDefinition = messagingHandler.getModuleDefinition();
+				if (moduleDefinition.getReceiveConfigs() != null) {
+					checkRequiredConfigsAndSetDefaultValues(moduleDefinition.getReceiveConfigs().getParam(), step.getConfig());
+				}
+
+				Message inputMessage = getMessageFromBindings(step.getInput());
+				String callId = UUID.randomUUID().toString();
+
+				CallbackManager.getInstance().prepareForCallback(messagingContext.getSessionId(), callId);
+
+				if (!StringUtils.isBlank(step.getTimeout())) {
+					long timeout;
+					if (resolver.isVariableReference(step.getTimeout())) {
+						timeout = resolver.resolveVariableAsNumber(step.getTimeout()).longValue();
+					} else {
+						timeout = Double.valueOf(step.getTimeout()).longValue();
 					}
+					String flagName = null;
+					if (!StringUtils.isBlank(step.getTimeoutFlag())) {
+						if (resolver.isVariableReference(step.getTimeoutFlag())) {
+							flagName = resolver.resolveVariableAsString(step.getTimeoutFlag()).toString();
+						} else {
+							flagName = step.getTimeoutFlag();
+						}
+					}
+					boolean errorIfTimeout = false;
+					if (!StringUtils.isBlank(step.getTimeoutIsError())) {
+						if (resolver.isVariableReference(step.getTimeoutIsError())) {
+							errorIfTimeout = (Boolean) resolver.resolveVariableAsBoolean(step.getTimeoutIsError()).getValue();
+						} else {
+							errorIfTimeout = Boolean.parseBoolean(step.getTimeoutIsError());
+						}
+					}
+					Thread timeoutThread = new Thread(new TimeoutRunner(messagingContext.getSessionId(), callId, timeout, flagName, errorIfTimeout));
+					messagingContext.getMessagingThreads().add(timeoutThread);
+					timeoutThread.start();
+				}
 
-					Message inputMessage = getMessageFromBindings(step.getInput());
-					String callId = UUID.randomUUID().toString();
+				// This call will block until there is a callback response.
+				MessagingReport report =
+						messagingHandler
+								.receiveMessage(
+										messagingContext.getSessionId(),
+										transactionContext.getTransactionId(),
+										callId,
+										step.getConfig(),
+										inputMessage,
+										messagingContext.getMessagingThreads()
+								);
 
-					CallbackManager.getInstance().prepareForCallback(messagingContext.getSessionId(), callId);
+				if (report != null && report.getMessage() != null) {
+					Message message = report.getMessage();
 
-					if (!StringUtils.isBlank(step.getTimeout())) {
-                        long timeout;
-                        if (resolver.isVariableReference(step.getTimeout())) {
-                            timeout = resolver.resolveVariableAsNumber(step.getTimeout()).longValue();
-                        } else {
-                            timeout = Double.valueOf(step.getTimeout()).longValue();
-                        }
-                        String flagName = null;
-                        if (!StringUtils.isBlank(step.getTimeoutFlag())) {
+					if (step.getId() != null) {
+						MapType map;
+
+						if (step.getTimeout() != null && !StringUtils.isBlank(step.getTimeoutFlag())) {
+							String flagName;
 							if (resolver.isVariableReference(step.getTimeoutFlag())) {
 								flagName = resolver.resolveVariableAsString(step.getTimeoutFlag()).toString();
 							} else {
 								flagName = step.getTimeoutFlag();
 							}
-						}
-						boolean errorIfTimeout = false;
-						if (!StringUtils.isBlank(step.getTimeoutIsError())) {
-							if (resolver.isVariableReference(step.getTimeoutIsError())) {
-								errorIfTimeout = (Boolean)resolver.resolveVariableAsBoolean(step.getTimeoutIsError()).getValue();
-							} else {
-								errorIfTimeout = Boolean.valueOf(step.getTimeoutIsError());
+							if (!message.getFragments().containsKey(flagName)) {
+								/*
+								The response was not triggered by a timeout but we have a timeout flag defined
+								Make sure we have the flag set as false in the response.
+								 */
+								message.getFragments().put(flagName, new BooleanType(false));
 							}
 						}
-						Thread timeoutThread = new Thread(new TimeoutRunner(messagingContext.getSessionId(), callId, timeout, flagName, errorIfTimeout));
-						messagingContext.getMessagingThreads().add(timeoutThread);
-						timeoutThread.start();
-					}
 
-					// This call will block until there is a callback response.
-					MessagingReport report =
-							messagingHandler
-									.receiveMessage(
-											messagingContext.getSessionId(),
-											transactionContext.getTransactionId(),
-											callId,
-											step.getConfig(),
-											inputMessage,
-											messagingContext.getMessagingThreads()
-									);
-
-					if(report != null && report.getMessage() != null) {
-						Message message = report.getMessage();
-
-						if(step.getId() != null) {
-							MapType map;
-
-							if (step.getTimeout() != null && !StringUtils.isBlank(step.getTimeoutFlag())) {
-								String flagName;
-								if (resolver.isVariableReference(step.getTimeoutFlag())) {
-									flagName = resolver.resolveVariableAsString(step.getTimeoutFlag()).toString();
-								} else {
-									flagName = step.getTimeoutFlag();
-								}
-								if (!message.getFragments().containsKey(flagName)) {
-									/*
-									The response was not triggered by a timeout but we have a timeout flag defined
-									Make sure we have the flag set as false in the response.
-									 */
-									message.getFragments().put(flagName, new BooleanType(false));
-								}
-							}
-
-							if(step.getOutput().size() == 0) {
-								map = generateOutputWithMessageFields(message);
+						if (step.getOutput().size() == 0) {
+							map = generateOutputWithMessageFields(message);
+						} else {
+							boolean isNameBinding = BindingUtils.isNameBinding(step.getOutput());
+							if (isNameBinding) {
+								map = generateOutputWithNameBinding(message, step.getOutput());
 							} else {
-                                List<TypedParameter> requiredOutputParameters = new ArrayList<TypedParameter>();
-                                if(moduleDefinition.getOutputs() != null) {
-                                     requiredOutputParameters.addAll(getRequiredOutputParameters(moduleDefinition.getOutputs().getParam()));
-                                }
-
-								if(step.getOutput().size() != requiredOutputParameters.size()) {
-									throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Wrong number of outputs for ["+ moduleDefinition.getId()+"]"));
-								}
-
-								boolean isNameBinding = BindingUtils.isNameBinding(step.getOutput());
-
-								if(isNameBinding) {
-									map = generateOutputWithNameBinding(message, step.getOutput());
-								} else {
-									map = generateOutputWithModuleDefinition(messagingContext, message);
-								}
+								map = generateOutputWithModuleDefinition(messagingContext, message);
 							}
+						}
 
-							scope
+						scope
 								.createVariable(step.getId())
 								.setValue(map);
-						}
-						return report.getReport();
-					} else if(report != null) {
-                        return report.getReport();
-					} else {
-						return null;
 					}
-
+					return report.getReport();
+				} else if (report != null) {
+					return report.getReport();
+				} else {
+					return null;
 				}
+
 			}, context.dispatcher());
 
-			future.onSuccess(new OnSuccess<TestStepReportType>() {
+			future.foreach(new OnSuccess<>() {
 				@Override
-				public void onSuccess(TestStepReportType result) throws Throwable {
+				public void onSuccess(TestStepReportType result) {
 					promise.trySuccess(result);
 				}
 			}, context.dispatcher());
 
-			future.onFailure(new OnFailure() {
+			future.failed().foreach(new OnFailure() {
 				@Override
-				public void onFailure(Throwable failure) throws Throwable {
+				public void onFailure(Throwable failure) {
 					messagingHandler.endTransaction(messagingContext.getSessionId(), transactionContext.getTransactionId());
 					promise.tryFailure(failure);
 				}
@@ -252,7 +236,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 	@Override
 	protected void stop() {
 		if(promise != null && !promise.isCompleted()) {
-			boolean stopped = promise.tryFailure(new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.CANCELLATION, "Test step ["+stepId+"] is cancelled.")));
+			promise.tryFailure(new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.CANCELLATION, "Test step ["+stepId+"] is cancelled.")));
 		}
 	}
 
@@ -266,7 +250,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
         return transactionContext;
     }
 
-	public static ActorRef create(ActorContext context, Receive step, TestCaseScope scope, String stepId) throws Exception {
+	public static ActorRef create(ActorContext context, com.gitb.tdl.Receive step, TestCaseScope scope, String stepId) throws Exception {
 		return context.actorOf(props(ReceiveStepProcessorActor.class, step, scope, stepId).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
 	}
 

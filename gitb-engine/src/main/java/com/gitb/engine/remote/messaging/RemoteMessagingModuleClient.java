@@ -42,6 +42,11 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 		this.transactionProperties = transactionProperties;
 	}
 
+	@Override
+	public boolean isRemote() {
+		return true;
+	}
+
 	private URL getServiceURL() {
 		if (serviceURL == null) {
 			if (messagingModule == null) {

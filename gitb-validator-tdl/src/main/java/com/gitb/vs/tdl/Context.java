@@ -1,6 +1,7 @@
 package com.gitb.vs.tdl;
 
 import com.gitb.core.Actor;
+import com.gitb.core.Documentation;
 import com.gitb.core.TestRole;
 import com.gitb.tdl.TestCase;
 import com.gitb.tdl.TestCaseEntry;
@@ -26,6 +27,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 public class Context {
 
@@ -54,10 +57,18 @@ public class Context {
     private Set<Path> resourcePaths;
     private boolean resourcePathsLoaded;
     private Set<String> testCaseIdsReferencedByTestSuite;
+    private Set<Path> referencedResourcePaths;
 
     private Map<String, Map<String, TestRole>> testCaseActors;
 
     private ExternalConfiguration externalConfiguration;
+
+    public Set<Path> getReferencedResourcePaths() {
+        if (referencedResourcePaths == null) {
+            referencedResourcePaths = new HashSet<>();
+        }
+        return referencedResourcePaths;
+    }
 
     public void setTestSuiteRootPath(Path testSuiteRootPath) {
         this.testSuiteRootPath = testSuiteRootPath;
@@ -69,6 +80,29 @@ public class Context {
 
     public ExternalConfiguration getExternalConfiguration() {
         return externalConfiguration;
+    }
+
+    public Path resolveTestSuiteResourceIfValid(String resourcePath) {
+        Path testSuiteRootPath = getTestSuiteRootPath();
+        Path resolvedPath = testSuiteRootPath.resolve(resourcePath);
+        if (!Files.exists(resolvedPath)) {
+            if (getTestSuite() != null && getTestSuite().getMetadata() != null) {
+                String testSuiteIdentifier = getTestSuite().getId();
+                if (testSuiteIdentifier != null) {
+                    String testSuiteIdentifierPath = testSuiteIdentifier+"/";
+                    if (resourcePath.startsWith(testSuiteIdentifierPath) && resourcePath.length() > testSuiteIdentifier.length()) {
+                        String pathWithoutTestSuiteIdentifier = resourcePath.substring(testSuiteIdentifierPath.length());
+                        resolvedPath = testSuiteRootPath.resolve(pathWithoutTestSuiteIdentifier);
+                    } else {
+                        resolvedPath = null;
+                    }
+                }
+            }
+        }
+        if (resolvedPath != null && !resolvedPath.normalize().startsWith(testSuiteRootPath)) {
+            resolvedPath = null;
+        }
+        return resolvedPath;
     }
 
     public TestSuite getTestSuite() {
@@ -323,4 +357,22 @@ public class Context {
         }
         return testCaseActors;
     }
+
+    public void validateDocumentation(Documentation documentation, BiConsumer<String, String> referenceAndEmbeddedFunction, Consumer<String> resourceNotFoundFunction) {
+        if (documentation != null) {
+            boolean hasDocumentationReference = documentation.getImport() != null && !documentation.getImport().isBlank();
+            boolean hasDocumentationEmbedded = documentation.getValue() != null && !documentation.getValue().isBlank();
+            if (hasDocumentationReference && hasDocumentationEmbedded) {
+                referenceAndEmbeddedFunction.accept(documentation.getImport(), documentation.getValue());
+            } else if (hasDocumentationReference) {
+                Path resolvedPath = resolveTestSuiteResourceIfValid(documentation.getImport());
+                if (resolvedPath == null) {
+                    resourceNotFoundFunction.accept(documentation.getImport());
+                } else {
+                    getReferencedResourcePaths().add(resolvedPath.toAbsolutePath());
+                }
+            }
+        }
+    }
+
 }

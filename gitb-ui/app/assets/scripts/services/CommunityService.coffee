@@ -17,12 +17,15 @@ class CommunityService
       authenticate: true
       params: params
 
-  createCommunity: (shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, domainId) ->
+  createCommunity: (shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegForceTemplate, selfRegForceProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, domainId) ->
     data = {
       community_sname: shortName,
       community_fname: fullName,
       community_email: email,
-      description: description
+      description: description,
+      allow_certificate_download: allowCertificateDownload,
+      allow_statement_management: allowStatementManagement,
+      allow_system_management: allowSystemManagement
     }
     if @DataService.configuration['registration.enabled']
       if selfRegNotification == undefined
@@ -31,6 +34,8 @@ class CommunityService
       data.community_selfreg_token = selfRegToken
       data.community_selfreg_token_help_text = selfRegTokenHelpText
       data.community_selfreg_notification = selfRegNotification
+      data.community_selfreg_force_template = selfRegForceTemplate
+      data.community_selfreg_force_properties = selfRegForceProperties
       if @DataService.configuration['sso.enabled']
         data.community_selfreg_restriction = selfRegRestriction
 
@@ -48,12 +53,15 @@ class CommunityService
       authenticate: true
     })
 
-  updateCommunity: (communityId, shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, domainId) ->
+  updateCommunity: (communityId, shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegForceTemplate, selfRegForceProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, domainId) ->
     data = {
       community_sname: shortName,
       community_fname: fullName,
       community_email: email,
-      description: description
+      description: description,
+      allow_certificate_download: allowCertificateDownload,
+      allow_statement_management: allowStatementManagement,
+      allow_system_management: allowSystemManagement
     }
     if @DataService.configuration['registration.enabled']
       if selfRegNotification == undefined
@@ -62,6 +70,8 @@ class CommunityService
       data.community_selfreg_token = selfRegToken
       data.community_selfreg_token_help_text = selfRegTokenHelpText
       data.community_selfreg_notification = selfRegNotification
+      data.community_selfreg_force_template = selfRegForceTemplate
+      data.community_selfreg_force_properties = selfRegForceProperties
       if @DataService.configuration['sso.enabled']
         data.community_selfreg_restriction = selfRegRestriction
 
@@ -140,6 +150,10 @@ class CommunityService
       not_for_tests: parameter.notForTests,
       in_exports: parameter.inExports,
       in_selfreg: parameter.inSelfRegistration,
+      hidden: parameter.hidden,
+      allowedValues: parameter.allowedValues,
+      dependsOn: parameter.dependsOn,
+      dependsOnValue: parameter.dependsOnValue,
       community_id: parameter.community
     }
     @RestService.post({
@@ -158,6 +172,10 @@ class CommunityService
       admin_only: parameter.adminOnly,
       not_for_tests: parameter.notForTests,
       in_exports: parameter.inExports,
+      hidden: parameter.hidden,
+      allowedValues: parameter.allowedValues,
+      dependsOn: parameter.dependsOn,
+      dependsOnValue: parameter.dependsOnValue,
       community_id: parameter.community
     }
     @RestService.post({
@@ -178,10 +196,34 @@ class CommunityService
       not_for_tests: parameter.notForTests,
       in_exports: parameter.inExports,
       in_selfreg: parameter.inSelfRegistration,
+      hidden: parameter.hidden,
+      allowedValues: parameter.allowedValues,
+      dependsOn: parameter.dependsOn,
+      dependsOnValue: parameter.dependsOnValue,
       community_id: parameter.community
     }
     @RestService.post({
       path: jsRoutes.controllers.CommunityService.updateOrganisationParameter(parameter.id).url,
+      data: data,
+      authenticate: true
+    })
+
+  orderOrganisationParameters: (community, orderedIds) =>
+    data = {
+      ids: orderedIds.join ','
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.CommunityService.orderOrganisationParameters(community).url,
+      data: data,
+      authenticate: true
+    })
+
+  orderSystemParameters: (community, orderedIds) =>
+    data = {
+      ids: orderedIds.join ','
+    }
+    @RestService.post({
+      path: jsRoutes.controllers.CommunityService.orderSystemParameters(community).url,
       data: data,
       authenticate: true
     })
@@ -197,6 +239,10 @@ class CommunityService
       admin_only: parameter.adminOnly,
       not_for_tests: parameter.notForTests,
       in_exports: parameter.inExports,
+      hidden: parameter.hidden,
+      allowedValues: parameter.allowedValues,
+      dependsOn: parameter.dependsOn,
+      dependsOnValue: parameter.dependsOnValue,
       community_id: parameter.community
     }
     @RestService.post({

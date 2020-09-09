@@ -6,6 +6,7 @@ import com.gitb.tdl.Process;
 import com.gitb.tdl.*;
 import com.gitb.vs.tdl.Context;
 import com.gitb.vs.tdl.ErrorCode;
+import com.gitb.vs.tdl.rules.TestCaseSection;
 import com.gitb.vs.tdl.rules.testcase.expression.VariableResolver;
 import com.gitb.vs.tdl.rules.testcase.expression.VariableResolverProvider;
 import com.gitb.vs.tdl.util.Utils;
@@ -17,6 +18,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +31,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
 
     private Map<String, Boolean> scope;
     private VariableResolver variableResolver;
+    private List<String> importVariableExpressionsToCheck = new ArrayList<>();
 
     @Override
     public void initialiseTestCase(TestCase currentTestCase) {
@@ -42,8 +45,24 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     }
 
     @Override
+    public void sectionChanged(TestCaseSection section) {
+        super.sectionChanged(section);
+        if (section == TestCaseSection.PRELIMINARY) {
+            // In the preliminary section we have processed variables, actors and imports. We can now check imports for variable references.
+            for (String importExpression: importVariableExpressionsToCheck) {
+                checkToken(importExpression, TokenType.VARIABLE_REFERENCE);
+            }
+        }
+    }
+
+    @Override
     public void handleImport(Object artifactObj) {
+        super.handleImport(artifactObj);
         if (artifactObj instanceof TestArtifact) {
+            if (Utils.isVariableExpression(((TestArtifact)artifactObj).getValue())) {
+                // Park this because we need to make sure we have already processed actors and variable definitions.
+                importVariableExpressionsToCheck.add(((TestArtifact)artifactObj).getValue());
+            }
             recordVariable(((TestArtifact)artifactObj).getName(), ((TestArtifact)artifactObj).getType());
         }
     }
@@ -99,7 +118,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         } else if (step instanceof ExitStep) {
             checkToken(((ExitStep)step).getSuccess(), TokenType.STRING_OR_VARIABLE_REFERENCE);
         } else if (step instanceof Assign) {
-            String toToken = ((Assign)step).getTo();
+            String toToken = ((Assign) step).getTo();
             checkToken(toToken, TokenType.STRING_OR_VARIABLE_REFERENCE);
             if (toToken != null) {
                 if (!toToken.startsWith("$")) {
@@ -114,8 +133,11 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                     }
                 }
             }
-            checkToken(((Assign)step).getSource(), TokenType.VARIABLE_REFERENCE);
-            checkToken(((Assign)step).getValue(), TokenType.EXPRESSION);
+            checkToken(((Assign) step).getSource(), TokenType.VARIABLE_REFERENCE);
+            checkToken(((Assign) step).getValue(), TokenType.EXPRESSION);
+        } else if (step instanceof Log) {
+            checkToken(((Log) step).getSource(), TokenType.VARIABLE_REFERENCE);
+            checkToken(((Log) step).getValue(), TokenType.EXPRESSION);
         } else if (step instanceof Verify) {
             checkToken(((Verify)step).getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkConfigurations(((Verify) step).getProperty());

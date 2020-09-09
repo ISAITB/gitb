@@ -1,7 +1,7 @@
 package controllers
 
-import java.io.{File, InputStream}
-import java.nio.charset.Charset
+import java.io.InputStream
+import java.nio.charset.StandardCharsets
 
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
@@ -10,16 +10,18 @@ import managers.{AuthorizationManager, SystemConfigurationManager}
 import models.Constants
 import org.apache.commons.io.IOUtils
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.mvc.Controller
+import play.api.mvc.{AbstractController, ControllerComponents}
 import utils.JsonUtil
 
-class SystemConfigurationService @Inject()(systemConfigurationManager: SystemConfigurationManager, environment: play.api.Environment, authorizationManager: AuthorizationManager) extends Controller {
+import scala.concurrent.ExecutionContext
+
+class SystemConfigurationService @Inject()(implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemConfigurationManager: SystemConfigurationManager, environment: play.api.Environment, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemConfigurationService])
 
   /**
    * Gets session alive time
    */
-  def getSessionAliveTime = AuthorizedAction { request =>
+  def getSessionAliveTime = authorizedAction { request =>
     authorizationManager.canViewTheSessionAliveTime(request)
     val config = systemConfigurationManager.getSystemConfiguration(Constants.SessionAliveTime)
     val json: String = JsonUtil.serializeSystemConfig(config)
@@ -29,7 +31,7 @@ class SystemConfigurationService @Inject()(systemConfigurationManager: SystemCon
   /**
    * Update system configuration
    */
-  def updateSessionAliveTime = AuthorizedAction { request =>
+  def updateSessionAliveTime = authorizedAction { request =>
     authorizationManager.canEditTheSessionAliveTime(request)
 
     val value = ParameterExtractor.optionalBodyParameter(request, Parameters.PARAMETER)
@@ -42,40 +44,25 @@ class SystemConfigurationService @Inject()(systemConfigurationManager: SystemCon
     }
   }
 
-  def getCssForTheme = AuthorizedAction { request =>
+  def getCssForTheme = authorizedAction { request =>
     authorizationManager.canAccessThemeData(request)
     val env = sys.env.get(Constants.EnvironmentTheme)
     ResponseConstructor.constructCssResponse(parseTheme(env))
   }
 
-  def getFaviconForTheme = AuthorizedAction { request =>
+  def getFaviconForTheme = authorizedAction { request =>
     authorizationManager.canAccessThemeData(request)
-    Ok.sendResource(getFaviconPath(), environment.classLoader, true)
+    Ok.sendResource(systemConfigurationManager.getFaviconPath(), environment.classLoader, true)
   }
 
-  def getLogo = AuthorizedAction { request =>
+  def getLogo = authorizedAction { request =>
     authorizationManager.canAccessThemeData(request)
-    ResponseConstructor.constructStringResponse(getLogoPath())
+    ResponseConstructor.constructStringResponse(systemConfigurationManager.getLogoPath())
   }
 
-  def getFaviconPath(): String = {
-    val env = sys.env.get(Constants.EnvironmentTheme)
-    parseFavicon(env)
-  }
-
-  def getLogoPath(): String = {
-    val env = sys.env.get(Constants.EnvironmentTheme)
-    parseLogo(env)
-  }
-
-  def getFooterLogo = AuthorizedAction { request =>
+  def getFooterLogo = authorizedAction { request =>
     authorizationManager.canAccessThemeData(request)
-    ResponseConstructor.constructStringResponse(getFooterLogoPath())
-  }
-
-  def getFooterLogoPath(): String = {
-    val env = sys.env.get(Constants.EnvironmentTheme)
-    parseFooterLogo(env)
+    ResponseConstructor.constructStringResponse(systemConfigurationManager.getFooterLogoPath())
   }
 
   private def isPositiveInt(value: String): Boolean = {
@@ -84,38 +71,14 @@ class SystemConfigurationService @Inject()(systemConfigurationManager: SystemCon
 
   private def parseTheme(theme: Option[String]): String = {
     if (theme.isDefined && theme.get == Constants.EcTheme) {
-      IOUtils.toString(getInputStream("public/stylesheets/css/theme-ec.css"), Charset.forName("UTF-8"))
+      IOUtils.toString(getInputStream("public/stylesheets/css/theme-ec.css"), StandardCharsets.UTF_8)
     } else {
-      IOUtils.toString(getInputStream("public/stylesheets/css/theme-gitb.css"), Charset.forName("UTF-8"))
+      IOUtils.toString(getInputStream("public/stylesheets/css/theme-gitb.css"), StandardCharsets.UTF_8)
     }
   }
 
   private def getInputStream(path: String): InputStream = {
     environment.classLoader.getResourceAsStream(path)
-  }
-
-  private def parseFavicon(theme: Option[String]): String = {
-    if (theme.isDefined && theme.get == Constants.EcTheme) {
-      Constants.EcFavicon
-    } else {
-      Constants.GitbFavicon
-    }
-  }
-
-  private def parseLogo(theme: Option[String]): String = {
-    if (theme.isDefined && theme.get == Constants.EcTheme) {
-      Constants.EcLogo
-    } else {
-      Constants.GitbLogo
-    }
-  }
-
-  private def parseFooterLogo(theme: Option[String]): String = {
-    if (theme.isDefined && theme.get == Constants.EcTheme) {
-      Constants.GitbLogo
-    } else {
-      ""
-    }
   }
 
 }

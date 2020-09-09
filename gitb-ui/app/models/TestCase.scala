@@ -17,17 +17,23 @@ case class TestCases(
 											targetOptions: Option[String] = None,
 											testSuiteOrder: Short,
 											hasDocumentation: Boolean,
-											documentation: Option[String]
+											documentation: Option[String],
+											identifier: String
 	                    ) {
+
+	def withSpecification(specification: Long): TestCases = {
+		TestCases(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate,
+			this.modificationDate, this.description, this.keywords, this.testCaseType, path, specification, this.targetActors, this.targetOptions, this.testSuiteOrder, this.hasDocumentation, this.documentation, this.identifier)
+	}
 
 	def withPath(path: String): TestCases = {
 		TestCases(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate,
-			this.modificationDate, this.description, this.keywords, this.testCaseType, path, this.targetSpec, this.targetActors, this.targetOptions, this.testSuiteOrder, this.hasDocumentation, this.documentation)
+			this.modificationDate, this.description, this.keywords, this.testCaseType, path, this.targetSpec, this.targetActors, this.targetOptions, this.testSuiteOrder, this.hasDocumentation, this.documentation, this.identifier)
 	}
 
 	def withTargets(spec: Long, targetActors: Option[String] = None, targetOptions:Option[String] = None): TestCases = {
 		TestCases(this.id, this.shortname, this.fullname, this.version, this.authors, this.originalDate,
-			this.modificationDate, this.description, this.keywords, this.testCaseType, this.path, targetSpec, targetActors, targetOptions, this.testSuiteOrder, this.hasDocumentation, this.documentation)
+			this.modificationDate, this.description, this.keywords, this.testCaseType, this.path, targetSpec, targetActors, targetOptions, this.testSuiteOrder, this.hasDocumentation, this.documentation, this.identifier)
 	}
 
 }
@@ -50,7 +56,8 @@ class TestCase(
 	              _targetOptions: Option[List[models.Options]],
 	              _testSuiteOrder: Short,
 								_hasDocumentation: Boolean,
-							  _documentation: Option[String]
+							  _documentation: Option[String],
+								_identifier: String
 	              ) {
 	var id: Long = _id
 	var shortname: String = _sname
@@ -69,6 +76,7 @@ class TestCase(
 	var testSuiteOrder: Short = _testSuiteOrder
 	var hasDocumentation: Boolean = _hasDocumentation
 	var documentation: Option[String] = _documentation
+	var identifier: String = _identifier
 
 
 	def this(_case: TestCases, targetActors: Option[List[Actors]], targetOptions: Option[List[models.Options]]) = {
@@ -76,7 +84,7 @@ class TestCase(
 			if (_case.authors.isDefined) Some(_case.authors.get.split(",").toList) else None,
 			_case.originalDate, _case.modificationDate, _case.description,
 			if (_case.keywords.isDefined) Some(_case.keywords.get.split(",").toList) else None,
-			_case.testCaseType, _case.path, _case.targetSpec, targetActors, targetOptions, _case.testSuiteOrder, _case.hasDocumentation, _case.documentation)
+			_case.testCaseType, _case.path, _case.targetSpec, targetActors, targetOptions, _case.testSuiteOrder, _case.hasDocumentation, _case.documentation, _case.identifier)
 	}
 
 	def this(_case: TestCases) = {

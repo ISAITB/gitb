@@ -1,0 +1,73 @@
+<div class="page domains detail detail-testsuite">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">Test suite details</h4>
+		</div>
+		<form class="form-horizontal">
+			<div class="panel-body">
+				<div class="row">
+                    <div class="col-xs-10 col-xs-offset-1">
+						<div class="form-group">
+							<label class="col-xs-3 control-label" for="identifier">ID:</label>
+							<div class="col-xs-7"><input id="identifier" ng-model="testSuiteDetailsCtrl.testSuite.identifier" class="form-control" type="text" readonly="readonly"></div>
+							<div tb-tooltip="The unique identifier of the test suite within the {{testSuiteDetailsCtrl.DataService.labelSpecificationLower()}}. This is not presented to users but is used internally to match uploaded test suites to existing ones."></div>
+						</div>
+						<div class="form-group">
+							<label class="col-xs-3 control-label" for="name">* Name:</label>
+							<div class="col-xs-7"><input id="name" ng-model="testSuiteDetailsCtrl.testSuite.sname" class="form-control" type="text"></div>
+							<div tb-tooltip="A short and descriptive identifier for the test suite. This is used for filtering purposes and also to distinguish the test suite in conformance statements where multiple test suites are defined."></div>
+						</div>
+						<div class="form-group">
+							<label class="col-xs-3 control-label" for="description">Description:</label>
+							<div class="col-xs-7">
+								<textarea id="description" ng-model="testSuiteDetailsCtrl.testSuite.description" class="form-control"></textarea>
+							</div>
+							<div tb-tooltip="A description for the test suite presented to users when viewing a conformance statement with multiple test suites. This should be informative enough for users to understand the purpose of the test suite. Where extended information is needed consider complementing the description with the test suite's documentation."></div>
+						</div>
+						<div class="form-group">
+							<label class="col-xs-3 control-label" for="showDocumentation">Show documentation:</label>
+							<div class="col-xs-7">
+								<input id="showDocumentation" ng-model="testSuiteDetailsCtrl.showDocumentation" type="checkbox" class="form-check">
+							</div>
+						</div>
+					</div>
+				</div>
+				<div uib-collapse="!testSuiteDetailsCtrl.showDocumentation">
+					<div class="row">
+						<div class="col-xs-12">
+							<div class="form-separator"><h4 class="title">Documentation</h4></div>
+						</div>
+					</div>
+					<div class="row form-group">
+						<div class="col-xs-offset-1 col-xs-10">
+							<textarea id="mce-editor" class="mce-editor"></textarea>
+						</div>
+						<div tb-tooltip="Extended documentation on the test suite that users can click to view before test execution. Use this to provide detailed information, prerequisites and references to external resources."></div>
+					</div>
+					<div class="row form-group">
+						<div class="col-xs-offset-1 col-xs-10">
+							<button ng-click="testSuiteDetailsCtrl.previewDocumentation()" type="button" class="btn btn-default">Preview documentation</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<div class="panel-footer">
+				<div class="row">
+					<div class="col-xs-3"></div>
+					<div class="col-xs-8 btn-toolbar">
+						<button ng-click="testSuiteDetailsCtrl.saveChanges()" type="submit" class="btn btn-default" ng-disabled="testSuiteDetailsCtrl.saveDisabled()">Save changes</button>
+						<button ng-click="testSuiteDetailsCtrl.download()" type="button" class="btn btn-default">Download</button>
+						<button ng-click="testSuiteDetailsCtrl.delete()" type="button" class="btn btn-default">Delete</button>
+						<button ng-click="testSuiteDetailsCtrl.back()" type="button" class="btn btn-default">Back</button>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">Test cases</h4>
+		</div>
+		<div table-directive columns="testSuiteDetailsCtrl.testCaseTableColumns" data="testSuiteDetailsCtrl.testSuite.testCases" on-select="testSuiteDetailsCtrl.onTestCaseSelect"></div>
+	</div>
+</div>

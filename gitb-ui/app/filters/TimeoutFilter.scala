@@ -2,8 +2,7 @@ package filters
 
 import play.api.mvc._
 
-import scala.concurrent.{Await, Future}
-import play.api.libs.concurrent.Execution.Implicits.defaultContext
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 import scala.concurrent.duration.FiniteDuration
 import config.Configurations
@@ -13,7 +12,7 @@ import akka.stream.Materializer
 import javax.inject.Inject
 import org.slf4j.{Logger, LoggerFactory}
 
-class TimeoutFilter @Inject() (implicit val mat: Materializer) extends Filter{
+class TimeoutFilter @Inject() (implicit ec: ExecutionContext, implicit val mat: Materializer) extends Filter{
   private final val logger: Logger = LoggerFactory.getLogger(classOf[TimeoutFilter])
 
   def apply(next: (RequestHeader) => Future[Result])

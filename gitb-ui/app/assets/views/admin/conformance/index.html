@@ -3,7 +3,7 @@
         <div class="panel-heading">
 			<h4 class="title">Filters</h4>
 			<div class="btn-toolbar pull-right padded">
-                <toggle id="conformance-toggle-filter" class="btn-group" ng-model="adminConformanceCtrl.showFilters" on="Enabled" off="Disabled" ng-change="adminConformanceCtrl.DataService.async(adminConformanceCtrl.showFilters?adminConformanceCtrl.showFilter:adminConformanceCtrl.clearFilter)"/>
+                <toggle id="conformance-toggle-filter" class="btn-group" ng-model="adminConformanceCtrl.showFilters" on="Enabled" off="Disabled" ng-change="adminConformanceCtrl.DataService.async(adminConformanceCtrl.showFilters?adminConformanceCtrl.showFilter:adminConformanceCtrl.clearFilter)"></toggle>
 			</div>
 		</div>
         <div class="table-responsive" uib-collapse="!adminConformanceCtrl.showFilters">

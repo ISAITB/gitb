@@ -18,7 +18,7 @@ import utils.MimeUtil
 import scala.collection.mutable.ListBuffer
 
 @Singleton
-class ExportManager @Inject() (communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ExportManager @Inject() (triggerManager: TriggerManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ExportManager])
 
@@ -87,6 +87,7 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
       .join(PersistenceSchema.actors).on(_._2.actor === _.id)
       .filter(_._2.domain === domainId)
       .map(x => x._1._1)
+      .sortBy(x=> (x.endpoint.asc, x.displayOrder.asc, x.name.asc))
       .result
     ).foreach { x =>
       var parameters = endpointParameterMap.get(x.endpoint)
@@ -405,7 +406,7 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
               }
               exportedActor.setHidden(actor.hidden)
               // Endpoints.
-              if (exportSettings.endpoints && actorEndpointMap.get(actor.id).isDefined) {
+              if (exportSettings.endpoints && actorEndpointMap.contains(actor.id)) {
                 exportedActor.setEndpoints(new com.gitb.xml.export.Endpoints)
                 actorEndpointMap(actor.id).foreach { endpoint =>
                   val exportedEndpoint = new com.gitb.xml.export.Endpoint
@@ -414,7 +415,7 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
                   exportedEndpoint.setName(endpoint.name)
                   exportedEndpoint.setDescription(endpoint.desc.orNull)
                   // Endpoint parameters.
-                  if (endpointParameterMap.get(endpoint.id).isDefined) {
+                  if (endpointParameterMap.contains(endpoint.id)) {
                     exportedEndpoint.setParameters(new com.gitb.xml.export.EndpointParameters)
                     endpointParameterMap(endpoint.id).foreach { parameter =>
                       val exportedParameter = new com.gitb.xml.export.EndpointParameter
@@ -427,6 +428,11 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
                       exportedParameter.setEditable(!parameter.adminOnly)
                       exportedParameter.setInTests(!parameter.notForTests)
                       exportedParameter.setRequired(parameter.kind.equals("R"))
+                      exportedParameter.setHidden(parameter.hidden)
+                      exportedParameter.setAllowedValues(parameter.allowedValues.orNull)
+                      exportedParameter.setDisplayOrder(parameter.displayOrder)
+                      exportedParameter.setDependsOn(parameter.dependsOn.orNull)
+                      exportedParameter.setDependsOnValue(parameter.dependsOnValue.orNull)
                       exportedEndpointParameterMap += (parameter.id -> exportedParameter)
                       exportedEndpoint.getParameters.getParameter.add(exportedParameter)
                     }
@@ -444,6 +450,7 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
               val exportedTestSuite = new com.gitb.xml.export.TestSuite
               idSequence += 1
               exportedTestSuite.setId(toId(idSequence))
+              exportedTestSuite.setIdentifier(testSuite.identifier)
               exportedTestSuite.setShortName(testSuite.shortname)
               exportedTestSuite.setFullName(testSuite.fullname)
               exportedTestSuite.setVersion(testSuite.version)
@@ -476,6 +483,7 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
                   val exportedTestCase = new com.gitb.xml.export.TestCase
                   idSequence += 1
                   exportedTestCase.setId(toId(idSequence))
+                  exportedTestCase.setIdentifier(testCase.identifier)
                   exportedTestCase.setShortName(testCase.shortname)
                   exportedTestCase.setFullName(testCase.fullname)
                   exportedTestCase.setVersion(testCase.version)
@@ -579,6 +587,9 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
     communityData.setFullName(community.get.fullname)
     communityData.setSupportEmail(community.get.supportEmail.orNull)
     communityData.setDescription(community.get.description.orNull)
+    communityData.setAllowCertificateDownload(community.get.allowCertificateDownload)
+    communityData.setAllowStatementManagement(community.get.allowStatementManagement)
+    communityData.setAllowSystemManagement(community.get.allowSystemManagement)
     // Self registration information.
     communityData.setSelfRegistrationSettings(new SelfRegistrationSettings)
     SelfRegistrationType.apply(community.get.selfRegType) match {
@@ -595,6 +606,8 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
       case SelfRegistrationRestriction.UserEmail => communityData.getSelfRegistrationSettings.setRestriction(com.gitb.xml.export.SelfRegistrationRestriction.USER_EMAIL)
       case SelfRegistrationRestriction.UserEmailDomain => communityData.getSelfRegistrationSettings.setRestriction(com.gitb.xml.export.SelfRegistrationRestriction.USER_EMAIL_DOMAIN)
     }
+    communityData.getSelfRegistrationSettings.setForceTemplateSelection(community.get.selfRegForceTemplateSelection)
+    communityData.getSelfRegistrationSettings.setForceRequiredProperties(community.get.selfRegForceRequiredProperties)
     // Administrators.
     if (exportSettings.communityAdministrators) {
       val administrators = loadAdministrators(communityId)
@@ -662,6 +675,11 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
           exportedProperty.setInExports(property.inExports)
           exportedProperty.setInTests(!property.notForTests)
           exportedProperty.setInSelfRegistration(property.inSelfRegistration)
+          exportedProperty.setHidden(property.hidden)
+          exportedProperty.setAllowedValues(property.allowedValues.orNull)
+          exportedProperty.setDisplayOrder(property.displayOrder)
+          exportedProperty.setDependsOn(property.dependsOn.orNull)
+          exportedProperty.setDependsOnValue(property.dependsOnValue.orNull)
           communityData.getOrganisationProperties.getProperty.add(exportedProperty)
           exportedOrganisationPropertyMap += (property.id -> exportedProperty)
         }
@@ -681,6 +699,11 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
           exportedProperty.setEditable(!property.adminOnly)
           exportedProperty.setInExports(property.inExports)
           exportedProperty.setInTests(!property.notForTests)
+          exportedProperty.setHidden(property.hidden)
+          exportedProperty.setAllowedValues(property.allowedValues.orNull)
+          exportedProperty.setDisplayOrder(property.displayOrder)
+          exportedProperty.setDependsOn(property.dependsOn.orNull)
+          exportedProperty.setDependsOnValue(property.dependsOnValue.orNull)
           communityData.getSystemProperties.getProperty.add(exportedProperty)
           exportedSystemPropertyMap += (property.id -> exportedProperty)
         }
@@ -764,6 +787,54 @@ class ExportManager @Inject() (communityManager: CommunityManager, conformanceMa
           exportedContent.setDefault(content.default)
           communityData.getErrorTemplates.getErrorTemplate.add(exportedContent)
           exportedErrorTemplateMap += (content.id -> exportedContent)
+        }
+      }
+    }
+    // Triggers
+    if (exportSettings.triggers) {
+      val triggers = triggerManager.getTriggerAndDataByCommunityId(communityId)
+      if (triggers.nonEmpty) {
+        communityData.setTriggers(new com.gitb.xml.export.Triggers)
+        triggers.foreach { trigger =>
+          val exportedTrigger = new com.gitb.xml.export.Trigger
+          idSequence += 1
+          exportedTrigger.setId(toId(idSequence))
+          exportedTrigger.setName(trigger.trigger.name)
+          exportedTrigger.setDescription(trigger.trigger.description.orNull)
+          exportedTrigger.setActive(trigger.trigger.active)
+          exportedTrigger.setUrl(trigger.trigger.url)
+          exportedTrigger.setOperation(trigger.trigger.operation.orNull)
+          models.Enums.TriggerEventType.apply(trigger.trigger.eventType) match {
+            case models.Enums.TriggerEventType.OrganisationCreated => exportedTrigger.setEventType(TriggerEventType.ORGANISATION_CREATED)
+            case models.Enums.TriggerEventType.OrganisationUpdated => exportedTrigger.setEventType(TriggerEventType.ORGANISATION_UPDATED)
+            case models.Enums.TriggerEventType.SystemCreated => exportedTrigger.setEventType(TriggerEventType.SYSTEM_CREATED)
+            case models.Enums.TriggerEventType.SystemUpdated => exportedTrigger.setEventType(TriggerEventType.SYSTEM_UPDATED)
+            case models.Enums.TriggerEventType.ConformanceStatementCreated => exportedTrigger.setEventType(TriggerEventType.CONFORMANCE_STATEMENT_CREATED)
+            case models.Enums.TriggerEventType.ConformanceStatementUpdated => exportedTrigger.setEventType(TriggerEventType.CONFORMANCE_STATEMENT_UPDATED)
+          }
+          if (trigger.data.isDefined && trigger.data.get.nonEmpty) {
+            exportedTrigger.setDataItems(new TriggerDataItems)
+            trigger.data.get.foreach { dataItem =>
+              val exportedDataItem = new TriggerDataItem
+              idSequence += 1
+              exportedDataItem.setId(toId(idSequence))
+              models.Enums.TriggerDataType.apply(dataItem.dataType) match {
+                case models.Enums.TriggerDataType.Community => exportedDataItem.setDataType(TriggerDataType.COMMUNITY)
+                case models.Enums.TriggerDataType.Organisation => exportedDataItem.setDataType(TriggerDataType.ORGANISATION)
+                case models.Enums.TriggerDataType.System => exportedDataItem.setDataType(TriggerDataType.SYSTEM)
+                case models.Enums.TriggerDataType.Specification => exportedDataItem.setDataType(TriggerDataType.SPECIFICATION)
+                case models.Enums.TriggerDataType.Actor => exportedDataItem.setDataType(TriggerDataType.ACTOR)
+                case models.Enums.TriggerDataType.OrganisationParameter =>
+                  exportedDataItem.setDataType(TriggerDataType.ORGANISATION_PARAMETER)
+                  exportedDataItem.setData(exportedOrganisationPropertyMap(dataItem.dataId))
+                case models.Enums.TriggerDataType.SystemParameter =>
+                  exportedDataItem.setDataType(TriggerDataType.SYSTEM_PARAMETER)
+                  exportedDataItem.setData(exportedSystemPropertyMap(dataItem.dataId))
+              }
+              exportedTrigger.getDataItems.getTriggerDataItem.add(exportedDataItem)
+            }
+          }
+          communityData.getTriggers.getTrigger.add(exportedTrigger)
         }
       }
     }

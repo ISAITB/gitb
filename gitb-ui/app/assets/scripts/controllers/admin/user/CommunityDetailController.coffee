@@ -1,7 +1,7 @@
 class CommunityDetailController
 
-  @$inject = ['$log', '$state', '$window', '$stateParams', 'UserService', 'DataService', 'Constants', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'CommunityService', 'ConformanceService', 'ErrorService', 'PopupService', 'community', 'WebEditorService', '$timeout']
-  constructor: (@$log, @$state, @$window, @$stateParams, @UserService, @DataService, @Constants, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @CommunityService, @ConformanceService, @ErrorService, @PopupService, @community, @WebEditorService, @$timeout) ->
+  @$inject = ['$log', '$state', '$window', '$stateParams', 'UserService', 'DataService', 'Constants', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'TriggerService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'CommunityService', 'ConformanceService', 'ErrorService', 'PopupService', 'community', 'WebEditorService', '$timeout']
+  constructor: (@$log, @$state, @$window, @$stateParams, @UserService, @DataService, @Constants, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @TriggerService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @CommunityService, @ConformanceService, @ErrorService, @PopupService, @community, @WebEditorService, @$timeout) ->
 
     @communityId = @community.id
     @originalDomainId = @community.domain
@@ -84,13 +84,39 @@ class CommunityDetailController
       }
     ]
 
+    @triggerColumns = [
+      {
+        field: 'name',
+        title: 'Name'
+      }
+      {
+        field: 'description',
+        title: 'Description'
+      }
+      {
+        field: 'eventTypeLabel',
+        title: 'Event type'
+      }
+      {
+        field: 'active',
+        title: 'Active'
+      }
+      {
+        field: 'status',
+        title: 'Status'
+      }
+    ]
+
+
     @domains = {}
     @admins = []
     @organizations = []
     @landingPages = []
     @legalNotices = []
     @errorTemplates = []
+    @triggers = []
     @alerts = []
+    @triggerEventTypeMap = @DataService.idToLabelMap(@DataService.triggerEventTypes())
 
     @LegalNoticeService.getTestBedDefaultLegalNotice()
     .then (data) =>
@@ -143,6 +169,22 @@ class CommunityDetailController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
+    @TriggerService.getTriggersByCommunity(@communityId)
+    .then (data) =>
+      for trigger in data
+        trigger.eventTypeLabel = @triggerEventTypeMap[trigger.eventType]
+        if trigger.latestResultOk?
+          if trigger.latestResultOk
+            trigger.status = 'Success'
+          else
+            trigger.status = 'Error'
+        else
+          trigger.status = '-'
+
+      @triggers = data
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+
     @OrganizationService.getOrganizationsByCommunity(@communityId)
     .then (data) =>
       @organizations = data
@@ -153,13 +195,11 @@ class CommunityDetailController
 
   saveDisabled: () =>
     !(@community?.sname? && @community?.fname? && @community.sname.trim() != '' && @community.fname.trim() != '' &&
-    (!@DataService.configuration?['registration.enabled'] || 
-      ((@community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED || 
-        @community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || 
-        (@community?.selfRegToken?.trim().length > 0)) && 
-        (!@DataService.configuration?['email.enabled'] || 
-        (!@community?.selfRegNotification || @community?.email? && @community.email.trim() != '')))
-    ))
+      (!@DataService.configuration?['registration.enabled'] || 
+        (@community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED || 
+          ((@community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || (@community?.selfRegToken?.trim().length > 0)) && 
+          (!@DataService.configuration?['email.enabled'] || (!@community?.selfRegNotification || (@community?.email? && @community.email.trim() != '')))))
+    ))  
 
   updateCommunity: () =>
     @ValidationService.clearAll()
@@ -170,7 +210,7 @@ class CommunityDetailController
       if !@community.sameDescriptionAsDomain
         descriptionToUse = @community.activeDescription
       updateCall = () => 
-        @CommunityService.updateCommunity(@communityId, @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegRestriction, @community.selfRegToken, tinymce.activeEditor.getContent(), @community.selfRegNotification, descriptionToUse, @community.domain?.id)
+        @CommunityService.updateCommunity(@communityId, @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegRestriction, @community.selfRegToken, tinymce.activeEditor.getContent(), @community.selfRegNotification, descriptionToUse, @community.selfRegForceTemplateSelection, @community.selfRegForceRequiredProperties, @community.allowCertificateDownload, @community.allowStatementManagement, @community.allowSystemManagement, @community.domain?.id)
           .then (data) =>
             if data? && data.error_code?
               @ValidationService.pushAlert({type:'danger', msg:data.error_description})
@@ -217,6 +257,9 @@ class CommunityDetailController
 
   errorTemplateSelect: (errorTemplate) =>
     @$state.go 'app.admin.users.communities.detail.errortemplates.detail', { template_id : errorTemplate.id }
+
+  triggerSelect: (trigger) =>
+    @$state.go 'app.admin.users.communities.detail.triggers.detail', { trigger_id : trigger.id }
 
   adminSelect: (admin) =>
     @$state.go 'app.admin.users.communities.detail.admins.detail', { admin_id : admin.id }

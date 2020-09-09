@@ -1,5 +1,6 @@
 package com.gitb.vs.tdl.rules;
 
+import com.gitb.core.Documentation;
 import com.gitb.core.TestRole;
 import com.gitb.tdl.Binding;
 import com.gitb.tdl.Scriptlet;
@@ -23,6 +24,8 @@ public interface TestCaseObserver {
     void handleActor(TestRole testRole);
 
     void handleImport(Object artifactObj);
+
+    void handleDocumentation(Documentation documentation);
 
     void handleVariable(Variable var);
 

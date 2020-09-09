@@ -7,20 +7,18 @@ import javax.inject.Inject
 import managers.{AuthorizationManager, CommunityLabelManager, UserManager}
 import models.Constants
 import models.Enums.UserRole
-import org.slf4j.{Logger, LoggerFactory}
-import play.api.mvc.Controller
+import play.api.mvc.{AbstractController, ControllerComponents}
 import utils.JsonUtil
 
 /**
  * Created by VWYNGAET on 25/10/2016.
  */
-class UserService @Inject() (userManager: UserManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends Controller {
-  private final val logger: Logger = LoggerFactory.getLogger(classOf[UserService])
+class UserService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, userManager: UserManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
 
   /**
    * Gets system administrator users
    */
-  def getSystemAdministrators() = AuthorizedAction { request =>
+  def getSystemAdministrators() = authorizedAction { request =>
     authorizationManager.canViewTestBedAdministrators(request)
     val list = userManager.getSystemAdministrators()
     val json: String = JsonUtil.jsUsers(list).toString
@@ -30,7 +28,7 @@ class UserService @Inject() (userManager: UserManager, authorizationManager: Aut
   /**
    * Gets community administrator users
    */
-  def getCommunityAdministrators() = AuthorizedAction { request =>
+  def getCommunityAdministrators() = authorizedAction { request =>
     val communityId = ParameterExtractor.requiredQueryParameter(request, Parameters.COMMUNITY_ID).toLong
     authorizationManager.canViewCommunityAdministrators(request, communityId)
 
@@ -42,7 +40,7 @@ class UserService @Inject() (userManager: UserManager, authorizationManager: Aut
   /**
    * Gets users by organization
    */
-  def getUsersByOrganization(orgId: Long) = AuthorizedAction { request =>
+  def getUsersByOrganization(orgId: Long) = authorizedAction { request =>
     authorizationManager.canViewOrganisationUsers(request, orgId)
     val list = userManager.getUsersByOrganization(orgId)
     val json: String = JsonUtil.jsUsers(list).toString
@@ -52,7 +50,7 @@ class UserService @Inject() (userManager: UserManager, authorizationManager: Aut
   /**
    * Gets the user with specified id
    */
-  def getUserById(userId: Long) = AuthorizedAction { request =>
+  def getUserById(userId: Long) = authorizedAction { request =>
     authorizationManager.canViewUser(request, userId)
     val user = userManager.getUserById(userId)
     val json: String = JsonUtil.serializeUser(user)
@@ -62,7 +60,7 @@ class UserService @Inject() (userManager: UserManager, authorizationManager: Aut
   /**
    * Creates new system administrator
    */
-  def createSystemAdmin = AuthorizedAction { request =>
+  def createSystemAdmin = authorizedAction { request =>
     authorizationManager.canCreateTestBedAdministrator(request)
     val user = ParameterExtractor.extractSystemAdminInfo(request)
     userManager.createAdmin(user, Constants.DefaultCommunityId)
@@ -72,7 +70,7 @@ class UserService @Inject() (userManager: UserManager, authorizationManager: Aut
   /**
     * Creates new community administrator
     */
-  def createCommunityAdmin = AuthorizedAction { request =>
+  def createCommunityAdmin = authorizedAction { request =>
     val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
     authorizationManager.canCreateCommunityAdministrator(request, communityId)
     val user = ParameterExtractor.extractCommunityAdminInfo(request)
@@ -83,7 +81,7 @@ class UserService @Inject() (userManager: UserManager, authorizationManager: Aut
   /**
    * Creates new vendor user/admin
    */
-  def createUser(orgId: Long) = AuthorizedAction { request =>
+  def createUser(orgId: Long) = authorizedAction { request =>
     authorizationManager.canCreateOrganisationUser(request, orgId)
 
     val roleId = ParameterExtractor.requiredBodyParameter(request, Parameters.ROLE_ID).toShort
@@ -99,7 +97,7 @@ class UserService @Inject() (userManager: UserManager, authorizationManager: Aut
   /**
    * Updates system admin profile
    */
-  def updateSystemAdminProfile(userId: Long) = AuthorizedAction { request =>
+  def updateSystemAdminProfile(userId: Long) = authorizedAction { request =>
     authorizationManager.canUpdateTestBedAdministrator(request)
     val name = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_NAME)
     val password = ParameterExtractor.optionalBodyParameter(request, Parameters.PASSWORD)
@@ -110,7 +108,7 @@ class UserService @Inject() (userManager: UserManager, authorizationManager: Aut
   /**
     * Updates community admin profile
     */
-  def updateCommunityAdminProfile(userId: Long) = AuthorizedAction { request =>
+  def updateCommunityAdminProfile(userId: Long) = authorizedAction { request =>
     authorizationManager.canUpdateCommunityAdministrator(request, userId)
     val name = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_NAME)
     val password = ParameterExtractor.optionalBodyParameter(request, Parameters.PASSWORD)
@@ -121,7 +119,7 @@ class UserService @Inject() (userManager: UserManager, authorizationManager: Aut
   /**
    * Updates user profile
    */
-  def updateUserProfile(userId: Long) = AuthorizedAction { request =>
+  def updateUserProfile(userId: Long) = authorizedAction { request =>
     authorizationManager.canUpdateOrganisationUser(request, userId)
     val roleId = ParameterExtractor.requiredBodyParameter(request, Parameters.ROLE_ID).toShort
     var name: Option[String] = None
@@ -136,7 +134,7 @@ class UserService @Inject() (userManager: UserManager, authorizationManager: Aut
   /**
    * Deletes system administrator with specified id
    */
-  def deleteAdmin(userId: Long) = AuthorizedAction { request =>
+  def deleteAdmin(userId: Long) = authorizedAction { request =>
     authorizationManager.canDeleteAdministrator(request, userId)
     val authUserId = ParameterExtractor.extractUserId(request)
     if (authUserId == userId) {
@@ -150,7 +148,7 @@ class UserService @Inject() (userManager: UserManager, authorizationManager: Aut
   /**
    * Deletes vendor user/admin with specified id
    */
-  def deleteVendorUser(userId: Long) = AuthorizedAction { request =>
+  def deleteVendorUser(userId: Long) = authorizedAction { request =>
     authorizationManager.canDeleteOrganisationUser(request, userId)
     val isLastAdmin = userManager.isLastAdmin(userId)
     val authUserId = ParameterExtractor.extractUserId(request)

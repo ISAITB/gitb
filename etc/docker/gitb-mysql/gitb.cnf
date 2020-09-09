@@ -1,3 +1,4 @@
 [mysqld]
 
 lower_case_table_names=1
+max_allowed_packet=10485760

@@ -41,9 +41,9 @@
 							<div class="col-xs-7">
 								<div class="input-group">
 									<div class="input-group-btn">
-										<button class="btn btn-default" type="button" ng-file-select="controller.uploadArchive($files)"><i class="fa fa-folder-open-o"></i></button>
+										<button class="btn btn-default" type="button" ng-file-select="controller.uploadArchive($files)" accept="application/zip"><i class="fa fa-folder-open-o"></i></button>
 									</div>
-									<input type="text" class="form-control clickable" ng-value="controller.archiveData.name" placeholder="Select data archive ..." ng-file-select="controller.uploadArchive($files)" readonly="readonly"/>
+									<input type="text" class="form-control clickable" ng-value="controller.archiveData.name" placeholder="Select data archive ..." ng-file-select="controller.uploadArchive($files)" accept="application/zip" readonly="readonly"/>
 								</div>
 							</div>
 							<div tb-tooltip="The archive containing the data to import."></div>

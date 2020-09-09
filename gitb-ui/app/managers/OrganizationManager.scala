@@ -1,7 +1,6 @@
 package managers
 
-import java.util
-
+import actors.events.OrganisationUpdatedEvent
 import javax.inject.{Inject, Singleton}
 import models.Enums.UserRole
 import models._
@@ -16,7 +15,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * Created by VWYNGAET on 26/10/2016.
  */
 @Singleton
-class OrganizationManager @Inject() (systemManager: SystemManager, testResultManager: TestResultManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class OrganizationManager @Inject() (systemManager: SystemManager, testResultManager: TestResultManager, triggerHelper: TriggerHelper, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -88,21 +87,28 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
       .result.head)
   }
 
-  private def copyTestSetup(fromOrganisation: Long, toOrganisation: Long, copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
-    val actions = new ListBuffer[DBIO[_]]()
+  private def copyTestSetup(fromOrganisation: Long, toOrganisation: Long, copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean): DBIO[Option[List[SystemCreationDbInfo]]] = {
+    val actions = new ListBuffer[DBIO[Option[List[SystemCreationDbInfo]]]]()
     val systems = systemManager.getSystemsByOrganization(fromOrganisation)
     systems.foreach { otherSystem =>
       actions += (
         for {
           newSystemId <- systemManager.registerSystem(Systems(0L, otherSystem.shortname, otherSystem.fullname, otherSystem.description, otherSystem.version, toOrganisation), None, None, None)
-          _ <- systemManager.copyTestSetup(otherSystem.id, newSystemId, copySystemParameters, copyStatementParameters)
-        } yield ()
-        )
+          createdSystemInfo <- {
+            DBIO.successful(Some(List[SystemCreationDbInfo](new SystemCreationDbInfo(newSystemId, None))))
+          }
+          linkedActorIds <- systemManager.copyTestSetup(otherSystem.id, newSystemId, copySystemParameters, copyStatementParameters)
+          _ <- {
+            createdSystemInfo.get.head.linkedActorIds = Some(linkedActorIds)
+            DBIO.successful(())
+          }
+        } yield createdSystemInfo
+      )
     }
     if (copyOrganisationParameters) {
-      actions += PersistenceSchema.organisationParameterValues.filter(_.organisation === toOrganisation).delete
+      actions += PersistenceSchema.organisationParameterValues.filter(_.organisation === toOrganisation).delete andThen DBIO.successful(None)
       actions += (
-        for {
+        (for {
           otherValues <- PersistenceSchema.organisationParameterValues.filter(_.organisation === fromOrganisation).result.map(_.toList)
           _ <- {
             val copyActions = new ListBuffer[DBIO[_]]()
@@ -111,40 +117,46 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
             })
             DBIO.seq(copyActions.map(a => a): _*)
           }
-        } yield()
-        )
+        } yield()) andThen DBIO.successful(None)
+      )
     }
-    DBIO.seq(actions.map(a => a): _*)
+    DBIO.fold(actions, None) {
+      (aggregated, current) => {
+        Some(aggregated.getOrElse(List[SystemCreationDbInfo]()) ++ current.getOrElse(List[SystemCreationDbInfo]()))
+      }
+    }
   }
 
-  def createOrganizationInTrans(organization: Organizations, otherOrganisationId: Option[Long], propertyValues: Option[List[OrganisationParameterValues]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
+  def createOrganizationInTrans(organization: Organizations, otherOrganisationId: Option[Long], propertyValues: Option[List[OrganisationParameterValues]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean): DBIO[OrganisationCreationDbInfo] = {
     for {
       newOrganisationId <- PersistenceSchema.insertOrganization += organization
       _ <- {
         if (propertyValues.isDefined && (otherOrganisationId.isEmpty || !copyOrganisationParameters)) {
-          saveOrganisationParameterValues(newOrganisationId, organization.community, true, propertyValues.get)
+          saveOrganisationParameterValues(newOrganisationId, organization.community, isAdmin = true, propertyValues.get)
         } else {
           DBIO.successful(())
         }
       }
-      _ <- {
+      createdSystemsInfo <- {
         if (otherOrganisationId.isDefined) {
           copyTestSetup(otherOrganisationId.get, newOrganisationId, copyOrganisationParameters, copySystemParameters, copyStatementParameters)
         } else {
-          DBIO.successful(())
+          DBIO.successful(Some(List[SystemCreationDbInfo]()))
         }
       }
-    } yield newOrganisationId
+      createdOrganisationInfo <- DBIO.successful(new OrganisationCreationDbInfo(newOrganisationId, createdSystemsInfo))
+    } yield createdOrganisationInfo
   }
 
   /**
     * Creates new organization
     */
   def createOrganization(organization: Organizations, otherOrganisationId: Option[Long], propertyValues: Option[List[OrganisationParameterValues]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
-    val id: Long = exec(
+    val orgInfo = exec(
       createOrganizationInTrans(organization, otherOrganisationId, propertyValues, copyOrganisationParameters, copySystemParameters, copyStatementParameters).transactionally
     )
-    id
+    triggerHelper.triggersFor(organization.community, orgInfo)
+    orgInfo.organisationId
   }
 
   def isTemplateNameUnique(templateName: String, communityId: Long, organisationIdToIgnore: Option[Long]): Boolean = {
@@ -171,9 +183,10 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
       actions += saveOrganisationParameterValues(user.organization, organisation.community, isAdmin, propertyValues.get)
     }
     exec(DBIO.seq(actions.map(a => a): _*).transactionally)
+    triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(organisation.community, organisation.id))
   }
 
-  def updateOrganizationInternal(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], propertyValues: Option[List[OrganisationParameterValues]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
+  def updateOrganizationInternal(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], propertyValues: Option[List[OrganisationParameterValues]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean): DBIO[Option[List[SystemCreationDbInfo]]] = {
     for {
       org <- PersistenceSchema.organizations.filter(_.id === orgId).result.headOption
       _ <- {
@@ -190,22 +203,39 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
           if (!shortName.isEmpty && !org.get.shortname.equals(shortName)) {
             actions += testResultManager.updateForUpdatedOrganisation(orgId, shortName)
           }
-          if (otherOrganisation.isDefined) {
-            // Replace the test setup for the organisation with the one from the provided one.
-            actions += systemManager.deleteSystemByOrganization(orgId)
-            actions += copyTestSetup(otherOrganisation.get, orgId, copyOrganisationParameters, copySystemParameters, copyStatementParameters)
-          }
-          if (propertyValues.isDefined && (otherOrganisation.isEmpty || !copyOrganisationParameters)) {
-            actions += saveOrganisationParameterValues(orgId, org.get.community, true, propertyValues.get)
-          }
         }
         toDBIO(actions)
       }
-    } yield ()
+      createdSystemInfo <- {
+        if (otherOrganisation.isDefined) {
+          for {
+            // Replace the test setup for the organisation with the one from the provided one.
+            _ <- systemManager.deleteSystemByOrganization(orgId)
+            createdSystemInfo <- copyTestSetup(otherOrganisation.get, orgId, copyOrganisationParameters, copySystemParameters, copyStatementParameters)
+          } yield createdSystemInfo
+        } else {
+          DBIO.successful(Some(List[SystemCreationDbInfo]()))
+        }
+      }
+      _ <- {
+        if (propertyValues.isDefined && (otherOrganisation.isEmpty || !copyOrganisationParameters)) {
+          saveOrganisationParameterValues(orgId, org.get.community, isAdmin = true, propertyValues.get)
+        } else {
+          DBIO.successful(())
+        }
+      }
+    } yield createdSystemInfo
   }
 
-  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], propertyValues: Option[List[OrganisationParameterValues]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
-    exec(updateOrganizationInternal(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation, template, templateName, propertyValues, copyOrganisationParameters, copySystemParameters, copyStatementParameters).transactionally)
+  private def getCommunityIdByOrganisationId(organisationId: Long): Long = {
+    exec(PersistenceSchema.organizations.filter(_.id === organisationId).map(x => x.community).result.head)
+  }
+
+  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], propertyValues: Option[List[OrganisationParameterValues]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean): Unit = {
+    val createdSystemInfo = exec(updateOrganizationInternal(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation, template, templateName, propertyValues, copyOrganisationParameters, copySystemParameters, copyStatementParameters).transactionally)
+    val communityId = getCommunityIdByOrganisationId(orgId)
+    triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(communityId, orgId))
+    triggerHelper.triggersFor(communityId, createdSystemInfo)
   }
 
   /**
@@ -249,13 +279,17 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     exec(PersistenceSchema.organisationParameters
       .joinLeft(PersistenceSchema.organisationParameterValues).on((p, v) => p.id === v.parameter && v.organisation === orgId)
       .filter(_._1.community === communityId)
-      .sortBy(_._1.name.asc)
+      .sortBy(x => (x._1.displayOrder.asc, x._1.name.asc))
       .map(x => (x._1, x._2))
       .result
     ).toList.map(r => new OrganisationParametersWithValue(r._1, r._2))
   }
 
-  def saveOrganisationParameterValues(orgId: Long, communityId: Long, isAdmin: Boolean, values: List[OrganisationParameterValues]) = {
+  def saveOrganisationParameterValues(orgId: Long, communityId: Long, isAdmin: Boolean, values: List[OrganisationParameterValues]): DBIO[_] = {
+    saveOrganisationParameterValues(orgId, communityId, isAdmin, isSelfRegistration = false, values, requireMandatoryPropertyValues = false)
+  }
+
+  def saveOrganisationParameterValues(orgId: Long, communityId: Long, isAdmin: Boolean, isSelfRegistration: Boolean, values: List[OrganisationParameterValues], requireMandatoryPropertyValues: Boolean): DBIO[_] = {
     var providedParameters: Map[Long, OrganisationParameterValues] = Map()
     values.foreach { v =>
       providedParameters += (v.parameter -> v)
@@ -265,7 +299,14 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     // Make updates
     val actions = new ListBuffer[DBIO[_]]()
     parameterDefinitions.foreach { parameterDefinition =>
-      if (!parameterDefinition.adminOnly || isAdmin) {
+      if (requireMandatoryPropertyValues && "R".equals(parameterDefinition.use) && !providedParameters.contains(parameterDefinition.id)) {
+        if (isAdmin || (!parameterDefinition.adminOnly && !parameterDefinition.hidden && (!isSelfRegistration || parameterDefinition.inSelfRegistration))) {
+          // No need to check this case before as the UI normally enforces this. Only way we could reach this is if a request is tampered.
+          // Admins (if forced) should provide all values. Non-admins if forced would only be expected to provide values for parameters that are editable by them (non-admin, non-hidden).
+          throw new IllegalStateException("Required parameter ["+parameterDefinition.testKey+"] missing")
+        }
+      }
+      if ((!parameterDefinition.adminOnly && !parameterDefinition.hidden) || isAdmin) {
         val matchedProvidedParameter = providedParameters.get(parameterDefinition.id)
         if (matchedProvidedParameter.isDefined) {
           // Create or update

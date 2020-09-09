@@ -4,7 +4,7 @@
             <h4 class="title">Filters</h4>
             <div class="btn-toolbar pull-right">
                 <button class="btn btn-default" type="button" ng-click="dashboardCtrl.refresh()" ng-disabled="dashboardCtrl.refreshActivePending || dashboardCtrl.refreshCompletedPending || dashboardCtrl.refreshCompletedCountPending"><span class="tab" ng-if="dashboardCtrl.refreshActivePending || dashboardCtrl.refreshCompletedPending || dashboardCtrl.refreshCompletedCountPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Refresh</button>
-                <toggle id="dashboard-toggle-filter" class="btn-group" ng-model="dashboardCtrl.showFilters" on="Enabled" off="Disabled" ng-change="dashboardCtrl.DataService.async(dashboardCtrl.showFilters?dashboardCtrl.showFilter:dashboardCtrl.clearFilter)"/>
+                <toggle id="dashboard-toggle-filter" class="btn-group" ng-model="dashboardCtrl.showFilters" on="Enabled" off="Disabled" ng-change="dashboardCtrl.DataService.async(dashboardCtrl.showFilters?dashboardCtrl.showFilter:dashboardCtrl.clearFilter)"></toggle>
             </div>
         </div>
         <div class="table-responsive" uib-collapse="!dashboardCtrl.showFilters">
@@ -148,7 +148,7 @@
         <div class="panel-heading">
             <h4 class="title">Automatically terminate idle sessions</h4>
             <div class="btn-group pull-right">
-                <toggle id="dashboard-toggle-ttl" class="btn-group" ng-model="dashboardCtrl.ttlEnabled" on="Enabled" off="Disabled" ng-change="dashboardCtrl.ttlEnabled?dashboardCtrl.DataService.focus('parameter'):dashboardCtrl.turnOff()"/>
+                <toggle id="dashboard-toggle-ttl" class="btn-group" ng-model="dashboardCtrl.ttlEnabled" on="Enabled" off="Disabled" ng-change="dashboardCtrl.ttlEnabled?dashboardCtrl.DataService.focus('parameter'):dashboardCtrl.turnOff()"></toggle>
             </div>
         </div>
         <!-- configuration form -->

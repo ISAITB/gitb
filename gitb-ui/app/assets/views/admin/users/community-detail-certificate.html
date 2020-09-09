@@ -41,8 +41,10 @@
                 </div>
                 <div uib-collapse="!communityCertificateCtrl.settings.includeMessage">
                     <div class="row">
-                        <div class="col-xs-12 form-separator">
-                            <h4 class="title">Message configuration</h4>
+                        <div class="col-xs-12">
+                            <div class="form-separator">
+                                <h4 class="title">Message configuration</h4>
+                            </div>
                         </div>
                     </div>
                     <div class="row">
@@ -69,8 +71,10 @@
                 </div>
                 <div uib-collapse="!communityCertificateCtrl.settings.includeSignature">
                     <div class="row">
-                        <div class="col-xs-12 form-separator">
-                            <h4 class="title">Signature configuration</h4>
+                        <div class="col-xs-12">
+                            <div class="form-separator">
+                                <h4 class="title">Signature configuration</h4>
+                            </div>
                         </div>
                     </div>
                     <div class="row">
@@ -85,7 +89,7 @@
                                 </div>
                             </div>
                             <div class="form-group">
-                                <label class="col-xs-3 control-label" for="keystoreTypes">* Keystore type:</label>
+                                <label class="col-xs-3 control-label" for="type_1">* Keystore type:</label>
                                 <div class="col-xs-8">
                                     <label class="radio-inline"><input type="radio" ng-model="communityCertificateCtrl.settings.keystoreType" name="keystoreTypes" id="type_1" value="JCEKS">JCEKS</label>
                                     <label class="radio-inline"><input type="radio" ng-model="communityCertificateCtrl.settings.keystoreType" name="keystoreTypes" id="type_2" value="JKS">JKS</label>

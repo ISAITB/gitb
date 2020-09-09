@@ -7,18 +7,20 @@ import java.util.Objects
 
 import com.gitb.tr.{TAR, TestResultType}
 import javax.inject.{Inject, Singleton}
-import models.Enums.TestSuiteReplacementChoice.{TestSuiteReplacementChoice, _}
-import models.Enums.{TestResultStatus, TestSuiteReplacementChoice}
-import models.{TestSuiteUploadResult, _}
+import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
+import models.Enums.TestSuiteReplacementChoiceHistory.TestSuiteReplacementChoiceHistory
+import models.Enums.TestSuiteReplacementChoiceMetadata.TestSuiteReplacementChoiceMetadata
+import models.Enums.{TestResultStatus, TestSuiteReplacementChoice, TestSuiteReplacementChoiceHistory, TestSuiteReplacementChoiceMetadata}
+import models.{TestArtifactMetadata, TestSuiteUploadResult, _}
 import org.apache.commons.io.FileUtils
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.lifted.Rep
-import utils.{RepositoryUtils, ZipArchiver}
 import utils.tdlvalidator.tdl.{FileSource, TestSuiteValidationAdapter}
+import utils.{RepositoryUtils, ZipArchiver}
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -30,23 +32,23 @@ object TestSuiteManager {
 	type TestSuiteDbTuple = (
 			Rep[Long], Rep[String], Rep[String], Rep[String],
 			Rep[Option[String]], Rep[Option[String]], Rep[Option[String]], Rep[Option[String]],
-			Rep[Option[String]], Rep[Long], Rep[String], Rep[Boolean]
+			Rep[Option[String]], Rep[Long], Rep[String], Rep[Boolean], Rep[String]
 		)
 
 	type TestSuiteValueTuple = (
 		Long, String, String, String,
 			Option[String], Option[String], Option[String], Option[String],
-			Option[String], Long, String, Boolean
+			Option[String], Long, String, Boolean, String
 		)
 
 	private def withoutDocumentation(dbTestSuite: PersistenceSchema.TestSuitesTable): TestSuiteDbTuple = {
 		(dbTestSuite.id, dbTestSuite.shortname, dbTestSuite.fullname, dbTestSuite.version,
 			dbTestSuite.authors, dbTestSuite.originalDate, dbTestSuite.modificationDate, dbTestSuite.description,
-			dbTestSuite.keywords, dbTestSuite.specification, dbTestSuite.filename, dbTestSuite.hasDocumentation)
+			dbTestSuite.keywords, dbTestSuite.specification, dbTestSuite.filename, dbTestSuite.hasDocumentation, dbTestSuite.identifier)
 	}
 
-	def tupleToTestSuite(x: TestSuiteValueTuple) = {
-		TestSuites(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9, x._10, x._11, x._12, None)
+	def tupleToTestSuite(x: TestSuiteValueTuple): TestSuites = {
+		TestSuites(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9, x._10, x._11, x._12, None, x._13)
 	}
 
 }
@@ -107,6 +109,22 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 
 				new TestSuite(ts, testCases)
 		}
+	}
+
+	def getTestSuiteWithTestCases(testSuiteId: Long): TestSuite = {
+		val testSuite = exec(
+			PersistenceSchema.testSuites
+				.filter(_.id === testSuiteId)
+			  .result.head
+		)
+		val testCases = exec(PersistenceSchema.testCases
+		  .join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
+		  .filter(_._2.testsuite === testSuiteId)
+			.sortBy(_._1.shortname.asc)
+		  .map(x => TestCaseManager.withoutDocumentation(x._1))
+			.result.map(_.toList)
+		).map(TestCaseManager.tupleToTestCase)
+		new TestSuite(testSuite, testCases)
 	}
 
 	def getTestSuitesWithTestCasesForCommunity(communityId: Long): List[TestSuite] = {
@@ -170,27 +188,39 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		new File(getTempFolder(), "ts_validation")
 	}
 
-	def applyPendingTestSuiteAction(specification: Long, pendingTestSuiteIdentifier: String, action: TestSuiteReplacementChoice): TestSuiteUploadResult = {
+	def cancelPendingTestSuiteActions(pendingTestSuiteIdentifier: String): TestSuiteUploadResult = {
+		applyPendingTestSuiteActions(pendingTestSuiteIdentifier, TestSuiteReplacementChoice.CANCEL, null)
+	}
+
+	def completePendingTestSuiteActions(pendingTestSuiteIdentifier: String, actionsPerSpec: List[PendingTestSuiteAction]): TestSuiteUploadResult = {
+		applyPendingTestSuiteActions(pendingTestSuiteIdentifier, TestSuiteReplacementChoice.PROCEED, actionsPerSpec)
+	}
+
+	private def applyPendingTestSuiteActions(pendingTestSuiteIdentifier: String, overallAction: TestSuiteReplacementChoice, actionsPerSpec: List[PendingTestSuiteAction]): TestSuiteUploadResult = {
 		val result = new TestSuiteUploadResult()
 		val pendingTestSuiteFolder = new File(getPendingFolder(), pendingTestSuiteIdentifier)
 		try {
-			var replace = false
-			action match {
-				case TestSuiteReplacementChoice.CANCEL => result.success = true
-				case TestSuiteReplacementChoice.DROP_TEST_HISTORY | TestSuiteReplacementChoice.KEEP_TEST_HISTORY => replace = true
-				case _ => throw new IllegalStateException("Unsupported pending test suite action: "+action)
-			}
-			if (replace) {
+			if (overallAction == TestSuiteReplacementChoice.PROCEED) {
 				if (pendingTestSuiteFolder.exists()) {
 					val pendingFiles = pendingTestSuiteFolder.listFiles()
 					if (pendingFiles.length == 1) {
-						val testSuite = RepositoryUtils.getTestSuiteFromZip(specification, pendingFiles(0))
+						val testSuite = RepositoryUtils.getTestSuiteFromZip(None, pendingFiles.head)
 						// Sanity check
 						if (testSuite.isDefined && testSuite.get.testCases.isDefined) {
-							result.items.addAll(replaceTestSuite(testSuite.get.toCaseObject, testSuite.get.actors, testSuite.get.testCases, pendingFiles(0), action))
+							val onSuccessCalls = mutable.ListBuffer[() => _]()
+							val onFailureCalls = mutable.ListBuffer[() => _]()
+							val dbActions = new ListBuffer[DBIO[List[TestSuiteUploadItemResult]]]()
+							actionsPerSpec.foreach { replacementChoice =>
+								if (replacementChoice.action == TestSuiteReplacementChoice.PROCEED) {
+									setTestSuiteSpecification(testSuite.get, replacementChoice.specification)
+									dbActions += replaceTestSuiteInternal(testSuite.get.toCaseObject, testSuite.get.actors, testSuite.get.testCases, pendingFiles.head, replacementChoice.actionHistory.get, replacementChoice.actionMetadata.get, onSuccessCalls, onFailureCalls)
+								}
+							}
+							val mergedDbAction: DBIO[List[TestSuiteUploadItemResult]] = mergeActionsWithResults(dbActions.toList)
+							result.items.addAll(asJavaCollection(exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), mergedDbAction).transactionally)))
 							result.success = true
 						} else {
-							result.errorInformation = "The pending test suite archive ["+pendingTestSuiteIdentifier +"] was corrupted "
+							result.errorInformation = "The pending test suite archive [" + pendingTestSuiteIdentifier + "] was corrupted "
 						}
 					} else {
 						result.errorInformation = "A single pending test suite archive was expected but found " + pendingFiles.length
@@ -198,13 +228,14 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 				} else {
 					result.errorInformation = "The pending test suite ["+pendingTestSuiteIdentifier+"] could not be located"
 				}
+			} else {
+				result.success = true
 			}
 		} catch {
-			case e:Exception => {
+			case e:Exception =>
 				logger.error("An error occurred", e)
 				result.errorInformation = e.getMessage
 				result.success = false
-			}
 		} finally {
 			// Delete temporary folder (if exists)
 			FileUtils.deleteDirectory(pendingTestSuiteFolder)
@@ -212,49 +243,109 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		result
 	}
 
-	private def validateTestSuite(specification: Long, tempTestSuiteArchive: File): TAR = {
-		val actorSet = new util.HashSet[String]()
-		actorSet.addAll(conformanceManager.getActorsWithSpecificationId(None, Some(specification)).map(a => a.actorId))
-
-		val parameterSet = new util.HashSet[String]()
-		val domain = conformanceManager.getDomainOfSpecification(specification)
-		parameterSet.addAll(conformanceManager.getDomainParameters(domain.id).map(p => p.name))
-
-		val report = TestSuiteValidationAdapter.getInstance().doValidation(new FileSource(tempTestSuiteArchive), actorSet, parameterSet, getTmpValidationFolder().getAbsolutePath)
+	private def validateTestSuite(specifications: List[Long], tempTestSuiteArchive: File): TAR = {
+		// Domain parameters.
+		val domain = conformanceManager.getDomainOfSpecification(specifications.head)
+		val parameterSet = conformanceManager.getDomainParameters(domain.id).map(p => p.name).toSet
+		// Actor IDs (if multiple specs these are ones in common).
+		var actorIdSet: Option[mutable.Set[String]] = None
+		conformanceManager.getActorIdsOfSpecifications(specifications).values.foreach { specActorIds =>
+			if (actorIdSet.isEmpty) {
+				actorIdSet = Some(mutable.Set[String]())
+				actorIdSet.get ++= specActorIds
+			} else {
+				actorIdSet = Some(actorIdSet.get & specActorIds)
+			}
+		}
+		val report = TestSuiteValidationAdapter.getInstance().doValidation(new FileSource(tempTestSuiteArchive), setAsJavaSet(actorIdSet.getOrElse(mutable.Set[String]())), setAsJavaSet(parameterSet), getTmpValidationFolder().getAbsolutePath)
 		report
 	}
 
-	def deployTestSuiteFromZipFile(specification: Long, tempTestSuiteArchive: File): TestSuiteUploadResult = {
+	private def setTestSuiteSpecification(testSuite: TestSuite, specification: Long) = {
+		testSuite.specification = specification
+		if (testSuite.testCases.isDefined) {
+			testSuite.testCases = Some(
+				testSuite.testCases.get.map(tc => tc.withSpecification(specification))
+			)
+		}
+	}
+
+	private def testSuiteDefinesExistingActors(specification: Long, actorIdentifiers: List[String]): Boolean = {
+		exec(PersistenceSchema.actors
+		  .join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
+		  .filter(_._2.specId === specification)
+		  .filter(_._1.actorId inSet actorIdentifiers)
+			  .map(x => x._1.actorId)
+			  .result
+			  .headOption
+		).isDefined
+	}
+
+	def deployTestSuiteFromZipFile(specifications: List[Long], tempTestSuiteArchive: File): TestSuiteUploadResult = {
 		val result = new TestSuiteUploadResult()
 		try {
-			result.validationReport =  validateTestSuite(specification, tempTestSuiteArchive)
+			result.validationReport = validateTestSuite(specifications, tempTestSuiteArchive)
 			if (result.validationReport.getResult == TestResultType.SUCCESS) {
-				// We can proceed. Check also if test suite exists.
-				val testSuite = RepositoryUtils.getTestSuiteFromZip(specification, tempTestSuiteArchive)
-				if (testSuite.isDefined && testSuite.get.testCases.isDefined) {
-					logger.debug("Extracted test suite [" + testSuite + "] with the test cases [" + testSuite.get.testCases.get.map(_.shortname) + "]")
-					val exists = testSuiteExists(testSuite.get)
-					val noWarnings = result.validationReport.getCounters.getNrOfWarnings.intValue() == 0
-					result.exists = exists
-					if (exists || !noWarnings) {
+				val noWarnings = result.validationReport.getCounters.getNrOfWarnings.intValue() == 0
+				// If we have warnings we don't need to make a full parse (i.e. test cases and documentation).
+				val testSuite = RepositoryUtils.getTestSuiteFromZip(None, tempTestSuiteArchive, noWarnings)
+				if (testSuite.isDefined) {
+					var definedActorsIdentifiers: Option[List[String]] = None
+					if (testSuite.get.actors.isDefined) {
+						definedActorsIdentifiers = Some(testSuite.get.actors.get.map(actor => actor.actorId))
+					}
+					if (!noWarnings) {
+						result.needsConfirmation = true
+					}
+					val specsWithExistingTestSuite = new ListBuffer[Long]()
+					val specsWithMatchingData = new ListBuffer[Long]()
+					specifications.foreach { specification =>
+						setTestSuiteSpecification(testSuite.get, specification)
+						val testSuiteExists = checkTestSuiteExists(testSuite.get)
+						if (testSuiteExists) {
+							specsWithExistingTestSuite += specification
+							result.needsConfirmation = true
+						}
+						if (definedActorsIdentifiers.isDefined) {
+							val matchingDataExists = testSuiteDefinesExistingActors(specification, definedActorsIdentifiers.get)
+							if (matchingDataExists) {
+								specsWithMatchingData += specification
+								result.needsConfirmation = true
+							}
+						}
+					}
+					if (result.needsConfirmation) {
+						if (specsWithExistingTestSuite.nonEmpty) {
+							result.existsForSpecs = Some(specsWithExistingTestSuite.toList)
+						}
+						if (specsWithMatchingData.nonEmpty) {
+							result.matchingDataExists = Some(specsWithMatchingData.toList)
+						}
 						// Park the test suite for now and ask user what to do
 						FileUtils.moveDirectoryToDirectory(tempTestSuiteArchive.getParentFile, getPendingFolder(), true)
 						result.pendingTestSuiteFolderName = tempTestSuiteArchive.getParentFile.getName
 					} else {
+						// Proceed immediately.
 						val onSuccessCalls = mutable.ListBuffer[() => _]()
 						val onFailureCalls = mutable.ListBuffer[() => _]()
-						val action = saveTestSuite(testSuite.get.toCaseObject, null, testSuite.get.actors, testSuite.get.testCases, tempTestSuiteArchive, onSuccessCalls, onFailureCalls)
-						result.items.addAll(exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), action).transactionally))
+						val dbActions = new ListBuffer[DBIO[List[TestSuiteUploadItemResult]]]()
+						specifications.foreach { specification =>
+							setTestSuiteSpecification(testSuite.get, specification)
+							dbActions += saveTestSuite(testSuite.get.toCaseObject, null, updateMetadata = true, testSuite.get.actors, testSuite.get.testCases, tempTestSuiteArchive, onSuccessCalls, onFailureCalls)
+						}
+						val action: DBIO[List[TestSuiteUploadItemResult]] = mergeActionsWithResults(dbActions.toList)
+						result.items.addAll(asJavaCollection(exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), action).transactionally)))
 						result.success = true
 					}
 				}
+			} else {
+				result.needsConfirmation = true
 			}
 		} catch {
-			case e:Exception => {
+			case e:Exception =>
 				logger.error("An error occurred", e)
 				result.errorInformation = e.getMessage
 				result.success = false
-			}
 		} finally {
 			// Delete temporary folder (if exists)
 			FileUtils.deleteDirectory(tempTestSuiteArchive.getParentFile)
@@ -266,17 +357,25 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		new File(RepositoryUtils.getTestSuitesPath(getSpecificationById(specification)), testSuiteName)
 	}
 
-	private def testSuiteExists(suite: TestSuite): Boolean = {
+	private def checkTestSuiteExists(suite: TestSuite): Boolean = {
 		val count = exec(PersistenceSchema.testSuites
-			.filter(_.shortname === suite.shortname)
+			.filter(_.identifier === suite.identifier)
 			.filter(_.specification === suite.specification)
 			.size.result)
 		count > 0
 	}
 
-	private def getTestSuiteBySpecificationAndName(specId: Long, name: String): Option[TestSuites] = {
+	private def getTestSuiteIdBySpecificationAndIdentifier(specId: Long, identifier: String): Option[Long] = {
+		exec(PersistenceSchema.testSuites
+			.filter(_.identifier === identifier)
+			.filter(_.specification === specId)
+			.map(_.id)
+			.result.headOption)
+	}
+
+	private def getTestSuiteBySpecificationAndIdentifier(specId: Long, identifier: String): Option[TestSuites] = {
 		val testSuite = exec(PersistenceSchema.testSuites
-			.filter(_.shortname === name)
+			.filter(_.identifier === identifier)
 			.filter(_.specification === specId)
 			.map(TestSuiteManager.withoutDocumentation)
 			.result.headOption)
@@ -287,30 +386,126 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		}
 	}
 
-	private def replaceTestSuite(suite: TestSuites, testSuiteActors: Option[List[Actor]], testCases: Option[List[TestCases]], tempTestSuiteArchive: File, action: TestSuiteReplacementChoice): List[TestSuiteUploadItemResult] = {
-		val onSuccessCalls = mutable.ListBuffer[() => _]()
-		val onFailureCalls = mutable.ListBuffer[() => _]()
-		if (action == DROP_TEST_HISTORY) {
-			val existingTestSuite = getTestSuiteBySpecificationAndName(suite.specification, suite.shortname)
-			val action = conformanceManager.undeployTestSuite(existingTestSuite.get.id, onSuccessCalls) andThen
-				saveTestSuite(suite, null, testSuiteActors, testCases, tempTestSuiteArchive, onSuccessCalls, onFailureCalls)
-			exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), action).transactionally)
-		} else if (action == KEEP_TEST_HISTORY) {
-			val existingTestSuite = getTestSuiteBySpecificationAndName(suite.specification, suite.shortname)
-			val action = saveTestSuite(suite, existingTestSuite.orNull, testSuiteActors, testCases, tempTestSuiteArchive, onSuccessCalls, onFailureCalls)
-			exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), action).transactionally)
-		} else {
-			throw new IllegalStateException("Unexpected test suite replacement action ["+action+"]")
+	private def getTestSuiteMetadataForReplacement(testSuiteId: Long): Option[TestArtifactMetadata] = {
+		var result: Option[TestArtifactMetadata] = None
+		val testSuiteData = exec(PersistenceSchema.testSuites.filter(_.id === testSuiteId).map(x => (x.shortname, x.fullname, x.description, x.documentation)).result.headOption)
+		if (testSuiteData.isDefined) {
+			result = Some(new TestArtifactMetadata(testSuiteData.get._1, testSuiteData.get._2, testSuiteData.get._3, testSuiteData.get._4))
+			val testCaseMap = mutable.Map[String, TestArtifactMetadata]()
+			exec(PersistenceSchema.testCases
+				.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
+				.filter(_._2.testsuite === testSuiteId)
+				.map(x => (x._1.identifier, x._1.shortname, x._1.fullname, x._1.description, x._1.documentation))
+				.result
+			).foreach { x =>
+				testCaseMap += (x._1 -> new TestArtifactMetadata(x._2, x._3, x._4, x._5))
+			}
+			result.get.testCases = testCaseMap.toMap
 		}
+		result
 	}
 
-	def updateTestSuiteInDb(testSuiteId: Long, newData: TestSuites) = {
-		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.shortname, t.fullname, t.version, t.authors, t.keywords, t.description, t.filename, t.hasDocumentation, t.documentation)
-		q1.update(newData.shortname, newData.fullname, newData.version, newData.authors, newData.keywords, newData.description, newData.filename, newData.hasDocumentation, newData.documentation) andThen
-		testResultManager.updateForUpdatedTestSuite(testSuiteId, newData.shortname)
+	private def applyMetadataToTestSuite(metadata: TestArtifactMetadata, testSuite: TestSuites, testCases: Option[List[TestCases]]): (TestSuites, Option[List[TestCases]]) = {
+		val updatedTestSuite = TestSuites(testSuite.id, metadata.shortName, metadata.fullName, testSuite.version, testSuite.authors,
+			testSuite.originalDate, testSuite.modificationDate, metadata.description, testSuite.keywords, testSuite.specification,
+			testSuite.filename, metadata.documentation.isDefined, metadata.documentation, testSuite.identifier)
+		var updatedTestCases: Option[List[TestCases]] = None
+		if (testCases.isDefined) {
+			val testCasesList = ListBuffer[TestCases]()
+			testCases.get.foreach { testCase =>
+				var shortName = testCase.shortname
+				var fullName = testCase.fullname
+				var description = testCase.description
+				var documentation = testCase.documentation
+				val testCaseMetadata = metadata.testCases.get(testCase.identifier)
+				if (testCaseMetadata.isDefined) {
+					shortName = testCaseMetadata.get.shortName
+					fullName = testCaseMetadata.get.fullName
+					description = testCaseMetadata.get.description
+					documentation = testCaseMetadata.get.documentation
+				}
+				testCasesList += TestCases(testCase.id, shortName, fullName, testCase.version, testCase.authors, testCase.originalDate,
+					testCase.modificationDate, description, testCase.keywords, testCase.testCaseType, testCase.path, testCase.targetSpec,
+					testCase.targetActors, testCase.targetOptions, testCase.testSuiteOrder, documentation.isDefined, documentation,
+					testCase.identifier)
+			}
+			updatedTestCases = Some(testCasesList.toList)
+		}
+		(updatedTestSuite, updatedTestCases)
 	}
 
-	private def theSameActor(one: Actors, two: Actors) = {
+	private def replaceTestSuiteInternal(suite: TestSuites, testSuiteActors: Option[List[Actor]], testCases: Option[List[TestCases]], tempTestSuiteArchive: File, actionHistory: TestSuiteReplacementChoiceHistory, actionMetadata: TestSuiteReplacementChoiceMetadata, onSuccessCalls: mutable.ListBuffer[() => _], onFailureCalls: mutable.ListBuffer[() => _]): DBIO[List[TestSuiteUploadItemResult]] = {
+		var action: DBIO[List[TestSuiteUploadItemResult]] = null
+		val updateMetadata = actionMetadata == TestSuiteReplacementChoiceMetadata.UPDATE
+		if (actionHistory == TestSuiteReplacementChoiceHistory.DROP) {
+			val existingTestSuiteId = getTestSuiteIdBySpecificationAndIdentifier(suite.specification, suite.identifier)
+			var undeployDbAction: Option[DBIO[_]] = None
+			var testSuiteToUse: TestSuites = suite
+			var testCasesToUse: Option[List[TestCases]] = testCases
+			if (existingTestSuiteId.isDefined) {
+				if (!updateMetadata) {
+					val metadataToUse = getTestSuiteMetadataForReplacement(existingTestSuiteId.get)
+					if (metadataToUse.isDefined) {
+						val results = applyMetadataToTestSuite(metadataToUse.get, suite, testCases)
+						testSuiteToUse = results._1
+						testCasesToUse = results._2
+					}
+				}
+				undeployDbAction = Some(conformanceManager.undeployTestSuite(existingTestSuiteId.get, onSuccessCalls))
+			}
+			action = undeployDbAction.getOrElse(DBIO.successful(())) andThen
+				saveTestSuite(testSuiteToUse, null, updateMetadata, testSuiteActors, testCasesToUse, tempTestSuiteArchive, onSuccessCalls, onFailureCalls)
+		} else if (actionHistory == TestSuiteReplacementChoiceHistory.KEEP) {
+			val existingTestSuite = getTestSuiteBySpecificationAndIdentifier(suite.specification, suite.identifier)
+			action = saveTestSuite(suite, existingTestSuite.orNull, updateMetadata, testSuiteActors, testCases, tempTestSuiteArchive, onSuccessCalls, onFailureCalls)
+		} else {
+			throw new IllegalStateException("Unexpected test suite replacement action ["+actionHistory+"]")
+		}
+		action
+	}
+
+	def updateTestSuiteMetadata(testSuiteId: Long, name: String, description: Option[String], documentation: Option[String]) = {
+		var hasDocumentationToSet = false
+		var documentationToSet: Option[String] = None
+		if (documentation.isDefined && !documentation.get.isBlank) {
+			hasDocumentationToSet = true
+			documentationToSet = documentation
+		}
+		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation)
+		exec(
+			q1.update(name, name, description, documentationToSet, hasDocumentationToSet) andThen
+				testResultManager.updateForUpdatedTestSuite(testSuiteId, name)
+				.transactionally
+		)
+	}
+
+	def updateTestCaseMetadata(testCaseId: Long, name: String, description: Option[String], documentation: Option[String]) = {
+		var hasDocumentationToSet = false
+		var documentationToSet: Option[String] = None
+		if (documentation.isDefined && !documentation.get.isBlank) {
+			hasDocumentationToSet = true
+			documentationToSet = documentation
+		}
+		val q1 = for {t <- PersistenceSchema.testCases if t.id === testCaseId} yield (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation)
+		exec(
+				q1.update(name, name, description, documentationToSet, hasDocumentationToSet) andThen
+					testResultManager.updateForUpdatedTestCase(testCaseId, name)
+					.transactionally
+		)
+	}
+
+	def updateTestSuiteInDbWithoutMetadata(testSuiteId: Long, newData: TestSuites): DBIO[_] = {
+		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield t.filename
+		q1.update(newData.filename)
+	}
+
+	def updateTestSuiteInDb(testSuiteId: Long, newData: TestSuites): DBIO[_] = {
+		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.identifier, t.shortname, t.fullname, t.version, t.authors, t.keywords, t.description, t.filename, t.hasDocumentation, t.documentation)
+		q1.update(newData.identifier, newData.shortname, newData.fullname, newData.version, newData.authors, newData.keywords, newData.description, newData.filename, newData.hasDocumentation, newData.documentation) andThen
+			testResultManager.updateForUpdatedTestSuite(testSuiteId, newData.shortname)
+	}
+
+	private def theSameActor(one: Actors, two: Actors): Boolean = {
 		(Objects.equals(one.name, two.name)
 				&& Objects.equals(one.description, two.description)
 				&& Objects.equals(one.default, two.default)
@@ -318,39 +513,49 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 				&& Objects.equals(one.displayOrder, two.displayOrder))
 	}
 
-	private def theSameEndpoint(one: Endpoint, two: Endpoints) = {
+	private def theSameEndpoint(one: Endpoint, two: Endpoints): Boolean = {
 		(Objects.equals(one.name, two.name)
 				&& Objects.equals(one.desc, two.desc))
 	}
 
-	private def theSameParameter(one: models.Parameters, two: models.Parameters) = {
+	private def theSameParameter(one: models.Parameters, two: models.Parameters): Boolean = {
 		(Objects.equals(one.name, two.name)
 				&& Objects.equals(one.desc, two.desc)
 				&& Objects.equals(one.kind, two.kind)
 				&& Objects.equals(one.use, two.use)
 				&& Objects.equals(one.adminOnly, two.adminOnly)
-				&& Objects.equals(one.notForTests, two.notForTests))
+				&& Objects.equals(one.notForTests, two.notForTests)
+				&& Objects.equals(one.hidden, two.hidden)
+				&& Objects.equals(one.allowedValues, two.allowedValues)
+				&& Objects.equals(one.displayOrder, two.displayOrder)
+				&& Objects.equals(one.dependsOn, two.dependsOn)
+				&& Objects.equals(one.dependsOnValue, two.dependsOnValue)
+			)
 	}
 
 	def isActorReference(actorToSave: Actors) = {
 		actorToSave.actorId != null && actorToSave.name == null && actorToSave.description.isEmpty
 	}
 
-	private def stepSaveTestSuite(suite: TestSuites, existingSuite: TestSuites): DBIO[(Long, List[TestSuiteUploadItemResult])] = {
+	private def stepSaveTestSuite(suite: TestSuites, existingSuite: TestSuites, updateMetadata: Boolean): DBIO[(Long, List[TestSuiteUploadItemResult])] = {
 		val actions = new ListBuffer[DBIO[_]]()
 		var savedTestSuiteId: DBIO[Long] = null
 		val result = new ListBuffer[TestSuiteUploadItemResult]()
 		if (existingSuite != null) {
 			// Update existing test suite.
-			actions += updateTestSuiteInDb(existingSuite.id, suite)
+			if (updateMetadata) {
+				actions += updateTestSuiteInDb(existingSuite.id, suite)
+			} else {
+				actions += updateTestSuiteInDbWithoutMetadata(existingSuite.id, suite)
+			}
 			// Remove existing actor links (these will be updated later).
 			actions += removeActorLinksForTestSuite(existingSuite.id)
-			result += new TestSuiteUploadItemResult(suite.shortname, TestSuiteUploadItemResult.ITEM_TYPE_TEST_SUITE, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE)
+			result += new TestSuiteUploadItemResult(suite.shortname, TestSuiteUploadItemResult.ITEM_TYPE_TEST_SUITE, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE, suite.specification)
 			savedTestSuiteId = DBIO.successful(existingSuite.id)
 		} else {
 			// New test suite.
 			savedTestSuiteId = PersistenceSchema.testSuites.returning(PersistenceSchema.testSuites.map(_.id)) += suite
-			result += new TestSuiteUploadItemResult(suite.shortname, TestSuiteUploadItemResult.ITEM_TYPE_TEST_SUITE, TestSuiteUploadItemResult.ACTION_TYPE_ADD)
+			result += new TestSuiteUploadItemResult(suite.shortname, TestSuiteUploadItemResult.ITEM_TYPE_TEST_SUITE, TestSuiteUploadItemResult.ACTION_TYPE_ADD, suite.specification)
 		}
 		var otherActionsComposed: DBIO[_] = null
 		if (actions.nonEmpty) {
@@ -378,7 +583,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		}
 	}
 
-	private def stepSaveActors(testSuiteActors: Option[List[Actor]], domainId: Long, specificationActors: List[Actors], suite: TestSuites): DBIO[(util.Map[String, Long], List[TestSuiteUploadItemResult])] = {
+	private def stepSaveActors(testSuiteActors: Option[List[Actor]], domainId: Long, specificationActors: List[Actors], suite: TestSuites, updateMetadata: Boolean): DBIO[(util.Map[String, Long], List[TestSuiteUploadItemResult])] = {
 		// Get the (new, existing or referenced) actor IDs resulting from the import.
 		var finalAction: DBIO[List[TestSuiteUploadItemResult]] = DBIO.successful(List[TestSuiteUploadItemResult]())
 		val actions = new ListBuffer[DBIO[List[TestSuiteUploadItemResult]]]()
@@ -393,11 +598,11 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 			var savedActorStringId: String = null
 
 			if (savedActor.isDefined) {
-				if (isActorReference(actorToSave) || theSameActor(savedActor.get, actorToSave)) {
-					result += new TestSuiteUploadItemResult(savedActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED)
+				if (!updateMetadata || isActorReference(actorToSave) || theSameActor(savedActor.get, actorToSave)) {
+					result += new TestSuiteUploadItemResult(savedActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED, suite.specification)
 				} else {
 					updateAction = Some(actorManager.updateActor(savedActor.get.id, actorToSave.actorId, actorToSave.name, actorToSave.description, actorToSave.default, actorToSave.hidden, actorToSave.displayOrder, suite.specification))
-					result += new TestSuiteUploadItemResult(savedActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE)
+					result += new TestSuiteUploadItemResult(savedActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE, suite.specification)
 				}
 				savedActorId = DBIO.successful(savedActor.get.id)
 				savedActorStringId = savedActor.get.actorId
@@ -409,14 +614,14 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 					savedActorId = conformanceManager.createActor(actorToSave, suite.specification)
 					savedActorStringId = actorToSave.actorId
 				}
-				result += new TestSuiteUploadItemResult(actorToSave.actorId, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_ADD)
+				result += new TestSuiteUploadItemResult(actorToSave.actorId, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_ADD, suite.specification)
 			}
 
 			val combinedAction = (updateAction.getOrElse(DBIO.successful(())) andThen savedActorId).flatMap(id => {
 				savedActorIds.put(savedActorStringId, id)
 				for {
 					existingEndpoints <- PersistenceSchema.endpoints.filter(_.actor === id).result.map(_.toList)
-					endpointResults <- stepSaveEndpoints(id, testSuiteActor, actorToSave, existingEndpoints)
+					endpointResults <- stepSaveEndpoints(id, testSuiteActor, actorToSave, existingEndpoints, suite, updateMetadata)
 				} yield endpointResults
 			})
 			actions += mergeActionsWithResults(combinedAction, DBIO.successful(result.toList))
@@ -434,7 +639,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		})
 	}
 
-	private def stepSaveEndpoints(savedActorId: Long, testSuiteActor: Actor, actorToSave: Actors, existingEndpoints: List[Endpoints]): DBIO[List[TestSuiteUploadItemResult]] = {
+	private def stepSaveEndpoints(savedActorId: Long, testSuiteActor: Actor, actorToSave: Actors, existingEndpoints: List[Endpoints], suite: TestSuites, updateMetadata: Boolean): DBIO[List[TestSuiteUploadItemResult]] = {
 		val actions = new ListBuffer[DBIO[List[TestSuiteUploadItemResult]]]()
 		val existingEndpointMap = new util.HashMap[String, Endpoints]()
 		for (existingEndpoint <- existingEndpoints) {
@@ -453,21 +658,21 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 					// Existing endpoint.
 					endpointId = DBIO.successful(existingEndpoint.id)
 					existingEndpointMap.remove(endpoint.name)
-					if (theSameEndpoint(endpoint, existingEndpoint)) {
-						result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]", TestSuiteUploadItemResult.ITEM_TYPE_ENDPOINT, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED)
+					if (!updateMetadata || theSameEndpoint(endpoint, existingEndpoint)) {
+						result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]", TestSuiteUploadItemResult.ITEM_TYPE_ENDPOINT, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED, suite.specification)
 					} else {
 						updateAction = Some(endPointManager.updateEndPoint(existingEndpoint.id, endpoint.name, endpoint.desc))
-						result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]", TestSuiteUploadItemResult.ITEM_TYPE_ENDPOINT, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE)
+						result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]", TestSuiteUploadItemResult.ITEM_TYPE_ENDPOINT, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE, suite.specification)
 					}
 				} else {
 					// New endpoint.
 					endpointId = endPointManager.createEndpoint(endpoint.toCaseObject.copy(actor = savedActorId))
-					result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]", TestSuiteUploadItemResult.ITEM_TYPE_ENDPOINT, TestSuiteUploadItemResult.ACTION_TYPE_ADD)
+					result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]", TestSuiteUploadItemResult.ITEM_TYPE_ENDPOINT, TestSuiteUploadItemResult.ACTION_TYPE_ADD, suite.specification)
 				}
 				val combinedAction = (updateAction.getOrElse(DBIO.successful(())) andThen endpointId).flatMap(id => {
 					for {
 						existingEndpointParameters <- PersistenceSchema.parameters.filter(_.endpoint === id.longValue()).result.map(_.toList)
-						parameterResults <- stepSaveParameters(id, endpoint, actorToSave, existingEndpointParameters)
+						parameterResults <- stepSaveParameters(id, endpoint, actorToSave, existingEndpointParameters, suite, updateMetadata)
 					} yield parameterResults
 				})
 				actions += mergeActionsWithResults(combinedAction, DBIO.successful(result.toList))
@@ -480,7 +685,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		}
 	}
 
-	private def stepSaveParameters(endpointId: Long, endpoint: Endpoint, actorToSave: Actors, existingEndpointParameters: List[models.Parameters]): DBIO[List[TestSuiteUploadItemResult]] = {
+	private def stepSaveParameters(endpointId: Long, endpoint: Endpoint, actorToSave: Actors, existingEndpointParameters: List[models.Parameters], suite: TestSuites, updateMetadata: Boolean): DBIO[List[TestSuiteUploadItemResult]] = {
 		val actions = new ListBuffer[DBIO[_]]()
 		val result = new ListBuffer[TestSuiteUploadItemResult]()
 		val existingParameterMap = new util.HashMap[String, models.Parameters]()
@@ -497,16 +702,16 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 					// Existing parameter.
 					parameterId = existingParameter.id
 					existingParameterMap.remove(parameter.name)
-					if (theSameParameter(parameter, existingParameter)) {
-						result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.name, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED)
+					if (!updateMetadata || theSameParameter(parameter, existingParameter)) {
+						result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.name, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED, suite.specification)
 					} else {
-						action = Some(parameterManager.updateParameter(parameterId, parameter.name, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests))
-						result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.name, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE)
+						action = Some(parameterManager.updateParameter(parameterId, parameter.name, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue))
+						result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.name, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE, suite.specification)
 					}
 				} else {
 					// New parameter.
-					action = Some(parameterManager.createParameter(parameter.copy(endpoint = endpointId)))
-					result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.name, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_ADD)
+					action = Some(parameterManager.createParameter(parameter.withEndpoint(endpointId, Some(0))))
+					result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.name, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_ADD, suite.specification)
 				}
 				actions += action.getOrElse(DBIO.successful(()))
 			}
@@ -520,23 +725,30 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		combinedAction andThen DBIO.successful(result.toList)
 	}
 
-	def stepProcessTestCases(specificationId: Long, savedTestSuiteId: Long, testCases: Option[List[TestCases]], resourcePaths: Map[String, String], existingTestCaseMap: util.HashMap[String, java.lang.Long], savedActorIds: util.Map[String, Long], existingActorToSystemMap: util.HashMap[Long, util.HashSet[Long]]): DBIO[(util.List[Long], List[TestSuiteUploadItemResult])] = {
+	def stepProcessTestCases(specificationId: Long, savedTestSuiteId: Long, testCases: Option[List[TestCases]], resourcePaths: Map[String, String], existingTestCaseMap: util.HashMap[String, (java.lang.Long, String)], savedActorIds: util.Map[String, Long], existingActorToSystemMap: util.HashMap[Long, util.HashSet[Long]], updateMetadata: Boolean): DBIO[(util.List[Long], List[TestSuiteUploadItemResult])] = {
 		val savedTestCaseIds: util.List[Long] = new util.ArrayList[Long]
 		var combinedAction: DBIO[_] = DBIO.successful(())
 		val result = new ListBuffer[TestSuiteUploadItemResult]()
 		for (testCase <- testCases.get) {
-			val testCaseToStore = testCase.withPath(resourcePaths(testCase.shortname))
-			val existingTestCaseId = existingTestCaseMap.get(testCase.shortname)
-			if (existingTestCaseId != null) {
+			val testCaseToStore = testCase.withPath(resourcePaths(testCase.identifier))
+			val existingTestCaseInfo = existingTestCaseMap.get(testCase.identifier)
+			if (existingTestCaseInfo != null) {
+				val existingTestCaseId: Long = existingTestCaseInfo._1
 				// Test case already exists - update.
-				existingTestCaseMap.remove(testCase.shortname)
-				combinedAction = combinedAction andThen
-					testCaseManager.updateTestCase(
-						existingTestCaseId, testCaseToStore.shortname, testCaseToStore.fullname,
-						testCaseToStore.version, testCaseToStore.authors, testCaseToStore.description,
-						testCaseToStore.keywords, testCaseToStore.testCaseType, testCaseToStore.path, testCaseToStore.testSuiteOrder,
-						testCaseToStore.targetActors.get, testCaseToStore.documentation.isDefined, testCaseToStore.documentation
-					)
+				existingTestCaseMap.remove(testCase.identifier)
+				if (updateMetadata) {
+					combinedAction = combinedAction andThen
+						testCaseManager.updateTestCase(
+							existingTestCaseId, testCaseToStore.identifier, testCaseToStore.shortname, testCaseToStore.fullname,
+							testCaseToStore.version, testCaseToStore.authors, testCaseToStore.description,
+							testCaseToStore.keywords, testCaseToStore.testCaseType, testCaseToStore.path, testCaseToStore.testSuiteOrder,
+							testCaseToStore.targetActors.get, testCaseToStore.documentation.isDefined, testCaseToStore.documentation
+						)
+				} else {
+					combinedAction = combinedAction andThen
+						testCaseManager.updateTestCaseWithoutMetadata(existingTestCaseId, testCaseToStore.path, testCaseToStore.testSuiteOrder,
+							testCaseToStore.targetActors.get)
+				}
 				// Update test case relation to actors.
 				val actorsToFurtherProcess = new util.HashSet[Long]
 				val actorsThatExistAndChangedToSut = new util.HashSet[Long]
@@ -553,7 +765,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 				}
 				combinedAction = combinedAction andThen
 					(for {
-					existingTestCaseActors <- PersistenceSchema.testCaseHasActors.filter(_.testcase === existingTestCaseId.toLong).result.map(_.toList)
+					existingTestCaseActors <- PersistenceSchema.testCaseHasActors.filter(_.testcase === existingTestCaseId).result.map(_.toList)
 					_ <- {
 						val actions = new ListBuffer[DBIO[_]]()
 						existingTestCaseActors.map(existingTestCaseActor => {
@@ -561,7 +773,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 							val existingMarkedAsSut = existingTestCaseActor._4
 							if (!actorsToFurtherProcess.contains(existingActorId)) {
 								// The actor is no longer mentioned in the test case - remove
-								actions += PersistenceSchema.conformanceResults.filter(_.testcase === existingTestCaseId.toLong).filter(_.actor === existingActorId).delete
+								actions += PersistenceSchema.conformanceResults.filter(_.testcase === existingTestCaseId).filter(_.actor === existingActorId).delete
 								actions += testCaseManager.removeActorLinkForTestCase(existingTestCaseId, existingActorId)
 							} else {
 								// Update the actor role if needed.
@@ -572,7 +784,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
                   actions += query.update(existingActorId == sutActor)
                   if (existingActorId != sutActor) {
                     // The actor is no longer the SUT. Remove the conformance results for it.
-                    actions += PersistenceSchema.conformanceResults.filter(_.testcase === existingTestCaseId.toLong).filter(_.actor === existingActorId).delete
+                    actions += PersistenceSchema.conformanceResults.filter(_.testcase === existingTestCaseId).filter(_.actor === existingActorId).delete
                     // No need for further processing for this actor.
                     actorsToFurtherProcess.remove(existingActorId)
                   } else {
@@ -592,19 +804,19 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 						}
 					}
 					_ <- {
-						val actions = actorsToFurtherProcess.map(newTestCaseActor => {
+						val actions = asScalaSet(actorsToFurtherProcess).map(newTestCaseActor => {
 							var action: DBIO[_] = null
               if (actorsThatExistAndChangedToSut.contains(newTestCaseActor)) {
                 action = DBIO.successful(())
               } else {
-                action = PersistenceSchema.testCaseHasActors += (existingTestCaseId.longValue(), specificationId, newTestCaseActor, newTestCaseActor == sutActor)
+                action = PersistenceSchema.testCaseHasActors += (existingTestCaseId, specificationId, newTestCaseActor, newTestCaseActor == sutActor)
               }
 							val implementingSystems = existingActorToSystemMap.get(newTestCaseActor)
 							if (implementingSystems != null) {
-								for (implementingSystem <- implementingSystems) {
+								for (implementingSystem <- asScalaSet(implementingSystems)) {
 									// Check to see if there are existing test sessions for this test case.
 									action = action andThen (for {
-										previousResult <- PersistenceSchema.testResults.filter(_.sutId === implementingSystem).filter(_.testCaseId === existingTestCaseId.toLong).sortBy(_.endTime.desc).result.headOption
+										previousResult <- PersistenceSchema.testResults.filter(_.sutId === implementingSystem).filter(_.testCaseId === existingTestCaseId).sortBy(_.endTime.desc).result.headOption
 										_ <- {
 											if (previousResult.isDefined) {
 												PersistenceSchema.conformanceResults += ConformanceResult(0L, implementingSystem, specificationId, newTestCaseActor, savedTestSuiteId, existingTestCaseId, previousResult.get.result, Some(previousResult.get.sessionId))
@@ -620,7 +832,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 						DBIO.seq(actions.toList: _*)
 					}
 				} yield())
-				result += new TestSuiteUploadItemResult(testCaseToStore.shortname, TestSuiteUploadItemResult.ITEM_TYPE_TEST_CASE, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE)
+				result += new TestSuiteUploadItemResult(testCaseToStore.shortname, TestSuiteUploadItemResult.ITEM_TYPE_TEST_CASE, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE, specificationId)
 			} else {
 				// New test case.
 				combinedAction = combinedAction andThen
@@ -652,7 +864,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 								if (isSut) {
 									val implementingSystems = existingActorToSystemMap.get(actorInternalId)
 									if (implementingSystems != null) {
-										for (implementingSystem <- implementingSystems) {
+										for (implementingSystem <- asScalaSet(implementingSystems)) {
 											action = action andThen
 												(PersistenceSchema.conformanceResults += ConformanceResult(0L, implementingSystem, specificationId, actorInternalId, savedTestSuiteId, existingTestCaseId, TestResultStatus.UNDEFINED.toString, None))
 										}
@@ -663,20 +875,20 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 						action
 					}
 				} yield())
-				result += new TestSuiteUploadItemResult(testCaseToStore.shortname, TestSuiteUploadItemResult.ITEM_TYPE_TEST_CASE, TestSuiteUploadItemResult.ACTION_TYPE_ADD)
+				result += new TestSuiteUploadItemResult(testCaseToStore.shortname, TestSuiteUploadItemResult.ITEM_TYPE_TEST_CASE, TestSuiteUploadItemResult.ACTION_TYPE_ADD, specificationId)
 			}
 		}
 		combinedAction andThen DBIO.successful((savedTestCaseIds, result.toList))
 	}
 
-	def stepRemoveTestCases(existingTestCaseMap: util.HashMap[String, java.lang.Long]): DBIO[List[TestSuiteUploadItemResult]] = {
+	def stepRemoveTestCases(existingTestCaseMap: util.HashMap[String, (java.lang.Long, String)], specificationId: Long): DBIO[List[TestSuiteUploadItemResult]] = {
 		// Remove test cases not in new test suite.
 		val actions = new ListBuffer[DBIO[_]]()
 		val results = new ListBuffer[TestSuiteUploadItemResult]()
 
-		for (testCaseEntry <- existingTestCaseMap.entrySet()) {
-			actions += testCaseManager.delete(testCaseEntry.getValue)
-			results += new TestSuiteUploadItemResult(testCaseEntry.getKey, TestSuiteUploadItemResult.ITEM_TYPE_TEST_CASE, TestSuiteUploadItemResult.ACTION_TYPE_REMOVE)
+		for (testCaseEntry <- asScalaSet(existingTestCaseMap.entrySet())) {
+			actions += testCaseManager.delete(testCaseEntry.getValue._1)
+			results += new TestSuiteUploadItemResult(testCaseEntry.getValue._2, TestSuiteUploadItemResult.ITEM_TYPE_TEST_CASE, TestSuiteUploadItemResult.ACTION_TYPE_REMOVE, specificationId)
 		}
 		DBIO.seq(actions.toList: _*) andThen DBIO.successful(results.toList)
 	}
@@ -684,7 +896,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	def stepUpdateTestSuiteActorLinks(savedTestSuiteId: Long, savedActorIds: util.Map[String, Long]): DBIO[_] = {
 		// Add new test suite actor links.
 		val actions = new ListBuffer[DBIO[_]]()
-		for (actorEntry <- savedActorIds.entrySet()) {
+		for (actorEntry <- asScalaSet(savedActorIds.entrySet())) {
 				actions += (PersistenceSchema.testSuiteHasActors += (savedTestSuiteId, actorEntry.getValue))
 		}
 		DBIO.seq(actions.toList: _*)
@@ -693,7 +905,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	def stepUpdateTestSuiteTestCaseLinks(savedTestSuiteId: Long, savedTestCaseIds: util.List[Long]): DBIO[_] = {
 		// Update test suite test case links.
 		val actions = new ListBuffer[DBIO[_]]()
-		for (testCaseId <- savedTestCaseIds) {
+		for (testCaseId <- collectionAsScalaIterable(savedTestCaseIds)) {
 			actions += (PersistenceSchema.testSuiteHasTestCases += (savedTestSuiteId, testCaseId))
 		}
 		DBIO.seq(actions.toList: _*)
@@ -717,22 +929,22 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		DBIO.successful(existingActorToSystemMap)
 	}
 
-	def getExistingTestCasesForTestSuite(testSuiteId: Long) = {
+	def getExistingTestCasesForTestSuite(testSuiteId: Long): DBIO[List[(Long, String, String)]] = {
 		PersistenceSchema.testCases
 			.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
 			.filter(_._2.testsuite === testSuiteId)
-			.map(r => (r._1.id, r._1.shortname))
+			.map(r => (r._1.id, r._1.identifier, r._1.shortname))
 			.result
 			.map(_.toList)
 	}
 
-	def getExistingTestCaseMap(existingTestCasesForTestSuite: List[(Long, String)]): DBIO[util.HashMap[String, java.lang.Long]] = {
+	def getExistingTestCaseMap(existingTestCasesForTestSuite: List[(Long, String, String)]): DBIO[util.HashMap[String, (java.lang.Long, String)]] = {
 		// Process test cases.
-		val existingTestCaseMap = new util.HashMap[String, java.lang.Long]()
+		val existingTestCaseMap = new util.HashMap[String, (java.lang.Long, String)]()
 		if (existingTestCasesForTestSuite.nonEmpty) {
 			// This is an update - check for existing test cases.
 			for (existingTestCase <- existingTestCasesForTestSuite) {
-				existingTestCaseMap.put(existingTestCase._2, existingTestCase._1)
+				existingTestCaseMap.put(existingTestCase._2, (existingTestCase._1, existingTestCase._3))
 			}
 		}
 		DBIO.successful(existingTestCaseMap)
@@ -744,7 +956,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	flatmaps that execute preceding actions before processing the following ones. Its very ugly but its
 	the only way to do things now that Slick dropped support for implicit sessions.
 	 */
-	private def saveTestSuite(suite: TestSuites, existingSuite: TestSuites, testSuiteActors: Option[List[Actor]], testCases: Option[List[TestCases]], tempTestSuiteArchive: File, onSuccessCalls: mutable.ListBuffer[() => _], onFailureCalls: mutable.ListBuffer[() => _]): DBIO[List[TestSuiteUploadItemResult]] = {
+	private def saveTestSuite(suite: TestSuites, existingSuite: TestSuites, updateMetadata: Boolean, testSuiteActors: Option[List[Actor]], testCases: Option[List[TestCases]], tempTestSuiteArchive: File, onSuccessCalls: mutable.ListBuffer[() => _], onFailureCalls: mutable.ListBuffer[() => _]): DBIO[List[TestSuiteUploadItemResult]] = {
 		val targetFolder: File = getTestSuiteFile(suite.specification, suite.filename)
     var existingFolder: File = null
     if (existingSuite != null) {
@@ -756,7 +968,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 			// Get the specification of the test suite.
 			spec <- PersistenceSchema.specifications.filter(_.id === suite.specification).result.head
 			// Save the test suite (insert or update) and return the identifier to use.
-			saveTestSuiteStep <- stepSaveTestSuite(suite, existingSuite)
+			saveTestSuiteStep <- stepSaveTestSuite(suite, existingSuite, updateMetadata)
 			// Lookup the existing actors for the specification in question.
 			specificationActors <- {
 				val query = PersistenceSchema.actors
@@ -768,13 +980,13 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
   				.map(_.toList)
 			}
 			// Process the actors (inserting and saving them as needed) and return their ID information for further processing.
-			saveActorsStep <- stepSaveActors(testSuiteActors, spec.domain, specificationActors, suite)
+			saveActorsStep <- stepSaveActors(testSuiteActors, spec.domain, specificationActors, suite, updateMetadata)
 			// Lookup the existing test cases for the test suite (if it already exists).
 			existingTestCasesForTestSuite <- {
 				if (existingSuite != null) {
 					getExistingTestCasesForTestSuite(saveTestSuiteStep._1)
 				} else {
-					DBIO.successful(List[(Long, String)]())
+					DBIO.successful(List[(Long, String, String)]())
 				}
 			}
 			// Place the existing test cases in a map for further processing.
@@ -784,9 +996,9 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 			// Create a map of actors to systems.
 			existingActorToSystemMap <- getExistingActorToSystemMap(systemActors)
 			// Process the test cases.
-			processTestCasesStep <- stepProcessTestCases(spec.id, saveTestSuiteStep._1, testCases, resourcePaths, existingTestCaseMap, saveActorsStep._1, existingActorToSystemMap)
+			processTestCasesStep <- stepProcessTestCases(spec.id, saveTestSuiteStep._1, testCases, resourcePaths, existingTestCaseMap, saveActorsStep._1, existingActorToSystemMap, updateMetadata)
 			// Remove the test cases that are no longer in the test suite.
-			removeTestCasesStep <- stepRemoveTestCases(existingTestCaseMap)
+			removeTestCasesStep <- stepRemoveTestCases(existingTestCaseMap, suite.specification)
 			// Update the actor links for the  test suite.
 			_ <- stepUpdateTestSuiteActorLinks(saveTestSuiteStep._1, saveActorsStep._1)
 			// Update the test case links for the test suite.

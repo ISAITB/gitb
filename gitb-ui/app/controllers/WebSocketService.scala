@@ -11,7 +11,7 @@ import play.api.mvc._
 /**
  * Handles the communication with browsers
  */
-class WebSocketService @Inject() (implicit system: ActorSystem, materializer: Materializer, webSocketActor: WebSocketActor) extends Controller{
+class WebSocketService @Inject() (implicit system: ActorSystem, cc: ControllerComponents, materializer: Materializer, webSocketActor: WebSocketActor) extends AbstractController(cc) {
 
   /**
    * Creates a WebSocket for the client

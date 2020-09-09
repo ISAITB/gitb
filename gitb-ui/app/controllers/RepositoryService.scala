@@ -1,7 +1,7 @@
 package controllers
 
 import java.io._
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Paths}
 
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl.TestCase
@@ -16,8 +16,8 @@ import javax.xml.bind.JAXBElement
 import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
 import managers._
-import managers.export.{ExportManager, ExportSettings, ImportCompleteManager, ImportItem, ImportPreviewManager, ImportSettings}
-import models.{ConformanceCertificate, Constants}
+import managers.export._
+import models.{ConformanceCertificate, ConformanceCertificates, Constants}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
@@ -26,30 +26,32 @@ import org.slf4j.LoggerFactory
 import play.api.mvc._
 import utils._
 
+import scala.concurrent.ExecutionContext
+
 /**
  * Created by serbay on 10/16/14.
  */
-class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager, importPreviewManager: ImportPreviewManager, importCompleteManager: ImportCompleteManager) extends Controller {
+class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemManager: SystemManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager, importPreviewManager: ImportPreviewManager, importCompleteManager: ImportCompleteManager) extends AbstractController(cc) {
 
 	private val logger = LoggerFactory.getLogger(classOf[RepositoryService])
 	private val codec = new URLCodec()
   private val EXPORT_QNAME:QName = new QName("http://www.gitb.com/export/v1/", "export")
   private val TESTCASE_STEP_REPORT_NAME = "step.pdf"
 
-  import scala.collection.JavaConversions._
+  import scala.collection.JavaConverters._
 
-	def getTestSuiteResource(testId: String, filePath:String) = AuthorizedAction { request =>
+	def getTestSuiteResource(testId: String, filePath:String) = authorizedAction { request =>
     authorizationManager.canViewTestSuiteResource(request, testId)
     val testCase = testCaseManager.getTestCaseForIdWrapper(testId).get
     val testSuite = testSuiteManager.getTestSuiteOfTestCaseWrapper(testCase.id)
     var filePathToLookup = codec.decode(filePath)
     var filePathToAlsoCheck: Option[String] = null
-    if (!filePath.startsWith(testSuite.shortname) && !filePath.startsWith("/"+testSuite.shortname)) {
+    if (!filePath.startsWith(testSuite.identifier) && !filePath.startsWith("/"+testSuite.identifier)) {
       filePathToLookup = testSuite.filename + "/" + filePathToLookup
       filePathToAlsoCheck = None
     } else {
       filePathToAlsoCheck = Some(testSuite.filename + "/" + filePathToLookup)
-      filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.shortname, testSuite.filename)
+      filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.identifier, testSuite.filename)
     }
     // Ensure that the requested resource is within the test suite folder (to avoid path traversal)
     val spec = specificationManager.getSpecificationById(testSuite.specification)
@@ -63,7 +65,7 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     }
 	}
 
-	def getTestStepReport(sessionId: String, reportPath: String) = AuthorizedAction { request =>
+	def getTestStepReport(sessionId: String, reportPath: String) = authorizedAction { request =>
 //    34888315-6781-4d74-a677-8f9001a02cb8/4.xml
     authorizationManager.canViewTestResultForSession(request, sessionId)
 
@@ -98,7 +100,7 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
 		}
 	}
 
-  def exportTestStepReport(sessionId: String, reportPath: String) = AuthorizedAction { request =>
+  def exportTestStepReport(sessionId: String, reportPath: String) = authorizedAction { request =>
     //    34888315-6781-4d74-a677-8f9001a02cb8/4.xml
     authorizationManager.canViewTestResultForSession(request, sessionId)
     var path: String = null
@@ -124,12 +126,12 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     } else {
       Ok.sendFile(
         content = pdf,
-        fileName = _ => TESTCASE_STEP_REPORT_NAME
+        fileName = _ => Some(TESTCASE_STEP_REPORT_NAME)
       )
     }
   }
 
-  def exportTestCaseReport() = AuthorizedAction { request =>
+  def exportTestCaseReport() = authorizedAction { request =>
     val session = ParameterExtractor.requiredQueryParameter(request, Parameters.SESSION_ID)
     authorizationManager.canViewTestResultForSession(request, session)
     val testCaseId = ParameterExtractor.requiredQueryParameter(request, Parameters.TEST_ID)
@@ -158,14 +160,14 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
       }
       Ok.sendFile(
         content = exportedReport,
-        fileName = _ => exportedReport.getName
+        fileName = _ => Some(exportedReport.getName)
       )
     } else {
       NotFound
     }
   }
 
-  def exportConformanceStatementReport() = AuthorizedAction { request =>
+  def exportConformanceStatementReport() = authorizedAction { request =>
     val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID)
     authorizationManager.canViewConformanceStatementReport(request, systemId)
     val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID)
@@ -188,18 +190,11 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     reportManager.generateConformanceStatementReport(reportPath, includeTests, actorId.toLong, systemId.toLong, labels)
     Ok.sendFile(
       content = reportPath.toFile,
-      fileName = _ => reportPath.toFile.getName
+      fileName = _ => Some(reportPath.toFile.getName)
     )
   }
 
-  def exportConformanceCertificateReport() = AuthorizedAction { request =>
-    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
-    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
-    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
-    authorizationManager.canViewConformanceCertificateReport(request, communityId)
-
-    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
-    var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
+  private def exportConformanceCertificateInternal(settings: ConformanceCertificates, communityId: Long, systemId: Long, actorId: Long) = {
     val reportPath = Paths.get(
       ReportManager.getTempFolderPath().toFile.getAbsolutePath,
       "conformance_reports",
@@ -209,10 +204,48 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     try {
       FileUtils.deleteDirectory(reportPath.toFile.getParentFile)
     } catch  {
-      case e:Exception => {
+      case _:Exception => {
         // Ignore these are anyway deleted every hour
       }
     }
+    reportManager.generateConformanceCertificate(reportPath, settings, actorId, systemId)
+    Ok.sendFile(
+      content = reportPath.toFile,
+      fileName = _ => Some(reportPath.toFile.getName)
+    )
+  }
+
+  def exportOwnConformanceCertificateReport() = authorizedAction { request =>
+    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    authorizationManager.canViewOwnConformanceCertificateReport(request, systemId)
+    val communityId = systemManager.getCommunityIdOfSystem(systemId)
+    var settingsToUse: Option[ConformanceCertificates] = None
+    val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+    if (storedSettings.isEmpty) {
+      // Use default settings.
+      settingsToUse = Some(ConformanceCertificates(0L, None, None, includeMessage = false, includeTestStatus = true, includeTestCases = true, includeDetails = true, includeSignature = false, None, None, None, None, communityId))
+    } else {
+      val completeSettings = new ConformanceCertificate(storedSettings.get)
+      if (storedSettings.get.includeSignature) {
+        completeSettings.keystoreFile = storedSettings.get.keystoreFile
+        completeSettings.keystoreType = storedSettings.get.keystoreType
+        completeSettings.keyPassword = Some(MimeUtil.decryptString(storedSettings.get.keyPassword.get))
+        completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
+        settingsToUse = Some(completeSettings.toCaseObject)
+      }
+    }
+    exportConformanceCertificateInternal(settingsToUse.get, communityId, systemId, actorId)
+  }
+
+  def exportConformanceCertificateReport() = authorizedAction { request =>
+    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
+    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    authorizationManager.canViewConformanceCertificateReport(request, communityId)
+
+    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
+    var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
     if (settings.includeSignature) {
       // The signature information needs to be looked up from the stored data.
       val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
@@ -223,15 +256,11 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
       completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
       settings = completeSettings.toCaseObject
     }
-    reportManager.generateConformanceCertificate(reportPath, settings, actorId, systemId)
-    Ok.sendFile(
-      content = reportPath.toFile,
-      fileName = _ => reportPath.toFile.getName
-    )
+    exportConformanceCertificateInternal(settings, communityId, systemId, actorId)
   }
 
-  def exportDemoConformanceCertificateReport(communityId: Long) = AuthorizedAction { request =>
-    authorizationManager.canViewConformanceCertificateReport(request, communityId)
+  def exportDemoConformanceCertificateReport(communityId: Long) = authorizedAction { request =>
+    authorizationManager.canPreviewConformanceCertificateReport(request, communityId)
     val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
     var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
 
@@ -268,13 +297,13 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
       reportManager.generateDemoConformanceCertificate(reportPath, settings, communityId)
       response = Ok.sendFile(
         content = reportPath.toFile,
-        fileName = _ => reportPath.toFile.getName
+        fileName = _ => Some(reportPath.toFile.getName)
       )
     }
     response
   }
 
-	def getTestCaseDefinition(testId: String) = AuthorizedAction { request =>
+	def getTestCaseDefinition(testId: String) = authorizedAction { request =>
     authorizationManager.canViewTestCase(request, testId)
     val tc = testCaseManager.getTestCase(testId)
     if (tc.isDefined) {
@@ -290,35 +319,35 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     }
 	}
 
-  def getAllTestCases() = AuthorizedAction { request =>
+  def getAllTestCases() = authorizedAction { request =>
     authorizationManager.canViewAllTestCases(request)
     val testCases = testCaseManager.getAllTestCases()
     val json = JsonUtil.jsTestCasesList(testCases).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def getTestCasesForSystem(systemId: Long) = AuthorizedAction { request =>
+  def getTestCasesForSystem(systemId: Long) = authorizedAction { request =>
     authorizationManager.canViewTestCasesBySystemId(request, systemId)
     val testCases = testCaseManager.getTestCasesForSystem(systemId)
     val json = JsonUtil.jsTestCasesList(testCases).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def getTestCasesForCommunity(communityId: Long) = AuthorizedAction { request =>
+  def getTestCasesForCommunity(communityId: Long) = authorizedAction { request =>
     authorizationManager.canViewTestCasesByCommunityId(request, communityId)
     val testCases = testCaseManager.getTestCasesForCommunity(communityId)
     val json = JsonUtil.jsTestCasesList(testCases).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def exportDomain(domainId: Long) = AuthorizedAction { request =>
+  def exportDomain(domainId: Long) = authorizedAction { request =>
     authorizationManager.canManageDomain(request, domainId)
     exportInternal(request, (exportSettings: ExportSettings) => {
       exportManager.exportDomain(domainId, exportSettings)
     })
   }
 
-  def exportCommunity(communityId: Long) = AuthorizedAction { request =>
+  def exportCommunity(communityId: Long) = authorizedAction { request =>
     authorizationManager.canManageCommunity(request, communityId)
     exportInternal(request, (exportSettings: ExportSettings) => {
       exportManager.exportCommunity(communityId, exportSettings)
@@ -355,7 +384,7 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
       Ok.sendFile(
         content = exportPathZip.toFile,
         inline = false,
-        fileName = _ => exportPathZip.toFile.getName,
+        fileName = _ => Some(exportPathZip.toFile.getName),
         onClose = () => FileUtils.deleteQuietly(exportPathZip.toFile)
       )
     } catch {
@@ -395,7 +424,7 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     }
   }
 
-  def uploadCommunityExport(communityId: Long) = AuthorizedAction { request =>
+  def uploadCommunityExport(communityId: Long) = authorizedAction { request =>
     authorizationManager.canManageCommunity(request, communityId)
     processImport(request, isDomain = false, (exportData: Export, settings: ImportSettings) => {
       val result = importPreviewManager.previewCommunityImport(exportData.getCommunities.getCommunity.get(0), Some(communityId))
@@ -407,7 +436,7 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     })
   }
 
-  def uploadDomainExport(domainId: Long) = AuthorizedAction { request =>
+  def uploadDomainExport(domainId: Long) = authorizedAction { request =>
     authorizationManager.canManageDomain(request, domainId)
     processImport(request, isDomain = true, (exportData: Export, settings: ImportSettings) => {
       val result = importPreviewManager.previewDomainImport(exportData.getDomains.getDomain.get(0), Some(domainId))
@@ -423,12 +452,12 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
     ResponseConstructor.constructEmptyResponse
   }
 
-  def cancelDomainImport(domainId: Long) = AuthorizedAction { request =>
+  def cancelDomainImport(domainId: Long) = authorizedAction { request =>
     authorizationManager.canManageDomain(request, domainId)
     cancelImportInternal(request)
   }
 
-  def cancelCommunityImport(communityId: Long) = AuthorizedAction { request =>
+  def cancelCommunityImport(communityId: Long) = authorizedAction { request =>
     authorizationManager.canManageCommunity(request, communityId)
     cancelImportInternal(request)
   }
@@ -457,43 +486,43 @@ class RepositoryService @Inject() (testCaseManager: TestCaseManager, testSuiteMa
 
   private def confirmDomainImportInternal(request: Request[AnyContent], domainId: Long, canAddOrDeleteDomain: Boolean) = {
     confirmImportInternal(request, (export: Export, importSettings: ImportSettings, importItems: List[ImportItem]) => {
-      importCompleteManager.completeDomainImport(export.getDomains.getDomain.head, importSettings, importItems, Some(domainId), canAddOrDeleteDomain)
+      importCompleteManager.completeDomainImport(collectionAsScalaIterable(export.getDomains.getDomain).head, importSettings, importItems, Some(domainId), canAddOrDeleteDomain)
     })
   }
 
   private def confirmCommunityImportInternal(request: Request[AnyContent], communityId: Long, canAddOrDeleteDomain: Boolean) = {
     confirmImportInternal(request, (export: Export, importSettings: ImportSettings, importItems: List[ImportItem]) => {
-      importCompleteManager.completeCommunityImport(export.getCommunities.getCommunity.head, importSettings, importItems, Some(communityId), canAddOrDeleteDomain, Some(ParameterExtractor.extractUserId(request)))
+      importCompleteManager.completeCommunityImport(collectionAsScalaIterable(export.getCommunities.getCommunity).head, importSettings, importItems, Some(communityId), canAddOrDeleteDomain, Some(ParameterExtractor.extractUserId(request)))
     })
   }
 
-  def confirmDomainImportTestBedAdmin(domainId: Long): Action[AnyContent] = AuthorizedAction { request =>
+  def confirmDomainImportTestBedAdmin(domainId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canCreateDomain(request)
     confirmDomainImportInternal(request, domainId, canAddOrDeleteDomain = true)
   }
 
-  def confirmDomainImportCommunityAdmin(domainId: Long): Action[AnyContent] = AuthorizedAction { request =>
+  def confirmDomainImportCommunityAdmin(domainId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageDomain(request, domainId)
     confirmDomainImportInternal(request, domainId, canAddOrDeleteDomain = false)
   }
 
-  def confirmCommunityImportTestBedAdmin(communityId: Long): Action[AnyContent] = AuthorizedAction { request =>
+  def confirmCommunityImportTestBedAdmin(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canCreateCommunity(request)
     confirmCommunityImportInternal(request, communityId, canAddOrDeleteDomain = true)
   }
 
-  def confirmCommunityImportCommunityAdmin(communityId: Long): Action[AnyContent] = AuthorizedAction { request =>
+  def confirmCommunityImportCommunityAdmin(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageCommunity(request, communityId)
     confirmCommunityImportInternal(request, communityId, canAddOrDeleteDomain = false)
   }
 
-  def applySandboxData() = AuthorizedAction(parse.multipartFormData) { request =>
+  def applySandboxData() = authorizedAction(parse.multipartFormData) { request =>
     authorizationManager.canApplySandboxDataMulti(request)
     var response:Result = null
     val archivePassword = ParameterExtractor.requiredBodyParameterMulti(request, Parameters.PASSWORD)
     request.body.file(Parameters.FILE) match {
       case Some(archive) => {
-        val archiveFile = archive.ref.file
+        val archiveFile = archive.ref.path.toFile
         try {
           val importResult = importCompleteManager.importSandboxData(archiveFile, archivePassword)
           if (importResult._1) {

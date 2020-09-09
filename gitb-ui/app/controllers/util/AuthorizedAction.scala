@@ -1,12 +1,12 @@
 package controllers.util
 
+import javax.inject.Inject
 import managers.AuthorizationManager
-import play.api.mvc.{ActionBuilder, Request, _}
+import play.api.mvc.{Request, _}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-object AuthorizedAction extends ActionBuilder[RequestWithAttributes] {
+class AuthorizedAction @Inject() (val parser: BodyParsers.Default) (implicit val ec: ExecutionContext) extends ActionBuilder[RequestWithAttributes, AnyContent] {
 
   def invokeBlock[A](request: Request[A], block: RequestWithAttributes[A] => Future[Result]): Future[Result] = {
     // Perform an input sanitization check first. This is done here and not via filter to benefit from the already parsed request body.
@@ -21,4 +21,7 @@ object AuthorizedAction extends ActionBuilder[RequestWithAttributes] {
     )
   }
 
+  override protected def executionContext: ExecutionContext = ec
+
 }
+

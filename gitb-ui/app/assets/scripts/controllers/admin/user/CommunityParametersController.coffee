@@ -3,50 +3,8 @@ class CommunityParametersController
   @$inject = ['$state', '$stateParams', 'CommunityService', 'ErrorService', '$q', '$uibModal', 'DataService', 'PopupService']
   constructor: (@$state, @$stateParams, @CommunityService, @ErrorService, @$q, @$uibModal, @DataService, @PopupService) ->
     @communityId = @$stateParams.community_id
-    @systemParameterTableColumns = [
-      {
-        field: 'name'
-        title: 'Label'
-      }
-      {
-        field: 'testKey'
-        title: 'Key'
-      }
-      {
-        field: 'desc'
-        title: 'Description'
-      }
-      {
-        field: 'kindLabel'
-        title: 'Type'
-      }
-      {
-        field: 'useLabel'
-        title: 'Required'
-      }
-      {
-        field: 'adminOnlyLabel'
-        title: 'Editable'
-      }
-      {
-        field: 'notForTestsLabel'
-        title: 'In tests'
-      }
-      {
-        field: 'inExports'
-        title: 'In exports'
-      }
-    ]
-
-    @organisationParameterTableColumns = @systemParameterTableColumns.slice()
-    if @DataService.configuration['registration.enabled']
-      @organisationParameterTableColumns.push(
-        {
-          field: 'inSelfRegistration'
-          title: 'In registration'
-        }
-      )
-
+    @orderOrganisationParametersDisabled = {value: true}
+    @orderSystemParametersDisabled = {value: true}
     @organisationReservedKeys = ['fullName', 'shortName']
     @systemReservedKeys = ['fullName', 'shortName', 'version']
 
@@ -54,23 +12,87 @@ class CommunityParametersController
     .then((data) =>
       @organisationParameterValues = []
       for item in data
-        @organisationParameterValues.push({id: item.id, name: item.name, key: item.testKey})
+        itemRef = {id: item.id, name: item.name, key: item.testKey, kind: item.kind}
+        itemRef.hasPresetValues = false
+        if item.allowedValues?
+          itemRef.presetValues = JSON.parse(item.allowedValues)
+          itemRef.hasPresetValues = itemRef.presetValues?.length > 0
+        @organisationParameterValues.push itemRef
       @organisationParameters = data
     )
     @loadParameters(@CommunityService.getSystemParameters)
     .then((data) =>
       @systemParameterValues = []
       for item in data
-        @systemParameterValues.push({id: item.id, name: item.name, key: item.testKey})
+        itemRef = {id: item.id, name: item.name, key: item.testKey, kind: item.kind}
+        itemRef.hasPresetValues = false
+        if item.allowedValues?
+          itemRef.presetValues = JSON.parse(item.allowedValues)
+          itemRef.hasPresetValues = itemRef.presetValues?.length > 0
+        @systemParameterValues.push itemRef
       @systemParameters = data
     )
+
+  previewParameters: (title, parameters, hasRegistrationCase) =>
+    modalOptions =
+      templateUrl: 'assets/views/admin/users/preview-parameters-modal.html'
+      controller: 'PreviewParametersModalController as controller'
+      size: 'lg'
+      resolve:
+        modalTitle: () => title
+        parameters: () => parameters
+        hasRegistrationCase: () => hasRegistrationCase
+    modalInstance = @$uibModal.open(modalOptions)
+    modalInstance.result
+      .finally(angular.noop)
+      .then(angular.noop, angular.noop)
+
+  previewOrganisationParameters: () =>
+    @previewParameters(@DataService.labelOrganisation()+" property form preview", @organisationParameters, true)
+
+  previewSystemParameters: () =>
+    @previewParameters(@DataService.labelSystem()+" property form preview", @systemParameters, false)
+
+  orderOrganisationParameters: () =>
+    ids = []
+    for param in @organisationParameters
+      ids.push param.id
+    @CommunityService.orderOrganisationParameters(@communityId, ids)
+    .then () =>
+      @PopupService.success('Property ordering saved.')
+      @orderOrganisationParametersDisabled.value = true
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+      @orderOrganisationParametersDisabled.value = true
+
+  orderSystemParameters: () =>
+    ids = []
+    for param in @systemParameters
+      ids.push param.id
+    @CommunityService.orderSystemParameters(@communityId, ids)
+    .then () =>
+      @PopupService.success('Property ordering saved.')
+      @orderSystemParametersDisabled.value = true
+    .catch (error) =>
+      @ErrorService.showErrorMessage(error)
+      @orderSystemParametersDisabled.value = true
+
+  movePropertyUp: (properties, disabledFlag, index) =>
+    item = properties.splice(index, 1)[0]
+    disabledFlag.value = false
+    properties.splice(index-1, 0, item)
+
+  movePropertyDown: (properties, disabledFlag, index) =>
+    item = properties.splice(index, 1)[0]
+    disabledFlag.value = false
+    properties.splice(index+1, 0, item)
 
   loadParameters: (serviceMethod) =>
     resultDeferred = @$q.defer()
     serviceMethod(@communityId)
     .then (data) =>
       for item in data
-        item.kindLabel = if item.kind == 'SIMPLE' then 'Simple' else if item.kind == 'BINARY' then 'Binary' else 'Hidden'
+        item.kindLabel = if item.kind == 'SIMPLE' then 'Simple' else if item.kind == 'BINARY' then 'Binary' else 'Secret'
         item.useLabel = item.use == 'R'
         item.adminOnlyLabel = !item.adminOnly
         item.notForTestsLabel = !item.notForTests
@@ -111,6 +133,7 @@ class CommunityParametersController
         parameter.testKey = parameter.key
         parameter.desc = parameter.description
         parameter.community = @communityId
+        @preparePresetValues(parameter)
         createMethod(parameter)
         .then () =>
           @$state.go(@$state.$current, null, { reload: true });
@@ -119,6 +142,17 @@ class CommunityParametersController
           @ErrorService.showErrorMessage(error)
 
     , angular.noop)
+
+  preparePresetValues: (parameter) =>
+    parameter.allowedValues = undefined
+    if parameter.kind == 'SIMPLE' && parameter.hasPresetValues
+      checkedValues = []
+      for value in parameter.presetValues
+        existingValue = _.find(checkedValues, (v) => v.value == value.value)
+        if existingValue == undefined
+          checkedValues.push({value: value.value, label: value.label})
+      if checkedValues.length > 0
+        parameter.allowedValues = JSON.stringify(checkedValues)
 
   onOrganisationParameterSelect: (parameter) =>
     @onParameterSelect(parameter, @organisationParameterValues, @organisationReservedKeys, @CommunityService.updateOrganisationParameter, @CommunityService.deleteOrganisationParameter, @DataService.labelOrganisation(), false)
@@ -152,6 +186,7 @@ class CommunityParametersController
           data.parameter.testKey = data.parameter.key
           data.parameter.description = data.parameter.desc
           data.parameter.community = @communityId
+          @preparePresetValues(data.parameter)
           updateMethod(data.parameter)
           .then () =>
             @$state.go(@$state.$current, null, { reload: true });

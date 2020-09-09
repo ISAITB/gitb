@@ -4,7 +4,7 @@
 <form class="form-horizontal">
 	<div class="modal-body">
 		<div class="form-group">
-			<label class="col-xs-3 control-label" for="choice_report">I want to ...</label>
+			<label class="col-xs-3 control-label" for="choice_link">I want to ...</label>
 			<div class="col-xs-8">
 				<label class="radio-inline"><input type="radio" ng-model="controller.choice" name="choice" id="choice_link" ng-value="controller.Constants.CREATE_ACCOUNT_OPTION.LINK" ng-change="controller.choiceChanged()">Confirm a role assigned to me by an administrator</label><br/>
 				<label class="radio-inline" ng-if="controller.DataService.configuration['registration.enabled']"><input type="radio" ng-model="controller.choice" name="choice" id="choice_register" ng-value="controller.Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER" ng-change="controller.choiceChanged()">Register in a public community</label><br/>

@@ -1,8 +1,15 @@
 @import "../_common.less";
 
 .editor {
-	.CodeMirror {
-		height: 500px;
+	&.editor-normal {
+		.CodeMirror {
+			height: 500px;
+		}
+	}
+	&.editor-short {
+		.CodeMirror {
+			height: 200px;
+		}
 	}
 	.indicator-editor-widget {
 		font-size: 12px;

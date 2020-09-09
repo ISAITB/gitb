@@ -33,6 +33,9 @@ public class ExpressionHandler{
         namespaceContext = new NamespaceContext(scope);
     }
 
+    public DataType processExpression(Expression expression) {
+        return processExpression(expression, null);
+    }
 
     public DataType processExpression(Expression expression, String expectedReturnType) {
         String sourceVariableExpression = expression.getSource();
@@ -51,6 +54,9 @@ public class ExpressionHandler{
             expressionResult = processExpression(xpathExpression, expectedReturnType);
         }
         if (asTemplate) {
+            if (expectedReturnType == null) {
+                expectedReturnType = expressionResult.getType();
+            }
             expressionResult = TemplateUtils.generateDataTypeFromTemplate(scope, expressionResult, expectedReturnType);
         }
         return expressionResult;
@@ -58,7 +64,7 @@ public class ExpressionHandler{
 
     private DataType processExpression(DataType source, String expression, String expectedReturnType)  {
         XPathExpression expr = createXPathExpression(expression);
-        return source.processXPath(expr,expectedReturnType);
+        return source.processXPath(expr, expectedReturnType);
     }
 
     private DataType processExpression(String expression, String expectedReturnType)  {

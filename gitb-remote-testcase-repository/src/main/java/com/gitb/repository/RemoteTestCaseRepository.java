@@ -128,18 +128,15 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 		HmacUtils.TokenData tokenData = HmacUtils.getTokenData(resourceId);
 		request.addHeader(HmacUtils.HMAC_HEADER_TOKEN, tokenData.getTokenValue());
 		request.addHeader(HmacUtils.HMAC_HEADER_TIMESTAMP, tokenData.getTokenTimestamp());
-		CloseableHttpResponse httpResponse = httpClient.execute(request);
-		try {
-			if(httpResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
+		try (CloseableHttpResponse httpResponse = httpClient.execute(request)) {
+			if (httpResponse.getStatusLine().getStatusCode() == HttpStatus.SC_OK) {
 				HttpEntity entity = httpResponse.getEntity();
 				byte[] content = IOUtils.toByteArray(entity.getContent());
 				stream = new ByteArrayInputStream(content);
 			}
 		} catch (Exception e) {
-			logger.debug("Test case definition retrieval was failed", e);
+			logger.debug("Test case definition retrieval failed", e);
 			throw new GITBEngineInternalError(e);
-		} finally {
-			httpResponse.close();
 		}
 
 		return stream;

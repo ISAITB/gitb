@@ -2,7 +2,7 @@ package com.gitb.engine.functions;
 
 import com.gitb.repository.IFunctionRegistry;
 import com.gitb.utils.TimeUtils;
-import org.apache.commons.lang.reflect.MethodUtils;
+import org.apache.commons.lang3.reflect.MethodUtils;
 import org.kohsuke.MetaInfServices;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;

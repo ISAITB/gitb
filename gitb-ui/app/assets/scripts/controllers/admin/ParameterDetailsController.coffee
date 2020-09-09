@@ -10,13 +10,26 @@ class ParameterDetailsController
 		@$scope.modalTitle = if options.modalTitle? then options.modalTitle else 'Parameter details'
 		@$scope.confirmMessage = if options.confirmMessage? then options.confirmMessage else 'Are you sure you want to delete this parameter?'
 		@$scope.existingValues = options.existingValues
+		@$scope.dependsOnTargets = []
+		@$scope.dependsOnTargetsMap = {}
+		for v in @$scope.existingValues
+			if v.id != @$scope.parameter.id && v.kind == 'SIMPLE'
+				@$scope.dependsOnTargets.push v
+				@$scope.dependsOnTargetsMap[v.key] = v
 		@$scope.reservedKeys = options.reservedKeys
 		@$scope.hideInExport = options.hideInExport? && options.hideInExport
 		@$scope.hideInRegistration = !@DataService.configuration['registration.enabled'] || (options.hideInRegistration? && options.hideInRegistration)
+
+		@$scope.parameter.hasPresetValues = parameter.allowedValues?
+		if @$scope.parameter.hasPresetValues
+			@$scope.parameter.presetValues = JSON.parse(@$scope.parameter.allowedValues)
+		if @$scope.parameter.presetValues == undefined
+			@$scope.parameter.presetValues = []
+
 		@$uibModalInstance.rendered.then () => @DataService.focus('name')
 
 		@$scope.saveDisabled= () =>
-			!(@$scope.parameter.name?.length > 0 && @$scope.parameter.kind?.length > 0 && (!@$scope.hasKey || @$scope.parameter.key?.length > 0))
+			!(@$scope.parameter.name?.length > 0 && @$scope.parameter.kind?.length > 0 && (!@$scope.hasKey || @$scope.parameter.key?.length > 0) && @presetValuesValid() && @dependencyValid())
 
 		@$scope.updateParameter = () =>
 			if !@$scope.saveDisabled() && @validName(@$scope.parameter.name) && @validKey(@$scope.parameter.key)
@@ -35,6 +48,39 @@ class ParameterDetailsController
 
 		@$scope.cancel = () =>
 			@$uibModalInstance.dismiss()
+
+		@$scope.removePresetValue = (index) =>
+			@$scope.parameter.presetValues.splice(index, 1)
+
+		@$scope.addPresetValue = () =>
+			@$scope.parameter.presetValues.push({value: '', label:''})
+			@DataService.focus('presetValue-'+(@$scope.parameter.presetValues.length - 1))
+
+		@$scope.movePresetUp = (index) =>
+			item = @$scope.parameter.presetValues.splice(index, 1)[0]
+			@$scope.parameter.presetValues.splice(index-1, 0, item)
+
+		@$scope.movePresetDown = (index) =>
+			item = @$scope.parameter.presetValues.splice(index, 1)[0]
+			@$scope.parameter.presetValues.splice(index+1, 0, item)
+
+		@$scope.dependsOnChanged = () =>
+			if @$scope.parameter.dependsOn == undefined || @$scope.parameter.dependsOn == ''
+				@$scope.parameter.dependsOnValue = undefined
+
+	presetValuesValid: () =>
+		if @$scope.parameter.kind == 'SIMPLE' && @$scope.parameter.hasPresetValues
+			for v in @$scope.parameter.presetValues
+				if (v.value == undefined || v.value.trim().length == 0) || (v.label == undefined || v.label.trim().length == 0)
+					return false
+		return true
+
+	dependencyValid: () =>
+		valid = true
+		if @$scope.parameter.dependsOn? && @$scope.parameter.dependsOn != ''
+			if !@$scope.parameter.dependsOnValue? || @$scope.parameter.dependsOnValue.trim() == ''
+				valid = false
+		valid
 
 	validName: (nameValue) =>
 		finder = (value) =>

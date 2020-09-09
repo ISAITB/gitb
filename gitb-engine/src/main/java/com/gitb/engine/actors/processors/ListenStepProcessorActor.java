@@ -1,11 +1,13 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import akka.dispatch.Futures;
 import akka.dispatch.OnFailure;
 import akka.dispatch.OnSuccess;
-import com.gitb.core.*;
+import com.gitb.core.Configuration;
+import com.gitb.core.ErrorCode;
+import com.gitb.core.MessagingModule;
+import com.gitb.core.StepStatus;
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.expr.resolvers.VariableResolver;
@@ -23,14 +25,8 @@ import com.gitb.tr.TestStepReportType;
 import com.gitb.types.MapType;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Callable;
 
 /**
  * Created by serbay.
@@ -39,29 +35,26 @@ import java.util.concurrent.Callable;
  */
 public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActor<Listen> {
 
-    private static final Logger logger = LoggerFactory.getLogger(ListenStepProcessorActor.class);
-
     public static final String NAME = "listen-p";
 
     private MessagingContext messagingContext;
     private TransactionContext transactionContext;
 
     private Promise<TestStepReportType> promise;
-    private Future<TestStepReportType> future;
 
     public ListenStepProcessorActor(Listen step, TestCaseScope scope, String stepId) {
         super(step, scope, stepId);
     }
 
     @Override
-    protected void init() throws Exception {
+    protected void init() {
         final ActorContext context = getContext();
         promise = Futures.promise();
 
-        promise.future().onSuccess(new OnSuccess<TestStepReportType>() {
+        promise.future().foreach(new OnSuccess<>() {
             @Override
-            public void onSuccess(TestStepReportType result) throws Throwable {
-                if(result != null) {
+            public void onSuccess(TestStepReportType result) {
+                if (result != null) {
                     if (result.getResult() == TestResultType.SUCCESS) {
                         updateTestStepStatus(context, StepStatus.COMPLETED, result);
                     } else if (result.getResult() == TestResultType.WARNING) {
@@ -75,16 +68,16 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
             }
         }, context.dispatcher());
 
-        promise.future().onFailure(new OnFailure() {
+        promise.future().failed().foreach(new OnFailure() {
             @Override
-            public void onFailure(Throwable failure) throws Throwable {
+            public void onFailure(Throwable failure) {
                 updateTestStepStatus(context, new ErrorStatusEvent(failure), null, true);
             }
         }, context.dispatcher());
     }
 
     @Override
-    protected void start() throws Exception {
+    protected void start() {
         processing();
 
         TestCaseContext testCaseContext = scope.getContext();
@@ -104,87 +97,74 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
         waiting();
 
         if(messagingHandler != null) {
-            future = Futures.future(new Callable<TestStepReportType>() {
-                @Override
-                public TestStepReportType call() throws Exception {
+            Future<TestStepReportType> future = Futures.future(() -> {
 
-                    VariableResolver resolver = new VariableResolver(scope);
-                    if (step.getConfig() != null) {
-                        for (Configuration config: step.getConfig()) {
-                            if (resolver.isVariableReference(config.getValue())) {
-                                config.setValue(resolver.resolveVariableAsString(config.getValue()).toString());
-                            }
+                VariableResolver resolver = new VariableResolver(scope);
+                if (step.getConfig() != null) {
+                    for (Configuration config : step.getConfig()) {
+                        if (resolver.isVariableReference(config.getValue())) {
+                            config.setValue(resolver.resolveVariableAsString(config.getValue()).toString());
                         }
                     }
-                    MessagingModule moduleDefinition = messagingHandler.getModuleDefinition();
-                    if (moduleDefinition.getReceiveConfigs() != null) {
-                        checkRequiredParametersAndSetDefaultValues(moduleDefinition.getReceiveConfigs().getParam(), step.getConfig());
-                    }
-
-                    Message inputMessage = getMessageFromBindings(step.getInput());
-
-                    MessagingReport report =
-                            messagingHandler
-                                    .listenMessage(
-                                            messagingContext.getSessionId(),
-                                            transactionContext.getTransactionId(),
-                                            step.getFrom(),
-                                            step.getTo(),
-                                            step.getConfig(),
-                                            inputMessage
-                                    );
-
-                    if(report != null && report.getMessage() != null) {
-                        Message message = report.getMessage();
-
-                        if(step.getId() != null) {
-                            MapType map;
-
-                            if(step.getOutput().size() == 0) {
-                                map = generateOutputWithMessageFields(message);
-                            } else {
-                                List<TypedParameter> requiredOutputParameters = new ArrayList<TypedParameter>();
-                                if(moduleDefinition.getOutputs() != null) {
-                                    requiredOutputParameters.addAll(getRequiredOutputParameters(moduleDefinition.getOutputs().getParam()));
-                                }
-
-                                if(step.getOutput().size() != requiredOutputParameters.size()) {
-                                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Wrong number of outputs for ["+ moduleDefinition.getId()+"]"));
-                                }
-
-                                boolean isNameBinding = BindingUtils.isNameBinding(step.getOutput());
-
-                                if(isNameBinding) {
-                                    map = generateOutputWithNameBinding(message, step.getOutput());
-                                } else {
-                                    map = generateOutputWithModuleDefinition(messagingContext, message);
-                                }
-                            }
-
-                            scope
-                                    .createVariable(step.getId())
-                                    .setValue(map);
-                        }
-                        return report.getReport();
-                    } else if(report != null) {
-                        return report.getReport();
-                    } else {
-                        return null;
-                    }
-
                 }
+                MessagingModule moduleDefinition = messagingHandler.getModuleDefinition();
+                if (moduleDefinition.getReceiveConfigs() != null) {
+                    checkRequiredConfigsAndSetDefaultValues(moduleDefinition.getReceiveConfigs().getParam(), step.getConfig());
+                }
+
+                Message inputMessage = getMessageFromBindings(step.getInput());
+
+                MessagingReport report =
+                        messagingHandler
+                                .listenMessage(
+                                        messagingContext.getSessionId(),
+                                        transactionContext.getTransactionId(),
+                                        step.getFrom(),
+                                        step.getTo(),
+                                        step.getConfig(),
+                                        inputMessage
+                                );
+
+                if (report != null && report.getMessage() != null) {
+                    Message message = report.getMessage();
+
+                    if (step.getId() != null) {
+                        MapType map;
+
+                        if (step.getOutput().size() == 0) {
+                            map = generateOutputWithMessageFields(message);
+                        } else {
+                            boolean isNameBinding = BindingUtils.isNameBinding(step.getOutput());
+                            if (isNameBinding) {
+                                map = generateOutputWithNameBinding(message, step.getOutput());
+                            } else {
+                                map = generateOutputWithModuleDefinition(messagingContext, message);
+                            }
+                        }
+
+                        scope
+                                .createVariable(step.getId())
+                                .setValue(map);
+                    }
+                    return report.getReport();
+                } else if (report != null) {
+                    return report.getReport();
+                } else {
+                    return null;
+                }
+
             }, context.dispatcher());
 
-            future.onSuccess(new OnSuccess<TestStepReportType>() {
+            future.foreach(new OnSuccess<>() {
                 @Override
-                public void onSuccess(TestStepReportType result) throws Throwable {
+                public void onSuccess(TestStepReportType result) {
                     promise.trySuccess(result);
                 }
             }, context.dispatcher());
 
-            future.onFailure(new OnFailure() {
+            future.failed().foreach(new OnFailure() {
                 @Override
-                public void onFailure(Throwable failure) throws Throwable {
+                public void onFailure(Throwable failure) {
                     messagingHandler.endTransaction(messagingContext.getSessionId(), transactionContext.getTransactionId());
                     promise.tryFailure(failure);
                 }
@@ -197,7 +177,7 @@ public class ListenStepProcessorActor extends AbstractMessagingStepProcessorActo
     @Override
     protected void stop() {
         if(promise != null && !promise.isCompleted()) {
-            boolean stopped = promise.tryFailure(new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.CANCELLATION, "Test step [" + stepId + "] is cancelled.")));
+            promise.tryFailure(new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.CANCELLATION, "Test step [" + stepId + "] is cancelled.")));
         }
     }
 

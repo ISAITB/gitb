@@ -1,6 +1,5 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import akka.dispatch.Futures;
 import akka.dispatch.OnFailure;
@@ -30,14 +29,13 @@ import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
 import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
 import java.util.List;
-import java.util.concurrent.Callable;
 
 /**
  * Created by tuncay on 9/24/14.
@@ -48,17 +46,16 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
 
     public static final String NAME = "interaction-p";
 
-    private static Logger logger = LoggerFactory.getLogger(InteractionStepProcessorActor.class);
+    private static final Logger logger = LoggerFactory.getLogger(InteractionStepProcessorActor.class);
 
     private Promise<TestStepReportType> promise;
-    private Future<TestStepReportType> future;
 
     public InteractionStepProcessorActor(UserInteraction step, TestCaseScope scope, String stepId) {
         super(step, scope, stepId);
     }
 
     @Override
-    protected void init() throws Exception {
+    protected void init() {
         String classifier = TestStepInputEventBus.getClassifier(scope.getContext().getSessionId(), stepId);
         TestStepInputEventBus
                 .getInstance()
@@ -67,95 +64,104 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         final ActorContext context = getContext();
 
         promise = Futures.promise();
-        promise.future().onFailure(new OnFailure() {
+
+        promise.future().failed().foreach(new OnFailure() {
             @Override
-            public void onFailure(Throwable failure) throws Throwable {
+            public void onFailure(Throwable failure) {
                 updateTestStepStatus(context, new ErrorStatusEvent(failure), null, true);
             }
         }, getContext().dispatcher());
-
     }
 
     @Override
-    protected void start() throws Exception {
+    protected void start() {
         processing();
-        future = Futures.future(new Callable<TestStepReportType>() {
-            @Override
-            public TestStepReportType call() throws Exception {
-                //Process the instructions and request the interaction from TestbedClient
-                try {
-                    VariableResolver variableResolver = new VariableResolver(scope);
-                    List<InstructionOrRequest> instructionAndRequests = step.getInstructOrRequest();
-                    UserInteractionRequest userInteractionRequest = new UserInteractionRequest();
-                    String sutActorId = getSUTActor().getId();
-                    if (StringUtils.isBlank(step.getWith())) {
-                        userInteractionRequest.setWith(sutActorId);
-                    } else {
-                        userInteractionRequest.setWith(step.getWith());
-                    }
-                    int childStepId = 1;
-                    for (InstructionOrRequest instructionOrRequest : instructionAndRequests) {
-                        // Set the type in case this is missing.
-                        if (StringUtils.isBlank(instructionOrRequest.getType())) {
-                            if (instructionOrRequest.getContentType() == ValueEmbeddingEnumeration.BASE_64) {
-                                // if the contentTYpe is set to BASE64 this will be a file.
-                                instructionOrRequest.setType(DataType.BINARY_DATA_TYPE);
-                            } else {
-                                if (variableResolver.isVariableReference(instructionOrRequest.getValue())) {
-                                    // If a target variable is referenced we can use this to determine the type.
-                                    DataType targetVariable = variableResolver.resolveVariable(instructionOrRequest.getValue());
-                                    if (targetVariable == null) {
-                                        throw new GITBEngineInternalError("No variable could be found based on expression ["+instructionOrRequest.getValue()+"]");
-                                    }
-                                    instructionOrRequest.setType(targetVariable.getType());
-                                } else {
-                                    // Set "string" if no other type can be determined.
-                                    instructionOrRequest.setType(DataType.STRING_DATA_TYPE);
-                                }
-                            }
-                        }
-                        // Set the default content type based on the type.
-                        if (instructionOrRequest.getContentType() == null) {
-                            if (DataType.isFileType(instructionOrRequest.getType())) {
-                                instructionOrRequest.setContentType(ValueEmbeddingEnumeration.BASE_64);
-                            } else {
-                                instructionOrRequest.setContentType(ValueEmbeddingEnumeration.STRING);
-                            }
-                        }
-                        if (StringUtils.isBlank(instructionOrRequest.getWith())) {
-                            instructionOrRequest.setWith(userInteractionRequest.getWith());
-                        }
-                        //If it is an instruction
-                        if (instructionOrRequest instanceof com.gitb.tdl.Instruction) {
-                            // If no expression is specified consider it an empty expression.
-                            if (StringUtils.isBlank(instructionOrRequest.getValue())) {
-                                instructionOrRequest.setValue("''");
-                            }
-                            userInteractionRequest.getInstructionOrRequest().add(processInstruction(instructionOrRequest, "" + childStepId));
-                        }
-                        //If it is a request
-                        else {
-                            userInteractionRequest.getInstructionOrRequest().add(processRequest((com.gitb.tdl.UserRequest)instructionOrRequest, "" + childStepId));
-                        }
-                        childStepId++;
-                    }
-                    TestbedService.interactWithUsers(scope.getContext().getSessionId(), stepId, userInteractionRequest);
-                    return null;
-                } catch (Exception e) {
-                    logger.error(addMarker(), "Error in interaction step", e);
-                    throw new GITBEngineInternalError(e);
+        //Process the instructions and request the interaction from TestbedClient
+        // Set the type in case this is missing.
+        // if the contentTYpe is set to BASE64 this will be a file.
+        // If a target variable is referenced we can use this to determine the type.
+        // Set "string" if no other type can be determined.
+        // Set the default content type based on the type.
+        //If it is an instruction
+        // If no expression is specified consider it an empty expression.
+        //If it is a request
+        Future<TestStepReportType> future = Futures.future(() -> {
+            //Process the instructions and request the interaction from TestbedClient
+            try {
+                VariableResolver variableResolver = new VariableResolver(scope);
+                List<InstructionOrRequest> instructionAndRequests = step.getInstructOrRequest();
+                UserInteractionRequest userInteractionRequest = new UserInteractionRequest();
+                String sutActorId = getSUTActor().getId();
+                if (StringUtils.isBlank(step.getWith())) {
+                    userInteractionRequest.setWith(sutActorId);
+                } else {
+                    userInteractionRequest.setWith(step.getWith());
                 }
+                int childStepId = 1;
+                for (InstructionOrRequest instructionOrRequest : instructionAndRequests) {
+                    // Set the type in case this is missing.
+                    if (StringUtils.isBlank(instructionOrRequest.getType())) {
+                        if (instructionOrRequest.getContentType() == ValueEmbeddingEnumeration.BASE_64) {
+                            // if the contentTYpe is set to BASE64 this will be a file.
+                            instructionOrRequest.setType(DataType.BINARY_DATA_TYPE);
+                        } else {
+                            if (variableResolver.isVariableReference(instructionOrRequest.getValue())) {
+                                // If a target variable is referenced we can use this to determine the type.
+                                DataType targetVariable = variableResolver.resolveVariable(instructionOrRequest.getValue());
+                                if (targetVariable == null) {
+                                    throw new GITBEngineInternalError("No variable could be found based on expression [" + instructionOrRequest.getValue() + "]");
+                                }
+                                instructionOrRequest.setType(targetVariable.getType());
+                            } else {
+                                // Set "string" if no other type can be determined.
+                                instructionOrRequest.setType(DataType.STRING_DATA_TYPE);
+                            }
+                        }
+                    }
+                    // Set the default content type based on the type.
+                    if (instructionOrRequest.getContentType() == null) {
+                        if (DataType.isFileType(instructionOrRequest.getType())) {
+                            instructionOrRequest.setContentType(ValueEmbeddingEnumeration.BASE_64);
+                        } else {
+                            instructionOrRequest.setContentType(ValueEmbeddingEnumeration.STRING);
+                        }
+                    }
+                    if (StringUtils.isBlank(instructionOrRequest.getWith())) {
+                        instructionOrRequest.setWith(userInteractionRequest.getWith());
+                    }
+                    //If it is an instruction
+                    if (instructionOrRequest instanceof com.gitb.tdl.Instruction) {
+                        // If no expression is specified consider it an empty expression.
+                        if (StringUtils.isBlank(instructionOrRequest.getValue())) {
+                            instructionOrRequest.setValue("''");
+                        }
+                        userInteractionRequest.getInstructionOrRequest().add(processInstruction(instructionOrRequest, "" + childStepId));
+                    }
+                    //If it is a request
+                    else {
+                        userInteractionRequest.getInstructionOrRequest().add(processRequest((UserRequest) instructionOrRequest, "" + childStepId));
+                    }
+                    childStepId++;
+                }
+                TestbedService.interactWithUsers(scope.getContext().getSessionId(), stepId, userInteractionRequest);
+                return null;
+            } catch (Exception e) {
+                logger.error(addMarker(), "Error in interaction step", e);
+                throw new GITBEngineInternalError(e);
             }
         }, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER));
-        future.onSuccess(new OnSuccess<TestStepReportType>() {
+
+        future.foreach(new OnSuccess<>() {
 
             @Override
-            public void onSuccess(TestStepReportType result) throws Throwable { promise.trySuccess(result);
+            public void onSuccess(TestStepReportType result) {
+                promise.trySuccess(result);
             }
         }, getContext().dispatcher());
-        future.onFailure(new OnFailure() {
+
+        future.failed().foreach(new OnFailure() {
             @Override
-            public void onFailure(Throwable failure) throws Throwable { promise.tryFailure(failure);
+            public void onFailure(Throwable failure) { promise.tryFailure(failure);
             }
         }, getContext().dispatcher());
         waiting();
@@ -173,7 +179,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
      * @param stepId step id
      * @return instruction
      */
-    private Instruction processInstruction(InstructionOrRequest instructionCommand, String stepId) throws Exception {
+    private Instruction processInstruction(InstructionOrRequest instructionCommand, String stepId) {
         Instruction instruction = new Instruction();
         instruction.setWith(instructionCommand.getWith());
         instruction.setDesc(instructionCommand.getDesc());
@@ -207,7 +213,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         if (instructionCommand.getContentType() == null) {
             inputRequest.setContentType(ValueEmbeddingEnumeration.STRING);
         }
-        if (instructionCommand.getValue() != null && !instructionCommand.getValue().equals("")) {
+        if (StringUtils.isNotBlank(instructionCommand.getValue())) {
             String assignedVariableExpression = instructionCommand.getValue();
             DataType assignedVariable = variableResolver.resolveVariable(assignedVariableExpression);
             inputRequest.setType(assignedVariable.getType());
@@ -279,10 +285,10 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
 
 
     @Override
-    protected void handleInputEvent(InputEvent event) throws Exception {
+    protected void handleInputEvent(InputEvent event) {
         processing();
         List<UserInput> userInputs = event.getUserInputs();
-        TestCaseScope.ScopedVariable scopedVariable = null;
+        TestCaseScope.ScopedVariable scopedVariable;
         DataTypeFactory dataTypeFactory = DataTypeFactory.getInstance();
         //Create the Variable for Interaction Result if an id is given for the Interaction
         MapType interactionResult = (MapType) dataTypeFactory.create(DataType.MAP_DATA_TYPE);
@@ -294,7 +300,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         for (UserInput userInput : userInputs) {
             int stepIndex = Integer.parseInt(userInput.getId());
             InstructionOrRequest targetRequest = step.getInstructOrRequest().get(stepIndex - 1);
-            if (targetRequest.getValue() != null && !targetRequest.getValue().equals("")) {
+            if (StringUtils.isNotBlank(targetRequest.getValue())) {
                 //Find the variable that the given input content is assigned(bound) to
                 String assignedVariableExpression = targetRequest.getValue();
                 VariableResolver variableResolver = new VariableResolver(scope);

@@ -1,7 +1,8 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
-import akka.dispatch.*;
+import akka.dispatch.Futures;
+import akka.dispatch.OnFailure;
+import akka.dispatch.OnSuccess;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.events.model.ErrorStatusEvent;
@@ -14,8 +15,6 @@ import com.gitb.utils.ErrorUtils;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
-import java.util.concurrent.Callable;
-
 /**
  * Created by serbay on 9/5/14.
  *
@@ -25,7 +24,6 @@ import java.util.concurrent.Callable;
 public abstract class AbstractProcessorActor<T> extends AbstractTestStepActor<T> {
 
 	private Promise<TestStepReportType> promise;
-	private Future<TestStepReportType> future;
 
 	public AbstractProcessorActor(T step, TestCaseScope scope) {
 		super(step, scope);
@@ -43,10 +41,10 @@ public abstract class AbstractProcessorActor<T> extends AbstractTestStepActor<T>
 
 		promise = Futures.promise();
 
-		promise.future().onSuccess(new OnSuccess<TestStepReportType>() {
+		promise.future().foreach(new OnSuccess<>() {
 			@Override
-			public void onSuccess(TestStepReportType result) throws Throwable {
-				if(result != null) {
+			public void onSuccess(TestStepReportType result) {
+				if (result != null) {
 					if (result.getResult() == TestResultType.SUCCESS) {
 						updateTestStepStatus(context, StepStatus.COMPLETED, result);
 					} else if (result.getResult() == TestResultType.WARNING) {
@@ -60,9 +58,9 @@ public abstract class AbstractProcessorActor<T> extends AbstractTestStepActor<T>
 			}
 		}, getContext().dispatcher());
 
-		promise.future().onFailure(new OnFailure() {
+		promise.future().failed().foreach(new OnFailure() {
 			@Override
-			public void onFailure(Throwable failure) throws Throwable {
+			public void onFailure(Throwable failure) {
 				updateTestStepStatus(context, new ErrorStatusEvent(failure), null, true);
 			}
 		}, getContext().dispatcher());
@@ -73,26 +71,23 @@ public abstract class AbstractProcessorActor<T> extends AbstractTestStepActor<T>
 		final IProcessor processor = getProcessor();
 
 		if(processor != null) {
-			future = Futures.future(new Callable<TestStepReportType>() {
-				@Override
-				public TestStepReportType call() throws Exception {
-					processing();
+			Future<TestStepReportType> future = Futures.future(() -> {
+				processing();
 
-					return processor.process(step);
-				}
+				return processor.process(step);
 			}, getContext().dispatcher());
 
-			future.onSuccess(new OnSuccess<TestStepReportType>() {
+			future.foreach(new OnSuccess<>() {
 
 				@Override
-				public void onSuccess(TestStepReportType result) throws Throwable {
+				public void onSuccess(TestStepReportType result) {
 					promise.trySuccess(result);
 				}
 			}, getContext().dispatcher());
 
-			future.onFailure(new OnFailure() {
+			future.failed().foreach(new OnFailure() {
 				@Override
-				public void onFailure(Throwable failure) throws Throwable {
+				public void onFailure(Throwable failure) {
 					promise.tryFailure(failure);
 				}
 			}, getContext().dispatcher());
@@ -102,7 +97,7 @@ public abstract class AbstractProcessorActor<T> extends AbstractTestStepActor<T>
 	@Override
 	protected void stop() {
         if(promise != null) {
-            boolean stopped = promise.tryFailure(new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.CANCELLATION, "Test step ["+stepId+"] is cancelled.")));
+            promise.tryFailure(new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.CANCELLATION, "Test step ["+stepId+"] is cancelled.")));
         }
 	}
 }

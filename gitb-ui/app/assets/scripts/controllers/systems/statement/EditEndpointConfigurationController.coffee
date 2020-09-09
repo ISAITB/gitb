@@ -12,6 +12,12 @@ class EditEndpointConfigurationController
         parameter: @parameter.id
     else
       @configuration = _.cloneDeep @oldConfiguration
+    
+    @hasPresetValues = false
+    if @parameter.allowedValues?
+      @presetValues = JSON.parse(@parameter.allowedValues)
+      if @presetValues?.length > 0
+        @hasPresetValues = true
 
     @isBinary = @parameter.kind == "BINARY"
     @isConfigurationSet = @configuration.value?

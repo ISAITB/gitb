@@ -1,6 +1,5 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import com.gitb.engine.actors.ActorSystem;
 import com.gitb.engine.processors.AssignProcessor;

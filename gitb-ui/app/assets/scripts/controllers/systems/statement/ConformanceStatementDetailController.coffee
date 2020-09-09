@@ -11,6 +11,8 @@ class ConformanceStatementDetailController
     @domain = null
     @specification = null
     @endpoints = []
+    @hasEndpoints = false
+    @hasMultipleEndpoints = false
     @endpointRepresentations = []
     @configurations = []
     @testSuites = []
@@ -18,6 +20,7 @@ class ConformanceStatementDetailController
     @endpointsExpanded = @$stateParams['editEndpoints']? && @$stateParams['editEndpoints']
     @testStatus = ''
     @backgroundMode = false
+    @allTestsSuccessful = false
 
     @parameterTableColumns = [
       {
@@ -86,6 +89,7 @@ class ConformanceStatementDetailController
         testSuiteResults.push(testSuiteData[testSuiteId])
       @testSuites = testSuiteResults
       @testStatus = @DataService.testStatusText(completedCount, failedCount, undefinedCount)
+      @allTestsSuccessful = completedCount == totalCount
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
@@ -129,40 +133,75 @@ class ConformanceStatementDetailController
               extension: parameterConfig.extension
               configured: parameterConfig.configured
             })
-        endpointsTemp.push(endpoint)
+        if endpoint.parameters.length > 0
+          endpointsTemp.push(endpoint)
       @endpoints = endpointsTemp
       @configurations = configurations
       @constructEndpointRepresentations()
     .catch (error) =>
       @ErrorService.showErrorMessage(error)      
 
+  checkPrerequisite: (parameterMap, repr) =>
+    if !repr.checkedPrerequisites?
+      if repr.dependsOn?
+        otherPrerequisites = @checkPrerequisite(parameterMap, parameterMap[repr.dependsOn])
+        valueCheck = parameterMap[repr.dependsOn].value == repr.dependsOnValue
+        repr.prerequisiteOk = otherPrerequisites && valueCheck
+      else
+        repr.prerequisiteOk = true
+      repr.checkedPrerequisites = true
+    repr.prerequisiteOk
+
   constructEndpointRepresentations: () =>
-    @endpointRepresentations = _.map @endpoints, (endpoint) =>
+    @endpointRepresentations = []
+    for endpoint in @endpoints
+      endpointRepr = {
         name: endpoint.name
         description: endpoint.description
         id: endpoint.id
-        parameters: _.map endpoint.parameters, (parameter) =>
-          repr = _.cloneDeep parameter
+      }
+      parameterMap = {}
+      endpointRepr.parameters = []
+      for parameter in endpoint.parameters
+        repr = _.cloneDeep parameter
+        relevantConfig = _.find(@configurations, (config) => 
+          Number(parameter.id) == Number(config.parameter) && Number(parameter.endpoint) == Number(config.endpoint)
+        )
+        if relevantConfig?
+          repr.value = relevantConfig.value
+          repr.configured = relevantConfig.configured
+        else
+          repr.configured = false
+          repr.value = undefined
 
-          relevantConfig = _.find(@configurations, (config) => 
-            Number(parameter.id) == Number(config.parameter) && Number(parameter.endpoint) == Number(config.endpoint)
-          );
-          if relevantConfig?
-            repr.value = relevantConfig.value
-            repr.configured = relevantConfig.configured
-          else
-            repr.configured = false
-            repr.value = undefined
+        if repr.configured
+          if parameter.kind == 'BINARY'
+            repr.fileName = parameter.name
+            if relevantConfig.extension?
+              repr.fileName += relevantConfig.extension
+            repr.mimeType = relevantConfig.mimeType
+          else if parameter.kind == 'SECRET'
+            repr.value = '*****'
+          else if parameter.kind == 'SIMPLE'
+            if parameter.allowedValues?
+              presetValues = JSON.parse(parameter.allowedValues)
+              if presetValues?.length > 0
+                foundPresetValue = _.find presetValues, (v) => `v.value == repr.value`
+                if foundPresetValue?
+                  repr.valueToShow = foundPresetValue.label
 
-          if repr.configured
-            if parameter.kind == 'BINARY'
-              repr.fileName = parameter.name
-              if relevantConfig.extension?
-                repr.fileName += relevantConfig.extension
-              repr.mimeType = relevantConfig.mimeType
-            else if parameter.kind == 'SECRET'
-              repr.value = '*****'
-          repr
+        parameterMap[parameter.name] = repr
+        if !parameter.hidden || @DataService.isSystemAdmin || @DataService.isCommunityAdmin
+          endpointRepr.parameters.push repr
+
+      hasVisibleParameters = false
+      for p in endpointRepr.parameters
+        if @checkPrerequisite(parameterMap, p)
+          hasVisibleParameters = true
+      if hasVisibleParameters
+        @endpointRepresentations.push endpointRepr
+    @hasEndpoints = @endpointRepresentations.length > 0
+    @hasMultipleEndpoints = @endpointRepresentations.length > 1
 
   onExpand: (testSuite) =>
     testSuite.expanded = !testSuite.expanded if !@runTestClicked
@@ -180,14 +219,14 @@ class ConformanceStatementDetailController
     @systemConfigurationChecked = @$q.defer()
     @configurationChecked = @$q.defer()
     # Organisation parameter values.
-    @OrganizationService.getOrganisationParameterValues(@getOrganisation().id, false)
+    @OrganizationService.checkOrganisationParameterValues(@getOrganisation().id)
     .then (data) =>
       @organisationProperties = data
       @organisationConfigurationChecked.resolve()
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
     # System parameter values.
-    @SystemService.getSystemParameterValues(@systemId, false)
+    @SystemService.checkSystemParameterValues(@systemId)
     .then (data) =>
       @systemProperties = data
       @systemConfigurationChecked.resolve()
@@ -196,17 +235,20 @@ class ConformanceStatementDetailController
     # Statement parameter values.
     @ConformanceService.checkConfigurations(@actorId, @systemId)
     .then (data) =>
-      @endpointRepresentations = data
+      @endpointRepresentationsToCheck = data
       @configurationChecked.resolve()
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
     # Check status once everything is loaded.
     @$q.all([@organisationConfigurationChecked.promise, @systemConfigurationChecked.promise, @configurationChecked.promise]).then(() =>
-      @configurationValid = @DataService.isConfigurationValid(@endpointRepresentations)
+      @configurationValid = @DataService.isConfigurationValid(@endpointRepresentationsToCheck)
       @systemConfigurationValid = @DataService.isMemberConfigurationValid(@systemProperties)
       @organisationConfigurationValid = @DataService.isMemberConfigurationValid(@organisationProperties)
       if (!@configurationValid || !@systemConfigurationValid || !@organisationConfigurationValid)
         # Missing configuration.
+        organisationPropertyVisibility = @DataService.checkPropertyVisibility(@organisationProperties)
+        systemPropertyVisibility = @DataService.checkPropertyVisibility(@systemProperties)
+        statementPropertyVisibility = @DataService.checkPropertyVisibility(@endpointRepresentationsToCheck[0].parameters)
         options =
           templateUrl: 'assets/views/systems/conformance/missing-configuration-modal.html'
           controller: 'MissingConfigurationModalController as controller'
@@ -215,8 +257,11 @@ class ConformanceStatementDetailController
             organisationConfigurationValid: () => @organisationConfigurationValid
             systemProperties: () => @systemProperties
             systemConfigurationValid: () => @systemConfigurationValid
-            endpointRepresentations: () => @endpointRepresentations
+            endpointRepresentations: () => @endpointRepresentationsToCheck
             configurationValid: () => @configurationValid
+            organisationPropertyVisibility: () => organisationPropertyVisibility
+            systemPropertyVisibility: () => systemPropertyVisibility
+            statementPropertyVisibility: () => statementPropertyVisibility
           size: 'lg'
         instance = @$uibModal.open options
         instance.result
@@ -280,7 +325,6 @@ class ConformanceStatementDetailController
       @$state.go 'app.tests.execution', {systemId: @systemId, actorId: @actorId, specId:@specId, testSuiteId: testSuite.id}
 
   onParameterSelect: (parameter) =>
-    @$log.debug "Editing parameter: ", parameter
 
     oldConfiguration = _.find @configurations, (configuration) =>
       parameter.id == configuration.parameter &&
@@ -322,7 +366,7 @@ class ConformanceStatementDetailController
       , angular.noop)
 
   canDelete: () =>
-    !@DataService.isVendorUser
+    @DataService.isSystemAdmin || @DataService.isCommunityAdmin || (@DataService.isVendorAdmin && @DataService.community.allowStatementManagement)
 
   canEditParameter: (parameter) =>
     @DataService.isSystemAdmin || @DataService.isCommunityAdmin || (@DataService.isVendorAdmin && !parameter.adminOnly)
@@ -359,6 +403,20 @@ class ConformanceStatementDetailController
         @ErrorService.showErrorMessage(error)
         @exportPending = false
     )
+
+  onExportConformanceCertificate:() =>
+    @exportCertificatePending = true
+    @ConformanceService.exportOwnConformanceCertificateReport(@actorId, @systemId)
+    .then (data) =>
+        blobData = new Blob([data], {type: 'application/pdf'});
+        saveAs(blobData, "conformance_certificate.pdf");
+        @exportCertificatePending = false
+    .catch (error) =>
+        @ErrorService.showErrorMessage(error)
+        @exportCertificatePending = false
+
+  canExportConformanceCertificate: () =>
+    @allTestsSuccessful && (@DataService.isSystemAdmin || @DataService.isCommunityAdmin || @DataService.community.allowCertificateDownload)
 
   showDocumentation: (title, content) ->
     html = @$sce.trustAsHtml(content)

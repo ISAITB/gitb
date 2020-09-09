@@ -10,7 +10,7 @@ import com.gitb.reports.dto.tar.ReportItem;
 import com.gitb.tbs.TestStepStatus;
 import com.gitb.tr.*;
 import net.sf.jasperreports.engine.*;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBElement;

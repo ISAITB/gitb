@@ -25,20 +25,21 @@
 			</div>
 		</div>
         <div class="panel-footer">
+			<button ng-if="conformanceStatementDetailCtrl.canExportConformanceCertificate()" type="button" class="btn btn-default" ng-click="conformanceStatementDetailCtrl.onExportConformanceCertificate()" ng-disabled="conformanceStatementDetailCtrl.exportCertificatePending"><span class="tab" ng-if="conformanceStatementDetailCtrl.exportCertificatePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Download conformance certificate</button>
 			<button type="button" class="btn btn-default" ng-click="conformanceStatementDetailCtrl.onExportConformanceStatement()" ng-disabled="conformanceStatementDetailCtrl.exportPending"><span class="tab" ng-if="conformanceStatementDetailCtrl.exportPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Download report</button>
 			<button type="button" class="btn btn-default" ng-if="conformanceStatementDetailCtrl.canDelete()" ng-click="conformanceStatementDetailCtrl.deleteConformanceStatement()">Delete statement</button>
         </div>		
 	</div>
-	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.endpoints.length > 0">
+	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.hasEndpoints">
 		<div class="panel-heading panel-heading-tests">
 			<h4 class="title">Configuration parameters</h4>
             <div class="btn-toolbar pull-right" ng-class="{'padded': conformanceStatementDetailCtrl.testSuites.length > 1}">
-				<toggle id="conformance-toggle-configuration" class="btn-group" ng-model="conformanceStatementDetailCtrl.endpointsExpanded" on="Visible" off="Hidden"/>
+				<toggle id="conformance-toggle-configuration" class="btn-group" ng-model="conformanceStatementDetailCtrl.endpointsExpanded" on="Visible" off="Hidden"></toggle>
 			</div>
 		</div>
-		<div class="list-group" uib-collapse="!conformanceStatementDetailCtrl.endpointsExpanded">
-			<div class="list-group-item endpoint" ng-repeat="endpoint in conformanceStatementDetailCtrl.endpointRepresentations">
-				<div endpoint-display endpoint="endpoint" editable="!conformanceStatementDetailCtrl.DataService.isVendorUser" can-edit="conformanceStatementDetailCtrl.canEditParameter" show-values="true" on-edit="conformanceStatementDetailCtrl.onParameterSelect"></div>
+		<div ng-class="{'list-group': conformanceStatementDetailCtrl.hasMultipleEndpoints}" uib-collapse="!conformanceStatementDetailCtrl.endpointsExpanded">
+			<div class="endpoint" ng-class="{'list-group-item': conformanceStatementDetailCtrl.hasMultipleEndpoints}" ng-repeat="endpoint in conformanceStatementDetailCtrl.endpointRepresentations">
+				<div endpoint-display endpoint="endpoint" hide-endpoint-info="!conformanceStatementDetailCtrl.hasMultipleEndpoints" editable="!conformanceStatementDetailCtrl.DataService.isVendorUser" can-edit="conformanceStatementDetailCtrl.canEditParameter" show-values="true" on-edit="conformanceStatementDetailCtrl.onParameterSelect"></div>
 			</div>
 		</div>
 	</div>
@@ -47,7 +48,7 @@
 		<div class="panel-heading panel-heading-tests">
 			<h4 class="title">Conformance tests</h4>
             <div class="btn-toolbar pull-right" ng-class="{'padded': conformanceStatementDetailCtrl.testSuites.length > 1}">
-				<toggle id="conformance-toggle" class="btn-group" ng-model="conformanceStatementDetailCtrl.backgroundMode" on="Background execution" off="Interactive execution"/>
+				<toggle id="conformance-toggle" class="btn-group" ng-model="conformanceStatementDetailCtrl.backgroundMode" on="Background execution" off="Interactive execution"></toggle>
 				<button type="button" ng-style="{'margin-right':(conformanceStatementDetailCtrl.testSuites.length == 1 && conformanceStatementDetailCtrl.testSuites[0].testCases.length > 1)?'-3px':'8px'}" class="btn btn-primary" ng-if="conformanceStatementDetailCtrl.testSuites.length == 1 && conformanceStatementDetailCtrl.testSuites[0].hasDocumentation" ng-click="conformanceStatementDetailCtrl.showTestSuiteDocumentation(conformanceStatementDetailCtrl.testSuites[0].id)"><i class="fa fa-info-circle"></i></button>
 				<button type="button" class="btn btn-primary" ng-if="conformanceStatementDetailCtrl.testSuites.length == 1 && conformanceStatementDetailCtrl.testSuites[0].testCases.length > 1" ng-click="conformanceStatementDetailCtrl.onTestSuiteSelect()"><i class="fa fa-play"></i></button>
 			</div>

@@ -22,6 +22,7 @@ object ExistingIds {
     map += (ImportItemType.LandingPage -> mutable.Set[String]())
     map += (ImportItemType.LegalNotice -> mutable.Set[String]())
     map += (ImportItemType.ErrorTemplate -> mutable.Set[String]())
+    map += (ImportItemType.Trigger -> mutable.Set[String]())
     map += (ImportItemType.Administrator -> mutable.Set[String]())
     map += (ImportItemType.Organisation -> mutable.Set[String]())
     map += (ImportItemType.OrganisationUser -> mutable.Set[String]())

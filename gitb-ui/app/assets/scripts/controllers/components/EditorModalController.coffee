@@ -11,6 +11,14 @@ class EditorModalController
     @$scope.indicators = indicators
     @$scope.lineNumber = lineNumber
     @$scope.isDownloadVisible = editorOptions.download? && editorOptions.value?
+    if editorOptions.copy == undefined
+      @$scope.isCopyVisible = true 
+    else 
+      @$scope.isCopyVisible = editorOptions.copy
+    if editorOptions.styleClass == undefined
+      @$scope.styleClass = 'editor-normal'
+    else 
+      @$scope.styleClass = editorOptions.styleClass
 
     @$scope.close = () =>
       @$uibModalInstance.dismiss()

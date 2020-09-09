@@ -1,6 +1,3 @@
-create database if not exists gitb;
-create user 'gitb' identified by 'gitb';
-GRANT ALL PRIVILEGES ON gitb.* To 'gitb';
 SET sql_mode='NO_AUTO_VALUE_ON_ZERO';
 
 use gitb;

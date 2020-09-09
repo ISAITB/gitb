@@ -5,6 +5,7 @@ import models.Specifications
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
+import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class SpecificationManager @Inject() (actorManager: ActorManager, testResultManager: TestResultManager, testSuiteManager: TestSuiteManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
@@ -23,6 +24,10 @@ class SpecificationManager @Inject() (actorManager: ActorManager, testResultMana
   def getSpecificationById(specId: Long): Specifications = {
     val spec = exec(PersistenceSchema.specifications.filter(_.id === specId).result.head)
     spec
+  }
+
+  def getSpecificationsById(specIds: List[Long]): List[Specifications] = {
+    exec(PersistenceSchema.specifications.filter(_.id inSet specIds).result.map(_.toList))
   }
 
   def updateSpecificationInternal(specId: Long, sname: String, fname: String, descr: Option[String], hidden:Boolean): DBIO[_] = {

@@ -1,6 +1,5 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
@@ -10,8 +9,8 @@ import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.tdl.*;
 import com.gitb.tdl.Process;
+import com.gitb.tdl.*;
 import com.gitb.utils.ErrorUtils;
 
 import java.util.Map;
@@ -84,7 +83,7 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
         if (childStep instanceof Send) {
             child = SendStepProcessorActor.create(context, (Send) childStep, scope, childStepId);
         } else if (childStep instanceof Receive) {
-            child = ReceiveStepProcessorActor.create(context, (Receive) childStep, scope, childStepId);
+            child = ReceiveStepProcessorActor.create(context, (com.gitb.tdl.Receive) childStep, scope, childStepId);
         } else if (childStep instanceof Listen) {
             child = ListenStepProcessorActor.create(context, (Listen) childStep, scope, childStepId);
         } else if (childStep instanceof BeginTransaction) {
@@ -105,6 +104,8 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
             child = ExitStepProcessorActor.create(context, (ExitStep) childStep, scope, childStepId);
         } else if (childStep instanceof Assign) {
             child = AssignStepProcessorActor.create(context, (Assign) childStep, scope, childStepId);
+        } else if (childStep instanceof Log) {
+            child = LogStepProcessorActor.create(context, (Log) childStep, scope, childStepId);
         } else if (childStep instanceof Group) {
             child = GroupStepProcessorActor.create(context, (Group) childStep, scope, childStepId);
         } else if (childStep instanceof Verify) {

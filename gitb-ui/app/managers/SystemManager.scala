@@ -2,6 +2,7 @@ package managers
 
 import java.util
 
+import actors.events.{ConformanceStatementCreatedEvent, ConformanceStatementUpdatedEvent, SystemCreatedEvent, SystemUpdatedEvent}
 import javax.inject.{Inject, Singleton}
 import models.Enums.{TestResultStatus, UserRole}
 import models.{ConformanceResult, ConformanceStatement, _}
@@ -13,7 +14,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelper: TriggerHelper, triggerManager: TriggerManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -24,22 +25,16 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     firstOption.isDefined
   }
 
-  def registerSystem(adminId: Long, system: Systems) = {
-    //1) Get organization id of the admin
-    val orgId = exec(PersistenceSchema.users.filter(_.id === adminId).result.head).organization
-
-    //2) Persist new System
-    exec((PersistenceSchema.insertSystem += system.withOrganizationId(orgId)).transactionally)
-  }
-
-  def copyTestSetup(fromSystem: Long, toSystem: Long, copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
+  def copyTestSetup(fromSystem: Long, toSystem: Long, copySystemParameters: Boolean, copyStatementParameters: Boolean): DBIO[List[Long]] = {
     val actions = new ListBuffer[DBIO[_]]()
+    val linkedActorIds = ListBuffer[Long]()
     val conformanceStatements = getConformanceStatementReferences(fromSystem)
     var addedStatements = scala.collection.mutable.Set[String]()
     conformanceStatements.foreach { otherConformanceStatement =>
       val key = otherConformanceStatement.spec+"-"+otherConformanceStatement.actor
       if (!addedStatements.contains(key)) {
         addedStatements += key
+        linkedActorIds += otherConformanceStatement.actor
         actions += defineConformanceStatement(toSystem, otherConformanceStatement.spec, otherConformanceStatement.actor, None)
       }
     }
@@ -73,36 +68,44 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
         } yield()
         )
     }
-    DBIO.seq(actions.map(a => a): _*)
+    DBIO.seq(actions.map(a => a): _*) andThen DBIO.successful(linkedActorIds.toList)
+  }
+
+  private def getCommunityIdForOrganisationId(organisationId: Long): Long = {
+    exec(PersistenceSchema.organizations.filter(_.id === organisationId).map(x => x.community).result.head)
+  }
+
+  private def getCommunityIdForSystemId(systemId: Long): Long = {
+    exec(PersistenceSchema.organizations.join(PersistenceSchema.systems).on(_.id === _.owner).filter(_._2.id === systemId).map(x => x._1.community).result.head)
   }
 
   def registerSystemWrapper(userId:Long, system: Systems, otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
     var isAdmin: Option[Boolean] = None
-    var communityId: Option[Long] = None
+    val communityId = getCommunityIdForOrganisationId(system.owner)
 
     var propertyValuesToUse = propertyValues
     if (propertyValues.isDefined && (otherSystem.isEmpty || !copySystemParameters)) {
       val user = exec(PersistenceSchema.users.filter(_.id === userId).result.head)
       isAdmin = Some(user.role == UserRole.SystemAdmin.id.toShort || user.role == UserRole.CommunityAdmin.id.toShort)
-      communityId = Some(exec(PersistenceSchema.organizations.filter(_.id === system.owner).result.head).community)
     } else {
       propertyValuesToUse = None
     }
-    val id: Long = exec(
+    val ids = exec(
       (
         for {
-          newSystemId <- registerSystem(system, communityId, isAdmin, propertyValuesToUse)
-          _ <- {
+          newSystemId <- registerSystem(system, Some(communityId), isAdmin, propertyValuesToUse)
+          linkedActorIds <- {
             if (otherSystem.isDefined) {
               copyTestSetup(otherSystem.get, newSystemId, copySystemParameters, copyStatementParameters)
             } else {
-              DBIO.successful(())
+              DBIO.successful(List[Long]())
             }
           }
-        } yield newSystemId
+        } yield (newSystemId, linkedActorIds)
       ).transactionally
     )
-    id
+    triggerHelper.triggersFor(communityId, new SystemCreationDbInfo(ids._1, Some(ids._2)))
+    ids
   }
 
   def registerSystem(system: Systems, communityId: Option[Long], isAdmin: Option[Boolean], propertyValues: Option[List[SystemParameterValues]]): DBIO[Long] = {
@@ -118,7 +121,7 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     } yield newSystemId
   }
 
-  def saveSystemParameterValues(systemId: Long, communityId: Long, isAdmin: Boolean, values: List[SystemParameterValues]) = {
+  def saveSystemParameterValues(systemId: Long, communityId: Long, isAdmin: Boolean, values: List[SystemParameterValues]): DBIO[_] = {
     var providedParameters:Map[Long, SystemParameterValues] = Map()
     values.foreach{ v =>
       providedParameters += (v.parameter -> v)
@@ -128,7 +131,7 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     // Make updates
     val actions = new ListBuffer[DBIO[_]]()
     parameterDefinitions.foreach{ parameterDefinition =>
-      if (!parameterDefinition.adminOnly || isAdmin) {
+      if ((!parameterDefinition.adminOnly && !parameterDefinition.hidden) || isAdmin) {
         val matchedProvidedParameter = providedParameters.get(parameterDefinition.id)
         if (matchedProvidedParameter.isDefined) {
           // Create or update
@@ -150,55 +153,70 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
   }
 
   def updateSystemProfile(userId: Long, systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
-    exec(updateSystemProfileInternal(Some(userId), None, systemId, sname, fname, description, version, otherSystem, propertyValues, copySystemParameters, copyStatementParameters).transactionally)
+    val communityId = getCommunityIdForSystemId(systemId)
+    val linkedActorIds = exec(updateSystemProfileInternal(Some(userId), None, systemId, sname, fname, description, version, otherSystem, propertyValues, copySystemParameters, copyStatementParameters).transactionally)
+    triggerHelper.publishTriggerEvent(new SystemUpdatedEvent(communityId, systemId))
+    triggerHelper.triggersFor(communityId, systemId, Some(linkedActorIds))
   }
 
-  def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
-    val actions = new ListBuffer[DBIO[_]]()
-
-    //update short name of the system
-    if (sname.isDefined) {
-      val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield (s.shortname)
-      actions += q.update(sname.get)
-      actions += testResultManager.updateForUpdatedSystem(systemId, sname.get)
-    }
-    //update full name of the system
-    if (fname.isDefined) {
-      val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield (s.fullname)
-      actions += q.update(fname.get)
-    }
-    //update description of the system
-    if (description.isDefined) {
-      val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield (s.description)
-      actions += q.update(description)
-    }
-    //update version of the system
-    if (version.isDefined) {
-      val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield (s.version)
-      actions += q.update(version.get)
-    }
-    // Update test configuration
-    if (otherSystem.isDefined) {
-      actions += deleteAllConformanceStatements(systemId)
-      actions += copyTestSetup(otherSystem.get, systemId, copySystemParameters, copyStatementParameters)
-    }
-    if (propertyValues.isDefined && (otherSystem.isEmpty || !copySystemParameters)) {
-      var isAdmin = false
-      if (userId.isEmpty) {
-        isAdmin = true
-      } else {
-        val user = exec(PersistenceSchema.users.filter(_.id === userId.get).result.head)
-        isAdmin = user.role == UserRole.SystemAdmin.id.toShort || user.role == UserRole.CommunityAdmin.id.toShort
+  def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], copySystemParameters: Boolean, copyStatementParameters: Boolean): DBIO[List[Long]] = {
+    for {
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        // Update short name of the system
+        if (sname.isDefined) {
+          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield s.shortname
+          actions += q.update(sname.get)
+          actions += testResultManager.updateForUpdatedSystem(systemId, sname.get)
+        }
+        // Update full name of the system
+        if (fname.isDefined) {
+          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield s.fullname
+          actions += q.update(fname.get)
+        }
+        // Update description of the system
+        if (description.isDefined) {
+          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield s.description
+          actions += q.update(description)
+        }
+        toDBIO(actions)
       }
-      var communityIdToUse: Option[Long] = None
-      if (communityId.isDefined) {
-        communityIdToUse = Some(communityId.get)
-      } else {
-        communityIdToUse = Some(getCommunityIdOfSystem(systemId))
+      // Update test configuration
+      linkedActorIds <- {
+        if (otherSystem.isDefined) {
+          deleteAllConformanceStatements(systemId) andThen
+            copyTestSetup(otherSystem.get, systemId, copySystemParameters, copyStatementParameters)
+        } else {
+          DBIO.successful(List[Long]())
+        }
       }
-      actions += saveSystemParameterValues(systemId, communityIdToUse.get, isAdmin, propertyValues.get)
-    }
-    toDBIO(actions)
+      _ <- {
+        if (propertyValues.isDefined && (otherSystem.isEmpty || !copySystemParameters)) {
+          for {
+            isAdmin <- {
+              if (userId.isEmpty) {
+                DBIO.successful(true)
+              } else {
+                for {
+                  user <- PersistenceSchema.users.filter(_.id === userId.get).result.head
+                  isAdmin <- DBIO.successful(user.role == UserRole.SystemAdmin.id.toShort || user.role == UserRole.CommunityAdmin.id.toShort)
+                } yield isAdmin
+              }
+            }
+            communityIdToUse <- {
+              if (communityId.isDefined) {
+                DBIO.successful(communityId.get)
+              } else {
+                getCommunityIdOfSystemInternal(systemId)
+              }
+            }
+            _ <- saveSystemParameterValues(systemId, communityIdToUse, isAdmin, propertyValues.get)
+          } yield ()
+        } else {
+          DBIO.successful(())
+        }
+      }
+    } yield linkedActorIds
   }
 
   def getSystemProfile(systemId: Long): models.System = {
@@ -255,8 +273,10 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     systems
   }
 
-  def defineConformanceStatementWrapper(system: Long, spec: Long, actor: Long, options: Option[List[Long]]) = {
+  def defineConformanceStatementWrapper(system: Long, spec: Long, actor: Long, options: Option[List[Long]]):Unit = {
     exec(defineConformanceStatement(system, spec, actor, options).transactionally)
+    val communityId = getCommunityIdForSystemId(system)
+    triggerHelper.publishTriggerEvent(new ConformanceStatementCreatedEvent(communityId, system, actor))
   }
 
   def sutTestCasesExistForActor(actor: Long): Boolean = {
@@ -364,8 +384,8 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
       }
     }
     var statements = new ListBuffer[ConformanceStatement]
-    import scala.collection.JavaConversions._
-    for (conformanceEntry <- conformanceMap) {
+    import scala.collection.JavaConverters._
+    for (conformanceEntry <- mapAsScalaMap(conformanceMap)) {
       statements += conformanceEntry._2
     }
     statements.toList
@@ -461,6 +481,7 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
 
   def deleteEndpointConfiguration(systemId: Long, parameterId: Long, endpointId: Long) = {
     exec(deleteEndpointConfigurationInternal(systemId, parameterId, endpointId).transactionally)
+    triggerHelper.publishTriggerEvent(new ConformanceStatementUpdatedEvent(getCommunityIdForSystemId(systemId), systemId, getActorIdForEndpointId(endpointId)))
   }
 
   def saveEndpointConfigurationInternal(forceAdd: Boolean, forceUpdate: Boolean, config: Configs) = {
@@ -493,6 +514,11 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
 
   def saveEndpointConfiguration(config: Configs) = {
     exec(saveEndpointConfigurationInternal(false, false, config).transactionally)
+    triggerHelper.publishTriggerEvent(new ConformanceStatementUpdatedEvent(getCommunityIdForSystemId(config.system), config.system, getActorIdForEndpointId(config.endpoint)))
+  }
+
+  private def getActorIdForEndpointId(endpointId: Long): Long = {
+    exec(PersistenceSchema.endpoints.filter(_.id === endpointId).map(x => x.actor).result.head)
   }
 
   def getConfigurationsWithEndpointIds(system: Long, ids: List[Long]): List[Configs] = {
@@ -541,10 +567,14 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
   }
 
   def getCommunityIdOfSystem(systemId: Long): Long = {
-    exec(PersistenceSchema.systems
+    exec(getCommunityIdOfSystemInternal(systemId))
+  }
+
+  private def getCommunityIdOfSystemInternal(systemId: Long): DBIO[Long] = {
+    PersistenceSchema.systems
       .join(PersistenceSchema.organizations).on(_.owner === _.id)
       .filter(_._1.id === systemId)
-      .map(x => x._2.community).result.head)
+      .map(x => x._2.community).result.head
   }
 
   def getSystemParameterValues(systemId: Long): List[SystemParametersWithValue] = {
@@ -552,7 +582,7 @@ class SystemManager @Inject() (testResultManager: TestResultManager, dbConfigPro
     exec(PersistenceSchema.systemParameters
       .joinLeft(PersistenceSchema.systemParameterValues).on((p, v) => p.id === v.parameter && v.system === systemId)
       .filter(_._1.community === communityId)
-      .sortBy(_._1.name.asc)
+      .sortBy(x => (x._1.displayOrder.asc, x._1.name.asc))
       .map(x => (x._1, x._2))
       .result
     ).toList.map(r => new SystemParametersWithValue(r._1, r._2))

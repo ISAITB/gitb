@@ -1,5 +1,6 @@
 package com.gitb.messaging;
 
+import com.gitb.StepHandler;
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.Configuration;
 import com.gitb.core.MessagingModule;
@@ -10,13 +11,13 @@ import java.util.List;
 /**
  * Created by tuncay on 9/1/14.
  */
-public interface IMessagingHandler {
+public interface IMessagingHandler extends StepHandler {
 
     /**
      * Returns the messaging module definition
      * @return module definition
      */
-    public MessagingModule getModuleDefinition();
+    MessagingModule getModuleDefinition();
 
     /**
      * Does initial configuration for the messaging module to begin
@@ -25,7 +26,7 @@ public interface IMessagingHandler {
      * @return initial configuration object that consists some configurations
      * and session id
      */
-    public InitiateResponse initiate(List<ActorConfiguration> actorConfigurations);
+    InitiateResponse initiate(List<ActorConfiguration> actorConfigurations);
 
     /**
      * Initiate a transaction with Messaging Handler
@@ -36,7 +37,7 @@ public interface IMessagingHandler {
      * @param configurations configurations related to the transaction
      * @return the unique transactionId
      */
-    public void beginTransaction(String sessionId, String transactionId, String from, String to, List<Configuration> configurations);
+    void beginTransaction(String sessionId, String transactionId, String from, String to, List<Configuration> configurations);
 
     /**
      *
@@ -46,7 +47,7 @@ public interface IMessagingHandler {
      * @param message
      * @return
      */
-    public MessagingReport sendMessage(String sessionId, String transactionId, List<Configuration> configurations, Message message);
+    MessagingReport sendMessage(String sessionId, String transactionId, List<Configuration> configurations, Message message);
 
     /**
      *
@@ -55,8 +56,7 @@ public interface IMessagingHandler {
      * @param configurations
      * @return
      */
-    public MessagingReport receiveMessage(String sessionId, String transactionId, String callId, List<Configuration> configurations, Message message, List<Thread> messagingThreads);
-
+    MessagingReport receiveMessage(String sessionId, String transactionId, String callId, List<Configuration> configurations, Message message, List<Thread> messagingThreads);
 
     /**
      *
@@ -67,18 +67,18 @@ public interface IMessagingHandler {
      * @param configurations
      * @return
      */
-    public MessagingReport listenMessage(String sessionId, String transactionId, String from, String to, List<Configuration> configurations, Message inputs);
+    MessagingReport listenMessage(String sessionId, String transactionId, String from, String to, List<Configuration> configurations, Message inputs);
 
     /**
      * Close the transaction (Connection)
      * @param transactionId transaction id
      */
-    public void endTransaction(String sessionId, String transactionId);
+    void endTransaction(String sessionId, String transactionId);
 
     /**
      * Close the session with the transactions in it
      * @param sessionId session id
      */
-    public void endSession(String sessionId);
+    void endSession(String sessionId);
 
 }

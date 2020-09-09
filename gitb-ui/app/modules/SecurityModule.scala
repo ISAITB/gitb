@@ -5,14 +5,17 @@ import config.Configurations
 import ecas.ExtendedCasConfiguration
 import org.pac4j.cas.client.{CasClient, CasProxyReceptor}
 import org.pac4j.cas.config.CasProtocol
+import org.pac4j.core.authorization.authorizer.IsAuthenticatedAuthorizer
 import org.pac4j.core.client.Clients
 import org.pac4j.core.client.direct.AnonymousClient
 import org.pac4j.core.config.Config
-import org.pac4j.core.http.DefaultAjaxRequestResolver
-import org.pac4j.core.matching.PathMatcher
-import org.pac4j.play.http.DefaultHttpActionAdapter
-import org.pac4j.play.store.{PlayCacheSessionStore, PlaySessionStore}
+import org.pac4j.core.http.ajax.DefaultAjaxRequestResolver
+import org.pac4j.core.matching.matcher.PathMatcher
+import org.pac4j.core.profile.UserProfile
+import org.pac4j.play.http.PlayHttpActionAdapter
+import org.pac4j.play.store.PlaySessionStore
 import org.pac4j.play.{CallbackController, LogoutController}
+import play.cache.SyncCacheApi
 
 class SecurityModule extends AbstractModule {
 
@@ -22,7 +25,19 @@ class SecurityModule extends AbstractModule {
     // Make sure the configuration is loaded
     Configurations.loadConfigurations()
 
-    bind(classOf[PlaySessionStore]).to(classOf[PlayCacheSessionStore])
+    // Session store and idle/max session timeouts
+    val playCacheSessionStore = new CustomPlayEhCacheSessionStore(getProvider(classOf[SyncCacheApi]))
+    if (Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME < 0) {
+      playCacheSessionStore.setTimeout(0) // Infinite.
+    } else {
+      playCacheSessionStore.setTimeout(Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME)
+    }
+    if (Configurations.AUTHENTICATION_SESSION_MAX_TOTAL_TIME < 0) {
+      playCacheSessionStore.setMaxTimeout(0) // Infinite.
+    } else {
+      playCacheSessionStore.setMaxTimeout(Configurations.AUTHENTICATION_SESSION_MAX_TOTAL_TIME)
+    }
+    bind(classOf[PlaySessionStore]).toInstance(playCacheSessionStore)
 
     // callback
     val callbackController = new CallbackController()
@@ -44,7 +59,7 @@ class SecurityModule extends AbstractModule {
   }
 
   @Provides
-  def provideCasClient(casProxyReceptor: CasProxyReceptor) = {
+  def provideCasClient() = {
     val casConfiguration = new ExtendedCasConfiguration()
     casConfiguration.setLoginUrl(Configurations.AUTHENTICATION_SSO_LOGIN_URL)
     if (Configurations.AUTHENTICATION_SSO_CAS_VERSION == 2) {
@@ -52,7 +67,6 @@ class SecurityModule extends AbstractModule {
     } else {
       casConfiguration.setProtocol(CasProtocol.CAS30)
     }
-    casConfiguration.setProxyReceptor(casProxyReceptor)
     val casClient = new CasClient(casConfiguration)
     casClient.setName(CLIENT_NAME)
     casClient.setAjaxRequestResolver(new DefaultAjaxRequestResolver)
@@ -70,9 +84,25 @@ class SecurityModule extends AbstractModule {
       clients = new Clients(anonymoucClient)
     }
     val config = new Config(clients)
-    config.addAuthorizer("any", new BasicAuthorizer[Nothing])
-    config.addMatcher("excludedPath", new PathMatcher().excludePath("/"))
-    config.setHttpActionAdapter(new DefaultHttpActionAdapter())
+    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+      config.addAuthorizer("_authenticated_", new IsAuthenticatedAuthorizer[UserProfile])
+    } else {
+      config.addAuthorizer("_authenticated_", new BasicAuthorizer[Nothing])
+    }
+    config.setHttpActionAdapter(new PlayHttpActionAdapter())
+    config.addMatcher("excludedPath", new PathMatcher()
+      .excludePath("/")
+      .excludePath("/notices/tbdefault")
+      .excludePath("/initdata")
+      .excludePath("/favicon.ico")
+      .excludeBranch("/theme")
+      .excludeBranch("/assets")
+      .excludeBranch("/webjars")
+      .excludeBranch("/template")
+      .excludeBranch("/callback")
+      .excludeBranch("/repository/tests")
+      .excludeBranch("/repository/resource")
+    )
     config
   }
 }

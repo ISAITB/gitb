@@ -22,8 +22,13 @@ object PersistenceSchema {
     def selfregNotification = column[Boolean]("selfreg_notification")
     def selfRegRestriction = column[Short]("selfreg_restriction")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def selfRegForceTemplateSelection = column[Boolean]("selfreg_force_template")
+    def selfRegForceRequiredProperties = column[Boolean]("selfreg_force_properties")
+    def allowCertificateDownload = column[Boolean]("allow_certificate_download")
+    def allowStatementManagement = column[Boolean]("allow_statement_management")
+    def allowSystemManagement = column[Boolean]("allow_system_management")
     def domain = column[Option[Long]] ("domain")
-    def * = (id, shortname, fullname, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText, selfregNotification, description, selfRegRestriction, domain) <> (Communities.tupled, Communities.unapply)
+    def * = (id, shortname, fullname, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText, selfregNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, domain) <> (Communities.tupled, Communities.unapply)
   }
   val communities = TableQuery[CommunitiesTable]
   val insertCommunity = communities returning communities.map(_.id)
@@ -59,8 +64,6 @@ object PersistenceSchema {
     def ssoEmail = column[Option[String]]("sso_email")
     def ssoStatus = column[Short]("sso_status")
     def * = (id, name, email, password, onetimePassword, role, organization, ssoUid, ssoEmail, ssoStatus) <> (Users.tupled, Users.unapply)
-    //def fk = foreignKey("users_fk", organization, Organizations)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
-    //def idx1 = index("users_idx_1", email, unique = true)
   }
   val users = TableQuery[UsersTable]
   val insertUser = users returning users.map(_.id)
@@ -73,7 +76,6 @@ object PersistenceSchema {
     def version = column[String]("version")
     def owner = column[Long]("owner")
     def * = (id, shortname, fullname, description, version, owner) <> (Systems.tupled, Systems.unapply)
-    //def fk = foreignKey("systems_fk", owner, Organizations)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
   val systems = TableQuery[SystemsTable]
   val insertSystem = systems returning systems.map(_.id)
@@ -95,7 +97,6 @@ object PersistenceSchema {
     def hidden = column[Boolean]("is_hidden")
     def domain = column[Long]("domain")
     def * = (id, shortname, fullname, description, hidden, domain) <> (Specifications.tupled, Specifications.unapply)
-    //def fk = foreignKey("specs_fk", domain, Domains)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
   val specifications = TableQuery[SpecificationsTable]
 
@@ -109,8 +110,6 @@ object PersistenceSchema {
     def displayOrder = column[Option[Short]]("display_order")
     def domain  = column[Long]("domain")
     def * = (id, actorId, name, desc, default, hidden, displayOrder, domain) <> (Actors.tupled, Actors.unapply)
-    def actorIdUniqueIdx = index("actors_aid_unq_idx", actorId, unique = true)
-    //def fk = foreignKey("actors_fk", domain, Domains)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
   val actors = TableQuery[ActorsTable]
 
@@ -120,8 +119,6 @@ object PersistenceSchema {
     def desc  = column[Option[String]]("description", O.SqlType("TEXT"))
     def actor = column[Long]("actor")
     def * = (id, name, desc, actor) <> (Endpoints.tupled, Endpoints.unapply)
-    def endpointActorUniqueIdx = index("endp_act_unq_idx", (name, actor), unique = true)
-    //def fk = foreignKey("endpoints_fk", actor, Actors)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
   val endpoints = TableQuery[EndpointsTable]
 
@@ -133,9 +130,14 @@ object PersistenceSchema {
 		def kind  = column[String]("kind")
     def adminOnly = column[Boolean]("admin_only")
     def notForTests = column[Boolean]("not_for_tests")
+    def hidden = column[Boolean]("hidden")
+    def allowedValues  = column[Option[String]]("allowed_values", O.SqlType("TEXT"))
+    def displayOrder = column[Short]("display_order")
+    def dependsOn  = column[Option[String]]("depends_on")
+    def dependsOnValue  = column[Option[String]]("depends_on_value")
 		def endpoint = column[Long]("endpoint")
 
-		def * = (id, name, desc, use, kind, adminOnly, notForTests, endpoint) <> (models.Parameters.tupled, models.Parameters.unapply)
+		def * = (id, name, desc, use, kind, adminOnly, notForTests, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, endpoint) <> (models.Parameters.tupled, models.Parameters.unapply)
 	}
 	val parameters = TableQuery[ParametersTable]
 
@@ -179,7 +181,6 @@ object PersistenceSchema {
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def domain = column[Long]("domain")
     def * = (shortname, fullname, description, domain) <> (Transaction.tupled, Transaction.unapply)
-    //def fk = foreignKey("tx_fk", shortname, Domains)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
   val transactions = TableQuery[TransactionsTable]
 
@@ -190,12 +191,12 @@ object PersistenceSchema {
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def actor = column[Long]("actor")
     def * = (id, shortname, fullname, description, actor) <> (Options.tupled, Options.unapply)
-    //def fk = foreignKey("options_fk", shortname, Domains)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
   val options = TableQuery[OptionsTable]
 
   class TestCasesTable(tag: Tag) extends Table[TestCases](tag, "TestCases") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def identifier = column[String]("identifier")
     def shortname = column[String]("sname")
     def fullname = column[String]("fname")
     def version = column[String]("version")
@@ -212,15 +213,13 @@ object PersistenceSchema {
     def testSuiteOrder = column[Short]("testsuite_order")
     def hasDocumentation = column[Boolean]("has_documentation")
     def documentation = column[Option[String]]("documentation")
-	  def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, testCaseType, path, targetSpec, targetActors, targetOptions, testSuiteOrder, hasDocumentation, documentation) <> (TestCases.tupled, TestCases.unapply)
-    def shortNameVersionUniqueIdx = index("tc_sn_vsn_idx", (shortname, version), unique = true)
-    //def fk1 = foreignKey("tc_fk_1", targetSpec, Specifications)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
-    //def fk2 = foreignKey("tc_fk_2", targetActor, Actors)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
+	  def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, testCaseType, path, targetSpec, targetActors, targetOptions, testSuiteOrder, hasDocumentation, documentation, identifier) <> (TestCases.tupled, TestCases.unapply)
   }
   val testCases = TableQuery[TestCasesTable]
 
 	class TestSuitesTable(tag: Tag) extends Table[TestSuites](tag, "TestSuites") {
     def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def identifier = column[String]("identifier")
 		def shortname = column[String]("sname")
 		def fullname = column[String]("fname")
 		def version = column[String]("version")
@@ -233,8 +232,7 @@ object PersistenceSchema {
     def filename = column[String]("file_name")
     def hasDocumentation = column[Boolean]("has_documentation")
     def documentation = column[Option[String]]("documentation")
-		def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, specification, filename, hasDocumentation, documentation) <> (TestSuites.tupled, TestSuites.unapply)
-    def shortNameVersionUniqueIdx = index("ts_sn_vsn_idx", (shortname, version), unique = true)
+		def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, specification, filename, hasDocumentation, documentation, identifier) <> (TestSuites.tupled, TestSuites.unapply)
 	}
 	val testSuites = TableQuery[TestSuitesTable]
 
@@ -261,9 +259,6 @@ object PersistenceSchema {
 	  def endTime = column[Option[Timestamp]]("end_time", O.SqlType("TIMESTAMP"))
 	  def tpl = column[String]("tpl", O.SqlType("BLOB"))
     def * = (testSessionId, sutId, sut, organizationId, organization, communityId, community, testCaseId, testCase, testSuiteId, testSuite, actorId, actor, specificationId, specification, domainId, domain, result, startTime, endTime, tpl) <> (TestResult.tupled, TestResult.unapply)
-    //def fk1 = foreignKey("tr_fk_1", sutId, Systems)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
-    //def fk2 = foreignKey("tr_fk_2", testcase, TestCases)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
-    //def fk3 = foreignKey("tr_fk_3", sutVersion, Systems)(_.version, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
   val testResults = TableQuery[TestResultsTable]
 
@@ -288,8 +283,6 @@ object PersistenceSchema {
     def userId = column[Long]("user_id")
     def * = (systemId, userId)
     def pk = primaryKey("sha1_pk", (systemId, userId))
-    //def fk1 = foreignKey("sha_fk_1", systemId, Systems)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
-    //def fk2 = foreignKey("sha_fk_2", systemId, Users)(_.id, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
   val systemHasAdmins = TableQuery[SystemHasAdminsTable]
 
@@ -316,8 +309,6 @@ object PersistenceSchema {
     def actorId = column[Long]("actor_id")
     def * = (specId, actorId)
     def pk = primaryKey("sha2_pk", (specId, actorId))
-    //def fk1 = foreignKey("shac_fk_1", specName, Specifications)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
-    //def fk2 = foreignKey("shac_fk_2", actorName, Actors)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
   val specificationHasActors = TableQuery[SpecificationHasActorsTable]
 
@@ -327,9 +318,6 @@ object PersistenceSchema {
     def transaction = column[String]("transaction")
     def * = (actorId, endpoint, transaction)
     def pk = primaryKey("est_pk", (actorId, endpoint, transaction))
-    //def fk1 = foreignKey("est_fk_1", actor, Endpoints)(_.actor, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
-    //def fk2 = foreignKey("est_fk_2", endpoint, Endpoints)(_.name, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
-    //def fk3 = foreignKey("est_fk_3", transaction, Transactions)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
   val endpointSupportsTransactions = TableQuery[EndpointSupportsTransactionsTable]
 
@@ -370,8 +358,6 @@ object PersistenceSchema {
     def option = column[Long]("option")
     def * =  (testcase, option)
     def pk = primaryKey("tcco_pk", (testcase, option))
-    //def fk1 = foreignKey("tco_fk_1", testcase, TestCases)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
-    //def fk2 = foreignKey("tco_fk_2", option, Options)(_.shortname, onUpdate=ForeignKeyAction.Cascade, onDelete=ForeignKeyAction.Cascade)
   }
   val testCaseCoversOptions = TableQuery[TestCaseCoversOptionsTable]
 
@@ -450,8 +436,13 @@ object PersistenceSchema {
     def notForTests = column[Boolean]("not_for_tests")
     def inExports = column[Boolean]("in_exports")
     def inSelfRegistration = column[Boolean]("in_selfreg")
+    def hidden = column[Boolean]("hidden")
+    def allowedValues  = column[Option[String]]("allowed_values", O.SqlType("TEXT"))
+    def displayOrder = column[Short]("display_order")
+    def dependsOn  = column[Option[String]]("depends_on")
+    def dependsOnValue  = column[Option[String]]("depends_on_value")
     def community = column[Long]("community")
-    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, community) <> (OrganisationParameters.tupled, OrganisationParameters.unapply)
+    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, inSelfRegistration, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, community) <> (OrganisationParameters.tupled, OrganisationParameters.unapply)
   }
   val organisationParameters = TableQuery[OrganisationParametersTable]
   val insertOrganisationParameters = organisationParameters returning organisationParameters.map(_.id)
@@ -466,8 +457,13 @@ object PersistenceSchema {
     def adminOnly = column[Boolean]("admin_only")
     def notForTests = column[Boolean]("not_for_tests")
     def inExports = column[Boolean]("in_exports")
+    def hidden = column[Boolean]("hidden")
+    def allowedValues  = column[Option[String]]("allowed_values", O.SqlType("TEXT"))
+    def displayOrder = column[Short]("display_order")
+    def dependsOn  = column[Option[String]]("depends_on")
+    def dependsOnValue  = column[Option[String]]("depends_on_value")
     def community = column[Long]("community")
-    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, community) <> (SystemParameters.tupled, SystemParameters.unapply)
+    def * = (id, name, testKey, description, use, kind, adminOnly, notForTests, inExports, hidden, allowedValues, displayOrder, dependsOn, dependsOnValue, community) <> (SystemParameters.tupled, SystemParameters.unapply)
   }
   val systemParameters = TableQuery[SystemParametersTable]
   val insertSystemParameters = systemParameters returning systemParameters.map(_.id)
@@ -500,5 +496,31 @@ object PersistenceSchema {
     def pk = primaryKey("cl_pk", (community, labelType))
   }
   val communityLabels = TableQuery[CommunityLabelsTable]
+
+  class TriggersTable(tag: Tag) extends Table[Triggers](tag, "Triggers") {
+    def id = column[Long]("id", O.PrimaryKey, O.AutoInc)
+    def name = column[String]("name")
+    def description = column[Option[String]]("description", O.SqlType("TEXT"))
+    def url = column[String]("url")
+    def eventType = column[Short]("event_type")
+    def operation = column[Option[String]]("operation")
+    def active = column[Boolean]("active")
+    def latestResultOk = column[Option[Boolean]]("latest_result_ok")
+    def latestResultOutput = column[Option[String]]("latest_result_output", O.SqlType("TEXT"))
+    def community = column[Long] ("community")
+    def * = (id, name, description, url, eventType, operation, active, latestResultOk, latestResultOutput, community) <> (Triggers.tupled, Triggers.unapply)
+    def pk = primaryKey("triggers_pk", id)
+  }
+  val triggers = TableQuery[TriggersTable]
+  val insertTriggers = triggers returning triggers.map(_.id)
+
+  class TriggerDataTable(tag: Tag) extends Table[TriggerData](tag, "TriggerData") {
+    def dataType = column[Short]("data_type")
+    def dataId = column[Long]("data_id")
+    def trigger = column[Long] ("trigger")
+    def * = (dataType, dataId, trigger) <> (TriggerData.tupled, TriggerData.unapply)
+    def pk = primaryKey("cl_pk", (dataType, dataId, trigger))
+  }
+  val triggerData = TableQuery[TriggerDataTable]
 
 }

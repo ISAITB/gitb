@@ -1,62 +1,65 @@
 package managers.export
 
-import models.Enums.{ImportItemChoice, ImportItemType}
+import models.Enums.ImportItemType
 
 import scala.collection.mutable.ListBuffer
 
 object ImportTargets {
 
-  import scala.collection.JavaConversions._
+  import scala.collection.JavaConverters._
 
-  private def updateForCommunity(community: com.gitb.xml.export.Community, result: ImportTargets) = {
+  private def updateForCommunity(community: com.gitb.xml.export.Community, result: ImportTargets): Unit = {
     if (community != null) {
       result.hasCommunity = true
       if (community.getDomain != null) {
         updateForDomain(community.getDomain, result)
       }
-      if (community.getAdministrators != null && community.getAdministrators.getAdministrator.nonEmpty) {
+      if (community.getAdministrators != null && !community.getAdministrators.getAdministrator.isEmpty) {
         result.hasAdministrators = true
       }
       if (community.getConformanceCertificateSettings != null) {
         result.hasCommunityCertificateSettings = true
       }
-      if (community.getCustomLabels != null && community.getCustomLabels.getLabel.nonEmpty) {
+      if (community.getCustomLabels != null && !community.getCustomLabels.getLabel.isEmpty) {
         result.hasCustomLabels = true
       }
-      if (community.getOrganisationProperties != null && community.getOrganisationProperties.getProperty.nonEmpty) {
+      if (community.getOrganisationProperties != null && !community.getOrganisationProperties.getProperty.isEmpty) {
         result.hasOrganisationProperties = true
       }
-      if (community.getSystemProperties != null && community.getSystemProperties.getProperty.nonEmpty) {
+      if (community.getSystemProperties != null && !community.getSystemProperties.getProperty.isEmpty) {
         result.hasSystemProperties = true
       }
-      if (community.getLandingPages != null && community.getLandingPages.getLandingPage.nonEmpty) {
+      if (community.getLandingPages != null && !community.getLandingPages.getLandingPage.isEmpty) {
         result.hasLandingPages = true
       }
-      if (community.getLegalNotices != null && community.getLegalNotices.getLegalNotice.nonEmpty) {
+      if (community.getLegalNotices != null && !community.getLegalNotices.getLegalNotice.isEmpty) {
         result.hasLegalNotices = true
       }
-      if (community.getErrorTemplates != null && community.getErrorTemplates.getErrorTemplate.nonEmpty) {
+      if (community.getErrorTemplates != null && !community.getErrorTemplates.getErrorTemplate.isEmpty) {
         result.hasErrorTemplates = true
       }
-      if (community.getOrganisations != null && community.getOrganisations.getOrganisation.nonEmpty) {
+      if (community.getTriggers != null && !community.getTriggers.getTrigger.isEmpty) {
+        result.hasTriggers = true
+      }
+      if (community.getOrganisations != null && !community.getOrganisations.getOrganisation.isEmpty) {
         result.hasOrganisations = true
-        community.getOrganisations.getOrganisation.foreach { exportedOrganisation =>
-          if (exportedOrganisation.getUsers != null && exportedOrganisation.getUsers.getUser.nonEmpty) {
+        collectionAsScalaIterable(community.getOrganisations.getOrganisation).foreach { exportedOrganisation =>
+          if (exportedOrganisation.getUsers != null && !exportedOrganisation.getUsers.getUser.isEmpty) {
             result.hasOrganisationUsers = true
           }
-          if (exportedOrganisation.getPropertyValues != null && exportedOrganisation.getPropertyValues.getProperty.nonEmpty) {
+          if (exportedOrganisation.getPropertyValues != null && !exportedOrganisation.getPropertyValues.getProperty.isEmpty) {
             result.hasOrganisationPropertyValues = true
           }
-          if (exportedOrganisation.getSystems != null && exportedOrganisation.getSystems.getSystem.nonEmpty) {
+          if (exportedOrganisation.getSystems != null && !exportedOrganisation.getSystems.getSystem.isEmpty) {
             result.hasSystems = true
-            exportedOrganisation.getSystems.getSystem.foreach { exportedSystem =>
-              if (exportedSystem.getPropertyValues != null && exportedSystem.getPropertyValues.getProperty.nonEmpty) {
+            collectionAsScalaIterable(exportedOrganisation.getSystems.getSystem).foreach { exportedSystem =>
+              if (exportedSystem.getPropertyValues != null && !exportedSystem.getPropertyValues.getProperty.isEmpty) {
                 result.hasSystemPropertyValues = true
               }
-              if (exportedSystem.getStatements != null && exportedSystem.getStatements.getStatement.nonEmpty) {
+              if (exportedSystem.getStatements != null && !exportedSystem.getStatements.getStatement.isEmpty) {
                 result.hasStatements = true
-                exportedSystem.getStatements.getStatement.foreach { exportedStatement =>
-                  if (exportedStatement.getConfigurations != null && exportedStatement.getConfigurations.getConfiguration.nonEmpty) {
+                collectionAsScalaIterable(exportedSystem.getStatements.getStatement).foreach { exportedStatement =>
+                  if (exportedStatement.getConfigurations != null && !exportedStatement.getConfigurations.getConfiguration.isEmpty) {
                     result.hasStatementConfigurations = true
                   }
                 }
@@ -102,6 +105,7 @@ object ImportTargets {
         case ImportItemType.LandingPage => targets.hasLandingPages = true
         case ImportItemType.LegalNotice => targets.hasLegalNotices = true
         case ImportItemType.ErrorTemplate => targets.hasErrorTemplates = true
+        case ImportItemType.Trigger => targets.hasTriggers = true
         case ImportItemType.Organisation  => targets.hasOrganisations = true
         case ImportItemType.OrganisationUser => targets.hasOrganisationUsers = true
         case ImportItemType.OrganisationPropertyValue => targets.hasOrganisationPropertyValues = true
@@ -120,23 +124,23 @@ object ImportTargets {
     result
   }
 
-  private def updateForDomain(domain: com.gitb.xml.export.Domain, result: ImportTargets) = {
+  private def updateForDomain(domain: com.gitb.xml.export.Domain, result: ImportTargets): Unit = {
     if (domain != null) {
       result.hasDomain = true
-      if (domain.getSpecifications != null && domain.getSpecifications.getSpecification.nonEmpty) {
+      if (domain.getSpecifications != null && !domain.getSpecifications.getSpecification.isEmpty) {
         result.hasSpecifications = true
-        domain.getSpecifications.getSpecification.foreach { specification =>
-          if (specification.getTestSuites != null && specification.getTestSuites.getTestSuite.nonEmpty) {
+        collectionAsScalaIterable(domain.getSpecifications.getSpecification).foreach { specification =>
+          if (specification.getTestSuites != null && !specification.getTestSuites.getTestSuite.isEmpty) {
             result.hasTestSuites = true
           }
-          if (specification.getActors != null && specification.getActors.getActor.nonEmpty) {
+          if (specification.getActors != null && !specification.getActors.getActor.isEmpty) {
             result.hasActors = true
-            specification.getActors.getActor.foreach { actor =>
+            collectionAsScalaIterable(specification.getActors.getActor).foreach { actor =>
               if (actor.getEndpoints != null) {
-                if (actor.getEndpoints.getEndpoint.nonEmpty) {
+                if (!actor.getEndpoints.getEndpoint.isEmpty) {
                   result.hasEndpoints = true
-                  actor.getEndpoints.getEndpoint.foreach { endpoint =>
-                    if (endpoint.getParameters != null && endpoint.getParameters.getParameter.nonEmpty) {
+                  collectionAsScalaIterable(actor.getEndpoints.getEndpoint).foreach { endpoint =>
+                    if (endpoint.getParameters != null && !endpoint.getParameters.getParameter.isEmpty) {
                       result.hasEndpointParameters = true
                     }
                   }
@@ -146,7 +150,7 @@ object ImportTargets {
           }
         }
       }
-      if (domain.getParameters != null && domain.getParameters.getParameter.nonEmpty) {
+      if (domain.getParameters != null && !domain.getParameters.getParameter.isEmpty) {
         result.hasDomainParameters = true
       }
     }
@@ -177,6 +181,7 @@ class ImportTargets {
   var hasLandingPages: Boolean = false
   var hasLegalNotices: Boolean = false
   var hasErrorTemplates: Boolean = false
+  var hasTriggers: Boolean = false
   var hasAdministrators: Boolean = false
   var hasOrganisations: Boolean = false
   var hasOrganisationUsers: Boolean = false

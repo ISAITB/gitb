@@ -6,15 +6,15 @@
         <form class="form-horizontal">
             <div class="panel-body">
                 <!-- Error messages -->
-                <div class="row col-md-10 col-md-offset-1">
+                <div class="row col-xs-10 col-xs-offset-1">
                     <div uib-alert ng-repeat="alert in communityCreateCtrl.alerts" ng-class="'alert-' + alert.type" close="communityCreateCtrl.closeAlert($index)">{{alert.msg}}</div>
                 </div>
-                <div class="col-md-10 col-md-offset-1" tb-community-form tb-community="communityCreateCtrl.community" tb-admin="true" tb-domains="communityCreateCtrl.domains"></div>
+                <div tb-community-form tb-community="communityCreateCtrl.community" tb-admin="true" tb-domains="communityCreateCtrl.domains"></div>
             </div>
             <div class="panel-footer">
                 <div class="row">
-                    <div class="col-md-3"></div>
-                    <div class="col-md-8 btn-toolbar">
+                    <div class="col-xs-3"></div>
+                    <div class="col-xs-8 btn-toolbar">
                         <button class="btn btn-default" type="submit" ng-click="communityCreateCtrl.createCommunity()" ng-disabled="communityCreateCtrl.saveDisabled()">Save</button>
                         <button class="btn btn-default" type="button" ng-click="communityCreateCtrl.cancelCreateCommunity()">Cancel</button>
                     </div>

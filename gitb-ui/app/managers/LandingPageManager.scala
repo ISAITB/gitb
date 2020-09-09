@@ -44,12 +44,12 @@ class LandingPageManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ex
     exec(createLandingPageInternal(landingPage).transactionally)
   }
 
-  def createLandingPageInternal(landingPage: LandingPages) = {
+  def createLandingPageInternal(landingPage: LandingPages): DBIO[Long] = {
     for {
       _ <- {
         val actions = new ListBuffer[DBIO[_]]()
         if (landingPage.default) {
-          val q = for {l <- PersistenceSchema.landingPages if l.default === true && l.community === landingPage.community} yield (l.default)
+          val q = for {l <- PersistenceSchema.landingPages if l.default === true && l.community === landingPage.community} yield l.default
           actions += q.update(false)
         }
         toDBIO(actions)

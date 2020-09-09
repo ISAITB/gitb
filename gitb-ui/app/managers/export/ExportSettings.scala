@@ -6,6 +6,7 @@ class ExportSettings {
   var landingPages: Boolean = false
   var legalNotices: Boolean = false
   var errorTemplates: Boolean = false
+  var triggers: Boolean = false
   var certificateSettings: Boolean = false
   var customLabels: Boolean = false
   var customProperties: Boolean = false

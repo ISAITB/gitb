@@ -7,6 +7,9 @@ class CommunityCreateController
     @community = {}
     @community.selfRegType = @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED
     @community.selfRegRestriction = @Constants.SELF_REGISTRATION_RESTRICTION.NO_RESTRICTION
+    @community.allowCertificateDownload = false
+    @community.allowSystemManagement = true
+    @community.allowStatementManagement = true
     @domains = []
     @DataService.focus('sname')
 
@@ -22,14 +25,12 @@ class CommunityCreateController
       @ErrorService.showErrorMessage(error)
 
   saveDisabled: () =>
-    !(@community?.sname? && @community?.fname? && 
-    (!@DataService.configuration?['registration.enabled'] || 
-      ((@community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED || 
-        @community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || 
-        (@community?.selfRegToken?.trim().length > 0)) && 
-        (!@DataService.configuration?['email.enabled'] || 
-        (!@community?.selfRegNotification || @community?.email? && @community.email.trim() != '')))
-    ))
+    !(@community?.sname? && @community?.fname? && @community.sname.trim() != '' && @community.fname.trim() != '' &&
+      (!@DataService.configuration?['registration.enabled'] || 
+        (@community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED || 
+          ((@community?.selfRegType == @Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || (@community?.selfRegToken?.trim().length > 0)) && 
+          (!@DataService.configuration?['email.enabled'] || (!@community?.selfRegNotification || (@community?.email? && @community.email.trim() != '')))))
+    ))  
 
   createCommunity: () =>
     @ValidationService.clearAll()
@@ -39,7 +40,7 @@ class CommunityCreateController
     (!@community.selfRegNotification || @ValidationService.requireNonNull(@community.email, "A support email needs to be defined to support notifications."))
       if !@community.sameDescriptionAsDomain
         descriptionToUse = @community.activeDescription
-      @CommunityService.createCommunity @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegRestriction, @community.selfRegToken, tinymce.activeEditor.getContent(), @community.selfRegNotification, descriptionToUse, @community.domain?.id
+      @CommunityService.createCommunity @community.sname, @community.fname, @community.email, @community.selfRegType, @community.selfRegRestriction, @community.selfRegToken, tinymce.activeEditor.getContent(), @community.selfRegNotification, descriptionToUse, @community.selfRegForceTemplateSelection, @community.selfRegForceRequiredProperties, @community.allowCertificateDownload, @community.allowStatementManagement, @community.allowSystemManagement, @community.domain?.id
       .then (data) =>
         if data? && data.error_code?
           @ValidationService.pushAlert({type:'danger', msg:data.error_description})

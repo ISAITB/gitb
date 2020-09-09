@@ -1,7 +1,5 @@
 package managers.export
 
-import java.util.Objects
-
 class Version(_major: Int, _minor: Int, _patch: Int) extends Comparable[Version] {
   var major: Int = _major
   var minor: Int = _minor

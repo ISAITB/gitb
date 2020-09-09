@@ -5,24 +5,23 @@ import controllers.util.ParameterExtractor.requiredBodyParameter
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
 import javax.inject.Inject
-import managers.{AuthorizationManager, CommunityManager, OrganizationManager}
+import managers.{AuthenticationManager, AuthorizationManager, CommunityManager, OrganizationManager}
 import models.Enums.{SelfRegistrationRestriction, SelfRegistrationType}
 import models.{ActualUserInfo, Communities, Organizations, Users}
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
-import persistence.AuthenticationManager
-import play.api.mvc.{Controller, Result}
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, Result}
 import utils.{EmailUtil, HtmlUtil, JsonUtil}
 
 import scala.concurrent.{ExecutionContext, ExecutionContextExecutor}
 
-class CommunityService @Inject() (communityManager: CommunityManager, authorizationManager: AuthorizationManager, organisationManager: OrganizationManager, authenticationManager: AuthenticationManager) extends Controller {
+class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, communityManager: CommunityManager, authorizationManager: AuthorizationManager, organisationManager: OrganizationManager, authenticationManager: AuthenticationManager) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[CommunityService])
 
   /**
     * Gets all communities with given ids or all if none specified
     */
-  def getCommunities() = AuthorizedAction { request =>
+  def getCommunities() = authorizedAction { request =>
     val communityIds = ParameterExtractor.extractLongIdsQueryParameter(request)
     authorizationManager.canViewCommunities(request, communityIds)
     val skipDefault = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SKIP_DEFAULT)
@@ -34,7 +33,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
   /**
     * Creates new community
     */
-  def createCommunity() = AuthorizedAction { request =>
+  def createCommunity() = authorizedAction { request =>
     authorizationManager.canCreateCommunity(request)
     val community = ParameterExtractor.extractCommunityInfo(request)
     communityManager.createCommunity(community)
@@ -44,27 +43,32 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
   /**
     * Gets the community with specified id
     */
-  def getCommunityById(communityId: Long) = AuthorizedAction { request =>
+  def getCommunityById(communityId: Long) = authorizedAction { request =>
     authorizationManager.canViewCommunityFull(request, communityId)
     val community = communityManager.getCommunityById(communityId)
-    val json: String = JsonUtil.serializeCommunity(community, None)
+    val json: String = JsonUtil.serializeCommunity(community, None, includeAdminInfo = true)
     ResponseConstructor.constructJsonResponse(json)
   }
 
   /**
     * Updates community
     */
-  def updateCommunity(communityId: Long) = AuthorizedAction { request =>
+  def updateCommunity(communityId: Long) = authorizedAction { request =>
     authorizationManager.canUpdateCommunity(request, communityId)
     val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SNAME)
     val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_FNAME)
     val email = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_EMAIL)
     val description = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
+    val allowCertificateDownload = ParameterExtractor.requiredBodyParameter(request, Parameters.ALLOW_CERTIFICATE_DOWNLOAD).toBoolean
+    val allowStatementManagement = requiredBodyParameter(request, Parameters.ALLOW_STATEMENT_MANAGEMENT).toBoolean
+    val allowSystemManagement = requiredBodyParameter(request, Parameters.ALLOW_SYSTEM_MANAGEMENT).toBoolean
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
     var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
     var selfRegToken: Option[String] = None
     var selfRegTokenHelpText: Option[String] = None
     var selfRegNotification: Boolean = false
+    var selfRegForceTemplateSelection: Boolean = false
+    var selfRegForceRequiredProperties: Boolean = false
     if (Configurations.REGISTRATION_ENABLED) {
       selfRegType = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_TYPE).toShort
       if (!ParameterExtractor.validCommunitySelfRegType(selfRegType)) {
@@ -83,28 +87,32 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
         selfRegToken = None
         selfRegTokenHelpText = None
       }
-      if (selfRegType != SelfRegistrationType.NotSupported.id.toShort && Configurations.EMAIL_ENABLED) {
-        selfRegNotification = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
-      }
-      if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-        selfRegRestriction = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_RESTRICTION).toShort
+      if (selfRegType != SelfRegistrationType.NotSupported.id.toShort) {
+        selfRegForceTemplateSelection = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_FORCE_TEMPLATE).toBoolean
+        selfRegForceRequiredProperties = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_FORCE_PROPERTIES).toBoolean
+        if (Configurations.EMAIL_ENABLED) {
+          selfRegNotification = requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_NOTIFICATION).toBoolean
+        }
+        if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+          selfRegRestriction = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_SELFREG_RESTRICTION).toShort
+        }
       }
     }
     val domainId: Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    communityManager.updateCommunity(communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegRestriction, domainId)
+    communityManager.updateCommunity(communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, domainId)
     ResponseConstructor.constructEmptyResponse
   }
 
   /**
     * Deletes the community with specified id
     */
-  def deleteCommunity(communityId: Long) = AuthorizedAction { request =>
+  def deleteCommunity(communityId: Long) = authorizedAction { request =>
     authorizationManager.canDeleteCommunity(request, communityId)
     communityManager.deleteCommunity(communityId)
     ResponseConstructor.constructEmptyResponse
   }
 
-  def selfRegister() = AuthorizedAction { request =>
+  def selfRegister() = authorizedAction { request =>
     var response: Result = null
     val selfRegToken = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
     val organisation = ParameterExtractor.extractOrganizationInfo(request)
@@ -120,11 +128,17 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     authorizationManager.canSelfRegister(request, organisation, organisationAdmin, selfRegToken, templateId)
     val community = communityManager.getById(organisation.community)
     if (community.isDefined) {
-      // Check that the token (if required) matches
-      if (community.get.selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort
-        && selfRegToken.isDefined && community.get.selfRegToken.isDefined
-        && community.get.selfRegToken.get != selfRegToken.get) {
-        response = ResponseConstructor.constructErrorResponse(ErrorCodes.INCORRECT_SELFREG_TOKEN, "The provided token is incorrect.")
+      // Check in case template selection is required
+      if (community.get.selfRegForceTemplateSelection && templateId.isEmpty) {
+        response = ResponseConstructor.constructErrorResponse(ErrorCodes.MISSING_PARAMS, "A configuration template must be selected.")
+      }
+      if (response == null) {
+        // Check that the token (if required) matches
+        if (community.get.selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort
+          && selfRegToken.isDefined && community.get.selfRegToken.isDefined
+          && community.get.selfRegToken.get != selfRegToken.get) {
+          response = ResponseConstructor.constructErrorResponse(ErrorCodes.INCORRECT_SELFREG_TOKEN, "The provided token is incorrect.")
+        }
       }
       if (response == null) {
         if (Configurations.AUTHENTICATION_SSO_ENABLED) {
@@ -145,7 +159,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
         val customPropertyValues = ParameterExtractor.extractOrganisationParameterValues(request, Parameters.PROPERTIES, true)
         response = ParameterExtractor.checkOrganisationParameterValues(customPropertyValues)
         if (response == null) {
-          val userId = communityManager.selfRegister(organisation, organisationAdmin, templateId, actualUserInfo, customPropertyValues)
+          val userId = communityManager.selfRegister(organisation, organisationAdmin, templateId, actualUserInfo, customPropertyValues, community.get.selfRegForceRequiredProperties)
           if (Configurations.AUTHENTICATION_SSO_ENABLED) {
             val json: String = JsonUtil.jsActualUserInfo(authorizationManager.getAccountInfo(request)).toString
             response = ResponseConstructor.constructJsonResponse(json)
@@ -188,7 +202,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     }
   }
 
-  def getSelfRegistrationOptions() = AuthorizedAction { request =>
+  def getSelfRegistrationOptions() = authorizedAction { request =>
     authorizationManager.canViewSelfRegistrationOptions(request)
     val options = communityManager.getSelfRegistrationOptions()
     val json: String = JsonUtil.jsSelfRegOptions(options).toString
@@ -198,20 +212,34 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
   /**
     * Returns the community of the authenticated user
     */
-  def getUserCommunity = AuthorizedAction { request =>
+  def getUserCommunity = authorizedAction { request =>
     val userId = ParameterExtractor.extractUserId(request)
     authorizationManager.canViewOwnCommunity(request)
 
     val community = communityManager.getUserCommunity(userId)
     val labels = communityManager.getCommunityLabels(community.id)
-    val json: String = JsonUtil.serializeCommunity(community, Some(labels))
+    val json: String = JsonUtil.serializeCommunity(community, Some(labels), includeAdminInfo = false)
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def createOrganisationParameter() = AuthorizedAction { request =>
+  def orderOrganisationParameters(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageCommunity(request, communityId)
+    val orderedIds = ParameterExtractor.extractLongIdsBodyParameter(request)
+    communityManager.orderOrganisationParameters(communityId, orderedIds.getOrElse(List[Long]()))
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def orderSystemParameters(communityId: Long): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canManageCommunity(request, communityId)
+    val orderedIds = ParameterExtractor.extractLongIdsBodyParameter(request)
+    communityManager.orderSystemParameters(communityId, orderedIds.getOrElse(List[Long]()))
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def createOrganisationParameter(): Action[AnyContent] = authorizedAction { request =>
     val parameter = ParameterExtractor.extractOrganisationParameter(request)
     authorizationManager.canManageCommunity(request, parameter.community)
-    if (communityManager.checkOrganisationParameterExists(parameter, false)) {
+    if (communityManager.checkOrganisationParameterExists(parameter, isUpdate = false)) {
       ResponseConstructor.constructBadRequestResponse(ErrorCodes.NAME_EXISTS, "The name and key of the property must be unique.")
     } else {
       val id = communityManager.createOrganisationParameter(parameter)
@@ -219,7 +247,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     }
   }
 
-  def createSystemParameter() = AuthorizedAction { request =>
+  def createSystemParameter() = authorizedAction { request =>
     val parameter = ParameterExtractor.extractSystemParameter(request)
     authorizationManager.canManageCommunity(request, parameter.community)
     if (communityManager.checkSystemParameterExists(parameter, false)) {
@@ -230,19 +258,19 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     }
   }
 
-  def deleteOrganisationParameter(parameterId: Long) = AuthorizedAction { request =>
+  def deleteOrganisationParameter(parameterId: Long) = authorizedAction { request =>
     authorizationManager.canManageOrganisationParameter(request, parameterId)
     communityManager.deleteOrganisationParameterWrapper(parameterId)
     ResponseConstructor.constructEmptyResponse
   }
 
-  def deleteSystemParameter(parameterId: Long) = AuthorizedAction { request =>
+  def deleteSystemParameter(parameterId: Long) = authorizedAction { request =>
     authorizationManager.canManageSystemParameter(request, parameterId)
     communityManager.deleteSystemParameterWrapper(parameterId)
     ResponseConstructor.constructEmptyResponse
   }
 
-  def updateOrganisationParameter(parameterId: Long) = AuthorizedAction { request =>
+  def updateOrganisationParameter(parameterId: Long) = authorizedAction { request =>
     val parameter = ParameterExtractor.extractOrganisationParameter(request)
     authorizationManager.canManageCommunity(request, parameter.community)
 
@@ -254,7 +282,7 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     }
   }
 
-  def updateSystemParameter(parameterId: Long) = AuthorizedAction { request =>
+  def updateSystemParameter(parameterId: Long) = authorizedAction { request =>
     val parameter = ParameterExtractor.extractSystemParameter(request)
     authorizationManager.canManageCommunity(request, parameter.community)
 
@@ -266,22 +294,22 @@ class CommunityService @Inject() (communityManager: CommunityManager, authorizat
     }
   }
 
-  def getOrganisationParameters(communityId: Long) = AuthorizedAction { request =>
+  def getOrganisationParameters(communityId: Long) = authorizedAction { request =>
     authorizationManager.canManageCommunity(request, communityId)
     ResponseConstructor.constructJsonResponse(JsonUtil.jsOrganisationParameters(communityManager.getOrganisationParameters(communityId)).toString)
   }
 
-  def getSystemParameters(communityId: Long) = AuthorizedAction { request =>
+  def getSystemParameters(communityId: Long) = authorizedAction { request =>
     authorizationManager.canViewCommunityBasic(request, communityId)
     ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemParameters(communityManager.getSystemParameters(communityId)).toString)
   }
 
-  def getCommunityLabels(communityId: Long) = AuthorizedAction { request =>
+  def getCommunityLabels(communityId: Long) = authorizedAction { request =>
     authorizationManager.canViewCommunityBasic(request, communityId)
     ResponseConstructor.constructJsonResponse(JsonUtil.jsCommunityLabels(communityManager.getCommunityLabels(communityId)).toString)
   }
 
-  def setCommunityLabels(communityId: Long) = AuthorizedAction { request =>
+  def setCommunityLabels(communityId: Long) = authorizedAction { request =>
     authorizationManager.canManageCommunity(request, communityId)
     val labels = JsonUtil.parseJsCommunityLabels(communityId, requiredBodyParameter(request, Parameters.VALUES))
     communityManager.setCommunityLabels(communityId, labels)

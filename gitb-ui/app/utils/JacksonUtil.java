@@ -281,10 +281,12 @@ public class JacksonUtil {
                     jsonGenerator.writeStringField("to", ((MessagingStep) step).getTo());
                 } else if (step instanceof DecisionStep) {
                     jsonGenerator.writeStringField("type", "decision");
+                    jsonGenerator.writeStringField("title", ((DecisionStep) step).getTitle());
                     jsonGenerator.writeObjectField("then", ((DecisionStep) step).getThen());
                     jsonGenerator.writeObjectField("else", ((DecisionStep) step).getElse());
                 } else if (step instanceof Sequence) {
                     jsonGenerator.writeStringField("type", "loop");
+                    jsonGenerator.writeStringField("title", ((Sequence) step).getTitle());
                     jsonGenerator.writeArrayFieldStart("steps");
                     for(TestStep testStep : ((Sequence) step).getSteps()) {
                         jsonGenerator.writeObject(testStep);
@@ -292,6 +294,7 @@ public class JacksonUtil {
                     jsonGenerator.writeEndArray();
                 } else if (step instanceof FlowStep) {
                     jsonGenerator.writeStringField("type", "flow");
+                    jsonGenerator.writeStringField("title", ((FlowStep) step).getTitle());
                     jsonGenerator.writeArrayFieldStart("threads");
                     for(Sequence sequence : ((FlowStep) step).getThread()) {
                         jsonGenerator.writeObject(sequence);
@@ -301,6 +304,7 @@ public class JacksonUtil {
                     jsonGenerator.writeStringField("type", "exit");
                 } else if (step instanceof UserInteractionStep) {
                     jsonGenerator.writeStringField("type", "interact");
+                    jsonGenerator.writeStringField("title", ((UserInteractionStep) step).getTitle());
                     jsonGenerator.writeArrayFieldStart("interactions");
                     for(InstructionOrRequest ior : ((UserInteractionStep) step).getInstructOrRequest()){
                         jsonGenerator.writeStartObject();

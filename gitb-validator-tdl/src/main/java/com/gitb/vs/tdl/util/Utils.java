@@ -221,12 +221,16 @@ public class Utils {
             step = "exit";
         } else if (stepObj instanceof Assign) {
             step = "assign";
+        } else if (stepObj instanceof Log) {
+            step = "log";
         } else if (stepObj instanceof Group) {
             step = "group";
         } else if (stepObj instanceof CallStep) {
             step = "call";
         } else if (stepObj instanceof UserInteraction) {
             step = "interact";
+        } else if (stepObj instanceof TestArtifact) {
+            step = "imports";
         } else {
             step = "";
         }

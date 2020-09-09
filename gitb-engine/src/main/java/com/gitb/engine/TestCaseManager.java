@@ -38,7 +38,7 @@ public class TestCaseManager {
      */
     public static com.gitb.tpl.TestCase getTestCasePresentation(String testCaseId) {
         TestCase testCaseDescription = getTestCaseDescription(testCaseId);
-        return TestCaseUtils.convertTestCase(testCaseDescription);
+        return TestCaseUtils.convertTestCase(testCaseId, testCaseDescription);
     }
 
 }

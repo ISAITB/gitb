@@ -1,5 +1,6 @@
 package com.gitb.vs.tdl.rules.testcase;
 
+import com.gitb.core.Documentation;
 import com.gitb.core.TestRole;
 import com.gitb.tdl.Binding;
 import com.gitb.tdl.Scriptlet;
@@ -54,6 +55,11 @@ public class AbstractTestCaseObserver implements TestCaseObserver {
 
     @Override
     public void handleImport(Object artifactObj) {
+        currentStep = artifactObj;
+    }
+
+    @Override
+    public void handleDocumentation(Documentation documentation) {
         // Do nothing by default.
     }
 

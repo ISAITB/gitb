@@ -5,20 +5,21 @@ import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, Respo
 import exceptions.ErrorCodes
 import javax.inject.Inject
 import managers.{AuthorizationManager, OrganizationManager, UserManager}
+import models.prerequisites.PrerequisiteUtil
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.mvc.{Controller, Result}
+import play.api.mvc.{AbstractController, ControllerComponents, Result}
 import utils.JsonUtil
 
 /**
  * Created by VWYNGAET on 26/10/2016.
  */
-class OrganizationService @Inject() (organizationManager: OrganizationManager, userManager: UserManager, authorizationManager: AuthorizationManager) extends Controller {
+class OrganizationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, organizationManager: OrganizationManager, userManager: UserManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[OrganizationService])
 
   /**
    * Gets all organizations except the default organization for system administrators
    */
-  def getOrganizations() = AuthorizedAction { request =>
+  def getOrganizations() = authorizedAction { request =>
     authorizationManager.canViewAllOrganisations(request)
     val list = organizationManager.getOrganizations()
     val json: String = JsonUtil.jsOrganizations(list).toString
@@ -28,14 +29,14 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager, u
   /**
    * Gets the organization with specified id
    */
-  def getOrganizationById(orgId: Long) = AuthorizedAction { request =>
+  def getOrganizationById(orgId: Long) = authorizedAction { request =>
     authorizationManager.canViewOrganisation(request, orgId)
     val organization = organizationManager.getOrganizationById(orgId)
-    val json: String = JsonUtil.serializeOrganization(organization)
+    val json: String = JsonUtil.serializeOrganization(organization, includeAdminInfo = true)
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def getOrganizationBySystemId(systemId: Long) = AuthorizedAction { request =>
+  def getOrganizationBySystemId(systemId: Long) = authorizedAction { request =>
     authorizationManager.canViewSystem(request, systemId)
 
     val organization = organizationManager.getOrganizationBySystemId(systemId)
@@ -46,7 +47,7 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager, u
   /**
    * Gets the organizations with specified community
    */
-  def getOrganizationsByCommunity(communityId: Long) = AuthorizedAction { request =>
+  def getOrganizationsByCommunity(communityId: Long) = authorizedAction { request =>
     authorizationManager.canViewOrganisationsByCommunity(request, communityId)
     val list = organizationManager.getOrganizationsByCommunity(communityId)
     val json: String = JsonUtil.jsOrganizations(list).toString
@@ -56,7 +57,7 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager, u
   /**
    * Creates new organization
    */
-  def createOrganization() = AuthorizedAction { request =>
+  def createOrganization() = authorizedAction { request =>
     val organization = ParameterExtractor.extractOrganizationInfo(request)
     val otherOrganisation = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_ORGANISATION)
 
@@ -82,7 +83,7 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager, u
   /**
    * Updates organization
    */
-  def updateOrganization(orgId: Long) = AuthorizedAction { request =>
+  def updateOrganization(orgId: Long) = authorizedAction { request =>
     authorizationManager.canUpdateOrganisation(request, orgId)
     val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_SNAME)
     val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_FNAME)
@@ -115,13 +116,13 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager, u
   /**
    * Deletes organization by id
    */
-  def deleteOrganization(orgId: Long) = AuthorizedAction { request =>
+  def deleteOrganization(orgId: Long) = authorizedAction { request =>
     authorizationManager.canDeleteOrganisation(request, orgId)
     organizationManager.deleteOrganizationWrapper(orgId)
     ResponseConstructor.constructEmptyResponse
   }
 
-  def getOwnOrganisationParameterValues() = AuthorizedAction { request =>
+  def getOwnOrganisationParameterValues() = authorizedAction { request =>
     authorizationManager.canViewOwnOrganisation(request)
     val user = userManager.getById(ParameterExtractor.extractUserId(request))
     val values = organizationManager.getOrganisationParameterValues(user.organization)
@@ -129,15 +130,21 @@ class OrganizationService @Inject() (organizationManager: OrganizationManager, u
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def getOrganisationParameterValues(orgId: Long) = AuthorizedAction { request =>
+  def getOrganisationParameterValues(orgId: Long) = authorizedAction { request =>
     authorizationManager.canViewOrganisation(request, orgId)
-    val includeValues = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.VALUES)
     val values = organizationManager.getOrganisationParameterValues(orgId)
-    val json: String = JsonUtil.jsOrganisationParametersWithValues(values, includeValues.getOrElse(true)).toString
+    val json: String = JsonUtil.jsOrganisationParametersWithValues(values, includeValues = true).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def updateOrganisationParameterValues(orgId: Long) = AuthorizedAction { request =>
+  def checkOrganisationParameterValues(orgId: Long) = authorizedAction { request =>
+    authorizationManager.canViewOrganisation(request, orgId)
+    val valuesWithValidPrerequisites = PrerequisiteUtil.withValidPrerequisites(organizationManager.getOrganisationParameterValues(orgId))
+    val json: String = JsonUtil.jsOrganisationParametersWithValues(valuesWithValidPrerequisites, includeValues = false).toString
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def updateOrganisationParameterValues(orgId: Long) = authorizedAction { request =>
     authorizationManager.canManageOrganisationBasic(request, orgId)
     val userId = ParameterExtractor.extractUserId(request)
     val values = ParameterExtractor.extractOrganisationParameterValues(request, Parameters.VALUES, false)

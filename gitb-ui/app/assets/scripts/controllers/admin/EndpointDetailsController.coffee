@@ -7,49 +7,54 @@ class EndpointDetailsController
 		@actorId = @$stateParams.actor_id
 		@domainId = @$stateParams.id
 		@specificationId = @$stateParams.spec_id
+		@orderParametersDisabled = {value: true}
 
 		@endpoint = null
-
-		@parameterTableColumns = [
-			{
-				field: 'name'
-				title: 'Name'
-			}
-			{
-				field: 'desc'
-				title: 'Description'
-			}
-			{
-				field: 'kindLabel'
-				title: 'Type'
-			}
-			{
-				field: 'useLabel'
-				title: 'Required'
-			}
-			{
-				field: 'adminOnlyLabel'
-				title: 'Editable'
-			}
-			{
-				field: 'notForTestsLabel'
-				title: 'Included in tests'
-			}
-		]
 
 		@ConformanceService.getEndpoints [@endpointId]
 		.then (data) =>
 			@endpoint = _.head data
+			@parameterValues = []
 			if @endpoint.parameters? && @endpoint.parameters.length > 0
 				for e in @endpoint.parameters
-					e.kindLabel = if e.kind == 'SIMPLE' then 'Simple' else if e.kind == 'BINARY' then 'Binary' else 'Hidden'
+					e.kindLabel = if e.kind == 'SIMPLE' then 'Simple' else if e.kind == 'BINARY' then 'Binary' else 'Secret'
 					e.useLabel = e.use == 'R'
 					e.adminOnlyLabel = !e.adminOnly
 					e.notForTestsLabel = !e.notForTests
+					itemRef = {id: e.id, name: e.name, key: e.name, kind: e.kind}
+					itemRef.hasPresetValues = false
+					if e.allowedValues?
+						itemRef.presetValues = JSON.parse(e.allowedValues)
+						itemRef.hasPresetValues = itemRef.presetValues?.length > 0
+					@parameterValues.push itemRef
+
+
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
 
 		@DataService.focus('name')
+
+	moveParameterUp: (index) =>
+		item = @endpoint.parameters.splice(index, 1)[0]
+		@orderParametersDisabled.value = false
+		@endpoint.parameters.splice(index-1, 0, item)
+
+	moveParameterDown: (index) =>
+		item = @endpoint.parameters.splice(index, 1)[0]
+		@orderParametersDisabled.value = false
+		@endpoint.parameters.splice(index+1, 0, item)
+
+	orderParameters: () =>
+		ids = []
+		for param in @endpoint.parameters
+			ids.push param.id
+		@ParameterService.orderParameters(@endpointId, ids)
+		.then () =>
+			@PopupService.success('Parameter ordering saved.')
+			@orderParametersDisabled.value = true
+		.catch (error) =>
+			@ErrorService.showErrorMessage(error)
+			@orderParametersDisabled.value = true
 
 	delete: () =>
 		@ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this "+@DataService.labelEndpointLower()+"?", "Yes", "No")
@@ -74,6 +79,16 @@ class EndpointDetailsController
 	back: () =>
 		@$state.go 'app.admin.domains.detail.specifications.detail.actors.detail.list', {id: @domainId, spec_id: @specificationId, actor_id: @actorId}
 
+	preparePresetValues: (parameter) =>
+		parameter.allowedValues = undefined
+		if parameter.kind == 'SIMPLE' && parameter.hasPresetValues
+			checkedValues = []
+			for value in parameter.presetValues
+				existingValue = _.find(checkedValues, (v) => v.value == value.value)
+				if existingValue == undefined
+					checkedValues.push({value: value.value, label: value.label})
+			parameter.allowedValues = JSON.stringify(checkedValues)
+
 	addParameter: () =>
 		modalOptions =
 			templateUrl: 'assets/views/admin/domains/create-parameter-modal.html'
@@ -83,12 +98,14 @@ class EndpointDetailsController
 				options: () => {
 					hideInExport: true,
 					hideInRegistration: true
+					existingValues: @parameterValues
 				}
 		modalInstance = @$uibModal.open(modalOptions)
 		modalInstance.result
 			.finally(angular.noop)
 			.then((parameter) => 
-				@ConformanceService.createParameter parameter.name, parameter.description, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, @endpointId
+				@preparePresetValues(parameter)
+				@ConformanceService.createParameter parameter.name, parameter.description, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, @endpointId
 					.then () =>
 						@$state.go(@$state.$current, null, { reload: true })
 						@PopupService.success('Parameter created.')
@@ -105,6 +122,7 @@ class EndpointDetailsController
 				options: () => {
 					hideInExport: true,
 					hideInRegistration: true
+					existingValues: @parameterValues
 				}
 			size: 'lg'
 		modalInstance = @$uibModal.open(modalOptions)
@@ -112,7 +130,8 @@ class EndpointDetailsController
 			.finally(angular.noop)
 			.then((data) => 
 				if data.action == 'update'
-					@ParameterService.updateParameter(data.parameter.id, data.parameter.name, data.parameter.desc, data.parameter.use, data.parameter.kind, data.parameter.adminOnly, data.parameter.notForTests, @endpointId)
+					@preparePresetValues(data.parameter)
+					@ParameterService.updateParameter(data.parameter.id, data.parameter.name, data.parameter.desc, data.parameter.use, data.parameter.kind, data.parameter.adminOnly, data.parameter.notForTests, data.parameter.hidden, data.parameter.allowedValues, data.parameter.dependsOn, data.parameter.dependsOnValue, @endpointId)
 					.then () =>
 						@$state.go(@$state.$current, null, { reload: true })
 						@PopupService.success('Parameter updated.')

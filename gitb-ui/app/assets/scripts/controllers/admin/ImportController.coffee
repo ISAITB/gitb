@@ -93,6 +93,7 @@ class ImportController
         @importItemTypeLabels[@Constants.IMPORT_ITEM_TYPE.LANDING_PAGE] = 'Landing pages'
         @importItemTypeLabels[@Constants.IMPORT_ITEM_TYPE.LEGAL_NOTICE] = 'Legal notices'
         @importItemTypeLabels[@Constants.IMPORT_ITEM_TYPE.ERROR_TEMPLATE] = 'Error templates'
+        @importItemTypeLabels[@Constants.IMPORT_ITEM_TYPE.TRIGGER] = 'Triggers'
         @importItemTypeLabels[@Constants.IMPORT_ITEM_TYPE.ORGANISATION] = @DataService.labelOrganisations()
         @importItemTypeLabels[@Constants.IMPORT_ITEM_TYPE.ORGANISATION_USER] = 'Users'
         @importItemTypeLabels[@Constants.IMPORT_ITEM_TYPE.ORGANISATION_PROPERTY_VALUE] = 'Custom ' + @DataService.labelOrganisationLower() + ' property values'

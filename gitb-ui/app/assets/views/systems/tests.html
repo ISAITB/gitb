@@ -5,7 +5,7 @@
             <h4 class="title">Filters</h4>
             <div class="btn-toolbar pull-right">
                 <button type="button" class="btn btn-default" ng-click="systemTestsCtrl.refresh()" ng-disabled="systemTestsCtrl.refreshActivePending || systemTestsCtrl.refreshCompletedPending || systemTestsCtrl.refreshCompletedCountPending"><span class="tab" ng-if="systemTestsCtrl.refreshActivePending || systemTestsCtrl.refreshCompletedPending || systemTestsCtrl.refreshCompletedCountPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Refresh</button>
-                <toggle id="sessions-toggle-filter" class="btn-group" ng-model="systemTestsCtrl.showFiltering" on="Enabled" off="Disabled" ng-change="systemTestsCtrl.DataService.async(systemTestsCtrl.showFiltering?systemTestsCtrl.applyFiltering:systemTestsCtrl.clearFiltering)"/>
+                <toggle id="sessions-toggle-filter" class="btn-group" ng-model="systemTestsCtrl.showFiltering" on="Enabled" off="Disabled" ng-change="systemTestsCtrl.DataService.async(systemTestsCtrl.showFiltering?systemTestsCtrl.applyFiltering:systemTestsCtrl.clearFiltering)"></toggle>
             </div>
         </div>
         <div class="table-responsive" uib-collapse="!systemTestsCtrl.showFiltering">

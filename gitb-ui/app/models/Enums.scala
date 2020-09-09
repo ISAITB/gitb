@@ -47,11 +47,22 @@ object Enums {
 		val FAILURE = Value("FAILURE")
 	}
 
+  object TestSuiteReplacementChoiceHistory extends Enumeration {
+    type TestSuiteReplacementChoiceHistory = Value
+    val KEEP = Value(0)
+    val DROP = Value(1)
+  }
+
+  object TestSuiteReplacementChoiceMetadata extends Enumeration {
+    type TestSuiteReplacementChoiceMetadata = Value
+    val SKIP = Value(0)
+    val UPDATE = Value(1)
+  }
+
   object TestSuiteReplacementChoice extends Enumeration {
     type TestSuiteReplacementChoice = Value
-    val KEEP_TEST_HISTORY = Value(0)
-    val DROP_TEST_HISTORY = Value(1)
-    val CANCEL = Value(2)
+    val PROCEED = Value(0)
+    val CANCEL = Value(1)
   }
 
   object LabelType extends Enumeration(1) {
@@ -64,7 +75,7 @@ object Enums {
     val Domain, DomainParameter, Specification, Actor, Endpoint, EndpointParameter, TestSuite,
     Community, Administrator, CustomLabel, OrganisationProperty, SystemProperty, LandingPage, LegalNotice, ErrorTemplate,
     Organisation, OrganisationUser, OrganisationPropertyValue, System, SystemPropertyValue,
-    Statement, StatementConfiguration = Value
+    Statement, StatementConfiguration, Trigger = Value
   }
 
   object ImportItemMatch extends Enumeration(1) {
@@ -75,6 +86,22 @@ object Enums {
   object ImportItemChoice extends Enumeration(1) {
     type ImportItemChoice = Value
     val Skip, SkipProcessChildren, SkipDueToParent, Proceed = Value
+  }
+
+  object TriggerEventType extends Enumeration(1) {
+    type TriggerEventType = Value
+    val OrganisationCreated,
+        SystemCreated,
+        ConformanceStatementCreated,
+        OrganisationUpdated,
+        SystemUpdated,
+        ConformanceStatementUpdated
+        = Value
+  }
+
+  object TriggerDataType extends Enumeration(1) {
+    type TriggerDataType = Value
+    val Community, Organisation, System, Specification, Actor, OrganisationParameter, SystemParameter = Value
   }
 
 }

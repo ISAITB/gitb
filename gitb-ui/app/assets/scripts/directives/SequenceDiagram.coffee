@@ -260,7 +260,7 @@ extractSteps = (s, actorInfo) =>
           '\'warning\': message.status == TEST_STATUS.WARNING, '+
           '\'completed\': message.status == TEST_STATUS.COMPLETED}">'+
           '<div class="message-type">'+
-            '<span>{{message.type}}</span>'+
+            '<span>{{message.title}}</span>'+
             '<span class="uib-dropdown iterations" uib-dropdown ng-if="message.type == \'loop\' && message.sequences != null && message.sequences.length > 0">'+
               '<span href="" class="uib-dropdown-toggle" uib-dropdown-toggle>Iteration {{message.currentIterationIndex+1}} of {{message.sequences.length}}</span>'+
               '<ul uib-dropdown-menu class="uib-dropdown-menu">'+
@@ -284,7 +284,7 @@ extractSteps = (s, actorInfo) =>
             '<div class="step-icon" ng-if="message.type == \'exit\'">'+
               '<i class="fa fa-dot-circle-o""></i>'+
             '</div>'+
-            '<div><span class="title" ng-class="{\'skipped\': message.status == TEST_STATUS.SKIPPED}">{{message.desc}}<span ng-if="message.documentation" ng-click="showStepDocumentation(message.documentation)"><i ng-style="{ \'margin-left\': message.desc?\'5px\':\'0px\'}" class="fa fa-question-circle icon-documentation"/></span></span></div>'+
+            '<div><span class="title" ng-class="{\'skipped\': message.status == TEST_STATUS.SKIPPED}">{{message.desc}}<span ng-if="message.documentation" ng-click="showStepDocumentation(message.documentation)"><i ng-style="{ \'margin-left\': message.desc?\'5px\':\'0px\'}" class="fa fa-question-circle icon-documentation"></i></span></span></div>'+
           '</div>'+
           '<div class="message-report" ng-if="message.report != null">'+
             '<a href="" class="report-link" ng-click="showReport()">'+
@@ -400,6 +400,8 @@ extractSteps = (s, actorInfo) =>
               $timeout showLastStatus, 0
           scope.$watch 'message.sequences', onLoopIterationUpdated, true
         scope.depth = calculateDepth scope.message
+        if scope.message.title == undefined
+          scope.message.title = scope.message.type
 ]
 
 @directives.directive 'seqDiagramMessageStatus', (RecursionHelper, Constants) ->

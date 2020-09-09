@@ -1,6 +1,5 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import akka.dispatch.Futures;
 import akka.dispatch.OnFailure;
@@ -27,8 +26,6 @@ import com.gitb.utils.ErrorUtils;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
-import java.util.concurrent.Callable;
-
 /**
  * Created by serbay on 9/30/14.
  *
@@ -41,23 +38,22 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 	private TransactionContext transactionContext;
 
 	private Promise<TestStepReportType> promise;
-	private Future<TestStepReportType> future;
 
 	public SendStepProcessorActor(Send step, TestCaseScope scope, String stepId) {
 		super(step, scope, stepId);
 	}
 
     @Override
-	protected void init() throws Exception {
+	protected void init() {
 
 		final ActorContext context = getContext();
 
 		promise = Futures.promise();
 
-		promise.future().onSuccess(new OnSuccess<TestStepReportType>() {
+		promise.future().foreach(new OnSuccess<>() {
 			@Override
-			public void onSuccess(TestStepReportType result) throws Throwable {
-				if(result != null) {
+			public void onSuccess(TestStepReportType result) {
+				if (result != null) {
 					if (result.getResult() == TestResultType.SUCCESS) {
 						updateTestStepStatus(context, StepStatus.COMPLETED, result);
 					} else if (result.getResult() == TestResultType.WARNING) {
@@ -71,16 +67,16 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 			}
 		}, context.dispatcher());
 
-		promise.future().onFailure(new OnFailure() {
+		promise.future().failed().foreach(new OnFailure() {
 			@Override
-			public void onFailure(Throwable failure) throws Throwable {
+			public void onFailure(Throwable failure) {
 				updateTestStepStatus(context, new ErrorStatusEvent(failure), null, true);
 			}
 		}, context.dispatcher());
 	}
 
 	@Override
-	protected void start() throws Exception {
+	protected void start() {
 		processing();
         TestCaseContext testCaseContext = scope.getContext();
 
@@ -96,59 +92,56 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 		final IMessagingHandler messagingHandler = messagingContext.getHandler();
 
 		if(messagingHandler != null) {
-			future = Futures.future(new Callable<TestStepReportType>() {
-				@Override
-				public TestStepReportType call() throws Exception {
+			//id parameter must be set for Send steps, so that sent message
+			//is saved to scope
+			Future<TestStepReportType> future = Futures.future(() -> {
 
-					VariableResolver resolver = new VariableResolver(scope);
-					if (step.getConfig() != null) {
-						for (Configuration config: step.getConfig()) {
-							if (resolver.isVariableReference(config.getValue())) {
-								config.setValue(resolver.resolveVariableAsString(config.getValue()).toString());
-							}
+				VariableResolver resolver = new VariableResolver(scope);
+				if (step.getConfig() != null) {
+					for (Configuration config : step.getConfig()) {
+						if (resolver.isVariableReference(config.getValue())) {
+							config.setValue(resolver.resolveVariableAsString(config.getValue()).toString());
 						}
 					}
+				}
 
-					Message message = getMessageFromBindings(step.getInput());
+				Message message = getMessageFromBindings(step.getInput());
 
-					MessagingReport report =
+				MessagingReport report =
 						messagingHandler
-							.sendMessage(
-								messagingContext.getSessionId(),
-								transactionContext.getTransactionId(),
-								step.getConfig(),
-								message
-							);
+								.sendMessage(
+										messagingContext.getSessionId(),
+										transactionContext.getTransactionId(),
+										step.getConfig(),
+										message
+								);
 
-                    if(report != null) {
-                        //id parameter must be set for Send steps, so that sent message
-                        //is saved to scope
-                        if(step.getId() != null && report.getMessage() != null) {
-                            Message sentMessage = report.getMessage();
-                            MapType map = generateOutputWithMessageFields(sentMessage);
-
-                            scope
-                                .createVariable(step.getId())
-                                .setValue(map);
-                        }
-
-                        return report.getReport();
-                    } else {
-                        return null;
-                    }
+				if (report != null) {
+					//id parameter must be set for Send steps, so that sent message
+					//is saved to scope
+					if (step.getId() != null && report.getMessage() != null) {
+						Message sentMessage = report.getMessage();
+						MapType map = generateOutputWithMessageFields(sentMessage);
+						scope
+								.createVariable(step.getId())
+								.setValue(map);
+					}
+					return report.getReport();
+				} else {
+					return null;
 				}
 			}, getContext().dispatcher());
 
-			future.onSuccess(new OnSuccess<TestStepReportType>() {
+			future.foreach(new OnSuccess<>() {
 				@Override
-				public void onSuccess(TestStepReportType result) throws Throwable {
+				public void onSuccess(TestStepReportType result) {
 					promise.trySuccess(result);
 				}
 			}, getContext().dispatcher());
 
-			future.onFailure(new OnFailure() {
+			future.failed().foreach(new OnFailure() {
 				@Override
-				public void onFailure(Throwable failure) throws Throwable {
+				public void onFailure(Throwable failure) {
 					promise.tryFailure(failure);
 				}
 			}, getContext().dispatcher());
@@ -159,7 +152,7 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 	@Override
 	protected void stop() {
 		if(promise != null) {
-			boolean stopped = promise.tryFailure(new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.CANCELLATION, "Test step ["+stepId+"] is cancelled.")));
+			promise.tryFailure(new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.CANCELLATION, "Test step ["+stepId+"] is cancelled.")));
 		}
 	}
 

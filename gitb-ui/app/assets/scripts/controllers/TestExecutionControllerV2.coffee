@@ -39,6 +39,7 @@ class TestExecutionControllerV2
       @initialiseState()
 
   initialiseState: () =>
+    @isAdmin = @DataService.isCommunityAdmin || @DataService.isSystemAdmin
     @documentationExists = @testCasesHaveDocumentation()
     @systemId = parseInt(@$stateParams['systemId'], 10)
     @actorId  = parseInt(@$stateParams['actorId'], 10)
@@ -160,6 +161,16 @@ class TestExecutionControllerV2
         @systemConfigurationValid = @DataService.isMemberConfigurationValid(@systemProperties)
         @organisationConfigurationValid = @DataService.isMemberConfigurationValid(@organisationProperties)
         if (!@configurationValid || !@systemConfigurationValid || !@organisationConfigurationValid)
+          @organisationPropertyVisibility = @DataService.checkPropertyVisibility(@organisationProperties)
+          @systemPropertyVisibility = @DataService.checkPropertyVisibility(@systemProperties)
+          @statementPropertyVisibility = @DataService.checkPropertyVisibility(@endpointRepresentations[0].parameters)
+
+          @showOrganisationProperties = @organisationPropertyVisibility.hasVisibleMissingRequiredProperties || @organisationPropertyVisibility.hasVisibleMissingOptionalProperties
+          @showSystemProperties = @systemPropertyVisibility.hasVisibleMissingRequiredProperties || @systemPropertyVisibility.hasVisibleMissingOptionalProperties
+          @showStatementProperties = @statementPropertyVisibility.hasVisibleMissingRequiredProperties || @statementPropertyVisibility.hasVisibleMissingOptionalProperties
+          @somethingIsVisible = @showOrganisationProperties || @showSystemProperties || @showStatementProperties
+          @requiredPropertiesAreHidden = @organisationPropertyVisibility.hasNonVisibleMissingRequiredProperties || @systemPropertyVisibility.hasNonVisibleMissingRequiredProperties || @statementPropertyVisibility.hasNonVisibleMissingRequiredProperties
+
           @wizardStep = 1
         else 
           @runInitiateStep()
@@ -207,19 +218,19 @@ class TestExecutionControllerV2
 
   getOrganisation : () =>
     organisation = @DataService.vendor
-    if @DataService.isCommunityAdmin || @DataService.isSystemAdmin
+    if @isAdmin
       organisation = JSON.parse(@$window.localStorage['organization'])
     organisation
 
   checkConfigurations : (actorId, systemId) ->
-    @OrganizationService.getOrganisationParameterValues(@getOrganisation().id, false)
+    @OrganizationService.checkOrganisationParameterValues(@getOrganisation().id)
     .then (data) =>
       @organisationProperties = data
       @organisationConfigurationChecked.resolve()
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-    @SystemService.getSystemParameterValues(systemId, false)
+    @SystemService.checkSystemParameterValues(systemId)
     .then (data) =>
       @systemProperties = data
       @systemConfigurationChecked.resolve()
@@ -594,7 +605,6 @@ class TestExecutionControllerV2
 
   setChildrenAsSkipped: (step, idToCheck, parentStepId) ->
     regex = new RegExp(@escapeRegExp(parentStepId)+"(\\[.+\\])?\\.?", "g");
-    console.log("Checking ["+idToCheck+"] vs ["+parentStepId+"]")
     if step? && idToCheck? && (idToCheck == parentStepId || idToCheck.match(regex) != null)
       if step.type == 'loop'
         @setChildrenSequenceAsSkipped(step.steps, idToCheck)

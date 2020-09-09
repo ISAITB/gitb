@@ -427,16 +427,16 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
         collectStepReportsForSequence(testStep.asInstanceOf[DecisionStep].getElse, collectedSteps, folder)
       }
     } else if (testStep.isInstanceOf[FlowStep]) {
-      import scala.collection.JavaConversions._
-      for (thread <- testStep.asInstanceOf[FlowStep].getThread) {
+      import scala.collection.JavaConverters._
+      for (thread <- collectionAsScalaIterable(testStep.asInstanceOf[FlowStep].getThread)) {
         collectStepReportsForSequence(thread, collectedSteps, folder)
       }
     }
   }
 
   def collectStepReportsForSequence(testStepSequence: com.gitb.tpl.Sequence, collectedSteps: ListBuffer[TitledTestStepReportType], folder: File): Unit = {
-    import scala.collection.JavaConversions._
-    for (testStep <- testStepSequence.getSteps) {
+    import scala.collection.JavaConverters._
+    for (testStep <- collectionAsScalaIterable(testStepSequence.getSteps)) {
       collectStepReports(testStep, collectedSteps, folder)
     }
   }
