@@ -3,7 +3,6 @@ package jaxws;
 import actors.WebSocketActor;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.gitb.core.ValueEmbeddingEnumeration;
-import com.gitb.tbs.Error;
 import com.gitb.tbs.Void;
 import com.gitb.tbs.*;
 import managers.ReportManager;

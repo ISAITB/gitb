@@ -1,7 +1,5 @@
 package controllers
 
-import com.gitb.tpl.ObjectFactory
-import com.gitb.utils.XMLUtils
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import javax.inject.Inject
 import managers.{AuthorizationManager, CommunityManager, ReportManager}
@@ -200,8 +198,7 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val testId = ParameterExtractor.requiredBodyParameter(request, Parameters.TEST_ID)
 
     val response = testService.getTestCasePresentation(testId)
-    val presentation = XMLUtils.marshalToString(new ObjectFactory().createTestcase(response.getTestcase))
-    reportManager.createTestReport(sessionId, systemId, testId, actorId, presentation)
+    reportManager.createTestReport(sessionId, systemId, testId, actorId, response.getTestcase)
     ResponseConstructor.constructEmptyResponse
   }
 

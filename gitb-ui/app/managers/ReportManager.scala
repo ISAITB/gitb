@@ -29,6 +29,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import utils.signature.{CreateSignature, SigUtils}
 import utils.{JacksonUtil, MimeUtil, TimeUtil}
 
+import scala.collection.JavaConverters.collectionAsScalaIterable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -306,7 +307,15 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
       testResult.withPresentation(json)
   }
 
-  def createTestReport(sessionId: String, systemId: Long, testId: String, actorId: Long, presentation: String) = {
+  private def removeStepDocumentation(testCase: com.gitb.tpl.TestCase): Unit = {
+    if (testCase.getSteps != null && testCase.getSteps.getSteps != null) {
+      collectionAsScalaIterable(testCase.getSteps.getSteps).foreach { step =>
+        step.setDocumentation(null)
+      }
+    }
+  }
+
+  def createTestReport(sessionId: String, systemId: Long, testId: String, actorId: Long, testCasePresentation: com.gitb.tpl.TestCase) = {
     val initialStatus = TestResultType.UNDEFINED.value()
     val startTime = TimeUtil.getCurrentTimestamp()
     val system = systemManager.getSystemById(systemId).get
@@ -317,6 +326,10 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
     val actor = actorManager.getById(actorId).get
     val specification = specificationManager.getSpecificationOfActor(actor.id)
     val domain = conformanceManager.getById(specification.domain)
+
+    // Remove the step documentation because it can greatly increase the size without any use (documentation links are not displayed for non-active test sessions)
+    removeStepDocumentation(testCasePresentation)
+    val presentation = XMLUtils.marshalToString(new com.gitb.tpl.ObjectFactory().createTestcase(testCasePresentation))
 
     val q = (for {c <- PersistenceSchema.conformanceResults if c.sut === systemId && c.testcase === testCase.id} yield (c.testsession, c.result))
 
