@@ -1,5 +1,6 @@
 package utils;
 
+import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
 import static org.owasp.html.Sanitizers.*;
 
@@ -8,13 +9,18 @@ import static org.owasp.html.Sanitizers.*;
  */
 public class HtmlUtil {
 
-    private static PolicyFactory FULL_EDITOR_POLICY;
-    private static PolicyFactory MINIMAL_EDITOR_POLICY;
-    private static PolicyFactory PDF_POLICY;
+    private final static PolicyFactory FULL_EDITOR_POLICY;
+    private final static PolicyFactory MINIMAL_EDITOR_POLICY;
+    private final static PolicyFactory PDF_POLICY;
+
+    public static final PolicyFactory LINKS_WITH_TARGET = new HtmlPolicyBuilder()
+            .allowStandardUrlProtocols().allowElements("a")
+            .allowAttributes("href", "target").onElements("a").requireRelNofollowOnLinks()
+            .toFactory();
 
     static {
-        FULL_EDITOR_POLICY = BLOCKS.and(FORMATTING).and(IMAGES).and(TABLES).and(LINKS).and(STYLES);
-        MINIMAL_EDITOR_POLICY = BLOCKS.and(FORMATTING).and(LINKS).and(STYLES);
+        FULL_EDITOR_POLICY = BLOCKS.and(FORMATTING).and(IMAGES).and(TABLES).and(LINKS_WITH_TARGET).and(STYLES);
+        MINIMAL_EDITOR_POLICY = BLOCKS.and(FORMATTING).and(LINKS_WITH_TARGET).and(STYLES);
         PDF_POLICY = BLOCKS.and(FORMATTING).and(LINKS);
     }
 
