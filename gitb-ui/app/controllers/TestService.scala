@@ -4,8 +4,6 @@ import actors.WebSocketActor
 import akka.actor.ActorSystem
 import com.gitb.core.{ActorConfiguration, Configuration, ValueEmbeddingEnumeration}
 import com.gitb.tbs._
-import com.gitb.tpl.ObjectFactory
-import com.gitb.utils.XMLUtils
 import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
@@ -311,8 +309,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
         configureInternal(testSessionId, statementParameters, domainParameters, organisationParameters, systemParameters)
         // Preliminary step is skipped as this is a headless session. If input was expected during this step the test session will fail.
         val testCasePresentation = getTestCasePresentation(testCaseId.toString)
-        val presentation = XMLUtils.marshalToString(new ObjectFactory().createTestcase(testCasePresentation.getTestcase))
-        reportManager.createTestReport(testSessionId, systemId, testCaseId.toString, actorId, presentation)
+        reportManager.createTestReport(testSessionId, systemId, testCaseId.toString, actorId, testCasePresentation.getTestcase)
         startInternal(testSessionId)
         Future.successful((testCaseIds.drop(1), systemId, actorId, statementParameters, domainParameters, organisationParameters, systemParameters))
       } catch {

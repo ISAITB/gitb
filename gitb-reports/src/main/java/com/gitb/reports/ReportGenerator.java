@@ -196,8 +196,8 @@ public class ReportGenerator {
                             messages += 1;
                         }
                         reportItem.setDescription(StringUtils.defaultIfBlank(tarItem.getDescription(), "-"));
-                        reportItem.setTest(StringUtils.defaultIfBlank(tarItem.getTest(), "-"));
-                        reportItem.setLocation(StringUtils.defaultIfBlank(tarItem.getLocation(), "-"));
+                        reportItem.setTest(StringUtils.trimToNull(tarItem.getTest()));
+                        reportItem.setLocation(StringUtils.trimToNull(tarItem.getLocation()));
                         report.getReportItems().add(reportItem);
                     }
                 }

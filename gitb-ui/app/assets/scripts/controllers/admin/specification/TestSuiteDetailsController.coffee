@@ -1,7 +1,7 @@
 class TestSuiteDetailsController
 
-	@$inject = ['$scope', 'TestSuiteService', 'ConfirmationDialogService', '$state', '$stateParams', 'ErrorService', 'DataService', 'PopupService', 'WebEditorService', 'HtmlService', '$sce']
-	constructor: (@$scope, @TestSuiteService, @ConfirmationDialogService, @$state, @$stateParams, @ErrorService, @DataService, @PopupService, @WebEditorService, @HtmlService, @$sce) ->
+	@$inject = ['$scope', 'TestSuiteService', 'ConfirmationDialogService', '$state', '$stateParams', 'ErrorService', 'DataService', 'PopupService', 'WebEditorService', 'HtmlService', '$sce', 'ConformanceService']
+	constructor: (@$scope, @TestSuiteService, @ConfirmationDialogService, @$state, @$stateParams, @ErrorService, @DataService, @PopupService, @WebEditorService, @HtmlService, @$sce, @ConformanceService) ->
 		@testSuite = {}
 		@domainId = @$stateParams.id
 		@specificationId = @$stateParams.spec_id
@@ -35,8 +35,11 @@ class TestSuiteDetailsController
 		@DataService.focus('name')
 
 	previewDocumentation: () =>
-		html = @$sce.trustAsHtml(tinymce.activeEditor.getContent())
-		@HtmlService.showHtml('Test suite documentation', html)
+		@ConformanceService.getDocumentationForPreview(tinymce.activeEditor.getContent())
+		.then (html) =>
+			@HtmlService.showHtml('Test suite documentation', @$sce.trustAsHtml(html))
+		.catch (error) =>
+			@ErrorService.showErrorMessage(error)
 
 	download: () =>
 		@TestSuiteService.downloadTestSuite @testSuite.id

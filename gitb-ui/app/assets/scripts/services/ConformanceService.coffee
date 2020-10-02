@@ -295,6 +295,15 @@ class ConformanceService
       path: jsRoutes.controllers.ConformanceService.getTestCaseDocumentation(id).url
       authenticate: true
 
+  getDocumentationForPreview: (content) ->
+    @RestService.post({
+      path: jsRoutes.controllers.ConformanceService.getDocumentationForPreview().url,
+      authenticate: true
+      data: {
+        content: content
+      }
+    })
+
   getTestSuites: (specificationId) ->
     @RestService.get
       path: jsRoutes.controllers.ConformanceService.getSpecTestSuites(specificationId).url
