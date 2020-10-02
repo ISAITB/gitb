@@ -1446,6 +1446,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canViewDomains(request, getUser(getRequestUserId(request)), ids)
   }
 
+  def canPreviewDocumentation(request: RequestWithAttributes[_]):Boolean = {
+    checkIsAuthenticated(request)
+  }
+
   private def getUser(userId: Long): User = {
     val user = userManager.getUserById(userId)
     user

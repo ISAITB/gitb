@@ -2,6 +2,7 @@ package utils;
 
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
+
 import static org.owasp.html.Sanitizers.*;
 
 /**
@@ -13,9 +14,19 @@ public class HtmlUtil {
     private final static PolicyFactory MINIMAL_EDITOR_POLICY;
     private final static PolicyFactory PDF_POLICY;
 
-    public static final PolicyFactory LINKS_WITH_TARGET = new HtmlPolicyBuilder()
-            .allowStandardUrlProtocols().allowElements("a")
-            .allowAttributes("href", "target").onElements("a").requireRelNofollowOnLinks()
+    private final static PolicyFactory LINKS_WITH_TARGET = new HtmlPolicyBuilder()
+            .allowElements((elementName, attrs) -> {
+                int targetIndex = attrs.indexOf("target");
+                if (targetIndex < 0) {
+                    attrs.add("target");
+                    attrs.add("_blank");
+                } else {
+                    attrs.set(targetIndex + 1, "_blank");
+                }
+                return elementName;
+            }, "a")
+            .allowStandardUrlProtocols()
+            .allowAttributes("href", "target").onElements("a").requireRelsOnLinks("noopener", "noreferrer", "nofollow")
             .toFactory();
 
     static {

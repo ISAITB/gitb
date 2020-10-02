@@ -20,7 +20,7 @@ import org.apache.commons.lang3.RandomStringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import utils.signature.SigUtils
-import utils.{ClamAVClient, JsonUtil, MimeUtil}
+import utils.{ClamAVClient, HtmlUtil, JsonUtil, MimeUtil}
 
 class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, communityManager: CommunityManager, conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, systemManager: SystemManager, testResultManager: TestResultManager, organizationManager: OrganizationManager, testCaseManager: TestCaseManager, endPointManager: EndPointManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ConformanceService])
@@ -584,6 +584,12 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
     }
     val json = JsonUtil.jsSystemConfigurationEndpoints(status, addValues = false, isAdmin = false) // The isAdmin flag only affects whether or a hidden value will be added (i.e. not applicable is addValues is false)
     ResponseConstructor.constructJsonResponse(json.toString)
+  }
+
+  def getDocumentationForPreview() = authorizedAction { request =>
+    authorizationManager.canPreviewDocumentation(request)
+    val documentation = HtmlUtil.sanitizeEditorContent(ParameterExtractor.requiredBodyParameter(request, Parameters.CONTENT))
+    ResponseConstructor.constructStringResponse(documentation)
   }
 
   def getTestCaseDocumentation(id: Long) = authorizedAction { request =>

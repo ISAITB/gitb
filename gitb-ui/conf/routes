@@ -92,6 +92,7 @@ GET	    /actors/:actor_id/conformance/:sut_id/:testsuite_id @controllers.Conform
 GET	    /testcases/:testCaseId              @controllers.ConformanceService.getTestSuiteTestCase(testCaseId : Long)
 GET	    /testcases/:id/documentation        @controllers.ConformanceService.getTestCaseDocumentation(id : Long)
 GET	    /testsuites/:id/documentation       @controllers.ConformanceService.getTestSuiteDocumentation(id : Long)
+POST    /testdocumentation/                 @controllers.ConformanceService.getDocumentationForPreview
 GET     /actors/:actor_id/endpoints         @controllers.ConformanceService.getEndpointsForActor(actor_id : Long)
 POST    /endpoints                          @controllers.ConformanceService.createEndpoint
 DELETE  /endpoints/:endpoint_id             @controllers.EndPointService.deleteEndPoint(endpoint_id : Long)
