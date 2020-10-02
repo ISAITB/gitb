@@ -196,14 +196,18 @@
 										<imageExpression><![CDATA["error".equals($F{level})?"reports/images/error.png":("warning".equals($F{level})?"reports/images/warning.png":"reports/images/info.png")]]></imageExpression>
 									</image>
 									<textField isStretchWithOverflow="true">
-										<reportElement style="itemStyle" positionType="Float" x="10" y="21" width="730" height="3" uuid="69a2916c-8564-43d2-b14a-3a1fddd45e7b"/>
+										<reportElement style="itemStyle" positionType="Float" x="10" y="21" width="730" height="3" isRemoveLineWhenBlank="true" uuid="69a2916c-8564-43d2-b14a-3a1fddd45e7b">
+											<printWhenExpression><![CDATA[$F{test} != null]]></printWhenExpression>
+										</reportElement>
 										<textElement verticalAlignment="Top" markup="html">
 											<paragraph firstLineIndent="0" leftIndent="5" rightIndent="5" spacingBefore="4" spacingAfter="10"/>
 										</textElement>
-										<textFieldExpression><![CDATA["<b>Test:</b> " + $F{test} + "<br/>"]]></textFieldExpression>
+										<textFieldExpression><![CDATA["<b>Test:</b> " + $F{test} + (($F{location} !=null)?"<br/>":"")]]></textFieldExpression>
 									</textField>
 									<textField isStretchWithOverflow="true">
-										<reportElement style="itemStyle" positionType="Float" x="10" y="24" width="730" height="3" uuid="201ecfec-8c16-4bf2-ba20-692c8ebb82c4"/>
+										<reportElement style="itemStyle" positionType="Float" x="10" y="24" width="730" height="3" isRemoveLineWhenBlank="true" uuid="201ecfec-8c16-4bf2-ba20-692c8ebb82c4">
+											<printWhenExpression><![CDATA[$F{location} != null]]></printWhenExpression>
+										</reportElement>
 										<textElement verticalAlignment="Top" markup="html">
 											<paragraph firstLineIndent="0" leftIndent="5" rightIndent="5" spacingBefore="4" spacingAfter="10"/>
 										</textElement>

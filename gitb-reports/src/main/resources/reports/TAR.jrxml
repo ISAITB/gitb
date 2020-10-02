@@ -178,7 +178,7 @@
 				<textFieldExpression><![CDATA[$P{reportFileName}]]></textFieldExpression>
 			</textField>
 		</band>
-		<band height="123">
+		<band height="125">
 			<printWhenExpression><![CDATA[$P{reportItems} != null]]></printWhenExpression>
 			<textField>
 				<reportElement x="20" y="10" width="760" height="30" uuid="c52cbd65-ceb2-4642-94b8-555518394b78">
@@ -195,14 +195,14 @@
 				</reportElement>
 			</line>
 			<componentElement>
-				<reportElement x="20" y="50" width="752" height="65" uuid="c497a39f-422f-4fdc-afa4-19cc371337d7">
+				<reportElement x="20" y="50" width="752" height="66" uuid="c497a39f-422f-4fdc-afa4-19cc371337d7">
 					<printWhenExpression><![CDATA[$P{reportItems} != null]]></printWhenExpression>
 				</reportElement>
 				<jr:list xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd" printOrder="Vertical">
 					<datasetRun subDataset="Dataset1" uuid="cd65171e-29d5-4b84-9d2a-090f72a8762d">
 						<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.data.JRBeanCollectionDataSource($P{reportItems})]]></dataSourceExpression>
 					</datasetRun>
-					<jr:listContents height="65" width="752">
+					<jr:listContents height="66" width="752">
 						<textField isStretchWithOverflow="true">
 							<reportElement style="itemStyle" x="10" y="2" width="730" height="19" uuid="52e228b3-178c-422b-bddd-14e1b8028d82"/>
 							<textElement verticalAlignment="Top" markup="html">
@@ -215,14 +215,18 @@
 							<imageExpression><![CDATA["error".equals($F{level})?"reports/images/error.png":("warning".equals($F{level})?"reports/images/warning.png":"reports/images/info.png")]]></imageExpression>
 						</image>
 						<textField isStretchWithOverflow="true">
-							<reportElement style="itemStyle" positionType="Float" x="10" y="21" width="730" height="19" uuid="09292200-f190-43ec-8781-aa3c3d39d35c"/>
+							<reportElement key="" style="itemStyle" positionType="Float" x="10" y="21" width="730" height="22" isRemoveLineWhenBlank="true" uuid="09292200-f190-43ec-8781-aa3c3d39d35c">
+								<printWhenExpression><![CDATA[$F{test} != null]]></printWhenExpression>
+							</reportElement>
 							<textElement verticalAlignment="Top" markup="html">
 								<paragraph firstLineIndent="0" leftIndent="5" rightIndent="5" spacingBefore="4" spacingAfter="10"/>
 							</textElement>
-							<textFieldExpression><![CDATA["<b>Test:</b> " + $F{test} + "<br/>"]]></textFieldExpression>
+							<textFieldExpression><![CDATA["<b>Test:</b> " + $F{test} + (($F{location} !=null)?"<br/>":"")]]></textFieldExpression>
 						</textField>
 						<textField isStretchWithOverflow="true">
-							<reportElement style="itemStyle" positionType="Float" x="10" y="40" width="730" height="21" uuid="25f4a881-bccf-4b87-bdcb-88cc8162032e"/>
+							<reportElement style="itemStyle" positionType="Float" x="10" y="43" width="730" height="21" isRemoveLineWhenBlank="true" uuid="af8d6fc2-0f6e-4719-86da-e355fd85880c">
+								<printWhenExpression><![CDATA[$F{location} != null]]></printWhenExpression>
+							</reportElement>
 							<textElement verticalAlignment="Top" markup="html">
 								<paragraph firstLineIndent="0" leftIndent="5" rightIndent="5" spacingBefore="4" spacingAfter="10"/>
 							</textElement>
