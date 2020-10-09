@@ -38,5 +38,5 @@ object Constants {
   val PlaceholderActor = "$ACTOR"
   val PlaceholderDomain = "$DOMAIN"
 
-  val VersionNumber = "1.10.2"
+  val VersionNumber = "1.10.2_b1"
 }
