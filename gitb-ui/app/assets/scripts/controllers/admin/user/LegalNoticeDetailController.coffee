@@ -43,7 +43,6 @@ class LegalNoticeDetailController
         if copy
           @copyLegalNotice()
         else
-          @cancelDetailLegalNotice()
           @PopupService.success('Legal notice updated.')
     .catch (error) =>
       @ErrorService.showErrorMessage(error)

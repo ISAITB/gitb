@@ -42,7 +42,6 @@ class LandingPageDetailController
         if copy
           @copyLandingPage()
         else
-          @cancelDetailLandingPage()
           @PopupService.success('Landing page updated.')
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
