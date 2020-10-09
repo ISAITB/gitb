@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -285,46 +286,99 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     ).toList.map(r => new OrganisationParametersWithValue(r._1, r._2))
   }
 
+  private def prerequisitesSatisfied(isAdmin: Boolean, parameterToCheck: OrganisationParameters, statusMap: mutable.Map[Long, Boolean], definitionMap: Map[String, OrganisationParameters], providedValueMap: Map[Long, OrganisationParameterValues], existingValueMap: Map[Long, OrganisationParameterValues], checkedParameters: mutable.Set[Long]): Boolean = {
+    var satisfied = false
+    if (statusMap.contains(parameterToCheck.id)) {
+      satisfied = statusMap(parameterToCheck.id)
+    } else {
+      if (!checkedParameters.contains(parameterToCheck.id)) {
+        checkedParameters += parameterToCheck.id
+        // The above check is added to avoid circular dependencies that would never complete.
+        if (parameterToCheck.dependsOn.isDefined) {
+          if (parameterToCheck.dependsOnValue.isDefined) {
+            if (definitionMap.contains(parameterToCheck.dependsOn.get)) {
+              val parentParameter = definitionMap(parameterToCheck.dependsOn.get)
+              if (prerequisitesSatisfied(isAdmin, parentParameter, statusMap, definitionMap, providedValueMap, existingValueMap, checkedParameters)) {
+                var parentValue = providedValueMap.get(parentParameter.id)
+                if (parentValue.isEmpty && !isAdmin && parentParameter.adminOnly && parentParameter.hidden) {
+                  parentValue = existingValueMap.get(parentParameter.id)
+                }
+                if (parentValue.isDefined && parentValue.get.value != null && parentValue.get.value.equals(parameterToCheck.dependsOnValue.get)) {
+                  satisfied = true
+                }
+              }
+            }
+          }
+        } else {
+          satisfied = true
+        }
+      }
+      statusMap += (parameterToCheck.id -> satisfied)
+    }
+    satisfied
+  }
+
   def saveOrganisationParameterValues(orgId: Long, communityId: Long, isAdmin: Boolean, values: List[OrganisationParameterValues]): DBIO[_] = {
     saveOrganisationParameterValues(orgId, communityId, isAdmin, isSelfRegistration = false, values, requireMandatoryPropertyValues = false)
   }
 
   def saveOrganisationParameterValues(orgId: Long, communityId: Long, isAdmin: Boolean, isSelfRegistration: Boolean, values: List[OrganisationParameterValues], requireMandatoryPropertyValues: Boolean): DBIO[_] = {
-    var providedParameters: Map[Long, OrganisationParameterValues] = Map()
-    values.foreach { v =>
-      providedParameters += (v.parameter -> v)
-    }
-    // Load parameter definitions for the organisation's community
-    val parameterDefinitions = exec(PersistenceSchema.organisationParameters.filter(_.community === communityId).result).toList
-    // Make updates
-    val actions = new ListBuffer[DBIO[_]]()
-    parameterDefinitions.foreach { parameterDefinition =>
-      if (requireMandatoryPropertyValues && "R".equals(parameterDefinition.use) && !providedParameters.contains(parameterDefinition.id)) {
-        if (isAdmin || (!parameterDefinition.adminOnly && !parameterDefinition.hidden && (!isSelfRegistration || parameterDefinition.inSelfRegistration))) {
-          // No need to check this case before as the UI normally enforces this. Only way we could reach this is if a request is tampered.
-          // Admins (if forced) should provide all values. Non-admins if forced would only be expected to provide values for parameters that are editable by them (non-admin, non-hidden).
-          throw new IllegalStateException("Required parameter ["+parameterDefinition.testKey+"] missing")
+    for {
+      // Create a map of the provided parameters
+      providedParameters <- DBIO.successful(values.map(x => (x.parameter, x)).toMap)
+      // Load existing parameter values (needed to check prerequisites that are admin-only and hidden - only needed if we're enforcing required values.
+      existingSimpleValues <- {
+        var existingSimpleValues: Option[Map[Long, OrganisationParameterValues]] = None
+        if (requireMandatoryPropertyValues && !isSelfRegistration) {
+          // We only load these if we're not doing a self-registration. In a self-registration there will never be previously existing values.
+          existingSimpleValues = Some(
+            exec(
+              PersistenceSchema.organisationParameterValues
+                .join(PersistenceSchema.organisationParameters).on(_.parameter === _.id)
+                .filter(_._1.organisation === orgId)
+                .filter(_._2.kind === "SIMPLE")
+                .map(x => x._1)
+                .result
+            ).map(x => (x.parameter, x)).toMap
+          )
         }
+        DBIO.successful(existingSimpleValues)
       }
-      if ((!parameterDefinition.adminOnly && !parameterDefinition.hidden) || isAdmin) {
-        val matchedProvidedParameter = providedParameters.get(parameterDefinition.id)
-        if (matchedProvidedParameter.isDefined) {
-          // Create or update
-          if (parameterDefinition.kind != "SECRET" || (parameterDefinition.kind == "SECRET" && matchedProvidedParameter.get.value != "")) {
-            // Special case: No update for secret parameters that are defined but not updated.
-            actions += PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterDefinition.id).filter(_.organisation === orgId).delete
-            actions += (PersistenceSchema.organisationParameterValues += matchedProvidedParameter.get.withOrgId(orgId))
+      // Load parameter definitions for the organisation's community.
+      parameterDefinitions <- PersistenceSchema.organisationParameters.filter(_.community === communityId).result
+      // Create also a map based on the key.
+      parameterDefinitionMap <- DBIO.successful(parameterDefinitions.map(x => (x.testKey, x)).toMap)
+      // Make checks and updates.
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        val prerequisiteStatusMap = mutable.Map[Long, Boolean]()
+        val checkPrerequisitesSet = mutable.Set[Long]()
+        parameterDefinitions.foreach { parameterDefinition =>
+          if (requireMandatoryPropertyValues && "R".equals(parameterDefinition.use) && !providedParameters.contains(parameterDefinition.id) && prerequisitesSatisfied(isAdmin, parameterDefinition, prerequisiteStatusMap, parameterDefinitionMap, providedParameters, existingSimpleValues.get, checkPrerequisitesSet)) {
+            if (isAdmin || (!parameterDefinition.adminOnly && !parameterDefinition.hidden && (!isSelfRegistration || parameterDefinition.inSelfRegistration))) {
+              // No need to check this case before as the UI normally enforces this. Only way we could reach this is if a request is tampered.
+              // Admins (if forced) should provide all values. Non-admins if forced would only be expected to provide values for parameters that are editable by them (non-admin, non-hidden).
+              throw new IllegalStateException("Required parameter ["+parameterDefinition.testKey+"] missing")
+            }
           }
-        } else {
-          // Delete existing (if present)
-          actions += PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterDefinition.id).filter(_.organisation === orgId).delete
+          if ((!parameterDefinition.adminOnly && !parameterDefinition.hidden) || isAdmin) {
+            val matchedProvidedParameter = providedParameters.get(parameterDefinition.id)
+            if (matchedProvidedParameter.isDefined) {
+              // Create or update
+              if (parameterDefinition.kind != "SECRET" || (parameterDefinition.kind == "SECRET" && matchedProvidedParameter.get.value != "")) {
+                // Special case: No update for secret parameters that are defined but not updated.
+                actions += PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterDefinition.id).filter(_.organisation === orgId).delete
+                actions += (PersistenceSchema.organisationParameterValues += matchedProvidedParameter.get.withOrgId(orgId))
+              }
+            } else {
+              // Delete existing (if present)
+              actions += PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterDefinition.id).filter(_.organisation === orgId).delete
+            }
+          }
         }
+        toDBIO(actions)
       }
-    }
-    if (actions.nonEmpty) {
-      DBIO.seq(actions.map(a => a): _*)
-    } else
-      DBIO.successful(())
+    } yield()
   }
 
   def saveOrganisationParameterValuesWrapper(userId: Long, orgId: Long, values: List[OrganisationParameterValues]) = {
