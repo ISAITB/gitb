@@ -38,6 +38,11 @@ class CommunityDetailController
         title: 'Full name'
       }
     ]
+    if @DataService.configuration['registration.enabled']
+      @organizationColumns.push({
+        field: 'templateName',
+        title: 'Set as template'
+      })
 
     @landingPagesColumns = [
       {
