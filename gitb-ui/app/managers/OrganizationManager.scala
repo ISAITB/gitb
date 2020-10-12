@@ -286,7 +286,7 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     ).toList.map(r => new OrganisationParametersWithValue(r._1, r._2))
   }
 
-  private def prerequisitesSatisfied(isAdmin: Boolean, parameterToCheck: OrganisationParameters, statusMap: mutable.Map[Long, Boolean], definitionMap: Map[String, OrganisationParameters], providedValueMap: Map[Long, OrganisationParameterValues], existingValueMap: Map[Long, OrganisationParameterValues], checkedParameters: mutable.Set[Long]): Boolean = {
+  private def prerequisitesSatisfied(isAdmin: Boolean, parameterToCheck: OrganisationParameters, statusMap: mutable.Map[Long, Boolean], definitionMap: Map[String, OrganisationParameters], providedValueMap: Map[Long, OrganisationParameterValues], existingValueMap: Option[Map[Long, OrganisationParameterValues]], checkedParameters: mutable.Set[Long]): Boolean = {
     var satisfied = false
     if (statusMap.contains(parameterToCheck.id)) {
       satisfied = statusMap(parameterToCheck.id)
@@ -300,8 +300,8 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
               val parentParameter = definitionMap(parameterToCheck.dependsOn.get)
               if (prerequisitesSatisfied(isAdmin, parentParameter, statusMap, definitionMap, providedValueMap, existingValueMap, checkedParameters)) {
                 var parentValue = providedValueMap.get(parentParameter.id)
-                if (parentValue.isEmpty && !isAdmin && parentParameter.adminOnly && parentParameter.hidden) {
-                  parentValue = existingValueMap.get(parentParameter.id)
+                if (parentValue.isEmpty && !isAdmin && parentParameter.adminOnly && parentParameter.hidden && existingValueMap.isDefined) {
+                  parentValue = existingValueMap.get.get(parentParameter.id)
                 }
                 if (parentValue.isDefined && parentValue.get.value != null && parentValue.get.value.equals(parameterToCheck.dependsOnValue.get)) {
                   satisfied = true
@@ -354,7 +354,7 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
         val prerequisiteStatusMap = mutable.Map[Long, Boolean]()
         val checkPrerequisitesSet = mutable.Set[Long]()
         parameterDefinitions.foreach { parameterDefinition =>
-          if (requireMandatoryPropertyValues && "R".equals(parameterDefinition.use) && !providedParameters.contains(parameterDefinition.id) && prerequisitesSatisfied(isAdmin, parameterDefinition, prerequisiteStatusMap, parameterDefinitionMap, providedParameters, existingSimpleValues.get, checkPrerequisitesSet)) {
+          if (requireMandatoryPropertyValues && "R".equals(parameterDefinition.use) && !providedParameters.contains(parameterDefinition.id) && prerequisitesSatisfied(isAdmin, parameterDefinition, prerequisiteStatusMap, parameterDefinitionMap, providedParameters, existingSimpleValues, checkPrerequisitesSet)) {
             if (isAdmin || (!parameterDefinition.adminOnly && !parameterDefinition.hidden && (!isSelfRegistration || parameterDefinition.inSelfRegistration))) {
               // No need to check this case before as the UI normally enforces this. Only way we could reach this is if a request is tampered.
               // Admins (if forced) should provide all values. Non-admins if forced would only be expected to provide values for parameters that are editable by them (non-admin, non-hidden).
