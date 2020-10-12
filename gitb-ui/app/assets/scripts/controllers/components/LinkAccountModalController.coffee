@@ -94,7 +94,7 @@ class LinkAccountModalController
                 token = @selfRegData.selfRegToken
             if @selfRegData.template?
                 templateId = @selfRegData.template.id
-            @CommunityService.selfRegister(@selfRegData.selfRegOption.communityId, token, @selfRegData.orgShortName, @selfRegData.orgFullName, templateId, undefined, undefined, undefined)
+            @CommunityService.selfRegister(@selfRegData.selfRegOption.communityId, token, @selfRegData.orgShortName, @selfRegData.orgFullName, templateId, @selfRegData.selfRegOption.organisationProperties, undefined, undefined, undefined)
             .then((data) => 
                 @createPending = false
                 if !@handleError('Unable to register', data)
