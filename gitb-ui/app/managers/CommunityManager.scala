@@ -179,17 +179,13 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
     community
   }
 
-  def updateCommunityInternal(community: Communities, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean, description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean, allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean, domainId: Option[Long]) = {
+  private def updateCommunityDomainDependencies(community: Communities, domainId: Option[Long]): DBIO[_] = {
     val actions = new ListBuffer[DBIO[_]]()
-
-    if (!shortName.isEmpty && community.shortname != shortName) {
-      val q = for {c <- PersistenceSchema.communities if c.id === community.id} yield (c.shortname)
-      actions += q.update(shortName)
-      actions += testResultManager.updateForUpdatedCommunity(community.id, shortName)
-    }
     if (community.domain.isDefined && domainId.isDefined && community.domain.get != domainId.get) {
       // New domain doesn't match previous domain. Remove conformance statements for previous domain.
       actions += conformanceManager.deleteConformanceStatementsForDomainAndCommunity(community.domain.get, community.id)
+      // Remove also any trigger data that referred to domain parameters.
+      actions += triggerManager.deleteTriggerDataOfCommunityAndDomain(community.id, community.domain.get)
     } else if (community.domain.isEmpty && domainId.isDefined) {
       // Domain set for community that was not previously linked to a domain. Remove statements for other domains.
       val action = for {
@@ -224,7 +220,25 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
       } yield ()
       actions += action
     }
+    toDBIO(actions)
+  }
 
+  private[managers] def updateCommunityDomain(community: Communities, domainId: Option[Long]): DBIO[_] = {
+    updateCommunityDomainDependencies(community, domainId) andThen {
+      val qs = for {c <- PersistenceSchema.communities if c.id === community.id} yield c.domain
+      qs.update(domainId)
+    }
+  }
+
+  private[managers] def updateCommunityInternal(community: Communities, shortName: String, fullName: String, supportEmail: Option[String], selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean, description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean, allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean, domainId: Option[Long]) = {
+    val actions = new ListBuffer[DBIO[_]]()
+    if (!shortName.isEmpty && community.shortname != shortName) {
+      val q = for {c <- PersistenceSchema.communities if c.id === community.id} yield (c.shortname)
+      actions += q.update(shortName)
+      actions += testResultManager.updateForUpdatedCommunity(community.id, shortName)
+    }
+    // Handle domain update (if any)
+    actions += updateCommunityDomainDependencies(community, domainId)
     if (!fullName.isEmpty && community.fullname != fullName) {
       val q = for {c <- PersistenceSchema.communities if c.id === community.id} yield (c.fullname)
       actions += q.update(fullName)

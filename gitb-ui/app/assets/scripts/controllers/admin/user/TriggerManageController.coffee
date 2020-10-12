@@ -1,7 +1,7 @@
 class TriggerManageController
 
-  @$inject = ['$state', '$stateParams', '$q', '$uibModal', 'TriggerService', 'CommunityService', 'ConfirmationDialogService', 'ErrorService', 'PopupService', 'DataService', 'Constants']
-  constructor: (@$state, @$stateParams, @$q, @$uibModal, @TriggerService, @CommunityService, @ConfirmationDialogService, @ErrorService, @PopupService, @DataService, @Constants) ->
+  @$inject = ['$state', '$stateParams', '$q', '$uibModal', 'TriggerService', 'ConformanceService', 'CommunityService', 'ConfirmationDialogService', 'ErrorService', 'PopupService', 'DataService', 'Constants']
+  constructor: (@$state, @$stateParams, @$q, @$uibModal, @TriggerService, @ConformanceService, @CommunityService, @ConfirmationDialogService, @ErrorService, @PopupService, @DataService, @Constants) ->
 
     @communityId = @$stateParams.community_id
     @triggerId = @$stateParams.trigger_id
@@ -33,10 +33,12 @@ class TriggerManageController
       actor: {dataType: @Constants.TRIGGER_DATA_TYPE.ACTOR, visible: true, selected: false}
       organisationParameter: {dataType: @Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER, visible: true, selected: false}
       systemParameter: {dataType: @Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER, visible: true, selected: false}
+      domainParameter: {dataType: @Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER, visible: true, selected: false}
     }
 
     @orgParamsLoaded = @$q.defer()
     @sysParamsLoaded = @$q.defer()
+    @domainParamsLoaded = @$q.defer()
 
     @CommunityService.getOrganisationParameters(@communityId)
     .then (data) =>
@@ -63,8 +65,27 @@ class TriggerManageController
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 
-    if @update
-      @$q.all([@orgParamsLoaded.promise, @sysParamsLoaded.promise]).then(() =>
+    if @DataService.isCommunityAdmin && @DataService.community.domainId?
+      @domainParameterFnResult = @ConformanceService.getDomainParameters(@domainId, false)
+    else if @DataService.isSystemAdmin
+      @domainParameterFnResult = @ConformanceService.getDomainParametersOfCommunity(@communityId)
+    if @domainParameterFnResult?
+      @domainParameterFnResult.then (data) =>
+        @domainParameters = data
+        @domainParameterMap = {}
+        for parameter in @domainParameters
+          parameter.selected = false
+          @domainParameterMap[parameter.id] = parameter
+        if @domainParameters.length == 0
+          _.remove(@dataTypes, (current) => current.id == @Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER)
+        @domainParamsLoaded.resolve()
+      .catch (error) =>
+        @ErrorService.showErrorMessage(error)
+    else
+      @domainParamsLoaded.resolve()
+
+    @$q.all([@orgParamsLoaded.promise, @sysParamsLoaded.promise, @domainParamsLoaded.promise]).then(() =>
+      if @update
         @TriggerService.getTriggerById(@triggerId)
         .then (data) =>
           @trigger = data.trigger
@@ -89,16 +110,22 @@ class TriggerManageController
               @triggerData.actor.selected = true
             else if item.dataType == @Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER
               @triggerData.organisationParameter.selected = true
-              @organisationParameterMap[item.dataId].selected = true
+              if @domainParameterMap[item.dataId]?
+                @organisationParameterMap[item.dataId].selected = true
             else if item.dataType == @Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER
               @triggerData.systemParameter.selected = true
-              @systemParameterMap[item.dataId].selected = true
+              if @domainParameterMap[item.dataId]?
+                @systemParameterMap[item.dataId].selected = true
+            else if item.dataType == @Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
+              @triggerData.domainParameter.selected = true
+              if @domainParameterMap[item.dataId]?
+                @domainParameterMap[item.dataId].selected = true
           @eventTypeChanged()
         .catch (error) =>
           @ErrorService.showErrorMessage(error)
-      )
-    else
-      @eventTypeChanged()      
+      else
+        @eventTypeChanged()
+    )
     @DataService.focus('name')
 
   saveDisabled: () =>
@@ -137,6 +164,10 @@ class TriggerManageController
       for parameter in @systemParameters
         if parameter.selected
           dataItems.push({dataType: @Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER, dataId: parameter.id})
+    if @triggerData.domainParameter.visible && @triggerData.domainParameter.selected
+      for parameter in @domainParameters
+        if parameter.selected
+          dataItems.push({dataType: @Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER, dataId: parameter.id})
     dataItems
 
   save: () =>
@@ -303,8 +334,9 @@ class TriggerManageController
     @triggerData.system.visible = eventType == undefined || @DataService.triggerDataTypeAllowedForEvent(eventType, @triggerData.system.dataType)
     @triggerData.specification.visible = eventType == undefined || @DataService.triggerDataTypeAllowedForEvent(eventType, @triggerData.specification.dataType)
     @triggerData.actor.visible = eventType == undefined || @DataService.triggerDataTypeAllowedForEvent(eventType, @triggerData.actor.dataType)
-    @triggerData.organisationParameter.visible = eventType == undefined || @DataService.triggerDataTypeAllowedForEvent(eventType, @triggerData.organisationParameter.dataType)
-    @triggerData.systemParameter.visible = eventType == undefined || @DataService.triggerDataTypeAllowedForEvent(eventType, @triggerData.systemParameter.dataType)
+    @triggerData.organisationParameter.visible = @organisationParameters.length > 0 && (eventType == undefined || @DataService.triggerDataTypeAllowedForEvent(eventType, @triggerData.organisationParameter.dataType))
+    @triggerData.systemParameter.visible = @systemParameters.length > 0 && (eventType == undefined || @DataService.triggerDataTypeAllowedForEvent(eventType, @triggerData.systemParameter.dataType))
+    @triggerData.domainParameter.visible = @domainParameters.length > 0 && (eventType == undefined || @DataService.triggerDataTypeAllowedForEvent(eventType, @triggerData.domainParameter.dataType))
 
   parameterType: (parameter) =>
     parameter.kindLabel = if parameter.kind == 'SIMPLE' then 'Simple' else if parameter.kind == 'BINARY' then 'Binary' else 'Secret'

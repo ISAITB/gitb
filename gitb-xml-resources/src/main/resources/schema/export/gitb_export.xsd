@@ -368,6 +368,7 @@
                     <xsd:element name="value" type="xsd:string"/>
                 </xsd:sequence>
                 <xsd:attribute name="type" type="PropertyType" use="required"/>
+                <xsd:attribute name="inTests" type="xsd:boolean" default="true"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
@@ -528,6 +529,7 @@
             <xsd:enumeration value="ACTOR"/>
             <xsd:enumeration value="ORGANISATION_PARAMETER"/>
             <xsd:enumeration value="SYSTEM_PARAMETER"/>
+            <xsd:enumeration value="DOMAIN_PARAMETER"/>
         </xsd:restriction>
     </xsd:simpleType>
     <xsd:complexType name="TestSuite">

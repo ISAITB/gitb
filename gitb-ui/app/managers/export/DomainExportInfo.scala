@@ -9,5 +9,6 @@ case class DomainExportInfo(
                              exportedEndpointParameterMap: mutable.Map[Long, com.gitb.xml.export.EndpointParameter],
                              exportedDomain: com.gitb.xml.export.Domain,
                              actorEndpointMap: mutable.Map[Long, ListBuffer[models.Endpoints]],
-                             endpointParameterMap: mutable.Map[Long, ListBuffer[models.Parameters]]
+                             endpointParameterMap: mutable.Map[Long, ListBuffer[models.Parameters]],
+                             exportedDomainParameterMap: mutable.Map[Long, com.gitb.xml.export.DomainParameter]
                            ) {}

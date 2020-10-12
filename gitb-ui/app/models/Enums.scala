@@ -101,7 +101,7 @@ object Enums {
 
   object TriggerDataType extends Enumeration(1) {
     type TriggerDataType = Value
-    val Community, Organisation, System, Specification, Actor, OrganisationParameter, SystemParameter = Value
+    val Community, Organisation, System, Specification, Actor, OrganisationParameter, SystemParameter, DomainParameter = Value
   }
 
 }

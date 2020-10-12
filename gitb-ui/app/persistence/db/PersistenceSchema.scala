@@ -147,8 +147,9 @@ object PersistenceSchema {
     def desc  = column[Option[String]]("description", O.SqlType("TEXT"))
     def kind  = column[String]("kind")
     def value = column[Option[String]]("value", O.SqlType("MEDIUMBLOB"))
+    def inTests = column[Boolean]("in_tests")
     def domain = column[Long]("domain")
-    def * = (id, name, desc, kind, value, domain) <> (models.DomainParameter.tupled, models.DomainParameter.unapply)
+    def * = (id, name, desc, kind, value, inTests, domain) <> (models.DomainParameter.tupled, models.DomainParameter.unapply)
   }
   val domainParameters = TableQuery[DomainParametersTable]
 

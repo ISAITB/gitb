@@ -175,6 +175,20 @@ object ParameterExtractor {
     }
   }
 
+  def optionalBooleanBodyParameter(request:Request[AnyContent], parameter:String):Option[Boolean] = {
+    try {
+      val paramList = request.body.asFormUrlEncoded.get(parameter)
+      if(paramList.nonEmpty){
+        Some(paramList.head.toBoolean)
+      } else{
+        None
+      }
+    } catch {
+      case _:NoSuchElementException =>
+        None
+    }
+  }
+
   def optionalShortBodyParameter(request:Request[AnyContent], parameter:String):Option[Short] = {
     try {
       val paramList = request.body.asFormUrlEncoded.get(parameter)

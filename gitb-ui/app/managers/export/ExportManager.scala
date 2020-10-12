@@ -367,6 +367,7 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
     }
     val exportedActorMap: scala.collection.mutable.Map[Long, com.gitb.xml.export.Actor] = scala.collection.mutable.Map()
     val exportedEndpointParameterMap: scala.collection.mutable.Map[Long, com.gitb.xml.export.EndpointParameter] = scala.collection.mutable.Map()
+    val exportedDomainParameterMap: scala.collection.mutable.Map[Long, com.gitb.xml.export.DomainParameter] = scala.collection.mutable.Map()
     // Domain.
     val domain = conformanceManager.getById(domainId)
     val exportedDomain = new com.gitb.xml.export.Domain
@@ -539,16 +540,18 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
           exportedParameter.setName(parameter.name)
           exportedParameter.setDescription(parameter.desc.orNull)
           exportedParameter.setType(propertyTypeForExport(parameter.kind))
+          exportedParameter.setInTests(parameter.inTests)
           if (exportedParameter.getType == PropertyType.SECRET) {
             exportedParameter.setValue(encryptText(parameter.value, exportSettings.encryptionKey))
           } else {
             exportedParameter.setValue(parameter.value.orNull)
           }
           exportedDomain.getParameters.getParameter.add(exportedParameter)
+          exportedDomainParameterMap += (parameter.id -> exportedParameter)
         }
       }
     }
-    DomainExportInfo(idSequence, exportedActorMap, exportedEndpointParameterMap, exportedDomain, actorEndpointMap, endpointParameterMap)
+    DomainExportInfo(idSequence, exportedActorMap, exportedEndpointParameterMap, exportedDomain, actorEndpointMap, endpointParameterMap, exportedDomainParameterMap)
   }
 
   def exportCommunity(communityId: Long, exportSettings: ExportSettings): com.gitb.xml.export.Export = {
@@ -815,23 +818,33 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
           if (trigger.data.isDefined && trigger.data.get.nonEmpty) {
             exportedTrigger.setDataItems(new TriggerDataItems)
             trigger.data.get.foreach { dataItem =>
-              val exportedDataItem = new TriggerDataItem
-              idSequence += 1
-              exportedDataItem.setId(toId(idSequence))
-              models.Enums.TriggerDataType.apply(dataItem.dataType) match {
-                case models.Enums.TriggerDataType.Community => exportedDataItem.setDataType(TriggerDataType.COMMUNITY)
-                case models.Enums.TriggerDataType.Organisation => exportedDataItem.setDataType(TriggerDataType.ORGANISATION)
-                case models.Enums.TriggerDataType.System => exportedDataItem.setDataType(TriggerDataType.SYSTEM)
-                case models.Enums.TriggerDataType.Specification => exportedDataItem.setDataType(TriggerDataType.SPECIFICATION)
-                case models.Enums.TriggerDataType.Actor => exportedDataItem.setDataType(TriggerDataType.ACTOR)
-                case models.Enums.TriggerDataType.OrganisationParameter =>
-                  exportedDataItem.setDataType(TriggerDataType.ORGANISATION_PARAMETER)
-                  exportedDataItem.setData(exportedOrganisationPropertyMap(dataItem.dataId))
-                case models.Enums.TriggerDataType.SystemParameter =>
-                  exportedDataItem.setDataType(TriggerDataType.SYSTEM_PARAMETER)
-                  exportedDataItem.setData(exportedSystemPropertyMap(dataItem.dataId))
+              val dataType = models.Enums.TriggerDataType.apply(dataItem.dataType)
+              // Check to ensure we have the dependent properties exported (if applicable).
+              if ((dataType != models.Enums.TriggerDataType.OrganisationParameter && dataType != models.Enums.TriggerDataType.SystemParameter && dataType != models.Enums.TriggerDataType.DomainParameter) ||
+                  ((dataType == models.Enums.TriggerDataType.OrganisationParameter || dataType == models.Enums.TriggerDataType.SystemParameter) && exportSettings.customProperties) ||
+                  (dataType == models.Enums.TriggerDataType.DomainParameter && exportSettings.domain && exportSettings.domainParameters)
+              ) {
+                val exportedDataItem = new TriggerDataItem
+                idSequence += 1
+                exportedDataItem.setId(toId(idSequence))
+                dataType match {
+                  case models.Enums.TriggerDataType.Community => exportedDataItem.setDataType(TriggerDataType.COMMUNITY)
+                  case models.Enums.TriggerDataType.Organisation => exportedDataItem.setDataType(TriggerDataType.ORGANISATION)
+                  case models.Enums.TriggerDataType.System => exportedDataItem.setDataType(TriggerDataType.SYSTEM)
+                  case models.Enums.TriggerDataType.Specification => exportedDataItem.setDataType(TriggerDataType.SPECIFICATION)
+                  case models.Enums.TriggerDataType.Actor => exportedDataItem.setDataType(TriggerDataType.ACTOR)
+                  case models.Enums.TriggerDataType.OrganisationParameter =>
+                    exportedDataItem.setDataType(TriggerDataType.ORGANISATION_PARAMETER)
+                    exportedDataItem.setData(exportedOrganisationPropertyMap(dataItem.dataId))
+                  case models.Enums.TriggerDataType.SystemParameter =>
+                    exportedDataItem.setDataType(TriggerDataType.SYSTEM_PARAMETER)
+                    exportedDataItem.setData(exportedSystemPropertyMap(dataItem.dataId))
+                  case models.Enums.TriggerDataType.DomainParameter =>
+                    exportedDataItem.setDataType(TriggerDataType.DOMAIN_PARAMETER)
+                    exportedDataItem.setData(domainExportInfo.exportedDomainParameterMap(dataItem.dataId))
+                }
+                exportedTrigger.getDataItems.getTriggerDataItem.add(exportedDataItem)
               }
-              exportedTrigger.getDataItems.getTriggerDataItem.add(exportedDataItem)
             }
           }
           communityData.getTriggers.getTrigger.add(exportedTrigger)

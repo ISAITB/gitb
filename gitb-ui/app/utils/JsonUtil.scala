@@ -518,6 +518,7 @@ object JsonUtil {
         "name" -> domainParameter.name,
         "description" -> domainParameter.desc,
         "kind" -> domainParameter.kind,
+        "inTests" -> domainParameter.inTests,
         "value" -> ""
       )
       json
@@ -527,6 +528,7 @@ object JsonUtil {
         "name" -> domainParameter.name,
         "description" -> domainParameter.desc,
         "kind" -> domainParameter.kind,
+        "inTests" -> domainParameter.inTests,
         "value" -> domainParameter.value
       )
       json
@@ -803,7 +805,7 @@ object JsonUtil {
     val dataType = (jsonConfig \ "dataType").as[Short]
     val dataTypeEnum = TriggerDataType.apply(dataType)
     var dataIdToUse: Long = -1
-    if (dataTypeEnum == TriggerDataType.OrganisationParameter || dataTypeEnum == TriggerDataType.SystemParameter) {
+    if (dataTypeEnum == TriggerDataType.OrganisationParameter || dataTypeEnum == TriggerDataType.SystemParameter || dataTypeEnum == TriggerDataType.DomainParameter) {
       dataIdToUse = (jsonConfig \ "dataId").as[Long]
     }
     val data = TriggerData(
@@ -949,6 +951,7 @@ object JsonUtil {
       (jsonConfig \ "desc").asOpt[String],
       kind,
       value,
+      (jsonConfig \ "inTests").as[Boolean],
       domainId
     )
   }

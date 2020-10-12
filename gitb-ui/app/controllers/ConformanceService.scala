@@ -323,7 +323,16 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
 
   def getDomainParameters(domainId: Long) = authorizedAction { request =>
     authorizationManager.canManageDomainParameters(request, domainId)
-    val result = conformanceManager.getDomainParameters(domainId)
+    // Optionally skip loading values (if we only want to show the list of parameters)
+    val loadValues = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.VALUES).getOrElse(true)
+    val result = conformanceManager.getDomainParameters(domainId, loadValues, None)
+    val json = JsonUtil.jsDomainParameters(result).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def getDomainParametersOfCommunity(communityId: Long) = authorizedAction { request =>
+    authorizationManager.canViewDomainParametersForCommunity(request, communityId)
+    val result = conformanceManager.getDomainParametersByCommunityId(communityId)
     val json = JsonUtil.jsDomainParameters(result).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -366,7 +375,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
     } else if (domainParameter.kind == "BINARY" && Configurations.ANTIVIRUS_SERVER_ENABLED && domainParameter.value.isDefined && ParameterExtractor.virusPresent(List(domainParameter.value.get))) {
       ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
     } else {
-      conformanceManager.updateDomainParameter(domainParameterId, domainParameter.name, domainParameter.desc, domainParameter.kind, domainParameter.value)
+      conformanceManager.updateDomainParameter(domainParameterId, domainParameter.name, domainParameter.desc, domainParameter.kind, domainParameter.value, domainParameter.inTests)
       ResponseConstructor.constructEmptyResponse
     }
   }

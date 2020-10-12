@@ -101,7 +101,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
 
   private def loadDomainParameters(specId: Long): Option[ActorConfiguration] = {
     val domainId = conformanceManager.getSpecifications(Some(List(specId))).head.domain
-    val parameters = conformanceManager.getDomainParameters(domainId)
+    val parameters = conformanceManager.getDomainParameters(domainId, loadValues = true, Some(true))
     if (parameters.nonEmpty) {
       val domainConfiguration = new ActorConfiguration()
       domainConfiguration.setActor(Constants.domainConfigurationName)

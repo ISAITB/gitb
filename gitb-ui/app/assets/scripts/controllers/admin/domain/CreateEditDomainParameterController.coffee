@@ -8,6 +8,8 @@ class CreateEditDomainParameterController
 		@$scope.savePending = false
 		@$scope.deletePending = false
 		@$scope.domainParameter = _.cloneDeep domainParameter
+		if !@$scope.domainParameter.id?
+			@$scope.domainParameter.inTests = true
 		@$scope.domainId = domainId
 		@$scope.formData = {}
 		@$scope.formData.initialKind = @$scope.domainParameter.kind
@@ -50,7 +52,7 @@ class CreateEditDomainParameterController
 						else if @$scope.domainParameter.kind == 'BINARY'
 							@valueToSave = @$scope.formData.data
 							
-						@ConformanceService.updateDomainParameter(@$scope.domainParameter.id, @$scope.domainParameter.name, @$scope.domainParameter.description, @valueToSave, @$scope.domainParameter.kind, @$scope.domainId)
+						@ConformanceService.updateDomainParameter(@$scope.domainParameter.id, @$scope.domainParameter.name, @$scope.domainParameter.description, @valueToSave, @$scope.domainParameter.kind, @$scope.domainParameter.inTests, @$scope.domainId)
 							.then((data) =>
 									@$scope.pending = false
 									@$scope.savePending = false
@@ -69,7 +71,7 @@ class CreateEditDomainParameterController
 							@valueToSave = @$scope.formData.hiddenValue
 						else if @$scope.domainParameter.kind == 'BINARY'
 							@valueToSave = @$scope.formData.data
-						@ConformanceService.createDomainParameter(@$scope.domainParameter.name, @$scope.domainParameter.description, @valueToSave, @$scope.domainParameter.kind, @$scope.domainId)
+						@ConformanceService.createDomainParameter(@$scope.domainParameter.name, @$scope.domainParameter.description, @valueToSave, @$scope.domainParameter.kind, @$scope.domainParameter.inTests, @$scope.domainId)
 							.then((data) =>
 								@$scope.pending = false
 								@$scope.savePending = false

@@ -158,6 +158,9 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
           }
         } else if (importItem.get.itemChoice.get == ImportItemChoice.Skip || importItem.get.itemChoice.get == ImportItemChoice.SkipProcessChildren) {
           if (importItem.get.targetKey.isDefined) {
+            if (importItem.get.itemChoice.get == ImportItemChoice.SkipProcessChildren && importCallbacks.fnSkipButProcessChildren.isDefined) {
+              dbAction = Some(importCallbacks.fnSkipButProcessChildren.get.apply(data, importItem.get.targetKey.get, importItem.get))
+            }
             // A skipped update - add it to the processed ID map if it exists in the DB.
             if (ctx.existingIds.map(itemType).contains(importItem.get.targetKey.get)) {
               var idMap = ctx.processedIdMap.get(itemType)
@@ -193,6 +196,22 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
     }
     toDBIO(dbActions)
+  }
+
+  private def determineDomainIdForCommunityUpdate(exportedCommunity: com.gitb.xml.export.Community, targetCommunity: Option[models.Communities], ctx: ImportContext): Option[Long] = {
+    var domainId: Option[Long] = None
+    if (exportedCommunity.getDomain != null) {
+      if (ctx.processedIdMap.contains(ImportItemType.Domain)) {
+        val processedDomainId = ctx.processedIdMap(ImportItemType.Domain).get(exportedCommunity.getDomain.getId)
+        if (processedDomainId.isDefined) {
+          domainId = Some(processedDomainId.get.toLong)
+        }
+      }
+    } else if (targetCommunity.isDefined) {
+      // The community may already have a domain defined (in the case of an update).
+      domainId = targetCommunity.get.domain
+    }
+    domainId
   }
 
   private def propertyTypeToKind(propertyType: PropertyType, isDomainParameter: Boolean): String = {
@@ -390,6 +409,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       case com.gitb.xml.export.TriggerDataType.ACTOR => Enums.TriggerDataType.Actor.id.toShort
       case com.gitb.xml.export.TriggerDataType.ORGANISATION_PARAMETER => Enums.TriggerDataType.OrganisationParameter.id.toShort
       case com.gitb.xml.export.TriggerDataType.SYSTEM_PARAMETER => Enums.TriggerDataType.SystemParameter.id.toShort
+      case com.gitb.xml.export.TriggerDataType.DOMAIN_PARAMETER => Enums.TriggerDataType.DomainParameter.id.toShort
       case _ => throw new IllegalArgumentException("Unknown enum value ["+dataType+"]")
     }
   }
@@ -405,10 +425,12 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
           dataId = getProcessedDbId(dataItem.getData, ImportItemType.OrganisationProperty, ctx)
         } else if (dataItem.getDataType == com.gitb.xml.export.TriggerDataType.SYSTEM_PARAMETER) {
           dataId = getProcessedDbId(dataItem.getData, ImportItemType.SystemProperty, ctx)
+        } else if (dataItem.getDataType == com.gitb.xml.export.TriggerDataType.DOMAIN_PARAMETER) {
+          dataId = getProcessedDbId(dataItem.getData, ImportItemType.DomainParameter, ctx)
         } else {
           dataId = Some(-1)
         }
-        // This might be referring to a organisation or system property that does not exist
+        // This might be referring to a organisation, system or domain property that does not exist
         if (dataId.isDefined) {
           modelDataItemsToProcess += models.TriggerData(toModelTriggerDataType(dataItem.getDataType), dataId.get, modelTriggerId.getOrElse(0L))
         }
@@ -684,10 +706,10 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.DomainParameter, item: ImportItem) => {
                   val domainId = item.parentItem.get.targetKey.get.toLong
-                  conformanceManager.createDomainParameterInternal(models.DomainParameter(0L, data.getName, Option(data.getDescription), propertyTypeToKind(data.getType, isDomainParameter = true), decryptIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), domainId))
+                  conformanceManager.createDomainParameterInternal(models.DomainParameter(0L, data.getName, Option(data.getDescription), propertyTypeToKind(data.getType, isDomainParameter = true), decryptIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), data.isInTests, domainId))
                 },
                 (data: com.gitb.xml.export.DomainParameter, targetKey: String, item: ImportItem) => {
-                  conformanceManager.updateDomainParameterInternal(targetKey.toLong, data.getName, Option(data.getDescription), propertyTypeToKind(data.getType, isDomainParameter = true), Option(data.getValue))
+                  conformanceManager.updateDomainParameterInternal(targetKey.toLong, data.getName, Option(data.getDescription), propertyTypeToKind(data.getType, isDomainParameter = true), Option(data.getValue), data.isInTests)
                 }
               )
             )
@@ -1078,13 +1100,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
         processFromArchive(ImportItemType.Community, exportedCommunity, exportedCommunity.getId, ctx,
           ImportCallbacks.set(
             (data: com.gitb.xml.export.Community, item: ImportItem) => {
-              var domainId: Option[Long] = None
-              if (exportedCommunity.getDomain != null && ctx.processedIdMap.contains(ImportItemType.Domain)) {
-                val processedDomainId = ctx.processedIdMap(ImportItemType.Domain).get(exportedCommunity.getDomain.getId)
-                if (processedDomainId.isDefined) {
-                  domainId = Some(processedDomainId.get.toLong)
-                }
-              }
+              val domainId = determineDomainIdForCommunityUpdate(exportedCommunity, None, ctx)
               // This returns a tuple: (community ID, admin organisation ID)
               communityManager.createCommunityInternal(models.Communities(0L, data.getShortName, data.getFullName, Option(data.getSupportEmail),
                 selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText),
@@ -1095,18 +1111,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
               ))
             },
             (data: com.gitb.xml.export.Community, targetKey: String, item: ImportItem) => {
-              var domainId: Option[Long] = None
-              if (exportedCommunity.getDomain != null) {
-                if (ctx.processedIdMap.contains(ImportItemType.Domain)) {
-                  val processedDomainId = ctx.processedIdMap(ImportItemType.Domain).get(exportedCommunity.getDomain.getId)
-                  if (processedDomainId.isDefined) {
-                    domainId = Some(processedDomainId.get.toLong)
-                  }
-                }
-              } else {
-                // The community may already have a domain defined.
-                domainId = targetCommunity.get.domain
-              }
+              val domainId = determineDomainIdForCommunityUpdate(exportedCommunity, targetCommunity, ctx)
               communityManager.updateCommunityInternal(targetCommunity.get, data.getShortName, data.getFullName, Option(data.getSupportEmail),
                 selfRegistrationMethodToModel(data.getSelfRegistrationSettings.getMethod), Option(data.getSelfRegistrationSettings.getToken), Option(data.getSelfRegistrationSettings.getTokenHelpText), data.getSelfRegistrationSettings.isNotifications,
                 Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
@@ -1125,7 +1130,15 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
               // Record admin organisation ID.
               communityAdminOrganisationId = Some(ids._2)
             }
-          )
+          ).withFnForSkipButProcessChildren((data: com.gitb.xml.export.Community, targetKey: String, item: ImportItem) => {
+            /*
+             Exceptional case for community import to make sure we always update its domain. Not doing so would create problems for
+             triggers with domain parameters and conformance statements. We cannot do these checks using a normal approach on the ID
+             being processed as the domain is processed separately.
+             */
+            val domainId = determineDomainIdForCommunityUpdate(exportedCommunity, targetCommunity, ctx)
+            communityManager.updateCommunityDomain(targetCommunity.get, domainId)
+          })
         )
       }
       // Certificate settings

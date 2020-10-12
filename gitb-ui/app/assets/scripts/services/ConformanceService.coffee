@@ -190,18 +190,32 @@ class ConformanceService
       authenticate: true
     })
 
-  getDomainParameters: (domainId) ->
+  getDomainParameters: (domainId, loadValues) ->
+    params = {}
+    if loadValues?
+      params.values = loadValues
     @RestService.get({
       path: jsRoutes.controllers.ConformanceService.getDomainParameters(domainId).url,
       authenticate: true
+      params: params
     })
 
-  updateDomainParameter: (domainParameterId, domainParameterName, domainParameterDescription, domainParameterValue, domainParameterKind, domainId) ->
+  getDomainParametersOfCommunity: (communityId) ->
+    @RestService.get({
+      path: jsRoutes.controllers.ConformanceService.getDomainParametersOfCommunity(communityId).url,
+      authenticate: true
+    })
+
+  updateDomainParameter: (domainParameterId, domainParameterName, domainParameterDescription, domainParameterValue, domainParameterKind, inTests, domainId) ->
     params = {
       name: domainParameterName,
       desc: domainParameterDescription,
-      kind: domainParameterKind,
+      kind: domainParameterKind
     }
+    if inTests?
+      params.inTests = inTests
+    else
+      params.inTests = false
     if domainParameterKind == 'BINARY'
       params.valueBinary = domainParameterValue
     else
@@ -213,12 +227,16 @@ class ConformanceService
         config: angular.toJson params
     })
 
-  createDomainParameter: (domainParameterName, domainParameterDescription, domainParameterValue, domainParameterKind, domainId) ->
+  createDomainParameter: (domainParameterName, domainParameterDescription, domainParameterValue, domainParameterKind, inTests, domainId) ->
     params = {
       name: domainParameterName,
       desc: domainParameterDescription,
-      kind: domainParameterKind,
+      kind: domainParameterKind
     }
+    if inTests?
+      params.inTests = inTests
+    else
+      params.inTests = false
     if domainParameterKind == 'BINARY'
       params.valueBinary = domainParameterValue
     else

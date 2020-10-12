@@ -91,7 +91,7 @@ class DomainDetailsController
 	onSpecificationSelect: (specification) =>
 		@$state.go 'app.admin.domains.detail.specifications.detail.list', {id: @domainId, spec_id: specification.id}
 
-	onDomainParameterSelect: (domainParameter) =>
+	openParameterModal: (domainParameter) =>
 		modalOptions =
 			templateUrl: 'assets/views/admin/domains/create-edit-domain-parameter-modal.html'
 			controller: 'CreateEditDomainParameterController as parameterCtrl'
@@ -106,20 +106,11 @@ class DomainDetailsController
 				@$state.go @$state.current, {}, {reload: true}
 			, angular.noop)
 
+	onDomainParameterSelect: (domainParameter) =>
+		@openParameterModal(domainParameter)
+
 	createDomainParameter: () =>
-		modalOptions =
-			templateUrl: 'assets/views/admin/domains/create-edit-domain-parameter-modal.html'
-			controller: 'CreateEditDomainParameterController as parameterCtrl'
-			resolve: 
-				domainParameter: () => {}
-				domainId: () => @domain.id
-			size: 'lg'
-		modalInstance = @$uibModal.open(modalOptions)
-		modalInstance.result
-			.finally(angular.noop)
-			.then((result) => 
-				@$state.go @$state.current, {}, {reload: true}
-			, angular.noop)
+		@openParameterModal({})
 
 	uploadTestSuite: () =>
 		modalOptions =

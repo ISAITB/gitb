@@ -1,0 +1,1 @@
+ALTER TABLE `domainparameters` ADD COLUMN `in_tests` TINYINT DEFAULT 1 NOT NULL;

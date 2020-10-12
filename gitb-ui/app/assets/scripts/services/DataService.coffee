@@ -495,6 +495,7 @@ class DataService
 			{id: @Constants.TRIGGER_DATA_TYPE.ACTOR, label: @labelActor()},
 			{id: @Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER, label: @labelOrganisation() + ' properties'},
 			{id: @Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER, label: @labelSystem() + ' properties'}
+			{id: @Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER, label: @labelDomain() + ' properties'}
 		]
 
 	idToLabelMap: (items) ->
@@ -509,26 +510,30 @@ class DataService
 			@addIdMapEntry(tempMap, @Constants.TRIGGER_EVENT_TYPE.ORGANISATION_CREATED, [
 				@Constants.TRIGGER_DATA_TYPE.COMMUNITY,
 				@Constants.TRIGGER_DATA_TYPE.ORGANISATION,
-				@Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER,
+				@Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
 			])
 			@addIdMapEntry(tempMap, @Constants.TRIGGER_EVENT_TYPE.ORGANISATION_UPDATED, [
 				@Constants.TRIGGER_DATA_TYPE.COMMUNITY,
 				@Constants.TRIGGER_DATA_TYPE.ORGANISATION,
-				@Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER,
+				@Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
 			])
 			@addIdMapEntry(tempMap, @Constants.TRIGGER_EVENT_TYPE.SYSTEM_CREATED, [
 				@Constants.TRIGGER_DATA_TYPE.COMMUNITY,
 				@Constants.TRIGGER_DATA_TYPE.ORGANISATION,
 				@Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER,
 				@Constants.TRIGGER_DATA_TYPE.SYSTEM,
-				@Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER
+				@Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
+				@Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
 			])
 			@addIdMapEntry(tempMap, @Constants.TRIGGER_EVENT_TYPE.SYSTEM_UPDATED, [
 				@Constants.TRIGGER_DATA_TYPE.COMMUNITY,
 				@Constants.TRIGGER_DATA_TYPE.ORGANISATION,
 				@Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER,
 				@Constants.TRIGGER_DATA_TYPE.SYSTEM,
-				@Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER
+				@Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
+				@Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
 			])
 			@addIdMapEntry(tempMap, @Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_CREATED, [
 				@Constants.TRIGGER_DATA_TYPE.COMMUNITY,
@@ -537,7 +542,8 @@ class DataService
 				@Constants.TRIGGER_DATA_TYPE.SYSTEM,
 				@Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
 				@Constants.TRIGGER_DATA_TYPE.SPECIFICATION,
-				@Constants.TRIGGER_DATA_TYPE.ACTOR
+				@Constants.TRIGGER_DATA_TYPE.ACTOR,
+				@Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
 			])
 			@addIdMapEntry(tempMap, @Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_UPDATED, [
 				@Constants.TRIGGER_DATA_TYPE.COMMUNITY,
@@ -546,7 +552,8 @@ class DataService
 				@Constants.TRIGGER_DATA_TYPE.SYSTEM,
 				@Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
 				@Constants.TRIGGER_DATA_TYPE.SPECIFICATION,
-				@Constants.TRIGGER_DATA_TYPE.ACTOR
+				@Constants.TRIGGER_DATA_TYPE.ACTOR,
+				@Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
 			])
 			@triggerEventToDataTypeMap = tempMap
 		@triggerEventToDataTypeMap[eventType][dataType]? == true
