@@ -4,7 +4,7 @@ import java.util
 
 import com.gitb.core.{ActorConfiguration, Configuration}
 import javax.inject.{Inject, Singleton}
-import models.Enums.TestResultStatus
+import models.Enums.{TestResultStatus, TriggerDataType}
 import models._
 import models.prerequisites.PrerequisiteUtil
 import org.apache.commons.io.FileUtils
@@ -18,7 +18,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class ConformanceManager @Inject() (actorManager: ActorManager, testResultManager: TestResultManager, testCaseManager: TestCaseManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager: ActorManager, testResultManager: TestResultManager, testCaseManager: TestCaseManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   def logger = LoggerFactory.getLogger("ConformanceManager")
 
@@ -104,27 +104,19 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 		exec(createDomainParameterInternal(parameter))
 	}
 
-	def updateDomainParameter(parameterId: Long, name: String, description: Option[String], kind: String, value: Option[String]) = {
-		exec(updateDomainParameterInternal(parameterId, name, description, kind, value).transactionally)
+	def updateDomainParameter(parameterId: Long, name: String, description: Option[String], kind: String, value: Option[String], inTests: Boolean) = {
+		exec(updateDomainParameterInternal(parameterId, name, description, kind, value, inTests).transactionally)
 	}
 
-	def updateDomainParameterInternal(parameterId: Long, name: String, description: Option[String], kind: String, value: Option[String]): DBIO[_] = {
-		val actions = new ListBuffer[DBIO[_]]()
-		val q1 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.name)
-		actions += q1.update(name)
-
-		val q2 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.desc)
-		actions += q2.update(description)
-
-		val q3 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.kind)
-		actions += q3.update(kind)
-
+	def updateDomainParameterInternal(parameterId: Long, name: String, description: Option[String], kind: String, value: Option[String], inTests: Boolean): DBIO[_] = {
 		if (value.isDefined) {
 			// If there is no value provided this means that we don't want to update this
-			val q4 = for {d <- PersistenceSchema.domainParameters if d.id === parameterId} yield (d.value)
-			actions += q4.update(value)
+			val q = for {p <- PersistenceSchema.domainParameters if p.id === parameterId} yield (p.name, p.desc, p.kind, p.inTests, p.value)
+			q.update(name, description, kind, inTests, value)
+		} else {
+			val q = for {p <- PersistenceSchema.domainParameters if p.id === parameterId} yield (p.name, p.desc, p.kind, p.inTests)
+			q.update(name, description, kind, inTests)
 		}
-		toDBIO(actions)
 	}
 
 	def deleteDomainParameterWrapper(domainParameter: Long) = {
@@ -132,20 +124,55 @@ class ConformanceManager @Inject() (actorManager: ActorManager, testResultManage
 	}
 
 	def deleteDomainParameter(domainParameter: Long): DBIO[_] = {
-		PersistenceSchema.domainParameters.filter(_.id === domainParameter).delete
+		triggerManager.deleteTriggerDataByDataType(domainParameter, TriggerDataType.DomainParameter) andThen
+			PersistenceSchema.domainParameters.filter(_.id === domainParameter).delete
 	}
 
 	def getDomainParameter(domainParameterId: Long) = {
 		exec(PersistenceSchema.domainParameters.filter(_.id === domainParameterId).result.head)
 	}
 
-	def getDomainParameters(domainId: Long) = {
+	def getDomainParametersByCommunityId(communityId: Long): List[DomainParameter] = {
 		exec(
-			PersistenceSchema.domainParameters.filter(_.domain === domainId)
-				.sortBy(_.name.asc)
-				.result
-  			.map(_.toList)
+			for {
+				domainId <- PersistenceSchema.communities.filter(_.id === communityId).map(x => x.domain).result.head
+				domainParameters <- {
+					if (domainId.isDefined) {
+						PersistenceSchema.domainParameters
+							.filter(_.domain === domainId.get)
+							.map(x => (x.id, x.name, x.kind))
+							.sortBy(_._2.asc)
+							.result
+							.map(_.toList.map(x => DomainParameter(x._1, x._2, None, x._3, None, inTests = false, domainId.get)))
+					} else {
+						DBIO.successful(List[DomainParameter]())
+					}
+				}
+			} yield domainParameters
 		)
+	}
+
+	def getDomainParameters(domainId: Long, loadValues: Boolean, onlyForTests: Option[Boolean]): List[DomainParameter] = {
+		val query = PersistenceSchema.domainParameters.filter(_.domain === domainId)
+			.filterOpt(onlyForTests)((table, filterValue) => table.inTests === filterValue)
+			.sortBy(_.name.asc)
+		if (loadValues) {
+			exec(
+				query
+					.result
+					.map(_.toList)
+			)
+		} else {
+			exec(
+				query
+					.map(x => (x.id, x.name, x.desc, x.kind, x.inTests))
+				.result
+			).map(x => DomainParameter(x._1, x._2, x._3, x._4, None, x._5, domainId)).toList
+		}
+	}
+
+	def getDomainParameters(domainId: Long): List[DomainParameter] = {
+		getDomainParameters(domainId, loadValues = true, None)
 	}
 
 	def getDomainParameterByDomainAndName(domainId: Long, name: String) = {

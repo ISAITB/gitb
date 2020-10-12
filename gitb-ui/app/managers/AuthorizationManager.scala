@@ -1146,6 +1146,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canManageDomain(request, domainId)
   }
 
+  def canViewDomainParametersForCommunity(request: RequestWithAttributes[_], communityId: Long):Boolean = {
+    canManageCommunity(request, communityId)
+  }
+
   def canViewTestSuiteByTestCaseId(request: RequestWithAttributes[_], testCaseId: Long):Boolean = {
     var ok = false
     val userInfo = getUser(getRequestUserId(request))

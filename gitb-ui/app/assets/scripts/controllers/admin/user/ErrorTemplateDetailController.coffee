@@ -41,7 +41,6 @@ class ErrorTemplateDetailController
         if copy
           @copyErrorTemplate()
         else
-          @cancelDetailErrorTemplate()
           @PopupService.success('Error template updated.')
     .catch (error) =>
       @ErrorService.showErrorMessage(error)

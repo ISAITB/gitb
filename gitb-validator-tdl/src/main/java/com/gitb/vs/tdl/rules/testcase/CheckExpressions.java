@@ -31,7 +31,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
 
     private Map<String, Boolean> scope;
     private VariableResolver variableResolver;
-    private List<String> importVariableExpressionsToCheck = new ArrayList<>();
+    private final List<String> importVariableExpressionsToCheck = new ArrayList<>();
 
     @Override
     public void initialiseTestCase(TestCase currentTestCase) {

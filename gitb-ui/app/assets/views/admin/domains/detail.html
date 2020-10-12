@@ -44,6 +44,7 @@
 						<th>Name</th>
 						<th>Value</th>
 						<th>Description</th>
+						<th>In&nbsp;tests</th>
 					</tr>
 				</thead>
 				<tbody>
@@ -52,6 +53,7 @@
 						<td ng-if="parameter.kind == 'BINARY'"><a href="" ng-click="domainDetailsCtrl.downloadParameter(parameter); $event.stopPropagation();">{{parameter.valueToShow}}</a></td>
 						<td ng-if="parameter.kind != 'BINARY'">{{parameter.valueToShow}}</td>
 						<td>{{parameter.description}}</td>
+						<td><div><span><i class="glyphicon" ng-class="{'glyphicon-ok': parameter.inTests, 'glyphicon-remove': !parameter.inTests}"></i></span></div></td>
 					</tr>
 				</tbody>
 			</table>

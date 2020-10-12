@@ -164,6 +164,34 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
       PersistenceSchema.triggers.filter(_.id === triggerId).delete
   }
 
+  def deleteTriggerDataOfCommunityAndDomain(communityId: Long, domainId: Long): DBIO[_] = {
+    for {
+      domainParameterIds <- {
+        PersistenceSchema.domainParameters.filter(_.domain === domainId).map(x => x.id).result
+      }
+      triggerDataToDelete <- {
+        PersistenceSchema.triggerData
+          .join(PersistenceSchema.triggers).on(_.trigger === _.id)
+          .filter(_._2.community === communityId)
+          .filter(_._1.dataType === TriggerDataType.DomainParameter.id.toShort)
+          .filter(_._1.dataId inSet domainParameterIds)
+          .map(x => x._1)
+          .result
+      }
+      _ <- {
+        val actions = ListBuffer[DBIO[_]]()
+        triggerDataToDelete.foreach { data =>
+          actions += PersistenceSchema.triggerData
+            .filter(_.dataId === data.dataId)
+            .filter(_.dataType === data.dataType)
+            .filter(_.trigger === data.trigger)
+            .delete
+        }
+        toDBIO(actions)
+      }
+    } yield ()
+  }
+
   private def deleteTriggerDataInternal(triggerId: Long): DBIO[_] = {
     PersistenceSchema.triggerData.filter(_.trigger === triggerId).delete
   }
@@ -186,18 +214,9 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
     PersistenceSchema.triggerData.filter(_.dataId === dataId).filter(_.dataType === dataType.id.toShort).delete
   }
 
-  private def hasOrganisationParameter(data: List[TriggerData]): Boolean = {
+  private def hasTriggerDataType(data: List[TriggerData], dataType: TriggerDataType): Boolean = {
     data.foreach { dataItem =>
-      if (TriggerDataType.apply(dataItem.dataType) == TriggerDataType.OrganisationParameter) {
-        return true
-      }
-    }
-    false
-  }
-
-  private def hasSystemParameter(data: List[TriggerData]): Boolean = {
-    data.foreach { dataItem =>
-      if (TriggerDataType.apply(dataItem.dataType) == TriggerDataType.SystemParameter) {
+      if (TriggerDataType.apply(dataItem.dataType) == dataType) {
         return true
       }
     }
@@ -264,6 +283,17 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
     resultMap.toMap
   }
 
+  private def loadDomainParameterData(parameterIds: List[Long]): Map[Long, (String, String, Option[String])] = {
+    val data: List[(Long, String, String, Option[String])] = exec(
+      PersistenceSchema.domainParameters.filter(_.id inSet parameterIds).map(x => (x.id, x.name, x.kind, x.value)).result
+    ).map(x => (x._1, x._2, x._3, x._4)).toList
+    val resultMap = mutable.Map[Long, (String, String, Option[String])]()
+    data.foreach { dataItem =>
+      resultMap += (dataItem._1 -> (dataItem._2, dataItem._3, dataItem._4))
+    }
+    resultMap.toMap
+  }
+
   private def fromCache[T](cache: mutable.Map[String, Any], cacheKey: String, fnLoad: () => T): T = {
     if (cache.contains(cacheKey)) {
       cache(cacheKey).asInstanceOf[T]
@@ -277,12 +307,16 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
   private def prepareTriggerInput(trigger: Trigger, dataCache: mutable.Map[String, Any], callbacks: Option[TriggerCallbacks]): ProcessRequest = {
     var organisationParameterData: Map[Long, (String, String, Option[String])] = null
     var systemParameterData: Map[Long, (String, String, Option[String])] = null
+    var domainParameterData: Map[Long, (String, String, Option[String])] = null
     if (trigger.data.isDefined) {
-      if (hasOrganisationParameter(trigger.data.get)) {
+      if (hasTriggerDataType(trigger.data.get, TriggerDataType.OrganisationParameter)) {
         organisationParameterData = fromCache(dataCache, "organisationParameterData", () => loadOrganisationParameterData(trigger.data.get.map(x => x.dataId), TriggerCallbacks.organisationId(callbacks)))
       }
-      if (hasSystemParameter(trigger.data.get)) {
+      if (hasTriggerDataType(trigger.data.get, TriggerDataType.SystemParameter)) {
         systemParameterData = fromCache(dataCache, "systemParameterData", () => loadSystemParameterData(trigger.data.get.map(x => x.dataId), TriggerCallbacks.systemId(callbacks)))
+      }
+      if (hasTriggerDataType(trigger.data.get, TriggerDataType.DomainParameter)) {
+        domainParameterData = fromCache(dataCache, "domainParameterData", () => loadDomainParameterData(trigger.data.get.map(x => x.dataId)))
       }
     }
     val request = new ProcessRequest()
@@ -296,6 +330,7 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
     var specificationData: Option[AnyContent] = None
     var orgParamData: Option[AnyContent] = None
     var sysParamData: Option[AnyContent] = None
+    var domainParamData: Option[AnyContent] = None
     if (trigger.data.isDefined) {
       trigger.data.get.foreach { dataItem =>
         TriggerDataType.apply(dataItem.dataType) match {
@@ -397,6 +432,20 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
                 sysParamData.get.getItem.add(toAnyContent(paramInfo.get._1, "string", paramInfo.get._3.getOrElse("Sample data"), None))
               }
             }
+          case TriggerDataType.DomainParameter =>
+            domainParamData = getOrInitiatizeContentMap("domainParameters", domainParamData)
+            val paramInfo = domainParameterData.get(dataItem.dataId)
+            if (paramInfo.isDefined) {
+              if ("BINARY".equals(paramInfo.get._2)) {
+                var value = "BASE64_CONTENT_OF_FILE"
+                if (paramInfo.get._3.isDefined) {
+                  value = MimeUtil.getBase64FromDataURL(paramInfo.get._3.get)
+                }
+                domainParamData.get.getItem.add(toAnyContent(paramInfo.get._1, "binary", value, Some(ValueEmbeddingEnumeration.BASE_64)))
+              } else {
+                domainParamData.get.getItem.add(toAnyContent(paramInfo.get._1, "string", paramInfo.get._3.getOrElse("Sample data"), None))
+              }
+            }
         }
       }
       if (communityData.isDefined) {
@@ -413,6 +462,9 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
       }
       if (actorData.isDefined) {
         request.getInput.add(actorData.get)
+      }
+      if (domainParamData.isDefined) {
+        request.getInput.add(domainParamData.get)
       }
       if (orgParamData.isDefined) {
         request.getInput.add(orgParamData.get)

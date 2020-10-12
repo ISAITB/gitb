@@ -129,17 +129,15 @@
             '<div class="form-group" ng-if="model.selfRegOption.templates.length > 0">'+
                 '<label class="col-xs-3 control-label" for="template"><span ng-show="model.selfRegOption.forceTemplateSelection">* </span>Configuration:</label>'+
                 '<div class="col-xs-7">'+
-                    '<select id="template" class="form-control" ng-model="model.template" ng-options="template as template.name for template in model.selfRegOption.templates"><option value=""></option></select>'+
+                    '<select id="template" class="form-control" ng-disabled="templateReadonly" ng-model="model.template" ng-options="template as template.name for template in model.selfRegOption.templates"><option value=""></option></select>'+
                 '</div>'+
                 '<div tb-tooltip="Predefined test configuration(s) curated by the community administrator."></div>'+
             '</div>'+
-
             '<div class="row" ng-if="model.selfRegOption.organisationProperties.length > 0">'+
               '<div class="col-xs-12">'+
                 '<div ng-class="{\'form-separator-popup selfreg\': sso, \'form-separator\': !sso}"></div>'+
               '</div>'+
             '</div>'+
-
             '<div tb-custom-properties-form tb-properties="model.selfRegOption.organisationProperties" tb-show-form-header="false" tb-form-padded="false" tb-col-input-less="1" tb-show-required-asterisks="model.selfRegOption.forceRequiredProperties"></div>'+
             '<div ng-if="!sso">'+
               '<div class="form-separator form-separator-top-padding">'+
@@ -193,6 +191,14 @@
         }
       ]
       scope.DataService.setupLabels()
+
+      scope.adaptTemplateStatus = () =>
+        if scope.model?.selfRegOption?.forceTemplateSelection && scope.model?.selfRegOption?.templates?.length == 1
+          scope.model.template = scope.model.selfRegOption.templates[0]
+          scope.templateReadonly = true
+        else 
+          scope.templateReadonly = false
+
       scope.communitySelected = (option) =>
         scope.model.selfRegOption = option
         scope.communityChanged()
@@ -203,24 +209,11 @@
             scope.DataService.focus('token', 200)
           else 
             scope.DataService.focus('orgShortName', 200)
-      if scope.selfRegOptions == undefined
-        CommunityService.getSelfRegistrationOptions()
-        .then((data) =>
-          scope.selfRegOptions = data
-          if data.length == 1
-            scope.model.selfRegOption = data[0]
-            scope.DataService.setupLabels(scope.model.selfRegOption.labels)
-            scope.setFormFocus()
-        )
-      else
-        if scope.selfRegOptions.length == 1
-          scope.model.selfRegOption = scope.selfRegOptions[0]
-          scope.DataService.setupLabels(scope.model.selfRegOption.labels)
-          scope.setFormFocus()
       
       scope.communityChanged = () =>
         if scope.model?.selfRegOption?
           scope.DataService.setupLabels(scope.model.selfRegOption.labels)
+          scope.adaptTemplateStatus()
           scope.setFormFocus()
 
       scope.optionRowStyle = () =>
@@ -228,6 +221,17 @@
           ""
         else
           "selected"
+
+      if scope.selfRegOptions == undefined
+        CommunityService.getSelfRegistrationOptions()
+        .then((data) =>
+          scope.selfRegOptions = data
+          if data.length == 1
+            scope.communitySelected(data[0])
+        )
+      else
+        if scope.selfRegOptions.length == 1
+          scope.communitySelected(scope.selfRegOptions[0])
 
 ]
 

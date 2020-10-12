@@ -23,4 +23,10 @@ class ImportCallbacks[A](_fnCreate: (A, ImportItem) => DBIO[Any], _fnUpdate: (A,
   var fnUpdate: (A, String, ImportItem) => DBIO[_] = _fnUpdate
   var fnPostCreate: Option[(A, Any, ImportItem) => _] = _fnPostCreate
   var fnCreatedIdHandle: Option[(A, String, Any, ImportItem) => _] = _fnCreatedIdHandle
+  var fnSkipButProcessChildren: Option[(A, String, ImportItem) => DBIO[_]] = None
+
+  def withFnForSkipButProcessChildren(fn: (A, String, ImportItem) => DBIO[_]): ImportCallbacks[A] = {
+    fnSkipButProcessChildren = Some(fn)
+    this
+  }
 }

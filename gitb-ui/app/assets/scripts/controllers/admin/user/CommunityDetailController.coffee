@@ -38,6 +38,11 @@ class CommunityDetailController
         title: 'Full name'
       }
     ]
+    if @DataService.configuration['registration.enabled']
+      @organizationColumns.push({
+        field: 'templateName',
+        title: 'Set as template'
+      })
 
     @landingPagesColumns = [
       {
@@ -257,6 +262,9 @@ class CommunityDetailController
 
   errorTemplateSelect: (errorTemplate) =>
     @$state.go 'app.admin.users.communities.detail.errortemplates.detail', { template_id : errorTemplate.id }
+
+  createTrigger: () =>
+    @$state.go 'app.admin.users.communities.detail.triggers.create'
 
   triggerSelect: (trigger) =>
     @$state.go 'app.admin.users.communities.detail.triggers.detail', { trigger_id : trigger.id }
