@@ -148,6 +148,26 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				deferred.promise
 		]
 
+		canEditOwnOrganisation = [
+			'$q', 'OrganizationService', 'ErrorService', 'DataService'
+			($q, OrganizationService, Errorservice, DataService) ->
+				deferred = $q.defer()
+				if DataService.isSystemAdmin || DataService.isCommunityAdmin
+					deferred.resolve(true)
+				else if DataService.isVendorAdmin
+					if  DataService.community.allowPostTestOrganisationUpdates
+						deferred.resolve(true)
+					else
+						OrganizationService.ownOrganisationHasTests()
+						.then (data) =>
+							deferred.resolve(!data.hasTests)
+						.catch (error) =>
+							ErrorService.showErrorMessage(error)
+				else
+					deferred.resolve(false)
+				deferred.promise
+		]
+
 		$urlRouterProvider.when('', '/')
 		$urlRouterProvider.otherwise('/')
 
@@ -275,6 +295,8 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/settings/organisation.html'
 				controller: 'OrganizationController'
 				controllerAs: 'oc'
+				resolve:
+					canEditOwnOrganisation: canEditOwnOrganisation
 				params: {
 					viewProperties: false
 				}

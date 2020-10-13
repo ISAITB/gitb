@@ -69,6 +69,7 @@ object Parameters {
   val TEMPLATE = "template"
   val TEMPLATE_ID = "template_id"
   val TEMPLATE_NAME = "template_name"
+  val CHECK_HAS_TESTS = "check_has_tests"
 
   val ORGANISATION_PARAMETERS = "org_params"
   val SYSTEM_PARAMETERS = "sys_params"
@@ -123,7 +124,9 @@ object Parameters {
   val ALLOW_CERTIFICATE_DOWNLOAD = "allow_certificate_download"
   val ALLOW_STATEMENT_MANAGEMENT = "allow_statement_management"
   val ALLOW_SYSTEM_MANAGEMENT = "allow_system_management"
-
+  val ALLOW_POST_TEST_ORG_UPDATE = "allow_post_test_org_update"
+  val ALLOW_POST_TEST_SYS_UPDATE = "allow_post_test_sys_update"
+  val ALLOW_POST_TEST_STM_UPDATE = "allow_post_test_stm_update"
   //TestService parameters
   val ACTOR_ID   = "actor_id"
   val ACTOR_DEFAULT   = "default"

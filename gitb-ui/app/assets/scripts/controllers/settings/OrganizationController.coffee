@@ -1,7 +1,7 @@
 class OrganizationController
 
-    @$inject = ['$scope', '$uibModal', 'DataService', 'AccountService', 'ErrorService', 'Constants', 'UserService', 'ConfirmationDialogService', 'OrganizationService', '$stateParams', 'PopupService']
-    constructor: (@$scope, @$uibModal, @DataService, @AccountService, @ErrorService, @Constants, @UserService, @ConfirmationDialogService, @OrganizationService, @$stateParams, @PopupService) ->
+    @$inject = ['$scope', '$uibModal', 'DataService', 'AccountService', 'ErrorService', 'Constants', 'UserService', 'ConfirmationDialogService', 'OrganizationService', '$stateParams', 'PopupService', 'canEditOwnOrganisation']
+    constructor: (@$scope, @$uibModal, @DataService, @AccountService, @ErrorService, @Constants, @UserService, @ConfirmationDialogService, @OrganizationService, @$stateParams, @PopupService, @canEditOwnOrganisation) ->
         @ds = @DataService #shorten service name
         @users  = []       # users of the organization
         @alerts = []       # alerts to be displayed
@@ -140,5 +140,13 @@ class OrganizationController
 
     removeAlerts: () ->
         @alerts = []
+
+    canUpdateOrganisation: () =>
+        canUpdate = false
+        if @DataService.isSystemAdmin || @DataService.isCommunityAdmin
+            canUpdate = true
+        else if @DataService.isVendorAdmin && (@DataService.community.allowPostTestOrganisationUpdates || !@hasTests)
+            canUpdate = true
+        canUpdate
 
 controllers.controller('OrganizationController', OrganizationController)

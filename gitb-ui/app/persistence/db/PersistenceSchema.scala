@@ -27,8 +27,11 @@ object PersistenceSchema {
     def allowCertificateDownload = column[Boolean]("allow_certificate_download")
     def allowStatementManagement = column[Boolean]("allow_statement_management")
     def allowSystemManagement = column[Boolean]("allow_system_management")
+    def allowPostTestOrganisationUpdates = column[Boolean]("allow_post_test_org_updates")
+    def allowPostTestSystemUpdates = column[Boolean]("allow_post_test_sys_updates")
+    def allowPostTestStatementUpdates = column[Boolean]("allow_post_test_stm_updates")
     def domain = column[Option[Long]] ("domain")
-    def * = (id, shortname, fullname, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText, selfregNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, domain) <> (Communities.tupled, Communities.unapply)
+    def * = (id, shortname, fullname, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText, selfregNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, domain) <> (Communities.tupled, Communities.unapply)
   }
   val communities = TableQuery[CommunitiesTable]
   val insertCommunity = communities returning communities.map(_.id)

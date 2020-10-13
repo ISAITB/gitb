@@ -9,6 +9,8 @@ class SystemsController
 		@systemSpinner = false # spinner to be displayed for new system operations
 		@organization = JSON.parse(@$window.localStorage['organization'])
 		@$scope.editing = false
+		@showAction = @DataService.isSystemAdmin || @DataService.isCommunityAdmin || (@DataService.isVendorAdmin && @DataService.community.allowPostTestSystemUpdates)
+
 		@tableColumns = [
 			{
 				field: 'sname',
@@ -28,14 +30,28 @@ class SystemsController
 			}
 		]
 		#initially get the registered Systems of the vendor
-		@getSystems()
+		@getSystems(true)
 
-	getSystems: () ->
-		@SystemService.getSystemsByOrganization(@organization.id)
+	getSystems: (initialLoad) ->
+		checkIfHasTests = @DataService.isVendorAdmin && !@DataService.community.allowPostTestSystemUpdates
+		@SystemService.getSystemsByOrganization(@organization.id, checkIfHasTests)
 		.then(
 			(data) =>
 				@systems = data
-				if @$stateParams['id']?
+				for system in @systems
+					system.editable = false
+					if @DataService.isSystemAdmin || @DataService.isCommunityAdmin
+						system.editable = true
+						@showAction = true
+					else if @DataService.isVendorAdmin
+						if @DataService.community.allowPostTestSystemUpdates
+							system.editable = true
+							@showAction = true
+						else if !system.hasTests
+							system.editable = true
+							@showAction = true
+						
+				if initialLoad && @$stateParams['id']?
 					systemToEdit = _.find @systems, (s) => 
 						s.id == @$stateParams['id']
 					if systemToEdit?
@@ -59,7 +75,8 @@ class SystemsController
 		modalInstance.result
 			.finally(angular.noop)
 			.then((result) => 
-				@systems = result
+				if result?.ok
+					@getSystems()
 			, angular.noop)
 
 	onSystemSelect: (system) =>
@@ -67,32 +84,34 @@ class SystemsController
 			@$state.go 'app.systems.detail.conformance.list', { id : system.id }
 
 	onSystemEdit: (system) =>
-		@$scope.editing = true
-		modalOptions =
-			templateUrl: 'assets/views/systems/create-edit-system-modal.html'
-			controller: 'CreateEditSystemController as systemCtrl'
-			resolve: 
-				system: () => system
-				organisationId: () => @organization.id
-				communityId: () => @organization.community
-				viewProperties: () => @$stateParams['viewProperties']? && @$stateParams['viewProperties']
-			size: 'lg'
-		modalInstance = @$uibModal.open(modalOptions)
-		modalInstance.result
-			.finally(angular.noop)
-			.then((result) => 
-				@$scope.editing = false
-				@systems = result
-			, () => 
-				# Dismissed
-				@$scope.editing = false
-			)
+		if @isSystemEditable(system)
+			@$scope.editing = true
+			modalOptions =
+				templateUrl: 'assets/views/systems/create-edit-system-modal.html'
+				controller: 'CreateEditSystemController as systemCtrl'
+				resolve: 
+					system: () => system
+					organisationId: () => @organization.id
+					communityId: () => @organization.community
+					viewProperties: () => @$stateParams['viewProperties']? && @$stateParams['viewProperties']
+				size: 'lg'
+			modalInstance = @$uibModal.open(modalOptions)
+			modalInstance.result
+				.finally(angular.noop)
+				.then((result) => 
+					@$scope.editing = false
+					if result?.ok
+						@getSystems()
+				, () => 
+					# Dismissed
+					@$scope.editing = false
+				)
 
 	showBack: () =>
 		@organization? && @DataService.vendor? && @organization.id != @DataService.vendor.id
 
-	showAction: () =>
-		!@DataService.isVendorUser
+	isSystemEditable: (system) =>
+		system.editable
 
 	showCreate: () =>
 		@DataService.isSystemAdmin || @DataService.isCommunityAdmin || (@DataService.isVendorAdmin && @DataService.community.allowSystemManagement)

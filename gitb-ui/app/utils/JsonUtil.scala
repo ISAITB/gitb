@@ -428,9 +428,17 @@ object JsonUtil {
    * @return JsArray
    */
   def jsSystems(list:List[Systems]):JsArray = {
+    jsSystems(list, None)
+  }
+
+  def jsSystems(list:List[Systems], systemsWithTests: Option[Set[Long]]):JsArray = {
     var json = Json.arr()
     list.foreach{ system =>
-      json = json.append(jsSystem(system))
+      var systemJson = jsSystem(system)
+      if (systemsWithTests.isDefined) {
+        systemJson = systemJson + ("hasTests" -> JsBoolean(systemsWithTests.get.contains(system.id)))
+      }
+      json = json.append(systemJson)
     }
     json
   }
@@ -459,6 +467,9 @@ object JsonUtil {
       "allowCertificateDownload" -> community.allowCertificateDownload,
       "allowStatementManagement" -> community.allowStatementManagement,
       "allowSystemManagement" -> community.allowSystemManagement,
+      "allowPostTestOrganisationUpdates" -> community.allowPostTestOrganisationUpdates,
+      "allowPostTestSystemUpdates" -> community.allowPostTestSystemUpdates,
+      "allowPostTestStatementUpdates" -> community.allowPostTestStatementUpdates,
       "domainId" -> community.domain
     )
     if (includeAdminInfo) {

@@ -60,15 +60,14 @@
 			parameterLabel: '@?'
 		template: ''+
 			'<div>
-				<table id="parameter-table" class="table table-directive" ng-if="parameters && parameters.length > 0">
+				<table class="table table-directive" ng-class="{\'with-actions\': showActions}" ng-if="parameters && parameters.length > 0">
 					<thead>
 						<tr>
 							<th width="1%" style="padding-right:30px;" ng-if="!onlyMissing">Set?</th>
 							<th width="20%">{{parameterLabel}}</th>
 							<th ng-if="showValues">Configured value</th>
 							<th>Description</th>
-							<th style="text-align: center;" width="5%" ng-if="editable">Action</th>
-							<th width="1%" ng-if="!editable"></th>
+							<th style="text-align: center;" width="5%" ng-if="showActions">Action</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -79,8 +78,7 @@
 							<td ng-if="showValues && parameter.kind == \'BINARY\'"><a ng-if="parameter.value" href="" ng-click="downloadBinaryParameter(parameter)">{{parameter.fileName}}</a></td>
 							<td ng-if="showValues && parameter.kind != \'BINARY\'"><span ng-if="parameter.valueToShow != undefined">{{parameter.valueToShow}}</span><span ng-if="parameter.valueToShow == undefined">{{parameter.value}}</span></td>
 							<td>{{parameter.desc}}</td>
-							<td style="text-align: center;" ng-if="editable && canEdit(parameter)"><button type="button" class="btn btn-default" ng-click="onEdit(parameter)"><i class="fa fa-pencil"></i></button></td>
-							<td ng-if="!editable || !canEdit(parameter)"></td>
+							<td class="operations" style="text-align: center;" ng-if="showActions"><button type="button" class="btn btn-default" ng-if="canEdit(parameter)" ng-click="onEdit(parameter)"><i class="fa fa-pencil"></i></button></td>
 						</tr>
 					</tbody>
 				</table>
@@ -92,6 +90,11 @@
 				scope.onlyMissing = false
 			if scope.parameterLabel == undefined
 				scope.parameterLabel = 'Parameter'
+			scope.showActions = false
+			if scope.editable && scope.parameters?
+				for param in scope.parameters
+					if scope.canEdit(param)
+						scope.showActions = true
 			scope.isRequired = (parameter) =>
 				parameter.use == 'R'
 			scope.showParameter = (parameter) =>

@@ -20,12 +20,8 @@ class SystemService @Inject() (accountManager: AccountManager, authorizedAction:
 
   def deleteSystem(systemId:Long) = authorizedAction { request =>
     authorizationManager.canDeleteSystem(request, systemId)
-    val organisationId = ParameterExtractor.requiredQueryParameter(request, Parameters.ORGANIZATION_ID).toLong
     systemManager.deleteSystemWrapper(systemId)
-    // Return updated list of systems
-    val systems = systemManager.getSystemsByOrganization(organisationId)
-    val json = JsonUtil.jsSystems(systems).toString()
-    ResponseConstructor.constructJsonResponse(json)
+    ResponseConstructor.constructEmptyResponse
   }
 
   def registerSystemWithOrganization = authorizedAction { request =>
@@ -39,10 +35,7 @@ class SystemService @Inject() (accountManager: AccountManager, authorizedAction:
     var response: Result = ParameterExtractor.checkSystemParameterValues(values)
     if (response == null) {
       systemManager.registerSystemWrapper(userId, system, otherSystem, values, copySystemParameters, copyStatementParameters)
-      // Return updated list of systems
-      val systems = systemManager.getSystemsByOrganization(system.owner)
-      val json = JsonUtil.jsSystems(systems).toString()
-      response = ResponseConstructor.constructJsonResponse(json)
+      response = ResponseConstructor.constructEmptyResponse
     }
     response
   }
@@ -58,7 +51,6 @@ class SystemService @Inject() (accountManager: AccountManager, authorizedAction:
       val fname:Option[String]   = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_FNAME)
       val descr:Option[String]   = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_DESC)
       val version:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_VERSION)
-      val organisationId = ParameterExtractor.requiredBodyParameter(request, Parameters.ORGANIZATION_ID).toLong
       val otherSystem = ParameterExtractor.optionalLongBodyParameter(request, Parameters.OTHER_SYSTEM)
       val copySystemParameters = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_PARAMETERS).getOrElse("false").toBoolean
       val copyStatementParameters = ParameterExtractor.optionalBodyParameter(request, Parameters.STATEMENT_PARAMETERS).getOrElse("false").toBoolean
@@ -67,14 +59,11 @@ class SystemService @Inject() (accountManager: AccountManager, authorizedAction:
       if (response == null) {
         val userId = ParameterExtractor.extractUserId(request)
         systemManager.updateSystemProfile(userId, sut_id, sname, fname, descr, version, otherSystem, values, copySystemParameters, copyStatementParameters)
-        // Return updated list of systems
-        val systems = systemManager.getSystemsByOrganization(organisationId)
-        val json = JsonUtil.jsSystems(systems).toString()
-        response = ResponseConstructor.constructJsonResponse(json)
+        response = ResponseConstructor.constructEmptyResponse
       }
       response
     } else{
-      throw new NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, models.Enums.LabelType.System) + " with ID '" + sut_id + "' not found.")
+      throw NotFoundException(ErrorCodes.SYSTEM_NOT_FOUND, communityLabelManager.getLabel(request, models.Enums.LabelType.System) + " with ID '" + sut_id + "' not found.")
     }
   }
   /**
@@ -128,17 +117,17 @@ class SystemService @Inject() (accountManager: AccountManager, authorizedAction:
 	}
 
 	def deleteConformanceStatement(sut_id: Long) = authorizedAction { request =>
-    authorizationManager.canDeleteConformanceStatement(request, sut_id)
-		ParameterExtractor.extractLongIdsQueryParameter(request) match {
-			case Some(actorIds) => {
-				if(actorIds.size == 0) {
+    val actorIds = ParameterExtractor.extractLongIdsQueryParameter(request)
+    authorizationManager.canDeleteConformanceStatement(request, sut_id, actorIds)
+    actorIds match {
+			case Some(actorIds) =>
+        if (actorIds.isEmpty) {
           ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "'ids' parameter should be non-empty")
-				} else {
-					systemManager.deleteConformanceStatmentsWrapper(sut_id, actorIds)
+        } else {
+          systemManager.deleteConformanceStatmentsWrapper(sut_id, actorIds)
           ResponseConstructor.constructEmptyResponse
-				}
-			}
-			case None =>
+        }
+      case None =>
 				ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "'ids' parameter is missing")
 		}
 
@@ -231,8 +220,13 @@ class SystemService @Inject() (accountManager: AccountManager, authorizedAction:
   def getSystemsByOrganization() = authorizedAction { request =>
     val orgId = ParameterExtractor.requiredQueryParameter(request, Parameters.ORGANIZATION_ID).toLong
     authorizationManager.canViewSystems(request, orgId)
+    val checkIfHasTests = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.CHECK_HAS_TESTS)
     val list = systemManager.getSystemsByOrganization(orgId)
-    val json:String = JsonUtil.jsSystems(list).toString
+    var systemsWithTests: Option[Set[Long]] = None
+    if (checkIfHasTests.isDefined) {
+      systemsWithTests = Some(systemManager.checkIfSystemsHaveTests(list.map(x => x.id).toSet))
+    }
+    val json:String = JsonUtil.jsSystems(list, systemsWithTests).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 

@@ -439,30 +439,78 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User cannot edit this parameter")
   }
 
-  def canEditEndpointConfiguration(request: RequestWithAttributes[_], config: Configs):Boolean = {
+  private def canManageEndpointConfiguration(request: RequestWithAttributes[_], systemId: Long, endpointId: Long, parameterId: Long): Boolean = {
+    var ok = false
     val userInfo = getUser(getRequestUserId(request))
-    var check = canManageSystem(request, userInfo, config.system)
-    if (check) {
-      check = canManageSystemButCanAlsoEditParameter(request, userInfo, config.parameter)
+    if (isTestBedAdmin(userInfo)) {
+      ok = true
+    } else {
+      val system = systemManager.getSystemById(systemId)
+      if (system.isDefined) {
+        if (isCommunityAdmin(userInfo)) {
+          ok = isOwnSystem(userInfo, system) || canManageOrganisationFull(request, userInfo, system.get.owner)
+        } else if (isOrganisationAdmin(userInfo)) {
+          if (isOwnSystem(userInfo, system)) {
+            val parameter = parameterManager.getParameterById(parameterId)
+            if (parameter.isDefined && !parameter.get.adminOnly) {
+              val community = communityManager.getById(userInfo.organization.get.community)
+              if (community.isDefined) {
+                if (community.get.allowPostTestStatementUpdates) {
+                  ok = true
+                } else {
+                  val endpoint = endpointManager.getById(endpointId)
+                  ok = !testResultManager.testSessionsExistForSystemAndActors(systemId, List(endpoint.actor))
+                }
+              }
+            }
+          }
+        }
+      }
     }
-    check
+    setAuthResult(request, ok, "User cannot manage provided parameters")
+  }
+
+  def canEditEndpointConfiguration(request: RequestWithAttributes[_], config: Configs):Boolean = {
+    canManageEndpointConfiguration(request, config.system, config.endpoint, config.parameter)
   }
 
   def canDeleteEndpointConfiguration(request: RequestWithAttributes[_], systemId: Long, endpointId: Long, parameterId: Long):Boolean = {
-    val userInfo = getUser(getRequestUserId(request))
-    var check = canManageSystem(request, userInfo, systemId)
-    if (check) {
-      check = canManageSystemButCanAlsoEditParameter(request, userInfo, parameterId)
-    }
-    check
+    canManageEndpointConfiguration(request, systemId, endpointId, parameterId)
   }
 
   def canViewEndpointConfigurations(request: RequestWithAttributes[_], systemId: Long, endpointId: Long):Boolean = {
     canViewSystem(request, systemId)
   }
 
-  def canDeleteConformanceStatement(request: RequestWithAttributes[_], sut_id: Long):Boolean = {
-    canCreateConformanceStatement(request, sut_id)
+  def canDeleteConformanceStatement(request: RequestWithAttributes[_], systemId: Long, actorIds: Option[List[Long]]):Boolean = {
+    var ok = false
+    val userInfo = getUser(getRequestUserId(request))
+    if (isTestBedAdmin(userInfo)) {
+      ok = true
+    } else if (isCommunityAdmin(userInfo)) {
+      // Own system or within community.
+      val system = systemManager.getSystemById(systemId)
+      if (system.isDefined) {
+        ok = isOwnSystem(userInfo, system) || canManageOrganisationFull(request, userInfo, system.get.owner)
+      }
+    } else if (isOrganisationAdmin(userInfo)) {
+      val community = communityManager.getById(userInfo.organization.get.community)
+      if (community.isDefined && community.get.allowStatementManagement) {
+        // Has to be own system.
+        if (isOwnSystem(userInfo, systemId)) {
+          if (community.get.allowPostTestStatementUpdates) {
+            ok = true
+          } else {
+            if (actorIds.isDefined && actorIds.get.nonEmpty) {
+              ok = !testResultManager.testSessionsExistForSystemAndActors(systemId, actorIds.get)
+            } else {
+              ok = true
+            }
+          }
+        }
+      }
+    }
+    setAuthResult(request, ok, "User cannot delete the requested statement")
   }
 
   def canViewConformanceStatements(request: RequestWithAttributes[_], sut_id: Long):Boolean = {
@@ -487,7 +535,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
         ok = isOwnSystem(userInfo, sut_id)
       }
     }
-    setAuthResult(request, ok, "User cannot manage the requested system")
+    setAuthResult(request, ok, "User cannot manage the requested statement")
   }
 
   def canViewSystem(request: RequestWithAttributes[_], sut_id: Long):Boolean = {
@@ -508,8 +556,32 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User cannot view the requested system")
   }
 
-  def canUpdateSystem(request: RequestWithAttributes[_], sut_id: Long):Boolean = {
-    canManageSystem(request, getUser(getRequestUserId(request)), sut_id)
+  def canUpdateSystem(request: RequestWithAttributes[_], systemId: Long):Boolean = {
+    var ok = false
+    val userInfo = getUser(getRequestUserId(request))
+    if (isTestBedAdmin(userInfo)) {
+      ok = true
+    } else if (isCommunityAdmin(userInfo)) {
+      // Own system or within community.
+      val system = systemManager.getSystemById(systemId)
+      if (system.isDefined) {
+        ok = isOwnSystem(userInfo, system) || canManageOrganisationFull(request, userInfo, system.get.owner)
+      }
+    } else if (isOrganisationAdmin(userInfo) && userInfo.organization.isDefined) {
+      // Has to be own system.
+      if (isOwnSystem(userInfo, systemId)) {
+        // Check to see if special permissions are in place.
+        val community = communityManager.getById(userInfo.organization.get.community)
+        if (community.isDefined) {
+          if (community.get.allowPostTestSystemUpdates) {
+            ok = true
+          } else {
+            ok = !testResultManager.testSessionsExistForSystem(systemId)
+          }
+        }
+      }
+    }
+    setAuthResult(request, ok, "User cannot update the requested system")
   }
 
   private def isOwnSystem(userInfo: User, system: Option[Systems]): Boolean = {
@@ -558,24 +630,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canDeleteSystem(request: RequestWithAttributes[_], systemId: Long):Boolean = {
-    var ok = false
-    val userInfo = getUser(getRequestUserId(request))
-    if (isTestBedAdmin(userInfo)) {
-      ok = true
-    } else if (isCommunityAdmin(userInfo)) {
-      // Own system or within community.
-      val system = systemManager.getSystemById(systemId)
-      if (system.isDefined) {
-        ok = isOwnSystem(userInfo, system) || canManageOrganisationFull(request, userInfo, system.get.owner)
-      }
-    } else {
-      val community = communityManager.getById(userInfo.organization.get.community)
-      if (isOrganisationAdmin(userInfo) && community.isDefined && community.get.allowSystemManagement) {
-        // Has to be own system.
-        ok = isOwnSystem(userInfo, systemId)
-      }
-    }
-    setAuthResult(request, ok, "User cannot manage the requested system")
+    canUpdateSystem(request, systemId)
   }
 
   def canAccessThemeData(request: RequestWithAttributes[_]):Boolean = {
@@ -1069,10 +1124,22 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canUpdateOwnOrganisation(request: RequestWithAttributes[_]):Boolean = {
-    var ok = isAnyAdminType(getUser(getRequestUserId(request)))
-    if (ok) {
-      val userId = getRequestUserId(request)
-      ok = !Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT
+    var ok = false
+    val userId = getRequestUserId(request)
+    if (!Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT) {
+      val userInfo = getUser(userId)
+      if (isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo)) {
+        ok = true
+      } else if (isOrganisationAdmin(userInfo) && userInfo.organization.isDefined) {
+        val community = communityManager.getById(userInfo.organization.get.community)
+        if (community.isDefined) {
+          if (community.get.allowPostTestOrganisationUpdates) {
+            ok = true
+          } else {
+            ok = !testResultManager.testSessionsExistForOrganisation(userInfo.organization.get.id)
+          }
+        }
+      }
     }
     setAuthResult(request, ok, "User cannot manage own organisation")
   }

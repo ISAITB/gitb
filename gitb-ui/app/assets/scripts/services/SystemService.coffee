@@ -7,13 +7,16 @@ class SystemService
   constructor: (@$log, @RestService, @DataService) ->
     @$log.debug "Constructing SystemService..."
 
-  getSystemsByOrganization: (orgId) ->
+  getSystemsByOrganization: (orgId, checkIfHasTests) ->
+    params = {
+      organization_id: orgId
+    }
+    if checkIfHasTests?
+      params.check_has_tests = checkIfHasTests
     @RestService.get({
       path: jsRoutes.controllers.SystemService.getSystemsByOrganization().url,
       authenticate: true,
-      params: {
-        organization_id: orgId
-      }
+      params: params
     })
 
   getSystem:(systemId) ->
@@ -109,7 +112,7 @@ class SystemService
 
   deleteEndpointConfiguration: (systemId, parameterId, endpointId) ->
     @RestService.delete
-      path: jsRoutes.controllers.SystemService.saveEndpointConfiguration(endpointId).url
+      path: jsRoutes.controllers.SystemService.deleteEndpointConfiguration(endpointId).url
       authenticate: true
       params:
         system_id: systemId

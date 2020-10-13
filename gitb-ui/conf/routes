@@ -47,6 +47,7 @@ GET     /app/configuration                  @controllers.AccountService.getConfi
 POST    /user/feedback                      @controllers.AccountService.submitFeedback
 POST    /user/selfreg                       @controllers.CommunityService.selfRegister
 GET     /user/selfreg                       @controllers.CommunityService.getSelfRegistrationOptions
+GET     /vendor/organisation/hasTests       @controllers.OrganizationService.ownOrganisationHasTests
 
 # System mangement API
 GET     /suts/sysparam/:id                  @controllers.SystemService.getSystemParameterValues(id: Long)

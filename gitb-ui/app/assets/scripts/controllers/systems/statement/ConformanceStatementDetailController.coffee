@@ -21,6 +21,7 @@ class ConformanceStatementDetailController
     @testStatus = ''
     @backgroundMode = false
     @allTestsSuccessful = false
+    @hasTests = false
 
     @parameterTableColumns = [
       {
@@ -85,6 +86,7 @@ class ConformanceStatementDetailController
             if testCase.result == @Constants.TEST_CASE_RESULT.FAILURE
               testSuiteData[result.testSuiteId].result = @Constants.TEST_CASE_RESULT.FAILURE
         testSuiteData[result.testSuiteId].testCases.push(testCase)
+      @hasTests = failedCount > 0 || completedCount > 0
       for testSuiteId in testSuiteIds
         testSuiteResults.push(testSuiteData[testSuiteId])
       @testSuites = testSuiteResults
@@ -366,10 +368,10 @@ class ConformanceStatementDetailController
       , angular.noop)
 
   canDelete: () =>
-    @DataService.isSystemAdmin || @DataService.isCommunityAdmin || (@DataService.isVendorAdmin && @DataService.community.allowStatementManagement)
+    @DataService.isSystemAdmin || @DataService.isCommunityAdmin || (@DataService.isVendorAdmin && @DataService.community.allowStatementManagement && (@DataService.community.allowPostTestStatementUpdates || !@hasTests))
 
   canEditParameter: (parameter) =>
-    @DataService.isSystemAdmin || @DataService.isCommunityAdmin || (@DataService.isVendorAdmin && !parameter.adminOnly)
+    @DataService.isSystemAdmin || @DataService.isCommunityAdmin || (@DataService.isVendorAdmin && !parameter.adminOnly && (@DataService.community.allowPostTestStatementUpdates || !@hasTests))
 
   deleteConformanceStatement: () ->
     @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete this conformance statement?", "Yes", "No")

@@ -17,7 +17,7 @@ class CommunityService
       authenticate: true
       params: params
 
-  createCommunity: (shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegForceTemplate, selfRegForceProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, domainId) ->
+  createCommunity: (shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegForceTemplate, selfRegForceProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, domainId) ->
     data = {
       community_sname: shortName,
       community_fname: fullName,
@@ -25,7 +25,10 @@ class CommunityService
       description: description,
       allow_certificate_download: allowCertificateDownload,
       allow_statement_management: allowStatementManagement,
-      allow_system_management: allowSystemManagement
+      allow_system_management: allowSystemManagement,
+      allow_post_test_org_update: allowPostTestOrganisationUpdate,
+      allow_post_test_sys_update: allowPostTestSystemUpdate,
+      allow_post_test_stm_update: allowPostTestStatementUpdate
     }
     if @DataService.configuration['registration.enabled']
       if selfRegNotification == undefined
@@ -53,7 +56,7 @@ class CommunityService
       authenticate: true
     })
 
-  updateCommunity: (communityId, shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegForceTemplate, selfRegForceProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, domainId) ->
+  updateCommunity: (communityId, shortName, fullName, email, selfRegType, selfRegRestriction, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegForceTemplate, selfRegForceProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, domainId) ->
     data = {
       community_sname: shortName,
       community_fname: fullName,
@@ -61,7 +64,10 @@ class CommunityService
       description: description,
       allow_certificate_download: allowCertificateDownload,
       allow_statement_management: allowStatementManagement,
-      allow_system_management: allowSystemManagement
+      allow_system_management: allowSystemManagement,
+      allow_post_test_org_update: allowPostTestOrganisationUpdate,
+      allow_post_test_sys_update: allowPostTestSystemUpdate,
+      allow_post_test_stm_update: allowPostTestStatementUpdate
     }
     if @DataService.configuration['registration.enabled']
       if selfRegNotification == undefined

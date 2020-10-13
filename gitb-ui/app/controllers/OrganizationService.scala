@@ -4,16 +4,17 @@ import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
 import javax.inject.Inject
-import managers.{AuthorizationManager, OrganizationManager, UserManager}
+import managers.{AuthorizationManager, OrganizationManager, TestResultManager, UserManager}
 import models.prerequisites.PrerequisiteUtil
 import org.slf4j.{Logger, LoggerFactory}
+import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents, Result}
 import utils.JsonUtil
 
 /**
  * Created by VWYNGAET on 26/10/2016.
  */
-class OrganizationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, organizationManager: OrganizationManager, userManager: UserManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
+class OrganizationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, organizationManager: OrganizationManager, userManager: UserManager, authorizationManager: AuthorizationManager, testResultManager: TestResultManager) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[OrganizationService])
 
   /**
@@ -154,6 +155,13 @@ class OrganizationService @Inject() (authorizedAction: AuthorizedAction, cc: Con
       response = ResponseConstructor.constructEmptyResponse
     }
     response
+  }
+
+  def ownOrganisationHasTests() = authorizedAction { request =>
+    authorizationManager.canViewOwnOrganisation(request)
+    val userId = ParameterExtractor.extractUserId(request)
+    val hasTests = testResultManager.testSessionsExistForUserOrganisation(userId)
+    ResponseConstructor.constructJsonResponse(Json.obj("hasTests" -> hasTests).toString())
   }
 
 }

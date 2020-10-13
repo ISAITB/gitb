@@ -244,6 +244,15 @@ class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelp
     systemIds
   }
 
+  def checkIfSystemsHaveTests(systemIds: Set[Long]): Set[Long] = {
+    exec(
+      PersistenceSchema.testResults
+        .filter(_.sutId inSet systemIds)
+        .map(x => x.sutId)
+        .result
+    ).map(x => x.get).toSet
+  }
+
   def getSystemsByOrganization(orgId: Long): List[Systems] = {
     val systems = exec(PersistenceSchema.systems.filter(_.owner === orgId)
         .sortBy(_.shortname.asc)

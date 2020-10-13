@@ -223,4 +223,46 @@ class TestResultManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ext
     )
   }
 
+  def testSessionsExistForSystemAndActors(systemId: Long, actorIds: List[Long]): Boolean = {
+    exec(
+      PersistenceSchema.testResults
+        .filter(_.sutId === systemId)
+        .filter(_.actorId inSet actorIds)
+        .map(x => x.testSessionId)
+        .result
+        .headOption
+    ).isDefined
+  }
+
+  def testSessionsExistForSystem(systemId: Long): Boolean = {
+    exec(
+      PersistenceSchema.testResults
+        .filter(_.sutId === systemId)
+        .map(x => x.testSessionId)
+        .result
+        .headOption
+    ).isDefined
+  }
+
+  def testSessionsExistForOrganisation(organisationId: Long): Boolean = {
+    exec(
+      PersistenceSchema.testResults
+        .filter(_.organizationId === organisationId)
+        .map(x => x.testSessionId)
+        .result
+        .headOption
+    ).isDefined
+  }
+
+  def testSessionsExistForUserOrganisation(userId: Long): Boolean = {
+    exec(
+      PersistenceSchema.users
+        .join(PersistenceSchema.testResults).on(_.organization === _.organizationId)
+        .filter(_._1.id === userId)
+        .map(x => x._2.testSessionId)
+        .result
+        .headOption
+    ).isDefined
+  }
+
 }

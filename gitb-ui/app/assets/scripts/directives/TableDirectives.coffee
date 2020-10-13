@@ -25,6 +25,7 @@
 			nextDisabled: '='
 			prevDisabled: '='
 			actionVisible: '='
+			actionVisibleForRow: '='
 			onAction: '='
 			actionIcon: '='
 			onSort: '='
@@ -47,7 +48,7 @@
 					'</tr>'+
 				'</thead>'+
 				'<tbody>'+
-					'<tr class="table-row-directive" ng-class="rowClass($index)" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" action-visible="actionVisible" action-icon="actionIcon" operations-visible="operationsVisible" export-visible="exportVisible" checkbox-enabled="checkboxEnabled" on-action="onAction" on-delete="onDelete" on-export="onExport" on-check="onCheck" delete-visible-for-row="deleteVisibleForRow"></tr>'+
+					'<tr class="table-row-directive" ng-class="rowClass($index)" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" action-visible="actionVisible" action-icon="actionIcon" operations-visible="operationsVisible" export-visible="exportVisible" checkbox-enabled="checkboxEnabled" on-action="onAction" on-delete="onDelete" on-export="onExport" on-check="onCheck" delete-visible-for-row="deleteVisibleForRow" action-visible-for-row="actionVisibleForRow"></tr>'+
 				'</tbody>'+
 			'</table>'+
 				'<div ng-if="paginationVisible" class="text-center">'+
@@ -140,6 +141,7 @@
 			classes: '='
 			operationsVisible: '='
 			actionVisible: '='
+			actionVisibleForRow: '='
 			exportVisible: '='
 			checkboxEnabled: '='
 			onDelete: '='
@@ -162,7 +164,7 @@
 				'</div>'+
 			'</td>'+
 			'<td class="operations" ng-if="actionVisible">'+
-				'<button type="button" class="btn btn-default" ng-click="action(); $event.stopPropagation();"><i class="fa {{actionIcon}}"></i></button>'+
+				'<button type="button" ng-if="!actionVisibleForRow || actionVisibleForRow(data)" class="btn btn-default" ng-click="action(); $event.stopPropagation();"><i class="fa {{actionIcon}}"></i></button>'+
 			'</td>' +
 			'<td class="operations" ng-if="operationsVisible">'+
 				'<button type="button" ng-if="!deleteVisibleForRow || deleteVisibleForRow(data)" class="btn btn-default" ng-click="delete(); $event.stopPropagation();"><i class="fa fa-times"></i></button>'+
