@@ -593,6 +593,9 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
     communityData.setAllowCertificateDownload(community.get.allowCertificateDownload)
     communityData.setAllowStatementManagement(community.get.allowStatementManagement)
     communityData.setAllowSystemManagement(community.get.allowSystemManagement)
+    communityData.setAllowPostTestOrganisationUpdates(community.get.allowPostTestOrganisationUpdates)
+    communityData.setAllowPostTestSystemUpdates(community.get.allowPostTestSystemUpdates)
+    communityData.setAllowPostTestStatementUpdates(community.get.allowPostTestStatementUpdates)
     // Self registration information.
     communityData.setSelfRegistrationSettings(new SelfRegistrationSettings)
     SelfRegistrationType.apply(community.get.selfRegType) match {
@@ -845,6 +848,9 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
                 }
                 exportedTrigger.getDataItems.getTriggerDataItem.add(exportedDataItem)
               }
+            }
+            if (exportedTrigger.getDataItems != null && exportedTrigger.getDataItems.getTriggerDataItem.isEmpty) {
+              exportedTrigger.setDataItems(null)
             }
           }
           communityData.getTriggers.getTrigger.add(exportedTrigger)
