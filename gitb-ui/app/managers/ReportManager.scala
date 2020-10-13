@@ -7,6 +7,7 @@ import java.time.LocalDateTime
 import java.util
 import java.util.Date
 
+import actors.events.{ConformanceStatementSucceededEvent, TestSessionFailedEvent, TestSessionSucceededEvent}
 import javax.xml.transform.stream.StreamSource
 import com.gitb.core.StepStatus
 import com.gitb.reports.ReportGenerator
@@ -82,7 +83,7 @@ object ReportManager {
   * Created by senan on 03.12.2014.
   */
 @Singleton
-class ReportManager @Inject() (actorManager: ActorManager, systemManager: SystemManager, organizationManager: OrganizationManager, communityManager: CommunityManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager) extends BaseManager(dbConfigProvider) {
+class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: ActorManager, systemManager: SystemManager, organizationManager: OrganizationManager, communityManager: CommunityManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -351,8 +352,7 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
     val q = for {
       t <- PersistenceSchema.testResults if t.testSessionId === sessionId
     } yield (t.result, t.endTime)
-    val q1 = for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield (c.result)
-
+    val q1 = for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield c.result
     exec(
       (
         q.update(status.value(), Some(TimeUtil.getCurrentTimestamp())) andThen
@@ -360,6 +360,37 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
         q1.update(status.value())
       ).transactionally
     )
+    // Triggers linked to test sessions: (communityID, systemID, actorID)
+    val sessionIds: Option[(Option[Long], Option[Long], Option[Long])] = exec(
+      PersistenceSchema.testResults
+        .filter(_.testSessionId === sessionId)
+        .map(x => (x.communityId, x.sutId, x.actorId))
+        .result
+        .headOption
+    )
+    if (sessionIds.isDefined && sessionIds.get._1.isDefined && sessionIds.get._2.isDefined && sessionIds.get._3.isDefined) {
+      val communityId = sessionIds.get._1.get
+      val systemId = sessionIds.get._2.get
+      val actorId = sessionIds.get._3.get
+      // We have all the data we need to fire the triggers.
+      if (status == TestResultType.SUCCESS) {
+        triggerHelper.publishTriggerEvent(new TestSessionSucceededEvent(communityId, systemId, actorId))
+      } else if (status == TestResultType.FAILURE) {
+        triggerHelper.publishTriggerEvent(new TestSessionFailedEvent(communityId, systemId, actorId))
+      }
+      // See if the conformance statement is now successfully completed and fire an additional trigger if so.
+      val statementStatus = conformanceManager.getConformanceStatus(actorId, systemId, None)
+      var successCount = 0
+      statementStatus.foreach { status =>
+        if ("SUCCESS".equals(status.result)) {
+          successCount += 1
+        }
+      }
+      if (successCount == statementStatus.size) {
+        // All the statement's test cases are successful
+        triggerHelper.publishTriggerEvent(new ConformanceStatementSucceededEvent(communityId, systemId, actorId))
+      }
+    }
   }
 
   def setEndTimeNow(sessionId: String) = {

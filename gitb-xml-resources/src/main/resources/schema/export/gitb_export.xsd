@@ -521,6 +521,9 @@
             <xsd:enumeration value="SYSTEM_UPDATED"/>
             <xsd:enumeration value="CONFORMANCE_STATEMENT_CREATED"/>
             <xsd:enumeration value="CONFORMANCE_STATEMENT_UPDATED"/>
+            <xsd:enumeration value="TEST_SESSION_SUCCEEDED"/>
+            <xsd:enumeration value="TEST_SESSION_FAILED"/>
+            <xsd:enumeration value="CONFORMANCE_STATEMENT_SUCCEEDED"/>
         </xsd:restriction>
     </xsd:simpleType>
     <xsd:simpleType name="TriggerDataType">
