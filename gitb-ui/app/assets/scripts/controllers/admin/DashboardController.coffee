@@ -650,11 +650,14 @@ class DashboardController
     @stop = true
     @ConfirmationDialogService.confirm("Confirm delete", "Are you certain you want to terminate this session?", "Yes", "No")
     .then () =>
+      session.deletePending = true
       @TestService.stop(session.session)
       .then (data) =>
+        session.deletePending = false
         @$state.go @$state.current, {}, {reload: true}
         @PopupService.success('Test session terminated.')
       .catch (error) =>
+        session.deletePending = false
         @ErrorService.showErrorMessage(error)
 
   goFirstPage: () =>
@@ -715,12 +718,15 @@ class DashboardController
 
   onReportExport: (data) =>
     if (!data.obsolete)
+      data.exportPending = true
       @ReportService.exportTestCaseReport(data.session, data.testCaseId)
       .then (stepResults) =>
           blobData = new Blob([stepResults], {type: 'application/pdf'});
           saveAs(blobData, "report.pdf");
+          data.exportPending = false
       .catch (error) =>
           @ErrorService.showErrorMessage(error)
+          data.exportPending = false
 
   exportCompletedSessionsToCsv: () =>
     @exportCompletedPending = true

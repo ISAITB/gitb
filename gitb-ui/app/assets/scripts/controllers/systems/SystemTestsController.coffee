@@ -506,16 +506,6 @@ class SystemTestsController
         result.push o
     childSelection = result
 
-  onTestSelect: (test, element) =>
-    if @export
-        @export = false
-    else if @check
-        @check = false
-    else
-        searchState = @getCurrentSearchCriteria()
-        @DataService.setSearchState(searchState, @Constants.SEARCH_STATE_ORIGIN.SYSTEM_TESTS)
-        @$state.go 'app.reports.presentation', {session_id: test.sessionId}
-
   rowStyle: (row) => 
     if row.obsolete
       "test-result-obsolete"
@@ -525,11 +515,14 @@ class SystemTestsController
   onReportExport: (data) =>
     if (!data.obsolete)
       @export = true
+      data.exportPending = true
       @ReportService.exportTestCaseReport(data.sessionId, data.testCaseId)
       .then (stepResults) =>
           blobData = new Blob([stepResults], {type: 'application/pdf'});
           saveAs(blobData, "report.pdf");
+          data.exportPending = false
       .catch (error) =>
+          data.exportPending = false
           @ErrorService.showErrorMessage(error)
 
   exportActiveSessionsToCsv: () =>
@@ -592,11 +585,14 @@ class SystemTestsController
   stopSession: (session) =>
     @ConfirmationDialogService.confirm("Confirm delete", "Are you certain you want to terminate this session?", "Yes", "No")
     .then () =>
+      session.deletePending = true
       @TestService.stop(session.sessionId)
       .then (data) =>
+        session.deletePending = false
         @$state.go @$state.current, {}, {reload: true}
         @PopupService.success('Test session terminated.')
       .catch (error) =>
+        session.deletePending = false
         @ErrorService.showErrorMessage(error)
 
   deleteObsolete: () ->

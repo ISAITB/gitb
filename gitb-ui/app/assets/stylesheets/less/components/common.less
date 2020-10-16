@@ -15,6 +15,15 @@
 			padding-bottom: 15px;
 		}
 	}
+	thead {
+		th {
+			&.operations {
+				white-space: nowrap;
+				text-align: center;
+				width: 1px;
+			}
+		}
+	}
 	tbody {
 		tr {
 			&.selectable {
@@ -30,6 +39,12 @@
 				&.operations {
 					padding-top: 8px;
 					padding-bottom: 8px;
+					text-align: center;
+					button.btn {
+						&.pending {
+							padding: 6px;
+						}
+					}
 				}
 			}
 		}
