@@ -118,9 +118,11 @@
             <h4 class="title">Active test sessions</h4>
             <div class="btn-toolbar pull-right">
                 <button type="button" class="btn btn-default" ng-click="dashboardCtrl.exportActiveSessionsToCsv()" ng-disabled="dashboardCtrl.exportActivePending"><span class="tab" ng-if="dashboardCtrl.exportActivePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Export CSV</button>
+				<button type="button" class="btn btn-default" ng-if="dashboardCtrl.showCollapseAllActive()" ng-click="dashboardCtrl.onCollapseAllActive()">Collapse all</button>
             </div>
         </div>
         <div session-table-directive session-table-id="dashboard-table-active" session-id-property="session" test-suite-name-property="testSuite" test-case-name-property="testCase"
+            expanded-counter="dashboardCtrl.activeExpandedCounter"
             columns="dashboardCtrl.activeTestsColumns"
             data="dashboardCtrl.activeTests"
             on-sort="dashboardCtrl.sortActiveSessions"
@@ -136,9 +138,11 @@
             <div class="btn-toolbar pull-right">
                 <button type="button" class="btn btn-default" ng-click="dashboardCtrl.deleteObsolete()" ng-disabled="dashboardCtrl.deletePending"><span class="tab" ng-if="dashboardCtrl.deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete obsolete results</button>
                 <button type="button" class="btn btn-default" ng-click="dashboardCtrl.exportCompletedSessionsToCsv()" ng-disabled="dashboardCtrl.exportCompletedPending"><span class="tab" ng-if="dashboardCtrl.exportCompletedPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Export CSV</button>
+				<button type="button" class="btn btn-default" ng-if="dashboardCtrl.showCollapseAll()" ng-click="dashboardCtrl.onCollapseAll()">Collapse all</button>
             </div>
         </div>
         <div session-table-directive session-table-id="dashboard-table" session-id-property="session" test-suite-name-property="testSuite" test-case-name-property="testCase"
+            expanded-counter="dashboardCtrl.completedExpandedCounter"
             columns="dashboardCtrl.completedTestsColumns"
             data="dashboardCtrl.completedTests"
             export-visible="true"

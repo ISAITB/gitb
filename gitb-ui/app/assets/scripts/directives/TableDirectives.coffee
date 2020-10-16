@@ -216,6 +216,7 @@ sessionTableDirectiveInputs.sessionTableId = '@?'
 sessionTableDirectiveInputs.sessionIdProperty = '@?'
 sessionTableDirectiveInputs.testSuiteNameProperty = '@?'
 sessionTableDirectiveInputs.testCaseNameProperty = '@?'
+sessionTableDirectiveInputs.expandedCounter = '='
 
 @directives.directive 'sessionTableDirective', ['$timeout'
 	($timeout) ->
@@ -342,6 +343,11 @@ sessionTableDirectiveInputs.testCaseNameProperty = '@?'
 			scope.onExpand = (data) =>
 				data.collapsing = false
 				data.expanded = !data.expanded? || !data.expanded
+				if scope.expandedCounter?
+					if data.expanded
+						scope.expandedCounter.count = scope.expandedCounter.count + 1
+					else
+						scope.expandedCounter.count = scope.expandedCounter.count - 1
 			scope.rowClass = (row) =>
 				rowClass = ''
 				if scope.rowStyle

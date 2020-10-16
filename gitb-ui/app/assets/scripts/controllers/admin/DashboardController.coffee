@@ -5,6 +5,8 @@ class DashboardController
 
     @exportActivePending = false
     @exportCompletedPending = false
+    @activeExpandedCounter = {count: 0}
+    @completedExpandedCounter = {count: 0}
 
     @activeTestsColumns = [
       {
@@ -803,5 +805,21 @@ class DashboardController
     @getActiveTests()
     @getCompletedTests()
     @getTotalTestCount()
+
+  showCollapseAll: () =>
+    @completedExpandedCounter.count > 0
+
+  showCollapseAllActive: () =>
+    @activeExpandedCounter.count > 0
+
+  onCollapseAll: () =>
+    for test in @completedTests
+      test.expanded = false
+    @completedExpandedCounter.count = 0
+
+  onCollapseAllActive: () =>
+    for test in @activeTests
+      test.expanded = false
+    @activeExpandedCounter.count = 0
 
 @controllers.controller 'DashboardController', DashboardController

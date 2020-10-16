@@ -396,17 +396,21 @@ class AdminConformanceController
 			@exportPending = false		
 
 	onExportTestCase: (statement, testCase) =>
+		testCase.exportPending = true
 		@ReportService.exportTestCaseReport(testCase.sessionId, testCase.id)
 		.then (stepResults) =>
 			blobData = new Blob([stepResults], {type: 'application/pdf'});
 			saveAs(blobData, "test_case_report.pdf");
+			testCase.exportPending = false
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
+			testCase.exportPending = false
 
 	onExportConformanceStatement: (statement) =>
 		@statementToProcess = statement
 		if !statement?
 			@statementToProcess = @conformanceStatements[0]
+		@statementToProcess.exportPending = true
 		if !@settings?
 			@ConformanceService.getConformanceCertificateSettings(@statementToProcess.communityId, false)
 			.then (settings) => 
@@ -416,8 +420,10 @@ class AdminConformanceController
 					@settings = {}
 				@settingsLoaded.resolve()
 			.catch (error) =>
+				@statementToProcess.exportPending = false
 				@ErrorService.showErrorMessage(error)
 		@settingsLoaded.promise.then () =>
+			@statementToProcess.exportPending = false
 			modalOptions =
 				templateUrl: 'assets/views/admin/conformance/generate-certificate-modal.html'
 				controller: 'ConformanceCertificateModalController as controller'
