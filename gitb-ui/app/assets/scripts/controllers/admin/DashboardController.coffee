@@ -621,6 +621,7 @@ class DashboardController
     result.actor = testResult.actor?.name
     result.testSuite = testResult.testSuite?.sname
     result.testCase = testResult.test?.sname
+    result.testCaseId = testResult.test?.id
     result.organization = testResult.organization?.sname
     if orgParameters?
       for param in orgParameters
@@ -644,12 +645,6 @@ class DashboardController
     @completedSortColumn = column.field
     @completedSortOrder = column.order
     @goPage()
-
-  onAction: (session) =>
-    @action = true
-    searchState = @getCurrentSearchCriteria()
-    @DataService.setSearchState(searchState, @Constants.SEARCH_STATE_ORIGIN.DASHBOARD)
-    @$state.go 'app.reports.presentation', {session_id: session.session}
 
   stopSession: (session) =>
     @stop = true
@@ -715,21 +710,17 @@ class DashboardController
       @turnOff()
       @ttlEnabled = false
 
-  testSelect: (test) =>
-    if @action
-      @action = false
-    else if @stop
-      @stop = false
-    else
-      # if test.domain? and test.specification? and test.testCase? and test.testSuite?
-        data = [
-          {label: @DataService.labelDomain(), value: test.domain}
-          {label: @DataService.labelActor(), value: test.actor}
-          {label: @DataService.labelSpecification(), value: test.specification}
-          {label: "Test suite", value: test.testSuite}
-          {label: "Test case", value: test.testCase}
-        ]
-        @PopupService.show("Session #{test.session}", data)
+  exportVisible: (session) =>
+    !session.obsolete? || !session.obsolete
+
+  onReportExport: (data) =>
+    if (!data.obsolete)
+      @ReportService.exportTestCaseReport(data.session, data.testCaseId)
+      .then (stepResults) =>
+          blobData = new Blob([stepResults], {type: 'application/pdf'});
+          saveAs(blobData, "report.pdf");
+      .catch (error) =>
+          @ErrorService.showErrorMessage(error)
 
   exportCompletedSessionsToCsv: () =>
     @exportCompletedPending = true

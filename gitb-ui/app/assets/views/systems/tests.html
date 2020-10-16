@@ -125,9 +125,15 @@
                 <button type="button" class="btn btn-default" ng-click="systemTestsCtrl.exportActiveSessionsToCsv()" ng-disabled="systemTestsCtrl.exportActivePending"><span class="tab" ng-if="systemTestsCtrl.exportActivePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Export CSV</button>
             </div>
         </div>
-        <div id="system-tests-table-active" table-directive columns="systemTestsCtrl.activeTestsColumns" data="systemTestsCtrl.activeTests"
-             on-select="systemTestsCtrl.onTestSelect" on-sort="systemTestsCtrl.sortActiveSessions" on-delete="systemTestsCtrl.stopSession"
-             operations-visible="true" row-style="systemTestsCtrl.rowStyle"></div>
+        <div session-table-directive session-table-id="system-tests-table-active"
+            columns="systemTestsCtrl.activeTestsColumns"
+            data="systemTestsCtrl.activeTests"
+            on-select="systemTestsCtrl.onTestSelect"
+            on-sort="systemTestsCtrl.sortActiveSessions"
+            on-delete="systemTestsCtrl.stopSession"
+            operations-visible="true"
+            row-style="systemTestsCtrl.rowStyle">
+        </div>
     </div>
     <div class="panel panel-default">
         <div class="panel-heading">
@@ -137,22 +143,23 @@
                 <button type="button" class="btn btn-default" ng-click="systemTestsCtrl.exportToCsv()" ng-disabled="systemTestsCtrl.exportCompletedPending"><span class="tab" ng-if="systemTestsCtrl.exportCompletedPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Export CSV</button>
             </div>
         </div>
-        <div id="system-tests-table" ng-if="systemTestsCtrl.testResults.length > 0" table-directive
-             columns="systemTestsCtrl.tableColumns"
-             data="systemTestsCtrl.testResults"
-             on-select="systemTestsCtrl.onTestSelect"
-             row-style="systemTestsCtrl.rowStyle"
-             export-visible="true"
-             on-export="systemTestsCtrl.onReportExport"
-             checkbox-enabled="false"
-             on-sort="systemTestsCtrl.sortTestResults"
-             pagination-visible="true"
-             first-page="systemTestsCtrl.navigateFirstPage()"
-             prev-page="systemTestsCtrl.navigatePreviousPage()"
-             next-page="systemTestsCtrl.navigateNextPage()"
-             last-page="systemTestsCtrl.navigateLastPage()"
-             next-disabled="!systemTestsCtrl.hasNextPage"
-             prev-disabled="!systemTestsCtrl.hasPreviousPage">
+        <div session-table-directive session-table-id="system-tests-table"
+            columns="systemTestsCtrl.tableColumns"
+            data="systemTestsCtrl.testResults"
+            on-select="systemTestsCtrl.onTestSelect"
+            row-style="systemTestsCtrl.rowStyle"
+            export-visible="true"
+            export-visible-for-row="systemTestsCtrl.exportVisible"
+            on-export="systemTestsCtrl.onReportExport"
+            checkbox-enabled="false"
+            on-sort="systemTestsCtrl.sortTestResults"
+            pagination-visible="true"
+            first-page="systemTestsCtrl.navigateFirstPage()"
+            prev-page="systemTestsCtrl.navigatePreviousPage()"
+            next-page="systemTestsCtrl.navigateNextPage()"
+            last-page="systemTestsCtrl.navigateLastPage()"
+            next-disabled="!systemTestsCtrl.hasNextPage"
+            prev-disabled="!systemTestsCtrl.hasPreviousPage">
         </div>
     </div>
 </div>

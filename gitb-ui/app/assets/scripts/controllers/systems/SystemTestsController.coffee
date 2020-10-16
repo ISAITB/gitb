@@ -348,6 +348,7 @@ class SystemTestsController
                         specification: if report.test? then report.specification.sname else '-'
                         actor: if report.actor? then report.actor.name else '-'
                         testCaseName: if report.test? then report.test.sname else '-'
+                        testSuiteName: if report.testSuite? then report.testSuite.sname else '-'
                         startTime: report.result.startTime
                         sessionId: report.result.sessionId
 
@@ -370,19 +371,22 @@ class SystemTestsController
                         testCaseId: if report.test? then report.test.id else '-'
                         specification: if report.test? then report.specification.sname else '-'
                         testCaseName: if report.test? then report.test.sname else '-'
+                        testSuiteName: if report.testSuite? then report.testSuite.sname else '-'
                         actor: if report.actor? then report.actor.name else '-'
                         startTime: report.result.startTime
                         endTime: if report.result.endTime? then report.result.endTime else '-'
                         result: report.result.result
                         sessionId: report.result.sessionId
                         obsolete: report.result.obsolete
-                        hideExportButton: report.result.obsolete
                       transformedObject
       @testResults = resultReportsCollection.value()
       @refreshCompletedPending = false
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
       @refreshCompletedPending = false
+
+  exportVisible: (session) =>
+    !session.obsolete? || !session.obsolete
 
   getTestResultsCount: () ->
     params = @getCurrentSearchCriteria()

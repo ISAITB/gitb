@@ -1,34 +1,38 @@
+tableDirectiveInputs = {
+	columns: '=' # e.g.: {'sname': 'Short Name', 'fname': 'Full Name'}
+	classes: '=' # e.g.: {'sname': 'short-name', 'fname': 'full-name'}
+	data: '='
+	onSelect: '='
+	onDeselect: '='
+	rowStyle: '='
+	operationsVisible: '='
+	exportVisible: '='
+	exportVisibleForRow: '='
+	checkboxEnabled: '='
+	onDelete: '='
+	deleteVisibleForRow: '='
+	onExport: '='
+	onCheck: '='
+	allowSelect: '='
+	allowMultiSelect: '='
+	tableCaption: '='
+	paginationVisible: '='
+	firstPage: '&'
+	prevPage: '&'
+	nextPage: '&'
+	lastPage: '&'
+	nextDisabled: '='
+	prevDisabled: '='
+	actionVisible: '='
+	actionVisibleForRow: '='
+	onAction: '='
+	actionIcon: '='
+	onSort: '='
+}
+
 @directives.directive 'tableDirective', [
 	()->
-		scope:
-			columns: '=' # e.g.: {'sname': 'Short Name', 'fname': 'Full Name'}
-			classes: '=' # e.g.: {'sname': 'short-name', 'fname': 'full-name'}
-			data: '='
-			onSelect: '='
-			onDeselect: '='
-			rowStyle: '='
-			operationsVisible: '='
-			exportVisible: '='
-			checkboxEnabled: '='
-			onDelete: '='
-			deleteVisibleForRow: '='
-			onExport: '='
-			onCheck: '='
-			allowSelect: '='
-			allowMultiSelect: '='
-			tableCaption: '='
-			paginationVisible: '='
-			firstPage: '&'
-			prevPage: '&'
-			nextPage: '&'
-			lastPage: '&'
-			nextDisabled: '='
-			prevDisabled: '='
-			actionVisible: '='
-			actionVisibleForRow: '='
-			onAction: '='
-			actionIcon: '='
-			onSort: '='
+		scope: tableDirectiveInputs
 		restrict: 'AE'
 		template: ''+
 			'<div>'+
@@ -48,7 +52,7 @@
 					'</tr>'+
 				'</thead>'+
 				'<tbody>'+
-					'<tr class="table-row-directive" ng-class="rowClass($index)" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" action-visible="actionVisible" action-icon="actionIcon" operations-visible="operationsVisible" export-visible="exportVisible" checkbox-enabled="checkboxEnabled" on-action="onAction" on-delete="onDelete" on-export="onExport" on-check="onCheck" delete-visible-for-row="deleteVisibleForRow" action-visible-for-row="actionVisibleForRow"></tr>'+
+					'<tr class="table-row-directive" ng-class="rowClass($index)" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" action-visible="actionVisible" action-icon="actionIcon" operations-visible="operationsVisible" export-visible="exportVisible" export-visible-for-row="exportVisibleForRow" checkbox-enabled="checkboxEnabled" on-action="onAction" on-delete="onDelete" on-export="onExport" on-check="onCheck" delete-visible-for-row="deleteVisibleForRow" action-visible-for-row="actionVisibleForRow"></tr>'+
 				'</tbody>'+
 			'</table>'+
 				'<div ng-if="paginationVisible" class="text-center">'+
@@ -143,6 +147,7 @@
 			actionVisible: '='
 			actionVisibleForRow: '='
 			exportVisible: '='
+			exportVisibleForRow: '='
 			checkboxEnabled: '='
 			onDelete: '='
 			deleteVisibleForRow: '='
@@ -170,7 +175,7 @@
 				'<button type="button" ng-if="!deleteVisibleForRow || deleteVisibleForRow(data)" class="btn btn-default" ng-click="delete(); $event.stopPropagation();"><i class="fa fa-times"></i></button>'+
 			'</td>' +
 			'<td class="operations" ng-if="exportVisible">'+
-				'<button type="button" ng-if="!data.hideExportButton" class="btn btn-default" ng-click="export(); $event.stopPropagation();" ng-disabled="data.disableExportButton"><i ng-class="exportClass()"></i></button>'+
+				'<button type="button" ng-if="!exportVisibleForRow || exportVisibleForRow(data)" class="btn btn-default" ng-click="export(); $event.stopPropagation();" ng-disabled="data.disableExportButton"><i ng-class="exportClass()"></i></button>'+
 			'</td>'
 		link: (scope, element, attrs) ->
 			scope.rows = _.map scope.columns, (column)->
@@ -195,4 +200,164 @@
 				scope.onCheck? scope.data
 			scope.action = () =>
 				scope.onAction? scope.data
+]
+
+sessionTableDirectiveInputs = JSON.parse(JSON.stringify(tableDirectiveInputs))
+sessionTableDirectiveInputs.sessionTableId = '@?'
+sessionTableDirectiveInputs.sessionIdProperty = '@?'
+sessionTableDirectiveInputs.testSuiteNameProperty = '@?'
+sessionTableDirectiveInputs.testCaseNameProperty = '@?'
+
+@directives.directive 'sessionTableDirective', ['$timeout'
+	($timeout) ->
+		scope: sessionTableDirectiveInputs
+		restrict: 'AE'
+		template: '
+			<div>
+				<table ng-attr-id="sessionTableId" class="table table-directive expandable-table">
+					<caption ng-if="tableCaptionVisible">{{tableCaption}}</caption>
+					<thead>
+						<tr>
+							<th ng-if="checkboxEnabled"></th>
+							<th ng-class="{sortable: column.sortable}" ng-repeat="column in columns" ng-click="!column.sortable || headerColumnClicked(column)">
+								{{column.title}} 
+								<i ng-if="column.order == \'desc\'" class="fa fa-caret-down"></i>
+								<i ng-if="column.order == \'asc\'" class="fa fa-caret-up"></i>
+							</th>
+							<th ng-if="actionVisible">Action</th>
+							<th ng-if="operationsVisible">Operation</th>
+							<th ng-if="exportVisible">Export</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr table-row-directive class="table-row-directive expandable-table-row-collapsed" 
+							ng-repeat-start="row in data" 
+							ng-class="rowClass(row)" 
+							ng-click="onExpand(row)" 
+							data="row" 
+							columns="columns" 
+							classes="classes" 
+							action-visible="actionVisible" 
+							action-icon="actionIcon" 
+							operations-visible="operationsVisible" 
+							export-visible="exportVisible"
+							export-visible-for-row="exportVisibleForRow"
+							checkbox-enabled="checkboxEnabled" on-action="onAction" on-delete="onDelete" 
+							on-export="onExport"
+							on-check="onCheck"
+							delete-visible-for-row="deleteVisibleForRow"
+							action-visible-for-row="actionVisibleForRow">
+						</tr>
+						<tr ng-repeat-end class="expandable-table-row-expanded">
+							<td ng-attr-colspan="{{columnCount}}" class="expandable-table-expandable-cell-no-spacings" ng-class="{\'collapsed\': !row.expanded && !row.collapsing, \'collapsing\': row.collapsing}">
+								<table width="100%" style="table-layout:fixed">
+									<tr>
+										<td>
+											<div uib-collapse="!row.expanded" collapsing="rowCollapsing(row)" collapsed="rowCollapsed(row)">
+												<div class="panel panel-default">
+													<div class="panel-heading session-table-title">
+														<div class="session-table-title-part">
+															<div class="session-table-title-label">Test suite</div>
+															<div class="session-table-title-value">{{row[testSuiteNameProperty]}}</div>
+														</div>
+														<div class="session-table-title-part">
+															<div class="session-table-title-label">Test case</div>
+															<div class="session-table-title-value">{{row[testCaseNameProperty]}}</div>
+														</div>
+														<div class="session-table-title-part">
+															<div class="session-table-title-label">Session</div>
+															<div class="session-table-title-value">{{row[sessionIdProperty]}}</div>
+														</div>
+													</div>
+													<div class="panel-body" style="overflow-x: auto; overflow-y: hidden;">
+														<div ng-show="!row.hideLoadingIcon"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></div>
+														<div uib-collapse="!row.diagramExpanded" class="no-margin">
+															<div ng-if="row.expanded || row.diagramLoaded">
+																<div test-session-presentation session-id="getSessionId(row)" session-object="row" on-ready="diagramReady"></div>
+															</div>
+														</div>
+													</div>
+												</div>
+											</div>
+										</td>
+									</tr>
+								</table>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				<div ng-if="paginationVisible" class="text-center table-paging-controls-expandable">
+					<ul class="pagination pagination-sm"  >
+						<li ng-class="prevDisabled ? \'disabled\' : \'\'"><a href ng-click="doFirstPage()">First</a></li>
+						<li ng-class="prevDisabled ? \'disabled\' : \'\'"><a href ng-click="doPrevPage()">Previous</a></li>
+						<li ng-class="nextDisabled ? \'disabled\' : \'\'"><a href ng-click="doNextPage()">Next</a></li>
+						<li ng-class="nextDisabled ? \'disabled\' : \'\'"><a href ng-click="doLastPage()">Last</a></li>
+					</ul>
+				</div>
+			</div>
+			'
+		replace: true
+		link: (scope, element, attrs) ->
+			if !scope.sessionTableId?
+				scope.sessionTableId = "session-table"
+			if !scope.sessionIdProperty?
+				scope.sessionIdProperty = "sessionId"
+			if !scope.testSuiteNameProperty
+				scope.testSuiteNameProperty = "testSuiteName"
+			if !scope.testCaseNameProperty
+				scope.testCaseNameProperty = "testCaseName"
+			scope.columnCount = scope.columns.length
+			if scope.checkboxEnabled
+				scope.columnCount += 1
+			if scope.actionVisible
+				scope.columnCount += 1
+			if scope.operationsVisible
+				scope.columnCount += 1
+			if scope.exportVisible
+				scope.columnCount += 1
+			scope.rowCollapsing = (data) ->
+				data.collapsing = true
+			scope.rowCollapsed = (data) ->
+				data.collapsing = false
+			scope.getSessionId = (data) =>
+				data[scope.sessionIdProperty]
+			scope.diagramReady = (sessionId, test) ->
+				test.diagramLoaded = true
+				$timeout(() -> 
+					test.hideLoadingIcon = true
+					test.diagramExpanded = true
+				, 200)
+			scope.onExpand = (data) =>
+				data.collapsing = false
+				data.expanded = !data.expanded? || !data.expanded
+			scope.rowClass = (row) =>
+				rowClass = ''
+				if scope.rowStyle
+					customClass = scope.rowStyle(row)
+					if customClass?
+						rowClass = rowClass + ' ' + customClass
+				if scope.allowSelect || scope.allowMultiSelect || scope.onSelect
+					rowClass = rowClass + ' selectable'
+				rowClass
+			scope.doFirstPage = () =>
+				if scope.prevDisabled
+					false
+				else
+					scope.firstPage()
+			scope.doPrevPage = () =>
+				if scope.prevDisabled
+					false
+				else
+					scope.prevPage()
+			scope.doNextPage = () =>
+				if scope.nextDisabled
+					false
+				else
+					scope.nextPage()
+			scope.doLastPage = () =>
+				if scope.nextDisabled
+					false
+				else
+					scope.lastPage()
+				
 ]

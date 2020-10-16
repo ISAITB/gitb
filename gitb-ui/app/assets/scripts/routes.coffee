@@ -208,17 +208,6 @@ app.config ['$stateProvider', '$urlRouterProvider',
 				templateUrl: 'assets/views/tests/execution-v2.html'
 				controller: 'TestExecutionControllerV2'
 				controllerAs: 'testExecutionCtrl'
-			'app.reports':
-				url: '/reports/:session_id'
-				templateUrl: 'assets/views/result.html'
-				abstract: true
-				controller: 'TestResultController'
-				controllerAs: 'testResultCtrl'
-			'app.reports.presentation':
-				url: ''
-				templateUrl: 'assets/views/test-presentation.html'
-				controller: 'TestPresentationController'
-				controllerAs: 'testPresentationCtrl'
 			'app.systems':
 				url: '/systems'
 				abstract: true

@@ -120,10 +120,14 @@
                 <button type="button" class="btn btn-default" ng-click="dashboardCtrl.exportActiveSessionsToCsv()" ng-disabled="dashboardCtrl.exportActivePending"><span class="tab" ng-if="dashboardCtrl.exportActivePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Export CSV</button>
             </div>
         </div>
-        <div id="dashboard-table-active" table-directive columns="dashboardCtrl.activeTestsColumns" data="dashboardCtrl.activeTests"
-             on-select="dashboardCtrl.testSelect" action-visible="true" action-icon="'fa-search'" on-action="dashboardCtrl.onAction"
-             on-sort="dashboardCtrl.sortActiveSessions"
-             operations-visible="true" on-delete="dashboardCtrl.stopSession" row-style="dashboardCtrl.rowStyle"></div>
+        <div session-table-directive session-table-id="dashboard-table-active" session-id-property="session" test-suite-name-property="testSuite" test-case-name-property="testCase"
+            columns="dashboardCtrl.activeTestsColumns"
+            data="dashboardCtrl.activeTests"
+            on-sort="dashboardCtrl.sortActiveSessions"
+            operations-visible="true"
+            on-delete="dashboardCtrl.stopSession"
+            row-style="dashboardCtrl.rowStyle">
+        </div>
     </div>
     <!-- completed sessions -->
     <div class="panel panel-default">
@@ -134,14 +138,22 @@
                 <button type="button" class="btn btn-default" ng-click="dashboardCtrl.exportCompletedSessionsToCsv()" ng-disabled="dashboardCtrl.exportCompletedPending"><span class="tab" ng-if="dashboardCtrl.exportCompletedPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Export CSV</button>
             </div>
         </div>
-        <div id="dashboard-table" table-directive columns="dashboardCtrl.completedTestsColumns" data="dashboardCtrl.completedTests"
-             on-select="dashboardCtrl.testSelect" action-visible="true" action-icon="'fa-search'" on-action="dashboardCtrl.onAction"
-             pagination-visible="true" first-page="dashboardCtrl.goFirstPage()"
-             prev-page="dashboardCtrl.goPreviousPage()" on-sort="dashboardCtrl.sortCompletedSessions"
-             next-page="dashboardCtrl.goNextPage()" last-page="dashboardCtrl.goLastPage()"
-             next-disabled="dashboardCtrl.isNextPageDisabled"
-             prev-disabled="dashboardCtrl.isPreviousPageDisabled"
-             row-style="dashboardCtrl.rowStyle"></div>
+        <div session-table-directive session-table-id="dashboard-table" session-id-property="session" test-suite-name-property="testSuite" test-case-name-property="testCase"
+            columns="dashboardCtrl.completedTestsColumns"
+            data="dashboardCtrl.completedTests"
+            export-visible="true"
+            on-export="dashboardCtrl.onReportExport"
+            export-visible-for-row="dashboardCtrl.exportVisible"
+            pagination-visible="true"
+            first-page="dashboardCtrl.goFirstPage()"
+            prev-page="dashboardCtrl.goPreviousPage()"
+            on-sort="dashboardCtrl.sortCompletedSessions"
+            next-page="dashboardCtrl.goNextPage()"
+            last-page="dashboardCtrl.goLastPage()"
+            next-disabled="dashboardCtrl.isNextPageDisabled"
+            prev-disabled="dashboardCtrl.isPreviousPageDisabled"
+            row-style="dashboardCtrl.rowStyle">
+        </div>
     </div>
     <!-- configuration -->
     <div class="panel panel-default" ng-if="dashboardCtrl.DataService.isSystemAdmin">

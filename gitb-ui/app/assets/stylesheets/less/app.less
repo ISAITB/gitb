@@ -39,6 +39,9 @@ body {
 .div-padded {
 	padding: 15px;
 }
+.div-padded-bottom {
+	padding-bottom: 15px;
+}
 
 .account-card {
 	&:extend(.div-rounded);
@@ -126,6 +129,10 @@ body {
 
 }
 
+.table-paging-controls-expandable {
+	border-top: 2px solid #ddd;
+}
+
 table.expandable-table {
 	th {
 		background-color: #FFFFFF;
@@ -133,12 +140,51 @@ table.expandable-table {
 	tr {
 		background-color: #F5F5F5;
 	}
+	.panel {
+		margin-bottom: 0px;
+		.panel-heading {
+			background-color: white;
+    		color: #777;
+		}
+	}
 }
+
+.session-table-title {
+	padding: 0px 15px;
+	display: flex;
+	.session-table-title-part {
+		display: inline-flex;
+		border-left: 1px solid #ddd;
+		padding-left: 10px;
+		padding-right: 10px;		
+		padding-top: 10px;
+		padding-bottom: 10px;
+		&:first-child {
+			border-left: 0px;
+			padding-left: 0px;
+		}
+		.session-table-title-label {
+			display: inline-flex;
+			font-weight: bold;
+			padding-right: 10px;
+			align-items: center;
+			white-space: nowrap
+		}
+		.session-table-title-value {
+			display: inline-flex;
+			align-items: center;
+		}
+	}
+}
+
 
 table tbody tr.expandable-table-row-collapsed {
 	&:hover {
 		background-color: #efefef;
 		+ .expandable-table-row-expanded > td.expandable-table-expandable-cell {
+			background-color: #efefef;
+		}
+		+ .expandable-table-row-expanded > td.expandable-table-expandable-cell-no-spacings {
 			background-color: #efefef;
 		}
 	}
@@ -177,6 +223,16 @@ table tbody tr.expandable-table-row-expanded {
 			.btn-toolbar {
 				margin: 0px;
 			}
+		}
+	}
+	td.expandable-table-expandable-cell-no-spacings {
+		&.collapsed {
+			padding-top:0px;
+			padding-bottom:0px;
+		}
+		&.collapsing {
+			padding-top:8px;
+			padding-bottom:8px;
 		}
 	}
 	td {
