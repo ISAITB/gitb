@@ -311,6 +311,7 @@ class TestExecutionControllerV2
     .then(
       (data) =>
         @session = data
+        @currentTest.sessionId = @session
         configureFinished = @$q.defer()
         @configure(@session, configureFinished)
 

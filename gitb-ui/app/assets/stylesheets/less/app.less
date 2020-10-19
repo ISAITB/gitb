@@ -149,9 +149,31 @@ table.expandable-table {
 	}
 }
 
+.panel-default > .panel-heading > .session-table-title {
+	color: #777;
+}
+
+.session-execution-info {
+	display: flex;
+	width: 100%;
+	.session-table-title {
+		display: inline-flex;
+		width: 100%;
+		padding-left: 0px;
+		.session-table-title-part {
+			padding-top: 15px;
+			padding-bottom: 15px;
+		}
+	}
+	.session-table-operations {
+		display: inline-flex;
+		align-items: center;
+	}
+}
 .session-table-title {
 	padding: 0px 15px;
 	display: flex;
+	color: #777;
 	.session-table-title-part {
 		display: inline-flex;
 		border-left: 1px solid #ddd;
