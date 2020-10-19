@@ -19,9 +19,13 @@
 				<div class="col-md-10">{{conformanceStatementDetailCtrl.actor.name}}</div>
 				<div class="col-md-10 col-md-offset-2 row-display-inner" ng-if="conformanceStatementDetailCtrl.actor.description">{{conformanceStatementDetailCtrl.actor.description}}</div>
 			</div>
-			<div class="row row-display-last">
-				<div class="col-md-2"><strong>Test status</strong></div>
-				<div class="col-md-10">{{conformanceStatementDetailCtrl.testStatus}}</div>
+			<div class="row row-display">
+				<div class="col-md-2"><strong>Test results</strong></div>
+				<div class="col-md-10"><span>{{conformanceStatementDetailCtrl.testStatus}}</span></div>
+			</div>
+			<div class="row row-display-last" style="display:flex; margin-bottom:-2px;">
+				<div class="col-md-2" style="display:inline-flex"><strong>Status</strong></div>
+				<div class="col-md-10" style="display:inline-flex; align-items: center; line-height:0px"><span><i ng-class="conformanceStatementDetailCtrl.DataService.iconForTestResult(conformanceStatementDetailCtrl.conformanceStatus)"></i></span></div>
 			</div>
 		</div>
         <div class="panel-footer">
@@ -56,18 +60,18 @@
 			</div>
 		</div>
 
-		<table class="table table-directive" ng-class="{'expandable-table': (conformanceStatementDetailCtrl.testSuites.length > 1),'padded-table': (conformanceStatementDetailCtrl.testSuites.length == 1)}">
+		<table id="conformance-statement-details" class="table table-directive" ng-class="{'expandable-table': (conformanceStatementDetailCtrl.testSuites.length > 1),'padded-table': (conformanceStatementDetailCtrl.testSuites.length == 1)}">
 			<thead>
 				<th width="10%">{{conformanceStatementDetailCtrl.testSuites.length == 1?"Test case":"Test suite"}}</th>
 				<th>Description</th>
-				<th width="10%">Result</th>
+				<th class="tb-result">Result</th>
 				<th width="10%"></th>
 			</thead>
 			<tbody ng-if="conformanceStatementDetailCtrl.testSuites.length == 1">
 				<tr ng-repeat="testCase in conformanceStatementDetailCtrl.testSuites[0].testCases">
 					<td>{{testCase.sname}}</td>
 					<td>{{testCase.description}}</td>
-					<td>{{testCase.result}}</td>
+					<td class="tb-result"><i ng-class="conformanceStatementDetailCtrl.DataService.iconForTestResult(testCase.result)"></i></td>
 					<td class="operation-cell">
 						<div class="btn-toolbar pull-right">
 							<button type="button" class="btn btn-primary" ng-if="testCase.hasDocumentation" ng-click="conformanceStatementDetailCtrl.showTestCaseDocumentation(testCase.id)"><i class="fa fa-info-circle"></i></button>
@@ -82,7 +86,7 @@
 					class="expandable-table-row-collapsed">
 					<td>{{testSuite.sname}}</td>
 					<td>{{testSuite.description}}</td>
-					<td>{{testSuite.result}}</td>
+					<td class="tb-result"><i ng-class="conformanceStatementDetailCtrl.DataService.iconForTestResult(testSuite.result)"></i></td>
 					<td style="padding-right: 17px;">
 						<div class="btn-toolbar pull-right">
 							<button type="button" class="btn btn-primary" ng-if="testSuite.hasDocumentation" ng-click="conformanceStatementDetailCtrl.showTestSuiteDocumentation(testSuite.id); $event.stopPropagation();"><i class="fa fa-info-circle"></i></button>
@@ -97,14 +101,14 @@
 								<thead>
 									<th width="10%">Test&nbsp;case</th>
 									<th>Description</th>
-									<th width="10%">Result</th>
+									<th class="td-centered" width="10%">Result</th>
 									<th width="10%"></th>
 								</thead>
 								<tbody>
 									<tr ng-repeat="testCase in testSuite.testCases">
 										<td>{{testCase.sname}}</td>
 										<td>{{testCase.description}}</td>
-										<td>{{testCase.result}}</td>
+										<td class="tb-result"><i ng-class="conformanceStatementDetailCtrl.DataService.iconForTestResult(testCase.result)"></i></td>
 										<td>
 											<div class="btn-toolbar pull-right">
 												<button type="button" class="btn btn-primary" ng-if="testCase.hasDocumentation" ng-click="conformanceStatementDetailCtrl.showTestCaseDocumentation(testCase.id)"><i class="fa fa-info-circle"></i></button>

@@ -36,6 +36,7 @@
 				}
 			}
 			td {
+				vertical-align: middle;
 				&.operations {
 					padding-top: 8px;
 					padding-bottom: 8px;
@@ -51,7 +52,7 @@
 	}
 }
 
-#dashboard-table, #dashboard-table-active, #system-tests-table, #systems-table, #system-tests-table-active, #members-table {
+#systems-table, #members-table {
 	td.operations {
 		padding-top: 8px;
 		padding-bottom: 8px;
@@ -83,8 +84,10 @@
 	margin-top: 5px;
 }
 
-.test-result-obsolete {
-	color: #ddd
+tr.test-result-obsolete {
+	td {
+		opacity: 40%;
+	}
 }
 
 .system-container-div {
@@ -117,6 +120,9 @@
 }
 .test-case-success {
 	color: @completed-color;
+}
+.test-case-undefined {
+	color: @gray;
 }
 
 .select-execution {

@@ -44,7 +44,7 @@ tableDirectiveInputs = {
 				'<thead>'+
 					'<tr>'+
 						'<th ng-if="checkboxEnabled"></th>'+
-						'<th ng-class="{sortable: column.sortable}" ng-repeat="column in columns" ng-click="!column.sortable || headerColumnClicked(column)">'+
+						'<th ng-class="column.headerClass" ng-repeat="column in columns" ng-click="!column.sortable || headerColumnClicked(column)">'+
 							'{{column.title}} '+
 							'<i ng-if="column.order == \'desc\'" class="fa fa-caret-down"></i>'+
 							'<i ng-if="column.order == \'asc\'" class="fa fa-caret-up"></i>'+
@@ -70,6 +70,11 @@ tableDirectiveInputs = {
 
 		replace: true
 		link: (scope, element, attrs) ->
+			for column in scope.columns
+				column.headerClass = 'tb-'+column.title.toLowerCase().replace(" ", "-")
+				if column.sortable
+					column.headerClass = column.headerClass + ' sortable'
+
 			scope.headerColumnClicked = (column) =>
 				for col, i in scope.columns
 					if col.field == column.field
@@ -82,6 +87,7 @@ tableDirectiveInputs = {
 					else
 						col.order = null
 				scope.onSort? column
+
 			scope.tableCaptionVisible = scope.tableCaption?
 
 			scope.doFirstPage = () =>
@@ -167,11 +173,16 @@ tableDirectiveInputs = {
 				'<input type="checkbox" ng-model="data.checked" ng-change="check()">' +
 			'</td>' +
 			'<td class="{{row.class}}" ng-repeat="row in rows">'+
-				'<div ng-if="row.boolean">'+
-					'<i class="glyphicon" ng-class="{\'glyphicon-ok\': row.data, \'glyphicon-remove\': !row.data}"></i>'+
+				'<div ng-if="columns[$index].iconFn">'+
+					'<i ng-class="columns[$index].iconFn(row.data)"></i>'+
 				'</div>'+
-				'<div ng-if="!row.boolean">'+
-					'{{row.data}}'+
+				'<div ng-if="!columns[$index].iconFn">'+
+					'<div ng-if="row.boolean">'+
+						'<i class="glyphicon" ng-class="{\'glyphicon-ok\': row.data, \'glyphicon-remove\': !row.data}"></i>'+
+					'</div>'+
+					'<div ng-if="!row.boolean">'+
+						'{{row.data}}'+
+					'</div>'+
 				'</div>'+
 			'</td>'+
 			'<td class="operations" ng-if="actionVisible">'+
@@ -224,12 +235,12 @@ sessionTableDirectiveInputs.expandedCounter = '='
 		restrict: 'AE'
 		template: '
 			<div>
-				<table ng-attr-id="sessionTableId" class="table table-directive expandable-table">
+				<table ng-attr-id="{{sessionTableId}}" class="table table-directive expandable-table">
 					<caption ng-if="tableCaptionVisible">{{tableCaption}}</caption>
 					<thead>
 						<tr>
 							<th ng-if="checkboxEnabled"></th>
-							<th ng-class="{sortable: column.sortable}" ng-repeat="column in columns" ng-click="!column.sortable || headerColumnClicked(column)">
+							<th ng-class="column.headerClass" ng-repeat="column in columns" ng-click="!column.sortable || headerColumnClicked(column)">
 								{{column.title}} 
 								<i ng-if="column.order == \'desc\'" class="fa fa-caret-down"></i>
 								<i ng-if="column.order == \'asc\'" class="fa fa-caret-up"></i>
@@ -319,6 +330,10 @@ sessionTableDirectiveInputs.expandedCounter = '='
 				scope.testSuiteNameProperty = "testSuiteName"
 			if !scope.testCaseNameProperty
 				scope.testCaseNameProperty = "testCaseName"
+			for column in scope.columns
+				column.headerClass = 'tb-'+column.title.toLowerCase().replace(" ", "-")
+				if column.sortable
+					column.headerClass = column.headerClass + ' sortable'
 			scope.columnCount = scope.columns.length
 			if scope.checkboxEnabled
 				scope.columnCount += 1
@@ -377,5 +392,5 @@ sessionTableDirectiveInputs.expandedCounter = '='
 					false
 				else
 					scope.lastPage()
-				
+			
 ]

@@ -596,4 +596,22 @@ class DataService
 		for otherId in ids 
 			map[id][otherId] = true
 
+	iconForTestResult: (result) =>
+		if (result == @Constants.TEST_CASE_RESULT.SUCCESS)
+			icon = "fa testsuite-progress-icon fa-check-circle test-case-success"
+		else if (result == @Constants.TEST_CASE_RESULT.FAILURE)
+			icon = "fa testsuite-progress-icon fa-times-circle test-case-error"
+		else
+			icon = "fa testsuite-progress-icon fa-ban test-case-undefined"
+		icon
+
+	conformanceStatusForTests: (completedCount, failedCount, undefinedCount) =>
+		totalCount = completedCount + failedCount + undefinedCount
+		if completedCount == totalCount
+			@Constants.TEST_CASE_RESULT.SUCCESS
+		else if failedCount > 0
+			@Constants.TEST_CASE_RESULT.FAILURE
+		else
+			@Constants.TEST_CASE_RESULT.UNDEFINED
+
 services.service('DataService', DataService)

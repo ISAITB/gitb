@@ -67,7 +67,8 @@ class SystemTestsController
       {
         field: 'result'
         title: 'Result'
-        sortable: true
+        sortable: true,
+        iconFn: @DataService.iconForTestResult
       }
     ]
 

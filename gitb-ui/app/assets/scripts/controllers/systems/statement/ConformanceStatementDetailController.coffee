@@ -91,6 +91,7 @@ class ConformanceStatementDetailController
         testSuiteResults.push(testSuiteData[testSuiteId])
       @testSuites = testSuiteResults
       @testStatus = @DataService.testStatusText(completedCount, failedCount, undefinedCount)
+      @conformanceStatus = @DataService.conformanceStatusForTests(completedCount, failedCount, undefinedCount)
       @allTestsSuccessful = completedCount == totalCount
     .catch (error) =>
       @ErrorService.showErrorMessage(error)

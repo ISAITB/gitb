@@ -308,6 +308,7 @@ class AdminConformanceController
 				failedCount = Number(conformanceStatement.failed)
 				undefinedCount = Number(conformanceStatement.undefined)
 				conformanceStatement.status = @DataService.testStatusText(completedCount, failedCount, undefinedCount)
+				conformanceStatement.overallStatus = @DataService.conformanceStatusForTests(completedCount, failedCount, undefinedCount)
 			d.resolve(data)
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)

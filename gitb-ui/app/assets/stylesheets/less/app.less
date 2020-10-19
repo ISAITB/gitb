@@ -177,7 +177,6 @@ table.expandable-table {
 	}
 }
 
-
 table tbody tr.expandable-table-row-collapsed {
 	&:hover {
 		background-color: #efefef;
@@ -212,6 +211,47 @@ table.padded-table tbody tr {
 table.table-directive {
 	div.btn-toolbar {
 		margin: 0px;
+	}
+}
+
+#conformance-statement-details {
+	th.tb-result {
+		width: 10%;
+		text-align: center;
+		white-space: nowrap;
+	}
+	td.tb-result {
+		padding-top: 8px;
+		padding-bottom: 8px;
+		vertical-align: middle;
+		text-align: center;
+	}
+}
+.td-min-centered {
+	padding-top: 8px;
+	padding-bottom: 8px;
+	vertical-align: middle;
+	text-align: center;
+}
+.th-min-centered {
+	width: 1px;
+	text-align: center;
+	white-space: nowrap;
+}
+#system-tests-table, #dashboard-table, #conformanceDashboardPageTable {
+	th.tb-result {
+		.th-min-centered
+	}
+	td.tb-result {
+		.td-min-centered
+	}
+}
+#conformance-statements-table {
+	th.tb-status {
+		.th-min-centered
+	}
+	td.tb-status {
+		.td-min-centered
 	}
 }
 
@@ -250,7 +290,7 @@ tr.expandable-table-row-expanded table.expandable-table {
 	}
 	th {
 		background-color: #FFFFFF;
-		padding: 8px
+		padding: 8px;
 	}
 	th:first-child {
 		border-left: 1px solid #ddd;

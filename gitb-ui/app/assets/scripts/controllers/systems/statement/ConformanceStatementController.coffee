@@ -22,7 +22,12 @@ class ConformanceStatementController
       }
       {
         field: 'results'
-        title: 'Results'
+        title: 'Test results'
+      }
+      {
+        field: 'status'
+        title: 'Status'
+        iconFn: @DataService.iconForTestResult
       }
     ]
 
@@ -46,6 +51,7 @@ class ConformanceStatementController
           domain: conformanceStatement.domain
           domainFull: conformanceStatement.domainFull
           results: @DataService.testStatusText(Number(conformanceStatement.results.completed), Number(conformanceStatement.results.failed), Number(conformanceStatement.results.undefined))
+          status: @DataService.conformanceStatusForTests(Number(conformanceStatement.results.completed), Number(conformanceStatement.results.failed), Number(conformanceStatement.results.undefined))
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
 

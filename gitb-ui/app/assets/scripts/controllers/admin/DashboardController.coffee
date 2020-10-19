@@ -82,7 +82,8 @@ class DashboardController
       {
         field: 'result',
         title: 'Result',
-        sortable: true
+        sortable: true,
+        iconFn: @DataService.iconForTestResult
       }
     ]
 
