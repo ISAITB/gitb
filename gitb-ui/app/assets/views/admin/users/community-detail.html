@@ -33,7 +33,13 @@
             <h4 class="title">Community administrators</h4>
             <a ui-sref="app.admin.users.communities.detail.admins.create" class="btn btn-default pull-right">Create community administrator</a>
         </div>
-        <div table-directive columns="communityDetailCtrl.adminColumns" data="communityDetailCtrl.admins" on-select="communityDetailCtrl.adminSelect"></div>
+        <div table-directive 
+            columns="communityDetailCtrl.adminColumns"
+            data="communityDetailCtrl.admins"
+			no-data-message="No administrators found"
+			loading-status="communityDetailCtrl.adminStatus" 
+            on-select="communityDetailCtrl.adminSelect">
+        </div>
     </div>
     <!-- organisations -->
     <div class="panel panel-default">
@@ -41,7 +47,13 @@
             <h4 class="title">{{communityDetailCtrl.DataService.labelOrganisations()}}</h4>
             <a ui-sref="app.admin.users.communities.detail.organizations.create" class="btn btn-default pull-right">Create {{communityDetailCtrl.DataService.labelOrganisationLower()}}</a>
         </div>
-        <div table-directive columns="communityDetailCtrl.organizationColumns" data="communityDetailCtrl.organizations" on-select="communityDetailCtrl.organizationSelect"></div>
+        <div table-directive
+            columns="communityDetailCtrl.organizationColumns"
+            data="communityDetailCtrl.organizations"
+			no-data-message="No organisations found"
+			loading-status="communityDetailCtrl.organisationStatus" 
+            on-select="communityDetailCtrl.organizationSelect">
+        </div>
     </div>
     <!-- landing pages -->
     <div class="panel panel-default">
@@ -50,7 +62,13 @@
             <a ui-sref="app.admin.users.communities.detail.landingpages.create" class="btn btn-default pull-right">Create landing page</a>
             <a  ng-hide="communityDetailCtrl.communityId == 0" ng-disabled="communityDetailCtrl.testBedLandingPage == undefined" ui-sref="app.admin.users.communities.detail.landingpages.create({name : communityDetailCtrl.testBedLandingPage.name, description : communityDetailCtrl.testBedLandingPage.description, content: communityDetailCtrl.testBedLandingPage.content})" class="btn btn-default pull-right">Copy Test Bed landing page</a>
         </div>
-        <div table-directive columns="communityDetailCtrl.landingPagesColumns" data="communityDetailCtrl.landingPages" on-select="communityDetailCtrl.landingPageSelect"></div>
+        <div table-directive
+            columns="communityDetailCtrl.landingPagesColumns"
+            data="communityDetailCtrl.landingPages"
+			no-data-message="No landing pages found"
+			loading-status="communityDetailCtrl.landingPageStatus" 
+            on-select="communityDetailCtrl.landingPageSelect">
+        </div>
     </div>
      <!-- legal notices -->
     <div class="panel panel-default">
@@ -59,7 +77,13 @@
             <a ui-sref="app.admin.users.communities.detail.legalnotices.create" class="btn btn-default pull-right">Create legal notice</a>
             <a ng-hide="communityDetailCtrl.communityId == 0" ng-disabled="communityDetailCtrl.testBedLegalNotice == undefined" ui-sref="app.admin.users.communities.detail.legalnotices.create({name : communityDetailCtrl.testBedLegalNotice.name, description : communityDetailCtrl.testBedLegalNotice.description, content: communityDetailCtrl.testBedLegalNotice.content})" class="btn btn-default pull-right">Copy Test bed legal notice</a>
         </div>
-        <div table-directive columns="communityDetailCtrl.legalNoticesColumns" data="communityDetailCtrl.legalNotices" on-select="communityDetailCtrl.legalNoticeSelect"></div>
+        <div table-directive
+            columns="communityDetailCtrl.legalNoticesColumns"
+            data="communityDetailCtrl.legalNotices"
+			no-data-message="No legal notices found"
+			loading-status="communityDetailCtrl.legalNoticeStatus" 
+            on-select="communityDetailCtrl.legalNoticeSelect">
+        </div>
     </div>
      <!-- error templates -->
      <div class="panel panel-default">
@@ -68,7 +92,13 @@
             <a ui-sref="app.admin.users.communities.detail.errortemplates.create" class="btn btn-default pull-right">Create error template</a>
             <a ng-hide="communityDetailCtrl.communityId == 0" ng-disabled="communityDetailCtrl.testBedErrorTemplate == undefined" ui-sref="app.admin.users.communities.detail.errortemplates.create({name : communityDetailCtrl.testBedErrorTemplate.name, description : communityDetailCtrl.testBedErrorTemplate.description, content: communityDetailCtrl.testBedErrorTemplate.content})" class="btn btn-default pull-right">Copy Test bed error template</a>
         </div>
-        <div table-directive columns="communityDetailCtrl.errorTemplatesColumns" data="communityDetailCtrl.errorTemplates" on-select="communityDetailCtrl.errorTemplateSelect"></div>
+        <div table-directive
+            columns="communityDetailCtrl.errorTemplatesColumns"
+            data="communityDetailCtrl.errorTemplates"
+			no-data-message="No error templates found"
+			loading-status="communityDetailCtrl.errorTemplateStatus" 
+            on-select="communityDetailCtrl.errorTemplateSelect">
+        </div>
     </div>
      <!-- triggers -->
      <div class="panel panel-default">
@@ -76,6 +106,12 @@
             <h4 class="title">Triggers</h4>
             <button type="button" class="btn btn-default pull-right" ng-click="communityDetailCtrl.createTrigger()">Create trigger</button>
         </div>
-        <div table-directive columns="communityDetailCtrl.triggerColumns" data="communityDetailCtrl.triggers" on-select="communityDetailCtrl.triggerSelect"></div>
+        <div table-directive
+            columns="communityDetailCtrl.triggerColumns"
+            data="communityDetailCtrl.triggers"
+			no-data-message="No triggers found"
+			loading-status="communityDetailCtrl.triggerStatus" 
+            on-select="communityDetailCtrl.triggerSelect">
+        </div>
     </div>
 </div>

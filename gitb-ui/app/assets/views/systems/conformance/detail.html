@@ -67,6 +67,13 @@
 				<th class="tb-result">Result</th>
 				<th width="10%"></th>
 			</thead>
+
+			<tbody ng-if="conformanceStatementDetailCtrl.loadingStatus.status == conformanceStatementDetailCtrl.Constants.STATUS.PENDING">
+				<td colspan="4" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
+			</tbody>
+			<tbody ng-if="conformanceStatementDetailCtrl.loadingStatus.status == conformanceStatementDetailCtrl.Constants.STATUS.FINISHED && conformanceStatementDetailCtrl.testSuites.length == 0">
+				<td colspan="4" class="td-no-data"><span>No test cases found</span></td>
+			</tbody>
 			<tbody ng-if="conformanceStatementDetailCtrl.testSuites.length == 1">
 				<tr ng-repeat="testCase in conformanceStatementDetailCtrl.testSuites[0].testCases">
 					<td>{{testCase.sname}}</td>

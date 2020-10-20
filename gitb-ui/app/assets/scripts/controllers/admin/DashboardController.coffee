@@ -7,6 +7,8 @@ class DashboardController
     @exportCompletedPending = false
     @activeExpandedCounter = {count: 0}
     @completedExpandedCounter = {count: 0}
+    @activeStatus = {status: @Constants.STATUS.PENDING}
+    @completedStatus = {status: @Constants.STATUS.PENDING}
 
     @activeTestsColumns = [
       {
@@ -521,9 +523,11 @@ class DashboardController
       testResultMapper = @newTestResult
       @activeTests = _.map data.data, (testResult) -> testResultMapper(testResult)
       @refreshActivePending = false
+      @activeStatus.status = @Constants.STATUS.FINISHED      
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
       @refreshActivePending = false
+      @activeStatus.status = @Constants.STATUS.FINISHED      
 
   domainClicked: (domain) =>
     @setSpecificationFilter(@filters.domain.selection, @filters.domain.filter, true)
@@ -612,9 +616,11 @@ class DashboardController
       testResultMapper = @newTestResult
       @completedTests = _.map data.data, (t) -> testResultMapper(t)
       @refreshCompletedPending = false
+      @completedStatus.status = @Constants.STATUS.FINISHED
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
       @refreshCompletedPending = false
+      @completedStatus.status = @Constants.STATUS.FINISHED
 
   newTestResult: (testResult, orgParameters, sysParameters) ->
     result = {}

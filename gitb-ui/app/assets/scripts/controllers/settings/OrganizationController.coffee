@@ -9,6 +9,7 @@ class OrganizationController
         @$scope.vdata = {} # bindings for vendor
         @$scope.vdata.fname = @ds.vendor.fname
         @$scope.vdata.sname = @ds.vendor.sname
+        @dataStatus = {status: @Constants.STATUS.PENDING}
         @propertyData = {
             properties: []
             edit: @$stateParams['viewProperties']? && @$stateParams['viewProperties']
@@ -77,9 +78,11 @@ class OrganizationController
                     user.ssoStatusText = @userStatus(user.ssoStatus)
                     user
                 )
+                @dataStatus.status = @Constants.STATUS.FINISHED
             ,
             (error) => #error handler
                 @ErrorService.showErrorMessage(error)
+                @dataStatus.status = @Constants.STATUS.FINISHED
         )
 
     valueDefined: (value) =>

@@ -207,12 +207,18 @@ table tbody tr.expandable-table-row-collapsed {
 		}
 		+ .expandable-table-row-expanded > td.expandable-table-expandable-cell-no-spacings {
 			background-color: #efefef;
+			.tr-expandable-inner {
+				background-color: #efefef;
+			}
 		}
 	}
 	td {
 		padding-top: 15px;
 		padding-bottom: 15px;
 		cursor: pointer;
+		&.td-min-centered {
+			.td-min-centered
+		}
 	}
 	td:last-child {
 		padding-top: 8px;
@@ -278,28 +284,27 @@ table.table-directive {
 }
 
 table tbody tr.expandable-table-row-expanded {
-	td.expandable-table-expandable-cell {
-		padding: 0px;
-		div {
-			margin: 8px;
-			.btn-toolbar {
-				margin: 0px;
+	td {
+		padding-top: 0px;
+		padding-bottom: 0px;
+		&.expandable-table-expandable-cell {
+			padding: 0px;
+			div {
+				margin: 8px;
+				.btn-toolbar {
+					margin: 0px;
+				}
 			}
 		}
 	}
 	td.expandable-table-expandable-cell-no-spacings {
-		&.collapsed {
-			padding-top:0px;
-			padding-bottom:0px;
-		}
-		&.collapsing {
-			padding-top:8px;
-			padding-bottom:8px;
+		padding:0px;
+		div.collapsing-div {
+			margin: 8px;
 		}
 	}
 	td {
 		border-top: 0px solid #ddd;
-		background-color: #F5F5F5;
 	}
 }
 

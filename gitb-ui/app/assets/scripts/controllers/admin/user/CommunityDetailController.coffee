@@ -3,6 +3,13 @@ class CommunityDetailController
   @$inject = ['$log', '$state', '$window', '$stateParams', 'UserService', 'DataService', 'Constants', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'TriggerService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'CommunityService', 'ConformanceService', 'ErrorService', 'PopupService', 'community', 'WebEditorService', '$timeout']
   constructor: (@$log, @$state, @$window, @$stateParams, @UserService, @DataService, @Constants, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @TriggerService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @CommunityService, @ConformanceService, @ErrorService, @PopupService, @community, @WebEditorService, @$timeout) ->
 
+    @adminStatus = {status: @Constants.STATUS.PENDING}
+    @organisationStatus = {status: @Constants.STATUS.PENDING}
+    @landingPageStatus = {status: @Constants.STATUS.PENDING}
+    @errorTemplateStatus = {status: @Constants.STATUS.PENDING}
+    @legalNoticeStatus = {status: @Constants.STATUS.PENDING}
+    @triggerStatus = {status: @Constants.STATUS.PENDING}
+
     @communityId = @community.id
     @originalDomainId = @community.domain
     @$timeout(() =>
@@ -146,8 +153,10 @@ class CommunityDetailController
       for admin in data
         admin.ssoStatusText = @DataService.userStatus(admin.ssoStatus)
       @admins = data
+      @adminStatus.status = @Constants.STATUS.FINISHED
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @adminStatus.status = @Constants.STATUS.FINISHED
 
     if @DataService.isSystemAdmin
       @ConformanceService.getDomains()
@@ -159,20 +168,26 @@ class CommunityDetailController
     @LandingPageService.getLandingPagesByCommunity(@communityId)
     .then (data) =>
       @landingPages = data
+      @landingPageStatus.status = @Constants.STATUS.FINISHED
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @landingPageStatus.status = @Constants.STATUS.FINISHED
 
     @LegalNoticeService.getLegalNoticesByCommunity(@communityId)
     .then (data) =>
       @legalNotices = data
+      @legalNoticeStatus.status = @Constants.STATUS.FINISHED
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @legalNoticeStatus.status = @Constants.STATUS.FINISHED
 
     @ErrorTemplateService.getErrorTemplatesByCommunity(@communityId)
     .then (data) =>
       @errorTemplates = data
+      @errorTemplateStatus.status = @Constants.STATUS.FINISHED
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @errorTemplateStatus.status = @Constants.STATUS.FINISHED
 
     @TriggerService.getTriggersByCommunity(@communityId)
     .then (data) =>
@@ -185,16 +200,19 @@ class CommunityDetailController
             trigger.status = 'Error'
         else
           trigger.status = '-'
-
       @triggers = data
+      @triggerStatus.status = @Constants.STATUS.FINISHED    
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @triggerStatus.status = @Constants.STATUS.FINISHED    
 
     @OrganizationService.getOrganizationsByCommunity(@communityId)
     .then (data) =>
       @organizations = data
+      @organisationStatus.status = @Constants.STATUS.FINISHED    
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @organisationStatus.status = @Constants.STATUS.FINISHED    
 
     @DataService.focus('sname')
 

@@ -215,6 +215,10 @@ class Constants
 		FAILURE : "FAILURE"
 		UNDEFINED : "UNDEFINED"
 
+	@STATUS =
+		PENDING : 0
+		FINISHED : 1
+
 	@EMAIL_REGEX: /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 	@DATA_URL_REGEX: /^data:.+\/(.+);base64,(.*)$/
 	@VARIABLE_NAME_REGEX: /^[a-zA-Z][a-zA-Z\-_\.0-9]*$/

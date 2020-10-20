@@ -104,6 +104,12 @@
 				<th class="operations">Export</th>
 			</tr>
 			</thead>
+			<tbody ng-if="adminConformanceCtrl.dataStatus.status == adminConformanceCtrl.Constants.STATUS.PENDING">
+				<tr><td ng-attr-colspan="{{adminConformanceCtrl.columnCount}}" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td></tr>
+			</tbody>
+			<tbody ng-if="adminConformanceCtrl.dataStatus.status == adminConformanceCtrl.Constants.STATUS.FINISHED && adminConformanceCtrl.conformanceStatements.length == 0">
+				<tr><td ng-attr-colspan="{{adminConformanceCtrl.columnCount}}" class="td-no-data"><span>No conformance data found</span></td></tr>
+			</tbody>
 			<tbody ng-if="adminConformanceCtrl.conformanceStatements.length > 0">
 				<tr ng-repeat-start="statement in adminConformanceCtrl.conformanceStatements"
 					ng-click="adminConformanceCtrl.onExpand(statement)"

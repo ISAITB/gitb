@@ -22,6 +22,7 @@ class ConformanceStatementDetailController
     @backgroundMode = false
     @allTestsSuccessful = false
     @hasTests = false
+    @loadingStatus = {status: @Constants.STATUS.PENDING}
 
     @parameterTableColumns = [
       {
@@ -93,8 +94,10 @@ class ConformanceStatementDetailController
       @testStatus = @DataService.testStatusText(completedCount, failedCount, undefinedCount)
       @conformanceStatus = @DataService.conformanceStatusForTests(completedCount, failedCount, undefinedCount)
       @allTestsSuccessful = completedCount == totalCount
+      @loadingStatus.status = @Constants.STATUS.FINISHED
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @loadingStatus.status = @Constants.STATUS.FINISHED
 
     @ConformanceService.getActorsWithIds [@actorId]
     .then (data) =>

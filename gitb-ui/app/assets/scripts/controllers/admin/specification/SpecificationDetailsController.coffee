@@ -1,7 +1,7 @@
 class SpecificationDetailsController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', 'ConfirmationDialogService', 'SpecificationService', '$state', '$stateParams', '$uibModal', 'PopupService', 'ErrorService', 'DataService']
-	constructor: (@$log, @$scope, @ConformanceService, @ConfirmationDialogService, @SpecificationService, @$state, @$stateParams, @$uibModal, @PopupService, @ErrorService, @DataService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', 'ConfirmationDialogService', 'SpecificationService', '$state', '$stateParams', '$uibModal', 'PopupService', 'ErrorService', 'DataService', 'Constants']
+	constructor: (@$log, @$scope, @ConformanceService, @ConfirmationDialogService, @SpecificationService, @$state, @$stateParams, @$uibModal, @PopupService, @ErrorService, @DataService, @Constants) ->
 		@$log.debug "Constructing SpecificationDetailsController"
 
 		@specification = {}
@@ -9,7 +9,8 @@ class SpecificationDetailsController
 		@testSuites = []
 		@domainId = @$stateParams.id
 		@specificationId = @$stateParams.spec_id
-
+		@actorStatus = {status: @Constants.STATUS.PENDING}
+		@testSuiteStatus = {status: @Constants.STATUS.PENDING}
 		@tableColumns = [
 			{
 				field: 'sname',
@@ -76,14 +77,18 @@ class SpecificationDetailsController
 		@ConformanceService.getActorsWithSpecificationId(@specificationId)
 		.then (data)=>
 			@actors = data
+			@actorStatus.status = @Constants.STATUS.FINISHED			
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
+			@actorStatus.status = @Constants.STATUS.FINISHED			
 
 		@ConformanceService.getTestSuites(@specificationId)
 		.then (data)=>
 			@testSuites = data
+			@testSuiteStatus.status = @Constants.STATUS.FINISHED			
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
+			@testSuiteStatus.status = @Constants.STATUS.FINISHED			
 
 		@DataService.focus('shortName')
 

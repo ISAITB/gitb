@@ -44,6 +44,15 @@
             <h4 class="title">Members</h4>
 			<button type="button" class="btn btn-default pull-right" ng-if="oc.ds.isVendorAdmin" ng-click="oc.popupMemberForm()">Add member</button>
         </div>
-		<div ng-attr-id="{{oc.ds.isVendorAdmin?'members-table':'members-table-na'}}" table-directive columns="oc.tableColumns" data="oc.users" allowSelect="false" operations-visible="oc.ds.isVendorAdmin" on-delete="oc.deleteMember" delete-visible-for-row="oc.deleteVisible"></div>
+        <div ng-attr-id="{{oc.ds.isVendorAdmin?'members-table':'members-table-na'}}" table-directive 
+            columns="oc.tableColumns" 
+            data="oc.users" 
+			loading-status="oc.dataStatus" 
+			no-data-message="No members found"
+            allowSelect="false" 
+            operations-visible="oc.ds.isVendorAdmin" 
+            on-delete="oc.deleteMember" 
+            delete-visible-for-row="oc.deleteVisible">
+        </div>
     </div>
 </div>

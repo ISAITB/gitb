@@ -1,8 +1,8 @@
 class OrganizationDetailController
 
-  @$inject = ['$log', '$state', '$stateParams', '$window', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'UserManagementService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'UserService', 'ErrorService', '$q', 'DataService', 'PopupService']
-  constructor: (@$log, @$state, @$stateParams, @$window, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @UserManagementService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @UserService, @ErrorService, @$q, @DataService, @PopupService) ->
-
+  @$inject = ['$log', '$state', '$stateParams', '$window', 'LandingPageService', 'LegalNoticeService', 'ErrorTemplateService', 'UserManagementService', 'ValidationService', 'ConfirmationDialogService', 'OrganizationService', 'UserService', 'ErrorService', '$q', 'DataService', 'PopupService', 'Constants']
+  constructor: (@$log, @$state, @$stateParams, @$window, @LandingPageService, @LegalNoticeService, @ErrorTemplateService, @UserManagementService, @ValidationService, @ConfirmationDialogService, @OrganizationService, @UserService, @ErrorService, @$q, @DataService, @PopupService, @Constants) ->
+    @dataStatus = {status: @Constants.STATUS.PENDING}
     @userColumns = [
       {
         field: 'name',
@@ -56,8 +56,10 @@ class OrganizationDetailController
         user.ssoStatusText = @DataService.userStatus(user.ssoStatus)
       @users = data
       @UserManagementService.mapUsers(@users)
+      @dataStatus.status = @Constants.STATUS.FINISHED
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @dataStatus.status = @Constants.STATUS.FINISHED
 
     @LandingPageService.getLandingPagesByCommunity(@communityId)
     .then (data) =>

@@ -2,6 +2,8 @@ tableDirectiveInputs = {
 	columns: '=' # e.g.: {'sname': 'Short Name', 'fname': 'Full Name'}
 	classes: '=' # e.g.: {'sname': 'short-name', 'fname': 'full-name'}
 	data: '='
+	loadingStatus: '='
+	noDataMessage: '@?'
 	onSelect: '='
 	onDeselect: '='
 	rowStyle: '='
@@ -33,48 +35,65 @@ tableDirectiveInputs = {
 	onSort: '='
 }
 
-@directives.directive 'tableDirective', [
-	()->
+@directives.directive 'tableDirective', ['Constants'
+	(Constants)->
 		scope: tableDirectiveInputs
 		restrict: 'AE'
-		template: ''+
-			'<div>'+
-			'<table class="table table-directive">'+
-				'<caption ng-if="tableCaptionVisible">{{tableCaption}}</caption>'+
-				'<thead>'+
-					'<tr>'+
-						'<th ng-if="checkboxEnabled"></th>'+
-						'<th ng-class="column.headerClass" ng-repeat="column in columns" ng-click="!column.sortable || headerColumnClicked(column)">'+
-							'{{column.title}} '+
-							'<i ng-if="column.order == \'desc\'" class="fa fa-caret-down"></i>'+
-							'<i ng-if="column.order == \'asc\'" class="fa fa-caret-up"></i>'+
-						'</th>'+
-						'<th ng-if="actionVisible" class="operations">Action</th>'+
-						'<th ng-if="operationsVisible" class="operations">Operation</th>'+
-						'<th ng-if="exportVisible" class="operations">Export</th>'+
-					'</tr>'+
-				'</thead>'+
-				'<tbody>'+
-					'<tr class="table-row-directive" ng-class="rowClass($index)" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" action-visible="actionVisible" action-icon="actionIcon" operations-visible="operationsVisible" export-visible="exportVisible" export-visible-for-row="exportVisibleForRow" checkbox-enabled="checkboxEnabled" on-action="onAction" on-delete="onDelete" on-export="onExport" on-check="onCheck" delete-visible-for-row="deleteVisibleForRow" action-visible-for-row="actionVisibleForRow" action-pending-property="actionPendingProperty" delete-pending-property="deletePendingProperty" export-pending-property="exportPendingProperty"></tr>'+
-				'</tbody>'+
-			'</table>'+
-				'<div ng-if="paginationVisible" class="text-center">'+
-					'<ul class="pagination pagination-sm">'+
-						'<li ng-class="prevDisabled ? \'disabled\' : \'\'"><a href ng-click="doFirstPage()">First</a></li>'+
-						'<li ng-class="prevDisabled ? \'disabled\' : \'\'"><a href ng-click="doPrevPage()">Previous</a></li>'+
-						'<li ng-class="nextDisabled ? \'disabled\' : \'\'"><a href ng-click="doNextPage()">Next</a></li>'+
-						'<li ng-class="nextDisabled ? \'disabled\' : \'\'"><a href ng-click="doLastPage()">Last</a></li>'+
-					'</ul>'+
-				'</div>'+
-			'</div>'
-
+		template: '
+			<div>
+			<table class="table table-directive">
+				<caption ng-if="tableCaptionVisible">{{tableCaption}}</caption>
+				<thead>
+					<tr>
+						<th ng-if="checkboxEnabled"></th>
+						<th ng-class="column.headerClass" ng-repeat="column in columns" ng-click="!column.sortable || headerColumnClicked(column)">
+							{{column.title}} 
+							<i ng-if="column.order == \'desc\'" class="fa fa-caret-down"></i>
+							<i ng-if="column.order == \'asc\'" class="fa fa-caret-up"></i>
+						</th>
+						<th ng-if="actionVisible" class="operations">Action</th>
+						<th ng-if="operationsVisible" class="operations">Operation</th>
+						<th ng-if="exportVisible" class="operations">Export</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr ng-if="loadingStatus && loadingStatus.status == Constants.STATUS.PENDING">
+						<td ng-attr-colspan="{{columnCount}}" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
+					</tr>
+					<tr ng-if="loadingStatus && loadingStatus.status == Constants.STATUS.FINISHED && (!data || data.length == 0)">
+						<td ng-attr-colspan="{{columnCount}}" class="td-no-data"><span>{{noDataMessage}}</span></td>
+					</tr>
+					<tr class="table-row-directive" ng-class="rowClass($index)" ng-repeat="row in data" ng-click="select($index)" table-row-directive data="row" columns="columns" classes="classes" action-visible="actionVisible" action-icon="actionIcon" operations-visible="operationsVisible" export-visible="exportVisible" export-visible-for-row="exportVisibleForRow" checkbox-enabled="checkboxEnabled" on-action="onAction" on-delete="onDelete" on-export="onExport" on-check="onCheck" delete-visible-for-row="deleteVisibleForRow" action-visible-for-row="actionVisibleForRow" action-pending-property="actionPendingProperty" delete-pending-property="deletePendingProperty" export-pending-property="exportPendingProperty"></tr>
+				</tbody>
+			</table>
+				<div ng-if="paginationVisible && data && data.length > 0" class="text-center">
+					<ul class="pagination pagination-sm">
+						<li ng-class="prevDisabled ? \'disabled\' : \'\'"><a href ng-click="doFirstPage()">First</a></li>
+						<li ng-class="prevDisabled ? \'disabled\' : \'\'"><a href ng-click="doPrevPage()">Previous</a></li>
+						<li ng-class="nextDisabled ? \'disabled\' : \'\'"><a href ng-click="doNextPage()">Next</a></li>
+						<li ng-class="nextDisabled ? \'disabled\' : \'\'"><a href ng-click="doLastPage()">Last</a></li>
+					</ul>
+				</div>
+			</div>
+		'
 		replace: true
 		link: (scope, element, attrs) ->
+			scope.Constants = Constants
+			if !scope.noDataMessage
+				scope.noDataMessage = "No data found"
+			scope.columnCount = scope.columns.length
+			if scope.checkboxEnabled
+				scope.columnCount += 1
+			if scope.actionVisible
+				scope.columnCount += 1
+			if scope.operationsVisible
+				scope.columnCount += 1
+			if scope.exportVisible
+				scope.columnCount += 1
 			for column in scope.columns
 				column.headerClass = 'tb-'+column.title.toLowerCase().replace(" ", "-")
 				if column.sortable
 					column.headerClass = column.headerClass + ' sortable'
-
 			scope.headerColumnClicked = (column) =>
 				for col, i in scope.columns
 					if col.field == column.field
@@ -229,8 +248,8 @@ sessionTableDirectiveInputs.testSuiteNameProperty = '@?'
 sessionTableDirectiveInputs.testCaseNameProperty = '@?'
 sessionTableDirectiveInputs.expandedCounter = '='
 
-@directives.directive 'sessionTableDirective', ['$timeout'
-	($timeout) ->
+@directives.directive 'sessionTableDirective', ['$timeout','Constants'
+	($timeout, Constants) ->
 		scope: sessionTableDirectiveInputs
 		restrict: 'AE'
 		template: '
@@ -251,6 +270,12 @@ sessionTableDirectiveInputs.expandedCounter = '='
 						</tr>
 					</thead>
 					<tbody>
+						<tr ng-if="loadingStatus && loadingStatus.status == Constants.STATUS.PENDING">
+							<td ng-attr-colspan="{{columnCount}}" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
+						</tr>
+						<tr ng-if="loadingStatus && loadingStatus.status == Constants.STATUS.FINISHED && (!data || data.length == 0)">
+							<td ng-attr-colspan="{{columnCount}}" class="td-no-data"><span>{{noDataMessage}}</span></td>
+						</tr>
 						<tr table-row-directive class="table-row-directive expandable-table-row-collapsed" 
 							ng-repeat-start="row in data" 
 							ng-class="rowClass(row)" 
@@ -274,10 +299,10 @@ sessionTableDirectiveInputs.expandedCounter = '='
 						</tr>
 						<tr ng-repeat-end class="expandable-table-row-expanded">
 							<td ng-attr-colspan="{{columnCount}}" class="expandable-table-expandable-cell-no-spacings" ng-class="{\'collapsed\': !row.expanded && !row.collapsing, \'collapsing\': row.collapsing}">
-								<table width="100%" style="table-layout:fixed">
-									<tr>
+								<table width="100%" style="table-layout:fixed;">
+									<tr class="tr-expandable-inner">
 										<td>
-											<div uib-collapse="!row.expanded" collapsing="rowCollapsing(row)" collapsed="rowCollapsed(row)">
+											<div class="collapsing-div" uib-collapse="!row.expanded" collapsing="rowCollapsing(row)" collapsed="rowCollapsed(row)">
 												<div class="panel panel-default">
 													<div class="panel-heading session-table-title">
 														<div class="session-table-title-part">
@@ -310,8 +335,8 @@ sessionTableDirectiveInputs.expandedCounter = '='
 						</tr>
 					</tbody>
 				</table>
-				<div ng-if="paginationVisible" class="text-center table-paging-controls-expandable">
-					<ul class="pagination pagination-sm"  >
+				<div ng-if="paginationVisible && data && data.length > 0" class="text-center table-paging-controls-expandable">
+					<ul class="pagination pagination-sm">
 						<li ng-class="prevDisabled ? \'disabled\' : \'\'"><a href ng-click="doFirstPage()">First</a></li>
 						<li ng-class="prevDisabled ? \'disabled\' : \'\'"><a href ng-click="doPrevPage()">Previous</a></li>
 						<li ng-class="nextDisabled ? \'disabled\' : \'\'"><a href ng-click="doNextPage()">Next</a></li>
@@ -322,6 +347,9 @@ sessionTableDirectiveInputs.expandedCounter = '='
 			'
 		replace: true
 		link: (scope, element, attrs) ->
+			scope.Constants = Constants
+			if !scope.noDataMessage
+				scope.noDataMessage = "No data found"
 			if !scope.sessionTableId?
 				scope.sessionTableId = "session-table"
 			if !scope.sessionIdProperty?

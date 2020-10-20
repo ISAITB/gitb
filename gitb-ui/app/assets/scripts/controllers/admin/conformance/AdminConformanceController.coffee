@@ -5,6 +5,15 @@ class AdminConformanceController
 		@$log.debug "Constructing AdminConformanceController..."
 		@showFilters = false
 		@exportPending = false
+		@dataStatus = {status: @Constants.STATUS.PENDING}
+		if @DataService.isSystemAdmin
+			@columnCount = 9
+		else if @DataService.isCommunityAdmin
+			if @DataService.community.domain == null
+				@columnCount = 8
+			else
+				@columnCount = 7
+
 		@filters =
 			community :
 				all : []
@@ -309,9 +318,11 @@ class AdminConformanceController
 				undefinedCount = Number(conformanceStatement.undefined)
 				conformanceStatement.status = @DataService.testStatusText(completedCount, failedCount, undefinedCount)
 				conformanceStatement.overallStatus = @DataService.conformanceStatusForTests(completedCount, failedCount, undefinedCount)
+			@dataStatus = {status: @Constants.STATUS.FINISHED}
 			d.resolve(data)
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
+			@dataStatus = {status: @Constants.STATUS.FINISHED}
 		d.promise
 
 	getConformanceStatements: () =>

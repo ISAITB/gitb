@@ -1,14 +1,15 @@
 class DomainDetailsController
 
-	@$inject = ['$log', '$scope', '$state', '$stateParams', 'ConfirmationDialogService', 'ConformanceService', 'ErrorService', '$uibModal', 'DataService', 'PopupService']
-	constructor: (@$log, @$scope, @$state, @$stateParams, @ConfirmationDialogService, @ConformanceService, @ErrorService, @$uibModal, @DataService, @PopupService) ->
+	@$inject = ['$log', '$scope', '$state', '$stateParams', 'ConfirmationDialogService', 'ConformanceService', 'ErrorService', '$uibModal', 'DataService', 'PopupService', 'Constants']
+	constructor: (@$log, @$scope, @$state, @$stateParams, @ConfirmationDialogService, @ConformanceService, @ErrorService, @$uibModal, @DataService, @PopupService, @Constants) ->
 		@$log.debug "Constructing DomainDetailsController..."
 
 		@domain = {}
 		@specifications = []
 		@domainParameters = []
 		@domainId = @$stateParams.id
-
+		@specificationStatus = {status: @Constants.STATUS.PENDING}
+		@parameterStatus = {status: @Constants.STATUS.PENDING}
 		@tableColumns = [
 			{
 				field: 'sname',
@@ -37,8 +38,10 @@ class DomainDetailsController
 		@ConformanceService.getSpecifications(@domainId)
 		.then (data)=>
 			@specifications = data
+			@specificationStatus.status = @Constants.STATUS.FINISHED			
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
+			@specificationStatus.status = @Constants.STATUS.FINISHED			
 
 		@ConformanceService.getDomainParameters(@domainId)
 		.then (data)=>
@@ -54,8 +57,10 @@ class DomainDetailsController
 				else 
 					parameter.valueToShow = parameter.value
 				@domainParameters.push(parameter)
+			@parameterStatus.status = @Constants.STATUS.FINISHED			
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
+			@parameterStatus.status = @Constants.STATUS.FINISHED			
 		
 		@DataService.focus('shortName')
 

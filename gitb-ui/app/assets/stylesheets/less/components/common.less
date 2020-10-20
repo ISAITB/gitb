@@ -37,6 +37,16 @@
 			}
 			td {
 				vertical-align: middle;
+				&.td-no-data {
+					background: white;
+					text-align: center;
+					span {
+						opacity: 50%;
+					}
+				}
+				&.td-data-loading {
+					background: white;
+				}
 				&.operations {
 					padding-top: 8px;
 					padding-bottom: 8px;

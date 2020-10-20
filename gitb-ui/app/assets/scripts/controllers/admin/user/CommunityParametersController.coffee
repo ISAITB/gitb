@@ -1,7 +1,9 @@
 class CommunityParametersController
 
-  @$inject = ['$state', '$stateParams', 'CommunityService', 'ErrorService', '$q', '$uibModal', 'DataService', 'PopupService']
-  constructor: (@$state, @$stateParams, @CommunityService, @ErrorService, @$q, @$uibModal, @DataService, @PopupService) ->
+  @$inject = ['$state', '$stateParams', 'CommunityService', 'ErrorService', '$q', '$uibModal', 'DataService', 'PopupService', 'Constants']
+  constructor: (@$state, @$stateParams, @CommunityService, @ErrorService, @$q, @$uibModal, @DataService, @PopupService, @Constants) ->
+    @organisationParameterStatus = {status: @Constants.STATUS.PENDING}
+    @systemParameterStatus = {status: @Constants.STATUS.PENDING}
     @communityId = @$stateParams.community_id
     @orderOrganisationParametersDisabled = {value: true}
     @orderSystemParametersDisabled = {value: true}
@@ -19,6 +21,7 @@ class CommunityParametersController
           itemRef.hasPresetValues = itemRef.presetValues?.length > 0
         @organisationParameterValues.push itemRef
       @organisationParameters = data
+      @organisationParameterStatus.status = @Constants.STATUS.FINISHED      
     )
     @loadParameters(@CommunityService.getSystemParameters)
     .then((data) =>
@@ -31,6 +34,7 @@ class CommunityParametersController
           itemRef.hasPresetValues = itemRef.presetValues?.length > 0
         @systemParameterValues.push itemRef
       @systemParameters = data
+      @systemParameterStatus.status = @Constants.STATUS.FINISHED      
     )
 
   previewParameters: (title, parameters, hasRegistrationCase) =>

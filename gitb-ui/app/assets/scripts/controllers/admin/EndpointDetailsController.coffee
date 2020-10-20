@@ -1,13 +1,14 @@
 class EndpointDetailsController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', 'EndPointService', 'ParameterService', 'ConfirmationDialogService', '$state', '$stateParams', '$uibModal', 'ErrorService', 'DataService', 'PopupService']
-	constructor: (@$log, @$scope, @ConformanceService, @EndPointService, @ParameterService, @ConfirmationDialogService, @$state, @$stateParams, @$uibModal, @ErrorService, @DataService, @PopupService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', 'EndPointService', 'ParameterService', 'ConfirmationDialogService', '$state', '$stateParams', '$uibModal', 'ErrorService', 'DataService', 'PopupService', 'Constants']
+	constructor: (@$log, @$scope, @ConformanceService, @EndPointService, @ParameterService, @ConfirmationDialogService, @$state, @$stateParams, @$uibModal, @ErrorService, @DataService, @PopupService, @Constants) ->
 		@$log.debug "Constructing EndpointDetailsController"
 		@endpointId = @$stateParams.endpoint_id
 		@actorId = @$stateParams.actor_id
 		@domainId = @$stateParams.id
 		@specificationId = @$stateParams.spec_id
 		@orderParametersDisabled = {value: true}
+		@dataStatus = {status: @Constants.STATUS.PENDING}
 
 		@endpoint = null
 
@@ -27,10 +28,10 @@ class EndpointDetailsController
 						itemRef.presetValues = JSON.parse(e.allowedValues)
 						itemRef.hasPresetValues = itemRef.presetValues?.length > 0
 					@parameterValues.push itemRef
-
-
+			@dataStatus.status = @Constants.STATUS.FINISHED
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
+			@dataStatus.status = @Constants.STATUS.FINISHED
 
 		@DataService.focus('name')
 

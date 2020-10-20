@@ -8,6 +8,8 @@ class SystemTestsController
     @exportActivePending = false
     @exportCompletedPending = false
     @activeExpandedCounter = {count: 0}
+    @activeDataStatus = {status: @Constants.STATUS.PENDING}
+    @completedDataStatus = {status: @Constants.STATUS.PENDING}
     @completedExpandedCounter = {count: 0}
 
     @activeTests = []
@@ -358,9 +360,11 @@ class SystemTestsController
                       transformedObject
       @activeTests = resultReportsCollection.value()
       @refreshActivePending = false
+      @activeDataStatus.status = @Constants.STATUS.FINISHED
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
       @refreshActivePending = false
+      @activeDataStatus.status = @Constants.STATUS.FINISHED
 
   getTestResults:() ->
     params = @getCurrentSearchCriteria()
@@ -384,9 +388,11 @@ class SystemTestsController
                       transformedObject
       @testResults = resultReportsCollection.value()
       @refreshCompletedPending = false
+      @completedDataStatus.status = @Constants.STATUS.FINISHED
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
       @refreshCompletedPending = false
+      @completedDataStatus.status = @Constants.STATUS.FINISHED
 
   exportVisible: (session) =>
     !session.obsolete? || !session.obsolete

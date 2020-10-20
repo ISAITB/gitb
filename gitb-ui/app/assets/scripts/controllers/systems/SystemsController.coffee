@@ -1,6 +1,6 @@
 class SystemsController
-	@$inject = ['$log', '$scope', '$state', '$stateParams', '$window', 'SystemService', 'ErrorService', '$uibModal', 'DataService', '$location']
-	constructor: (@$log, @$scope, @$state, @$stateParams, @$window, @SystemService, @ErrorService, @$uibModal, @DataService, @$location) ->
+	@$inject = ['$log', '$scope', '$state', '$stateParams', '$window', 'SystemService', 'ErrorService', '$uibModal', 'DataService', '$location', 'Constants']
+	constructor: (@$log, @$scope, @$state, @$stateParams, @$window, @SystemService, @ErrorService, @$uibModal, @DataService, @$location, @Constants) ->
 		@$log.debug "Constructing SystemsController"
 		@systems  = []       # systems of the organization
 		@alerts   = []       # alerts to be displayed
@@ -10,6 +10,7 @@ class SystemsController
 		@organization = JSON.parse(@$window.localStorage['organization'])
 		@$scope.editing = false
 		@showAction = @DataService.isSystemAdmin || @DataService.isCommunityAdmin || (@DataService.isVendorAdmin && @DataService.community.allowPostTestSystemUpdates)
+		@dataStatus = {status: @Constants.STATUS.PENDING}
 
 		@tableColumns = [
 			{
@@ -56,9 +57,11 @@ class SystemsController
 						s.id == @$stateParams['id']
 					if systemToEdit?
 						@onSystemEdit(systemToEdit)
+				@dataStatus.status = @Constants.STATUS.FINISHED
 			,
 			(error) =>
 				@ErrorService.showErrorMessage(error)
+				@dataStatus.status = @Constants.STATUS.FINISHED
 		)
 
 	createSystem: () =>

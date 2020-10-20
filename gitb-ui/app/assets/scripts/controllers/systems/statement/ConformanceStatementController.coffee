@@ -1,11 +1,12 @@
 class ConformanceStatementController
 
-  @$inject = ['$log', '$scope', '$stateParams', '$state', '$uibModal', 'ConformanceService', 'SystemService', 'ErrorService', 'DataService']
-  constructor: (@$log, @$scope, @$stateParams, @$state, @$uibModal, @ConformanceService, @SystemService, @ErrorService, @DataService)->
+  @$inject = ['$log', '$scope', '$stateParams', '$state', '$uibModal', 'ConformanceService', 'SystemService', 'ErrorService', 'DataService', 'Constants']
+  constructor: (@$log, @$scope, @$stateParams, @$state, @$uibModal, @ConformanceService, @SystemService, @ErrorService, @DataService, @Constants)->
     @$log.debug "Constructing ConformanceStatementController"
 
     @conformanceStatements = []
     @conformanceStatementRepresentations = []
+    @dataStatus = {status: @Constants.STATUS.PENDING}
 
     @tableColumns = [
       {
@@ -52,8 +53,10 @@ class ConformanceStatementController
           domainFull: conformanceStatement.domainFull
           results: @DataService.testStatusText(Number(conformanceStatement.results.completed), Number(conformanceStatement.results.failed), Number(conformanceStatement.results.undefined))
           status: @DataService.conformanceStatusForTests(Number(conformanceStatement.results.completed), Number(conformanceStatement.results.failed), Number(conformanceStatement.results.undefined))
+      @dataStatus.status = @Constants.STATUS.FINISHED
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @dataStatus.status = @Constants.STATUS.FINISHED
 
   onConformanceStatementSelect: (conformanceStatementRepresentation) =>
     @$state.go 'app.systems.detail.conformance.detail', {actor_id: conformanceStatementRepresentation.id, specId: conformanceStatementRepresentation.specificationId}
