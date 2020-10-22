@@ -1,87 +1,17 @@
 <div id="conformanceDashboardPage" class="page conformancedashboard">
-	<div class="panel panel-default">
-        <div class="panel-heading">
-			<h4 class="title">Filters</h4>
-			<div class="btn-toolbar pull-right padded">
-                <toggle id="conformance-toggle-filter" class="btn-group" ng-model="adminConformanceCtrl.showFilters" on="Enabled" off="Disabled" ng-change="adminConformanceCtrl.DataService.async(adminConformanceCtrl.showFilters?adminConformanceCtrl.showFilter:adminConformanceCtrl.clearFilter)"></toggle>
-			</div>
-		</div>
-        <div class="table-responsive" uib-collapse="!adminConformanceCtrl.showFilters">
-			<table class="table">
-				<thead>
-				<tr>
-					<th class="col-md-1" ng-if="!adminConformanceCtrl.DataService.isCommunityAdmin">Community</th>
-					<th class="col-md-1">{{adminConformanceCtrl.DataService.labelOrganisation()}}</th>
-					<th class="col-md-1">{{adminConformanceCtrl.DataService.labelSystem()}}</th>
-					<th class="col-md-1" ng-if="adminConformanceCtrl.DataService.isSystemAdmin || (adminConformanceCtrl.DataService.isCommunityAdmin && adminConformanceCtrl.DataService.community.domain === null)">{{adminConformanceCtrl.DataService.labelDomain()}}</th>
-					<th class="col-md-1">{{adminConformanceCtrl.DataService.labelSpecification()}}</th>
-					<th class="col-md-1">{{adminConformanceCtrl.DataService.labelActor()}}</th>
-				</tr>
-				</thead>
-				<tbody>
-				<tr>
-					<td ng-if="!adminConformanceCtrl.DataService.isCommunityAdmin">
-						<div isteven-multi-select input-model="adminConformanceCtrl.filters.community.filter"
-								output-model="adminConformanceCtrl.filters.community.selection" button-label="sname"
-								item-label="sname"
-								tick-property="ticked" max-labels="0" max-height="250px"
-								translation="adminConformanceCtrl.translation"
-								helper-elements="filter" search-property="sname" output-properties="id"
-								on-item-click="adminConformanceCtrl.communityClicked(data)"
-								is-disabled="adminConformanceCtrl.DataService.isCommunityAdmin"></div>
-					</td>
-					<td>
-						<div isteven-multi-select input-model="adminConformanceCtrl.filters.organization.filter"
-								output-model="adminConformanceCtrl.filters.organization.selection" button-label="sname"
-								item-label="sname"
-								tick-property="ticked" max-labels="0" max-height="250px"
-								translation="adminConformanceCtrl.translation"
-								helper-elements="filter" search-property="sname"
-								output-properties="id" on-item-click="adminConformanceCtrl.organizationClicked(data)"></div>
-					</td>
-					<td>
-						<div isteven-multi-select input-model="adminConformanceCtrl.filters.system.filter"
-								output-model="adminConformanceCtrl.filters.system.selection" button-label="sname"
-								item-label="sname"
-								tick-property="ticked" max-labels="0" max-height="250px"
-								translation="adminConformanceCtrl.translation"
-								helper-elements="filter" search-property="sname" output-properties="id"
-								on-item-click="adminConformanceCtrl.systemClicked(data)"></div>
-					</td>
-					<td ng-if="adminConformanceCtrl.DataService.isSystemAdmin || (adminConformanceCtrl.DataService.isCommunityAdmin && adminConformanceCtrl.DataService.community.domain === null)">
-							<div isteven-multi-select input-model="adminConformanceCtrl.filters.domain.filter"
-									output-model="adminConformanceCtrl.filters.domain.selection" button-label="sname"
-									item-label="sname"
-									tick-property="ticked" max-labels="0" max-height="250px"
-									translation="adminConformanceCtrl.translation"
-									helper-elements="filter" search-property="sname" output-properties="id"
-									on-item-click="adminConformanceCtrl.domainClicked(data)"
-									is-disabled="adminConformanceCtrl.domainDisabled"></div>
-						</td>
-						<td>
-							<div isteven-multi-select input-model="adminConformanceCtrl.filters.specification.filter"
-									output-model="adminConformanceCtrl.filters.specification.selection" button-label="sname"
-									item-label="sname"
-									tick-property="ticked" max-labels="0" max-height="250px"
-									translation="adminConformanceCtrl.translation"
-									helper-elements="filter" search-property="sname"
-									output-properties="id" on-item-click="adminConformanceCtrl.specificationClicked(data)"></div>
-						</td>
-						<td>
-							<div isteven-multi-select input-model="adminConformanceCtrl.filters.actor.filter"
-									output-model="adminConformanceCtrl.filters.actor.selection" button-label="actorId"
-									item-label="actorId"
-									tick-property="ticked" max-labels="0" max-height="250px"
-									translation="adminConformanceCtrl.translation"
-									helper-elements="filter" search-property="actorId"
-									output-properties="id" on-item-click="adminConformanceCtrl.actorClicked(data)"></div>
-						</td>
-					</tr>
-				</tbody>
-				</table>
-			</div>
-		</div>
-	</div>
+
+    <div tb-test-filter 
+        filters = "adminConformanceCtrl.filters"
+        state = "adminConformanceCtrl.filterState"
+        apply-fn = "adminConformanceCtrl.getConformanceStatements"
+        load-domains-fn = "adminConformanceCtrl.getAllDomains"
+        load-specifications-fn = "adminConformanceCtrl.getAllSpecifications"
+        load-actors-fn = "adminConformanceCtrl.getAllActors"
+        load-communities-fn = "adminConformanceCtrl.getAllCommunities"
+        load-organisations-fn = "adminConformanceCtrl.getAllOrganizations"
+        load-systems-fn = "adminConformanceCtrl.getAllSystems">
+    </div>
+
 	<div id="conformanceDashboardPageTable" class="panel panel-default">
 		<div class="panel-heading">
 			<h4 id="conformance-statements-title" class="title">Conformance statements</h4>

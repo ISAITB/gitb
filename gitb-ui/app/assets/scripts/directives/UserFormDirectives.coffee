@@ -554,3 +554,494 @@
 
 ]
 
+@directives.directive 'tbTestFilter', ['DataService', 'Constants', '$q', 'ErrorService'
+  (DataService, Constants, $q, ErrorService) ->
+    scope:
+      filters: '='
+      state: '='
+      applyFn: '='
+      loadDomainsFn: '='
+      loadSpecificationsFn: '='
+      loadActorsFn: '='
+      loadTestSuitesFn: '='
+      loadTestCasesFn: '='
+      loadCommunitiesFn: '='
+      loadOrganisationsFn: '='
+      loadSystemsFn: '='
+    restrict: 'A'
+    template: '
+      <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Filters</h4>
+            <div class="btn-toolbar pull-right">
+                <button type="button" class="btn btn-default" ng-click="applyFilters()" ng-disabled="state.updatePending"><span class="tab" ng-if="state.updatePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Refresh</button>
+                <toggle id="sessions-toggle-filter" class="btn-group" ng-model="showFiltering" on="Enabled" off="Disabled" ng-change="toggleFiltering()"></toggle>
+            </div>
+        </div>
+        <div class="table-responsive" uib-collapse="!showFiltering">
+            <table class="table">
+                <thead>
+                  <tr>
+                      <th ng-if="filterDefined(Constants.FILTER_TYPE.DOMAIN)">{{DataService.labelDomain()}}</th>
+                      <th ng-if="filterDefined(Constants.FILTER_TYPE.SPECIFICATION)">{{DataService.labelSpecification()}}</th>
+                      <th ng-if="filterDefined(Constants.FILTER_TYPE.ACTOR)">{{DataService.labelActor()}}</th>
+                      <th ng-if="filterDefined(Constants.FILTER_TYPE.TEST_SUITE)">Test suite</th>
+                      <th ng-if="filterDefined(Constants.FILTER_TYPE.TEST_CASE)">Test case</th>
+                      <th ng-if="filterDefined(Constants.FILTER_TYPE.COMMUNITY)">Community</th>
+                      <th ng-if="filterDefined(Constants.FILTER_TYPE.ORGANISATION)">{{DataService.labelOrganisation()}}</th>
+                      <th ng-if="filterDefined(Constants.FILTER_TYPE.SYSTEM)">{{DataService.labelSystem()}}</th>
+                      <th ng-if="filterDefined(Constants.FILTER_TYPE.RESULT)">Result</th>
+                      <th ng-if="filterDefined(Constants.FILTER_TYPE.TIME)">Start time</th>
+                      <th ng-if="filterDefined(Constants.FILTER_TYPE.TIME)">End time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                      <td ng-if="filterDefined(Constants.FILTER_TYPE.DOMAIN)">
+                          <div isteven-multi-select
+                              input-model="filtering[Constants.FILTER_TYPE.DOMAIN].filter"
+                              output-model="filtering[Constants.FILTER_TYPE.DOMAIN].selection"
+                              button-label="sname"
+                              item-label="sname"
+                              tick-property="ticked"
+                              max-labels="0"
+                              max-height="250px"
+                              translation="translation"
+                              helper-elements="filter"
+                              search-property="sname"
+                              output-properties="id"
+                              on-item-click="filterItemTicked(Constants.FILTER_TYPE.DOMAIN)">
+                          </div>
+                      </td>
+                      <td ng-if="filterDefined(Constants.FILTER_TYPE.SPECIFICATION)">
+                          <div isteven-multi-select
+                              input-model="filtering[Constants.FILTER_TYPE.SPECIFICATION].filter"
+                              output-model="filtering[Constants.FILTER_TYPE.SPECIFICATION].selection"
+                              button-label="sname"
+                              item-label="sname"
+                              tick-property="ticked"
+                              max-labels="0"
+                              max-height="250px"
+                              translation="translation"
+                              helper-elements="filter"
+                              search-property="sname"
+                              output-properties="id"
+                              on-item-click="filterItemTicked(Constants.FILTER_TYPE.SPECIFICATION)">
+                          </div>
+                      </td>
+                      <td ng-if="filterDefined(Constants.FILTER_TYPE.ACTOR)">
+                          <div isteven-multi-select
+                              input-model="filtering[Constants.FILTER_TYPE.ACTOR].filter"
+                              output-model="filtering[Constants.FILTER_TYPE.ACTOR].selection"
+                              button-label="actorId"
+                              item-label="actorId"
+                              tick-property="ticked"
+                              max-labels="0"
+                              max-height="250px"
+                              translation="translation"
+                              helper-elements="filter"
+                              search-property="actorId"
+                              output-properties="id"
+                              on-item-click="filterItemTicked(Constants.FILTER_TYPE.ACTOR)">
+                          </div>
+                      </td>
+                      <td ng-if="filterDefined(Constants.FILTER_TYPE.TEST_SUITE)">
+                          <div isteven-multi-select
+                              input-model="filtering[Constants.FILTER_TYPE.TEST_SUITE].filter"
+                              output-model="filtering[Constants.FILTER_TYPE.TEST_SUITE].selection"
+                              button-label="sname"
+                              item-label="sname"
+                              tick-property="ticked"
+                              max-labels="0"
+                              max-height="250px"
+                              translation="translation"
+                              helper-elements="filter"
+                              search-property="sname"
+                              output-properties="id testCases"
+                              on-item-click="filterItemTicked(Constants.FILTER_TYPE.TEST_SUITE)">
+                          </div>
+                      </td>
+                      <td ng-if="filterDefined(Constants.FILTER_TYPE.TEST_CASE)">
+                          <div isteven-multi-select
+                              input-model="filtering[Constants.FILTER_TYPE.TEST_CASE].filter"
+                              output-model="filtering[Constants.FILTER_TYPE.TEST_CASE].selection"
+                              button-label="sname"
+                              item-label="sname"
+                              tick-property="ticked"
+                              max-labels="0"
+                              max-height="250px"
+                              translation="translation"
+                              helper-elements="filter"
+                              search-property="sname"
+                              output-properties="id"
+                              on-item-click="filterItemTicked(Constants.FILTER_TYPE.TEST_CASE)">
+                          </div>
+                      </td>
+                      <td ng-if="filterDefined(Constants.FILTER_TYPE.COMMUNITY)">
+                          <div isteven-multi-select
+                              input-model="filtering[Constants.FILTER_TYPE.COMMUNITY].filter"
+                              output-model="filtering[Constants.FILTER_TYPE.COMMUNITY].selection"
+                              button-label="sname"
+                              item-label="sname"
+                              tick-property="ticked"
+                              max-labels="0"
+                              max-height="250px"
+                              translation="translation"
+                              helper-elements="filter"
+                              search-property="sname"
+                              output-properties="id"
+                              on-item-click="filterItemTicked(Constants.FILTER_TYPE.COMMUNITY)">
+                          </div>
+                      </td>
+                      <td ng-if="filterDefined(Constants.FILTER_TYPE.ORGANISATION)">
+                          <div isteven-multi-select
+                              input-model="filtering[Constants.FILTER_TYPE.ORGANISATION].filter"
+                              output-model="filtering[Constants.FILTER_TYPE.ORGANISATION].selection"
+                              button-label="sname"
+                              item-label="sname"
+                              tick-property="ticked"
+                              max-labels="0"
+                              max-height="250px"
+                              translation="translation"
+                              helper-elements="filter"
+                              search-property="sname"
+                              output-properties="id"
+                              on-item-click="filterItemTicked(Constants.FILTER_TYPE.ORGANISATION)">
+                          </div>
+                      </td>
+                      <td ng-if="filterDefined(Constants.FILTER_TYPE.SYSTEM)">
+                          <div isteven-multi-select
+                              input-model="filtering[Constants.FILTER_TYPE.SYSTEM].filter"
+                              output-model="filtering[Constants.FILTER_TYPE.SYSTEM].selection"
+                              button-label="sname"
+                              item-label="sname"
+                              tick-property="ticked"
+                              max-labels="0"
+                              max-height="250px"
+                              translation="translation"
+                              helper-elements="filter"
+                              search-property="sname"
+                              output-properties="id"
+                              on-item-click="filterItemTicked(Constants.FILTER_TYPE.SYSTEM)">
+                          </div>
+                      </td>
+                      <td ng-if="filterDefined(Constants.FILTER_TYPE.RESULT)">
+                          <div isteven-multi-select
+                              input-model="filtering[Constants.FILTER_TYPE.RESULT].filter"
+                              output-model="filtering[Constants.FILTER_TYPE.RESULT].selection"
+                              button-label="id"
+                              item-label="id"
+                              tick-property="ticked"
+                              max-labels="0"
+                              max-height="250px"
+                              translation="translation"
+                              helper-elements="filter"
+                              search-property="id"
+                              output-properties="id"
+                              on-item-click="filterItemTicked(Constants.FILTER_TYPE.RESULT)">
+                          </div>
+                      </td>
+                      <td ng-if="filterDefined(Constants.FILTER_TYPE.TIME)">
+                          <input date-range-picker class="form-control date-picker" type="text"
+                                ng-model="startTime.date" options="startTimeOptions" clearable="true">
+                      </td>
+                      <td ng-if="filterDefined(Constants.FILTER_TYPE.TIME)">
+                          <input date-range-picker class="form-control date-picker" type="text"
+                                ng-model="endTime.date" options="endTimeOptions" clearable="true">
+                      </td>
+                  </tr>
+                </tbody>
+            </table>
+        </div>
+      </div>
+      '
+    link: (scope, element, attrs) ->
+      scope.DataService = DataService
+      scope.Constants = Constants
+
+      scope.filterDefined = (filterType) =>
+        scope.filters.indexOf(filterType) != -1
+
+      scope.setupFilter = (filterType, loadFn) =>
+        scope.filtering[filterType] = {
+          all : []
+          filter : []
+          selection : []
+        }
+        if scope.filterDefined(filterType)
+          loadPromise = $q.defer()
+          scope.loadPromises.push(loadPromise.promise)
+          loadFn()
+          .then (data) =>
+            scope.filtering[filterType].all = data
+            loadPromise.resolve()
+          .catch (error) =>
+            ErrorService.showErrorMessage(error)
+
+      scope.filterValue = (filterType) =>
+        if scope.filterDefined(filterType)
+          values = _.map scope.filtering[filterType].selection, (s) -> s.id
+        values
+
+      scope.filterItemTicked = (filterType) =>
+        if filterType == Constants.FILTER_TYPE.DOMAIN
+          scope.setSpecificationFilter(scope.filtering[Constants.FILTER_TYPE.DOMAIN].selection, scope.filtering[Constants.FILTER_TYPE.DOMAIN].filter, true)
+        if filterType == Constants.FILTER_TYPE.DOMAIN || filterType == Constants.FILTER_TYPE.SPECIFICATION
+          scope.setActorFilter(scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].selection, scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, true)
+        if filterType == Constants.FILTER_TYPE.DOMAIN || filterType == Constants.FILTER_TYPE.SPECIFICATION || filterType == Constants.FILTER_TYPE.ACTOR
+          # TODO ADAPT THE FOLLOWING CALL TO BE BASED ON ACTOR
+          scope.setTestSuiteFilter(scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].selection, scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, true)
+        if filterType == Constants.FILTER_TYPE.DOMAIN || filterType == Constants.FILTER_TYPE.SPECIFICATION || filterType == Constants.FILTER_TYPE.ACTOR || filterType == Constants.FILTER_TYPE.TEST_SUITE
+          scope.setTestCaseFilter(scope.filtering[Constants.FILTER_TYPE.TEST_SUITE].selection, scope.filtering[Constants.FILTER_TYPE.TEST_SUITE].filter, true)
+        if filterType == Constants.FILTER_TYPE.COMMUNITY
+          scope.setOrganizationFilter(scope.filtering[Constants.FILTER_TYPE.COMMUNITY].selection, scope.filtering[Constants.FILTER_TYPE.COMMUNITY].filter, true)
+        if filterType == Constants.FILTER_TYPE.COMMUNITY || filterType == Constants.FILTER_TYPE.ORGANISATION
+          scope.setSystemFilter(scope.filtering[Constants.FILTER_TYPE.ORGANISATION].selection, scope.filtering[Constants.FILTER_TYPE.ORGANISATION].filter, true)
+        scope.applyFilters()
+
+      scope.currentFilters = () =>
+        filters = {}
+        filters[Constants.FILTER_TYPE.DOMAIN] = scope.filterValue(Constants.FILTER_TYPE.DOMAIN)
+        filters[Constants.FILTER_TYPE.SPECIFICATION] = scope.filterValue(Constants.FILTER_TYPE.SPECIFICATION)
+        filters[Constants.FILTER_TYPE.ACTOR] = scope.filterValue(Constants.FILTER_TYPE.ACTOR)
+        filters[Constants.FILTER_TYPE.TEST_SUITE] = scope.filterValue(Constants.FILTER_TYPE.TEST_SUITE)
+        filters[Constants.FILTER_TYPE.TEST_CASE] = scope.filterValue(Constants.FILTER_TYPE.TEST_CASE)
+        filters[Constants.FILTER_TYPE.COMMUNITY] = scope.filterValue(Constants.FILTER_TYPE.COMMUNITY)
+        filters[Constants.FILTER_TYPE.ORGANISATION] = scope.filterValue(Constants.FILTER_TYPE.ORGANISATION)
+        filters[Constants.FILTER_TYPE.SYSTEM] = scope.filterValue(Constants.FILTER_TYPE.SYSTEM)
+        filters[Constants.FILTER_TYPE.RESULT] = scope.filterValue(Constants.FILTER_TYPE.RESULT)
+        if scope.filterDefined(Constants.FILTER_TYPE.TIME)
+          filters.startTimeBegin = scope.startTime.date.startDate
+          filters.startTimeBeginStr = scope.startTime.date.startDate?.format('DD-MM-YYYY HH:mm:ss')
+          filters.startTimeEnd = scope.startTime.date.endDate
+          filters.startTimeEndStr = scope.startTime.date.endDate?.format('DD-MM-YYYY HH:mm:ss')
+          filters.endTimeBegin = scope.endTime.date.startDate
+          filters.endTimeBeginStr = scope.endTime.date.startDate?.format('DD-MM-YYYY HH:mm:ss')
+          filters.endTimeEnd = scope.endTime.date.endDate
+          filters.endTimeEndStr = scope.endTime.date.endDate?.format('DD-MM-YYYY HH:mm:ss')
+        filters
+
+      scope.applyFilters = () =>
+        scope.applyFn(scope.currentFilters())
+
+      scope.clearFilter = (filterType) =>
+        if scope.filterDefined(filterType)
+          scope.filtering[filterType].selection = []
+
+      scope.clearFilters = () =>
+        scope.showFiltering = false
+        scope.clearFilter(Constants.FILTER_TYPE.DOMAIN)
+        scope.clearFilter(Constants.FILTER_TYPE.ACTOR)
+        scope.clearFilter(Constants.FILTER_TYPE.TEST_SUITE)
+        scope.clearFilter(Constants.FILTER_TYPE.TEST_CASE)
+        scope.clearFilter(Constants.FILTER_TYPE.COMMUNITY)
+        scope.clearFilter(Constants.FILTER_TYPE.ORGANISATION)
+        scope.clearFilter(Constants.FILTER_TYPE.SYSTEM)
+        scope.clearFilter(Constants.FILTER_TYPE.RESULT)
+        if scope.filterDefined(Constants.FILTER_TYPE.RESULT)
+          scope.startTime.date = {startDate: null, endDate: null}
+          scope.endTime.date = {startDate: null, endDate: null}
+        scope.resetFilters()
+        scope.applyFilters()
+
+      scope.toggleFiltering = () =>
+        if scope.showFiltering
+          DataService.async(scope.applyFilters)
+        else
+          DataService.async(scope.clearFilters)
+
+      scope.applyTimeFiltering = (ev, picker) =>
+        scope.applyFilters()
+
+      scope.clearStartTimeFiltering = (ev, picker) =>
+        scope.clearTimeFiltering(scope.startTime.date)
+
+      scope.clearEndTimeFiltering = (ev, picker) =>
+        scope.clearTimeFiltering(scope.endTime.date)
+
+      scope.clearTimeFiltering = (time) =>
+        time.endDate = null
+        time.startDate = null
+        scope.applyFilters()
+
+      scope.keepTickedProperty = (oldArr, newArr) ->
+        if oldArr? and oldArr.length > 0
+          for o, i in newArr
+            n = _.find oldArr, (s) => `s.id == o.id`
+            o.ticked = if n?.ticked? then n.ticked else false
+
+      scope.setDomainFilter = () ->
+        scope.filtering[Constants.FILTER_TYPE.DOMAIN].filter = _.map(scope.filtering[Constants.FILTER_TYPE.DOMAIN].all, _.clone)
+        if scope.filtering[Constants.FILTER_TYPE.DOMAIN].selection.length > 0
+          for f in scope.filtering[Constants.FILTER_TYPE.DOMAIN].filter
+            found = _.find scope.filtering[Constants.FILTER_TYPE.DOMAIN].selection, (d) => `d.id == f.id`
+            if found?
+              f.ticked = true
+
+      scope.setSpecificationFilter = (selection1, selection2, keepTick) ->
+        if scope.filterDefined(Constants.FILTER_TYPE.DOMAIN)
+          copy = _.map(scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, _.clone)
+          selection = if selection1? and selection1.length > 0 then selection1 else selection2
+          scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter = _.map((_.filter scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].all, (s) => (_.contains (_.map selection, (d) => d.id), s.domain)), _.clone)
+          scope.keepTickedProperty(copy, scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter) if keepTick
+          for i in [scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].selection.length - 1..0] by -1
+            some = scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].selection[i]
+            found = _.find scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, (s) => `s.id == some.id`
+            if (!found?)
+              scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].selection.splice(i, 1)
+            else
+              found.ticked = true
+        else
+          scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter = _.map(scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].all, _.clone)
+
+      scope.setActorFilter = (selection1, selection2, keepTick) ->
+        selection = if selection1? and selection1.length > 0 then selection1 else selection2
+        copy = _.map(scope.filtering[Constants.FILTER_TYPE.ACTOR].filter, _.clone)
+        scope.filtering[Constants.FILTER_TYPE.ACTOR].filter = _.map((_.filter scope.filtering[Constants.FILTER_TYPE.ACTOR].all, (a) => (_.contains (_.map selection, (s) => s.id), a.specification)), _.clone)
+        scope.keepTickedProperty(copy, scope.filtering[Constants.FILTER_TYPE.ACTOR].filter) if keepTick
+
+        for i in [scope.filtering[Constants.FILTER_TYPE.ACTOR].selection.length - 1..0] by -1
+          some = scope.filtering[Constants.FILTER_TYPE.ACTOR].selection[i]
+          found = _.find scope.filtering[Constants.FILTER_TYPE.ACTOR].filter, (s) => `s.id == some.id`
+          if (!found?)
+            scope.filtering[Constants.FILTER_TYPE.ACTOR].selection.splice(i, 1)
+
+      scope.setTestSuiteFilter = (selection1, selection2, keepTick) ->
+        # TODO ADAPT THIS TO BE BASED ON ACTOR OR SPECIFICATION
+        selection = if selection1? and selection1.length > 0 then selection1 else selection2
+        copy = _.map(scope.filtering[Constants.FILTER_TYPE.TEST_SUITE].filter, _.clone)
+        scope.filtering[Constants.FILTER_TYPE.TEST_SUITE].filter = _.map((_.filter scope.filtering[Constants.FILTER_TYPE.TEST_SUITE].all, (t) => (_.contains (_.map selection, (s) => s.id), t.specification)), _.clone)
+        scope.keepTickedProperty(copy, scope.filtering[Constants.FILTER_TYPE.TEST_SUITE].filter) if keepTick
+
+        for i in [scope.filtering[Constants.FILTER_TYPE.TEST_SUITE].selection.length - 1..0] by -1
+          some = scope.filtering[Constants.FILTER_TYPE.TEST_SUITE].selection[i]
+          found = _.find scope.filtering[Constants.FILTER_TYPE.TEST_SUITE].filter, (s) => `s.id == some.id`
+          if (!found?)
+            scope.filtering[Constants.FILTER_TYPE.TEST_SUITE].selection.splice(i, 1)
+          else
+            found.ticked = true
+
+      scope.setTestCaseFilter = (selection1, selection2, keepTick) ->
+        selection = if selection1? and selection1.length > 0 then selection1 else selection2
+        copy = _.map(scope.filtering[Constants.FILTER_TYPE.TEST_CASE].filter, _.clone)
+        result = []
+        for s, i in selection
+          for t, i in s.testCases
+            found = _.find scope.filtering[Constants.FILTER_TYPE.TEST_CASE].all, (c) => `c.id == t.id`
+            result.push found
+        scope.filtering[Constants.FILTER_TYPE.TEST_CASE].filter = _.map(result, _.clone)
+        scope.keepTickedProperty(copy, scope.filtering[Constants.FILTER_TYPE.TEST_CASE].filter) if keepTick
+
+        for i in [scope.filtering[Constants.FILTER_TYPE.TEST_CASE].selection.length - 1..0] by -1
+          some = scope.filtering[Constants.FILTER_TYPE.TEST_CASE].selection[i]
+          found = _.find scope.filtering[Constants.FILTER_TYPE.TEST_CASE].filter, (s) => `s.id == some.id`
+          if (!found?)
+            scope.filtering[Constants.FILTER_TYPE.TEST_CASE].selection.splice(i, 1)
+          else
+            found.ticked = true
+
+      scope.setCommunityFilter = () ->
+        scope.filtering[Constants.FILTER_TYPE.COMMUNITY].filter = _.map(scope.filtering[Constants.FILTER_TYPE.COMMUNITY].all, _.clone)
+
+      scope.setOrganizationFilter = (selection1, selection2, keepTick) ->
+        if scope.filterDefined(Constants.FILTER_TYPE.COMMUNITY)
+          selection = if selection1? and selection1.length > 0 then selection1 else selection2
+          copy = _.map(scope.filtering[Constants.FILTER_TYPE.ORGANISATION].filter, _.clone)
+          scope.filtering[Constants.FILTER_TYPE.ORGANISATION].filter = _.map((_.filter scope.filtering[Constants.FILTER_TYPE.ORGANISATION].all, (o) => (_.contains (_.map selection, (s) => s.id), o.community)), _.clone)
+          scope.keepTickedProperty(copy, scope.filtering[Constants.FILTER_TYPE.ORGANISATION].filter) if keepTick
+
+          for i in [scope.filtering[Constants.FILTER_TYPE.ORGANISATION].selection.length - 1..0] by -1
+            some = scope.filtering[Constants.FILTER_TYPE.ORGANISATION].selection[i]
+            found = _.find scope.filtering[Constants.FILTER_TYPE.ORGANISATION].filter, (s) => `s.id == some.id`
+            if (!found?)
+              scope.filtering[Constants.FILTER_TYPE.ORGANISATION].selection.splice(i, 1)
+        else
+          scope.filtering[Constants.FILTER_TYPE.ORGANISATION].filter = _.map(scope.filtering[Constants.FILTER_TYPE.ORGANISATION].all, _.clone)
+
+      scope.setSystemFilter = (selection1, selection2, keepTick) ->
+        selection = if selection1? and selection1.length > 0 then selection1 else selection2
+        copy = _.map(scope.filtering[Constants.FILTER_TYPE.SYSTEM].filter, _.clone)
+        scope.filtering[Constants.FILTER_TYPE.SYSTEM].filter = _.map((_.filter scope.filtering[Constants.FILTER_TYPE.SYSTEM].all, (o) => (_.contains (_.map selection, (s) => s.id), o.owner)), _.clone)
+        scope.keepTickedProperty(copy, scope.filtering[Constants.FILTER_TYPE.SYSTEM].filter) if keepTick
+
+        for i in [scope.filtering[Constants.FILTER_TYPE.SYSTEM].selection.length - 1..0] by -1
+          some = scope.filtering[Constants.FILTER_TYPE.SYSTEM].selection[i]
+          found = _.find scope.filtering[Constants.FILTER_TYPE.SYSTEM].filter, (s) => `s.id == some.id`
+          if (!found?)
+            scope.filtering[Constants.FILTER_TYPE.SYSTEM].selection.splice(i, 1)
+
+      scope.resetFilters = () =>
+        scope.setDomainFilter()
+        scope.setCommunityFilter()
+        scope.setSpecificationFilter(scope.filtering[Constants.FILTER_TYPE.DOMAIN].filter, [], false)
+        scope.setActorFilter(scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, [], false)
+        scope.setTestSuiteFilter(scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, [], false)
+        scope.setTestCaseFilter(scope.filtering[Constants.FILTER_TYPE.TEST_SUITE].filter, [], false)
+        scope.setOrganizationFilter(scope.filtering[Constants.FILTER_TYPE.COMMUNITY].filter, [], false)
+        scope.setSystemFilter(scope.filtering[Constants.FILTER_TYPE.ORGANISATION].filter, [], false)
+        for r in scope.filtering[Constants.FILTER_TYPE.RESULT].filter
+          r.ticked = false
+
+      scope.getAllTestResults = () =>
+        results = []
+        for k, v of Constants.TEST_CASE_RESULT
+          results.push({id: v})
+        results
+
+      scope.state.currentFilters = scope.currentFilters
+
+      scope.translation =
+        selectAll       : ""
+        selectNone      : ""
+        reset           : ""
+        search          : "Search..."
+        nothingSelected : "All"
+      scope.showFiltering = false
+      scope.filtering = {}
+      scope.loadPromises = []
+      scope.setupFilter(Constants.FILTER_TYPE.DOMAIN, scope.loadDomainsFn)
+      scope.setupFilter(Constants.FILTER_TYPE.SPECIFICATION, scope.loadSpecificationsFn)
+      scope.setupFilter(Constants.FILTER_TYPE.ACTOR, scope.loadActorsFn)
+      scope.setupFilter(Constants.FILTER_TYPE.TEST_SUITE, scope.loadTestSuitesFn)
+      scope.setupFilter(Constants.FILTER_TYPE.TEST_CASE, scope.loadTestCasesFn)
+      scope.setupFilter(Constants.FILTER_TYPE.COMMUNITY, scope.loadCommunitiesFn)
+      scope.setupFilter(Constants.FILTER_TYPE.ORGANISATION, scope.loadOrganisationsFn)
+      scope.setupFilter(Constants.FILTER_TYPE.SYSTEM, scope.loadSystemsFn)
+      scope.filtering[Constants.FILTER_TYPE.RESULT] = {
+        all: scope.getAllTestResults()
+        filter: scope.getAllTestResults()
+        selection: []
+      }
+      if scope.filterDefined(Constants.FILTER_TYPE.TIME)
+        scope.startTime = {
+          date: {
+            startDate: null
+            endDate: null
+          }
+        }
+        scope.startTimeOptions =
+          locale:
+            format: "DD-MM-YYYY"
+          eventHandlers:
+            'apply.daterangepicker': scope.applyTimeFiltering
+            'cancel.daterangepicker': scope.clearStartTimeFiltering
+
+        scope.endTime = {
+          date: {
+            startDate: null
+            endDate: null
+          }
+        }
+        scope.endTimeOptions =
+          locale:
+            format: "DD-MM-YYYY"
+          eventHandlers:
+            'apply.daterangepicker': scope.applyTimeFiltering
+            'cancel.daterangepicker': scope.clearEndTimeFiltering
+
+      $q.all(scope.loadPromises)
+      .then () =>
+        scope.resetFilters()
+        scope.applyFilters()
+
+]

@@ -1,7 +1,7 @@
 class DashboardController
 
-  @$inject = ['$log', '$state', '$q', 'CommunityService', 'TestService', 'DataService', 'ReportService', 'Constants', 'SystemConfigurationService', 'PopupService', 'ConfirmationDialogService', 'SpecificationService', 'ConformanceService', 'TestSuiteService', 'OrganizationService', 'SystemService', 'ErrorService']
-  constructor: (@$log, @$state, @$q, @CommunityService, @TestService, @DataService, @ReportService, @Constants, @SystemConfigurationService, @PopupService, @ConfirmationDialogService, @SpecificationService, @ConformanceService, @TestSuiteService, @OrganizationService, @SystemService, @ErrorService) ->
+  @$inject = ['$state', 'CommunityService', 'TestService', 'DataService', 'ReportService', 'Constants', 'SystemConfigurationService', 'PopupService', 'ConfirmationDialogService', 'SpecificationService', 'ConformanceService', 'TestSuiteService', 'OrganizationService', 'SystemService', 'ErrorService']
+  constructor: (@$state, @CommunityService, @TestService, @DataService, @ReportService, @Constants, @SystemConfigurationService, @PopupService, @ConfirmationDialogService, @SpecificationService, @ConformanceService, @TestSuiteService, @OrganizationService, @SystemService, @ErrorService) ->
 
     @exportActivePending = false
     @exportCompletedPending = false
@@ -9,6 +9,15 @@ class DashboardController
     @completedExpandedCounter = {count: 0}
     @activeStatus = {status: @Constants.STATUS.PENDING}
     @completedStatus = {status: @Constants.STATUS.PENDING}
+
+    @filterState = {
+      updatePending: false
+    }
+    @filters = [@Constants.FILTER_TYPE.SPECIFICATION, @Constants.FILTER_TYPE.TEST_SUITE, @Constants.FILTER_TYPE.TEST_CASE, @Constants.FILTER_TYPE.ORGANISATION, @Constants.FILTER_TYPE.SYSTEM, @Constants.FILTER_TYPE.RESULT, @Constants.FILTER_TYPE.TIME]
+    if @DataService.isSystemAdmin || (@DataService.isCommunityAdmin && !@DataService.community.domain?)
+      @filters.push(@Constants.FILTER_TYPE.DOMAIN)
+    if @DataService.isSystemAdmin
+      @filters.push(@Constants.FILTER_TYPE.COMMUNITY)
 
     @activeTestsColumns = [
       {
@@ -111,66 +120,6 @@ class DashboardController
     @prevParameter = null
     @showFilters = false
 
-    @translation =
-      selectAll       : ""
-      selectNone      : ""
-      reset           : ""
-      search          : "Search..."
-      nothingSelected : "All"
-
-    @filters =
-      community :
-        all : []
-        filter : []
-        selection : []
-      domain :
-        all : []
-        filter : []
-        selection : []
-      specification :
-        all : []
-        filter : []
-        selection : []
-      testSuite :
-        all : []
-        filter : []
-        selection : []
-      testCase :
-        all : []
-        filter : []
-        selection : []
-      organization :
-        all : []
-        filter : []
-        selection : []
-      system :
-        all : []
-        filter : []
-        selection : []
-      result :
-        all : []
-        filter : []
-        selection : []
-
-    @startTime = {}
-    @endTime = {}
-
-    @domainDisabled = false
-
-    @startTimeOptions =
-      locale:
-        format: "DD-MM-YYYY"
-      eventHandlers:
-        'apply.daterangepicker': @applyTimeFiltering
-        'cancel.daterangepicker': @clearStartTimeFiltering
-
-    @endTimeOptions =
-      locale:
-        format: "DD-MM-YYYY"
-      eventHandlers:
-        'apply.daterangepicker': @applyTimeFiltering
-        'cancel.daterangepicker': @clearEndTimeFiltering
-
     if @DataService.isSystemAdmin
       @SystemConfigurationService.getSessionAliveTime()
       .then (data) =>
@@ -181,448 +130,132 @@ class DashboardController
       .catch (error) =>
         @ErrorService.showErrorMessage(error)
 
-    @getAllResults()
-    d1 = @getAllCommunities()
-    d2 = @getAllDomains()
-    d3 = @getAllSpecifications()
-    d4 = @getAllTestSuites()
-    d5 = @getAllTestCases()
-    d6 = @getAllOrganizations()
-    d7 = @getAllSystems()
+  getAllCommunities: () =>
+    @CommunityService.getCommunities()
 
-    @$q.all([d1, d2, d3, d4, d5, d6, d7])
-    .then () =>
-      @resetFilters(@applySavedSearchState())
-      @goPage()
-      @getActiveTests()
+  getAllDomains: () =>
+    @ConformanceService.getDomains()
 
-  applySavedSearchState: () =>
-    if @DataService.searchState? && @DataService.searchState.data? && @DataService.searchState.origin == @Constants.SEARCH_STATE_ORIGIN.DASHBOARD
-      @savedSearchState = @DataService.searchState.data
-      if @savedSearchState.domainIds?
-        @filters.domain.selection = _.map(_.filter(@filters.domain.all, (d) => @savedSearchState.domainIds.includes(d.id)), _.clone)
-      if @savedSearchState.specIds?
-        @filters.specification.selection = _.map(_.filter(@filters.specification.all, (d) => @savedSearchState.specIds.includes(d.id)), _.clone)
-      if @savedSearchState.testSuiteIds?
-        @filters.testSuite.selection = _.map(_.filter(@filters.testSuite.all, (d) => @savedSearchState.testSuiteIds.includes(d.id)), _.clone)
-      if @savedSearchState.testCaseIds?
-        @filters.testCase.selection = _.map(_.filter(@filters.testCase.all, (d) => @savedSearchState.testCaseIds.includes(d.id)), _.clone)
-      if @savedSearchState.communityIds?
-        @filters.community.selection = _.map(_.filter(@filters.community.all, (d) => @savedSearchState.communityIds.includes(d.id)), _.clone)
-      if @savedSearchState.organizationIds?
-        @filters.organization.selection = _.map(_.filter(@filters.organization.all, (d) => @savedSearchState.organizationIds.includes(d.id)), _.clone)
-      if @savedSearchState.systemIds?
-        @filters.system.selection = _.map(_.filter(@filters.system.all, (d) => @savedSearchState.systemIds.includes(d.id)), _.clone)
-      if @savedSearchState.results?
-        @filters.result.selection = _.map(_.filter(@filters.result.all, (d) => @savedSearchState.results.includes(d.result)), _.clone)
-        for f in @filters.result.filter
-          found = _.find @filters.result.selection, (d) => `d.result == f.result`
-          if found?
-            f.ticked = true
-      @startTime.startDate = @savedSearchState.startTimeBegin
-      @startTime.endDate = @savedSearchState.startTimeEnd
-      @endTime.startDate = @savedSearchState.endTimeBegin
-      @endTime.endDate = @savedSearchState.endTimeEnd
-      @currentPage = @savedSearchState.currentPage
-      @activeSortColumn = @savedSearchState.activeSortColumn
-      @activeSortOrder = @savedSearchState.activeSortOrder
-      for column in @activeTestsColumns
-        if column.field == @activeSortColumn
-          column.order = @activeSortOrder
-        else
-          column.order = undefined
-      @completedSortColumn = @savedSearchState.completedSortColumn
-      @completedSortOrder = @savedSearchState.completedSortOrder
-      for column in @completedTestsColumns
-        if column.field == @completedSortColumn
-          column.order = @completedSortOrder
-        else
-          column.order = undefined
-      @showFilters = @savedSearchState.showFilters
-      @DataService.clearSearchState()
-      @searchState = undefined
-      true
-    else
-      false
-
-  resetFilters: (keepTick) ->
-    @setDomainFilter()
-    @setCommunityFilter()
-    if keepTick
-      @setSpecificationFilter(@filters.domain.selection, @filters.domain.filter, keepTick)
-      @setTestSuiteFilter(@filters.specification.selection, @filters.specification.filter, keepTick)
-      @setTestCaseFilter(@filters.testSuite.selection, @filters.testSuite.filter, keepTick)
-      @setOrganizationFilter(@filters.community.selection, @filters.community.filter, keepTick)
-      @setSystemFilter(@filters.organization.selection, @filters.organization.filter, keepTick)
-    else
-      @setSpecificationFilter(@filters.domain.filter, [], keepTick)
-      @setTestSuiteFilter(@filters.specification.filter, [], keepTick)
-      @setTestCaseFilter(@filters.testSuite.filter, [], keepTick)
-      @setOrganizationFilter(@filters.community.filter, [], keepTick)
-      @setSystemFilter(@filters.organization.filter, [], keepTick)
-
-  setDomainFilter: () ->
-    if @DataService.isCommunityAdmin and @DataService.community.domainId?
-      id = @DataService.community.domainId
-      @filters.domain.filter = _.map(_.filter(@filters.domain.all, (d) => `d.id == id`), _.clone)
-      @filters.domain.filter[0].ticked = true
-      @filters.domain.selection = _.map(@filters.domain.filter, _.clone)
-    else
-      @filters.domain.filter = _.map(@filters.domain.all, _.clone)
-      if @filters.domain.selection.length > 0
-        for f in @filters.domain.filter
-          found = _.find @filters.domain.selection, (d) => `d.id == f.id`
-          if found?
-            f.ticked = true
-
-  setSpecificationFilter: (selection1, selection2, keepTick) ->
-    selection = if selection1? and selection1.length > 0 then selection1 else selection2
-    copy = _.map(@filters.specification.filter, _.clone)
-    @filters.specification.filter = _.map((_.filter @filters.specification.all, (s) => (_.contains (_.map selection, (d) => d.id), s.domain)), _.clone)
-    @keepTickedProperty(copy, @filters.specification.filter) if keepTick
-
-    for i in [@filters.specification.selection.length - 1..0] by -1
-      some = @filters.specification.selection[i]
-      found = _.find @filters.specification.filter, (s) => `s.id == some.id`
-      if (!found?)
-        @filters.specification.selection.splice(i, 1)
-      else
-        found.ticked = true
-
-  setTestSuiteFilter: (selection1, selection2, keepTick) ->
-    selection = if selection1? and selection1.length > 0 then selection1 else selection2
-    copy = _.map(@filters.testSuite.filter, _.clone)
-    @filters.testSuite.filter = _.map((_.filter @filters.testSuite.all, (t) => (_.contains (_.map selection, (s) => s.id), t.specification)), _.clone)
-    @keepTickedProperty(copy, @filters.testSuite.filter) if keepTick
-
-    for i in [@filters.testSuite.selection.length - 1..0] by -1
-      some = @filters.testSuite.selection[i]
-      found = _.find @filters.testSuite.filter, (s) => `s.id == some.id`
-      if (!found?)
-        @filters.testSuite.selection.splice(i, 1)
-      else
-        found.ticked = true
-
-  setTestCaseFilter: (selection1, selection2, keepTick) ->
-    selection = if selection1? and selection1.length > 0 then selection1 else selection2
-    copy = _.map(@filters.testCase.filter, _.clone)
-    result = []
-    for s, i in selection
-      for t, i in s.testCases
-        found = _.find @filters.testCase.all, (c) => `c.id == t.id`
-        result.push found
-    @filters.testCase.filter = _.map(result, _.clone)
-    @keepTickedProperty(copy, @filters.testCase.filter) if keepTick
-
-    for i in [@filters.testCase.selection.length - 1..0] by -1
-      some = @filters.testCase.selection[i]
-      found = _.find @filters.testCase.filter, (s) => `s.id == some.id`
-      if (!found?)
-        @filters.testCase.selection.splice(i, 1)
-      else
-        found.ticked = true
-
-  setCommunityFilter: () ->
-    if @DataService.isCommunityAdmin
-      id = @DataService.community.id
-      @filters.community.filter = _.map(_.filter(@filters.community.all, (c) => `c.id == id`), _.clone)
-      @filters.community.filter[0].ticked = true
-      @filters.community.selection = _.map(@filters.community.filter, _.clone)
-    else
-      @filters.community.filter = _.map(@filters.community.all, _.clone)
-      if @filters.community.selection.length > 0
-        for f in @filters.community.filter
-          found = _.find @filters.community.selection, (c) => `c.id == f.id`
-          if found?
-            f.ticked = true
-
-  setOrganizationFilter: (selection1, selection2, keepTick) ->
-    selection = if selection1? and selection1.length > 0 then selection1 else selection2
-    copy = _.map(@filters.organization.filter, _.clone)
-    @filters.organization.filter = _.map((_.filter @filters.organization.all, (o) => (_.contains (_.map selection, (s) => s.id), o.community)), _.clone)
-    @keepTickedProperty(copy, @filters.organization.filter) if keepTick
-
-    for i in [@filters.organization.selection.length - 1..0] by -1
-      some = @filters.organization.selection[i]
-      found = _.find @filters.organization.filter, (s) => `s.id == some.id`
-      if (!found?)
-        @filters.organization.selection.splice(i, 1)
-      else
-        found.ticked = true
-
-  setSystemFilter: (selection1, selection2, keepTick) ->
-    selection = if selection1? and selection1.length > 0 then selection1 else selection2
-    copy = _.map(@filters.system.filter, _.clone)
-    @filters.system.filter = _.map((_.filter @filters.system.all, (o) => (_.contains (_.map selection, (s) => s.id), o.owner)), _.clone)
-    @keepTickedProperty(copy, @filters.system.filter) if keepTick
-
-    for i in [@filters.system.selection.length - 1..0] by -1
-      some = @filters.system.selection[i]
-      found = _.find @filters.system.filter, (s) => `s.id == some.id`
-      if (!found?)
-        @filters.system.selection.splice(i, 1)
-      else
-        found.ticked = true
-
-  keepTickedProperty: (oldArr, newArr) ->
-    if oldArr? and oldArr.length > 0
-      for o, i in newArr
-        n = _.find oldArr, (s) => `s.id == o.id`
-        o.ticked = if n?.ticked? then n.ticked else false
-
-  getAllCommunities: () ->
-    d = @$q.defer()
-    if @DataService.isCommunityAdmin
-      communityIds = [@DataService.community.id]
-    @CommunityService.getCommunities(communityIds)
-    .then (data) =>
-        @filters.community.all = data
-        d.resolve()
-    .catch (error) =>
-      @ErrorService.showErrorMessage(error)
-    d.promise
-
-  getAllDomains: () ->
-    d = @$q.defer()
-    if @DataService.isCommunityAdmin && @DataService.community.domainId?
-      domainIds = [@DataService.community.domainId]
-    @ConformanceService.getDomains(domainIds)
-    .then (data) =>
-      @filters.domain.all = data
-      d.resolve()
-    .catch (error) =>
-      @ErrorService.showErrorMessage(error)
-    d.promise
-
-  getAllSpecifications: () ->
-    d = @$q.defer()
+  getAllSpecifications: () =>
     if @DataService.isCommunityAdmin && @DataService.community.domainId?
       callResult = @ConformanceService.getSpecifications(@DataService.community.domainId)
     else
       callResult = @ConformanceService.getSpecificationsWithIds()
-    callResult.then (data) =>
-       @filters.specification.all = data
-       d.resolve()
-    .catch (error) =>
-      @ErrorService.showErrorMessage(error)
-    d.promise
+    callResult
 
-  getAllTestCases: () ->
+  getAllTestCases: () =>
     if @DataService.isCommunityAdmin && @DataService.community.domainId
-      tcFunction = @ReportService.getTestCasesForCommunity
+      result = @ReportService.getTestCasesForCommunity()
     else
-      tcFunction = @ReportService.getAllTestCases
-    d = @$q.defer()
-    tcFunction()
-    .then (data) =>
-       @filters.testCase.all = data
-       d.resolve()
-    .catch (error) =>
-      @ErrorService.showErrorMessage(error)
-    d.promise
+      result = @ReportService.getAllTestCases()
+    result
 
-  getAllTestSuites: () ->
-    if @DataService.isCommunityAdmin && @DataService.community.domainId
-      tsFunction = @TestSuiteService.getTestSuitesWithTestCasesForCommunity
+  getAllTestSuites: () =>
+    if @DataService.isCommunityAdmin && @DataService.community.domainId?
+      result = @TestSuiteService.getTestSuitesWithTestCasesForCommunity()
     else
-      tsFunction = @TestSuiteService.getAllTestSuitesWithTestCases
-    d = @$q.defer()
-    tsFunction()
-    .then (data) =>
-       @filters.testSuite.all = data
-       d.resolve()
-    .catch (error) =>
-      @ErrorService.showErrorMessage(error)
-    d.promise
+      result = @TestSuiteService.getAllTestSuitesWithTestCases()
+    result
 
-  getAllOrganizations: () ->
-    d = @$q.defer()
+  getAllOrganizations: () =>
     if @DataService.isCommunityAdmin
-      @OrganizationService.getOrganizationsByCommunity(@DataService.community.id)
-      .then (data) =>
-        @filters.organization.all = data
-        d.resolve()
-      .catch (error) =>
-        @ErrorService.showErrorMessage(error)
+      result = @OrganizationService.getOrganizationsByCommunity(@DataService.community.id)
     else
-      @OrganizationService.getOrganizations()
-      .then (data) =>
-        @filters.organization.all = data
-        d.resolve()
-      .catch (error) =>
-        @ErrorService.showErrorMessage(error)
-    d.promise
+      result = @OrganizationService.getOrganizations()
+    result
 
-  getAllSystems: () ->
-    d = @$q.defer()
+  getAllSystems: () =>
     if @DataService.isSystemAdmin
-      sFunction = @SystemService.getSystems
+      result = @SystemService.getSystems()
     else
-      sFunction = @SystemService.getSystemsByCommunity
-    sFunction().then (data) =>
-      @filters.system.all = data
-      d.resolve()
-    .catch (error) =>
-      @ErrorService.showErrorMessage(error)
-    d.promise
+      result = @SystemService.getSystemsByCommunity()
+    result
 
-  showFilter: () =>
-    @showFilters = true
+  setFilterRefreshState: () =>
+    @filterState.updatePending = @refreshActivePending || @refreshCompletedPending || @refreshCompletedCountPending
 
-  clearFilter: () =>
-    @showFilters = false
-
-    @startTime = {}
-    @endTime = {}
-
-    @filters.domain.selection = []
-    @filters.specification.selection = []
-    @filters.testSuite.selection = []
-    @filters.testCase.selection = []
-    @filters.community.selection = []
-    @filters.organization.selection = []
-    @filters.system.selection = []
-    @filters.result.selection = []
-
-    @resetFilters(false)
-
-    @goFirstPage()
-    @getActiveTests()
-
-  getCurrentSearchCriteria:() ->
+  getCurrentSearchCriteria:() =>
+    filters = @filterState.currentFilters()
     searchCriteria = {}
-    searchCriteria.domainIds = _.map @filters.domain.selection, (s) -> s.id
-    searchCriteria.specIds = _.map @filters.specification.selection, (s) -> s.id
-    searchCriteria.testSuiteIds = _.map @filters.testSuite.selection, (s) -> s.id
-    searchCriteria.testCaseIds = _.map @filters.testCase.selection, (s) -> s.id
-    searchCriteria.communityIds = _.map @filters.community.selection, (s) -> s.id
-    searchCriteria.organizationIds = _.map @filters.organization.selection, (s) -> s.id
-    searchCriteria.systemIds = _.map @filters.system.selection, (s) -> s.id
-    searchCriteria.results = _.map @filters.result.selection, (s) -> s.result
-    searchCriteria.startTimeBegin = @startTime.startDate
-    searchCriteria.startTimeBeginStr = @startTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
-    searchCriteria.startTimeEnd = @startTime.endDate
-    searchCriteria.startTimeEndStr = @startTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
-    searchCriteria.endTimeBegin = @endTime.startDate
-    searchCriteria.endTimeBeginStr = @endTime.startDate?.format('DD-MM-YYYY HH:mm:ss')
-    searchCriteria.endTimeEnd = @endTime.endDate
-    searchCriteria.endTimeEndStr = @endTime.endDate?.format('DD-MM-YYYY HH:mm:ss')
+    if @DataService.isCommunityAdmin
+      searchCriteria.communityIds = [@DataService.community.id]
+      if @DataService.community.domain?
+        searchCriteria.domainIds = [@DataService.community.domain.id]
+      else
+        searchCriteria.domainIds = filters[@Constants.FILTER_TYPE.DOMAIN]
+    else
+      searchCriteria.communityIds = filters[@Constants.FILTER_TYPE.COMMUNITY]
+      searchCriteria.domainIds = filters[@Constants.FILTER_TYPE.DOMAIN]
+    searchCriteria.specIds = filters[@Constants.FILTER_TYPE.SPECIFICATION]
+    searchCriteria.testSuiteIds = filters[@Constants.FILTER_TYPE.TEST_SUITE]
+    searchCriteria.testCaseIds = filters[@Constants.FILTER_TYPE.TEST_CASE]
+    searchCriteria.organizationIds = filters[@Constants.FILTER_TYPE.ORGANISATION]
+    searchCriteria.systemIds = filters[@Constants.FILTER_TYPE.SYSTEM]
+    searchCriteria.results = filters[@Constants.FILTER_TYPE.RESULT]
+    searchCriteria.startTimeBeginStr = filters.startTimeBeginStr
+    searchCriteria.startTimeEndStr = filters.startTimeEndStr
+    searchCriteria.endTimeBeginStr = filters.endTimeBeginStr
+    searchCriteria.endTimeEndStr = filters.endTimeEndStr
     searchCriteria.activeSortColumn = @activeSortColumn
     searchCriteria.activeSortOrder = @activeSortOrder
     searchCriteria.completedSortColumn = @completedSortColumn
     searchCriteria.completedSortOrder = @completedSortOrder
     searchCriteria.currentPage = @currentPage
-    searchCriteria.showFilters = @showFilters
     searchCriteria
 
-  getActiveTests: () ->
+  getActiveTests: () =>
     params = @getCurrentSearchCriteria()
-
+    @refreshActivePending = true
+    @setFilterRefreshState()
     @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.activeSortColumn, params.activeSortOrder)
     .then (data) =>
       testResultMapper = @newTestResult
-      @activeTests = _.map data.data, (testResult) -> testResultMapper(testResult)
+      @activeTests = _.map data.data, (testResult) => testResultMapper(testResult)
       @refreshActivePending = false
+      @setFilterRefreshState()
       @activeStatus.status = @Constants.STATUS.FINISHED      
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
       @refreshActivePending = false
+      @setFilterRefreshState()
       @activeStatus.status = @Constants.STATUS.FINISHED      
 
-  domainClicked: (domain) =>
-    @setSpecificationFilter(@filters.domain.selection, @filters.domain.filter, true)
-    @setTestSuiteFilter(@filters.specification.selection, @filters.specification.filter, true)
-    @setTestCaseFilter(@filters.testSuite.selection, @filters.testSuite.filter, true)
-    @goFirstPage()
-    @getActiveTests()
-
-  specificationClicked: (spec) =>
-    @setTestSuiteFilter(@filters.specification.selection, @filters.specification.filter, true)
-    @setTestCaseFilter(@filters.testSuite.selection, @filters.testSuite.filter, true)
-    @goFirstPage()
-    @getActiveTests()
-
-  testSuiteClicked: (testSuite) =>
-    @setTestCaseFilter(@filters.testSuite.selection, @filters.testSuite.filter, true)
-    @goFirstPage()
-    @getActiveTests()
-
-  testCaseClicked: (testCase) =>
-    @goFirstPage()
-    @getActiveTests()
-
-  communityClicked: (community) =>
-    @setOrganizationFilter(@filters.community.selection, @filters.community.filter, true)
-    @setSystemFilter(@filters.organization.selection, @filters.organization.filter, true)
-    @goFirstPage()
-    @getActiveTests()
-
-  organizationClicked: (organization) =>
-    @setSystemFilter(@filters.organization.selection, @filters.organization.filter, true)
-    @goFirstPage()
-    @getActiveTests()
-
-  systemClicked: (system) =>
-    @goFirstPage()
-    @getActiveTests()
-
-  resultClicked: (result) =>
-    @goFirstPage()
-
-  isDomainDisabled: () =>
-    @DataService.isCommunityAdmin
-
-  applyTimeFiltering: (ev, picker) =>
-    @goFirstPage()
-    @getActiveTests()
-
-  clearTimeFiltering: (time) =>
-    time.endDate = null
-    time.startDate = null
-    @goFirstPage()
-    @getActiveTests()
-
-  clearStartTimeFiltering: (ev, picker) =>
-    @clearTimeFiltering @startTime
-
-  clearEndTimeFiltering: (ev, picker) =>
-    @clearTimeFiltering @endTime
-
-  getAllResults: () ->
-    for k, v of @Constants.TEST_CASE_RESULT
-      result = {result: v}
-      @filters.result.all.push result
-      @filters.result.filter.push result
-
-  getTotalTestCount: () ->
+  getTotalTestCount: () =>
     params = @getCurrentSearchCriteria()
-
+    @refreshCompletedCountPending = true
+    @setFilterRefreshState()
     @ReportService.getCompletedTestResultsCount(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr)
     .then (data) =>
       @completedTestsTotalCount = data.count
       @refreshCompletedCountPending = false
+      @setFilterRefreshState()
     .then () =>
       @updatePagination()
       @refreshCompletedCountPending = false
+      @setFilterRefreshState()
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
       @refreshCompletedCountPending = false
+      @setFilterRefreshState()
 
   getCompletedTests: () =>
     params = @getCurrentSearchCriteria()
-
+    @refreshCompletedPending = true
+    @setFilterRefreshState()
     @ReportService.getCompletedTestResults(params.currentPage, @Constants.TABLE_PAGE_SIZE, params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.completedSortColumn, params.completedSortOrder)
     .then (data) =>
       testResultMapper = @newTestResult
-      @completedTests = _.map data.data, (t) -> testResultMapper(t)
+      @completedTests = _.map data.data, (t) => testResultMapper(t)
       @refreshCompletedPending = false
+      @setFilterRefreshState()
       @completedStatus.status = @Constants.STATUS.FINISHED
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
       @refreshCompletedPending = false
+      @setFilterRefreshState()
       @completedStatus.status = @Constants.STATUS.FINISHED
 
-  newTestResult: (testResult, orgParameters, sysParameters) ->
+  newTestResult: (testResult, orgParameters, sysParameters) =>
     result = {}
     result.session = testResult.result.sessionId
     result.domain = testResult.domain?.sname
@@ -630,7 +263,6 @@ class DashboardController
     result.actor = testResult.actor?.name
     result.testSuite = testResult.testSuite?.sname
     result.testCase = testResult.test?.sname
-    result.testCaseId = testResult.test?.id
     result.organization = testResult.organization?.sname
     if orgParameters?
       for param in orgParameters
@@ -653,7 +285,8 @@ class DashboardController
   sortCompletedSessions: (column) =>
     @completedSortColumn = column.field
     @completedSortOrder = column.order
-    @goPage()
+    @getCompletedTests()
+    @getTotalTestCount()
 
   stopSession: (session) =>
     @stop = true
@@ -669,27 +302,28 @@ class DashboardController
         session.deletePending = false
         @ErrorService.showErrorMessage(error)
 
-  goFirstPage: () =>
-    @currentPage = 1
-    @goPage()
-
-  goPreviousPage: () =>
-    @currentPage -= 1
-    @goPage()
-
-  goNextPage: () =>
-    @currentPage += 1
-    @goPage()
-
-  goLastPage: () =>
-    @currentPage = Math.ceil(@completedTestsTotalCount / @Constants.TABLE_PAGE_SIZE)
-    @goPage()
-
-  goPage: () ->
+  queryDatabase: () =>
+    @getActiveTests()
     @getCompletedTests()
     @getTotalTestCount()
 
-  updatePagination: () ->
+  goFirstPage: () =>
+    @currentPage = 1
+    @queryDatabase()
+
+  goPreviousPage: () =>
+    @currentPage -= 1
+    @queryDatabase()
+
+  goNextPage: () =>
+    @currentPage += 1
+    @queryDatabase()
+
+  goLastPage: () =>
+    @currentPage = Math.ceil(@completedTestsTotalCount / @Constants.TABLE_PAGE_SIZE)
+    @queryDatabase()
+
+  updatePagination: () =>
     if @currentPage == 1
       @isNextPageDisabled = @completedTestsTotalCount <= @Constants.TABLE_PAGE_SIZE
       @isPreviousPageDisabled = true
@@ -753,7 +387,7 @@ class DashboardController
           headers.push(@DataService.labelSystem() + " ("+param+")")
       headers = headers.concat(["Start time", "End time", "Result", "Obsolete"])
       testResultMapper = @newTestResult
-      tests = _.map data.data, (t) -> testResultMapper(t, data.orgParameters, data.sysParameters)
+      tests = _.map data.data, (t) => testResultMapper(t, data.orgParameters, data.sysParameters)
       @DataService.exportAllAsCsv(headers, tests)
       @exportCompletedPending = false
     .catch (error) =>
@@ -776,7 +410,7 @@ class DashboardController
           headers.push(@DataService.labelSystem() + " ("+param+")")
       headers = headers.concat(["Start time", "End time", "Result", "Obsolete"])
       testResultMapper = @newTestResult
-      tests = _.map data.data, (testResult) -> testResultMapper(testResult, data.orgParameters, data.sysParameters)
+      tests = _.map data.data, (testResult) => testResultMapper(testResult, data.orgParameters, data.sysParameters)
       @DataService.exportAllAsCsv(headers, tests)
       @exportActivePending = false
     .catch (error) =>
@@ -789,7 +423,7 @@ class DashboardController
     else  
       ""
 
-  deleteObsolete: () ->
+  deleteObsolete: () =>
     @ConfirmationDialogService.confirm("Confirm delete", "Are you sure you want to delete all obsolete test results?", "Yes", "No")
     .then () =>
       @deletePending = true
@@ -804,14 +438,6 @@ class DashboardController
       .catch (error) =>
           @deletePending = false
           @ErrorService.showErrorMessage(error)
-
-  refresh: () =>
-    @refreshActivePending = true
-    @refreshCompletedPending = true
-    @refreshCompletedCountPending = true
-    @getActiveTests()
-    @getCompletedTests()
-    @getTotalTestCount()
 
   showCollapseAll: () =>
     @completedExpandedCounter.count > 0

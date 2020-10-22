@@ -14,6 +14,18 @@ class Constants
 
 	@DEFAULT_COMMUNITY_ID = 0
 
+	@FILTER_TYPE =
+		DOMAIN: 'domain'
+		SPECIFICATION: 'specification'
+		ACTOR: 'actor'
+		TEST_SUITE: 'test_suite'
+		TEST_CASE: 'test_case'
+		COMMUNITY: 'community'
+		ORGANISATION: 'organisation'
+		SYSTEM: 'system'
+		RESULT: 'result'
+		TIME: 'time'
+
 	@TRIGGER_EVENT_TYPE = 
 		ORGANISATION_CREATED: 1
 		SYSTEM_CREATED: 2

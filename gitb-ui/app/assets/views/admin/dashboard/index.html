@@ -1,118 +1,18 @@
 <div class="page dashboard">
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h4 class="title">Filters</h4>
-            <div class="btn-toolbar pull-right">
-                <button class="btn btn-default" type="button" ng-click="dashboardCtrl.refresh()" ng-disabled="dashboardCtrl.refreshActivePending || dashboardCtrl.refreshCompletedPending || dashboardCtrl.refreshCompletedCountPending"><span class="tab" ng-if="dashboardCtrl.refreshActivePending || dashboardCtrl.refreshCompletedPending || dashboardCtrl.refreshCompletedCountPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Refresh</button>
-                <toggle id="dashboard-toggle-filter" class="btn-group" ng-model="dashboardCtrl.showFilters" on="Enabled" off="Disabled" ng-change="dashboardCtrl.DataService.async(dashboardCtrl.showFilters?dashboardCtrl.showFilter:dashboardCtrl.clearFilter)"></toggle>
-            </div>
-        </div>
-        <div class="table-responsive" uib-collapse="!dashboardCtrl.showFilters">
-            <table class="table">
-                <thead>
-                <tr>
-                    <th class="col-md-1" ng-if="dashboardCtrl.DataService.isSystemAdmin || (dashboardCtrl.DataService.isCommunityAdmin && dashboardCtrl.DataService.community.domain === null)">{{dashboardCtrl.DataService.labelDomain()}}</th>
-                    <th class="col-md-1">{{dashboardCtrl.DataService.labelSpecification()}}</th>
-                    <th class="col-md-1">Test suite</th>
-                    <th class="col-md-1">Test case</th>
-                    <th class="col-md-1" ng-if="!dashboardCtrl.DataService.isCommunityAdmin">Community</th>
-                    <th class="col-md-1">{{dashboardCtrl.DataService.labelOrganisation()}}</th>
-                    <th class="col-md-1">{{dashboardCtrl.DataService.labelSystem()}}</th>
-                    <th class="col-md-1">Result</th>
-                    <th class="col-md-2">Start time</th>
-                    <th class="col-md-2">End time</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <td ng-if="dashboardCtrl.DataService.isSystemAdmin || (dashboardCtrl.DataService.isCommunityAdmin && dashboardCtrl.DataService.community.domain === null)">
-                        <div isteven-multi-select input-model="dashboardCtrl.filters.domain.filter"
-                             output-model="dashboardCtrl.filters.domain.selection" button-label="sname"
-                             item-label="sname"
-                             tick-property="ticked" max-labels="0" max-height="250px"
-                             translation="dashboardCtrl.translation"
-                             helper-elements="filter" search-property="sname" output-properties="id"
-                             on-item-click="dashboardCtrl.domainClicked(data)"
-                             is-disabled="dashboardCtrl.domainDisabled"></div>
-                    </td>
-                    <td>
-                        <div isteven-multi-select input-model="dashboardCtrl.filters.specification.filter"
-                             output-model="dashboardCtrl.filters.specification.selection" button-label="sname"
-                             item-label="sname"
-                             tick-property="ticked" max-labels="0" max-height="250px"
-                             translation="dashboardCtrl.translation"
-                             helper-elements="filter" search-property="sname"
-                             output-properties="id" on-item-click="dashboardCtrl.specificationClicked(data)"></div>
-                    </td>
-                    <td>
-                        <div isteven-multi-select input-model="dashboardCtrl.filters.testSuite.filter"
-                             output-model="dashboardCtrl.filters.testSuite.selection" button-label="sname"
-                             item-label="sname"
-                             tick-property="ticked" max-labels="0" max-height="250px"
-                             translation="dashboardCtrl.translation"
-                             helper-elements="filter" search-property="sname" output-properties="id testCases"
-                             on-item-click="dashboardCtrl.testSuiteClicked(data)"></div>
-                    </td>
-                    <td>
-                        <div isteven-multi-select input-model="dashboardCtrl.filters.testCase.filter"
-                             output-model="dashboardCtrl.filters.testCase.selection" button-label="sname"
-                             item-label="sname"
-                             tick-property="ticked" max-labels="0" max-height="250px"
-                             translation="dashboardCtrl.translation"
-                             helper-elements="filter" search-property="sname" output-properties="id"
-                             on-item-click="dashboardCtrl.testCaseClicked(data)"></div>
-                    </td>
-                    <td ng-if="!dashboardCtrl.DataService.isCommunityAdmin">
-                        <div isteven-multi-select input-model="dashboardCtrl.filters.community.filter"
-                             output-model="dashboardCtrl.filters.community.selection" button-label="sname"
-                             item-label="sname"
-                             tick-property="ticked" max-labels="0" max-height="250px"
-                             translation="dashboardCtrl.translation"
-                             helper-elements="filter" search-property="sname" output-properties="id"
-                             on-item-click="dashboardCtrl.communityClicked(data)"
-                             is-disabled="dashboardCtrl.DataService.isCommunityAdmin"></div>
-                    </td>
-                    <td>
-                        <div isteven-multi-select input-model="dashboardCtrl.filters.organization.filter"
-                             output-model="dashboardCtrl.filters.organization.selection" button-label="sname"
-                             item-label="sname"
-                             tick-property="ticked" max-labels="0" max-height="250px"
-                             translation="dashboardCtrl.translation"
-                             helper-elements="filter" search-property="sname"
-                             output-properties="id" on-item-click="dashboardCtrl.organizationClicked(data)"></div>
-                    </td>
-                    <td>
-                        <div isteven-multi-select input-model="dashboardCtrl.filters.system.filter"
-                             output-model="dashboardCtrl.filters.system.selection" button-label="sname"
-                             item-label="sname"
-                             tick-property="ticked" max-labels="0" max-height="250px"
-                             translation="dashboardCtrl.translation"
-                             helper-elements="filter" search-property="sname" output-properties="id"
-                             on-item-click="dashboardCtrl.systemClicked(data)"></div>
-                    </td>
-                    <td>
-                        <div isteven-multi-select input-model="dashboardCtrl.filters.result.filter"
-                             output-model="dashboardCtrl.filters.result.selection" button-label="result"
-                             item-label="result"
-                             tick-property="ticked" max-labels="0" max-height="250px"
-                             translation="dashboardCtrl.translation"
-                             helper-elements="filter" search-property="result" output-properties="result"
-                             on-item-click="dashboardCtrl.resultClicked(data)"></div>
-                    </td>
-                    <td>
-                        <input date-range-picker class="form-control date-picker" type="text"
-                               ng-model="dashboardCtrl.startTime" options="dashboardCtrl.startTimeOptions"
-                               clearable="true">
-                    </td>
-                    <td>
-                        <input date-range-picker class="form-control date-picker" type="text"
-                               ng-model="dashboardCtrl.endTime" options="dashboardCtrl.endTimeOptions" clearable="true">
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
+
+    <div tb-test-filter 
+        filters = "dashboardCtrl.filters"
+        state = "dashboardCtrl.filterState"
+        apply-fn = "dashboardCtrl.goFirstPage"
+        load-domains-fn = "dashboardCtrl.getAllDomains"
+        load-specifications-fn = "dashboardCtrl.getAllSpecifications"
+        load-test-suites-fn = "dashboardCtrl.getAllTestSuites"
+        load-test-cases-fn = "dashboardCtrl.getAllTestCases"
+        load-communities-fn = "dashboardCtrl.getAllCommunities"
+        load-organisations-fn = "dashboardCtrl.getAllOrganizations"
+        load-systems-fn = "dashboardCtrl.getAllSystems">
     </div>
+
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Active test sessions</h4>

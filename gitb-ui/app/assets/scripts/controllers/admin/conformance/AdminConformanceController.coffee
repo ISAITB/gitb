@@ -3,60 +3,23 @@ class AdminConformanceController
 	@$inject = ['$log', '$scope', '$state', 'DataService', 'ConformanceService', 'ErrorService', 'Constants', '$q', 'CommunityService', 'OrganizationService', 'SystemService', 'ReportService', 'ConfirmationDialogService', '$uibModal']
 	constructor: (@$log, @$scope, @$state, @DataService, @ConformanceService, @ErrorService, @Constants, @$q, @CommunityService, @OrganizationService, @SystemService, @ReportService, @ConfirmationDialogService, @$uibModal) ->
 		@$log.debug "Constructing AdminConformanceController..."
-		@showFilters = false
 		@exportPending = false
 		@dataStatus = {status: @Constants.STATUS.PENDING}
+		@filterState = {
+			updatePending: false
+		}
+		@filters = [@Constants.FILTER_TYPE.SPECIFICATION, @Constants.FILTER_TYPE.ACTOR, @Constants.FILTER_TYPE.ORGANISATION, @Constants.FILTER_TYPE.SYSTEM]
 		if @DataService.isSystemAdmin
 			@columnCount = 9
+			@filters.push(@Constants.FILTER_TYPE.DOMAIN)
+			@filters.push(@Constants.FILTER_TYPE.COMMUNITY)
 		else if @DataService.isCommunityAdmin
 			if @DataService.community.domain == null
 				@columnCount = 8
+				@filters.push(@Constants.FILTER_TYPE.DOMAIN)
 			else
 				@columnCount = 7
 
-		@filters =
-			community :
-				all : []
-				filter : []
-				selection : []
-			domain :
-				all : []
-				filter : []
-				selection : []
-			specification :
-				all : []
-				filter : []
-				selection : []
-			actor :
-				all : []
-				filter : []
-				selection : []
-			organization :
-				all : []
-				filter : []
-				selection : []
-			system :
-				all : []
-				filter : []
-				selection : []
-		@translation =
-			selectAll       : ""
-			selectNone      : ""
-			reset           : ""
-			search          : "Search..."
-			nothingSelected : "All"
-		d1 = @getAllCommunities()
-		d2 = @getAllDomains()
-		d3 = @getAllSpecifications()
-		d4 = @getAllActors()
-		d6 = @getAllOrganizations()
-		d7 = @getAllSystems()
-
-		@$q.all([d1, d2, d3, d4, d6, d7])
-		.then () =>
-			@resetFilters(false)
-			@getConformanceStatements()
-		
 		tempColumns = []
 		if (!@DataService.isCommunityAdmin)
 			tempColumns.push {
@@ -93,224 +56,62 @@ class AdminConformanceController
 		@expandedStatements.count = 0
 		@settingsLoaded = @$q.defer()
 
-	resetFilters: (keepTick) ->
-		@setDomainFilter()
-		@setSpecificationFilter(@filters.domain.filter, [], keepTick)
-		@setActorFilter(@filters.specification.filter, [], keepTick)
-		@setCommunityFilter()
-		@setOrganizationFilter(@filters.community.filter, [], keepTick)
-		@setSystemFilter(@filters.organization.filter, [], keepTick)
+	getAllCommunities: () =>
+		@CommunityService.getCommunities()
 
-	setDomainFilter: () ->
-		if @DataService.isCommunityAdmin and @DataService.community.domainId?
-			id = @DataService.community.domainId
-			@filters.domain.filter = _.map(_.filter(@filters.domain.all, (d) => `d.id == id`), _.clone)
-			@filters.domain.filter[0].ticked = true
-			@filters.domain.selection = _.map(@filters.domain.filter, _.clone)
-		else
-			@filters.domain.filter = _.map(@filters.domain.all, _.clone)
+	getAllDomains: () =>
+		@ConformanceService.getDomains()
 
-	setSpecificationFilter: (selection1, selection2, keepTick) ->
-		selection = if selection1? and selection1.length > 0 then selection1 else selection2
-		copy = _.map(@filters.specification.filter, _.clone)
-		@filters.specification.filter = _.map((_.filter @filters.specification.all, (s) => (_.contains (_.map selection, (d) => d.id), s.domain)), _.clone)
-		@keepTickedProperty(copy, @filters.specification.filter) if keepTick
-
-		for i in [@filters.specification.selection.length - 1..0] by -1
-			some = @filters.specification.selection[i]
-			found = _.find @filters.specification.filter, (s) => `s.id == some.id`
-			if (!found?)
-				@filters.specification.selection.splice(i, 1)
-
-	setActorFilter: (selection1, selection2, keepTick) ->
-		selection = if selection1? and selection1.length > 0 then selection1 else selection2
-		copy = _.map(@filters.actor.filter, _.clone)
-		@filters.actor.filter = _.map((_.filter @filters.actor.all, (a) => (_.contains (_.map selection, (s) => s.id), a.specification)), _.clone)
-		@keepTickedProperty(copy, @filters.actor.filter) if keepTick
-
-		for i in [@filters.actor.selection.length - 1..0] by -1
-			some = @filters.actor.selection[i]
-			found = _.find @filters.actor.filter, (s) => `s.id == some.id`
-			if (!found?)
-				@filters.actor.selection.splice(i, 1)
-
-	setCommunityFilter: () ->
-		if @DataService.isCommunityAdmin
-			id = @DataService.community.id
-			@filters.community.filter = _.map(_.filter(@filters.community.all, (c) => `c.id == id`), _.clone)
-			@filters.community.filter[0].ticked = true
-			@filters.community.selection = _.map(@filters.community.filter, _.clone)
-		else
-			@filters.community.filter = _.map(@filters.community.all, _.clone)
-
-	setOrganizationFilter: (selection1, selection2, keepTick) ->
-		selection = if selection1? and selection1.length > 0 then selection1 else selection2
-		copy = _.map(@filters.organization.filter, _.clone)
-		@filters.organization.filter = _.map((_.filter @filters.organization.all, (o) => (_.contains (_.map selection, (s) => s.id), o.community)), _.clone)
-		@keepTickedProperty(copy, @filters.organization.filter) if keepTick
-
-		for i in [@filters.organization.selection.length - 1..0] by -1
-			some = @filters.organization.selection[i]
-			found = _.find @filters.organization.filter, (s) => `s.id == some.id`
-			if (!found?)
-				@filters.organization.selection.splice(i, 1)
-
-	setSystemFilter: (selection1, selection2, keepTick) ->
-		selection = if selection1? and selection1.length > 0 then selection1 else selection2
-		copy = _.map(@filters.system.filter, _.clone)
-		@filters.system.filter = _.map((_.filter @filters.system.all, (o) => (_.contains (_.map selection, (s) => s.id), o.owner)), _.clone)
-		@keepTickedProperty(copy, @filters.system.filter) if keepTick
-
-		for i in [@filters.system.selection.length - 1..0] by -1
-			some = @filters.system.selection[i]
-			found = _.find @filters.system.filter, (s) => `s.id == some.id`
-			if (!found?)
-				@filters.system.selection.splice(i, 1)
-
-	keepTickedProperty: (oldArr, newArr) ->
-		if oldArr? and oldArr.length > 0
-			for o, i in newArr
-				n = _.find oldArr, (s) => `s.id == o.id`
-				o.ticked = if n?.ticked? then n.ticked else false
-
-	getAllCommunities: () ->
-		d = @$q.defer()
-		if !@DataService.isSystemAdmin
-			communityIds = [@DataService.community.id]
-		@CommunityService.getCommunities(communityIds)
-		.then (data) =>
-				@filters.community.all = data
-				d.resolve()
-		.catch (error) =>
-			@ErrorService.showErrorMessage(error)
-		d.promise
-
-	getAllDomains: () ->
-		d = @$q.defer()
-		if !@DataService.isSystemAdmin && @DataService.community.domainId?
-			domainIds = [@DataService.community.domainId]
-		@ConformanceService.getDomains(domainIds)
-		.then (data) =>
-			@filters.domain.all = data
-			d.resolve()
-		.catch (error) =>
-			@ErrorService.showErrorMessage(error)
-		d.promise
-
-	getAllSpecifications: () ->
-		d = @$q.defer()
+	getAllSpecifications: () =>
 		if @DataService.isCommunityAdmin && @DataService.community.domainId?
 			callResult = @ConformanceService.getSpecifications(@DataService.community.domainId)
 		else
 			callResult = @ConformanceService.getSpecificationsWithIds()
-		callResult.then (data) =>
-				@filters.specification.all = data
-				d.resolve()
-		.catch (error) =>
-			@ErrorService.showErrorMessage(error)
-		d.promise
+		callResult
 
-	getAllActors: () ->
-		d = @$q.defer()
+	getAllActors: () =>
 		if @DataService.isCommunityAdmin && @DataService.community.domainId?
 			callResult = @ConformanceService.getActorsForDomain(@DataService.community.domainId)
 		else
 			callResult = @ConformanceService.getActorsWithIds()
-		callResult.then (data) =>
-				@filters.actor.all = data
-				d.resolve()
-		.catch (error) =>
-			@ErrorService.showErrorMessage(error)
-		d.promise
+		callResult
 
-	getAllOrganizations: () ->
-		d = @$q.defer()
+	getAllOrganizations: () =>
 		if @DataService.isCommunityAdmin
-			@OrganizationService.getOrganizationsByCommunity(@DataService.community.id)
-			.then (data) =>
-				@filters.organization.all = data
-				d.resolve()
-			.catch (error) =>
-				@ErrorService.showErrorMessage(error)
+			callResult = @OrganizationService.getOrganizationsByCommunity(@DataService.community.id)
 		else
-			@OrganizationService.getOrganizations()
-			.then (data) =>
-				@filters.organization.all = data
-				d.resolve()
-			.catch (error) =>
-				@ErrorService.showErrorMessage(error)
-		d.promise
+			callResult = @OrganizationService.getOrganizations()
+		callResult
 
-	getAllSystems: () ->
-		d = @$q.defer()
+	getAllSystems: () =>
 		if @DataService.isSystemAdmin
-			sFunction = @SystemService.getSystems
+			callResult = @SystemService.getSystems()
 		else
-			sFunction = @SystemService.getSystemsByCommunity
-		sFunction().then (data) =>
-			@filters.system.all = data
-			d.resolve()
-		.catch (error) =>
-			@ErrorService.showErrorMessage(error)
-		d.promise
+			callResult = @SystemService.getSystemsByCommunity()
+		callResult
 
-	showFilter: () =>
-		@showFilters = true
-
-	clearFilter: () =>
-		@showFilters = false
-		@filters.domain.selection = []
-		@filters.specification.selection = []
-		@filters.actor.selection = []
-		@filters.community.selection = []
-		@filters.organization.selection = []
-		@filters.system.selection = []
-		@resetFilters(false)
-		@getConformanceStatements()
-
-	domainClicked: (domain) =>
-		@setSpecificationFilter(@filters.domain.selection, @filters.domain.filter, true)
-		@getConformanceStatements()
-
-	specificationClicked: (spec) =>
-		@setActorFilter(@filters.specification.selection, @filters.specification.filter, true)
-		@getConformanceStatements()
-
-	actorClicked: (spec) =>
-		@getConformanceStatements()
-
-	communityClicked: (community) =>
-		@setOrganizationFilter(@filters.community.selection, @filters.community.filter, true)
-		@setSystemFilter(@filters.organization.selection, @filters.organization.filter, true)
-		@getConformanceStatements()
-
-	organizationClicked: (organization) =>
-		@setSystemFilter(@filters.organization.selection, @filters.organization.filter, true)
-		@getConformanceStatements()
-
-	systemClicked: (system) =>
-		@getConformanceStatements()
-
-	isDomainDisabled: () =>
-		@DataService.isCommunityAdmin
-
+	getCurrentSearchCriteria:() =>
+		filters = @filterState.currentFilters()
+		searchCriteria = {}
+		if @DataService.isCommunityAdmin
+			searchCriteria.communityIds = [@DataService.community.id]
+			if @DataService.community.domain?
+				searchCriteria.domainIds = [@DataService.community.domain.id]
+			else
+				searchCriteria.domainIds = filters[@Constants.FILTER_TYPE.DOMAIN]
+		else
+			searchCriteria.communityIds = filters[@Constants.FILTER_TYPE.COMMUNITY]
+			searchCriteria.domainIds = filters[@Constants.FILTER_TYPE.DOMAIN]
+		searchCriteria.specIds = filters[@Constants.FILTER_TYPE.SPECIFICATION]
+		searchCriteria.actorIds = filters[@Constants.FILTER_TYPE.ACTOR]
+		searchCriteria.organizationIds = filters[@Constants.FILTER_TYPE.ORGANISATION]
+		searchCriteria.systemIds = filters[@Constants.FILTER_TYPE.SYSTEM]
+		searchCriteria
 
 	getConformanceStatementsInternal: (fullResults, forExport) =>
 		d = @$q.defer()
-		if (@DataService.isCommunityAdmin)
-			communityIds = [@DataService.community.id]
-		else
-			communityIds = _.map @filters.community.selection, (s) -> s.id
-		if (@DataService.isCommunityAdmin && @DataService.community.domainId?)
-			domainIds = [@DataService.community.domainId]
-		else
-			domainIds = _.map @filters.domain.selection, (s) -> s.id
-		specIds = _.map @filters.specification.selection, (s) -> s.id
-		actorIds = _.map @filters.actor.selection, (s) -> s.id
-		organizationIds = _.map @filters.organization.selection, (s) -> s.id
-		systemIds = _.map @filters.system.selection, (s) -> s.id
-
-		@ConformanceService.getConformanceOverview(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, fullResults, forExport)
+		params = @getCurrentSearchCriteria()
+		@ConformanceService.getConformanceOverview(params.domainIds, params.specIds, params.actorIds, params.communityIds, params.organizationIds, params.systemIds, fullResults, forExport)
 		.then (data) =>
 			for conformanceStatement in data.data
 				completedCount = Number(conformanceStatement.completed)
@@ -326,10 +127,15 @@ class AdminConformanceController
 		d.promise
 
 	getConformanceStatements: () =>
-		searchPromise = @getConformanceStatementsInternal(false, false).then((data) => 
+		@filterState.updatePending = true
+		@getConformanceStatementsInternal(false, false)
+		.then (data) => 
 			@conformanceStatements = data.data
+			@filterState.updatePending = false
 			@onCollapseAll()
-		)
+		.catch (error) =>
+			@ErrorService.showErrorMessage(error)
+			@filterState.updatePending = false
 
 	onExpand: (statement) =>
 		if (@isExpanded(statement))
