@@ -26,10 +26,11 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val testCaseIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.TEST_CASE_IDS)
     val startTimeBegin = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_BEGIN)
     val startTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_END)
+    val sessionId = ParameterExtractor.optionalQueryParameter(request, Parameters.SESSION_ID)
     val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
 
-    val testResultReports = reportManager.getSystemActiveTestResults(systemId, domainIds, specIds, testSuiteIds, testCaseIds, startTimeBegin, startTimeEnd, sortColumn, sortOrder)
+    val testResultReports = reportManager.getSystemActiveTestResults(systemId, domainIds, specIds, testSuiteIds, testCaseIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder)
     val json = JsonUtil.jsTestResultReports(testResultReports).toString()
     ResponseConstructor.constructJsonResponse(json)
 
@@ -51,11 +52,11 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val startTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_END)
     val endTimeBegin = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_BEGIN)
     val endTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_END)
+    val sessionId = ParameterExtractor.optionalQueryParameter(request, Parameters.SESSION_ID)
     val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
 
-
-    val testResultReports = reportManager.getTestResults(page, limit, systemId, domainIds, specIds, testSuiteIds, testCaseIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
+    val testResultReports = reportManager.getTestResults(page, limit, systemId, domainIds, specIds, testSuiteIds, testCaseIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder)
     val json = JsonUtil.jsTestResultReports(testResultReports).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -74,8 +75,9 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val startTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_END)
     val endTimeBegin = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_BEGIN)
     val endTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_END)
+    val sessionId = ParameterExtractor.optionalQueryParameter(request, Parameters.SESSION_ID)
 
-    val count = reportManager.getTestResultsCount(systemId, domainIds, specIds, testSuiteIds, testCaseIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd)
+    val count = reportManager.getTestResultsCount(systemId, domainIds, specIds, testSuiteIds, testCaseIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId)
     val json = JsonUtil.jsCount(count).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -93,11 +95,12 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val systemIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SYSTEM_IDS)
     val startTimeBegin = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_BEGIN)
     val startTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_END)
+    val sessionId = ParameterExtractor.optionalQueryParameter(request, Parameters.SESSION_ID)
     val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
     val forExport: Boolean = ParameterExtractor.optionalQueryParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
 
-    val testResultReports = reportManager.getActiveTestResults(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, startTimeBegin, startTimeEnd, sortColumn, sortOrder)
+    val testResultReports = reportManager.getActiveTestResults(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder)
 
     var orgParameterDefinitions: Option[List[OrganisationParameters]] = None
     var orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
@@ -129,8 +132,9 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val startTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_END)
     val endTimeBegin = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_BEGIN)
     val endTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_END)
+    val sessionId = ParameterExtractor.optionalQueryParameter(request, Parameters.SESSION_ID)
 
-    val count = reportManager.getFinishedTestResultsCount(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd)
+    val count = reportManager.getFinishedTestResultsCount(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId)
     val json = JsonUtil.jsCount(count).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -153,11 +157,12 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val startTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_END)
     val endTimeBegin = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_BEGIN)
     val endTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_END)
+    val sessionId = ParameterExtractor.optionalQueryParameter(request, Parameters.SESSION_ID)
     val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
     val forExport: Boolean = ParameterExtractor.optionalQueryParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
 
-    val testResultReports = reportManager.getFinishedTestResults(page, limit, communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
+    val testResultReports = reportManager.getFinishedTestResults(page, limit, communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder)
 
     var orgParameterDefinitions: Option[List[OrganisationParameters]] = None
     var orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None

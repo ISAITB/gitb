@@ -22,7 +22,7 @@ class SystemTestsController
       updatePending: false
     }
 
-    @filters = [@Constants.FILTER_TYPE.SPECIFICATION, @Constants.FILTER_TYPE.TEST_SUITE, @Constants.FILTER_TYPE.TEST_CASE, @Constants.FILTER_TYPE.RESULT, @Constants.FILTER_TYPE.TIME]
+    @filters = [@Constants.FILTER_TYPE.SPECIFICATION, @Constants.FILTER_TYPE.TEST_SUITE, @Constants.FILTER_TYPE.TEST_CASE, @Constants.FILTER_TYPE.RESULT, @Constants.FILTER_TYPE.TIME, @Constants.FILTER_TYPE.SESSION]
     if !@community.domain?
       @filters.push(@Constants.FILTER_TYPE.DOMAIN)
 
@@ -124,6 +124,7 @@ class SystemTestsController
     searchCriteria.startTimeEndStr = filters.startTimeEndStr
     searchCriteria.endTimeBeginStr = filters.endTimeBeginStr
     searchCriteria.endTimeEndStr = filters.endTimeEndStr
+    searchCriteria.sessionId = filters.sessionId
     searchCriteria.systemId = @systemId
     searchCriteria.currentPage = @currentPage
     searchCriteria.limit = @limit
@@ -140,7 +141,7 @@ class SystemTestsController
     params = @getCurrentSearchCriteria()
     @refreshActivePending = true
     @setFilterRefreshState()
-    @ReportService.getSystemActiveTestResults(@systemId, params.specIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.activeSortColumn, params.activeSortOrder)
+    @ReportService.getSystemActiveTestResults(@systemId, params.specIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.sessionId, params.activeSortColumn, params.activeSortOrder)
     .then (testResultReports) =>
       resultReportsCollection = _ testResultReports
       resultReportsCollection = resultReportsCollection
@@ -168,7 +169,7 @@ class SystemTestsController
     params = @getCurrentSearchCriteria()
     @refreshCompletedPending = true
     @setFilterRefreshState()
-    @ReportService.getTestResults(params.systemId, params.currentPage, params.limit, params.specIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sortColumn, params.sortOrder)
+    @ReportService.getTestResults(params.systemId, params.currentPage, params.limit, params.specIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId, params.sortColumn, params.sortOrder)
     .then (testResultReports) =>
       resultReportsCollection = _ testResultReports
       resultReportsCollection = resultReportsCollection
@@ -202,7 +203,7 @@ class SystemTestsController
     params = @getCurrentSearchCriteria()
     @refreshCompletedCountPending = true
     @setFilterRefreshState()
-    @ReportService.getTestResultsCount(params.systemId, params.specIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr)
+    @ReportService.getTestResultsCount(params.systemId, params.specIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId)
     .then (data) =>
       @testResultsCount = data.count
       @refreshCompletedCountPending = false

@@ -25,6 +25,7 @@ class Constants
 		SYSTEM: 'system'
 		RESULT: 'result'
 		TIME: 'time'
+		SESSION: 'session'
 
 	@TRIGGER_EVENT_TYPE = 
 		ORGANISATION_CREATED: 1

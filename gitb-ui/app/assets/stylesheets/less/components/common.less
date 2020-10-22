@@ -562,3 +562,32 @@ table.table {
 		}
 	}
 }
+
+table.table {
+	&.filter-table {
+		width: 100%;
+		max-width: 100%;
+		margin-bottom: 0px;
+		th {
+			min-width: 110px;
+			&.time-filter {
+				width: 250px;
+			}
+			&.result-filter {
+				width: 200px;
+			}
+		}
+		input.date-picker {
+			width: 200px;
+			cursor: pointer;
+		}
+		td.session-filter {
+			.session-filter-input {
+				max-width: 370px;
+			}
+		}
+	}
+}
+.faded {
+	opacity: 50%;
+}

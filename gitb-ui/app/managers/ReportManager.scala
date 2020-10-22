@@ -98,9 +98,10 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                                  testCaseIds: Option[List[Long]],
                                  startTimeBegin: Option[String],
                                  startTimeEnd: Option[String],
+                                 sessionId: Option[String],
                                  sortColumn: Option[String],
                                  sortOrder: Option[String]): List[TestResult] = {
-    val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, None, startTimeBegin, startTimeEnd, None, None, sortColumn, sortOrder)
+    val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, None, startTimeBegin, startTimeEnd, None, None, sessionId, sortColumn, sortOrder)
     val testResults = exec(query.filter(_.sutId === systemId).filter(_.endTime.isEmpty).result.map(_.toList))
     testResults
   }
@@ -117,9 +118,10 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                      startTimeEnd: Option[String],
                      endTimeBegin: Option[String],
                      endTimeEnd: Option[String],
+                     sessionId: Option[String],
                      sortColumn: Option[String],
                      sortOrder: Option[String]): List[TestResult] = {
-    val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
+    val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder)
     val testResults = exec(query.filter(_.sutId === systemId).filter(_.endTime.isDefined).drop((page - 1) * limit).take(limit).result.map(_.toList))
     testResults
   }
@@ -133,8 +135,9 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                           startTimeBegin: Option[String],
                           startTimeEnd: Option[String],
                           endTimeBegin: Option[String],
-                          endTimeEnd: Option[String]): Long = {
-    val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, None, None)
+                          endTimeEnd: Option[String],
+                          sessionId: Option[String]): Long = {
+    val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, None, None)
     val count = exec(query.filter(_.sutId === systemId).filter(_.endTime.isDefined).size.result)
     count
   }
@@ -148,9 +151,10 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                            systemIds: Option[List[Long]],
                            startTimeBegin: Option[String],
                            startTimeEnd: Option[String],
+                           sessionId: Option[String],
                            sortColumn: Option[String],
                            sortOrder: Option[String]): List[TestResult] = {
-    val query = getTestResultQuery(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, None, startTimeBegin, startTimeEnd, None, None, sortColumn, sortOrder)
+    val query = getTestResultQuery(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, sortColumn, sortOrder)
     val testResults = exec(query.filter(_.endTime.isEmpty).result.map(_.toList))
     testResults
   }
@@ -166,8 +170,9 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                                   startTimeBegin: Option[String],
                                   startTimeEnd: Option[String],
                                   endTimeBegin: Option[String],
-                                  endTimeEnd: Option[String]): Long = {
-    val testResults = getTestResultQuery(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, None, None)
+                                  endTimeEnd: Option[String],
+                                  sessionId: Option[String]): Long = {
+    val testResults = getTestResultQuery(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, None, None)
     val count = exec(testResults.filter(_.endTime.isDefined).size.result)
     count
   }
@@ -186,9 +191,10 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                              startTimeEnd: Option[String],
                              endTimeBegin: Option[String],
                              endTimeEnd: Option[String],
+                             sessionId: Option[String],
                              sortColumn: Option[String],
                              sortOrder: Option[String]): List[TestResult] = {
-    val query = getTestResultQuery(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
+    val query = getTestResultQuery(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder)
     val testResults = exec(query.filter(_.endTime.isDefined).drop((page - 1) * limit).take(limit).result.map(_.toList))
     testResults
   }
@@ -205,66 +211,24 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                                  startTimeEnd: Option[String],
                                  endTimeBegin: Option[String],
                                  endTimeEnd: Option[String],
+                                 sessionId: Option[String],
                                  sortColumn: Option[String],
                                  sortOrder: Option[String]) = {
 
-    var query = for {
-      testResult <- PersistenceSchema.testResults
-    } yield testResult
-
-    query = communityIds match {
-      case Some(ids) => query.filter(_.communityId inSet ids)
-      case None => query
-    }
-
-    query = domainIds match {
-      case Some(ids) => query.filter(_.domainId inSet ids)
-      case None => query
-    }
-
-    query = specIds match {
-      case Some(ids) => query.filter(_.specificationId inSet ids)
-      case None => query
-    }
-
-    query = testCaseIds match {
-      case Some(ids) => query.filter(_.testCaseId inSet ids)
-      case None => query
-    }
-
-    query = organizationIds match {
-      case Some(ids) => query.filter(_.organizationId inSet ids)
-      case None => query
-    }
-
-    query = systemIds match {
-      case Some(ids) => query.filter(_.sutId inSet ids)
-      case None => query
-    }
-
-    query = results match {
-      case Some(s) => query.filter(_.result inSet s)
-      case None => query
-    }
-
-    query = testSuiteIds match {
-      case Some(ids) => query.filter(_.testSuiteId inSet ids)
-      case None => query
-    }
-
-    if (startTimeBegin.isDefined && startTimeEnd.isDefined) {
-      val start = TimeUtil.parseTimestamp(startTimeBegin.get)
-      val end = TimeUtil.parseTimestamp(startTimeEnd.get)
-
-      query = query.filter(_.startTime >= start).filter(_.startTime <= end)
-    }
-
-    if (endTimeBegin.isDefined && endTimeEnd.isDefined) {
-      val start = TimeUtil.parseTimestamp(endTimeBegin.get)
-      val end = TimeUtil.parseTimestamp(endTimeEnd.get)
-
-      query = query.filter(_.endTime >= start).filter(_.endTime <= end)
-    }
+    var query = PersistenceSchema.testResults
+      .filterOpt(communityIds)((table, ids) => table.communityId inSet ids)
+      .filterOpt(domainIds)((table, ids) => table.domainId inSet ids)
+      .filterOpt(specIds)((table, ids) => table.specificationId inSet ids)
+      .filterOpt(testCaseIds)((table, ids) => table.testCaseId inSet ids)
+      .filterOpt(organizationIds)((table, ids) => table.organizationId inSet ids)
+      .filterOpt(systemIds)((table, ids) => table.sutId inSet ids)
+      .filterOpt(results)((table, results) => table.result inSet results)
+      .filterOpt(testSuiteIds)((table, ids) => table.testSuiteId inSet ids)
+      .filterOpt(startTimeBegin)((table, timeStr) => table.startTime >=  TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(startTimeEnd)((table, timeStr) => table.startTime <=  TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(endTimeBegin)((table, timeStr) => table.endTime >=  TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(endTimeEnd)((table, timeStr) => table.endTime <=  TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(sessionId)((table, id) => table.testSessionId ===  id)
 
     if (sortColumn.isDefined && sortOrder.isDefined) {
       if (sortOrder.get == "asc") {

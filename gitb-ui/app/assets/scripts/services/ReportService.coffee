@@ -7,7 +7,7 @@ class ReportService
   constructor: (@$log, @RestService, @DataService) ->
     @$log.debug "Constructing ReportService..."
 
-  getSystemActiveTestResults: (systemId, specIds, testSuiteIds, testCaseIds, domainIds, startTimeBegin, startTimeEnd, sortColumn, sortOrder) ->
+  getSystemActiveTestResults: (systemId, specIds, testSuiteIds, testCaseIds, domainIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder) ->
     params = {
         system_id: systemId
     }
@@ -30,6 +30,9 @@ class ReportService
     if startTimeEnd
       params.start_time_end = startTimeEnd
 
+    if sessionId
+      params.session_id = sessionId
+
     if sortColumn
       params.sort_column = sortColumn
 
@@ -41,7 +44,7 @@ class ReportService
       authenticate: true
       params: params
 
-  getTestResults: (systemId, page, limit, specIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder) ->
+  getTestResults: (systemId, page, limit, specIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder) ->
     params = {
         system_id: systemId
         page: page
@@ -80,6 +83,9 @@ class ReportService
 
     if startTimeEnd
       params.start_time_end = startTimeEnd
+    
+    if sessionId
+      params.session_id = sessionId
 
     if sortColumn
       params.sort_column = sortColumn
@@ -92,7 +98,7 @@ class ReportService
       authenticate: true
       params: params
 
-  getTestResultsCount: (systemId, specIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd) ->
+  getTestResultsCount: (systemId, specIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId) ->
     params = {
         system_id: systemId
     }
@@ -129,13 +135,16 @@ class ReportService
 
     if startTimeEnd
       params.start_time_end = startTimeEnd
+    
+    if sessionId
+      params.session_id = sessionId
 
     @RestService.get
       path: jsRoutes.controllers.ReportService.getTestResultsCount().url
       authenticate: true
       params: params
 
-  getActiveTestResults: (communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, sortColumn, sortOrder, forExport) ->
+  getActiveTestResults: (communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder, forExport) ->
     params = {}
 
     if communityIds? and communityIds.length > 0
@@ -164,6 +173,9 @@ class ReportService
 
     if startTimeEnd
       params.start_time_end = startTimeEnd
+
+    if sessionId
+      params.session_id = sessionId
 
     if sortColumn
       params.sort_column = sortColumn
@@ -261,7 +273,7 @@ class ReportService
       path: jsRoutes.controllers.RepositoryService.getTestCasesForCommunity(@DataService.community.id).url
       authenticate: true
 
-  getCompletedTestResults: (page, limit, communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder, forExport) ->
+  getCompletedTestResults: (page, limit, communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder, forExport) ->
     params = {
         page: page
         limit: limit
@@ -312,6 +324,9 @@ class ReportService
     if sortOrder
       params.sort_order = sortOrder
 
+    if sessionId
+      params.session_id = sessionId
+
     params.export = forExport? && forExport
 
     @RestService.get
@@ -319,7 +334,7 @@ class ReportService
       authenticate: true
       params: params
 
-  getCompletedTestResultsCount: (communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd) ->
+  getCompletedTestResultsCount: (communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId) ->
     params = {}
 
     if communityIds? and communityIds.length > 0
@@ -357,6 +372,9 @@ class ReportService
 
     if endTimeEnd
       params.end_time_end = endTimeEnd
+
+    if sessionId
+      params.session_id = sessionId
 
     @RestService.get
       path: jsRoutes.controllers.ReportService.getFinishedTestResultsCount().url

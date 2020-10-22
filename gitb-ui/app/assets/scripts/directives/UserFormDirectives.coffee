@@ -579,179 +579,203 @@
             </div>
         </div>
         <div class="table-responsive" uib-collapse="!showFiltering">
-            <table class="table">
-                <thead>
-                  <tr>
-                      <th ng-if="filterDefined(Constants.FILTER_TYPE.DOMAIN)">{{DataService.labelDomain()}}</th>
-                      <th ng-if="filterDefined(Constants.FILTER_TYPE.SPECIFICATION)">{{DataService.labelSpecification()}}</th>
-                      <th ng-if="filterDefined(Constants.FILTER_TYPE.ACTOR)">{{DataService.labelActor()}}</th>
-                      <th ng-if="filterDefined(Constants.FILTER_TYPE.TEST_SUITE)">Test suite</th>
-                      <th ng-if="filterDefined(Constants.FILTER_TYPE.TEST_CASE)">Test case</th>
-                      <th ng-if="filterDefined(Constants.FILTER_TYPE.COMMUNITY)">Community</th>
-                      <th ng-if="filterDefined(Constants.FILTER_TYPE.ORGANISATION)">{{DataService.labelOrganisation()}}</th>
-                      <th ng-if="filterDefined(Constants.FILTER_TYPE.SYSTEM)">{{DataService.labelSystem()}}</th>
-                      <th ng-if="filterDefined(Constants.FILTER_TYPE.RESULT)">Result</th>
-                      <th ng-if="filterDefined(Constants.FILTER_TYPE.TIME)">Start time</th>
-                      <th ng-if="filterDefined(Constants.FILTER_TYPE.TIME)">End time</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                      <td ng-if="filterDefined(Constants.FILTER_TYPE.DOMAIN)">
-                          <div isteven-multi-select
-                              input-model="filtering[Constants.FILTER_TYPE.DOMAIN].filter"
-                              output-model="filtering[Constants.FILTER_TYPE.DOMAIN].selection"
-                              button-label="sname"
-                              item-label="sname"
-                              tick-property="ticked"
-                              max-labels="0"
-                              max-height="250px"
-                              translation="translation"
-                              helper-elements="filter"
-                              search-property="sname"
-                              output-properties="id"
-                              on-item-click="filterItemTicked(Constants.FILTER_TYPE.DOMAIN)">
-                          </div>
-                      </td>
-                      <td ng-if="filterDefined(Constants.FILTER_TYPE.SPECIFICATION)">
-                          <div isteven-multi-select
-                              input-model="filtering[Constants.FILTER_TYPE.SPECIFICATION].filter"
-                              output-model="filtering[Constants.FILTER_TYPE.SPECIFICATION].selection"
-                              button-label="sname"
-                              item-label="sname"
-                              tick-property="ticked"
-                              max-labels="0"
-                              max-height="250px"
-                              translation="translation"
-                              helper-elements="filter"
-                              search-property="sname"
-                              output-properties="id"
-                              on-item-click="filterItemTicked(Constants.FILTER_TYPE.SPECIFICATION)">
-                          </div>
-                      </td>
-                      <td ng-if="filterDefined(Constants.FILTER_TYPE.ACTOR)">
-                          <div isteven-multi-select
-                              input-model="filtering[Constants.FILTER_TYPE.ACTOR].filter"
-                              output-model="filtering[Constants.FILTER_TYPE.ACTOR].selection"
-                              button-label="actorId"
-                              item-label="actorId"
-                              tick-property="ticked"
-                              max-labels="0"
-                              max-height="250px"
-                              translation="translation"
-                              helper-elements="filter"
-                              search-property="actorId"
-                              output-properties="id"
-                              on-item-click="filterItemTicked(Constants.FILTER_TYPE.ACTOR)">
-                          </div>
-                      </td>
-                      <td ng-if="filterDefined(Constants.FILTER_TYPE.TEST_SUITE)">
-                          <div isteven-multi-select
-                              input-model="filtering[Constants.FILTER_TYPE.TEST_SUITE].filter"
-                              output-model="filtering[Constants.FILTER_TYPE.TEST_SUITE].selection"
-                              button-label="sname"
-                              item-label="sname"
-                              tick-property="ticked"
-                              max-labels="0"
-                              max-height="250px"
-                              translation="translation"
-                              helper-elements="filter"
-                              search-property="sname"
-                              output-properties="id testCases"
-                              on-item-click="filterItemTicked(Constants.FILTER_TYPE.TEST_SUITE)">
-                          </div>
-                      </td>
-                      <td ng-if="filterDefined(Constants.FILTER_TYPE.TEST_CASE)">
-                          <div isteven-multi-select
-                              input-model="filtering[Constants.FILTER_TYPE.TEST_CASE].filter"
-                              output-model="filtering[Constants.FILTER_TYPE.TEST_CASE].selection"
-                              button-label="sname"
-                              item-label="sname"
-                              tick-property="ticked"
-                              max-labels="0"
-                              max-height="250px"
-                              translation="translation"
-                              helper-elements="filter"
-                              search-property="sname"
-                              output-properties="id"
-                              on-item-click="filterItemTicked(Constants.FILTER_TYPE.TEST_CASE)">
-                          </div>
-                      </td>
-                      <td ng-if="filterDefined(Constants.FILTER_TYPE.COMMUNITY)">
-                          <div isteven-multi-select
-                              input-model="filtering[Constants.FILTER_TYPE.COMMUNITY].filter"
-                              output-model="filtering[Constants.FILTER_TYPE.COMMUNITY].selection"
-                              button-label="sname"
-                              item-label="sname"
-                              tick-property="ticked"
-                              max-labels="0"
-                              max-height="250px"
-                              translation="translation"
-                              helper-elements="filter"
-                              search-property="sname"
-                              output-properties="id"
-                              on-item-click="filterItemTicked(Constants.FILTER_TYPE.COMMUNITY)">
-                          </div>
-                      </td>
-                      <td ng-if="filterDefined(Constants.FILTER_TYPE.ORGANISATION)">
-                          <div isteven-multi-select
-                              input-model="filtering[Constants.FILTER_TYPE.ORGANISATION].filter"
-                              output-model="filtering[Constants.FILTER_TYPE.ORGANISATION].selection"
-                              button-label="sname"
-                              item-label="sname"
-                              tick-property="ticked"
-                              max-labels="0"
-                              max-height="250px"
-                              translation="translation"
-                              helper-elements="filter"
-                              search-property="sname"
-                              output-properties="id"
-                              on-item-click="filterItemTicked(Constants.FILTER_TYPE.ORGANISATION)">
-                          </div>
-                      </td>
-                      <td ng-if="filterDefined(Constants.FILTER_TYPE.SYSTEM)">
-                          <div isteven-multi-select
-                              input-model="filtering[Constants.FILTER_TYPE.SYSTEM].filter"
-                              output-model="filtering[Constants.FILTER_TYPE.SYSTEM].selection"
-                              button-label="sname"
-                              item-label="sname"
-                              tick-property="ticked"
-                              max-labels="0"
-                              max-height="250px"
-                              translation="translation"
-                              helper-elements="filter"
-                              search-property="sname"
-                              output-properties="id"
-                              on-item-click="filterItemTicked(Constants.FILTER_TYPE.SYSTEM)">
-                          </div>
-                      </td>
-                      <td ng-if="filterDefined(Constants.FILTER_TYPE.RESULT)">
-                          <div isteven-multi-select
-                              input-model="filtering[Constants.FILTER_TYPE.RESULT].filter"
-                              output-model="filtering[Constants.FILTER_TYPE.RESULT].selection"
-                              button-label="id"
-                              item-label="id"
-                              tick-property="ticked"
-                              max-labels="0"
-                              max-height="250px"
-                              translation="translation"
-                              helper-elements="filter"
-                              search-property="id"
-                              output-properties="id"
-                              on-item-click="filterItemTicked(Constants.FILTER_TYPE.RESULT)">
-                          </div>
-                      </td>
-                      <td ng-if="filterDefined(Constants.FILTER_TYPE.TIME)">
-                          <input date-range-picker class="form-control date-picker" type="text"
-                                ng-model="startTime.date" options="startTimeOptions" clearable="true">
-                      </td>
-                      <td ng-if="filterDefined(Constants.FILTER_TYPE.TIME)">
-                          <input date-range-picker class="form-control date-picker" type="text"
-                                ng-model="endTime.date" options="endTimeOptions" clearable="true">
-                      </td>
-                  </tr>
-                </tbody>
+          <div>
+            <table class="table filter-table" ng-if="filterDefined(Constants.FILTER_TYPE.DOMAIN) || filterDefined(Constants.FILTER_TYPE.SPECIFICATION) || filterDefined(Constants.FILTER_TYPE.ACTOR) || filterDefined(Constants.FILTER_TYPE.TEST_SUITE) || filterDefined(Constants.FILTER_TYPE.TEST_CASE) || filterDefined(Constants.FILTER_TYPE.COMMUNITY) || filterDefined(Constants.FILTER_TYPE.ORGANISATION) || filterDefined(Constants.FILTER_TYPE.SYSTEM)">
+              <thead>
+                <tr>
+                  <th ng-if="filterDefined(Constants.FILTER_TYPE.DOMAIN)">{{DataService.labelDomain()}}</th>
+                  <th ng-if="filterDefined(Constants.FILTER_TYPE.SPECIFICATION)">{{DataService.labelSpecification()}}</th>
+                  <th ng-if="filterDefined(Constants.FILTER_TYPE.ACTOR)">{{DataService.labelActor()}}</th>
+                  <th ng-if="filterDefined(Constants.FILTER_TYPE.TEST_SUITE)">Test suite</th>
+                  <th ng-if="filterDefined(Constants.FILTER_TYPE.TEST_CASE)">Test case</th>
+                  <th ng-if="filterDefined(Constants.FILTER_TYPE.COMMUNITY)">Community</th>
+                  <th ng-if="filterDefined(Constants.FILTER_TYPE.ORGANISATION)">{{DataService.labelOrganisation()}}</th>
+                  <th ng-if="filterDefined(Constants.FILTER_TYPE.SYSTEM)">{{DataService.labelSystem()}}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td ng-if="filterDefined(Constants.FILTER_TYPE.DOMAIN)">
+                      <div isteven-multi-select
+                          input-model="filtering[Constants.FILTER_TYPE.DOMAIN].filter"
+                          output-model="filtering[Constants.FILTER_TYPE.DOMAIN].selection"
+                          button-label="sname"
+                          item-label="sname"
+                          tick-property="ticked"
+                          max-labels="0"
+                          max-height="250px"
+                          translation="translation"
+                          helper-elements="filter"
+                          search-property="sname"
+                          output-properties="id"
+                          on-item-click="filterItemTicked(Constants.FILTER_TYPE.DOMAIN)">
+                      </div>
+                  </td>
+                  <td ng-if="filterDefined(Constants.FILTER_TYPE.SPECIFICATION)">
+                      <div isteven-multi-select
+                          input-model="filtering[Constants.FILTER_TYPE.SPECIFICATION].filter"
+                          output-model="filtering[Constants.FILTER_TYPE.SPECIFICATION].selection"
+                          button-label="sname"
+                          item-label="sname"
+                          tick-property="ticked"
+                          max-labels="0"
+                          max-height="250px"
+                          translation="translation"
+                          helper-elements="filter"
+                          search-property="sname"
+                          output-properties="id"
+                          on-item-click="filterItemTicked(Constants.FILTER_TYPE.SPECIFICATION)">
+                      </div>
+                  </td>
+                  <td ng-if="filterDefined(Constants.FILTER_TYPE.ACTOR)">
+                      <div isteven-multi-select
+                          input-model="filtering[Constants.FILTER_TYPE.ACTOR].filter"
+                          output-model="filtering[Constants.FILTER_TYPE.ACTOR].selection"
+                          button-label="actorId"
+                          item-label="actorId"
+                          tick-property="ticked"
+                          max-labels="0"
+                          max-height="250px"
+                          translation="translation"
+                          helper-elements="filter"
+                          search-property="actorId"
+                          output-properties="id"
+                          on-item-click="filterItemTicked(Constants.FILTER_TYPE.ACTOR)">
+                      </div>
+                  </td>
+                  <td ng-if="filterDefined(Constants.FILTER_TYPE.TEST_SUITE)">
+                      <div isteven-multi-select
+                          input-model="filtering[Constants.FILTER_TYPE.TEST_SUITE].filter"
+                          output-model="filtering[Constants.FILTER_TYPE.TEST_SUITE].selection"
+                          button-label="sname"
+                          item-label="sname"
+                          tick-property="ticked"
+                          max-labels="0"
+                          max-height="250px"
+                          translation="translation"
+                          helper-elements="filter"
+                          search-property="sname"
+                          output-properties="id testCases"
+                          on-item-click="filterItemTicked(Constants.FILTER_TYPE.TEST_SUITE)">
+                      </div>
+                  </td>
+                  <td ng-if="filterDefined(Constants.FILTER_TYPE.TEST_CASE)">
+                      <div isteven-multi-select
+                          input-model="filtering[Constants.FILTER_TYPE.TEST_CASE].filter"
+                          output-model="filtering[Constants.FILTER_TYPE.TEST_CASE].selection"
+                          button-label="sname"
+                          item-label="sname"
+                          tick-property="ticked"
+                          max-labels="0"
+                          max-height="250px"
+                          translation="translation"
+                          helper-elements="filter"
+                          search-property="sname"
+                          output-properties="id"
+                          on-item-click="filterItemTicked(Constants.FILTER_TYPE.TEST_CASE)">
+                      </div>
+                  </td>
+                  <td ng-if="filterDefined(Constants.FILTER_TYPE.COMMUNITY)">
+                      <div isteven-multi-select
+                          input-model="filtering[Constants.FILTER_TYPE.COMMUNITY].filter"
+                          output-model="filtering[Constants.FILTER_TYPE.COMMUNITY].selection"
+                          button-label="sname"
+                          item-label="sname"
+                          tick-property="ticked"
+                          max-labels="0"
+                          max-height="250px"
+                          translation="translation"
+                          helper-elements="filter"
+                          search-property="sname"
+                          output-properties="id"
+                          on-item-click="filterItemTicked(Constants.FILTER_TYPE.COMMUNITY)">
+                      </div>
+                  </td>
+                  <td ng-if="filterDefined(Constants.FILTER_TYPE.ORGANISATION)">
+                      <div isteven-multi-select
+                          input-model="filtering[Constants.FILTER_TYPE.ORGANISATION].filter"
+                          output-model="filtering[Constants.FILTER_TYPE.ORGANISATION].selection"
+                          button-label="sname"
+                          item-label="sname"
+                          tick-property="ticked"
+                          max-labels="0"
+                          max-height="250px"
+                          translation="translation"
+                          helper-elements="filter"
+                          search-property="sname"
+                          output-properties="id"
+                          on-item-click="filterItemTicked(Constants.FILTER_TYPE.ORGANISATION)">
+                      </div>
+                  </td>
+                  <td ng-if="filterDefined(Constants.FILTER_TYPE.SYSTEM)">
+                      <div isteven-multi-select
+                          input-model="filtering[Constants.FILTER_TYPE.SYSTEM].filter"
+                          output-model="filtering[Constants.FILTER_TYPE.SYSTEM].selection"
+                          button-label="sname"
+                          item-label="sname"
+                          tick-property="ticked"
+                          max-labels="0"
+                          max-height="250px"
+                          translation="translation"
+                          helper-elements="filter"
+                          search-property="sname"
+                          output-properties="id"
+                          on-item-click="filterItemTicked(Constants.FILTER_TYPE.SYSTEM)">
+                      </div>
+                  </td>
+                </tr>
+              </tbody>
             </table>
+          </div>
+          <div>
+            <table class="table filter-table" ng-if="filterDefined(Constants.FILTER_TYPE.RESULT) || filterDefined(Constants.FILTER_TYPE.TIME) || filterDefined(Constants.FILTER_TYPE.SESSION)">
+              <thead>
+                <tr>
+                    <th class="result-filter" ng-if="filterDefined(Constants.FILTER_TYPE.RESULT)">Result</th>
+                    <th class="time-filter" ng-if="filterDefined(Constants.FILTER_TYPE.TIME)">Start time</th>
+                    <th class="time-filter" ng-if="filterDefined(Constants.FILTER_TYPE.TIME)">End time</th>
+                    <th class="session-filter" ng-if="filterDefined(Constants.FILTER_TYPE.SESSION)">Session</th>
+                    <th class="filler"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td ng-if="filterDefined(Constants.FILTER_TYPE.RESULT)">
+                      <div isteven-multi-select
+                          input-model="filtering[Constants.FILTER_TYPE.RESULT].filter"
+                          output-model="filtering[Constants.FILTER_TYPE.RESULT].selection"
+                          button-label="id"
+                          item-label="id"
+                          tick-property="ticked"
+                          max-labels="0"
+                          max-height="250px"
+                          translation="translation"
+                          helper-elements="filter"
+                          search-property="id"
+                          output-properties="id"
+                          on-item-click="filterItemTicked(Constants.FILTER_TYPE.RESULT)">
+                      </div>
+                  </td>
+                  <td ng-if="filterDefined(Constants.FILTER_TYPE.TIME)">
+                      <input date-range-picker class="form-control date-picker" type="text"
+                            ng-model="startTime.date" options="startTimeOptions" clearable="true" readonly="readonly">
+                  </td>
+                  <td ng-if="filterDefined(Constants.FILTER_TYPE.TIME)">
+                      <input date-range-picker class="form-control date-picker" type="text"
+                            ng-model="endTime.date" options="endTimeOptions" clearable="true" readonly="readonly">
+                  </td>
+                  <td class="session-filter" ng-if="filterDefined(Constants.FILTER_TYPE.SESSION)">
+                    <div class="input-group session-filter-input">
+                      <input type="text" ng-trim="false" class="form-control" ng-click="sessionIdClicked()" ng-model="sessionState.id" ng-readonly="sessionState.readonly" ng-class="{\'clickable\': sessionState.readonly}"/>
+                      <div class="input-group-btn">
+                          <button class="btn btn-default" type="button" ng-click="applySessionId()" ng-disabled="sessionState.id == undefined"><i class="glyphicon" ng-class="{\'glyphicon-remove\': sessionState.readonly, \'glyphicon-ok\': !sessionState.readonly, \'faded\': sessionState.id == undefined}"></i></button>
+                      </div>
+                  </td>
+                  <td></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
       '
@@ -760,7 +784,7 @@
       scope.Constants = Constants
 
       scope.filterDefined = (filterType) =>
-        scope.filters.indexOf(filterType) != -1
+        scope.definedFilters[filterType]?
 
       scope.setupFilter = (filterType, loadFn) =>
         scope.filtering[filterType] = {
@@ -819,6 +843,8 @@
           filters.endTimeBeginStr = scope.endTime.date.startDate?.format('DD-MM-YYYY HH:mm:ss')
           filters.endTimeEnd = scope.endTime.date.endDate
           filters.endTimeEndStr = scope.endTime.date.endDate?.format('DD-MM-YYYY HH:mm:ss')
+        if scope.filterDefined(Constants.FILTER_TYPE.SESSION)
+          filters.sessionId = scope.sessionState.id
         filters
 
       scope.applyFilters = () =>
@@ -841,13 +867,12 @@
         if scope.filterDefined(Constants.FILTER_TYPE.RESULT)
           scope.startTime.date = {startDate: null, endDate: null}
           scope.endTime.date = {startDate: null, endDate: null}
+        scope.sessionId = undefined
         scope.resetFilters()
         scope.applyFilters()
 
       scope.toggleFiltering = () =>
-        if scope.showFiltering
-          DataService.async(scope.applyFilters)
-        else
+        if !scope.showFiltering
           DataService.async(scope.clearFilters)
 
       scope.applyTimeFiltering = (ev, picker) =>
@@ -981,6 +1006,9 @@
         scope.setSystemFilter(scope.filtering[Constants.FILTER_TYPE.ORGANISATION].filter, [], false)
         for r in scope.filtering[Constants.FILTER_TYPE.RESULT].filter
           r.ticked = false
+        if scope.filterDefined(Constants.FILTER_TYPE.SESSION)
+          scope.sessionState.id = undefined
+          scope.sessionState.readonly = true
 
       scope.getAllTestResults = () =>
         results = []
@@ -989,6 +1017,10 @@
         results
 
       scope.state.currentFilters = scope.currentFilters
+
+      scope.definedFilters = {}
+      for filterType in scope.filters
+        scope.definedFilters[filterType] = true
 
       scope.translation =
         selectAll       : ""
@@ -1038,6 +1070,31 @@
           eventHandlers:
             'apply.daterangepicker': scope.applyTimeFiltering
             'cancel.daterangepicker': scope.clearEndTimeFiltering
+
+      scope.sessionIdClicked = () =>
+        if scope.sessionState.readonly
+          scope.sessionState.readonly = false
+          if !scope.sessionState.id?
+            scope.sessionState.id = ''
+      scope.applySessionId = () =>
+        if scope.sessionState.id?
+          if scope.sessionState.readonly
+            # Clear
+            scope.sessionState.id = undefined
+            scope.applyFilters()
+          else
+            # Apply
+            trimmed = scope.sessionState.id.trim()
+            scope.sessionState.id = trimmed
+            if scope.sessionState.id.length == 0
+              scope.sessionState.id = undefined
+            scope.sessionState.readonly = true
+            scope.applyFilters()
+
+      if scope.filterDefined(Constants.FILTER_TYPE.SESSION)
+        scope.sessionState = {
+          readonly: true
+        }
 
       $q.all(scope.loadPromises)
       .then () =>

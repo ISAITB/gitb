@@ -13,7 +13,7 @@ class DashboardController
     @filterState = {
       updatePending: false
     }
-    @filters = [@Constants.FILTER_TYPE.SPECIFICATION, @Constants.FILTER_TYPE.TEST_SUITE, @Constants.FILTER_TYPE.TEST_CASE, @Constants.FILTER_TYPE.ORGANISATION, @Constants.FILTER_TYPE.SYSTEM, @Constants.FILTER_TYPE.RESULT, @Constants.FILTER_TYPE.TIME]
+    @filters = [@Constants.FILTER_TYPE.SPECIFICATION, @Constants.FILTER_TYPE.TEST_SUITE, @Constants.FILTER_TYPE.TEST_CASE, @Constants.FILTER_TYPE.ORGANISATION, @Constants.FILTER_TYPE.SYSTEM, @Constants.FILTER_TYPE.RESULT, @Constants.FILTER_TYPE.TIME, @Constants.FILTER_TYPE.SESSION]
     if @DataService.isSystemAdmin || (@DataService.isCommunityAdmin && !@DataService.community.domain?)
       @filters.push(@Constants.FILTER_TYPE.DOMAIN)
     if @DataService.isSystemAdmin
@@ -196,6 +196,8 @@ class DashboardController
     searchCriteria.startTimeEndStr = filters.startTimeEndStr
     searchCriteria.endTimeBeginStr = filters.endTimeBeginStr
     searchCriteria.endTimeEndStr = filters.endTimeEndStr
+    searchCriteria.sessionId = filters.sessionId
+
     searchCriteria.activeSortColumn = @activeSortColumn
     searchCriteria.activeSortOrder = @activeSortOrder
     searchCriteria.completedSortColumn = @completedSortColumn
@@ -207,7 +209,7 @@ class DashboardController
     params = @getCurrentSearchCriteria()
     @refreshActivePending = true
     @setFilterRefreshState()
-    @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.activeSortColumn, params.activeSortOrder)
+    @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.sessionId, params.activeSortColumn, params.activeSortOrder)
     .then (data) =>
       testResultMapper = @newTestResult
       @activeTests = _.map data.data, (testResult) => testResultMapper(testResult)
@@ -224,7 +226,7 @@ class DashboardController
     params = @getCurrentSearchCriteria()
     @refreshCompletedCountPending = true
     @setFilterRefreshState()
-    @ReportService.getCompletedTestResultsCount(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr)
+    @ReportService.getCompletedTestResultsCount(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId)
     .then (data) =>
       @completedTestsTotalCount = data.count
       @refreshCompletedCountPending = false
@@ -242,7 +244,7 @@ class DashboardController
     params = @getCurrentSearchCriteria()
     @refreshCompletedPending = true
     @setFilterRefreshState()
-    @ReportService.getCompletedTestResults(params.currentPage, @Constants.TABLE_PAGE_SIZE, params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.completedSortColumn, params.completedSortOrder)
+    @ReportService.getCompletedTestResults(params.currentPage, @Constants.TABLE_PAGE_SIZE, params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId, params.completedSortColumn, params.completedSortOrder)
     .then (data) =>
       testResultMapper = @newTestResult
       @completedTests = _.map data.data, (t) => testResultMapper(t)
