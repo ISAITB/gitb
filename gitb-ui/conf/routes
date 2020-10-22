@@ -76,6 +76,7 @@ POST    /domains/:domain_id                 @controllers.ConformanceService.upda
 GET	    /domains/:domain_id/specs           @controllers.ConformanceService.getDomainSpecs(domain_id : Long)
 GET     /specs                              @controllers.ConformanceService.getSpecs
 GET     /specs/system                       @controllers.ConformanceService.getSpecsForSystem(systemId: Long)
+GET     /actors/system                      @controllers.ConformanceService.getActorsForSystem(systemId: Long)
 POST    /specs                              @controllers.ConformanceService.createSpecification
 GET	    /specs/:spec_id/actors              @controllers.ConformanceService.getSpecActors(spec_id : Long)
 GET	    /specs/:spec_id/suites              @controllers.ConformanceService.getSpecTestSuites(spec_id : Long)

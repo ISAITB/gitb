@@ -214,6 +214,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canViewSystem(request, systemId)
   }
 
+  def canViewActorsBySystemId(request: RequestWithAttributes[AnyContent], systemId: Long): Boolean = {
+    canViewSystem(request, systemId)
+  }
+
   def canViewActorsByDomainId(request: RequestWithAttributes[AnyContent], domainId: Long): Boolean = {
     canViewDomains(request, Some(List(domainId)))
   }

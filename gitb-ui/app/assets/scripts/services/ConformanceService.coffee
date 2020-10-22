@@ -166,6 +166,12 @@ class ConformanceService
       authenticate: true
     })
 
+  getActorsForSystem: (systemId) =>
+    @RestService.get({
+      path: jsRoutes.controllers.ConformanceService.getActorsForSystem(systemId).url,
+      authenticate: true
+    })
+
   getActorsForDomain: (domainId) ->
     @RestService.get({
       path: jsRoutes.controllers.ConformanceService.getActorsForDomain(domainId).url,

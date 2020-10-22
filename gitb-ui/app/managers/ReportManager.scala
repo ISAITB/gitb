@@ -94,6 +94,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   def getSystemActiveTestResults(systemId: Long,
                                  domainIds: Option[List[Long]],
                                  specIds: Option[List[Long]],
+                                 actorIds: Option[List[Long]],
                                  testSuiteIds: Option[List[Long]],
                                  testCaseIds: Option[List[Long]],
                                  startTimeBegin: Option[String],
@@ -101,7 +102,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                                  sessionId: Option[String],
                                  sortColumn: Option[String],
                                  sortOrder: Option[String]): List[TestResult] = {
-    val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, None, startTimeBegin, startTimeEnd, None, None, sessionId, sortColumn, sortOrder)
+    val query = getTestResultQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, None, None, None, startTimeBegin, startTimeEnd, None, None, sessionId, sortColumn, sortOrder)
     val testResults = exec(query.filter(_.sutId === systemId).filter(_.endTime.isEmpty).result.map(_.toList))
     testResults
   }
@@ -111,6 +112,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                      systemId: Long,
                      domainIds: Option[List[Long]],
                      specIds: Option[List[Long]],
+                     actorIds: Option[List[Long]],
                      testSuiteIds: Option[List[Long]],
                      testCaseIds: Option[List[Long]],
                      results: Option[List[String]],
@@ -121,7 +123,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                      sessionId: Option[String],
                      sortColumn: Option[String],
                      sortOrder: Option[String]): List[TestResult] = {
-    val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder)
+    val query = getTestResultQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder)
     val testResults = exec(query.filter(_.sutId === systemId).filter(_.endTime.isDefined).drop((page - 1) * limit).take(limit).result.map(_.toList))
     testResults
   }
@@ -129,6 +131,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   def getTestResultsCount(systemId: Long,
                           domainIds: Option[List[Long]],
                           specIds: Option[List[Long]],
+                          actorIds: Option[List[Long]],
                           testSuiteIds: Option[List[Long]],
                           testCaseIds: Option[List[Long]],
                           results: Option[List[String]],
@@ -137,7 +140,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                           endTimeBegin: Option[String],
                           endTimeEnd: Option[String],
                           sessionId: Option[String]): Long = {
-    val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, None, None)
+    val query = getTestResultQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, None, None)
     val count = exec(query.filter(_.sutId === systemId).filter(_.endTime.isDefined).size.result)
     count
   }
@@ -145,6 +148,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   def getActiveTestResults(communityIds: Option[List[Long]],
                            domainIds: Option[List[Long]],
                            specIds: Option[List[Long]],
+                           actorIds: Option[List[Long]],
                            testSuiteIds: Option[List[Long]],
                            testCaseIds: Option[List[Long]],
                            organizationIds: Option[List[Long]],
@@ -154,7 +158,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                            sessionId: Option[String],
                            sortColumn: Option[String],
                            sortOrder: Option[String]): List[TestResult] = {
-    val query = getTestResultQuery(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, sortColumn, sortOrder)
+    val query = getTestResultQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, sortColumn, sortOrder)
     val testResults = exec(query.filter(_.endTime.isEmpty).result.map(_.toList))
     testResults
   }
@@ -162,6 +166,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   def getFinishedTestResultsCount(communityIds: Option[List[Long]],
                                   domainIds: Option[List[Long]],
                                   specIds: Option[List[Long]],
+                                  actorIds: Option[List[Long]],
                                   testSuiteIds: Option[List[Long]],
                                   testCaseIds: Option[List[Long]],
                                   organizationIds: Option[List[Long]],
@@ -172,7 +177,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                                   endTimeBegin: Option[String],
                                   endTimeEnd: Option[String],
                                   sessionId: Option[String]): Long = {
-    val testResults = getTestResultQuery(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, None, None)
+    val testResults = getTestResultQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, None, None)
     val count = exec(testResults.filter(_.endTime.isDefined).size.result)
     count
   }
@@ -182,6 +187,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                              communityIds: Option[List[Long]],
                              domainIds: Option[List[Long]],
                              specIds: Option[List[Long]],
+                             actorIds: Option[List[Long]],
                              testSuiteIds: Option[List[Long]],
                              testCaseIds: Option[List[Long]],
                              organizationIds: Option[List[Long]],
@@ -194,7 +200,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                              sessionId: Option[String],
                              sortColumn: Option[String],
                              sortOrder: Option[String]): List[TestResult] = {
-    val query = getTestResultQuery(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder)
+    val query = getTestResultQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder)
     val testResults = exec(query.filter(_.endTime.isDefined).drop((page - 1) * limit).take(limit).result.map(_.toList))
     testResults
   }
@@ -202,6 +208,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   private def getTestResultQuery(communityIds: Option[List[Long]],
                                  domainIds: Option[List[Long]],
                                  specIds: Option[List[Long]],
+                                 actorIds: Option[List[Long]],
                                  testSuiteIds: Option[List[Long]],
                                  testCaseIds: Option[List[Long]],
                                  organizationIds: Option[List[Long]],
@@ -219,6 +226,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
       .filterOpt(communityIds)((table, ids) => table.communityId inSet ids)
       .filterOpt(domainIds)((table, ids) => table.domainId inSet ids)
       .filterOpt(specIds)((table, ids) => table.specificationId inSet ids)
+      .filterOpt(actorIds)((table, ids) => table.actorId inSet ids)
       .filterOpt(testCaseIds)((table, ids) => table.testCaseId inSet ids)
       .filterOpt(organizationIds)((table, ids) => table.organizationId inSet ids)
       .filterOpt(systemIds)((table, ids) => table.sutId inSet ids)

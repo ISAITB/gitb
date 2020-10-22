@@ -13,7 +13,7 @@ class DashboardController
     @filterState = {
       updatePending: false
     }
-    @filters = [@Constants.FILTER_TYPE.SPECIFICATION, @Constants.FILTER_TYPE.TEST_SUITE, @Constants.FILTER_TYPE.TEST_CASE, @Constants.FILTER_TYPE.ORGANISATION, @Constants.FILTER_TYPE.SYSTEM, @Constants.FILTER_TYPE.RESULT, @Constants.FILTER_TYPE.TIME, @Constants.FILTER_TYPE.SESSION]
+    @filters = [@Constants.FILTER_TYPE.SPECIFICATION, @Constants.FILTER_TYPE.ACTOR, @Constants.FILTER_TYPE.TEST_SUITE, @Constants.FILTER_TYPE.TEST_CASE, @Constants.FILTER_TYPE.ORGANISATION, @Constants.FILTER_TYPE.SYSTEM, @Constants.FILTER_TYPE.RESULT, @Constants.FILTER_TYPE.TIME, @Constants.FILTER_TYPE.SESSION]
     if @DataService.isSystemAdmin || (@DataService.isCommunityAdmin && !@DataService.community.domain?)
       @filters.push(@Constants.FILTER_TYPE.DOMAIN)
     if @DataService.isSystemAdmin
@@ -143,6 +143,13 @@ class DashboardController
       callResult = @ConformanceService.getSpecificationsWithIds()
     callResult
 
+  getAllActors: () =>
+    if @DataService.isCommunityAdmin && @DataService.community.domainId?
+      callResult = @ConformanceService.getActorsForDomain(@DataService.community.domainId)
+    else
+      callResult = @ConformanceService.getActorsWithIds()
+    callResult
+
   getAllTestCases: () =>
     if @DataService.isCommunityAdmin && @DataService.community.domainId
       result = @ReportService.getTestCasesForCommunity()
@@ -187,6 +194,7 @@ class DashboardController
       searchCriteria.communityIds = filters[@Constants.FILTER_TYPE.COMMUNITY]
       searchCriteria.domainIds = filters[@Constants.FILTER_TYPE.DOMAIN]
     searchCriteria.specIds = filters[@Constants.FILTER_TYPE.SPECIFICATION]
+    searchCriteria.actorIds = filters[@Constants.FILTER_TYPE.ACTOR]
     searchCriteria.testSuiteIds = filters[@Constants.FILTER_TYPE.TEST_SUITE]
     searchCriteria.testCaseIds = filters[@Constants.FILTER_TYPE.TEST_CASE]
     searchCriteria.organizationIds = filters[@Constants.FILTER_TYPE.ORGANISATION]
@@ -209,7 +217,7 @@ class DashboardController
     params = @getCurrentSearchCriteria()
     @refreshActivePending = true
     @setFilterRefreshState()
-    @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.sessionId, params.activeSortColumn, params.activeSortOrder)
+    @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.sessionId, params.activeSortColumn, params.activeSortOrder)
     .then (data) =>
       testResultMapper = @newTestResult
       @activeTests = _.map data.data, (testResult) => testResultMapper(testResult)
@@ -226,7 +234,7 @@ class DashboardController
     params = @getCurrentSearchCriteria()
     @refreshCompletedCountPending = true
     @setFilterRefreshState()
-    @ReportService.getCompletedTestResultsCount(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId)
+    @ReportService.getCompletedTestResultsCount(params.communityIds, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId)
     .then (data) =>
       @completedTestsTotalCount = data.count
       @refreshCompletedCountPending = false
@@ -244,7 +252,7 @@ class DashboardController
     params = @getCurrentSearchCriteria()
     @refreshCompletedPending = true
     @setFilterRefreshState()
-    @ReportService.getCompletedTestResults(params.currentPage, @Constants.TABLE_PAGE_SIZE, params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId, params.completedSortColumn, params.completedSortOrder)
+    @ReportService.getCompletedTestResults(params.currentPage, @Constants.TABLE_PAGE_SIZE, params.communityIds, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId, params.completedSortColumn, params.completedSortOrder)
     .then (data) =>
       testResultMapper = @newTestResult
       @completedTests = _.map data.data, (t) => testResultMapper(t)

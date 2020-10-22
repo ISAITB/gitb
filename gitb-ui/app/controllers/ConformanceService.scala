@@ -64,6 +64,13 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
     ResponseConstructor.constructJsonResponse(json)
   }
 
+  def getActorsForSystem(systemId: Long) = authorizedAction { request =>
+    authorizationManager.canViewActorsBySystemId(request, systemId)
+    val result = conformanceManager.getActorsWithSpecificationIdBySystem(systemId)
+    val json = JsonUtil.jsActorsNonCase(result).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
   def getDomainsForSystem(systemId: Long) = authorizedAction { request =>
     authorizationManager.canViewDomainsBySystemId(request, systemId)
     val result = conformanceManager.getDomainsBySystem(systemId)

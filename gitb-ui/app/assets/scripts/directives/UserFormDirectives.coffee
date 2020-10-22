@@ -571,11 +571,11 @@
     restrict: 'A'
     template: '
       <div class="panel panel-default">
-        <div class="panel-heading">
+        <div class="panel-heading" ng-click="clickedHeader()" ng-class="{\'clickable\': enableFiltering}">
             <h4 class="title">Filters</h4>
-            <div class="btn-toolbar pull-right">
+            <div class="btn-toolbar pull-right" ng-click="$event.stopPropagation();">
                 <button type="button" class="btn btn-default" ng-click="applyFilters()" ng-disabled="state.updatePending"><span class="tab" ng-if="state.updatePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Refresh</button>
-                <toggle id="sessions-toggle-filter" class="btn-group" ng-model="showFiltering" on="Enabled" off="Disabled" ng-change="toggleFiltering()"></toggle>
+                <toggle id="sessions-toggle-filter" class="btn-group" ng-model="enableFiltering" on="Enabled" off="Disabled" ng-change="toggleFiltering()"></toggle>
             </div>
         </div>
         <div class="table-responsive" uib-collapse="!showFiltering">
@@ -583,14 +583,14 @@
             <table class="table filter-table" ng-if="filterDefined(Constants.FILTER_TYPE.DOMAIN) || filterDefined(Constants.FILTER_TYPE.SPECIFICATION) || filterDefined(Constants.FILTER_TYPE.ACTOR) || filterDefined(Constants.FILTER_TYPE.TEST_SUITE) || filterDefined(Constants.FILTER_TYPE.TEST_CASE) || filterDefined(Constants.FILTER_TYPE.COMMUNITY) || filterDefined(Constants.FILTER_TYPE.ORGANISATION) || filterDefined(Constants.FILTER_TYPE.SYSTEM)">
               <thead>
                 <tr>
-                  <th ng-if="filterDefined(Constants.FILTER_TYPE.DOMAIN)">{{DataService.labelDomain()}}</th>
-                  <th ng-if="filterDefined(Constants.FILTER_TYPE.SPECIFICATION)">{{DataService.labelSpecification()}}</th>
-                  <th ng-if="filterDefined(Constants.FILTER_TYPE.ACTOR)">{{DataService.labelActor()}}</th>
-                  <th ng-if="filterDefined(Constants.FILTER_TYPE.TEST_SUITE)">Test suite</th>
-                  <th ng-if="filterDefined(Constants.FILTER_TYPE.TEST_CASE)">Test case</th>
-                  <th ng-if="filterDefined(Constants.FILTER_TYPE.COMMUNITY)">Community</th>
-                  <th ng-if="filterDefined(Constants.FILTER_TYPE.ORGANISATION)">{{DataService.labelOrganisation()}}</th>
-                  <th ng-if="filterDefined(Constants.FILTER_TYPE.SYSTEM)">{{DataService.labelSystem()}}</th>
+                  <th ng-style="{{colStyle}}" ng-if="filterDefined(Constants.FILTER_TYPE.DOMAIN)">{{DataService.labelDomain()}}</th>
+                  <th ng-style="{{colStyle}}" ng-if="filterDefined(Constants.FILTER_TYPE.SPECIFICATION)">{{DataService.labelSpecification()}}</th>
+                  <th ng-style="{{colStyle}}" ng-if="filterDefined(Constants.FILTER_TYPE.ACTOR)">{{DataService.labelActor()}}</th>
+                  <th ng-style="{{colStyle}}" ng-if="filterDefined(Constants.FILTER_TYPE.TEST_SUITE)">Test suite</th>
+                  <th ng-style="{{colStyle}}" ng-if="filterDefined(Constants.FILTER_TYPE.TEST_CASE)">Test case</th>
+                  <th ng-style="{{colStyle}}" ng-if="filterDefined(Constants.FILTER_TYPE.COMMUNITY)">Community</th>
+                  <th ng-style="{{colStyle}}" ng-if="filterDefined(Constants.FILTER_TYPE.ORGANISATION)">{{DataService.labelOrganisation()}}</th>
+                  <th ng-style="{{colStyle}}" ng-if="filterDefined(Constants.FILTER_TYPE.SYSTEM)">{{DataService.labelSystem()}}</th>
                 </tr>
               </thead>
               <tbody>
@@ -731,11 +731,10 @@
             <table class="table filter-table" ng-if="filterDefined(Constants.FILTER_TYPE.RESULT) || filterDefined(Constants.FILTER_TYPE.TIME) || filterDefined(Constants.FILTER_TYPE.SESSION)">
               <thead>
                 <tr>
-                    <th class="result-filter" ng-if="filterDefined(Constants.FILTER_TYPE.RESULT)">Result</th>
+                    <th ng-style="{{colStyle}}" class="result-filter" ng-if="filterDefined(Constants.FILTER_TYPE.RESULT)">Result</th>
                     <th class="time-filter" ng-if="filterDefined(Constants.FILTER_TYPE.TIME)">Start time</th>
                     <th class="time-filter" ng-if="filterDefined(Constants.FILTER_TYPE.TIME)">End time</th>
                     <th class="session-filter" ng-if="filterDefined(Constants.FILTER_TYPE.SESSION)">Session</th>
-                    <th class="filler"></th>
                 </tr>
               </thead>
               <tbody>
@@ -771,7 +770,6 @@
                           <button class="btn btn-default" type="button" ng-click="applySessionId()" ng-disabled="sessionState.id == undefined"><i class="glyphicon" ng-class="{\'glyphicon-remove\': sessionState.readonly, \'glyphicon-ok\': !sessionState.readonly, \'faded\': sessionState.id == undefined}"></i></button>
                       </div>
                   </td>
-                  <td></td>
                 </tr>
               </tbody>
             </table>
@@ -812,8 +810,6 @@
           scope.setSpecificationFilter(scope.filtering[Constants.FILTER_TYPE.DOMAIN].selection, scope.filtering[Constants.FILTER_TYPE.DOMAIN].filter, true)
         if filterType == Constants.FILTER_TYPE.DOMAIN || filterType == Constants.FILTER_TYPE.SPECIFICATION
           scope.setActorFilter(scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].selection, scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, true)
-        if filterType == Constants.FILTER_TYPE.DOMAIN || filterType == Constants.FILTER_TYPE.SPECIFICATION || filterType == Constants.FILTER_TYPE.ACTOR
-          # TODO ADAPT THE FOLLOWING CALL TO BE BASED ON ACTOR
           scope.setTestSuiteFilter(scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].selection, scope.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, true)
         if filterType == Constants.FILTER_TYPE.DOMAIN || filterType == Constants.FILTER_TYPE.SPECIFICATION || filterType == Constants.FILTER_TYPE.ACTOR || filterType == Constants.FILTER_TYPE.TEST_SUITE
           scope.setTestCaseFilter(scope.filtering[Constants.FILTER_TYPE.TEST_SUITE].selection, scope.filtering[Constants.FILTER_TYPE.TEST_SUITE].filter, true)
@@ -855,6 +851,7 @@
           scope.filtering[filterType].selection = []
 
       scope.clearFilters = () =>
+        scope.enableFiltering = false
         scope.showFiltering = false
         scope.clearFilter(Constants.FILTER_TYPE.DOMAIN)
         scope.clearFilter(Constants.FILTER_TYPE.ACTOR)
@@ -871,9 +868,15 @@
         scope.resetFilters()
         scope.applyFilters()
 
+      scope.clickedHeader = () =>
+        if scope.enableFiltering
+          scope.showFiltering = !scope.showFiltering
+
       scope.toggleFiltering = () =>
-        if !scope.showFiltering
+        if !scope.enableFiltering
           DataService.async(scope.clearFilters)
+        else
+          scope.showFiltering = true
 
       scope.applyTimeFiltering = (ev, picker) =>
         scope.applyFilters()
@@ -932,7 +935,6 @@
             scope.filtering[Constants.FILTER_TYPE.ACTOR].selection.splice(i, 1)
 
       scope.setTestSuiteFilter = (selection1, selection2, keepTick) ->
-        # TODO ADAPT THIS TO BE BASED ON ACTOR OR SPECIFICATION
         selection = if selection1? and selection1.length > 0 then selection1 else selection2
         copy = _.map(scope.filtering[Constants.FILTER_TYPE.TEST_SUITE].filter, _.clone)
         scope.filtering[Constants.FILTER_TYPE.TEST_SUITE].filter = _.map((_.filter scope.filtering[Constants.FILTER_TYPE.TEST_SUITE].all, (t) => (_.contains (_.map selection, (s) => s.id), t.specification)), _.clone)
@@ -1016,11 +1018,45 @@
           results.push({id: v})
         results
 
+      scope.sessionIdClicked = () =>
+        if scope.sessionState.readonly
+          scope.sessionState.readonly = false
+          if !scope.sessionState.id?
+            scope.sessionState.id = ''
+
+      scope.applySessionId = () =>
+        if scope.sessionState.id?
+          if scope.sessionState.readonly
+            # Clear
+            scope.sessionState.id = undefined
+            scope.applyFilters()
+          else
+            # Apply
+            trimmed = scope.sessionState.id.trim()
+            scope.sessionState.id = trimmed
+            if scope.sessionState.id.length == 0
+              scope.sessionState.id = undefined
+            scope.sessionState.readonly = true
+            scope.applyFilters()
+
       scope.state.currentFilters = scope.currentFilters
 
       scope.definedFilters = {}
       for filterType in scope.filters
         scope.definedFilters[filterType] = true
+      topColumnCount = 0
+      topColumnCount += 1 if scope.filterDefined(Constants.FILTER_TYPE.DOMAIN)
+      topColumnCount += 1 if scope.filterDefined(Constants.FILTER_TYPE.SPECIFICATION)
+      topColumnCount += 1 if scope.filterDefined(Constants.FILTER_TYPE.ACTOR)
+      topColumnCount += 1 if scope.filterDefined(Constants.FILTER_TYPE.TEST_SUITE)
+      topColumnCount += 1 if scope.filterDefined(Constants.FILTER_TYPE.TEST_CASE)
+      topColumnCount += 1 if scope.filterDefined(Constants.FILTER_TYPE.COMMUNITY)
+      topColumnCount += 1 if scope.filterDefined(Constants.FILTER_TYPE.ORGANISATION)
+      topColumnCount += 1 if scope.filterDefined(Constants.FILTER_TYPE.SYSTEM)
+      scope.colWidth = (100 / topColumnCount) + '%'
+      scope.colStyle = {
+        'width': scope.colWidth
+      }
 
       scope.translation =
         selectAll       : ""
@@ -1028,7 +1064,7 @@
         reset           : ""
         search          : "Search..."
         nothingSelected : "All"
-      scope.showFiltering = false
+      scope.enableFiltering = false
       scope.filtering = {}
       scope.loadPromises = []
       scope.setupFilter(Constants.FILTER_TYPE.DOMAIN, scope.loadDomainsFn)
@@ -1070,26 +1106,6 @@
           eventHandlers:
             'apply.daterangepicker': scope.applyTimeFiltering
             'cancel.daterangepicker': scope.clearEndTimeFiltering
-
-      scope.sessionIdClicked = () =>
-        if scope.sessionState.readonly
-          scope.sessionState.readonly = false
-          if !scope.sessionState.id?
-            scope.sessionState.id = ''
-      scope.applySessionId = () =>
-        if scope.sessionState.id?
-          if scope.sessionState.readonly
-            # Clear
-            scope.sessionState.id = undefined
-            scope.applyFilters()
-          else
-            # Apply
-            trimmed = scope.sessionState.id.trim()
-            scope.sessionState.id = trimmed
-            if scope.sessionState.id.length == 0
-              scope.sessionState.id = undefined
-            scope.sessionState.readonly = true
-            scope.applyFilters()
 
       if scope.filterDefined(Constants.FILTER_TYPE.SESSION)
         scope.sessionState = {

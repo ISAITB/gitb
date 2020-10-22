@@ -7,13 +7,16 @@ class ReportService
   constructor: (@$log, @RestService, @DataService) ->
     @$log.debug "Constructing ReportService..."
 
-  getSystemActiveTestResults: (systemId, specIds, testSuiteIds, testCaseIds, domainIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder) ->
+  getSystemActiveTestResults: (systemId, specIds, actorIds, testSuiteIds, testCaseIds, domainIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder) ->
     params = {
         system_id: systemId
     }
 
     if specIds? and specIds.length > 0
       params.specification_ids = specIds.join ','
+
+    if actorIds? and actorIds.length > 0
+      params.actor_ids = actorIds.join ','
 
     if testSuiteIds? and testSuiteIds.length > 0
       params.test_suite_ids = testSuiteIds.join ','
@@ -44,7 +47,7 @@ class ReportService
       authenticate: true
       params: params
 
-  getTestResults: (systemId, page, limit, specIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder) ->
+  getTestResults: (systemId, page, limit, specIds, actorIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder) ->
     params = {
         system_id: systemId
         page: page
@@ -56,6 +59,9 @@ class ReportService
 
     if specIds? and specIds.length > 0
       params.specification_ids = specIds.join ','
+
+    if actorIds? and actorIds.length > 0
+      params.actor_ids = actorIds.join ','
 
     if testSuiteIds? and testSuiteIds.length > 0
       params.test_suite_ids = testSuiteIds.join ','
@@ -98,7 +104,7 @@ class ReportService
       authenticate: true
       params: params
 
-  getTestResultsCount: (systemId, specIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId) ->
+  getTestResultsCount: (systemId, specIds, actorIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId) ->
     params = {
         system_id: systemId
     }
@@ -108,6 +114,9 @@ class ReportService
 
     if specIds? and specIds.length > 0
       params.specification_ids = specIds.join ','
+
+    if actorIds? and actorIds.length > 0
+      params.actor_ids = actorIds.join ','
 
     if testSuiteIds? and testSuiteIds.length > 0
       params.test_suite_ids = testSuiteIds.join ','
@@ -144,7 +153,7 @@ class ReportService
       authenticate: true
       params: params
 
-  getActiveTestResults: (communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder, forExport) ->
+  getActiveTestResults: (communityIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder, forExport) ->
     params = {}
 
     if communityIds? and communityIds.length > 0
@@ -152,6 +161,9 @@ class ReportService
 
     if specIds? and specIds.length > 0
       params.specification_ids = specIds.join ','
+
+    if actorIds? and actorIds.length > 0
+      params.actor_ids = actorIds.join ','
 
     if testSuiteIds? and testSuiteIds.length > 0
       params.test_suite_ids = testSuiteIds.join ','
@@ -273,7 +285,7 @@ class ReportService
       path: jsRoutes.controllers.RepositoryService.getTestCasesForCommunity(@DataService.community.id).url
       authenticate: true
 
-  getCompletedTestResults: (page, limit, communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder, forExport) ->
+  getCompletedTestResults: (page, limit, communityIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder, forExport) ->
     params = {
         page: page
         limit: limit
@@ -284,6 +296,9 @@ class ReportService
 
     if specIds? and specIds.length > 0
       params.specification_ids = specIds.join ','
+
+    if actorIds? and actorIds.length > 0
+      params.actor_ids = actorIds.join ','
 
     if testSuiteIds? and testSuiteIds.length > 0
       params.test_suite_ids = testSuiteIds.join ','
@@ -334,7 +349,7 @@ class ReportService
       authenticate: true
       params: params
 
-  getCompletedTestResultsCount: (communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId) ->
+  getCompletedTestResultsCount: (communityIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId) ->
     params = {}
 
     if communityIds? and communityIds.length > 0
@@ -342,6 +357,9 @@ class ReportService
 
     if specIds? and specIds.length > 0
       params.specification_ids = specIds.join ','
+
+    if actorIds? and actorIds.length > 0
+      params.actor_ids = actorIds.join ','
 
     if testSuiteIds? and testSuiteIds.length > 0
       params.test_suite_ids = testSuiteIds.join ','

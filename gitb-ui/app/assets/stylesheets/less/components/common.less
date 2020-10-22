@@ -265,6 +265,9 @@ li.menu-section-start {
 .clickable {
 	&:hover {
 		cursor: pointer;
+		&.panel-heading {
+			background-color: #efefef;
+		}
 	}
 }
 
@@ -569,16 +572,16 @@ table.table {
 		max-width: 100%;
 		margin-bottom: 0px;
 		th {
-			min-width: 110px;
 			&.time-filter {
-				width: 250px;
+				max-width: 250px;
 			}
 			&.result-filter {
-				width: 200px;
+				min-width: 110px;
+				max-width: 200px;
 			}
 		}
 		input.date-picker {
-			width: 200px;
+			max-width: 200px;
 			cursor: pointer;
 		}
 		td.session-filter {

@@ -42,6 +42,18 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
     )
   }
 
+	def getActorsWithSpecificationIdBySystem(systemId: Long): List[Actor] = {
+		exec(PersistenceSchema.conformanceResults
+			.join(PersistenceSchema.actors).on(_.actor === _.id)
+			.join(PersistenceSchema.specificationHasActors).on(_._2.id === _.actorId)
+			.filter(_._1._1.sut === systemId)
+			.map(r => (r._1._2, r._2.specId))
+			.distinctOn(_._1.id)
+			.sortBy(_._1.actorId.asc)
+			.result.map(_.toList)
+		).map(x => new Actor(x._1, null, null, x._2))
+	}
+
   def getDomainsBySystem(systemId: Long): List[Domain] = {
     exec(PersistenceSchema.conformanceResults
       .join(PersistenceSchema.specifications).on(_.spec === _.id)
