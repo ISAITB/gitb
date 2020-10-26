@@ -167,4 +167,7 @@ object Parameters {
   val MESSAGE_CONTENT = "msg_content"
 
   val SKIP_DEFAULT = "skipDefault"
+
+  val FILTERING = "filtering"
+
 }

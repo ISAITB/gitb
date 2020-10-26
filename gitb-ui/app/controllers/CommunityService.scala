@@ -305,12 +305,14 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: Contro
 
   def getOrganisationParameters(communityId: Long) = authorizedAction { request =>
     authorizationManager.canManageCommunity(request, communityId)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsOrganisationParameters(communityManager.getOrganisationParameters(communityId)).toString)
+    val forFiltering = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.FILTERING)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsOrganisationParameters(communityManager.getOrganisationParameters(communityId, forFiltering)).toString)
   }
 
   def getSystemParameters(communityId: Long) = authorizedAction { request =>
     authorizationManager.canViewCommunityBasic(request, communityId)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemParameters(communityManager.getSystemParameters(communityId)).toString)
+    val forFiltering = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.FILTERING)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemParameters(communityManager.getSystemParameters(communityId, forFiltering)).toString)
   }
 
   def getCommunityLabels(communityId: Long) = authorizedAction { request =>

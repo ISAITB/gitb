@@ -26,6 +26,8 @@ class Constants
 		RESULT: 'result'
 		TIME: 'time'
 		SESSION: 'session'
+		ORGANISATION_PROPERTY: 'org_property'
+		SYSTEM_PROPERTY: 'sys_property'
 
 	@TRIGGER_EVENT_TYPE = 
 		ORGANISATION_CREATED: 1

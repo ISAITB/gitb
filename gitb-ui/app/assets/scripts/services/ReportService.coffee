@@ -153,7 +153,7 @@ class ReportService
       authenticate: true
       params: params
 
-  getActiveTestResults: (communityIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder, forExport) ->
+  getActiveTestResults: (communityIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, sessionId, organisationParameters, systemParameters, sortColumn, sortOrder, forExport) ->
     params = {}
 
     if communityIds? and communityIds.length > 0
@@ -188,6 +188,12 @@ class ReportService
 
     if sessionId
       params.session_id = sessionId
+
+    if organisationParameters && organisationParameters.length > 0
+      params.org_params = JSON.stringify(organisationParameters)
+
+    if systemParameters && systemParameters.length > 0
+      params.sys_params = JSON.stringify(systemParameters)
 
     if sortColumn
       params.sort_column = sortColumn
@@ -285,10 +291,12 @@ class ReportService
       path: jsRoutes.controllers.RepositoryService.getTestCasesForCommunity(@DataService.community.id).url
       authenticate: true
 
-  getCompletedTestResults: (page, limit, communityIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder, forExport) ->
+  getCompletedTestResults: (page, limit, communityIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, organisationParameters, systemParameters, sortColumn, sortOrder, forExport) ->
     params = {
         page: page
         limit: limit
+    }
+    data = {
     }
 
     if communityIds? and communityIds.length > 0
@@ -341,6 +349,12 @@ class ReportService
 
     if sessionId
       params.session_id = sessionId
+    
+    if organisationParameters && organisationParameters.length > 0
+      params.org_params = JSON.stringify(organisationParameters)
+
+    if systemParameters && systemParameters.length > 0
+      params.sys_params = JSON.stringify(systemParameters)
 
     params.export = forExport? && forExport
 
@@ -349,7 +363,7 @@ class ReportService
       authenticate: true
       params: params
 
-  getCompletedTestResultsCount: (communityIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId) ->
+  getCompletedTestResultsCount: (communityIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, organisationParameters, systemParameters) ->
     params = {}
 
     if communityIds? and communityIds.length > 0
@@ -393,6 +407,12 @@ class ReportService
 
     if sessionId
       params.session_id = sessionId
+
+    if organisationParameters && organisationParameters.length > 0
+      params.org_params = JSON.stringify(organisationParameters)
+
+    if systemParameters && systemParameters.length > 0
+      params.sys_params = JSON.stringify(systemParameters)
 
     @RestService.get
       path: jsRoutes.controllers.ReportService.getFinishedTestResultsCount().url

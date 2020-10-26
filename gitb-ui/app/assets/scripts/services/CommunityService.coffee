@@ -125,16 +125,24 @@ class CommunityService
       data: data
     })
 
-  getOrganisationParameters: (communityId) =>
+  getOrganisationParameters: (communityId, forFiltering) =>
+    params = {}
+    if forFiltering?
+      filtering = forFiltering
     @RestService.get({
       path: jsRoutes.controllers.CommunityService.getOrganisationParameters(communityId).url
       authenticate: true
+      params: params
     })
 
-  getSystemParameters: (communityId) =>
+  getSystemParameters: (communityId, forFiltering) =>
+    params = {}
+    if forFiltering?
+      filtering = forFiltering
     @RestService.get({
       path: jsRoutes.controllers.CommunityService.getSystemParameters(communityId).url
       authenticate: true
+      params: params
     })
 
   deleteOrganisationParameter: (parameterId) =>

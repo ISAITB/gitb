@@ -9,11 +9,13 @@ class DashboardController
     @completedExpandedCounter = {count: 0}
     @activeStatus = {status: @Constants.STATUS.PENDING}
     @completedStatus = {status: @Constants.STATUS.PENDING}
+    if @DataService.isCommunityAdmin
+      @communityId = @DataService.community.id
 
     @filterState = {
       updatePending: false
     }
-    @filters = [@Constants.FILTER_TYPE.SPECIFICATION, @Constants.FILTER_TYPE.ACTOR, @Constants.FILTER_TYPE.TEST_SUITE, @Constants.FILTER_TYPE.TEST_CASE, @Constants.FILTER_TYPE.ORGANISATION, @Constants.FILTER_TYPE.SYSTEM, @Constants.FILTER_TYPE.RESULT, @Constants.FILTER_TYPE.TIME, @Constants.FILTER_TYPE.SESSION]
+    @filters = [@Constants.FILTER_TYPE.SPECIFICATION, @Constants.FILTER_TYPE.ACTOR, @Constants.FILTER_TYPE.TEST_SUITE, @Constants.FILTER_TYPE.TEST_CASE, @Constants.FILTER_TYPE.ORGANISATION, @Constants.FILTER_TYPE.SYSTEM, @Constants.FILTER_TYPE.RESULT, @Constants.FILTER_TYPE.TIME, @Constants.FILTER_TYPE.SESSION, @Constants.FILTER_TYPE.ORGANISATION_PROPERTY, @Constants.FILTER_TYPE.SYSTEM_PROPERTY]
     if @DataService.isSystemAdmin || (@DataService.isCommunityAdmin && !@DataService.community.domain?)
       @filters.push(@Constants.FILTER_TYPE.DOMAIN)
     if @DataService.isSystemAdmin
@@ -178,6 +180,12 @@ class DashboardController
       result = @SystemService.getSystemsByCommunity()
     result
 
+  getOrganisationPropertiesForFiltering: (communityId) =>
+    @CommunityService.getOrganisationParameters(communityId, true)
+
+  getSystemPropertiesForFiltering: (communityId) =>
+    @CommunityService.getSystemParameters(communityId, true)
+
   setFilterRefreshState: () =>
     @filterState.updatePending = @refreshActivePending || @refreshCompletedPending || @refreshCompletedCountPending
 
@@ -205,6 +213,8 @@ class DashboardController
     searchCriteria.endTimeBeginStr = filters.endTimeBeginStr
     searchCriteria.endTimeEndStr = filters.endTimeEndStr
     searchCriteria.sessionId = filters.sessionId
+    searchCriteria.organisationProperties = filters.organisationProperties
+    searchCriteria.systemProperties = filters.systemProperties
 
     searchCriteria.activeSortColumn = @activeSortColumn
     searchCriteria.activeSortOrder = @activeSortOrder
@@ -217,7 +227,7 @@ class DashboardController
     params = @getCurrentSearchCriteria()
     @refreshActivePending = true
     @setFilterRefreshState()
-    @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.sessionId, params.activeSortColumn, params.activeSortOrder)
+    @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.sessionId, params.organisationProperties, params.systemProperties, params.activeSortColumn, params.activeSortOrder)
     .then (data) =>
       testResultMapper = @newTestResult
       @activeTests = _.map data.data, (testResult) => testResultMapper(testResult)
@@ -234,7 +244,7 @@ class DashboardController
     params = @getCurrentSearchCriteria()
     @refreshCompletedCountPending = true
     @setFilterRefreshState()
-    @ReportService.getCompletedTestResultsCount(params.communityIds, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId)
+    @ReportService.getCompletedTestResultsCount(params.communityIds, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId, params.organisationProperties, params.systemProperties)
     .then (data) =>
       @completedTestsTotalCount = data.count
       @refreshCompletedCountPending = false
@@ -252,7 +262,7 @@ class DashboardController
     params = @getCurrentSearchCriteria()
     @refreshCompletedPending = true
     @setFilterRefreshState()
-    @ReportService.getCompletedTestResults(params.currentPage, @Constants.TABLE_PAGE_SIZE, params.communityIds, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId, params.completedSortColumn, params.completedSortOrder)
+    @ReportService.getCompletedTestResults(params.currentPage, @Constants.TABLE_PAGE_SIZE, params.communityIds, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId, params.organisationProperties, params.systemProperties, params.completedSortColumn, params.completedSortOrder)
     .then (data) =>
       testResultMapper = @newTestResult
       @completedTests = _.map data.data, (t) => testResultMapper(t)
@@ -385,7 +395,7 @@ class DashboardController
     @exportCompletedPending = true
     params = @getCurrentSearchCriteria()
 
-    @ReportService.getCompletedTestResults(1, 1000000, params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.completedSortColumn, params.completedSortOrder, true)
+    @ReportService.getCompletedTestResults(1, 1000000, params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.organisationProperties, params.systemProperties, params.completedSortColumn, params.completedSortOrder, true)
     .then (data) =>
       headers = ["Session", @DataService.labelDomain(), @DataService.labelSpecification(), @DataService.labelActor(), "Test suite", "Test case", @DataService.labelOrganisation()]
       if data.orgParameters?
@@ -408,7 +418,7 @@ class DashboardController
     @exportActivePending = true
     params = @getCurrentSearchCriteria()
 
-    @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.activeSortColumn, params.activeSortOrder, true)
+    @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.organisationProperties, params.systemProperties, params.activeSortColumn, params.activeSortOrder, true)
     .then (data) =>
       headers = ["Session", @DataService.labelDomain(), @DataService.labelSpecification(), @DataService.labelActor(), "Test suite", "Test case", @DataService.labelOrganisation()]
       if data.orgParameters?

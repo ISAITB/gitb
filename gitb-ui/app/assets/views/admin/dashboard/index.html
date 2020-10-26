@@ -4,6 +4,7 @@
         filters = "dashboardCtrl.filters"
         state = "dashboardCtrl.filterState"
         apply-fn = "dashboardCtrl.goFirstPage"
+        community-id = "dashboardCtrl.communityId"
         load-domains-fn = "dashboardCtrl.getAllDomains"
         load-specifications-fn = "dashboardCtrl.getAllSpecifications"
         load-actors-fn = "dashboardCtrl.getAllActors"
@@ -11,7 +12,9 @@
         load-test-cases-fn = "dashboardCtrl.getAllTestCases"
         load-communities-fn = "dashboardCtrl.getAllCommunities"
         load-organisations-fn = "dashboardCtrl.getAllOrganizations"
-        load-systems-fn = "dashboardCtrl.getAllSystems">
+        load-systems-fn = "dashboardCtrl.getAllSystems"
+        load-organisation-properties-fn = "dashboardCtrl.getOrganisationPropertiesForFiltering"
+        load-system-properties-fn = "dashboardCtrl.getSystemPropertiesForFiltering">
     </div>
 
     <div class="panel panel-default">

@@ -501,8 +501,17 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
   }
 
   def getOrganisationParameters(communityId: Long): List[OrganisationParameters] = {
+    getOrganisationParameters(communityId, None)
+  }
+
+  def getOrganisationParameters(communityId: Long, forFiltering: Option[Boolean]): List[OrganisationParameters] = {
+    var typeToCheck: Option[String] = None
+    if (forFiltering.isDefined && forFiltering.get) {
+      typeToCheck = Some("SIMPLE")
+    }
     exec(PersistenceSchema.organisationParameters
       .filter(_.community === communityId)
+      .filterOpt(typeToCheck)((table, propertyType)=> table.kind === propertyType)
       .sortBy(x => (x.displayOrder.asc, x.name.asc))
       .result).toList
   }
@@ -549,8 +558,17 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
   }
 
   def getSystemParameters(communityId: Long): List[SystemParameters] = {
+    getSystemParameters(communityId, None)
+  }
+
+  def getSystemParameters(communityId: Long, forFiltering: Option[Boolean]): List[SystemParameters] = {
+    var typeToCheck: Option[String] = None
+    if (forFiltering.isDefined && forFiltering.get) {
+      typeToCheck = Some("SIMPLE")
+    }
     exec(PersistenceSchema.systemParameters
       .filter(_.community === communityId)
+      .filterOpt(typeToCheck)((table, propertyType)=> table.kind === propertyType)
       .sortBy(x => (x.displayOrder.asc, x.name.asc))
       .result).toList
   }

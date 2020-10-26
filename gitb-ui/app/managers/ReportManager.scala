@@ -102,9 +102,10 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                                  sessionId: Option[String],
                                  sortColumn: Option[String],
                                  sortOrder: Option[String]): List[TestResult] = {
-    val query = getTestResultQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, None, None, None, startTimeBegin, startTimeEnd, None, None, sessionId, sortColumn, sortOrder)
-    val testResults = exec(query.filter(_.sutId === systemId).filter(_.endTime.isEmpty).result.map(_.toList))
-    testResults
+    exec(
+      getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, None, Some(List(systemId)), None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
+        .result.map(_.toList)
+    )
   }
 
   def getTestResults(page: Long,
@@ -123,9 +124,11 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                      sessionId: Option[String],
                      sortColumn: Option[String],
                      sortOrder: Option[String]): List[TestResult] = {
-    val query = getTestResultQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder)
-    val testResults = exec(query.filter(_.sutId === systemId).filter(_.endTime.isDefined).drop((page - 1) * limit).take(limit).result.map(_.toList))
-    testResults
+    exec(
+      getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, None, Some(List(systemId)), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
+        .drop((page - 1) * limit).take(limit)
+        .result.map(_.toList)
+    )
   }
 
   def getTestResultsCount(systemId: Long,
@@ -140,8 +143,10 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                           endTimeBegin: Option[String],
                           endTimeEnd: Option[String],
                           sessionId: Option[String]): Long = {
-    val query = getTestResultQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, None, None)
-    val count = exec(query.filter(_.sutId === systemId).filter(_.endTime.isDefined).size.result)
+    val count = exec(
+      getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, None, Some(List(systemId)), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), None, None)
+        .size.result
+    )
     count
   }
 
@@ -151,16 +156,19 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                            actorIds: Option[List[Long]],
                            testSuiteIds: Option[List[Long]],
                            testCaseIds: Option[List[Long]],
-                           organizationIds: Option[List[Long]],
+                           organisationIds: Option[List[Long]],
                            systemIds: Option[List[Long]],
                            startTimeBegin: Option[String],
                            startTimeEnd: Option[String],
                            sessionId: Option[String],
+                           orgParameters: Option[Map[Long, Set[String]]],
+                           sysParameters: Option[Map[Long, Set[String]]],
                            sortColumn: Option[String],
                            sortOrder: Option[String]): List[TestResult] = {
-    val query = getTestResultQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, None, startTimeBegin, startTimeEnd, None, None, sessionId, sortColumn, sortOrder)
-    val testResults = exec(query.filter(_.endTime.isEmpty).result.map(_.toList))
-    testResults
+    exec(
+      getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organisationIdsToUse(organisationIds, orgParameters), systemIdsToUse(systemIds, sysParameters), None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
+        .result.map(_.toList)
+    )
   }
 
   def getFinishedTestResultsCount(communityIds: Option[List[Long]],
@@ -169,16 +177,20 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                                   actorIds: Option[List[Long]],
                                   testSuiteIds: Option[List[Long]],
                                   testCaseIds: Option[List[Long]],
-                                  organizationIds: Option[List[Long]],
+                                  organisationIds: Option[List[Long]],
                                   systemIds: Option[List[Long]],
                                   results: Option[List[String]],
                                   startTimeBegin: Option[String],
                                   startTimeEnd: Option[String],
                                   endTimeBegin: Option[String],
                                   endTimeEnd: Option[String],
-                                  sessionId: Option[String]): Long = {
-    val testResults = getTestResultQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, None, None)
-    val count = exec(testResults.filter(_.endTime.isDefined).size.result)
+                                  sessionId: Option[String],
+                                  orgParameters: Option[Map[Long, Set[String]]],
+                                  sysParameters: Option[Map[Long, Set[String]]]): Long = {
+    val count = exec(
+      getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organisationIdsToUse(organisationIds, orgParameters), systemIdsToUse(systemIds, sysParameters), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), None, None)
+        .size.result
+    )
     count
   }
 
@@ -190,7 +202,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                              actorIds: Option[List[Long]],
                              testSuiteIds: Option[List[Long]],
                              testCaseIds: Option[List[Long]],
-                             organizationIds: Option[List[Long]],
+                             organisationIds: Option[List[Long]],
                              systemIds: Option[List[Long]],
                              results: Option[List[String]],
                              startTimeBegin: Option[String],
@@ -198,30 +210,91 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                              endTimeBegin: Option[String],
                              endTimeEnd: Option[String],
                              sessionId: Option[String],
+                             orgParameters: Option[Map[Long, Set[String]]],
+                             sysParameters: Option[Map[Long, Set[String]]],
                              sortColumn: Option[String],
                              sortOrder: Option[String]): List[TestResult] = {
-    val query = getTestResultQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder)
-    val testResults = exec(query.filter(_.endTime.isDefined).drop((page - 1) * limit).take(limit).result.map(_.toList))
-    testResults
+
+    exec(
+      getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organisationIdsToUse(organisationIds, orgParameters), systemIdsToUse(systemIds, sysParameters), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
+        .drop((page - 1) * limit).take(limit)
+        .result.map(_.toList)
+    )
   }
 
-  private def getTestResultQuery(communityIds: Option[List[Long]],
-                                 domainIds: Option[List[Long]],
-                                 specIds: Option[List[Long]],
-                                 actorIds: Option[List[Long]],
-                                 testSuiteIds: Option[List[Long]],
-                                 testCaseIds: Option[List[Long]],
-                                 organizationIds: Option[List[Long]],
-                                 systemIds: Option[List[Long]],
-                                 results: Option[List[String]],
-                                 startTimeBegin: Option[String],
-                                 startTimeEnd: Option[String],
-                                 endTimeBegin: Option[String],
-                                 endTimeEnd: Option[String],
-                                 sessionId: Option[String],
-                                 sortColumn: Option[String],
-                                 sortOrder: Option[String]) = {
+  private def organisationIdsToUse(organisationIds: Option[Iterable[Long]], orgParameters: Option[Map[Long, Set[String]]]): Option[Iterable[Long]] = {
+    var matchingIds: Option[Iterable[Long]] = None
+    if (organisationIds.isDefined) {
+      matchingIds = Some(organisationIds.get)
+    }
+    if (orgParameters.isDefined) {
+      orgParameters.get.foreach { entry =>
+        matchingIds = Some(organisationIdsForParameterValues(matchingIds, entry._1, entry._2))
+        if (matchingIds.get.isEmpty) {
+          // No matching IDs. Return immediately without checking other parameters.
+          return Some(Set[Long]())
+        }
+      }
+    }
+    matchingIds
+  }
 
+  private def organisationIdsForParameterValues(organisationIds: Option[Iterable[Long]], parameterId: Long, values: Iterable[String]): Set[Long] = {
+    exec(
+      PersistenceSchema.organisationParameterValues
+      .filterOpt(organisationIds)((table, ids) => table.organisation inSet ids)
+      .filter(_.parameter === parameterId)
+      .filter(_.value inSet values)
+      .map(x => x.organisation)
+      .result
+    ).toSet
+  }
+
+  private def systemIdsToUse(systemIds: Option[Iterable[Long]], sysParameters: Option[Map[Long, Set[String]]]): Option[Iterable[Long]] = {
+    var matchingIds: Option[Iterable[Long]] = None
+    if (systemIds.isDefined) {
+      matchingIds = Some(systemIds.get)
+    }
+    if (sysParameters.isDefined) {
+      sysParameters.get.foreach { entry =>
+        matchingIds = Some(systemIdsForParameterValues(matchingIds, entry._1, entry._2))
+        if (matchingIds.get.isEmpty) {
+          // No matching IDs. Return immediately without checking other parameters.
+          return Some(Set[Long]())
+        }
+      }
+    }
+    matchingIds
+  }
+
+  private def systemIdsForParameterValues(systemIds: Option[Iterable[Long]], parameterId: Long, values: Iterable[String]): Set[Long] = {
+    exec(
+      PersistenceSchema.systemParameterValues
+        .filterOpt(systemIds)((table, ids) => table.system inSet ids)
+        .filter(_.parameter === parameterId)
+        .filter(_.value inSet values)
+        .map(x => x.system)
+        .result
+    ).toSet
+  }
+
+  private def getTestResultsQuery(communityIds: Option[List[Long]],
+                                  domainIds: Option[List[Long]],
+                                  specIds: Option[List[Long]],
+                                  actorIds: Option[List[Long]],
+                                  testSuiteIds: Option[List[Long]],
+                                  testCaseIds: Option[List[Long]],
+                                  organizationIds: Option[Iterable[Long]],
+                                  systemIds: Option[Iterable[Long]],
+                                  results: Option[List[String]],
+                                  startTimeBegin: Option[String],
+                                  startTimeEnd: Option[String],
+                                  endTimeBegin: Option[String],
+                                  endTimeEnd: Option[String],
+                                  sessionId: Option[String],
+                                  completedStatus: Option[Boolean],
+                                  sortColumn: Option[String],
+                                  sortOrder: Option[String]) = {
     var query = PersistenceSchema.testResults
       .filterOpt(communityIds)((table, ids) => table.communityId inSet ids)
       .filterOpt(domainIds)((table, ids) => table.domainId inSet ids)
@@ -237,7 +310,8 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
       .filterOpt(endTimeBegin)((table, timeStr) => table.endTime >=  TimeUtil.parseTimestamp(timeStr))
       .filterOpt(endTimeEnd)((table, timeStr) => table.endTime <=  TimeUtil.parseTimestamp(timeStr))
       .filterOpt(sessionId)((table, id) => table.testSessionId ===  id)
-
+      .filterOpt(completedStatus)((table, completed) => if (completed) table.endTime.isDefined else table.endTime.isEmpty)
+    // Apply sorting
     if (sortColumn.isDefined && sortOrder.isDefined) {
       if (sortOrder.get == "asc") {
         query = sortColumn.get match {
@@ -268,9 +342,53 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
         }
       }
     }
-
     query
   }
+
+
+//  private def getTestResultsQueryInternal(communityIds: Option[List[Long]],
+//                                 domainIds: Option[List[Long]],
+//                                 specIds: Option[List[Long]],
+//                                 actorIds: Option[List[Long]],
+//                                 testSuiteIds: Option[List[Long]],
+//                                 testCaseIds: Option[List[Long]],
+//                                 organizationIds: Option[List[Long]],
+//                                 systemIds: Option[List[Long]],
+//                                 results: Option[List[String]],
+//                                 startTimeBegin: Option[String],
+//                                 startTimeEnd: Option[String],
+//                                 endTimeBegin: Option[String],
+//                                 endTimeEnd: Option[String],
+//                                 sessionId: Option[String],
+//                                 orgParameters: Option[Map[Long, Set[String]]],
+//                                 sortColumn: Option[String],
+//                                 sortOrder: Option[String],
+//                                 completedStatus: Option[Boolean],
+//                                 page: Option[Long],
+//                                 limit: Option[Long]) = {
+//    val query =
+//      for {
+//        organisationIds <- DBIO.successful(Some(List[Long]()))
+//        testResults <- {
+//          // Apply filter criteria
+//          // Apply paging
+//          if (page.isDefined && limit.isDefined) {
+//            query = query.drop((page.get - 1) * limit.get).take(limit.get)
+//          }
+//          query
+//        }
+//      } yield testResults
+//    query
+////    exec(query).result.map(_.toList)
+////      .join(PersistenceSchema.organisationParameterValues).on(_.organizationId === _.organisation)
+////    if (orgParameters.isDefined) {
+////      orgParameters.get.foreach { entry =>
+//////        query = query.join(PersistenceSchema.organisationParameterValues).on(_.organizationId === _.organisation)
+////        query = query.join(PersistenceSchema.organisationParameterValues).on((t, p) => t.organizationId === p.organisation && p.value.inSet(entry._2))
+////      }
+////    }
+////    query
+//  }
 
   def getTestResultOfSession(sessionId: String): TestResult = {
       val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.head)

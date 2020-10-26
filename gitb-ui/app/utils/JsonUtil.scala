@@ -18,7 +18,8 @@ import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsObject, _}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
+import scala.collection.{immutable, mutable}
+import scala.collection.mutable.{ListBuffer, Map}
 object JsonUtil {
 
   def jsTextArray(texts: List[String]): JsObject = {
@@ -843,6 +844,29 @@ object JsonUtil {
     val settings = new ImportSettings()
     settings.encryptionKey = (jsonConfig \ "encryptionKey").asOpt[String]
     settings
+  }
+
+  def parseJsIdToValuesMap(json: Option[String]): Option[immutable.Map[Long, Set[String]]] = {
+    var result: Option[immutable.Map[Long, Set[String]]] = None
+    if (json.isDefined) {
+      val jsArray = Json.parse(json.get).as[List[JsObject]]
+      val tempMap = new mutable.HashMap[Long, mutable.HashSet[String]]()
+      jsArray.foreach { jsonObj =>
+        val id = (jsonObj \ "id").as[Long]
+        val value = (jsonObj \ "value").as[String]
+        val idValues = tempMap.getOrElseUpdate(id, new mutable.HashSet[String]())
+        idValues += value
+      }
+      result = Some(tempMap.map(x => x._1 -> x._2.toSet).toMap)
+    }
+    result
+  }
+
+  def parseJsIdsToValues(json: String): List[(Long, String)] = {
+    val jsArray = Json.parse(json).as[List[JsObject]]
+    jsArray.map(jsonConfig =>
+      ((jsonConfig \ "id").as[Long], (jsonConfig \ "value").as[String])
+    )
   }
 
   def parseJsExportSettings(json:String):ExportSettings = {

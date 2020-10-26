@@ -103,8 +103,10 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
     val forExport: Boolean = ParameterExtractor.optionalQueryParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
+    val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalQueryParameter(request, Parameters.ORGANISATION_PARAMETERS))
+    val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalQueryParameter(request, Parameters.SYSTEM_PARAMETERS))
 
-    val testResultReports = reportManager.getActiveTestResults(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder)
+    val testResultReports = reportManager.getActiveTestResults(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, startTimeBegin, startTimeEnd, sessionId, orgParameters, sysParameters, sortColumn, sortOrder)
 
     var orgParameterDefinitions: Option[List[OrganisationParameters]] = None
     var orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
@@ -138,8 +140,10 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val endTimeBegin = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_BEGIN)
     val endTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_END)
     val sessionId = ParameterExtractor.optionalQueryParameter(request, Parameters.SESSION_ID)
+    val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalQueryParameter(request, Parameters.ORGANISATION_PARAMETERS))
+    val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalQueryParameter(request, Parameters.SYSTEM_PARAMETERS))
 
-    val count = reportManager.getFinishedTestResultsCount(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId)
+    val count = reportManager.getFinishedTestResultsCount(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, orgParameters, sysParameters)
     val json = JsonUtil.jsCount(count).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -167,8 +171,10 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
     val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
     val forExport: Boolean = ParameterExtractor.optionalQueryParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
+    val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalQueryParameter(request, Parameters.ORGANISATION_PARAMETERS))
+    val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalQueryParameter(request, Parameters.SYSTEM_PARAMETERS))
 
-    val testResultReports = reportManager.getFinishedTestResults(page, limit, communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder)
+    val testResultReports = reportManager.getFinishedTestResults(page, limit, communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, orgParameters, sysParameters, sortColumn, sortOrder)
 
     var orgParameterDefinitions: Option[List[OrganisationParameters]] = None
     var orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
