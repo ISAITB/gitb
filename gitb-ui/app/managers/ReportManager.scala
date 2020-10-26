@@ -166,7 +166,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                            sortColumn: Option[String],
                            sortOrder: Option[String]): List[TestResult] = {
     exec(
-      getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organisationIdsToUse(organisationIds, orgParameters), systemIdsToUse(systemIds, sysParameters), None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
+      getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, conformanceManager.organisationIdsToUse(organisationIds, orgParameters), conformanceManager.systemIdsToUse(systemIds, sysParameters), None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
         .result.map(_.toList)
     )
   }
@@ -188,7 +188,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                                   orgParameters: Option[Map[Long, Set[String]]],
                                   sysParameters: Option[Map[Long, Set[String]]]): Long = {
     val count = exec(
-      getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organisationIdsToUse(organisationIds, orgParameters), systemIdsToUse(systemIds, sysParameters), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), None, None)
+      getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, conformanceManager.organisationIdsToUse(organisationIds, orgParameters), conformanceManager.systemIdsToUse(systemIds, sysParameters), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), None, None)
         .size.result
     )
     count
@@ -216,66 +216,10 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                              sortOrder: Option[String]): List[TestResult] = {
 
     exec(
-      getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organisationIdsToUse(organisationIds, orgParameters), systemIdsToUse(systemIds, sysParameters), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
+      getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, conformanceManager.organisationIdsToUse(organisationIds, orgParameters), conformanceManager.systemIdsToUse(systemIds, sysParameters), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
         .drop((page - 1) * limit).take(limit)
         .result.map(_.toList)
     )
-  }
-
-  private def organisationIdsToUse(organisationIds: Option[Iterable[Long]], orgParameters: Option[Map[Long, Set[String]]]): Option[Iterable[Long]] = {
-    var matchingIds: Option[Iterable[Long]] = None
-    if (organisationIds.isDefined) {
-      matchingIds = Some(organisationIds.get)
-    }
-    if (orgParameters.isDefined) {
-      orgParameters.get.foreach { entry =>
-        matchingIds = Some(organisationIdsForParameterValues(matchingIds, entry._1, entry._2))
-        if (matchingIds.get.isEmpty) {
-          // No matching IDs. Return immediately without checking other parameters.
-          return Some(Set[Long]())
-        }
-      }
-    }
-    matchingIds
-  }
-
-  private def organisationIdsForParameterValues(organisationIds: Option[Iterable[Long]], parameterId: Long, values: Iterable[String]): Set[Long] = {
-    exec(
-      PersistenceSchema.organisationParameterValues
-      .filterOpt(organisationIds)((table, ids) => table.organisation inSet ids)
-      .filter(_.parameter === parameterId)
-      .filter(_.value inSet values)
-      .map(x => x.organisation)
-      .result
-    ).toSet
-  }
-
-  private def systemIdsToUse(systemIds: Option[Iterable[Long]], sysParameters: Option[Map[Long, Set[String]]]): Option[Iterable[Long]] = {
-    var matchingIds: Option[Iterable[Long]] = None
-    if (systemIds.isDefined) {
-      matchingIds = Some(systemIds.get)
-    }
-    if (sysParameters.isDefined) {
-      sysParameters.get.foreach { entry =>
-        matchingIds = Some(systemIdsForParameterValues(matchingIds, entry._1, entry._2))
-        if (matchingIds.get.isEmpty) {
-          // No matching IDs. Return immediately without checking other parameters.
-          return Some(Set[Long]())
-        }
-      }
-    }
-    matchingIds
-  }
-
-  private def systemIdsForParameterValues(systemIds: Option[Iterable[Long]], parameterId: Long, values: Iterable[String]): Set[Long] = {
-    exec(
-      PersistenceSchema.systemParameterValues
-        .filterOpt(systemIds)((table, ids) => table.system inSet ids)
-        .filter(_.parameter === parameterId)
-        .filter(_.value inSet values)
-        .map(x => x.system)
-        .result
-    ).toSet
   }
 
   private def getTestResultsQuery(communityIds: Option[List[Long]],
@@ -703,7 +647,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   }
 
   def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, actorId: Long, systemId: Long): Path = {
-    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)))
+    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None)
     generateConformanceCertificate(reportPath, settings, conformanceInfo)
   }
 
@@ -717,7 +661,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
       title = settings.title.get.trim
     }
     val labels = communityLabelManager.getLabels(settings.community)
-    generateCoreConformanceReport(pathToUseForPdf, false, title, settings.includeDetails, settings.includeTestCases, settings.includeTestStatus, settings.includeMessage, settings.message, conformanceInfo, labels)
+    generateCoreConformanceReport(pathToUseForPdf, addTestCases = false, title, addDetails = settings.includeDetails, addTestCaseResults = settings.includeTestCases, addTestStatus = settings.includeTestStatus, addMessage = settings.includeMessage, settings.message, conformanceInfo, labels)
     // Add signature is needed.
     if (settings.includeSignature) {
       val keystore = SigUtils.loadKeystore(
@@ -754,7 +698,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   }
 
   private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: String, addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, message: Option[String], actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels]): Path = {
-    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)))
+    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None)
     generateCoreConformanceReport(reportPath, addTestCases, title, addDetails, addTestCaseResults, addTestStatus, addMessage, message, conformanceInfo, labels)
   }
 

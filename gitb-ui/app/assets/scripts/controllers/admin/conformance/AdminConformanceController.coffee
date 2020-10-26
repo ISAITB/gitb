@@ -8,7 +8,9 @@ class AdminConformanceController
 		@filterState = {
 			updatePending: false
 		}
-		@filters = [@Constants.FILTER_TYPE.SPECIFICATION, @Constants.FILTER_TYPE.ACTOR, @Constants.FILTER_TYPE.ORGANISATION, @Constants.FILTER_TYPE.SYSTEM]
+		@filters = [@Constants.FILTER_TYPE.SPECIFICATION, @Constants.FILTER_TYPE.ACTOR, @Constants.FILTER_TYPE.ORGANISATION, @Constants.FILTER_TYPE.SYSTEM, @Constants.FILTER_TYPE.ORGANISATION_PROPERTY, @Constants.FILTER_TYPE.SYSTEM_PROPERTY]
+		if @DataService.isCommunityAdmin
+			@communityId = @DataService.community.id
 		if @DataService.isSystemAdmin
 			@columnCount = 9
 			@filters.push(@Constants.FILTER_TYPE.DOMAIN)
@@ -90,6 +92,12 @@ class AdminConformanceController
 			callResult = @SystemService.getSystemsByCommunity()
 		callResult
 
+	getOrganisationPropertiesForFiltering: (communityId) =>
+		@CommunityService.getOrganisationParameters(communityId, true)
+
+	getSystemPropertiesForFiltering: (communityId) =>
+		@CommunityService.getSystemParameters(communityId, true)
+
 	getCurrentSearchCriteria:() =>
 		filters = @filterState.currentFilters()
 		searchCriteria = {}
@@ -106,12 +114,14 @@ class AdminConformanceController
 		searchCriteria.actorIds = filters[@Constants.FILTER_TYPE.ACTOR]
 		searchCriteria.organizationIds = filters[@Constants.FILTER_TYPE.ORGANISATION]
 		searchCriteria.systemIds = filters[@Constants.FILTER_TYPE.SYSTEM]
+		searchCriteria.organisationProperties = filters.organisationProperties
+		searchCriteria.systemProperties = filters.systemProperties
 		searchCriteria
 
 	getConformanceStatementsInternal: (fullResults, forExport) =>
 		d = @$q.defer()
 		params = @getCurrentSearchCriteria()
-		@ConformanceService.getConformanceOverview(params.domainIds, params.specIds, params.actorIds, params.communityIds, params.organizationIds, params.systemIds, fullResults, forExport)
+		@ConformanceService.getConformanceOverview(params.domainIds, params.specIds, params.actorIds, params.communityIds, params.organizationIds, params.systemIds, params.organisationProperties, params.systemProperties, fullResults, forExport)
 		.then (data) =>
 			for conformanceStatement in data.data
 				completedCount = Number(conformanceStatement.completed)

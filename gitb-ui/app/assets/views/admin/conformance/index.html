@@ -3,13 +3,16 @@
     <div tb-test-filter 
         filters = "adminConformanceCtrl.filters"
         state = "adminConformanceCtrl.filterState"
-        apply-fn = "adminConformanceCtrl.getConformanceStatements"
+		apply-fn = "adminConformanceCtrl.getConformanceStatements"
+        community-id = "adminConformanceCtrl.communityId"
         load-domains-fn = "adminConformanceCtrl.getAllDomains"
         load-specifications-fn = "adminConformanceCtrl.getAllSpecifications"
         load-actors-fn = "adminConformanceCtrl.getAllActors"
         load-communities-fn = "adminConformanceCtrl.getAllCommunities"
         load-organisations-fn = "adminConformanceCtrl.getAllOrganizations"
-        load-systems-fn = "adminConformanceCtrl.getAllSystems">
+		load-systems-fn = "adminConformanceCtrl.getAllSystems"
+        load-organisation-properties-fn = "adminConformanceCtrl.getOrganisationPropertiesForFiltering"
+        load-system-properties-fn = "adminConformanceCtrl.getSystemPropertiesForFiltering">
     </div>
 
 	<div id="conformanceDashboardPageTable" class="panel panel-default">
