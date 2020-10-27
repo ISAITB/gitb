@@ -45,7 +45,11 @@ public class XSDResolver implements LSResourceResolver {
         InputStream resource  = repository.getTestArtifact(testCaseId, artifactPath);
         if(resource != null) {
             // the "/" prevents the system to add the path where mvn command executed.
-            return new Input(publicId, systemId, "/" + artifactPath, resource);
+            String baseUriToSet = parentFolder;
+            if (!parentFolder.startsWith("/")) {
+                baseUriToSet = "/" + baseUriToSet;
+            }
+            return new Input(publicId, systemId, baseUriToSet, resource);
         }
 
 	    return null;
