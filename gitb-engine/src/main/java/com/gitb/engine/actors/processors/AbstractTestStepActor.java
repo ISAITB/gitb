@@ -299,7 +299,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		}
 
 		if (step instanceof TestConstruct && ((TestConstruct)step).getId() != null) {
-			((MapType)(scope.getVariable(TestCaseContext.STEP_SUCCESS_MAP, true).getValue())).addItem(((TestConstruct)step).getId(), new BooleanType(status == StepStatus.COMPLETED));
+			((MapType)(scope.getVariable(TestCaseContext.STEP_SUCCESS_MAP, true).getValue())).addItem(((TestConstruct)step).getId(), new BooleanType(status == StepStatus.COMPLETED || status == StepStatus.WARNING));
 		}
 
 		if (reportTestStepStatus) {

@@ -39,6 +39,11 @@ public class TestCaseContext {
 	 */
 	public static final String STEP_SUCCESS_MAP = "STEP_SUCCESS";
 
+	/**
+	 * The scope variable holding the overall result of the test session.
+	 */
+	public static final String TEST_SUCCESS = "TEST_SUCCESS";
+
     /**
      * Test case to be executed
      */

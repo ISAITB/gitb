@@ -81,7 +81,7 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
             //Start command for test case processing
             if (message instanceof StartCommand) {
 	            logger.debug(MarkerFactory.getDetachedMarker(((StartCommand) message).getSessionId()), "Received start command, starting test case sequence.");
-                sequenceProcessorActor = SequenceProcessorActor.create(getContext(), testCase.getSteps(), context.getScope(), "");
+                sequenceProcessorActor = RootSequenceProcessorActor.create(getContext(), testCase.getSteps(), context.getScope(), "");
 	            sequenceProcessorActor.tell(message, self());
             }
             // Prepare for stop command
