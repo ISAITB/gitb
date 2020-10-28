@@ -133,7 +133,6 @@ GET     /dashboard/tests/community          @controllers.RepositoryService.getTe
 GET     /dashboard/systems                  @controllers.SystemService.getSystems
 GET     /dashboard/active                   @controllers.ReportService.getActiveTestResults
 GET     /dashboard/finished                 @controllers.ReportService.getFinishedTestResults
-GET     /dashboard/count                    @controllers.ReportService.getFinishedTestResultsCount
 GET     /dashboard/config                   @controllers.SystemConfigurationService.getSessionAliveTime
 POST    /dashboard/config                   @controllers.SystemConfigurationService.updateSessionAliveTime
 GET     /dashboard/suites/all               @controllers.TestSuiteService.getAllTestSuitesWithTestCases
@@ -244,7 +243,6 @@ DELETE  /endpoints/:endpoint_id/config      @controllers.SystemService.deleteEnd
 # Report management API
 GET     /reports/active                     @controllers.ReportService.getSystemActiveTestResults
 GET     /reports                            @controllers.ReportService.getTestResults
-GET     /reports/count                      @controllers.ReportService.getTestResultsCount
 GET     /reports/:session_id                @controllers.ReportService.getTestResultOfSession(session_id: String)
 POST    /reports/create                     @controllers.ReportService.createTestReport
 GET     /reports/:session_id/steps          @controllers.ReportService.getTestStepResults(session_id:String)

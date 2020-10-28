@@ -1151,21 +1151,26 @@ object JsonUtil {
     json
   }
 
-  def jsTestResultReports(list: List[TestResult]): JsArray = {
+  def jsTestResultReports(list: Iterable[TestResult], resultCount: Option[Int]): JsObject = {
     var json = Json.arr()
     list.foreach { report =>
       json = json.append(jsTestResultReport(report, None, None, None, None))
     }
-    json
+    val jsonResult = Json.obj(
+      "data" -> json,
+      "count" -> (if (resultCount.isDefined) resultCount.get else JsNull)
+    )
+    jsonResult
   }
 
-  def jsTestResultSessionReports(list: List[TestResult], orgParameterDefinitions: Option[List[OrganisationParameters]], orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], sysParameterDefinitions: Option[List[SystemParameters]], sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]]): JsObject = {
+  def jsTestResultSessionReports(list: Iterable[TestResult], orgParameterDefinitions: Option[List[OrganisationParameters]], orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], sysParameterDefinitions: Option[List[SystemParameters]], sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], resultCount: Option[Int]): JsObject = {
     var json = Json.arr()
     list.foreach { report =>
       json = json.append(jsTestResultReport(report, orgParameterDefinitions, orgParameterValues, sysParameterDefinitions, sysParameterValues))
     }
     var jsonResult = Json.obj(
-      "data" -> json
+      "data" -> json,
+      "count" -> (if (resultCount.isDefined) resultCount.get else JsNull)
     )
     if (orgParameterDefinitions.isDefined) {
       var orgParameters = Json.arr()
@@ -1187,13 +1192,6 @@ object JsonUtil {
   def jsId(id: Long): JsObject = {
     val json = Json.obj(
       "id"    -> id
-    )
-    json
-  }
-
-  def jsCount(count: Long): JsObject = {
-    val json = Json.obj(
-      "count"    -> count
     )
     json
   }

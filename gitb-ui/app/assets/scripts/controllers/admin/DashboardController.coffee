@@ -189,7 +189,7 @@ class DashboardController
     @CommunityService.getSystemParameters(communityId, true)
 
   setFilterRefreshState: () =>
-    @filterState.updatePending = @refreshActivePending || @refreshCompletedPending || @refreshCompletedCountPending
+    @filterState.updatePending = @refreshActivePending || @refreshCompletedPending
 
   getCurrentSearchCriteria:() =>
     filters = @filterState.currentFilters()
@@ -242,24 +242,6 @@ class DashboardController
       @setFilterRefreshState()
       @activeStatus.status = @Constants.STATUS.FINISHED      
 
-  getTotalTestCount: () =>
-    params = @getCurrentSearchCriteria()
-    @refreshCompletedCountPending = true
-    @setFilterRefreshState()
-    @ReportService.getCompletedTestResultsCount(params.communityIds, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId, params.organisationProperties, params.systemProperties)
-    .then (data) =>
-      @completedTestsTotalCount = data.count
-      @refreshCompletedCountPending = false
-      @setFilterRefreshState()
-    .then () =>
-      @updatePagination()
-      @refreshCompletedCountPending = false
-      @setFilterRefreshState()
-    .catch (error) =>
-      @ErrorService.showErrorMessage(error)
-      @refreshCompletedCountPending = false
-      @setFilterRefreshState()
-
   getCompletedTests: () =>
     @viewCheckbox = false
     @selectingForDelete = false
@@ -269,8 +251,10 @@ class DashboardController
     @ReportService.getCompletedTestResults(params.currentPage, @Constants.TABLE_PAGE_SIZE, params.communityIds, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId, params.organisationProperties, params.systemProperties, params.completedSortColumn, params.completedSortOrder)
     .then (data) =>
       testResultMapper = @newTestResult
+      @completedTestsTotalCount = data.count
       @completedTests = _.map data.data, (t) => testResultMapper(t)
       @refreshCompletedPending = false
+      @updatePagination()      
       @setFilterRefreshState()
       @completedStatus.status = @Constants.STATUS.FINISHED
     .catch (error) =>
@@ -310,7 +294,6 @@ class DashboardController
     @completedSortColumn = column.field
     @completedSortOrder = column.order
     @getCompletedTests()
-    @getTotalTestCount()
 
   stopSession: (session) =>
     @stop = true
@@ -329,7 +312,6 @@ class DashboardController
   queryDatabase: () =>
     @getActiveTests()
     @getCompletedTests()
-    @getTotalTestCount()
 
   goFirstPage: () =>
     @currentPage = 1

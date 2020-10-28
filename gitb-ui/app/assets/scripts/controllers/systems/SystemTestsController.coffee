@@ -86,7 +86,7 @@ class SystemTestsController
     ]
 
     @currentPage = 1
-    @testResultsCount = null
+    @testResultsCount = 0
     @limit = @Constants.TABLE_PAGE_SIZE
 
     @activeSortColumn = "startTime"
@@ -139,15 +139,15 @@ class SystemTestsController
     searchCriteria
 
   setFilterRefreshState: () =>
-    @filterState.updatePending = @refreshActivePending || @refreshCompletedPending || @refreshCompletedCountPending
+    @filterState.updatePending = @refreshActivePending || @refreshCompletedPending
 
   getActiveTests: () =>
     params = @getCurrentSearchCriteria()
     @refreshActivePending = true
     @setFilterRefreshState()
     @ReportService.getSystemActiveTestResults(@systemId, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.sessionId, params.activeSortColumn, params.activeSortOrder)
-    .then (testResultReports) =>
-      resultReportsCollection = _ testResultReports
+    .then (data) =>
+      resultReportsCollection = _ data.data
       resultReportsCollection = resultReportsCollection
                     .map (report) ->
                       transformedObject =
@@ -174,8 +174,9 @@ class SystemTestsController
     @refreshCompletedPending = true
     @setFilterRefreshState()
     @ReportService.getTestResults(params.systemId, params.currentPage, params.limit, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId, params.sortColumn, params.sortOrder)
-    .then (testResultReports) =>
-      resultReportsCollection = _ testResultReports
+    .then (data) =>
+      @testResultsCount = data.count
+      resultReportsCollection = _ data.data
       resultReportsCollection = resultReportsCollection
                     .map (report) ->
                       transformedObject =
@@ -191,6 +192,7 @@ class SystemTestsController
                         obsolete: report.result.obsolete
                       transformedObject
       @testResults = resultReportsCollection.value()
+      @setPaginationStatus()      
       @refreshCompletedPending = false
       @setFilterRefreshState()
       @completedDataStatus.status = @Constants.STATUS.FINISHED
@@ -202,24 +204,6 @@ class SystemTestsController
 
   exportVisible: (session) =>
     !session.obsolete? || !session.obsolete
-
-  getTestResultsCount: () =>
-    params = @getCurrentSearchCriteria()
-    @refreshCompletedCountPending = true
-    @setFilterRefreshState()
-    @ReportService.getTestResultsCount(params.systemId, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId)
-    .then (data) =>
-      @testResultsCount = data.count
-      @refreshCompletedCountPending = false
-      @setFilterRefreshState()
-    .then () =>
-      @setPaginationStatus()
-      @refreshCompletedCountPending = false
-      @setFilterRefreshState()
-    .catch (error) =>
-      @ErrorService.showErrorMessage(error)
-      @refreshCompletedCountPending = false
-      @setFilterRefreshState()
 
   sortTestResults: (column) =>
     @sortColumn = column.field
@@ -250,7 +234,6 @@ class SystemTestsController
   queryDatabase: () =>
     @getActiveTests()
     @getTestResults()
-    @getTestResultsCount()
 
   setPaginationStatus: () =>
     if @currentPage == 1

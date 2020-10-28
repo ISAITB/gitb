@@ -8,7 +8,6 @@ import java.util
 import java.util.Date
 
 import actors.events.{ConformanceStatementSucceededEvent, TestSessionFailedEvent, TestSessionSucceededEvent}
-import javax.xml.transform.stream.StreamSource
 import com.gitb.core.StepStatus
 import com.gitb.reports.ReportGenerator
 import com.gitb.reports.dto.{ConformanceStatementOverview, TestCaseOverview}
@@ -18,6 +17,7 @@ import com.gitb.tr._
 import com.gitb.utils.XMLUtils
 import config.Configurations
 import javax.inject.{Inject, Singleton}
+import javax.xml.transform.stream.StreamSource
 import models.Enums.TestResultStatus
 import models._
 import org.apache.commons.codec.binary.Base64
@@ -123,31 +123,16 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                      endTimeEnd: Option[String],
                      sessionId: Option[String],
                      sortColumn: Option[String],
-                     sortOrder: Option[String]): List[TestResult] = {
-    exec(
-      getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, None, Some(List(systemId)), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
-        .drop((page - 1) * limit).take(limit)
-        .result.map(_.toList)
-    )
-  }
+                     sortOrder: Option[String]): (Iterable[TestResult], Int) = {
 
-  def getTestResultsCount(systemId: Long,
-                          domainIds: Option[List[Long]],
-                          specIds: Option[List[Long]],
-                          actorIds: Option[List[Long]],
-                          testSuiteIds: Option[List[Long]],
-                          testCaseIds: Option[List[Long]],
-                          results: Option[List[String]],
-                          startTimeBegin: Option[String],
-                          startTimeEnd: Option[String],
-                          endTimeBegin: Option[String],
-                          endTimeEnd: Option[String],
-                          sessionId: Option[String]): Long = {
-    val count = exec(
-      getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, None, Some(List(systemId)), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), None, None)
-        .size.result
+    val query = getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, None, Some(List(systemId)), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
+    val output = exec(
+      for {
+        results <- query.drop((page - 1) * limit).take(limit).result
+        resultCount <- query.size.result
+      } yield (results, resultCount)
     )
-    count
+    output
   }
 
   def getActiveTestResults(communityIds: Option[List[Long]],
@@ -171,29 +156,6 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     )
   }
 
-  def getFinishedTestResultsCount(communityIds: Option[List[Long]],
-                                  domainIds: Option[List[Long]],
-                                  specIds: Option[List[Long]],
-                                  actorIds: Option[List[Long]],
-                                  testSuiteIds: Option[List[Long]],
-                                  testCaseIds: Option[List[Long]],
-                                  organisationIds: Option[List[Long]],
-                                  systemIds: Option[List[Long]],
-                                  results: Option[List[String]],
-                                  startTimeBegin: Option[String],
-                                  startTimeEnd: Option[String],
-                                  endTimeBegin: Option[String],
-                                  endTimeEnd: Option[String],
-                                  sessionId: Option[String],
-                                  orgParameters: Option[Map[Long, Set[String]]],
-                                  sysParameters: Option[Map[Long, Set[String]]]): Long = {
-    val count = exec(
-      getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, conformanceManager.organisationIdsToUse(organisationIds, orgParameters), conformanceManager.systemIdsToUse(systemIds, sysParameters), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), None, None)
-        .size.result
-    )
-    count
-  }
-
   def getFinishedTestResults(page: Long,
                              limit: Long,
                              communityIds: Option[List[Long]],
@@ -213,13 +175,16 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
                              orgParameters: Option[Map[Long, Set[String]]],
                              sysParameters: Option[Map[Long, Set[String]]],
                              sortColumn: Option[String],
-                             sortOrder: Option[String]): List[TestResult] = {
+                             sortOrder: Option[String]): (Iterable[TestResult], Int) = {
 
-    exec(
-      getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, conformanceManager.organisationIdsToUse(organisationIds, orgParameters), conformanceManager.systemIdsToUse(systemIds, sysParameters), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
-        .drop((page - 1) * limit).take(limit)
-        .result.map(_.toList)
+    val query = getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, conformanceManager.organisationIdsToUse(organisationIds, orgParameters), conformanceManager.systemIdsToUse(systemIds, sysParameters), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
+    val output = exec(
+      for {
+        results <- query.drop((page - 1) * limit).take(limit).result
+        resultCount <- query.size.result
+      } yield (results, resultCount)
     )
+    output
   }
 
   private def getTestResultsQuery(communityIds: Option[List[Long]],
