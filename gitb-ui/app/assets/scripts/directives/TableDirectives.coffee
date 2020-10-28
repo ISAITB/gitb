@@ -318,7 +318,7 @@ sessionTableDirectiveInputs.expandedCounter = '='
 															<div class="session-table-title-value">{{row[sessionIdProperty]}}</div>
 														</div>
 													</div>
-													<div class="panel-body" style="overflow-x: auto; overflow-y: hidden;">
+													<div class="panel-body" style="overflow-x: auto; overflow-y: hidden; padding-bottom:0px; margin-bottom:15px;">
 														<div ng-show="!row.hideLoadingIcon"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></div>
 														<div uib-collapse="!row.diagramExpanded" class="no-margin">
 															<div ng-if="row.expanded || row.diagramLoaded">
