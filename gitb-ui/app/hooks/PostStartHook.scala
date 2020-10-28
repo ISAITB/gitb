@@ -50,7 +50,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
     */
 
   private def destroyIdleSessions() = {
-    actorSystem.scheduler.scheduleWithFixedDelay(1.days, 1.days) {
+    actorSystem.scheduler.scheduleWithFixedDelay(1.hours, 1.hours) {
       () => {
         val config = systemConfigurationManager.getSystemConfiguration(Constants.SessionAliveTime)
         val aliveTime = config.parameter
