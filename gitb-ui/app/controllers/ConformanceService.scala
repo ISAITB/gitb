@@ -419,6 +419,14 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
     ResponseConstructor.constructJsonResponse(json)
   }
 
+  def deleteTestResults() = authorizedAction { request =>
+    val communityId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.COMMUNITY_ID)
+    authorizationManager.canDeleteTestResults(request, communityId)
+    val sessionIds = JsonUtil.parseStringArray(ParameterExtractor.requiredBodyParameter(request, Parameters.SESSION_IDS))
+    testResultManager.deleteTestSessions(sessionIds)
+    ResponseConstructor.constructEmptyResponse
+  }
+
   def deleteAllObsoleteTestResults() = authorizedAction { request =>
     authorizationManager.canDeleteAllObsoleteTestResults(request)
     testResultManager.deleteAllObsoleteTestResults()

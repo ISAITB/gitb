@@ -5,6 +5,8 @@ class DashboardController
 
     @exportActivePending = false
     @exportCompletedPending = false
+    @viewCheckbox = false
+    @selectingForDelete = false
     @activeExpandedCounter = {count: 0}
     @completedExpandedCounter = {count: 0}
     @activeStatus = {status: @Constants.STATUS.PENDING}
@@ -259,6 +261,8 @@ class DashboardController
       @setFilterRefreshState()
 
   getCompletedTests: () =>
+    @viewCheckbox = false
+    @selectingForDelete = false
     params = @getCurrentSearchCriteria()
     @refreshCompletedPending = true
     @setFilterRefreshState()
@@ -395,7 +399,7 @@ class DashboardController
     @exportCompletedPending = true
     params = @getCurrentSearchCriteria()
 
-    @ReportService.getCompletedTestResults(1, 1000000, params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.organisationProperties, params.systemProperties, params.completedSortColumn, params.completedSortOrder, true)
+    @ReportService.getCompletedTestResults(1, 1000000, params.communityIds, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId, params.organisationProperties, params.systemProperties, params.completedSortColumn, params.completedSortOrder, true)
     .then (data) =>
       headers = ["Session", @DataService.labelDomain(), @DataService.labelSpecification(), @DataService.labelActor(), "Test suite", "Test case", @DataService.labelOrganisation()]
       if data.orgParameters?
@@ -418,7 +422,7 @@ class DashboardController
     @exportActivePending = true
     params = @getCurrentSearchCriteria()
 
-    @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.organisationProperties, params.systemProperties, params.activeSortColumn, params.activeSortOrder, true)
+    @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.sessionId, params.organisationProperties, params.systemProperties, params.activeSortColumn, params.activeSortOrder, true)
     .then (data) =>
       headers = ["Session", @DataService.labelDomain(), @DataService.labelSpecification(), @DataService.labelActor(), "Test suite", "Test case", @DataService.labelOrganisation()]
       if data.orgParameters?
@@ -474,5 +478,50 @@ class DashboardController
     for test in @activeTests
       test.expanded = false
     @activeExpandedCounter.count = 0
+
+  selectDeleteSessions: () =>
+    @viewCheckbox = true
+    @selectingForDelete = true
+
+  confirmDeleteSessions: () =>
+    testsToDelete = []
+    for test in @completedTests
+      if test.checked? && test.checked
+        testsToDelete.push(test.session)
+    if testsToDelete.length == 1
+      msg = "Are you sure you want to delete the selected test result?"
+    else
+      msg = "Are you sure you want to delete the selected test results?"
+    dialog = @ConfirmationDialogService.confirm("Confirm delete", msg, "Yes", "No")
+    dialog.finally(angular.noop).then(
+      () => 
+        @deleteSessionsPending = true
+        @ConformanceService.deleteTestResults(testsToDelete)
+        .then () =>
+          @deleteSessionsPending = false
+          @PopupService.success('Test results deleted.')
+          @queryDatabase()
+        .catch (error) =>
+            @deleteSessionsPending = false
+            @viewCheckbox = false
+            @selectingForDelete = false
+            @ErrorService.showErrorMessage(error)
+      , 
+      () => 
+        @cancelDeleteSessions()
+      ,
+    )
+
+  cancelDeleteSessions: () =>
+    @viewCheckbox = false
+    @selectingForDelete = false
+    for test in @completedTests
+      test.checked = false
+
+  testsChecked: () =>
+    for test in @completedTests
+      if test.checked? && test.checked
+        return true
+    false
 
 @controllers.controller 'DashboardController', DashboardController

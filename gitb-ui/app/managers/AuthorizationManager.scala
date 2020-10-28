@@ -1200,6 +1200,14 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     canManageSystem(request, getUser(getRequestUserId(request)), systemId)
   }
 
+  def canDeleteTestResults(request: RequestWithAttributes[_], communityId: Option[Long]):Boolean = {
+    if (communityId.isDefined) {
+      canManageCommunity(request, communityId.get)
+    } else {
+      checkTestBedAdmin(request)
+    }
+  }
+
   def canDeleteAllObsoleteTestResults(request: RequestWithAttributes[_]):Boolean = {
     checkTestBedAdmin(request)
   }

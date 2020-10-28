@@ -370,6 +370,17 @@ class ConformanceService
       authenticate: true
       params: params
 
+  deleteTestResults: (sessionIds) ->
+    data = {
+        session_ids: angular.toJson sessionIds
+    }
+    if @DataService.isCommunityAdmin
+      data.community_id = @DataService.community.id
+    @RestService.post
+      path: jsRoutes.controllers.ConformanceService.deleteTestResults().url
+      authenticate: true
+      data: data
+
   deleteObsoleteTestResultsForCommunity: (communityId) ->
     @RestService.delete
       path: jsRoutes.controllers.ConformanceService.deleteObsoleteTestResultsForCommunity().url

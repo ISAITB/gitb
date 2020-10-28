@@ -839,6 +839,10 @@ object JsonUtil {
     list.toList
   }
 
+  def parseStringArray(json: String): List[String] = {
+    Json.parse(json).as[List[String]]
+  }
+
   def parseJsImportSettings(json:String):ImportSettings = {
     val jsonConfig = Json.parse(json).as[JsObject]
     val settings = new ImportSettings()

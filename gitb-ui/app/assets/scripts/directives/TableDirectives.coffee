@@ -188,7 +188,7 @@ tableDirectiveInputs = {
 			onCheck: '='
 		restrict: 'A'
 		template: ''+
-			'<td ng-if="checkboxEnabled">'+
+			'<td ng-if="checkboxEnabled" ng-click="$event.stopPropagation();">'+
 				'<input type="checkbox" ng-model="data.checked" ng-change="check()">' +
 			'</td>' +
 			'<td class="{{row.class}}" ng-repeat="row in rows">'+

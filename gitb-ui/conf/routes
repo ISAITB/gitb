@@ -117,6 +117,7 @@ POST    /fulltestcases/:test_case_id                            @controllers.Tes
 DELETE  /testresults/obsolete/all           @controllers.ConformanceService.deleteAllObsoleteTestResults
 DELETE  /testresults/obsolete/system        @controllers.ConformanceService.deleteObsoleteTestResultsForSystem
 DELETE  /testresults/obsolete/community     @controllers.ConformanceService.deleteObsoleteTestResultsForCommunity
+POST    /testresults                        @controllers.ConformanceService.deleteTestResults
 
 # User management API
 GET     /admins/all                         @controllers.UserService.getSystemAdministrators

@@ -15,7 +15,7 @@
         <div class="panel-heading">
             <h4 class="title">Active test sessions</h4>
             <div class="btn-toolbar pull-right">
-                <button type="button" class="btn btn-default" ng-click="systemTestsCtrl.exportActiveSessionsToCsv()" ng-disabled="systemTestsCtrl.exportActivePending"><span class="tab" ng-if="systemTestsCtrl.exportActivePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Export CSV</button>
+                <button type="button" class="btn btn-default" ng-click="systemTestsCtrl.exportActiveSessionsToCsv()" ng-disabled="systemTestsCtrl.activeTests.length == 0 || systemTestsCtrl.exportActivePending"><span class="tab" ng-if="systemTestsCtrl.exportActivePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Export CSV</button>
 				<button type="button" class="btn btn-default" ng-if="systemTestsCtrl.showCollapseAllActive()" ng-click="systemTestsCtrl.onCollapseAllActive()">Collapse all</button>
             </div>
         </div>
@@ -35,8 +35,8 @@
         <div class="panel-heading">
             <h4 class="title">Completed test sessions</h4>
             <div class="btn-toolbar pull-right">
-                <button type="button" class="btn btn-default" ng-if="systemTestsCtrl.canDelete()" ng-disabled="systemTestsCtrl.deletePending" ng-click="systemTestsCtrl.deleteObsolete()"><span class="tab" ng-if="systemTestsCtrl.deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete obsolete results</button>
-                <button type="button" class="btn btn-default" ng-click="systemTestsCtrl.exportToCsv()" ng-disabled="systemTestsCtrl.exportCompletedPending"><span class="tab" ng-if="systemTestsCtrl.exportCompletedPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Export CSV</button>
+                <button type="button" class="btn btn-default" ng-if="systemTestsCtrl.canDelete()" ng-disabled="systemTestsCtrl.deletePending" ng-click="systemTestsCtrl.deleteObsolete()"><span class="tab" ng-if="systemTestsCtrl.deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete obsolete sessions</button>
+                <button type="button" class="btn btn-default" ng-click="systemTestsCtrl.exportToCsv()" ng-disabled="systemTestsCtrl.testResults.length == 0 || systemTestsCtrl.exportCompletedPending"><span class="tab" ng-if="systemTestsCtrl.exportCompletedPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Export CSV</button>
 				<button type="button" class="btn btn-default" ng-if="systemTestsCtrl.showCollapseAll()" ng-click="systemTestsCtrl.onCollapseAll()">Collapse all</button>
             </div>
         </div>

@@ -286,7 +286,7 @@ class SystemTestsController
     @exportActivePending = true
     params = @getCurrentSearchCriteria()
 
-    @ReportService.getSystemActiveTestResults(@systemId, params.specIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.activeSortColumn, params.activeSortOrder)
+    @ReportService.getSystemActiveTestResults(@systemId, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.sessionId, params.activeSortColumn, params.activeSortOrder)
     .then (testResultReports) =>
       resultReportsCollection = _ testResultReports
       resultReportsCollection = resultReportsCollection
@@ -311,7 +311,7 @@ class SystemTestsController
     @exportCompletedPending = true
     params = @getCurrentSearchCriteria()
 
-    @ReportService.getTestResults(params.systemId, 1, 1000000, params.specIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sortColumn, params.sortOrder)
+    @ReportService.getTestResults(params.systemId, 1, 1000000, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId, params.sortColumn, params.sortOrder)
     .then (testResultReports) =>
       resultReportsCollection = _ testResultReports
       resultReportsCollection = resultReportsCollection

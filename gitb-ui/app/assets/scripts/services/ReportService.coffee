@@ -261,15 +261,6 @@ class ReportService
         authenticate: true
         responseType: "arraybuffer"
 
-  exportTestCaseReports: (session_ids, test_ids) ->
-        @RestService.get
-          path: jsRoutes.controllers.RepositoryService.exportTestCaseReports().url
-          params:
-              session_ids:  session_ids
-              test_ids: test_ids
-          authenticate: true
-          responseType: "arraybuffer"
-
   exportTestStepReport: (sessionId, reportPath) ->
     @RestService.get
       path: jsRoutes.controllers.RepositoryService.exportTestStepReport(sessionId, reportPath).url
