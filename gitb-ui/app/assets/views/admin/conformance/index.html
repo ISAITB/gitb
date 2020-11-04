@@ -74,7 +74,9 @@
 									<tr ng-repeat="testCase in statement.testCases">
 										<td>{{testCase.testSuiteName}}</td>
 										<td>{{testCase.testCaseName}}</td>
-										<td class="tb-result"><i ng-class="adminConformanceCtrl.DataService.iconForTestResult(testCase.result)"></i></td>
+										<td class="tb-result">
+											<div tb-result-display message="testCase.outputMessage" result="testCase.result"></div>
+										</td>
 										<td class="operations">
 											<button ng-if="adminConformanceCtrl.showExportTestCase(testCase) && !testCase.exportPending" class="btn btn-default" ng-click="adminConformanceCtrl.onExportTestCase(statement, testCase)"><i class="fa fa-file-pdf-o"></i></button>
 											<button ng-if="adminConformanceCtrl.showExportTestCase(testCase) && testCase.exportPending" class="btn btn-default pending" disabled="disabled"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></button>

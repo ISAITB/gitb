@@ -1136,7 +1136,7 @@ object JsonUtil {
    * @param testResult TestResult object to be converted
    * @return JsObject
    */
-  def jsTestResult(testResult:TestResult, returnTPL:Boolean):JsObject = {
+  def jsTestResult(testResult:TestResult, withExtendedInformation:Boolean):JsObject = {
     val json = Json.obj(
       "sessionId" -> testResult.sessionId,
       "systemId"  -> (if (testResult.systemId.isDefined) testResult.systemId else JsNull),
@@ -1145,7 +1145,8 @@ object JsonUtil {
       "result"    -> testResult.result,
       "startTime" -> TimeUtil.serializeTimestamp(testResult.startTime),
       "endTime"   -> (if(testResult.endTime.isDefined) TimeUtil.serializeTimestamp(testResult.endTime.get) else JsNull),
-      "tpl"       -> (if(returnTPL) testResult.tpl else JsNull),
+      "tpl"       -> (if(withExtendedInformation) testResult.tpl else JsNull),
+      "outputMessage" -> (if (withExtendedInformation && testResult.outputMessage.isDefined) testResult.outputMessage.get else JsNull),
       "obsolete"  -> (if (testResult.testSuiteId.isDefined && testResult.testCaseId.isDefined && testResult.systemId.isDefined && testResult.organizationId.isDefined && testResult.communityId.isDefined && testResult.domainId.isDefined && testResult.specificationId.isDefined && testResult.actorId.isDefined) false else true)
     )
     json
@@ -1224,7 +1225,7 @@ object JsonUtil {
 
   def jsTestResultReport(result: TestResult, orgParameterDefinitions: Option[List[OrganisationParameters]], orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], sysParameterDefinitions: Option[List[SystemParameters]], sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]]): JsObject = {
     val json = Json.obj(
-      "result" -> jsTestResult(result, returnTPL = false),
+      "result" -> jsTestResult(result, withExtendedInformation = false),
       "test" ->  {
         Json.obj(
           "id"      -> (if (result.testCaseId.isDefined) result.testCaseId.get else JsNull),
@@ -1275,19 +1276,6 @@ object JsonUtil {
         )
       }
     )
-    json
-  }
-
-  /**
-   * Converts a List of TestResults into Play!'s JSON notation
-   * @param list List of TestResults to be converted
-   * @return JsArray
-   */
-  def jsTestResults(list:List[TestResult], returnTPL:Boolean):JsArray = {
-    var json = Json.arr()
-    list.foreach{ testResult =>
-      json = json.append(jsTestResult(testResult, returnTPL))
-    }
     json
   }
 
@@ -1803,6 +1791,7 @@ object JsonUtil {
       "testCaseDescription"    -> listItem.testCaseDescription,
       "testCaseHasDocumentation"    -> listItem.testCaseHasDocumentation,
       "result"    -> listItem.result,
+      "outputMessage" -> listItem.outputMessage,
       "sessionId"    -> listItem.sessionId
     )
     json
@@ -1857,7 +1846,8 @@ object JsonUtil {
       "failed"    -> item.failedTests,
       "completed"    -> item.completedTests,
       "undefined"    -> item.undefinedTests,
-      "result" -> item.result
+      "result" -> item.result,
+      "outputMessage" -> item.outputMessage
     )
     if (orgParameterDefinitions.isDefined && orgParameterValues.isDefined) {
       orgParameterDefinitions.get.foreach{ param =>

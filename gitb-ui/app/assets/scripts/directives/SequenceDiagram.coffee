@@ -435,10 +435,14 @@ extractSteps = (s, actorInfo) =>
       endTimeProperty: '@?'
       resultProperty: '@?'
       onReady: '='
-    template: ''+
-      '<div ng-if="stepsOfTests && actorInfoOfTests" class="div-padded-bottom">'+
-        '<div class="child" seq-diagram steps-of-tests="stepsOfTests" test="{{sessionId}}" actor-info-of-tests="actorInfoOfTests"></div>'+
-      '</div>'
+    template: '
+      <div ng-if="stepsOfTests && actorInfoOfTests" ng-class="{\'div-padded-bottom\': !outputMessage}">
+        <div class="child" seq-diagram steps-of-tests="stepsOfTests" test="{{sessionId}}" actor-info-of-tests="actorInfoOfTests"></div>
+        <div class="test-output-container" ng-if="outputMessage">
+            <div uib-alert class="no-margin" ng-class="{\'alert-success\': result == \'SUCCESS\', \'alert-danger\': result == \'FAILURE\'}">{{outputMessage}}</div>
+        </div>
+      </div>
+      '
     restrict: 'A'
     link: (scope, element, attrs) ->
       if !scope.endTimeProperty?
@@ -465,6 +469,8 @@ extractSteps = (s, actorInfo) =>
             })
             actorInfoOfTests[scope.sessionId] = actors
             stepsOfTests[scope.sessionId] = testcase.steps
+            scope.outputMessage = result.outputMessage
+            scope.result = result.result
             scope.actorInfoOfTests = actorInfoOfTests
             scope.stepsOfTests = stepsOfTests
             $timeout(() =>

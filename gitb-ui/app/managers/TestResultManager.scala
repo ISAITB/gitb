@@ -183,13 +183,13 @@ class TestResultManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ext
               .headOption
             // Update the result.
             _ <- {
-              val updateQuery = for { c <- queryConformanceResult } yield (c.testsession, c.result)
+              val updateQuery = for { c <- queryConformanceResult } yield (c.testsession, c.result, c.outputMessage)
               if (latestTestSession.isDefined) {
                 // Replace status
-                updateQuery.update(Some(latestTestSession.get.sessionId), latestTestSession.get.result)
+                updateQuery.update(Some(latestTestSession.get.sessionId), latestTestSession.get.result, latestTestSession.get.outputMessage)
               } else {
                 // Set as empty status
-                updateQuery.update(None, TestResultStatus.UNDEFINED.toString)
+                updateQuery.update(None, TestResultStatus.UNDEFINED.toString, None)
               }
             }
           } yield ()

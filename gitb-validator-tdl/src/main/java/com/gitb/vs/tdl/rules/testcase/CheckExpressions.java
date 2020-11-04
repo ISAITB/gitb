@@ -41,6 +41,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         scope.put(Utils.ORGANISATION_MAP, true);
         scope.put(Utils.SYSTEM_MAP, true);
         scope.put(Utils.STEP_SUCCESS, true);
+        scope.put(Utils.TEST_SUCCESS, true);
         variableResolver = new VariableResolver(this);
     }
 
@@ -75,6 +76,27 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     @Override
     public void handleVariable(Variable var) {
         recordVariable(var.getName(), var.getType());
+    }
+
+    @Override
+    public void handleTestOutput(Output output) {
+        super.handleTestOutput(output);
+        if (output != null) {
+            if (output.getSuccess() != null) {
+                for (OutputCase outputCase: output.getSuccess().getCase()) {
+                    checkExpression(outputCase.getCond());
+                    checkExpression(outputCase.getMessage());
+                }
+                checkExpression(output.getSuccess().getDefault());
+            }
+            if (output.getFailure() != null) {
+                for (OutputCase outputCase: output.getFailure().getCase()) {
+                    checkExpression(outputCase.getCond());
+                    checkExpression(outputCase.getMessage());
+                }
+                checkExpression(output.getFailure().getDefault());
+            }
+        }
     }
 
     @Override

@@ -26,6 +26,7 @@ case class TestResult(
                        result:String,
                        startTime:Timestamp,
                        endTime:Option[Timestamp],
+                       outputMessage: Option[String],
                        tpl:String
                      )
 {
@@ -33,7 +34,7 @@ case class TestResult(
     TestResult(this.sessionId, this.systemId, this.system, this.organizationId, this.organization,
       this.communityId, this.community, this.testCaseId, this.testCase,  this.testSuiteId, this.testSuite,
       this.actorId, this.actor, this.specificationId, this.specification, this.domainId, this.domain,
-      this.result, this.startTime, this.endTime, presentation)
+      this.result, this.startTime, this.endTime, this.outputMessage, presentation)
   }
 }
 

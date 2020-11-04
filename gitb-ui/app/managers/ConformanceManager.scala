@@ -517,9 +517,9 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 		}
 		val finalQuery = query
 			.sortBy(x => (x._2.shortname, x._1._2.testSuiteOrder))
-			.map(x => (x._2.id, x._2.shortname, x._2.description, x._2.hasDocumentation, x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._1.result, x._1._1.testsession))
+			.map(x => (x._2.id, x._2.shortname, x._2.description, x._2.hasDocumentation, x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._1.result, x._1._1.outputMessage, x._1._1.testsession))
 		val results = exec(finalQuery.result.map(_.toList)).map(r => {
-			ConformanceStatusItem(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10)
+			ConformanceStatusItem(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10, r._11)
 		})
 		results
 	}
@@ -575,7 +575,7 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 					resultActor.id, resultActor.actorId, resultActor.name,
 					resultSpec.id, resultSpec.shortname, resultSpec.fullname,
 					Some(resultTestSuite.shortname), Some(resultTestCase.shortname), resultTestCase.description,
-					Some(resultConfResult.result), resultConfResult.testsession, 0L, 0L, 0L)
+					Some(resultConfResult.result), resultConfResult.outputMessage, resultConfResult.testsession, 0L, 0L, 0L)
 			statements += conformanceStatement
 		}
 		statements.toList
@@ -617,7 +617,7 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 					resultDomain.id, resultDomain.shortname, resultDomain.fullname,
 					resultActor.id, resultActor.actorId, resultActor.name,
 					resultSpecification.id, resultSpecification.shortname, resultSpecification.fullname,
-					None, None, resultConfResult.testsession, None, None,
+					None, None, None, resultConfResult.testsession, None, None,
 					0L, 0L, 0L)
 				conformanceMap.put(key, conformanceStatement)
 			}

@@ -326,11 +326,18 @@ class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelp
         }
       }
       // Load any existing test results for the system and actor.
-      existingResults <- PersistenceSchema.testResults.filter(_.sutId === system).filter(_.actorId === actor).filter(_.testCaseId.isDefined).result
+      existingResults <- PersistenceSchema.testResults
+        .filter(_.sutId === system)
+        .filter(_.actorId === actor)
+        .filter(_.testCaseId.isDefined)
+        .sortBy(_.endTime.desc)
+        .result
       existingResultsMap <- {
-        val existingResultsMap = new util.HashMap[Long, (String, String)]
+        val existingResultsMap = new util.HashMap[Long, (String, String, Option[String])]
         existingResults.foreach { existingResult =>
-          existingResultsMap.put(existingResult.testCaseId.get, (existingResult.sessionId, existingResult.result))
+          if (!existingResultsMap.containsKey(existingResult.testCaseId.get)) {
+            existingResultsMap.put(existingResult.testCaseId.get, (existingResult.sessionId, existingResult.result, existingResult.outputMessage))
+          }
         }
         DBIO.successful(existingResultsMap)
       }
@@ -340,13 +347,15 @@ class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelp
           val testCase = conformanceInfoEntry._1
           val testSuite = conformanceInfoEntry._2
           var result = TestResultStatus.UNDEFINED
+          var outputMessage: Option[String] = None
           var sessionId: Option[String] = None
           if (existingResultsMap.containsKey(testCase)) {
             val existingData = existingResultsMap.get(testCase)
             sessionId = Some(existingData._1)
             result = TestResultStatus.withName(existingData._2)
+            outputMessage = existingData._3
           }
-          actions += (PersistenceSchema.conformanceResults += ConformanceResult(0L, system, spec, actor, testSuite, testCase, result.toString, sessionId))
+          actions += (PersistenceSchema.conformanceResults += ConformanceResult(0L, system, spec, actor, testSuite, testCase, result.toString, outputMessage, sessionId))
         }
         toDBIO(actions)
       }

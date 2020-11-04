@@ -55,6 +55,7 @@ class TestExecutionControllerV2
     @intervalSet = false
     @progressIcons = {}
     @testCaseStatus = {}
+    @testCaseOutput = {}
     @$scope.stepsOfTests = {}
     @$scope.actorInfoOfTests = {}
     @logMessages = {}
@@ -200,13 +201,15 @@ class TestExecutionControllerV2
       @started = false 
       @reload = true
 
-  testCaseFinished: (result) =>
+  testCaseFinished: (result, outputMessage) =>
     if (result == "SUCCESS")
       @updateTestCaseStatus(@currentTest.id, @Constants.TEST_CASE_STATUS.COMPLETED)
     else if (result == "FAILURE")
       @updateTestCaseStatus(@currentTest.id, @Constants.TEST_CASE_STATUS.ERROR)
     else
       @updateTestCaseStatus(@currentTest.id, @Constants.TEST_CASE_STATUS.STOPPED)
+    if outputMessage?
+      @testCaseOutput[@currentTest.id] = outputMessage
     # Make sure steps still marked as pending or in progress are set as skipped.
     @setPendingStepsToSkipped()
     if (@currentTestIndex + 1 < @testsToExecute.length)
@@ -476,7 +479,7 @@ class TestExecutionControllerV2
       if stepId == @Constants.END_OF_TEST_STEP
         @$log.debug "END OF THE TEST"
         @started = false
-        @testCaseFinished(response.report.result)
+        @testCaseFinished(response.report.result, response?.report?.context?.value)
       else
         status = response.status
         report = response.report

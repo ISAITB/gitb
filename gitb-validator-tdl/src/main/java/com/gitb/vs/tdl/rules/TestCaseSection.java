@@ -10,6 +10,7 @@ public enum TestCaseSection {
     VARIABLES,
     ACTORS,
     STEPS,
+    OUTPUT,
     SCRIPTLETS,
     SCRIPTLET_START,
     SCRIPTLET_METADATA,

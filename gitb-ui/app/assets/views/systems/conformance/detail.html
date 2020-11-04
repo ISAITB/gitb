@@ -62,10 +62,10 @@
 
 		<table id="conformance-statement-details" class="table table-directive" ng-class="{'expandable-table': (conformanceStatementDetailCtrl.testSuites.length > 1),'padded-table': (conformanceStatementDetailCtrl.testSuites.length == 1)}">
 			<thead>
-				<th width="10%">{{conformanceStatementDetailCtrl.testSuites.length == 1?"Test case":"Test suite"}}</th>
+				<th style="white-space: nowrap;">{{conformanceStatementDetailCtrl.testSuites.length == 1?"Test case":"Test suite"}}</th>
 				<th>Description</th>
 				<th class="tb-result">Result</th>
-				<th width="10%"></th>
+				<th style="width:118px;"></th>
 			</thead>
 
 			<tbody ng-if="conformanceStatementDetailCtrl.loadingStatus.status == conformanceStatementDetailCtrl.Constants.STATUS.PENDING">
@@ -78,7 +78,9 @@
 				<tr ng-repeat="testCase in conformanceStatementDetailCtrl.testSuites[0].testCases">
 					<td>{{testCase.sname}}</td>
 					<td>{{testCase.description}}</td>
-					<td class="tb-result"><i ng-class="conformanceStatementDetailCtrl.DataService.iconForTestResult(testCase.result)"></i></td>
+					<td class="tb-result">
+						<div tb-result-display message="testCase.outputMessage" result="testCase.result"></div>
+					</td>
 					<td class="operation-cell">
 						<div class="btn-toolbar pull-right">
 							<button type="button" class="btn btn-primary" ng-if="testCase.hasDocumentation" ng-click="conformanceStatementDetailCtrl.showTestCaseDocumentation(testCase.id)"><i class="fa fa-info-circle"></i></button>
@@ -102,20 +104,22 @@
 					</td>
 				</tr>
 				<tr ng-repeat-end class="expandable-table-row-expanded">
-					<td colspan="8" class="expandable-table-expandable-cell">
+					<td colspan="4" class="expandable-table-expandable-cell">
 						<div uib-collapse="!testSuite.expanded">
 							<table class="table table-directive expandable-table">
 								<thead>
-									<th width="10%">Test&nbsp;case</th>
+									<th style="white-space: nowrap;">Test case</th>
 									<th>Description</th>
-									<th class="td-centered" width="10%">Result</th>
-									<th width="10%"></th>
+									<th class="td-centered" style="width:110px">Result</th>
+									<th style="width:110px"></th>
 								</thead>
 								<tbody>
 									<tr ng-repeat="testCase in testSuite.testCases">
 										<td>{{testCase.sname}}</td>
 										<td>{{testCase.description}}</td>
-										<td class="tb-result"><i ng-class="conformanceStatementDetailCtrl.DataService.iconForTestResult(testCase.result)"></i></td>
+										<td class="tb-result">
+											<div tb-result-display message="testCase.outputMessage" result="testCase.result"></div>
+										</td>
 										<td>
 											<div class="btn-toolbar pull-right">
 												<button type="button" class="btn btn-primary" ng-if="testCase.hasDocumentation" ng-click="conformanceStatementDetailCtrl.showTestCaseDocumentation(testCase.id)"><i class="fa fa-info-circle"></i></button>

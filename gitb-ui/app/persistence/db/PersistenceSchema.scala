@@ -164,8 +164,9 @@ object PersistenceSchema {
     def testsuite  = column[Long]("test_suite_id")
     def testcase  = column[Long]("test_case_id")
     def result  = column[String]("result")
+    def outputMessage = column[Option[String]]("output_message", O.SqlType("TEXT"))
     def testsession = column[Option[String]]("test_session_id")
-    def * = (id, sut, spec, actor, testsuite, testcase, result, testsession) <> (models.ConformanceResult.tupled, models.ConformanceResult.unapply)
+    def * = (id, sut, spec, actor, testsuite, testcase, result, outputMessage, testsession) <> (models.ConformanceResult.tupled, models.ConformanceResult.unapply)
   }
   val conformanceResults = TableQuery[ConformanceResultsTable]
 
@@ -261,8 +262,9 @@ object PersistenceSchema {
 	  def result = column[String]("result")
 	  def startTime = column[Timestamp]("start_time")
 	  def endTime = column[Option[Timestamp]]("end_time", O.SqlType("TIMESTAMP"))
+    def outputMessage = column[Option[String]]("output_message", O.SqlType("TEXT"))
 	  def tpl = column[String]("tpl", O.SqlType("BLOB"))
-    def * = (testSessionId, sutId, sut, organizationId, organization, communityId, community, testCaseId, testCase, testSuiteId, testSuite, actorId, actor, specificationId, specification, domainId, domain, result, startTime, endTime, tpl) <> (TestResult.tupled, TestResult.unapply)
+    def * = (testSessionId, sutId, sut, organizationId, organization, communityId, community, testCaseId, testCase, testSuiteId, testSuite, actorId, actor, specificationId, specification, domainId, domain, result, startTime, endTime, outputMessage, tpl) <> (TestResult.tupled, TestResult.unapply)
   }
   val testResults = TableQuery[TestResultsTable]
 

@@ -60,6 +60,7 @@ class ConformanceStatementDetailController
         testCase.id = result.testCaseId
         testCase.sname = result.testCaseName
         testCase.description = result.testCaseDescription
+        testCase.outputMessage = result.outputMessage
         testCase.hasDocumentation = result.testCaseHasDocumentation
         testCase.result = result.result
         totalCount += 1

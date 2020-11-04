@@ -2,10 +2,7 @@ package com.gitb.vs.tdl.rules.testcase;
 
 import com.gitb.core.Documentation;
 import com.gitb.core.TestRole;
-import com.gitb.tdl.Binding;
-import com.gitb.tdl.Scriptlet;
-import com.gitb.tdl.TestCase;
-import com.gitb.tdl.Variable;
+import com.gitb.tdl.*;
 import com.gitb.vs.tdl.Context;
 import com.gitb.vs.tdl.ErrorCode;
 import com.gitb.vs.tdl.ValidationReport;
@@ -71,6 +68,11 @@ public class AbstractTestCaseObserver implements TestCaseObserver {
     @Override
     public void handleOutput(Binding binding) {
         // Do nothing by default.
+    }
+
+    @Override
+    public void handleTestOutput(Output output) {
+        currentStep = output;
     }
 
     @Override

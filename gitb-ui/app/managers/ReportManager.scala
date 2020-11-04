@@ -254,51 +254,6 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     query
   }
 
-
-//  private def getTestResultsQueryInternal(communityIds: Option[List[Long]],
-//                                 domainIds: Option[List[Long]],
-//                                 specIds: Option[List[Long]],
-//                                 actorIds: Option[List[Long]],
-//                                 testSuiteIds: Option[List[Long]],
-//                                 testCaseIds: Option[List[Long]],
-//                                 organizationIds: Option[List[Long]],
-//                                 systemIds: Option[List[Long]],
-//                                 results: Option[List[String]],
-//                                 startTimeBegin: Option[String],
-//                                 startTimeEnd: Option[String],
-//                                 endTimeBegin: Option[String],
-//                                 endTimeEnd: Option[String],
-//                                 sessionId: Option[String],
-//                                 orgParameters: Option[Map[Long, Set[String]]],
-//                                 sortColumn: Option[String],
-//                                 sortOrder: Option[String],
-//                                 completedStatus: Option[Boolean],
-//                                 page: Option[Long],
-//                                 limit: Option[Long]) = {
-//    val query =
-//      for {
-//        organisationIds <- DBIO.successful(Some(List[Long]()))
-//        testResults <- {
-//          // Apply filter criteria
-//          // Apply paging
-//          if (page.isDefined && limit.isDefined) {
-//            query = query.drop((page.get - 1) * limit.get).take(limit.get)
-//          }
-//          query
-//        }
-//      } yield testResults
-//    query
-////    exec(query).result.map(_.toList)
-////      .join(PersistenceSchema.organisationParameterValues).on(_.organizationId === _.organisation)
-////    if (orgParameters.isDefined) {
-////      orgParameters.get.foreach { entry =>
-//////        query = query.join(PersistenceSchema.organisationParameterValues).on(_.organizationId === _.organisation)
-////        query = query.join(PersistenceSchema.organisationParameterValues).on((t, p) => t.organizationId === p.organisation && p.value.inSet(entry._2))
-////      }
-////    }
-////    query
-//  }
-
   def getTestResultOfSession(sessionId: String): TestResult = {
       val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.head)
       val xml = testResult.tpl
@@ -331,7 +286,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     removeStepDocumentation(testCasePresentation)
     val presentation = XMLUtils.marshalToString(new com.gitb.tpl.ObjectFactory().createTestcase(testCasePresentation))
 
-    val q = (for {c <- PersistenceSchema.conformanceResults if c.sut === systemId && c.testcase === testCase.id} yield (c.testsession, c.result))
+    val q = for {c <- PersistenceSchema.conformanceResults if c.sut === systemId && c.testcase === testCase.id} yield (c.testsession, c.result, c.outputMessage)
 
     exec(
       (
@@ -340,23 +295,23 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
           sessionId, Some(systemId), Some(system.shortname), Some(organisation.id), Some(organisation.shortname),
           Some(community.id), Some(community.shortname), Some(testCase.id), Some(testCase.shortname), Some(testSuite.id), Some(testSuite.shortname),
           Some(actor.id), Some(actor.name), Some(specification.id), Some(specification.shortname), Some(domain.id), Some(domain.shortname),
-          initialStatus, startTime, None, presentation)) andThen
+          initialStatus, startTime, None, None, presentation)) andThen
         // Update also the conformance results for the system
-        q.update(Some(sessionId), initialStatus)
+        q.update(Some(sessionId), initialStatus, None)
       ).transactionally
     )
   }
 
-  def finishTestReport(sessionId: String, status: TestResultType) = {
+  def finishTestReport(sessionId: String, status: TestResultType, outputMessage: Option[String]) = {
     val q = for {
       t <- PersistenceSchema.testResults if t.testSessionId === sessionId
-    } yield (t.result, t.endTime)
-    val q1 = for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield c.result
+    } yield (t.result, t.endTime, t.outputMessage)
+    val q1 = for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield (c.result, c.outputMessage)
     exec(
       (
-        q.update(status.value(), Some(TimeUtil.getCurrentTimestamp())) andThen
+        q.update(status.value(), Some(TimeUtil.getCurrentTimestamp()), outputMessage) andThen
         // Update also the conformance results for the system
-        q1.update(status.value())
+        q1.update(status.value(), outputMessage)
       ).transactionally
     )
     // Triggers linked to test sessions: (communityID, systemID, actorID)
@@ -395,8 +350,8 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   def setEndTimeNow(sessionId: String) = {
     val testSession = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption)
     if (testSession.isDefined) {
-      val q = for {t <- PersistenceSchema.testResults if t.testSessionId === sessionId} yield (t.endTime)
-      val q1 = for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield (c.result)
+      val q = for {t <- PersistenceSchema.testResults if t.testSessionId === sessionId} yield t.endTime
+      val q1 = for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield c.result
       exec(
         (
           q.update(Some(TimeUtil.getCurrentTimestamp())) andThen
@@ -595,7 +550,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain),
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor),
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification),
-      Some("Sample Test Suite "+index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), Some("SUCCESS"),
+      Some("Sample Test Suite "+index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), Some("SUCCESS"), Some("An output message for the test session"),
       None, 0L, 0L, 0L)
   }
 

@@ -57,6 +57,8 @@ public class CheckTestCaseContent extends AbstractCheck {
             handleStep(testCase.getPreliminary());
             sectionChanged(TestCaseSection.STEPS);
             checkSteps(testCase.getSteps());
+            sectionChanged(TestCaseSection.OUTPUT);
+            handleTestOutput(testCase.getOutput());
             sectionChanged(TestCaseSection.SCRIPTLETS);
             if (testCase.getScriptlets() != null && testCase.getScriptlets().getScriptlet() != null) {
                 for (Scriptlet scriptlet: testCase.getScriptlets().getScriptlet()) {
@@ -156,6 +158,12 @@ public class CheckTestCaseContent extends AbstractCheck {
             handleDocumentation(((TestStep)step).getDocumentation());
         } else if (step instanceof Group) {
             handleDocumentation(((Group)step).getDocumentation());
+        }
+    }
+
+    private void handleTestOutput(Output output) {
+        for (TestCaseObserver observer: observers) {
+            observer.handleTestOutput(output);
         }
     }
 

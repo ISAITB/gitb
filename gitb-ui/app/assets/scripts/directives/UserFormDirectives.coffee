@@ -553,3 +553,28 @@
         return false
 
 ]
+
+@directives.directive 'tbResultDisplay', ['Constants', 'DataService'
+  (Constants, DataService) ->
+    scope:
+      message: '='
+      result: '='
+    restrict: 'A'
+    replace: true
+    template: '
+      <div>
+        <span ng-if="result == Constants.TEST_CASE_RESULT.SUCCESS || result == Constants.TEST_CASE_RESULT.FAILURE" class="pointer" uib-popover="{{message}}" popover-trigger="\'outsideClick\'" popover-placement="left" popover-class="{{popoverClass()}}"><i ng-class="iconToShow()"></i></span>
+        <span ng-if="result != Constants.TEST_CASE_RESULT.SUCCESS && result != Constants.TEST_CASE_RESULT.FAILURE"><i ng-class="iconToShow()"></i></span>
+      </div>
+      '
+    link: (scope, element, attrs) ->
+      scope.Constants = Constants
+      scope.iconToShow = () ->
+        DataService.iconForTestResult(scope.result)
+      scope.popoverClass = () ->
+        if scope.result == Constants.TEST_CASE_RESULT.SUCCESS
+          'result-message-popover success'
+        else 
+          'result-message-popover failure'
+
+]

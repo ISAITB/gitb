@@ -164,6 +164,7 @@ class AdminConformanceController
 						testCase.testSuiteName = result.testSuiteName
 						testCase.testCaseName = result.testCaseName
 						testCase.result = result.result
+						testCase.outputMessage = result.outputMessage
 						testCases.push(testCase)
 					statement.testCases = testCases
 					@expand(statement)

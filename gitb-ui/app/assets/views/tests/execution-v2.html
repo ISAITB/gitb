@@ -126,7 +126,12 @@
                         </div>
                     </div>
                     <div class="panel-body" style="overflow-x: auto; overflow-y: hidden;">
-                        <div class="child" seq-diagram steps-of-tests="stepsOfTests" test="{{test.id}}" actor-info-of-tests="actorInfoOfTests"></div>
+                        <div>
+                            <div class="child" seq-diagram steps-of-tests="stepsOfTests" test="{{test.id}}" actor-info-of-tests="actorInfoOfTests"></div>
+                            <div class="test-output-container" ng-if="testExecutionCtrl.testCaseOutput[test.id]">
+                                <div uib-alert class="no-margin" ng-class="{'alert-success': testExecutionCtrl.testCaseStatus[test.id] == testExecutionCtrl.Constants.TEST_CASE_STATUS.COMPLETED, 'alert-danger': testExecutionCtrl.testCaseStatus[test.id] == testExecutionCtrl.Constants.TEST_CASE_STATUS.ERROR}">{{testExecutionCtrl.testCaseOutput[test.id]}}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
