@@ -271,6 +271,7 @@ class DashboardController
     result.actor = testResult.actor?.name
     result.testSuite = testResult.testSuite?.sname
     result.testCase = testResult.test?.sname
+    result.testCaseId = testResult.test?.id
     result.organization = testResult.organization?.sname
     if orgParameters?
       for param in orgParameters

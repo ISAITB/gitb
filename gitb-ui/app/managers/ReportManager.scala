@@ -475,6 +475,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     // Result
     val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.head)
     overview.setReportResult(testResult.result)
+    overview.setOutputMessage(testResult.outputMessage.orNull)
     // Start time
     val start = testResult.startTime
     overview.setStartTime(sdf.format(new Date(start.getTime)));
@@ -678,6 +679,13 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
       } else {
         undefinedTests += 1
       }
+      if (completedTests == totalTests) {
+        overview.setOverallStatus("SUCCESS")
+      } else if (failedTests > 0) {
+        overview.setOverallStatus("FAILURE")
+      } else {
+        overview.setOverallStatus("UNDEFINED")
+      }
       if (addTestCaseResults) {
         val testCaseOverview = new TestCaseOverview()
         testCaseOverview.setId(index.toString)
@@ -689,7 +697,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
           testCaseOverview.setTestDescription("-")
         }
         testCaseOverview.setReportResult(info.result.get)
-
+        testCaseOverview.setOutputMessage(info.outputMessage.orNull)
         if (addTestCases) {
           testCaseOverview.setTitle("Test Case Report #" + index)
           testCaseOverview.setOrganisation(info.organizationName)

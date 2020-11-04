@@ -30,6 +30,46 @@
 		</box>
 	</style>
 	<style name="testCaseTitle" style="titleStyle" backcolor="#FFFFFF"/>
+	<style name="resultStyle" mode="Opaque" backcolor="#FFFFFF">
+		<conditionalStyle>
+			<conditionExpression><![CDATA["FAILURE".equals($F{reportResult})]]></conditionExpression>
+			<style backcolor="#F2DEDE">
+				<pen lineWidth="1.0" lineColor="#F2DEDE"/>
+			</style>
+		</conditionalStyle>
+		<conditionalStyle>
+			<conditionExpression><![CDATA["SUCCESS".equals($F{reportResult})]]></conditionExpression>
+			<style backcolor="#DFF0D8">
+				<pen lineWidth="1.0" lineStyle="Solid" lineColor="#DFF0D8"/>
+			</style>
+		</conditionalStyle>
+		<conditionalStyle>
+			<conditionExpression><![CDATA["UNDEFINED".equals($F{reportResult})]]></conditionExpression>
+			<style backcolor="#EDEDED">
+				<pen lineWidth="1.0" lineColor="#EDEDED"/>
+			</style>
+		</conditionalStyle>
+	</style>
+	<style name="overallResultStyle" mode="Opaque" backcolor="#FFFFFF">
+		<conditionalStyle>
+			<conditionExpression><![CDATA["FAILURE".equals($P{overallStatus})]]></conditionExpression>
+			<style backcolor="#F2DEDE">
+				<pen lineWidth="1.0" lineColor="#F2DEDE"/>
+			</style>
+		</conditionalStyle>
+		<conditionalStyle>
+			<conditionExpression><![CDATA["SUCCESS".equals($P{overallStatus})]]></conditionExpression>
+			<style backcolor="#DFF0D8">
+				<pen lineWidth="1.0" lineStyle="Solid" lineColor="#DFF0D8"/>
+			</style>
+		</conditionalStyle>
+		<conditionalStyle>
+			<conditionExpression><![CDATA["UNDEFINED".equals($P{overallStatus})]]></conditionExpression>
+			<style backcolor="#EDEDED">
+				<pen lineWidth="1.0" lineColor="#EDEDED"/>
+			</style>
+		</conditionalStyle>
+	</style>
 	<subDataset name="Dataset1" uuid="1b89a830-86f4-4613-99cd-683670ca4790">
 		<queryString>
 			<![CDATA[]]>
@@ -44,6 +84,7 @@
 		<field name="steps" class="java.util.List"/>
 		<field name="id" class="java.lang.String"/>
 		<field name="title" class="java.lang.String"/>
+		<field name="outputMessage" class="java.lang.String"/>
 	</subDataset>
 	<subDataset name="Dataset2" uuid="7f38df46-ead1-4036-abe5-2ac1415dc93a">
 		<queryString>
@@ -90,6 +131,7 @@
 	<parameter name="labelSystem" class="java.lang.String">
 		<defaultValueExpression><![CDATA["System"]]></defaultValueExpression>
 	</parameter>
+	<parameter name="overallStatus" class="java.lang.String"/>
 	<queryString>
 		<![CDATA[]]>
 	</queryString>
@@ -199,7 +241,7 @@
 				<reportElement x="21" y="33" width="752" height="1" uuid="6c8e0df0-db27-4e49-b517-4354a86cf5f9"/>
 			</line>
 		</band>
-		<band height="43">
+		<band height="16">
 			<textField>
 				<reportElement x="60" y="0" width="81" height="15" uuid="1f35fc4a-9f90-42be-bd0f-dd068599bcc6"/>
 				<textElement textAlignment="Right">
@@ -208,29 +250,42 @@
 				<textFieldExpression><![CDATA["Report date:"]]></textFieldExpression>
 			</textField>
 			<textField>
-				<reportElement x="60" y="19" width="81" height="15" uuid="75b8eb80-f4e7-483d-ab96-a094789ff375">
-					<printWhenExpression><![CDATA[$P{includeTestStatus} != null && $P{includeTestStatus}]]></printWhenExpression>
-				</reportElement>
-				<textElement textAlignment="Right">
-					<font isBold="true"/>
-				</textElement>
-				<textFieldExpression><![CDATA["Test status:"]]></textFieldExpression>
-			</textField>
-			<textField>
 				<reportElement x="151" y="0" width="341" height="15" uuid="da775b00-af56-40d5-b5ed-c539db9b0909"/>
 				<textElement textAlignment="Left">
 					<font isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{reportDate}]]></textFieldExpression>
 			</textField>
+		</band>
+		<band height="51">
+			<printWhenExpression><![CDATA[$P{includeTestStatus} != null && $P{includeTestStatus}]]></printWhenExpression>
 			<textField>
-				<reportElement x="150" y="19" width="342" height="15" uuid="98f6a5a7-5db1-490b-a020-1901d6d4f776">
-					<printWhenExpression><![CDATA[$P{includeTestStatus} != null && $P{includeTestStatus}]]></printWhenExpression>
-				</reportElement>
+				<reportElement x="60" y="7" width="81" height="15" uuid="75b8eb80-f4e7-483d-ab96-a094789ff375"/>
+				<textElement textAlignment="Right">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Test results:"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="150" y="7" width="342" height="15" uuid="98f6a5a7-5db1-490b-a020-1901d6d4f776"/>
 				<textElement textAlignment="Left">
 					<font isBold="false"/>
 				</textElement>
 				<textFieldExpression><![CDATA[$P{testStatus}]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement x="60" y="30" width="81" height="15" uuid="f5cba460-f8c4-49e5-be8d-8c73b779096f"/>
+				<textElement textAlignment="Right" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA["Status:"]]></textFieldExpression>
+			</textField>
+			<textField>
+				<reportElement style="overallResultStyle" x="150" y="30" width="90" height="15" uuid="eb8ce480-4ed9-4f6f-a476-d0cca29be920"/>
+				<textElement textAlignment="Center" verticalAlignment="Middle">
+					<font isBold="true"/>
+				</textElement>
+				<textFieldExpression><![CDATA[$P{overallStatus}]]></textFieldExpression>
 			</textField>
 		</band>
 		<band height="76">
@@ -256,8 +311,10 @@
 							<textFieldExpression><![CDATA[$F{testName}]]></textFieldExpression>
 						</textField>
 						<textField isStretchWithOverflow="true">
-							<reportElement stretchType="RelativeToTallestObject" x="690" y="5" width="66" height="15" uuid="e3542c44-01ca-43a9-9feb-23f4b37b1b16"/>
-							<textElement textAlignment="Center"/>
+							<reportElement style="resultStyle" x="690" y="5" width="66" height="15" uuid="e3542c44-01ca-43a9-9feb-23f4b37b1b16"/>
+							<textElement textAlignment="Center">
+								<font isBold="true"/>
+							</textElement>
 							<textFieldExpression><![CDATA[$F{reportResult}]]></textFieldExpression>
 						</textField>
 						<line>
@@ -313,16 +370,16 @@
 		</band>
 		<band height="292">
 			<componentElement>
-				<reportElement x="-20" y="0" width="841" height="240" uuid="465c2f82-d245-422a-9ed0-c8db950428c4">
+				<reportElement x="-20" y="0" width="841" height="279" uuid="465c2f82-d245-422a-9ed0-c8db950428c4">
 					<printWhenExpression><![CDATA[$P{includeTestCases} != null && $P{includeTestCases} && $P{testCases} != null && !$P{testCases}.isEmpty()]]></printWhenExpression>
 				</reportElement>
 				<jr:list xmlns:jr="http://jasperreports.sourceforge.net/jasperreports/components" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports/components http://jasperreports.sourceforge.net/xsd/components.xsd" printOrder="Vertical">
 					<datasetRun subDataset="Dataset1" uuid="ef66b363-4e9e-4cd5-9964-52ec3a28041c">
 						<dataSourceExpression><![CDATA[new net.sf.jasperreports.engine.data.JRBeanCollectionDataSource($P{testCases})]]></dataSourceExpression>
 					</datasetRun>
-					<jr:listContents height="240" width="841">
+					<jr:listContents height="279" width="841">
 						<subreport>
-							<reportElement x="20" y="200" width="761" height="20" uuid="0b4141f4-a326-4da9-a140-0f22d40c3bc8">
+							<reportElement x="20" y="246" width="761" height="20" uuid="0b4141f4-a326-4da9-a140-0f22d40c3bc8">
 								<printWhenExpression><![CDATA[$F{steps} != null && !$F{steps}.isEmpty()]]></printWhenExpression>
 							</reportElement>
 							<subreportParameter name="steps">
@@ -394,31 +451,33 @@
 							</textField>
 						</frame>
 						<textField>
-							<reportElement positionType="Float" x="450" y="143" width="80" height="20" uuid="f0784ce5-8ba5-42e6-bff8-2868d493562a"/>
+							<reportElement positionType="Float" x="450" y="121" width="80" height="20" uuid="f0784ce5-8ba5-42e6-bff8-2868d493562a"/>
 							<textElement textAlignment="Right" verticalAlignment="Top">
 								<font isBold="true"/>
 							</textElement>
 							<textFieldExpression><![CDATA["Start time:"]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement positionType="Float" x="450" y="121" width="80" height="20" uuid="66f764db-f103-41bd-aa0a-3e2140d00526"/>
-							<textElement textAlignment="Right" verticalAlignment="Top">
+							<reportElement positionType="Float" x="41" y="195" width="80" height="20" uuid="66f764db-f103-41bd-aa0a-3e2140d00526"/>
+							<textElement textAlignment="Right" verticalAlignment="Middle">
 								<font isBold="true"/>
 							</textElement>
 							<textFieldExpression><![CDATA["Result:"]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement positionType="Float" x="537" y="143" width="240" height="20" uuid="15a45fa5-1c20-4d85-a99c-52c041f93aae"/>
+							<reportElement positionType="Float" x="537" y="121" width="240" height="20" uuid="15a45fa5-1c20-4d85-a99c-52c041f93aae"/>
 							<textElement verticalAlignment="Top"/>
 							<textFieldExpression><![CDATA[$F{startTime}]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement positionType="Float" x="537" y="121" width="240" height="20" uuid="e136652a-1c48-4871-b34e-a2ddd44a0d50"/>
-							<textElement verticalAlignment="Top"/>
+							<reportElement style="resultStyle" positionType="Float" x="128" y="195" width="92" height="20" uuid="e136652a-1c48-4871-b34e-a2ddd44a0d50"/>
+							<textElement textAlignment="Center" verticalAlignment="Middle">
+								<font isBold="true"/>
+							</textElement>
 							<textFieldExpression><![CDATA[$F{reportResult}]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement positionType="Float" x="450" y="165" width="80" height="20" uuid="d5fa7750-2c86-4cf6-ac93-0f6eea8bde67">
+							<reportElement positionType="Float" x="450" y="143" width="80" height="20" uuid="d5fa7750-2c86-4cf6-ac93-0f6eea8bde67">
 								<printWhenExpression><![CDATA[$F{endTime} != null]]></printWhenExpression>
 							</reportElement>
 							<textElement textAlignment="Right" verticalAlignment="Top">
@@ -427,11 +486,20 @@
 							<textFieldExpression><![CDATA["End time:"]]></textFieldExpression>
 						</textField>
 						<textField>
-							<reportElement positionType="Float" x="537" y="165" width="240" height="20" uuid="fc427ae6-9f0f-4873-afe8-0de9faf40fe9">
+							<reportElement positionType="Float" x="537" y="143" width="240" height="20" uuid="fc427ae6-9f0f-4873-afe8-0de9faf40fe9">
 								<printWhenExpression><![CDATA[$F{endTime} != null]]></printWhenExpression>
 							</reportElement>
 							<textElement verticalAlignment="Top"/>
 							<textFieldExpression><![CDATA[$F{endTime}]]></textFieldExpression>
+						</textField>
+						<textField isStretchWithOverflow="true">
+							<reportElement style="resultStyle" positionType="Float" x="128" y="215" width="372" height="20" uuid="0201f39f-7601-47ce-a443-29f681fc9b39">
+								<printWhenExpression><![CDATA[$F{outputMessage} != null]]></printWhenExpression>
+							</reportElement>
+							<textElement textAlignment="Left" verticalAlignment="Middle">
+								<paragraph leftIndent="5" rightIndent="5"/>
+							</textElement>
+							<textFieldExpression><![CDATA[$F{outputMessage}]]></textFieldExpression>
 						</textField>
 					</jr:listContents>
 				</jr:list>

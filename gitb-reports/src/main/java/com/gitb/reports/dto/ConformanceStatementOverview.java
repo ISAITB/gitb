@@ -11,6 +11,7 @@ public class ConformanceStatementOverview {
     private String organisation;
     private String system;
     private String testStatus;
+    private String overallStatus;
     private String reportDate;
     private Boolean includeTestCases;
     private Boolean includeDetails = Boolean.TRUE;
@@ -23,6 +24,14 @@ public class ConformanceStatementOverview {
     private String labelOrganisation;
     private String labelSystem;
     private List<TestCaseOverview> testCases;
+
+    public String getOverallStatus() {
+        return overallStatus;
+    }
+
+    public void setOverallStatus(String overallStatus) {
+        this.overallStatus = overallStatus;
+    }
 
     public String getTitle() {
         return title;
