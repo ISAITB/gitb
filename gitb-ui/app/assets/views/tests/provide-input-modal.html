@@ -1,35 +1,33 @@
 <div class="modal-header">
-	<h4 class="modal-title" id="myModalLabel">Server interaction</h4>
+	<h4 class="modal-title" id="myModalLabel">{{inputTitle}}</h4>
 </div>
 <form>
 	<div class="modal-body" style="overflow-x: auto; overflow-y: hidden;">
-		<div class="row">
-			<div class="row" ng-repeat="interaction in interactions">
-				<div class="form-group">
-					<div class="col-md-11 col-centered" >
-						<label>{{interaction.desc}}</label>
-						<!-- request interaction: server asks operator to send inputs -->
-						<div ng-if="interaction.type == 'request'">
-							<!-- Case 1: input text -->
-							<input ng-if="interaction.contentType != 'BASE64' && !interaction.options" ng-attr-id="{{'input-'+$index}}" type="text" class="form-control" ng-model="interaction.data"/>
-							<!-- Case 2: select multiple -->
-							<select ng-if="interaction.contentType != 'BASE64' && interaction.options && interaction.multiple" ng-attr-id="{{'input-'+$index}}" multiple="true" class="form-control" ng-model="interaction.data" ng-options="option.label for option in interaction.optionData track by option.value"></select>
-							<!-- Case 3: select single -->
-							<select ng-if="interaction.contentType != 'BASE64' && interaction.options && !interaction.multiple" ng-attr-id="{{'input-'+$index}}" class="form-control" ng-model="interaction.data" ng-options="option.label for option in interaction.optionData track by option.value"><option value=""></option></select>
-							<!-- Case 4: Upload file -->
-							<div ng-if="interaction.contentType == 'BASE64'">
-								<span class="tab" ng-if="interaction.file != null">{{interaction.file.name}} - {{interaction.file.size}} bytes</span>
-								<span class="tab" ng-if="interaction.file == null">No file selected</span>
-								<button type="button" class="btn btn-default" ng-attr-id="{{'input-'+$index}}" ng-file-select="onFileSelect(interaction, $files)">Select file</button>
-							</div>
+		<div ng-repeat="interaction in interactions">
+			<div class="form-group">
+				<div class="col-md-12 col-centered" >
+					<label>{{interaction.desc}}</label>
+					<!-- request interaction: server asks operator to send inputs -->
+					<div ng-if="interaction.type == 'request'">
+						<!-- Case 1: input text -->
+						<input ng-if="interaction.contentType != 'BASE64' && !interaction.options" ng-attr-id="{{'input-'+$index}}" type="text" class="form-control" ng-model="interaction.data"/>
+						<!-- Case 2: select multiple -->
+						<select ng-if="interaction.contentType != 'BASE64' && interaction.options && interaction.multiple" ng-attr-id="{{'input-'+$index}}" multiple="true" class="form-control" ng-model="interaction.data" ng-options="option.label for option in interaction.optionData track by option.value"></select>
+						<!-- Case 3: select single -->
+						<select ng-if="interaction.contentType != 'BASE64' && interaction.options && !interaction.multiple" ng-attr-id="{{'input-'+$index}}" class="form-control" ng-model="interaction.data" ng-options="option.label for option in interaction.optionData track by option.value"><option value=""></option></select>
+						<!-- Case 4: Upload file -->
+						<div ng-if="interaction.contentType == 'BASE64'">
+							<span class="tab" ng-if="interaction.file != null">{{interaction.file.name}} - {{interaction.file.size}} bytes</span>
+							<span class="tab" ng-if="interaction.file == null">No file selected</span>
+							<button type="button" class="btn btn-default" ng-attr-id="{{'input-'+$index}}" ng-file-select="onFileSelect(interaction, $files)">Select file</button>
 						</div>
-						<!-- instruction interaction: server shows a message -->
-						<div ng-if="interaction.type == 'instruction' && interaction.value != null">
-							<span class="tab" ng-if="interaction.name != null">{{interaction.name}}</span>
-							<button type="button" class="btn btn-default" ng-if="interaction.contentType == 'BASE64'" ng-click="download(interaction)">Download</button>
-							<!-- configuration parameter is a string -->
-							<span class="tab" ng-if="interaction.contentType != 'BASE64'">{{interaction.value}}</span>
-						</div>
+					</div>
+					<!-- instruction interaction: server shows a message -->
+					<div ng-if="interaction.type == 'instruction' && interaction.value != null">
+						<span class="tab" ng-if="interaction.name != null">{{interaction.name}}</span>
+						<button type="button" class="btn btn-default" ng-if="interaction.contentType == 'BASE64'" ng-click="download(interaction)">Download</button>
+						<!-- configuration parameter is a string -->
+						<span class="tab" ng-if="interaction.contentType != 'BASE64'">{{interaction.value}}</span>
 					</div>
 				</div>
 			</div>

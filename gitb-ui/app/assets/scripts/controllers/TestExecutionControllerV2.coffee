@@ -471,7 +471,7 @@ class TestExecutionControllerV2
     response = angular.fromJson(msg.data)
     stepId = response.stepId
     if response.interactions? #interactWithUsers
-        @interact(response.interactions, stepId)
+        @interact(response.interactions, response.inputTitle, stepId)
     else if response.notify?
       if response.notify.simulatedConfigs?
         @simulatedConfigs = response.notify.simulatedConfigs
@@ -502,7 +502,7 @@ class TestExecutionControllerV2
 
           @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop)
 
-  interact: (interactions, stepId) =>
+  interact: (interactions, inputTitle, stepId) =>
     sessionForModal = @session
 
     modalOptions =
@@ -512,6 +512,7 @@ class TestExecutionControllerV2
       backdrop: 'static'      
       resolve: 
         interactions: () => interactions
+        inputTitle: () => inputTitle
         session: () => sessionForModal
         interactionStepId: () => stepId
 

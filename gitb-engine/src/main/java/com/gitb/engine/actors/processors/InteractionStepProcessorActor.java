@@ -91,6 +91,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 VariableResolver variableResolver = new VariableResolver(scope);
                 List<InstructionOrRequest> instructionAndRequests = step.getInstructOrRequest();
                 UserInteractionRequest userInteractionRequest = new UserInteractionRequest();
+                userInteractionRequest.setInputTitle(step.getInputTitle() == null?"Server interaction":step.getInputTitle());
                 String sutActorId = getSUTActor().getId();
                 if (StringUtils.isBlank(step.getWith())) {
                     userInteractionRequest.setWith(sutActorId);
