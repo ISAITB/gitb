@@ -3,19 +3,18 @@ package com.gitb.engine.remote.processing;
 import com.gitb.core.AnyContent;
 import com.gitb.core.Configuration;
 import com.gitb.core.ErrorCode;
-import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.engine.remote.RemoteCallContext;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.processing.IProcessingHandler;
 import com.gitb.processing.ProcessingData;
 import com.gitb.processing.ProcessingReport;
-import com.gitb.ps.*;
 import com.gitb.ps.Void;
-import com.gitb.types.*;
+import com.gitb.ps.*;
+import com.gitb.types.DataType;
+import com.gitb.types.DataTypeFactory;
 import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
-import org.apache.commons.codec.binary.Base64;
 
 import java.net.MalformedURLException;
 import java.net.URI;
@@ -89,7 +88,7 @@ public class RemoteProcessingModuleClient implements IProcessingHandler {
     private ProcessingData getOutput(List<AnyContent> output) {
         ProcessingData data = new ProcessingData();
         for (AnyContent content : output) {
-            data.getData().put(content.getName(), toDataType(content));
+            data.getData().put(content.getName(), DataTypeFactory.getInstance().create(content));
         }
         return data;
     }
@@ -121,49 +120,6 @@ public class RemoteProcessingModuleClient implements IProcessingHandler {
             }
         }
         return serviceURL;
-    }
-
-    private DataType toDataType(AnyContent content) {
-        DataType type;
-        if (DataType.MAP_DATA_TYPE.equals(content.getType())) {
-            type = new MapType();
-            for (AnyContent child : content.getItem()) {
-                ((MapType) type).addItem(child.getName(), toDataType(child));
-            }
-        } else if (DataType.STRING_DATA_TYPE.equals(content.getType())) {
-            type = new StringType();
-            type.setValue(content.getValue());
-        } else if (DataType.BINARY_DATA_TYPE.equals(content.getType())) {
-            type = new BinaryType();
-            if (ValueEmbeddingEnumeration.BASE_64.equals(content.getEmbeddingMethod())) {
-                type.setValue(Base64.decodeBase64(content.getValue()));
-            } else {
-                throw new IllegalStateException("Only base64 embedding supported for binary types");
-            }
-        } else if (DataType.BOOLEAN_DATA_TYPE.equals(content.getType())) {
-            type = new BooleanType();
-            type.setValue(Boolean.valueOf(content.getValue()));
-        } else if (DataType.NUMBER_DATA_TYPE.equals(content.getType())) {
-            type = new NumberType();
-            type.setValue(content.getValue());
-        } else if (DataType.LIST_DATA_TYPE.equals(content.getType())) {
-            type = new ListType();
-            for (AnyContent child : content.getItem()) {
-                ((ListType) type).append(toDataType(child));
-            }
-        } else if (DataType.OBJECT_DATA_TYPE.equals(content.getType())) {
-            type = new ObjectType();
-            if (ValueEmbeddingEnumeration.BASE_64.equals(content.getEmbeddingMethod())) {
-                type.deserialize(Base64.decodeBase64(content.getValue()));
-            } else if (ValueEmbeddingEnumeration.STRING.equals(content.getEmbeddingMethod())) {
-                type.deserialize(content.getValue().getBytes());
-            } else {
-                throw new IllegalStateException("Only base64 and string embedding supported for object types");
-            }
-        } else {
-            throw new IllegalStateException("Unsupported data type [" + content.getType() + "]");
-        }
-        return type;
     }
 
 }

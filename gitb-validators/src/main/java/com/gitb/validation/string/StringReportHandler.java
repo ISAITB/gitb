@@ -14,8 +14,8 @@ import com.gitb.validation.common.AbstractReportHandler;
  * Created by senan
  */
 public class StringReportHandler extends AbstractReportHandler {
-    public static final String ACTUALSTRING_ITEM_NAME = "ACTUAL STRING";
-    public static final String EXPECTEDSTRING_ITEM_NAME = "EXPECTED STRING";
+    public static final String ACTUALSTRING_ITEM_NAME = "actual";
+    public static final String EXPECTEDSTRING_ITEM_NAME = "expected";
 
     protected StringReportHandler(StringType actualstring, StringType expectedstring, BooleanType result) {
         super();

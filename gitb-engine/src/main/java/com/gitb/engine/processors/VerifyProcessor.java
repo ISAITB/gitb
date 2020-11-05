@@ -15,6 +15,7 @@ import com.gitb.tr.ObjectFactory;
 import com.gitb.tr.*;
 import com.gitb.types.BooleanType;
 import com.gitb.types.DataType;
+import com.gitb.types.DataTypeFactory;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.validation.IValidationHandler;
@@ -117,6 +118,7 @@ public class VerifyProcessor implements IProcessor {
 		if (report instanceof TAR) {
 			completeReportCounters((TAR)report);
 		}
+		// Record the step's result as a Boolean flag bound to its ID
         if(verify.getId() != null && verify.getId().length() > 0) {
             boolean result = report.getResult().equals(TestResultType.SUCCESS) || report.getResult().equals(TestResultType.WARNING);
 
@@ -126,6 +128,13 @@ public class VerifyProcessor implements IProcessor {
                 scope.createVariable(verify.getId()).setValue(new BooleanType(result));
             }
         }
+        // Record the report's context if specified to do so.
+		if (verify.getOutput() != null && !verify.getOutput().isBlank()) {
+			if ((report instanceof TAR) && ((TAR)report).getContext() != null) {
+				String outputVariable = verify.getOutput().trim();
+				scope.createVariable(outputVariable).setValue(DataTypeFactory.getInstance().create(((TAR)report).getContext()));
+			}
+		}
 		return report;
 	}
 

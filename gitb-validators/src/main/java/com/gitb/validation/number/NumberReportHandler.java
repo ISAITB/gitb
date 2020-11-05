@@ -15,8 +15,8 @@ import com.gitb.validation.common.AbstractReportHandler;
  */
 public class NumberReportHandler extends AbstractReportHandler {
 
-    public static final String ACTUALNUMBER_ITEM_NAME = "ACTUAL NUMBER";
-    public static final String EXPECTEDNUMBER_ITEM_NAME = "EXPECTED NUMBER";
+    public static final String ACTUALNUMBER_ITEM_NAME = "actual";
+    public static final String EXPECTEDNUMBER_ITEM_NAME = "expected";
 
     protected NumberReportHandler(NumberType actualnumber, NumberType expectednumber, BooleanType result) {
         super();

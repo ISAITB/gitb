@@ -33,8 +33,8 @@ public class SchematronReportHandler extends AbstractReportHandler {
 
     private static final Logger logger = LoggerFactory.getLogger(SchematronReportHandler.class);
 
-    public static final String XML_ITEM_NAME  = "XML";
-    public static final String SCH_ITEM_NAME  = "SCH";
+    public static final String XML_ITEM_NAME  = "xml";
+    public static final String SCH_ITEM_NAME  = "sch";
 
     private Document node;
     private SchematronOutputType svrlReport;
