@@ -22,20 +22,31 @@ getTesterNameForActor = (actor, actorInfo) ->
   actorName
 
 extractActors = (messages, actorInfo) =>
+  actors = extractActorsInternal(messages, actorInfo)
+  hasOrdering = _.find(actorInfo, (actor) => 
+    return actor.displayOrder?
+  )
+  if hasOrdering?
+    actorsToReturn = sortActors(actors, actorInfo)
+  else
+    actorsToReturn = actors
+  moveTestEngineToTheEnd(actorsToReturn)
+
+extractActorsInternal = (messages, actorInfo) =>
   collection = _ messages
   collection = collection.map (message) ->
     if message.from? && message.to?
       [message.from, message.to]
     else if message.type == 'loop'
-      extractActors(message.steps, actorInfo)
+      extractActorsInternal(message.steps, actorInfo)
     else if message.type == 'decision'
-      _then = extractActors(message.then, actorInfo)
-      _else = extractActors(message.else, actorInfo)
+      _then = extractActorsInternal(message.then, actorInfo)
+      _else = extractActorsInternal(message.else, actorInfo)
 
       _then.concat _else
     else if message.type == 'flow'
       for thread in message.threads
-        extractActors(thread, actorInfo)
+        extractActorsInternal(thread, actorInfo)
     else if message.type == 'exit'
       [TEST_ENGINE_ACTOR, TEST_ENGINE_ACTOR]
     else if message.type == 'interact'
@@ -49,13 +60,14 @@ extractActors = (messages, actorInfo) =>
     else
       []
   flattened = collection.flatten().unique().value()
-  hasOrdering = _.find(actorInfo, (actor) => 
-    return actor.displayOrder?
-  )
-  if hasOrdering?
-    sortActors(flattened, actorInfo)
-  else
-    flattened
+  flattened
+
+moveTestEngineToTheEnd = (actors) =>
+  testEngineIndex = actors.indexOf(TEST_ENGINE_ACTOR)
+  if testEngineIndex != -1
+    actors.splice(testEngineIndex, 1)
+    actors.push(TEST_ENGINE_ACTOR)
+  actors
 
 sortActors = (actors, actorInfo) =>
   sortedArray = []
