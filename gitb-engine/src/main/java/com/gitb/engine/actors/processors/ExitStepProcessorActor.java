@@ -36,7 +36,7 @@ public class ExitStepProcessorActor extends AbstractTestStepActor<ExitStep> {
 		if (resolver.isVariableReference(step.getSuccess())) {
 			isSuccess = (Boolean)resolver.resolveVariableAsBoolean(step.getSuccess()).getValue();
 		} else {
-			isSuccess = Boolean.valueOf(step.getSuccess());
+			isSuccess = Boolean.parseBoolean(step.getSuccess());
 		}
 		TestStepReportType report = new SR();
 		report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());

@@ -16,11 +16,7 @@ import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.tdl.Expression;
-import com.gitb.tdl.OutputCase;
-import com.gitb.tdl.OutputCaseSet;
-import com.gitb.tdl.TestCase;
-import com.gitb.tr.SR;
+import com.gitb.tdl.*;
 import com.gitb.tr.TAR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
@@ -63,11 +59,50 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
         TestCaseContext context = SessionManager
                 .getInstance()
                 .getContext(sessionId);
-
         if (context != null) {
             testCase = context.getTestCase();
+            applyStopOnErrorSemantics(testCase.getSteps(), testCase.getSteps().isStopOnError());
             if (testCase.getPreliminary() != null) {
                 preliminaryProcessorActor = InteractionStepProcessorActor.create(InteractionStepProcessorActor.class, getContext(), testCase.getPreliminary(), context.getScope(), PRELIMINARY_STEP_ID);
+            }
+        }
+    }
+
+    private void applyStopOnErrorSemantics(Sequence step, boolean stopOnError) {
+        if (step != null) {
+            if (stopOnError) {
+                step.setStopOnError(true);
+            }
+            for (Object childStep: step.getSteps()) {
+                if (childStep instanceof Sequence) {
+                    applyStopOnErrorSemantics((Sequence)childStep, step.isStopOnError());
+                }
+                if (childStep instanceof TestConstruct) {
+                    applyStopOnErrorSemantics((TestConstruct)childStep, step.isStopOnError());
+                }
+            }
+        }
+    }
+
+    private void applyStopOnErrorSemantics(TestConstruct step, boolean stopOnError) {
+        if (stopOnError) {
+            step.setStopOnError(true);
+        }
+        // Cover also the steps that have internal sequences.
+        if (step instanceof IfStep) {
+            applyStopOnErrorSemantics(((IfStep) step).getThen(), step.isStopOnError());
+            applyStopOnErrorSemantics(((IfStep) step).getElse(), step.isStopOnError());
+        } else if (step instanceof WhileStep) {
+            applyStopOnErrorSemantics(((WhileStep) step).getDo(), step.isStopOnError());
+        } else if (step instanceof ForEachStep) {
+            applyStopOnErrorSemantics(((ForEachStep) step).getDo(), step.isStopOnError());
+        } else if (step instanceof RepeatUntilStep) {
+            applyStopOnErrorSemantics(((RepeatUntilStep) step).getDo(), step.isStopOnError());
+        } else if (step instanceof FlowStep) {
+            if (((FlowStep) step).getThread() != null) {
+                for (Sequence thread: ((FlowStep) step).getThread()) {
+                    applyStopOnErrorSemantics(thread, step.isStopOnError());
+                }
             }
         }
     }
@@ -196,7 +231,12 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
             ExpressionHandler expressionHandler = new ExpressionHandler(context.getScope());
             if (outputSet.getCase() != null) {
                  for (OutputCase outputCase: outputSet.getCase()) {
-                     boolean condition = (boolean) expressionHandler.processExpression(outputCase.getCond(), DataType.BOOLEAN_DATA_TYPE).getValue();
+                     boolean condition = false;
+                     try {
+                         condition = (boolean) expressionHandler.processExpression(outputCase.getCond(), DataType.BOOLEAN_DATA_TYPE).getValue();
+                     } catch (Exception e) {
+                         logger.warn(MarkerFactory.getDetachedMarker(sessionId), "Skipping output message calculation due to expression error.", e);
+                     }
                      if (condition) {
                          message = applyCaseExpression(outputCase.getMessage(), expressionHandler);
                          if (message != null) {

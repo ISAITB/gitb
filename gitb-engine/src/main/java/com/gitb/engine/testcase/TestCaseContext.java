@@ -121,7 +121,11 @@ public class TestCaseContext {
 		/**
 		 * Execution is completed or stopped by user or exit with some error
 		 */
-        STOPPED
+        STOPPED,
+		/**
+		 * Execution is in the process of stopping
+		 */
+		STOPPING
     }
 
     public TestCaseContext(TestCase testCase, String sessionId) {

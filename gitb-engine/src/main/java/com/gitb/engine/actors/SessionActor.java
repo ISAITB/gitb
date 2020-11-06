@@ -178,6 +178,7 @@ public class SessionActor extends Actor {
                         unexpectedCommand(message, context);
                     }
                     break;
+                case STOPPING:
                 case EXECUTION:
                     if (message instanceof TestStepStatusEvent) {
                         TestStepStatusEvent event = (TestStepStatusEvent) message;
@@ -190,6 +191,7 @@ public class SessionActor extends Actor {
 
                         sendStatusUpdate(event);
                     } else if (message instanceof PrepareForStopCommand) {
+                        context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPING);
                         ActorRef child = getContext().findChild(TestCaseProcessorActor.NAME).orElseThrow(() -> new IllegalStateException("TestCaseProcessorActor actorRef not found"));
                         try {
                             ActorUtils.askBlocking(child, message);
@@ -198,10 +200,10 @@ public class SessionActor extends Actor {
                         }
                         getSender().tell(Boolean.TRUE, self());
                     } else if (message instanceof StopCommand) {
+                        context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPED);
                         ActorRef child = getContext().findChild(TestCaseProcessorActor.NAME).orElseThrow(() -> new IllegalStateException("TestCaseProcessorActor actorRef not found"));
                         child.tell(message, self());
                         context.destroy();
-                        context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPED);
                         SessionManager.getInstance().endSession(((StopCommand) message).getSessionId());
                         self().tell(PoisonPill.getInstance(), self());
                     } else {

@@ -61,7 +61,12 @@ public abstract class AbstractProcessorActor<T> extends AbstractTestStepActor<T>
 		promise.future().failed().foreach(new OnFailure() {
 			@Override
 			public void onFailure(Throwable failure) {
-				updateTestStepStatus(context, new ErrorStatusEvent(failure), null, true);
+				boolean logError = true;
+				if (failure instanceof GITBEngineInternalError && ((GITBEngineInternalError)failure).getErrorInfo() != null && ((GITBEngineInternalError)failure).getErrorInfo().getErrorCode() == ErrorCode.CANCELLATION) {
+					// This is a cancelled step due to a session being stopped.
+					logError = false;
+				}
+				updateTestStepStatus(context, new ErrorStatusEvent(failure), null, true, logError);
 			}
 		}, getContext().dispatcher());
 	}
