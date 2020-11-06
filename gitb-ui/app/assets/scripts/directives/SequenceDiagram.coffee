@@ -515,7 +515,7 @@ extractSteps = (s, actorInfo) =>
                 step.report.tcInstanceId = scope.sessionId
                 step.report.path = scope.testResultFlat[step.id].path
             if !statusToSet?
-              if parentStatus == Constants.TEST_STATUS.COMPLETED || parentStatus == Constants.TEST_STATUS.ERROR
+              if parentStatus == Constants.TEST_STATUS.COMPLETED || parentStatus == Constants.TEST_STATUS.ERROR || parentStatus == Constants.TEST_STATUS.SKIPPED
                 statusToSet = Constants.TEST_STATUS.SKIPPED
             step.status =  statusToSet
             if step.type == "decision"

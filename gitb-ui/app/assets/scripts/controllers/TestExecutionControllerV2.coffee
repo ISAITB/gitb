@@ -464,8 +464,22 @@ class TestExecutionControllerV2
 
   setPendingStepsToSkipped: () =>
     for step in @$scope.stepsOfTests[@currentTest.id]
-      if step.status == @Constants.TEST_STATUS.PROCESSING || step.status == @Constants.TEST_STATUS.WAITING
-        step.status = @Constants.TEST_STATUS.SKIPPED
+      @skipPendingSteps(step)
+
+  skipPendingStepSequence:(steps) =>
+    for step in steps
+      @skipPendingSteps(step)
+
+  skipPendingSteps:(step) =>
+    if !step.status? || step.status == @Constants.TEST_STATUS.PROCESSING || step.status == @Constants.TEST_STATUS.WAITING
+      step.status = @Constants.TEST_STATUS.SKIPPED
+    if step.type == 'loop'
+      @skipPendingStepSequence(step.steps)
+    else if step.type == 'decision'
+      @skipPendingStepSequence(step.then)
+      @skipPendingStepSequence(step.else)
+    else if step.type == 'flow'
+      @skipPendingStepSequence(step.threads)
 
   processMessage: (msg) =>
     response = angular.fromJson(msg.data)
@@ -584,7 +598,7 @@ class TestExecutionControllerV2
       else
         current = step
 
-      if current? && current.status != status
+      if current? && current.id == stepId && current.status != status
         if (status == @Constants.TEST_STATUS.COMPLETED) ||
         (status == @Constants.TEST_STATUS.ERROR) ||
         (status == @Constants.TEST_STATUS.WARNING) ||
