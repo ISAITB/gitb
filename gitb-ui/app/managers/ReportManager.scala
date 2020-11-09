@@ -7,7 +7,7 @@ import java.time.LocalDateTime
 import java.util
 import java.util.Date
 
-import javax.xml.transform.stream.StreamSource
+import actors.events.{ConformanceStatementSucceededEvent, TestSessionFailedEvent, TestSessionSucceededEvent}
 import com.gitb.core.StepStatus
 import com.gitb.reports.ReportGenerator
 import com.gitb.reports.dto.{ConformanceStatementOverview, TestCaseOverview}
@@ -17,6 +17,7 @@ import com.gitb.tr._
 import com.gitb.utils.XMLUtils
 import config.Configurations
 import javax.inject.{Inject, Singleton}
+import javax.xml.transform.stream.StreamSource
 import models.Enums.TestResultStatus
 import models._
 import org.apache.commons.codec.binary.Base64
@@ -82,7 +83,7 @@ object ReportManager {
   * Created by senan on 03.12.2014.
   */
 @Singleton
-class ReportManager @Inject() (actorManager: ActorManager, systemManager: SystemManager, organizationManager: OrganizationManager, communityManager: CommunityManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager) extends BaseManager(dbConfigProvider) {
+class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: ActorManager, systemManager: SystemManager, organizationManager: OrganizationManager, communityManager: CommunityManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -93,15 +94,18 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
   def getSystemActiveTestResults(systemId: Long,
                                  domainIds: Option[List[Long]],
                                  specIds: Option[List[Long]],
+                                 actorIds: Option[List[Long]],
                                  testSuiteIds: Option[List[Long]],
                                  testCaseIds: Option[List[Long]],
                                  startTimeBegin: Option[String],
                                  startTimeEnd: Option[String],
+                                 sessionId: Option[String],
                                  sortColumn: Option[String],
                                  sortOrder: Option[String]): List[TestResult] = {
-    val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, None, startTimeBegin, startTimeEnd, None, None, sortColumn, sortOrder)
-    val testResults = exec(query.filter(_.sutId === systemId).filter(_.endTime.isEmpty).result.map(_.toList))
-    testResults
+    exec(
+      getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, None, Some(List(systemId)), None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
+        .result.map(_.toList)
+    )
   }
 
   def getTestResults(page: Long,
@@ -109,6 +113,7 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
                      systemId: Long,
                      domainIds: Option[List[Long]],
                      specIds: Option[List[Long]],
+                     actorIds: Option[List[Long]],
                      testSuiteIds: Option[List[Long]],
                      testCaseIds: Option[List[Long]],
                      results: Option[List[String]],
@@ -116,59 +121,39 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
                      startTimeEnd: Option[String],
                      endTimeBegin: Option[String],
                      endTimeEnd: Option[String],
+                     sessionId: Option[String],
                      sortColumn: Option[String],
-                     sortOrder: Option[String]): List[TestResult] = {
-    val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
-    val testResults = exec(query.filter(_.sutId === systemId).filter(_.endTime.isDefined).drop((page - 1) * limit).take(limit).result.map(_.toList))
-    testResults
-  }
+                     sortOrder: Option[String]): (Iterable[TestResult], Int) = {
 
-  def getTestResultsCount(systemId: Long,
-                          domainIds: Option[List[Long]],
-                          specIds: Option[List[Long]],
-                          testSuiteIds: Option[List[Long]],
-                          testCaseIds: Option[List[Long]],
-                          results: Option[List[String]],
-                          startTimeBegin: Option[String],
-                          startTimeEnd: Option[String],
-                          endTimeBegin: Option[String],
-                          endTimeEnd: Option[String]): Long = {
-    val query = getTestResultQuery(None, domainIds, specIds, testSuiteIds, testCaseIds, None, None, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, None, None)
-    val count = exec(query.filter(_.sutId === systemId).filter(_.endTime.isDefined).size.result)
-    count
+    val query = getTestResultsQuery(None, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, None, Some(List(systemId)), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
+    val output = exec(
+      for {
+        results <- query.drop((page - 1) * limit).take(limit).result
+        resultCount <- query.size.result
+      } yield (results, resultCount)
+    )
+    output
   }
 
   def getActiveTestResults(communityIds: Option[List[Long]],
                            domainIds: Option[List[Long]],
                            specIds: Option[List[Long]],
+                           actorIds: Option[List[Long]],
                            testSuiteIds: Option[List[Long]],
                            testCaseIds: Option[List[Long]],
-                           organizationIds: Option[List[Long]],
+                           organisationIds: Option[List[Long]],
                            systemIds: Option[List[Long]],
                            startTimeBegin: Option[String],
                            startTimeEnd: Option[String],
+                           sessionId: Option[String],
+                           orgParameters: Option[Map[Long, Set[String]]],
+                           sysParameters: Option[Map[Long, Set[String]]],
                            sortColumn: Option[String],
                            sortOrder: Option[String]): List[TestResult] = {
-    val query = getTestResultQuery(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, None, startTimeBegin, startTimeEnd, None, None, sortColumn, sortOrder)
-    val testResults = exec(query.filter(_.endTime.isEmpty).result.map(_.toList))
-    testResults
-  }
-
-  def getFinishedTestResultsCount(communityIds: Option[List[Long]],
-                                  domainIds: Option[List[Long]],
-                                  specIds: Option[List[Long]],
-                                  testSuiteIds: Option[List[Long]],
-                                  testCaseIds: Option[List[Long]],
-                                  organizationIds: Option[List[Long]],
-                                  systemIds: Option[List[Long]],
-                                  results: Option[List[String]],
-                                  startTimeBegin: Option[String],
-                                  startTimeEnd: Option[String],
-                                  endTimeBegin: Option[String],
-                                  endTimeEnd: Option[String]): Long = {
-    val testResults = getTestResultQuery(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, None, None)
-    val count = exec(testResults.filter(_.endTime.isDefined).size.result)
-    count
+    exec(
+      getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, conformanceManager.organisationIdsToUse(organisationIds, orgParameters), conformanceManager.systemIdsToUse(systemIds, sysParameters), None, startTimeBegin, startTimeEnd, None, None, sessionId, Some(false), sortColumn, sortOrder)
+        .result.map(_.toList)
+    )
   }
 
   def getFinishedTestResults(page: Long,
@@ -176,95 +161,66 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
                              communityIds: Option[List[Long]],
                              domainIds: Option[List[Long]],
                              specIds: Option[List[Long]],
+                             actorIds: Option[List[Long]],
                              testSuiteIds: Option[List[Long]],
                              testCaseIds: Option[List[Long]],
-                             organizationIds: Option[List[Long]],
+                             organisationIds: Option[List[Long]],
                              systemIds: Option[List[Long]],
                              results: Option[List[String]],
                              startTimeBegin: Option[String],
                              startTimeEnd: Option[String],
                              endTimeBegin: Option[String],
                              endTimeEnd: Option[String],
+                             sessionId: Option[String],
+                             orgParameters: Option[Map[Long, Set[String]]],
+                             sysParameters: Option[Map[Long, Set[String]]],
                              sortColumn: Option[String],
-                             sortOrder: Option[String]): List[TestResult] = {
-    val query = getTestResultQuery(communityIds, domainIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder)
-    val testResults = exec(query.filter(_.endTime.isDefined).drop((page - 1) * limit).take(limit).result.map(_.toList))
-    testResults
+                             sortOrder: Option[String]): (Iterable[TestResult], Int) = {
+
+    val query = getTestResultsQuery(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, conformanceManager.organisationIdsToUse(organisationIds, orgParameters), conformanceManager.systemIdsToUse(systemIds, sysParameters), results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, Some(true), sortColumn, sortOrder)
+    val output = exec(
+      for {
+        results <- query.drop((page - 1) * limit).take(limit).result
+        resultCount <- query.size.result
+      } yield (results, resultCount)
+    )
+    output
   }
 
-  private def getTestResultQuery(communityIds: Option[List[Long]],
-                                 domainIds: Option[List[Long]],
-                                 specIds: Option[List[Long]],
-                                 testSuiteIds: Option[List[Long]],
-                                 testCaseIds: Option[List[Long]],
-                                 organizationIds: Option[List[Long]],
-                                 systemIds: Option[List[Long]],
-                                 results: Option[List[String]],
-                                 startTimeBegin: Option[String],
-                                 startTimeEnd: Option[String],
-                                 endTimeBegin: Option[String],
-                                 endTimeEnd: Option[String],
-                                 sortColumn: Option[String],
-                                 sortOrder: Option[String]) = {
-
-    var query = for {
-      testResult <- PersistenceSchema.testResults
-    } yield testResult
-
-    query = communityIds match {
-      case Some(ids) => query.filter(_.communityId inSet ids)
-      case None => query
-    }
-
-    query = domainIds match {
-      case Some(ids) => query.filter(_.domainId inSet ids)
-      case None => query
-    }
-
-    query = specIds match {
-      case Some(ids) => query.filter(_.specificationId inSet ids)
-      case None => query
-    }
-
-    query = testCaseIds match {
-      case Some(ids) => query.filter(_.testCaseId inSet ids)
-      case None => query
-    }
-
-    query = organizationIds match {
-      case Some(ids) => query.filter(_.organizationId inSet ids)
-      case None => query
-    }
-
-    query = systemIds match {
-      case Some(ids) => query.filter(_.sutId inSet ids)
-      case None => query
-    }
-
-    query = results match {
-      case Some(s) => query.filter(_.result inSet s)
-      case None => query
-    }
-
-    query = testSuiteIds match {
-      case Some(ids) => query.filter(_.testSuiteId inSet ids)
-      case None => query
-    }
-
-    if (startTimeBegin.isDefined && startTimeEnd.isDefined) {
-      val start = TimeUtil.parseTimestamp(startTimeBegin.get)
-      val end = TimeUtil.parseTimestamp(startTimeEnd.get)
-
-      query = query.filter(_.startTime >= start).filter(_.startTime <= end)
-    }
-
-    if (endTimeBegin.isDefined && endTimeEnd.isDefined) {
-      val start = TimeUtil.parseTimestamp(endTimeBegin.get)
-      val end = TimeUtil.parseTimestamp(endTimeEnd.get)
-
-      query = query.filter(_.endTime >= start).filter(_.endTime <= end)
-    }
-
+  private def getTestResultsQuery(communityIds: Option[List[Long]],
+                                  domainIds: Option[List[Long]],
+                                  specIds: Option[List[Long]],
+                                  actorIds: Option[List[Long]],
+                                  testSuiteIds: Option[List[Long]],
+                                  testCaseIds: Option[List[Long]],
+                                  organizationIds: Option[Iterable[Long]],
+                                  systemIds: Option[Iterable[Long]],
+                                  results: Option[List[String]],
+                                  startTimeBegin: Option[String],
+                                  startTimeEnd: Option[String],
+                                  endTimeBegin: Option[String],
+                                  endTimeEnd: Option[String],
+                                  sessionId: Option[String],
+                                  completedStatus: Option[Boolean],
+                                  sortColumn: Option[String],
+                                  sortOrder: Option[String]) = {
+    var query = PersistenceSchema.testResults
+      .filterOpt(communityIds)((table, ids) => table.communityId inSet ids)
+      .filterOpt(domainIds)((table, ids) => table.domainId inSet ids)
+      .filterOpt(specIds)((table, ids) => table.specificationId inSet ids)
+      .filterOpt(actorIds)((table, ids) => table.actorId inSet ids)
+      .filterOpt(testCaseIds)((table, ids) => table.testCaseId inSet ids)
+      .filterOpt(organizationIds)((table, ids) => table.organizationId inSet ids)
+      .filterOpt(systemIds)((table, ids) => table.sutId inSet ids)
+      .filterOpt(results)((table, results) => table.result inSet results)
+      .filterOpt(testSuiteIds)((table, ids) => table.testSuiteId inSet ids)
+      .filterOpt(startTimeBegin)((table, timeStr) => table.startTime >=  TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(startTimeEnd)((table, timeStr) => table.startTime <=  TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(endTimeBegin)((table, timeStr) => table.endTime >=  TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(endTimeEnd)((table, timeStr) => table.endTime <=  TimeUtil.parseTimestamp(timeStr))
+      .filterOpt(sessionId)((table, id) => table.testSessionId ===  id)
+      .filterOpt(completedStatus)((table, completed) => if (completed) table.endTime.isDefined else table.endTime.isEmpty)
+    // Apply sorting
     if (sortColumn.isDefined && sortOrder.isDefined) {
       if (sortOrder.get == "asc") {
         query = sortColumn.get match {
@@ -295,7 +251,6 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
         }
       }
     }
-
     query
   }
 
@@ -331,7 +286,7 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
     removeStepDocumentation(testCasePresentation)
     val presentation = XMLUtils.marshalToString(new com.gitb.tpl.ObjectFactory().createTestcase(testCasePresentation))
 
-    val q = (for {c <- PersistenceSchema.conformanceResults if c.sut === systemId && c.testcase === testCase.id} yield (c.testsession, c.result))
+    val q = for {c <- PersistenceSchema.conformanceResults if c.sut === systemId && c.testcase === testCase.id} yield (c.testsession, c.result, c.outputMessage)
 
     exec(
       (
@@ -340,33 +295,63 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
           sessionId, Some(systemId), Some(system.shortname), Some(organisation.id), Some(organisation.shortname),
           Some(community.id), Some(community.shortname), Some(testCase.id), Some(testCase.shortname), Some(testSuite.id), Some(testSuite.shortname),
           Some(actor.id), Some(actor.name), Some(specification.id), Some(specification.shortname), Some(domain.id), Some(domain.shortname),
-          initialStatus, startTime, None, presentation)) andThen
+          initialStatus, startTime, None, None, presentation)) andThen
         // Update also the conformance results for the system
-        q.update(Some(sessionId), initialStatus)
+        q.update(Some(sessionId), initialStatus, None)
       ).transactionally
     )
   }
 
-  def finishTestReport(sessionId: String, status: TestResultType) = {
+  def finishTestReport(sessionId: String, status: TestResultType, outputMessage: Option[String]) = {
     val q = for {
       t <- PersistenceSchema.testResults if t.testSessionId === sessionId
-    } yield (t.result, t.endTime)
-    val q1 = for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield (c.result)
-
+    } yield (t.result, t.endTime, t.outputMessage)
+    val q1 = for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield (c.result, c.outputMessage)
     exec(
       (
-        q.update(status.value(), Some(TimeUtil.getCurrentTimestamp())) andThen
+        q.update(status.value(), Some(TimeUtil.getCurrentTimestamp()), outputMessage) andThen
         // Update also the conformance results for the system
-        q1.update(status.value())
+        q1.update(status.value(), outputMessage)
       ).transactionally
     )
+    // Triggers linked to test sessions: (communityID, systemID, actorID)
+    val sessionIds: Option[(Option[Long], Option[Long], Option[Long])] = exec(
+      PersistenceSchema.testResults
+        .filter(_.testSessionId === sessionId)
+        .map(x => (x.communityId, x.sutId, x.actorId))
+        .result
+        .headOption
+    )
+    if (sessionIds.isDefined && sessionIds.get._1.isDefined && sessionIds.get._2.isDefined && sessionIds.get._3.isDefined) {
+      val communityId = sessionIds.get._1.get
+      val systemId = sessionIds.get._2.get
+      val actorId = sessionIds.get._3.get
+      // We have all the data we need to fire the triggers.
+      if (status == TestResultType.SUCCESS) {
+        triggerHelper.publishTriggerEvent(new TestSessionSucceededEvent(communityId, systemId, actorId))
+      } else if (status == TestResultType.FAILURE) {
+        triggerHelper.publishTriggerEvent(new TestSessionFailedEvent(communityId, systemId, actorId))
+      }
+      // See if the conformance statement is now successfully completed and fire an additional trigger if so.
+      val statementStatus = conformanceManager.getConformanceStatus(actorId, systemId, None)
+      var successCount = 0
+      statementStatus.foreach { status =>
+        if ("SUCCESS".equals(status.result)) {
+          successCount += 1
+        }
+      }
+      if (successCount == statementStatus.size) {
+        // All the statement's test cases are successful
+        triggerHelper.publishTriggerEvent(new ConformanceStatementSucceededEvent(communityId, systemId, actorId))
+      }
+    }
   }
 
   def setEndTimeNow(sessionId: String) = {
     val testSession = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption)
     if (testSession.isDefined) {
-      val q = for {t <- PersistenceSchema.testResults if t.testSessionId === sessionId} yield (t.endTime)
-      val q1 = for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield (c.result)
+      val q = for {t <- PersistenceSchema.testResults if t.testSessionId === sessionId} yield t.endTime
+      val q1 = for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield c.result
       exec(
         (
           q.update(Some(TimeUtil.getCurrentTimestamp())) andThen
@@ -490,6 +475,7 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
     // Result
     val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.head)
     overview.setReportResult(testResult.result)
+    overview.setOutputMessage(testResult.outputMessage.orNull)
     // Start time
     val start = testResult.startTime
     overview.setStartTime(sdf.format(new Date(start.getTime)));
@@ -565,7 +551,7 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain),
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor),
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification),
-      Some("Sample Test Suite "+index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), Some("SUCCESS"),
+      Some("Sample Test Suite "+index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), Some("SUCCESS"), Some("An output message for the test session"),
       None, 0L, 0L, 0L)
   }
 
@@ -582,7 +568,7 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
   }
 
   def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, actorId: Long, systemId: Long): Path = {
-    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)))
+    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None)
     generateConformanceCertificate(reportPath, settings, conformanceInfo)
   }
 
@@ -596,7 +582,7 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
       title = settings.title.get.trim
     }
     val labels = communityLabelManager.getLabels(settings.community)
-    generateCoreConformanceReport(pathToUseForPdf, false, title, settings.includeDetails, settings.includeTestCases, settings.includeTestStatus, settings.includeMessage, settings.message, conformanceInfo, labels)
+    generateCoreConformanceReport(pathToUseForPdf, addTestCases = false, title, addDetails = settings.includeDetails, addTestCaseResults = settings.includeTestCases, addTestStatus = settings.includeTestStatus, addMessage = settings.includeMessage, settings.message, conformanceInfo, labels)
     // Add signature is needed.
     if (settings.includeSignature) {
       val keystore = SigUtils.loadKeystore(
@@ -633,7 +619,7 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
   }
 
   private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: String, addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, message: Option[String], actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels]): Path = {
-    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)))
+    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None)
     generateCoreConformanceReport(reportPath, addTestCases, title, addDetails, addTestCaseResults, addTestStatus, addMessage, message, conformanceInfo, labels)
   }
 
@@ -693,6 +679,13 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
       } else {
         undefinedTests += 1
       }
+      if (completedTests == totalTests) {
+        overview.setOverallStatus("SUCCESS")
+      } else if (failedTests > 0) {
+        overview.setOverallStatus("FAILURE")
+      } else {
+        overview.setOverallStatus("UNDEFINED")
+      }
       if (addTestCaseResults) {
         val testCaseOverview = new TestCaseOverview()
         testCaseOverview.setId(index.toString)
@@ -704,7 +697,7 @@ class ReportManager @Inject() (actorManager: ActorManager, systemManager: System
           testCaseOverview.setTestDescription("-")
         }
         testCaseOverview.setReportResult(info.result.get)
-
+        testCaseOverview.setOutputMessage(info.outputMessage.orNull)
         if (addTestCases) {
           testCaseOverview.setTitle("Test Case Report #" + index)
           testCaseOverview.setOrganisation(info.organizationName)

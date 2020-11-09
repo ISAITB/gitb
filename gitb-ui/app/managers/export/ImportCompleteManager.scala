@@ -395,6 +395,9 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       case com.gitb.xml.export.TriggerEventType.SYSTEM_UPDATED => Enums.TriggerEventType.SystemUpdated.id.toShort
       case com.gitb.xml.export.TriggerEventType.CONFORMANCE_STATEMENT_CREATED => Enums.TriggerEventType.ConformanceStatementCreated.id.toShort
       case com.gitb.xml.export.TriggerEventType.CONFORMANCE_STATEMENT_UPDATED => Enums.TriggerEventType.ConformanceStatementUpdated.id.toShort
+      case com.gitb.xml.export.TriggerEventType.TEST_SESSION_SUCCEEDED => Enums.TriggerEventType.TestSessionSucceeded.id.toShort
+      case com.gitb.xml.export.TriggerEventType.TEST_SESSION_FAILED => Enums.TriggerEventType.TestSessionFailed.id.toShort
+      case com.gitb.xml.export.TriggerEventType.CONFORMANCE_STATEMENT_SUCCEEDED => Enums.TriggerEventType.ConformanceStatementSucceeded.id.toShort
       case _ => throw new IllegalArgumentException("Unknown enum value ["+eventType+"]")
     }
   }
@@ -1107,6 +1110,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                 data.getSelfRegistrationSettings.isNotifications, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
                 data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
                 data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
+                data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates,
                 domainId
               ))
             },
@@ -1117,6 +1121,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                 Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
                 data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
                 data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
+                data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates,
                 domainId
               )
             },

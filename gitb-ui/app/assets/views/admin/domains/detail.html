@@ -30,7 +30,13 @@
 				<button type="button" class="btn btn-default" ng-click="domainDetailsCtrl.createSpecification()">Create {{domainDetailsCtrl.DataService.labelSpecificationLower()}}</button>
 			</div>
 		</div>
-		<div table-directive columns="domainDetailsCtrl.tableColumns" data="domainDetailsCtrl.specifications" on-select="domainDetailsCtrl.onSpecificationSelect"></div>
+		<div table-directive
+			columns="domainDetailsCtrl.tableColumns"
+			data="domainDetailsCtrl.specifications"
+			no-data-message="No {{domainDetailsCtrl.DataService.labelSpecificationsLower()}} found"
+			loading-status="domainDetailsCtrl.specificationStatus" 
+			on-select="domainDetailsCtrl.onSpecificationSelect">
+		</div>
 	</div>
 	<div class="panel panel-default">
 		<div class="panel-heading">
@@ -48,6 +54,12 @@
 					</tr>
 				</thead>
 				<tbody>
+					<tr ng-if="domainDetailsCtrl.parameterStatus.status == domainDetailsCtrl.Constants.STATUS.PENDING">
+						<td colspan="4" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
+					</tr>
+					<tr ng-if="domainDetailsCtrl.parameterStatus.status == domainDetailsCtrl.Constants.STATUS.FINISHED && domainDetailsCtrl.domainParameters.length == 0">
+						<td colspan="4" class="td-no-data"><span>No parameters found</span></td>
+					</tr>
 					<tr class="selectable" ng-click="domainDetailsCtrl.onDomainParameterSelect(parameter)" ng-repeat="parameter in domainDetailsCtrl.domainParameters">
 						<td>{{parameter.name}}</td>
 						<td ng-if="parameter.kind == 'BINARY'"><a href="" ng-click="domainDetailsCtrl.downloadParameter(parameter); $event.stopPropagation();">{{parameter.valueToShow}}</a></td>

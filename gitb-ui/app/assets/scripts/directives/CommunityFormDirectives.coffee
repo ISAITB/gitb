@@ -133,6 +133,24 @@
                 <div tb-inline="true" tb-inline-type="checkLabelText" tb-tooltip="Check this to allow {{DataService.labelOrganisationLower()}} administrators to create and delete conformance statements. You may want to restrict this if you predefine fully the setup for your users, either through community administrator actions or via self-registration templates."></div>
               </label>
             </div>
+            <div class="col-xs-offset-3 col-xs-7">
+              <label class="checkbox-inline">
+                <input type="checkbox" ng-model="tbCommunity.allowPostTestOrganisationUpdates">Update {{DataService.labelOrganisationLower()}} data after testing
+                <div tb-inline="true" tb-inline-type="checkLabelText" tb-tooltip="Check this to allow {{DataService.labelOrganisationLower()}} users to update {{DataService.labelOrganisationLower()}} data and custom properties once tests have been recorded."></div>
+              </label>
+            </div>
+            <div class="col-xs-offset-3 col-xs-7">
+              <label class="checkbox-inline">
+                <input type="checkbox" ng-model="tbCommunity.allowPostTestSystemUpdates">Update {{DataService.labelSystemLower()}} data after testing
+                <div tb-inline="true" tb-inline-type="checkLabelText" tb-tooltip="Check this to allow {{DataService.labelOrganisationLower()}} users to update {{DataService.labelSystemLower()}} data and custom properties once tests have been recorded."></div>
+              </label>
+            </div>
+            <div class="col-xs-offset-3 col-xs-7">
+              <label class="checkbox-inline">
+                <input type="checkbox" ng-model="tbCommunity.allowPostTestStatementUpdates">Update conformance statement parameters after testing
+                <div tb-inline="true" tb-inline-type="checkLabelText" tb-tooltip="Check this to allow {{DataService.labelOrganisationLower()}} users to update the configuration parameters for a conformance statement once tests have been recorded."></div>
+              </label>
+            </div>
           </div>
         </div>
       </div>

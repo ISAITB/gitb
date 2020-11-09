@@ -6,6 +6,7 @@ import com.gitb.core.StepStatus;
 import com.gitb.engine.commands.interaction.StartCommand;
 import com.gitb.engine.commands.interaction.StopCommand;
 import com.gitb.engine.events.model.StatusEvent;
+import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -27,7 +28,7 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
     private Map<Integer, Integer> childActorUidIndexMap;
     private Map<Integer, ActorRef> childStepIndexActorMap;
     private Map<Integer, StepStatus> childStepStatuses;
-    private boolean stopping = false;
+    private Map<Integer, Object> childSteps;
 
     public SequenceProcessorActor(T sequence, TestCaseScope scope) {
         super(sequence, scope);
@@ -43,24 +44,22 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
         this.childActorUidIndexMap = new ConcurrentHashMap<>();
         this.childStepIndexActorMap = new ConcurrentHashMap<>();
         this.childStepStatuses = new ConcurrentHashMap<>();
+        this.childSteps = new ConcurrentHashMap<>();
 
         if (step != null) {
             int realIndex = 0;
             int reportedIndex = 1;
             for (Object childStep : step.getSteps()) {
-
                 ActorRef child;
-
                 if (TestCaseUtils.shouldBeReported(childStep.getClass())) {
                     child = createChildActor(reportedIndex, childStep);
                     reportedIndex++;
                 } else {
                     child = createChildActor(-1, childStep);
                 }
-
-
                 if (child != null) {
                     childActorUidIndexMap.put(child.path().uid(), realIndex);
+                    childSteps.put(child.path().uid(), childStep);
                     childStepIndexActorMap.put(realIndex, child);
                     realIndex++;
                 }
@@ -133,11 +132,6 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
     }
 
     @Override
-    protected void reactToPrepareForStop() {
-        stopping = true;
-    }
-
-    @Override
     protected void stop() {
         StopCommand command = new StopCommand(scope.getContext().getSessionId());
         for (ActorRef child : getContext().getChildren()) {
@@ -149,10 +143,14 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
 
     @Override
     protected void handleStatusEvent(StatusEvent event) throws Exception {
+        if (scope.getContext().getCurrentState() == TestCaseContext.TestCaseStateEnum.STOPPED) {
+            return;
+        }
         StepStatus status = event.getStatus();
         //If a step is completed, continue from next step
         int senderUid = getSender().path().uid();
         int completedStepIndex = childActorUidIndexMap.get(senderUid);
+        Object childStep = childSteps.get(senderUid);
 
         childStepStatuses.put(completedStepIndex, status);
 
@@ -162,7 +160,17 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
                 || status == StepStatus.SKIPPED) {
 
             ActorRef nextStep = null;
-            if (!stopping) {
+            boolean loadNextStep = true;
+            if (scope.getContext().getCurrentState() == TestCaseContext.TestCaseStateEnum.STOPPING
+                    || (status == StepStatus.ERROR && (
+                            (childStep instanceof TestConstruct && ((TestConstruct) childStep).isStopOnError())
+                                    || step.isStopOnError()
+                        )
+                    )
+            ) {
+                loadNextStep = false;
+            }
+            if (loadNextStep) {
                 nextStep = startTestStepAtIndex(completedStepIndex + 1);
             }
             if (nextStep == null) {

@@ -72,8 +72,19 @@
                 </div>
             </div>
             <div class="panel panel-default" ng-if="testExecutionCtrl.wizardStep == 2">
-                <div class="panel-heading">
-                    <h5 class="title">Test [{{testExecutionCtrl.currentTest.sname}}] - Preliminary phase</h5>
+                <div class="panel-heading no-top-bottom-padding">
+                    <div class="session-execution-info">
+                        <div class="session-table-title">
+                            <div class="session-table-title-part">
+                                <div class="session-table-title-label">Test case</div>
+                                <div class="session-table-title-value">{{currentTest.sname}}</div>
+                            </div>
+                            <div class="session-table-title-part">
+                                <div class="session-table-title-label">Session</div>
+                                <div class="session-table-title-value">{{currentTest.sessionId}}</div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="panel-body">
                     <div ng-repeat="simulatedConfig in testExecutionCtrl.simulatedConfigs">
@@ -96,13 +107,31 @@
             </div>
             <div ng-repeat="test in testExecutionCtrl.testsToExecute" ng-if="testExecutionCtrl.wizardStep == 3">
                 <div class="panel panel-default select-execution" ng-show="test.id == testExecutionCtrl.visibleTest.id">
-                    <div class="panel-heading">
-                        <h5 class="title">Test [{{test.sname}}] - Execution</h5>
-                        <button type="button" class="btn btn-primary pull-right" ng-if="testExecutionCtrl.testsToExecute.length > 1 && !testExecutionCtrl.started && !testExecutionCtrl.startAutomatically && !testExecutionCtrl.reload" ng-click="testExecutionCtrl.start(testExecutionCtrl.session)">Start</button>
-                        <button type="button" class="btn btn-primary pull-right" ng-if="testExecutionCtrl.testsToExecute.length > 1 && testExecutionCtrl.started && test.id == testExecutionCtrl.currentTest.id" ng-click="testExecutionCtrl.stop(testExecutionCtrl.session)">Stop</button>
+                    <div class="panel-heading no-top-bottom-padding">
+                        <div class="session-execution-info">
+                            <div class="session-table-title">
+                                <div class="session-table-title-part">
+                                    <div class="session-table-title-label">Test case</div>
+                                    <div class="session-table-title-value">{{test.sname}}</div>
+                                </div>
+                                <div class="session-table-title-part">
+                                    <div class="session-table-title-label">Session</div>
+                                    <div class="session-table-title-value">{{test.sessionId}}</div>
+                                </div>
+                            </div>
+                            <div class="session-table-operations">
+                                <button type="button" class="btn btn-primary" ng-if="testExecutionCtrl.testsToExecute.length > 1 && !testExecutionCtrl.started && !testExecutionCtrl.startAutomatically && !testExecutionCtrl.reload" ng-click="testExecutionCtrl.start(testExecutionCtrl.session)">Start</button>
+                                <button type="button" class="btn btn-primary" ng-if="testExecutionCtrl.testsToExecute.length > 1 && testExecutionCtrl.started && test.id == testExecutionCtrl.currentTest.id" ng-click="testExecutionCtrl.stop(testExecutionCtrl.session)">Stop</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="panel-body" style="overflow-x: auto; overflow-y: hidden;">
-                        <div class="child" seq-diagram steps-of-tests="stepsOfTests" test="{{test.id}}" actor-info-of-tests="actorInfoOfTests"></div>
+                        <div>
+                            <div class="child" seq-diagram steps-of-tests="stepsOfTests" test="{{test.id}}" actor-info-of-tests="actorInfoOfTests"></div>
+                            <div class="test-output-container" ng-if="testExecutionCtrl.testCaseOutput[test.id]">
+                                <div uib-alert class="no-margin" ng-class="{'alert-success': testExecutionCtrl.testCaseStatus[test.id] == testExecutionCtrl.Constants.TEST_CASE_STATUS.COMPLETED, 'alert-danger': testExecutionCtrl.testCaseStatus[test.id] == testExecutionCtrl.Constants.TEST_CASE_STATUS.ERROR}">{{testExecutionCtrl.testCaseOutput[test.id]}}</div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

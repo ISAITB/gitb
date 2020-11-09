@@ -1,9 +1,10 @@
 class ProvideInputModalController
 
-	@$inject = ['$log', '$scope', '$uibModalInstance', 'Constants', 'TestService', 'session', 'interactionStepId', 'interactions', 'DataService']
-	constructor:(@$log, @$scope, @$uibModalInstance, @Constants, @TestService, @session, @interactionStepId, interactions, @DataService) ->
+	@$inject = ['$log', '$scope', '$uibModalInstance', 'Constants', 'TestService', 'session', 'interactionStepId', 'interactions', 'DataService', 'inputTitle']
+	constructor:(@$log, @$scope, @$uibModalInstance, @Constants, @TestService, @session, @interactionStepId, interactions, @DataService, inputTitle) ->
 
 		@$scope.interactions = interactions
+		@$scope.inputTitle = inputTitle
 
 		i = 0
 		for interaction in @$scope.interactions

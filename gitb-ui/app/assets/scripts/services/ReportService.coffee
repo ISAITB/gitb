@@ -7,13 +7,16 @@ class ReportService
   constructor: (@$log, @RestService, @DataService) ->
     @$log.debug "Constructing ReportService..."
 
-  getSystemActiveTestResults: (systemId, specIds, testSuiteIds, testCaseIds, domainIds, startTimeBegin, startTimeEnd, sortColumn, sortOrder) ->
+  getSystemActiveTestResults: (systemId, specIds, actorIds, testSuiteIds, testCaseIds, domainIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder) ->
     params = {
         system_id: systemId
     }
 
     if specIds? and specIds.length > 0
       params.specification_ids = specIds.join ','
+
+    if actorIds? and actorIds.length > 0
+      params.actor_ids = actorIds.join ','
 
     if testSuiteIds? and testSuiteIds.length > 0
       params.test_suite_ids = testSuiteIds.join ','
@@ -29,6 +32,9 @@ class ReportService
 
     if startTimeEnd
       params.start_time_end = startTimeEnd
+
+    if sessionId
+      params.session_id = sessionId
 
     if sortColumn
       params.sort_column = sortColumn
@@ -41,7 +47,7 @@ class ReportService
       authenticate: true
       params: params
 
-  getTestResults: (systemId, page, limit, specIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder) ->
+  getTestResults: (systemId, page, limit, specIds, actorIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder) ->
     params = {
         system_id: systemId
         page: page
@@ -54,6 +60,9 @@ class ReportService
     if specIds? and specIds.length > 0
       params.specification_ids = specIds.join ','
 
+    if actorIds? and actorIds.length > 0
+      params.actor_ids = actorIds.join ','
+
     if testSuiteIds? and testSuiteIds.length > 0
       params.test_suite_ids = testSuiteIds.join ','
 
@@ -80,6 +89,9 @@ class ReportService
 
     if startTimeEnd
       params.start_time_end = startTimeEnd
+    
+    if sessionId
+      params.session_id = sessionId
 
     if sortColumn
       params.sort_column = sortColumn
@@ -92,7 +104,7 @@ class ReportService
       authenticate: true
       params: params
 
-  getTestResultsCount: (systemId, specIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd) ->
+  getTestResultsCount: (systemId, specIds, actorIds, testSuiteIds, testCaseIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId) ->
     params = {
         system_id: systemId
     }
@@ -102,6 +114,9 @@ class ReportService
 
     if specIds? and specIds.length > 0
       params.specification_ids = specIds.join ','
+
+    if actorIds? and actorIds.length > 0
+      params.actor_ids = actorIds.join ','
 
     if testSuiteIds? and testSuiteIds.length > 0
       params.test_suite_ids = testSuiteIds.join ','
@@ -129,13 +144,16 @@ class ReportService
 
     if startTimeEnd
       params.start_time_end = startTimeEnd
+    
+    if sessionId
+      params.session_id = sessionId
 
     @RestService.get
       path: jsRoutes.controllers.ReportService.getTestResultsCount().url
       authenticate: true
       params: params
 
-  getActiveTestResults: (communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, sortColumn, sortOrder, forExport) ->
+  getActiveTestResults: (communityIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, startTimeBegin, startTimeEnd, sessionId, organisationParameters, systemParameters, sortColumn, sortOrder, forExport) ->
     params = {}
 
     if communityIds? and communityIds.length > 0
@@ -143,6 +161,9 @@ class ReportService
 
     if specIds? and specIds.length > 0
       params.specification_ids = specIds.join ','
+
+    if actorIds? and actorIds.length > 0
+      params.actor_ids = actorIds.join ','
 
     if testSuiteIds? and testSuiteIds.length > 0
       params.test_suite_ids = testSuiteIds.join ','
@@ -164,6 +185,15 @@ class ReportService
 
     if startTimeEnd
       params.start_time_end = startTimeEnd
+
+    if sessionId
+      params.session_id = sessionId
+
+    if organisationParameters && organisationParameters.length > 0
+      params.org_params = JSON.stringify(organisationParameters)
+
+    if systemParameters && systemParameters.length > 0
+      params.sys_params = JSON.stringify(systemParameters)
 
     if sortColumn
       params.sort_column = sortColumn
@@ -231,15 +261,6 @@ class ReportService
         authenticate: true
         responseType: "arraybuffer"
 
-  exportTestCaseReports: (session_ids, test_ids) ->
-        @RestService.get
-          path: jsRoutes.controllers.RepositoryService.exportTestCaseReports().url
-          params:
-              session_ids:  session_ids
-              test_ids: test_ids
-          authenticate: true
-          responseType: "arraybuffer"
-
   exportTestStepReport: (sessionId, reportPath) ->
     @RestService.get
       path: jsRoutes.controllers.RepositoryService.exportTestStepReport(sessionId, reportPath).url
@@ -261,10 +282,12 @@ class ReportService
       path: jsRoutes.controllers.RepositoryService.getTestCasesForCommunity(@DataService.community.id).url
       authenticate: true
 
-  getCompletedTestResults: (page, limit, communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sortColumn, sortOrder, forExport) ->
+  getCompletedTestResults: (page, limit, communityIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, organisationParameters, systemParameters, sortColumn, sortOrder, forExport) ->
     params = {
         page: page
         limit: limit
+    }
+    data = {
     }
 
     if communityIds? and communityIds.length > 0
@@ -272,6 +295,9 @@ class ReportService
 
     if specIds? and specIds.length > 0
       params.specification_ids = specIds.join ','
+
+    if actorIds? and actorIds.length > 0
+      params.actor_ids = actorIds.join ','
 
     if testSuiteIds? and testSuiteIds.length > 0
       params.test_suite_ids = testSuiteIds.join ','
@@ -312,6 +338,15 @@ class ReportService
     if sortOrder
       params.sort_order = sortOrder
 
+    if sessionId
+      params.session_id = sessionId
+    
+    if organisationParameters && organisationParameters.length > 0
+      params.org_params = JSON.stringify(organisationParameters)
+
+    if systemParameters && systemParameters.length > 0
+      params.sys_params = JSON.stringify(systemParameters)
+
     params.export = forExport? && forExport
 
     @RestService.get
@@ -319,7 +354,7 @@ class ReportService
       authenticate: true
       params: params
 
-  getCompletedTestResultsCount: (communityIds, specIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd) ->
+  getCompletedTestResultsCount: (communityIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, domainIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, organisationParameters, systemParameters) ->
     params = {}
 
     if communityIds? and communityIds.length > 0
@@ -327,6 +362,9 @@ class ReportService
 
     if specIds? and specIds.length > 0
       params.specification_ids = specIds.join ','
+
+    if actorIds? and actorIds.length > 0
+      params.actor_ids = actorIds.join ','
 
     if testSuiteIds? and testSuiteIds.length > 0
       params.test_suite_ids = testSuiteIds.join ','
@@ -357,6 +395,15 @@ class ReportService
 
     if endTimeEnd
       params.end_time_end = endTimeEnd
+
+    if sessionId
+      params.session_id = sessionId
+
+    if organisationParameters && organisationParameters.length > 0
+      params.org_params = JSON.stringify(organisationParameters)
+
+    if systemParameters && systemParameters.length > 0
+      params.sys_params = JSON.stringify(systemParameters)
 
     @RestService.get
       path: jsRoutes.controllers.ReportService.getFinishedTestResultsCount().url

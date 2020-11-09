@@ -55,6 +55,7 @@ class ErrorService
     errorDeferred.promise
 
   openModal: (error, withRetry, errorDeferred) =>
+    @$log.error('Error caught: ' + error)
     if !error.template? || error.template == ''
       if error.data?.error_id?
         error.template = '<p><b>Error message: </b>'+@Constants.PLACEHOLDER__ERROR_DESCRIPTION+'</p>' +

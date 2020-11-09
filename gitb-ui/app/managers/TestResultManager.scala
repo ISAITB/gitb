@@ -1,12 +1,15 @@
 package managers
 
 import javax.inject.{Inject, Singleton}
+import models.Enums.TestResultStatus
 import models._
 import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
@@ -129,11 +132,15 @@ class TestResultManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ext
   }
 
   def deleteObsoleteTestResultsForSystemWrapper(systemId: Long): Unit = {
-    exec(deleteObsoleteTestResultsForSystem(systemId).transactionally)
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = deleteObsoleteTestResultsForSystem(systemId, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
   def deleteObsoleteTestResultsForCommunityWrapper(communityId: Long): Unit = {
-    exec(deleteObsoleteTestResultsForCommunity(communityId).transactionally)
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = deleteObsoleteTestResultsForCommunity(communityId, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
   }
 
   def deleteSessionDataFromFileSystem(testResult: TestResult): Unit = {
@@ -142,85 +149,154 @@ class TestResultManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ext
         FileUtils.deleteDirectory(path.toFile)
     } catch {
       case e:Exception =>
-        logger.warn("Unable to delete folder ["+path.toFile.getAbsolutePath+"] for obsolete session [" + testResult.sessionId + "]", e)
+        logger.warn("Unable to delete folder ["+path.toFile.getAbsolutePath+"] for session [" + testResult.sessionId + "]", e)
     }
   }
 
-  def deleteObsoleteTestResultsForSystem(systemId: Long): DBIO[_] = {
-    val query = PersistenceSchema.testResults
-      .filter(x => x.sutId === systemId &&
-        (x.testSuiteId.isEmpty || x.testCaseId.isEmpty ||
-          x.communityId.isEmpty || x.organizationId.isEmpty ||
-          x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty))
-    // Delete filesystem data.
-    (for {
-      results <- query.result
-      _ <- DBIO.seq(results.map(r => {
-        for {
-          _ <- {
-            (for {t <- PersistenceSchema.conformanceResults if t.testsession === r.sessionId} yield t.testsession).update(None)
-          }
-          _ <- {
-            deleteSessionDataFromFileSystem(r)
-            DBIO.successful(())
-          }
-        } yield()
-      }): _*)
-    } yield ()) andThen
-    // Delete the DB records.
-    query.delete
+  private def deleteTestSession(testSession: TestResult, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+    val queryTestResult = PersistenceSchema.testResults.filter(_.testSessionId === testSession.sessionId)
+    val queryConformanceResult = PersistenceSchema.conformanceResults.filter(_.testsession === testSession.sessionId)
+    for {
+      // Delete file system data (on success)
+      _ <- {
+        onSuccessCalls += (() => {
+          deleteSessionDataFromFileSystem(testSession)
+        })
+        DBIO.successful(())
+      }
+      // Load conformance result
+      conformanceResult <- queryConformanceResult.result.headOption
+      // Calculate if needed new conformance result
+      _ <- {
+        if (conformanceResult.isDefined) {
+          // Update the result entry to match the other sessions' results
+          for {
+            // Get latest relevant test session (except the one being deleted)
+            latestTestSession <- PersistenceSchema.testResults
+              .filter(_.actorId === conformanceResult.get.actor)
+              .filter(_.sutId === conformanceResult.get.sut)
+              .filter(_.testCaseId === conformanceResult.get.testcase)
+              .filter(_.testSessionId =!= testSession.sessionId)
+              .filter(_.endTime.isDefined)
+              .sortBy(_.endTime.desc)
+              .result
+              .headOption
+            // Update the result.
+            _ <- {
+              val updateQuery = for { c <- queryConformanceResult } yield (c.testsession, c.result, c.outputMessage)
+              if (latestTestSession.isDefined) {
+                // Replace status
+                updateQuery.update(Some(latestTestSession.get.sessionId), latestTestSession.get.result, latestTestSession.get.outputMessage)
+              } else {
+                // Set as empty status
+                updateQuery.update(None, TestResultStatus.UNDEFINED.toString, None)
+              }
+            }
+          } yield ()
+        } else {
+          DBIO.successful(())
+        }
+      }
+      // Delete test result
+      _ <- queryTestResult.delete
+    } yield ()
   }
 
-  def deleteObsoleteTestResultsForCommunity(communityId: Long): DBIO[_] = {
-    val query = PersistenceSchema.testResults
-      .filter(x => x.communityId === communityId &&
-        (x.testSuiteId.isEmpty || x.testCaseId.isEmpty ||
-          x.sutId.isEmpty || x.organizationId.isEmpty ||
-          x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty))
-    // Delete filesystem data.
-    (for {
-      results <- query.result
-      _ <- DBIO.seq(results.map(r => {
-        for {
-          _ <- {
-            (for {t <- PersistenceSchema.conformanceResults if t.testsession === r.sessionId} yield t.testsession).update(None)
-          }
-          _ <- {
-            deleteSessionDataFromFileSystem(r)
-            DBIO.successful(())
-          }
-        } yield()
-      }): _*)
-    } yield()) andThen
-    // Delete the DB records.
-    query.delete
+  def deleteTestSessions(sessionIds: Iterable[String]): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = for {
+      sessions <- PersistenceSchema.testResults.filter(_.testSessionId inSet sessionIds).result
+      _ <- deleteTestSessionsInternal(sessions, onSuccessCalls)
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+  }
+
+  def deleteTestSessionsInternal(sessions: Iterable[TestResult], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+    val actions = ListBuffer[DBIO[_]]()
+    sessions.foreach { session =>
+      actions += deleteTestSession(session, onSuccessCalls)
+    }
+    toDBIO(actions)
+  }
+
+  def deleteObsoleteTestResultsForSystem(systemId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+    for  {
+      sessions <- PersistenceSchema.testResults
+                      .filter(x => x.sutId === systemId &&
+                          (x.testSuiteId.isEmpty || x.testCaseId.isEmpty ||
+                            x.communityId.isEmpty || x.organizationId.isEmpty ||
+                            x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty))
+                      .result
+      _ <- deleteTestSessionsInternal(sessions, onSuccessCalls)
+    } yield ()
+  }
+
+  def deleteObsoleteTestResultsForCommunity(communityId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+    for {
+      sessions <- PersistenceSchema.testResults
+        .filter(x => x.communityId === communityId &&
+          (x.testSuiteId.isEmpty || x.testCaseId.isEmpty ||
+            x.sutId.isEmpty || x.organizationId.isEmpty ||
+            x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty))
+        .result
+      _ <- deleteTestSessionsInternal(sessions, onSuccessCalls)
+    } yield ()
   }
 
   def deleteAllObsoleteTestResults(): Unit = {
-    val query = PersistenceSchema.testResults
-      .filter(x =>
-        x.testSuiteId.isEmpty || x.testCaseId.isEmpty ||
-          x.sutId.isEmpty || x.organizationId.isEmpty || x.communityId.isEmpty ||
-          x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty)
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val action = for {
+      sessions <- PersistenceSchema.testResults
+        .filter(x =>
+          x.testSuiteId.isEmpty || x.testCaseId.isEmpty ||
+            x.sutId.isEmpty || x.organizationId.isEmpty || x.communityId.isEmpty ||
+            x.domainId.isEmpty || x.actorId.isEmpty || x.specificationId.isEmpty)
+        .result
+      _ <- deleteTestSessionsInternal(sessions, onSuccessCalls)
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, action).transactionally)
+  }
+
+  def testSessionsExistForSystemAndActors(systemId: Long, actorIds: List[Long]): Boolean = {
     exec(
-      (
-        (for {
-        results <- query.result
-        _ <- DBIO.seq(results.map(r => {
-          for {
-            _ <- {
-              (for {t <- PersistenceSchema.conformanceResults if t.testsession === r.sessionId} yield t.testsession).update(None)
-            }
-            _ <- {
-              deleteSessionDataFromFileSystem(r)
-              DBIO.successful(())
-            }
-          } yield()
-        }): _*)
-      } yield()) andThen
-        query.delete
-      ).transactionally
-    )
+      PersistenceSchema.testResults
+        .filter(_.sutId === systemId)
+        .filter(_.actorId inSet actorIds)
+        .map(x => x.testSessionId)
+        .result
+        .headOption
+    ).isDefined
+  }
+
+  def testSessionsExistForSystem(systemId: Long): Boolean = {
+    exec(
+      PersistenceSchema.testResults
+        .filter(_.sutId === systemId)
+        .map(x => x.testSessionId)
+        .result
+        .headOption
+    ).isDefined
+  }
+
+  def testSessionsExistForOrganisation(organisationId: Long): Boolean = {
+    exec(
+      PersistenceSchema.testResults
+        .filter(_.organizationId === organisationId)
+        .map(x => x.testSessionId)
+        .result
+        .headOption
+    ).isDefined
+  }
+
+  def testSessionsExistForUserOrganisation(userId: Long): Boolean = {
+    exec(
+      PersistenceSchema.users
+        .join(PersistenceSchema.testResults).on(_.organization === _.organizationId)
+        .filter(_._1.id === userId)
+        .map(x => x._2.testSessionId)
+        .result
+        .headOption
+    ).isDefined
   }
 
 }

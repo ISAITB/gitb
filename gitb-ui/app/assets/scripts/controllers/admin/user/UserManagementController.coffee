@@ -1,7 +1,10 @@
 class UserManagementController
 
-  @$inject = ['$log', '$state', 'DataService', 'UserService', 'OrganizationService', 'CommunityService', 'ErrorService']
-  constructor: (@$log, @$state, @DataService, @UserService, @OrganizationService, @CommunityService, @ErrorService) ->
+  @$inject = ['$log', '$state', 'DataService', 'UserService', 'OrganizationService', 'CommunityService', 'ErrorService', 'Constants']
+  constructor: (@$log, @$state, @DataService, @UserService, @OrganizationService, @CommunityService, @ErrorService, @Constants) ->
+
+    @adminStatus = {status: @Constants.STATUS.PENDING}
+    @communityStatus = {status: @Constants.STATUS.PENDING}
 
     # admin table
     @adminColumns = [
@@ -41,14 +44,18 @@ class UserManagementController
       for admin in data
         admin.ssoStatusText = @userStatus(admin.ssoStatus)
       @admins = data
+      @adminStatus.status = @Constants.STATUS.FINISHED
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @adminStatus.status = @Constants.STATUS.FINISHED
 
     @CommunityService.getCommunities()
     .then (data) =>
       @communities = data
+      @communityStatus.status = @Constants.STATUS.FINISHED
     .catch (error) =>
       @ErrorService.showErrorMessage(error)
+      @communityStatus.status = @Constants.STATUS.FINISHED
 
   userStatus: (ssoStatus) =>
       @DataService.userStatus(ssoStatus)

@@ -47,6 +47,7 @@ GET     /app/configuration                  @controllers.AccountService.getConfi
 POST    /user/feedback                      @controllers.AccountService.submitFeedback
 POST    /user/selfreg                       @controllers.CommunityService.selfRegister
 GET     /user/selfreg                       @controllers.CommunityService.getSelfRegistrationOptions
+GET     /vendor/organisation/hasTests       @controllers.OrganizationService.ownOrganisationHasTests
 
 # System mangement API
 GET     /suts/sysparam/:id                  @controllers.SystemService.getSystemParameterValues(id: Long)
@@ -75,6 +76,7 @@ POST    /domains/:domain_id                 @controllers.ConformanceService.upda
 GET	    /domains/:domain_id/specs           @controllers.ConformanceService.getDomainSpecs(domain_id : Long)
 GET     /specs                              @controllers.ConformanceService.getSpecs
 GET     /specs/system                       @controllers.ConformanceService.getSpecsForSystem(systemId: Long)
+GET     /actors/system                      @controllers.ConformanceService.getActorsForSystem(systemId: Long)
 POST    /specs                              @controllers.ConformanceService.createSpecification
 GET	    /specs/:spec_id/actors              @controllers.ConformanceService.getSpecActors(spec_id : Long)
 GET	    /specs/:spec_id/suites              @controllers.ConformanceService.getSpecTestSuites(spec_id : Long)
@@ -115,6 +117,7 @@ POST    /fulltestcases/:test_case_id                            @controllers.Tes
 DELETE  /testresults/obsolete/all           @controllers.ConformanceService.deleteAllObsoleteTestResults
 DELETE  /testresults/obsolete/system        @controllers.ConformanceService.deleteObsoleteTestResultsForSystem
 DELETE  /testresults/obsolete/community     @controllers.ConformanceService.deleteObsoleteTestResultsForCommunity
+POST    /testresults                        @controllers.ConformanceService.deleteTestResults
 
 # User management API
 GET     /admins/all                         @controllers.UserService.getSystemAdministrators
@@ -130,7 +133,6 @@ GET     /dashboard/tests/community          @controllers.RepositoryService.getTe
 GET     /dashboard/systems                  @controllers.SystemService.getSystems
 GET     /dashboard/active                   @controllers.ReportService.getActiveTestResults
 GET     /dashboard/finished                 @controllers.ReportService.getFinishedTestResults
-GET     /dashboard/count                    @controllers.ReportService.getFinishedTestResultsCount
 GET     /dashboard/config                   @controllers.SystemConfigurationService.getSessionAliveTime
 POST    /dashboard/config                   @controllers.SystemConfigurationService.updateSessionAliveTime
 GET     /dashboard/suites/all               @controllers.TestSuiteService.getAllTestSuitesWithTestCases
@@ -241,7 +243,6 @@ DELETE  /endpoints/:endpoint_id/config      @controllers.SystemService.deleteEnd
 # Report management API
 GET     /reports/active                     @controllers.ReportService.getSystemActiveTestResults
 GET     /reports                            @controllers.ReportService.getTestResults
-GET     /reports/count                      @controllers.ReportService.getTestResultsCount
 GET     /reports/:session_id                @controllers.ReportService.getTestResultOfSession(session_id: String)
 POST    /reports/create                     @controllers.ReportService.createTestReport
 GET     /reports/:session_id/steps          @controllers.ReportService.getTestStepResults(session_id:String)

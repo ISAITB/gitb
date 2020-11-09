@@ -1,13 +1,14 @@
 class ActorDetailsController
 
-	@$inject = ['$log', '$scope', 'ConformanceService', 'ActorService', 'ConfirmationDialogService', '$state', '$stateParams', 'ErrorService', 'DataService', 'PopupService']
-	constructor: (@$log, @$scope, @ConformanceService, @ActorService, @ConfirmationDialogService, @$state, @$stateParams, @ErrorService, @DataService, @PopupService) ->
+	@$inject = ['$log', '$scope', 'ConformanceService', 'ActorService', 'ConfirmationDialogService', '$state', '$stateParams', 'ErrorService', 'DataService', 'PopupService', 'Constants']
+	constructor: (@$log, @$scope, @ConformanceService, @ActorService, @ConfirmationDialogService, @$state, @$stateParams, @ErrorService, @DataService, @PopupService, @Constants) ->
 		@$log.debug "Constructing ActorDetailsController"
 
 		@actor = {}
 		@options = []
 		@endpoints = []
 		@endpointRepresentations = []
+		@dataStatus = {status: @Constants.STATUS.PENDING}
 
 		@domainId = @$stateParams.id
 		@specificationId = @$stateParams.spec_id
@@ -61,8 +62,10 @@ class ActorDetailsController
 					'name': endpoint.name
 					'desc': endpoint.description
 					'parameters': parameters.join ', '
+			@dataStatus.status = @Constants.STATUS.FINISHED
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
+			@dataStatus.status = @Constants.STATUS.FINISHED
 
 		@DataService.focus('id')
 

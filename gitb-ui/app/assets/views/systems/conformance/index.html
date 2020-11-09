@@ -4,7 +4,12 @@
 			<h4 class="title">Conformance statements</h4>
 			<a class="btn btn-default pull-right" ui-sref="app.systems.detail.conformance.create" ng-if="conformanceStatementCtrl.showCreate()">Create conformance statement</a>
 		</div>
-		<h5 class="no-conformance-statement-defined" ng-if="conformanceStatementCtrl.conformanceStatements.length == 0">No conformance statement is present for the {{conformanceStatementCtrl.DataService.labelSystemLower()}}...</h5>
-		<div  ng-if="conformanceStatementCtrl.conformanceStatements.length > 0" table-directive columns="conformanceStatementCtrl.tableColumns" data="conformanceStatementCtrl.conformanceStatementRepresentations" on-select="conformanceStatementCtrl.onConformanceStatementSelect"></div>
+		<div id="conformance-statements-table" table-directive 
+			columns="conformanceStatementCtrl.tableColumns" 
+			data="conformanceStatementCtrl.conformanceStatementRepresentations" 
+            no-data-message="No statements found"
+			loading-status="conformanceStatementCtrl.dataStatus" 
+			on-select="conformanceStatementCtrl.onConformanceStatementSelect">
+		</div>
 	</div>
 </div>

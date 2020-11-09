@@ -12,7 +12,4 @@ class SystemNavigationController
 			.catch (error) =>
 				@ErrorService.showErrorMessage(error)
 
-	toPerformedTests: () =>
-		@DataService.clearSearchState()
-
 @controllers.controller 'SystemNavigationController', SystemNavigationController

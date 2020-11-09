@@ -55,6 +55,7 @@ class TestExecutionControllerV2
     @intervalSet = false
     @progressIcons = {}
     @testCaseStatus = {}
+    @testCaseOutput = {}
     @$scope.stepsOfTests = {}
     @$scope.actorInfoOfTests = {}
     @logMessages = {}
@@ -200,13 +201,15 @@ class TestExecutionControllerV2
       @started = false 
       @reload = true
 
-  testCaseFinished: (result) =>
+  testCaseFinished: (result, outputMessage) =>
     if (result == "SUCCESS")
       @updateTestCaseStatus(@currentTest.id, @Constants.TEST_CASE_STATUS.COMPLETED)
     else if (result == "FAILURE")
       @updateTestCaseStatus(@currentTest.id, @Constants.TEST_CASE_STATUS.ERROR)
     else
       @updateTestCaseStatus(@currentTest.id, @Constants.TEST_CASE_STATUS.STOPPED)
+    if outputMessage?
+      @testCaseOutput[@currentTest.id] = outputMessage
     # Make sure steps still marked as pending or in progress are set as skipped.
     @setPendingStepsToSkipped()
     if (@currentTestIndex + 1 < @testsToExecute.length)
@@ -311,6 +314,7 @@ class TestExecutionControllerV2
     .then(
       (data) =>
         @session = data
+        @currentTest.sessionId = @session
         configureFinished = @$q.defer()
         @configure(@session, configureFinished)
 
@@ -460,14 +464,28 @@ class TestExecutionControllerV2
 
   setPendingStepsToSkipped: () =>
     for step in @$scope.stepsOfTests[@currentTest.id]
-      if step.status == @Constants.TEST_STATUS.PROCESSING || step.status == @Constants.TEST_STATUS.WAITING
-        step.status = @Constants.TEST_STATUS.SKIPPED
+      @skipPendingSteps(step)
+
+  skipPendingStepSequence:(steps) =>
+    for step in steps
+      @skipPendingSteps(step)
+
+  skipPendingSteps:(step) =>
+    if !step.status? || step.status == @Constants.TEST_STATUS.PROCESSING || step.status == @Constants.TEST_STATUS.WAITING
+      step.status = @Constants.TEST_STATUS.SKIPPED
+    if step.type == 'loop'
+      @skipPendingStepSequence(step.steps)
+    else if step.type == 'decision'
+      @skipPendingStepSequence(step.then)
+      @skipPendingStepSequence(step.else)
+    else if step.type == 'flow'
+      @skipPendingStepSequence(step.threads)
 
   processMessage: (msg) =>
     response = angular.fromJson(msg.data)
     stepId = response.stepId
     if response.interactions? #interactWithUsers
-        @interact(response.interactions, stepId)
+        @interact(response.interactions, response.inputTitle, stepId)
     else if response.notify?
       if response.notify.simulatedConfigs?
         @simulatedConfigs = response.notify.simulatedConfigs
@@ -475,7 +493,7 @@ class TestExecutionControllerV2
       if stepId == @Constants.END_OF_TEST_STEP
         @$log.debug "END OF THE TEST"
         @started = false
-        @testCaseFinished(response.report.result)
+        @testCaseFinished(response.report.result, response?.report?.context?.value)
       else
         status = response.status
         report = response.report
@@ -498,7 +516,7 @@ class TestExecutionControllerV2
 
           @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop)
 
-  interact: (interactions, stepId) =>
+  interact: (interactions, inputTitle, stepId) =>
     sessionForModal = @session
 
     modalOptions =
@@ -508,6 +526,7 @@ class TestExecutionControllerV2
       backdrop: 'static'      
       resolve: 
         interactions: () => interactions
+        inputTitle: () => inputTitle
         session: () => sessionForModal
         interactionStepId: () => stepId
 
@@ -579,7 +598,7 @@ class TestExecutionControllerV2
       else
         current = step
 
-      if current? && current.status != status
+      if current? && current.id == stepId && current.status != status
         if (status == @Constants.TEST_STATUS.COMPLETED) ||
         (status == @Constants.TEST_STATUS.ERROR) ||
         (status == @Constants.TEST_STATUS.WARNING) ||

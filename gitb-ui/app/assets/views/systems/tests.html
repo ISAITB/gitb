@@ -1,158 +1,64 @@
 <div class="page tests">
 
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h4 class="title">Filters</h4>
-            <div class="btn-toolbar pull-right">
-                <button type="button" class="btn btn-default" ng-click="systemTestsCtrl.refresh()" ng-disabled="systemTestsCtrl.refreshActivePending || systemTestsCtrl.refreshCompletedPending || systemTestsCtrl.refreshCompletedCountPending"><span class="tab" ng-if="systemTestsCtrl.refreshActivePending || systemTestsCtrl.refreshCompletedPending || systemTestsCtrl.refreshCompletedCountPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Refresh</button>
-                <toggle id="sessions-toggle-filter" class="btn-group" ng-model="systemTestsCtrl.showFiltering" on="Enabled" off="Disabled" ng-change="systemTestsCtrl.DataService.async(systemTestsCtrl.showFiltering?systemTestsCtrl.applyFiltering:systemTestsCtrl.clearFiltering)"></toggle>
-            </div>
-        </div>
-        <div class="table-responsive" uib-collapse="!systemTestsCtrl.showFiltering">
-            <table class="table">
-                <thead>
-                <tr>
-                    <th ng-if="systemTestsCtrl.community.domainId == undefined" class="col-md-2">{{systemTestsCtrl.DataService.labelDomain()}}</th>
-                    <th class="col-md-2">{{systemTestsCtrl.DataService.labelSpecification()}}</th>
-                    <th class="col-md-2">Test suite</th>
-                    <th class="col-md-1">Test case</th>
-                    <th class="col-md-1">Result</th>
-                    <th class="col-md-2">Start time</th>
-                    <th class="col-md-2">End time</th>
-                </tr>
-                </thead>
-                <tbody>
-                <tr>
-                    <td ng-if="systemTestsCtrl.community.domainId == undefined">
-                        <div isteven-multi-select
-                             input-model="systemTestsCtrl.filtering.domain.filter"
-                             output-model="systemTestsCtrl.filtering.domain.selection"
-                             button-label="sname"
-                             item-label="sname"
-                             tick-property="ticked"
-                             max-labels="0"
-                             max-height="250px"
-                             translation="systemTestsCtrl.translation"
-                             helper-elements="filter"
-                             search-property="sname"
-                             output-properties="id"
-                             on-item-click="systemTestsCtrl.domainTicked(data)">
-                        </div>
-                    </td>
-                    <td>
-                        <div isteven-multi-select
-                             input-model="systemTestsCtrl.filtering.specification.filter"
-                             output-model="systemTestsCtrl.filtering.specification.selection"
-                             button-label="sname"
-                             item-label="sname"
-                             tick-property="ticked"
-                             max-labels="0"
-                             max-height="250px"
-                             translation="systemTestsCtrl.translation"
-                             helper-elements="filter"
-                             search-property="sname"
-                             output-properties="id"
-                             on-item-click="systemTestsCtrl.specificationTicked(data)">
-                        </div>
-                    </td>
-                    <td>
-                        <div isteven-multi-select
-                             input-model="systemTestsCtrl.filtering.testSuite.filter"
-                             output-model="systemTestsCtrl.filtering.testSuite.selection"
-                             button-label="sname"
-                             item-label="sname"
-                             tick-property="ticked"
-                             max-labels="0"
-                             max-height="250px"
-                             translation="systemTestsCtrl.translation"
-                             helper-elements="filter"
-                             search-property="sname"
-                             output-properties="id testCases"
-                             on-item-click="systemTestsCtrl.testSuiteTicked(data)">
-                        </div>
-                    </td>
-                    <td>
-                        <div isteven-multi-select
-                             input-model="systemTestsCtrl.filtering.testCase.filter"
-                             output-model="systemTestsCtrl.filtering.testCase.selection"
-                             button-label="sname"
-                             item-label="sname"
-                             tick-property="ticked"
-                             max-labels="0"
-                             max-height="250px"
-                             translation="systemTestsCtrl.translation"
-                             helper-elements="filter"
-                             search-property="sname"
-                             output-properties="id"
-                             on-item-click="systemTestsCtrl.testCaseTicked(data)">
-                        </div>
-                    </td>
-                    <td>
-                        <div isteven-multi-select
-                             input-model="systemTestsCtrl.filtering.result.filter"
-                             output-model="systemTestsCtrl.filtering.result.selection"
-                             button-label="result"
-                             item-label="result"
-                             tick-property="ticked"
-                             max-labels="0"
-                             max-height="250px"
-                             translation="systemTestsCtrl.translation"
-                             helper-elements="filter"
-                             search-property="result"
-                             output-properties="result"
-                             on-item-click="systemTestsCtrl.resultClicked(data)">
-                        </div>
-                    </td>
-                    <td>
-                        <input date-range-picker class="form-control date-picker" type="text"
-                               ng-model="systemTestsCtrl.startTime" options="systemTestsCtrl.startTimeOptions"
-                               clearable="true">
-                    </td>
-                    <td>
-                        <input date-range-picker class="form-control date-picker" type="text"
-                               ng-model="systemTestsCtrl.endTime" options="systemTestsCtrl.endTimeOptions"
-                               clearable="true">
-                    </td>
-                </tr>
-                </tbody>
-            </table>
-        </div>
+    <div tb-test-filter 
+        filters = "systemTestsCtrl.filters"
+        state = "systemTestsCtrl.filterState"
+        apply-fn = "systemTestsCtrl.navigateFirstPage"
+        load-domains-fn = "systemTestsCtrl.getAllDomains"
+        load-specifications-fn = "systemTestsCtrl.getAllSpecifications"
+        load-actors-fn = "systemTestsCtrl.getAllActors"
+        load-test-suites-fn = "systemTestsCtrl.getAllTestSuites"
+        load-test-cases-fn = "systemTestsCtrl.getAllTestCases">
     </div>
+
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Active test sessions</h4>
             <div class="btn-toolbar pull-right">
-                <button type="button" class="btn btn-default" ng-click="systemTestsCtrl.exportActiveSessionsToCsv()" ng-disabled="systemTestsCtrl.exportActivePending"><span class="tab" ng-if="systemTestsCtrl.exportActivePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Export CSV</button>
+                <button type="button" class="btn btn-default" ng-click="systemTestsCtrl.exportActiveSessionsToCsv()" ng-disabled="systemTestsCtrl.activeTests.length == 0 || systemTestsCtrl.exportActivePending"><span class="tab" ng-if="systemTestsCtrl.exportActivePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Export CSV</button>
+				<button type="button" class="btn btn-default" ng-if="systemTestsCtrl.showCollapseAllActive()" ng-click="systemTestsCtrl.onCollapseAllActive()">Collapse all</button>
             </div>
         </div>
-        <div id="system-tests-table-active" table-directive columns="systemTestsCtrl.activeTestsColumns" data="systemTestsCtrl.activeTests"
-             on-select="systemTestsCtrl.onTestSelect" on-sort="systemTestsCtrl.sortActiveSessions" on-delete="systemTestsCtrl.stopSession"
-             operations-visible="true" row-style="systemTestsCtrl.rowStyle"></div>
+        <div session-table-directive session-table-id="system-tests-table-active"
+            expanded-counter="systemTestsCtrl.activeExpandedCounter"
+            columns="systemTestsCtrl.activeTestsColumns"
+            data="systemTestsCtrl.activeTests"
+            no-data-message="No sessions found"
+            loading-status="systemTestsCtrl.activeDataStatus"
+            on-sort="systemTestsCtrl.sortActiveSessions"
+            on-delete="systemTestsCtrl.stopSession"
+            operations-visible="true"
+            row-style="systemTestsCtrl.rowStyle">
+        </div>
     </div>
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Completed test sessions</h4>
             <div class="btn-toolbar pull-right">
-                <button type="button" class="btn btn-default" ng-if="systemTestsCtrl.canDelete()" ng-disabled="systemTestsCtrl.deletePending" ng-click="systemTestsCtrl.deleteObsolete()"><span class="tab" ng-if="systemTestsCtrl.deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete obsolete results</button>
-                <button type="button" class="btn btn-default" ng-click="systemTestsCtrl.exportToCsv()" ng-disabled="systemTestsCtrl.exportCompletedPending"><span class="tab" ng-if="systemTestsCtrl.exportCompletedPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Export CSV</button>
+                <button type="button" class="btn btn-default" ng-if="systemTestsCtrl.canDelete()" ng-disabled="systemTestsCtrl.deletePending" ng-click="systemTestsCtrl.deleteObsolete()"><span class="tab" ng-if="systemTestsCtrl.deletePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Delete obsolete sessions</button>
+                <button type="button" class="btn btn-default" ng-click="systemTestsCtrl.exportToCsv()" ng-disabled="systemTestsCtrl.testResults.length == 0 || systemTestsCtrl.exportCompletedPending"><span class="tab" ng-if="systemTestsCtrl.exportCompletedPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Export CSV</button>
+				<button type="button" class="btn btn-default" ng-if="systemTestsCtrl.showCollapseAll()" ng-click="systemTestsCtrl.onCollapseAll()">Collapse all</button>
             </div>
         </div>
-        <div id="system-tests-table" ng-if="systemTestsCtrl.testResults.length > 0" table-directive
-             columns="systemTestsCtrl.tableColumns"
-             data="systemTestsCtrl.testResults"
-             on-select="systemTestsCtrl.onTestSelect"
-             row-style="systemTestsCtrl.rowStyle"
-             export-visible="true"
-             on-export="systemTestsCtrl.onReportExport"
-             checkbox-enabled="false"
-             on-sort="systemTestsCtrl.sortTestResults"
-             pagination-visible="true"
-             first-page="systemTestsCtrl.navigateFirstPage()"
-             prev-page="systemTestsCtrl.navigatePreviousPage()"
-             next-page="systemTestsCtrl.navigateNextPage()"
-             last-page="systemTestsCtrl.navigateLastPage()"
-             next-disabled="!systemTestsCtrl.hasNextPage"
-             prev-disabled="!systemTestsCtrl.hasPreviousPage">
+        <div session-table-directive session-table-id="system-tests-table"
+            expanded-counter="systemTestsCtrl.completedExpandedCounter"
+            columns="systemTestsCtrl.tableColumns"
+            data="systemTestsCtrl.testResults"
+            no-data-message="No sessions found"
+            loading-status="systemTestsCtrl.completedDataStatus"
+            row-style="systemTestsCtrl.rowStyle"
+            export-visible="true"
+            export-visible-for-row="systemTestsCtrl.exportVisible"
+            on-export="systemTestsCtrl.onReportExport"
+            checkbox-enabled="false"
+            on-sort="systemTestsCtrl.sortTestResults"
+            pagination-visible="true"
+            first-page="systemTestsCtrl.navigateFirstPage()"
+            prev-page="systemTestsCtrl.navigatePreviousPage()"
+            next-page="systemTestsCtrl.navigateNextPage()"
+            last-page="systemTestsCtrl.navigateLastPage()"
+            next-disabled="!systemTestsCtrl.hasNextPage"
+            prev-disabled="!systemTestsCtrl.hasPreviousPage">
         </div>
     </div>
 </div>

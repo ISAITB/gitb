@@ -246,8 +246,7 @@ public class TestbedService {
 			+ " ( "
 			+ sessionId + " , "
 			+ stepId + " , "
-			+ status + " , "
-			+ report
+			+ status
 			+ " ) ");
 		//Get the Callback client
 		ITestbedServiceCallbackHandler tbsCallbackHandle = TestEngine

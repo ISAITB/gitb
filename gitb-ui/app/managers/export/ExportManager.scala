@@ -593,6 +593,9 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
     communityData.setAllowCertificateDownload(community.get.allowCertificateDownload)
     communityData.setAllowStatementManagement(community.get.allowStatementManagement)
     communityData.setAllowSystemManagement(community.get.allowSystemManagement)
+    communityData.setAllowPostTestOrganisationUpdates(community.get.allowPostTestOrganisationUpdates)
+    communityData.setAllowPostTestSystemUpdates(community.get.allowPostTestSystemUpdates)
+    communityData.setAllowPostTestStatementUpdates(community.get.allowPostTestStatementUpdates)
     // Self registration information.
     communityData.setSelfRegistrationSettings(new SelfRegistrationSettings)
     SelfRegistrationType.apply(community.get.selfRegType) match {
@@ -814,6 +817,9 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
             case models.Enums.TriggerEventType.SystemUpdated => exportedTrigger.setEventType(TriggerEventType.SYSTEM_UPDATED)
             case models.Enums.TriggerEventType.ConformanceStatementCreated => exportedTrigger.setEventType(TriggerEventType.CONFORMANCE_STATEMENT_CREATED)
             case models.Enums.TriggerEventType.ConformanceStatementUpdated => exportedTrigger.setEventType(TriggerEventType.CONFORMANCE_STATEMENT_UPDATED)
+            case models.Enums.TriggerEventType.TestSessionSucceeded => exportedTrigger.setEventType(TriggerEventType.TEST_SESSION_SUCCEEDED)
+            case models.Enums.TriggerEventType.TestSessionFailed => exportedTrigger.setEventType(TriggerEventType.TEST_SESSION_FAILED)
+            case models.Enums.TriggerEventType.ConformanceStatementSucceeded => exportedTrigger.setEventType(TriggerEventType.CONFORMANCE_STATEMENT_SUCCEEDED)
           }
           if (trigger.data.isDefined && trigger.data.get.nonEmpty) {
             exportedTrigger.setDataItems(new TriggerDataItems)
@@ -845,6 +851,9 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
                 }
                 exportedTrigger.getDataItems.getTriggerDataItem.add(exportedDataItem)
               }
+            }
+            if (exportedTrigger.getDataItems != null && exportedTrigger.getDataItems.getTriggerDataItem.isEmpty) {
+              exportedTrigger.setDataItems(null)
             }
           }
           communityData.getTriggers.getTrigger.add(exportedTrigger)

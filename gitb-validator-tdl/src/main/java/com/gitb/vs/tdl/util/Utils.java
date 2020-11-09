@@ -42,6 +42,7 @@ public class Utils {
     public static final String SYSTEM_MAP__FULL_NAME = "fullName";
     public static final String SYSTEM_MAP__VERSION = "version";
     public static final String STEP_SUCCESS = "STEP_SUCCESS";
+    public static final String TEST_SUCCESS = "TEST_SUCCESS";
     public static final String VARIABLE_EXPRESSION = "\\$([a-zA-Z][a-zA-Z\\-_0-9]*)(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*";
     public static final Pattern VARIABLE_EXPRESSION_PATTERN = Pattern.compile(VARIABLE_EXPRESSION);
 
@@ -231,6 +232,8 @@ public class Utils {
             step = "interact";
         } else if (stepObj instanceof TestArtifact) {
             step = "imports";
+        } else if (stepObj instanceof Output) {
+            step = "output";
         } else {
             step = "";
         }

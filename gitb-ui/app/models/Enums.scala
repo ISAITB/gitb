@@ -95,7 +95,10 @@ object Enums {
         ConformanceStatementCreated,
         OrganisationUpdated,
         SystemUpdated,
-        ConformanceStatementUpdated
+        ConformanceStatementUpdated,
+        TestSessionSucceeded,
+        TestSessionFailed,
+        ConformanceStatementSucceeded
         = Value
   }
 

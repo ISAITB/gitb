@@ -16,6 +16,7 @@ public class TestCaseOverview {
     private String testName;
     private String testDescription;
     private String reportResult;
+    private String outputMessage;
     private String startTime;
     private String endTime;
     private String testSuiteName;
@@ -28,6 +29,14 @@ public class TestCaseOverview {
     private String labelSystem;
 
     private List<Report> steps = new ArrayList<>();
+
+    public String getOutputMessage() {
+        return outputMessage;
+    }
+
+    public void setOutputMessage(String outputMessage) {
+        this.outputMessage = outputMessage;
+    }
 
     public String getId() {
         return id;

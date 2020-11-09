@@ -523,12 +523,24 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
           case TriggerEventType.SystemUpdated =>
             callbacks.fnSystem = Some(() => triggerData.asInstanceOf[Long])
             callbacks.fnOrganisation = Some(() => exec(PersistenceSchema.systems.filter(_.id === triggerData.asInstanceOf[Long]).map(x => x.owner).result.head))
-          // Conformance statement events: Data is a (Long, Long) (system ID, actor ID)
+          // Conformance statement and test session events: Data is a (Long, Long) (system ID, actor ID)
           case TriggerEventType.ConformanceStatementCreated =>
             callbacks.fnSystem = Some(() => triggerData.asInstanceOf[(Long, Long)]._1)
             callbacks.fnOrganisation = Some(() => exec(PersistenceSchema.systems.filter(_.id === triggerData.asInstanceOf[(Long, Long)]._1).map(x => x.owner).result.head))
             callbacks.fnActor = Some(() => triggerData.asInstanceOf[(Long, Long)]._2)
           case TriggerEventType.ConformanceStatementUpdated =>
+            callbacks.fnSystem = Some(() => triggerData.asInstanceOf[(Long, Long)]._1)
+            callbacks.fnOrganisation = Some(() => exec(PersistenceSchema.systems.filter(_.id === triggerData.asInstanceOf[(Long, Long)]._1).map(x => x.owner).result.head))
+            callbacks.fnActor = Some(() => triggerData.asInstanceOf[(Long, Long)]._2)
+          case TriggerEventType.ConformanceStatementSucceeded =>
+            callbacks.fnSystem = Some(() => triggerData.asInstanceOf[(Long, Long)]._1)
+            callbacks.fnOrganisation = Some(() => exec(PersistenceSchema.systems.filter(_.id === triggerData.asInstanceOf[(Long, Long)]._1).map(x => x.owner).result.head))
+            callbacks.fnActor = Some(() => triggerData.asInstanceOf[(Long, Long)]._2)
+          case TriggerEventType.TestSessionSucceeded =>
+            callbacks.fnSystem = Some(() => triggerData.asInstanceOf[(Long, Long)]._1)
+            callbacks.fnOrganisation = Some(() => exec(PersistenceSchema.systems.filter(_.id === triggerData.asInstanceOf[(Long, Long)]._1).map(x => x.owner).result.head))
+            callbacks.fnActor = Some(() => triggerData.asInstanceOf[(Long, Long)]._2)
+          case TriggerEventType.TestSessionFailed =>
             callbacks.fnSystem = Some(() => triggerData.asInstanceOf[(Long, Long)]._1)
             callbacks.fnOrganisation = Some(() => exec(PersistenceSchema.systems.filter(_.id === triggerData.asInstanceOf[(Long, Long)]._1).map(x => x.owner).result.head))
             callbacks.fnActor = Some(() => triggerData.asInstanceOf[(Long, Long)]._2)

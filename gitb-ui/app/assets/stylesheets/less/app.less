@@ -39,6 +39,9 @@ body {
 .div-padded {
 	padding: 15px;
 }
+.div-padded-bottom {
+	padding-bottom: 15px;
+}
 
 .account-card {
 	&:extend(.div-rounded);
@@ -126,12 +129,73 @@ body {
 
 }
 
+.table-paging-controls-expandable {
+	border-top: 2px solid #ddd;
+}
+
 table.expandable-table {
 	th {
 		background-color: #FFFFFF;
 	}
 	tr {
 		background-color: #F5F5F5;
+	}
+	.panel {
+		margin-bottom: 0px;
+		.panel-heading {
+			background-color: white;
+    		color: #777;
+		}
+	}
+}
+
+.panel-default > .panel-heading > .session-table-title {
+	color: #777;
+}
+
+.session-execution-info {
+	display: flex;
+	width: 100%;
+	.session-table-title {
+		display: inline-flex;
+		width: 100%;
+		padding-left: 0px;
+		.session-table-title-part {
+			padding-top: 15px;
+			padding-bottom: 15px;
+		}
+	}
+	.session-table-operations {
+		display: inline-flex;
+		align-items: center;
+	}
+}
+.session-table-title {
+	padding: 0px 15px;
+	display: flex;
+	color: #777;
+	.session-table-title-part {
+		display: inline-flex;
+		border-left: 1px solid #ddd;
+		padding-left: 10px;
+		padding-right: 10px;		
+		padding-top: 10px;
+		padding-bottom: 10px;
+		&:first-child {
+			border-left: 0px;
+			padding-left: 0px;
+		}
+		.session-table-title-label {
+			display: inline-flex;
+			font-weight: bold;
+			padding-right: 10px;
+			align-items: center;
+			white-space: nowrap
+		}
+		.session-table-title-value {
+			display: inline-flex;
+			align-items: center;
+		}
 	}
 }
 
@@ -141,11 +205,18 @@ table tbody tr.expandable-table-row-collapsed {
 		+ .expandable-table-row-expanded > td.expandable-table-expandable-cell {
 			background-color: #efefef;
 		}
+		+ .expandable-table-row-expanded > td.expandable-table-expandable-cell-no-spacings {
+			background-color: #efefef;
+			.tr-expandable-inner {
+				background-color: #efefef;
+			}
+		}
 	}
 	td {
-		padding-top: 15px;
-		padding-bottom: 15px;
 		cursor: pointer;
+		&.td-min-centered {
+			.td-min-centered
+		}
 	}
 	td:last-child {
 		padding-top: 8px;
@@ -169,19 +240,70 @@ table.table-directive {
 	}
 }
 
+#conformance-statement-details {
+	th.tb-result {
+		width: 110px;
+		text-align: center;
+		white-space: nowrap;
+	}
+	td.tb-result {
+		padding-top: 8px;
+		padding-bottom: 8px;
+		vertical-align: middle;
+		text-align: center;
+	}
+}
+.td-min-centered {
+	padding-top: 8px;
+	padding-bottom: 8px;
+	vertical-align: middle;
+	text-align: center;
+}
+.th-min-centered {
+	width: 1px;
+	text-align: center;
+	white-space: nowrap;
+}
+#system-tests-table, #dashboard-table, #conformanceDashboardPageTable {
+	th.tb-result {
+		.th-min-centered
+	}
+	td.tb-result {
+		.td-min-centered
+	}
+}
+
+#conformance-statements-table {
+	th.tb-status {
+		.th-min-centered
+	}
+	td.tb-status {
+		.td-min-centered
+	}
+}
+
 table tbody tr.expandable-table-row-expanded {
-	td.expandable-table-expandable-cell {
-		padding: 0px;
-		div {
-			margin: 8px;
-			.btn-toolbar {
-				margin: 0px;
+	td {
+		padding-top: 0px;
+		padding-bottom: 0px;
+		&.expandable-table-expandable-cell {
+			padding: 0px;
+			> div {
+				margin: 8px;
+				.btn-toolbar {
+					margin: 0px;
+				}
 			}
+		}
+	}
+	td.expandable-table-expandable-cell-no-spacings {
+		padding:0px;
+		div.collapsing-div {
+			margin: 8px;
 		}
 	}
 	td {
 		border-top: 0px solid #ddd;
-		background-color: #F5F5F5;
 	}
 }
 
@@ -194,7 +316,7 @@ tr.expandable-table-row-expanded table.expandable-table {
 	}
 	th {
 		background-color: #FFFFFF;
-		padding: 8px
+		padding: 8px;
 	}
 	th:first-child {
 		border-left: 1px solid #ddd;
@@ -251,4 +373,41 @@ tr.expandable-table-row-expanded table.expandable-table {
 			vertical-align: sub;
 		}
 	}
+}
+
+.popover.result-message-popover {
+	padding: 10px;
+	max-width: 800px;
+	&.success {
+		> .arrow {
+			border-left-color: #d6e9c6;
+			&:after {
+				border-left-color: #dff0d8;
+			}
+		}
+		background-color: #dff0d8;
+		border-color: #d6e9c6;
+		.popover-inner {
+			background-color: #dff0d8;
+			color: #3c763d;
+		}
+	}
+	&.failure {
+		> .arrow {
+			border-left-color: #ebccd1;
+			&:after {
+				border-left-color: #f2dede;
+			}
+		}
+		background-color: #f2dede;
+		border-color: #ebccd1;
+		.popover-inner {
+			background-color: #f2dede;
+			color: #a94442;
+		}
+	}
+}
+
+.pointer {
+	cursor: pointer;
 }

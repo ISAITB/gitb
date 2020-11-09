@@ -14,6 +14,21 @@ class Constants
 
 	@DEFAULT_COMMUNITY_ID = 0
 
+	@FILTER_TYPE =
+		DOMAIN: 'domain'
+		SPECIFICATION: 'specification'
+		ACTOR: 'actor'
+		TEST_SUITE: 'test_suite'
+		TEST_CASE: 'test_case'
+		COMMUNITY: 'community'
+		ORGANISATION: 'organisation'
+		SYSTEM: 'system'
+		RESULT: 'result'
+		TIME: 'time'
+		SESSION: 'session'
+		ORGANISATION_PROPERTY: 'org_property'
+		SYSTEM_PROPERTY: 'sys_property'
+
 	@TRIGGER_EVENT_TYPE = 
 		ORGANISATION_CREATED: 1
 		SYSTEM_CREATED: 2
@@ -21,6 +36,9 @@ class Constants
 		ORGANISATION_UPDATED: 4
 		SYSTEM_UPDATED: 5
 		CONFORMANCE_STATEMENT_UPDATED: 6
+		TEST_SESSION_SUCCEEDED: 7
+		TEST_SESSION_FAILED: 8
+		CONFORMANCE_STATEMENT_SUCCEEDED: 9
 
 	@TRIGGER_DATA_TYPE = 
 		COMMUNITY: 1
@@ -212,10 +230,14 @@ class Constants
 		FAILURE : "FAILURE"
 		UNDEFINED : "UNDEFINED"
 
+	@STATUS =
+		PENDING : 0
+		FINISHED : 1
+
 	@EMAIL_REGEX: /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 	@DATA_URL_REGEX: /^data:.+\/(.+);base64,(.*)$/
 	@VARIABLE_NAME_REGEX: /^[a-zA-Z][a-zA-Z\-_\.0-9]*$/
 
-	@VERSION = "v1.10.2"
+	@VERSION = "v1.11.0_b1"
 
 common.value('Constants', Constants)

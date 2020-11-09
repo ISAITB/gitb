@@ -39,6 +39,12 @@ class TriggerActor @Inject() (triggerManager: TriggerManager) extends Actor {
       triggerManager.fireTriggers(msg.communityId, msg.eventType, (msg.systemId, msg.actorId))
     case msg: actors.events.ConformanceStatementUpdatedEvent =>
       triggerManager.fireTriggers(msg.communityId, msg.eventType, (msg.systemId, msg.actorId))
+    case msg: actors.events.ConformanceStatementSucceededEvent =>
+      triggerManager.fireTriggers(msg.communityId, msg.eventType, (msg.systemId, msg.actorId))
+    case msg: actors.events.TestSessionSucceededEvent =>
+      triggerManager.fireTriggers(msg.communityId, msg.eventType, (msg.systemId, msg.actorId))
+    case msg: actors.events.TestSessionFailedEvent =>
+      triggerManager.fireTriggers(msg.communityId, msg.eventType, (msg.systemId, msg.actorId))
     case msg: actors.events.TriggerEvent =>
       logger.warn("Unexpected event type received [community: "+msg.communityId+"][type: "+msg.eventType+"]")
   }

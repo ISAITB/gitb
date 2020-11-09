@@ -22,20 +22,31 @@ getTesterNameForActor = (actor, actorInfo) ->
   actorName
 
 extractActors = (messages, actorInfo) =>
+  actors = extractActorsInternal(messages, actorInfo)
+  hasOrdering = _.find(actorInfo, (actor) => 
+    return actor.displayOrder?
+  )
+  if hasOrdering?
+    actorsToReturn = sortActors(actors, actorInfo)
+  else
+    actorsToReturn = actors
+  moveTestEngineToTheEnd(actorsToReturn)
+
+extractActorsInternal = (messages, actorInfo) =>
   collection = _ messages
   collection = collection.map (message) ->
     if message.from? && message.to?
       [message.from, message.to]
     else if message.type == 'loop'
-      extractActors(message.steps, actorInfo)
+      extractActorsInternal(message.steps, actorInfo)
     else if message.type == 'decision'
-      _then = extractActors(message.then, actorInfo)
-      _else = extractActors(message.else, actorInfo)
+      _then = extractActorsInternal(message.then, actorInfo)
+      _else = extractActorsInternal(message.else, actorInfo)
 
       _then.concat _else
     else if message.type == 'flow'
       for thread in message.threads
-        extractActors(thread, actorInfo)
+        extractActorsInternal(thread, actorInfo)
     else if message.type == 'exit'
       [TEST_ENGINE_ACTOR, TEST_ENGINE_ACTOR]
     else if message.type == 'interact'
@@ -49,13 +60,14 @@ extractActors = (messages, actorInfo) =>
     else
       []
   flattened = collection.flatten().unique().value()
-  hasOrdering = _.find(actorInfo, (actor) => 
-    return actor.displayOrder?
-  )
-  if hasOrdering?
-    sortActors(flattened, actorInfo)
-  else
-    flattened
+  flattened
+
+moveTestEngineToTheEnd = (actors) =>
+  testEngineIndex = actors.indexOf(TEST_ENGINE_ACTOR)
+  if testEngineIndex != -1
+    actors.splice(testEngineIndex, 1)
+    actors.push(TEST_ENGINE_ACTOR)
+  actors
 
 sortActors = (actors, actorInfo) =>
   sortedArray = []
@@ -242,8 +254,8 @@ extractSteps = (s, actorInfo) =>
         else
           scope.actor = info.id + " (" + info.role + ")"
 
-@directives.directive 'seqDiagramMessage', ['RecursionHelper', 'ReportService', 'Constants', '$uibModal', '$timeout', '$sce', 'HtmlService'
-  (RecursionHelper, ReportService, Constants, $uibModal, $timeout, $sce, HtmlService) =>
+@directives.directive 'seqDiagramMessage', ['RecursionHelper', 'ReportService', 'Constants', '$uibModal', '$timeout', '$sce', 'HtmlService', '$log'
+  (RecursionHelper, ReportService, Constants, $uibModal, $timeout, $sce, HtmlService, $log) =>
     scope:
       message: '='
       actorInfo: '='
@@ -351,12 +363,12 @@ extractSteps = (s, actorInfo) =>
             $uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
 
           if scope.message.report?
-            if scope.message.report.path? && !scope.message.report.result?
-              ReportService.getTestStepReport scope.message.report.path
+            if scope.message.report.tcInstanceId? && scope.message.report.path? && !scope.message.report.result?
+              ReportService.getTestStepReport(scope.message.report.tcInstanceId, scope.message.report.path)
               .then (report) =>
                 showTestStepReportModal report
               .catch (error) =>
-                @$log.debug "An error occurred", error
+                $log.debug "An error occurred", error
             else
               showTestStepReportModal scope.message.report
 
@@ -400,27 +412,136 @@ extractSteps = (s, actorInfo) =>
               $timeout showLastStatus, 0
           scope.$watch 'message.sequences', onLoopIterationUpdated, true
         scope.depth = calculateDepth scope.message
-        if scope.message.title == undefined
+        if scope.message.title == undefined || scope.message.title == null
           scope.message.title = scope.message.type
 ]
 
-@directives.directive 'seqDiagramMessageStatus', (RecursionHelper, Constants) ->
-  scope:
-    message: '='
-  restrict: 'A'
-  replace: true
-  template: ''+
-    '<div class="status-wrapper {{(message.fromIndex > message.toIndex)?\'backwards-message\':((message.fromIndex == message.toIndex)?\'self-message\':\'\')}} {{message.type}}-type">'+
-      '<div class="status" '+
-        'ng-class="{'+
-        '\'processing\': message.status == TEST_STATUS.PROCESSING, '+
-        '\'skipped\': message.status == TEST_STATUS.SKIPPED, '+
-        '\'waiting\': message.status == TEST_STATUS.WAITING, '+
-        '\'error\': message.status == TEST_STATUS.ERROR, '+
-        '\'warning\': message.status == TEST_STATUS.WARNING, '+
-        '\'completed\': message.status == TEST_STATUS.COMPLETED}">'+
-      '</div>'+
-    '</div>'
-  compile: (element) ->
-    RecursionHelper.compile element, (scope, element, attrs) ->
-      scope.TEST_STATUS = Constants.TEST_STATUS
+@directives.directive 'seqDiagramMessageStatus', ['RecursionHelper', 'Constants'
+  (RecursionHelper, Constants) ->
+    scope:
+      message: '='
+    restrict: 'A'
+    replace: true
+    template: ''+
+      '<div class="status-wrapper {{(message.fromIndex > message.toIndex)?\'backwards-message\':((message.fromIndex == message.toIndex)?\'self-message\':\'\')}} {{message.type}}-type">'+
+        '<div class="status" '+
+          'ng-class="{'+
+          '\'processing\': message.status == TEST_STATUS.PROCESSING, '+
+          '\'skipped\': message.status == TEST_STATUS.SKIPPED, '+
+          '\'waiting\': message.status == TEST_STATUS.WAITING, '+
+          '\'error\': message.status == TEST_STATUS.ERROR, '+
+          '\'warning\': message.status == TEST_STATUS.WARNING, '+
+          '\'completed\': message.status == TEST_STATUS.COMPLETED}">'+
+        '</div>'+
+      '</div>'
+    compile: (element) ->
+      RecursionHelper.compile element, (scope, element, attrs) ->
+        scope.TEST_STATUS = Constants.TEST_STATUS
+]
+
+@directives.directive 'testSessionPresentation', ['ReportService', 'ErrorService', 'Constants', '$timeout'
+  (ReportService, ErrorService, Constants, $timeout) ->
+    scope:
+      sessionId: '='
+      sessionObject: '='
+      endTimeProperty: '@?'
+      resultProperty: '@?'
+      onReady: '='
+    template: '
+      <div ng-if="stepsOfTests && actorInfoOfTests" ng-class="{\'div-padded-bottom\': !outputMessage}">
+        <div class="child" seq-diagram steps-of-tests="stepsOfTests" test="{{sessionId}}" actor-info-of-tests="actorInfoOfTests"></div>
+        <div class="test-output-container" ng-if="outputMessage">
+            <div uib-alert class="no-margin" ng-class="{\'alert-success\': result == \'SUCCESS\', \'alert-danger\': result == \'FAILURE\'}">{{outputMessage}}</div>
+        </div>
+      </div>
+      '
+    restrict: 'A'
+    link: (scope, element, attrs) ->
+      if !scope.endTimeProperty?
+        scope.endTimeProperty = 'endTime'
+      if !scope.resultProperty?
+        scope.resultProperty = 'result'
+      scope.testResultFlat = {}
+      scope.loadTestSessionData = (sessionId) ->
+        ReportService.getTestStepResults(scope.sessionId)
+        .then (stepResults) =>
+          for result in stepResults
+            scope.testResultFlat[result.stepId] = result
+          ReportService.getTestResultOfSession(scope.sessionId)
+          .then (result) =>
+            testcase     = angular.fromJson(result.tpl)
+            actorInfoOfTests = {}
+            stepsOfTests = {}
+            actors = []
+            for actor in testcase.actors.actor
+              actors.push({
+                id: actor.id
+                name: actor.name
+                role: actor.role
+            })
+            actorInfoOfTests[scope.sessionId] = actors
+            stepsOfTests[scope.sessionId] = testcase.steps
+            scope.outputMessage = result.outputMessage
+            scope.result = result.result
+            scope.actorInfoOfTests = actorInfoOfTests
+            scope.stepsOfTests = stepsOfTests
+            $timeout(() =>
+              parentStatus = Constants.TEST_STATUS.WAITING
+              if scope.sessionObject?[scope.endTimeProperty]?
+                if scope.sessionObject?[scope.resultProperty]?
+                  if scope.sessionObject[scope.resultProperty] == 'SUCCESS'
+                    parentStatus = Constants.TEST_STATUS.COMPLETED
+                  else if scope.sessionObject[scope.resultProperty] == 'FAILURE'
+                    parentStatus = Constants.TEST_STATUS.ERROR
+                else
+                  parentStatus = Constants.TEST_STATUS.ERROR
+              scope.addStatusToSteps(scope.stepsOfTests[scope.sessionId], parentStatus)
+              if scope.onReady?
+                scope.onReady(scope.sessionId, scope.sessionObject)
+            , 1)
+          .catch (error) =>
+            ErrorService.showErrorMessage(error)
+        .catch (error) =>
+          ErrorService.showErrorMessage(error)
+
+      scope.addStatusToSteps = (steps, parentStatus) ->
+        if steps?
+          for step in steps
+            statusToSet = undefined
+            if scope.testResultFlat[step.id]?
+              statusToSet = scope.testResultFlat[step.id].result
+              if scope.testResultFlat[step.id].path?
+                step.report = {}
+                step.report.tcInstanceId = scope.sessionId
+                step.report.path = scope.testResultFlat[step.id].path
+            if !statusToSet?
+              if parentStatus == Constants.TEST_STATUS.COMPLETED || parentStatus == Constants.TEST_STATUS.ERROR || parentStatus == Constants.TEST_STATUS.SKIPPED
+                statusToSet = Constants.TEST_STATUS.SKIPPED
+            step.status =  statusToSet
+            if step.type == "decision"
+              scope.addStatusToSteps(step.then, statusToSet)
+              scope.addStatusToSteps(step.else, statusToSet)
+            else if step.type == "flow"
+              for thread in step.threads
+                scope.addStatusToSteps(thread, statusToSet)
+            else if step.type == "loop"
+              scope.traverseLoops(step)
+              for sequence in step.sequences
+                scope.addStatusToSteps(sequence, statusToSet)
+
+      scope.traverseLoops = (loopStep) ->
+        loopStep.sequences = []
+        i = 1
+        while scope.testResultFlat[loopStep.id + "[" + i + "]"]?
+          sequence = angular.toJson(loopStep.steps)
+          if i > 1
+            sequence = sequence.split(loopStep.id+"[1]").join(loopStep.id + "[" + i + "]")
+          sequence = angular.fromJson(sequence)
+          if sequence.length > 0
+            loopStep.sequences.push(sequence)
+          i = i+1
+        loopStep.currentIndex = loopStep.sequences.length - 1
+      
+      scope.loadTestSessionData()
+
+]

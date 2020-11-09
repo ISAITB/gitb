@@ -21,15 +21,6 @@ class DataService
 		@isCommunityAdmin = false
 		@isDomainUser = false
 		@acceptedEmailAttachmentTypes = undefined
-		@searchState = undefined
-
-	clearSearchState: () =>
-		@searchState = undefined
-
-	setSearchState: (searchState, origin) =>
-		@searchState = {}
-		@searchState.data = searchState
-		@searchState.origin = origin
 
 	setActualUser: (actualUser) ->
 		@actualUser = actualUser
@@ -483,7 +474,10 @@ class DataService
 			{id: @Constants.TRIGGER_EVENT_TYPE.SYSTEM_CREATED, label: @labelSystem() + ' created'},
 			{id: @Constants.TRIGGER_EVENT_TYPE.SYSTEM_UPDATED, label: @labelSystem() + ' updated'},
 			{id: @Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_CREATED, label: 'Conformance statement created'},
-			{id: @Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_UPDATED, label: 'Conformance statement updated'}
+			{id: @Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_UPDATED, label: 'Conformance statement updated'},
+			{id: @Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_SUCCEEDED, label: 'Conformance statement succeeded'},
+			{id: @Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED, label: 'Test session succeeded'},
+			{id: @Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED, label: 'Test session failed'}
 		]
 
 	triggerDataTypes: () ->
@@ -555,6 +549,36 @@ class DataService
 				@Constants.TRIGGER_DATA_TYPE.ACTOR,
 				@Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
 			])
+			@addIdMapEntry(tempMap, @Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_SUCCEEDED, [
+				@Constants.TRIGGER_DATA_TYPE.COMMUNITY,
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION,
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER,
+				@Constants.TRIGGER_DATA_TYPE.SYSTEM,
+				@Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
+				@Constants.TRIGGER_DATA_TYPE.SPECIFICATION,
+				@Constants.TRIGGER_DATA_TYPE.ACTOR,
+				@Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
+			])
+			@addIdMapEntry(tempMap, @Constants.TRIGGER_EVENT_TYPE.TEST_SESSION_FAILED, [
+				@Constants.TRIGGER_DATA_TYPE.COMMUNITY,
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION,
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER,
+				@Constants.TRIGGER_DATA_TYPE.SYSTEM,
+				@Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
+				@Constants.TRIGGER_DATA_TYPE.SPECIFICATION,
+				@Constants.TRIGGER_DATA_TYPE.ACTOR,
+				@Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
+			])
+			@addIdMapEntry(tempMap, @Constants.TRIGGER_EVENT_TYPE.CONFORMANCE_STATEMENT_SUCCEEDED, [
+				@Constants.TRIGGER_DATA_TYPE.COMMUNITY,
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION,
+				@Constants.TRIGGER_DATA_TYPE.ORGANISATION_PARAMETER,
+				@Constants.TRIGGER_DATA_TYPE.SYSTEM,
+				@Constants.TRIGGER_DATA_TYPE.SYSTEM_PARAMETER,
+				@Constants.TRIGGER_DATA_TYPE.SPECIFICATION,
+				@Constants.TRIGGER_DATA_TYPE.ACTOR,
+				@Constants.TRIGGER_DATA_TYPE.DOMAIN_PARAMETER
+			])
 			@triggerEventToDataTypeMap = tempMap
 		@triggerEventToDataTypeMap[eventType][dataType]? == true
 				
@@ -562,5 +586,23 @@ class DataService
 		map[id] = {}
 		for otherId in ids 
 			map[id][otherId] = true
+
+	iconForTestResult: (result) =>
+		if (result == @Constants.TEST_CASE_RESULT.SUCCESS)
+			icon = "fa testsuite-progress-icon fa-check-circle test-case-success"
+		else if (result == @Constants.TEST_CASE_RESULT.FAILURE)
+			icon = "fa testsuite-progress-icon fa-times-circle test-case-error"
+		else
+			icon = "fa testsuite-progress-icon fa-ban test-case-undefined"
+		icon
+
+	conformanceStatusForTests: (completedCount, failedCount, undefinedCount) =>
+		totalCount = completedCount + failedCount + undefinedCount
+		if completedCount == totalCount
+			@Constants.TEST_CASE_RESULT.SUCCESS
+		else if failedCount > 0
+			@Constants.TEST_CASE_RESULT.FAILURE
+		else
+			@Constants.TEST_CASE_RESULT.UNDEFINED
 
 services.service('DataService', DataService)

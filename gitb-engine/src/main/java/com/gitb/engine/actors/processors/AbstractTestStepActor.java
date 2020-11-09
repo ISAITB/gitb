@@ -8,6 +8,7 @@ import com.gitb.core.StepStatus;
 import com.gitb.core.TestRole;
 import com.gitb.core.TestRoleEnumeration;
 import com.gitb.engine.actors.Actor;
+import com.gitb.engine.actors.SessionActor;
 import com.gitb.engine.actors.util.ActorUtils;
 import com.gitb.engine.commands.interaction.PrepareForStopCommand;
 import com.gitb.engine.commands.interaction.RestartCommand;
@@ -22,6 +23,7 @@ import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.IfStep;
+import com.gitb.tdl.Sequence;
 import com.gitb.tdl.TestConstruct;
 import com.gitb.tr.*;
 import com.gitb.types.BooleanType;
@@ -273,7 +275,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 
 		if (status == StepStatus.COMPLETED || status == StepStatus.ERROR) {
 			if (statusEvent instanceof ErrorStatusEvent) {
-				logger.debug(addMarker(), "An error status event is received. Stopping execution of the test step actor [" + stepId + "].");
+				logger.debug(addMarker(), "Stopping execution of the test step actor [" + stepId + "].");
 
 				self().tell(new StopCommand(scope.getContext().getSessionId()), self());
 				self().tell(PoisonPill.getInstance(), self());
@@ -298,16 +300,38 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			return;
 		}
 
-		if (step instanceof TestConstruct && ((TestConstruct)step).getId() != null) {
-			((MapType)(scope.getVariable(TestCaseContext.STEP_SUCCESS_MAP, true).getValue())).addItem(((TestConstruct)step).getId(), new BooleanType(status == StepStatus.COMPLETED));
+		boolean stopTestSession = false;
+		if (step instanceof TestConstruct || step instanceof Sequence) {
+			boolean stopOnError = false;
+			if (step instanceof TestConstruct) {
+				stopOnError = ((TestConstruct)step).isStopOnError();
+				if (((TestConstruct)step).getId() != null) {
+					((MapType)(scope.getVariable(TestCaseContext.STEP_SUCCESS_MAP, true).getValue())).addItem(((TestConstruct)step).getId(), new BooleanType(status == StepStatus.COMPLETED || status == StepStatus.WARNING));
+				}
+			}
+			if (step instanceof Sequence) {
+				stopOnError = ((Sequence)step).isStopOnError();
+			}
+			if (status == StepStatus.ERROR && stopOnError) {
+				// We need to stop the complete test session. We only do this if not already signalled.
+				if (scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
+					scope.getContext().setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPING);
+					stopTestSession = true;
+				}
+			}
 		}
-
 		if (reportTestStepStatus) {
 			final TestStepStatusEvent event = new TestStepStatusEvent(scope.getContext().getSessionId(), stepId, status, report, self());
-
 			TestStepStatusEventBus
-				.getInstance()
-				.publish(event);
+					.getInstance()
+					.publish(event);
+		}
+		if (stopTestSession) {
+			try {
+				ActorUtils.askBlocking(getContext().system().actorSelection(SessionActor.getPath(scope.getContext().getSessionId())), new PrepareForStopCommand(scope.getContext().getSessionId(), self()));
+			} catch (Exception e) {
+				logger.error(addMarker(), "Error sending the signal to stop the test session from test step actor [" + stepId + "].");
+			}
 		}
 	}
 

@@ -42,6 +42,12 @@
 					<th class="min-width"></th>
 				</thead>
 				<tbody>
+					<tr ng-if="endpointDetailsCtrl.dataStatus.status == endpointDetailsCtrl.Constants.STATUS.PENDING">
+						<td colspan="8" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
+					</tr>
+					<tr ng-if="endpointDetailsCtrl.dataStatus.status == endpointDetailsCtrl.Constants.STATUS.FINISHED && endpointDetailsCtrl.endpoint.parameters.length == 0">
+						<td colspan="8" class="td-no-data"><span>No parameters found</span></td>
+					</tr>
 					<tr class="table-row-directive selectable" ng-repeat="parameter in endpointDetailsCtrl.endpoint.parameters" ng-click="endpointDetailsCtrl.onParameterSelect(parameter)">
 						<td><div><span>{{parameter.name}}</span></div></td>
 						<td><div><span>{{parameter.desc}}</span></div></td>

@@ -33,6 +33,12 @@
             <h4 class="title">Users</h4>
             <a ui-sref="app.admin.users.communities.detail.organizations.detail.users.create" class="btn btn-default pull-right">Create user</a>
         </div>
-        <div table-directive columns="orgDetailCtrl.userColumns" data="orgDetailCtrl.users" on-select="orgDetailCtrl.userSelect"></div>
+        <div table-directive 
+            columns="orgDetailCtrl.userColumns" 
+            data="orgDetailCtrl.users"
+			no-data-message="No users found"
+			loading-status="orgDetailCtrl.dataStatus" 
+            on-select="orgDetailCtrl.userSelect">
+        </div>
     </div>
 </div>

@@ -19,15 +19,21 @@
 				<div class="col-md-10">{{conformanceStatementDetailCtrl.actor.name}}</div>
 				<div class="col-md-10 col-md-offset-2 row-display-inner" ng-if="conformanceStatementDetailCtrl.actor.description">{{conformanceStatementDetailCtrl.actor.description}}</div>
 			</div>
-			<div class="row row-display-last">
-				<div class="col-md-2"><strong>Test status</strong></div>
-				<div class="col-md-10">{{conformanceStatementDetailCtrl.testStatus}}</div>
+			<div class="row row-display">
+				<div class="col-md-2"><strong>Test results</strong></div>
+				<div class="col-md-10"><span>{{conformanceStatementDetailCtrl.testStatus}}</span></div>
+			</div>
+			<div class="row row-display-last" style="display:flex; margin-bottom:-2px;">
+				<div class="col-md-2" style="display:inline-flex"><strong>Status</strong></div>
+				<div class="col-md-10" style="display:inline-flex; align-items: center; line-height:0px"><span><i ng-class="conformanceStatementDetailCtrl.DataService.iconForTestResult(conformanceStatementDetailCtrl.conformanceStatus)"></i></span></div>
 			</div>
 		</div>
         <div class="panel-footer">
-			<button ng-if="conformanceStatementDetailCtrl.canExportConformanceCertificate()" type="button" class="btn btn-default" ng-click="conformanceStatementDetailCtrl.onExportConformanceCertificate()" ng-disabled="conformanceStatementDetailCtrl.exportCertificatePending"><span class="tab" ng-if="conformanceStatementDetailCtrl.exportCertificatePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Download conformance certificate</button>
-			<button type="button" class="btn btn-default" ng-click="conformanceStatementDetailCtrl.onExportConformanceStatement()" ng-disabled="conformanceStatementDetailCtrl.exportPending"><span class="tab" ng-if="conformanceStatementDetailCtrl.exportPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Download report</button>
-			<button type="button" class="btn btn-default" ng-if="conformanceStatementDetailCtrl.canDelete()" ng-click="conformanceStatementDetailCtrl.deleteConformanceStatement()">Delete statement</button>
+			<div class="btn-toolbar">
+				<button ng-if="conformanceStatementDetailCtrl.canExportConformanceCertificate()" type="button" class="btn btn-default" ng-click="conformanceStatementDetailCtrl.onExportConformanceCertificate()" ng-disabled="conformanceStatementDetailCtrl.exportCertificatePending"><span class="tab" ng-if="conformanceStatementDetailCtrl.exportCertificatePending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Download conformance certificate</button>
+				<button type="button" class="btn btn-default" ng-click="conformanceStatementDetailCtrl.onExportConformanceStatement()" ng-disabled="conformanceStatementDetailCtrl.exportPending"><span class="tab" ng-if="conformanceStatementDetailCtrl.exportPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>Download report</button>
+				<button type="button" class="btn btn-default" ng-if="conformanceStatementDetailCtrl.canDelete()" ng-click="conformanceStatementDetailCtrl.deleteConformanceStatement()">Delete statement</button>
+			</div>
         </div>		
 	</div>
 	<div class="panel panel-default" ng-if="conformanceStatementDetailCtrl.hasEndpoints">
@@ -54,18 +60,27 @@
 			</div>
 		</div>
 
-		<table class="table table-directive" ng-class="{'expandable-table': (conformanceStatementDetailCtrl.testSuites.length > 1),'padded-table': (conformanceStatementDetailCtrl.testSuites.length == 1)}">
+		<table id="conformance-statement-details" class="table table-directive" ng-class="{'expandable-table': (conformanceStatementDetailCtrl.testSuites.length > 1),'padded-table': (conformanceStatementDetailCtrl.testSuites.length == 1)}">
 			<thead>
-				<th width="10%">{{conformanceStatementDetailCtrl.testSuites.length == 1?"Test case":"Test suite"}}</th>
+				<th style="white-space: nowrap;">{{conformanceStatementDetailCtrl.testSuites.length == 1?"Test case":"Test suite"}}</th>
 				<th>Description</th>
-				<th width="10%">Result</th>
-				<th width="10%"></th>
+				<th class="tb-result">Result</th>
+				<th style="width:118px;"></th>
 			</thead>
+
+			<tbody ng-if="conformanceStatementDetailCtrl.loadingStatus.status == conformanceStatementDetailCtrl.Constants.STATUS.PENDING">
+				<td colspan="4" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
+			</tbody>
+			<tbody ng-if="conformanceStatementDetailCtrl.loadingStatus.status == conformanceStatementDetailCtrl.Constants.STATUS.FINISHED && conformanceStatementDetailCtrl.testSuites.length == 0">
+				<td colspan="4" class="td-no-data"><span>No test cases found</span></td>
+			</tbody>
 			<tbody ng-if="conformanceStatementDetailCtrl.testSuites.length == 1">
 				<tr ng-repeat="testCase in conformanceStatementDetailCtrl.testSuites[0].testCases">
 					<td>{{testCase.sname}}</td>
 					<td>{{testCase.description}}</td>
-					<td>{{testCase.result}}</td>
+					<td class="tb-result">
+						<div tb-result-display message="testCase.outputMessage" result="testCase.result"></div>
+					</td>
 					<td class="operation-cell">
 						<div class="btn-toolbar pull-right">
 							<button type="button" class="btn btn-primary" ng-if="testCase.hasDocumentation" ng-click="conformanceStatementDetailCtrl.showTestCaseDocumentation(testCase.id)"><i class="fa fa-info-circle"></i></button>
@@ -80,7 +95,7 @@
 					class="expandable-table-row-collapsed">
 					<td>{{testSuite.sname}}</td>
 					<td>{{testSuite.description}}</td>
-					<td>{{testSuite.result}}</td>
+					<td class="tb-result"><i ng-class="conformanceStatementDetailCtrl.DataService.iconForTestResult(testSuite.result)"></i></td>
 					<td style="padding-right: 17px;">
 						<div class="btn-toolbar pull-right">
 							<button type="button" class="btn btn-primary" ng-if="testSuite.hasDocumentation" ng-click="conformanceStatementDetailCtrl.showTestSuiteDocumentation(testSuite.id); $event.stopPropagation();"><i class="fa fa-info-circle"></i></button>
@@ -89,20 +104,22 @@
 					</td>
 				</tr>
 				<tr ng-repeat-end class="expandable-table-row-expanded">
-					<td colspan="8" class="expandable-table-expandable-cell">
+					<td colspan="4" class="expandable-table-expandable-cell">
 						<div uib-collapse="!testSuite.expanded">
 							<table class="table table-directive expandable-table">
 								<thead>
-									<th width="10%">Test&nbsp;case</th>
+									<th style="white-space: nowrap;">Test case</th>
 									<th>Description</th>
-									<th width="10%">Result</th>
-									<th width="10%"></th>
+									<th class="td-centered" style="width:110px">Result</th>
+									<th style="width:110px"></th>
 								</thead>
 								<tbody>
 									<tr ng-repeat="testCase in testSuite.testCases">
 										<td>{{testCase.sname}}</td>
 										<td>{{testCase.description}}</td>
-										<td>{{testCase.result}}</td>
+										<td class="tb-result">
+											<div tb-result-display message="testCase.outputMessage" result="testCase.result"></div>
+										</td>
 										<td>
 											<div class="btn-toolbar pull-right">
 												<button type="button" class="btn btn-primary" ng-if="testCase.hasDocumentation" ng-click="conformanceStatementDetailCtrl.showTestCaseDocumentation(testCase.id)"><i class="fa fa-info-circle"></i></button>

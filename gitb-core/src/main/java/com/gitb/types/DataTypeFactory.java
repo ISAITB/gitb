@@ -1,9 +1,12 @@
 package com.gitb.types;
 
 import com.gitb.ModuleManager;
+import com.gitb.core.AnyContent;
+import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.tdl.NamedTypedString;
 import com.gitb.tdl.Variable;
 
+import java.util.Base64;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -139,6 +142,68 @@ public class DataTypeFactory {
         }
         return data;
     }
+
+    public DataType create(AnyContent content) {
+        DataType type;
+        String declaredType = content.getType();
+        if (declaredType == null) {
+            if (content.getItem().size() > 0) {
+                boolean namedChildren = false;
+                for (AnyContent child: content.getItem()) {
+                    if (child.getName() != null) {
+                        namedChildren = true;
+                    } else {
+                        namedChildren = false;
+                        break;
+                    }
+                }
+                if (namedChildren) {
+                    // Named child items - this can only be a map.
+                    declaredType = DataType.MAP_DATA_TYPE;
+                }
+            }
+        }
+        if (DataType.MAP_DATA_TYPE.equals(declaredType)) {
+            type = new MapType();
+            for (AnyContent child : content.getItem()) {
+                ((MapType) type).addItem(child.getName(), create(child));
+            }
+        } else if (DataType.STRING_DATA_TYPE.equals(declaredType)) {
+            type = new StringType();
+            type.setValue(content.getValue());
+        } else if (DataType.BINARY_DATA_TYPE.equals(declaredType)) {
+            type = new BinaryType();
+            if (ValueEmbeddingEnumeration.BASE_64.equals(content.getEmbeddingMethod())) {
+                type.setValue(Base64.getDecoder().decode(content.getValue()));
+            } else {
+                throw new IllegalStateException("Only base64 embedding supported for binary types");
+            }
+        } else if (DataType.BOOLEAN_DATA_TYPE.equals(declaredType)) {
+            type = new BooleanType();
+            type.setValue(Boolean.valueOf(content.getValue()));
+        } else if (DataType.NUMBER_DATA_TYPE.equals(declaredType)) {
+            type = new NumberType();
+            type.setValue(content.getValue());
+        } else if (DataType.LIST_DATA_TYPE.equals(declaredType)) {
+            type = new ListType();
+            for (AnyContent child : content.getItem()) {
+                ((ListType) type).append(create(child));
+            }
+        } else if (DataType.OBJECT_DATA_TYPE.equals(declaredType)) {
+            type = new ObjectType();
+            if (ValueEmbeddingEnumeration.BASE_64.equals(content.getEmbeddingMethod())) {
+                type.deserialize(Base64.getDecoder().decode(content.getValue()));
+            } else if (ValueEmbeddingEnumeration.STRING.equals(content.getEmbeddingMethod())) {
+                type.deserialize(content.getValue().getBytes());
+            } else {
+                throw new IllegalStateException("Only base64 and string embedding supported for object types");
+            }
+        } else {
+            throw new IllegalStateException("Unsupported data type [" + declaredType + "]");
+        }
+        return type;
+    }
+
     /**
      * Initialize a value from the Variable definition
      * @param variable

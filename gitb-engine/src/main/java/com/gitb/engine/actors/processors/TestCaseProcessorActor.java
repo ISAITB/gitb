@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.japi.Creator;
+import com.gitb.core.AnyContent;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.SessionManager;
 import com.gitb.engine.TestEngine;
@@ -12,12 +13,14 @@ import com.gitb.engine.actors.SessionActor;
 import com.gitb.engine.actors.util.ActorUtils;
 import com.gitb.engine.commands.interaction.*;
 import com.gitb.engine.events.model.StatusEvent;
+import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.tdl.TestCase;
-import com.gitb.tr.SR;
+import com.gitb.tdl.*;
+import com.gitb.tr.TAR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
+import com.gitb.types.DataType;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,11 +59,50 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
         TestCaseContext context = SessionManager
                 .getInstance()
                 .getContext(sessionId);
-
         if (context != null) {
             testCase = context.getTestCase();
+            applyStopOnErrorSemantics(testCase.getSteps(), testCase.getSteps().isStopOnError());
             if (testCase.getPreliminary() != null) {
                 preliminaryProcessorActor = InteractionStepProcessorActor.create(InteractionStepProcessorActor.class, getContext(), testCase.getPreliminary(), context.getScope(), PRELIMINARY_STEP_ID);
+            }
+        }
+    }
+
+    private void applyStopOnErrorSemantics(Sequence step, boolean stopOnError) {
+        if (step != null) {
+            if (stopOnError) {
+                step.setStopOnError(true);
+            }
+            for (Object childStep: step.getSteps()) {
+                if (childStep instanceof Sequence) {
+                    applyStopOnErrorSemantics((Sequence)childStep, step.isStopOnError());
+                }
+                if (childStep instanceof TestConstruct) {
+                    applyStopOnErrorSemantics((TestConstruct)childStep, step.isStopOnError());
+                }
+            }
+        }
+    }
+
+    private void applyStopOnErrorSemantics(TestConstruct step, boolean stopOnError) {
+        if (stopOnError) {
+            step.setStopOnError(true);
+        }
+        // Cover also the steps that have internal sequences.
+        if (step instanceof IfStep) {
+            applyStopOnErrorSemantics(((IfStep) step).getThen(), step.isStopOnError());
+            applyStopOnErrorSemantics(((IfStep) step).getElse(), step.isStopOnError());
+        } else if (step instanceof WhileStep) {
+            applyStopOnErrorSemantics(((WhileStep) step).getDo(), step.isStopOnError());
+        } else if (step instanceof ForEachStep) {
+            applyStopOnErrorSemantics(((ForEachStep) step).getDo(), step.isStopOnError());
+        } else if (step instanceof RepeatUntilStep) {
+            applyStopOnErrorSemantics(((RepeatUntilStep) step).getDo(), step.isStopOnError());
+        } else if (step instanceof FlowStep) {
+            if (((FlowStep) step).getThread() != null) {
+                for (Sequence thread: ((FlowStep) step).getThread()) {
+                    applyStopOnErrorSemantics(thread, step.isStopOnError());
+                }
             }
         }
     }
@@ -81,7 +123,7 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
             //Start command for test case processing
             if (message instanceof StartCommand) {
 	            logger.debug(MarkerFactory.getDetachedMarker(((StartCommand) message).getSessionId()), "Received start command, starting test case sequence.");
-                sequenceProcessorActor = SequenceProcessorActor.create(getContext(), testCase.getSteps(), context.getScope(), "");
+                sequenceProcessorActor = RootSequenceProcessorActor.create(getContext(), testCase.getSteps(), context.getScope(), "");
 	            sequenceProcessorActor.tell(message, self());
             }
             // Prepare for stop command
@@ -127,7 +169,7 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
 	            if(getSender().equals(sequenceProcessorActor)) {
 		            StepStatus status = ((StatusEvent) message).getStatus();
 		            if (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.WARNING) {
-			            TestbedService.updateStatus(sessionId, TEST_CASE_STEP_ID, status, constructResultReport(status));
+			            TestbedService.updateStatus(sessionId, TEST_CASE_STEP_ID, status, constructResultReport(status, context));
                         if (SessionManager.getInstance().exists(sessionId)) {
                             TestEngine
                                     .getInstance()
@@ -147,14 +189,33 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
         }
     }
 
-	private TestStepReportType constructResultReport(StepStatus status) {
-		SR report = new SR();
-		// We treat a final result of "WARNING" as a "SUCCESS". This is the overall test session result.
-		if (status == StepStatus.COMPLETED || status == StepStatus.WARNING) {
+	private TestStepReportType constructResultReport(StepStatus status, TestCaseContext context) {
+		TAR report = new TAR();
+        // We treat a final result of "WARNING" as a "SUCCESS". This is the overall test session result.
+        if (status == StepStatus.COMPLETED || status == StepStatus.WARNING) {
             report.setResult(TestResultType.SUCCESS);
-		} else {
-			report.setResult(TestResultType.FAILURE);
-		}
+        } else {
+            report.setResult(TestResultType.FAILURE);
+        }
+        // Set output message (if defined).
+        if (testCase.getOutput() != null) {
+            try {
+                String outputMessage = null;
+                if (report.getResult() == TestResultType.SUCCESS) {
+                    outputMessage = calculateOutputMessage(testCase.getOutput().getSuccess(), context);
+                } else if (report.getResult() == TestResultType.FAILURE) {
+                    outputMessage = calculateOutputMessage(testCase.getOutput().getFailure(), context);
+                }
+                if (outputMessage != null) {
+                    report.setContext(new AnyContent());
+                    report.getContext().setValue(outputMessage);
+                }
+            } catch (Exception e) {
+                // Error while calculating output message - report log and fail the test session.
+                logger.error(MarkerFactory.getDetachedMarker(sessionId), "Error calculating output message", e);
+                report.setResult(TestResultType.FAILURE);
+            }
+        }
 		try {
 			report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
 		} catch (DatatypeConfigurationException e) {
@@ -163,6 +224,41 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
 
 		return report;
 	}
+
+    private String calculateOutputMessage(OutputCaseSet outputSet, TestCaseContext context) {
+        String message = null;
+        if (outputSet != null) {
+            ExpressionHandler expressionHandler = new ExpressionHandler(context.getScope());
+            if (outputSet.getCase() != null) {
+                 for (OutputCase outputCase: outputSet.getCase()) {
+                     boolean condition = false;
+                     try {
+                         condition = (boolean) expressionHandler.processExpression(outputCase.getCond(), DataType.BOOLEAN_DATA_TYPE).getValue();
+                     } catch (Exception e) {
+                         logger.warn(MarkerFactory.getDetachedMarker(sessionId), "Skipping output message calculation due to expression error.", e);
+                     }
+                     if (condition) {
+                         message = applyCaseExpression(outputCase.getMessage(), expressionHandler);
+                         if (message != null) {
+                             break;
+                         }
+                     }
+                 }
+                 if (message == null && outputSet.getDefault() != null) {
+                     message = applyCaseExpression(outputSet.getDefault(), expressionHandler);
+                 }
+            }
+        }
+        return message;
+    }
+
+    private String applyCaseExpression(Expression expression, ExpressionHandler expressionHandler) {
+        String caseMessage = (String) expressionHandler.processExpression(expression, DataType.STRING_DATA_TYPE).getValue();
+        if (caseMessage != null && !caseMessage.isBlank()) {
+            return caseMessage.trim();
+        }
+        return null;
+    }
 
     public static Props props(final String sessionId) {
         return Props.create(TestCaseProcessorActor.class, (Creator<TestCaseProcessorActor>) () -> new TestCaseProcessorActor(sessionId));

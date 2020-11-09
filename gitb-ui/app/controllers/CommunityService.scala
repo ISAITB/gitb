@@ -62,6 +62,9 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: Contro
     val allowCertificateDownload = ParameterExtractor.requiredBodyParameter(request, Parameters.ALLOW_CERTIFICATE_DOWNLOAD).toBoolean
     val allowStatementManagement = requiredBodyParameter(request, Parameters.ALLOW_STATEMENT_MANAGEMENT).toBoolean
     val allowSystemManagement = requiredBodyParameter(request, Parameters.ALLOW_SYSTEM_MANAGEMENT).toBoolean
+    val allowPostTestOrganisationUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_ORG_UPDATE).toBoolean
+    val allowPostTestSystemUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_SYS_UPDATE).toBoolean
+    val allowPostTestStatementUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_STM_UPDATE).toBoolean
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
     var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
     var selfRegToken: Option[String] = None
@@ -99,7 +102,13 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: Contro
       }
     }
     val domainId: Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.DOMAIN_ID)
-    communityManager.updateCommunity(communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, domainId)
+    communityManager.updateCommunity(
+      communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
+      description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
+      allowCertificateDownload, allowStatementManagement, allowSystemManagement,
+      allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate,
+      domainId
+    )
     ResponseConstructor.constructEmptyResponse
   }
 
@@ -296,12 +305,14 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: Contro
 
   def getOrganisationParameters(communityId: Long) = authorizedAction { request =>
     authorizationManager.canManageCommunity(request, communityId)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsOrganisationParameters(communityManager.getOrganisationParameters(communityId)).toString)
+    val forFiltering = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.FILTERING)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsOrganisationParameters(communityManager.getOrganisationParameters(communityId, forFiltering)).toString)
   }
 
   def getSystemParameters(communityId: Long) = authorizedAction { request =>
     authorizationManager.canViewCommunityBasic(request, communityId)
-    ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemParameters(communityManager.getSystemParameters(communityId)).toString)
+    val forFiltering = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.FILTERING)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsSystemParameters(communityManager.getSystemParameters(communityId, forFiltering)).toString)
   }
 
   def getCommunityLabels(communityId: Long) = authorizedAction { request =>

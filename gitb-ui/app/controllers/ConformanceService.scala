@@ -64,6 +64,13 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
     ResponseConstructor.constructJsonResponse(json)
   }
 
+  def getActorsForSystem(systemId: Long) = authorizedAction { request =>
+    authorizationManager.canViewActorsBySystemId(request, systemId)
+    val result = conformanceManager.getActorsWithSpecificationIdBySystem(systemId)
+    val json = JsonUtil.jsActorsNonCase(result).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
   def getDomainsForSystem(systemId: Long) = authorizedAction { request =>
     authorizationManager.canViewDomainsBySystemId(request, systemId)
     val result = conformanceManager.getDomainsBySystem(systemId)
@@ -389,12 +396,14 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
     val organizationIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.ORG_IDS)
     val systemIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SYSTEM_IDS)
     val actorIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.ACTOR_IDS)
+    val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalQueryParameter(request, Parameters.ORGANISATION_PARAMETERS))
+    val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalQueryParameter(request, Parameters.SYSTEM_PARAMETERS))
     val forExport: Boolean = ParameterExtractor.optionalQueryParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
     var results: List[ConformanceStatementFull] = null
     if (fullResults) {
-      results = conformanceManager.getConformanceStatementsFull(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds)
+      results = conformanceManager.getConformanceStatementsFull(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, orgParameters, sysParameters)
     } else {
-      results = conformanceManager.getConformanceStatements(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds)
+      results = conformanceManager.getConformanceStatements(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, orgParameters, sysParameters)
     }
     var orgParameterDefinitions: Option[List[OrganisationParameters]] = None
     var orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None
@@ -408,6 +417,14 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
     }
     val json = JsonUtil.jsConformanceResultFullList(results, orgParameterDefinitions, orgParameterValues, sysParameterDefinitions, sysParameterValues).toString()
     ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def deleteTestResults() = authorizedAction { request =>
+    val communityId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.COMMUNITY_ID)
+    authorizationManager.canDeleteTestResults(request, communityId)
+    val sessionIds = JsonUtil.parseStringArray(ParameterExtractor.requiredBodyParameter(request, Parameters.SESSION_IDS))
+    testResultManager.deleteTestSessions(sessionIds)
+    ResponseConstructor.constructEmptyResponse
   }
 
   def deleteAllObsoleteTestResults() = authorizedAction { request =>

@@ -1,7 +1,7 @@
 class OrganizationController
 
-    @$inject = ['$scope', '$uibModal', 'DataService', 'AccountService', 'ErrorService', 'Constants', 'UserService', 'ConfirmationDialogService', 'OrganizationService', '$stateParams', 'PopupService']
-    constructor: (@$scope, @$uibModal, @DataService, @AccountService, @ErrorService, @Constants, @UserService, @ConfirmationDialogService, @OrganizationService, @$stateParams, @PopupService) ->
+    @$inject = ['$scope', '$uibModal', 'DataService', 'AccountService', 'ErrorService', 'Constants', 'UserService', 'ConfirmationDialogService', 'OrganizationService', '$stateParams', 'PopupService', 'canEditOwnOrganisation']
+    constructor: (@$scope, @$uibModal, @DataService, @AccountService, @ErrorService, @Constants, @UserService, @ConfirmationDialogService, @OrganizationService, @$stateParams, @PopupService, @canEditOwnOrganisation) ->
         @ds = @DataService #shorten service name
         @users  = []       # users of the organization
         @alerts = []       # alerts to be displayed
@@ -9,6 +9,7 @@ class OrganizationController
         @$scope.vdata = {} # bindings for vendor
         @$scope.vdata.fname = @ds.vendor.fname
         @$scope.vdata.sname = @ds.vendor.sname
+        @dataStatus = {status: @Constants.STATUS.PENDING}
         @propertyData = {
             properties: []
             edit: @$stateParams['viewProperties']? && @$stateParams['viewProperties']
@@ -77,9 +78,11 @@ class OrganizationController
                     user.ssoStatusText = @userStatus(user.ssoStatus)
                     user
                 )
+                @dataStatus.status = @Constants.STATUS.FINISHED
             ,
             (error) => #error handler
                 @ErrorService.showErrorMessage(error)
+                @dataStatus.status = @Constants.STATUS.FINISHED
         )
 
     valueDefined: (value) =>
@@ -140,5 +143,13 @@ class OrganizationController
 
     removeAlerts: () ->
         @alerts = []
+
+    canUpdateOrganisation: () =>
+        canUpdate = false
+        if @DataService.isSystemAdmin || @DataService.isCommunityAdmin
+            canUpdate = true
+        else if @DataService.isVendorAdmin && (@DataService.community.allowPostTestOrganisationUpdates || !@hasTests)
+            canUpdate = true
+        canUpdate
 
 controllers.controller('OrganizationController', OrganizationController)

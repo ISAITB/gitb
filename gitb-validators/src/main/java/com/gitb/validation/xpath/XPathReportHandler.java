@@ -19,8 +19,8 @@ import org.slf4j.LoggerFactory;
 public class XPathReportHandler extends AbstractReportHandler {
     private static final Logger logger = LoggerFactory.getLogger(XPathReportHandler.class);
 
-    public static final String XML_ITEM_NAME    = "XML";
-    public static final String XPATH_ITEM_NAME  = "XPATH";
+    public static final String XML_ITEM_NAME    = "xml";
+    public static final String XPATH_ITEM_NAME  = "xpath";
 
     protected XPathReportHandler(ObjectType content, StringType xpath, BooleanType result) {
         super();

@@ -183,6 +183,7 @@ public class JacksonUtil {
             if(value.getInteraction().getWith() != null) {
                 json.writeStringField("with", value.getInteraction().getWith());
             }
+            json.writeStringField("inputTitle", value.getInteraction().getInputTitle());
 
             json.writeArrayFieldStart("interactions");
             for(Object ior : value.getInteraction().getInstructionOrRequest()){

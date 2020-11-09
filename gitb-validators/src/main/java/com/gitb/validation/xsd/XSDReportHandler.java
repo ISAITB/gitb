@@ -17,8 +17,8 @@ import javax.xml.bind.JAXBElement;
  */
 public class XSDReportHandler extends AbstractReportHandler implements ErrorHandler {
 
-	public static final String XML_ITEM_NAME = "XML";
-	public static final String XSD_ITEM_NAME = "XSD";
+	public static final String XML_ITEM_NAME = "xml";
+	public static final String XSD_ITEM_NAME = "xsd";
 
     protected XSDReportHandler(ObjectType xml, SchemaType xsd) {
         super();

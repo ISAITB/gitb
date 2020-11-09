@@ -68,6 +68,12 @@
 		<div class="panel-heading">
 			<h4 class="title">Test cases</h4>
 		</div>
-		<div table-directive columns="testSuiteDetailsCtrl.testCaseTableColumns" data="testSuiteDetailsCtrl.testSuite.testCases" on-select="testSuiteDetailsCtrl.onTestCaseSelect"></div>
+		<div table-directive
+			columns="testSuiteDetailsCtrl.testCaseTableColumns"
+			data="testSuiteDetailsCtrl.testSuite.testCases"
+			no-data-message="No test cases found"
+			loading-status="testSuiteDetailsCtrl.dataStatus" 
+			on-select="testSuiteDetailsCtrl.onTestCaseSelect">
+		</div>
 	</div>
 </div>

@@ -123,4 +123,10 @@ class OrganizationService
       authenticate: true
     })
 
+  ownOrganisationHasTests: () ->
+    @RestService.get({
+      path: jsRoutes.controllers.OrganizationService.ownOrganisationHasTests().url,
+      authenticate: true
+    })
+
 services.service('OrganizationService', OrganizationService)

@@ -819,9 +819,9 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 										previousResult <- PersistenceSchema.testResults.filter(_.sutId === implementingSystem).filter(_.testCaseId === existingTestCaseId).sortBy(_.endTime.desc).result.headOption
 										_ <- {
 											if (previousResult.isDefined) {
-												PersistenceSchema.conformanceResults += ConformanceResult(0L, implementingSystem, specificationId, newTestCaseActor, savedTestSuiteId, existingTestCaseId, previousResult.get.result, Some(previousResult.get.sessionId))
+												PersistenceSchema.conformanceResults += ConformanceResult(0L, implementingSystem, specificationId, newTestCaseActor, savedTestSuiteId, existingTestCaseId, previousResult.get.result, previousResult.get.outputMessage, Some(previousResult.get.sessionId))
 											} else {
-												PersistenceSchema.conformanceResults += ConformanceResult(0L, implementingSystem, specificationId, newTestCaseActor, savedTestSuiteId, existingTestCaseId, TestResultStatus.UNDEFINED.toString, None)
+												PersistenceSchema.conformanceResults += ConformanceResult(0L, implementingSystem, specificationId, newTestCaseActor, savedTestSuiteId, existingTestCaseId, TestResultStatus.UNDEFINED.toString, None, None)
 											}
 										}
 									} yield())
@@ -866,7 +866,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 									if (implementingSystems != null) {
 										for (implementingSystem <- asScalaSet(implementingSystems)) {
 											action = action andThen
-												(PersistenceSchema.conformanceResults += ConformanceResult(0L, implementingSystem, specificationId, actorInternalId, savedTestSuiteId, existingTestCaseId, TestResultStatus.UNDEFINED.toString, None))
+												(PersistenceSchema.conformanceResults += ConformanceResult(0L, implementingSystem, specificationId, actorInternalId, savedTestSuiteId, existingTestCaseId, TestResultStatus.UNDEFINED.toString, None, None))
 										}
 									}
 								}

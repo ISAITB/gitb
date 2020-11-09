@@ -5,11 +5,13 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.tbs.Void;
 import com.gitb.tbs.*;
+import com.gitb.tr.TAR;
 import managers.ReportManager;
 import managers.TestbedBackendClient;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import scala.Option;
 import utils.JacksonUtil;
 import utils.MimeUtil;
 
@@ -53,7 +55,15 @@ public class TestbedService implements TestbedClient {
 
             //save report
             if(step.equals(END_STEP_ID)){
-                reportManager.finishTestReport(session, testStepStatus.getReport().getResult());
+                String outputMessage = null;
+                if (testStepStatus.getReport() instanceof TAR
+                        && ((TAR)testStepStatus.getReport()).getContext() != null
+                        && ((TAR)testStepStatus.getReport()).getContext().getValue() != null
+                        && !((TAR)testStepStatus.getReport()).getContext().getValue().isBlank()
+                ) {
+                    outputMessage = ((TAR)testStepStatus.getReport()).getContext().getValue().trim();
+                }
+                reportManager.finishTestReport(session, testStepStatus.getReport().getResult(), Option.apply(outputMessage));
                 // Send the end session message with a slight delay to avoid race conditions with other ending messages.
                 new java.util.Timer().schedule(
                         new java.util.TimerTask() {

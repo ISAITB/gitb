@@ -1,11 +1,12 @@
 class TestSuiteDetailsController
 
-	@$inject = ['$scope', 'TestSuiteService', 'ConfirmationDialogService', '$state', '$stateParams', 'ErrorService', 'DataService', 'PopupService', 'WebEditorService', 'HtmlService', '$sce', 'ConformanceService']
-	constructor: (@$scope, @TestSuiteService, @ConfirmationDialogService, @$state, @$stateParams, @ErrorService, @DataService, @PopupService, @WebEditorService, @HtmlService, @$sce, @ConformanceService) ->
+	@$inject = ['$scope', 'TestSuiteService', 'ConfirmationDialogService', '$state', '$stateParams', 'ErrorService', 'DataService', 'PopupService', 'WebEditorService', 'HtmlService', '$sce', 'ConformanceService', 'Constants']
+	constructor: (@$scope, @TestSuiteService, @ConfirmationDialogService, @$state, @$stateParams, @ErrorService, @DataService, @PopupService, @WebEditorService, @HtmlService, @$sce, @ConformanceService, @Constants) ->
 		@testSuite = {}
 		@domainId = @$stateParams.id
 		@specificationId = @$stateParams.spec_id
 		@testSuiteId = @$stateParams.testsuite_id
+		@dataStatus = {status: @Constants.STATUS.PENDING}
 		@testCaseTableColumns = [
 			{
 				field: 'identifier'
@@ -29,8 +30,10 @@ class TestSuiteDetailsController
 				valueToSet = ''
 			tinymce.remove('.mce-editor')
 			@WebEditorService.editor(300, valueToSet)
+			@dataStatus.status = @Constants.STATUS.FINISHED
 		.catch (error) =>
 			@ErrorService.showErrorMessage(error)
+			@dataStatus.status = @Constants.STATUS.FINISHED
 
 		@DataService.focus('name')
 

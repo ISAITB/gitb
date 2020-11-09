@@ -37,6 +37,9 @@
                 <xsd:attribute name="allowCertificateDownload" type="xsd:boolean" default="false"/>
                 <xsd:attribute name="allowStatementManagement" type="xsd:boolean" default="true"/>
                 <xsd:attribute name="allowSystemManagement" type="xsd:boolean" default="true"/>
+                <xsd:attribute name="allowPostTestOrganisationUpdates" type="xsd:boolean" default="true"/>
+                <xsd:attribute name="allowPostTestSystemUpdates" type="xsd:boolean" default="true"/>
+                <xsd:attribute name="allowPostTestStatementUpdates" type="xsd:boolean" default="true"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
@@ -518,6 +521,9 @@
             <xsd:enumeration value="SYSTEM_UPDATED"/>
             <xsd:enumeration value="CONFORMANCE_STATEMENT_CREATED"/>
             <xsd:enumeration value="CONFORMANCE_STATEMENT_UPDATED"/>
+            <xsd:enumeration value="TEST_SESSION_SUCCEEDED"/>
+            <xsd:enumeration value="TEST_SESSION_FAILED"/>
+            <xsd:enumeration value="CONFORMANCE_STATEMENT_SUCCEEDED"/>
         </xsd:restriction>
     </xsd:simpleType>
     <xsd:simpleType name="TriggerDataType">

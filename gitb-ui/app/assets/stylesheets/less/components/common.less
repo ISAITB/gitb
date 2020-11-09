@@ -7,21 +7,62 @@
 @light-blue: #D9EDF7;
 
 .table-directive {
-  	padding:0; margin:0;
-	tbody {
-		tr.selectable {
-			&:hover {
-				cursor: pointer;
-				background-color: fade(@gray-light, 50%);
+	padding: 0;
+	margin: 0;
+	&.with-actions {
+		tbody > tr > td {
+			padding-top: 15px;
+			padding-bottom: 15px;
+		}
+	}
+	thead {
+		th {
+			&.operations {
+				white-space: nowrap;
+				text-align: center;
+				width: 1px;
 			}
-			&.selected {
-				background-color: fade(@gray-light, 50%);
+		}
+	}
+	tbody {
+		tr {
+			&.selectable {
+				&:hover {
+					cursor: pointer;
+					background-color: fade(@gray-light, 50%);
+				}
+				&.selected {
+					background-color: fade(@gray-light, 50%);
+				}
+			}
+			td {
+				vertical-align: middle;
+				&.td-no-data {
+					background: white;
+					text-align: center;
+					span {
+						opacity: 50%;
+					}
+				}
+				&.td-data-loading {
+					background: white;
+				}
+				&.operations {
+					padding-top: 8px;
+					padding-bottom: 8px;
+					text-align: center;
+					button.btn {
+						&.pending {
+							padding: 6px;
+						}
+					}
+				}
 			}
 		}
 	}
 }
 
-#dashboard-table, #dashboard-table-active, #systems-table, #system-tests-table, #system-tests-table-active, #parameter-table, #members-table {
+#systems-table, #members-table {
 	td.operations {
 		padding-top: 8px;
 		padding-bottom: 8px;
@@ -29,10 +70,6 @@
 	td {
 		padding-top: 15px;
 		padding-bottom: 15px;
-	}
-	td:last-child {
-		padding-top: 8px;
-		padding-bottom: 8px;
 	}
 }
 
@@ -57,8 +94,10 @@
 	margin-top: 5px;
 }
 
-.test-result-obsolete {
-	color: #ddd
+tr.test-result-obsolete {
+	td {
+		opacity: 40%;
+	}
 }
 
 .system-container-div {
@@ -91,6 +130,9 @@
 }
 .test-case-success {
 	color: @completed-color;
+}
+.test-case-undefined {
+	color: @gray;
 }
 
 .select-execution {
@@ -223,6 +265,9 @@ li.menu-section-start {
 .clickable {
 	&:hover {
 		cursor: pointer;
+		&.panel-heading {
+			background-color: #efefef;
+		}
 	}
 }
 
@@ -435,6 +480,20 @@ div.import-item-root {
 	padding-left: 0px !important;
 }
 
+.no-top-bottom-padding {
+	padding-top: 0px !important;
+	padding-bottom: 0px !important;
+}
+
+.no-side-padding {
+	padding-left: 0px !important;
+	padding-right: 0px !important;
+}
+
+.no-margin {
+	margin: 0px !important;
+}
+
 .trigger-data-properties-container {
 	border: 1px solid @gray-dark-1;
 	border-radius: 5px;
@@ -505,4 +564,119 @@ table.table {
 			}
 		}
 	}
+}
+
+table.table {
+	&.filter-table {
+		width: 100%;
+		max-width: 100%;
+		margin-bottom: 0px;
+		th {
+			&.time-filter {
+				max-width: 250px;
+			}
+			&.result-filter {
+				min-width: 110px;
+				max-width: 200px;
+			}
+		}
+		input.date-picker {
+			max-width: 200px;
+			cursor: pointer;
+		}
+		td.session-filter {
+			.session-filter-input {
+				max-width: 370px;
+			}
+		}
+	}
+}
+.faded {
+	opacity: 50%;
+}
+.property-filters-container {
+	display: flex;
+	flex-wrap: wrap;
+	.property-filter {
+		margin-right: 5px;
+		margin-top: 8px;
+		display: inline-flex;
+		.custom-property-filter {
+			display: flex;
+			align-content: center;
+			.custom-property-filter-container {
+				display: flex;
+				align-items: center;
+				&.non-applied {
+					.property-id {
+						display: inline-flex;
+						select {
+							border-top-right-radius: 0px;
+							border-bottom-right-radius: 0px;
+						}
+					}
+					.property-value {
+						display: inline-flex;
+						width: 300px;
+						select, input {
+							border-radius: 0px;
+							border-left:0px;
+							border-right:0px;
+						}
+					}
+					.property-controls {
+						display: inline-flex;
+						button {
+							&:first-child {
+								border-radius: 0px;
+								border-right: 0px;
+							}
+							&:last-child {
+								border-top-left-radius: 0px;
+								border-bottom-left-radius: 0px;
+							}
+						}
+					}
+				}
+				&.applied {
+					.property-id {
+						padding: 6px 12px;
+						border: 1px solid #ccc;
+						border-top-left-radius: 4px;
+						border-bottom-left-radius: 4px;							
+						text-align: center;
+						font-weight: bold;
+						white-space: nowrap;
+					}
+					.property-value {
+						padding: 6px 12px;
+						border: 1px solid #ccc;
+						border-left: 0px;
+						border-right: 0px;							
+						text-align: center;
+						background-color: #eee;
+						color: #555;
+						white-space: nowrap;
+					}
+					.property-controls {
+						button {
+							border-top-left-radius: 0px;
+							border-bottom-left-radius: 0px;								
+						}
+					}
+				}
+			}
+		}			
+	}
+	.property-filters-control {
+		display: inline-flex;
+		margin-top: 8px;
+		&.padded {
+			margin-left:15px;
+		}
+	}
+}
+
+.test-output-container {
+	margin-top: 32px;
 }

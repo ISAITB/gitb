@@ -66,7 +66,7 @@ class CreateEditSystemController
 				.then((data) =>
 						@$scope.pending = false
 						@$scope.savePending = false
-						@$uibModalInstance.close(data)
+						@$uibModalInstance.close({ ok: true })
 						@PopupService.success(@DataService.labelSystem() + ' updated.')
 				, (error) =>
 					@$scope.pending = false
@@ -91,7 +91,7 @@ class CreateEditSystemController
 						.then((data) =>
 							@$scope.pending = false
 							@$scope.savePending = false
-							@$uibModalInstance.close(data)
+							@$uibModalInstance.close({ ok: true })
 							@PopupService.success(@DataService.labelSystem() + ' created.')
 						, (error) =>
 							@$scope.pending = false
@@ -108,7 +108,7 @@ class CreateEditSystemController
 						.then((data) =>
 								@$scope.pending = false
 								@$scope.deletePending = false
-								@$uibModalInstance.close(data)
+								@$uibModalInstance.close({ ok: true })
 								@PopupService.success(@DataService.labelSystem() + ' deleted.')
 						, (error) =>
 							@$scope.pending = false

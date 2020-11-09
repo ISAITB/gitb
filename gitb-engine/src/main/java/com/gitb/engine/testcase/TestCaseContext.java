@@ -39,6 +39,11 @@ public class TestCaseContext {
 	 */
 	public static final String STEP_SUCCESS_MAP = "STEP_SUCCESS";
 
+	/**
+	 * The scope variable holding the overall result of the test session.
+	 */
+	public static final String TEST_SUCCESS = "TEST_SUCCESS";
+
     /**
      * Test case to be executed
      */
@@ -116,7 +121,11 @@ public class TestCaseContext {
 		/**
 		 * Execution is completed or stopped by user or exit with some error
 		 */
-        STOPPED
+        STOPPED,
+		/**
+		 * Execution is in the process of stopping
+		 */
+		STOPPING
     }
 
     public TestCaseContext(TestCase testCase, String sessionId) {

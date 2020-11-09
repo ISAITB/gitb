@@ -31,6 +31,12 @@
                             <th class="min-width"></th>
                         </thead>
                         <tbody>
+                            <tr ng-if="controller.organisationParameterStatus.status == controller.Constants.STATUS.PENDING">
+                                <td colspan="10" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
+                            </tr>
+                            <tr ng-if="controller.organisationParameterStatus.status == controller.Constants.STATUS.FINISHED && controller.organisationParameters.length == 0">
+                                <td colspan="10" class="td-no-data"><span>No properties found</span></td>
+                            </tr>
                             <tr class="table-row-directive selectable" ng-repeat="parameter in controller.organisationParameters" ng-click="controller.onOrganisationParameterSelect(parameter)">
                                 <td><div><span>{{parameter.name}}</span></div></td>
                                 <td><div><span>{{parameter.testKey}}</span></div></td>
@@ -75,6 +81,12 @@
                             <th class="min-width"></th>
                         </thead>
                         <tbody>
+                            <tr ng-if="controller.systemParameterStatus.status == controller.Constants.STATUS.PENDING">
+                                <td colspan="10" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
+                            </tr>
+                            <tr ng-if="controller.systemParameterStatus.status == controller.Constants.STATUS.FINISHED && controller.systemParameters.length == 0">
+                                <td colspan="10" class="td-no-data"><span>No properties found</span></td>
+                            </tr>
                             <tr class="table-row-directive selectable" ng-repeat="parameter in controller.systemParameters" ng-click="controller.onSystemParameterSelect(parameter)">
                                 <td><div><span>{{parameter.name}}</span></div></td>
                                 <td><div><span>{{parameter.testKey}}</span></div></td>

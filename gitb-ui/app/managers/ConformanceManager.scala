@@ -42,6 +42,18 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
     )
   }
 
+	def getActorsWithSpecificationIdBySystem(systemId: Long): List[Actor] = {
+		exec(PersistenceSchema.conformanceResults
+			.join(PersistenceSchema.actors).on(_.actor === _.id)
+			.join(PersistenceSchema.specificationHasActors).on(_._2.id === _.actorId)
+			.filter(_._1._1.sut === systemId)
+			.map(r => (r._1._2, r._2.specId))
+			.distinctOn(_._1.id)
+			.sortBy(_._1.actorId.asc)
+			.result.map(_.toList)
+		).map(x => new Actor(x._1, null, null, x._2))
+	}
+
   def getDomainsBySystem(systemId: Long): List[Domain] = {
     exec(PersistenceSchema.conformanceResults
       .join(PersistenceSchema.specifications).on(_.spec === _.id)
@@ -505,9 +517,9 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 		}
 		val finalQuery = query
 			.sortBy(x => (x._2.shortname, x._1._2.testSuiteOrder))
-			.map(x => (x._2.id, x._2.shortname, x._2.description, x._2.hasDocumentation, x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._1.result, x._1._1.testsession))
+			.map(x => (x._2.id, x._2.shortname, x._2.description, x._2.hasDocumentation, x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._1.result, x._1._1.outputMessage, x._1._1.testsession))
 		val results = exec(finalQuery.result.map(_.toList)).map(r => {
-			ConformanceStatusItem(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10)
+			ConformanceStatusItem(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10, r._11)
 		})
 		results
 	}
@@ -522,8 +534,8 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 		spec
 	}
 
-	def getConformanceStatementsFull(domainIds: Option[List[Long]], specIds: Option[List[Long]], actorIds: Option[List[Long]], communityIds: Option[List[Long]], organizationIds: Option[List[Long]], systemIds: Option[List[Long]]): List[ConformanceStatementFull] = {
-		var query = PersistenceSchema.conformanceResults
+	def getConformanceStatementsFull(domainIds: Option[List[Long]], specIds: Option[List[Long]], actorIds: Option[List[Long]], communityIds: Option[List[Long]], organizationIds: Option[List[Long]], systemIds: Option[List[Long]], orgParameters: Option[Map[Long, Set[String]]], sysParameters: Option[Map[Long, Set[String]]]): List[ConformanceStatementFull] = {
+		val query = PersistenceSchema.conformanceResults
 			.join(PersistenceSchema.specifications).on(_.spec === _.id)
 			.join(PersistenceSchema.actors).on(_._1.actor === _.id)
 			.join(PersistenceSchema.domains).on(_._2.domain === _.id)
@@ -532,25 +544,13 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 			.join(PersistenceSchema.communities).on(_._2.community === _.id)
   		.join(PersistenceSchema.testSuites).on(_._1._1._1._1._1._1.testsuite === _.id)
   		.join(PersistenceSchema.testCases).on(_._1._1._1._1._1._1._1.testcase === _.id)
-		if (domainIds.isDefined) {
-			query = query.filter(_._1._1._1._1._1._2.id inSet domainIds.get)
-		}
-		if (specIds.isDefined) {
-			query = query.filter(_._1._1._1._1._1._1._1._1.spec inSet specIds.get)
-		}
-		if (actorIds.isDefined) {
-			query = query.filter(_._1._1._1._1._1._1._1._1.actor inSet actorIds.get)
-		}
-		if (communityIds.isDefined) {
-			query = query.filter(_._1._1._2.id inSet communityIds.get)
-		}
-		if (organizationIds.isDefined) {
-			query = query.filter(_._1._1._1._2.id inSet organizationIds.get)
-		}
-		if (systemIds.isDefined) {
-			query = query.filter(_._1._1._1._1._1._1._1._1.sut inSet systemIds.get)
-		}
-		query = query.sortBy(x => (x._1._1._2.shortname, x._1._1._1._2.shortname, x._1._1._1._1._2.shortname, x._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._2.actorId, x._1._2.shortname, x._2.shortname))
+			.filterOpt(domainIds)((q, ids) => q._1._1._1._1._1._2.id inSet ids)
+			.filterOpt(specIds)((q, ids) => q._1._1._1._1._1._1._1._1.spec inSet ids)
+			.filterOpt(actorIds)((q, ids) => q._1._1._1._1._1._1._1._1.actor inSet ids)
+			.filterOpt(communityIds)((q, ids) => q._1._1._2.id inSet ids)
+			.filterOpt(organisationIdsToUse(organizationIds, orgParameters))((q, ids) => q._1._1._1._2.id inSet ids)
+			.filterOpt(systemIdsToUse(systemIds, sysParameters))((q, ids) => q._1._1._1._1._1._1._1._1.sut inSet ids)
+			.sortBy(x => (x._1._1._2.shortname, x._1._1._1._2.shortname, x._1._1._1._1._2.shortname, x._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._2.actorId, x._1._2.shortname, x._2.shortname))
 
 		val results = exec(query
 			.result
@@ -575,39 +575,27 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 					resultActor.id, resultActor.actorId, resultActor.name,
 					resultSpec.id, resultSpec.shortname, resultSpec.fullname,
 					Some(resultTestSuite.shortname), Some(resultTestCase.shortname), resultTestCase.description,
-					Some(resultConfResult.result), resultConfResult.testsession, 0L, 0L, 0L)
+					Some(resultConfResult.result), resultConfResult.outputMessage, resultConfResult.testsession, 0L, 0L, 0L)
 			statements += conformanceStatement
 		}
 		statements.toList
 	}
 
-	def getConformanceStatements(domainIds: Option[List[Long]], specIds: Option[List[Long]], actorIds: Option[List[Long]], communityIds: Option[List[Long]], organizationIds: Option[List[Long]], systemIds: Option[List[Long]]): List[ConformanceStatementFull] = {
-		var query = PersistenceSchema.conformanceResults
+	def getConformanceStatements(domainIds: Option[List[Long]], specIds: Option[List[Long]], actorIds: Option[List[Long]], communityIds: Option[List[Long]], organizationIds: Option[List[Long]], systemIds: Option[List[Long]], orgParameters: Option[Map[Long, Set[String]]], sysParameters: Option[Map[Long, Set[String]]]): List[ConformanceStatementFull] = {
+		val query = PersistenceSchema.conformanceResults
 			.join(PersistenceSchema.specifications).on(_.spec === _.id)
 			.join(PersistenceSchema.actors).on(_._1.actor === _.id)
 			.join(PersistenceSchema.domains).on(_._2.domain === _.id)
 			.join(PersistenceSchema.systems).on(_._1._1._1.sut === _.id)
   		.join(PersistenceSchema.organizations).on(_._2.owner === _.id)
   		.join(PersistenceSchema.communities).on(_._2.community === _.id)
-		if (domainIds.isDefined) {
-			query = query.filter(_._1._1._1._2.id inSet domainIds.get)
-		}
-		if (specIds.isDefined) {
-			query = query.filter(_._1._1._1._1._1._1.spec inSet specIds.get)
-		}
-		if (actorIds.isDefined) {
-			query = query.filter(_._1._1._1._1._1._1.actor inSet actorIds.get)
-		}
-		if (communityIds.isDefined) {
-			query = query.filter(_._2.id inSet communityIds.get)
-		}
-		if (organizationIds.isDefined) {
-			query = query.filter(_._1._2.id inSet organizationIds.get)
-		}
-		if (systemIds.isDefined) {
-			query = query.filter(_._1._1._1._1._1._1.sut inSet systemIds.get)
-		}
-		query = query.sortBy(x => (x._2.shortname, x._1._2.shortname, x._1._1._2.shortname, x._1._1._1._2.shortname, x._1._1._1._1._1._2.shortname, x._1._1._1._1._2.actorId))
+			.filterOpt(domainIds)((q, ids) => q._1._1._1._2.id inSet ids)
+			.filterOpt(specIds)((q, ids) => q._1._1._1._1._1._1.spec inSet ids)
+			.filterOpt(actorIds)((q, ids) => q._1._1._1._1._1._1.actor inSet ids)
+			.filterOpt(communityIds)((q, ids) => q._2.id inSet ids)
+			.filterOpt(organisationIdsToUse(organizationIds, orgParameters))((q, ids) => q._1._2.id inSet ids)
+			.filterOpt(systemIdsToUse(systemIds, sysParameters))((q, ids) => q._1._1._1._1._1._1.sut inSet ids)
+			.sortBy(x => (x._2.shortname, x._1._2.shortname, x._1._1._2.shortname, x._1._1._1._2.shortname, x._1._1._1._1._1._2.shortname, x._1._1._1._1._2.actorId))
 
 		val results = exec(query.result.map(_.toList))
 		val conformanceMap = new util.LinkedHashMap[String, ConformanceStatementFull]
@@ -629,7 +617,7 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 					resultDomain.id, resultDomain.shortname, resultDomain.fullname,
 					resultActor.id, resultActor.actorId, resultActor.name,
 					resultSpecification.id, resultSpecification.shortname, resultSpecification.fullname,
-					None, None, resultConfResult.testsession, None, None,
+					None, None, None, resultConfResult.testsession, None, None,
 					0L, 0L, 0L)
 				conformanceMap.put(key, conformanceStatement)
 			}
@@ -840,6 +828,62 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 			}
 		} yield ()
 		action
+	}
+
+	private[managers] def organisationIdsToUse(organisationIds: Option[Iterable[Long]], orgParameters: Option[Map[Long, Set[String]]]): Option[Iterable[Long]] = {
+		var matchingIds: Option[Iterable[Long]] = None
+		if (organisationIds.isDefined) {
+			matchingIds = Some(organisationIds.get)
+		}
+		if (orgParameters.isDefined) {
+			orgParameters.get.foreach { entry =>
+				matchingIds = Some(organisationIdsForParameterValues(matchingIds, entry._1, entry._2))
+				if (matchingIds.get.isEmpty) {
+					// No matching IDs. Return immediately without checking other parameters.
+					return Some(Set[Long]())
+				}
+			}
+		}
+		matchingIds
+	}
+
+	private def organisationIdsForParameterValues(organisationIds: Option[Iterable[Long]], parameterId: Long, values: Iterable[String]): Set[Long] = {
+		exec(
+			PersistenceSchema.organisationParameterValues
+				.filterOpt(organisationIds)((table, ids) => table.organisation inSet ids)
+				.filter(_.parameter === parameterId)
+				.filter(_.value inSet values)
+				.map(x => x.organisation)
+				.result
+		).toSet
+	}
+
+	private[managers] def systemIdsToUse(systemIds: Option[Iterable[Long]], sysParameters: Option[Map[Long, Set[String]]]): Option[Iterable[Long]] = {
+		var matchingIds: Option[Iterable[Long]] = None
+		if (systemIds.isDefined) {
+			matchingIds = Some(systemIds.get)
+		}
+		if (sysParameters.isDefined) {
+			sysParameters.get.foreach { entry =>
+				matchingIds = Some(systemIdsForParameterValues(matchingIds, entry._1, entry._2))
+				if (matchingIds.get.isEmpty) {
+					// No matching IDs. Return immediately without checking other parameters.
+					return Some(Set[Long]())
+				}
+			}
+		}
+		matchingIds
+	}
+
+	private def systemIdsForParameterValues(systemIds: Option[Iterable[Long]], parameterId: Long, values: Iterable[String]): Set[Long] = {
+		exec(
+			PersistenceSchema.systemParameterValues
+				.filterOpt(systemIds)((table, ids) => table.system inSet ids)
+				.filter(_.parameter === parameterId)
+				.filter(_.value inSet values)
+				.map(x => x.system)
+				.result
+		).toSet
 	}
 
 

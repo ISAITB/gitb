@@ -18,7 +18,8 @@ import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsObject, _}
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
+import scala.collection.{immutable, mutable}
+import scala.collection.mutable.{ListBuffer, Map}
 object JsonUtil {
 
   def jsTextArray(texts: List[String]): JsObject = {
@@ -428,9 +429,17 @@ object JsonUtil {
    * @return JsArray
    */
   def jsSystems(list:List[Systems]):JsArray = {
+    jsSystems(list, None)
+  }
+
+  def jsSystems(list:List[Systems], systemsWithTests: Option[Set[Long]]):JsArray = {
     var json = Json.arr()
     list.foreach{ system =>
-      json = json.append(jsSystem(system))
+      var systemJson = jsSystem(system)
+      if (systemsWithTests.isDefined) {
+        systemJson = systemJson + ("hasTests" -> JsBoolean(systemsWithTests.get.contains(system.id)))
+      }
+      json = json.append(systemJson)
     }
     json
   }
@@ -459,6 +468,9 @@ object JsonUtil {
       "allowCertificateDownload" -> community.allowCertificateDownload,
       "allowStatementManagement" -> community.allowStatementManagement,
       "allowSystemManagement" -> community.allowSystemManagement,
+      "allowPostTestOrganisationUpdates" -> community.allowPostTestOrganisationUpdates,
+      "allowPostTestSystemUpdates" -> community.allowPostTestSystemUpdates,
+      "allowPostTestStatementUpdates" -> community.allowPostTestStatementUpdates,
       "domainId" -> community.domain
     )
     if (includeAdminInfo) {
@@ -827,11 +839,38 @@ object JsonUtil {
     list.toList
   }
 
+  def parseStringArray(json: String): List[String] = {
+    Json.parse(json).as[List[String]]
+  }
+
   def parseJsImportSettings(json:String):ImportSettings = {
     val jsonConfig = Json.parse(json).as[JsObject]
     val settings = new ImportSettings()
     settings.encryptionKey = (jsonConfig \ "encryptionKey").asOpt[String]
     settings
+  }
+
+  def parseJsIdToValuesMap(json: Option[String]): Option[immutable.Map[Long, Set[String]]] = {
+    var result: Option[immutable.Map[Long, Set[String]]] = None
+    if (json.isDefined) {
+      val jsArray = Json.parse(json.get).as[List[JsObject]]
+      val tempMap = new mutable.HashMap[Long, mutable.HashSet[String]]()
+      jsArray.foreach { jsonObj =>
+        val id = (jsonObj \ "id").as[Long]
+        val value = (jsonObj \ "value").as[String]
+        val idValues = tempMap.getOrElseUpdate(id, new mutable.HashSet[String]())
+        idValues += value
+      }
+      result = Some(tempMap.map(x => x._1 -> x._2.toSet).toMap)
+    }
+    result
+  }
+
+  def parseJsIdsToValues(json: String): List[(Long, String)] = {
+    val jsArray = Json.parse(json).as[List[JsObject]]
+    jsArray.map(jsonConfig =>
+      ((jsonConfig \ "id").as[Long], (jsonConfig \ "value").as[String])
+    )
   }
 
   def parseJsExportSettings(json:String):ExportSettings = {
@@ -1097,7 +1136,7 @@ object JsonUtil {
    * @param testResult TestResult object to be converted
    * @return JsObject
    */
-  def jsTestResult(testResult:TestResult, returnTPL:Boolean):JsObject = {
+  def jsTestResult(testResult:TestResult, withExtendedInformation:Boolean):JsObject = {
     val json = Json.obj(
       "sessionId" -> testResult.sessionId,
       "systemId"  -> (if (testResult.systemId.isDefined) testResult.systemId else JsNull),
@@ -1106,27 +1145,33 @@ object JsonUtil {
       "result"    -> testResult.result,
       "startTime" -> TimeUtil.serializeTimestamp(testResult.startTime),
       "endTime"   -> (if(testResult.endTime.isDefined) TimeUtil.serializeTimestamp(testResult.endTime.get) else JsNull),
-      "tpl"       -> (if(returnTPL) testResult.tpl else JsNull),
+      "tpl"       -> (if(withExtendedInformation) testResult.tpl else JsNull),
+      "outputMessage" -> (if (withExtendedInformation && testResult.outputMessage.isDefined) testResult.outputMessage.get else JsNull),
       "obsolete"  -> (if (testResult.testSuiteId.isDefined && testResult.testCaseId.isDefined && testResult.systemId.isDefined && testResult.organizationId.isDefined && testResult.communityId.isDefined && testResult.domainId.isDefined && testResult.specificationId.isDefined && testResult.actorId.isDefined) false else true)
     )
     json
   }
 
-  def jsTestResultReports(list: List[TestResult]): JsArray = {
+  def jsTestResultReports(list: Iterable[TestResult], resultCount: Option[Int]): JsObject = {
     var json = Json.arr()
     list.foreach { report =>
       json = json.append(jsTestResultReport(report, None, None, None, None))
     }
-    json
+    val jsonResult = Json.obj(
+      "data" -> json,
+      "count" -> (if (resultCount.isDefined) resultCount.get else JsNull)
+    )
+    jsonResult
   }
 
-  def jsTestResultSessionReports(list: List[TestResult], orgParameterDefinitions: Option[List[OrganisationParameters]], orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], sysParameterDefinitions: Option[List[SystemParameters]], sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]]): JsObject = {
+  def jsTestResultSessionReports(list: Iterable[TestResult], orgParameterDefinitions: Option[List[OrganisationParameters]], orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], sysParameterDefinitions: Option[List[SystemParameters]], sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], resultCount: Option[Int]): JsObject = {
     var json = Json.arr()
     list.foreach { report =>
       json = json.append(jsTestResultReport(report, orgParameterDefinitions, orgParameterValues, sysParameterDefinitions, sysParameterValues))
     }
     var jsonResult = Json.obj(
-      "data" -> json
+      "data" -> json,
+      "count" -> (if (resultCount.isDefined) resultCount.get else JsNull)
     )
     if (orgParameterDefinitions.isDefined) {
       var orgParameters = Json.arr()
@@ -1148,13 +1193,6 @@ object JsonUtil {
   def jsId(id: Long): JsObject = {
     val json = Json.obj(
       "id"    -> id
-    )
-    json
-  }
-
-  def jsCount(count: Long): JsObject = {
-    val json = Json.obj(
-      "count"    -> count
     )
     json
   }
@@ -1187,7 +1225,7 @@ object JsonUtil {
 
   def jsTestResultReport(result: TestResult, orgParameterDefinitions: Option[List[OrganisationParameters]], orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]], sysParameterDefinitions: Option[List[SystemParameters]], sysParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]]): JsObject = {
     val json = Json.obj(
-      "result" -> jsTestResult(result, returnTPL = false),
+      "result" -> jsTestResult(result, withExtendedInformation = false),
       "test" ->  {
         Json.obj(
           "id"      -> (if (result.testCaseId.isDefined) result.testCaseId.get else JsNull),
@@ -1238,19 +1276,6 @@ object JsonUtil {
         )
       }
     )
-    json
-  }
-
-  /**
-   * Converts a List of TestResults into Play!'s JSON notation
-   * @param list List of TestResults to be converted
-   * @return JsArray
-   */
-  def jsTestResults(list:List[TestResult], returnTPL:Boolean):JsArray = {
-    var json = Json.arr()
-    list.foreach{ testResult =>
-      json = json.append(jsTestResult(testResult, returnTPL))
-    }
     json
   }
 
@@ -1766,6 +1791,7 @@ object JsonUtil {
       "testCaseDescription"    -> listItem.testCaseDescription,
       "testCaseHasDocumentation"    -> listItem.testCaseHasDocumentation,
       "result"    -> listItem.result,
+      "outputMessage" -> listItem.outputMessage,
       "sessionId"    -> listItem.sessionId
     )
     json
@@ -1820,7 +1846,8 @@ object JsonUtil {
       "failed"    -> item.failedTests,
       "completed"    -> item.completedTests,
       "undefined"    -> item.undefinedTests,
-      "result" -> item.result
+      "result" -> item.result,
+      "outputMessage" -> item.outputMessage
     )
     if (orgParameterDefinitions.isDefined && orgParameterValues.isDefined) {
       orgParameterDefinitions.get.foreach{ param =>
