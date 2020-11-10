@@ -25,7 +25,13 @@
 			</style>
 		</conditionalStyle>
 		<conditionalStyle>
-			<conditionExpression><![CDATA["UNDEFINED".equals($P{reportResult})]]></conditionExpression>
+			<conditionExpression><![CDATA["WARNING".equals($P{reportResult})]]></conditionExpression>
+			<style backcolor="#FCF8E3">
+				<pen lineWidth="1.0" lineStyle="Solid" lineColor="#FCF8E3"/>
+			</style>
+		</conditionalStyle>
+		<conditionalStyle>
+			<conditionExpression><![CDATA[!"FAILURE".equals($P{reportResult}) && !"SUCCESS".equals($P{reportResult}) && !"WARNING".equals($P{reportResult})]]></conditionExpression>
 			<style backcolor="#EDEDED">
 				<pen lineWidth="1.0" lineColor="#EDEDED"/>
 			</style>
