@@ -563,8 +563,8 @@
     replace: true
     template: '
       <div>
-        <span ng-if="result == Constants.TEST_CASE_RESULT.SUCCESS || result == Constants.TEST_CASE_RESULT.FAILURE" class="pointer" uib-popover="{{message}}" popover-trigger="\'outsideClick\'" popover-placement="left" popover-class="{{popoverClass()}}"><i ng-class="iconToShow()"></i></span>
-        <span ng-if="result != Constants.TEST_CASE_RESULT.SUCCESS && result != Constants.TEST_CASE_RESULT.FAILURE"><i ng-class="iconToShow()"></i></span>
+        <span ng-if="(result == Constants.TEST_CASE_RESULT.SUCCESS || result == Constants.TEST_CASE_RESULT.FAILURE) && message" class="pointer" uib-popover="{{message}}" popover-trigger="\'outsideClick\'" popover-placement="left" popover-class="{{popoverClass()}}"><i ng-class="iconToShow()"></i></span>
+        <span ng-if="!((result == Constants.TEST_CASE_RESULT.SUCCESS || result == Constants.TEST_CASE_RESULT.FAILURE) && message)"><i ng-class="iconToShow()"></i></span>
       </div>
       '
     link: (scope, element, attrs) ->
