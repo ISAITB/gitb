@@ -41,11 +41,11 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	@Override
 	protected void init() throws Exception {
 		scriptlet = findScriptlet();
-		childScope = createChildScope();
 	}
 
 	@Override
 	protected void start() throws Exception {
+		childScope = createChildScope();
 		ActorRef child = SequenceProcessorActor.create(getContext(), scriptlet.getSteps(), childScope, stepId);
 
 		StartCommand command = new StartCommand(scope.getContext().getSessionId());
@@ -229,10 +229,12 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 			setInputWithIndexBinding(childScope);
 		}
 
-		for (Variable variable : scriptlet.getVariables().getVar()) {
-			childScope
-				.createVariable(variable.getName())
-				.setValue(DataTypeFactory.getInstance().create(variable));
+		if (scriptlet.getVariables() != null) {
+			for (Variable variable : scriptlet.getVariables().getVar()) {
+				childScope
+						.createVariable(variable.getName())
+						.setValue(DataTypeFactory.getInstance().create(variable));
+			}
 		}
 
 		for (Binding output : scriptlet.getOutput()) {

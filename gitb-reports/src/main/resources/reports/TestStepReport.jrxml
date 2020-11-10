@@ -126,7 +126,9 @@
 							<reportElement style="resultStyle" positionType="Float" x="80" y="61" width="100" height="20" uuid="98ab0562-609e-42ae-8003-ddbae479480c">
 								<printWhenExpression><![CDATA[$F{reportResult} != null]]></printWhenExpression>
 							</reportElement>
-							<textElement textAlignment="Center" verticalAlignment="Middle"/>
+							<textElement textAlignment="Center" verticalAlignment="Middle">
+								<font isBold="true"/>
+							</textElement>
 							<textFieldExpression><![CDATA[$F{reportResult}]]></textFieldExpression>
 						</textField>
 						<textField>
