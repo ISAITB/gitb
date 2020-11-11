@@ -1,8 +1,8 @@
 app.config ['$stateProvider', '$urlRouterProvider',
 	($stateProvider, $urlRouterProvider) ->
 		profile = [
-			'$q', '$log', '$state', 'AuthProvider', 'AccountService', 'DataService', 'CommunityService', 'ErrorService', 
-			($q, $log, $state, AuthProvider, AccountService, DataService, CommunityService, ErrorService)->
+			'$q', '$log', '$state', 'AuthProvider', 'AccountService', 'DataService', 'UserGuideService', 'CommunityService', 'ErrorService', 
+			($q, $log, $state, AuthProvider, AccountService, DataService, UserGuideService, CommunityService, ErrorService)->
 				deferred = $q.defer()
 				$log.debug 'Resolving user profile..'
 				authenticated = AuthProvider.isAuthenticated()
@@ -28,6 +28,7 @@ app.config ['$stateProvider', '$urlRouterProvider',
 						AccountService.getUserProfile()
 							.then (data)->
 								DataService.setUser(data)
+								UserGuideService.initialise()
 								$log.debug 'Got user profile from the server...'
 								userDeferred.resolve()
 							.catch (error) ->
