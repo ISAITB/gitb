@@ -147,7 +147,7 @@
             </div>
             <div class="col-xs-offset-3 col-xs-7">
               <label class="checkbox-inline">
-                <input type="checkbox" ng-model="tbCommunity.allowPostTestStatementUpdates">Update conformance statement parameters after testing
+                <input type="checkbox" ng-model="tbCommunity.allowPostTestStatementUpdates">Update conformance statement after testing
                 <div tb-inline="true" tb-inline-type="checkLabelText" tb-tooltip="Check this to allow {{DataService.labelOrganisationLower()}} users to update the configuration parameters for a conformance statement once tests have been recorded."></div>
               </label>
             </div>
