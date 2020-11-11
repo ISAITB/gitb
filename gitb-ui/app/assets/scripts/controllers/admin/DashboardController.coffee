@@ -231,8 +231,7 @@ class DashboardController
     @setFilterRefreshState()
     @ReportService.getActiveTestResults(params.communityIds, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.startTimeBeginStr, params.startTimeEndStr, params.sessionId, params.organisationProperties, params.systemProperties, params.activeSortColumn, params.activeSortOrder)
     .then (data) =>
-      testResultMapper = @newTestResult
-      @activeTests = _.map data.data, (testResult) => testResultMapper(testResult)
+      @activeTests = _.map data.data, (testResult) => @newTestResult(testResult, false)
       @refreshActivePending = false
       @setFilterRefreshState()
       @activeStatus.status = @Constants.STATUS.FINISHED      
@@ -250,9 +249,8 @@ class DashboardController
     @setFilterRefreshState()
     @ReportService.getCompletedTestResults(params.currentPage, @Constants.TABLE_PAGE_SIZE, params.communityIds, params.specIds, params.actorIds, params.testSuiteIds, params.testCaseIds, params.organizationIds, params.systemIds, params.domainIds, params.results, params.startTimeBeginStr, params.startTimeEndStr, params.endTimeBeginStr, params.endTimeEndStr, params.sessionId, params.organisationProperties, params.systemProperties, params.completedSortColumn, params.completedSortOrder)
     .then (data) =>
-      testResultMapper = @newTestResult
       @completedTestsTotalCount = data.count
-      @completedTests = _.map data.data, (t) => testResultMapper(t)
+      @completedTests = _.map data.data, (t) => @newTestResult(t, false)
       @refreshCompletedPending = false
       @updatePagination()      
       @setFilterRefreshState()
@@ -263,7 +261,7 @@ class DashboardController
       @setFilterRefreshState()
       @completedStatus.status = @Constants.STATUS.FINISHED
 
-  newTestResult: (testResult, orgParameters, sysParameters) =>
+  newTestResult: (testResult, forExport, orgParameters, sysParameters) =>
     result = {}
     result.session = testResult.result.sessionId
     result.domain = testResult.domain?.sname
@@ -271,7 +269,8 @@ class DashboardController
     result.actor = testResult.actor?.name
     result.testSuite = testResult.testSuite?.sname
     result.testCase = testResult.test?.sname
-    result.testCaseId = testResult.test?.id
+    if !forExport
+      result.testCaseId = testResult.test?.id
     result.organization = testResult.organization?.sname
     if orgParameters?
       for param in orgParameters
@@ -393,8 +392,7 @@ class DashboardController
         for param in data.sysParameters
           headers.push(@DataService.labelSystem() + " ("+param+")")
       headers = headers.concat(["Start time", "End time", "Result", "Obsolete"])
-      testResultMapper = @newTestResult
-      tests = _.map data.data, (t) => testResultMapper(t, data.orgParameters, data.sysParameters)
+      tests = _.map data.data, (t) => @newTestResult(t, true, data.orgParameters, data.sysParameters)
       @DataService.exportAllAsCsv(headers, tests)
       @exportCompletedPending = false
     .catch (error) =>
@@ -416,8 +414,7 @@ class DashboardController
         for param in data.sysParameters
           headers.push(@DataService.labelSystem() + " ("+param+")")
       headers = headers.concat(["Start time", "End time", "Result", "Obsolete"])
-      testResultMapper = @newTestResult
-      tests = _.map data.data, (testResult) => testResultMapper(testResult, data.orgParameters, data.sysParameters)
+      tests = _.map data.data, (testResult) => @newTestResult(testResult, true, data.orgParameters, data.sysParameters)
       @DataService.exportAllAsCsv(headers, tests)
       @exportActivePending = false
     .catch (error) =>
