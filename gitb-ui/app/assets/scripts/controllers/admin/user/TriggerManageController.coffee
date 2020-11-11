@@ -66,7 +66,7 @@ class TriggerManageController
       @ErrorService.showErrorMessage(error)
 
     if @DataService.isCommunityAdmin && @DataService.community.domainId?
-      @domainParameterFnResult = @ConformanceService.getDomainParameters(@domainId, false)
+      @domainParameterFnResult = @ConformanceService.getDomainParameters(@DataService.community.domainId, false)
     else if @DataService.isSystemAdmin
       @domainParameterFnResult = @ConformanceService.getDomainParametersOfCommunity(@communityId)
     if @domainParameterFnResult?
