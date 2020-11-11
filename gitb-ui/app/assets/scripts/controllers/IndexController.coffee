@@ -64,6 +64,7 @@ class IndexController
 			.then(
 				(data) =>
 					@DataService.setUser(data)
+					@UserGuideService.initialise()
 					@profileLoaded.resolve()
 				,
 				(error) =>
