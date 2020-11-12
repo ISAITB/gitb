@@ -50,7 +50,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
     */
 
   private def destroyIdleSessions() = {
-    actorSystem.scheduler.scheduleWithFixedDelay(1.hours, 1.hours) {
+    actorSystem.scheduler.scheduleWithFixedDelay(5.minutes, 30.minutes) {
       () => {
         val config = systemConfigurationManager.getSystemConfiguration(Constants.SessionAliveTime)
         val aliveTime = config.parameter
@@ -61,7 +61,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
             if (difference >= aliveTime.get.toInt) {
               val sessionId = result.sessionId
               testService.endSession(sessionId)
-              logger.info("Stopped idle session [" + sessionId + "]")
+              logger.info("Terminated idle session [" + sessionId + "]")
             }
           }
         }
