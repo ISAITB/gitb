@@ -739,9 +739,9 @@ class TestExecutionControllerV2
     @$state.go 'app.systems.detail.conformance.detail', {actor_id: @actorId, specId: @specId, id: @systemId, editEndpoints: true}
 
   leavingTestExecutionPage: () =>
-    if @ws? and @session?
-      @ws.close()
     if @firstTestStarted && !@stopped
+      if @ws?
+        @ws.close()
       pendingTests = _.filter(@testsToExecute, (test) =>
         @testCaseStatus[test.id] == @Constants.TEST_CASE_STATUS.READY || @testCaseStatus[test.id] == @Constants.TEST_CASE_STATUS.PENDING
       )
@@ -754,6 +754,9 @@ class TestExecutionControllerV2
       else
         if @testCaseStatus[@currentTest.id] == @Constants.TEST_CASE_STATUS.PROCESSING
           @PopupService.success('Continuing test session in background. Check <b>Test Sessions</b> for progress.')
+    else
+      if @ws? && @session?
+        @stopAll()
 
   testCasesHaveDocumentation: () =>
     if @testsToExecute?
