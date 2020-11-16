@@ -33,6 +33,10 @@ class CommunityService
     if @DataService.configuration['registration.enabled']
       if selfRegNotification == undefined
         selfRegNotification = false
+      if selfRegForceTemplate == undefined
+        selfRegForceTemplate = false
+      if selfRegForceProperties == undefined
+        selfRegForceProperties = false
       data.community_selfreg_type = selfRegType
       data.community_selfreg_token = selfRegToken
       data.community_selfreg_token_help_text = selfRegTokenHelpText
@@ -72,6 +76,10 @@ class CommunityService
     if @DataService.configuration['registration.enabled']
       if selfRegNotification == undefined
         selfRegNotification = false
+      if selfRegForceTemplate == undefined
+        selfRegForceTemplate = false
+      if selfRegForceProperties == undefined
+        selfRegForceProperties = false
       data.community_selfreg_type = selfRegType
       data.community_selfreg_token = selfRegToken
       data.community_selfreg_token_help_text = selfRegTokenHelpText
