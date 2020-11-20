@@ -98,13 +98,18 @@
 							<img src="@config.footerLogoPath" class="pull-left"/>
 						</div>
 						<div class="col-md-6 version-div">
-							<span class="pull-right">
-								<a href="@config.userGuideLink" target="blank">User guide</a><span class="version-text">
-								@if(config.hasDefaultLegalNotice) {
-									| </span><a href="#" data-toggle="modal" data-target="#legalModal">Legal notice</a><span class="version-text">
+							<div class="pull-right">
+								@if(config.developmentMode) {
+								<div class="footer-devmode"><i class="fa fa-exclamation-circle" aria-hidden="true"></i> Development mode</div>
 								}
-								| </span><span class="version-text">@config.versionNumber</span>
-							</span>
+								<div class="footer-links">
+									<a href="@config.userGuideLink" target="blank">User guide</a><span class="version-text">
+									@if(config.hasDefaultLegalNotice) {
+										| </span><a href="#" data-toggle="modal" data-target="#legalModal">Legal notice</a><span class="version-text">
+									}
+									| </span><span class="version-text">@config.versionNumber</span>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>

@@ -1,6 +1,6 @@
 package models
 
-class PublicConfig(_ssoEnabled: Boolean, _logoPath: String, _footerLogoPath: String, _versionNumber: String, _hasDefaultLegalNotice: Boolean, _defaultLegalNotice: String, _inMigrationPeriod: Boolean, _demosEnabled: Boolean, _userGuideLink: String, _registrationEnabled: Boolean, _euLoginUseGuide: String, _euLoginMigrationGuide: String, _cookiePath: String, _initialSandboxRun: Boolean) {
+class PublicConfig(_ssoEnabled: Boolean, _logoPath: String, _footerLogoPath: String, _versionNumber: String, _hasDefaultLegalNotice: Boolean, _defaultLegalNotice: String, _inMigrationPeriod: Boolean, _demosEnabled: Boolean, _userGuideLink: String, _registrationEnabled: Boolean, _euLoginUseGuide: String, _euLoginMigrationGuide: String, _cookiePath: String, _initialSandboxRun: Boolean, _developmentMode: Boolean) {
 
   var ssoEnabled: Boolean = _ssoEnabled
   var logoPath: String = _logoPath
@@ -16,7 +16,8 @@ class PublicConfig(_ssoEnabled: Boolean, _logoPath: String, _footerLogoPath: Str
   var euLoginMigrationGuideLink: String = _euLoginMigrationGuide
   var cookiePath: String = _cookiePath
   var initialSandboxRun: Boolean = _initialSandboxRun
+  var developmentMode: Boolean = _developmentMode
 
   def this(_versionNumber: String) =
-    this(false, null, null, _versionNumber, false, null, false, false, null, false, null, null, null, false)
+    this(false, null, null, _versionNumber, false, null, false, false, null, false, null, null, null, false, false)
 }

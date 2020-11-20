@@ -4,6 +4,7 @@ import java.util.Properties
 
 import com.gitb.utils.HmacUtils
 import com.typesafe.config.{Config, ConfigFactory}
+import models.Constants
 
 import scala.util.matching.Regex
 
@@ -112,6 +113,8 @@ object Configurations {
 
   var DATA_ARCHIVE_KEY = ""
   var DATA_WEB_INIT_ENABLED = false
+
+  var TESTBED_MODE:String = ""
 
   def loadConfigurations() = {
     if (!_IS_LOADED) {
@@ -282,6 +285,26 @@ object Configurations {
       DATA_ARCHIVE_KEY = fromEnv("DATA_ARCHIVE_KEY", "")
       DATA_WEB_INIT_ENABLED = fromEnv("DATA_WEB_INIT_ENABLED", "false").toBoolean
 
+      // Mode - START
+      /*
+        Use of default values for secrets should only be allowed for a development instance.
+       */
+      if (DATA_ARCHIVE_KEY.length > 0 || DATA_WEB_INIT_ENABLED) {
+        TESTBED_MODE = Constants.SandboxMode
+      } else {
+        TESTBED_MODE = fromEnv("TESTBED_MODE", Constants.DevelopmentMode)
+        // Test that no default values are being used.
+        if (TESTBED_MODE == Constants.ProductionMode) {
+          if (fromEnv("APPLICATION_SECRET", "value_used_during_development_to_be_replaced_in_production") == "value_used_during_development_to_be_replaced_in_production" ||
+            String.valueOf(MASTER_PASSWORD) == "value_used_during_development_to_be_replaced_in_production" ||
+            fromEnv("DB_DEFAULT_PASSWORD", "gitb") == "gitb" ||
+            hmacKey == "devKey"
+          ) {
+            throw new IllegalStateException("Your application is running in production mode with default values set for sensitive configuration properties. Switch to development mode by setting on gitb-ui the TESTBED_MODE environment variable to \""+Constants.DevelopmentMode+"\" or replace these settings accordingly. For more details check the test bed's installation guide.")
+          }
+        }
+      }
+      // Mode - END
       _IS_LOADED = true
     }
   }

@@ -1398,8 +1398,8 @@ object JsonUtil {
       "demos.enabled" -> config.get("demos.enabled").toBoolean,
       "demos.account" -> config.get("demos.account").toLong,
       "registration.enabled" -> config.get("registration.enabled").toBoolean,
-      "savedFile.maxSize" -> config.get("savedFile.maxSize").toLong
-
+      "savedFile.maxSize" -> config.get("savedFile.maxSize").toLong,
+      "mode" -> config.get("mode")
     )
     json
   }
