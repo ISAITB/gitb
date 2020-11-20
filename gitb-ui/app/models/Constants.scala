@@ -38,5 +38,9 @@ object Constants {
   val PlaceholderActor = "$ACTOR"
   val PlaceholderDomain = "$DOMAIN"
 
+  val ProductionMode = "production"
+  val DevelopmentMode = "development"
+  val SandboxMode = "sandbox"
+
   val VersionNumber = "1.11.0"
 }

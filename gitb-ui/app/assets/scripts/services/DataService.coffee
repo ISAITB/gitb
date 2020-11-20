@@ -39,6 +39,9 @@ class DataService
 		@isSystemAdmin = (@user.role == @Constants.USER_ROLE.SYSTEM_ADMIN)
 		@isCommunityAdmin = (@user.role == @Constants.USER_ROLE.COMMUNITY_ADMIN)
 
+	isDevelopmentMode: () ->
+		@configuration? && @configuration['mode'] == 'development'
+
 	isDemoAccount: () ->
 		@user? && @configuration['demos.enabled'] && @configuration['demos.account'] == @user.id
 

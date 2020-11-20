@@ -38,7 +38,8 @@ class Application @Inject() (cc: ControllerComponents, defaultAction: DefaultAct
       Configurations.GUIDES_EULOGIN_USE,
       Configurations.GUIDES_EULOGIN_MIGRATION,
       Configurations.AUTHENTICATION_COOKIE_PATH,
-      enableWebInit
+      enableWebInit,
+      Configurations.TESTBED_MODE == Constants.DevelopmentMode
     )))
   }
 

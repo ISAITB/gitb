@@ -38,7 +38,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
     cleanupTempReports()
     initialiseActors(triggerManager)
     loadDataExports()
-    logger.info("Application has started")
+    logger.info("Application has started in "+Configurations.TESTBED_MODE+" mode")
   }
 
   private def initialiseActors(triggerManager: TriggerManager): Unit = {
