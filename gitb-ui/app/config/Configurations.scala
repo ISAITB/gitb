@@ -295,12 +295,15 @@ object Configurations {
         TESTBED_MODE = fromEnv("TESTBED_MODE", Constants.DevelopmentMode)
         // Test that no default values are being used.
         if (TESTBED_MODE == Constants.ProductionMode) {
-          if (fromEnv("APPLICATION_SECRET", "value_used_during_development_to_be_replaced_in_production") == "value_used_during_development_to_be_replaced_in_production" ||
-            String.valueOf(MASTER_PASSWORD) == "value_used_during_development_to_be_replaced_in_production" ||
-            fromEnv("DB_DEFAULT_PASSWORD", "gitb") == "gitb" ||
-            hmacKey == "devKey"
+          val appSecret = fromEnv("APPLICATION_SECRET", "value_used_during_development_to_be_replaced_in_production")
+          val dbPassword = fromEnv("DB_DEFAULT_PASSWORD", "gitb")
+          val masterPassword = String.valueOf(MASTER_PASSWORD)
+          if (appSecret == "value_used_during_development_to_be_replaced_in_production" || appSecret == "CHANGE_ME" ||
+            masterPassword == "value_used_during_development_to_be_replaced_in_production" || masterPassword == "CHANGE_ME" ||
+            dbPassword == "gitb" || dbPassword == "CHANGE_ME" ||
+            hmacKey == "devKey" || hmacKey == "CHANGE_ME"
           ) {
-            throw new IllegalStateException("Your application is running in production mode with default values set for sensitive configuration properties. Switch to development mode by setting on gitb-ui the TESTBED_MODE environment variable to \""+Constants.DevelopmentMode+"\" or replace these settings accordingly. For more details check the test bed's installation guide.")
+            throw new IllegalStateException("Your application is running in production mode with default values set for sensitive configuration properties. Switch to development mode by setting on gitb-ui the TESTBED_MODE environment variable to \""+Constants.DevelopmentMode+"\" or replace these settings accordingly. For more details refer to the test bed's production installation guide.")
           }
         }
       }
