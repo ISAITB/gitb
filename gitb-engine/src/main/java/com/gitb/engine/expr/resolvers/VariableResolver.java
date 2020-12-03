@@ -1,7 +1,6 @@
 package com.gitb.engine.expr.resolvers;
 
 import com.gitb.core.ErrorCode;
-import com.gitb.core.ErrorInfo;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.types.*;
@@ -10,6 +9,7 @@ import com.gitb.utils.XMLUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -116,6 +116,7 @@ public class VariableResolver implements XPathVariableResolver{
     }
 
     public DataType resolveVariable(String variableExpression, boolean tolerateMissing) {
+        DataType result = null;
         Matcher matcher = VARIABLE_EXPRESSION_PATTERN.matcher(variableExpression);
         if(!matcher.matches()){
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid variable reference ["+variableExpression+"]"));
@@ -127,22 +128,21 @@ public class VariableResolver implements XPathVariableResolver{
             TestCaseScope.ScopedVariable scopeVariable = scope.getVariable(containerVariableName);
             if (scopeVariable == null || !scopeVariable.isDefined()) {
                 // No variable could be matched.
-                if (tolerateMissing) {
-                    return null;
-                } else {
-                    ErrorInfo errorInfo = ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE);
-                    errorInfo.setDescription("No variable could be located in the session context for expression [" + variableExpression + "]");
-                    throw new GITBEngineInternalError(errorInfo);
+                if (!tolerateMissing) {
+                    logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "No variable could be located in the session context for expression [" + variableExpression + "]");
                 }
             } else {
                 DataType containerVariable = scopeVariable.getValue();
-                return resolveVariable(containerVariable, indexOrKeyExpression);
+                result = resolveVariable(containerVariable, indexOrKeyExpression);
             }
         } catch (Exception e) {
-            ErrorInfo errorInfo = ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE);
-            errorInfo.setDescription("An exception occurred when resolving variable [" + variableExpression + "]");
-            throw new GITBEngineInternalError(errorInfo, e);
+            logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "An exception occurred when resolving variable [" + variableExpression + "]", e);
+            result = null;
         }
+        if (result == null && !tolerateMissing) {
+            result = new StringType();
+        }
+        return result;
     }
 
 	/**
