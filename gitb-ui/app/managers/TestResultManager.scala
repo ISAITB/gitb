@@ -1,5 +1,8 @@
 package managers
 
+import com.gitb.core.StepStatus
+import com.gitb.tbs.TestStepStatus
+
 import javax.inject.{Inject, Singleton}
 import models.Enums.TestResultStatus
 import models._
@@ -8,6 +11,7 @@ import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 
+import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -17,6 +21,53 @@ class TestResultManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ext
   private def logger = LoggerFactory.getLogger("TestResultManager")
 
   import dbConfig.profile.api._
+
+  /**
+   * Concurrent map used to hold the sessions' step status updates. Status updates are held in a linked hash map
+   * for direct access but also retrieval using insertion order.
+   */
+  private val sessionMap = new TrieMap[String, mutable.LinkedHashMap[String, TestStepResultInfo]]()
+
+  def sessionUpdate(sessionId: String, stepId: String, status: TestStepResultInfo): List[(String, TestStepResultInfo)] = {
+    var sessionSteps = sessionMap.get(sessionId)
+    if (sessionSteps.isEmpty) {
+      sessionSteps = Some(new mutable.LinkedHashMap[String, TestStepResultInfo])
+      sessionMap.put(sessionId, sessionSteps.get)
+    }
+    var stepInfo = sessionSteps.get.get(stepId)
+    if (stepInfo.isEmpty) {
+      stepInfo = Some(status)
+      sessionSteps.get.put(stepId, stepInfo.get)
+    } else {
+      val existingStatus = stepInfo.get.result
+      if (status.result == StepStatus.COMPLETED.ordinal().toShort
+        || status.result == StepStatus.ERROR.ordinal().toShort
+        || status.result == StepStatus.WARNING.ordinal().toShort
+        || status.result == StepStatus.SKIPPED.ordinal().toShort && existingStatus != StepStatus.COMPLETED.ordinal().toShort && existingStatus != StepStatus.ERROR.ordinal().toShort && existingStatus != StepStatus.WARNING.ordinal().toShort
+        || status.result == StepStatus.WAITING.ordinal().toShort && existingStatus != StepStatus.SKIPPED.ordinal().toShort && existingStatus != StepStatus.COMPLETED.ordinal().toShort && existingStatus != StepStatus.ERROR.ordinal().toShort && existingStatus != StepStatus.WARNING.ordinal().toShort
+        || status.result == StepStatus.PROCESSING.ordinal().toShort && existingStatus != StepStatus.WAITING.ordinal().toShort && existingStatus != StepStatus.SKIPPED.ordinal().toShort && existingStatus != StepStatus.COMPLETED.ordinal().toShort && existingStatus != StepStatus.ERROR.ordinal().toShort && existingStatus != StepStatus.WARNING.ordinal().toShort
+      ) {
+        // The new status logically follows the current one (check made to avoid race conditions that would "rewind" progress)
+        stepInfo.get.result = status.result
+        stepInfo.get.path = status.path
+      }
+    }
+    // Return the history of step updates
+    sessionMap(sessionId).map { entry =>
+      (entry._1, entry._2)
+    }.toList
+  }
+
+  def sessionRemove(sessionId: String): List[(String, TestStepResultInfo)] = {
+    val sessionSteps = sessionMap.remove(sessionId)
+    if (sessionSteps.isEmpty) {
+      List()
+    } else {
+      sessionSteps.get.map { entry =>
+        (entry._1, entry._2)
+      }.toList
+    }
+  }
 
   def getTestResultForSessionWrapper(sessionId: String): Option[TestResult] = {
     exec(getTestResultForSession(sessionId))
@@ -199,6 +250,8 @@ class TestResultManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ext
       }
       // Delete test result
       _ <- queryTestResult.delete
+      // Delete test step reports
+      _ <- PersistenceSchema.testStepReports.filter(_.testSessionId ===testSession.sessionId).delete
     } yield ()
   }
 

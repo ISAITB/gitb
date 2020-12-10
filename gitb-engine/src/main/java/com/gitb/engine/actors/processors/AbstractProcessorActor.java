@@ -6,6 +6,7 @@ import akka.dispatch.OnSuccess;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.events.model.ErrorStatusEvent;
+import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.processors.IProcessor;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
@@ -61,12 +62,7 @@ public abstract class AbstractProcessorActor<T> extends AbstractTestStepActor<T>
 		promise.future().failed().foreach(new OnFailure() {
 			@Override
 			public void onFailure(Throwable failure) {
-				boolean logError = true;
-				if (failure instanceof GITBEngineInternalError && ((GITBEngineInternalError)failure).getErrorInfo() != null && ((GITBEngineInternalError)failure).getErrorInfo().getErrorCode() == ErrorCode.CANCELLATION) {
-					// This is a cancelled step due to a session being stopped.
-					logError = false;
-				}
-				updateTestStepStatus(context, new ErrorStatusEvent(failure), null, true, logError);
+				handleFutureFailure(failure);
 			}
 		}, getContext().dispatcher());
 	}

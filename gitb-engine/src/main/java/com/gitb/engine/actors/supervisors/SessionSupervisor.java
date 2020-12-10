@@ -11,6 +11,7 @@ import com.gitb.engine.events.TestStepStatusEventBus;
 import com.gitb.exceptions.GITBEngineInternalError;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 /**
  * Created by serbay on 9/4/14.
@@ -29,10 +30,10 @@ public class SessionSupervisor extends com.gitb.engine.actors.Actor {
 		if(message instanceof CreateCommand) {
 			String sessionId = ((CreateCommand) message).getSessionId();
 			ActorRef actor = SessionActor.create(getContext(), sessionId);
-
 			TestStepStatusEventBus
 				.getInstance()
 				.subscribe(actor, sessionId);
+			logger.debug(MarkerFactory.getDetachedMarker(sessionId), "Created new test session [" + sessionId + "]");
 		}
         //Closing a Test Case Execution session
         else if(message instanceof DestroyCommand) {

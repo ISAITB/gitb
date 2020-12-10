@@ -1,10 +1,8 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.commands.interaction.StartCommand;
-import com.gitb.engine.commands.interaction.StopCommand;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
@@ -44,16 +42,6 @@ public class ForEachStepProcessorActor extends AbstractIterationStepActor<ForEac
 		if(!loop()) {
 			completed(); // TODO send test step report
 		}
-	}
-
-	@Override
-	protected void stop() {
-		StopCommand command = new StopCommand(scope.getContext().getSessionId());
-		for(ActorRef child : getContext().getChildren()) {
-			child.tell(command, self());
-		}
-
-		childScope.destroy();
 	}
 
 	@Override

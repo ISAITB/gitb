@@ -32,7 +32,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
     logger.info("Starting Application")
     System.setProperty("java.io.tmpdir", System.getProperty("user.dir"))
     //start TestbedClient service
-    TestbedService.endpoint = Endpoint.publish(Configurations.TESTBED_CLIENT_URL, new TestbedService(reportManager, webSocketActor, testbedBackendClient))
+    TestbedService.endpoint = Endpoint.publish(Configurations.TESTBED_CLIENT_URL, new TestbedService(testResultManager, reportManager, webSocketActor, testbedBackendClient))
     destroyIdleSessions()
     cleanupPendingTestSuiteUploads()
     cleanupTempReports()

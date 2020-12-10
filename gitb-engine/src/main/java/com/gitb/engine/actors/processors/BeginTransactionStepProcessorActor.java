@@ -56,11 +56,6 @@ public class BeginTransactionStepProcessorActor extends AbstractTestStepActor<Be
 		completed();
 	}
 
-	@Override
-	protected void stop() {
-        
-	}
-
 	public static ActorRef create(ActorContext context, BeginTransaction step, TestCaseScope scope, String stepId) throws Exception {
 		return create(BeginTransactionStepProcessorActor.class, context, step, scope, stepId);
 	}

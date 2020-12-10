@@ -32,9 +32,4 @@ public class EndProcessingTransactionStepProcessorActor extends AbstractTestStep
         completed();
     }
 
-    @Override
-    protected void stop() {
-
-    }
-
 }

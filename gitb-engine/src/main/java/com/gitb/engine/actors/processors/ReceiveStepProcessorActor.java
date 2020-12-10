@@ -77,7 +77,7 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 		promise.future().failed().foreach(new OnFailure() {
 			@Override
 			public void onFailure(Throwable failure) {
-                updateTestStepStatus(context, new ErrorStatusEvent(failure), null, true);
+				handleFutureFailure(failure);
 			}
 		}, context.dispatcher());
 	}
@@ -105,9 +105,9 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 		if(messagingHandler != null) {
 			// This call will block until there is a callback response.
 			/*
-								The response was not triggered by a timeout but we have a timeout flag defined
-								Make sure we have the flag set as false in the response.
-								 */
+			The response was not triggered by a timeout but we have a timeout flag defined
+			Make sure we have the flag set as false in the response.
+			 */
 			Future<TestStepReportType> future = Futures.future(() -> {
 				VariableResolver resolver = new VariableResolver(scope);
 				if (step.getConfig() != null) {

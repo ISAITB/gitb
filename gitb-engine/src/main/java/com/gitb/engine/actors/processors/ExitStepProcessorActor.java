@@ -3,10 +3,10 @@ package com.gitb.engine.actors.processors;
 import akka.actor.ActorRef;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.actors.SessionActor;
-import com.gitb.engine.actors.util.ActorUtils;
 import com.gitb.engine.commands.interaction.PrepareForStopCommand;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.expr.resolvers.VariableResolver;
+import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.tdl.ExitStep;
 import com.gitb.tr.SR;
@@ -49,17 +49,16 @@ public class ExitStepProcessorActor extends AbstractTestStepActor<ExitStep> {
 			status = new StatusEvent(StepStatus.ERROR);
 		}
 		// Prepare the rest of the test case for the stop.
-		ActorUtils.askBlocking(getContext().system().actorSelection(SessionActor.getPath(sessionId)), new PrepareForStopCommand(sessionId, self()));
+		if (scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
+			scope.getContext().setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPING);
+		}
+		getContext().system().actorSelection(SessionActor.getPath(scope.getContext().getSessionId())).tell(new PrepareForStopCommand(scope.getContext().getSessionId(), self()), self());
 		// Send the step's report.
 		updateTestStepStatus(getContext(), status, report, true, false);
 	}
 
 	@Override
 	protected void init() {
-	}
-
-	@Override
-	protected void stop() {
 	}
 
 	public static ActorRef create(ActorContext context, ExitStep step, TestCaseScope scope, String stepId) throws Exception{

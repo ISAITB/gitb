@@ -168,11 +168,6 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         waiting();
     }
 
-    @Override
-    protected void stop() {
-
-    }
-
     /**
      * Process TDL Instruction command and convert it to Instruction TBS request object
      *

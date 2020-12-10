@@ -9,98 +9,48 @@ import com.gitb.engine.SessionManager;
 import com.gitb.engine.TestbedService;
 import com.gitb.engine.actors.processors.TestCaseProcessorActor;
 import com.gitb.engine.actors.supervisors.SessionSupervisor;
-import com.gitb.engine.actors.util.ActorUtils;
 import com.gitb.engine.commands.interaction.*;
 import com.gitb.engine.events.model.TestStepStatusEvent;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tbs.SUTConfiguration;
+import com.gitb.tbs.TestStepStatus;
+import com.gitb.tr.SR;
+import com.gitb.tr.TestResultType;
+import com.gitb.tr.TestStepReportType;
+import com.gitb.utils.XMLDateTimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
+import scala.concurrent.Await;
+import scala.concurrent.duration.Duration;
 
+import javax.xml.datatype.DatatypeConfigurationException;
+import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
+
+import static com.gitb.engine.actors.processors.TestCaseProcessorActor.TEST_CASE_STEP_ID;
 
 /**
- * Created by serbay on 9/4/14.
- *
- * <p>Actor that controls the test execution session.</p>
- *
- * <p>Valid commands for each session state {@link com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum}
- * for this actor are described below:</p>
- *
- * <p><b>{@link com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum#IDLE}:</b></p>
- * <ul>
- *     <li>
- *         {@link com.gitb.engine.commands.interaction.ConfigureCommand} Used to configure simulated actor endpoints.
- *         Given SUT configurations are sent to the corresponding messaging handlers.
- *         Test session state is set to {@link com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum#CONFIGURATION}.
- *     </li>
- * </ul>
- *
- * <p><b>{@link com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum#CONFIGURATION}:</b></p>
- * <ul>
- *     <li>
- *         {@link com.gitb.engine.commands.interaction.InitiatePreliminaryCommand}: Used to start the preliminary phase.
- *         Test session state is set to {@link com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum#PRELIMINARY}.
- *     </li>
- * </ul>
- *
- * <p><b>{@link com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum#PRELIMINARY}:</b></p>
- * <ul>
- *     <li>
- *         {@link com.gitb.engine.events.model.TestStepStatusEvent}: Used to track the status of the {@link com.gitb.engine.actors.processors.InteractionStepProcessorActor}
- *         collects the necessary preliminary inputs. Test session state is set to {@link com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum#READY}.
- *     </li>
- * </ul>
- *
- * <p><b>{@link com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum#READY}:</b></p>
- * <ul>
- *     <li>
- *         {@link com.gitb.engine.commands.interaction.StartCommand}: Starts the test execution. Test session state is set
- *         to {@link com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum#EXECUTION}.
- *     </li>
- *     <li>
- *         {@link com.gitb.engine.commands.interaction.StopCommand}: Stops the test session without starting executing test steps.
- *         Test session state is set to {@link com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum#STOPPED}.
- *     </li>
- * </ul>
- *
- * <p><b>{@link com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum#EXECUTION}:</b></p>
- * <ul>
- *     <li>
- *         {@link com.gitb.engine.events.model.TestStepStatusEvent}: Redirects the incoming test step status updates to
- *         {@link com.gitb.engine.TestbedService#updateStatus(String, String, com.gitb.core.StepStatus, com.gitb.tr.TestStepReportType)}.
- *     </li>
- *     <li>
- *         {@link com.gitb.engine.commands.interaction.StopCommand}: Stops the execution of the remaining test steps.
- *         Test session state is set to {@link com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum#STOPPED}.
- *     </li>
- * </ul>
- *
- * <p><b>{@link com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum#STOPPED}:</b></p>
- * <ul>
- *     <li>
- *         {@link com.gitb.engine.commands.interaction.RestartCommand}: Restarts the execution of the test steps with a new test
- *         execution session id and possibly new simulated actor configurations.
- *     </li>
- *     <li>
- *         {@link com.gitb.engine.events.model.TestStepStatusEvent}: Ignored
- *     </li>
- * </ul>
- *
+ * Actor that controls the test execution session.
  */
 public class SessionActor extends Actor {
-    private static Logger logger = LoggerFactory.getLogger(SessionActor.class);
+    private static final Logger logger = LoggerFactory.getLogger(SessionActor.class);
 
     private String getSessionId() {
         return self().path().name();
     }
 
+    private ActorRef testCaseProcessorActor;
+
+    private final LinkedHashMap<String, UpdateMessage> eventOutbox = new LinkedHashMap<>();
+    private boolean eventProcessingInProgress = false;
+    private UpdateMessage sessionEndEvent = null;
+
     @Override
     public void preStart() throws Exception {
-        TestCaseProcessorActor.create(getContext(), getSessionId());
+        testCaseProcessorActor = TestCaseProcessorActor.create(getContext(), getSessionId());
     }
 
     @Override
@@ -110,138 +60,239 @@ public class SessionActor extends Actor {
                 .getInstance()
                 .getContext(getSessionId());
         if (context != null) {
-            switch (context.getCurrentState()) {
-                case IDLE:
-                    /**
-                     * Handle the configuration of test execution (given configuration list for each SUT actor)
-                     */
-                    if (message instanceof ConfigureCommand) {
-                        try {
-                            List<SUTConfiguration> sutConfigurations = context.configure(
-                                    ((ConfigureCommand) message).getActorConfigurations(),
-                                    ((ConfigureCommand) message).getDomainConfiguration(),
-                                    ((ConfigureCommand) message).getOrganisationConfiguration(),
-                                    ((ConfigureCommand) message).getSystemConfiguration()
-                            );
-                            getSender().tell(sutConfigurations, self());
+            if (message instanceof LogCommand) {
+                var msg = new UpdateMessage(((LogCommand) message).getTestStepStatus());
+                eventOutbox.put(msg.getUuid(), msg);
+                if (context.getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
+                    // After stopping, any such updates will be handled in the final cleanup.
+                    self().tell(new SendUpdateCommand(), self());
+                }
+            } else if (message instanceof SendUpdateCommand) {
+                if (context.getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
+                    if (!eventProcessingInProgress) {
+                        eventProcessingInProgress = true;
+                        sendUpdateAsync(eventOutbox.values().iterator().next());
+                    }
+                }
+            } else if (message instanceof UpdateSentEvent) {
+                eventOutbox.remove(((UpdateSentEvent) message).getEventUuid());
+                if (context.getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
+                    if (eventOutbox.isEmpty()) {
+                        eventProcessingInProgress = false;
+                        if (sessionEndEvent != null) {
+                            self().tell(new StopCommand(getSessionId()), self());
+                        }
+                    } else {
+                        sendUpdateAsync(eventOutbox.values().iterator().next());
+                    }
+                }
+            } else if (message instanceof ConnectionClosedEvent) {
+                if (context.getCurrentState() == TestCaseContext.TestCaseStateEnum.READY) {
+                    // In all other statuses we ignore a closed connection. In this case however we need to cleanup the test session.
+                    stopTestSession(context);
+                    logger.debug("Session ["+getSessionId()+"] stopped due to closed connection.");
+                }
+            } else {
+                switch (context.getCurrentState()) {
+                    case IDLE:
+                        if (message instanceof ConfigureCommand) {
+                            try {
+                                List<SUTConfiguration> sutConfigurations = context.configure(
+                                        ((ConfigureCommand) message).getActorConfigurations(),
+                                        ((ConfigureCommand) message).getDomainConfiguration(),
+                                        ((ConfigureCommand) message).getOrganisationConfiguration(),
+                                        ((ConfigureCommand) message).getSystemConfiguration()
+                                );
+                                getSender().tell(sutConfigurations, self());
 
-                            if (context.getTestCase().getPreliminary() != null) {
-                                context.setCurrentState(TestCaseContext.TestCaseStateEnum.CONFIGURATION);
-                            } else {
+                                if (context.getTestCase().getPreliminary() != null) {
+                                    context.setCurrentState(TestCaseContext.TestCaseStateEnum.CONFIGURATION);
+                                } else {
+                                    context.setCurrentState(TestCaseContext.TestCaseStateEnum.READY);
+                                }
+                            } catch (Exception e) {
+                                getSender().tell(e, self());
+                            }
+                        } else {
+                            unexpectedCommand(message, context);
+                        }
+                        break;
+                    case CONFIGURATION:
+                        if (message instanceof InitiatePreliminaryCommand) {
+                            for (ActorRef actorRef : getContext().getChildren()) {
+                                actorRef.tell(message, self());
+                            }
+                            context.setCurrentState(TestCaseContext.TestCaseStateEnum.PRELIMINARY);
+                        } else {
+                            unexpectedCommand(message, context);
+                        }
+                        break;
+                    case PRELIMINARY:
+                        if (message instanceof TestStepStatusEvent) {
+                            TestStepStatusEvent event = (TestStepStatusEvent) message;
+                            if (event.getStepId().equals(TestCaseProcessorActor.PRELIMINARY_STEP_ID) && event.getStatus() == StepStatus.COMPLETED) {
                                 context.setCurrentState(TestCaseContext.TestCaseStateEnum.READY);
                             }
-                        } catch (Exception e) {
-                            getSender().tell(e, self());
+                            var msg = prepareStatusUpdate(event);
+                            eventOutbox.put(msg.getUuid(), msg);
+                            self().tell(new SendUpdateCommand(), self());
+                        } else {
+                            unexpectedCommand(message, context);
                         }
-                    } else {
-                        unexpectedCommand(message, context);
-                    }
-                    break;
-                case CONFIGURATION:
-                    /**
-                     * Initiate the preliminary phase for this execution
-                     */
-                    if (message instanceof InitiatePreliminaryCommand) {
-                        for (ActorRef actorRef : getContext().getChildren()) {
-                            actorRef.tell(message, self());
+                        break;
+                    case READY:
+                        if (message instanceof StartCommand) {
+                            testCaseProcessorActor.tell(message, self());
+                            context.setCurrentState(TestCaseContext.TestCaseStateEnum.EXECUTION);
+                        } else if (message instanceof StopCommand) {
+                            stopTestSession(context);
+                            logger.debug("Session ["+getSessionId()+"] stopped before having started.");
+                        } else {
+                            unexpectedCommand(message, context);
                         }
-                        context.setCurrentState(TestCaseContext.TestCaseStateEnum.PRELIMINARY);
-                    } else {
-                        unexpectedCommand(message, context);
-                    }
-                    break;
-                case PRELIMINARY:
-                    if (message instanceof TestStepStatusEvent) {
-                        TestStepStatusEvent event = (TestStepStatusEvent) message;
-                        if (event.getStepId().equals(TestCaseProcessorActor.PRELIMINARY_STEP_ID) && event.getStatus() == StepStatus.COMPLETED) {
-                            context.setCurrentState(TestCaseContext.TestCaseStateEnum.READY);
+                        break;
+                    case STOPPING:
+                    case EXECUTION:
+                        if (message instanceof TestStepStatusEvent) {
+                            var msg = prepareStatusUpdate((TestStepStatusEvent)message);
+                            eventOutbox.put(msg.getUuid(), msg);
+                            if (context.getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
+                                // After stopping, any such updates will be handled in the final cleanup.
+                                self().tell(new SendUpdateCommand(), self());
+                            }
+                        } else if (message instanceof PrepareForStopCommand) {
+                            context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPING);
+                            testCaseProcessorActor.tell(message, self());
+                        } else if (message instanceof TestSessionFinishedCommand) {
+                            logger.debug(MarkerFactory.getDetachedMarker(getSessionId()), "Test session finished with result ["+((TestSessionFinishedCommand) message).getStatus()+"]");
+                            sessionEndEvent = createSessionEndMessage(((TestSessionFinishedCommand) message).getStatus(), ((TestSessionFinishedCommand) message).getResultReport());
+                            if (!eventProcessingInProgress) {
+                                self().tell(new StopCommand(getSessionId()), self());
+                            }
+                        } else if (message instanceof StopCommand) {
+                            stopTestSession(context);
+                            logger.debug("Session ["+getSessionId()+"] stopped.");
+                        } else if (message instanceof UnexpectedErrorCommand) {
+                            self().tell(prepareStatusUpdate(getSessionId(), null, StepStatus.ERROR, null, true), self());
+                        } else {
+                            unexpectedCommand(message, context);
                         }
-                        TestbedService
-                                .updateStatus(event.getSessionId(), event.getStepId(), event.getStatus(), event.getReport());
-                    } else {
-                        unexpectedCommand(message, context);
-                    }
-                    break;
-                case READY:
-                    if (message instanceof StartCommand) {
-                        ActorRef child = getContext()
-                                .findChild(TestCaseProcessorActor.NAME).orElseThrow(() -> new IllegalStateException("TestCaseProcessorActor actorRef not found"));
-                        child.tell(message, self());
-                        context.setCurrentState(TestCaseContext.TestCaseStateEnum.EXECUTION);
-                    } else if (message instanceof StopCommand) {
-                        ActorRef child = getContext()
-                                .findChild(TestCaseProcessorActor.NAME).orElseThrow(() -> new IllegalStateException("TestCaseProcessorActor actorRef not found"));
-                        child.tell(message, self());
-                        context.destroy();
-                        context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPED);
-                    } else {
-                        unexpectedCommand(message, context);
-                    }
-                    break;
-                case STOPPING:
-                case EXECUTION:
-                    if (message instanceof TestStepStatusEvent) {
-                        TestStepStatusEvent event = (TestStepStatusEvent) message;
-
-                        if (event.getStepId().equals(TestCaseProcessorActor.TEST_CASE_STEP_ID)
-                                && (event.getStatus() == StepStatus.COMPLETED || event.getStatus() == StepStatus.ERROR)) {
-                            context.destroy();
-                            context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPED);
+                        break;
+                    case STOPPED:
+                        if (message instanceof RestartCommand) {
+                            testCaseProcessorActor.tell(message, self());
+                        } else if (message instanceof TestStepStatusEvent) {
+                            ignoredStatusUpdate((TestStepStatusEvent)message);
+                        } else {
+                            unexpectedCommand(message, context);
                         }
-
-                        sendStatusUpdate(event);
-                    } else if (message instanceof PrepareForStopCommand) {
-                        context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPING);
-                        ActorRef child = getContext().findChild(TestCaseProcessorActor.NAME).orElseThrow(() -> new IllegalStateException("TestCaseProcessorActor actorRef not found"));
-                        try {
-                            ActorUtils.askBlocking(child, message);
-                        } catch (Exception e) {
-                            throw new IllegalStateException(e);
-                        }
-                        getSender().tell(Boolean.TRUE, self());
-                    } else if (message instanceof StopCommand) {
-                        context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPED);
-                        ActorRef child = getContext().findChild(TestCaseProcessorActor.NAME).orElseThrow(() -> new IllegalStateException("TestCaseProcessorActor actorRef not found"));
-                        child.tell(message, self());
-                        context.destroy();
-                        SessionManager.getInstance().endSession(((StopCommand) message).getSessionId());
-                        self().tell(PoisonPill.getInstance(), self());
-                    } else {
-                        unexpectedCommand(message, context);
-                    }
-                    break;
-                case STOPPED:
-                    if (message instanceof RestartCommand) {
-                        ActorRef child = getContext()
-                                .findChild(TestCaseProcessorActor.NAME).orElseThrow(() -> new IllegalStateException("TestCaseProcessorActor actorRef not found"));
-                        child.tell(message, self());
-                    } else if (message instanceof TestStepStatusEvent) {
-                        ignoredStatusUpdate((TestStepStatusEvent)message);
-                    } else {
-                        unexpectedCommand(message, context);
-                    }
-                    break;
+                        break;
+                }
             }
         }
     }
 
-	private void sendStatusUpdate(final TestStepStatusEvent event) {
-		Futures.future(new Callable<Object>() {
-			@Override
-			public Object call() throws Exception {
-				TestbedService
-					.updateStatus(event.getSessionId(), event.getStepId(), event.getStatus(), event.getReport());
-				return null;
-			}
-		}, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER));
-	}
+    private void stopTestSession(TestCaseContext context) {
+        context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPED);
+        SessionManager.getInstance().endSession(getSessionId());
+        self().tell(PoisonPill.getInstance(), self());
+    }
 
-	private void ignoredStatusUpdate(TestStepStatusEvent message) {
+    private UpdateMessage createSessionEndMessage(StepStatus result, TestStepReportType report) {
+        return prepareStatusUpdate(getSessionId(), TEST_CASE_STEP_ID, result, report, false);
+    }
+
+    @Override
+    public void postStop() throws Exception {
+        super.postStop();
+        if (sessionEndEvent == null) {
+            sessionEndEvent = createSessionEndMessage(StepStatus.SKIPPED, null);
+        }
+        logger.debug("Signalling end of session ["+getSessionId()+"]");
+        Futures.future(() -> {
+            try {
+                for (UpdateMessage msg: eventOutbox.values()) {
+                    sendUpdateSync(msg, false);
+                }
+            } finally {
+                Await.result(Futures.future(() -> {
+                    sendUpdateSync(sessionEndEvent, false);
+                    return null;
+                }, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER)), Duration.apply(100, TimeUnit.MILLISECONDS));
+            }
+            return null;
+        }, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER));
+    }
+
+    private void sendUpdateAsync(final UpdateMessage msg) {
+        Futures.future(() -> {
+            sendUpdateSync(msg, true);
+            return null;
+        }, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER));
+    }
+
+    private void sendUpdateSync(final UpdateMessage msg, boolean sendConfirmation) {
+        try {
+            if (msg == null) {
+                throw new IllegalArgumentException("Provided message was null");
+            }
+            TestbedService.sendStatusUpdate(getSessionId(), msg.getStatusMessage());
+        } catch (Exception e) {
+            if (msg != null) {
+                logger.warn(String.format("Error while sending update sent for session [%s] message [%s] (step [%s] - status [%s])", getSessionId(), msg.getUuid(), msg.getStatusMessage().getStepId(), msg.getStatusMessage().getStatus()), e);
+            } else {
+                logger.warn(String.format("Error while sending update sent for session [%s] - message was null", getSessionId()), e);
+            }
+        } finally {
+            if (sendConfirmation) {
+                if (msg != null) {
+                    self().tell(new UpdateSentEvent(msg.getUuid()), self());
+                }
+            }
+        }
+    }
+
+    private UpdateMessage prepareStatusUpdate(TestStepStatusEvent event) {
+        return prepareStatusUpdate(event.getSessionId(), event.getStepId(), event.getStatus(), event.getReport(), true);
+    }
+
+    private UpdateMessage prepareStatusUpdate(String sessionId, String stepId, StepStatus status, TestStepReportType report, boolean sendLogMessage) {
+        if (sendLogMessage) {
+            logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("updateStatus (%s, %s , %s) ", sessionId, stepId, status));
+        } else {
+            logger.debug(String.format("updateStatus (%s, %s , %s) ", sessionId, stepId, status));
+        }
+        if (report == null && (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.SKIPPED || status == StepStatus.WARNING)) {
+            report = new SR();
+            try {
+                report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
+            } catch (DatatypeConfigurationException e) {
+                throw new IllegalStateException(e);
+            }
+            if (status == StepStatus.COMPLETED) {
+                report.setResult(TestResultType.SUCCESS);
+            } else if (status == StepStatus.ERROR) {
+                report.setResult(TestResultType.FAILURE);
+            } else if (status == StepStatus.WARNING) {
+                report.setResult(TestResultType.WARNING);
+            } else {
+                report.setResult(TestResultType.UNDEFINED);
+            }
+        }
+        TestStepStatus testStepStatus = new TestStepStatus();
+        testStepStatus.setTcInstanceId(sessionId);
+        testStepStatus.setStepId(stepId);
+        testStepStatus.setStatus(status);
+        testStepStatus.setReport(report);
+        return new UpdateMessage(testStepStatus);
+    }
+
+    private void ignoredStatusUpdate(TestStepStatusEvent message) {
 		logger.debug(MarkerFactory.getDetachedMarker(message.getSessionId()), "Ignoring the status update ["+message+"]");
 	}
 
 	private void unexpectedCommand(Object message, TestCaseContext context) {
-        logger.error(MarkerFactory.getDetachedMarker(context.getSessionId()), "InternalError", "Invalid command [" + message.getClass().getName() + "] in state [" + context.getCurrentState() + "]");
+        logger.error(MarkerFactory.getDetachedMarker(context.getSessionId()), "Invalid command [" + message.getClass().getName() + "] in state [" + context.getCurrentState() + "]");
         throw new GITBEngineInternalError("Invalid command [" + message.getClass().getName() + "] in state [" + context.getCurrentState() + "]");
     }
 

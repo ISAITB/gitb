@@ -1,12 +1,10 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
+import com.gitb.ModuleManager;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
-import com.gitb.ModuleManager;
 import com.gitb.engine.commands.interaction.StartCommand;
-import com.gitb.engine.commands.interaction.StopCommand;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.testcase.TestCaseScope;
@@ -57,14 +55,6 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
     private void report(StepStatus status) {
         updateTestStepStatus(getContext(), new StatusEvent(status), null, false);
     }
-
-    @Override
-	protected void stop() {
-		StopCommand command = new StopCommand(scope.getContext().getSessionId());
-		for(ActorRef child : getContext().getChildren()) {
-			child.tell(command, self());
-		}
-	}
 
 	@Override
 	protected void handleStatusEvent(StatusEvent event) throws Exception {

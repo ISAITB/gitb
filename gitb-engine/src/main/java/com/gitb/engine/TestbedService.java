@@ -4,7 +4,6 @@ import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.ErrorCode;
-import com.gitb.core.StepStatus;
 import com.gitb.engine.actors.SessionActor;
 import com.gitb.engine.actors.util.ActorUtils;
 import com.gitb.engine.commands.interaction.*;
@@ -14,17 +13,11 @@ import com.gitb.engine.events.model.InputEvent;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tbs.*;
 import com.gitb.tpl.TestCase;
-import com.gitb.tr.SR;
-import com.gitb.tr.TestResultType;
-import com.gitb.tr.TestStepReportType;
 import com.gitb.utils.ErrorUtils;
-import com.gitb.utils.XMLDateTimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
-import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,13 +53,11 @@ public class TestbedService {
 		String sessionId = SessionManager
 			.getInstance()
 			.newSession(testCaseId);
-		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "New session [" + sessionId + "] created for the execution of test case [" + testCaseId + "]...");
 		TestEngine
 			.getInstance()
 			.getEngineActorSystem()
 			.getSessionSupervisor()
 			.tell(new CreateCommand(sessionId), ActorRef.noSender());
-		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "Test execution environment initialized for session [" + sessionId + "]...");
 		return sessionId;
 	}
 
@@ -183,18 +174,26 @@ public class TestbedService {
 	 * @param sessionId
 	 */
 	public static void stop(String sessionId) {
-		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "stop"
-			+ " ( "
-			+ sessionId
-			+ " ) ");
-
+		boolean isClosedConnectionSignal = false;
+		if (sessionId.startsWith("CONNECTION_CLOSED|")) {
+			sessionId = sessionId.substring(sessionId.indexOf('|')+1);
+			isClosedConnectionSignal = true;
+		}
 		if (SessionManager.getInstance().exists(sessionId)) {
+			Object msg;
+			if (isClosedConnectionSignal) {
+				msg = new ConnectionClosedEvent(sessionId);
+			} else {
+				// Regular stop
+				logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("connection ( %s ) ", sessionId));
+				msg = new StopCommand(sessionId);
+			}
 			TestEngine
 					.getInstance()
 					.getEngineActorSystem()
 					.getActorSystem()
 					.actorSelection(SessionActor.getPath(sessionId))
-					.tell(new StopCommand(sessionId), ActorRef.noSender());
+					.tell(msg, ActorRef.noSender());
 		}
 	}
 
@@ -233,62 +232,19 @@ public class TestbedService {
 		return newSessionId;
 	}
 
-	/**
-	 * Callback for informing the client side about latest status of execution
-	 *
-	 * @param sessionId
-	 * @param stepId
-	 * @param status
-	 * @param report
-	 */
-	public static void updateStatus(String sessionId, String stepId, StepStatus status, TestStepReportType report) {
-		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "updateStatus"
-			+ " ( "
-			+ sessionId + " , "
-			+ stepId + " , "
-			+ status
-			+ " ) ");
+	public static void sendStatusUpdate(String sessionId, TestStepStatus testStepStatus) {
 		//Get the Callback client
 		ITestbedServiceCallbackHandler tbsCallbackHandle = TestEngine
-			.getInstance()
-			.getTbsCallbackHandle();
-
-		if(tbsCallbackHandle == null) {
+				.getInstance()
+				.getTbsCallbackHandle();
+		if (tbsCallbackHandle == null) {
 			return;
 		}
-
-        if(stepId == null || stepId.length() == 0) {
-            return;
-        }
-
-        if (report == null && (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.SKIPPED || status == StepStatus.WARNING)) {
-			report = new SR();
-			try {
-				report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
-			} catch (DatatypeConfigurationException e) {
-				throw new IllegalStateException(e);
-			}
-			if (status == StepStatus.COMPLETED) {
-				report.setResult(TestResultType.SUCCESS);
-			} else if (status == StepStatus.ERROR) {
-				report.setResult(TestResultType.FAILURE);
-			} else if (status == StepStatus.WARNING) {
-				report.setResult(TestResultType.WARNING);
-			} else {
-				report.setResult(TestResultType.UNDEFINED);
-			}
+		TestbedClient testbedClient = tbsCallbackHandle.getTestbedClient(sessionId);
+		if (testbedClient != null) {
+			//Call the UpdateStatus callback
+			testbedClient.updateStatus(testStepStatus);
 		}
-
-		TestbedClient testbedClient = tbsCallbackHandle
-			.getTestbedClient(sessionId);
-		//Construct the Callback response
-		TestStepStatus testStepStatus = new TestStepStatus();
-		testStepStatus.setTcInstanceId(sessionId);
-		testStepStatus.setStepId(stepId);
-		testStepStatus.setStatus(status);
-		testStepStatus.setReport(report);
-		//Call the UpdateStatus callback
-		testbedClient.updateStatus(testStepStatus);
 	}
 
 	/**

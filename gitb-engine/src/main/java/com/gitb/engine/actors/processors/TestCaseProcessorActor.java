@@ -1,16 +1,11 @@
 package com.gitb.engine.actors.processors;
 
 import akka.actor.ActorRef;
-import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.japi.Creator;
 import com.gitb.core.AnyContent;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.SessionManager;
-import com.gitb.engine.TestEngine;
-import com.gitb.engine.TestbedService;
-import com.gitb.engine.actors.SessionActor;
-import com.gitb.engine.actors.util.ActorUtils;
 import com.gitb.engine.commands.interaction.*;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.expr.ExpressionHandler;
@@ -130,17 +125,16 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
             else if (message instanceof PrepareForStopCommand) {
                 logger.debug(MarkerFactory.getDetachedMarker(((PrepareForStopCommand) message).getSessionId()), "Received prepare for stop command.");
                 if (sequenceProcessorActor != null) {
-                    ActorUtils.askBlocking(sequenceProcessorActor, message);
+                    sequenceProcessorActor.tell(message, getSelf());
                 }
                 if (preliminaryProcessorActor != null) {
                     //Stop child preliminary processor
-                    ActorUtils.askBlocking(preliminaryProcessorActor, message);
+                    preliminaryProcessorActor.tell(message, getSelf());
                 }
-                getSender().tell(Boolean.TRUE, self());
             }
             //Stop command for test case processing
-            else if (message instanceof StopCommand || message instanceof RestartCommand) {
-	            logger.debug(MarkerFactory.getDetachedMarker(sessionId), "Received stop command, stopping test case sequence.");
+            else if (message instanceof RestartCommand) {
+	            logger.debug("Restarting session ["+sessionId+"].");
 	            //Stop child sequence processor
 	            if (sequenceProcessorActor != null) {
 		            sequenceProcessorActor.tell(message, self());
@@ -152,9 +146,6 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
 		            preliminaryProcessorActor.tell(message, self());
 		            preliminaryProcessorActor = null;
 	            }
-
-	            //Stop all the execution tree
-	            self().tell(PoisonPill.getInstance(), self());
             }
             //Initiate the preliminary phase execution
             else if (message instanceof InitiatePreliminaryCommand) {
@@ -169,23 +160,21 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
 	            if(getSender().equals(sequenceProcessorActor)) {
 		            StepStatus status = ((StatusEvent) message).getStatus();
 		            if (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.WARNING) {
-			            TestbedService.updateStatus(sessionId, TEST_CASE_STEP_ID, status, constructResultReport(status, context));
-                        if (SessionManager.getInstance().exists(sessionId)) {
-                            TestEngine
-                                    .getInstance()
-                                    .getEngineActorSystem()
-                                    .getActorSystem()
-                                    .actorSelection(SessionActor.getPath(sessionId))
-                                    .tell(new StopCommand(sessionId), self());
-                        }
+                        getContext().getParent().tell(new TestSessionFinishedCommand(sessionId, status, constructResultReport(status, context)), self());
 		            }
 	            }
             } else {
                 throw new GITBEngineInternalError("Invalid command [" + message.getClass().getName() + "]");
             }
-        }catch(Exception e){
-            logger.error(MarkerFactory.getDetachedMarker(sessionId), "InternalServerError",e);
-            TestbedService.updateStatus(sessionId, null, StepStatus.ERROR, null);
+        } catch(Exception e) {
+            try {
+                logger.error(MarkerFactory.getDetachedMarker(sessionId), "InternalServerError",e);
+                // Signal error via normal session channel.
+                getContext().getParent().tell(new UnexpectedErrorCommand(sessionId), self());
+            } catch (Exception e2) {
+                // Last attempt to signal error.
+                logger.error("Error while signalling unexpected failure", e2);
+            }
         }
     }
 

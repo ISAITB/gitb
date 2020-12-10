@@ -7,12 +7,15 @@ import com.gitb.tbs.Void;
 import com.gitb.tbs.*;
 import com.gitb.tr.TAR;
 import managers.ReportManager;
+import managers.TestResultManager;
 import managers.TestbedBackendClient;
+import models.TestStepResultInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import scala.Option;
 import utils.JacksonUtil;
+import utils.JsonUtil;
 import utils.MimeUtil;
 
 import javax.jws.WebParam;
@@ -31,11 +34,13 @@ public class TestbedService implements TestbedClient {
 
     private final Logger logger = LoggerFactory.getLogger(TestbedService.class);
 
-    private ReportManager reportManager;
-    private WebSocketActor webSocketActor;
-    private TestbedBackendClient testbedBackendClient;
+    private final TestResultManager testResultManager;
+    private final ReportManager reportManager;
+    private final WebSocketActor webSocketActor;
+    private final TestbedBackendClient testbedBackendClient;
 
-    public TestbedService(ReportManager reportManager, WebSocketActor webSocketActor, TestbedBackendClient testbedBackendClient) {
+    public TestbedService(TestResultManager testResultManager, ReportManager reportManager, WebSocketActor webSocketActor, TestbedBackendClient testbedBackendClient) {
+        this.testResultManager = testResultManager;
         this.reportManager = reportManager;
         this.webSocketActor = webSocketActor;
         this.testbedBackendClient = testbedBackendClient;
@@ -63,25 +68,23 @@ public class TestbedService implements TestbedClient {
                 ) {
                     outputMessage = ((TAR)testStepStatus.getReport()).getContext().getValue().trim();
                 }
-                reportManager.finishTestReport(session, testStepStatus.getReport().getResult(), Option.apply(outputMessage));
-                // Send the end session message with a slight delay to avoid race conditions with other ending messages.
-                new java.util.Timer().schedule(
-                        new java.util.TimerTask() {
-                            @Override
-                            public void run() {
-                                //send status updates
-                                webSocketActor.testSessionEnded(session, status);
-                            }
-                        },
-                        1000
-                );
+                try {
+                    var statusUpdates = testResultManager.sessionRemove(session);
+                    reportManager.finishTestReport(session, testStepStatus.getReport().getResult(), Option.apply(outputMessage));
+                    var resultInfo = new TestStepResultInfo((short)testStepStatus.getStatus().ordinal(), Option.empty());
+                    String message = JsonUtil.jsTestStepResultInfo(session, step, resultInfo, Option.apply(outputMessage), statusUpdates).toString();
+                } finally {
+                    webSocketActor.testSessionEnded(session, message);
+                }
             } else if (step.equals(LOG_EVENT_STEP_ID)) {
                 //send log event
                 webSocketActor.broadcast(session, status, false);
             } else {
-                reportManager.createTestStepReport(session, testStepStatus);
-                //send status updates
-                webSocketActor.broadcast(session, status);
+                Option<String> reportPath = reportManager.createTestStepReport(session, testStepStatus);
+                var resultInfo = new TestStepResultInfo((short)testStepStatus.getStatus().ordinal(), reportPath);
+                var statusUpdates = testResultManager.sessionUpdate(session, step, resultInfo);
+                String message = JsonUtil.jsTestStepResultInfo(session, step, resultInfo, Option.empty(), statusUpdates).toString();
+                webSocketActor.broadcast(session, message);
             }
         } catch (JsonProcessingException e) {
             logger.error("Error during test session update for session ["+testStepStatus.getTcInstanceId()+"]", e);

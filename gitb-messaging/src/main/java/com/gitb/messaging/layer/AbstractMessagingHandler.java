@@ -345,6 +345,10 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
         }
 	}
 
+    protected MessagingReport onSkip() {
+        return MessagingHandlerUtils.generateSkipReport();
+    }
+
     protected MessagingReport onError(GITBEngineInternalError error) {
         logger.error(addMarker(), "An error occurred", error);
         return MessagingHandlerUtils.generateErrorReport(error);
@@ -411,6 +415,10 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
                 } else {
                     return handler.onSuccess(message);
                 }
+            } catch (InterruptedException e) {
+                // Ignore this can be expected.
+                logger.debug("Messaging handler for session ["+handler.testSessionId+"] was interrupted");
+                return handler.onSkip();
             } catch (Exception e) {
                 return handler.onError(new GITBEngineInternalError(e));
             } finally {

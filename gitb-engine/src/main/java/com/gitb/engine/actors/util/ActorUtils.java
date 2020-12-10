@@ -15,13 +15,6 @@ import java.util.concurrent.TimeUnit;
  */
 public class ActorUtils {
 
-	public static Object askBlocking(ActorSelection ref, Object message) throws Exception {
-		Timeout t = Timeout.durationToTimeout(FiniteDuration.apply(30, TimeUnit.SECONDS));
-		Future<ActorRef> f = ref.resolveOne(t);
-		ActorRef actorRef = Await.result(f, t.duration());
-		return askBlocking(actorRef, message);
-	}
-
 	public static Object askBlocking(ActorRef ref, Object message) throws Exception {
 		Timeout t = Timeout.durationToTimeout(FiniteDuration.apply(30, TimeUnit.SECONDS));
 

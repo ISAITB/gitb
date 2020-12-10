@@ -55,7 +55,10 @@ public class TestbedServiceCallbackHandler implements ITestbedServiceCallbackHan
     @Override
     public TestbedClient getTestbedClient(String sessionId){
         WSAddresingProperties wsAddresingProperties = sessionCallbackMap.get(sessionId);
-        return wsAddresingProperties.getTestbedClient();
+        if (wsAddresingProperties != null) {
+            return wsAddresingProperties.getTestbedClient();
+        }
+        return null;
     }
 
     @Override

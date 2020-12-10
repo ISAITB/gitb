@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.japi.Creator;
+import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.core.TestRole;
 import com.gitb.core.TestRoleEnumeration;
@@ -88,27 +89,28 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	/**
 	 * Stop your execution
 	 */
-	protected abstract void stop();
+	protected void stop() {
+		// Do nothing by default
+	}
 
 	/**
 	 * Prepare to stop the execution
 	 */
 	protected void prepareForStop(PrepareForStopCommand command) {
-		for(ActorRef child : getContext().getChildren()) {
+		for (ActorRef child : getContext().getChildren()) {
 			try {
 				if (!child.equals(command.getOriginalSource())) {
-					ActorUtils.askBlocking(child, command);
+					child.tell(command, self());
 				}
 			} catch (Exception e) {
 				throw new IllegalStateException(e);
 			}
 		}
 		reactToPrepareForStop();
-		getSender().tell(Boolean.TRUE, self());
 	}
 
 	protected void reactToPrepareForStop() {
-		// Do nothing by default
+		stop();
 	}
 
 	/**
@@ -273,23 +275,30 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		StepStatus status = statusEvent.getStatus();
 		context.parent().tell(statusEvent, self());
 
-		if (status == StepStatus.COMPLETED || status == StepStatus.ERROR) {
-			if (statusEvent instanceof ErrorStatusEvent) {
-				logger.debug(addMarker(), "Stopping execution of the test step actor [" + stepId + "].");
-
-				self().tell(new StopCommand(scope.getContext().getSessionId()), self());
-				self().tell(PoisonPill.getInstance(), self());
-			}
+		if (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.SKIPPED || status == StepStatus.WARNING) {
+			self().tell(PoisonPill.getInstance(), self());
+//			if (statusEvent instanceof ErrorStatusEvent) {
+//				logger.debug(String.format("Stopping execution of the test step actor [%s] of session [%s].", stepId, scope.getContext().getSessionId()));
+//				self().tell(PoisonPill.getInstance(), self());
+//			}
 
 			if (report == null) {
 				switch (status) {
 					case COMPLETED:
-						report = constructDefaultCompletedReport();
+						report = constructDefaultReport(TestResultType.SUCCESS);
+						break;
+					case SKIPPED:
+						report = constructDefaultReport(TestResultType.UNDEFINED);
+						break;
+					case WARNING:
+						report = constructDefaultReport(TestResultType.WARNING);
 						break;
 					case ERROR:
-						if(statusEvent instanceof ErrorStatusEvent
+						if (statusEvent instanceof ErrorStatusEvent
 							&& ((ErrorStatusEvent) statusEvent).getException() != null) {
 							report = constructDefaultErrorReport((ErrorStatusEvent) statusEvent);
+						} else {
+							report = constructDefaultReport(TestResultType.FAILURE);
 						}
 						break;
 				}
@@ -328,14 +337,14 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		}
 		if (stopTestSession) {
 			try {
-				ActorUtils.askBlocking(getContext().system().actorSelection(SessionActor.getPath(scope.getContext().getSessionId())), new PrepareForStopCommand(scope.getContext().getSessionId(), self()));
+				getContext().system().actorSelection(SessionActor.getPath(scope.getContext().getSessionId())).tell(new PrepareForStopCommand(scope.getContext().getSessionId(), self()), self());
 			} catch (Exception e) {
 				logger.error(addMarker(), "Error sending the signal to stop the test session from test step actor [" + stepId + "].");
 			}
 		}
 	}
 
-	protected TestStepReportType constructDefaultCompletedReport() {
+	protected TestStepReportType constructDefaultReport(TestResultType resultType) {
 		TestStepReportType report = null;
 
 		try {
@@ -345,7 +354,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 				report = new SR();
 			}
 			report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
-			report.setResult(TestResultType.SUCCESS);
+			report.setResult(resultType);
 
 		} catch (DatatypeConfigurationException e) {
 			logger.error(addMarker(), "An error occurred while trying to construct a completed report for [" + step + "] with id [" + stepId + "]");
@@ -413,6 +422,16 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			}
 		}
 		return Collections.unmodifiableList(sutActors);
+	}
+
+	protected void handleFutureFailure(Throwable failure) {
+		if (failure instanceof GITBEngineInternalError && ((GITBEngineInternalError)failure).getErrorInfo() != null && ((GITBEngineInternalError)failure).getErrorInfo().getErrorCode() == ErrorCode.CANCELLATION) {
+			// This is a cancelled step due to a session being stopped.
+			updateTestStepStatus(getContext(), new StatusEvent(StepStatus.SKIPPED), null, true, false);
+		} else {
+			// Unexpected error.
+			updateTestStepStatus(getContext(), new ErrorStatusEvent(failure), null, true, true);
+		}
 	}
 
 }
