@@ -42,5 +42,5 @@ object Constants {
   val DevelopmentMode = "development"
   val SandboxMode = "sandbox"
 
-  val VersionNumber = "1.11.0"
+  val VersionNumber = "1.11.1"
 }
