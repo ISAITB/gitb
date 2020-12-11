@@ -34,11 +34,6 @@ public class LogStepProcessorActor extends AbstractTestStepActor<Log> {
         completed();
     }
 
-    @Override
-    protected void stop() {
-        // Do nothing.
-    }
-
     public static ActorRef create(ActorContext context, Log step, TestCaseScope scope, String stepId) throws Exception{
         return create(LogStepProcessorActor.class, context, step, scope, stepId);
     }

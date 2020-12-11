@@ -9,18 +9,19 @@ import com.gitb.core.ErrorCode;
 import com.gitb.core.MessagingModule;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.actors.ActorSystem;
-import com.gitb.engine.events.model.ErrorStatusEvent;
+import com.gitb.engine.commands.messaging.NotificationReceived;
+import com.gitb.engine.commands.messaging.TimeoutExpired;
 import com.gitb.engine.expr.resolvers.VariableResolver;
+import com.gitb.engine.messaging.CallbackManager;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.messaging.TransactionContext;
+import com.gitb.engine.remote.messaging.RemoteMessagingModuleClient;
 import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.messaging.CallbackManager;
-import com.gitb.messaging.IMessagingHandler;
-import com.gitb.messaging.Message;
-import com.gitb.messaging.MessagingReport;
+import com.gitb.messaging.*;
 import com.gitb.messaging.utils.MessagingHandlerUtils;
+import com.gitb.tr.TAR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.BooleanType;
@@ -28,10 +29,13 @@ import com.gitb.types.MapType;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by serbay on 9/30/14.
@@ -40,15 +44,29 @@ import java.util.UUID;
  */
 public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorActor<com.gitb.tdl.Receive> {
 
+	private static final Logger logger = LoggerFactory.getLogger(ReceiveStepProcessorActor.class);
 	public static final String NAME = "receive-p";
 
 	private MessagingContext messagingContext;
 	private TransactionContext transactionContext;
+	private boolean receivedResponse = false;
 
 	private Promise<TestStepReportType> promise;
 
 	public ReceiveStepProcessorActor(com.gitb.tdl.Receive step, TestCaseScope scope, String stepId) {
 		super(step, scope, stepId);
+	}
+
+	private void signalStepStatus(TestStepReportType result) {
+		if (result != null) {
+			if (result.getResult() == TestResultType.SUCCESS) {
+				updateTestStepStatus(getContext(), StepStatus.COMPLETED, result);
+			} else if (result.getResult() == TestResultType.WARNING) {
+				updateTestStepStatus(getContext(), StepStatus.WARNING, result);
+			} else {
+				updateTestStepStatus(getContext(), StepStatus.ERROR, result);
+			}
+		}
 	}
 
 	@Override
@@ -60,24 +78,14 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 		promise.future().foreach(new OnSuccess<>() {
 			@Override
 			public void onSuccess(TestStepReportType result) {
-				if (result != null) {
-					if (result.getResult() == TestResultType.SUCCESS) {
-						updateTestStepStatus(context, StepStatus.COMPLETED, result);
-					} else if (result.getResult() == TestResultType.WARNING) {
-						updateTestStepStatus(context, StepStatus.WARNING, result);
-					} else {
-						updateTestStepStatus(context, StepStatus.ERROR, result);
-					}
-				} else {
-					updateTestStepStatus(context, StepStatus.COMPLETED, null);
-				}
+				signalStepStatus(result);
 			}
 		}, context.dispatcher());
 
 		promise.future().failed().foreach(new OnFailure() {
 			@Override
 			public void onFailure(Throwable failure) {
-                updateTestStepStatus(context, new ErrorStatusEvent(failure), null, true);
+				handleFutureFailure(failure);
 			}
 		}, context.dispatcher());
 	}
@@ -102,12 +110,12 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 
 		waiting();
 
-		if(messagingHandler != null) {
+		if (messagingHandler != null) {
 			// This call will block until there is a callback response.
 			/*
-								The response was not triggered by a timeout but we have a timeout flag defined
-								Make sure we have the flag set as false in the response.
-								 */
+			The response was not triggered by a timeout but we have a timeout flag defined
+			Make sure we have the flag set as false in the response.
+			 */
 			Future<TestStepReportType> future = Futures.future(() -> {
 				VariableResolver resolver = new VariableResolver(scope);
 				if (step.getConfig() != null) {
@@ -117,17 +125,17 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 						}
 					}
 				}
-
 				MessagingModule moduleDefinition = messagingHandler.getModuleDefinition();
 				if (moduleDefinition.getReceiveConfigs() != null) {
 					checkRequiredConfigsAndSetDefaultValues(moduleDefinition.getReceiveConfigs().getParam(), step.getConfig());
 				}
-
 				Message inputMessage = getMessageFromBindings(step.getInput());
 				String callId = UUID.randomUUID().toString();
-
-				CallbackManager.getInstance().prepareForCallback(messagingContext.getSessionId(), callId);
-
+				if (messagingHandler instanceof RemoteMessagingModuleClient) {
+					CallbackManager.getInstance().registerForNotification(self(), messagingContext.getSessionId(), callId);
+				} else {
+					SynchronousCallbackManager.getInstance().prepareForCallback(messagingContext.getSessionId(), callId);
+				}
 				if (!StringUtils.isBlank(step.getTimeout())) {
 					long timeout;
 					if (resolver.isVariableReference(step.getTimeout())) {
@@ -135,83 +143,30 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 					} else {
 						timeout = Double.valueOf(step.getTimeout()).longValue();
 					}
-					String flagName = null;
-					if (!StringUtils.isBlank(step.getTimeoutFlag())) {
-						if (resolver.isVariableReference(step.getTimeoutFlag())) {
-							flagName = resolver.resolveVariableAsString(step.getTimeoutFlag()).toString();
-						} else {
-							flagName = step.getTimeoutFlag();
-						}
-					}
-					boolean errorIfTimeout = false;
-					if (!StringUtils.isBlank(step.getTimeoutIsError())) {
-						if (resolver.isVariableReference(step.getTimeoutIsError())) {
-							errorIfTimeout = (Boolean) resolver.resolveVariableAsBoolean(step.getTimeoutIsError()).getValue();
-						} else {
-							errorIfTimeout = Boolean.parseBoolean(step.getTimeoutIsError());
-						}
-					}
-					Thread timeoutThread = new Thread(new TimeoutRunner(messagingContext.getSessionId(), callId, timeout, flagName, errorIfTimeout));
-					messagingContext.getMessagingThreads().add(timeoutThread);
-					timeoutThread.start();
+					context.system().scheduler().scheduleOnce(
+							scala.concurrent.duration.Duration.apply(timeout, TimeUnit.MILLISECONDS), () -> {
+								if (!self().isTerminated()) {
+									self().tell(new TimeoutExpired(), self());
+								}
+							},
+							context.dispatcher()
+					);
 				}
-
-				// This call will block until there is a callback response.
-				MessagingReport report =
-						messagingHandler
-								.receiveMessage(
-										messagingContext.getSessionId(),
-										transactionContext.getTransactionId(),
-										callId,
-										step.getConfig(),
-										inputMessage,
-										messagingContext.getMessagingThreads()
-								);
-
-				if (report != null && report.getMessage() != null) {
-					Message message = report.getMessage();
-
-					if (step.getId() != null) {
-						MapType map;
-
-						if (step.getTimeout() != null && !StringUtils.isBlank(step.getTimeoutFlag())) {
-							String flagName;
-							if (resolver.isVariableReference(step.getTimeoutFlag())) {
-								flagName = resolver.resolveVariableAsString(step.getTimeoutFlag()).toString();
-							} else {
-								flagName = step.getTimeoutFlag();
-							}
-							if (!message.getFragments().containsKey(flagName)) {
-								/*
-								The response was not triggered by a timeout but we have a timeout flag defined
-								Make sure we have the flag set as false in the response.
-								 */
-								message.getFragments().put(flagName, new BooleanType(false));
-							}
-						}
-
-						if (step.getOutput().size() == 0) {
-							map = generateOutputWithMessageFields(message);
-						} else {
-							boolean isNameBinding = BindingUtils.isNameBinding(step.getOutput());
-							if (isNameBinding) {
-								map = generateOutputWithNameBinding(message, step.getOutput());
-							} else {
-								map = generateOutputWithModuleDefinition(messagingContext, message);
-							}
-						}
-
-						scope
-								.createVariable(step.getId())
-								.setValue(map);
-					}
-					return report.getReport();
-				} else if (report != null) {
-					return report.getReport();
-				} else {
+				MessagingReport report = messagingHandler
+					.receiveMessage(
+							messagingContext.getSessionId(),
+							transactionContext.getTransactionId(),
+							callId,
+							step.getConfig(),
+							inputMessage,
+							messagingContext.getMessagingThreads()
+				);
+				if (report instanceof DeferredMessagingReport) {
+					// This means that we should not resolve this step but rather wait for a message to be delivered to the actor.
 					return null;
+				} else {
+					return handleMessagingResult(report);
 				}
-
 			}, context.dispatcher());
 
 			future.foreach(new OnSuccess<>() {
@@ -230,6 +185,87 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 			}, context.dispatcher());
 		} else {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Messaging handler is not available"));
+		}
+	}
+
+	@Override
+	public void onReceive(Object message) {
+		try {
+			if (message instanceof NotificationReceived) {
+				logger.debug(addMarker(), "Received notification");
+				receivedResponse = true;
+				signalStepStatus(handleMessagingResult(((NotificationReceived) message).getReport()));
+			} else if (message instanceof TimeoutExpired) {
+				if (!receivedResponse) {
+					logger.debug(addMarker(), "Timeout expired while waiting to receive message");
+					VariableResolver resolver = new VariableResolver(scope);
+					String flagName = null;
+					if (!StringUtils.isBlank(step.getTimeoutFlag())) {
+						if (resolver.isVariableReference(step.getTimeoutFlag())) {
+							flagName = resolver.resolveVariableAsString(step.getTimeoutFlag()).toString();
+						} else {
+							flagName = step.getTimeoutFlag();
+						}
+					}
+					boolean errorIfTimeout = false;
+					if (!StringUtils.isBlank(step.getTimeoutIsError())) {
+						if (resolver.isVariableReference(step.getTimeoutIsError())) {
+							errorIfTimeout = (Boolean) resolver.resolveVariableAsBoolean(step.getTimeoutIsError()).getValue();
+						} else {
+							errorIfTimeout = Boolean.parseBoolean(step.getTimeoutIsError());
+						}
+					}
+					signalStepStatus(handleMessagingResult(MessagingHandlerUtils.getMessagingReportForTimeout(flagName, errorIfTimeout)));
+				}
+			} else {
+				super.onReceive(message);
+			}
+		} catch (Exception e) {
+			logger.error(addMarker(), "Processing caught an exception", e);
+			error(e);
+		}
+	}
+
+	private TAR handleMessagingResult(MessagingReport report) {
+		if (report != null && report.getMessage() != null) {
+			Message message = report.getMessage();
+			if (step.getId() != null) {
+				MapType map;
+				if (step.getTimeout() != null && !StringUtils.isBlank(step.getTimeoutFlag())) {
+					String flagName;
+					VariableResolver resolver = new VariableResolver(scope);
+					if (resolver.isVariableReference(step.getTimeoutFlag())) {
+						flagName = resolver.resolveVariableAsString(step.getTimeoutFlag()).toString();
+					} else {
+						flagName = step.getTimeoutFlag();
+					}
+					if (!message.getFragments().containsKey(flagName)) {
+						/*
+							The response was not triggered by a timeout but we have a timeout flag defined
+							Make sure we have the flag set as false in the response.
+						 */
+						message.getFragments().put(flagName, new BooleanType(false));
+					}
+				}
+				if (step.getOutput().size() == 0) {
+					map = generateOutputWithMessageFields(message);
+				} else {
+					boolean isNameBinding = BindingUtils.isNameBinding(step.getOutput());
+					if (isNameBinding) {
+						map = generateOutputWithNameBinding(message, step.getOutput());
+					} else {
+						map = generateOutputWithModuleDefinition(messagingContext, message);
+					}
+				}
+				scope
+					.createVariable(step.getId())
+					.setValue(map);
+			}
+			return report.getReport();
+		} else if (report != null) {
+			return report.getReport();
+		} else {
+			return MessagingHandlerUtils.generateSuccessReport(null).getReport();
 		}
 	}
 
@@ -254,31 +290,4 @@ public class ReceiveStepProcessorActor extends AbstractMessagingStepProcessorAct
 		return context.actorOf(props(ReceiveStepProcessorActor.class, step, scope, stepId).withDispatcher(ActorSystem.BLOCKING_DISPATCHER), getName(NAME));
 	}
 
-	static class TimeoutRunner implements Runnable {
-
-		private final String sessionId;
-        private final long timeout;
-		private final boolean errorIfTimeout;
-		private final String flagName;
-		private final String callId;
-
-		TimeoutRunner(String sessionId, String callId, long timeout, String flagName, boolean errorIfTimeout) {
-            this.timeout = timeout;
-			this.sessionId = sessionId;
-			this.flagName = flagName;
-			this.errorIfTimeout = errorIfTimeout;
-			this.callId = callId;
-		}
-		
-		@Override
-		public void run() {
-			try {
-				Thread.sleep(timeout);
-			} catch (InterruptedException e) {
-				// Nothing to do.
-			} finally {
-				CallbackManager.getInstance().callbackReceived(sessionId, callId, MessagingHandlerUtils.getMessagingReportForTimeout(flagName, errorIfTimeout));
-			}
-		}
-	}
 }

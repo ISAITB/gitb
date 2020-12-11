@@ -199,7 +199,7 @@ extractSteps = (s, actorInfo) =>
       message.from = firstChild.from
       message.to = lastChild.to
       message.fromIndex = firstChild.fromIndex
-      message.toIndex = firstChild.toIndex
+      message.toIndex = lastChild.toIndex
       message.span = (Math.abs (message.fromIndex - message.toIndex))+1
 
     setInteractionStepChildIndexes = (message) =>
@@ -493,6 +493,8 @@ extractSteps = (s, actorInfo) =>
                     parentStatus = Constants.TEST_STATUS.COMPLETED
                   else if scope.sessionObject[scope.resultProperty] == 'FAILURE'
                     parentStatus = Constants.TEST_STATUS.ERROR
+                  else if scope.sessionObject[scope.resultProperty] == 'UNDEFINED'
+                    parentStatus = Constants.TEST_STATUS.SKIPPED
                 else
                   parentStatus = Constants.TEST_STATUS.ERROR
               scope.addStatusToSteps(scope.stepsOfTests[scope.sessionId], parentStatus)

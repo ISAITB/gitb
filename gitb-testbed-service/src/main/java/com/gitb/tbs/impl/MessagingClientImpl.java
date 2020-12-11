@@ -1,6 +1,7 @@
 package com.gitb.tbs.impl;
 
-import com.gitb.messaging.CallbackManager;
+import com.gitb.engine.messaging.CallbackManager;
+import com.gitb.messaging.utils.MessagingHandlerUtils;
 import com.gitb.ms.MessagingClient;
 import com.gitb.ms.NotifyForMessageRequest;
 import com.gitb.ms.Void;
@@ -14,7 +15,10 @@ public class MessagingClientImpl implements MessagingClient {
 
     @Override
     public Void notifyForMessage(NotifyForMessageRequest parameters) {
-        CallbackManager.getInstance().callbackReceived(parameters);
+        CallbackManager.getInstance().callbackReceived(
+                parameters.getSessionId(),
+                parameters.getCallId(),
+                MessagingHandlerUtils.getMessagingReport(parameters.getReport()));
         return new Void();
     }
 

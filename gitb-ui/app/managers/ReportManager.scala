@@ -370,7 +370,8 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     ReportManager.getPathForTestSessionObj(sessionId, testResult, isExpected)
   }
 
-  def createTestStepReport(sessionId: String, step: TestStepStatus) = {
+  def createTestStepReport(sessionId: String, step: TestStepStatus): Option[String] = {
+    var savedPath: Option[String] = None
     //save status reports only when step is concluded with either COMPLETED or ERROR state
     if (step.getReport != null && (step.getStatus == StepStatus.COMPLETED || step.getStatus == StepStatus.ERROR || step.getStatus == StepStatus.WARNING)) {
       // Check to see if we have already recorded this to avoid potential concurrency errors popping up that
@@ -380,6 +381,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
         step.getReport.setId(step.getStepId)
 
         val path = step.getStepId + ".xml"
+        savedPath = Some(path)
 
         //write the report into a file
         if (step.getReport != null) {
@@ -396,6 +398,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
         exec((PersistenceSchema.testStepReports += result).transactionally)
       }
     }
+    savedPath
   }
 
   def getTestStepResults(sessionId: String): List[TestStepResult] = {

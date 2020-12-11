@@ -202,9 +202,9 @@ class TestExecutionControllerV2
       @reload = true
 
   testCaseFinished: (result, outputMessage) =>
-    if (result == "SUCCESS")
+    if (result == @Constants.TEST_STATUS.COMPLETED)
       @updateTestCaseStatus(@currentTest.id, @Constants.TEST_CASE_STATUS.COMPLETED)
-    else if (result == "FAILURE")
+    else if (result == @Constants.TEST_STATUS.ERROR)
       @updateTestCaseStatus(@currentTest.id, @Constants.TEST_CASE_STATUS.ERROR)
     else
       @updateTestCaseStatus(@currentTest.id, @Constants.TEST_CASE_STATUS.STOPPED)
@@ -438,7 +438,6 @@ class TestExecutionControllerV2
     @socketOpen.resolve()
 
   onclose: (msg) =>
-    @$log.debug "WebSocket closed."
     @wsOpen = false
     if (@keepAlive?)
       @$interval.cancel(@keepAlive)
@@ -479,7 +478,9 @@ class TestExecutionControllerV2
       @skipPendingStepSequence(step.then)
       @skipPendingStepSequence(step.else)
     else if step.type == 'flow'
-      @skipPendingStepSequence(step.threads)
+      if step.threads
+        for thread in step.threads
+          @skipPendingStepSequence(thread)
 
   processMessage: (msg) =>
     response = angular.fromJson(msg.data)
@@ -493,8 +494,10 @@ class TestExecutionControllerV2
       if stepId == @Constants.END_OF_TEST_STEP
         @$log.debug "END OF THE TEST"
         @started = false
-        @testCaseFinished(response.report.result, response?.report?.context?.value)
+        @testCaseFinished(response.status, response?.outputMessage)
       else
+        if response.stepHistory?
+          @updateStepHistory(response.tcInstanceId, stepId, response.stepHistory)
         status = response.status
         report = response.report
         step   = @findNodeWithStepId @$scope.stepsOfTests[@currentTest.id], stepId
@@ -515,6 +518,19 @@ class TestExecutionControllerV2
               error.data.error_description = report.reports.assertionReports[0].value.description
 
           @ErrorService.showErrorMessage(error).finally(angular.noop).then(angular.noop, angular.noop)
+
+  updateStepHistory: (testSessionId, currentStepId, stepReports) =>
+    for stepReport in stepReports
+      if currentStepId != stepReport.stepId
+        step = @findNodeWithStepId @$scope.stepsOfTests[@currentTest.id], stepReport.stepId
+        if step.status != stepReport.status
+          reportToSet = undefined
+          if stepReport.path
+            reportToSet = {
+              tcInstanceId: testSessionId
+              path: stepReport.path
+            }
+          @updateStatus(step, stepReport.stepId, stepReport.status, reportToSet)
 
   interact: (interactions, inputTitle, stepId) =>
     sessionForModal = @session
@@ -603,7 +619,8 @@ class TestExecutionControllerV2
         (status == @Constants.TEST_STATUS.ERROR) ||
         (status == @Constants.TEST_STATUS.WARNING) ||
         (status == @Constants.TEST_STATUS.SKIPPED && (current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.WARNING)) ||
-        ((status == @Constants.TEST_STATUS.PROCESSING || status == @Constants.TEST_STATUS.WAITING) && (@started && current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.SKIPPED && current.status != @Constants.TEST_STATUS.WARNING))
+        (status == @Constants.TEST_STATUS.WAITING && (@started && current.status != @Constants.TEST_STATUS.SKIPPED && current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.WARNING)) ||
+        (status == @Constants.TEST_STATUS.PROCESSING && (@started && current.status != @Constants.TEST_STATUS.WAITING && current.status != @Constants.TEST_STATUS.SKIPPED && current.status != @Constants.TEST_STATUS.COMPLETED && current.status != @Constants.TEST_STATUS.ERROR && current.status != @Constants.TEST_STATUS.WARNING))
           current.status = status
           current.report = report
           # If skipped, marked all children as skipped.

@@ -196,6 +196,18 @@ public class MessagingHandlerUtils {
 		return new MessagingReport(report);
 	}
 
+	public static MessagingReport generateSkipReport() {
+		TAR report = null;
+		try {
+			report = new TAR();
+			report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
+			report.setResult(TestResultType.UNDEFINED);
+		} catch (Exception e) {
+			// Ignore
+		}
+		return new MessagingReport(report, null);
+	}
+
 	public static MessagingReport generateSuccessReport(Message message) {
 		TAR report = null;
 		try {

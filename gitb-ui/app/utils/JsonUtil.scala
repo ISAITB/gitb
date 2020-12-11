@@ -1,11 +1,11 @@
 package utils
 
 import java.util
-
 import com.gitb.core.ValueEmbeddingEnumeration
-import com.gitb.tbs.UserInput
+import com.gitb.tbs.{TestStepStatus, UserInput}
 import com.gitb.tr._
 import config.Configurations
+
 import javax.xml.bind.JAXBElement
 import managers.AttachmentType
 import managers.export.{ExportSettings, ImportItem, ImportSettings}
@@ -13,7 +13,7 @@ import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoiceHistory.TestSuiteReplacementChoiceHistory
 import models.Enums.TestSuiteReplacementChoiceMetadata.TestSuiteReplacementChoiceMetadata
 import models.Enums._
-import models._
+import models.{TestStepResultInfo, _}
 import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsObject, _}
 
@@ -1313,6 +1313,29 @@ object JsonUtil {
     zippedResults.foreach { pair =>
       val (testCaseId, testResultStatus) = pair
       json = json + (testCaseId.toString, JsString(testResultStatus.toString))
+    }
+    json
+  }
+
+  def jsTestStepResultInfo(testSessionId: String, stepId: String, stepStatus: TestStepResultInfo, outputMessage: Option[String], stepHistory: List[(String, TestStepResultInfo)]): JsObject = {
+    Json.obj(
+      "tcInstanceId" -> testSessionId,
+      "stepId" -> stepId,
+      "status" -> stepStatus.result,
+      "report" -> (if (stepStatus.path.isDefined) Json.obj("path" -> stepStatus.path.get) else JsNull),
+      "outputMessage" -> (if (outputMessage.isDefined) outputMessage.get else JsNull),
+      "stepHistory" -> jsTestStepResultInfoHistory(stepHistory)
+    )
+  }
+
+  def jsTestStepResultInfoHistory(steps: List[(String, TestStepResultInfo)]): JsArray = {
+    var json = Json.arr()
+    steps.foreach{ stepInfo =>
+      json = json.append(Json.obj(
+        "stepId" -> stepInfo._1,
+        "status" -> stepInfo._2.result,
+        "path" -> (if (stepInfo._2.path.isDefined) stepInfo._2.path.get else JsNull)
+      ))
     }
     json
   }

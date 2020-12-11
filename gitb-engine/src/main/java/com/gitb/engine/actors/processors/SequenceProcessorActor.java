@@ -132,16 +132,6 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
     }
 
     @Override
-    protected void stop() {
-        StopCommand command = new StopCommand(scope.getContext().getSessionId());
-        for (ActorRef child : getContext().getChildren()) {
-            child.tell(command, self());
-        }
-        childActorUidIndexMap.clear();
-        childStepIndexActorMap.clear();
-    }
-
-    @Override
     protected void handleStatusEvent(StatusEvent event) throws Exception {
         if (scope.getContext().getCurrentState() == TestCaseContext.TestCaseStateEnum.STOPPED) {
             return;

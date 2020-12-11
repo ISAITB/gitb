@@ -1,10 +1,8 @@
 package com.gitb.engine.actors.processors;
 
-import akka.actor.ActorContext;
 import akka.actor.ActorRef;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.commands.interaction.StartCommand;
-import com.gitb.engine.commands.interaction.StopCommand;
 import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.tdl.FlowStep;
@@ -64,15 +62,6 @@ public class FlowStepProcessorActor extends AbstractTestStepActor<FlowStep> {
 				child.tell(new StartCommand(scope.getContext().getSessionId()), self());
 		}
 		processing();
-	}
-
-	@Override
-	protected void stop() {
-		StopCommand command = new StopCommand(scope.getContext().getSessionId());
-		for(ActorRef child : getContext().getChildren()) {
-			child.tell(command, self());
-		}
-		stepIndexActorMap.clear();
 	}
 
 	@Override

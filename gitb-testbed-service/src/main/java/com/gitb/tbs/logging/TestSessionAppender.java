@@ -1,16 +1,17 @@
 package com.gitb.tbs.logging;
 
+import akka.actor.ActorRef;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
 import ch.qos.logback.core.AppenderBase;
 import com.gitb.core.AnyContent;
 import com.gitb.core.StepStatus;
-import com.gitb.engine.ITestbedServiceCallbackHandler;
 import com.gitb.engine.TestEngine;
+import com.gitb.engine.actors.SessionActor;
 import com.gitb.engine.actors.processors.AbstractTestStepActor;
+import com.gitb.engine.commands.interaction.LogCommand;
 import com.gitb.tbs.TestStepStatus;
-import com.gitb.tbs.TestbedClient;
 import com.gitb.tr.TAR;
 
 /**
@@ -44,8 +45,6 @@ public class TestSessionAppender extends AppenderBase<ILoggingEvent> {
     protected void append(ILoggingEvent eventObject) {
         if (eventObject.getMarker() != null) {
             String sessionId = eventObject.getMarker().getName();
-            ITestbedServiceCallbackHandler tbsCallbackHandle = TestEngine.getInstance().getTbsCallbackHandle();
-            TestbedClient testbedClient = tbsCallbackHandle.getTestbedClient(sessionId);
             //Construct the Callback response
             TestStepStatus testStepStatus = new TestStepStatus();
             testStepStatus.setTcInstanceId(sessionId);
@@ -55,8 +54,13 @@ public class TestSessionAppender extends AppenderBase<ILoggingEvent> {
             report.setContext(new AnyContent());
             report.getContext().setValue(getLogMessage(eventObject));
             testStepStatus.setReport(report);
-            //Call the UpdateStatus callback
-            testbedClient.updateStatus(testStepStatus);
+            // Trigger log message send
+            TestEngine
+                    .getInstance()
+                    .getEngineActorSystem()
+                    .getActorSystem()
+                    .actorSelection(SessionActor.getPath(sessionId))
+                    .tell(new LogCommand(sessionId, testStepStatus), ActorRef.noSender());
         }
     }
 

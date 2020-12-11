@@ -70,7 +70,7 @@ public class SendStepProcessorActor extends AbstractMessagingStepProcessorActor<
 		promise.future().failed().foreach(new OnFailure() {
 			@Override
 			public void onFailure(Throwable failure) {
-				updateTestStepStatus(context, new ErrorStatusEvent(failure), null, true);
+				handleFutureFailure(failure);
 			}
 		}, context.dispatcher());
 	}

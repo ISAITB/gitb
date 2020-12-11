@@ -22,11 +22,7 @@ public class TestStepStatusEvent extends StatusEvent {
 	}
 
 	public TestStepStatusEvent(String sessionId, String stepId, StepStatus status, TestStepReportType report) {
-		super(status);
-		this.sessionId = sessionId;
-		this.stepId = stepId;
-		this.report = report;
-		this.actorRef = null;
+		this(sessionId, stepId, status, report, null);
 	}
 
 	public String getSessionId() {

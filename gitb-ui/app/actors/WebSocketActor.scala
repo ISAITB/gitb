@@ -1,6 +1,8 @@
 package actors
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
+import com.gitb.tbs.BasicCommand
+
 import javax.inject.{Inject, Singleton}
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json._
@@ -19,9 +21,15 @@ object WebSocketActor {
 }
 
 @Singleton
-class WebSocketActor @Inject() (actorSystem: ActorSystem) {
+class WebSocketActor @Inject() (actorSystem: ActorSystem, testbedClient: managers.TestbedBackendClient) {
 
   private final val logger = LoggerFactory.getLogger("WebSocketActor")
+
+  def pingTestEngineForClosedConnection(sessionId: String): Unit = {
+    val command = new BasicCommand()
+    command.setTcInstanceId("CONNECTION_CLOSED|"+sessionId)
+    testbedClient.service().stop(command)
+  }
 
   private def broadcastAttempt(sessionId:String, msg:String, attempt: Int): Unit = {
     if (attempt <= 10) {
@@ -98,9 +106,9 @@ class WebSocketActor @Inject() (actorSystem: ActorSystem) {
    * Pushes given msg (in Json) to the given actor with given session
    */
   def push(sessionId:String, actorId:String, msg:String) = {
-    if(WebSocketActor.webSockets.get(sessionId).isDefined) {
+    if(WebSocketActor.webSockets.contains(sessionId)) {
       val actors = WebSocketActor.webSockets(sessionId)
-      if (actors.get(actorId).isDefined) {
+      if (actors.contains(actorId)) {
         val out = actors(actorId)
         //send message to the client with given session and actor IDs
         out ! Json.parse(msg)
@@ -178,12 +186,14 @@ class WebSocketActorHandler (out: ActorRef, webSocketActor: WebSocketActor) exte
   override def postStop() = {
     WebSocketActor.webSockets.synchronized {
       //remove the actor
-      if(WebSocketActor.webSockets.get(sessionId).isDefined) {
+      if (WebSocketActor.webSockets.contains(sessionId)) {
         var actors = WebSocketActor.webSockets(sessionId)
         actors -= actorId
         //if all actors are gone within a session, remove the session as well
         if(actors.isEmpty) {
           WebSocketActor.webSockets -= sessionId
+          // Ping the test engine - this is needed for cleanup in case a test session has not started yet.
+          webSocketActor.pingTestEngineForClosedConnection(sessionId)
         }
         //otherwise, update the webSockets map
         else {
