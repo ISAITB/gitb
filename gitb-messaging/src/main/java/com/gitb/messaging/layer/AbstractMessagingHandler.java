@@ -141,7 +141,7 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
         Thread receiveThread = new Thread(new ReceiveRunner(sessionId, transactionId, callId, configurations, inputs, this));
         messagingThreads.add(receiveThread);
         receiveThread.start();
-        return CallbackManager.getInstance().waitForCallback(sessionId, callId);
+        return SynchronousCallbackManager.getInstance().waitForCallback(sessionId, callId);
     }
 
     @Override
@@ -429,7 +429,7 @@ public abstract class AbstractMessagingHandler implements IMessagingHandler {
         @Override
         public void run() {
             MessagingReport report = doReceiveMessage(transactionId, configurations, inputs);
-            CallbackManager.getInstance().callbackReceived(sessionId, callId, report);
+            SynchronousCallbackManager.getInstance().callbackReceived(sessionId, callId, report);
         }
     }
 

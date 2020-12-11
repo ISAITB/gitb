@@ -68,14 +68,11 @@ public class TestbedService implements TestbedClient {
                 ) {
                     outputMessage = ((TAR)testStepStatus.getReport()).getContext().getValue().trim();
                 }
-                try {
-                    var statusUpdates = testResultManager.sessionRemove(session);
-                    reportManager.finishTestReport(session, testStepStatus.getReport().getResult(), Option.apply(outputMessage));
-                    var resultInfo = new TestStepResultInfo((short)testStepStatus.getStatus().ordinal(), Option.empty());
-                    String message = JsonUtil.jsTestStepResultInfo(session, step, resultInfo, Option.apply(outputMessage), statusUpdates).toString();
-                } finally {
-                    webSocketActor.testSessionEnded(session, message);
-                }
+                var statusUpdates = testResultManager.sessionRemove(session);
+                reportManager.finishTestReport(session, testStepStatus.getReport().getResult(), Option.apply(outputMessage));
+                var resultInfo = new TestStepResultInfo((short)testStepStatus.getStatus().ordinal(), Option.empty());
+                String message = JsonUtil.jsTestStepResultInfo(session, step, resultInfo, Option.apply(outputMessage), statusUpdates).toString();
+                webSocketActor.testSessionEnded(session, message);
             } else if (step.equals(LOG_EVENT_STEP_ID)) {
                 //send log event
                 webSocketActor.broadcast(session, status, false);

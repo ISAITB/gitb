@@ -1,17 +1,18 @@
 package com.gitb.engine.remote.messaging;
 
 import com.gitb.core.*;
+import com.gitb.engine.messaging.CallbackManager;
 import com.gitb.engine.remote.RemoteCallContext;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.messaging.CallbackManager;
+import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
 import com.gitb.messaging.model.InitiateResponse;
 import com.gitb.messaging.utils.MessagingHandlerUtils;
-import com.gitb.ms.*;
 import com.gitb.ms.Void;
+import com.gitb.ms.*;
 import com.gitb.types.DataType;
 import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
@@ -132,7 +133,7 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 			request.getInput().add(input);
 		}
 		call(() -> getServiceClient().receive(request));
-		return CallbackManager.getInstance().waitForCallback(sessionId, callId);
+		return new DeferredMessagingReport();
 	}
 
 	@Override

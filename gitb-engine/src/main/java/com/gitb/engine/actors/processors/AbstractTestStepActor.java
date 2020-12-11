@@ -10,7 +10,6 @@ import com.gitb.core.TestRole;
 import com.gitb.core.TestRoleEnumeration;
 import com.gitb.engine.actors.Actor;
 import com.gitb.engine.actors.SessionActor;
-import com.gitb.engine.actors.util.ActorUtils;
 import com.gitb.engine.commands.interaction.PrepareForStopCommand;
 import com.gitb.engine.commands.interaction.RestartCommand;
 import com.gitb.engine.commands.interaction.StartCommand;
@@ -277,10 +276,6 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 
 		if (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.SKIPPED || status == StepStatus.WARNING) {
 			self().tell(PoisonPill.getInstance(), self());
-//			if (statusEvent instanceof ErrorStatusEvent) {
-//				logger.debug(String.format("Stopping execution of the test step actor [%s] of session [%s].", stepId, scope.getContext().getSessionId()));
-//				self().tell(PoisonPill.getInstance(), self());
-//			}
 
 			if (report == null) {
 				switch (status) {

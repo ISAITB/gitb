@@ -13,18 +13,21 @@ import java.util.concurrent.Semaphore;
 
 /**
  * Created by simatosc on 25/11/2016.
+ * 
+ * @deprecated This class is kept to support the legacy messaging handlers with blocking thread semantics. Blocking
+ * threads in an Akka system is very inefficient and needs to be redesigned using actor messaging. 
  */
-public class CallbackManager {
+public class SynchronousCallbackManager {
 
-    private static CallbackManager INSTANCE = new CallbackManager();
+    private static SynchronousCallbackManager INSTANCE = new SynchronousCallbackManager();
     private ConcurrentMap<String, CallbackData> callbackLocks = new ConcurrentHashMap<>();
     private ConcurrentMap<String, Set<String>> sessionToCallMap = new ConcurrentHashMap<>();
     private final Object mutex = new Object();
 
-    private CallbackManager() {
+    private SynchronousCallbackManager() {
     }
 
-    public static CallbackManager getInstance() {
+    public static SynchronousCallbackManager getInstance() {
         return INSTANCE;
     }
 
