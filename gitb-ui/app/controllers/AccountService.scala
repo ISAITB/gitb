@@ -80,6 +80,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
     val json:String = JsonUtil.serializeUser(user)
     ResponseConstructor.constructJsonResponse(json)
   }
+  
   /**
    * Updates the user profile of the authenticated user
    */

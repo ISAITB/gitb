@@ -1,0 +1,24 @@
+<div class="form-group">
+    <label class="col-sm-3 control-label" for="shortName">* Short name:</label>
+    <div class="col-sm-7"><input id="shortName" name="shortName" [(ngModel)]="specification.sname" class="form-control" type="text"></div>
+    <app-tooltip [tbTooltip]="'This is used to display the '+dataService.labelSpecificationLower()+' in selection lists (e.g. search filters) and tables (e.g. conformance statement creation wizard) where space is limited. Ensure this is short but still understandable by users.'"></app-tooltip>
+</div>
+<div class="form-group">
+    <label class="col-sm-3 control-label" for="fullName">* Full name:</label>
+    <div class="col-sm-7"><input id="fullName" name="fullName" [(ngModel)]="specification.fname" class="form-control" type="text"></div>
+    <app-tooltip [tbTooltip]="'This is used to display the '+dataService.labelSpecificationLower()+' in detail forms and reports.'"></app-tooltip>
+</div>
+<div class="form-group">
+    <label class="col-sm-3 control-label" for="description">Description:</label>
+    <div class="col-sm-7">
+        <textarea id="description" name="description" [(ngModel)]="specification.description" class="form-control"></textarea>
+    </div>
+    <app-tooltip [tbTooltip]="'This is used to describe the '+dataService.labelSpecificationLower()+'. It is visible to users when managing conformance statements.'"></app-tooltip>
+</div>
+<div class="form-group">
+    <label class="col-sm-3 control-label" for="hidden">Hidden:</label>
+    <div class="col-sm-8">
+        <input id="hidden" name="hidden" [(ngModel)]="specification.hidden" type="checkbox" class="form-check">
+        <app-tooltip [tbTooltip]="'Check this to hide the '+dataService.labelSpecificationLower()+' as an available option for new conformance statements. Doing so effectively deprecates the '+dataService.labelSpecificationLower()+' but keeps testing history intact.'" [inline]="true"></app-tooltip>
+    </div>
+</div>

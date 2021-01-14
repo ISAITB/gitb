@@ -88,7 +88,7 @@ public class ReportGenerator {
         try {
             Unmarshaller unmarshaller = jaxbContext.createUnmarshaller();
             JAXBElement<TAR> tar = unmarshaller.unmarshal(new StreamSource(inputStream), TAR.class);
-            writeTARReport(tar.getValue(), title, outputStream);
+            writeTARReport(tar.getValue(), title, outputStream, addContext);
         } catch(Exception e) {
             throw new IllegalStateException(e);
         }

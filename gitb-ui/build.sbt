@@ -46,19 +46,7 @@ libraryDependencies ++= Seq(
   "org.apache.tika" % "tika-core" % "1.25",
   "org.webjars" %% "webjars-play" % "2.8.0-1",
   "org.webjars" % "jquery" % "3.5.1",
-  "org.webjars" % "jquery-cookie" % "1.4.1-1" exclude("org.webjars", "jquery"),
-  "org.webjars" % "lodash" % "2.4.1-6",
   "org.webjars" % "bootstrap" % "3.3.7-1" exclude("org.webjars", "jquery"),
-  "org.webjars" % "angularjs" % "1.7.9" exclude("org.webjars", "jquery"),
-  "org.webjars" % "angular-ui-bootstrap" % "2.5.0",
-  "org.webjars" % "angular-ui-router" % "1.0.20",
-  "org.webjars" % "font-awesome" % "4.7.0" excludeAll(
-      ExclusionRule(organization="org.webjars", name="jquery"),
-      ExclusionRule(organization="org.webjars", name="bootstrap")
-  ),
-  "org.webjars" % "angular-file-upload" % "1.6.12",
-  "org.webjars" % "codemirror" % "4.8",
-  "org.webjars" % "tinymce" % "4.7.9",
   "javax.mail" % "mail" % "1.4.7",
   "javax.activation" % "activation" % "1.1.1",
   "javax.xml.ws" % "jaxws-api" % "2.3.1",
@@ -80,9 +68,8 @@ libraryDependencies ++= Seq(
   "net.lingala.zip4j" % "zip4j" % "2.6.4"
 )
 
-includeFilter in (Assets, LessKeys.less) := "*.less"
-
-excludeFilter in (Assets, LessKeys.less) := "_*.less"
+// Add assets build folder to clean task
+cleanFiles += baseDirectory.value / "app" / "assets" / "build"
 
 // Exclude sources and documentation
 sources in (Compile, doc) := Seq.empty

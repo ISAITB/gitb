@@ -1,0 +1,5 @@
+<div [ngClass]="outerClass" *ngIf="alerts && alerts.length > 0">
+    <div [ngClass]="innerClass">
+        <alert *ngFor="let alert of alerts; let i = index" [type]="alert.type" [dismissible]="true" (onClosed)="clearAlert(i)">{{alert.msg}}</alert>
+    </div>
+</div>

@@ -1,0 +1,16 @@
+<div class="any-content-view" *ngIf="context != undefined">
+    <span *ngIf="context.name != undefined"><strong>{{context!.name}}</strong></span>
+    <div class="value" *ngIf="value != undefined">
+      <span *ngIf="!isValueTooLong">{{value}}</span>
+      <span *ngIf="isValueTooLong">{{value.length}} bytes</span>
+      <a href class="pull-right clearfix open" (click)="open();$event.preventDefault()" *ngIf="isValueTooLong">
+        Open in editor
+      </a>
+      <a href class="pull-right clearfix open" style="padding-right: 20px;" (click)="download();$event.preventDefault()" *ngIf="isValueTooLong">
+        Download as file
+      </a>
+    </div>
+    <div class="items" *ngIf="context != undefined && context.item != undefined">
+      <app-any-content-view *ngFor="let item of context!.item!" [context]="item" [report]="report"></app-any-content-view>
+    </div>
+</div>

@@ -168,7 +168,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
         actions += q.update(BCrypt.hashpw(password.get, BCrypt.gensalt()), false)
       } else {
         //2.1.2) incorrect password => send Invalid Credentials error
-        throw InvalidAuthorizationException(ErrorCodes.INVALID_CREDENTIALS, "Invalid credentials")
+        throw InvalidRequestException(ErrorCodes.INVALID_CREDENTIALS, "Invalid credentials")
       }
     }
     if (actions.nonEmpty) {

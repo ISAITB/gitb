@@ -2,17 +2,18 @@ package controllers
 
 import config.Configurations
 import filters.CorsFilter
-import javax.inject.Inject
 import managers.{LegalNoticeManager, SystemConfigurationManager}
 import models.{Constants, PublicConfig}
 import org.apache.commons.lang3.StringUtils
+import play.api.Environment
 import play.api.mvc._
 import play.api.routing._
 import utils.RepositoryUtils
 
+import javax.inject.Inject
 import scala.collection.mutable.ListBuffer
 
-class Application @Inject() (cc: ControllerComponents, defaultAction: DefaultActionBuilder, systemConfigurationManager: SystemConfigurationManager, legalNoticeManager: LegalNoticeManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
+class Application @Inject() (cc: ControllerComponents, defaultAction: DefaultActionBuilder, systemConfigurationManager: SystemConfigurationManager, legalNoticeManager: LegalNoticeManager, environment: Environment, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
 
   def index() = defaultAction {
     val legalNotice = legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId)
@@ -39,12 +40,22 @@ class Application @Inject() (cc: ControllerComponents, defaultAction: DefaultAct
       Configurations.GUIDES_EULOGIN_MIGRATION,
       Configurations.AUTHENTICATION_COOKIE_PATH,
       enableWebInit,
-      Configurations.TESTBED_MODE == Constants.DevelopmentMode
+      Configurations.TESTBED_MODE == Constants.DevelopmentMode,
+      contextPath()
     )))
   }
 
   def app() = defaultAction {
-    Ok(views.html.app(new PublicConfig(Constants.VersionNumber)))
+    Ok(views.html.ngApp(new PublicConfig(Constants.VersionNumber, Configurations.AUTHENTICATION_COOKIE_PATH, contextPath()), environment.mode))
+  }
+
+  private def contextPath(): String = {
+    var contextPath = Configurations.AUTHENTICATION_COOKIE_PATH
+    if (!contextPath.endsWith("/")) {
+      contextPath += "/"
+    }
+    contextPath += "app"
+    contextPath
   }
 
   def preFlight(all: String) = defaultAction {

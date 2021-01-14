@@ -122,7 +122,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
       })
       if (targetSpecificationMap.nonEmpty) {
         exportManager.loadSpecificationTestSuiteMap(targetDomain.get.id).map { x =>
-          targetSpecificationTestSuiteMap += (x._1 -> listBufferToNameMap(x._2, { t => t.shortname }))
+          targetSpecificationTestSuiteMap += (x._1 -> listBufferToNameMap(x._2, { t => t.identifier }))
         }
         exportManager.loadSpecificationActorMap(targetDomain.get.id).map { x =>
           targetSpecificationActorMap += (x._1 -> listBufferToNameMap(x._2, { a => a.actorId }))

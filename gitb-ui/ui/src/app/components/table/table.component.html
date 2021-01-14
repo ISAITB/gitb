@@ -1,0 +1,56 @@
+<div>
+    <table class="table table-directive">
+        <caption *ngIf="tableCaptionVisible">{{tableCaption}}</caption>
+        <thead>
+            <tr>
+                <th *ngIf="checkboxEnabled"></th>
+                <th [ngClass]="classForColumn(column)" *ngFor="let column of columns" (click)="!column.sortable || headerColumnClicked(column)">
+                    {{column.title}} 
+                    <i [ngClass]="{'fa-caret-down': column.order == 'desc', 'fa-caret-up': column.order == 'asc'}" class="fa"></i>
+                </th>
+                <th *ngIf="actionVisible" class="operations">Action</th>
+                <th *ngIf="operationsVisible" class="operations">Operation</th>
+                <th *ngIf="exportVisible" class="operations">Export</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngIf="loadingStatus && loadingStatus.status == Constants.STATUS.PENDING">
+                <td [attr.colspan]="columnCount" class="td-data-loading"><app-pending-block></app-pending-block></td>
+            </tr>
+            <tr *ngIf="loadingStatus && loadingStatus.status == Constants.STATUS.FINISHED && (!data || data.length == 0)">
+                <td [attr.colspan]="columnCount" class="td-no-data"><span>{{noDataMessage}}</span></td>
+            </tr>
+            <tr *ngFor="let row of data; let i = index" table-row-directive
+                class="table-row-directive" 
+                [ngClass]="rowClass(i)" 
+                [class.selected]="row._selected"
+                (click)="select(i)"
+                [data]="row"
+                [columns]="columns"
+                [classes]="classes"
+                [actionVisible]="actionVisible"
+                [actionIcon]="actionIcon"
+                [operationsVisible]="operationsVisible"
+                [exportVisible]="exportVisible"
+                [exportVisibleForRow]="exportVisibleForRow"
+                [checkboxEnabled]="checkboxEnabled"
+                (onAction)="handleAction($event)"
+                (onDelete)="handleDelete($event)"
+                (onExport)="handleExport($event)"
+                (onCheck)="handleCheck($event)"
+                [deleteVisibleForRow]="deleteVisibleForRow"
+                [actionVisibleForRow]="actionVisibleForRow"
+                [actionPendingProperty]="actionPendingProperty"
+                [deletePendingProperty]="deletePendingProperty"
+                [exportPendingProperty]="exportPendingProperty"></tr>
+        </tbody>
+    </table>
+    <div *ngIf="paginationVisible && data && data.length > 0" class="text-center">
+        <ul class="pagination pagination-sm">
+            <li [class.disabled]="prevDisabled"><a href (click)="doFirstPage();$event.preventDefault()">First</a></li>
+            <li [class.disabled]="prevDisabled"><a href (click)="doPrevPage();$event.preventDefault()">Previous</a></li>
+            <li [class.disabled]="nextDisabled"><a href (click)="doNextPage();$event.preventDefault()">Next</a></li>
+            <li [class.disabled]="nextDisabled"><a href (click)="doLastPage();$event.preventDefault()">Last</a></li>
+        </ul>
+    </div>
+</div>

@@ -25,9 +25,6 @@ public class WhileStepProcessorActor extends AbstractIterationStepActor<WhileSte
 	private Map<Integer, Integer> childActorUidIndexMap;
 	private Map<Integer, ActorRef> iterationIndexActorMap;
 
-	private boolean childrenHasError;
-	private boolean childrenHasWarning;
-
 	public WhileStepProcessorActor(WhileStep step, TestCaseScope scope, String stepId){
 		super(step, scope, stepId);
 	}
@@ -37,8 +34,6 @@ public class WhileStepProcessorActor extends AbstractIterationStepActor<WhileSte
 		expressionHandler = new ExpressionHandler(scope);
 		childActorUidIndexMap = new ConcurrentHashMap<>();
 		iterationIndexActorMap = new ConcurrentHashMap<>();
-
-		childrenHasError = false;
 	}
 
 	@Override
@@ -51,27 +46,10 @@ public class WhileStepProcessorActor extends AbstractIterationStepActor<WhileSte
 	}
 
 	@Override
-	protected void handleStatusEvent(StatusEvent event) throws Exception {
-        StepStatus status = event.getStatus();
-		if (status == StepStatus.ERROR) {
-			childrenHasError = true;
-		} else if (status == StepStatus.WARNING) {
-			childrenHasWarning = true;
-		}
-		if (status == StepStatus.ERROR || status == StepStatus.WARNING || status == StepStatus.COMPLETED) {
-			int senderUid = getSender().path().uid();
-			int iteration = childActorUidIndexMap.get(senderUid);
-			boolean started = loop(iteration+1);
-			if (!started) {
-				if (childrenHasError) {
-					childrenHasError();
-				} else if (childrenHasWarning) {
-					childrenHasWarning();
-				} else {
-					completed();
-				}
-			}
-		}
+	protected boolean handleStatusEventInternal(StatusEvent event) throws Exception {
+		int senderUid = getSender().path().uid();
+		int iteration = childActorUidIndexMap.get(senderUid);
+		return loop(iteration+1);
     }
 
 	private boolean loop(int iteration) throws Exception {

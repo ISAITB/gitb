@@ -1,0 +1,33 @@
+<td *ngIf="checkboxEnabled" (click)="$event.stopPropagation();">
+    <input type="checkbox" [(ngModel)]="data.checked" (change)="check()">
+</td>
+<td class="{{item.class}}" *ngFor="let item of columnDataItems; let i = index">
+    <div *ngIf="columns[i].iconFn">
+        <i [ngClass]="columns[i].iconFn!(item.data)"></i>
+    </div>
+    <div *ngIf="!columns[i].iconFn">
+        <ng-container [ngSwitch]="item.boolean">
+            <div *ngSwitchCase="true">
+                <i class="glyphicon" [ngClass]="{'glyphicon-ok': item.data, 'glyphicon-remove': !item.data}"></i>
+            </div>
+            <div *ngSwitchCase="false">
+                {{item.data}}
+            </div>
+        </ng-container>
+    </div>
+</td>
+<td class="operations" *ngIf="actionVisible">
+    <button type="button" *ngIf="(!actionVisibleForRow || actionVisibleForRow(data))" [ngClass]="{'pending': data[actionPendingProperty]}" [pending]="data[actionPendingProperty]" [icon]="true" class="btn btn-default" (click)="action(); $event.stopPropagation();">
+        <i [ngClass]="actionIcon"></i>
+    </button>
+</td>
+<td class="operations" *ngIf="operationsVisible">
+    <button type="button" *ngIf="(!deleteVisibleForRow || deleteVisibleForRow(data))" [ngClass]="{'pending': data[deletePendingProperty]}" [pending]="data[deletePendingProperty]" [icon]="true" class="btn btn-default" (click)="delete(); $event.stopPropagation();">
+        <i class="fa fa-times"></i>
+    </button>
+</td>
+<td class="operations" *ngIf="exportVisible">
+    <button type="button" *ngIf="(!exportVisibleForRow || exportVisibleForRow(data))" [ngClass]="{'pending': data[exportPendingProperty]}" [pending]="data[exportPendingProperty]" [icon]="true" class="btn btn-default" (click)="export(); $event.stopPropagation();">
+        <i class="fa fa-file-pdf-o"></i>
+    </button>
+</td>

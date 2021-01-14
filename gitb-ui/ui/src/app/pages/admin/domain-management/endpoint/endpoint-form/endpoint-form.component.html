@@ -1,0 +1,12 @@
+<div class="form-group">
+    <label class="col-xs-3 control-label" for="name">* Name:</label>
+    <div class="col-xs-7"><input id="name" name="name" [(ngModel)]="endpoint.name" class="form-control" type="text"></div>
+    <app-tooltip tbTooltip="A name used to refer to this set of configuration properties. This is displayed when viewing a conformance statement's details."></app-tooltip>
+</div>
+<div class="form-group">
+    <label class="col-xs-3 control-label" for="description">Description:</label>
+    <div class="col-xs-7">
+        <textarea id="description" name="description" [(ngModel)]="endpoint.description" class="form-control"></textarea>
+    </div>
+    <app-tooltip tbTooltip="A descriptive text for the purpose of these configuration properties. This is displayed when viewing a conformance statement's details."></app-tooltip>
+</div>

@@ -1,0 +1,51 @@
+<div class="page settings">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">Profile</h4>
+        </div>
+        <form #profileForm="ngForm" class="form-horizontal">
+            <div class="panel-body">
+                <app-alert-display [alerts]="alerts" innerClass="col-md-10 col-md-offset-1"></app-alert-display>
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1">
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label" for="shortName"><span *ngIf="!dataService.configuration.ssoEnabled">* </span>Name:</label>
+                            <div class="col-sm-8">
+                                <p *ngIf="dataService.configuration.ssoEnabled" class="form-control-static">{{data.name}}</p>
+                                <input *ngIf="!dataService.configuration.ssoEnabled" id="name" name="name" type="text" class="form-control" [(ngModel)]="data.name">
+                            </div>
+                            <app-tooltip *ngIf="!dataService.configuration.ssoEnabled" tbTooltip="Your full name. This is used only when listing the members of your {{dataService.labelOrganisationLower()}}."></app-tooltip>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label" for="fullName">Email:</label>
+                            <div class="col-sm-8">
+                                <p class="form-control-static">{{data.email}}</p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-sm-2 control-label" for="fullName">Role:</label>
+                            <div class="col-sm-8">
+                                <p class="form-control-static">{{data.role}}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1">
+                        <div class="bg-info div-rounded div-padded" *ngIf="!dataService.configuration.ssoEnabled">
+                            <span><b>Privacy note:</b> By clicking 'Save changes' you grant consent to record the provided information. This is used only for internal identification purposes and is never shared with other parties. Please refer to the legal notice (link available in the screen's footer) for more information.</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel-footer">
+                <div class="btn-toolbar">
+                    <button type="submit" class="btn btn-default" *ngIf="!dataService.configuration.ssoEnabled" [disable]="saveDisabled()" (click)="updateProfile()" [pending]="spinner">Save changes</button>
+                    <button type="button" class="btn btn-default" *ngIf="dataService.configuration.ssoEnabled"  (click)="disconnect()">Remove role from your account</button>
+                    <button type="button" class="btn btn-default" *ngIf="dataService.configuration.ssoEnabled"  (click)="linkOtherRole()">Link another role to your account</button>
+                    <button type="button" class="btn btn-default" *ngIf="dataService.configuration.registrationEnabled" (click)="register()">Register another {{dataService.labelOrganisationLower()}}</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

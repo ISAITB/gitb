@@ -153,9 +153,9 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 				.join(PersistenceSchema.conformanceResults).on(_.id === _.testsuite)
 				.filter(_._1.hidden === false)
 				.filter(_._2.sut === systemId)
-				.distinctOn(_._1.id)
-				.sortBy(_._1.shortname.asc)
 				.map(r => TestSuiteManager.withoutDocumentation(r._1))
+				.distinctOn(_._1) // Test suite ID
+				.sortBy(_._2.asc) // Test suite short name
 				.result.map(_.toList)
 		).map(TestSuiteManager.tupleToTestSuite)
 		testSuites map {

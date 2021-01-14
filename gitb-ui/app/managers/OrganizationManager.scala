@@ -71,13 +71,8 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
   /**
     * Gets organization with specified id
     */
-  def getOrganizationById(orgId: Long): Organization = {
-    val o = exec(PersistenceSchema.organizations.filter(_.id === orgId).result.head)
-    val l = exec(PersistenceSchema.landingPages.filter(_.id === o.landingPage).result.headOption)
-    val n = exec(PersistenceSchema.legalNotices.filter(_.id === o.legalNotice).result.headOption)
-    val e = exec(PersistenceSchema.errorTemplates.filter(_.id === o.errorTemplate).result.headOption)
-    val organization = new Organization(o, l.orNull, n.orNull, e.orNull)
-    organization
+  def getOrganizationById(orgId: Long): Organizations = {
+    exec(PersistenceSchema.organizations.filter(_.id === orgId).result.head)
   }
 
   def getOrganizationBySystemId(systemId: Long): Organizations = {

@@ -1,0 +1,147 @@
+@import "../_common.less";
+
+.test-step-report {
+
+	.summary {
+		border: 1px solid @gray-light;
+
+		.summary-cell {
+			padding-top: 5px;
+			padding-bottom: 5px;
+			text-align: center;
+
+			&.summary-cell-title {
+				background: @gray-light;
+				font-weight: bold;
+				text-align: left;
+			}
+
+			.summary-item-label {
+				font-weight: bold;
+			}
+		}
+
+	}
+
+    .report-item {
+		display: block;
+		padding: 10px 15px;
+	}
+
+	.report-item-element {
+		display: block;
+		padding: 8px 15px;
+
+		&.assertion-report-item {
+			line-height: 16px;
+			.report-item-icon {	
+				padding: 0 4px;
+				&.info-icon {
+					color: @success-green;
+				}
+				&.warning-icon {
+					color: @warning-yellow;
+				}
+				&.error-icon {
+					color: @error-red;
+				}
+			}
+		}
+    }
+    .step-report {
+	&.decision-step-report {
+	    
+	}
+
+	&.messaging-step-report {
+	    .message-fragment-report {
+	    }
+	}
+
+	&.validation-step-report {
+	}
+
+	.title {
+	    padding: 8px 0;
+	}
+
+	.any-content-view {
+	    padding: 0 15px;
+	    margin: 8px 0;
+	    border: 1px solid @gray-light;
+	    border-radius: 3px;
+
+	    .content-view {
+		padding: 5px 0;
+		.simple-content-view {
+		    display: block;
+		    padding: 8px 0;
+		    border-bottom: 1px solid @gray-light;
+
+		    &:last-child {
+			border-bottom: none;
+		    }
+
+		    .name {
+		    }
+		    .value {
+			display: block;
+		    }
+		    .value-length {
+		    }
+		    .open {
+		    }
+		}
+		.string-content-view {
+		    .simple-content-view {
+			.simple-string-content-view {
+			}
+		    }
+		}
+		.uri-content-view {
+		    .simple-content-view {
+			.simple-uri-content-view {
+			}
+		    }
+		}
+		.base64-content-view {
+		    .simple-content-view {
+			.simple-base64-content-view {
+			}
+		    }
+		}
+	    }
+	}
+	.test-assertion-group-report {
+		.assertion-report-nolink {
+			display: block;
+			margin-bottom: 10px;
+			&.warning-assertion-report {
+				background-color: @orange-light;
+			}
+			&.error-assertion-report {
+				background-color: @red-light;
+			}
+			&.info-assertion-report {
+				background-color: @gray-light-2;
+			}
+		}
+		.assertion-report {
+			display: block;
+			margin-bottom: 10px;
+			&:hover {
+				cursor: pointer;
+			}
+			&.warning-assertion-report {
+				background-color: @orange-light;
+			}
+			&.error-assertion-report {
+				background-color: @red-light;
+			}
+			&.info-assertion-report {
+				background-color: @gray-light-2;
+			}
+		}
+	}
+}
+}

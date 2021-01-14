@@ -1,0 +1,76 @@
+<div class="page index">
+    <div class="header">
+      <div class="navbar-collapse nav-main-collapse collapse">
+        <div class="container">
+          <img [src]="logo" class="logo"/>
+          <nav class="nav-main mega-menu">
+            <ul class="nav nav-pills nav-main" id="mainMenu">
+              <li *ngIf="isAuthenticated() && !dataService.user?.onetime">
+                <a routerLink="home">Home</a>
+              </li>
+              <li *ngIf="isAuthenticated() && !dataService.user?.onetime">
+                <a class="pointer" (click)="onTestsClick()">Tests</a>
+              </li>
+              <li *ngIf="isAuthenticated() && (dataService.isSystemAdmin || dataService.isCommunityAdmin) && !dataService.user?.onetime">
+                <a routerLink="admin/sessions">Admin</a>
+              </li>
+              <!-- User menu item, show when authenticated -->
+              <li class="dropdown mega-menu-item mega-menu-signin signin logged" id="headerAccount" *ngIf="userLoaded()">
+                <a class="dropdown-toggle">
+                  <i class="fa fa-user"></i> {{dataService.user?.name}}
+                  <i class="fa fa-angle-down"></i>
+                </a>
+                <ul class="dropdown-menu">
+                  <li>
+                    <div class="mega-menu-content">
+                      <div class="row">
+                        <div class="col-xs-7">
+                          <div class="user-avatar">
+                            <p><strong>{{dataService.user?.name}}</strong></p>
+                            <p class="role-description" *ngIf="userFullyLoaded()">{{dataService.getRoleDescription(false)}}</p>
+                          </div>
+                        </div>
+                        <div class="col-xs-5">
+                          <ul class="list-account-options">
+                            <li routerLinkActive="active" *ngIf="!dataService.isDemoAccount() && (dataService.configuration.ssoEnabled || !dataService.user?.onetime) && isAuthenticated()">
+                              <a class="pointer" routerLink="settings/profile">Settings</a>
+                            </li>
+                            <li *ngIf="dataService.configuration.ssoEnabled && isAuthenticated()">
+                                <a class="pointer" (click)="switchAccount()">Switch role</a>
+                            </li>
+                            <li>
+                              <a class="pointer" (click)="logout()">Logout</a>
+                            </li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </div>
+    <div class="child">
+      <router-outlet></router-outlet>
+    </div>
+    <footer>
+      <div class="container">
+        <div class="row">
+          <div class="col-xs-2">
+            <img [src]="footer" class="pull-left"/>
+          </div>
+          <div class="col-xs-10 version-div">
+            <div class="pull-right">
+              <div class="footer-devmode" *ngIf="dataService.isDevelopmentMode()"><i class="fa fa-exclamation-circle" aria-hidden="true"></i> Development mode</div>
+              <div class="footer-links">
+                <a href *ngIf="showUserGuide()" (click)="userGuideLink();$event.preventDefault()">User guide</a><span *ngIf="showUserGuide()" class="version-text"> | </span><a *ngIf="showProvideFeedback()" [href]="provideFeedbackLink()" target="blank">Provide feedback</a><span *ngIf="showProvideFeedback()" class="version-text"> | </span><a href="#" *ngIf="showContactUs()" (click)="contactUs();$event.preventDefault()">Contact support</a><span *ngIf="showContactUs()" class="version-text"> | </span><a href (click)="onLegalNotice();$event.preventDefault()">Legal notice</a><span class="version-text"> | </span><span class="version-text">{{version}}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </footer>
+  </div>

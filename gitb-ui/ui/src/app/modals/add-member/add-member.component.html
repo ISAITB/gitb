@@ -1,0 +1,53 @@
+<div class="modal-content">
+    <div class="modal-header">
+        <h4 class="modal-title" id="myModalLabel">Member information</h4>
+    </div>
+    <div class="modal-body">
+        <form class="form-horizontal">
+            <app-alert-display [alerts]="alerts" innerClass="col-xs-11 col-centered"></app-alert-display>
+            <div class="form-group" *ngIf="!dataService.configuration!.ssoEnabled">
+                <label class="col-xs-3 control-label" for="name">* User name:</label>
+                <div class="col-xs-7">
+                    <input id="name" name="name" type="text" class="form-control" [(ngModel)]="udata.name">
+                </div>
+                <app-tooltip tbTooltip="This is the full name of the user. It is only used only when displaying the list of members for the {{dataService.labelOrganisationLower()}}."></app-tooltip>
+            </div>
+            <div class="form-group">
+                <label class="col-xs-3 control-label" for="email">* Email:</label>
+                <div class="col-xs-7">
+                    <input id="email" name="email" type="text" class="form-control" [(ngModel)]="udata.email">
+                </div>
+                <div [ngSwitch]="dataService.configuration!.ssoEnabled">
+                    <app-tooltip *ngSwitchCase="true" tbTooltip="This is the email address linked to the user's EU Login account."></app-tooltip>
+                    <app-tooltip *ngSwitchCase="false" tbTooltip="This is used only during login as the user's email-formatted username (no emails will ever be sent to this address)."></app-tooltip>
+                </div>
+            </div>
+            <div *ngIf="!dataService.configuration!.ssoEnabled">
+                <div class="form-group">
+                    <label class="col-xs-3 control-label" for="password">* One-time password:</label>
+                    <div class="col-xs-7">
+                        <input id="password" name="password" type="password" class="form-control" [(ngModel)]="udata.password" >
+                    </div>
+                    <app-tooltip tbTooltip="This password will only be used once upon first login at which point it will need to be changed."></app-tooltip>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-3 control-label" for="confirm">* Confirm password:</label>
+                    <div class="col-xs-7">
+                        <input id="confirm" name="confirm" type="password" class="form-control" [(ngModel)]="udata.passwordConfirmation" >
+                    </div>
+                    <app-tooltip tbTooltip="Provide again the password to ensure it is correct."></app-tooltip>
+                </div>
+            </div>
+            <div class="col-xs-11 col-centered">
+                <div class="form-control-static bg-info div-padded div-rounded">
+                    <p *ngIf="dataService.configuration!.ssoEnabled">The user's new role assignment will need to be confirmed by the user upon login.</p>
+                    <p style="margin-bottom: 0px;"><b>Privacy note:</b> By clicking 'Save changes' you grant the user's consent on his/her behalf to record the provided information. This is used only for internal identification purposes and is never shared with other parties. <span *ngIf="!dataService.configuration.ssoEnabled">Alternatively you may also complete this form with information that is not personally identifiable. </span>Please refer to the legal notice (link available in the screen's footer) for more information.</p>
+                </div>
+            </div>
+            <div class="modal-footer" style="margin-top:10px">
+                <input type="submit" value="Save changes" [disabled]="saveMemberDisabled()" (click)="checkEmail()" class="btn btn-default" >
+                <button type="button" class="btn btn-default" (click)="close()">Cancel</button>
+            </div>
+        </form>
+    </div>
+</div>

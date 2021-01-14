@@ -1,0 +1,52 @@
+<div class="page domains detail detail-spec">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">{{dataService.labelSpecification()}} details</h4>
+		</div>
+		<form class="form-horizontal">
+			<div class="panel-body">
+				<div class="row">
+					<div class="col-md-10 col-md-offset-1">
+                        <app-specification-form [specification]="specification"></app-specification-form>
+                    </div>
+				</div>
+			</div>
+			<div class="panel-footer">
+				<div class="row">
+					<div class="col-md-3"></div>
+					<div class="col-md-8 btn-toolbar">
+						<button (click)="saveSpecificationChanges()" type="submit" class="btn btn-default" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+						<button (click)="deleteSpecification()" type="button" class="btn btn-default" [pending]="deletePending" [disable]="savePending">Delete</button>
+						<button (click)="back()" type="button" class="btn btn-default">Back</button>
+					</div>
+				</div>
+			</div>
+		</form>
+	</div>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">Test suites</h4>
+			<button class="btn btn-default pull-right" (click)="uploadTestSuite()">Upload test suite</button>
+		</div>
+		<div table-directive id="test-suites-table" 
+			[columns]="testSuiteTableColumns" 
+			[data]="testSuites"
+			noDataMessage="No test suites found"
+			[loadingStatus]="testSuiteStatus" 
+			(onSelect)="onTestSuiteSelect($event)">
+		</div>
+	</div>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">{{dataService.labelActors()}}</h4>
+            <button class="btn btn-default pull-right" type="button" (click)="createActor()">Create {{dataService.labelActorLower()}}</button>
+		</div>
+		<div table-directive
+			[columns]="actorTableColumns"
+			[data]="actors"
+			[noDataMessage]="'No '+dataService.labelActorsLower()+' found'"
+			[loadingStatus]="actorStatus" 
+			(onSelect)="onActorSelect($event)">
+		</div>
+	</div>
+</div>

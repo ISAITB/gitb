@@ -1,0 +1,68 @@
+<div [ngClass]="classForWrapper">
+    <div [ngClass]="classForMessage()">
+      <div class="message-type">
+        <span>{{message.title}}</span>
+        <div *ngIf="message.type == 'loop' && message.sequences != null && message.sequences.length > 0" class="btn-group iterations" dropdown>
+          <button id="button-iterations" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-iterations">Iteration {{currentIterationIndex+1}} of {{message.sequences.length}}</button>
+            <ul id="dropdown-iterations" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-iterations">
+              <ng-container *ngFor="let iteration of message.sequences; let i = index">
+                  <li *ngIf="iteration != null" role="menuitem">
+                    <a class="dropdown-item" [ngClass]="{
+                      'processing': iteration.status == TEST_STATUS.PROCESSING, 
+                      'skipped': iteration.status == TEST_STATUS.SKIPPED, 
+                      'waiting': iteration.status == TEST_STATUS.WAITING, 
+                      'error': iteration.status == TEST_STATUS.ERROR, 
+                      'warning': iteration.status == TEST_STATUS.WARNING, 
+                      'completed': iteration.status == TEST_STATUS.COMPLETED}" (click)="showLoopIteration(i); $event.preventDefault()" href>Iteration {{i+1}}</a>
+                  </li>
+              </ng-container>
+            </ul>
+        </div>
+      </div>
+      <div class="message-info">
+        <div class="step-icon" *ngIf="message.type == 'verify'">
+          <i class="fa fa-gear" [ngClass]="{'fa-spin': message.status == TEST_STATUS.PROCESSING}"></i>
+        </div>
+        <div class="step-icon" *ngIf="message.type == 'exit'">
+          <i class="fa fa-dot-circle-o"></i>
+        </div>
+        <div><span class="title" *ngIf="message.desc || message.documentation || message.type == 'verify' || message.type == 'exit'" [ngClass]="{'skipped': message.status == TEST_STATUS.SKIPPED}">{{message.desc}}<span *ngIf="message.documentation" (click)="showStepDocumentation(message.documentation)"><i [ngStyle]="{ 'margin-left': message.desc?'5px':'0px'}" class="fa fa-question-circle icon-documentation"></i></span></span></div>
+      </div>
+      <div class="message-report" *ngIf="message.report != null">
+        <a href class="report-link" (click)="showReport();$event.preventDefault()">
+          <span class="fa-stack">
+            <i class="fa fa-file-text-o report-icon"></i>
+            <i class="fa fa-circle status-background-icon"></i>
+            <i class="fa fa-gear processing-icon"></i>
+            <i class="fa fa-check completed-icon"></i>
+            <i class="fa fa-times error-icon"></i>
+            <i class="fa fa-exclamation warning-icon"></i>
+          </span>
+        </a>
+      </div>
+      <div class="child-steps loop" [ngClass]="classForReverseOffset" *ngIf="message.type == 'loop'">
+        <ng-container *ngIf="currentIterationIndex == -1">
+            <app-sequence-diagram-message *ngFor="let subMessage of message.steps" [message]="subMessage" [events]="events"></app-sequence-diagram-message>
+        </ng-container>
+        <ng-container *ngIf="currentIterationIndex != -1">
+          <app-sequence-diagram-message *ngFor="let subMessage of message.sequences![currentIterationIndex].steps!" [message]="subMessage" [events]="events"></app-sequence-diagram-message>
+      </ng-container>
+    </div>
+      <div class="child-steps then" [ngClass]="classForReverseOffset" *ngIf="message.type == 'decision'">
+        <app-sequence-diagram-message *ngFor="let subMessage of message.then" [message]="subMessage" [events]="events"></app-sequence-diagram-message>
+      </div>
+      <div class="child-steps else" [ngClass]="classForReverseOffset" *ngIf="message.type == 'decision' && message.else != undefined && message.else.length > 0">
+        <app-sequence-diagram-message *ngFor="let subMessage of message.else" [message]="subMessage" [events]="events"></app-sequence-diagram-message>
+      </div>
+      <ng-container *ngIf="message.type == 'flow'">
+          <div [ngClass]="classForThread(i)" *ngFor="let thread of message.threads; let i = index">
+            <app-sequence-diagram-message *ngFor="let subMessage of thread" [message]="subMessage" [events]="events"></app-sequence-diagram-message>
+          </div>
+      </ng-container>
+      <div class="child-steps interactions" [ngClass]="classForReverseOffset" *ngIf="message.type == 'interact'">
+        <app-sequence-diagram-message *ngFor="let subMessage of message.interactions" [message]="subMessage" [events]="events"></app-sequence-diagram-message>
+      </div>
+      <div class="arrow" *ngIf="message.type == 'msg' || message.type == 'instruction' || message.type == 'request'"></div>
+      <app-sequence-diagram-message-status [message]="message" [events]="events"></app-sequence-diagram-message-status>
+    </div>
+</div>

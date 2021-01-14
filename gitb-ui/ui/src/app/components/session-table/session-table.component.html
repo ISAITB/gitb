@@ -1,0 +1,102 @@
+<div>
+    <table [attr.id]="sessionTableId" class="table table-directive expandable-table">
+        <caption *ngIf="tableCaptionVisible">{{tableCaption}}</caption>
+        <thead>
+            <tr>
+                <th *ngIf="checkboxEnabled"></th>
+                <th [ngClass]="column.headerClass!" *ngFor="let column of columns" (click)="!column.sortable || headerColumnClicked(column)">
+                    {{column.title}} 
+                    <i *ngIf="column.order == 'desc'" class="fa fa-caret-down"></i>
+                    <i *ngIf="column.order == 'asc'" class="fa fa-caret-up"></i>
+                </th>
+                <th *ngIf="actionVisible" class="operations">Action</th>
+                <th *ngIf="operationsVisible" class="operations">Operation</th>
+                <th *ngIf="exportVisible" class="operations">Export</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngIf="loadingStatus && loadingStatus.status == Constants.STATUS.PENDING">
+                <td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
+            </tr>
+            <tr *ngIf="loadingStatus && loadingStatus.status == Constants.STATUS.FINISHED && (!data || data.length == 0)">
+                <td [attr.colspan]="columnCount" class="td-no-data"><span>{{noDataMessage}}</span></td>
+            </tr>
+            <ng-container *ngFor="let row of data; let i = index">
+                <tr table-row-directive
+                    class="table-row-directive expandable-table-row-collapsed" 
+                    [ngClass]="rowClass(row)" 
+                    (click)="onExpand(row)"
+                    [data]="row"
+                    [columns]="columns"
+                    [classes]="classes"
+                    [actionVisible]="actionVisible"
+                    [actionIcon]="actionIcon"
+                    [operationsVisible]="operationsVisible"
+                    [exportVisible]="exportVisible"
+                    [exportVisibleForRow]="exportVisibleForRow"
+                    [checkboxEnabled]="checkboxEnabled"
+                    (onAction)="handleAction($event)"
+                    (onDelete)="handleDelete($event)"
+                    (onExport)="handleExport($event)"
+                    (onCheck)="handleCheck($event)"
+                    [deleteVisibleForRow]="deleteVisibleForRow"
+                    [actionVisibleForRow]="actionVisibleForRow"
+                    [actionPendingProperty]="actionPendingProperty"
+                    [deletePendingProperty]="deletePendingProperty"
+                    [exportPendingProperty]="exportPendingProperty"></tr>
+                <tr class="expandable-table-row-expanded">
+                    <td [attr.colspan]="columnCount" class="expandable-table-expandable-cell-no-spacings">
+                        <table width="100%" style="table-layout:fixed;">
+                            <tr class="tr-expandable-inner">
+                                <td>
+                                    <div [collapse]="!row.expanded" [isAnimated]="true">
+                                        <div class="collapsing-div">
+                                            <div class="panel panel-default">
+                                                <div class="panel-heading session-table-title">
+                                                    <div class="session-table-title-part">
+                                                        <div class="session-table-title-label">Test suite</div>
+                                                        <div class="session-table-title-value">{{row.testSuite}}</div>
+                                                    </div>
+                                                    <div class="session-table-title-part">
+                                                        <div class="session-table-title-label">Test case</div>
+                                                        <div class="session-table-title-value">{{row.testCase}}</div>
+                                                    </div>
+                                                    <div class="session-table-title-part">
+                                                        <div class="session-table-title-label">Session</div>
+                                                        <div class="session-table-title-value">{{row.session}}</div>
+                                                    </div>
+                                                </div>
+                                                <div class="panel-body" style="overflow-x: auto; overflow-y: hidden;">
+                                                    <div *ngIf="!row.hideLoadingIcon"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></div>
+                                                    <div [collapse]="!row.diagramExpanded" [isAnimated]="true">
+                                                        <div class="no-margin">
+                                                            <div *ngIf="row.expanded || row.diagramLoaded">
+                                                                <app-test-session-presentation 
+                                                                    [sessionId]="getSessionId(row)" 
+                                                                    [sessionObject]="row" 
+                                                                    (ready)="diagramReady($event)">
+                                                                </app-test-session-presentation>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </table>
+                    </td>
+                </tr>
+            </ng-container>
+        </tbody>
+    </table>
+    <div *ngIf="paginationVisible && data && data.length > 0" class="text-center table-paging-controls-expandable">
+        <ul class="pagination pagination-sm">
+            <li [ngClass]="prevDisabled ? 'disabled' : ''"><a href (click)="doFirstPage(); $event.preventDefault()">First</a></li>
+            <li [ngClass]="prevDisabled ? 'disabled' : ''"><a href (click)="doPrevPage(); $event.preventDefault()">Previous</a></li>
+            <li [ngClass]="nextDisabled ? 'disabled' : ''"><a href (click)="doNextPage(); $event.preventDefault()">Next</a></li>
+            <li [ngClass]="nextDisabled ? 'disabled' : ''"><a href (click)="doLastPage(); $event.preventDefault()">Last</a></li>
+        </ul>
+    </div>
+</div>

@@ -1,0 +1,39 @@
+<div class="page users detail">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">User details</h4>
+        </div>
+        <form class="form-horizontal">
+            <div class="panel-body">
+                <!-- Error messages -->
+                <div class="row">
+                    <div class="col-md-10 col-md-offset-1">
+                        <app-alert-display [alerts]="alerts" innerClass="col-md-10 col-md-offset-1"></app-alert-display>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-11">
+                        <app-user-form [user]="user" [new]="false" [admin]="false" [roles]="roleChoices" [sso]="dataService.configuration.ssoEnabled" (passwordChanged)="changePassword = $event"></app-user-form>
+                    </div>
+                </div>
+                <div class="row" *ngIf="!dataService.configuration.ssoEnabled">
+                    <div class="col-md-10 col-centered">
+                        <div class="form-control-static bg-info div-padded-sides div-rounded">
+                            <p style="margin-bottom: 0px;"><b>Privacy note:</b> By clicking 'Update' you grant the user's consent on his/her behalf to record the provided information. This is used only for internal identification purposes and is never shared with other parties. Alternatively you may also complete this form with information that is not personally identifiable. Please refer to the legal notice (link available in the screen's footer) for more information.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel-footer">
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-8 btn-toolbar">
+                        <button class="btn btn-default" type="submit" (click)="updateUser()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Update</button>
+                        <button class="btn btn-default" type="button" (click)="deleteUser()" [disable]="savePending" [pending]="deletePending">Delete</button>
+                        <button class="btn btn-default" type="button" (click)="cancelDetailUser()">Back</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
