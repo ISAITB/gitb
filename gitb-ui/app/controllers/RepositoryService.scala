@@ -233,6 +233,8 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
         completeSettings.keyPassword = Some(MimeUtil.decryptString(storedSettings.get.keyPassword.get))
         completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
         settingsToUse = Some(completeSettings.toCaseObject)
+      } else {
+        settingsToUse = storedSettings
       }
     }
     exportConformanceCertificateInternal(settingsToUse.get, communityId, systemId, actorId)
