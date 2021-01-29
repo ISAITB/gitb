@@ -19,7 +19,7 @@
 						<div class="input-group-btn">
 							<button class="btn btn-default" type="button" ng-file-select="controller.selectArchive($files)" accept="application/zip"><i class="fa fa-folder-open-o"></i></button>
 						</div>
-						<input type="text" class="form-control clickable" ng-value="controller.file.name" placeholder="Select test suite archive ..." ng-file-select="controller.selectArchive($files)" accept="application/zip" readonly="readonly"/>
+						<input type="text" autocomplete="off" class="form-control clickable" ng-value="controller.file.name" placeholder="Select test suite archive ..." ng-file-select="controller.selectArchive($files)" accept="application/zip" readonly="readonly"/>
 					</div>
 				</div>
 				<div tb-tooltip="The test suite archive to upload."></div>

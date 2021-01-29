@@ -23,7 +23,7 @@
 						</select>
 					</div>
 					<div ng-if="!editEndpointConfigurationCtrl.hasPresetValues">
-						<input id="value" ng-model="editEndpointConfigurationCtrl.configuration.value" class="form-control" type="text"/>
+						<input id="value" ng-model="editEndpointConfigurationCtrl.configuration.value" class="form-control" type="text" autocomplete="off"/>
 					</div>
 				</div>
 				<input id="value" ng-model="editEndpointConfigurationCtrl.configuration.value" class="form-control" type="password" ng-if="editEndpointConfigurationCtrl.parameter.kind == 'SECRET'"/>

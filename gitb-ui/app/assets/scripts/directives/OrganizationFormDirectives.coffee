@@ -10,12 +10,12 @@
     template: ''+
       '<div class="form-group">'+
         '<label class="col-xs-3 control-label" for="sname">* Short name:</label>'+
-        '<div class="col-xs-7"><input id="sname" ng-model="tbOrganization.sname" class="form-control" type="text"></div>'+
+        '<div class="col-xs-7"><input id="sname" ng-model="tbOrganization.sname" class="form-control" type="text" autocomplete="off"></div>'+
         '<div tb-tooltip="A short name to refer to the {{DataService.labelOrganisationLower()}} used in selection lists and tabular displays where space is limited."></div>'+
       '</div>'+
       '<div class="form-group">'+
         '<label class="col-xs-3 control-label" for="fname">* Full name:</label>'+
-        '<div class="col-xs-7"><input id="fname" ng-model="tbOrganization.fname" class="form-control" type="text"></div>'+
+        '<div class="col-xs-7"><input id="fname" ng-model="tbOrganization.fname" class="form-control" type="text" autocomplete="off"></div>'+
         '<div tb-tooltip="The full name of the {{DataService.labelOrganisationLower()}} used in reports and detail screens."></div>'+
       '</div>'+
       '<div class="form-group">'+
@@ -62,7 +62,7 @@
         '</div>'+
         '<div class="form-group" uib-collapse="!tbOrganization.template">'+
           '<label class="col-xs-3 control-label" for="templateName">* Template name:</label>'+
-          '<div class="col-xs-7"><input id="templateName" ng-model="tbOrganization.templateName" class="form-control" type="text"></div>'+
+          '<div class="col-xs-7"><input id="templateName" ng-model="tbOrganization.templateName" class="form-control" type="text" autocomplete="off"></div>'+
           '<div tb-tooltip="The name to display in the self-registration screen for this template configuration."></div>'+
         '</div>'+
       '</div>'

@@ -9,12 +9,12 @@
         <div class="col-xs-10 col-xs-offset-1">
           <div class="form-group">
             <label class="col-xs-3 control-label" for="sname">* Short name:</label>
-            <div class="col-xs-7"><input id="sname" ng-model="tbCommunity.sname" class="form-control" type="text"></div>
+            <div class="col-xs-7"><input id="sname" ng-model="tbCommunity.sname" class="form-control" type="text" autocomplete="off"></div>
             <div tb-tooltip="A short name used to refer to the community in selection lists and tabular displays where space is limited. If self-registration is enabled this is also displayed as the community\'s name along with its description."></div>
           </div>
           <div class="form-group">
             <label class="col-xs-3 control-label" for="fname">* Full name:</label>
-            <div class="col-xs-7"><input id="fname" ng-model="tbCommunity.fname" class="form-control" type="text"></div>
+            <div class="col-xs-7"><input id="fname" ng-model="tbCommunity.fname" class="form-control" type="text" autocomplete="off"></div>
             <div tb-tooltip="The full name used to refer to the community in reports and detail screens."></div>
           </div>
           <div class="form-group" ng-if="tbAdmin">
@@ -26,7 +26,7 @@
           </div>
           <div class="form-group">
             <label class="col-xs-3 control-label" for="email">Support email:</label>
-            <div class="col-xs-7"><input id="email" ng-model="tbCommunity.email" class="form-control" type="text"></div>
+            <div class="col-xs-7"><input id="email" ng-model="tbCommunity.email" class="form-control" type="text" autocomplete="off"></div>
             <div tb-tooltip="This email address is used to receive contact form submissions (if supported) from community members and other notifications."></div>
           </div>
           <div ng-if="selfRegEnabled" class="form-group">
@@ -51,7 +51,7 @@
             <div ng-show="tbCommunity.selfRegType == '+@Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN+'">
               <div class="form-group">
                 <label class="col-xs-3 control-label" for="selfRegToken">* Self-registration token:</label>
-                <div class="col-xs-7"><input id="selfRegToken" ng-model="tbCommunity.selfRegToken" class="form-control" type="text"></div>
+                <div class="col-xs-7"><input id="selfRegToken" ng-model="tbCommunity.selfRegToken" class="form-control" type="text" autocomplete="off"></div>
                 <div tb-tooltip="This serves as a password for new users to provide during self-registration so that the community is not fully public. Ensure your community members are aware of this or that you provide a support email for relevant requests."></div>
               </div>
               <div class="form-group">
@@ -303,7 +303,7 @@
                     </div>
                     <div ng-if="!property.hasPresetValues">
                       <p ng-if="isReadonly" class="form-control-static">{{property.value}}<span ng-if="property.desc" ng-style="{\'margin-left\':(property.value?\'20px\':\'0px\')}" uib-tooltip="{{property.desc}}"><i class="fa fa-question-circle"></i></span></p>
-                      <input ng-if="!isReadonly" ng-change="checkPrerequisites(property)" ng-attr-id="{{\'prop-\'+property.id}}" ng-model="property.value" ng-readonly="property.adminOnly && !isAdmin" class="form-control" type="text"/>
+                      <input ng-if="!isReadonly" ng-change="checkPrerequisites(property)" ng-attr-id="{{\'prop-\'+property.id}}" ng-model="property.value" ng-readonly="property.adminOnly && !isAdmin" class="form-control" type="text" autocomplete="off"/>
                     </div>
                   </div>
                   <div ng-if="property.kind == \'SECRET\'">

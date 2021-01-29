@@ -5,12 +5,12 @@
 		template: ''+
 			'<div class="form-group">'+
 				'<label class="col-xs-3 control-label" for="id">* ID:</label>'+
-				'<div class="col-xs-7"><input id="id" ng-model="actor.actorId" class="form-control" type="text"></div>'+
+				'<div class="col-xs-7"><input id="id" ng-model="actor.actorId" class="form-control" type="text" autocomplete="off"></div>'+
 				'<div tb-tooltip="This identifier is used within test suites and test cases to refer to the {{DataService.labelActorLower()}}."></div>'+
 			'</div>'+
 			'<div class="form-group">'+
 				'<label class="col-xs-3 control-label" for="name">* Name:</label>'+
-				'<div class="col-xs-7"><input id="name" ng-model="actor.name" class="form-control" type="text"></div>'+
+				'<div class="col-xs-7"><input id="name" ng-model="actor.name" class="form-control" type="text" autocomplete="off"></div>'+
 				'<div tb-tooltip="This is used to refer to the {{DataService.labelActorLower()}} in all screens and reports."></div>'+
 			'</div>'+
 			'<div class="form-group">'+
@@ -22,7 +22,7 @@
 			'</div>'+
 			'<div class="form-group">'+
 				'<label class="col-xs-3 control-label" for="displayOrder">Display order:</label>'+
-				'<div class="col-xs-1"><input id="displayOrder" ng-model="actor.displayOrder" class="form-control" type="text"></div>'+
+				'<div class="col-xs-1"><input id="displayOrder" ng-model="actor.displayOrder" class="form-control" type="text" autocomplete="off"></div>'+
 				'<div tb-tooltip="A number to be considered in relation to other {{DataService.labelActorsLower()}} that is used to determine the display positioning in test execution diagrams. If unspecified a default positioning is applied based on the test case\'s steps."></div>'+
 			'</div>'+
 			'<div class="form-group">'+

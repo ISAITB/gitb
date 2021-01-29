@@ -20,7 +20,7 @@
                     <div class="col-md-6">
                         <label>{{configuration.name}}:</label>
                         <span class="tab">{{configuration.desc}}</span>
-                        <input ng-if="configuration.kind == 'SIMPLE'" type="text" class="form-control" ng-model="configuration.value">
+                        <input ng-if="configuration.kind == 'SIMPLE'" type="text" autocomplete="off" class="form-control" ng-model="configuration.value">
                         <div   ng-if="configuration.kind == 'BINARY'">
                             <input type="file" id="file" name="file" onchange="angular.element(this).scope().onFileSelect(event)"  />
                         </div>
