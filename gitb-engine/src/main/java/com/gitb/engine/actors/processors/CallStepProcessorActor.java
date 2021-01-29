@@ -16,10 +16,16 @@ import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by serbay on 9/15/14.
@@ -28,6 +34,7 @@ import java.util.Map;
  */
 public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	public static final String NAME = "call-s-p";
+	private static final Logger LOG = LoggerFactory.getLogger(CallStepProcessorActor.class);
 
 	private Scriptlet scriptlet;
 	private TestCaseScope childScope;
@@ -58,51 +65,61 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 
 	@Override
 	protected void handleStatusEvent(StatusEvent event) throws Exception {
-//		super.handleStatusEvent(event);
-
 		StepStatus status = event.getStatus();
-		if(status == StepStatus.COMPLETED) {
-
+		if (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.WARNING) {
 			generateOutput();
-
-			report(StepStatus.COMPLETED);
-		} else if(status == StepStatus.ERROR) {
-			childrenHasError();
-		} else if(status == StepStatus.WARNING) {
-			childrenHasWarning();
+			if (status == StepStatus.COMPLETED) {
+				report(StepStatus.COMPLETED);
+			} else if(status == StepStatus.ERROR) {
+				childrenHasError();
+			} else { // WARNING
+				childrenHasWarning();
+			}
 		}
 	}
 
-	private Map<String, DataType> generateOutput() throws IOException {
-		Map<String, DataType> elements;
-
-		if(step.getOutput().size() > 0) {
-			// Call step has id and output bindings are listed
-			boolean isNameBinding = BindingUtils.isNameBinding(step.getOutput());
-
-			if(isNameBinding) {
-				elements = generateOutputWithNameBinding();
-			} else {
-				elements = generateOutputWithIndexBinding();
-			}
-
-			if(step.getId() != null) {
-				setOutputWithId(elements);
-			} else {
-				setOutputWithElements(elements);
-			}
-		} else {
-			 // Call step has id but output bindings are not listed
-			elements = generateOutputWithScriptletOutputs();
-
-			if(step.getId() != null) {
-				setOutputWithId(elements);
-			} else {
-				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Call step without an id and output bindings"));
+	private void generateOutput() throws IOException {
+		Set<String> specificOutputsToReturn = new HashSet<>();
+		for (var output: step.getOutput()) {
+			if (StringUtils.isNotBlank(output.getName())) {
+				if (specificOutputsToReturn.contains(output.getName())) {
+					LOG.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Ignoring duplicate output ["+output.getName()+"].");
+				} else {
+					specificOutputsToReturn.add(output.getName());
+				}
 			}
 		}
-
-		return elements;
+		ExpressionHandler expressionHandler = new ExpressionHandler(childScope);
+		Map<String, DataType> elements = new HashMap<>();
+		for (var output: scriptlet.getOutput()) {
+			if (output.getName() != null) {
+				if (specificOutputsToReturn.isEmpty() || specificOutputsToReturn.contains(output.getName())) {
+					// Add the scriptlet output to the call outputs.
+					DataType result;
+					if (StringUtils.isBlank(output.getValue())) {
+						TestCaseScope.ScopedVariable variable = childScope.getVariable(output.getName());
+						if (variable == null) {
+							throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet output ["+output.getName()+"] must either define an expression or match a variable in the scriptlet's scope."));
+						}
+						result = variable.getValue();
+					} else {
+						// Output defines an expression. Use it to define value.
+						result = expressionHandler.processExpression(output);
+					}
+					elements.put(output.getName(), result);
+				}
+			}
+		}
+		// Log a warning for any expected outputs that were not returned.
+		specificOutputsToReturn.removeAll(elements.keySet());
+		for (var unhandledOutput: specificOutputsToReturn) {
+			LOG.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Requested output ["+unhandledOutput+"] was not found in the scriptlet's outputs.");
+		}
+		if (step.getId() != null) {
+			setOutputWithId(elements);
+		} else {
+			setOutputWithElements(elements);
+		}
 	}
 
 	private void setOutputWithElements(Map<String, DataType> elements) throws IOException {
@@ -118,55 +135,6 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 		scope
 			.createVariable(step.getId())
 			.setValue(outputs);
-	}
-
-	private Map<String, DataType> generateOutputWithScriptletOutputs() throws IOException {
-		Map<String, DataType> elements = new HashMap<>();
-
-		for (int i = 0; i < scriptlet.getOutput().size(); i++) {
-			Binding scriptletOutput = scriptlet.getOutput().get(i);
-
-			TestCaseScope.ScopedVariable variable = childScope.getVariable(scriptletOutput.getName());
-			DataType result = variable.getValue();
-
-			elements.put(scriptletOutput.getName(), result);
-		}
-
-		return elements;
-	}
-
-	private Map<String, DataType> generateOutputWithNameBinding() throws IOException {
-		Map<String, DataType> elements = new HashMap<>();
-
-		for (int i = 0; i < step.getOutput().size(); i++) {
-			Binding output = step.getOutput().get(i);
-			Binding scriptletOutput = getScriptletOutputBinding(output.getName());
-
-			TestCaseScope.ScopedVariable variable = childScope.getVariable(scriptletOutput.getName());
-			DataType result = variable.getValue();
-
-			elements.put(output.getName(), result);
-		}
-
-		return elements;
-	}
-
-	private Map<String, DataType> generateOutputWithIndexBinding() throws IOException {
-		Map<String, DataType> elements = new HashMap<>();
-
-		for (int i = 0; i < step.getOutput().size(); i++) {
-			Binding output = step.getOutput().get(i);
-			Binding scriptletOutput = null;
-
-			scriptletOutput = scriptlet.getOutput().get(i);
-
-			TestCaseScope.ScopedVariable variable = childScope.getVariable(scriptletOutput.getName());
-			DataType result = variable.getValue();
-
-			elements.put(scriptletOutput.getName(), result);
-		}
-
-		return elements;
 	}
 
 	private MapType createOutputMap(Map<String, DataType> elements) {
@@ -195,18 +163,16 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 		throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet definition ["+ step.getPath()+"] cannot be found"));
 	}
 
-	private TestCaseScope createChildScope() throws Exception {
-		if(scriptlet.getParams().getVar().size() != step.getInput().size()) {
-			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Wrong number of parameters for scriptlet ["+scriptlet.getId()+"]"));
+	private TestCaseScope createChildScope() {
+		int parameterCount = 0;
+		if (scriptlet.getParams() != null) {
+			parameterCount = scriptlet.getParams().getVar().size();
 		}
-		if(step.getOutput().size() > 0 && scriptlet.getOutput().size() != step.getOutput().size()) {
-			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Wrong number of outputs for scriptlet["+scriptlet.getId()+"]"));
+		if (parameterCount != step.getInput().size()) {
+			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Wrong number of parameters for scriptlet ["+scriptlet.getId()+"]. Expected ["+parameterCount+"] but encountered ["+step.getInput().size()+"]"));
 		}
-
 		TestCaseScope childScope = scope.createChildScope();
-
 		createScriptletVariables(childScope);
-
 		return childScope;
 	}
 
@@ -269,16 +235,6 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "No variables with name ["+name+"] are found"));
 		}
 		return variable;
-	}
-
-	private Binding getScriptletOutputBinding(String name) {
-		for(Binding output : scriptlet.getOutput()) {
-			if(output.getName().equals(name)) {
-				return output;
-			}
-		}
-
-		return null;
 	}
 
 	private void setInputVariable(TestCaseScope childScope, ExpressionHandler expressionHandler, Binding input, Variable variable) {

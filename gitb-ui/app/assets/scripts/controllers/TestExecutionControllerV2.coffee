@@ -523,7 +523,7 @@ class TestExecutionControllerV2
     for stepReport in stepReports
       if currentStepId != stepReport.stepId
         step = @findNodeWithStepId @$scope.stepsOfTests[@currentTest.id], stepReport.stepId
-        if step.status != stepReport.status
+        if step && step.status != stepReport.status
           reportToSet = undefined
           if stepReport.path
             reportToSet = {
