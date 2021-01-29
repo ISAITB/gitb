@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.3.3.RELEASE</version>
+        <version>2.4.2</version>
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
@@ -18,7 +18,7 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <gitb.version>1.0-SNAPSHOT</gitb.version>
+        <version.springBoot>2.4.2</version.springBoot>
     </properties>
 
     <repositories>
@@ -57,7 +57,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.0</version>
+                <version>3.8.1</version>
                 <configuration>
                     <release>11</release>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
@@ -85,47 +85,47 @@
             <dependency>
                 <groupId>com.gitb</groupId>
                 <artifactId>gitb-core</artifactId>
-                <version>1.0-SNAPSHOT</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.gitb</groupId>
                 <artifactId>gitb-lib</artifactId>
-                <version>1.0-SNAPSHOT</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.gitb</groupId>
                 <artifactId>gitb-remote-testcase-repository</artifactId>
-                <version>1.0-SNAPSHOT</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.gitb</groupId>
                 <artifactId>gitb-local-testcase-repository</artifactId>
-                <version>1.0-SNAPSHOT</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.gitb</groupId>
                 <artifactId>gitb-messaging</artifactId>
-                <version>1.0-SNAPSHOT</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.gitb</groupId>
                 <artifactId>gitb-validators</artifactId>
-                <version>1.0-SNAPSHOT</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.gitb</groupId>
                 <artifactId>gitb-processing</artifactId>
-                <version>1.0-SNAPSHOT</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.gitb</groupId>
                 <artifactId>gitb-remote-modules</artifactId>
-                <version>1.0-SNAPSHOT</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.gitb</groupId>
                 <artifactId>gitb-engine</artifactId>
-                <version>1.0-SNAPSHOT</version>
+                <version>${project.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.kohsuke.metainf-services</groupId>
@@ -136,27 +136,27 @@
             <dependency>
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-spring-boot-starter-jaxws</artifactId>
-                <version>3.4.0</version>
+                <version>3.4.2</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter</artifactId>
-                <version>2.3.3.RELEASE</version>
+                <version>${version.springBoot}</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-validation</artifactId>
-                <version>2.3.3.RELEASE</version>
+                <version>${version.springBoot}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
-                <version>4.5.12</version>
+                <version>4.5.13</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpmime</artifactId>
-                <version>4.5.12</version>
+                <version>4.5.13</version>
             </dependency>
             <dependency>
                 <groupId>ch.qos.logback</groupId>
@@ -171,7 +171,7 @@
             <dependency>
                 <groupId>commons-codec</groupId>
                 <artifactId>commons-codec</artifactId>
-                <version>1.14</version>
+                <version>1.15</version>
             </dependency>
             <dependency>
                 <groupId>org.reflections</groupId>
@@ -181,7 +181,7 @@
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>2.7</version>
+                <version>2.8.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -191,12 +191,12 @@
             <dependency>
                 <groupId>org.apache.tika</groupId>
                 <artifactId>tika-core</artifactId>
-                <version>1.24.1</version>
+                <version>1.25</version>
             </dependency>
             <dependency>
                 <groupId>xerces</groupId>
                 <artifactId>xercesImpl</artifactId>
-                <version>2.12.0</version>
+                <version>2.12.1</version>
             </dependency>
             <dependency>
                 <groupId>javax.xml.bind</groupId>
@@ -206,12 +206,13 @@
             <dependency>
                 <groupId>org.glassfish.jaxb</groupId>
                 <artifactId>jaxb-runtime</artifactId>
-                <version>2.3.1</version>
+                <!-- Version must match the 2.3.* API -->
+                <version>2.3.3</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.saxon</groupId>
                 <artifactId>Saxon-HE</artifactId>
-                <version>9.9.1-7</version>
+                <version>10.3</version>
             </dependency>
             <dependency>
                 <groupId>javax.xml.ws</groupId>
@@ -266,12 +267,12 @@
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
                 <artifactId>akka-actor_2.12</artifactId>
-                <version>2.6.8</version>
+                <version>2.6.11</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>29.0-jre</version>
+                <version>30.1-jre</version>
             </dependency>
             <dependency>
                 <groupId>com.github.mifmif</groupId>
@@ -286,9 +287,10 @@
             <dependency>
                 <groupId>com.sun.xml.messaging.saaj</groupId>
                 <artifactId>saaj-impl</artifactId>
+                <!-- Do not update version -->
                 <version>1.5.2</version>
             </dependency>
-            <!-- TODO replace these dependecies (or better decouple) - START -->
+            <!-- TODO replace these dependencies (or better decouple) - START -->
             <dependency>
                 <groupId>com.helger</groupId>
                 <artifactId>as2-lib</artifactId>
@@ -314,16 +316,16 @@
                     </exclusion>
                 </exclusions>
             </dependency>
-            <!-- TODO replace these dependecies (or better decouple) - END -->
+            <!-- TODO replace these dependencies (or better decouple) - END -->
             <dependency>
                 <groupId>io.netty</groupId>
                 <artifactId>netty</artifactId>
                 <version>3.10.6.Final</version>
-            </dependency>
+            </dependency> <!-- TODO CHECK THIS -->
             <dependency>
                 <groupId>dnsjava</groupId>
                 <artifactId>dnsjava</artifactId>
-                <version>3.2.2</version>
+                <version>3.3.1</version>
             </dependency>
             <dependency>
                 <groupId>commons-fileupload</groupId>
@@ -338,17 +340,17 @@
             <dependency>
                 <groupId>com.alexnederlof</groupId>
                 <artifactId>jasperreports-plugin</artifactId>
-                <version>2.7</version>
+                <version>2.8</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.jasperreports</groupId>
                 <artifactId>jasperreports</artifactId>
-                <version>6.13.0</version>
+                <version>6.16.0</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.jasperreports</groupId>
                 <artifactId>jasperreports-fonts</artifactId>
-                <version>6.13.0</version>
+                <version>6.16.0</version>
             </dependency>
             <dependency>
                 <groupId>javax.servlet</groupId>
@@ -359,12 +361,13 @@
             <dependency>
                 <groupId>com.helger</groupId>
                 <artifactId>ph-schematron</artifactId>
+                <!-- TODO update this -->
                 <version>2.8.3</version>
             </dependency>
             <dependency>
                 <groupId>org.xmlunit</groupId>
                 <artifactId>xmlunit-core</artifactId>
-                <version>2.7.0</version>
+                <version>2.8.2</version>
             </dependency>
             <dependency>
                 <groupId>commons-beanutils</groupId>
