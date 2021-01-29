@@ -309,7 +309,7 @@
                   <div ng-if="property.kind == \'SECRET\'">
                     <div ng-class="\'col-xs-\'+(9-tbColLabel-tbColInputLess)">
                       <p ng-if="isReadonly" class="form-control-static">{{property.value}}<span ng-if="property.desc" ng-style="{\'margin-left\':(property.value?\'20px\':\'0px\')}" uib-tooltip="{{property.desc}}"><i class="fa fa-question-circle"></i></span></p>
-                      <input ng-if="!isReadonly" ng-change="checkPrerequisites(property)" ng-attr-id="{{\'prop-\'+property.id}}" ng-model="property.value" ng-readonly="!property.changeValue" class="form-control" ng-attr-type="{{property.showValue?\'text\':\'password\'}}"/>
+                      <input ng-if="!isReadonly" autocomplete="off" ng-change="checkPrerequisites(property)" ng-attr-id="{{\'prop-\'+property.id}}" ng-model="property.value" ng-readonly="!property.changeValue" class="form-control" ng-attr-type="{{property.showValue?\'text\':\'password\'}}"/>
                       <div class="checkbox" ng-if="property.changeValue" ng-disabled="property.adminOnly && !isAdmin">
                         <label>
                           <input type="checkbox" ng-model="property.showValue">Show

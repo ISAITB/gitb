@@ -38,7 +38,7 @@
 					<div class="form-group">
 						<label class="col-xs-3 control-label" for="encryptionPassword">* Export password:</label>
 						<div class="col-xs-4 inline-checkbox-container">
-							<input id="encryptionPassword" ng-model="controller.settings.encryptionKey" class="form-control" ng-attr-type="{{controller.showEncryptionKey?'text':'password'}}"/>
+							<input id="encryptionPassword" autocomplete="off" ng-model="controller.settings.encryptionKey" class="form-control" ng-attr-type="{{controller.showEncryptionKey?'text':'password'}}"/>
 							<label class="inline-checkbox">
 								<input type="checkbox" ng-model="controller.showEncryptionKey">Show
 								<div tb-inline="true" tb-tooltip="Used to encrypt the exported ZIP archive and also any sensitive values it may include. This password will need to be provided when importing or opening the archive."></div>
