@@ -22,10 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by serbay on 9/15/14.
@@ -160,7 +157,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 		if(repository.isScriptletAvailable(testCase.getId(), step.getPath())) {
 			return repository.getScriptlet(testCase.getId(), step.getPath());
 		}
-		throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet definition ["+ step.getPath()+"] cannot be found"));
+		throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet definition ["+ step.getPath()+"] cannot be found."));
 	}
 
 	private TestCaseScope createChildScope() {
@@ -169,7 +166,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 			parameterCount = scriptlet.getParams().getVar().size();
 		}
 		if (parameterCount != step.getInput().size()) {
-			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Wrong number of parameters for scriptlet ["+scriptlet.getId()+"]. Expected ["+parameterCount+"] but encountered ["+step.getInput().size()+"]"));
+			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Wrong number of parameters for scriptlet ["+scriptlet.getId()+"]. Expected ["+parameterCount+"] but encountered ["+step.getInput().size()+"]."));
 		}
 		TestCaseScope childScope = scope.createChildScope();
 		createScriptletVariables(childScope);
@@ -224,15 +221,21 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	private Variable getScriptletInputVariable(String name) {
 		Variable variable = null;
 
-		for(Variable v : scriptlet.getParams().getVar()) {
+		for (Variable v : scriptlet.getParams().getVar()) {
 			if(v.getName().equals(name)) {
 				variable = v;
 				break;
 			}
 		}
 
-		if(variable == null) {
-			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "No variables with name ["+name+"] are found"));
+		if (variable == null) {
+			Set<String> expectedInputs = new TreeSet<>();
+			scriptlet.getParams().getVar().forEach((v) -> expectedInputs.add(v.getName()));
+			if (expectedInputs.isEmpty()) {
+				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet was called with an unexpected input ["+name+"]. No inputs were expected to be provided."));
+			} else {
+				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet was called with an unexpected input ["+name+"]. The scriptlet expected the following inputs ["+ String.join("|", expectedInputs) +"]."));
+			}
 		}
 		return variable;
 	}
