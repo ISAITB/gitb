@@ -22,6 +22,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Locale;
 
 /**
  * Created by serbay on 10/20/14.
@@ -50,13 +51,8 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 	}
 
 	@Override
-	public boolean isScriptletAvailable(String testCaseId, String scriptletId) {
-		return getScriptlet(testCaseId, scriptletId) != null;
-	}
-
-	@Override
-	public Scriptlet getScriptlet(String testCaseId, String scriptletId) {
-		return getXMLTestResource(testCaseId, Scriptlet.class, scriptletId);
+	public Scriptlet getScriptlet(String from, String testCaseId, String scriptletPath) {
+		return getXMLTestResource(from, testCaseId, Scriptlet.class, scriptletPath);
 	}
 
 	@Override
@@ -73,14 +69,18 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 		return getTestArtifact(testCaseId, path) != null;
 	}
 
-	private <T> T getXMLTestResource(String testCaseId, Class<? extends T> clazz, String resourceId) {
+	private <T> T getXMLTestResource(String from, String testCaseId, Class<? extends T> clazz, String resourcePath) {
+		if (!resourcePath.toLowerCase(Locale.ROOT).endsWith(".xml")) {
+			resourcePath += ".xml";
+		}
+		String locationKey = testCaseId;
+		if (from != null) {
+			locationKey = from + "|" + testCaseId;
+		}
 		try {
-			InputStream inputStream = getTestResource(testCaseId,resourceId + ".xml");
-
+			InputStream inputStream = getTestResource(locationKey, resourcePath);
 			if (inputStream != null) {
-				T resource = XMLUtils.unmarshal(clazz, new StreamSource(inputStream));
-
-				return resource;
+				return XMLUtils.unmarshal(clazz, new StreamSource(inputStream));
 			} else {
 				return null;
 			}

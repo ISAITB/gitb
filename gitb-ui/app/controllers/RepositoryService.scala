@@ -2,7 +2,6 @@ package controllers
 
 import java.io._
 import java.nio.file.{Files, Paths}
-
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl.TestCase
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
@@ -11,13 +10,14 @@ import config.Configurations
 import controllers.util.ParameterExtractor.requiredBodyParameter
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
+
 import javax.inject.Inject
 import javax.xml.bind.JAXBElement
 import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
 import managers._
 import managers.export._
-import models.{ConformanceCertificate, ConformanceCertificates, Constants}
+import models.{ConformanceCertificate, ConformanceCertificates, Constants, Specifications, TestSuites}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
@@ -40,28 +40,50 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 
   import scala.collection.JavaConverters._
 
-	def getTestSuiteResource(testId: String, filePath:String) = authorizedAction { request =>
-    authorizationManager.canViewTestSuiteResource(request, testId)
-    val testCase = testCaseManager.getTestCaseForIdWrapper(testId).get
-    val testSuite = testSuiteManager.getTestSuiteOfTestCaseWrapper(testCase.id)
-    var filePathToLookup = codec.decode(filePath)
-    var filePathToAlsoCheck: Option[String] = null
-    if (!filePath.startsWith(testSuite.identifier) && !filePath.startsWith("/"+testSuite.identifier)) {
-      filePathToLookup = testSuite.filename + "/" + filePathToLookup
-      filePathToAlsoCheck = None
+	def getTestSuiteResource(locationKey: String, filePath:String) = authorizedAction { request =>
+    // Location key is either a test case ID (e.g. '123') or a test case ID prefixed by a test suite string identifier [TEST_SUITE_IDENTIFIER]|123.
+    authorizationManager.canViewTestSuiteResource(request, locationKey)
+    var testSuiteIdentifier: Option[String] = None
+    var testIdentifier: Option[String] = None
+    val locationKeyToUse = codec.decode(locationKey)
+    val locationSeparatorIndex = locationKeyToUse.indexOf('|')
+    if (locationSeparatorIndex != -1) {
+      testSuiteIdentifier = Some(locationKeyToUse.substring(0, locationSeparatorIndex))
+      testIdentifier = Some(locationKeyToUse.substring(locationSeparatorIndex+1))
     } else {
-      filePathToAlsoCheck = Some(testSuite.filename + "/" + filePathToLookup)
-      filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.identifier, testSuite.filename)
+      testIdentifier = Some(locationKeyToUse)
     }
-    // Ensure that the requested resource is within the test suite folder (to avoid path traversal)
-    val spec = specificationManager.getSpecificationById(testSuite.specification)
-    val testSuiteFolder = RepositoryUtils.getTestSuitesResource(spec, testSuite.filename, None)
-    val file = RepositoryUtils.getTestSuitesResource(spec, filePathToLookup, filePathToAlsoCheck)
-    logger.debug("Reading test resource ["+codec.decode(filePath)+"] definition from the file ["+file+"]")
-    if (file.exists() && file.toPath.normalize().startsWith(testSuiteFolder.toPath.normalize())) {
-      Ok.sendFile(file, true)
+    val testCase = testCaseManager.getTestCaseForIdWrapper(testIdentifier.get).get
+    val specificationOfTestCase = specificationManager.getSpecificationById(testCase.targetSpec)
+    var testSuite: Option[TestSuites] = None
+    if (testSuiteIdentifier.isEmpty) {
+      // Consider test suite of test case.
+      testSuite = Some(testSuiteManager.getTestSuiteOfTestCaseWrapper(testCase.id))
     } else {
+      // Find test suite in specification or domain.
+      testSuite = testSuiteManager.findTestSuiteByIdentifier(testSuiteIdentifier.get, specificationOfTestCase.domain, specificationOfTestCase.id)
+    }
+    if (testSuite.isEmpty) {
       NotFound
+    } else {
+      var filePathToLookup = codec.decode(filePath)
+      var filePathToAlsoCheck: Option[String] = null
+      if (!filePath.startsWith(testSuite.get.identifier) && !filePath.startsWith("/"+testSuite.get.identifier)) {
+        filePathToLookup = testSuite.get.filename + "/" + filePathToLookup
+        filePathToAlsoCheck = None
+      } else {
+        filePathToAlsoCheck = Some(testSuite.get.filename + "/" + filePathToLookup)
+        filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.get.identifier, testSuite.get.filename)
+      }
+      // Ensure that the requested resource is within the test suite folder (to avoid path traversal)
+      val testSuiteFolder = RepositoryUtils.getTestSuitesResource(testSuite.get.specification, specificationOfTestCase.domain, testSuite.get.filename, None)
+      val file = RepositoryUtils.getTestSuitesResource(testSuite.get.specification, specificationOfTestCase.domain, filePathToLookup, filePathToAlsoCheck)
+      logger.debug("Reading test resource ["+codec.decode(filePath)+"] definition from the file ["+file+"]")
+      if (file.exists() && file.toPath.normalize().startsWith(testSuiteFolder.toPath.normalize())) {
+        Ok.sendFile(file, inline = true)
+      } else {
+        NotFound
+      }
     }
 	}
 

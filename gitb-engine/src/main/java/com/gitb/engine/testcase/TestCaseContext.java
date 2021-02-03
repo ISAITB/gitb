@@ -6,15 +6,18 @@ import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.remote.messaging.RemoteMessagingModuleClient;
+import com.gitb.engine.utils.ScriptletCache;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.layer.AbstractMessagingHandler;
 import com.gitb.messaging.model.InitiateResponse;
-import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tbs.SUTConfiguration;
 import com.gitb.tdl.*;
-import com.gitb.types.*;
+import com.gitb.types.BooleanType;
+import com.gitb.types.DataType;
+import com.gitb.types.DataTypeFactory;
+import com.gitb.types.MapType;
 import com.gitb.utils.ActorUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.map.Tuple;
@@ -89,6 +92,8 @@ public class TestCaseContext {
      */
     private final Map<Tuple<String>, List<ActorConfiguration>> sutHandlerConfigurations;
 
+    private final ScriptletCache scriptletCache = new ScriptletCache();
+
     /**
      * Current state of the test case execution
      */
@@ -97,7 +102,7 @@ public class TestCaseContext {
 	/**
 	 * Test session state enumeration
 	 */
-    public static enum TestCaseStateEnum {
+    public enum TestCaseStateEnum {
 		/**
 		 * Just initialized, waiting for configuration
 		 */
@@ -148,6 +153,10 @@ public class TestCaseContext {
             actorRoles.put(role.getId(), role);
         }
     }
+
+    public ScriptletCache getScriptletCache() {
+    	return this.scriptletCache;
+	}
 
     private void addStepStatusForStep(MapType map, Object step) {
     	if (step != null) {
@@ -465,28 +474,18 @@ public class TestCaseContext {
 		            transactions.addAll(createTransactionInfo(thread));
 	            }
             } else if(step instanceof CallStep) {
-	            // find scriptlet in the test case (if it is inline)
-	            Scriptlet scriptlet = null;
-	            for(Scriptlet s : testCase.getScriptlets().getScriptlet()) {
-		            if(s.getId().equals(((CallStep) step).getPath())) {
-			            scriptlet = s;
-		            }
-	            }
-
-	            // find the scriptlet in repositories
-	            ITestCaseRepository repository = ModuleManager.getInstance().getTestCaseRepository();
-	            if(repository.isScriptletAvailable(getTestCase().getId(), ((CallStep) step).getPath())) {
-		            scriptlet = repository.getScriptlet(getTestCase().getId(), ((CallStep) step).getPath());
-	            }
-
-	            if(scriptlet != null) {
+	            Scriptlet scriptlet = getScriptlet((CallStep) step, false);
+	            if (scriptlet != null) {
 		            transactions.addAll(createTransactionInfo(scriptlet.getSteps()));
 	            }
             }
         }
-
         return transactions;
     }
+
+    public Scriptlet getScriptlet(CallStep step, boolean required) {
+    	return scriptletCache.getScriptlet(step.getFrom(), step.getPath(), testCase, required);
+	}
 
     public TestCase getTestCase() {
         return testCase;

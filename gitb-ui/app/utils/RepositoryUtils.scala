@@ -85,11 +85,11 @@ object RepositoryUtils {
 		path.toFile
 	}
 
-	def getTestSuitesResource(spec: Specifications, resourcePath: String, pathToAlsoCheck: Option[String]): File = {
-		var file = new File(getTestSuitesPath(spec), resourcePath)
+	def getTestSuitesResource(specId: Long, domainId: Long, resourcePath: String, pathToAlsoCheck: Option[String]): File = {
+		var file = new File(getTestSuitesPath(domainId, specId), resourcePath)
 		if(!file.exists()) {
 			if (pathToAlsoCheck.isDefined) {
-				file = new File(getTestSuitesPath(spec), pathToAlsoCheck.get)
+				file = new File(getTestSuitesPath(domainId, specId), pathToAlsoCheck.get)
 			}
 			if (!file.exists()) {
 				// Backwards compatibility: Lookup directly under the test-suites folder
@@ -97,6 +97,10 @@ object RepositoryUtils {
 			}
 		}
 		file
+	}
+
+	def getTestSuitesResource(spec: Specifications, resourcePath: String, pathToAlsoCheck: Option[String]): File = {
+		getTestSuitesResource(spec.id, spec.domain, resourcePath, pathToAlsoCheck)
 	}
 
 	/**

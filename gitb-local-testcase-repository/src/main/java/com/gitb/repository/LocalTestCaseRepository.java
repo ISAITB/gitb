@@ -53,19 +53,12 @@ public class LocalTestCaseRepository implements ITestCaseRepository {
     }
 
 	@Override
-	public boolean isScriptletAvailable(String testCaseId, String scriptletId) {
-        return isTestResourceAvailable(testCaseId, scriptletId, false);
-	}
-
-	@Override
-	public Scriptlet getScriptlet(String testCaseId, String scriptletId) {
-        if(isScriptletAvailable(testCaseId, scriptletId)){
-            try {
-                File resource = getTestResource(testCaseId, scriptletId, false);
-                return XMLUtils.unmarshal(Scriptlet.class, new StreamSource(resource));
-            } catch (Exception e) {
-	            logger.error("Exception when unmarshalling the scriptlet with id ["+scriptletId+"]", e);
-            }
+	public Scriptlet getScriptlet(String from, String testCaseId, String scriptletPath) {
+        try {
+            File resource = getTestResource(testCaseId, scriptletPath, false);
+            return XMLUtils.unmarshal(Scriptlet.class, new StreamSource(resource));
+        } catch (Exception e) {
+            logger.error("Exception when unmarshalling the scriptlet with id ["+scriptletPath+"]", e);
         }
         return null;
 	}

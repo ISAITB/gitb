@@ -1,7 +1,6 @@
 package com.gitb.engine.actors.processors;
 
 import akka.actor.ActorRef;
-import com.gitb.ModuleManager;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.commands.interaction.StartCommand;
@@ -9,8 +8,10 @@ import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.repository.ITestCaseRepository;
-import com.gitb.tdl.*;
+import com.gitb.tdl.Binding;
+import com.gitb.tdl.CallStep;
+import com.gitb.tdl.Scriptlet;
+import com.gitb.tdl.Variable;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
@@ -143,21 +144,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	}
 
 	private Scriptlet findScriptlet() {
-		TestCase testCase = scope.getContext().getTestCase();
-
-		// find scriptlet in the test case (if it is inline)
-		for(Scriptlet scriptlet : testCase.getScriptlets().getScriptlet()) {
-			if(scriptlet.getId().equals(step.getPath())) {
-				return scriptlet;
-			}
-		}
-
-		// find the scriptlet in repositories
-		ITestCaseRepository repository = ModuleManager.getInstance().getTestCaseRepository();
-		if(repository.isScriptletAvailable(testCase.getId(), step.getPath())) {
-			return repository.getScriptlet(testCase.getId(), step.getPath());
-		}
-		throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet definition ["+ step.getPath()+"] cannot be found."));
+		return scope.getContext().getScriptlet(step, true);
 	}
 
 	private TestCaseScope createChildScope() {

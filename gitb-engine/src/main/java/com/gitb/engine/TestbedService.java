@@ -12,10 +12,7 @@ import com.gitb.engine.events.TestStepInputEventBus;
 import com.gitb.engine.events.model.InputEvent;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tbs.*;
-import com.gitb.tpl.TestCase;
 import com.gitb.utils.ErrorUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 
 import java.util.ArrayList;
@@ -25,22 +22,6 @@ import java.util.List;
  * Created by serbay on 9/5/14.
  */
 public class TestbedService {
-	private static Logger logger = LoggerFactory.getLogger(TestbedService.class);
-
-	/**
-	 * Returns the test case definition (TPL representation) for the given TestCase id
-	 *
-	 * @param testCaseId
-	 * @return
-	 */
-	public static TestCase getTestCaseDefinition(String testCaseId) {
-		logger.debug("getTestCaseDefinition"
-			+ " ( "
-			+ testCaseId
-			+ " ) ");
-
-		return TestCaseManager.getTestCasePresentation(testCaseId);
-	}
 
 	/**
 	 * Initiate a TestCase Session, return session id

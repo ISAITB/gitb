@@ -2,6 +2,7 @@ package com.gitb.tbs.impl;
 
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.ErrorCode;
+import com.gitb.engine.TestCaseManager;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tbs.Error;
 import com.gitb.tbs.Void;
@@ -32,11 +33,14 @@ public class TestbedServiceImpl implements TestbedService {
     private WebServiceContext wsc;
 
     @Override
-    public GetTestCaseDefinitionResponse getTestCaseDefinition(BasicRequest parameters) throws Error {
+    public GetTestCaseDefinitionResponse getTestCaseDefinition(GetTestCaseDefinitionRequest parameters) throws Error {
         try {
-            String testCaseId = parameters.getTcId();
-            //Call the real TestbedService
-            TestCase testCase = com.gitb.engine.TestbedService.getTestCaseDefinition(testCaseId);
+            TestCase testCase;
+            if (parameters.getTcInstanceId() != null) {
+                testCase = TestCaseManager.getTestCasePresentationBySessionId(parameters.getTcInstanceId());
+            } else {
+                testCase = TestCaseManager.getTestCasePresentationByTestCaseId(parameters.getTcId());
+            }
             //Construct Response
             GetTestCaseDefinitionResponse response = new GetTestCaseDefinitionResponse();
             response.setTestcase(testCase);

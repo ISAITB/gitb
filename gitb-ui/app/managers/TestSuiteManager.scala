@@ -89,6 +89,26 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		 .result.map(_.toList)).map(TestSuiteManager.tupleToTestSuite)
 	}
 
+	def findTestSuiteByIdentifier(identifier: String, domain: Long, specificationToPrioritise: Long): Option[TestSuites] = {
+		var result: Option[TestSuites] = None
+		val testSuites = exec(PersistenceSchema.testSuites
+			.join(PersistenceSchema.specifications).on(_.specification === _.id)
+			.filter(_._1.identifier === identifier)
+			.filter(_._2.domain === domain)
+			.map(x => x._1)
+			.result
+		)
+		if (testSuites.nonEmpty) {
+			result = testSuites.find { t =>
+				t.specification == specificationToPrioritise
+			}
+			if (result.isEmpty) {
+				result = Some(testSuites.head)
+			}
+		}
+		result
+	}
+
 	def getTestSuiteOfTestCaseWrapper(testCaseId: Long): TestSuites = {
 		getTestSuiteOfTestCase(testCaseId)
 	}
