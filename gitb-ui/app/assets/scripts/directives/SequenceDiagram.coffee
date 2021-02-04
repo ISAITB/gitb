@@ -448,7 +448,7 @@ extractSteps = (s, actorInfo) =>
       resultProperty: '@?'
       onReady: '='
     template: '
-      <div ng-if="stepsOfTests && actorInfoOfTests" ng-class="{\'div-padded-bottom\': !outputMessage}">
+      <div ng-if="stepsOfTests && actorInfoOfTests" class="test-session-presentation-div">
         <div class="child" seq-diagram steps-of-tests="stepsOfTests" test="{{sessionId}}" actor-info-of-tests="actorInfoOfTests"></div>
         <div class="test-output-container" ng-if="outputMessage">
             <div uib-alert class="no-margin" ng-class="{\'alert-success\': result == \'SUCCESS\', \'alert-danger\': result == \'FAILURE\'}">{{outputMessage}}</div>
