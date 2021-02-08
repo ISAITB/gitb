@@ -529,18 +529,31 @@ extractSteps = (s, actorInfo) =>
             else if step.type == "loop"
               scope.traverseLoops(step)
               for sequence in step.sequences
-                scope.addStatusToSteps(sequence, statusToSet)
+                scope.addStatusToSteps(sequence.steps, statusToSet)
 
       scope.traverseLoops = (loopStep) ->
         loopStep.sequences = []
         i = 1
         while scope.testResultFlat[loopStep.id + "[" + i + "]"]?
+          loopItemResult = scope.testResultFlat[loopStep.id + "[" + i + "]"]
+          loopItem = {
+            id: loopItemResult.stepId
+            report: {
+              path: loopItemResult.path
+              tcInstanceId: loopItemResult.sessionId
+            }
+            status: loopItemResult.result
+            steps: []
+            type: "loop"
+          }
           sequence = angular.toJson(loopStep.steps)
           if i > 1
             sequence = sequence.split(loopStep.id+"[1]").join(loopStep.id + "[" + i + "]")
           sequence = angular.fromJson(sequence)
           if sequence.length > 0
-            loopStep.sequences.push(sequence)
+            for seqItem in sequence
+              loopItem.steps.push(seqItem)
+          loopStep.sequences.push(loopItem)
           i = i+1
         loopStep.currentIndex = loopStep.sequences.length - 1
       
