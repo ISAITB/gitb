@@ -254,8 +254,8 @@ extractSteps = (s, actorInfo) =>
         else
           scope.actor = info.id + " (" + info.role + ")"
 
-@directives.directive 'seqDiagramMessage', ['RecursionHelper', 'ReportService', 'Constants', '$uibModal', '$timeout', '$sce', 'HtmlService', '$log'
-  (RecursionHelper, ReportService, Constants, $uibModal, $timeout, $sce, HtmlService, $log) =>
+@directives.directive 'seqDiagramMessage', ['ReportService', 'Constants', '$uibModal', '$timeout', '$sce', 'HtmlService', '$log'
+  (ReportService, Constants, $uibModal, $timeout, $sce, HtmlService, $log) =>
     scope:
       message: '='
       actorInfo: '='
@@ -263,28 +263,15 @@ extractSteps = (s, actorInfo) =>
     replace: true
     template: ''+
       '<div class="message-wrapper offset-{{message.fromIndex}} {{message.type}}-type">'+
-        '<div class="message span-{{message.span}} {{(message.fromIndex > message.toIndex)?\'backwards-message\':((message.fromIndex == message.toIndex)?\'self-message\':\'\')}} reverse-offset-{{message.span}} depth-{{depth}} level-{{message.level}}" '+
-          'ng-class="{'+
-          '\'processing\': message.status == TEST_STATUS.PROCESSING, '+
-          '\'skipped\': message.status == TEST_STATUS.SKIPPED, '+
-          '\'waiting\': message.status == TEST_STATUS.WAITING, '+
-          '\'error\': message.status == TEST_STATUS.ERROR, '+
-          '\'warning\': message.status == TEST_STATUS.WARNING, '+
-          '\'completed\': message.status == TEST_STATUS.COMPLETED}">'+
+        '<div ng-class="classForMessage()">'+
           '<div class="message-type">'+
             '<span>{{message.title}}</span>'+
             '<span class="uib-dropdown iterations" uib-dropdown ng-if="message.type == \'loop\' && message.sequences != null && message.sequences.length > 0">'+
-              '<span href="" class="uib-dropdown-toggle" uib-dropdown-toggle>Iteration {{message.currentIterationIndex+1}} of {{message.sequences.length}}</span>'+
+              '<span href="" class="uib-dropdown-toggle" uib-dropdown-toggle>Iteration {{currentIterationIndex+1}} of {{message.sequences.length}}</span>'+
               '<ul uib-dropdown-menu class="uib-dropdown-menu">'+
                 '<li class="uib-dropdown-item"'+
                   'ng-repeat="iteration in message.sequences track by $index" ng-click="showLoopIteration($index)" '+
-                  'ng-if="iteration != null" '+
-                  'ng-class="{\'processing\': iteration.status == TEST_STATUS.PROCESSING, '+
-                  '\'skipped\': iteration.status == TEST_STATUS.SKIPPED, '+
-                  '\'waiting\': iteration.status == TEST_STATUS.WAITING, '+
-                  '\'error\': iteration.status == TEST_STATUS.ERROR, '+
-                  '\'warning\': iteration.status == TEST_STATUS.WARNING, '+
-                  '\'completed\': iteration.status == TEST_STATUS.COMPLETED}">'+
+                  'ng-if="iteration != null">'+
                   'Iteration {{$index+1}}</li>'+
               '</ul>'+
             '</span>'+
@@ -311,7 +298,8 @@ extractSteps = (s, actorInfo) =>
             '</a>'+
           '</div>'+
           '<div class="child-steps loop reverse-offset-{{message.fromIndex}}" ng-if="message.type == \'loop\'">'+
-            '<div ng-repeat="subMessage in message.steps" seq-diagram-message message="subMessage"></div>'+
+            '<div ng-if="currentIterationIndex == -1" ng-repeat="subMessage in message.steps" seq-diagram-message message="subMessage"></div>'+
+            '<div ng-if="currentIterationIndex != -1" ng-repeat="subMessage in message.sequences[currentIterationIndex].steps" seq-diagram-message message="subMessage"></div>'+
           '</div>'+
           '<div class="child-steps then reverse-offset-{{message.fromIndex}}" ng-if="message.type == \'decision\'">'+
             '<div ng-repeat="subMessage in message.then" seq-diagram-message message="subMessage"></div>'+
@@ -329,9 +317,9 @@ extractSteps = (s, actorInfo) =>
           '<div seq-diagram-message-status message="message"></div>'+
         '</div>'+
       '</div>'
-    compile: (element) =>
-      RecursionHelper.compile element, (scope, element, attrs) =>
+      link: (scope, element, attrs) ->
         scope.TEST_STATUS = Constants.TEST_STATUS
+        # Functions for initialisation
         calculateDepth = (message) ->
           if message.type == 'loop'
             childDepths = _.map message.steps, calculateDepth
@@ -349,6 +337,14 @@ extractSteps = (s, actorInfo) =>
             1
           else
             message.level
+        calculateFixedMessageClass = () ->
+          classValue = 'message span-'+scope.message.span+' '
+          if scope.message.fromIndex > scope.message.toIndex
+            classValue += 'backwards-message'
+          else if scope.message.fromIndex == scope.message.toIndex
+            classValue += 'self-message'
+          classValue += ' reverse-offset-'+scope.message.span+' depth-'+scope.depth+' level-'+scope.message.level
+        # Event handlers
         scope.showReport = () =>
           showTestStepReportModal = (report) =>
             modalOptions =
@@ -359,9 +355,7 @@ extractSteps = (s, actorInfo) =>
                 report: () => report
                 sessionId: () => scope.message.report.tcInstanceId
               size: 'lg'
-
             $uibModal.open(modalOptions).result.finally(angular.noop).then(angular.noop, angular.noop)
-
           if scope.message.report?
             if scope.message.report.tcInstanceId? && scope.message.report.path? && !scope.message.report.result?
               ReportService.getTestStepReport(scope.message.report.tcInstanceId, scope.message.report.path)
@@ -376,48 +370,42 @@ extractSteps = (s, actorInfo) =>
           html = $sce.trustAsHtml(documentation)
           HtmlService.showHtml("Step information", html)
 
-        scope.showLoopIteration = (iterationIndex) =>
-          scope.message.currentIterationIndex = iterationIndex
-          setStatusesAndReports = (message, iteration) ->
-            applyStatusesAndReportsToChildSteps = (childSteps, childStepIterations) =>
+        scope.showLoopIteration = (iteration) =>
+          if iteration?
+            scope.currentIterationIndex = iteration
 
-              zipped = _.zip childSteps, childStepIterations
-              _.forEach zipped, (pair) ->
-                setStatusesAndReports pair[0], pair[1]
-            message.status = iteration.status
-            message.report = iteration.report
-            if message.type == 'loop'
-              if iteration.sequences?
-                message.sequences = iteration.sequences
-              applyStatusesAndReportsToChildSteps message.steps, iteration.steps
-            else if message.type == 'decision'
-              applyStatusesAndReportsToChildSteps message.then, iteration.then
-              applyStatusesAndReportsToChildSteps message.else, iteration.else
-            else if message.type == 'flow'
-              _.forEach (_.zip message.threads, iteration.threads), (threadPair) ->
-                applyStatusesAndReportsToChildSteps threadPair[0], threadPair[1]
-
-          scope.message.sequences[iterationIndex].steps = extractSteps(scope.message.sequences[iterationIndex].steps, scope.actorInfo)
-          setStatusesAndReports scope.message, scope.message.sequences[iterationIndex]
-
-          scope.message.status = scope.message.sequences[iterationIndex].status
-          scope.message.report = scope.message.sequences[iterationIndex].report
-
-        if scope.message.type == 'loop'
-          onLoopIterationUpdated = (sequences) ->
-            showLastStatus = () =>
-              scope.showLoopIteration sequences.length - 1
-
-            if sequences? && sequences.length > 0
-              $timeout showLastStatus, 0
-          scope.$watch 'message.sequences', onLoopIterationUpdated, true
+        # Initialisation
         scope.depth = calculateDepth scope.message
+        scope.classForMessageFixed = calculateFixedMessageClass()
+        scope.classForWrapper = 'message-wrapper offset-'+scope.message.fromIndex+' '+scope.message.type+'-type'
+        scope.classForMessage = () ->
+          classValue = scope.classForMessageFixed
+          if scope.message.status == Constants.TEST_STATUS.PROCESSING
+            classValue += ' processing'
+          else if scope.message.status == Constants.TEST_STATUS.SKIPPED
+            classValue += ' skipped'
+          else if scope.message.status == Constants.TEST_STATUS.WAITING
+            classValue += ' waiting'
+          else if scope.message.status == Constants.TEST_STATUS.ERROR
+            classValue += ' error'
+          else if scope.message.status == Constants.TEST_STATUS.WARNING
+            classValue += ' warning'
+          else if scope.message.status == Constants.TEST_STATUS.COMPLETED
+            classValue += ' completed'
+          classValue
+        if scope.message.type == 'loop'
+          scope.currentIterationIndex = -1
+          scope.$watch 'message.sequences.length', () =>
+            if scope.message.sequences
+              scope.showLoopIteration(scope.message.sequences.length - 1)
+            else 
+              scope.currentIterationIndex = -1
         if scope.message.title == undefined || scope.message.title == null
           scope.message.title = scope.message.type
 ]
 
-@directives.directive 'seqDiagramMessageStatus', ['RecursionHelper', 'Constants'
-  (RecursionHelper, Constants) ->
+@directives.directive 'seqDiagramMessageStatus', ['Constants'
+  (Constants) ->
     scope:
       message: '='
     restrict: 'A'
@@ -434,9 +422,8 @@ extractSteps = (s, actorInfo) =>
           '\'completed\': message.status == TEST_STATUS.COMPLETED}">'+
         '</div>'+
       '</div>'
-    compile: (element) ->
-      RecursionHelper.compile element, (scope, element, attrs) ->
-        scope.TEST_STATUS = Constants.TEST_STATUS
+    link: (scope, element, attrs) ->
+      scope.TEST_STATUS = Constants.TEST_STATUS
 ]
 
 @directives.directive 'testSessionPresentation', ['ReportService', 'ErrorService', 'Constants', '$timeout'

@@ -561,9 +561,7 @@ class TestExecutionControllerV2
 
         while current? &&
         current.id != stepId
-          if current.type == 'loop'
-            if !current.sequences?
-              current.sequences = []
+          if current.type == 'loop' && status == @Constants.TEST_STATUS.PROCESSING
 
             setIds = (steps, str, replacement) ->
               _.forEach steps, (step) =>
@@ -571,6 +569,8 @@ class TestExecutionControllerV2
 
                 if step.type == 'loop'
                   setIds step.steps, str, replacement
+                  if step.sequences?
+                    setIds step.sequences, str, replacement
                 else if step.type == 'flow'
                   setIds step.threads, str, replacement
                 else if step.type == 'decision'
@@ -586,6 +586,8 @@ class TestExecutionControllerV2
 
                 if step.type == 'loop'
                   clearStatusesAndReports step.steps
+                  if step.sequences?
+                    clearStatusesAndReports step.sequences
                 else if step.type == 'decision'
                   clearStatusesAndReports step.then
                   clearStatusesAndReports step.else
@@ -602,11 +604,16 @@ class TestExecutionControllerV2
 
             setIds copySteps, oldId, newId
 
-            if !current.sequences[index - 1]?
-              current.sequences[index - 1] =
-                id: newId
-                type: current.type
-                steps: copySteps
+            if !current.sequences? || !current.sequences[index - 1]?
+              sequence = {
+                  id: newId
+                  type: current.type
+                  steps: copySteps
+              }
+              if !current.sequences?
+                current.sequences = [sequence]
+              else
+                current.sequences.push(sequence)
 
             current = @findNodeWithStepId current.sequences[index - 1], stepId
           else
