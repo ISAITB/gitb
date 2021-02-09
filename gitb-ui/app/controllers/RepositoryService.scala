@@ -1,7 +1,5 @@
 package controllers
 
-import java.io._
-import java.nio.file.{Files, Paths}
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl.TestCase
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
@@ -10,14 +8,9 @@ import config.Configurations
 import controllers.util.ParameterExtractor.requiredBodyParameter
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
-
-import javax.inject.Inject
-import javax.xml.bind.JAXBElement
-import javax.xml.namespace.QName
-import javax.xml.transform.stream.StreamSource
 import managers._
 import managers.export._
-import models.{ConformanceCertificate, ConformanceCertificates, Constants, Specifications, TestSuites}
+import models.{ConformanceCertificate, ConformanceCertificates, Constants, TestSuites}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
@@ -26,12 +19,18 @@ import org.slf4j.LoggerFactory
 import play.api.mvc._
 import utils._
 
+import java.io._
+import java.nio.file.{Files, Paths}
+import javax.inject.Inject
+import javax.xml.bind.JAXBElement
+import javax.xml.namespace.QName
+import javax.xml.transform.stream.StreamSource
 import scala.concurrent.ExecutionContext
 
 /**
  * Created by serbay on 10/16/14.
  */
-class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemManager: SystemManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager, importPreviewManager: ImportPreviewManager, importCompleteManager: ImportCompleteManager) extends AbstractController(cc) {
+class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemManager: SystemManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager, importPreviewManager: ImportPreviewManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
 
 	private val logger = LoggerFactory.getLogger(classOf[RepositoryService])
 	private val codec = new URLCodec()
@@ -61,7 +60,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       testSuite = Some(testSuiteManager.getTestSuiteOfTestCaseWrapper(testCase.id))
     } else {
       // Find test suite in specification or domain.
-      testSuite = testSuiteManager.findTestSuiteByIdentifier(testSuiteIdentifier.get, specificationOfTestCase.domain, specificationOfTestCase.id)
+      testSuite = repositoryUtils.findTestSuiteByIdentifier(testSuiteIdentifier.get, Some(specificationOfTestCase.domain), specificationOfTestCase.id)
     }
     if (testSuite.isEmpty) {
       NotFound
@@ -76,8 +75,8 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
         filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.get.identifier, testSuite.get.filename)
       }
       // Ensure that the requested resource is within the test suite folder (to avoid path traversal)
-      val testSuiteFolder = RepositoryUtils.getTestSuitesResource(testSuite.get.specification, specificationOfTestCase.domain, testSuite.get.filename, None)
-      val file = RepositoryUtils.getTestSuitesResource(testSuite.get.specification, specificationOfTestCase.domain, filePathToLookup, filePathToAlsoCheck)
+      val testSuiteFolder = repositoryUtils.getTestSuitesResource(testSuite.get.specification, specificationOfTestCase.domain, testSuite.get.filename, None)
+      val file = repositoryUtils.getTestSuitesResource(testSuite.get.specification, specificationOfTestCase.domain, filePathToLookup, filePathToAlsoCheck)
       logger.debug("Reading test resource ["+codec.decode(filePath)+"] definition from the file ["+file+"]")
       if (file.exists() && file.toPath.normalize().startsWith(testSuiteFolder.toPath.normalize())) {
         Ok.sendFile(file, inline = true)
@@ -331,7 +330,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     authorizationManager.canViewTestCase(request, testId)
     val tc = testCaseManager.getTestCase(testId)
     if (tc.isDefined) {
-      val file = RepositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(tc.get.targetSpec), tc.get.path, None)
+      val file = repositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(tc.get.targetSpec), tc.get.path, None)
       logger.debug("Reading test case ["+testId+"] definition from the file ["+file+"]")
       if(file.exists()) {
         Ok.sendFile(file, true)
@@ -551,7 +550,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
           val importResult = importCompleteManager.importSandboxData(archiveFile, archivePassword)
           if (importResult._1) {
             // Successful - prevent other imports to take place and return
-            RepositoryUtils.createDataLockFile()
+            repositoryUtils.createDataLockFile()
             response = ResponseConstructor.constructEmptyResponse
           } else {
             // Unsuccessful.

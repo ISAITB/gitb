@@ -16,6 +16,9 @@ public class RootSequenceProcessorActor<T extends Sequence> extends SequenceProc
 
     public RootSequenceProcessorActor(T sequence, TestCaseScope scope, String stepId) {
         super(sequence, scope, stepId);
+        // Set overall test status to success to begin with.
+        var variable = scope.createVariable(TestCaseContext.TEST_SUCCESS);
+        variable.setValue(new BooleanType(true));
     }
 
     public static ActorRef create(ActorContext context, Sequence step, TestCaseScope scope, String stepId) throws Exception {
@@ -24,15 +27,11 @@ public class RootSequenceProcessorActor<T extends Sequence> extends SequenceProc
 
     @Override
     protected void handleStatusEvent(StatusEvent event) throws Exception {
-        // Calculate the overall status of the test session.\
+        // Calculate the overall status of the test session.
         if (event.getStatus() == StepStatus.COMPLETED || event.getStatus() == StepStatus.WARNING || event.getStatus() == StepStatus.ERROR) {
-            TestCaseScope.ScopedVariable variable = scope.createVariable(TestCaseContext.TEST_SUCCESS);
+            var variable = scope.getVariable(TestCaseContext.TEST_SUCCESS, true);
             BooleanType currentValue = (BooleanType) variable.getValue();
-            if (currentValue == null) {
-                variable.setValue(new BooleanType(event.getStatus() == StepStatus.COMPLETED || event.getStatus() == StepStatus.WARNING));
-            } else {
-                currentValue.setValue(((Boolean)currentValue.getValue()) && (event.getStatus() == StepStatus.COMPLETED || event.getStatus() == StepStatus.WARNING));
-            }
+            currentValue.setValue(((Boolean)currentValue.getValue()) && (event.getStatus() == StepStatus.COMPLETED || event.getStatus() == StepStatus.WARNING));
         }
         // Handle regular processing.
         super.handleStatusEvent(event);

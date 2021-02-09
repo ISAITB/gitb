@@ -2,25 +2,32 @@ package utils
 
 import java.io.{File, FileOutputStream, StringWriter}
 import java.nio.charset.Charset
-import java.nio.file.Paths
+import java.nio.file.{Files, Paths}
 import java.util.zip.{ZipEntry, ZipFile}
-
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.gitb.core.{Documentation, EndpointParameter, TestCaseType, TestRoleEnumeration}
 import com.gitb.utils.XMLUtils
 import config.Configurations
+
 import javax.xml.transform.stream.StreamSource
-import managers.TestSuiteManager
+import managers.{BaseManager, TestSuiteManager}
 import models._
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.slf4j.LoggerFactory
+import persistence.db.PersistenceSchema
+import play.api.db.slick.DatabaseConfigProvider
 
+import javax.inject.{Inject, Singleton}
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.xml.XML
+import scala.concurrent.ExecutionContext.Implicits.global
 
-object RepositoryUtils {
+@Singleton
+class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+
+	import dbConfig.profile.api._
 
 	private final val logger = LoggerFactory.getLogger("RepositoryUtils")
 	private final val objectMapper = new ObjectMapper()
@@ -40,7 +47,7 @@ object RepositoryUtils {
 	}
 
 	def createDataLockFile(): Boolean = {
-		val lockFile = RepositoryUtils.getDataLockFile()
+		val lockFile = getDataLockFile()
 		if (!lockFile.exists()) {
 			lockFile.getParentFile.mkdirs()
 			lockFile.createNewFile()
@@ -170,29 +177,60 @@ object RepositoryUtils {
 		fileName
 	}
 
-	private def getDocumentation(testSuiteId: String, documentation: Documentation, testSuiteArchive: ZipFile): Option[String] = {
+	private def getDocumentation(testSuiteId: String, documentation: Documentation, testSuiteArchive: ZipFile, specification: Long, domain: Option[Long]): Option[String] = {
 		var documentationText: Option[String] = None
 		if (documentation != null) {
 			if (documentation.getValue != null && !documentation.getValue.isBlank) {
 				documentationText = Some(documentation.getValue.trim)
 			} else if (documentation.getImport != null) {
-				var referencedEntry = testSuiteArchive.getEntry(documentation.getImport)
-				if (referencedEntry == null) {
-					// It might be prefixed with the testSuiteId.
-					val testSuiteIdPath = testSuiteId+"/"
-					if (documentation.getImport.startsWith(testSuiteIdPath) && documentation.getImport.length() > testSuiteIdPath.length()) {
-						referencedEntry = testSuiteArchive.getEntry(documentation.getImport.substring(testSuiteIdPath.length()))
+				var documentationBytes: Option[Array[Byte]] = None
+				if (documentation.getFrom == null || documentation.getFrom.equals(testSuiteId)) {
+					// Look up from current test suite.
+					var referencedEntry = testSuiteArchive.getEntry(documentation.getImport)
+					if (referencedEntry == null) {
+						// It might be prefixed with the testSuiteId.
+						val testSuiteIdPath = testSuiteId+"/"
+						if (documentation.getImport.startsWith(testSuiteIdPath) && documentation.getImport.length() > testSuiteIdPath.length()) {
+							referencedEntry = testSuiteArchive.getEntry(documentation.getImport.substring(testSuiteIdPath.length()))
+						}
+					}
+					if (referencedEntry != null) {
+						documentationBytes = Some(IOUtils.toByteArray(testSuiteArchive.getInputStream(referencedEntry)))
+					}
+				} else if (documentation.getFrom != null) {
+					// Look up from another test suite in the domain.
+					var domainId: Long = -1
+					if (domain.isDefined) {
+						domainId = domain.get
+					} else {
+						domainId = domainIdOfSpecification(specification)
+					}
+					val testSuite = findTestSuiteByIdentifier(documentation.getFrom, Some(domainId), specification)
+					if (testSuite.isDefined) {
+						var filePathToLookup = documentation.getImport
+						var filePathToAlsoCheck: Option[String] = null
+						if (!documentation.getImport.startsWith(testSuite.get.identifier) && !documentation.getImport.startsWith("/"+testSuite.get.identifier)) {
+							filePathToLookup = testSuite.get.filename + "/" + filePathToLookup
+							filePathToAlsoCheck = None
+						} else {
+							filePathToAlsoCheck = Some(testSuite.get.filename + "/" + filePathToLookup)
+							filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.get.identifier, testSuite.get.filename)
+						}
+						val testSuiteFolder = getTestSuitesResource(testSuite.get.specification, domainId, testSuite.get.filename, None)
+						val file = getTestSuitesResource(testSuite.get.specification, domainId, filePathToLookup, filePathToAlsoCheck)
+						if (file.exists() && file.toPath.normalize().startsWith(testSuiteFolder.toPath.normalize())) {
+							documentationBytes = Some(FileUtils.readFileToByteArray(file))
+						}
 					}
 				}
-				if (referencedEntry == null) {
-					logger.warn("Documentation import resource ["+documentation.getImport+"] was not found in the test suite archive. This should have been caught at validation time.")
+				if (documentationBytes.isEmpty) {
+					logger.warn("Documentation import resource ["+documentation.getImport+"] was not found.")
 				} else {
-					val documentationBytes = IOUtils.toByteArray(testSuiteArchive.getInputStream(referencedEntry))
 					var encoding = Charset.defaultCharset()
 					if (documentation.getEncoding != null && !documentation.getEncoding.isBlank) {
 						encoding = Charset.forName(documentation.getEncoding)
 					}
-					documentationText = Some(new String(documentationBytes, encoding))
+					documentationText = Some(new String(documentationBytes.get, encoding))
 				}
 			}
 		}
@@ -203,11 +241,29 @@ object RepositoryUtils {
 		}
 	}
 
-	def getTestSuiteFromZip(specification:Option[Long], file: File): Option[TestSuite] = {
+	def getTestSuiteFromZip(specification: Long, file: File): Option[TestSuite] = {
 		getTestSuiteFromZip(specification, file, completeParse = true)
 	}
 
-	def getTestSuiteFromZip(specification:Option[Long], file: File, completeParse: Boolean): Option[TestSuite] = {
+	private def containsExternalDocumentation(tdlTestSuite: com.gitb.tdl.TestSuite, tdlTestCases: List[com.gitb.tdl.TestCase]): Boolean = {
+		if (tdlTestSuite.getMetadata != null
+			&& tdlTestSuite.getMetadata.getDocumentation != null
+			&& tdlTestSuite.getMetadata.getDocumentation.getFrom != null
+			&& !tdlTestSuite.getMetadata.getDocumentation.getFrom.equals(tdlTestSuite.getId)) {
+			return true
+		}
+		tdlTestCases.foreach { tc =>
+			if (tc.getMetadata != null
+				&& tc.getMetadata.getDocumentation != null
+				&& tc.getMetadata.getDocumentation.getFrom != null
+				&& !tc.getMetadata.getDocumentation.getFrom.equals(tdlTestSuite.getId)) {
+				return true
+			}
+		}
+		false
+	}
+
+	def getTestSuiteFromZip(specification :Long, file: File, completeParse: Boolean): Option[TestSuite] = {
 		var result: Option[TestSuite] = None
 		if(file.exists) {
 			var zip: ZipFile = null
@@ -230,10 +286,14 @@ object RepositoryUtils {
 						val tdlTestCaseEntries = tdlTestSuite.getTestcase.asScala
 						val fileName = generateTestSuiteFileName()
 						var documentation: Option[String] = None
-						if (completeParse && tdlTestSuite.getMetadata.getDocumentation != null) {
-							documentation = getDocumentation(tdlTestSuite.getId, tdlTestSuite.getMetadata.getDocumentation, zip)
+						var domainId: Option[Long] = None
+						if (containsExternalDocumentation(tdlTestSuite, tdlTestCases)) {
+							domainId = Some(domainIdOfSpecification(specification))
 						}
-						val caseObject = TestSuites(0L, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification.getOrElse(0L), fileName, documentation.isDefined, documentation, identifier)
+						if (completeParse && tdlTestSuite.getMetadata.getDocumentation != null) {
+							documentation = getDocumentation(tdlTestSuite.getId, tdlTestSuite.getMetadata.getDocumentation, zip, specification, domainId)
+						}
+						val caseObject = TestSuites(0L, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification, fileName, documentation.isDefined, documentation, identifier)
 						val actors = tdlActors.map { tdlActor =>
 							val endpoints = tdlActor.getEndpoint.asScala.map { tdlEndpoint => // construct actor endpoints
 								val parameters = tdlEndpoint.getConfig.asScala.map { tdlParameter =>
@@ -246,7 +306,7 @@ object RepositoryUtils {
 										dependsOnValue = None
 									}
 									val allowedValues = getAllowedValuesStr(tdlParameter)
-									Parameters(0L, tdlParameter.getName, Option(tdlParameter.getDesc), tdlParameter.getUse.value(), tdlParameter.getKind.value(), tdlParameter.isAdminOnly, tdlParameter.isNotForTests, tdlParameter.isHidden, allowedValues, 0, dependsOn, dependsOnValue, 0L)
+									models.Parameters(0L, tdlParameter.getName, Option(tdlParameter.getDesc), tdlParameter.getUse.value(), tdlParameter.getKind.value(), tdlParameter.isAdminOnly, tdlParameter.isNotForTests, tdlParameter.isHidden, allowedValues, 0, dependsOn, dependsOnValue, 0L)
 								}.toList
 								new Endpoint(Endpoints(0L, tdlEndpoint.getName, Option(tdlEndpoint.getDesc), 0L), parameters)
 							}.toList
@@ -280,13 +340,13 @@ object RepositoryUtils {
 									}
 									var documentation: Option[String] = None
 									if (tdlTestCase.getMetadata.getDocumentation != null) {
-										documentation = getDocumentation(tdlTestSuite.getId, tdlTestCase.getMetadata.getDocumentation, zip)
+										documentation = getDocumentation(tdlTestSuite.getId, tdlTestCase.getMetadata.getDocumentation, zip, specification, domainId)
 									}
 									TestCases(
 										0L, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getName, tdlTestCase.getMetadata.getVersion,
 										Option(tdlTestCase.getMetadata.getAuthors), Option(tdlTestCase.getMetadata.getPublished),
 										Option(tdlTestCase.getMetadata.getLastModified), Option(tdlTestCase.getMetadata.getDescription),
-										None, testCaseType.ordinal().toShort, null, specification.getOrElse(0L), Some(actorString.toString()), None,
+										None, testCaseType.ordinal().toShort, null, specification, Some(actorString.toString()), None,
 										testCaseCounter.toShort, documentation.isDefined, documentation, tdlTestCase.getId
 									)
 							}.toList)
@@ -409,6 +469,37 @@ object RepositoryUtils {
 	def deleteSpecificationTestSuiteFolder(spec: Specifications): Unit = {
 		val targetFolder = getTestSuitesPath(spec)
 		FileUtils.deleteDirectory(targetFolder)
+	}
+
+	private def domainIdOfSpecification(specification: Long): Long = {
+		exec(PersistenceSchema.specifications.filter(_.id === specification).map(x => x.domain).result).head
+	}
+
+	def findTestSuiteByIdentifier(identifier: String, domain: Option[Long], specificationToPrioritise: Long): Option[TestSuites] = {
+		var domainId: Long = -1
+		if (domain.isDefined) {
+			domainId = domain.get
+		} else {
+			domainId = domainIdOfSpecification(specificationToPrioritise)
+		}
+
+		var result: Option[TestSuites] = None
+		val testSuites = exec(PersistenceSchema.testSuites
+			.join(PersistenceSchema.specifications).on(_.specification === _.id)
+			.filter(_._1.identifier === identifier)
+			.filter(_._2.domain === domainId)
+			.map(x => x._1)
+			.result
+		)
+		if (testSuites.nonEmpty) {
+			result = testSuites.find { t =>
+				t.specification == specificationToPrioritise
+			}
+			if (result.isEmpty) {
+				result = Some(testSuites.head)
+			}
+		}
+		result
 	}
 
 }

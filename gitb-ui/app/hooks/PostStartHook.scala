@@ -22,7 +22,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 
 @Singleton
-class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: ApplicationLifecycle, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testService: TestService, testSuiteManager: TestSuiteManager, reportManager: ReportManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient, importCompleteManager: ImportCompleteManager, triggerManager: TriggerManager) {
+class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: ApplicationLifecycle, actorSystem: ActorSystem, systemConfigurationManager: SystemConfigurationManager, testResultManager: TestResultManager, testService: TestService, testSuiteManager: TestSuiteManager, reportManager: ReportManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient, importCompleteManager: ImportCompleteManager, triggerManager: TriggerManager, repositoryUtils: RepositoryUtils) {
 
   private def logger = LoggerFactory.getLogger(this.getClass)
 
@@ -104,7 +104,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
   }
 
   private def loadDataExports(): Unit = {
-    val dataIn = RepositoryUtils.getDataInFolder()
+    val dataIn = repositoryUtils.getDataInFolder()
     if (dataIn.exists() && dataIn.isDirectory && dataIn.canRead) {
       val containedFiles = dataIn.listFiles()
       if (containedFiles != null && containedFiles.nonEmpty) {
@@ -117,7 +117,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
               val moveArchive = importCompleteManager.importSandboxData(file, archiveKey)._1
               if (moveArchive) {
                 // Ensure a unique name in the "processed" folder.
-                val targetFile = RepositoryUtils.getDataProcessedFolder().toPath.resolve("export_"+RandomStringUtils.random(10, false, true)+".zip").toFile
+                val targetFile = repositoryUtils.getDataProcessedFolder().toPath.resolve("export_"+RandomStringUtils.random(10, false, true)+".zip").toFile
                 Files.createDirectories(targetFile.getParentFile.toPath)
                 FileUtils.moveFile(file, targetFile)
               }

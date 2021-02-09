@@ -12,9 +12,7 @@ import java.util.Collection;
  */
 public interface ITestCaseRepository {
 	String getName();
-	boolean isTestCaseAvailable(String testCaseId);
 	TestCase getTestCase(String testCaseId);
 	Scriptlet getScriptlet(String from, String testCaseId, String scriptletPath);
-    InputStream getTestArtifact(String testCaseId, String path);
-    boolean isTestArtifactAvailable(String testCaseId, String path);
+	InputStream getTestArtifact(String from, String testCaseId, String artifactPath);
 }

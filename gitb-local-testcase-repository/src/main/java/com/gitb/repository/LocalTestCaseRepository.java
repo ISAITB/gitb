@@ -2,7 +2,6 @@ package com.gitb.repository;
 
 import com.gitb.tdl.Scriptlet;
 import com.gitb.tdl.TestCase;
-import com.gitb.tdl.TestSuite;
 import com.gitb.utils.XMLUtils;
 import org.kohsuke.MetaInfServices;
 import org.slf4j.Logger;
@@ -34,20 +33,14 @@ public class LocalTestCaseRepository implements ITestCaseRepository {
     }
 
     @Override
-    public boolean isTestCaseAvailable(String testCaseId) {
-        return isTestResourceAvailable(testCaseId, testCaseId, true);
-    }
-
-    @Override
     public TestCase getTestCase(String testCaseId) {
-        if(isTestCaseAvailable(testCaseId)){
-            try {
-                File resource = getTestResource(testCaseId, testCaseId, true);
+        try {
+            File resource = getTestResource(testCaseId, testCaseId, true);
+            if (resource.exists()) {
                 return XMLUtils.unmarshal(TestCase.class, new StreamSource(resource));
-            } catch (Exception e) {
-                logger.error("Exception when unmarshalling the test case with id ["+testCaseId+"]", e);
             }
-
+        } catch (Exception e) {
+            logger.error("Exception when unmarshalling the test case with id ["+testCaseId+"]", e);
         }
         return null;
     }
@@ -64,26 +57,18 @@ public class LocalTestCaseRepository implements ITestCaseRepository {
 	}
 
     @Override
-    public InputStream getTestArtifact(String testCaseId, String pathToResource) {
+    public InputStream getTestArtifact(String from, String testCaseId, String pathToResource) {
         try {
             String path = configuration.getRepositoryLocation() + pathToResource;
             File artifact = new File( path );
             FileInputStream fis = new FileInputStream(artifact);
             return fis;
         } catch (Exception e) {
-	        logger.error("Exception when getting the test artifact with path ["+pathToResource+"]", e);
+            logger.error("Exception when getting the test artifact with path ["+pathToResource+"]", e);
         }
 
-	    return null;
+        return null;
     }
-
-	@Override
-	public boolean isTestArtifactAvailable(String testCaseId, String pathToResource) {
-		String path = configuration.getRepositoryLocation() + pathToResource;
-
-		File artifact = new File(path);
-		return artifact.exists();
-	}
 
 	/**
      * Returns a reference to a test resource (TestSuite, TestCase or Scriptlet) with its identifier

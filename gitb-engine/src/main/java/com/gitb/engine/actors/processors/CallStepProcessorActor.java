@@ -76,7 +76,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 		}
 	}
 
-	private void generateOutput() throws IOException {
+	private void generateOutput() {
 		Set<String> specificOutputsToReturn = new HashSet<>();
 		for (var output: step.getOutput()) {
 			if (StringUtils.isNotBlank(output.getName())) {
@@ -115,16 +115,6 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 		}
 		if (step.getId() != null) {
 			setOutputWithId(elements);
-		} else {
-			setOutputWithElements(elements);
-		}
-	}
-
-	private void setOutputWithElements(Map<String, DataType> elements) throws IOException {
-		for (Map.Entry<String, DataType> entry : elements.entrySet()) {
-			scope
-				.getVariable(entry.getKey())
-				.setValue(entry.getValue());
 		}
 	}
 
@@ -144,7 +134,11 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	}
 
 	private Scriptlet findScriptlet() {
-		return scope.getContext().getScriptlet(step, true);
+		String testSuiteContext = step.getFrom();
+		if (testSuiteContext == null && scope.getTestSuiteContext() != null) {
+			testSuiteContext = scope.getTestSuiteContext();
+		}
+		return scope.getContext().getScriptlet(testSuiteContext, step.getPath(), true);
 	}
 
 	private TestCaseScope createChildScope() {
@@ -155,7 +149,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 		if (parameterCount != step.getInput().size()) {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Wrong number of parameters for scriptlet ["+scriptlet.getId()+"]. Expected ["+parameterCount+"] but encountered ["+step.getInput().size()+"]."));
 		}
-		TestCaseScope childScope = scope.createChildScope();
+		TestCaseScope childScope = scope.createChildScope(scriptlet.getImports(), step.getFrom());
 		createScriptletVariables(childScope);
 		return childScope;
 	}

@@ -109,7 +109,11 @@ public class TestCaseUtils {
         }
         if (foundScriptlet == null) {
             if (required) {
-                throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet definition from ["+StringUtils.defaultIfBlank(from, "")+"] path ["+ scriptletPath+"] not found."));
+                if (from == null) {
+                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet definition ["+ scriptletPath+"] not found."));
+                } else {
+                    throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet definition from ["+StringUtils.defaultString(from, "")+"] path ["+ scriptletPath+"] not found."));
+                }
             }
         }
         return foundScriptlet;

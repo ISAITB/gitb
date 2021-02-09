@@ -18,7 +18,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager: ActorManager, testResultManager: TestResultManager, testCaseManager: TestCaseManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager: ActorManager, testResultManager: TestResultManager, testCaseManager: TestCaseManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   def logger = LoggerFactory.getLogger("ConformanceManager")
 
@@ -232,7 +232,7 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 			_ <- PersistenceSchema.specifications.filter(_.id === specId).delete
 			_ <- {
 				onSuccessCalls += (() => {
-					val testSuiteFolder = RepositoryUtils.getTestSuitesPath(ids._2, ids._1)
+					val testSuiteFolder = repositoryUtils.getTestSuitesPath(ids._2, ids._1)
 					FileUtils.deleteDirectory(testSuiteFolder)
 				})
 				DBIO.successful(())
@@ -264,7 +264,7 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 				testSuite <- PersistenceSchema.testSuites.filter(_.id === testSuiteId).result.head
 				_ <- {
 					onSuccessCalls += (() => {
-						RepositoryUtils.undeployTestSuite(getSpecificationById(testSuite.specification), testSuite.filename)
+						repositoryUtils.undeployTestSuite(getSpecificationById(testSuite.specification), testSuite.filename)
 					})
 					DBIO.successful(())
 				}
@@ -301,7 +301,7 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 			PersistenceSchema.domains.filter(_.id === domain).delete andThen
 			{
 				onSuccessCalls += (() => {
-					RepositoryUtils.deleteDomainTestSuiteFolder(domain)
+					repositoryUtils.deleteDomainTestSuiteFolder(domain)
 				})
 				DBIO.successful(())
 			}

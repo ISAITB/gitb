@@ -21,11 +21,9 @@ public class TestCaseManager {
      */
     public static TestCase getTestCaseDescription(String testCaseId) {
 	    ITestCaseRepository repository = ModuleManager.getInstance().getTestCaseRepository();
-        if (repository.isTestCaseAvailable(testCaseId)) {
-            TestCase testCase = repository.getTestCase(testCaseId);
-            if(testCase != null) {
-	            return testCase;
-            }
+        TestCase testCase = repository.getTestCase(testCaseId);
+        if (testCase != null) {
+            return testCase;
         }
         throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.ARTIFACT_NOT_FOUND, "The TestCase definition not found for [" + testCaseId + "]!"));
     }

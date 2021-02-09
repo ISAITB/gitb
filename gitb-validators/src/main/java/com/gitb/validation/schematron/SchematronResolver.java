@@ -14,9 +14,11 @@ import java.io.InputStream;
  */
 public class SchematronResolver implements URIResolver {
 
-    private String testCaseId;
+    private final String testSuiteId;
+    private final String testCaseId;
 
-    public SchematronResolver(String testCaseId) {
+    public SchematronResolver(String testSuiteId, String testCaseId) {
+        this.testSuiteId = testSuiteId;
         this.testCaseId = testCaseId;
     }
 
@@ -31,7 +33,7 @@ public class SchematronResolver implements URIResolver {
         } else{
             String parentFolder = base.substring(0, base.lastIndexOf("/")+1);
             String artifactPath = parentFolder + href;
-            resource = repository.getTestArtifact(testCaseId, artifactPath);
+            resource = repository.getTestArtifact(testSuiteId, testCaseId, artifactPath);
         }
         return new StreamSource(resource);
     }

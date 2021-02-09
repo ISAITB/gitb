@@ -12,7 +12,7 @@ import utils.RepositoryUtils
 
 import scala.collection.mutable.ListBuffer
 
-class Application @Inject() (cc: ControllerComponents, defaultAction: DefaultActionBuilder, systemConfigurationManager: SystemConfigurationManager, legalNoticeManager: LegalNoticeManager) extends AbstractController(cc) {
+class Application @Inject() (cc: ControllerComponents, defaultAction: DefaultActionBuilder, systemConfigurationManager: SystemConfigurationManager, legalNoticeManager: LegalNoticeManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
 
   def index() = defaultAction {
     val legalNotice = legalNoticeManager.getCommunityDefaultLegalNotice(Constants.DefaultCommunityId)
@@ -22,7 +22,7 @@ class Application @Inject() (cc: ControllerComponents, defaultAction: DefaultAct
       hasDefaultLegalNotice = true
       legalNoticeContent = legalNotice.get.content
     }
-    val enableWebInit = Configurations.DATA_WEB_INIT_ENABLED && !RepositoryUtils.getDataLockFile().exists()
+    val enableWebInit = Configurations.DATA_WEB_INIT_ENABLED && !repositoryUtils.getDataLockFile().exists()
     Ok(views.html.index(
       new PublicConfig(
       Configurations.AUTHENTICATION_SSO_ENABLED,

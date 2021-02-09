@@ -41,11 +41,6 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 	}
 
 	@Override
-	public boolean isTestCaseAvailable(String testCaseId) {
-		return getTestCase(testCaseId) != null;
-	}
-
-	@Override
 	public TestCase getTestCase(String testCaseId) {
 		return getTestCaseResource(testCaseId);
 	}
@@ -56,29 +51,28 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 	}
 
 	@Override
-	public InputStream getTestArtifact(String testCaseId, String path) {
+	public InputStream getTestArtifact(String from, String testCaseId, String artifactPath) {
 		try {
-			return getTestResource(testCaseId, path);
+			return getTestResource(toLocationKey(from, testCaseId), artifactPath);
 		} catch (Exception e) {
 			throw new GITBEngineInternalError(e);
 		}
 	}
 
-	@Override
-	public boolean isTestArtifactAvailable(String testCaseId, String path) {
-		return getTestArtifact(testCaseId, path) != null;
+	private String toLocationKey(String from, String testCaseId) {
+		String locationKey = testCaseId;
+		if (from != null) {
+			locationKey = from + "|" + testCaseId;
+		}
+		return locationKey;
 	}
 
 	private <T> T getXMLTestResource(String from, String testCaseId, Class<? extends T> clazz, String resourcePath) {
 		if (!resourcePath.toLowerCase(Locale.ROOT).endsWith(".xml")) {
 			resourcePath += ".xml";
 		}
-		String locationKey = testCaseId;
-		if (from != null) {
-			locationKey = from + "|" + testCaseId;
-		}
 		try {
-			InputStream inputStream = getTestResource(locationKey, resourcePath);
+			InputStream inputStream = getTestResource(toLocationKey(from, testCaseId), resourcePath);
 			if (inputStream != null) {
 				return XMLUtils.unmarshal(clazz, new StreamSource(inputStream));
 			} else {
@@ -108,13 +102,13 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 		}
 	}
 
-	private InputStream getTestResource(String testId, String path) throws IOException, EncoderException {
+	private InputStream getTestResource(String locationKey, String path) throws IOException, EncoderException {
 		URLCodec codec = new URLCodec();
 		String uri = TestCaseRepositoryConfiguration.TEST_RESOURCE_REPOSITORY_URL
-				.replace(":" + TestCaseRepositoryConfiguration.TEST_ID_PARAMETER, codec.encode(testId))
+				.replace(":" + TestCaseRepositoryConfiguration.TEST_ID_PARAMETER, codec.encode(locationKey))
 				.replace(":" + TestCaseRepositoryConfiguration.RESOURCE_ID_PARAMETER, codec.encode(path));
 
-		return retrieveRemoteTestResource(testId, uri);
+		return retrieveRemoteTestResource(locationKey, uri);
 	}
 
 	private InputStream retrieveRemoteTestResource(String resourceId, String uri) throws IOException, EncoderException {

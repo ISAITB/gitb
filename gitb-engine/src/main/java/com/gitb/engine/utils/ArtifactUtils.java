@@ -16,9 +16,14 @@ import java.io.InputStream;
  * Created by serbay on 10/10/14.
  */
 public class ArtifactUtils {
+
 	public static DataType resolveArtifact(TestCaseContext context, TestCaseScope scope, TestArtifact artifact) throws IOException {
-		if(artifact == null) {
+		if (artifact == null) {
 			return null;
+		}
+		String fromToConsider = artifact.getFrom();
+		if (fromToConsider == null) {
+			fromToConsider = scope.getTestSuiteContext();
 		}
 		String pathToLookup = artifact.getValue();
 		VariableResolver variableResolver = new VariableResolver(scope);
@@ -26,23 +31,21 @@ public class ArtifactUtils {
 			DataType resolvedType = variableResolver.resolveVariable(pathToLookup);
 			pathToLookup = (String)resolvedType.toStringType().getValue();
 		}
-
 		ITestCaseRepository testCaseRepository = ModuleManager.getInstance().getTestCaseRepository();
-
-		if(testCaseRepository == null || !testCaseRepository.isTestArtifactAvailable(context.getTestCase().getId(), pathToLookup)) {
-			return null;
+		DataType data = null;
+		if (testCaseRepository != null) {
+			InputStream inputStream = testCaseRepository.getTestArtifact(fromToConsider, context.getTestCase().getId(), pathToLookup);
+			if (inputStream != null) {
+				data = TemplateUtils.generateDataTypeFromTemplate(scope, inputStream, artifact.getType(), artifact.getEncoding());
+			}
+			// Set the location of the artifact if it is a schema type in order to resolve
+			// the location of other artifacts imported by this one.
+			if (data instanceof SchemaType) {
+				((SchemaType) data).setSchemaLocation(pathToLookup);
+				((SchemaType) data).setTestSuiteId(fromToConsider);
+			}
 		}
-
-		InputStream inputStream = testCaseRepository.getTestArtifact(context.getTestCase().getId(), pathToLookup);
-
-		DataType data = TemplateUtils.generateDataTypeFromTemplate(scope, inputStream, artifact.getType(), artifact.getEncoding());
-
-        //set the location of the artifact if it is a schema type in order to resolve
-        //the location of other artifacts imported by this one.
-        if(data instanceof SchemaType) {
-            ((SchemaType) data).setSchemaLocation(pathToLookup);
-        }
-
 		return data;
 	}
+
 }
