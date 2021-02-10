@@ -20,6 +20,19 @@ public class ValidationReport {
         items.add(new ValidationReportItem(error, location, messageArguments));
     }
 
+    protected ValidationReport sort() {
+        items.sort((o1, o2) -> {
+            if (o1.getLevel() == o2.getLevel()) {
+                return 0;
+            } else if (o1.getLevel() == ErrorLevel.ERROR || o1.getLevel() == ErrorLevel.WARNING && o2.getLevel() == ErrorLevel.INFO) {
+                return -1;
+            } else {
+                return 1;
+            }
+        });
+        return this;
+    }
+
     public static class ValidationReportItem {
 
         private String code;

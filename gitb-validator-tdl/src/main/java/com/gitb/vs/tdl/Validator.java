@@ -81,7 +81,7 @@ public class Validator {
                 FileUtils.deleteQuietly(testSuitePath.toFile());
             }
         }
-        return report;
+        return report.sort();
     }
 
     public boolean checkFileType(InputStreamSource streamSource) {
