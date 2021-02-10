@@ -279,6 +279,23 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         return currentStep;
     }
 
+    @Override
+    public void finalise() {
+        super.finalise();
+        var orgProperties = context.getCustomOrganisationPropertiesUsed();
+        if (orgProperties != null) {
+            for (var property: orgProperties) {
+                addReportItem(ErrorCode.POTENTIALLY_INVALID_ORGANISATION_VARIABLE, property);
+            }
+        }
+        var sysProperties = context.getCustomSystemPropertiesUsed();
+        if (sysProperties != null) {
+            for (var property: sysProperties) {
+                addReportItem(ErrorCode.POTENTIALLY_INVALID_SYSTEM_VARIABLE, property);
+            }
+        }
+    }
+
     enum TokenType {
         STRING,
         STRING_OR_VARIABLE_REFERENCE,
