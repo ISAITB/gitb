@@ -157,7 +157,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	private void createScriptletVariables(TestCaseScope childScope) {
 		boolean isNameBinding = BindingUtils.isNameBinding(step.getInput());
 
-		if(isNameBinding) {
+		if (isNameBinding) {
 			setInputWithNameBinding(childScope);
 		} else {
 			setInputWithIndexBinding(childScope);
@@ -190,11 +190,8 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 
 	private void setInputWithNameBinding(TestCaseScope childScope) {
 		ExpressionHandler expressionHandler = new ExpressionHandler(scope);
-
-		for (int i = 0; i < step.getInput().size(); i++) {
-			Binding input = step.getInput().get(i);
+		for (var input: step.getInput()) {
 			Variable variable = getScriptletInputVariable(input.getName());
-
 			setInputVariable(childScope, expressionHandler, input, variable);
 		}
 	}
@@ -224,7 +221,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	private void setInputVariable(TestCaseScope childScope, ExpressionHandler expressionHandler, Binding input, Variable variable) {
 		DataType value = expressionHandler.processExpression(input, variable.getType());
 
-		if(input.getName() == null) {
+		if (input.getName() == null) {
 			childScope
 				.createVariable(variable.getName())
 				.setValue(value);
