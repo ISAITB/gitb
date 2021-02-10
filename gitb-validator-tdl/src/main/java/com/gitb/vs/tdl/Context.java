@@ -3,6 +3,7 @@ package com.gitb.vs.tdl;
 import com.gitb.core.Actor;
 import com.gitb.core.Documentation;
 import com.gitb.core.TestRole;
+import com.gitb.tdl.Scriptlet;
 import com.gitb.tdl.TestCase;
 import com.gitb.tdl.TestCaseEntry;
 import com.gitb.tdl.TestSuite;
@@ -34,6 +35,7 @@ public class Context {
 
     private static QName QNAME_TEST_CASE = new QName("http://www.gitb.com/tdl/v1/", "testcase");
     private static QName QNAME_TEST_SUITE = new QName("http://www.gitb.com/tdl/v1/", "testsuite");
+    private static QName QNAME_SCRIPTLET = new QName("http://www.gitb.com/tdl/v1/", "scriptlet");
     private static QName QNAME_ID = new QName("http://www.gitb.com/tdl/v1/", "id");
 
     private JAXBContext jaxbContext;
@@ -41,16 +43,13 @@ public class Context {
     private Path testSuiteRootPath;
     private TestSuite testSuite;
     private boolean testSuiteLoaded;
-
     private Map<String, List<Path>> testSuitePaths;
     private Map<String, List<Path>> testCasePaths;
-
+    private Map<Path, Scriptlet> scriptletPaths;
     private Integer testSuiteCount;
     private Integer testCaseCount;
-
     private Map<String, TestCase> testCases;
     private boolean testCasesLoaded;
-
     private Map<String, Actor> testSuiteActors;
     private Actor defaultActor;
     private boolean defaultActorLoaded;
@@ -58,10 +57,10 @@ public class Context {
     private boolean resourcePathsLoaded;
     private Set<String> testCaseIdsReferencedByTestSuite;
     private Set<Path> referencedResourcePaths;
-
     private Map<String, Map<String, TestRole>> testCaseActors;
-
     private ExternalConfiguration externalConfiguration;
+    private Set<String> customOrganisationPropertiesUsed;
+    private Set<String> customSystemPropertiesUsed;
 
     public Set<Path> getReferencedResourcePaths() {
         if (referencedResourcePaths == null) {
@@ -83,6 +82,9 @@ public class Context {
     }
 
     public Path resolveTestSuiteResourceIfValid(String resourcePath) {
+        if (resourcePath.startsWith("/")) {
+            resourcePath = resourcePath.substring(1);
+        }
         Path testSuiteRootPath = getTestSuiteRootPath();
         Path resolvedPath = testSuiteRootPath.resolve(resourcePath);
         if (!Files.exists(resolvedPath)) {
@@ -204,6 +206,13 @@ public class Context {
         return testSuitePaths;
     }
 
+    public Map<Path, Scriptlet> getScriptletPaths() {
+        if (scriptletPaths == null) {
+            scanFiles();
+        }
+        return scriptletPaths;
+    }
+
     private void scanFiles() {
         if (testSuiteRootPath == null) {
             throw new IllegalStateException("The test suite path is not set");
@@ -211,6 +220,7 @@ public class Context {
         testSuitePaths = new HashMap<>();
         testCasePaths = new HashMap<>();
         resourcePaths = new HashSet<>();
+        scriptletPaths = new HashMap<>();
         scanFiles(testSuiteRootPath.toFile());
     }
 
@@ -264,6 +274,15 @@ public class Context {
                             }
                             paths.add(file.toPath());
                             documentIsOtherResource = false;
+                        } else if (matchesQName(document.getDocumentElement(), QNAME_SCRIPTLET)) {
+                            // Scriptlet.
+                            try {
+                                scriptletPaths.put(file.toPath(), Utils.unmarshal(Files.newInputStream(file.toPath()), Scriptlet.class, getJAXBContext(), null, null).getValue());
+                            } catch (Exception e) {
+                                // Record path but not object.
+                                scriptletPaths.put(file.toPath(), null);
+                            }
+                            documentIsOtherResource = false;
                         }
                     }
                     if (documentIsOtherResource) {
@@ -277,7 +296,7 @@ public class Context {
     public JAXBContext getJAXBContext() {
         if (jaxbContext == null) {
             try {
-                jaxbContext = JAXBContext.newInstance(TestCase.class, TestSuite.class);
+                jaxbContext = JAXBContext.newInstance(TestCase.class, TestSuite.class, Scriptlet.class);
             } catch (JAXBException e) {
                 throw new IllegalStateException(e);
             }
@@ -365,14 +384,38 @@ public class Context {
             if (hasDocumentationReference && hasDocumentationEmbedded) {
                 referenceAndEmbeddedFunction.accept(documentation.getImport(), documentation.getValue());
             } else if (hasDocumentationReference) {
-                Path resolvedPath = resolveTestSuiteResourceIfValid(documentation.getImport());
-                if (resolvedPath == null) {
-                    resourceNotFoundFunction.accept(documentation.getImport());
-                } else {
-                    getReferencedResourcePaths().add(resolvedPath.toAbsolutePath());
+                if (documentation.getFrom() == null || documentation.getFrom().equals(getTestSuite().getId())) {
+                    // Local documentation lookup.
+                    Path resolvedPath = resolveTestSuiteResourceIfValid(documentation.getImport());
+                    if (resolvedPath == null) {
+                        resourceNotFoundFunction.accept(documentation.getImport());
+                    } else {
+                        getReferencedResourcePaths().add(resolvedPath.toAbsolutePath());
+                    }
                 }
             }
         }
     }
 
+    public void recordCustomOrganisationProperty(String name) {
+        if (customOrganisationPropertiesUsed == null) {
+            customOrganisationPropertiesUsed = new LinkedHashSet<>();
+        }
+        customOrganisationPropertiesUsed.add(name);
+    }
+
+    public Set<String> getCustomOrganisationPropertiesUsed() {
+        return customOrganisationPropertiesUsed;
+    }
+
+    public void recordCustomSystemProperty(String name) {
+        if (customSystemPropertiesUsed == null) {
+            customSystemPropertiesUsed = new LinkedHashSet<>();
+        }
+        customSystemPropertiesUsed.add(name);
+    }
+
+    public Set<String> getCustomSystemPropertiesUsed() {
+        return customSystemPropertiesUsed;
+    }
 }
