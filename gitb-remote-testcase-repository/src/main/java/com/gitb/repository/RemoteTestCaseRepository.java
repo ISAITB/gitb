@@ -68,9 +68,6 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 	}
 
 	private <T> T getXMLTestResource(String from, String testCaseId, Class<? extends T> clazz, String resourcePath) {
-		if (!resourcePath.toLowerCase(Locale.ROOT).endsWith(".xml")) {
-			resourcePath += ".xml";
-		}
 		try {
 			InputStream inputStream = getTestResource(toLocationKey(from, testCaseId), resourcePath);
 			if (inputStream != null) {

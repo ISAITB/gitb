@@ -249,11 +249,13 @@ public class Utils {
     }
 
     public static String standardisePath(String path) {
-        if (path != null) {
+        if (path != null && !path.isBlank()) {
             path = StringUtils.replace(path, "\\", "/");
             if (!path.startsWith("/")) {
                 path = "/" + path;
             }
+        } else {
+            path = null;
         }
         return path;
     }

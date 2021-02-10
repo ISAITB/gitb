@@ -66,8 +66,11 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       NotFound
     } else {
       var filePathToLookup = codec.decode(filePath)
+      if (filePathToLookup.startsWith("/")) {
+        filePathToLookup = filePathToLookup.substring(1)
+      }
       var filePathToAlsoCheck: Option[String] = null
-      if (!filePath.startsWith(testSuite.get.identifier) && !filePath.startsWith("/"+testSuite.get.identifier)) {
+      if (!filePathToLookup.startsWith(testSuite.get.identifier)) {
         filePathToLookup = testSuite.get.filename + "/" + filePathToLookup
         filePathToAlsoCheck = None
       } else {
