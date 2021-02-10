@@ -10,7 +10,8 @@ public enum ErrorCode {
     NO_TEST_SUITE_FOUND(                                "TDL-002", "The provided archive does not contain a test suite file.", ERROR),
     MULTIPLE_TEST_SUITES_FOUND(                         "TDL-003", "Only a single test suite file should be included. The provided archive contains %s test suites.", ERROR),
     DUPLICATE_TEST_CASE_ID(                             "TDL-004", "Multiple test cases found with ID [%s].", ERROR),
-    DUPLICATE_TEST_SUITE_ID(                            "TDL-005", "Multiple test suites found with ID [%s].", ERROR),
+    // Deprecated, given that only one test suite can be present.
+//    DUPLICATE_TEST_SUITE_ID(                            "TDL-005", "Multiple test suites found with ID [%s].", ERROR),
     INVALID_TEST_SUITE_SYNTAX(                          "TDL-006", "%s", ERROR),
     INVALID_TEST_CASE_SYNTAX(                           "TDL-007", "%s", ERROR),
     NO_TEST_CASE_FOUND(                                 "TDL-008", "The provided archive must contain at least one test case.", ERROR),

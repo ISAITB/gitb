@@ -19,7 +19,7 @@ public class CheckTestSuiteEndpointParameters extends AbstractCheck {
     @Override
     public void doCheck(Context context, ValidationReport report) {
         TestSuite testSuite = context.getTestSuite();
-        if (testSuite.getActors() != null && testSuite.getActors().getActor() != null) {
+        if (testSuite != null && testSuite.getActors() != null && testSuite.getActors().getActor() != null) {
             for (Actor actor: testSuite.getActors().getActor()) {
                 if (actor.getEndpoint() != null) {
                     Set<String> endpointNames = new HashSet<>();
