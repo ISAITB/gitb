@@ -45,7 +45,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     var testSuiteIdentifier: Option[String] = None
     var testIdentifier: Option[String] = None
     val locationKeyToUse = codec.decode(locationKey)
-    val locationSeparatorIndex = locationKeyToUse.indexOf('|')
+    val locationSeparatorIndex = locationKeyToUse.lastIndexOf('|')
     if (locationSeparatorIndex != -1) {
       testSuiteIdentifier = Some(locationKeyToUse.substring(0, locationSeparatorIndex))
       testIdentifier = Some(locationKeyToUse.substring(locationSeparatorIndex+1))
