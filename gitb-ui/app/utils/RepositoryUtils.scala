@@ -184,7 +184,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 				documentationText = Some(documentation.getValue.trim)
 			} else if (documentation.getImport != null) {
 				var documentationBytes: Option[Array[Byte]] = None
-				if (documentation.getFrom == null || documentation.getFrom.equals(testSuiteId)) {
+				if (StringUtils.isBlank(documentation.getFrom) || documentation.getFrom.equals(testSuiteId)) {
 					// Look up from current test suite.
 					var referencedEntry = testSuiteArchive.getEntry(documentation.getImport)
 					if (referencedEntry == null) {

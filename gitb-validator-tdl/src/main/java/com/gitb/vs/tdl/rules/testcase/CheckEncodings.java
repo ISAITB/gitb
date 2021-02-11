@@ -60,7 +60,7 @@ public class CheckEncodings extends AbstractTestCaseObserver {
             } else if (section == TestCaseSection.METADATA) {
                 stepToReport = "documentation";
             } else if (currentStep != null) {
-                stepToReport = Utils.getStepName(currentStep);
+                stepToReport = Utils.stepNameWithScriptlet(currentStep, currentScriptlet);
             } else {
                 stepToReport = "";
             }

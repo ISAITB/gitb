@@ -59,8 +59,8 @@ public class Context {
     private Set<Path> referencedResourcePaths;
     private Map<String, Map<String, TestRole>> testCaseActors;
     private ExternalConfiguration externalConfiguration;
-    private Set<String> customOrganisationPropertiesUsed;
-    private Set<String> customSystemPropertiesUsed;
+    private final Set<String> customOrganisationPropertiesUsed = new TreeSet<>();
+    private final Set<String> customSystemPropertiesUsed = new TreeSet<>();
 
     public Set<Path> getReferencedResourcePaths() {
         if (referencedResourcePaths == null) {
@@ -384,7 +384,7 @@ public class Context {
             if (hasDocumentationReference && hasDocumentationEmbedded) {
                 referenceAndEmbeddedFunction.accept(documentation.getImport(), documentation.getValue());
             } else if (hasDocumentationReference) {
-                if (documentation.getFrom() == null || documentation.getFrom().equals(getTestSuite().getId())) {
+                if (StringUtils.isBlank(documentation.getFrom()) || documentation.getFrom().equals(getTestSuite().getId())) {
                     // Local documentation lookup.
                     Path resolvedPath = resolveTestSuiteResourceIfValid(documentation.getImport());
                     if (resolvedPath == null) {
@@ -398,9 +398,6 @@ public class Context {
     }
 
     public void recordCustomOrganisationProperty(String name) {
-        if (customOrganisationPropertiesUsed == null) {
-            customOrganisationPropertiesUsed = new LinkedHashSet<>();
-        }
         customOrganisationPropertiesUsed.add(name);
     }
 
@@ -409,9 +406,6 @@ public class Context {
     }
 
     public void recordCustomSystemProperty(String name) {
-        if (customSystemPropertiesUsed == null) {
-            customSystemPropertiesUsed = new LinkedHashSet<>();
-        }
         customSystemPropertiesUsed.add(name);
     }
 

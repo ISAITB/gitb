@@ -54,7 +54,7 @@ public class CheckTestCaseActors extends AbstractTestCaseObserver {
 
     @Override
     public void finaliseTestCase() {
-        if (!sutDefined) {
+        if (!testCaseIsWrappedScriptlet && !sutDefined) {
             addReportItem(ErrorCode.NO_SUT_DEFINED_IN_TEST_CASE, currentTestCase.getId());
         }
         super.finaliseTestCase();

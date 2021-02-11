@@ -111,7 +111,7 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                                 context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getOperations().get(operation).getOptionalInputs()
                         );
                     } else {
-                        addReportItem(ErrorCode.INVALID_PROCESSING_HANDLER_OPERATION, currentTestCase.getId(), Utils.getStepName(currentStep), ((Process) stepObj).getOperation());
+                        addReportItem(ErrorCode.INVALID_PROCESSING_HANDLER_OPERATION, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), ((Process) stepObj).getOperation());
                     }
                 } else {
                     // Check default config.
@@ -149,13 +149,13 @@ public class CheckHandlers extends AbstractTestCaseObserver {
             Set<String> remainingRequiredConfigs = new HashSet<>(expectedRequiredConfigs);
             for (Configuration config: configs) {
                 if (!expectedRequiredConfigs.contains(config.getName()) && !expectedOptionalConfigs.contains(config.getName())) {
-                    addReportItem(ErrorCode.UNEXPECTED_HANDLER_CONFIG, currentTestCase.getId(), Utils.getStepName(currentStep), config.getName());
+                    addReportItem(ErrorCode.UNEXPECTED_HANDLER_CONFIG, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), config.getName());
                 } else {
                     remainingRequiredConfigs.remove(config.getName());
                 }
             }
             for (String remainingRequiredConfig: remainingRequiredConfigs) {
-                addReportItem(ErrorCode.MISSING_HANDLER_CONFIG, currentTestCase.getId(), Utils.getStepName(currentStep), remainingRequiredConfig);
+                addReportItem(ErrorCode.MISSING_HANDLER_CONFIG, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), remainingRequiredConfig);
             }
         }
     }
@@ -165,13 +165,13 @@ public class CheckHandlers extends AbstractTestCaseObserver {
             Set<String> remainingRequiredInputs = new HashSet<>(expectedRequiredInputs);
             for (Binding input: inputs) {
                 if (!expectedRequiredInputs.contains(input.getName()) && !expectedOptionalInputs.contains(input.getName())) {
-                    addReportItem(ErrorCode.UNEXPECTED_HANDLER_INPUT, currentTestCase.getId(), Utils.getStepName(currentStep), input.getName());
+                    addReportItem(ErrorCode.UNEXPECTED_HANDLER_INPUT, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), input.getName());
                 } else {
                     remainingRequiredInputs.remove(input.getName());
                 }
             }
             for (String remainingRequiredInput: remainingRequiredInputs) {
-                addReportItem(ErrorCode.MISSING_HANDLER_INPUT, currentTestCase.getId(), Utils.getStepName(currentStep), remainingRequiredInput);
+                addReportItem(ErrorCode.MISSING_HANDLER_INPUT, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), remainingRequiredInput);
             }
         }
     }

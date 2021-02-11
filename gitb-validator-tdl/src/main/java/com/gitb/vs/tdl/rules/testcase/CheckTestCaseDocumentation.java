@@ -19,8 +19,8 @@ public class CheckTestCaseDocumentation extends AbstractTestCaseObserver {
         } else {
             // Documentation in a test step.
             context.validateDocumentation(documentation,
-                    (String path, String value) -> addReportItem(ErrorCode.TEST_STEP_DOCUMENTATION_BOTH_AS_VALUE_AND_IMPORT, currentTestCase.getId(), Utils.getStepName(currentStep)),
-                    (String path) -> addReportItem(ErrorCode.TEST_STEP_DOCUMENTATION_REFERENCE_INVALID, currentTestCase.getId(), Utils.getStepName(currentStep), path)
+                    (String path, String value) -> addReportItem(ErrorCode.TEST_STEP_DOCUMENTATION_BOTH_AS_VALUE_AND_IMPORT, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet)),
+                    (String path) -> addReportItem(ErrorCode.TEST_STEP_DOCUMENTATION_REFERENCE_INVALID, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), path)
             );
         }
     }

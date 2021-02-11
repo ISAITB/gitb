@@ -6,6 +6,7 @@ import com.gitb.tdl.*;
 import com.gitb.vs.tdl.Context;
 import com.gitb.vs.tdl.ErrorCode;
 import com.gitb.vs.tdl.ValidationReport;
+import com.gitb.vs.tdl.rules.ScriptletAsTestCase;
 import com.gitb.vs.tdl.rules.TestCaseObserver;
 import com.gitb.vs.tdl.rules.TestCaseSection;
 import com.gitb.vs.tdl.util.Utils;
@@ -18,6 +19,7 @@ public class AbstractTestCaseObserver implements TestCaseObserver {
     protected Context context;
     protected TestCase currentTestCase;
     protected Scriptlet currentScriptlet;
+    protected boolean testCaseIsWrappedScriptlet;
 
     @Override
     public void initialise(Context context, ValidationReport report) {
@@ -28,6 +30,7 @@ public class AbstractTestCaseObserver implements TestCaseObserver {
     @Override
     public void initialiseTestCase(TestCase currentTestCase) {
         this.currentTestCase = currentTestCase;
+        testCaseIsWrappedScriptlet = (currentTestCase instanceof ScriptletAsTestCase);
     }
 
     @Override
@@ -62,7 +65,7 @@ public class AbstractTestCaseObserver implements TestCaseObserver {
 
     @Override
     public void handleVariable(Variable var) {
-        // Do nothing by default.
+        currentStep = var;
     }
 
     @Override
@@ -91,12 +94,25 @@ public class AbstractTestCaseObserver implements TestCaseObserver {
 
     public String getLocation() {
         if (currentTestCase != null) {
-            return Utils.getTestCaseLocation(currentTestCase.getId(), context);
+            if (testCaseIsWrappedScriptlet) {
+                return Utils.getScriptletLocation(((ScriptletAsTestCase)currentTestCase).getScriptletPath(), context);
+            } else {
+                return Utils.getTestCaseLocation(currentTestCase.getId(), context);
+            }
         }
         return "";
     }
 
     public void addReportItem(ErrorCode error, String... parameters) {
-        report.addItem(error, getLocation(), parameters);
+        if (error.isPrefixWithResourceType()) {
+            String[] newParameters = new String[(parameters == null)?1:parameters.length+1];
+            newParameters[0] = testCaseIsWrappedScriptlet?"Scriptlet":"Test case";
+            if (parameters != null) {
+                System.arraycopy(parameters, 0, newParameters, 1, parameters.length);
+            }
+            report.addItem(error, getLocation(), newParameters);
+        } else {
+            report.addItem(error, getLocation(), parameters);
+        }
     }
 }
