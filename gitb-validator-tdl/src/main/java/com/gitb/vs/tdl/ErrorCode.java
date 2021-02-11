@@ -14,7 +14,7 @@ public enum ErrorCode {
 //    DUPLICATE_TEST_SUITE_ID(                            "TDL-005", "Multiple test suites found with ID [%s].", ERROR),
     INVALID_TEST_SUITE_SYNTAX(                          "TDL-006", "%s", ERROR),
     INVALID_TEST_CASE_SYNTAX(                           "TDL-007", "%s", ERROR),
-    NO_TEST_CASE_FOUND(                                 "TDL-008", "The provided archive must contain at least one test case.", ERROR),
+    NO_TEST_CASE_FOUND(                                 "TDL-008", "The provided archive does not contain test cases. This archive will not be directly usable in tests but can be used to share common resources with other test suites.", INFO),
     INVALID_TEST_CASE_REFERENCE(                        "TDL-009", "The test suite references a test case using an undefined ID [%s].", ERROR),
     INVALID_TEST_CASE_PREREQUISITE(                     "TDL-010", "The test suite specifies a prerequisite [%s] for test case [%s] that is not defined.", ERROR),
     INVALID_ACTOR_ID_REFERENCED_IN_TEST_CASE(           "TDL-011", "%s [%s] references an actor by ID [%s] that is not defined in the test suite.", ERROR, true),
@@ -114,6 +114,7 @@ public enum ErrorCode {
     EXTERNAL_SCRIPTLET_OUTPUT_NOT_FOUND_AS_VARIABLE(    "TDL-097", "Scriptlet [%s] includes an output [%s] that is not defined through an expression, and for which no variable with the same name exists in scope.", ERROR),
     DUPLICATE_INTERNAL_SCRIPTLET_DEFINITION_NAME(       "TDL-098", "Test case [%s] includes a scriptlet [%s] that defines [%s] as a %s.", ERROR),
     DUPLICATE__DEFINITION_NAME(                         "TDL-099", "%s [%s] defines [%s] as a %s.", ERROR, true),
+    NO_RESOURCE_FOUND(                                  "TDL-100", "The provided archive does not contain test cases nor resources that could be used by other test suites.", ERROR)
 
     ;
 

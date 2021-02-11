@@ -62,11 +62,13 @@ public class CheckTestCaseActors extends AbstractTestCaseObserver {
 
     @Override
     public void finalise() {
-        for (String actorId: unreferencedTestSuiteActors) {
-            addReportItem(ErrorCode.ACTOR_NOT_REFERENCED_IN_TEST_CASES, actorId);
-        }
-        if (defaultActor != null && !defaultActorDefinedAsSUT) {
-            addReportItem(ErrorCode.DEFAULT_ACTOR_NOT_REFERENCED_IN_TEST_CASES_AS_SUT, defaultActor.getId());
+        if (!context.getTestCases().isEmpty()) {
+            for (String actorId: unreferencedTestSuiteActors) {
+                addReportItem(ErrorCode.ACTOR_NOT_REFERENCED_IN_TEST_CASES, actorId);
+            }
+            if (defaultActor != null && !defaultActorDefinedAsSUT) {
+                addReportItem(ErrorCode.DEFAULT_ACTOR_NOT_REFERENCED_IN_TEST_CASES_AS_SUT, defaultActor.getId());
+            }
         }
         super.finalise();
     }
