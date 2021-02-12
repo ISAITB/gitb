@@ -1,12 +1,13 @@
 package com.gitb.validation.schematron;
 
-import com.helger.commons.io.IReadableResource;
+import com.helger.commons.io.resource.IReadableResource;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.InputStream;
 import java.net.URL;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 
 /**
@@ -16,8 +17,9 @@ import java.nio.charset.StandardCharsets;
  * the limitations by treating Strings as readable resources.
  */
 public class StringResource implements IReadableResource {
-    private String resource;
-    private String path;
+
+    private final String resource;
+    private final String path;
 
     public StringResource(String resource, String path) {
         this.resource = resource;
@@ -32,20 +34,13 @@ public class StringResource implements IReadableResource {
 
     @Nullable
     @Override
-    public Reader getReader(@Nonnull String s) {
-        return new StringReader(s);
-    }
-
-    @Nullable
-    @Override
-    public Reader getReader(@Nonnull Charset charset) {
-        return null;
-    }
-
-    @Nullable
-    @Override
     public InputStream getInputStream() {
         return new ByteArrayInputStream(this.resource.getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Override
+    public boolean isReadMultiple() {
+        return false;
     }
 
     @Nonnull
@@ -76,4 +71,5 @@ public class StringResource implements IReadableResource {
     public File getAsFile() {
         return null;
     }
+
 }

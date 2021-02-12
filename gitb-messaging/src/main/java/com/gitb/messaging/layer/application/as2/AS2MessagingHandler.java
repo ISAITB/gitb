@@ -9,18 +9,22 @@ import com.gitb.messaging.KeyStoreFactory;
 import com.gitb.messaging.ServerUtils;
 import com.gitb.messaging.layer.AbstractMessagingHandler;
 import com.gitb.messaging.layer.application.http.HttpMessagingHandler;
-import com.gitb.messaging.model.tcp.ITransactionReceiver;
-import com.gitb.messaging.model.tcp.ITransactionSender;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.model.TransactionContext;
+import com.gitb.messaging.model.tcp.ITransactionReceiver;
+import com.gitb.messaging.model.tcp.ITransactionSender;
 import com.gitb.messaging.utils.MessagingHandlerUtils;
 import com.gitb.types.MapType;
 import com.gitb.utils.ConfigurationUtils;
 import com.gitb.utils.EncodingUtils;
+import com.helger.as2lib.crypto.ECryptoAlgorithmCrypt;
+import com.helger.as2lib.crypto.ECryptoAlgorithmSign;
 import com.helger.as2lib.crypto.ICryptoHelper;
 import com.helger.as2lib.disposition.DispositionOptions;
-import com.helger.as2lib.util.AS2Util;
-import com.helger.as2lib.util.CAS2Header;
+import com.helger.as2lib.util.AS2Helper;
+import com.helger.as2lib.util.AS2ResourceHelper;
+import com.helger.commons.http.CHttpHeader;
+import com.helger.mail.cte.EContentTransferEncoding;
 import org.apache.commons.codec.binary.Base64;
 import org.kohsuke.MetaInfServices;
 
@@ -49,8 +53,6 @@ public class AS2MessagingHandler extends AbstractMessagingHandler{
     public static final String AS2_FROM    = "gitb-engine";
     public static final String AS2_SUBJECT = "AS2 Test Message";
 
-    public static final String SIGNING_ALGORITHM    = "sha1";
-    public static final String ENCRYPTION_ALGORITHM = "3des";
     public static final String DEFAULT_MDN_OPTIONS = "signed-receipt-protocol=required, " +
             "pkcs7-signature; signed-receipt-micalg=required, sha1";
 
@@ -80,29 +82,27 @@ public class AS2MessagingHandler extends AbstractMessagingHandler{
     }
 
     public static MimeBodyPart sign(MimeBodyPart mimeBody, X509Certificate senderCerificate, PrivateKey privateKey) throws Exception {
-        ICryptoHelper cryptoHelper = AS2Util.getCryptoHelper();
-        MimeBodyPart signed = cryptoHelper.sign(mimeBody, senderCerificate, privateKey, SIGNING_ALGORITHM);
-        return signed;
+        ICryptoHelper cryptoHelper = AS2Helper.getCryptoHelper();
+        return cryptoHelper.sign(mimeBody, senderCerificate, privateKey, ECryptoAlgorithmSign.DIGEST_SHA1, false, false, EContentTransferEncoding.AS2_DEFAULT);
     }
 
     public static MimeBodyPart encrypt(MimeBodyPart mimeBody, X509Certificate receiverCertificate) throws Exception {
-        ICryptoHelper cryptoHelper = AS2Util.getCryptoHelper();
-        MimeBodyPart encrypted = cryptoHelper.encrypt(mimeBody, receiverCertificate, ENCRYPTION_ALGORITHM);
-        return encrypted;
+        ICryptoHelper cryptoHelper = AS2Helper.getCryptoHelper();
+        return cryptoHelper.encrypt(mimeBody, receiverCertificate, ECryptoAlgorithmCrypt.CRYPT_3DES, EContentTransferEncoding.AS2_DEFAULT);
     }
 
     public static MimeBodyPart decrypt(MimeBodyPart mimeBody, X509Certificate receiverCertificate, PrivateKey privateKey) throws Exception {
-        ICryptoHelper cryptoHelper = AS2Util.getCryptoHelper();
+        ICryptoHelper cryptoHelper = AS2Helper.getCryptoHelper();
         if(cryptoHelper.isEncrypted(mimeBody)) {
-            return cryptoHelper.decrypt(mimeBody, receiverCertificate, privateKey);
+            return cryptoHelper.decrypt(mimeBody, receiverCertificate, privateKey, true, new AS2ResourceHelper());
         }
         return mimeBody;
     }
 
     public static MimeBodyPart verify(MimeBodyPart mimeBody, X509Certificate senderCertificate) throws Exception {
-        ICryptoHelper cryptoHelper = AS2Util.getCryptoHelper();
+        ICryptoHelper cryptoHelper = AS2Helper.getCryptoHelper();
         if(cryptoHelper.isSigned(mimeBody)) {
-            return cryptoHelper.verify(mimeBody, senderCertificate);
+            return cryptoHelper.verify(mimeBody, senderCertificate, false, true, null, new AS2ResourceHelper());
         }
         return mimeBody;
     }
@@ -123,10 +123,14 @@ public class AS2MessagingHandler extends AbstractMessagingHandler{
     }
 
     public static String calculateMIC(MimeBodyPart mimeBody, MapType headers, boolean includeHeaders) throws Exception {
-        ICryptoHelper cryptoHelper = AS2Util.getCryptoHelper();
-        String sDispositionOptions = ServerUtils.getHeader(headers, CAS2Header.HEADER_DISPOSITION_NOTIFICATION_OPTIONS);
+        ICryptoHelper cryptoHelper = AS2Helper.getCryptoHelper();
+        String sDispositionOptions = ServerUtils.getHeader(headers, CHttpHeader.DISPOSITION_NOTIFICATION_OPTIONS);
         DispositionOptions dispositionOptions = DispositionOptions.createFromString (sDispositionOptions);
-        return cryptoHelper.calculateMIC(mimeBody, dispositionOptions.getMICAlg(), includeHeaders);
+        var alg = dispositionOptions.getFirstMICAlg();
+        if (alg == null) {
+            throw new GITBEngineInternalError("MIC algorithm was missing.");
+        }
+        return cryptoHelper.calculateMIC(mimeBody, alg, includeHeaders).getAsAS2String();
     }
 
     public static String generateMessageId(String as2To) {

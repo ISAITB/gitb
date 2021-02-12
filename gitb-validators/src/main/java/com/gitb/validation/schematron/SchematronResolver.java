@@ -14,27 +14,38 @@ import java.io.InputStream;
  */
 public class SchematronResolver implements URIResolver {
 
+    private static final String PROTOCOL = "file:///";
+
+    /**
+     * Path to the folder that contains root resource (i.e. and XSD schema or Schematron file, etc)
+     */
+    private final String resource;
     private final String testSuiteId;
     private final String testCaseId;
 
-    public SchematronResolver(String testSuiteId, String testCaseId) {
+    public SchematronResolver(String testSuiteId, String testCaseId, String path) {
         this.testSuiteId = testSuiteId;
         this.testCaseId = testCaseId;
+        this.resource = path;
     }
 
     @Override
-    public Source resolve(String href, String base) throws TransformerException {
+    public Source resolve(String href, String baseURI) throws TransformerException {
         ModuleManager moduleManager = ModuleManager.getInstance();
         ITestCaseRepository repository = moduleManager.getTestCaseRepository();
-        InputStream resource;
-
-        if(href == null || href.equals("")) {
-            resource = this.getClass().getResourceAsStream(base);
-        } else{
-            String parentFolder = base.substring(0, base.lastIndexOf("/")+1);
-            String artifactPath = parentFolder + href;
-            resource = repository.getTestArtifact(testSuiteId, testCaseId, artifactPath);
+        String parentFolder;
+        if (baseURI == null || baseURI.isBlank()) {
+            parentFolder = this.resource.substring(0, this.resource.lastIndexOf("/")+1);
+        } else {
+            parentFolder = baseURI.substring(PROTOCOL.length(), baseURI.lastIndexOf("/")+1);
         }
-        return new StreamSource(resource);
+
+        String artifactPath = parentFolder + href;
+
+        InputStream resource  = repository.getTestArtifact(testSuiteId, testCaseId, artifactPath);
+        if(resource != null) {
+            return new StreamSource(resource);
+        }
+        return null;
     }
 }

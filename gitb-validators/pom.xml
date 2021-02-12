@@ -37,8 +37,20 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>com.helger.schematron</groupId>
+            <artifactId>ph-schematron-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.helger.schematron</groupId>
+            <artifactId>ph-schematron-xslt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.helger.schematron</groupId>
+            <artifactId>ph-schematron-pure</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.helger</groupId>
-            <artifactId>ph-schematron</artifactId>
+            <artifactId>ph-commons</artifactId>
         </dependency>
         <dependency>
             <groupId>net.sf.saxon</groupId>

@@ -18,15 +18,16 @@ import com.gitb.types.StringType;
 import com.gitb.utils.ConfigurationUtils;
 import com.gitb.utils.XMLUtils;
 import com.helger.as2lib.disposition.DispositionType;
-import com.helger.as2lib.util.CAS2Header;
-import com.helger.as2lib.util.javamail.ByteArrayDataSource;
-import com.helger.commons.jaxb.validation.CollectingValidationEventHandler;
+import com.helger.commons.http.CHttpHeader;
 import com.helger.commons.mime.CMimeType;
-import com.helger.peppol.sbdh.DocumentData;
-import com.helger.peppol.sbdh.read.DocumentDataReader;
-import com.helger.ubl.EUBL21DocumentType;
-import com.helger.ubl.UBL21DocumentTypes;
-import com.helger.ubl.UBL21Marshaller;
+import com.helger.jaxb.validation.CollectingValidationEventHandler;
+import com.helger.mail.datasource.ByteArrayDataSource;
+import com.helger.peppol.sbdh.read.PeppolSBDHDocumentReader;
+import com.helger.peppolid.factory.PeppolIdentifierFactory;
+import com.helger.sbdh.SBDMarshaller;
+import com.helger.ubl21.EUBL21DocumentType;
+import com.helger.ubl21.UBL21DocumentTypes;
+import com.helger.ubl21.UBL21ReaderBuilder;
 import com.sun.xml.messaging.saaj.packaging.mime.internet.InternetHeaders;
 import org.apache.http.impl.BHttpConnectionBase;
 import org.apache.http.impl.DefaultBHttpClientConnection;
@@ -34,7 +35,6 @@ import org.apache.http.impl.DefaultBHttpServerConnection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.unece.cefact.namespaces.sbdh.ObjectFactory;
-import org.unece.cefact.namespaces.sbdh.SBDMarshaller;
 import org.unece.cefact.namespaces.sbdh.StandardBusinessDocument;
 import org.unece.cefact.namespaces.sbdh.StandardBusinessDocumentHeader;
 import org.w3c.dom.Element;
@@ -51,7 +51,7 @@ import java.util.List;
  * Created by senan on 11.11.2014.
  */
 public class PeppolAS2Receiver extends HttpsReceiver{
-    private Logger logger = LoggerFactory.getLogger(PeppolAS2Receiver.class);
+    private final Logger logger = LoggerFactory.getLogger(PeppolAS2Receiver.class);
 
     public PeppolAS2Receiver(SessionContext sessionContext, TransactionContext transactionContext) {
         super(sessionContext, transactionContext);
@@ -182,29 +182,30 @@ public class PeppolAS2Receiver extends HttpsReceiver{
     protected void validateBusinessDocument(Element businessMessageNode) {
         // Try to determine the UBL document type from the namespace URI
         EUBL21DocumentType documentType = UBL21DocumentTypes.getDocumentTypeOfNamespace(businessMessageNode.getNamespaceURI());
-        if(documentType == null) {
+        if (documentType == null) {
             String msg = "The business message is not a supported UBL 2.1 document";
             saveError("unexpected-processing-error", msg);
             throw new IllegalStateException(msg);
         }
-
-        //Validate UBL document
-        final CollectingValidationEventHandler handler = new CollectingValidationEventHandler ();
-        final Object ublDocument = UBL21Marshaller.readUBLDocument(businessMessageNode, documentType.getImplementationClass(), handler);
-
-        if(ublDocument == null) {
+        var handler = new CollectingValidationEventHandler();
+        final Object aUBLDocument = UBL21ReaderBuilder.createGeneric (documentType)
+                .setValidationEventHandler(handler)
+                .read (businessMessageNode);
+        if (aUBLDocument == null) {
             String msg = "Failed to read the UBL document as " +
                     documentType.name () + ":\n" +
-                    handler.getResourceErrors ().getAllResourceErrors ().toString ();
+                    handler.getErrorList ().toString();
             saveError("unexpected-processing-error", msg);
             throw new IllegalStateException(msg);
         }
     }
 
     protected Element getBusinessMessageNode(StandardBusinessDocument sbd) throws Exception {
-        Element businessMessageNode;
-        DocumentData documentData = new DocumentDataReader().extractData (sbd);
-        businessMessageNode = documentData.getBusinessMessage ();
+        var documentData = new PeppolSBDHDocumentReader(PeppolIdentifierFactory.INSTANCE).extractData(sbd);
+        Element businessMessageNode = documentData.getBusinessMessage();
+        if (businessMessageNode == null) {
+            throw new IllegalStateException("Failed to read the UBL document");
+        }
         validateBusinessDocument(businessMessageNode);
         return businessMessageNode;
     }
@@ -217,8 +218,8 @@ public class PeppolAS2Receiver extends HttpsReceiver{
     }
 
     private boolean checkAS2Headers(MapType headers){
-        String as2From  = ServerUtils.getHeader(headers, CAS2Header.HEADER_AS2_FROM);
-        String as2To    = ServerUtils.getHeader(headers, CAS2Header.HEADER_AS2_TO);
+        String as2From  = ServerUtils.getHeader(headers, CHttpHeader.AS2_FROM);
+        String as2To    = ServerUtils.getHeader(headers, CHttpHeader.AS2_TO);
         boolean success = true;
 
         if(as2From == null){
@@ -281,13 +282,13 @@ public class PeppolAS2Receiver extends HttpsReceiver{
     }
 
     private MimeBodyPart createMimeBody(MapType headers, BinaryType body) throws Exception{
-        ContentType contentType = new ContentType(ServerUtils.getHeader(headers, CAS2Header.HEADER_CONTENT_TYPE));
+        ContentType contentType = new ContentType(ServerUtils.getHeader(headers, CHttpHeader.CONTENT_TYPE));
         String receivedContentType = contentType.toString();
 
         byte[] data = (byte[]) body.getValue();
         MimeBodyPart mimeBody = new MimeBodyPart ();
         mimeBody.setDataHandler(new DataHandler(new ByteArrayDataSource(data, receivedContentType, null)));
-        mimeBody.setHeader(CAS2Header.HEADER_CONTENT_TYPE, receivedContentType);
+        mimeBody.setHeader(CHttpHeader.CONTENT_TYPE, receivedContentType);
 
         return mimeBody;
     }

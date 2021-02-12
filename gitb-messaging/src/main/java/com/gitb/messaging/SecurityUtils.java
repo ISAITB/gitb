@@ -3,7 +3,7 @@ package com.gitb.messaging;
 
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.model.TransactionContext;
-import com.helger.as2lib.util.http.DoNothingTrustManager;
+import com.helger.commons.ws.TrustManagerTrustAll;
 
 import javax.net.ssl.*;
 import java.io.IOException;
@@ -24,7 +24,7 @@ public class SecurityUtils {
             KeyManagerFactory kmf = KeyManagerFactory.getInstance(PKI_ALGORITHM);
             kmf.init(keyStore, KeyStoreFactory.getInstance().getKeyStorePassword().toCharArray());
 
-            TrustManager[] trustManagers = new TrustManager [] { new DoNothingTrustManager() };
+            TrustManager[] trustManagers = new TrustManager [] { new TrustManagerTrustAll() };
 
             sslContext = SSLContext.getInstance(SECURE_ALGORITHM);
             sslContext.init(kmf.getKeyManagers(), trustManagers, null);
