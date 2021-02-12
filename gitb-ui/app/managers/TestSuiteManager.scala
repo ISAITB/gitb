@@ -288,15 +288,17 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		try {
 			result.validationReport = validateTestSuite(specifications, tempTestSuiteArchive)
 			if (result.validationReport.getResult == TestResultType.SUCCESS) {
-				val noWarnings = result.validationReport.getCounters.getNrOfWarnings.intValue() == 0
-				// If we have warnings we don't need to make a full parse (i.e. test cases and documentation).
-				val testSuite = repositoryUtils.getTestSuiteFromZip(specifications.head, tempTestSuiteArchive, noWarnings)
+				val hasReportItems = (result.validationReport.getCounters.getNrOfWarnings.intValue() > 0) ||
+						(result.validationReport.getCounters.getNrOfErrors.intValue() > 0) ||
+						(result.validationReport.getCounters.getNrOfAssertions.intValue() > 0)
+				// If we have messages we don't need to make a full parse (i.e. test cases and documentation).
+				val testSuite = repositoryUtils.getTestSuiteFromZip(specifications.head, tempTestSuiteArchive, !hasReportItems)
 				if (testSuite.isDefined) {
 					var definedActorsIdentifiers: Option[List[String]] = None
 					if (testSuite.get.actors.isDefined) {
 						definedActorsIdentifiers = Some(testSuite.get.actors.get.map(actor => actor.actorId))
 					}
-					if (!noWarnings) {
+					if (hasReportItems) {
 						result.needsConfirmation = true
 					}
 					val specsWithExistingTestSuite = new ListBuffer[Long]()
