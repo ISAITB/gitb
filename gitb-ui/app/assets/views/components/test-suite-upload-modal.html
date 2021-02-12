@@ -29,7 +29,12 @@
 			<div class="container-fluid">
 				<div class="row">
 					<div class="bg-info div-rounded div-padded">
-						The provided test suite completed validation with <strong ng-if="controller.report.counters.errors > 0">{{controller.report.counters.errors}} error(s)</strong><span ng-if="controller.report.counters.errors > 0 && controller.report.counters.warnings > 0"> and </span><strong ng-if="controller.report.counters.warnings > 0">{{controller.report.counters.warnings}} warning(s)</strong>.						
+						<div ng-if="controller.hasValidationErrors || controller.hasValidationWarnings">
+							The provided test suite completed validation with <strong ng-if="controller.hasValidationErrors">{{controller.report.counters.errors}} error(s)</strong><span ng-if="controller.hasValidationErrors && controller.hasValidationWarnings"> and </span><strong ng-if="controller.hasValidationWarnings">{{controller.report.counters.warnings}} warning(s)</strong>.
+						</div>
+						<div ng-if="!controller.hasValidationErrors && !controller.hasValidationWarnings">
+							The provided test suite was successfully validated.
+						</div>
 					</div>                        
 				</div>
 			</div>

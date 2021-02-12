@@ -7,6 +7,7 @@ class TestSuiteUploadModalController
       @actionProceedPending = false
       @hasValidationWarnings = false
       @hasValidationErrors = false
+      @hasValidationMessages = false
       @step = 'initial'
       @hasChoicesToComplete = true
       @specificationNames = {}
@@ -20,12 +21,14 @@ class TestSuiteUploadModalController
       @hasValidationErrors || @actionPending || @actionProceedPending || !(@file? && @specifications.length > 0) || (@step == 'replace' && !@hasChoicesToComplete)
 
     parseValidationReport: () =>
-      if @uploadResult.validationReport?.counters?.errors? && @uploadResult.validationReport?.counters?.warnings?
+      if @uploadResult.validationReport?.counters?.errors? && @uploadResult.validationReport?.counters?.warnings? && @uploadResult.validationReport?.counters?.infos?
         @hasValidationErrors = parseInt(@uploadResult.validationReport.counters.errors) > 0
         @hasValidationWarnings = parseInt(@uploadResult.validationReport.counters.warnings) > 0
+        @hasValidationMessages = parseInt(@uploadResult.validationReport.counters.infos) > 0
       else
         @hasValidationErrors = false
         @hasValidationWarnings = false
+        @hasValidationMessages = false
 
     showValidationReport: () =>
       @step = 'validation'
@@ -146,7 +149,7 @@ class TestSuiteUploadModalController
           @uploadResult = result.data
           if @uploadResult.validationReport
             @parseValidationReport()
-            if @hasValidationErrors || @hasValidationWarnings
+            if @hasValidationErrors || @hasValidationWarnings || @hasValidationMessages
               @showValidationReport()
             else
               if @uploadResult.needsConfirmation

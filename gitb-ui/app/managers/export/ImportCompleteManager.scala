@@ -340,10 +340,10 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     targetFolder
   }
 
-  private def toModelTestSuite(data: com.gitb.xml.export.TestSuite, specificationId: Long, testSuiteFileName: String): models.TestSuites = {
+  private def toModelTestSuite(data: com.gitb.xml.export.TestSuite, specificationId: Long, testSuiteFileName: String, hasTestCases: Boolean): models.TestSuites = {
     models.TestSuites(0L, data.getShortName, data.getFullName, data.getVersion, Option(data.getAuthors),
       Option(data.getOriginalDate), Option(data.getModificationDate), Option(data.getDescription), Option(data.getKeywords),
-      specificationId, testSuiteFileName, data.isHasDocumentation, Option(data.getDocumentation), data.getIdentifier)
+      specificationId, testSuiteFileName, data.isHasDocumentation, Option(data.getDocumentation), data.getIdentifier, !hasTestCases)
   }
 
   private def toModelCustomLabel(data: com.gitb.xml.export.CustomLabel, communityId: Long): models.CommunityLabels = {
@@ -503,10 +503,16 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
         FileUtils.deleteDirectory(testSuiteFile)
       }
     })
+    var testCases: List[TestCase] = null
+    if (data.getTestCases != null && data.getTestCases.getTestCase != null) {
+      testCases = collectionAsScalaIterable(data.getTestCases.getTestCase).toList
+    } else {
+      testCases = List.empty
+    }
     // Process DB operations
     val action = for {
       // Save test suite
-      testSuiteId <- PersistenceSchema.testSuites.returning(PersistenceSchema.testSuites.map(_.id)) += toModelTestSuite(data, specificationId, testSuiteFile.getName)
+      testSuiteId <- PersistenceSchema.testSuites.returning(PersistenceSchema.testSuites.map(_.id)) += toModelTestSuite(data, specificationId, testSuiteFile.getName, testCases.nonEmpty)
       // Lookup the map of systems to actors for the specification
       systemActors <- testSuiteManager.getSystemActors(specificationId)
       // Create a map of actors to systems.
@@ -517,8 +523,8 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
           testSuiteManager.stepProcessTestCases(
             specificationId,
             testSuiteId,
-            Some(toModelTestCases(collectionAsScalaIterable(data.getTestCases.getTestCase).toList, specificationId)),
-            getResourcePaths(testSuiteFile.getName, collectionAsScalaIterable(data.getTestCases.getTestCase).toList),
+            Some(toModelTestCases(testCases, specificationId)),
+            getResourcePaths(testSuiteFile.getName, testCases),
             new java.util.HashMap[String, (java.lang.Long, String)](), // existingTestCaseMap
             mapAsJavaMap(ctx.savedSpecificationActors(specificationId)), // savedActorIds
             existingActorToSystemMap,
@@ -542,12 +548,18 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     val testSuiteId = item.targetKey.get.toLong
     // File system operations
     val testSuiteFile = saveTestSuiteFiles(data, item, domainId, specificationId, ctx)
+    var testCases: List[TestCase] = null
+    if (data.getTestCases != null && data.getTestCases.getTestCase != null) {
+      testCases = collectionAsScalaIterable(data.getTestCases.getTestCase).toList
+    } else {
+      testCases = List.empty
+    }
     // Process DB operations
     val action = for {
       // Lookup existing test suite file (for later cleanup).
       existingTestSuiteFile <- PersistenceSchema.testSuites.filter(_.id === testSuiteId).map(x => x.filename).result.head
       // Update existing test suite.
-      _ <- testSuiteManager.updateTestSuiteInDb(testSuiteId, toModelTestSuite(data, specificationId, testSuiteFile.getName))
+      _ <- testSuiteManager.updateTestSuiteInDb(testSuiteId, toModelTestSuite(data, specificationId, testSuiteFile.getName, testCases.nonEmpty))
       // Remove existing actor links (these will be updated later).
       _ <- testSuiteManager.removeActorLinksForTestSuite(testSuiteId)
       // Lookup the existing test cases for the test suite.
@@ -564,8 +576,8 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
           testSuiteManager.stepProcessTestCases(
             specificationId,
             testSuiteId,
-            Some(toModelTestCases(collectionAsScalaIterable(data.getTestCases.getTestCase).toList, specificationId)),
-            getResourcePaths(testSuiteFile.getName, collectionAsScalaIterable(data.getTestCases.getTestCase).toList),
+            Some(toModelTestCases(testCases, specificationId)),
+            getResourcePaths(testSuiteFile.getName, testCases),
             existingTestCaseMap,
             mapAsJavaMap(ctx.savedSpecificationActors(specificationId)), // savedActorIds
             existingActorToSystemMap,

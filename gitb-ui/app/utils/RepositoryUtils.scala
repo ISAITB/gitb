@@ -263,6 +263,16 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		false
 	}
 
+	private def toActorList(actors: com.gitb.core.Actors): List[com.gitb.core.Actor] = {
+		val results = new ListBuffer[com.gitb.core.Actor]()
+		if (actors != null) {
+			actors.getActor.forEach { actor =>
+				results += actor
+			}
+		}
+		results.toList
+	}
+
 	def getTestSuiteFromZip(specification :Long, file: File, completeParse: Boolean): Option[TestSuite] = {
 		var result: Option[TestSuite] = None
 		if(file.exists) {
@@ -282,7 +292,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 						val originalDate: String = tdlTestSuite.getMetadata.getPublished
 						val modificationDate: String = tdlTestSuite.getMetadata.getLastModified
 						val description: String = tdlTestSuite.getMetadata.getDescription
-						val tdlActors = tdlTestSuite.getActors.getActor.asScala
+						val tdlActors = toActorList(tdlTestSuite.getActors)
 						val tdlTestCaseEntries = tdlTestSuite.getTestcase.asScala
 						val fileName = generateTestSuiteFileName()
 						var documentation: Option[String] = None
@@ -293,7 +303,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 						if (completeParse && tdlTestSuite.getMetadata.getDocumentation != null) {
 							documentation = getDocumentation(tdlTestSuite.getId, tdlTestSuite.getMetadata.getDocumentation, zip, specification, domainId)
 						}
-						val caseObject = TestSuites(0L, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification, fileName, documentation.isDefined, documentation, identifier)
+						val caseObject = TestSuites(0L, name, name, version, Option(authors), Option(originalDate), Option(modificationDate), Option(description), None, specification, fileName, documentation.isDefined, documentation, identifier, tdlTestCaseEntries.isEmpty)
 						val actors = tdlActors.map { tdlActor =>
 							val endpoints = tdlActor.getEndpoint.asScala.map { tdlEndpoint => // construct actor endpoints
 								val parameters = tdlEndpoint.getConfig.asScala.map { tdlParameter =>
@@ -314,8 +324,8 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 							if (tdlActor.getDisplayOrder != null) {
 								displayOrder = Some(tdlActor.getDisplayOrder)
 							}
-							new Actor(Actors(0L, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), Option(tdlActor.isDefault), tdlActor.isHidden, displayOrder,  0L), endpoints)
-						}.toList
+							new Actor(Actors(0L, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), Option(tdlActor.isDefault), tdlActor.isHidden, displayOrder, 0L), endpoints)
+						}
 
 						var testCases: Option[List[TestCases]] = None
 						if (completeParse) {

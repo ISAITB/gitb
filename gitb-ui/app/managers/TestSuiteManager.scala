@@ -48,7 +48,7 @@ object TestSuiteManager {
 	}
 
 	def tupleToTestSuite(x: TestSuiteValueTuple): TestSuites = {
-		TestSuites(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9, x._10, x._11, x._12, None, x._13)
+		TestSuites(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9, x._10, x._11, x._12, None, x._13, hidden = false)
 	}
 
 }
@@ -101,7 +101,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	}
 
 	def getTestSuitesWithTestCases(): List[TestSuite] = {
-		val testSuites = exec(PersistenceSchema.testSuites.sortBy(_.shortname.asc).map(TestSuiteManager.withoutDocumentation).result.map(_.toList)).map(TestSuiteManager.tupleToTestSuite)
+		val testSuites = exec(PersistenceSchema.testSuites.filter(_.hidden === false).sortBy(_.shortname.asc).map(TestSuiteManager.withoutDocumentation).result.map(_.toList)).map(TestSuiteManager.tupleToTestSuite)
 		testSuites map {
 			ts:TestSuites =>
 				val testCaseIds = exec(PersistenceSchema.testSuiteHasTestCases.filter(_.testsuite === ts.id).map(_.testcase).result.map(_.toList))
@@ -132,6 +132,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 			PersistenceSchema.testSuites
 				.join(PersistenceSchema.specifications).on(_.specification === _.id)
   			.join(PersistenceSchema.communities).on(_._2.domain === _.domain)
+				.filter(_._1._1.hidden === false)
   			.filter(_._2.id === communityId)
 				.sortBy(_._1._1.shortname.asc)
   			.map(r => TestSuiteManager.withoutDocumentation(r._1._1))
@@ -150,6 +151,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		val testSuites = exec(
 			PersistenceSchema.testSuites
 				.join(PersistenceSchema.conformanceResults).on(_.id === _.testsuite)
+				.filter(_._1.hidden === false)
 				.filter(_._2.sut === systemId)
 				.distinctOn(_._1.id)
 				.sortBy(_._1.shortname.asc)
@@ -408,7 +410,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	private def applyMetadataToTestSuite(metadata: TestArtifactMetadata, testSuite: TestSuites, testCases: Option[List[TestCases]]): (TestSuites, Option[List[TestCases]]) = {
 		val updatedTestSuite = TestSuites(testSuite.id, metadata.shortName, metadata.fullName, testSuite.version, testSuite.authors,
 			testSuite.originalDate, testSuite.modificationDate, metadata.description, testSuite.keywords, testSuite.specification,
-			testSuite.filename, metadata.documentation.isDefined, metadata.documentation, testSuite.identifier)
+			testSuite.filename, metadata.documentation.isDefined, metadata.documentation, testSuite.identifier, testCases.isEmpty || testCases.get.isEmpty)
 		var updatedTestCases: Option[List[TestCases]] = None
 		if (testCases.isDefined) {
 			val testCasesList = ListBuffer[TestCases]()
@@ -495,13 +497,13 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	}
 
 	def updateTestSuiteInDbWithoutMetadata(testSuiteId: Long, newData: TestSuites): DBIO[_] = {
-		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield t.filename
-		q1.update(newData.filename)
+		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.filename, t.hidden)
+		q1.update(newData.filename, newData.hidden)
 	}
 
 	def updateTestSuiteInDb(testSuiteId: Long, newData: TestSuites): DBIO[_] = {
-		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.identifier, t.shortname, t.fullname, t.version, t.authors, t.keywords, t.description, t.filename, t.hasDocumentation, t.documentation)
-		q1.update(newData.identifier, newData.shortname, newData.fullname, newData.version, newData.authors, newData.keywords, newData.description, newData.filename, newData.hasDocumentation, newData.documentation) andThen
+		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.identifier, t.shortname, t.fullname, t.version, t.authors, t.keywords, t.description, t.filename, t.hasDocumentation, t.documentation, t.hidden)
+		q1.update(newData.identifier, newData.shortname, newData.fullname, newData.version, newData.authors, newData.keywords, newData.description, newData.filename, newData.hasDocumentation, newData.documentation, newData.hidden) andThen
 			testResultManager.updateForUpdatedTestSuite(testSuiteId, newData.shortname)
 	}
 
