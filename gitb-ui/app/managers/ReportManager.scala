@@ -1,12 +1,5 @@
 package managers
 
-import java.io.{File, FileOutputStream, StringReader}
-import java.nio.file.{Files, Path, Paths}
-import java.text.SimpleDateFormat
-import java.time.LocalDateTime
-import java.util
-import java.util.Date
-
 import actors.events.{ConformanceStatementSucceededEvent, TestSessionFailedEvent, TestSessionSucceededEvent}
 import com.gitb.core.StepStatus
 import com.gitb.reports.ReportGenerator
@@ -16,8 +9,6 @@ import com.gitb.tpl.{DecisionStep, FlowStep, TestCase, TestStep}
 import com.gitb.tr._
 import com.gitb.utils.XMLUtils
 import config.Configurations
-import javax.inject.{Inject, Singleton}
-import javax.xml.transform.stream.StreamSource
 import models.Enums.TestResultStatus
 import models._
 import org.apache.commons.codec.binary.Base64
@@ -25,65 +16,26 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
-import persistence.db.PersistenceSchema.TestResultsTable
 import play.api.db.slick.DatabaseConfigProvider
 import utils.signature.{CreateSignature, SigUtils}
-import utils.{JacksonUtil, MimeUtil, TimeUtil}
+import utils.{JacksonUtil, MimeUtil, RepositoryUtils, TimeUtil}
 
+import java.io.{File, FileOutputStream, StringReader}
+import java.nio.file.{Files, Path, Paths}
+import java.text.SimpleDateFormat
+import java.util
+import java.util.Date
+import javax.inject.{Inject, Singleton}
+import javax.xml.transform.stream.StreamSource
 import scala.collection.JavaConverters.collectionAsScalaIterable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
-
-object ReportManager {
-
-  val STATUS_UPDATES_PATH: String = "status-updates"
-
-  def getPathForTestSessionObj(sessionId: String, testResult: Option[TestResultsTable#TableElementType], isExpected: Boolean): Path = {
-    var startTime: LocalDateTime = null
-    if (testResult.isDefined) {
-      startTime = testResult.get.startTime.toLocalDateTime
-    } else {
-      // We have no DB entry only in the case of preliminary steps.
-      startTime = LocalDateTime.now()
-    }
-    val path = Paths.get(
-      Configurations.TEST_CASE_REPOSITORY_PATH,
-      STATUS_UPDATES_PATH,
-      String.valueOf(startTime.getYear),
-      String.valueOf(startTime.getMonthValue),
-      String.valueOf(startTime.getDayOfMonth),
-      sessionId
-    )
-    if (isExpected && !Files.exists(path)) {
-      // For backwards compatibility. Lookup session folder directly under status-updates folder
-      val otherPath = Paths.get(
-        Configurations.TEST_CASE_REPOSITORY_PATH,
-        STATUS_UPDATES_PATH,
-        sessionId
-      )
-      if (Files.exists(otherPath)) {
-        otherPath
-      } else {
-        // This is for test sessions that have no report.
-        path
-      }
-    } else {
-      path
-    }
-  }
-
-  def getTempFolderPath(): Path = {
-    val path = Paths.get("/tmp/reports")
-    path
-  }
-
-}
 
 /**
   * Created by senan on 03.12.2014.
   */
 @Singleton
-class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: ActorManager, systemManager: SystemManager, organizationManager: OrganizationManager, communityManager: CommunityManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager) extends BaseManager(dbConfigProvider) {
+class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: ActorManager, systemManager: SystemManager, organizationManager: OrganizationManager, communityManager: CommunityManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -361,13 +313,13 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     }
   }
 
-  def getPathForTestSessionWrapper(sessionId: String, isExpected: Boolean): Path = {
+  def getPathForTestSessionWrapper(sessionId: String, isExpected: Boolean): SessionFolderInfo = {
     getPathForTestSession(sessionId, isExpected)
   }
 
-  def getPathForTestSession(sessionId: String, isExpected: Boolean): Path = {
+  def getPathForTestSession(sessionId: String, isExpected: Boolean): SessionFolderInfo = {
     val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption)
-    ReportManager.getPathForTestSessionObj(sessionId, testResult, isExpected)
+    repositoryUtils.getPathForTestSessionObj(sessionId, testResult, isExpected)
   }
 
   def createTestStepReport(sessionId: String, step: TestStepStatus): Option[String] = {
@@ -385,7 +337,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
 
         //write the report into a file
         if (step.getReport != null) {
-          val file = new File(getPathForTestSession(sessionId, false).toFile, path)
+          val file = new File(getPathForTestSession(sessionId, isExpected = false).path.toFile, path)
           file.getParentFile.mkdirs()
           file.createNewFile()
 
@@ -715,13 +667,19 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
               testCaseOverview.setEndTime(sdf.format(new Date(testResult.endTime.get.getTime)))
             }
             val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.tpl)))
-            val folder = ReportManager.getPathForTestSessionObj(info.sessionId.get, Some(testResult), true).toFile
-            val list = getListOfTestSteps(testcasePresentation, folder)
-            for (stepReport <- list) {
-              testCaseOverview.getSteps.add(generator.fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, false))
-            }
-            if (testCaseOverview.getSteps.isEmpty) {
-              testCaseOverview.setSteps(null)
+            val sessionFolderInfo = repositoryUtils.getPathForTestSessionObj(info.sessionId.get, Some(testResult), isExpected = true)
+            try {
+              val list = getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
+              for (stepReport <- list) {
+                testCaseOverview.getSteps.add(generator.fromTestStepReportType(stepReport.getWrapped, stepReport.getTitle, false))
+              }
+              if (testCaseOverview.getSteps.isEmpty) {
+                testCaseOverview.setSteps(null)
+              }
+            } finally {
+              if (sessionFolderInfo.archived) {
+                FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
+              }
             }
           } else {
             testCaseOverview.setStartTime("-")

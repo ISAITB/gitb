@@ -178,18 +178,6 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		spec
 	}
 
-	def getTempFolder(): File = {
-		new File("/tmp")
-	}
-
-	def getPendingFolder(): File = {
-		new File(getTempFolder(), "pending")
-	}
-
-	def getTmpValidationFolder(): File = {
-		new File(getTempFolder(), "ts_validation")
-	}
-
 	def cancelPendingTestSuiteActions(pendingTestSuiteIdentifier: String): TestSuiteUploadResult = {
 		applyPendingTestSuiteActions(pendingTestSuiteIdentifier, TestSuiteReplacementChoice.CANCEL, null)
 	}
@@ -200,7 +188,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 
 	private def applyPendingTestSuiteActions(pendingTestSuiteIdentifier: String, overallAction: TestSuiteReplacementChoice, actionsPerSpec: List[PendingTestSuiteAction]): TestSuiteUploadResult = {
 		val result = new TestSuiteUploadResult()
-		val pendingTestSuiteFolder = new File(getPendingFolder(), pendingTestSuiteIdentifier)
+		val pendingTestSuiteFolder = new File(repositoryUtils.getPendingFolder(), pendingTestSuiteIdentifier)
 		try {
 			if (overallAction == TestSuiteReplacementChoice.PROCEED) {
 				if (pendingTestSuiteFolder.exists()) {
@@ -259,7 +247,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 				actorIdSet = Some(actorIdSet.get & specActorIds)
 			}
 		}
-		val report = TestSuiteValidationAdapter.getInstance().doValidation(new FileSource(tempTestSuiteArchive), setAsJavaSet(actorIdSet.getOrElse(mutable.Set[String]())), setAsJavaSet(parameterSet), getTmpValidationFolder().getAbsolutePath)
+		val report = TestSuiteValidationAdapter.getInstance().doValidation(new FileSource(tempTestSuiteArchive), setAsJavaSet(actorIdSet.getOrElse(mutable.Set[String]())), setAsJavaSet(parameterSet), repositoryUtils.getTmpValidationFolder().getAbsolutePath)
 		report
 	}
 
@@ -326,7 +314,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 							result.matchingDataExists = Some(specsWithMatchingData.toList)
 						}
 						// Park the test suite for now and ask user what to do
-						FileUtils.moveDirectoryToDirectory(tempTestSuiteArchive.getParentFile, getPendingFolder(), true)
+						FileUtils.moveDirectoryToDirectory(tempTestSuiteArchive.getParentFile, repositoryUtils.getPendingFolder(), true)
 						result.pendingTestSuiteFolderName = tempTestSuiteArchive.getParentFile.getName
 					} else {
 						// Proceed immediately.
@@ -1045,7 +1033,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		var outputPathToUse = testSuiteOutputPath
 		if (testSuiteOutputPath.isEmpty) {
 			outputPathToUse = Some(Paths.get(
-				ReportManager.getTempFolderPath().toFile.getAbsolutePath,
+				repositoryUtils.getTempReportFolder().getAbsolutePath,
 				"test_suite",
 				"test_suite."+testSuite.id.toString+"."+System.currentTimeMillis()+".zip"
 			))

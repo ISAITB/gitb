@@ -4,10 +4,10 @@ import java.io.ByteArrayInputStream
 import java.nio.file.Paths
 import java.security.cert.{Certificate, CertificateExpiredException, CertificateNotYetValidException, X509Certificate}
 import java.security.{KeyStore, NoSuchAlgorithmException}
-
 import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.{ErrorCodes, NotFoundException}
+
 import javax.inject.Inject
 import managers._
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
@@ -20,9 +20,9 @@ import org.apache.commons.lang3.RandomStringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import utils.signature.SigUtils
-import utils.{ClamAVClient, HtmlUtil, JsonUtil, MimeUtil}
+import utils.{ClamAVClient, HtmlUtil, JsonUtil, MimeUtil, RepositoryUtils}
 
-class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, communityManager: CommunityManager, conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, systemManager: SystemManager, testResultManager: TestResultManager, organizationManager: OrganizationManager, testCaseManager: TestCaseManager, endPointManager: EndPointManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
+class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, communityManager: CommunityManager, conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, systemManager: SystemManager, testResultManager: TestResultManager, organizationManager: OrganizationManager, testCaseManager: TestCaseManager, endPointManager: EndPointManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ConformanceService])
 
   /**
@@ -289,7 +289,7 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
         }
         if (response == null) {
           val file = Paths.get(
-            testSuiteManager.getTempFolder().getAbsolutePath,
+            repositoryUtils.getTempFolder().getAbsolutePath,
             RandomStringUtils.random(10, false, true),
             testSuiteFileName
           ).toFile

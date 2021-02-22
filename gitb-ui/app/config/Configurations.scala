@@ -114,6 +114,8 @@ object Configurations {
   var DATA_ARCHIVE_KEY = ""
   var DATA_WEB_INIT_ENABLED = false
 
+  var TEST_SESSION_ARCHIVE_THRESHOLD = 30
+
   var TESTBED_MODE:String = ""
 
   def loadConfigurations() = {
@@ -308,6 +310,7 @@ object Configurations {
         }
       }
       // Mode - END
+      TEST_SESSION_ARCHIVE_THRESHOLD = fromEnv("TEST_SESSION_ARCHIVE_THRESHOLD", conf.getString("testsession.archive.threshold")).toInt
       _IS_LOADED = true
     }
   }

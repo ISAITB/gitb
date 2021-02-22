@@ -1,28 +1,29 @@
 package utils
 
-import java.io.{File, FileOutputStream, StringWriter}
-import java.nio.charset.Charset
-import java.nio.file.{Files, Paths}
-import java.util.zip.{ZipEntry, ZipFile}
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.gitb.core.{Documentation, EndpointParameter, TestCaseType, TestRoleEnumeration}
 import com.gitb.utils.XMLUtils
 import config.Configurations
-
-import javax.xml.transform.stream.StreamSource
 import managers.{BaseManager, TestSuiteManager}
 import models._
 import org.apache.commons.io.{FileUtils, IOUtils}
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
+import persistence.db.PersistenceSchema.TestResultsTable
 import play.api.db.slick.DatabaseConfigProvider
 
+import java.io.{File, FileOutputStream, StringWriter}
+import java.nio.charset.Charset
+import java.nio.file.attribute.BasicFileAttributes
+import java.nio.file._
+import java.time.LocalDateTime
+import java.util.zip.{ZipEntry, ZipFile}
 import javax.inject.{Inject, Singleton}
+import javax.xml.transform.stream.StreamSource
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.xml.XML
-import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
 class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
@@ -38,6 +39,31 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 	private final val DATA_PATH_IN: String = "in"
 	private final val DATA_PATH_PROCESSED: String = "processed"
 	private final val DATA_PATH_LOCK: String = "data.lock"
+	private final val STATUS_UPDATES_PATH: String = "status-updates"
+
+	def getStatusUpdatesFolder(): File = {
+		new File(Configurations.TEST_CASE_REPOSITORY_PATH, STATUS_UPDATES_PATH)
+	}
+
+	def getTempFolder(): File = {
+		new File("/tmp")
+	}
+
+	def getTempReportFolder(): File = {
+		new File(getTempFolder(), "reports")
+	}
+
+	def getTempArchivedSessionWorkspaceFolder(): File = {
+		new File(getTempFolder(), "session_archive")
+	}
+
+	def getPendingFolder(): File = {
+		new File(getTempFolder(), "pending")
+	}
+
+	def getTmpValidationFolder(): File = {
+		new File(getTempFolder(), "ts_validation")
+	}
 
 	def getDataRootFolder(): File = {
 		val path = Paths.get(
@@ -510,6 +536,67 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 			}
 		}
 		result
+	}
+
+	def getPathForTestSessionObj(sessionId: String, testResult: Option[TestResultsTable#TableElementType], isExpected: Boolean): SessionFolderInfo = {
+		var startTime: LocalDateTime = null
+		if (testResult.isDefined) {
+			startTime = testResult.get.startTime.toLocalDateTime
+		} else {
+			// We have no DB entry only in the case of preliminary steps.
+			startTime = LocalDateTime.now()
+		}
+		val statusUpdateFolderPath = getStatusUpdatesFolder().getAbsolutePath
+		val path = Paths.get(
+			statusUpdateFolderPath,
+			String.valueOf(startTime.getYear),
+			String.valueOf(startTime.getMonthValue),
+			String.valueOf(startTime.getDayOfMonth),
+			sessionId
+		)
+		if (isExpected && !Files.exists(path)) {
+			// For backwards compatibility. Lookup session folder directly under status-updates folder
+			val otherPath = Paths.get(statusUpdateFolderPath, sessionId)
+			if (Files.exists(otherPath)) {
+				SessionFolderInfo(otherPath, archived = false)
+			} else {
+				// Test sessions may be archived if old. Check to see if we have such an archive.
+				val archivePath = Paths.get(
+					statusUpdateFolderPath,
+					String.valueOf(startTime.getYear),
+					String.valueOf(startTime.getMonthValue)+".zip"
+				)
+				if (Files.exists(archivePath)) {
+					// Unzip session folder from ZIP archive into temp folder.
+					val pathFromArchive:Option[Path] = None
+					val zipFs = FileSystems.newFileSystem(archivePath, null)
+					val pathInArchive = zipFs.getPath("/", String.valueOf(startTime.getDayOfMonth), sessionId)
+					val targetPath = Path.of(getTempArchivedSessionWorkspaceFolder().getAbsolutePath, sessionId+"_"+System.currentTimeMillis().toString)
+					if (Files.exists(pathInArchive)) {
+						Files.walkFileTree(pathInArchive, new SimpleFileVisitor[Path]() {
+							override def visitFile(file: Path, attrs: BasicFileAttributes): FileVisitResult = {
+								// Conserve hierarchy.
+								val relativePathInZip = pathInArchive.relativize(file)
+								val extractPath = targetPath.resolve(relativePathInZip.toString)
+								Files.createDirectories(extractPath.getParent)
+								// Extract file.
+								Files.copy(file, extractPath)
+								FileVisitResult.CONTINUE
+							}
+						})
+						SessionFolderInfo(targetPath, archived = true)
+					} else {
+						// This is for test sessions that have no report.
+						SessionFolderInfo(path, archived = false)
+					}
+				} else {
+					// This is for test sessions that have no report.
+					SessionFolderInfo(path, archived = false)
+				}
+			}
+		} else {
+			SessionFolderInfo(path, archived = false)
+		}
 	}
 
 }
