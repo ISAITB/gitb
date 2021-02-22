@@ -1,0 +1,2 @@
+UPDATE `users` SET `onetime_password` = 1 WHERE `email` = 'test@test.com' and `password` = '$2a$04$FqO8.xUGvC7yF7P2mHS9XeypSBuHqs20ob6F6junA5NKEXbVSZwS6';
+UPDATE `users` SET `onetime_password` = 1 WHERE `email` = 'admin@test.com' and `password` = '$2a$04$FqO8.xUGvC7yF7P2mHS9XeypSBuHqs20ob6F6junA5NKEXbVSZwS6';
