@@ -10,6 +10,10 @@ class ContactSupportController
             , 1)
         )
 
+        @maxCount = 5
+        if @DataService.configuration?["email.attachments.maxCount"]?
+            @maxCount = parseInt(@DataService.configuration["email.attachments.maxCount"])
+
         if @DataService.user?
             @contactAddress = @DataService.user.email
         @surveyAddress = @DataService.configuration?["survey.address"]
@@ -45,11 +49,8 @@ class ContactSupportController
     validateAttachments: () =>
         valid = true
         if @attachments?
-            maxCount = 5
-            if @DataService.configuration?["email.attachments.maxCount"]?
-                maxCount = parseInt(@DataService.configuration["email.attachments.maxCount"])
-            if @attachments.length > maxCount
-                @ValidationService.alerts.push({type:'danger', msg:'A maximum of '+maxCount+' attachments can be provided'})
+            if @attachments.length > @maxCount
+                @ValidationService.alerts.push({type:'danger', msg:'A maximum of '+@maxCount+' attachments can be provided'})
                 valid = false
             totalSize = 0
             for attachment in @attachments
@@ -113,9 +114,6 @@ class ContactSupportController
         @attachments.splice(index, 1)
     
     showUpload: () =>
-        maxCount = -1
-        if @DataService.configuration?["email.attachments.maxCount"]?
-            maxCount = parseInt(@DataService.configuration["email.attachments.maxCount"])
-        maxCount > 0
+        @maxCount > 0
 
 @controllers.controller 'ContactSupportController', ContactSupportController

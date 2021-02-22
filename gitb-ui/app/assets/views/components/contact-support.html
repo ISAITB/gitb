@@ -42,7 +42,7 @@
                 <button type="button" class="btn btn-default" ng-click="controller.removeAttachment($index)"><i class="fa fa-times"></i></button>
             </div>
         </div>
-        <div class="form-group" ng-if="controller.attachments.length > 0">
+        <div class="form-group" ng-if="controller.attachments.length > 0 && controller.attachments.length < controller.maxCount">
             <div class="col-xs-8 col-xs-offset-3">
                 <button type="button" class="btn btn-default" ng-file-select="controller.attachFile($files)">Select file</button>
             </div>
