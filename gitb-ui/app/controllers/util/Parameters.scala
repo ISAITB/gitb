@@ -39,6 +39,7 @@ object Parameters {
   val URL = "url"
   val ACTIVE = "active"
   val EVENT = "event"
+  val VERSION = "version"
 
   // Landing page Service
   val DEFAULT = "default_flag"

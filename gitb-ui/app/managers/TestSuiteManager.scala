@@ -468,16 +468,16 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		action
 	}
 
-	def updateTestSuiteMetadata(testSuiteId: Long, name: String, description: Option[String], documentation: Option[String]) = {
+	def updateTestSuiteMetadata(testSuiteId: Long, name: String, description: Option[String], documentation: Option[String], version: String) = {
 		var hasDocumentationToSet = false
 		var documentationToSet: Option[String] = None
 		if (documentation.isDefined && !documentation.get.isBlank) {
 			hasDocumentationToSet = true
 			documentationToSet = documentation
 		}
-		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation)
+		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation, t.version)
 		exec(
-			q1.update(name, name, description, documentationToSet, hasDocumentationToSet) andThen
+			q1.update(name, name, description, documentationToSet, hasDocumentationToSet, version) andThen
 				testResultManager.updateForUpdatedTestSuite(testSuiteId, name)
 				.transactionally
 		)

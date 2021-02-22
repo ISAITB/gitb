@@ -21,12 +21,13 @@ class TestSuiteService @Inject() (implicit ec: ExecutionContext, authorizedActio
 	def updateTestSuiteMetadata(testSuiteId:Long) = authorizedAction { request =>
 		authorizationManager.canEditTestSuite(request, testSuiteId)
 		val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
+		val version:String = ParameterExtractor.requiredBodyParameter(request, Parameters.VERSION)
 		val description:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESCRIPTION)
 		var documentation:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DOCUMENTATION)
 		if (documentation.isDefined) {
 			documentation = Some(HtmlUtil.sanitizeEditorContent(documentation.get))
 		}
-		testSuiteManager.updateTestSuiteMetadata(testSuiteId, name, description, documentation)
+		testSuiteManager.updateTestSuiteMetadata(testSuiteId, name, description, documentation, version)
 		ResponseConstructor.constructEmptyResponse
 	}
 

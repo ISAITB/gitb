@@ -18,6 +18,11 @@
 							<div tb-tooltip="A short and descriptive identifier for the test suite. This is used for filtering purposes and also to distinguish the test suite in conformance statements where multiple test suites are defined."></div>
 						</div>
 						<div class="form-group">
+							<label class="col-xs-3 control-label" for="version">* Version:</label>
+							<div class="col-xs-7"><input id="version" ng-model="testSuiteDetailsCtrl.testSuite.version" class="form-control" type="text" autocomplete="off"></div>
+							<div tb-tooltip="A version number for this test suite. This is only visible to administrators."></div>
+						</div>
+						<div class="form-group">
 							<label class="col-xs-3 control-label" for="description">Description:</label>
 							<div class="col-xs-7">
 								<textarea id="description" ng-model="testSuiteDetailsCtrl.testSuite.description" class="form-control"></textarea>

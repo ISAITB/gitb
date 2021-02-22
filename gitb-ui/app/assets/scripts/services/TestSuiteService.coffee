@@ -15,13 +15,14 @@ class TestSuiteService
 			authenticate: true
 		})
 
-	updateTestSuiteMetadata: (testSuiteId, name, description, documentation) ->
+	updateTestSuiteMetadata: (testSuiteId, name, description, documentation, version) ->
 		@RestService.post({
 			path: jsRoutes.controllers.TestSuiteService.updateTestSuiteMetadata(testSuiteId).url,
 			data: {
 				name: name
 				description: description
 				documentation: documentation
+				version: version
 			}
 			authenticate: true
 		})
