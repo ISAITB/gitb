@@ -3,11 +3,10 @@ package com.gitb.engine.testcase;
 import com.gitb.core.ErrorCode;
 import com.gitb.engine.utils.ArtifactUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
+import com.gitb.tdl.Imports;
 import com.gitb.tdl.TestArtifact;
 import com.gitb.types.DataType;
 import com.gitb.utils.ErrorUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -22,41 +21,44 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Works in a similar fashion to Java scoping.
  */
 public class TestCaseScope {
-	private static final Logger logger = LoggerFactory.getLogger(TestCaseScope.class);
 
 	private final TestCaseContext context;
 
 	private TestCaseScope parent;
-	private List<TestCaseScope> children;
+	private final List<TestCaseScope> children;
 
-	private Map<String, DataType> symbols;
+	private final Map<String, DataType> symbols;
+	private final Imports scopeImports;
+	private final String testSuiteContext;
 
-	public TestCaseScope(TestCaseContext context) {
+	public TestCaseScope(TestCaseContext context, Imports imports) {
+		this(context, imports, null);
+	}
+
+	private TestCaseScope(TestCaseContext context, Imports imports, String testSuiteContext) {
 		this.context   = context;
+		this.scopeImports = imports;
 		this.symbols   = new ConcurrentHashMap<>();
 		this.children  = new CopyOnWriteArrayList<>();
+		this.testSuiteContext = testSuiteContext;
+	}
+
+	public String getTestSuiteContext() {
+		return testSuiteContext;
 	}
 
 	public TestCaseScope createChildScope() {
-		TestCaseScope child = new TestCaseScope(context);
-
-		child.parent = this;
-
-		children.add(child);
-
-		return child;
+		return createChildScope(null, null);
 	}
 
-	public boolean removeChildScope(TestCaseScope childScope) {
-		int index = children.indexOf(childScope);
-
-		if(index < 0)  {
-			return false;
-		} else {
-			childScope.destroy();
-			children.remove(index);
-			return true;
+	public TestCaseScope createChildScope(Imports imports, String testSuiteContext) {
+		if (testSuiteContext == null && this.testSuiteContext != null) {
+			testSuiteContext = this.testSuiteContext;
 		}
+		TestCaseScope child = new TestCaseScope(context, imports, testSuiteContext);
+		child.parent = this;
+		children.add(child);
+		return child;
 	}
 
 	private DataType getValue(String name) {
@@ -78,35 +80,50 @@ public class TestCaseScope {
 		symbols.put(name, value);
 	}
 
-	public ScopedVariable getVariable(String name) throws IOException {
-		TestArtifact artifact = context.getTestArtifact(name);
-
-		if (artifact != null) {
-			DataType data = ArtifactUtils.resolveArtifact(context, this, artifact);
-
-			ScopedVariable variable = createVariable(name);
-			variable.setValue(data);
-
-			return variable;
-		} else {
-			return getVariable(name, true);
+	private TestArtifact getTestArtifact(String name) {
+		if (name != null && scopeImports != null) {
+			for (var artifact: scopeImports.getArtifactOrModule()) {
+				if (artifact instanceof TestArtifact && name.equals(((TestArtifact) artifact).getName())) {
+					return (TestArtifact) artifact;
+				}
+			}
 		}
+		return null;
+	}
+
+	public ScopedVariable getVariable(String name) {
+		// When we have a scope from another test suite (i.e. a scriptlet) we should not propagate variable searches to parent scopes.
+		boolean searchAncestors = testSuiteContext == null;
+		return getVariable(name, searchAncestors);
 	}
 
 	public ScopedVariable getVariable(String name, boolean searchAncestors) {
 		TestCaseScope current = this;
-
-		while(current != null) {
-			if(current.symbols.containsKey(name)) {
+		while (current != null) {
+			// Step 1: Check to see if the variable already exists in the scope.
+			if (current.symbols.containsKey(name)) {
 				return new ScopedVariable(current, name);
-			} else {
-				if (!searchAncestors) {
-					break;
+			}
+			// Step 2: Check to see if this is an imported artefact.
+			TestArtifact artifact = current.getTestArtifact(name);
+			if (artifact != null) {
+				DataType data;
+				try {
+					data = ArtifactUtils.resolveArtifact(context, current, artifact);
+				} catch (IOException e) {
+					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Artifact linked to name ["+name+"] could not be loaded."), e);
 				}
+				ScopedVariable variable = new ScopedVariable(current, name);
+				variable.setValue(data);
+				return variable;
+			}
+			// Step 3: Repeat for parent scope.
+			if (searchAncestors) {
 				current = current.parent;
+			} else {
+				break;
 			}
 		}
-
 		return new ScopedVariable(null, name);
 	}
 
@@ -114,26 +131,11 @@ public class TestCaseScope {
 		return new ScopedVariable(this, name);
 	}
 
-	public void destroy() {
-		for(TestCaseScope scope : children) {
-			scope.destroy();
-		}
-
-		children.clear();
-		symbols.clear();
-
-		if(parent != null) {
-			parent.children.remove(this);
-		}
-
-		parent = null;
-	}
-
 	public TestCaseContext getContext() {
 		return context;
 	}
 
-	public class ScopedVariable {
+	public static class ScopedVariable {
 		protected final TestCaseScope scope;
 		protected final String name;
 

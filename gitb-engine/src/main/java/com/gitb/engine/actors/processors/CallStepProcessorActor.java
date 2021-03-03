@@ -1,7 +1,6 @@
 package com.gitb.engine.actors.processors;
 
 import akka.actor.ActorRef;
-import com.gitb.ModuleManager;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.commands.interaction.StartCommand;
@@ -9,17 +8,22 @@ import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
-import com.gitb.repository.ITestCaseRepository;
-import com.gitb.tdl.*;
+import com.gitb.tdl.Binding;
+import com.gitb.tdl.CallStep;
+import com.gitb.tdl.Scriptlet;
+import com.gitb.tdl.Variable;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Created by serbay on 9/15/14.
@@ -28,6 +32,7 @@ import java.util.Map;
  */
 public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	public static final String NAME = "call-s-p";
+	private static final Logger LOG = LoggerFactory.getLogger(CallStepProcessorActor.class);
 
 	private Scriptlet scriptlet;
 	private TestCaseScope childScope;
@@ -58,58 +63,58 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 
 	@Override
 	protected void handleStatusEvent(StatusEvent event) throws Exception {
-//		super.handleStatusEvent(event);
-
 		StepStatus status = event.getStatus();
-		if(status == StepStatus.COMPLETED) {
-
+		if (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.WARNING) {
 			generateOutput();
-
-			report(StepStatus.COMPLETED);
-		} else if(status == StepStatus.ERROR) {
-			childrenHasError();
-		} else if(status == StepStatus.WARNING) {
-			childrenHasWarning();
+			if (status == StepStatus.COMPLETED) {
+				report(StepStatus.COMPLETED);
+			} else if(status == StepStatus.ERROR) {
+				childrenHasError();
+			} else { // WARNING
+				childrenHasWarning();
+			}
 		}
 	}
 
-	private Map<String, DataType> generateOutput() throws IOException {
-		Map<String, DataType> elements;
-
-		if(step.getOutput().size() > 0) {
-			// Call step has id and output bindings are listed
-			boolean isNameBinding = BindingUtils.isNameBinding(step.getOutput());
-
-			if(isNameBinding) {
-				elements = generateOutputWithNameBinding();
-			} else {
-				elements = generateOutputWithIndexBinding();
-			}
-
-			if(step.getId() != null) {
-				setOutputWithId(elements);
-			} else {
-				setOutputWithElements(elements);
-			}
-		} else {
-			 // Call step has id but output bindings are not listed
-			elements = generateOutputWithScriptletOutputs();
-
-			if(step.getId() != null) {
-				setOutputWithId(elements);
-			} else {
-				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Call step without an id and output bindings"));
+	private void generateOutput() {
+		Set<String> specificOutputsToReturn = new HashSet<>();
+		for (var output: step.getOutput()) {
+			if (StringUtils.isNotBlank(output.getName())) {
+				if (specificOutputsToReturn.contains(output.getName())) {
+					LOG.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Ignoring duplicate output ["+output.getName()+"].");
+				} else {
+					specificOutputsToReturn.add(output.getName());
+				}
 			}
 		}
-
-		return elements;
-	}
-
-	private void setOutputWithElements(Map<String, DataType> elements) throws IOException {
-		for (Map.Entry<String, DataType> entry : elements.entrySet()) {
-			scope
-				.getVariable(entry.getKey())
-				.setValue(entry.getValue());
+		ExpressionHandler expressionHandler = new ExpressionHandler(childScope);
+		Map<String, DataType> elements = new HashMap<>();
+		for (var output: scriptlet.getOutput()) {
+			if (output.getName() != null) {
+				if (specificOutputsToReturn.isEmpty() || specificOutputsToReturn.contains(output.getName())) {
+					// Add the scriptlet output to the call outputs.
+					DataType result;
+					if (StringUtils.isBlank(output.getValue())) {
+						TestCaseScope.ScopedVariable variable = childScope.getVariable(output.getName());
+						if (variable == null) {
+							throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet output ["+output.getName()+"] must either define an expression or match a variable in the scriptlet's scope."));
+						}
+						result = variable.getValue();
+					} else {
+						// Output defines an expression. Use it to define value.
+						result = expressionHandler.processExpression(output);
+					}
+					elements.put(output.getName(), result);
+				}
+			}
+		}
+		// Log a warning for any expected outputs that were not returned.
+		specificOutputsToReturn.removeAll(elements.keySet());
+		for (var unhandledOutput: specificOutputsToReturn) {
+			LOG.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Requested output ["+unhandledOutput+"] was not found in the scriptlet's outputs.");
+		}
+		if (step.getId() != null) {
+			setOutputWithId(elements);
 		}
 	}
 
@@ -118,55 +123,6 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 		scope
 			.createVariable(step.getId())
 			.setValue(outputs);
-	}
-
-	private Map<String, DataType> generateOutputWithScriptletOutputs() throws IOException {
-		Map<String, DataType> elements = new HashMap<>();
-
-		for (int i = 0; i < scriptlet.getOutput().size(); i++) {
-			Binding scriptletOutput = scriptlet.getOutput().get(i);
-
-			TestCaseScope.ScopedVariable variable = childScope.getVariable(scriptletOutput.getName());
-			DataType result = variable.getValue();
-
-			elements.put(scriptletOutput.getName(), result);
-		}
-
-		return elements;
-	}
-
-	private Map<String, DataType> generateOutputWithNameBinding() throws IOException {
-		Map<String, DataType> elements = new HashMap<>();
-
-		for (int i = 0; i < step.getOutput().size(); i++) {
-			Binding output = step.getOutput().get(i);
-			Binding scriptletOutput = getScriptletOutputBinding(output.getName());
-
-			TestCaseScope.ScopedVariable variable = childScope.getVariable(scriptletOutput.getName());
-			DataType result = variable.getValue();
-
-			elements.put(output.getName(), result);
-		}
-
-		return elements;
-	}
-
-	private Map<String, DataType> generateOutputWithIndexBinding() throws IOException {
-		Map<String, DataType> elements = new HashMap<>();
-
-		for (int i = 0; i < step.getOutput().size(); i++) {
-			Binding output = step.getOutput().get(i);
-			Binding scriptletOutput = null;
-
-			scriptletOutput = scriptlet.getOutput().get(i);
-
-			TestCaseScope.ScopedVariable variable = childScope.getVariable(scriptletOutput.getName());
-			DataType result = variable.getValue();
-
-			elements.put(scriptletOutput.getName(), result);
-		}
-
-		return elements;
 	}
 
 	private MapType createOutputMap(Map<String, DataType> elements) {
@@ -178,42 +134,30 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	}
 
 	private Scriptlet findScriptlet() {
-		TestCase testCase = scope.getContext().getTestCase();
-
-		// find scriptlet in the test case (if it is inline)
-		for(Scriptlet scriptlet : testCase.getScriptlets().getScriptlet()) {
-			if(scriptlet.getId().equals(step.getPath())) {
-				return scriptlet;
-			}
+		String testSuiteContext = step.getFrom();
+		if (testSuiteContext == null && scope.getTestSuiteContext() != null) {
+			testSuiteContext = scope.getTestSuiteContext();
 		}
-
-		// find the scriptlet in repositories
-		ITestCaseRepository repository = ModuleManager.getInstance().getTestCaseRepository();
-		if(repository.isScriptletAvailable(testCase.getId(), step.getPath())) {
-			return repository.getScriptlet(testCase.getId(), step.getPath());
-		}
-		throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet definition ["+ step.getPath()+"] cannot be found"));
+		return scope.getContext().getScriptlet(testSuiteContext, step.getPath(), true);
 	}
 
-	private TestCaseScope createChildScope() throws Exception {
-		if(scriptlet.getParams().getVar().size() != step.getInput().size()) {
-			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Wrong number of parameters for scriptlet ["+scriptlet.getId()+"]"));
+	private TestCaseScope createChildScope() {
+		int parameterCount = 0;
+		if (scriptlet.getParams() != null) {
+			parameterCount = scriptlet.getParams().getVar().size();
 		}
-		if(step.getOutput().size() > 0 && scriptlet.getOutput().size() != step.getOutput().size()) {
-			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Wrong number of outputs for scriptlet["+scriptlet.getId()+"]"));
+		if (parameterCount != step.getInput().size()) {
+			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Wrong number of parameters for scriptlet ["+scriptlet.getId()+"]. Expected ["+parameterCount+"] but encountered ["+step.getInput().size()+"]."));
 		}
-
-		TestCaseScope childScope = scope.createChildScope();
-
+		TestCaseScope childScope = scope.createChildScope(scriptlet.getImports(), step.getFrom());
 		createScriptletVariables(childScope);
-
 		return childScope;
 	}
 
 	private void createScriptletVariables(TestCaseScope childScope) {
 		boolean isNameBinding = BindingUtils.isNameBinding(step.getInput());
 
-		if(isNameBinding) {
+		if (isNameBinding) {
 			setInputWithNameBinding(childScope);
 		} else {
 			setInputWithIndexBinding(childScope);
@@ -246,11 +190,8 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 
 	private void setInputWithNameBinding(TestCaseScope childScope) {
 		ExpressionHandler expressionHandler = new ExpressionHandler(scope);
-
-		for (int i = 0; i < step.getInput().size(); i++) {
-			Binding input = step.getInput().get(i);
+		for (var input: step.getInput()) {
 			Variable variable = getScriptletInputVariable(input.getName());
-
 			setInputVariable(childScope, expressionHandler, input, variable);
 		}
 	}
@@ -258,33 +199,29 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	private Variable getScriptletInputVariable(String name) {
 		Variable variable = null;
 
-		for(Variable v : scriptlet.getParams().getVar()) {
+		for (Variable v : scriptlet.getParams().getVar()) {
 			if(v.getName().equals(name)) {
 				variable = v;
 				break;
 			}
 		}
 
-		if(variable == null) {
-			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "No variables with name ["+name+"] are found"));
-		}
-		return variable;
-	}
-
-	private Binding getScriptletOutputBinding(String name) {
-		for(Binding output : scriptlet.getOutput()) {
-			if(output.getName().equals(name)) {
-				return output;
+		if (variable == null) {
+			Set<String> expectedInputs = new TreeSet<>();
+			scriptlet.getParams().getVar().forEach((v) -> expectedInputs.add(v.getName()));
+			if (expectedInputs.isEmpty()) {
+				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet was called with an unexpected input ["+name+"]. No inputs were expected to be provided."));
+			} else {
+				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet was called with an unexpected input ["+name+"]. The scriptlet expected the following inputs ["+ String.join("|", expectedInputs) +"]."));
 			}
 		}
-
-		return null;
+		return variable;
 	}
 
 	private void setInputVariable(TestCaseScope childScope, ExpressionHandler expressionHandler, Binding input, Variable variable) {
 		DataType value = expressionHandler.processExpression(input, variable.getType());
 
-		if(input.getName() == null) {
+		if (input.getName() == null) {
 			childScope
 				.createVariable(variable.getName())
 				.setValue(value);

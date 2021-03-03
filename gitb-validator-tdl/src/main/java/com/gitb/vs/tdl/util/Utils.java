@@ -188,7 +188,7 @@ public class Utils {
         return isContainer;
     }
 
-    public static String getStepName(Object stepObj) {
+    private static String getStepName(Object stepObj) {
         String step;
         if (stepObj instanceof Send) {
             step = "send";
@@ -234,10 +234,26 @@ public class Utils {
             step = "imports";
         } else if (stepObj instanceof Output) {
             step = "output";
+        } else if (stepObj instanceof Variable) {
+            step = "variables";
+        } else if (stepObj instanceof ScriptletOutputsMarker) {
+            step = "outputs";
         } else {
             step = "";
         }
         return step;
+    }
+
+    public static String stepNameWithScriptlet(Object currentStep, Scriptlet currentScriptlet) {
+        if (currentScriptlet == null) {
+            return Utils.getStepName(currentStep);
+        } else {
+            return String.format("%s of scriptlet [%s]", Utils.getStepName(currentStep), currentScriptlet.getId());
+        }
+    }
+
+    public static String getScriptletLocation(Path scriptletPath, Context context) {
+        return context.getTestSuiteRootPath().relativize(scriptletPath).toString();
     }
 
     public static String getTestCaseLocation(String testCaseId, Context context) {
@@ -249,12 +265,16 @@ public class Utils {
     }
 
     public static String standardisePath(String path) {
-        if (path != null) {
+        if (path != null && !path.isBlank()) {
             path = StringUtils.replace(path, "\\", "/");
             if (!path.startsWith("/")) {
                 path = "/" + path;
             }
+        } else {
+            path = null;
         }
         return path;
     }
+
+    public static class ScriptletOutputsMarker {}
 }

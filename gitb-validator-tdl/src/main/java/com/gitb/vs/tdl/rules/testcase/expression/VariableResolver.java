@@ -57,25 +57,25 @@ public class VariableResolver implements XPathVariableResolver {
                 if (provider.getScope().containsKey(entry.getKey())) {
                     if (entry.getValue().container && !provider.getScope().get(entry.getKey())) {
                         // Simple variable referenced as container variable.
-                        provider.addReportItem(ErrorCode.SIMPLE_VARIABLE_REFERENCED_AS_CONTAINER, provider.getCurrentTestCase().getId(), Utils.getStepName(provider.getCurrentStep()), entry.getKey());
+                        provider.addReportItem(ErrorCode.SIMPLE_VARIABLE_REFERENCED_AS_CONTAINER, provider.getCurrentTestCase().getId(), Utils.stepNameWithScriptlet(provider.getCurrentStep(), provider.getCurrentScriptlet()), entry.getKey());
                     }
                 } else {
                     // Variable not found in scope.
-                    provider.addReportItem(ErrorCode.VARIABLE_NOT_IN_SCOPE, provider.getCurrentTestCase().getId(), Utils.getStepName(provider.getCurrentStep()), entry.getKey());
+                    provider.addReportItem(ErrorCode.VARIABLE_NOT_IN_SCOPE, provider.getCurrentTestCase().getId(), Utils.stepNameWithScriptlet(provider.getCurrentStep(), provider.getCurrentScriptlet()), entry.getKey());
                 }
                 if (Utils.DOMAIN_MAP.equals(entry.getKey()) && !Utils.isVariableExpression(entry.getValue().containerExpression)) {
                     if (!provider.getContext().getExternalConfiguration().getExternalParameters().contains(entry.getValue().containerExpression)) {
-                        provider.addReportItem(ErrorCode.INVALID_EXTERNAL_PARAMETER_REFERENCE, provider.getCurrentTestCase().getId(), entry.getValue().containerExpression, Utils.getStepName(provider.getCurrentStep()));
+                        provider.addReportItem(ErrorCode.INVALID_EXTERNAL_PARAMETER_REFERENCE, provider.getCurrentTestCase().getId(), entry.getValue().containerExpression, Utils.stepNameWithScriptlet(provider.getCurrentStep(), provider.getCurrentScriptlet()));
                     }
                 }
                 if (Utils.ORGANISATION_MAP.equals(entry.getKey()) && !Utils.isVariableExpression(entry.getValue().containerExpression)) {
                     if (!Utils.ORGANISATION_MAP__FULL_NAME.equals(entry.getValue().containerExpression) && !Utils.ORGANISATION_MAP__SHORT_NAME.equals(entry.getValue().containerExpression)) {
-                        provider.addReportItem(ErrorCode.POTENTIALLY_INVALID_ORGANISATION_VARIABLE, provider.getCurrentTestCase().getId(), entry.getValue().containerExpression, Utils.getStepName(provider.getCurrentStep()));
+                        provider.getContext().recordCustomOrganisationProperty(entry.getValue().containerExpression);
                     }
                 }
                 if (Utils.SYSTEM_MAP.equals(entry.getKey()) && !Utils.isVariableExpression(entry.getValue().containerExpression)) {
                     if (!Utils.SYSTEM_MAP__FULL_NAME.equals(entry.getValue().containerExpression) && !Utils.SYSTEM_MAP__SHORT_NAME.equals(entry.getValue().containerExpression) && !Utils.SYSTEM_MAP__VERSION.equals(entry.getValue().containerExpression)) {
-                        provider.addReportItem(ErrorCode.POTENTIALLY_INVALID_SYSTEM_VARIABLE, provider.getCurrentTestCase().getId(), entry.getValue().containerExpression, Utils.getStepName(provider.getCurrentStep()));
+                        provider.getContext().recordCustomSystemProperty(entry.getValue().containerExpression);
                     }
                 }
             }

@@ -24,12 +24,12 @@
                             </td>
                             <td><input type="checkbox" ng-model="label.custom" class="form-check" ng-change="controller.customChecked(label.labelType)"/></td>
                             <td>
-                                <div ng-if="label.custom"><input ng-attr-id="{{'label-singular-'+label.labelType}}" type="text" ng-model="label.singularForm" class="form-control"/></div>
-                                <div ng-if="!label.custom"><input type="text" ng-value="controller.Constants.LABEL_DEFAULT[label.labelType].singularForm" class="form-control" readonly="true"/></div>
+                                <div ng-if="label.custom"><input ng-attr-id="{{'label-singular-'+label.labelType}}" type="text" autocomplete="off" ng-model="label.singularForm" class="form-control"/></div>
+                                <div ng-if="!label.custom"><input type="text" autocomplete="off" ng-value="controller.Constants.LABEL_DEFAULT[label.labelType].singularForm" class="form-control" readonly="true"/></div>
                             </td>
                             <td>
-                                <div ng-if="label.custom"><input type="text" ng-model="label.pluralForm" class="form-control"/></div>
-                                <div ng-if="!label.custom"><input type="text" ng-value="controller.Constants.LABEL_DEFAULT[label.labelType].pluralForm" class="form-control" readonly="true"/></div>
+                                <div ng-if="label.custom"><input type="text" autocomplete="off" ng-model="label.pluralForm" class="form-control"/></div>
+                                <div ng-if="!label.custom"><input type="text" autocomplete="off" ng-value="controller.Constants.LABEL_DEFAULT[label.labelType].pluralForm" class="form-control" readonly="true"/></div>
                             </td>
                             <td>
                                 <div ng-if="label.custom"><input type="checkbox" ng-model="label.fixedCase" class="form-check"/></div>

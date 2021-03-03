@@ -9,23 +9,23 @@
     template: ''+
       '<div class="form-group" ng-if="sso && !tbNew">'+
         '<label class="col-xs-3 control-label" for="name">Name:</label>'+
-        '<div class="col-xs-6"><input id="name" ng-readOnly="true" ng-model="tbUser.name" class="form-control" type="text"></div>'+
+        '<div class="col-xs-6"><input id="name" ng-readOnly="true" ng-model="tbUser.name" class="form-control" type="text" autocomplete="off"></div>'+
         '<div tb-tooltip="The name of the user retrieved from her EU Login account."></div>'+
       '</div>'+
       '<div class="form-group" ng-if="!sso">'+
         '<label class="col-xs-4 control-label" for="name">* Name:</label>'+
-        '<div class="col-xs-6"><input id="name" ng-model="tbUser.name" class="form-control" type="text"></div>'+
+        '<div class="col-xs-6"><input id="name" ng-model="tbUser.name" class="form-control" type="text" autocomplete="off"></div>'+
         '<div tb-tooltip="The name of the user. This is used for display purposes when listing users."></div>'+
       '</div>'+
       '<div class="form-group">'+
         '<label ng-class="{\'col-xs-3\': sso, \'col-xs-4\': !sso}" class="control-label" for="email"><span ng-if="tbNew">* </span>Email:</label>'+
-        '<div class="col-xs-6"><input id="email" ng-model="tbUser.email" class="form-control" type="text" ng-readOnly="!tbNew"></div>'+
+        '<div class="col-xs-6"><input id="email" ng-model="tbUser.email" class="form-control" type="text" autocomplete="off" ng-readOnly="!tbNew"></div>'+
         '<div ng-if="sso" tb-tooltip="The email address linked to the user\'s EU Login account."></div>'+
         '<div ng-if="!sso" tb-tooltip="An email-formatted username for this user that is used for logging in. No emails are ever sent to this."></div>'+
       '</div>'+
       '<div class="form-group" ng-if="tbAdmin && !tbNew">'+
         '<label ng-class="{\'col-xs-3\': sso, \'col-xs-4\': !sso}" class="control-label" for="role"><span ng-if="tbNew">* </span>Role:</label>'+
-        '<div class="col-xs-6"><input id="role" ng-model="tbUser.role.label" class="form-control" type="text" ng-readOnly="!tbNew"></div>'+
+        '<div class="col-xs-6"><input id="role" ng-model="tbUser.role.label" class="form-control" type="text" autocomplete="off" ng-readOnly="!tbNew"></div>'+
         '<div tb-tooltip="The user\'s assigned role."></div>'+
       '</div>'+
       '<div class="form-group" ng-if="!tbAdmin">'+
@@ -35,12 +35,12 @@
       '</div>'+
       '<div class="form-group" ng-if="!tbNew">'+
         '<label ng-class="{\'col-xs-3\': sso, \'col-xs-4\': !sso}" class="control-label" for="status">Status:</label>'+
-        '<div class="col-xs-6"><input id="status" ng-model="tbUser.ssoStatusText" class="form-control" type="text" ng-readOnly="true"></div>'+
+        '<div class="col-xs-6"><input id="status" ng-model="tbUser.ssoStatusText" class="form-control" type="text" autocomplete="off" ng-readOnly="true"></div>'+
         '<div tb-tooltip="The activation status of the user\'s account."></div>'+
       '</div>'+
       '<div class="form-group" ng-if="!tbAdmin && !tbNew">'+
         '<label ng-class="{\'col-xs-3\': sso, \'col-xs-4\': !sso}" class="control-label" for="organization"><span ng-if="!sso">* </span>{{DataService.labelOrganisation()}}:</label>'+
-        '<div class="col-xs-6"><input id="organization" ng-model="tbUser.organization.fname" class="form-control" type="text" ng-readOnly="true"></div>'+
+        '<div class="col-xs-6"><input id="organization" ng-model="tbUser.organization.fname" class="form-control" type="text" autocomplete="off" ng-readOnly="true"></div>'+
         '<div tb-tooltip="The {{DataService.labelOrganisationLower()}} this user is a member of."></div>'+
       '</div>'+
       '<div class="form-group" ng-if="!tbNew && !sso">'+
@@ -99,7 +99,7 @@
               '<div class="form-group">'+
                   '<label class="col-xs-3 control-label" for="token">* Registration token:</label>'+
                   '<div class="col-xs-7">'+
-                      '<input id="token" ng-model="model.selfRegToken" class="form-control" type="text"/>'+
+                      '<input id="token" ng-model="model.selfRegToken" class="form-control" type="text" autocomplete="off"/>'+
                   '</div>'+
                   '<div tb-tooltip="A community-specific token needs to be provided to allow registration. You need to request this from the community\'s administrator."></div>'+
               '</div>'+
@@ -115,14 +115,14 @@
             '<div class="form-group">'+
                 '<label class="col-xs-3 control-label" for="orgShortName">* Short name:</label>'+
                 '<div class="col-xs-7">'+
-                    '<input id="orgShortName" ng-model="model.orgShortName" class="form-control" type="text"/>'+
+                    '<input id="orgShortName" ng-model="model.orgShortName" class="form-control" type="text" autocomplete="off"/>'+
                 '</div>'+
                 '<div tb-tooltip="A short name for your {{DataService.labelOrganisationLower()}} to appear in reports."></div>'+
             '</div>'+
             '<div class="form-group">'+
                 '<label class="col-xs-3 control-label" for="orgFullName">* Full name:</label>'+
                 '<div class="col-xs-7">'+
-                    '<input id="orgFullName" ng-model="model.orgFullName" class="form-control" type="text"/>'+
+                    '<input id="orgFullName" ng-model="model.orgFullName" class="form-control" type="text" autocomplete="off"/>'+
                 '</div>'+
                 '<div tb-tooltip="The complete name of your {{DataService.labelOrganisationLower()}}."></div>'+
             '</div>'+
@@ -146,14 +146,14 @@
               '<div class="form-group">'+
                   '<label class="col-xs-3 control-label" for="adminName">* Name:</label>'+
                   '<div class="col-xs-7">'+
-                      '<input id="adminName" ng-model="model.adminName" class="form-control" type="text"/>'+
+                      '<input id="adminName" ng-model="model.adminName" class="form-control" type="text" autocomplete="off"/>'+
                   '</div>'+
                   '<div tb-tooltip="This may be your name or a description in case this account will be shared by multiple people."></div>'+
               '</div>'+
               '<div class="form-group">'+
                   '<label class="col-xs-3 control-label" for="adminEmail">* Email:</label>'+
                   '<div class="col-xs-7">'+
-                      '<input id="adminEmail" ng-model="model.adminEmail" class="form-control" type="text"/>'+
+                      '<input id="adminEmail" ng-model="model.adminEmail" class="form-control" type="text" autocomplete="off"/>'+
                   '</div>'+
                   '<div tb-tooltip="This is used only during login as an email-formatted username (no emails will ever be sent to this address)."></div>'+
               '</div>'+
@@ -296,7 +296,7 @@
             '<div class="title-action">'+
               '<button ng-if="showExpandAll()" type="button" ng-click="expandItem(tbImportItem); $event.stopPropagation();" class="btn btn-primary btn-sm">Expand all</button>'+
               '<select ng-if="!disableProcessChoice && tbImportItem.process != '+Constants.IMPORT_ITEM_CHOICE.SKIP_DUE_TO_PARENT+'" class="control" ng-click="$event.stopPropagation();" ng-model="tbImportItem.selectedProcessOption" ng-options="option.id as option.label for option in processOptions"></select>'+
-              '<input type="text" value="Skip" ng-if="disableProcessChoice || tbImportItem.process == '+Constants.IMPORT_ITEM_CHOICE.SKIP_DUE_TO_PARENT+'" class="control" ng-click="$event.stopPropagation();" disabled="true"/>'+
+              '<input type="text" autocomplete="off" value="Skip" ng-if="disableProcessChoice || tbImportItem.process == '+Constants.IMPORT_ITEM_CHOICE.SKIP_DUE_TO_PARENT+'" class="control" ng-click="$event.stopPropagation();" disabled="true"/>'+
             '</div>'+
             '<div class="title-icon" ng-if="hasGroups"><i class="fa" ng-class="{\'fa-chevron-down\': tbImportItem.open, \'fa-chevron-right\': !tbImportItem.open}"></i></div>'+
           '</div>'+

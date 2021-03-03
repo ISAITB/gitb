@@ -1,23 +1,22 @@
 package managers
 
 import com.gitb.core.StepStatus
-import com.gitb.tbs.TestStepStatus
-
-import javax.inject.{Inject, Singleton}
 import models.Enums.TestResultStatus
 import models._
 import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
+import utils.RepositoryUtils
 
+import javax.inject.{Inject, Singleton}
 import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class TestResultManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
   private def logger = LoggerFactory.getLogger("TestResultManager")
 
   import dbConfig.profile.api._
@@ -195,12 +194,12 @@ class TestResultManager @Inject() (dbConfigProvider: DatabaseConfigProvider) ext
   }
 
   def deleteSessionDataFromFileSystem(testResult: TestResult): Unit = {
-    val path = ReportManager.getPathForTestSessionObj(testResult.sessionId, Some(testResult), isExpected = true)
+    val pathInfo = repositoryUtils.getPathForTestSessionObj(testResult.sessionId, Some(testResult), isExpected = true)
     try {
-        FileUtils.deleteDirectory(path.toFile)
+        FileUtils.deleteDirectory(pathInfo.path.toFile)
     } catch {
       case e:Exception =>
-        logger.warn("Unable to delete folder ["+path.toFile.getAbsolutePath+"] for session [" + testResult.sessionId + "]", e)
+        logger.warn("Unable to delete folder ["+pathInfo.path.toFile.getAbsolutePath+"] for session [" + testResult.sessionId + "]", e)
     }
   }
 

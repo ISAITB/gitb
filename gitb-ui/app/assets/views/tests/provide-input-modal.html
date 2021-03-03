@@ -10,7 +10,7 @@
 					<!-- request interaction: server asks operator to send inputs -->
 					<div ng-if="interaction.type == 'request'">
 						<!-- Case 1: input text -->
-						<input ng-if="interaction.contentType != 'BASE64' && !interaction.options" ng-attr-id="{{'input-'+$index}}" type="text" class="form-control" ng-model="interaction.data"/>
+						<input ng-if="interaction.contentType != 'BASE64' && !interaction.options" ng-attr-id="{{'input-'+$index}}" type="text" autocomplete="off" class="form-control" ng-model="interaction.data" autocomplete="off"/>
 						<!-- Case 2: select multiple -->
 						<select ng-if="interaction.contentType != 'BASE64' && interaction.options && interaction.multiple" ng-attr-id="{{'input-'+$index}}" multiple="true" class="form-control" ng-model="interaction.data" ng-options="option.label for option in interaction.optionData track by option.value"></select>
 						<!-- Case 3: select single -->

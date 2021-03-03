@@ -14,7 +14,7 @@
                             <label class="col-sm-2 control-label" for="shortName"><span ng-if="!pc.DataService.configuration['sso.enabled']">* </span>Name:</label>
                             <div class="col-sm-8">
                                 <p ng-if="pc.DataService.configuration['sso.enabled']" class="form-control-static">{{data.name}}</p>
-                                <input id="name" ng-if="!pc.DataService.configuration['sso.enabled']" type="text" class="form-control" ng-model="data.name">
+                                <input id="name" ng-if="!pc.DataService.configuration['sso.enabled']" type="text" autocomplete="off" class="form-control" ng-model="data.name">
                             </div>
                             <div ng-if="!pc.DataService.configuration['sso.enabled']" tb-tooltip="Your full name. This is used only when listing the members of your {{pc.DataService.labelOrganisationLower()}}."></div>
                         </div>

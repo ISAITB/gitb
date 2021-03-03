@@ -13,15 +13,11 @@ import com.gitb.vs.tdl.util.Utils;
 import com.sun.org.apache.xpath.internal.jaxp.XPathFactoryImpl;
 import org.apache.commons.lang3.StringUtils;
 
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -29,30 +25,57 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
 
     private static final Pattern MAP_APPEND_EXPRESSION_PATTERN = Pattern.compile("(\\$?[a-zA-Z][a-zA-Z\\-_0-9]*(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*)\\{(\\$?[a-zA-Z][a-zA-Z\\-\\._0-9]*)\\}");
 
-    private Map<String, Boolean> scope;
+    private final Map<String, Boolean> testCaseScope = new HashMap<>();
+    private final Map<String, Boolean> internalScriptletScope = new HashMap<>();
     private VariableResolver variableResolver;
     private final List<String> importVariableExpressionsToCheck = new ArrayList<>();
+    private boolean inInternalScriptlet = false;
 
     @Override
     public void initialiseTestCase(TestCase currentTestCase) {
         super.initialiseTestCase(currentTestCase);
-        scope = new HashMap<>();
-        scope.put(Utils.DOMAIN_MAP, true);
-        scope.put(Utils.ORGANISATION_MAP, true);
-        scope.put(Utils.SYSTEM_MAP, true);
-        scope.put(Utils.STEP_SUCCESS, true);
-        scope.put(Utils.TEST_SUCCESS, true);
+        testCaseScope.clear();
+        testCaseScope.put(Utils.DOMAIN_MAP, true);
+        testCaseScope.put(Utils.ORGANISATION_MAP, true);
+        testCaseScope.put(Utils.SYSTEM_MAP, true);
+        testCaseScope.put(Utils.STEP_SUCCESS, true);
+        testCaseScope.put(Utils.TEST_SUCCESS, true);
         variableResolver = new VariableResolver(this);
+    }
+
+    @Override
+    public void initialiseScriptlet(Scriptlet scriptlet) {
+        super.initialiseScriptlet(scriptlet);
+        inInternalScriptlet = true;
+        internalScriptletScope.clear();
+        internalScriptletScope.putAll(testCaseScope);
+    }
+
+    @Override
+    public void finaliseScriptlet() {
+        inInternalScriptlet = false;
+        internalScriptletScope.clear();
+        super.finaliseScriptlet();
     }
 
     @Override
     public void sectionChanged(TestCaseSection section) {
         super.sectionChanged(section);
-        if (section == TestCaseSection.PRELIMINARY) {
-            // In the preliminary section we have processed variables, actors and imports. We can now check imports for variable references.
+        if (section == TestCaseSection.STEPS || section == TestCaseSection.SCRIPTLET_STEPS) {
+            // In this section we have processed variables, parameters, actors and imports. We can now check imports for variable references.
+            var currentStepCopy = currentStep;
+            // Ensure the step is reported correctly.
+            currentStep = new TestArtifact();
             for (String importExpression: importVariableExpressionsToCheck) {
                 checkToken(importExpression, TokenType.VARIABLE_REFERENCE);
             }
+            currentStep = currentStepCopy;
+            /*
+             We clear the checked values because this check will happen in two phases:
+             - For the imports of a test case (or a standalone scriptlet).
+             - For the imports of each test case's internal scriptlet.
+             */
+            importVariableExpressionsToCheck.clear();
         }
     }
 
@@ -76,6 +99,29 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     @Override
     public void handleVariable(Variable var) {
         recordVariable(var.getName(), var.getType());
+    }
+
+    @Override
+    public void handleOutput(Binding binding) {
+        super.handleOutput(binding);
+        if (section == TestCaseSection.SCRIPTLET_OUTPUT && binding != null) {
+            // If a scriptlet output does not include a variable reference it's name must match a variable in the scriptlet's scope.
+            if (binding.getValue() != null && !binding.getValue().isEmpty()) {
+                var previousStep = currentStep;
+                // Set current step to ensure correct reporting.
+                currentStep = new Utils.ScriptletOutputsMarker();
+                checkExpression(binding);
+                currentStep = previousStep;
+            } else {
+                if (!getScope().containsKey(binding.getName())) {
+                    if (inInternalScriptlet) {
+                        addReportItem(ErrorCode.INTERNAL_SCRIPTLET_OUTPUT_NOT_FOUND_AS_VARIABLE, currentTestCase.getId(), currentScriptlet.getId(), binding.getName());
+                    } else {
+                        addReportItem(ErrorCode.EXTERNAL_SCRIPTLET_OUTPUT_NOT_FOUND_AS_VARIABLE, currentTestCase.getId(), binding.getName());
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -214,13 +260,13 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         if (StringUtils.isNotBlank(token)) {
             boolean isVariableExpression = Utils.isVariableExpression(token);
             if (isVariableExpression && StringUtils.countMatches(token, '{') != StringUtils.countMatches(token, '}')) {
-                addReportItem(ErrorCode.INVALID_VARIABLE_REFERENCE, currentTestCase.getId(), Utils.getStepName(currentStep), token);
+                addReportItem(ErrorCode.INVALID_VARIABLE_REFERENCE, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentTestCase, currentScriptlet), token);
             } else {
                 if (expectedType == TokenType.VARIABLE_REFERENCE) {
                     if (isVariableExpression) {
                         variableResolver.checkVariablesInToken(token);
                     } else {
-                        addReportItem(ErrorCode.INVALID_VARIABLE_REFERENCE, currentTestCase.getId(), Utils.getStepName(currentStep), token);
+                        addReportItem(ErrorCode.INVALID_VARIABLE_REFERENCE, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentTestCase, currentScriptlet), token);
                     }
                 } else if (expectedType == TokenType.STRING_OR_VARIABLE_REFERENCE) {
                     if (isVariableExpression) {
@@ -234,7 +280,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                             XPathExpression expression = createXPathExpression(token);
                             expression.evaluate(Utils.getSecureDocumentBuilderFactory().newDocumentBuilder().newDocument());
                         } catch (XPathExpressionException e) {
-                            addReportItem(ErrorCode.INVALID_EXPRESSION, currentTestCase.getId(), Utils.getStepName(currentStep), token);
+                            addReportItem(ErrorCode.INVALID_EXPRESSION, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentTestCase, currentScriptlet), token);
                         } catch (ParserConfigurationException e) {
                             throw new IllegalStateException(e);
                         }
@@ -252,7 +298,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     }
 
     private void recordVariable(String name, Boolean isContainer) {
-        scope.put(name, isContainer);
+        getScope().put(name, isContainer);
     }
 
     private void recordVariable(String name, String type) {
@@ -261,7 +307,11 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
 
     @Override
     public Map<String, Boolean> getScope() {
-        return scope;
+        if (inInternalScriptlet) {
+            return internalScriptletScope;
+        } else {
+            return testCaseScope;
+        }
     }
 
     @Override
@@ -275,8 +325,26 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     }
 
     @Override
+    public Scriptlet getCurrentScriptlet() {
+        return currentScriptlet;
+    }
+
+    @Override
     public Object getCurrentStep() {
         return currentStep;
+    }
+
+    @Override
+    public void finalise() {
+        super.finalise();
+        reportCustomPropertyUsage(ErrorCode.POTENTIALLY_INVALID_ORGANISATION_VARIABLE, context.getCustomOrganisationPropertiesUsed());
+        reportCustomPropertyUsage(ErrorCode.POTENTIALLY_INVALID_SYSTEM_VARIABLE, context.getCustomSystemPropertiesUsed());
+    }
+
+    private void reportCustomPropertyUsage(ErrorCode code, Collection<String> propertyNames) {
+        if (propertyNames.size() > 0) {
+            addReportItem(code, String.format("[%s]", String.join(", ", propertyNames)));
+        }
     }
 
     enum TokenType {

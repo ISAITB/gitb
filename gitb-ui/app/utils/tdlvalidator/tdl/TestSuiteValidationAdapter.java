@@ -201,9 +201,12 @@ public class TestSuiteValidationAdapter {
             if (item.getLevel() == ErrorLevel.ERROR) {
                 errors += 1;
                 addReportItemError(item, report.getReports().getInfoOrWarningOrError());
-            } else { // Warning.
+            } else if (item.getLevel() == ErrorLevel.WARNING) {
                 warnings += 1;
                 addReportItemWarning(item, report.getReports().getInfoOrWarningOrError());
+            } else if (item.getLevel() == ErrorLevel.INFO) {
+                infos += 1;
+                addReportItemInfo(item, report.getReports().getInfoOrWarningOrError());
             }
         }
         // Add the overall validation counters to the report.
@@ -218,6 +221,16 @@ public class TestSuiteValidationAdapter {
             report.setResult(TestResultType.FAILURE);
         }
         return report;
+    }
+
+    /**
+     * Add an info message to the report.
+     *
+     * @param item The report item.
+     * @param reportItems The report's items.
+     */
+    private void addReportItemInfo(ValidationReport.ValidationReportItem item, List<JAXBElement<TestAssertionReportType>> reportItems) {
+        reportItems.add(objectFactory.createTestAssertionGroupReportsTypeInfo(createReportItemContent(item)));
     }
 
     /**

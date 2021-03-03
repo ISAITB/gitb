@@ -2,7 +2,7 @@ package com.gitb.engine;
 
 import com.gitb.ModuleManager;
 import com.gitb.core.ErrorCode;
-import com.gitb.engine.utils.TestCaseUtils;
+import com.gitb.engine.utils.TestCaseConverter;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tdl.TestCase;
@@ -21,24 +21,38 @@ public class TestCaseManager {
      */
     public static TestCase getTestCaseDescription(String testCaseId) {
 	    ITestCaseRepository repository = ModuleManager.getInstance().getTestCaseRepository();
-        if (repository.isTestCaseAvailable(testCaseId)) {
-            TestCase testCase = repository.getTestCase(testCaseId);
-            if(testCase != null) {
-	            return testCase;
-            }
+        TestCase testCase = repository.getTestCase(testCaseId);
+        if (testCase != null) {
+            return testCase;
         }
         throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.ARTIFACT_NOT_FOUND, "The TestCase definition not found for [" + testCaseId + "]!"));
     }
 
     /**
-     * Return the TestCase Description (TPL) given TestCase.id
+     * Return the TestCase Description (TPL).
      *
-     * @param testCaseId
-     * @return
+     * @param sessionId The session ID
+     * @return The test case.
      */
-    public static com.gitb.tpl.TestCase getTestCasePresentation(String testCaseId) {
+    public static com.gitb.tpl.TestCase getTestCasePresentationBySessionId(String sessionId) {
+        var ctx = SessionManager.getInstance().getContext(sessionId);
+        if (ctx == null) {
+            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_SESSION, "No test session could be found for ID [" + sessionId + "]!"));
+        }
+        return new TestCaseConverter(ctx.getTestCase(), ctx.getScriptletCache()).convertTestCase(ctx.getTestCase().getId());
+    }
+
+    /**
+     * Return the TestCase Description (TPL).
+     *
+     * @param testCaseId The test case ID.
+     * @return The test case.
+     */
+    public static com.gitb.tpl.TestCase getTestCasePresentationByTestCaseId(String testCaseId) {
         TestCase testCaseDescription = getTestCaseDescription(testCaseId);
-        return TestCaseUtils.convertTestCase(testCaseId, testCaseDescription);
+        // Ensure we replace the text ID with the internal fully unique ID
+        testCaseDescription.setId(testCaseId);
+        return new TestCaseConverter(testCaseDescription).convertTestCase(testCaseId);
     }
 
 }

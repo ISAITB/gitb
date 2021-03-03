@@ -5,13 +5,13 @@
 		<div class="modal-body">
 			<div class="form-group">
 				<label class="col-xs-3 control-label" for="name">* {{nameLabel}}:</label>
-				<div class="col-xs-7"><input id="name" ng-model="parameter.name" class="form-control" type="text"></div>
+				<div class="col-xs-7"><input id="name" ng-model="parameter.name" class="form-control" type="text" autocomplete="off"></div>
 				<div ng-if="hasKey" tb-tooltip="This will be displayed as a label for the property in data collection forms."></div>
 				<div ng-if="!hasKey" tb-tooltip="An identifier for the parameter within the current endpoint. This is displayed to users in the conformance statement detail screen and used within test cases to refer to the parameter."></div>
 			</div>
 			<div class="form-group" ng-if="hasKey">
 				<label class="col-xs-3 control-label" for="key">* Key:</label>
-				<div class="col-xs-7"><input id="key" ng-model="parameter.key" class="form-control" type="text"></div>
+				<div class="col-xs-7"><input id="key" ng-model="parameter.key" class="form-control" type="text" autocomplete="off"></div>
 				<div tb-tooltip="An identifier used to distinguish this property and refer to it from within test cases (if included in tests)."></div>
 			</div>
 			<div class="form-group">
@@ -70,7 +70,7 @@
 				<div class="col-xs-4 no-left-padding">
 					<div ng-if="parameter.dependsOn && parameter.dependsOn != ''">
 						<div ng-if="!dependsOnTargetsMap[parameter.dependsOn].hasPresetValues">
-							<input type="text" class="form-control" ng-model="parameter.dependsOnValue" placeholder="Property value"/>
+							<input type="text" autocomplete="off" class="form-control" ng-model="parameter.dependsOnValue" placeholder="Property value"/>
 						</div>
 						<div ng-if="dependsOnTargetsMap[parameter.dependsOn].hasPresetValues">
 							<select ng-model="parameter.dependsOnValue" class="form-control">
@@ -79,7 +79,7 @@
 						</div>
 					</div>
 					<div ng-if="!(parameter.dependsOn && parameter.dependsOn != '')">
-						<input type="text" readonly="readonly" class="form-control" placeholder="Property value"/>
+						<input type="text" autocomplete="off" readonly="readonly" class="form-control" placeholder="Property value"/>
 					</div>
 				</div>
 				<div tb-tooltip="Define another simple property as a prerequisite. To do so select another property and define the value that is must have. If the prerequisite property's value does not match the provided value, then the current property is hidden and never considered as required."></div>
@@ -104,8 +104,8 @@
 								</thead>
 								<tbody>
 									<tr ng-repeat="presetValue in parameter.presetValues">
-										<td><input ng-attr-id="{{'presetValue-'+$index}}" class="form-control" type="text" ng-model="presetValue.value"/></td>
-										<td><input class="form-control" type="text" ng-model="presetValue.label"/></td>
+										<td><input ng-attr-id="{{'presetValue-'+$index}}" class="form-control" type="text" autocomplete="off" ng-model="presetValue.value"/></td>
+										<td><input class="form-control" type="text" autocomplete="off" ng-model="presetValue.label"/></td>
 										<td class="btn-stacked-container">
 											<div class="btn-toolbar btn-stacked">
 												<button ng-if="!$first" class="btn btn-xs btn-default" type="button" ng-click="movePresetUp($index)"><i class="fa fa-chevron-up"></i></button>

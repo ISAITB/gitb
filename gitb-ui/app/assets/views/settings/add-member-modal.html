@@ -14,14 +14,14 @@
             <div class="form-group" ng-if="!controller.DataService.configuration['sso.enabled']">
                 <label class="col-xs-3 control-label" for="name">* User name:</label>
                 <div class="col-xs-7">
-                    <input id="name" type="text" class="form-control" ng-model="controller.udata.name">
+                    <input id="name" type="text" autocomplete="off" class="form-control" ng-model="controller.udata.name">
                 </div>
                 <div tb-tooltip="This is the full name of the user. It is only used only when displaying the list of members for the {{controller.DataService.labelOrganisationLower()}}."></div>
             </div>
             <div class="form-group">
                 <label class="col-xs-3 control-label" for="email">* Email:</label>
                 <div class="col-xs-7">
-                    <input id="email" type="text" class="form-control" ng-model="controller.udata.email">
+                    <input id="email" type="text" autocomplete="off" class="form-control" ng-model="controller.udata.email">
                 </div>
                 <div ng-if="!controller.DataService.configuration['sso.enabled']" tb-tooltip="This is used only during login as the user's email-formatted username (no emails will ever be sent to this address)."></div>
                 <div ng-if="controller.DataService.configuration['sso.enabled']" tb-tooltip="This is the email address linked to the user's EU Login account."></div>

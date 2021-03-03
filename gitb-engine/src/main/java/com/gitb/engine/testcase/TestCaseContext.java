@@ -6,15 +6,18 @@ import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.remote.messaging.RemoteMessagingModuleClient;
+import com.gitb.engine.utils.ScriptletCache;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.layer.AbstractMessagingHandler;
 import com.gitb.messaging.model.InitiateResponse;
-import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tbs.SUTConfiguration;
 import com.gitb.tdl.*;
-import com.gitb.types.*;
+import com.gitb.types.BooleanType;
+import com.gitb.types.DataType;
+import com.gitb.types.DataTypeFactory;
+import com.gitb.types.MapType;
 import com.gitb.utils.ActorUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.map.Tuple;
@@ -89,6 +92,8 @@ public class TestCaseContext {
      */
     private final Map<Tuple<String>, List<ActorConfiguration>> sutHandlerConfigurations;
 
+    private final ScriptletCache scriptletCache = new ScriptletCache();
+
     /**
      * Current state of the test case execution
      */
@@ -97,7 +102,7 @@ public class TestCaseContext {
 	/**
 	 * Test session state enumeration
 	 */
-    public static enum TestCaseStateEnum {
+    public enum TestCaseStateEnum {
 		/**
 		 * Just initialized, waiting for configuration
 		 */
@@ -136,7 +141,7 @@ public class TestCaseContext {
         this.sutHandlerConfigurations = new ConcurrentHashMap<>();
         this.messagingContexts = new ConcurrentHashMap<>();
 		this.processingContexts = new ConcurrentHashMap<>();
-        this.scope = new TestCaseScope(this);
+        this.scope = new TestCaseScope(this, testCase.getImports());
 
         addStepStatus();
         processVariables();
@@ -148,6 +153,10 @@ public class TestCaseContext {
             actorRoles.put(role.getId(), role);
         }
     }
+
+	public ScriptletCache getScriptletCache() {
+    	return this.scriptletCache;
+	}
 
     private void addStepStatusForStep(MapType map, Object step) {
     	if (step != null) {
@@ -343,7 +352,7 @@ public class TestCaseContext {
 	}
 
 	private List<SUTConfiguration> configureSimulatedActorsForSUTs(List<ActorConfiguration> configurations) {
-		List<TransactionInfo> testCaseTransactions = createTransactionInfo(testCase.getSteps());
+		List<TransactionInfo> testCaseTransactions = createTransactionInfo(testCase.getSteps(), null);
 		Map<String, MessagingContextBuilder> messagingContextBuilders = new HashMap<>();
 
         // collect all transactions needed to configure the messaging handlers
@@ -428,12 +437,12 @@ public class TestCaseContext {
      * @param sequence test step sequence
      * @return transactions occurring in the given sequence
      */
-    private List<TransactionInfo> createTransactionInfo(Sequence sequence) {
+    private List<TransactionInfo> createTransactionInfo(Sequence sequence, String testSuiteContext) {
         List<TransactionInfo> transactions = new ArrayList<>();
 		VariableResolver resolver = new VariableResolver(scope);
         for(Object step : sequence.getSteps()) {
             if(step instanceof Sequence) {
-                transactions.addAll(createTransactionInfo((Sequence) step));
+                transactions.addAll(createTransactionInfo((Sequence) step, testSuiteContext));
             } else if(step instanceof BeginTransaction) {
                 BeginTransaction beginTransactionStep = (BeginTransaction) step;
 
@@ -450,43 +459,35 @@ public class TestCaseContext {
 
                 transactions.add(new TransactionInfo(fromActorId, fromEndpoint, toActorId, toEndpoint, handlerIdentifier, TestCaseUtils.getStepProperties(beginTransactionStep.getProperty(), resolver)));
             } else if (step instanceof IfStep) {
-	            transactions.addAll(createTransactionInfo(((IfStep) step).getThen()));
+	            transactions.addAll(createTransactionInfo(((IfStep) step).getThen(), testSuiteContext));
 	            if (((IfStep) step).getElse() != null) {
-					transactions.addAll(createTransactionInfo(((IfStep) step).getElse()));
+					transactions.addAll(createTransactionInfo(((IfStep) step).getElse(), testSuiteContext));
 				}
             } else if(step instanceof WhileStep) {
-	            transactions.addAll(createTransactionInfo(((WhileStep) step).getDo()));
+	            transactions.addAll(createTransactionInfo(((WhileStep) step).getDo(), testSuiteContext));
             } else if(step instanceof ForEachStep) {
-	            transactions.addAll(createTransactionInfo(((ForEachStep) step).getDo()));
+	            transactions.addAll(createTransactionInfo(((ForEachStep) step).getDo(), testSuiteContext));
             } else if(step instanceof RepeatUntilStep) {
-	            transactions.addAll(createTransactionInfo(((RepeatUntilStep) step).getDo()));
+	            transactions.addAll(createTransactionInfo(((RepeatUntilStep) step).getDo(), testSuiteContext));
             } else if(step instanceof FlowStep) {
 	            for(Sequence thread : ((FlowStep) step).getThread()) {
-		            transactions.addAll(createTransactionInfo(thread));
+		            transactions.addAll(createTransactionInfo(thread, testSuiteContext));
 	            }
             } else if(step instanceof CallStep) {
-	            // find scriptlet in the test case (if it is inline)
-	            Scriptlet scriptlet = null;
-	            for(Scriptlet s : testCase.getScriptlets().getScriptlet()) {
-		            if(s.getId().equals(((CallStep) step).getPath())) {
-			            scriptlet = s;
-		            }
-	            }
-
-	            // find the scriptlet in repositories
-	            ITestCaseRepository repository = ModuleManager.getInstance().getTestCaseRepository();
-	            if(repository.isScriptletAvailable(getTestCase().getId(), ((CallStep) step).getPath())) {
-		            scriptlet = repository.getScriptlet(getTestCase().getId(), ((CallStep) step).getPath());
-	            }
-
-	            if(scriptlet != null) {
-		            transactions.addAll(createTransactionInfo(scriptlet.getSteps()));
-	            }
+            	String testSuiteContextToUse = ((CallStep) step).getFrom();
+            	if (testSuiteContextToUse == null && testSuiteContext != null) {
+					testSuiteContextToUse = testSuiteContext;
+				}
+	            Scriptlet scriptlet = getScriptlet(testSuiteContextToUse, ((CallStep) step).getPath(), true);
+				transactions.addAll(createTransactionInfo(scriptlet.getSteps(), testSuiteContextToUse));
             }
         }
-
         return transactions;
     }
+
+    public Scriptlet getScriptlet(String testSuiteContext, String path, boolean required) {
+    	return scriptletCache.getScriptlet(testSuiteContext, path, testCase, required);
+	}
 
     public TestCase getTestCase() {
         return testCase;
@@ -526,22 +527,6 @@ public class TestCaseContext {
             messagingContext.cleanup();
 		}
 		messagingContexts.clear();
-	}
-
-	public TestArtifact getTestArtifact(String name) {
-		if(testCase.getImports() != null) {
-			for(Object o : testCase.getImports().getArtifactOrModule()) {
-				if (o instanceof TestArtifact) {
-					TestArtifact testArtifact = (TestArtifact) o;
-
-					if(testArtifact.getName().equals(name)) {
-						return testArtifact;
-					}
-				}
-			}
-		}
-
-		return null;
 	}
 
     public MessagingContext endMessagingContext(String handler) {

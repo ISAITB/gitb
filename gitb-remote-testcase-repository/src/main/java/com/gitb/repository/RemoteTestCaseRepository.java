@@ -22,6 +22,7 @@ import javax.xml.transform.stream.StreamSource;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Locale;
 
 /**
  * Created by serbay on 10/20/14.
@@ -40,47 +41,37 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 	}
 
 	@Override
-	public boolean isTestCaseAvailable(String testCaseId) {
-		return getTestCase(testCaseId) != null;
-	}
-
-	@Override
 	public TestCase getTestCase(String testCaseId) {
 		return getTestCaseResource(testCaseId);
 	}
 
 	@Override
-	public boolean isScriptletAvailable(String testCaseId, String scriptletId) {
-		return getScriptlet(testCaseId, scriptletId) != null;
+	public Scriptlet getScriptlet(String from, String testCaseId, String scriptletPath) {
+		return getXMLTestResource(from, testCaseId, Scriptlet.class, scriptletPath);
 	}
 
 	@Override
-	public Scriptlet getScriptlet(String testCaseId, String scriptletId) {
-		return getXMLTestResource(testCaseId, Scriptlet.class, scriptletId);
-	}
-
-	@Override
-	public InputStream getTestArtifact(String testCaseId, String path) {
+	public InputStream getTestArtifact(String from, String testCaseId, String artifactPath) {
 		try {
-			return getTestResource(testCaseId, path);
+			return getTestResource(toLocationKey(from, testCaseId), artifactPath);
 		} catch (Exception e) {
 			throw new GITBEngineInternalError(e);
 		}
 	}
 
-	@Override
-	public boolean isTestArtifactAvailable(String testCaseId, String path) {
-		return getTestArtifact(testCaseId, path) != null;
+	private String toLocationKey(String from, String testCaseId) {
+		String locationKey = testCaseId;
+		if (from != null) {
+			locationKey = from + "|" + testCaseId;
+		}
+		return locationKey;
 	}
 
-	private <T> T getXMLTestResource(String testCaseId, Class<? extends T> clazz, String resourceId) {
+	private <T> T getXMLTestResource(String from, String testCaseId, Class<? extends T> clazz, String resourcePath) {
 		try {
-			InputStream inputStream = getTestResource(testCaseId,resourceId + ".xml");
-
+			InputStream inputStream = getTestResource(toLocationKey(from, testCaseId), resourcePath);
 			if (inputStream != null) {
-				T resource = XMLUtils.unmarshal(clazz, new StreamSource(inputStream));
-
-				return resource;
+				return XMLUtils.unmarshal(clazz, new StreamSource(inputStream));
 			} else {
 				return null;
 			}
@@ -108,13 +99,13 @@ public class RemoteTestCaseRepository implements ITestCaseRepository {
 		}
 	}
 
-	private InputStream getTestResource(String testId, String path) throws IOException, EncoderException {
+	private InputStream getTestResource(String locationKey, String path) throws IOException, EncoderException {
 		URLCodec codec = new URLCodec();
 		String uri = TestCaseRepositoryConfiguration.TEST_RESOURCE_REPOSITORY_URL
-				.replace(":" + TestCaseRepositoryConfiguration.TEST_ID_PARAMETER, codec.encode(testId))
+				.replace(":" + TestCaseRepositoryConfiguration.TEST_ID_PARAMETER, codec.encode(locationKey))
 				.replace(":" + TestCaseRepositoryConfiguration.RESOURCE_ID_PARAMETER, codec.encode(path));
 
-		return retrieveRemoteTestResource(testId, uri);
+		return retrieveRemoteTestResource(locationKey, uri);
 	}
 
 	private InputStream retrieveRemoteTestResource(String resourceId, String uri) throws IOException, EncoderException {

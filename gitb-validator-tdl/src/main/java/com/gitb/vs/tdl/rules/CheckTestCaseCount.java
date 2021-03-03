@@ -10,7 +10,11 @@ public class CheckTestCaseCount extends AbstractCheck {
     public void doCheck(Context context, ValidationReport report) {
         int testCaseCount = context.getTestCaseCount();
         if (testCaseCount == 0) {
-            report.addItem(ErrorCode.NO_TEST_CASE_FOUND, "");
+            if (context.getScriptletPaths().isEmpty() && context.getResourcePaths().isEmpty()) {
+                report.addItem(ErrorCode.NO_RESOURCE_FOUND, "");
+            } else {
+                report.addItem(ErrorCode.NO_TEST_CASE_FOUND, "");
+            }
         }
     }
 

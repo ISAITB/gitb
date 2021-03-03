@@ -18,9 +18,11 @@ import com.gitb.utils.ConfigurationUtils;
 import com.helger.as2lib.disposition.DispositionOptions;
 import com.helger.as2lib.disposition.DispositionType;
 import com.helger.as2lib.util.CAS2Header;
-import com.helger.as2lib.util.DateUtil;
-import com.helger.as2lib.util.javamail.ByteArrayDataSource;
+import com.helger.commons.datetime.PDTFactory;
+import com.helger.commons.datetime.PDTFormatter;
+import com.helger.commons.http.CHttpHeader;
 import com.helger.commons.mime.CMimeType;
+import com.helger.mail.datasource.ByteArrayDataSource;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.DefaultBHttpClientConnection;
 import org.apache.http.impl.DefaultBHttpServerConnection;
@@ -63,7 +65,7 @@ public class AS2Sender extends HttpSender {
 
         logger.debug(addMarker(), "MIC calculated: " + MIC);
 
-        headers.addItem(CAS2Header.HEADER_CONTENT_TYPE, new StringType(encryptedMimeBody.getContentType()));
+        headers.addItem(CHttpHeader.CONTENT_TYPE, new StringType(encryptedMimeBody.getContentType()));
 
         //define message parameters
         BinaryType binaryType = new BinaryType();
@@ -100,18 +102,18 @@ public class AS2Sender extends HttpSender {
     private MapType getHeaders(MimeBodyPart mimeBodyPart) throws Exception {
         MapType headers = new MapType();
 
-        headers.addItem(CAS2Header.HEADER_CONNECTION, new StringType(CAS2Header.DEFAULT_CONNECTION));
-        headers.addItem(CAS2Header.HEADER_USER_AGENT, new StringType(CAS2Header.DEFAULT_USER_AGENT));
-        headers.addItem(CAS2Header.HEADER_DATE, new StringType(DateUtil.getFormattedDateNow(CAS2Header.DEFAULT_DATE_FORMAT)));
-        headers.addItem(CAS2Header.HEADER_MESSAGE_ID, new StringType(AS2MessagingHandler.generateMessageId(getAS2To())));
-        headers.addItem(CAS2Header.HEADER_MIME_VERSION, new StringType(CAS2Header.DEFAULT_MIME_VERSION));
-        headers.addItem(CAS2Header.HEADER_AS2_VERSION, new StringType(CAS2Header.DEFAULT_AS2_VERSION));
-        headers.addItem(CAS2Header.HEADER_RECIPIENT_ADDRESS, new StringType(getRecipient()));
-        headers.addItem(CAS2Header.HEADER_AS2_TO, new StringType(getAS2To()));
-        headers.addItem(CAS2Header.HEADER_AS2_FROM, new StringType(AS2MessagingHandler.AS2_FROM));
-        headers.addItem(CAS2Header.HEADER_SUBJECT, new StringType(AS2MessagingHandler.AS2_SUBJECT));
-        headers.addItem(CAS2Header.HEADER_FROM, new StringType(AS2MessagingHandler.AS2_FROM));
-        headers.addItem(CAS2Header.HEADER_DISPOSITION_NOTIFICATION_OPTIONS, new StringType(AS2MessagingHandler.DEFAULT_MDN_OPTIONS));
+        headers.addItem(CHttpHeader.CONNECTION, new StringType(CAS2Header.DEFAULT_CONNECTION));
+        headers.addItem(CHttpHeader.USER_AGENT, new StringType(CAS2Header.DEFAULT_USER_AGENT));
+        headers.addItem(CHttpHeader.DATE, new StringType(PDTFormatter.getForPattern(CAS2Header.DEFAULT_DATE_FORMAT).format(PDTFactory.getCurrentZonedDateTime())));
+        headers.addItem(CHttpHeader.MESSAGE_ID, new StringType(AS2MessagingHandler.generateMessageId(getAS2To())));
+        headers.addItem(CHttpHeader.MIME_VERSION, new StringType(CAS2Header.DEFAULT_MIME_VERSION));
+        headers.addItem(CHttpHeader.AS2_VERSION, new StringType(CAS2Header.DEFAULT_AS2_VERSION));
+        headers.addItem(CHttpHeader.RECIPIENT_ADDRESS, new StringType(getRecipient()));
+        headers.addItem(CHttpHeader.AS2_TO, new StringType(getAS2To()));
+        headers.addItem(CHttpHeader.AS2_FROM, new StringType(AS2MessagingHandler.AS2_FROM));
+        headers.addItem(CHttpHeader.SUBJECT, new StringType(AS2MessagingHandler.AS2_SUBJECT));
+        headers.addItem(CHttpHeader.FROM, new StringType(AS2MessagingHandler.AS2_FROM));
+        headers.addItem(CHttpHeader.DISPOSITION_NOTIFICATION_OPTIONS, new StringType(AS2MessagingHandler.DEFAULT_MDN_OPTIONS));
         //Content-Length will be added by HttpSender
 
         return headers;
@@ -122,7 +124,7 @@ public class AS2Sender extends HttpSender {
         String MIC = AS2MessagingHandler.calculateMIC(mimeBody, receivedHeaders, true);
 
         //get disposition options
-        String sDispositionOptions = ServerUtils.getHeader(receivedHeaders, CAS2Header.HEADER_DISPOSITION_NOTIFICATION_OPTIONS);
+        String sDispositionOptions = ServerUtils.getHeader(receivedHeaders, CHttpHeader.DISPOSITION_NOTIFICATION_OPTIONS);
         DispositionOptions dispositionOptions = DispositionOptions.createFromString (sDispositionOptions);
 
         //crete MDN Mime Body
@@ -159,16 +161,16 @@ public class AS2Sender extends HttpSender {
         // Create the text part
         final MimeBodyPart textPart = new MimeBodyPart ();
         textPart.setContent("This is an MDN message" + "\r\n", CMimeType.TEXT_PLAIN.getAsString ());
-        textPart.setHeader(CAS2Header.HEADER_CONTENT_TYPE, CMimeType.TEXT_PLAIN.getAsString ());
+        textPart.setHeader(CHttpHeader.CONTENT_TYPE, CMimeType.TEXT_PLAIN.getAsString ());
         reportParts.addBodyPart(textPart);
 
         // Create the report part
         MimeBodyPart reportPart = new MimeBodyPart ();
         InternetHeaders reportHeaders = new InternetHeaders ();
         reportHeaders.setHeader(AS2MessagingHandler.HEADER_REPORTING_UA,AS2MessagingHandler.AS2_FROM + "@" + getHost() + ":" + getPort());
-        reportHeaders.setHeader(AS2MessagingHandler.HEADER_ORIGINAL_RECIPIENT, "rfc822; " + ServerUtils.getHeader(headers, CAS2Header.HEADER_AS2_TO));
-        reportHeaders.setHeader(AS2MessagingHandler.HEADER_FINAL_RECIPIENT, "rfc822; " + ServerUtils.getHeader(headers, CAS2Header.HEADER_AS2_FROM));
-        reportHeaders.setHeader(AS2MessagingHandler.HEADER_ORIGINAL_MESSAGE_ID, ServerUtils.getHeader(headers, CAS2Header.HEADER_MESSAGE_ID));
+        reportHeaders.setHeader(AS2MessagingHandler.HEADER_ORIGINAL_RECIPIENT, "rfc822; " + ServerUtils.getHeader(headers, CHttpHeader.AS2_TO));
+        reportHeaders.setHeader(AS2MessagingHandler.HEADER_FINAL_RECIPIENT, "rfc822; " + ServerUtils.getHeader(headers, CHttpHeader.AS2_FROM));
+        reportHeaders.setHeader(AS2MessagingHandler.HEADER_ORIGINAL_MESSAGE_ID, ServerUtils.getHeader(headers, CHttpHeader.MESSAGE_ID));
         reportHeaders.setHeader(AS2MessagingHandler.HEADER_DISPOSITION, DispositionType.createSuccess().getAsString());
         reportHeaders.setHeader(AS2MessagingHandler.HEADER_RECEIVED_CONTENT_MIC, MIC);
 
@@ -179,14 +181,14 @@ public class AS2Sender extends HttpSender {
         }
         reportData.append ("\r\n");
         reportPart.setContent (reportData.toString(), "message/disposition-notification");
-        reportPart.setHeader (CAS2Header.HEADER_CONTENT_TYPE, "message/disposition-notification");
+        reportPart.setHeader (CHttpHeader.CONTENT_TYPE, "message/disposition-notification");
         reportParts.addBodyPart (reportPart);
 
         // Convert report parts to MimeBodyPart
         MimeBodyPart report = new MimeBodyPart ();
         reportParts.setSubType ("report; report-type=disposition-notification");
         report.setContent(reportParts);
-        report.setHeader(CAS2Header.HEADER_CONTENT_TYPE, reportParts.getContentType ());
+        report.setHeader(CHttpHeader.CONTENT_TYPE, reportParts.getContentType ());
 
         return report;
     }
@@ -194,20 +196,20 @@ public class AS2Sender extends HttpSender {
     private MapType getMDNHeaders(MimeBodyPart mimeBody, MapType receivedHeaders) throws Exception {
         MapType headers = new MapType();
 
-        headers.addItem(CAS2Header.HEADER_AS2_VERSION, new StringType(CAS2Header.DEFAULT_AS2_VERSION));
-        headers.addItem(CAS2Header.HEADER_DATE, new StringType(DateUtil.getFormattedDateNow(CAS2Header.DEFAULT_DATE_FORMAT)));
-        headers.addItem(CAS2Header.HEADER_SERVER, new StringType(AS2MessagingHandler.AS2_FROM));
-        headers.addItem(CAS2Header.HEADER_MIME_VERSION, new StringType(CAS2Header.DEFAULT_MIME_VERSION));
-        headers.addItem(CAS2Header.HEADER_AS2_FROM, new StringType(ServerUtils.getHeader(receivedHeaders, CAS2Header.HEADER_AS2_TO)));
-        headers.addItem(CAS2Header.HEADER_AS2_TO, new StringType(ServerUtils.getHeader(receivedHeaders, CAS2Header.HEADER_AS2_FROM)));
-        headers.addItem(CAS2Header.HEADER_FROM, new StringType(ServerUtils.getHeader(receivedHeaders, CAS2Header.HEADER_AS2_TO)));
-        headers.addItem(CAS2Header.HEADER_CONTENT_TYPE, new StringType(mimeBody.getContentType()));
+        headers.addItem(CHttpHeader.AS2_VERSION, new StringType(CAS2Header.DEFAULT_AS2_VERSION));
+        headers.addItem(CHttpHeader.DATE, new StringType(PDTFormatter.getForPattern(CAS2Header.DEFAULT_DATE_FORMAT).format(PDTFactory.getCurrentZonedDateTime())));
+        headers.addItem(CHttpHeader.SERVER, new StringType(AS2MessagingHandler.AS2_FROM));
+        headers.addItem(CHttpHeader.MIME_VERSION, new StringType(CAS2Header.DEFAULT_MIME_VERSION));
+        headers.addItem(CHttpHeader.AS2_FROM, new StringType(ServerUtils.getHeader(receivedHeaders, CHttpHeader.AS2_TO)));
+        headers.addItem(CHttpHeader.AS2_TO, new StringType(ServerUtils.getHeader(receivedHeaders, CHttpHeader.AS2_FROM)));
+        headers.addItem(CHttpHeader.FROM, new StringType(ServerUtils.getHeader(receivedHeaders, CHttpHeader.AS2_TO)));
+        headers.addItem(CHttpHeader.CONTENT_TYPE, new StringType(mimeBody.getContentType()));
 
-        String subject = ServerUtils.getHeader(receivedHeaders, CAS2Header.HEADER_SUBJECT);
+        String subject = ServerUtils.getHeader(receivedHeaders, CHttpHeader.SUBJECT);
         if(subject != null) {
-            headers.addItem(CAS2Header.HEADER_SUBJECT, new StringType(subject));
+            headers.addItem(CHttpHeader.SUBJECT, new StringType(subject));
         } else {
-            headers.addItem(CAS2Header.HEADER_SUBJECT, new StringType("Requested MDN Response"));
+            headers.addItem(CHttpHeader.SUBJECT, new StringType("Requested MDN Response"));
         }
         return headers;
     }

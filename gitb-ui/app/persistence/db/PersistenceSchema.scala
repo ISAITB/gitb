@@ -237,7 +237,8 @@ object PersistenceSchema {
     def filename = column[String]("file_name")
     def hasDocumentation = column[Boolean]("has_documentation")
     def documentation = column[Option[String]]("documentation")
-		def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, specification, filename, hasDocumentation, documentation, identifier) <> (TestSuites.tupled, TestSuites.unapply)
+    def hidden = column[Boolean]("is_hidden")
+		def * = (id, shortname, fullname, version, authors, originalDate, modificationDate, description, keywords, specification, filename, hasDocumentation, documentation, identifier, hidden) <> (TestSuites.tupled, TestSuites.unapply)
 	}
 	val testSuites = TableQuery[TestSuitesTable]
 

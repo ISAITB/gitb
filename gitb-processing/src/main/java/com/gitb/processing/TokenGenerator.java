@@ -10,8 +10,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.kohsuke.MetaInfServices;
 
 import java.time.Instant;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.UUID;
@@ -19,12 +24,16 @@ import java.util.UUID;
 @MetaInfServices(IProcessingHandler.class)
 public class TokenGenerator extends AbstractProcessingHandler {
 
+    private static final ZoneId DEFAULT_ZONE = ZoneId.of("UTC");
+
     private static final String OPERATION__TIMESTAMP = "timestamp";
     private static final String OPERATION__UUID = "uuid";
     private static final String OPERATION__STRING = "string";
 
     private static final String INPUT__FORMAT = "format";
     private static final String INPUT__TIME = "time";
+    private static final String INPUT__DATE = "date";
+    private static final String INPUT__INPUT_FORMAT = "inputFormat";
     private static final String INPUT__DIFF = "diff";
     private static final String INPUT__ZONE = "zone";
 
@@ -40,14 +49,16 @@ public class TokenGenerator extends AbstractProcessingHandler {
         module.setConfigs(new ConfigurationParameters());
 
         TypedParameter outputText = createParameter(OUTPUT__VALUE, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "The output value.");
-        TypedParameter timestampFormat = createParameter(INPUT__FORMAT, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The optional format string to apply (see https://docs.oracle.com/javase/8/docs/api/java/time/format/DateTimeFormatter.html). Default is the epoch milliseconds.");
+        TypedParameter timestampFormat = createParameter(INPUT__FORMAT, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The optional format string to apply (see https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/format/DateTimeFormatter.html). Default is the epoch milliseconds.");
         TypedParameter milliseconds = createParameter(INPUT__TIME, "number", UsageEnumeration.O, ConfigurationType.SIMPLE, "The optional time (in epoch milliseconds) to use as the value (default is the current time).");
+        TypedParameter inputDate = createParameter(INPUT__DATE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The optional date/time as a formatted date string to use as the value (default is the current time).");
+        TypedParameter inputDateFormat = createParameter(INPUT__INPUT_FORMAT, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "When the "+INPUT__DATE+" input is provided this is the optional format string to use to parse its value (see https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/format/DateTimeFormatter.html). If not provided an ISO 8601 date/time format is assumed (yyyy-MM-dd'T'HH:mm:ss");
         TypedParameter diff = createParameter(INPUT__DIFF, "number", UsageEnumeration.O, ConfigurationType.SIMPLE, "The number of milliseconds to apply as a diff to the base time.");
         TypedParameter zone = createParameter(INPUT__ZONE, "string", UsageEnumeration.O, ConfigurationType.SIMPLE, "The timezone to consider (default is UTC).");
         TypedParameter regexpFormat = createParameter(INPUT__FORMAT, "string", UsageEnumeration.R, ConfigurationType.SIMPLE, "A regular expression defining the syntax and static parts of the returned string.");
 
         module.getOperation().add(createProcessingOperation(OPERATION__UUID, Collections.emptyList(), Arrays.asList(outputText)));
-        module.getOperation().add(createProcessingOperation(OPERATION__TIMESTAMP, Arrays.asList(timestampFormat, milliseconds, diff, zone), Arrays.asList(outputText)));
+        module.getOperation().add(createProcessingOperation(OPERATION__TIMESTAMP, Arrays.asList(timestampFormat, milliseconds, inputDate, inputDateFormat, diff, zone), Arrays.asList(outputText)));
         module.getOperation().add(createProcessingOperation(OPERATION__STRING, Arrays.asList(regexpFormat), Arrays.asList(outputText)));
         return module;
     }
@@ -65,9 +76,16 @@ public class TokenGenerator extends AbstractProcessingHandler {
             NumberType time = getInputForName(input, INPUT__TIME, NumberType.class);
             NumberType diff = getInputForName(input, INPUT__DIFF, NumberType.class);
             StringType zone = getInputForName(input, INPUT__ZONE, StringType.class);
+            StringType inputDate = getInputForName(input, INPUT__DATE, StringType.class);
+            StringType inputDateFormat = getInputForName(input, INPUT__INPUT_FORMAT, StringType.class);
             long epochMilliseconds;
             if (time == null) {
-                epochMilliseconds = System.currentTimeMillis();
+                if (inputDate == null) {
+                    // UTC time in milliseconds by default.
+                    epochMilliseconds = Instant.now().toEpochMilli();
+                } else {
+                    epochMilliseconds = parseDateStringAsMilliseconds((String) inputDate.getValue(), inputDateFormat == null?null: (String) inputDateFormat.getValue());
+                }
             } else {
                 epochMilliseconds = time.longValue();
             }
@@ -81,7 +99,7 @@ public class TokenGenerator extends AbstractProcessingHandler {
                 Instant instant = Instant.ofEpochMilli(epochMilliseconds);
                 ZoneId zoneId;
                 if (zone == null) {
-                    zoneId = ZoneId.of("UTC");
+                    zoneId = DEFAULT_ZONE;
                 } else {
                     zoneId = ZoneId.of((String)zone.getValue());
                 }
@@ -104,6 +122,42 @@ public class TokenGenerator extends AbstractProcessingHandler {
         ProcessingData data = new ProcessingData();
         data.getData().put(OUTPUT__VALUE, new StringType(value));
         return new ProcessingReport(createReport(TestResultType.SUCCESS), data);
+    }
+
+    private long parseDateStringAsMilliseconds(String dateString, String formatString) {
+        DateTimeFormatter formatter;
+        if (formatString == null) {
+            formatter = new DateTimeFormatterBuilder().appendPattern("[dd][/][MM][/][yyyy]['T'[HH][:mm][:ss][.SSS][Z]]")
+                    .parseDefaulting(ChronoField.DAY_OF_MONTH, 1)
+                    .parseDefaulting(ChronoField.MONTH_OF_YEAR, 1)
+                    .parseDefaulting(ChronoField.YEAR_OF_ERA, Instant.now().atZone(DEFAULT_ZONE).getYear())
+                    .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
+                    .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
+                    .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
+                    .parseDefaulting(ChronoField.MILLI_OF_SECOND, 0)
+                    .toFormatter();
+        } else {
+            formatter = new DateTimeFormatterBuilder().appendPattern(formatString)
+                    .parseDefaulting(ChronoField.HOUR_OF_DAY, 0)
+                    .parseDefaulting(ChronoField.MINUTE_OF_HOUR, 0)
+                    .parseDefaulting(ChronoField.SECOND_OF_MINUTE, 0)
+                    .parseDefaulting(ChronoField.MILLI_OF_SECOND, 0)
+                    .toFormatter();
+        }
+        if (formatter.getZone() == null) {
+            formatter = formatter.withZone(DEFAULT_ZONE);
+        }
+        ZonedDateTime zonedResult;
+        try {
+            zonedResult = ZonedDateTime.parse(dateString, formatter);
+        } catch (Exception e) {
+            if (formatString == null) {
+                throw new IllegalArgumentException("Unable to parse provided date string using default pattern (ISO 8061)");
+            } else {
+                throw new IllegalArgumentException("Unable to parse provided date string using provided pattern");
+            }
+        }
+        return zonedResult.toInstant().toEpochMilli();
     }
 
 }

@@ -4,6 +4,7 @@ package com.gitb.types;
  * Created by tuncay on 10/28/14.
  */
 public class SchemaType extends ObjectType{
+    protected String testSuiteId;
     protected String schemaLocation;
 
     public String getSchemaLocation(){
@@ -12,6 +13,14 @@ public class SchemaType extends ObjectType{
 
     public void setSchemaLocation(String schemaLocation) {
         this.schemaLocation = schemaLocation;
+    }
+
+    public String getTestSuiteId() {
+        return testSuiteId;
+    }
+
+    public void setTestSuiteId(String testSuiteId) {
+        this.testSuiteId = testSuiteId;
     }
 
     public String getType() {

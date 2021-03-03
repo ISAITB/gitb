@@ -17,7 +17,8 @@ case class TestSuites(
 	filename: String,
 	hasDocumentation: Boolean,
 	documentation: Option[String],
-	identifier: String
+	identifier: String,
+	hidden: Boolean
 )
 
 class TestSuite(
@@ -36,7 +37,8 @@ class TestSuite(
 							   _filename: String,
 							   _hasDocumentation: Boolean,
 							   _documentation: Option[String],
-							 	 _identifier: String
+							 	 _identifier: String,
+  						   _hidden: Boolean
 	               ) {
 	var id: Long = _id
 	var shortname: String = _shortname
@@ -54,13 +56,14 @@ class TestSuite(
 	var hasDocumentation: Boolean = _hasDocumentation
 	var documentation: Option[String] = _documentation
 	var identifier: String = _identifier
+	var hidden: Boolean = _hidden
 
 	def this(testSuite: TestSuites, actors: Option[List[Actor]], testCases: Option[List[TestCases]]) = {
 		this(testSuite.id, testSuite.shortname, testSuite.fullname, testSuite.version,
 			if(testSuite.authors.isDefined) Some(testSuite.authors.get.split(",").toList) else None,
 			testSuite.originalDate,	testSuite.modificationDate, testSuite.description,
 			if(testSuite.keywords.isDefined) Some(testSuite.keywords.get.split(",").toList) else None,
-			actors, testCases, testSuite.specification, testSuite.filename, testSuite.hasDocumentation, testSuite.documentation, testSuite.identifier)
+			actors, testCases, testSuite.specification, testSuite.filename, testSuite.hasDocumentation, testSuite.documentation, testSuite.identifier, testSuite.hidden)
 	}
 
 	def this(testSuite: TestSuites, testCases: List[TestCases]) = {
@@ -77,7 +80,7 @@ class TestSuite(
 			if(this.authors.isDefined) Some(this.authors.get.mkString(",")) else None,
 			this.originalDate, this.modificationDate, this.description,
 			if(this.keywords.isDefined) Some(this.keywords.get.mkString(",")) else None,
-			this.specification, this.filename, this.hasDocumentation, this.documentation, this.identifier
+			this.specification, this.filename, this.hasDocumentation, this.documentation, this.identifier, this.hidden
 		)
 	}
 }

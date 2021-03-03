@@ -203,16 +203,16 @@
                       </div>
                   </td>
                   <td ng-if="filterDefined(Constants.FILTER_TYPE.TIME)">
-                      <input date-range-picker class="form-control date-picker" type="text"
+                      <input date-range-picker class="form-control date-picker" type="text" autocomplete="off"
                             ng-model="startTime.date" options="startTimeOptions" clearable="true" readonly="readonly">
                   </td>
                   <td ng-if="filterDefined(Constants.FILTER_TYPE.TIME)">
-                      <input date-range-picker class="form-control date-picker" type="text"
+                      <input date-range-picker class="form-control date-picker" type="text" autocomplete="off"
                             ng-model="endTime.date" options="endTimeOptions" clearable="true" readonly="readonly">
                   </td>
                   <td class="session-filter" ng-if="filterDefined(Constants.FILTER_TYPE.SESSION)">
                     <div class="input-group session-filter-input">
-                      <input type="text" ng-trim="false" class="form-control" ng-click="sessionIdClicked()" ng-model="sessionState.id" ng-readonly="sessionState.readonly" ng-class="{\'clickable\': sessionState.readonly}"/>
+                      <input type="text" autocomplete="off" ng-trim="false" class="form-control" ng-click="sessionIdClicked()" ng-model="sessionState.id" ng-readonly="sessionState.readonly" ng-class="{\'clickable\': sessionState.readonly}"/>
                       <div class="input-group-btn">
                           <button class="btn btn-default" type="button" ng-click="applySessionId()" ng-disabled="sessionState.id == undefined"><i class="glyphicon" ng-class="{\'glyphicon-remove\': sessionState.readonly, \'glyphicon-ok\': !sessionState.readonly, \'faded\': sessionState.id == undefined}"></i></button>
                       </div>
@@ -771,7 +771,7 @@
             <select ng-change="propertyChanged()" ng-model="propertyInfo.property" class="form-control" ng-options="prop.name for prop in properties"></select>
           </div>
           <div class="property-value" ng-if="!propertyInfo.property.allowedValues">
-            <input ng-model="propertyInfo.value" type="text" class="form-control"/>
+            <input ng-model="propertyInfo.value" type="text" autocomplete="off" class="form-control"/>
           </div>
           <div class="property-value" ng-if="propertyInfo.property.allowedValues">
             <select ng-model="propertyInfo.valueObj" class="form-control">

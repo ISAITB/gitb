@@ -12,9 +12,9 @@ import com.gitb.messaging.model.tcp.ITransactionSender;
 import com.gitb.types.BinaryType;
 import com.gitb.types.MapType;
 import com.helger.as2lib.disposition.DispositionType;
-import com.helger.as2lib.util.CAS2Header;
-import com.helger.as2lib.util.javamail.ByteArrayDataSource;
+import com.helger.commons.http.CHttpHeader;
 import com.helger.commons.mime.CMimeType;
+import com.helger.mail.datasource.ByteArrayDataSource;
 import com.sun.xml.messaging.saaj.packaging.mime.internet.InternetHeaders;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.DefaultBHttpClientConnection;
@@ -68,13 +68,13 @@ public class AS2Receiver extends HttpReceiver {
     }
 
     private MimeBodyPart createMimeBody(MapType headers, BinaryType body) throws Exception {
-        ContentType contentType = new ContentType(ServerUtils.getHeader(headers, CAS2Header.HEADER_CONTENT_TYPE));
+        ContentType contentType = new ContentType(ServerUtils.getHeader(headers, CHttpHeader.CONTENT_TYPE));
         String receivedContentType = contentType.toString();
 
         byte[] data = (byte[]) body.getValue();
         MimeBodyPart mimeBody = new MimeBodyPart ();
         mimeBody.setDataHandler(new DataHandler(new ByteArrayDataSource(data, receivedContentType, null)));
-        mimeBody.setHeader(CAS2Header.HEADER_CONTENT_TYPE, receivedContentType);
+        mimeBody.setHeader(CHttpHeader.CONTENT_TYPE, receivedContentType);
 
         return mimeBody;
     }

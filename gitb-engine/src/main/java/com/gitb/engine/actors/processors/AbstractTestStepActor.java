@@ -46,7 +46,7 @@ import java.util.List;
  * Created by serbay on 9/11/14.
  */
 public abstract class AbstractTestStepActor<T> extends Actor {
-	private static Logger logger = LoggerFactory.getLogger(AbstractTestStepActor.class);
+	private static final Logger logger = LoggerFactory.getLogger(AbstractTestStepActor.class);
 
 	public static final String STEP_SEPARATOR = ".";
 	public static final String EXCEPTION_SANITIZATION_EXPRESSION =  "(?:[a-z]+[a-z\\d_]*\\.)*(?:([A-Z]+\\S*)(?:Exception|Error|Fault))";

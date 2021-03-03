@@ -95,7 +95,6 @@ public class SessionManager {
      * @return
      */
 	public TestCaseContext getContext(String sessionId) {
-		TestCaseContext testCaseContext = contexts.get(sessionId);
-		return testCaseContext;
+		return contexts.get(sessionId);
 	}
 }

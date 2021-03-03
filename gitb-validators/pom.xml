@@ -13,21 +13,6 @@
 	<build>
         <plugins>
             <plugin>
-                <groupId>org.jvnet.jaxb2.maven2</groupId>
-                <artifactId>maven-jaxb2-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>generate</goal>
-                        </goals>
-                        <configuration>
-                            <bindingDirectory>${basedir}/src/main/resources/schema/</bindingDirectory>
-                            <schemaDirectory>${basedir}/src/main/resources/schema/</schemaDirectory>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-deploy-plugin</artifactId>
                 <configuration>
@@ -52,8 +37,20 @@
             <optional>true</optional>
         </dependency>
         <dependency>
+            <groupId>com.helger.schematron</groupId>
+            <artifactId>ph-schematron-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.helger.schematron</groupId>
+            <artifactId>ph-schematron-xslt</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.helger.schematron</groupId>
+            <artifactId>ph-schematron-pure</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.helger</groupId>
-            <artifactId>ph-schematron</artifactId>
+            <artifactId>ph-commons</artifactId>
         </dependency>
         <dependency>
             <groupId>net.sf.saxon</groupId>

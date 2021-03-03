@@ -1,5 +1,6 @@
 package com.gitb.vs.tdl.rules;
 
+import com.gitb.tdl.Scriptlet;
 import com.gitb.tdl.TestCase;
 import com.gitb.tdl.TestSuite;
 import com.gitb.vs.tdl.Context;
@@ -18,8 +19,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 public class CheckFileSyntax extends AbstractCheck {
 
@@ -28,25 +30,32 @@ public class CheckFileSyntax extends AbstractCheck {
     @Override
     public void doCheck(Context context, ValidationReport report) {
         ErrorHandler handler = new ErrorHandler(report, context);
-        checkFileSyntax(context, handler, context.getTestSuitePaths(), true);
-        checkFileSyntax(context, handler, context.getTestCasePaths(), false);
+        checkFileSyntax(context, handler, flatten(context.getTestSuitePaths().values()), ResourceType.TEST_SUITE);
+        checkFileSyntax(context, handler, flatten(context.getTestCasePaths().values()), ResourceType.TEST_CASE);
+        checkFileSyntax(context, handler, context.getScriptletPaths().keySet(), ResourceType.SCRIPTLET);
     }
 
-    private void checkFileSyntax(Context context, ErrorHandler handler, Map<String, List<Path>> pathSets, boolean isTestSuite) {
-        for (List<Path> paths : pathSets.values()) {
-            for (Path path : paths) {
-                try (InputStream is = Files.newInputStream(path)) {
-                    handler.setCurrentPath(path, isTestSuite);
-                    if (isTestSuite) {
-                        Utils.unmarshal(is, TestSuite.class, context.getJAXBContext(), context.getTDLSchema(), handler).getValue();
-                    } else {
-                        Utils.unmarshal(is, TestCase.class, context.getJAXBContext(), context.getTDLSchema(), handler).getValue();
-                    }
-                } catch (JAXBException e) {
-                    handleParseException(e);
-                } catch (IOException e) {
-                    throw new IllegalStateException("Error while looking up test suite resource", e);
+    private List<Path> flatten(Collection<List<Path>> pathSets) {
+        List<Path> result = new ArrayList<>();
+        pathSets.forEach(result::addAll);
+        return result;
+    }
+
+    private void checkFileSyntax(Context context, ErrorHandler handler, Collection<Path> paths, ResourceType resourceType) {
+        for (Path path : paths) {
+            try (InputStream is = Files.newInputStream(path)) {
+                handler.setCurrentPath(path, resourceType);
+                if (resourceType == ResourceType.TEST_SUITE) {
+                    Utils.unmarshal(is, TestSuite.class, context.getJAXBContext(), context.getTDLSchema(), handler).getValue();
+                } else if (resourceType == ResourceType.TEST_CASE) {
+                    Utils.unmarshal(is, TestCase.class, context.getJAXBContext(), context.getTDLSchema(), handler).getValue();
+                } else { // Scriptlets
+                    Utils.unmarshal(is, Scriptlet.class, context.getJAXBContext(), context.getTDLSchema(), handler).getValue();
                 }
+            } catch (JAXBException e) {
+                handleParseException(e);
+            } catch (IOException e) {
+                throw new IllegalStateException("Error while looking up test suite resource", e);
             }
         }
     }
@@ -63,10 +72,10 @@ public class CheckFileSyntax extends AbstractCheck {
 
     static class ErrorHandler implements ValidationEventHandler {
 
-        private ValidationReport report;
-        private Context context;
+        private final ValidationReport report;
+        private final Context context;
         private Path currentPath;
-        private boolean isTestSuite;
+        private ErrorCode errorCodeToUse;
 
         ErrorHandler(ValidationReport report, Context context) {
             this.report = report;
@@ -77,16 +86,24 @@ public class CheckFileSyntax extends AbstractCheck {
             return report;
         }
 
-        void setCurrentPath(Path currentPath, boolean isTestSuite) {
+        void setCurrentPath(Path currentPath, ResourceType resourceType) {
             this.currentPath = currentPath;
-            this.isTestSuite = isTestSuite;
+            switch (resourceType) {
+                case TEST_SUITE: errorCodeToUse = ErrorCode.INVALID_TEST_SUITE_SYNTAX; break;
+                case TEST_CASE: errorCodeToUse = ErrorCode.INVALID_TEST_CASE_SYNTAX; break;
+                case SCRIPTLET: errorCodeToUse = ErrorCode.INVALID_SCRIPTLET_SYNTAX; break;
+                default: throw new IllegalStateException("Unknown resource type ["+resourceType+"]");
+            }
         }
 
         @Override
         public boolean handleEvent(ValidationEvent event) {
-            report.addItem(isTestSuite?ErrorCode.INVALID_TEST_SUITE_SYNTAX:ErrorCode.INVALID_TEST_CASE_SYNTAX, context.getTestSuiteRootPath().relativize(currentPath).toString(), event.getMessage());
+            report.addItem(errorCodeToUse, context.getTestSuiteRootPath().relativize(currentPath).toString(), event.getMessage());
             return event.getSeverity() == ValidationEvent.WARNING;
         }
     }
 
+    enum ResourceType {
+        TEST_SUITE, TEST_CASE, SCRIPTLET
+    }
 }

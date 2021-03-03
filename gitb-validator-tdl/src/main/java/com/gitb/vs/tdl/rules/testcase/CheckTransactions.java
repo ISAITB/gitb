@@ -11,33 +11,33 @@ import java.util.Set;
 
 public class CheckTransactions extends AbstractTestCaseObserver {
 
-    private Set<String> allMessagingTransactionIds;
-    private Set<String> allProcessingTransactionIds;
-    private Set<String> openMessagingTransactionIds;
-    private Set<String> openProcessingTransactionIds;
-    private Set<String> referencedMessagingTransactionIds;
-    private Set<String> referencedProcessingTransactionIds;
+    private Set<String> allMessagingTransactionIds = new HashSet<>();
+    private Set<String> allProcessingTransactionIds = new HashSet<>();
+    private Set<String> openMessagingTransactionIds = new HashSet<>();
+    private Set<String> openProcessingTransactionIds = new HashSet<>();
+    private Set<String> referencedMessagingTransactionIds = new HashSet<>();
+    private Set<String> referencedProcessingTransactionIds = new HashSet<>();
 
     @Override
     public void initialiseTestCase(TestCase currentTestCase) {
         super.initialiseTestCase(currentTestCase);
-        allMessagingTransactionIds = new HashSet<>();
-        allProcessingTransactionIds = new HashSet<>();
-        openMessagingTransactionIds = new HashSet<>();
-        openProcessingTransactionIds = new HashSet<>();
-        referencedMessagingTransactionIds = new HashSet<>();
-        referencedProcessingTransactionIds = new HashSet<>();
+        allMessagingTransactionIds.clear();
+        allProcessingTransactionIds.clear();
+        openMessagingTransactionIds.clear();
+        openProcessingTransactionIds.clear();
+        referencedMessagingTransactionIds.clear();
+        referencedProcessingTransactionIds.clear();
     }
 
     @Override
     public void initialiseScriptlet(Scriptlet scriptlet) {
         super.initialiseScriptlet(scriptlet);
-        allMessagingTransactionIds = new HashSet<>();
-        allProcessingTransactionIds = new HashSet<>();
-        openMessagingTransactionIds = new HashSet<>();
-        openProcessingTransactionIds = new HashSet<>();
-        referencedMessagingTransactionIds = new HashSet<>();
-        referencedProcessingTransactionIds = new HashSet<>();
+        allMessagingTransactionIds.clear();
+        allProcessingTransactionIds.clear();
+        openMessagingTransactionIds.clear();
+        openProcessingTransactionIds.clear();
+        referencedMessagingTransactionIds.clear();
+        referencedProcessingTransactionIds.clear();
     }
 
     @Override
@@ -72,11 +72,11 @@ public class CheckTransactions extends AbstractTestCaseObserver {
             }
         } else if (stepObj instanceof MessagingStep) {
             if (openMessagingTransactionIds.isEmpty()) {
-                addReportItem(ErrorCode.MESSAGING_STEP_OUTSIDE_TX, currentTestCase.getId(), Utils.getStepName(stepObj));
+                addReportItem(ErrorCode.MESSAGING_STEP_OUTSIDE_TX, currentTestCase.getId(), Utils.stepNameWithScriptlet(stepObj, currentScriptlet));
             } else {
                 String txId = ((MessagingStep)stepObj).getTxnId();
                 if (!openMessagingTransactionIds.contains(txId)) {
-                    addReportItem(ErrorCode.INVALID_TX_REFERENCE_FOR_MESSAGING_STEP, currentTestCase.getId(), Utils.getStepName(stepObj), txId);
+                    addReportItem(ErrorCode.INVALID_TX_REFERENCE_FOR_MESSAGING_STEP, currentTestCase.getId(), Utils.stepNameWithScriptlet(stepObj, currentScriptlet), txId);
                 } else {
                     referencedMessagingTransactionIds.add(txId);
                 }

@@ -6,7 +6,7 @@
 			<div class="alert alert-danger" role="alert" ng-if="errorMessage">{{errorMessage}}</div>			
 			<div class="form-group">
 				<label class="col-xs-3 control-label" for="name">* Name:</label>
-				<div class="col-xs-7"><input id="name" ng-model="domainParameter.name" class="form-control" type="text"></div>
+				<div class="col-xs-7"><input id="name" ng-model="domainParameter.name" class="form-control" type="text" autocomplete="off"></div>
 				<div tb-tooltip="An identifier for the parameter used to refer to it from within test cases."></div>
 			</div>
 			<div class="form-group">
@@ -39,7 +39,7 @@
 			</div>
 			<div class="form-group" ng-if="domainParameter.kind == 'SIMPLE'">
 				<label class="col-xs-3 control-label" for="value">* Value:</label>
-				<div class="col-xs-7"><input id="value" ng-model="domainParameter.value" class="form-control" type="text"/></div>
+				<div class="col-xs-7"><input id="value" ng-model="domainParameter.value" class="form-control" type="text" autocomplete="off"/></div>
 				<div tb-tooltip="The value to consider for this parameter."></div>
 			</div>
 			<div class="form-group" ng-if="domainParameter.kind == 'HIDDEN' && formData.showUpdateValue">

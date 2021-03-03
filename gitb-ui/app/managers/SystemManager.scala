@@ -174,6 +174,11 @@ class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelp
           val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield s.fullname
           actions += q.update(fname.get)
         }
+        // Update version of the system
+        if (version.isDefined) {
+          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield s.version
+          actions += q.update(version.get)
+        }
         // Update description of the system
         if (description.isDefined) {
           val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield s.description

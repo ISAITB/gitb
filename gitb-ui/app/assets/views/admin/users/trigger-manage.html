@@ -16,7 +16,7 @@
                     <div class="col-xs-10 col-xs-offset-1">
                         <div class="form-group">
                             <label class="col-xs-3 control-label" for="name">* Name:</label>
-                            <div class="col-xs-8"><input id="name" ng-model="controller.trigger.name" class="form-control" type="text"></div>
+                            <div class="col-xs-8"><input id="name" ng-model="controller.trigger.name" class="form-control" type="text" autocomplete="off"></div>
                             <div tb-tooltip="The name of the trigger that will identify it and be displayed in selection lists."></div>
                         </div>
                         <div class="form-group">
@@ -50,7 +50,7 @@
                         <div class="form-group">
                             <label class="col-xs-3 control-label" for="url">* Endpoint URL:</label>
                             <div class="col-xs-7">
-                                <input id="url" ng-model="controller.trigger.url" class="form-control" type="text">
+                                <input id="url" ng-model="controller.trigger.url" class="form-control" type="text" autocomplete="off">
                             </div>
                             <div class="col-xs-1">
                                 <button class="btn btn-default" type="button" ng-click="controller.testEndpoint()" ng-disabled="!controller.trigger.url"><span class="tab" ng-if="controller.testPending"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span><span ng-if="!controller.testPending">Test</span></button>
@@ -59,7 +59,7 @@
                         </div>
                         <div class="form-group">
                             <label class="col-xs-3 control-label" for="operation">Operation:</label>
-                            <div class="col-xs-7"><input id="operation" ng-model="controller.trigger.operation" class="form-control" type="text"></div>
+                            <div class="col-xs-7"><input id="operation" ng-model="controller.trigger.operation" class="form-control" type="text" autocomplete="off"></div>
                             <div class="col-xs-offset-1 col-xs-1 no-left-padding">
                                 <div tb-tooltip="An optional operation identifier to pass to the service. As a GITB processing service may define multiple operations this identifier can be used to determine the one intended by this trigger."></div>
                             </div>

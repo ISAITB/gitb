@@ -15,8 +15,8 @@ public class CheckTestCaseReferences extends AbstractCheck {
     @Override
     public void doCheck(Context context, ValidationReport report) {
         TestSuite testSuite = context.getTestSuite();
-        Set<String> unreferencedTestCases = new HashSet<>(context.getTestCasePaths().keySet());
         if (testSuite != null) {
+            Set<String> unreferencedTestCases = new HashSet<>(context.getTestCasePaths().keySet());
             List<TestCaseEntry> testCaseEntries = testSuite.getTestcase();
             if (testCaseEntries != null) {
                 for (TestCaseEntry entry: testCaseEntries) {
@@ -35,9 +35,9 @@ public class CheckTestCaseReferences extends AbstractCheck {
                     unreferencedTestCases.remove(entry.getId());
                 }
             }
-        }
-        for (String testCaseId: unreferencedTestCases) {
-            report.addItem(ErrorCode.TEST_CASE_NOT_REFERENCED, getTestCaseLocation(testCaseId, context), testCaseId);
+            for (String testCaseId: unreferencedTestCases) {
+                report.addItem(ErrorCode.TEST_CASE_NOT_REFERENCED, getTestCaseLocation(testCaseId, context), testCaseId);
+            }
         }
     }
 

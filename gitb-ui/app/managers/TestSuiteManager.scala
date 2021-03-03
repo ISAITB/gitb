@@ -48,7 +48,7 @@ object TestSuiteManager {
 	}
 
 	def tupleToTestSuite(x: TestSuiteValueTuple): TestSuites = {
-		TestSuites(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9, x._10, x._11, x._12, None, x._13)
+		TestSuites(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9, x._10, x._11, x._12, None, x._13, hidden = false)
 	}
 
 }
@@ -57,7 +57,7 @@ object TestSuiteManager {
  * Created by serbay on 10/17/14.
  */
 @Singleton
-class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorManager: ActorManager, conformanceManager: ConformanceManager, endPointManager: EndPointManager, testCaseManager: TestCaseManager, parameterManager: ParameterManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorManager: ActorManager, conformanceManager: ConformanceManager, endPointManager: EndPointManager, testCaseManager: TestCaseManager, parameterManager: ParameterManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
 	import dbConfig.profile.api._
 
@@ -101,7 +101,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	}
 
 	def getTestSuitesWithTestCases(): List[TestSuite] = {
-		val testSuites = exec(PersistenceSchema.testSuites.sortBy(_.shortname.asc).map(TestSuiteManager.withoutDocumentation).result.map(_.toList)).map(TestSuiteManager.tupleToTestSuite)
+		val testSuites = exec(PersistenceSchema.testSuites.filter(_.hidden === false).sortBy(_.shortname.asc).map(TestSuiteManager.withoutDocumentation).result.map(_.toList)).map(TestSuiteManager.tupleToTestSuite)
 		testSuites map {
 			ts:TestSuites =>
 				val testCaseIds = exec(PersistenceSchema.testSuiteHasTestCases.filter(_.testsuite === ts.id).map(_.testcase).result.map(_.toList))
@@ -132,6 +132,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 			PersistenceSchema.testSuites
 				.join(PersistenceSchema.specifications).on(_.specification === _.id)
   			.join(PersistenceSchema.communities).on(_._2.domain === _.domain)
+				.filter(_._1._1.hidden === false)
   			.filter(_._2.id === communityId)
 				.sortBy(_._1._1.shortname.asc)
   			.map(r => TestSuiteManager.withoutDocumentation(r._1._1))
@@ -150,6 +151,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		val testSuites = exec(
 			PersistenceSchema.testSuites
 				.join(PersistenceSchema.conformanceResults).on(_.id === _.testsuite)
+				.filter(_._1.hidden === false)
 				.filter(_._2.sut === systemId)
 				.distinctOn(_._1.id)
 				.sortBy(_._1.shortname.asc)
@@ -176,18 +178,6 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		spec
 	}
 
-	def getTempFolder(): File = {
-		new File("/tmp")
-	}
-
-	def getPendingFolder(): File = {
-		new File(getTempFolder(), "pending")
-	}
-
-	def getTmpValidationFolder(): File = {
-		new File(getTempFolder(), "ts_validation")
-	}
-
 	def cancelPendingTestSuiteActions(pendingTestSuiteIdentifier: String): TestSuiteUploadResult = {
 		applyPendingTestSuiteActions(pendingTestSuiteIdentifier, TestSuiteReplacementChoice.CANCEL, null)
 	}
@@ -198,13 +188,13 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 
 	private def applyPendingTestSuiteActions(pendingTestSuiteIdentifier: String, overallAction: TestSuiteReplacementChoice, actionsPerSpec: List[PendingTestSuiteAction]): TestSuiteUploadResult = {
 		val result = new TestSuiteUploadResult()
-		val pendingTestSuiteFolder = new File(getPendingFolder(), pendingTestSuiteIdentifier)
+		val pendingTestSuiteFolder = new File(repositoryUtils.getPendingFolder(), pendingTestSuiteIdentifier)
 		try {
 			if (overallAction == TestSuiteReplacementChoice.PROCEED) {
 				if (pendingTestSuiteFolder.exists()) {
 					val pendingFiles = pendingTestSuiteFolder.listFiles()
 					if (pendingFiles.length == 1) {
-						val testSuite = RepositoryUtils.getTestSuiteFromZip(None, pendingFiles.head)
+						val testSuite = repositoryUtils.getTestSuiteFromZip(actionsPerSpec.head.specification, pendingFiles.head)
 						// Sanity check
 						if (testSuite.isDefined && testSuite.get.testCases.isDefined) {
 							val onSuccessCalls = mutable.ListBuffer[() => _]()
@@ -257,7 +247,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 				actorIdSet = Some(actorIdSet.get & specActorIds)
 			}
 		}
-		val report = TestSuiteValidationAdapter.getInstance().doValidation(new FileSource(tempTestSuiteArchive), setAsJavaSet(actorIdSet.getOrElse(mutable.Set[String]())), setAsJavaSet(parameterSet), getTmpValidationFolder().getAbsolutePath)
+		val report = TestSuiteValidationAdapter.getInstance().doValidation(new FileSource(tempTestSuiteArchive), setAsJavaSet(actorIdSet.getOrElse(mutable.Set[String]())), setAsJavaSet(parameterSet), repositoryUtils.getTmpValidationFolder().getAbsolutePath)
 		report
 	}
 
@@ -286,15 +276,17 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		try {
 			result.validationReport = validateTestSuite(specifications, tempTestSuiteArchive)
 			if (result.validationReport.getResult == TestResultType.SUCCESS) {
-				val noWarnings = result.validationReport.getCounters.getNrOfWarnings.intValue() == 0
-				// If we have warnings we don't need to make a full parse (i.e. test cases and documentation).
-				val testSuite = RepositoryUtils.getTestSuiteFromZip(None, tempTestSuiteArchive, noWarnings)
+				val hasReportItems = (result.validationReport.getCounters.getNrOfWarnings.intValue() > 0) ||
+						(result.validationReport.getCounters.getNrOfErrors.intValue() > 0) ||
+						(result.validationReport.getCounters.getNrOfAssertions.intValue() > 0)
+				// If we have messages we don't need to make a full parse (i.e. test cases and documentation).
+				val testSuite = repositoryUtils.getTestSuiteFromZip(specifications.head, tempTestSuiteArchive, !hasReportItems)
 				if (testSuite.isDefined) {
 					var definedActorsIdentifiers: Option[List[String]] = None
 					if (testSuite.get.actors.isDefined) {
 						definedActorsIdentifiers = Some(testSuite.get.actors.get.map(actor => actor.actorId))
 					}
-					if (!noWarnings) {
+					if (hasReportItems) {
 						result.needsConfirmation = true
 					}
 					val specsWithExistingTestSuite = new ListBuffer[Long]()
@@ -322,7 +314,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 							result.matchingDataExists = Some(specsWithMatchingData.toList)
 						}
 						// Park the test suite for now and ask user what to do
-						FileUtils.moveDirectoryToDirectory(tempTestSuiteArchive.getParentFile, getPendingFolder(), true)
+						FileUtils.moveDirectoryToDirectory(tempTestSuiteArchive.getParentFile, repositoryUtils.getPendingFolder(), true)
 						result.pendingTestSuiteFolderName = tempTestSuiteArchive.getParentFile.getName
 					} else {
 						// Proceed immediately.
@@ -354,7 +346,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	}
 
 	def getTestSuiteFile(specification: Long, testSuiteName: String): File = {
-		new File(RepositoryUtils.getTestSuitesPath(getSpecificationById(specification)), testSuiteName)
+		new File(repositoryUtils.getTestSuitesPath(getSpecificationById(specification)), testSuiteName)
 	}
 
 	private def checkTestSuiteExists(suite: TestSuite): Boolean = {
@@ -408,7 +400,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	private def applyMetadataToTestSuite(metadata: TestArtifactMetadata, testSuite: TestSuites, testCases: Option[List[TestCases]]): (TestSuites, Option[List[TestCases]]) = {
 		val updatedTestSuite = TestSuites(testSuite.id, metadata.shortName, metadata.fullName, testSuite.version, testSuite.authors,
 			testSuite.originalDate, testSuite.modificationDate, metadata.description, testSuite.keywords, testSuite.specification,
-			testSuite.filename, metadata.documentation.isDefined, metadata.documentation, testSuite.identifier)
+			testSuite.filename, metadata.documentation.isDefined, metadata.documentation, testSuite.identifier, testCases.isEmpty || testCases.get.isEmpty)
 		var updatedTestCases: Option[List[TestCases]] = None
 		if (testCases.isDefined) {
 			val testCasesList = ListBuffer[TestCases]()
@@ -464,16 +456,16 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		action
 	}
 
-	def updateTestSuiteMetadata(testSuiteId: Long, name: String, description: Option[String], documentation: Option[String]) = {
+	def updateTestSuiteMetadata(testSuiteId: Long, name: String, description: Option[String], documentation: Option[String], version: String) = {
 		var hasDocumentationToSet = false
 		var documentationToSet: Option[String] = None
 		if (documentation.isDefined && !documentation.get.isBlank) {
 			hasDocumentationToSet = true
 			documentationToSet = documentation
 		}
-		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation)
+		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.shortname, t.fullname, t.description, t.documentation, t.hasDocumentation, t.version)
 		exec(
-			q1.update(name, name, description, documentationToSet, hasDocumentationToSet) andThen
+			q1.update(name, name, description, documentationToSet, hasDocumentationToSet, version) andThen
 				testResultManager.updateForUpdatedTestSuite(testSuiteId, name)
 				.transactionally
 		)
@@ -495,13 +487,13 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	}
 
 	def updateTestSuiteInDbWithoutMetadata(testSuiteId: Long, newData: TestSuites): DBIO[_] = {
-		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield t.filename
-		q1.update(newData.filename)
+		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.filename, t.hidden)
+		q1.update(newData.filename, newData.hidden)
 	}
 
 	def updateTestSuiteInDb(testSuiteId: Long, newData: TestSuites): DBIO[_] = {
-		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.identifier, t.shortname, t.fullname, t.version, t.authors, t.keywords, t.description, t.filename, t.hasDocumentation, t.documentation)
-		q1.update(newData.identifier, newData.shortname, newData.fullname, newData.version, newData.authors, newData.keywords, newData.description, newData.filename, newData.hasDocumentation, newData.documentation) andThen
+		val q1 = for {t <- PersistenceSchema.testSuites if t.id === testSuiteId} yield (t.identifier, t.shortname, t.fullname, t.version, t.authors, t.keywords, t.description, t.filename, t.hasDocumentation, t.documentation, t.hidden)
+		q1.update(newData.identifier, newData.shortname, newData.fullname, newData.version, newData.authors, newData.keywords, newData.description, newData.filename, newData.hasDocumentation, newData.documentation, newData.hidden) andThen
 			testResultManager.updateForUpdatedTestSuite(testSuiteId, newData.shortname)
 	}
 
@@ -963,7 +955,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
       // Update case.
       existingFolder = new File(targetFolder.getParent, existingSuite.filename)
     }
-		val resourcePaths = RepositoryUtils.extractTestSuiteFilesFromZipToFolder(suite.specification, targetFolder, tempTestSuiteArchive)
+		val resourcePaths = repositoryUtils.extractTestSuiteFilesFromZipToFolder(suite.specification, targetFolder, tempTestSuiteArchive)
 		val action = for {
 			// Get the specification of the test suite.
 			spec <- PersistenceSchema.specifications.filter(_.id === suite.specification).result.head
@@ -1037,11 +1029,11 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	}
 
 	def extractTestSuite(testSuite: TestSuites, specification: Specifications, testSuiteOutputPath: Option[Path]): Path = {
-		val testSuiteFolder = RepositoryUtils.getTestSuitesResource(specification, testSuite.filename, None)
+		val testSuiteFolder = repositoryUtils.getTestSuitesResource(specification, testSuite.filename, None)
 		var outputPathToUse = testSuiteOutputPath
 		if (testSuiteOutputPath.isEmpty) {
 			outputPathToUse = Some(Paths.get(
-				ReportManager.getTempFolderPath().toFile.getAbsolutePath,
+				repositoryUtils.getTempReportFolder().getAbsolutePath,
 				"test_suite",
 				"test_suite."+testSuite.id.toString+"."+System.currentTimeMillis()+".zip"
 			))

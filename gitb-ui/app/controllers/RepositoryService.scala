@@ -1,8 +1,5 @@
 package controllers
 
-import java.io._
-import java.nio.file.{Files, Paths}
-
 import com.gitb.tbs.TestStepStatus
 import com.gitb.tpl.TestCase
 import com.gitb.utils.{XMLDateTimeUtils, XMLUtils}
@@ -11,13 +8,9 @@ import config.Configurations
 import controllers.util.ParameterExtractor.requiredBodyParameter
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
-import javax.inject.Inject
-import javax.xml.bind.JAXBElement
-import javax.xml.namespace.QName
-import javax.xml.transform.stream.StreamSource
 import managers._
 import managers.export._
-import models.{ConformanceCertificate, ConformanceCertificates, Constants}
+import models.{ConformanceCertificate, ConformanceCertificates, Constants, TestSuites}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
@@ -26,12 +19,18 @@ import org.slf4j.LoggerFactory
 import play.api.mvc._
 import utils._
 
+import java.io._
+import java.nio.file.{Files, Paths}
+import javax.inject.Inject
+import javax.xml.bind.JAXBElement
+import javax.xml.namespace.QName
+import javax.xml.transform.stream.StreamSource
 import scala.concurrent.ExecutionContext
 
 /**
  * Created by serbay on 10/16/14.
  */
-class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemManager: SystemManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager, importPreviewManager: ImportPreviewManager, importCompleteManager: ImportCompleteManager) extends AbstractController(cc) {
+class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemManager: SystemManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, reportManager: ReportManager, testResultManager: TestResultManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, exportManager: ExportManager, importPreviewManager: ImportPreviewManager, importCompleteManager: ImportCompleteManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
 
 	private val logger = LoggerFactory.getLogger(classOf[RepositoryService])
 	private val codec = new URLCodec()
@@ -40,28 +39,53 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 
   import scala.collection.JavaConverters._
 
-	def getTestSuiteResource(testId: String, filePath:String) = authorizedAction { request =>
-    authorizationManager.canViewTestSuiteResource(request, testId)
-    val testCase = testCaseManager.getTestCaseForIdWrapper(testId).get
-    val testSuite = testSuiteManager.getTestSuiteOfTestCaseWrapper(testCase.id)
-    var filePathToLookup = codec.decode(filePath)
-    var filePathToAlsoCheck: Option[String] = null
-    if (!filePath.startsWith(testSuite.identifier) && !filePath.startsWith("/"+testSuite.identifier)) {
-      filePathToLookup = testSuite.filename + "/" + filePathToLookup
-      filePathToAlsoCheck = None
+	def getTestSuiteResource(locationKey: String, filePath:String) = authorizedAction { request =>
+    // Location key is either a test case ID (e.g. '123') or a test case ID prefixed by a test suite string identifier [TEST_SUITE_IDENTIFIER]|123.
+    authorizationManager.canViewTestSuiteResource(request, locationKey)
+    var testSuiteIdentifier: Option[String] = None
+    var testIdentifier: Option[String] = None
+    val locationKeyToUse = codec.decode(locationKey)
+    val locationSeparatorIndex = locationKeyToUse.lastIndexOf('|')
+    if (locationSeparatorIndex != -1) {
+      testSuiteIdentifier = Some(locationKeyToUse.substring(0, locationSeparatorIndex))
+      testIdentifier = Some(locationKeyToUse.substring(locationSeparatorIndex+1))
     } else {
-      filePathToAlsoCheck = Some(testSuite.filename + "/" + filePathToLookup)
-      filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.identifier, testSuite.filename)
+      testIdentifier = Some(locationKeyToUse)
     }
-    // Ensure that the requested resource is within the test suite folder (to avoid path traversal)
-    val spec = specificationManager.getSpecificationById(testSuite.specification)
-    val testSuiteFolder = RepositoryUtils.getTestSuitesResource(spec, testSuite.filename, None)
-    val file = RepositoryUtils.getTestSuitesResource(spec, filePathToLookup, filePathToAlsoCheck)
-    logger.debug("Reading test resource ["+codec.decode(filePath)+"] definition from the file ["+file+"]")
-    if (file.exists() && file.toPath.normalize().startsWith(testSuiteFolder.toPath.normalize())) {
-      Ok.sendFile(file, true)
+    val testCase = testCaseManager.getTestCaseForIdWrapper(testIdentifier.get).get
+    val specificationOfTestCase = specificationManager.getSpecificationById(testCase.targetSpec)
+    var testSuite: Option[TestSuites] = None
+    if (testSuiteIdentifier.isEmpty) {
+      // Consider test suite of test case.
+      testSuite = Some(testSuiteManager.getTestSuiteOfTestCaseWrapper(testCase.id))
     } else {
+      // Find test suite in specification or domain.
+      testSuite = repositoryUtils.findTestSuiteByIdentifier(testSuiteIdentifier.get, Some(specificationOfTestCase.domain), specificationOfTestCase.id)
+    }
+    if (testSuite.isEmpty) {
       NotFound
+    } else {
+      var filePathToLookup = codec.decode(filePath)
+      if (filePathToLookup.startsWith("/")) {
+        filePathToLookup = filePathToLookup.substring(1)
+      }
+      var filePathToAlsoCheck: Option[String] = null
+      if (!filePathToLookup.startsWith(testSuite.get.identifier)) {
+        filePathToLookup = testSuite.get.filename + "/" + filePathToLookup
+        filePathToAlsoCheck = None
+      } else {
+        filePathToAlsoCheck = Some(testSuite.get.filename + "/" + filePathToLookup)
+        filePathToLookup = StringUtils.replaceOnce(filePathToLookup, testSuite.get.identifier, testSuite.get.filename)
+      }
+      // Ensure that the requested resource is within the test suite folder (to avoid path traversal)
+      val testSuiteFolder = repositoryUtils.getTestSuitesResource(testSuite.get.specification, specificationOfTestCase.domain, testSuite.get.filename, None)
+      val file = repositoryUtils.getTestSuitesResource(testSuite.get.specification, specificationOfTestCase.domain, filePathToLookup, filePathToAlsoCheck)
+      logger.debug("Reading test resource ["+codec.decode(filePath)+"] definition from the file ["+file+"]")
+      if (file.exists() && file.toPath.normalize().startsWith(testSuiteFolder.toPath.normalize())) {
+        Ok.sendFile(file, inline = true)
+      } else {
+        NotFound
+      }
     }
 	}
 
@@ -69,35 +93,41 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 //    34888315-6781-4d74-a677-8f9001a02cb8/4.xml
     authorizationManager.canViewTestResultForSession(request, sessionId)
 
-		val sessionFolder = reportManager.getPathForTestSessionWrapper(sessionId, true).toFile
-    var path: String = null
-    path = reportPath
-      .replace("__SQS__", "[")
-      .replace("__SQE__", "]")
+		val sessionFolderInfo = reportManager.getPathForTestSessionWrapper(sessionId, isExpected = true)
+    try {
+      var path: String = null
+      path = reportPath
+        .replace("__SQS__", "[")
+        .replace("__SQE__", "]")
 
-    if (path.startsWith(sessionId)) {
-      // Backwards compatibility.
-      val pathParts = StringUtils.split(codec.decode(path), "/")
-      path = pathParts(1)
-    } else {
-      path = path
+      if (path.startsWith(sessionId)) {
+        // Backwards compatibility.
+        val pathParts = StringUtils.split(codec.decode(path), "/")
+        path = pathParts(1)
+      } else {
+        path = path
+      }
+      path = codec.decode(path)
+      val file = new File(sessionFolderInfo.path.toFile, path)
+
+      if(file.exists()) {
+        //read file into a string
+        val bytes  = Files.readAllBytes(Paths.get(file.getAbsolutePath));
+        val string = new String(bytes)
+
+        //convert string in xml format into its object representation
+        val step = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))
+
+        //serialize report inside the object into json
+        ResponseConstructor.constructJsonResponse(JacksonUtil.serializeTestReport(step.getReport))
+      } else {
+        NotFound
+      }
+    } finally {
+      if (sessionFolderInfo.archived) {
+        FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
+      }
     }
-    path = codec.decode(path)
-    val file = new File(sessionFolder, path)
-
-		if(file.exists()) {
-      //read file incto a string
-      val bytes  = Files.readAllBytes(Paths.get(file.getAbsolutePath));
-      val string = new String(bytes)
-
-      //convert string in xml format into its object representation
-      val step = XMLUtils.unmarshal(classOf[TestStepStatus], new StreamSource(new StringReader(string)))
-
-      //serialize report inside the object into json
-			ResponseConstructor.constructJsonResponse(JacksonUtil.serializeTestReport(step.getReport))
-		} else {
-			NotFound
-		}
 	}
 
   def exportTestStepReport(sessionId: String, reportPath: String) = authorizedAction { request =>
@@ -112,22 +142,28 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       path = reportPath
     }
     path = codec.decode(path)
-    val sessionFolder = reportManager.getPathForTestSessionWrapper(sessionId, true).toFile
-    val file = new File(sessionFolder, path)
-    val pdf = new File(sessionFolder, path.toLowerCase().replace(".xml", ".pdf"))
+    val sessionFolderInfo = reportManager.getPathForTestSessionWrapper(sessionId, isExpected = true)
+    try {
+      val file = new File(sessionFolderInfo.path.toFile, path)
+      val pdf = new File(sessionFolderInfo.path.toFile, path.toLowerCase().replace(".xml", ".pdf"))
 
-    if (!pdf.exists()) {
-      if (file.exists()) {
-        reportManager.generateTestStepReport(file.toPath, pdf.toPath)
+      if (!pdf.exists()) {
+        if (file.exists()) {
+          reportManager.generateTestStepReport(file.toPath, pdf.toPath)
+        }
       }
-    }
-    if (!pdf.exists()) {
-      NotFound
-    } else {
-      Ok.sendFile(
-        content = pdf,
-        fileName = _ => Some(TESTCASE_STEP_REPORT_NAME)
-      )
+      if (!pdf.exists()) {
+        NotFound
+      } else {
+        Ok.sendFile(
+          content = pdf,
+          fileName = _ => Some(TESTCASE_STEP_REPORT_NAME)
+        )
+      }
+    } finally {
+      if (sessionFolderInfo.archived) {
+        FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
+      }
     }
   }
 
@@ -136,34 +172,37 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     authorizationManager.canViewTestResultForSession(request, session)
     val testCaseId = ParameterExtractor.requiredQueryParameter(request, Parameters.TEST_ID)
 
-    val folder = reportManager.getPathForTestSessionWrapper(codec.decode(session), true).toFile
-
-    logger.debug("Reading test case report ["+codec.decode(session)+"] from the file ["+folder+"]")
-
-    val testResult = testResultManager.getTestResultForSessionWrapper(session)
-    if (testResult.isDefined) {
-
-      var exportedReport: File = null
-      if (testResult.get.endTime.isEmpty) {
-        // This name will be unique to ensure that a report generated for a pending session never gets cached.
-        exportedReport = new File(folder, "report_" + System.currentTimeMillis() + ".pdf")
-        FileUtils.forceDeleteOnExit(exportedReport)
+    val sessionFolderInfo = reportManager.getPathForTestSessionWrapper(codec.decode(session), isExpected = true)
+    try {
+      logger.debug("Reading test case report ["+codec.decode(session)+"] from the file ["+sessionFolderInfo+"]")
+      val testResult = testResultManager.getTestResultForSessionWrapper(session)
+      if (testResult.isDefined) {
+        var exportedReport: File = null
+        if (testResult.get.endTime.isEmpty) {
+          // This name will be unique to ensure that a report generated for a pending session never gets cached.
+          exportedReport = new File(sessionFolderInfo.path.toFile, "report_" + System.currentTimeMillis() + ".pdf")
+          FileUtils.forceDeleteOnExit(exportedReport)
+        } else {
+          exportedReport = new File(sessionFolderInfo.path.toFile, "report.pdf")
+        }
+        val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get.tpl)))
+        val testCase = testCaseManager.getTestCase(testCaseId)
+        if (!exportedReport.exists()) {
+          val list = reportManager.getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
+          val labels = communityLabelManager.getLabels(request)
+          reportManager.generateDetailedTestCaseReport(list, exportedReport.getAbsolutePath, testCase, session, false, labels)
+        }
+        Ok.sendFile(
+          content = exportedReport,
+          fileName = _ => Some(exportedReport.getName)
+        )
       } else {
-        exportedReport = new File(folder, "report.pdf")
+        NotFound
       }
-      val testcasePresentation = XMLUtils.unmarshal(classOf[TestCase], new StreamSource(new StringReader(testResult.get.tpl)))
-      val testCase = testCaseManager.getTestCase(testCaseId)
-      if (!exportedReport.exists()) {
-        val list = reportManager.getListOfTestSteps(testcasePresentation, folder)
-        val labels = communityLabelManager.getLabels(request)
-        reportManager.generateDetailedTestCaseReport(list, exportedReport.getAbsolutePath, testCase, session, false, labels)
+    } finally {
+      if (sessionFolderInfo.archived) {
+        FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
       }
-      Ok.sendFile(
-        content = exportedReport,
-        fileName = _ => Some(exportedReport.getName)
-      )
-    } else {
-      NotFound
     }
   }
 
@@ -173,7 +212,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID)
     val includeTests = ParameterExtractor.requiredQueryParameter(request, Parameters.TESTS).toBoolean
     val reportPath = Paths.get(
-      ReportManager.getTempFolderPath().toFile.getAbsolutePath,
+      repositoryUtils.getTempReportFolder().getAbsolutePath,
       "conformance_reports",
       actorId,
       systemId,
@@ -196,7 +235,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 
   private def exportConformanceCertificateInternal(settings: ConformanceCertificates, communityId: Long, systemId: Long, actorId: Long) = {
     val reportPath = Paths.get(
-      ReportManager.getTempFolderPath().toFile.getAbsolutePath,
+      repositoryUtils.getTempReportFolder().getAbsolutePath,
       "conformance_reports",
       "c"+communityId+"_a"+actorId+"_s"+systemId,
       "report_"+System.currentTimeMillis+".pdf"
@@ -276,7 +315,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
     if (response == null) {
       val reportPath = Paths.get(
-        ReportManager.getTempFolderPath().toFile.getAbsolutePath,
+        repositoryUtils.getTempReportFolder().getAbsolutePath,
         "conformance_reports",
         "c"+communityId,
         "report_"+System.currentTimeMillis+".pdf"
@@ -309,7 +348,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     authorizationManager.canViewTestCase(request, testId)
     val tc = testCaseManager.getTestCase(testId)
     if (tc.isDefined) {
-      val file = RepositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(tc.get.targetSpec), tc.get.path, None)
+      val file = repositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(tc.get.targetSpec), tc.get.path, None)
       logger.debug("Reading test case ["+testId+"] definition from the file ["+file+"]")
       if(file.exists()) {
         Ok.sendFile(file, true)
@@ -365,12 +404,12 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     // Define temp file paths.
     val randomToken = RandomStringUtils.random(10, false, true)
     val exportPathXml = Paths.get(
-      ReportManager.getTempFolderPath().toFile.getAbsolutePath,
+      repositoryUtils.getTempReportFolder().getAbsolutePath,
       "export",
       "data."+randomToken+".xml"
     )
     val exportPathZip = Paths.get(
-      ReportManager.getTempFolderPath().toFile.getAbsolutePath,
+      repositoryUtils.getTempReportFolder().getAbsolutePath,
       "export",
       "data."+randomToken+".zip"
     )
@@ -529,7 +568,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
           val importResult = importCompleteManager.importSandboxData(archiveFile, archivePassword)
           if (importResult._1) {
             // Successful - prevent other imports to take place and return
-            RepositoryUtils.createDataLockFile()
+            repositoryUtils.createDataLockFile()
             response = ResponseConstructor.constructEmptyResponse
           } else {
             // Unsuccessful.

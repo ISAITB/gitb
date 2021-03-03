@@ -23,7 +23,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportManager: ExportManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, actorManager: ActorManager, endpointManager: EndPointManager, parameterManager: ParameterManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, systemManager: SystemManager, importPreviewManager: ImportPreviewManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportManager: ExportManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, actorManager: ActorManager, endpointManager: EndPointManager, parameterManager: ParameterManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, systemManager: SystemManager, importPreviewManager: ImportPreviewManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private def logger = LoggerFactory.getLogger("ImportCompleteManager")
 
@@ -334,16 +334,16 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     Files.createDirectories(tempTestSuitePath.getParent)
     FileUtils.writeByteArrayToFile(tempTestSuitePath.toFile, testSuiteData)
     // Extract test suite to target location.
-    val testSuiteFileName = RepositoryUtils.generateTestSuiteFileName()
-    val targetFolder = new File(RepositoryUtils.getTestSuitesPath(domainId, specificationId), testSuiteFileName)
-    RepositoryUtils.extractTestSuiteFilesFromZipToFolder(specificationId, targetFolder, tempTestSuitePath.toFile)
+    val testSuiteFileName = repositoryUtils.generateTestSuiteFileName()
+    val targetFolder = new File(repositoryUtils.getTestSuitesPath(domainId, specificationId), testSuiteFileName)
+    repositoryUtils.extractTestSuiteFilesFromZipToFolder(specificationId, targetFolder, tempTestSuitePath.toFile)
     targetFolder
   }
 
-  private def toModelTestSuite(data: com.gitb.xml.export.TestSuite, specificationId: Long, testSuiteFileName: String): models.TestSuites = {
+  private def toModelTestSuite(data: com.gitb.xml.export.TestSuite, specificationId: Long, testSuiteFileName: String, hasTestCases: Boolean): models.TestSuites = {
     models.TestSuites(0L, data.getShortName, data.getFullName, data.getVersion, Option(data.getAuthors),
       Option(data.getOriginalDate), Option(data.getModificationDate), Option(data.getDescription), Option(data.getKeywords),
-      specificationId, testSuiteFileName, data.isHasDocumentation, Option(data.getDocumentation), data.getIdentifier)
+      specificationId, testSuiteFileName, data.isHasDocumentation, Option(data.getDocumentation), data.getIdentifier, !hasTestCases)
   }
 
   private def toModelCustomLabel(data: com.gitb.xml.export.CustomLabel, communityId: Long): models.CommunityLabels = {
@@ -503,10 +503,16 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
         FileUtils.deleteDirectory(testSuiteFile)
       }
     })
+    var testCases: List[TestCase] = null
+    if (data.getTestCases != null && data.getTestCases.getTestCase != null) {
+      testCases = collectionAsScalaIterable(data.getTestCases.getTestCase).toList
+    } else {
+      testCases = List.empty
+    }
     // Process DB operations
     val action = for {
       // Save test suite
-      testSuiteId <- PersistenceSchema.testSuites.returning(PersistenceSchema.testSuites.map(_.id)) += toModelTestSuite(data, specificationId, testSuiteFile.getName)
+      testSuiteId <- PersistenceSchema.testSuites.returning(PersistenceSchema.testSuites.map(_.id)) += toModelTestSuite(data, specificationId, testSuiteFile.getName, testCases.nonEmpty)
       // Lookup the map of systems to actors for the specification
       systemActors <- testSuiteManager.getSystemActors(specificationId)
       // Create a map of actors to systems.
@@ -517,8 +523,8 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
           testSuiteManager.stepProcessTestCases(
             specificationId,
             testSuiteId,
-            Some(toModelTestCases(collectionAsScalaIterable(data.getTestCases.getTestCase).toList, specificationId)),
-            getResourcePaths(testSuiteFile.getName, collectionAsScalaIterable(data.getTestCases.getTestCase).toList),
+            Some(toModelTestCases(testCases, specificationId)),
+            getResourcePaths(testSuiteFile.getName, testCases),
             new java.util.HashMap[String, (java.lang.Long, String)](), // existingTestCaseMap
             mapAsJavaMap(ctx.savedSpecificationActors(specificationId)), // savedActorIds
             existingActorToSystemMap,
@@ -542,12 +548,18 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     val testSuiteId = item.targetKey.get.toLong
     // File system operations
     val testSuiteFile = saveTestSuiteFiles(data, item, domainId, specificationId, ctx)
+    var testCases: List[TestCase] = null
+    if (data.getTestCases != null && data.getTestCases.getTestCase != null) {
+      testCases = collectionAsScalaIterable(data.getTestCases.getTestCase).toList
+    } else {
+      testCases = List.empty
+    }
     // Process DB operations
     val action = for {
       // Lookup existing test suite file (for later cleanup).
       existingTestSuiteFile <- PersistenceSchema.testSuites.filter(_.id === testSuiteId).map(x => x.filename).result.head
       // Update existing test suite.
-      _ <- testSuiteManager.updateTestSuiteInDb(testSuiteId, toModelTestSuite(data, specificationId, testSuiteFile.getName))
+      _ <- testSuiteManager.updateTestSuiteInDb(testSuiteId, toModelTestSuite(data, specificationId, testSuiteFile.getName, testCases.nonEmpty))
       // Remove existing actor links (these will be updated later).
       _ <- testSuiteManager.removeActorLinksForTestSuite(testSuiteId)
       // Lookup the existing test cases for the test suite.
@@ -564,8 +576,8 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
           testSuiteManager.stepProcessTestCases(
             specificationId,
             testSuiteId,
-            Some(toModelTestCases(collectionAsScalaIterable(data.getTestCases.getTestCase).toList, specificationId)),
-            getResourcePaths(testSuiteFile.getName, collectionAsScalaIterable(data.getTestCases.getTestCase).toList),
+            Some(toModelTestCases(testCases, specificationId)),
+            getResourcePaths(testSuiteFile.getName, testCases),
             existingTestCaseMap,
             mapAsJavaMap(ctx.savedSpecificationActors(specificationId)), // savedActorIds
             existingActorToSystemMap,
@@ -585,7 +597,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     action.flatMap(existingTestSuiteFile => {
       ctx.onSuccessCalls += (() => {
         // Finally, delete the backup folder
-        val existingTestSuiteFolder = new File(RepositoryUtils.getTestSuitesPath(domainId, specificationId), existingTestSuiteFile)
+        val existingTestSuiteFolder = new File(repositoryUtils.getTestSuitesPath(domainId, specificationId), existingTestSuiteFile)
         if (existingTestSuiteFolder != null && existingTestSuiteFolder.exists()) {
           FileUtils.deleteDirectory(existingTestSuiteFolder)
         }
@@ -684,7 +696,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
               createdDomainId = Some(targetKey.asInstanceOf[Long])
               // In case of a failure delete the created domain test suite folder (if one was created later on).
               ctx.onFailureCalls += (() => {
-                val domainFolder = RepositoryUtils.getDomainTestSuitesPath(createdDomainId.get)
+                val domainFolder = repositoryUtils.getDomainTestSuitesPath(createdDomainId.get)
                 if (domainFolder.exists()) {
                   FileUtils.deleteQuietly(domainFolder)
                 }
@@ -744,7 +756,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                   // In case of a failure delete the created domain test suite folder (if one was created later on).
                   ctx.onFailureCalls += (() => {
                     val domainId = item.parentItem.get.targetKey.get.toLong
-                    val specificationFolder = RepositoryUtils.getTestSuitesPath(domainId, targetKey.asInstanceOf[Long])
+                    val specificationFolder = repositoryUtils.getTestSuitesPath(domainId, targetKey.asInstanceOf[Long])
                     if (specificationFolder.exists()) {
                       FileUtils.deleteQuietly(specificationFolder)
                     }
@@ -931,7 +943,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       if (error.isDefined) {
         // Cleanup operations in case an error occurred.
         if (createdDomainId.isDefined) {
-          val domainFolder = RepositoryUtils.getDomainTestSuitesPath(createdDomainId.get)
+          val domainFolder = repositoryUtils.getDomainTestSuitesPath(createdDomainId.get)
           if (domainFolder.exists()) {
             FileUtils.deleteDirectory(domainFolder)
           }

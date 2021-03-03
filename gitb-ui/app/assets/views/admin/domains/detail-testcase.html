@@ -9,12 +9,12 @@
                     <div class="col-xs-10 col-xs-offset-1">
 						<div class="form-group">
 							<label class="col-xs-3 control-label" for="identifier">ID:</label>
-							<div class="col-xs-7"><input id="identifier" ng-model="testCaseDetailsCtrl.testCase.identifier" class="form-control" type="text" readonly="readonly"></div>
+							<div class="col-xs-7"><input id="identifier" ng-model="testCaseDetailsCtrl.testCase.identifier" class="form-control" type="text" autocomplete="off" readonly="readonly"></div>
 							<div tb-tooltip="The unique identifier of the test case within the test suite. This is not presented to users but is used internally to match uploaded test cases to existing ones."></div>
 						</div>
 						<div class="form-group">
 							<label class="col-xs-3 control-label" for="name">* Name:</label>
-							<div class="col-xs-7"><input id="name" ng-model="testCaseDetailsCtrl.testCase.sname" class="form-control" type="text"></div>
+							<div class="col-xs-7"><input id="name" ng-model="testCaseDetailsCtrl.testCase.sname" class="form-control" type="text" autocomplete="off"></div>
 							<div tb-tooltip="A short and descriptive identifier for the test case. This is used for filtering purposes and also to distinguish the test case within its test suite."></div>
 						</div>
 						<div class="form-group">

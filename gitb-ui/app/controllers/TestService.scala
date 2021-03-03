@@ -26,10 +26,12 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[TestService])
 
-  def getTestCasePresentation(testId:String): GetTestCaseDefinitionResponse = {
-    val request:BasicRequest = new BasicRequest
+  def getTestCasePresentation(testId:String, sessionId: Option[String]): GetTestCaseDefinitionResponse = {
+    val request = new GetTestCaseDefinitionRequest
     request.setTcId(testId)
-
+    if (sessionId.isDefined) {
+      request.setTcInstanceId(sessionId.get)
+    }
     testbedClient.service().getTestCaseDefinition(request)
   }
 
@@ -46,7 +48,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
    */
   def getTestCaseDefinition(test_id:String) = authorizedAction { request =>
     authorizationManager.canViewTestCase(request, test_id)
-    val response = getTestCasePresentation(test_id)
+    val response = getTestCasePresentation(test_id, None)
     val json = JacksonUtil.serializeTestCasePresentation(response.getTestcase)
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -308,7 +310,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
       try {
         configureInternal(testSessionId, statementParameters, domainParameters, organisationParameters, systemParameters)
         // Preliminary step is skipped as this is a headless session. If input was expected during this step the test session will fail.
-        val testCasePresentation = getTestCasePresentation(testCaseId.toString)
+        val testCasePresentation = getTestCasePresentation(testCaseId.toString, Some(testSessionId))
         reportManager.createTestReport(testSessionId, systemId, testCaseId.toString, actorId, testCasePresentation.getTestcase)
         startInternal(testSessionId)
         Future.successful((testCaseIds.drop(1), systemId, actorId, statementParameters, domainParameters, organisationParameters, systemParameters))

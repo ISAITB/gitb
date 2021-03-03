@@ -22,10 +22,10 @@ import java.util.Map;
  */
 public class ZipArchiver {
 
-    private List<File> fileList = new ArrayList<>();
+    private final List<File> fileList = new ArrayList<>();
     private final Path inputFile;
     private final Path outputFile;
-    private char[] password;
+    private final char[] password;
 
     /**
      * Constructor.

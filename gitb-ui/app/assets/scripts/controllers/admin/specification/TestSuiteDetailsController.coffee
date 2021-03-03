@@ -64,7 +64,7 @@ class TestSuiteDetailsController
 		, angular.noop)
 
 	saveChanges: () =>
-		@TestSuiteService.updateTestSuiteMetadata(@testSuite.id, @testSuite.sname, @testSuite.description, tinymce.activeEditor.getContent())
+		@TestSuiteService.updateTestSuiteMetadata(@testSuite.id, @testSuite.sname, @testSuite.description, tinymce.activeEditor.getContent(), @testSuite.version)
 		.then () =>
 			@PopupService.success('Test suite updated.')
 		.catch (error) =>

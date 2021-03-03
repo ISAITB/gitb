@@ -134,4 +134,11 @@ public class ListType extends ContainerType {
         }
         return map;
     }
+
+    public void clear() {
+        if (elements != null) {
+            elements.clear();
+        }
+    }
+
 }

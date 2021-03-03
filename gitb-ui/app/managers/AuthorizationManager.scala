@@ -41,6 +41,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      parameterManager: ParameterManager,
                                      testResultManager: TestResultManager,
                                      actorManager: ActorManager,
+                                     repositoryUtils: RepositoryUtils,
                                      playSessionStore: PlaySessionStore
                                     ) extends BaseManager(dbConfigProvider) {
 
@@ -1385,7 +1386,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canApplySandboxDataMulti(request: RequestWithAttributes[MultipartFormData[Files.TemporaryFile]]): Boolean = {
-    setAuthResult(request, Configurations.DATA_WEB_INIT_ENABLED && !RepositoryUtils.getDataLockFile().exists(), "Web-based data initialisation is not enabled")
+    setAuthResult(request, Configurations.DATA_WEB_INIT_ENABLED && !repositoryUtils.getDataLockFile().exists(), "Web-based data initialisation is not enabled")
   }
 
   private def isCommunityAdmin(userInfo: User): Boolean = {
