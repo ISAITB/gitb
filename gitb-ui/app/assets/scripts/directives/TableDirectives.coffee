@@ -420,5 +420,18 @@ sessionTableDirectiveInputs.expandedCounter = '='
 					false
 				else
 					scope.lastPage()
+			scope.headerColumnClicked = (column) =>
+				for col, i in scope.columns
+					if col.field == column.field
+						if !col.order?
+							col.order = 'asc'
+						else if col.order == 'asc'
+							col.order = 'desc'
+						else
+							col.order = 'asc'
+					else
+						col.order = null
+				scope.onSort? column
+
 			
 ]
