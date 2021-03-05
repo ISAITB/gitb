@@ -157,13 +157,20 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       } else {
         Ok.sendFile(
           content = pdf,
-          fileName = _ => Some(TESTCASE_STEP_REPORT_NAME)
+          fileName = _ => Some(TESTCASE_STEP_REPORT_NAME),
+          onClose = () => {
+            if (sessionFolderInfo.archived) {
+              FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
+            }
+          }
         )
       }
-    } finally {
-      if (sessionFolderInfo.archived) {
-        FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
-      }
+    } catch {
+      case e: Exception =>
+        if (sessionFolderInfo.archived) {
+          FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
+        }
+        throw e
     }
   }
 
@@ -174,7 +181,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 
     val sessionFolderInfo = reportManager.getPathForTestSessionWrapper(codec.decode(session), isExpected = true)
     try {
-      logger.debug("Reading test case report ["+codec.decode(session)+"] from the file ["+sessionFolderInfo+"]")
+      logger.debug("Reading test case report [" + codec.decode(session) + "] from the file [" + sessionFolderInfo + "]")
       val testResult = testResultManager.getTestResultForSessionWrapper(session)
       if (testResult.isDefined) {
         var exportedReport: File = null
@@ -194,15 +201,22 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
         }
         Ok.sendFile(
           content = exportedReport,
-          fileName = _ => Some(exportedReport.getName)
+          fileName = _ => Some(exportedReport.getName),
+          onClose = () => {
+            if (sessionFolderInfo.archived) {
+              FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
+            }
+          }
         )
       } else {
         NotFound
       }
-    } finally {
-      if (sessionFolderInfo.archived) {
-        FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
-      }
+    } catch {
+      case e: Exception =>
+        if (sessionFolderInfo.archived) {
+          FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
+        }
+        throw e
     }
   }
 
@@ -218,19 +232,22 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       systemId,
       "report_"+System.currentTimeMillis+".pdf"
     )
+    FileUtils.deleteQuietly(reportPath.toFile.getParentFile)
     try {
-      FileUtils.deleteDirectory(reportPath.toFile.getParentFile)
-    } catch  {
-      case e:Exception => {
-        // Ignore these are anyway deleted every hour
-      }
+      val labels = communityLabelManager.getLabels(request)
+      reportManager.generateConformanceStatementReport(reportPath, includeTests, actorId.toLong, systemId.toLong, labels)
+      Ok.sendFile(
+        content = reportPath.toFile,
+        fileName = _ => Some(reportPath.toFile.getName),
+        onClose = () => {
+          FileUtils.deleteQuietly(reportPath.toFile)
+        }
+      )
+    } catch {
+      case e: Exception =>
+        FileUtils.deleteQuietly(reportPath.toFile)
+        throw e
     }
-    val labels = communityLabelManager.getLabels(request)
-    reportManager.generateConformanceStatementReport(reportPath, includeTests, actorId.toLong, systemId.toLong, labels)
-    Ok.sendFile(
-      content = reportPath.toFile,
-      fileName = _ => Some(reportPath.toFile.getName)
-    )
   }
 
   private def exportConformanceCertificateInternal(settings: ConformanceCertificates, communityId: Long, systemId: Long, actorId: Long) = {
@@ -240,18 +257,21 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       "c"+communityId+"_a"+actorId+"_s"+systemId,
       "report_"+System.currentTimeMillis+".pdf"
     )
+    FileUtils.deleteQuietly(reportPath.toFile.getParentFile)
     try {
-      FileUtils.deleteDirectory(reportPath.toFile.getParentFile)
-    } catch  {
-      case _:Exception => {
-        // Ignore these are anyway deleted every hour
-      }
+      reportManager.generateConformanceCertificate(reportPath, settings, actorId, systemId)
+      Ok.sendFile(
+        content = reportPath.toFile,
+        fileName = _ => Some(reportPath.toFile.getName),
+        onClose = () => {
+          FileUtils.deleteQuietly(reportPath.toFile)
+        }
+      )
+    } catch {
+      case e: Exception =>
+        FileUtils.deleteQuietly(reportPath.toFile)
+        throw e
     }
-    reportManager.generateConformanceCertificate(reportPath, settings, actorId, systemId)
-    Ok.sendFile(
-      content = reportPath.toFile,
-      fileName = _ => Some(reportPath.toFile.getName)
-    )
   }
 
   def exportOwnConformanceCertificateReport() = authorizedAction { request =>
@@ -320,13 +340,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
         "c"+communityId,
         "report_"+System.currentTimeMillis+".pdf"
       )
-      try {
-        FileUtils.deleteDirectory(reportPath.toFile.getParentFile)
-      } catch  {
-        case e:Exception => {
-          // Ignore these are anyway deleted every hour
-        }
-      }
+      FileUtils.deleteQuietly(reportPath.toFile.getParentFile)
       if (settings.includeSignature && (settings.keystorePassword.isEmpty || settings.keyPassword.isEmpty)) {
         // The passwords need to be looked up from the stored data.
         val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
@@ -335,11 +349,20 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
         completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
         settings = completeSettings.toCaseObject
       }
-      reportManager.generateDemoConformanceCertificate(reportPath, settings, communityId)
-      response = Ok.sendFile(
-        content = reportPath.toFile,
-        fileName = _ => Some(reportPath.toFile.getName)
-      )
+      try {
+        reportManager.generateDemoConformanceCertificate(reportPath, settings, communityId)
+        response = Ok.sendFile(
+          content = reportPath.toFile,
+          fileName = _ => Some(reportPath.toFile.getName),
+          onClose = () => {
+            FileUtils.deleteQuietly(reportPath.toFile)
+          }
+        )
+      } catch {
+        case e: Exception =>
+          FileUtils.deleteQuietly(reportPath.toFile)
+          throw e
+      }
     }
     response
   }
