@@ -13,7 +13,7 @@ import utils.{JsonUtil, RepositoryUtils}
 
 import javax.inject.Inject
 
-class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, accountManager: AccountManager, authManager: AuthenticationManager, authorizationManager: AuthorizationManager, playSessionStore: PlaySessionStore, userManager: UserManager) extends AbstractController(cc) {
+class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, accountManager: AccountManager, authManager: AuthenticationManager, authorizationManager: AuthorizationManager, playSessionStore: PlaySessionStore, userManager: UserManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthenticationService])
   private final val BEARER = "Bearer"
@@ -214,7 +214,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: C
 
   private def disableDataBootstrap() = {
     if (Configurations.DATA_WEB_INIT_ENABLED) {
-      RepositoryUtils.createDataLockFile()
+      repositoryUtils.createDataLockFile()
     }
   }
 }
