@@ -1,0 +1,43 @@
+<div class="page users detail">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">{{dataService.labelOrganisation()}} details</h4>
+        </div>
+        <form class="form-horizontal">
+            <div class="panel-body">
+                <div class="row">
+                    <app-alert-display [alerts]="alerts" innerClass="col-md-10 col-md-offset-1"></app-alert-display>
+                </div>
+                <app-organisation-form
+                    [organisation]="organisation"
+                    [communityId]="communityId"
+                    [propertyData]="propertyData"
+                ></app-organisation-form>
+            </div>
+            <div class="panel-footer">
+                <div class="row">
+                    <div class="col-md-3"></div>
+                    <div class="col-md-8 btn-toolbar">
+                        <button class="btn btn-default" type="submit" (click)="updateOrganisation()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Update</button>
+                        <button class="btn btn-default" type="button" (click)="deleteOrganisation()" [disable]="savePending" [pending]="deletePending">Delete</button>
+                        <button class="btn btn-default" type="button" (click)="manageOrganisationTests()">Manage tests</button>
+                        <button class="btn btn-default" type="button" (click)="cancelDetailOrganisation()">Back</button>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Users</h4>
+            <a [routerLink]="['user', 'create']" class="btn btn-default pull-right">Create user</a>
+        </div>
+        <div table-directive 
+            [columns]="userColumns" 
+            [data]="users"
+			[noDataMessage]="'No users found'"
+			[loadingStatus]="dataStatus" 
+            (onSelect)="userSelect($event)">
+        </div>
+    </div>
+</div>

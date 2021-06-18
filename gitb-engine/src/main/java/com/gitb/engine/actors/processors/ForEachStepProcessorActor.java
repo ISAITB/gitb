@@ -22,8 +22,6 @@ public class ForEachStepProcessorActor extends AbstractIterationStepActor<ForEac
 
 	private TestCaseScope childScope;
 	private int iteration;
-	private boolean childrenHasError;
-	private boolean childrenHasWarning;
 
 	public ForEachStepProcessorActor(ForEachStep step, TestCaseScope scope, String stepId) {
 		super(step, scope, stepId);
@@ -33,7 +31,6 @@ public class ForEachStepProcessorActor extends AbstractIterationStepActor<ForEac
 	protected void init() throws Exception {
 		iteration = 0;
 		childScope = createChildScope();
-		childrenHasError = false;
 	}
 
 	@Override
@@ -45,24 +42,8 @@ public class ForEachStepProcessorActor extends AbstractIterationStepActor<ForEac
 	}
 
 	@Override
-	protected void handleStatusEvent(StatusEvent event) throws Exception {
-		StepStatus status = event.getStatus();
-		if (status == StepStatus.ERROR) {
-			childrenHasError = true;
-		} else if (status == StepStatus.WARNING) {
-			childrenHasWarning = true;
-		}
-		if (status == StepStatus.ERROR || status == StepStatus.WARNING || status == StepStatus.COMPLETED) {
-			if(!loop()) {
-				if (childrenHasError) {
-					childrenHasError();
-				} else if (childrenHasWarning) {
-					childrenHasWarning();
-				} else {
-					completed();
-				}
-			}
-		}
+	protected boolean handleStatusEventInternal(StatusEvent event) throws Exception {
+		return loop();
 	}
 
 	private boolean loop() throws Exception {

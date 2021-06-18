@@ -1,0 +1,157 @@
+<div class="modal-header">
+	<h4>Test suite upload</h4>
+</div>
+<div class="modal-body">
+	<form class="form-horizontal" [ngSwitch]="step">
+		<div *ngSwitchCase="'initial'">
+			<div class="form-group">
+				<label class="col-xs-3 control-label" for="specification">* Target {{dataService.labelSpecificationLower()}}:</label>
+				<div class="col-xs-8">
+					<input *ngIf="availableSpecifications.length == 1" class="form-control" id="specification" name="specification" [(ngModel)]="specifications[0].fname" readonly="readonly"/>
+					<select *ngIf="availableSpecifications.length > 1" multiple="multiple" class="form-control" id="specification" name="specification" [(ngModel)]="specifications">
+                        <option *ngFor="let specification of availableSpecifications" [ngValue]="specification">{{specification.fname}}</option>
+                    </select>
+				</div>
+				<app-tooltip [tbTooltip]="'The '+dataService.labelSpecificationLower()+' for which the test suite will be uploaded.'"></app-tooltip>
+			</div>
+			<div class="form-group">
+				<label class="col-xs-3 control-label">* Test suite:</label>
+				<div class="col-xs-8">
+					<app-file-select placeholder="Select test suite archive ..." 
+						[fileName]="file?.name" 
+						[multipart]="true" 
+						[accepts]="['application/zip']" 
+						(onUploadForMultipart)="selectArchive($event)"
+						[maxSize]="-1">
+					</app-file-select>
+				</div>
+				<app-tooltip tbTooltip="The test suite archive to upload."></app-tooltip>
+			</div>
+		</div>
+		<div *ngSwitchCase="'validation'">
+			<div class="container-fluid">
+				<div class="row">
+					<div class="bg-info div-rounded div-padded" [ngSwitch]="hasValidationErrors || hasValidationWarnings">
+						<div *ngSwitchCase="true">
+							The provided test suite completed validation with <strong *ngIf="hasValidationErrors">{{report!.counters.errors}} error(s)</strong><span *ngIf="hasValidationErrors && hasValidationWarnings"> and </span><strong *ngIf="hasValidationWarnings">{{report!.counters.warnings}} warning(s)</strong>.
+						</div>
+						<div *ngSwitchCase="false">
+							The provided test suite was successfully validated.
+						</div>
+					</div>                        
+				</div>
+			</div>
+			<div class="row test-step-report ts-upload-validation-report">
+				<div class="step-report test-assertion-step-report">
+					<div class="col-xs-12 test-assertion-group-report" *ngIf="report?.reports != undefined">
+						<div *ngFor="let assertionReport of report!.reports!">
+							<span class="assertion-report-nolink" [ngClass]="{'error-assertion-report': assertionReport.level == 'error', 'warning-assertion-report': assertionReport.level == 'warning', 'info-assertion-report': assertionReport.level == 'info'}">
+								<span class="report-item-element assertion-report-item">
+									<i class="fa fa-info-circle report-item-icon info-icon" *ngIf="assertionReport.level == 'info'"></i>
+									<i class="fa fa-warning report-item-icon warning-icon" *ngIf="assertionReport.level == 'warning'"></i>
+									<i class="fa fa-times-circle report-item-icon error-icon" *ngIf="assertionReport.level == 'error'"></i>
+									<span class="description">{{assertionReport.description}}</span>
+								</span>
+								<span class="report-item assertion-report-item" *ngIf="assertionReport.location != undefined"><strong>Location:</strong> {{assertionReport.location}}</span>
+							</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div *ngSwitchCase="'replace'">
+			<div class="container-fluid">
+				<div class="row">
+					<div class="bg-info div-rounded div-padded">
+						<span *ngIf="!hasMultipleChoices && hasMatchingTestSuite">The selected {{dataService.labelSpecificationLower()}} already contains this test suite and its data. Select how the update should take place.</span>
+						<span *ngIf="!hasMultipleChoices && !hasMatchingTestSuite">The selected {{dataService.labelSpecificationLower()}} defines matching data. Select how the update should take place.</span>
+						<span *ngIf="hasMultipleChoices && hasMatchingTestSuite">Selected {{dataService.labelSpecificationsLower()}} already contain this test suite and its data. Select how the update should take place.</span>
+						<span *ngIf="hasMultipleChoices && !hasMatchingTestSuite">Selected {{dataService.labelSpecificationsLower()}} define matching data. Select how the update should take place.</span>
+					</div>                        
+				</div>
+			</div>
+			<div class="container-fluid ts-upload-result-container">
+				<div *ngFor="let choice of specificationChoices; let first = first; let last = last" class="row" [ngClass]="{'ts-upload-result-first': first, 'ts-upload-result-last': last}">
+					<div class="col-xs-12 ts-upload-result-spec">
+						<div class="ts-upload-result-spec-name" [ngClass]="{'ts-upload-skipped': choice.skipUpdate}">{{specificationName(choice.specification)}}</div>
+						<div class="btn-toolbar pull-right ts-upload-result-spec-controls" *ngIf="hasMultipleChoices">
+							<button *ngIf="!choice.skipUpdate" class="btn btn-default btn-sm" type="button" (click)="applyChoiceToAll(choice.specification)">Apply to all</button>
+							<button *ngIf="!choice.skipUpdate" class="btn btn-default btn-sm" type="button" (click)="skipUpdate(choice.specification)">Skip</button>
+							<button *ngIf="choice.skipUpdate" class="btn btn-default btn-sm" type="button" (click)="processUpdate(choice.specification)">Process</button>
+						</div>
+					</div>
+					<div [collapse]="choice.skipUpdate" [isAnimated]="true" class="ts-upload-result-actions col-xs-12">
+						<div class="form-group" *ngIf="choice.testSuiteExists">
+							<label class="col-xs-3 control-label" [attr.for]="'choice_history_keep_'+choice.specification">* Test history:</label>
+							<div class="col-xs-8">
+								<label class="radio-inline">
+									<input type="radio" [name]="'choice_history_keep_'+choice.specification" [(ngModel)]="choice.history" [attr.id]="'choice_history_keep_'+choice.specification" [value]="'keep'">Keep existing test results
+									<app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="Existing conformance testing results for updated test cases are considered valid and are left unaffected."></app-tooltip>
+								</label>
+								<label class="radio-inline">
+									<input type="radio" [name]="'choice_history_keep_'+choice.specification" [(ngModel)]="choice.history" [attr.id]="'choice_history_keep_drop_'+choice.specification" [value]="'drop'">Drop existing test results
+									<app-tooltip [inline]="true" inlineType="checkLabel" tbTooltip="All existing conformance testing results for the test suite will be considered obsolete."></app-tooltip>
+								</label>
+							</div>
+						</div>
+						<div class="form-group">
+							<label class="col-xs-3 control-label" [attr.for]="'choice_metadata_skip_'+choice.specification">* {{dataService.labelSpecification()}} data:</label>
+							<div class="col-xs-8">
+								<label class="radio-inline">
+									<input type="radio" [name]="'choice_metadata_skip_'+choice.specification" [(ngModel)]="choice.metadata" [attr.id]="'choice_metadata_skip_'+choice.specification" [value]="'skip'">Keep existing values
+									<app-tooltip [inline]="true" inlineType="checkLabel" [tbTooltip]="'Keep the current '+dataService.labelSpecificationLower()+' data when matching values are defined in the new archive. This data includes '+dataService.labelActorsLower()+', '+dataService.labelEndpointsLower()+' and parameters, as well as the name, description and documentation of test suites and test cases.'"></app-tooltip>
+								</label>
+								<label class="radio-inline">
+									<input type="radio" [name]="'choice_metadata_skip_'+choice.specification" [(ngModel)]="choice.metadata" [attr.id]="'choice_metadata_update_'+choice.specification" [value]="'update'">Use archive data to replace existing values
+									<app-tooltip [inline]="true" inlineType="checkLabel" [tbTooltip]="'Replace matching '+dataService.labelSpecificationLower()+' data with the values from the new archive. This data includes '+dataService.labelActorsLower()+', '+dataService.labelEndpointsLower()+' and parameters, as well as the name, description and documentation of test suites and test cases.'"></app-tooltip>
+								</label>
+							</div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div *ngSwitchCase="'results'">
+			<div class="container-fluid">
+				<div class="row">
+					<div class="bg-info div-rounded div-padded">
+						<span>The test suite has been successfully uploaded. You can review below the changes that were applied.</span>
+					</div>                        
+				</div>
+			</div>
+			<div class="container-fluid ts-upload-result-container">
+				<div *ngFor="let result of results; let first = first; let last = last" class="row" [ngClass]="{'ts-upload-result-first': first, 'ts-upload-result-last': last}">
+					<div class="col-xs-12 ts-upload-result-spec">
+						<div class="ts-upload-result-spec-name">{{specificationName(result.specification)}}</div
+					></div>
+					<div class="ts-upload-result-actions col-xs-12">
+						<div *ngIf="result.testSuites.length > 0">
+							<label class="col-xs-3 control-label">Test suite:</label>
+							<div class="col-xs-9"><p class="form-control-static">{{result.testSuiteSummary}}</p></div>
+						</div>
+						<div *ngIf="result.testCases.length > 0">
+							<label class="col-xs-3 control-label">Test cases:</label>
+							<div class="col-xs-9"><p class="form-control-static">{{result.testCaseSummary}}</p></div>
+						</div>
+						<div *ngIf="result.actors.length > 0">
+							<label class="col-xs-3 control-label">{{dataService.labelActors()}}:</label>
+							<div class="col-xs-9"><p class="form-control-static">{{result.actorSummary}}</p></div>
+						</div>
+						<div *ngIf="result.endpoints.length > 0">
+							<label class="col-xs-3 control-label">{{dataService.labelEndpoints()}}:</label>
+							<div class="col-xs-9"><p class="form-control-static">{{result.endpointSummary}}</p></div>
+						</div>
+						<div *ngIf="result.parameters.length > 0">
+							<label class="col-xs-3 control-label">Parameters:</label>
+							<div class="col-xs-9"><p class="form-control-static">{{result.parameterSummary}}</p></div>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</form>
+</div>
+<div class="modal-footer">
+    <button *ngIf="proceedVisible()" type="button" class="btn btn-default" (click)="proceed()" [disable]="proceedDisabled()" [pending]="actionProceedPending">Proceed</button>
+	<button type="button" class="btn btn-default" (click)="close()" [disabled]="actionPending">{{step == 'results'?'Close':'Cancel'}}</button>
+</div>

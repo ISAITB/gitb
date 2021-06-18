@@ -1,7 +1,6 @@
 package managers
 
 import config.Configurations
-import javax.inject.{Inject, Singleton}
 import models.{Enums, Token, Users}
 import org.apache.commons.lang3.RandomStringUtils
 import org.mindrot.jbcrypt.BCrypt
@@ -9,6 +8,9 @@ import org.slf4j.LoggerFactory
 import persistence.cache.TokenCache
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import javax.inject.{Inject, Singleton}
 
 @Singleton
 class AuthenticationManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
@@ -56,6 +58,31 @@ class AuthenticationManager @Inject()(dbConfigProvider: DatabaseConfigProvider) 
     val user = exec(PersistenceSchema.users.filter(_.email === email).result.headOption)
     if (user.isDefined && BCrypt.checkpw(passwd, user.get.password)) user else None
   }
+
+  def replaceOnetimePassword(email: String, newPassword: String, oldPassword: String): Option[Long] = {
+    val q = for {
+      userData <- PersistenceSchema.users
+        .filter(_.email === email)
+        .filter(_.onetimePassword === true)
+        .map(x => (x.id, x.password)).result.headOption
+      resultUserId <- {
+        if (userData.isDefined) {
+          if (BCrypt.checkpw(oldPassword, userData.get._2)) {
+            // Old password matches - do update
+            val update = for { u <- PersistenceSchema.users.filter(_.id === userData.get._1)} yield (u.password, u.onetimePassword)
+            update.update(BCrypt.hashpw(newPassword, BCrypt.gensalt()), false) andThen
+              DBIO.successful(Some(userData.get._1))
+          } else {
+            DBIO.successful(None)
+          }
+        } else {
+          DBIO.successful(None)
+        }
+      }
+    } yield resultUserId
+    exec(q.transactionally)
+  }
+
 
   def generateTokens(userId:Long): Token = {
     //1) Create access and refresh tokens

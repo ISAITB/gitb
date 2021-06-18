@@ -150,11 +150,8 @@ class UserService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
    */
   def deleteVendorUser(userId: Long) = authorizedAction { request =>
     authorizationManager.canDeleteOrganisationUser(request, userId)
-    val isLastAdmin = userManager.isLastAdmin(userId)
     val authUserId = ParameterExtractor.extractUserId(request)
-    if (isLastAdmin) {
-      ResponseConstructor.constructErrorResponse(ErrorCodes.CANNOT_DELETE, "Cannot delete the only administrator of the "+communityLabelManager.getLabel(request, models.Enums.LabelType.Organisation, true, true)+".")
-    } else if (authUserId == userId) {
+    if (authUserId == userId) {
       ResponseConstructor.constructErrorResponse(ErrorCodes.CANNOT_DELETE, "Cannot delete your own account.")
     } else if (Configurations.DEMOS_ENABLED && Configurations.DEMOS_ACCOUNT == userId) {
       ResponseConstructor.constructErrorResponse(ErrorCodes.CANNOT_DELETE, "Cannot delete the configured demo account.")

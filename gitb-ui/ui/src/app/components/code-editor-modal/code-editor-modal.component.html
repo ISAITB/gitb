@@ -1,0 +1,13 @@
+<div class="clearfix modal-header">
+	<h5 class="pull-left" *ngIf="isNameVisible">{{documentName}}</h5>
+	<div class="btn-toolbar">
+		<button type="button" class="pull-right btn btn-default" (click)="close()">Close</button>
+		<button type="button" class="pull-right btn btn-default" (click)="download()" *ngIf="isDownloadVisible">Download</button>
+		<button type="button" class="pull-right btn btn-default" (click)="copyToClipboard()" *ngIf="isCopyVisible">Copy to clipboard</button>
+	</div>
+</div>
+<div class="modal-body">
+	<div class="editor" [ngClass]="styleClass">
+		<ngx-codemirror #codeEditor [(ngModel)]="editorOptions.value" [options]="editorOptions"></ngx-codemirror>
+	</div>
+</div>

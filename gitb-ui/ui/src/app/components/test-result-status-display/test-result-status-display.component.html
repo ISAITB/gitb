@@ -1,0 +1,4 @@
+<div [ngSwitch]="(result == Constants.TEST_CASE_RESULT.SUCCESS || result == Constants.TEST_CASE_RESULT.FAILURE) && message != undefined">
+    <span *ngSwitchCase="true" class="pointer" [popover]="message!" [outsideClick]="true" placement="left" [containerClass]="popoverClass"><i [ngClass]="iconToShow"></i></span>
+    <span *ngSwitchCase="false"><i [ngClass]="iconToShow"></i></span>
+</div>

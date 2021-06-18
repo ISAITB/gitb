@@ -1,0 +1,186 @@
+<div class="page systems clearfix">
+    <section class="page-top">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-12">
+                    <h2>Test execution</h2>
+                </div>
+            </div>
+        </div>
+    </section>
+    <div class="child col-md-12">
+        <div class="page conformance">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <h4 class="title">Test cases to execute</h4>
+                    <div class="btn-toolbar pull-right">
+                        <button type="button" class="btn btn-primary" (click)="nextStep()" *ngIf="wizardStep == 2">Next</button>
+                        <button type="button" class="btn btn-primary" *ngIf="wizardStep == 3 && !started && !startAutomatically && reload" (click)="reinitialise()">Reset</button>
+                        <button type="button" class="btn btn-primary" *ngIf="wizardStep == 3 && firstTestStarted && !reload && testsToExecute.length > 1" (click)="stopAll()">Stop All</button>
+                        <button type="button" class="btn btn-primary" *ngIf="wizardStep == 3 && testsToExecute.length == 1 && !started && !startAutomatically && !reload" (click)="start(session!)">Start</button>
+                        <button type="button" class="btn btn-primary" *ngIf="wizardStep == 3 && testsToExecute.length == 1 && started" (click)="stop(session!)">Stop</button>
+                    </div>
+                </div>
+                <div class="panel-body">
+                    <div class="test-case-list-table">
+                        <table class="table test-case-table">
+                            <thead>
+                                <tr>
+                                    <th width="10%">Name</th>
+                                    <th>Description</th>
+                                    <th class="td-doc" *ngIf="documentationExists" width="1%"></th>
+                                    <th class="td-centered" width="1%">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr *ngFor="let testCase of testsToExecute" (click)="viewTestCase(testCase)" [ngClass]="tableRowClass(testCase)">
+                                    <td>{{testCase.sname}}</td>
+                                    <td>{{testCase.description}}</td>
+                                    <td class="td-doc" *ngIf="documentationExists"><button *ngIf="testCase.hasDocumentation" type="button" class="btn btn-primary" (click)="showTestCaseDocumentation(testCase.id)"><i class="fa fa-info-circle"></i></button></td>
+                                    <td class="td-centered"><i class="fa testsuite-progress-icon" style="vertical-align:middle" [ngClass]="progressIcon(testCase.id)"></i></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <ng-container [ngSwitch]="wizardStep">
+                        <div *ngSwitchCase="1">
+                            <div class="panel panel-default" *ngIf="showOrganisationProperties">
+                                <div class="panel-heading">
+                                    <h5 class="title">Missing organisation properties</h5>
+                                    <div class="pull-right">
+                                        <button type="button" class="btn btn-default" (click)="toOrganisationProperties()">View</button>
+                                    </div>
+                                </div>
+                                <app-parameter-display 
+                                    [parameters]="organisationProperties!" 
+                                    [onlyMissing]="true" 
+                                    [showValues]="false" 
+                                    [editable]="false"
+                                    [parameterLabel]="'Property'"></app-parameter-display>
+                            </div>
+                            <div class="panel panel-default" *ngIf="showSystemProperties">
+                                <div class="panel-heading">
+                                    <h5 class="title">Missing system properties</h5>
+                                    <div class="pull-right">
+                                        <button type="button" class="btn btn-default" (click)="toSystemProperties()">View</button>
+                                    </div>
+                                </div>
+                                <app-parameter-display 
+                                    [parameters]="systemProperties!" 
+                                    [onlyMissing]="true" 
+                                    [showValues]="false" 
+                                    [editable]="false"
+                                    [parameterLabel]="'Property'"></app-parameter-display>
+                            </div>
+                            <div class="panel panel-default" *ngIf="showStatementProperties">
+                                <div class="panel-heading">
+                                    <h5 class="title">Missing conformance statement parameters</h5>
+                                    <div class="pull-right">
+                                        <button type="button" class="btn btn-default" (click)="toConfigurationProperties()">View</button>
+                                    </div>
+                                </div>
+                                <app-parameter-display 
+                                    [parameters]="endpointRepresentations![0].parameters"
+                                    [onlyMissing]="true" 
+                                    [showValues]="false" 
+                                    [editable]="false"></app-parameter-display>
+                            </div>
+                            <div *ngIf="!somethingIsVisible && requiredPropertiesAreHidden">
+                                <div class="bg-info div-rounded div-padded">
+                                    <span>Certain configuration must be completed for you by an administrator before you can proceed with testing.</span>
+                                </div>                    
+                            </div>
+                            <div *ngIf="somethingIsVisible && requiredPropertiesAreHidden">
+                                <div class="bg-info div-rounded div-padded">
+                                    <span><b>Note: </b></span><span>Certain additional configuration must be completed for you by an administrator before you can proceed with testing.</span>
+                                </div>                    
+                            </div>
+                        </div>
+                        <div *ngSwitchCase="2" class="panel panel-default">
+                            <div class="panel-heading no-top-bottom-padding">
+                                <div class="session-execution-info">
+                                    <div class="session-table-title">
+                                        <div class="session-table-title-part">
+                                            <div class="session-table-title-label">Test case</div>
+                                            <div class="session-table-title-value">{{currentTest?.sname}}</div>
+                                        </div>
+                                        <div class="session-table-title-part">
+                                            <div class="session-table-title-label">Session</div>
+                                            <div class="session-table-title-value">{{currentTest?.sessionId}}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="panel-body">
+                                <div *ngFor="let simulatedConfig of simulatedConfigs">
+                                    <p>Simulated configurations for {{getActorName(simulatedConfig.actor)}}</p>
+                                    <ul *ngFor="let config of simulatedConfig.configs">
+                                        <li><label>{{getActorName(config.actor)}}</label>
+                                            <ul *ngFor="let parameter of config.config">
+                                                <li>
+                                                    <span>{{parameter.name}}:</span>
+                                                    <ng-container [ngSwitch]="dataService.isDataURL(parameter.value)">
+                                                        <span *ngSwitchCase="true" class="tab"><a href (click)="download(parameter);$event.preventDefault();">Download</a></span>
+                                                        <span *ngSwitchCase="false" class="tab">{{parameter.value}}</span>
+                                                    </ng-container>
+                                                </li>
+                                            </ul>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        <ng-container *ngSwitchCase="3">
+                            <div *ngFor="let test of testsToExecute" [class.no-display]="test.id != visibleTest!.id">
+                                <div class="panel panel-default select-execution">
+                                    <div class="panel-heading no-top-bottom-padding">
+                                        <div class="session-execution-info">
+                                            <div class="session-table-title">
+                                                <div class="session-table-title-part">
+                                                    <div class="session-table-title-label">Test case</div>
+                                                    <div class="session-table-title-value">{{test.sname}}</div>
+                                                </div>
+                                                <div class="session-table-title-part">
+                                                    <div class="session-table-title-label">Session</div>
+                                                    <div class="session-table-title-value">{{test.sessionId}}</div>
+                                                </div>
+                                            </div>
+                                            <div class="session-table-operations btn-toolbar">
+                                                <button type="button" class="btn btn-primary" *ngIf="testsToExecute.length > 1 && !started && !startAutomatically && !reload" (click)="start(session!)">Start</button>
+                                                <button type="button" class="btn btn-primary" *ngIf="testsToExecute.length > 1 && started && test.id == currentTest!.id" (click)="stop(session!)">Stop</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="panel-body" style="overflow-x: auto; overflow-y: hidden;">
+                                        <div>
+                                            <div class="child">
+                                                <app-sequence-diagram 
+                                                    [stepsOfTests]="stepsOfTests"
+                                                    [test]="test.id+''"
+                                                    [actorInfoOfTests]="actorInfoOfTests"
+                                                    [events]="testEvents[test.id]">
+                                                </app-sequence-diagram>
+                                                <div class="test-output-container" *ngIf="testCaseOutput[test.id]">
+                                                    <alert [type]="alertTypeForStatus(testCaseStatus[test.id])" [dismissible]="false">{{testCaseOutput[test.id]}}</alert>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </ng-container>
+                        <div *ngSwitchDefault>
+                            <app-pending-block [pending]="true" [icon]="true"></app-pending-block>
+                        </div>
+                    </ng-container>
+                </div>
+                <div class="panel-footer">
+                    <div class="btn-toolbar">
+                        <button type="button" class="btn btn-default" (click)="back()">Back</button>
+                        <button type="button" class="btn btn-default" (click)="viewLog()" *ngIf="wizardStep > 1 && visibleTest != undefined">View log</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

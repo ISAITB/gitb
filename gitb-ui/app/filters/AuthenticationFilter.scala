@@ -2,8 +2,10 @@ package filters
 
 import akka.stream.Materializer
 import com.gitb.utils.HmacUtils
+import config.Configurations.API_ROOT
 import controllers.util.{Parameters, ResponseConstructor}
 import exceptions._
+
 import javax.inject.Inject
 import org.slf4j.{Logger, LoggerFactory}
 import managers.AccountManager
@@ -83,7 +85,7 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
   }
 
   def isHmacAuthenticationAllowed(request:RequestHeader):Boolean = {
-    request.path.startsWith("/repository/")
+    request.path.startsWith("/"+API_ROOT+"/repository/")
   }
 
   def isPublic(request:RequestHeader):Boolean = {
@@ -91,13 +93,13 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
     request.method.equals("OPTIONS") ||
       request.path.equals("/") ||
       request.path.equals("/app") ||
-      request.path.equals("/app/configuration") ||
-      request.path.equals("/notices/tbdefault") ||
-      request.path.equals("/user/selfreg") ||
-      request.path.startsWith("/sso/") ||
-      request.path.startsWith("/oauth/") ||
-      request.path.startsWith("/theme/") ||
-      request.path.equals("/initdata") ||
+      request.path.equals("/"+API_ROOT+"/app/configuration") ||
+      request.path.equals("/"+API_ROOT+"/notices/tbdefault") ||
+      request.path.equals("/"+API_ROOT+"/user/selfreg") ||
+      request.path.startsWith("/"+API_ROOT+"/sso/") ||
+      request.path.startsWith("/"+API_ROOT+"/oauth/") ||
+      request.path.startsWith("/"+API_ROOT+"/theme/") ||
+      request.path.equals("/"+API_ROOT+"/initdata") ||
       //public assets
       request.path.startsWith("/assets/") ||
       request.path.startsWith("/webjars/") ||
@@ -108,7 +110,7 @@ class AuthenticationFilter @Inject() (implicit ec: ExecutionContext, implicit va
   }
 
   def isPublicWithOptionalAuthentication(request:RequestHeader):Boolean = {
-    request.path.equals("/user/feedback")
+    request.path.equals("/"+API_ROOT+"/user/feedback")
   }
 
 }

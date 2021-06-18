@@ -2,6 +2,7 @@ package modules
 
 import com.google.inject.{AbstractModule, Provides}
 import config.Configurations
+import config.Configurations.API_ROOT
 import ecas.ExtendedCasConfiguration
 import org.pac4j.cas.client.{CasClient, CasProxyReceptor}
 import org.pac4j.cas.config.CasProtocol
@@ -79,9 +80,9 @@ class SecurityModule extends AbstractModule {
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
       clients = new Clients(Configurations.AUTHENTICATION_SSO_CALLBACK_URL, casClient, casProxyReceptor)
     } else {
-      val anonymoucClient = new AnonymousClient()
-      anonymoucClient.setName(CLIENT_NAME)
-      clients = new Clients(anonymoucClient)
+      val anonymousClient = new AnonymousClient()
+      anonymousClient.setName(CLIENT_NAME)
+      clients = new Clients(anonymousClient)
     }
     val config = new Config(clients)
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
@@ -92,16 +93,15 @@ class SecurityModule extends AbstractModule {
     config.setHttpActionAdapter(new PlayHttpActionAdapter())
     config.addMatcher("excludedPath", new PathMatcher()
       .excludePath("/")
-      .excludePath("/notices/tbdefault")
-      .excludePath("/initdata")
-      .excludePath("/favicon.ico")
-      .excludeBranch("/theme")
+      .excludePath("/"+API_ROOT+"/notices/tbdefault")
+      .excludeBranch("/"+API_ROOT+"/theme")
       .excludeBranch("/assets")
       .excludeBranch("/webjars")
       .excludeBranch("/template")
+      .excludePath("/favicon.ico")
       .excludeBranch("/callback")
-      .excludeBranch("/repository/tests")
-      .excludeBranch("/repository/resource")
+      .excludeBranch("/"+API_ROOT+"/repository/tests")
+      .excludeBranch("/"+API_ROOT+"/repository/resource")
     )
     config
   }

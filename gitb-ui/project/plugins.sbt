@@ -14,10 +14,6 @@ addSbtPlugin("com.typesafe.sbt" % "sbt-web" % "1.4.4")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-js-engine" % "1.2.3")
 
-addSbtPlugin("com.typesafe.sbt" % "sbt-coffeescript" % "1.0.2")
-
-addSbtPlugin("com.typesafe.sbt" % "sbt-less" % "1.1.2")
-
 addSbtPlugin("com.typesafe.sbt" % "sbt-digest" % "1.1.4")
 
 addSbtPlugin("com.typesafe.sbt" % "sbt-gzip" % "1.0.2")

@@ -1,0 +1,31 @@
+<div class="step-report test-assertion-step-report">
+    <div class="col-md-12" *ngIf="report.context != null">
+      <app-any-content-view [context]="report.context" [report]="report"></app-any-content-view>
+    </div>
+    <div *ngIf="report.reports != null && report.reports.assertionReports != null && report.reports.assertionReports.length > 0">
+      <div class="col-md-12" style="margin-bottom:8px;">
+        <span class="report-item"><strong>Details: </strong></span>
+      </div>
+      <div class="col-md-12" *ngIf="report.counters != null && (report.counters.nrOfErrors > 0 || report.counters.nrOfWarnings > 0 || report.counters.nrOfAssertions > 0)" style="padding-bottom:10px;">
+        <div class="col-md-12 summary">
+          <div class="row">
+            <div class="col-xs-2 summary-cell summary-cell-title">Summary</div>
+            <div class="col-xs-10">
+              <div class="row">
+                <div class="col-xs-4 summary-cell"><span class="summary-item-label">Errors:</span> {{report.counters.nrOfErrors}}</div>
+                <div class="col-xs-4 summary-cell"><span class="summary-item-label">Warnings:</span> {{report.counters.nrOfWarnings}}</div>
+                <div class="col-xs-4 summary-cell"><span class="summary-item-label">Messages:</span> {{report.counters.nrOfAssertions}}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-12 test-assertion-group-report">
+        <div class="assertion-reports" *ngIf="report.reports.assertionReports != null && report.reports.assertionReports.length > 0">
+          <div>
+            <app-test-assertion-report *ngFor="let assertionReport of report.reports.assertionReports" (click)="openAssertionReport(assertionReport)" [assertionReport]="assertionReport"></app-test-assertion-report>
+          </div>
+        </div>
+      </div>
+    </div>
+</div>

@@ -1,0 +1,27 @@
+@(config: models.PublicConfig, mode: play.api.Mode)
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<title>GITB</title>
+	<base href="@config.contextPath">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<link rel="icon" type="image/x-icon" href="favicon.ico">
+	<link rel="stylesheet" href="api/theme/css">
+	<link rel="stylesheet" href='@routes.Assets.at("build/styles.css")?v=@config.versionNumber'>
+</head>
+<body>
+	<script>__Zone_enable_cross_context_check = true;</script>
+	<script type="text/javascript" src="@routes.Application.javascriptRoutes"></script>
+	<script src='@routes.Assets.at("build/runtime.js")?v=@config.versionNumber' defer></script>
+	<script src='@routes.Assets.at("build/polyfills-es5.js")?v=@config.versionNumber' nomodule defer></script>
+	<script src='@routes.Assets.at("build/polyfills.js")?v=@config.versionNumber' defer></script>
+	@if(mode != play.api.Mode.Prod) {
+	<script src='@routes.Assets.at("build/scripts.js")?v=@config.versionNumber' defer></script>
+	<script src='@routes.Assets.at("build/vendor.js")?v=@config.versionNumber' defer></script>
+	}
+	<script src='@routes.Assets.at("build/main.js")?v=@config.versionNumber' defer></script>
+	<script type="text/javascript">var _apiRoot = '@config.cookiePath'</script>
+	<app-root></app-root>
+</body>
+</html>

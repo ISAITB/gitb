@@ -1,0 +1,60 @@
+<div class="modal-header">
+	<h4>Link a new role to your account</h4>
+</div>
+<form class="form-horizontal">
+	<div class="modal-body">
+		<div class="form-group">
+			<label class="col-xs-3 control-label" for="choice_link">I want to ...</label>
+			<div class="col-xs-8">
+				<label class="radio-inline"><input type="radio" [(ngModel)]="choice" name="choice" id="choice_link" [value]="Constants.CREATE_ACCOUNT_OPTION.LINK" (change)="choiceChanged()">Confirm a role assigned to me by an administrator</label><br/>
+				<label class="radio-inline" *ngIf="dataService.configuration.registrationEnabled"><input type="radio" [(ngModel)]="choice" name="choice" id="choice_register" [value]="Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER" (change)="choiceChanged()">Register in a public community</label><br/>
+				<label class="radio-inline" *ngIf="dataService.configuration.ssoInMigration"><input type="radio" [(ngModel)]="choice" name="choice" id="choice_migrate" [value]="Constants.CREATE_ACCOUNT_OPTION.MIGRATE" (change)="choiceChanged()">Migrate an existing account to my EU Login account</label>
+			</div>
+		</div>
+		<div *ngIf="choice == Constants.CREATE_ACCOUNT_OPTION.LINK">
+			<div class="link-account-separator">
+				<div class="bg-info div-rounded div-padded">
+					<div *ngIf="linkedAccounts.length > 0">
+						<p>The following roles have been assigned to you. Select the one you want to confirm and link to your account.</p>
+						<span><b>Privacy note:</b> By confirming you grant your consent to record your name, email and EU Login user ID.</span>
+					</div>
+					<span *ngIf="linkedAccounts.length == 0">There are no unconfirmed roles currently assigned to you.</span>
+				</div>
+			</div>
+			<div class="container-fluid" style="margin-left: 40px;margin-right: 40px;">
+				<div class="row" [ngClass]="{'div-spaced-small': !first, 'account-card-ou': account.role == Constants.USER_ROLE.VENDOR_USER, 'account-card-oa': account.role == Constants.USER_ROLE.VENDOR_ADMIN, 'account-card-ca': account.role == Constants.USER_ROLE.COMMUNITY_ADMIN, 'account-card-ta': account.role == Constants.USER_ROLE.SYSTEM_ADMIN}" *ngFor="let account of linkedAccounts; let first = first">
+					<div class="account-card-internal" [ngClass]="{'account-card-selected': selectedAccountId == account.id}" (click)="selectAccount(account.id)">
+						<div class="account-card-text">
+							{{dataService.getRoleDescription(true, account)}}
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div *ngIf="dataService.configuration.ssoInMigration && choice == Constants.CREATE_ACCOUNT_OPTION.MIGRATE">
+			<div class="link-account-separator">
+				<div class="bg-info div-rounded div-padded">
+					<p>Provide the credentials you have been using to authenticate prior to EU Login.</p>
+					<span><b>Privacy note:</b> By completing this you grant your consent to record your name, email and EU Login user ID.</span>
+				</div>
+			</div>
+			<div class="form-group">
+				<label class="col-xs-3 control-label" for="username">* Username:</label>
+				<div class="col-xs-7"><input id="username" name="username" [(ngModel)]="email" class="form-control" type="text"></div>
+				<app-tooltip tbTooltip="The email-formatted username you have been using up to now to log in."></app-tooltip>
+			</div>
+			<div class="form-group">
+				<label class="col-xs-3 control-label" for="password">* Password:</label>
+				<div class="col-xs-7"><input id="password" name="password" [(ngModel)]="password" class="form-control" type="password"></div>
+				<app-tooltip tbTooltip="The password you have been using up to now."></app-tooltip>
+			</div>
+		</div>
+		<div *ngIf="choice == Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER">
+            <app-self-registration [model]="selfRegData" [selfRegOptions]="selfRegOptions"></app-self-registration>
+		</div>
+	</div>
+	<div class="modal-footer">
+		<button class="btn btn-default" type="submit" (click)="create()" [disable]="!createEnabled()" [pending]="createPending">Complete</button>
+		<button class="btn btn-default" type="button" (click)="cancel()">Cancel</button>
+	</div>
+</form>

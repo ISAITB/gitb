@@ -118,6 +118,8 @@ object Configurations {
 
   var TESTBED_MODE:String = ""
 
+  var API_ROOT = ""
+
   def loadConfigurations() = {
     if (!_IS_LOADED) {
       //Load configuration file
@@ -311,6 +313,7 @@ object Configurations {
       }
       // Mode - END
       TEST_SESSION_ARCHIVE_THRESHOLD = fromEnv("TEST_SESSION_ARCHIVE_THRESHOLD", conf.getString("testsession.archive.threshold")).toInt
+      API_ROOT = conf.getString("apiPrefix")
       _IS_LOADED = true
     }
   }

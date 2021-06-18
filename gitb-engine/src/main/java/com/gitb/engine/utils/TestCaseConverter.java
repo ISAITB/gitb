@@ -192,7 +192,7 @@ public class TestCaseConverter {
         flow.setId(id);
         flow.setTitle(description.getTitle());
         flow.setDesc(description.getDesc());
-        flow.setDesc(getDocumentation(testCaseId, description.getDocumentation()));
+        flow.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
 
         for(int i=0; i<description.getThread().size(); i++) {
             com.gitb.tdl.Sequence thread = description.getThread().get(i);

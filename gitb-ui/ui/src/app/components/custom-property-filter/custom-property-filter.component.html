@@ -1,0 +1,28 @@
+<div class="custom-property-filter">
+    <div *ngIf="applied" class="custom-property-filter-container applied">
+      <div class="property-id">{{appliedName}}</div>
+      <div class="property-value">{{appliedValueLabel}}</div>
+      <div class="property-controls">
+        <button class="btn btn-default" (click)="clear()"><i class="glyphicon glyphicon-remove"></i></button>
+      </div>
+    </div>
+    <div *ngIf="!applied" class="custom-property-filter-container non-applied">
+      <div class="property-id">
+        <select name="propInput" (change)="propertyChanged()" [(ngModel)]="propertyInfo.property" class="form-control">
+            <option *ngFor="let prop of properties" [ngValue]="prop">{{prop.name}}</option>
+        </select>
+      </div>
+      <div class="property-value" *ngIf="!propertyInfo || !propertyInfo.property || !propertyInfo.property.allowedValues">
+        <input name="valInput" [(ngModel)]="propertyInfo.value" type="text" class="form-control"/>
+      </div>
+      <div class="property-value" *ngIf="propertyInfo?.property?.presetValues">
+        <select name="valInputChoice" [(ngModel)]="propertyInfo.valueObj" class="form-control">
+            <option *ngFor="let v of propertyInfo.property!.presetValues" [ngValue]="v">{{v.label}}</option>
+        </select>
+      </div>
+      <div class="property-controls">
+        <button class="btn btn-default" (click)="apply()"><i class="glyphicon glyphicon-ok"></i></button>
+        <button class="btn btn-default" (click)="cancel()"><i class="glyphicon glyphicon-remove"></i></button>
+      </div>
+    </div>
+  </div>

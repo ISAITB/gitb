@@ -1,0 +1,62 @@
+<div class="modal-header">
+    <h4>Provide feedback</h4>
+</div>
+<form class="form-horizontal">
+    <div class="modal-body">
+        <app-alert-display [alerts]="alerts" innerClass="col-xs-10 col-xs-offset-1"></app-alert-display>
+        <div class="form-group">
+            <label class="col-xs-3 control-label">* Contact email:</label>
+            <div class="col-xs-7">
+                <input id="contact" name="contact" [(ngModel)]="contactAddress" class="form-control" type="text">
+            </div>
+            <app-tooltip tbTooltip="Specify the email at which you would like to receive feedback regarding your request."></app-tooltip>
+        </div>
+        <div class="form-group">
+            <label class="col-xs-3 control-label">* Feedback type:</label>
+            <div class="col-xs-7">
+                <select class="form-control" name="feedback" [(ngModel)]="feedback">
+                    <option *ngFor="let feedbackType of feedbackTypes" [ngValue]="feedbackType">{{feedbackType.description}}</option>
+                </select>
+            </div>
+            <app-tooltip tbTooltip="Select the nature of your request to facilitate its processing by support staff."></app-tooltip>
+        </div>
+        <div class="form-group">
+            <label class="col-xs-3 control-label">* Message:</label>
+            <div class="col-xs-7">
+                <app-editor name="contentMessage" [(ngModel)]="contentMessage" [type]="'minimal'" [height]="300"></app-editor>
+            </div>
+        </div>
+        <div class="form-group" *ngIf="showUpload() && attachments.length == 0">
+            <label class="col-xs-3 control-label">Attachment(s):</label>
+            <div class="col-xs-8">
+                <app-file-select label="Select file" (onUpload)="attachFile($event)"></app-file-select>
+            </div>
+        </div>
+        <div class="form-group" *ngFor="let attachment of attachments; let first = first; let index = index"> 
+            <label class="col-xs-3 control-label" *ngIf="first">Attachment(s):</label>
+            <div class="col-xs-8" [ngClass]="{'col-xs-offset-3': !first}">
+                <span>{{attachment.name}} ({{attachment.size}} bytes)</span>
+                <button type="button" class="btn btn-default" style="margin-left:5px;" (click)="removeAttachment(index)"><i class="fa fa-times"></i></button>
+            </div>
+        </div>
+        <div class="form-group" *ngIf="attachments.length > 0">
+            <div class="col-xs-8 col-xs-offset-3">
+                <app-file-select *ngIf="maximumAttachments > attachments.length" label="Select file" (onUpload)="attachFile($event)"></app-file-select>
+            </div>
+        </div>
+        <div class="form-group" *ngIf="showSurveyLink()">
+            <div class="col-xs-offset-1 col-xs-10 bg-info div-rounded">
+                <p class="form-control-static">If you have 10 minutes to spare we would much appreciate if you would complete our feedback survey. Click <a [href]="surveyAddress" target="blank">here</a> to open the survey in a separate window and start.</p>
+            </div>
+        </div>
+        <div class="form-group">
+            <div class="col-xs-offset-1 col-xs-10 bg-info div-rounded">
+                <p class="form-control-static"><b>Privacy note:</b> The information you provide is treated by the test bed support team and is never shared to other parties. The 'Contact email' you provide is used only to receive a response from the support team. Please refer to the legal notice (link available in the screen's footer) for more information.</p>
+            </div>
+        </div>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-default" type="submit" (click)="send()" [disable]="sendDisabled()"[pending]="sendPending">Send feedback</button>
+        <button class="btn btn-default" type="button" (click)="cancel()">Close</button>
+    </div>
+</form>

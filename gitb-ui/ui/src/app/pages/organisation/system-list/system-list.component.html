@@ -1,0 +1,21 @@
+<div class="container page domains">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">{{dataService.labelSystems()}}</h4>
+			<button type="button" (click)="createSystem()" class="btn btn-default pull-right" *ngIf="showCreate()">Create {{dataService.labelSystemLower()}}</button>
+		</div>
+		<div table-directive 
+            id="systems-table"
+			[columns]="tableColumns" 
+			[data]="systems" 
+			[noDataMessage]="'No '+dataService.labelSystemsLower()+' found'"
+			[loadingStatus]="dataStatus" 
+			[actionVisible]="showAction" 
+			[actionVisibleForRow]="isSystemEditable" 
+			[actionIcon]="'fa fa-pencil'" 
+            (onAction)="onSystemEdit($event)"
+            (onSelect)="onSystemSelect($event)">
+		</div>
+	</div>
+	<button *ngIf="showBack()" class="btn btn-default pull-left" type="button" (click)="back()">Back</button>
+</div>

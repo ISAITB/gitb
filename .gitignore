@@ -32,3 +32,4 @@ RUNNING_PID
 #test repository deployment folder
 test/resources/repository
 */repository/status-updates/
+/gitb-ui/app/assets/build
