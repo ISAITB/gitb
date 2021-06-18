@@ -71,7 +71,7 @@ public class SessionActor extends Actor {
                 if (context.getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
                     if (!eventProcessingInProgress) {
                         eventProcessingInProgress = true;
-                        sendUpdateAsync(eventOutbox.values().iterator().next());
+                        sendUpdateSync(eventOutbox.values().iterator().next(), true);
                     }
                 }
             } else if (message instanceof UpdateSentEvent) {
@@ -83,7 +83,7 @@ public class SessionActor extends Actor {
                             self().tell(new StopCommand(getSessionId()), self());
                         }
                     } else {
-                        sendUpdateAsync(eventOutbox.values().iterator().next());
+                        sendUpdateSync(eventOutbox.values().iterator().next(), true);
                     }
                 }
             } else if (message instanceof ConnectionClosedEvent) {

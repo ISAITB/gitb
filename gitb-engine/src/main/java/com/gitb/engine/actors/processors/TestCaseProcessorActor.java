@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 
 import javax.xml.datatype.DatatypeConfigurationException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by serbay on 9/5/14.
@@ -160,7 +161,15 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
 	            if(getSender().equals(sequenceProcessorActor)) {
 		            StepStatus status = ((StatusEvent) message).getStatus();
 		            if (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.WARNING) {
-                        getContext().getParent().tell(new TestSessionFinishedCommand(sessionId, status, constructResultReport(status, context)), self());
+		                // Construct the final report.
+                        TestStepReportType resultReport = constructResultReport(status, context);
+                        // Notify for the completion of the test session after a grace period.
+                        getContext().system().scheduler().scheduleOnce(
+                                scala.concurrent.duration.Duration.apply(500L, TimeUnit.MILLISECONDS), () -> {
+                                    getContext().getParent().tell(new TestSessionFinishedCommand(sessionId, status, resultReport), self());
+                                },
+                                getContext().dispatcher()
+                        );
 		            }
 	            }
             } else {
