@@ -48,7 +48,8 @@ export class PasswordComponent extends BaseComponent implements AfterViewInit {
       this.clearAlerts()
       const sameCheck = this.requireDifferent(this.passwordChangeData.currentPassword, this.passwordChangeData.password1, 'The password you provided is the same as the current one.')
       const noConfirmCheck = this.requireSame(this.passwordChangeData.password1, this.passwordChangeData.password2, 'The new password does not match the confirmation.')
-      if (sameCheck && noConfirmCheck) {
+      const complexCheck = this.requireComplexPassword(this.passwordChangeData.password1, 'The new password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.')
+      if (sameCheck && noConfirmCheck && complexCheck) {
         // Proceed.
         this.spinner = true
         this.accountService.updatePassword(

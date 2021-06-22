@@ -9,7 +9,7 @@ import org.pac4j.play.store.PlaySessionStore
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.cache.TokenCache
 import play.api.mvc._
-import utils.{JsonUtil, RepositoryUtils}
+import utils.{CryptoUtil, JsonUtil, RepositoryUtils}
 
 import javax.inject.Inject
 
@@ -100,12 +100,16 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: C
     authorizationManager.canLogin(request)
     val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL)
     val newPassword = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD)
-    val oldPassword = ParameterExtractor.requiredBodyParameter(request, Parameters.OLD_PASSWORD)
-    val result = authManager.replaceOnetimePassword(email, newPassword, oldPassword)
-    if (result.isEmpty) {
-      throw InvalidAuthorizationException(ErrorCodes.INVALID_CREDENTIALS, "Invalid credentials")
+    if (CryptoUtil.isAcceptedPassword(newPassword)) {
+      val oldPassword = ParameterExtractor.requiredBodyParameter(request, Parameters.OLD_PASSWORD)
+      val result = authManager.replaceOnetimePassword(email, newPassword, oldPassword)
+      if (result.isEmpty) {
+        throw InvalidAuthorizationException(ErrorCodes.INVALID_CREDENTIALS, "Invalid credentials")
+      } else {
+        completeAccessTokenLogin(result.get)
+      }
     } else {
-      completeAccessTokenLogin(result.get)
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided password does not match minimum complexity requirements.")
     }
   }
 
@@ -122,6 +126,8 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: C
       if (result.get.onetimePassword) {
         // Onetime password needs to be replaced first.
         Ok("{\"onetime\": true}").as(JSON)
+      } else if (!CryptoUtil.isAcceptedPassword(passwd)) {
+        Ok("{\"weakPassword\": true}").as(JSON)
       } else {
         // All ok.
         completeAccessTokenLogin(result.get.id)

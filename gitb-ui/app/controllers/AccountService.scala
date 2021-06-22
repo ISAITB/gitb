@@ -3,12 +3,13 @@ package controllers
 import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
+
 import javax.inject.Inject
 import managers._
 import org.apache.tika.Tika
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
-import utils.{ClamAVClient, HtmlUtil, JsonUtil}
+import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil}
 
 
 class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, accountManager: AccountManager, userManager: UserManager, organisationManager: OrganizationManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
@@ -92,8 +93,12 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
     val passwd:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.PASSWORD)
     val oldPasswd:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.OLD_PASSWORD)
 
-    accountManager.updateUserProfile(userId, name, passwd, oldPasswd)
-    ResponseConstructor.constructEmptyResponse
+    if (passwd.isDefined && !CryptoUtil.isAcceptedPassword(passwd.get)) {
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided password does not match minimum complexity requirements.")
+    } else {
+      accountManager.updateUserProfile(userId, name, passwd, oldPasswd)
+      ResponseConstructor.constructEmptyResponse
+    }
   }
 
   def getConfiguration = authorizedAction { request =>

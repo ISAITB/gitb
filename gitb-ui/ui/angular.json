@@ -58,6 +58,7 @@
             "allowedCommonJsDependencies": [
               "file-saver",
               "lodash",
+              "codemirror/mode/xml/xml",
               "codemirror/mode/xquery/xquery",
               "codemirror/mode/http/http",
               "codemirror/mode/htmlmixed/htmlmixed",

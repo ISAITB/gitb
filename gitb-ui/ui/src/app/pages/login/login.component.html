@@ -59,10 +59,10 @@
                                     <div class="panel-body">
                                         <app-alert-display [alerts]="alerts" [innerClass]="(loginOption == Constants.LOGIN_OPTION.REGISTER)?'col-xs-12':'col-xs-10 col-xs-offset-1'"></app-alert-display>
                                         <div class="row" *ngIf="loginOption == Constants.LOGIN_OPTION.NONE">
-                                            <div *ngIf="onetimePassword">
+                                            <div *ngIf="onetimePassword || weakPassword">
                                                 <app-change-password-form [model]="passwordChangeData"></app-change-password-form>
                                             </div>
-                                            <div *ngIf="!onetimePassword">
+                                            <div *ngIf="!onetimePassword && !weakPassword">
                                                 <div class="col-xs-10 col-xs-offset-1">
                                                     <div class="form-group">
                                                         <label class="col-xs-3 control-label" for="email">Email address:</label>
@@ -87,14 +87,21 @@
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="row col-xs-10 col-xs-offset-1" *ngIf="!onetimePassword">
+                                            <div class="row col-xs-10 col-xs-offset-1">
                                                 <div class="bg-info div-rounded div-padded">
-                                                    <span><b>Privacy note:</b> By clicking 'Log in' you consent to the use of cookies to manage your session. Please refer to the legal notice (link available in the screen's footer) for more information.</span>
+                                                    <span *ngIf="!onetimePassword && !weakPassword"><b>Privacy note:</b> By clicking 'Log in' you consent to the use of cookies to manage your session. Please refer to the legal notice (link available in the screen's footer) for more information.</span>
+                                                    <span *ngIf="onetimePassword">The password you used is a one-time password that needs to be changed upon your first login.</span>
+                                                    <div *ngIf="weakPassword">
+                                                        <span>The password you used is not complex enough and needs to be replaced. Your password must:</span>
+                                                        <ul style="margin-bottom: 0px;">
+                                                            <li>Contain at least one uppercase letter, one lowercase letter, one digit and one symbol.</li>
+                                                            <li>Be at least eight characters long.</li>
+                                                        </ul>
+                                                    </div>
                                                 </div>
                                             </div>
                                             <div class="row col-md-10 col-md-offset-1" *ngIf="onetimePassword">
                                                 <div class="bg-info div-rounded div-padded">
-                                                    <span>The password you used is a one-time password that needs to be changed upon your first login.</span>
                                                 </div>
                                             </div>
                                         </div>
@@ -106,8 +113,8 @@
                                     </div>
                                     <div class="panel-footer">
                                         <div class="btn-toolbar">
-                                            <button *ngIf="loginOption == Constants.LOGIN_OPTION.NONE && !onetimePassword" type="submit" (click)="login()" class="btn btn-default" [disable]="loginDisabled()" [pending]="spinner">Log in</button>
-                                            <button *ngIf="loginOption == Constants.LOGIN_OPTION.NONE && onetimePassword" type="submit" (click)="replacePassword()" class="btn btn-default" [disable]="replaceDisabled()" [pending]="spinner">Save</button>
+                                            <button *ngIf="loginOption == Constants.LOGIN_OPTION.NONE && !onetimePassword && !weakPassword" type="submit" (click)="login()" class="btn btn-default" [disable]="loginDisabled()" [pending]="spinner">Log in</button>
+                                            <button *ngIf="loginOption == Constants.LOGIN_OPTION.NONE && (onetimePassword || weakPassword)" type="submit" (click)="replacePassword()" class="btn btn-default" [disable]="replaceDisabled()" [pending]="spinner">Save</button>
                                             <button *ngIf="loginOption == Constants.LOGIN_OPTION.REGISTER" type="submit" (click)="register()" class="btn btn-default" [disable]="registerDisabled()" [pending]="spinner">Register</button>
                                             <button (click)="cancelLogin()" type="button" class="btn btn-default">Cancel</button>
                                         </div>

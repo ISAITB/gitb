@@ -39,7 +39,7 @@ export class AddMemberComponent extends BaseComponent implements OnInit, AfterVi
 
   saveMemberDisabled() {
     let disabled = true
-    if (this.dataService.configuration) {
+    if (this.dataService.configurationLoaded) {
       let isSSO = this.dataService.configuration.ssoEnabled
       if (isSSO) {
         disabled = !this.textProvided(this.udata.email)

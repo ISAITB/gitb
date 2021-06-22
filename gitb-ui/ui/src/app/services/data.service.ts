@@ -21,6 +21,7 @@ import { User } from '../types/user.type';
 export class DataService {
 
   public configuration!: AppConfigurationProperties
+  public configurationLoaded = false
   public acceptedEmailAttachmentTypes?: {[key: string]: boolean}
   public actualUser?: ActualUserInfo
   public user?: User
@@ -59,6 +60,7 @@ export class DataService {
   }
 
   private emptyAppConfiguration(): AppConfigurationProperties {
+    this.configurationLoaded = false    
     return {
       emailEnabled: (this.configuration?.emailEnabled != undefined)?this.configuration!.emailEnabled:false,
       emailAttachmentsMaxCount: (this.configuration?.emailAttachmentsMaxCount != undefined)?this.configuration!.emailAttachmentsMaxCount:5,
@@ -116,6 +118,7 @@ export class DataService {
     for (let acceptedType of acceptedTypes) {
       this.acceptedEmailAttachmentTypes[acceptedType] = true
     }
+    this.configurationLoaded = true
   }
 
   getRoleDescription(full: boolean, account?: UserAccount): string {

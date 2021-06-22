@@ -27,7 +27,7 @@ export class ProfileResolver implements Resolve<any> {
         let result: Observable<any>
         const authenticated = this.authProviderService.isAuthenticated()
         const configObservable = new Observable<any>((configObserver) => {
-            if (this.dataService.configuration) {
+            if (this.dataService.configurationLoaded) {
                 configObserver.next()
                 configObserver.complete()
             } else {

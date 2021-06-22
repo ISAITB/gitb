@@ -70,6 +70,17 @@ export abstract class BaseComponent {
         return valid
     }
 
+    requireComplexPassword(password: string|undefined, message?: string): boolean {
+        let valid = true
+        if (password != undefined) {
+            valid = Constants.PASSWORD_REGEX.test(password)
+            if (!valid && message != undefined) {
+                this.addAlertError(message)
+            }
+        }
+        return valid
+    }
+
     addAlertError(message: string = 'An error occurred'):void {
         this.addAlert({type:'danger', msg: message})
     }

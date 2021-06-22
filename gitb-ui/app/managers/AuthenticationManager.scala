@@ -8,8 +8,9 @@ import org.slf4j.LoggerFactory
 import persistence.cache.TokenCache
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
-import scala.concurrent.ExecutionContext.Implicits.global
+import utils.CryptoUtil
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import javax.inject.{Inject, Singleton}
 
 @Singleton
@@ -63,15 +64,18 @@ class AuthenticationManager @Inject()(dbConfigProvider: DatabaseConfigProvider) 
     val q = for {
       userData <- PersistenceSchema.users
         .filter(_.email === email)
-        .filter(_.onetimePassword === true)
-        .map(x => (x.id, x.password)).result.headOption
+        .map(x => (x.id, x.password, x.onetimePassword)).result.headOption
       resultUserId <- {
         if (userData.isDefined) {
-          if (BCrypt.checkpw(oldPassword, userData.get._2)) {
-            // Old password matches - do update
-            val update = for { u <- PersistenceSchema.users.filter(_.id === userData.get._1)} yield (u.password, u.onetimePassword)
-            update.update(BCrypt.hashpw(newPassword, BCrypt.gensalt()), false) andThen
-              DBIO.successful(Some(userData.get._1))
+          if (userData.get._3 || !CryptoUtil.isAcceptedPassword(oldPassword)) {
+            if (BCrypt.checkpw(oldPassword, userData.get._2)) {
+              // Old password matches - do update
+              val update = for { u <- PersistenceSchema.users.filter(_.id === userData.get._1)} yield (u.password, u.onetimePassword)
+              update.update(BCrypt.hashpw(newPassword, BCrypt.gensalt()), false) andThen
+                DBIO.successful(Some(userData.get._1))
+            } else {
+              DBIO.successful(None)
+            }
           } else {
             DBIO.successful(None)
           }

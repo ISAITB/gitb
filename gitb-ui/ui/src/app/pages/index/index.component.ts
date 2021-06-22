@@ -76,10 +76,7 @@ export class IndexComponent implements OnInit {
   }
 
   provideFeedbackLink(): string {
-    if (this.dataService.configuration) {
-      return this.dataService.configuration.surveyAddress
-    }
-    return ''
+    return this.dataService.configuration.surveyAddress
   }
 
   userGuideLink() {

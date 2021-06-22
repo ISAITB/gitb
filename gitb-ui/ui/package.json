@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve --open --proxy-config src/proxy.conf.js --host 0.0.0.0",
-    "build": "ng build --progress --watch --output-path ../app/assets/build",
+    "build": "ng build --progress --output-path ../app/assets/build",
     "build:dev": "ng build --progress --watch --output-path ../app/assets/build",
     "build:prod": "ng build --progress --prod --output-path ../app/assets/build --output-hashing none"
   },

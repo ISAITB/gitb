@@ -10,6 +10,7 @@ import { ROUTES } from 'src/app/common/global';
 import { Utils } from 'src/app/common/utils';
 import { PasswordChangeData } from 'src/app/components/change-password-form/password-change-data.type';
 import { LinkAccountComponent } from 'src/app/modals/link-account/link-account.component';
+import { CommunityResolver } from 'src/app/resolvers/community-resolver';
 import { AuthProviderService } from 'src/app/services/auth-provider.service';
 import { AuthService } from 'src/app/services/auth.service';
 import { CommunityService } from 'src/app/services/community.service';
@@ -19,6 +20,8 @@ import { ErrorService } from 'src/app/services/error.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { HttpRequestConfig } from 'src/app/types/http-request-config.type';
 import { LoginEventInfo } from 'src/app/types/login-event-info.type';
+import { LoginResultActionNeeded } from 'src/app/types/login-result-action-needed';
+import { LoginResultOk } from 'src/app/types/login-result-ok';
 import { SelfRegistrationModel } from 'src/app/types/self-registration-model.type';
 import { BaseComponent } from '../base-component.component';
 
@@ -40,6 +43,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 
   private loginState?: LoginEventInfo
   onetimePassword = false
+  weakPassword = false
   passwordChangeData: PasswordChangeData = {}
 
   constructor(
@@ -155,26 +159,38 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 	loginInternal(config: HttpRequestConfig) {
     this.clearAlerts()
     this.spinner = true // Start spinner before calling service operation
-    this.makeAuthenticationPost(config.path, config.data).subscribe((result: HttpResponse<any>) => {
+    this.makeAuthenticationPost(config.path, config.data).subscribe((result: HttpResponse<LoginResultOk|LoginResultActionNeeded>) => {
       // Login successful.
-      if (result.body.onetime) {
+      if (this.isLoginActionNeeded(result.body)) {
         // Correct authentication but we need to replace the password to complete the login.
-        this.onetimePassword = true
+        this.onetimePassword = result.body.onetime != undefined && result.body.onetime
+        this.weakPassword = result.body.weakPassword != undefined && result.body.weakPassword
         this.dataService.focus('current')
-      } else {
+      } else if (this.isLoginOk(result.body)) {
         this.completeLogin(result)
+      } else {
+        // This case should never occur.
+        this.addAlertError('You are unable to log in at this time due to an unexpected error.')
       }
     }).add(() => {
       this.spinner = false
     })
   }
 
-  private completeLogin(result: HttpResponse<any>) {
+  private isLoginOk(obj: LoginResultOk|any): obj is LoginResultOk {
+    return obj != undefined && obj.access_token != undefined
+  }
+
+  private isLoginActionNeeded(obj: LoginResultActionNeeded|any): obj is LoginResultActionNeeded {
+    return obj != undefined && (obj.onetime != undefined || obj.weakPassword != undefined)
+  }
+
+  private completeLogin(result: HttpResponse<LoginResultOk|LoginResultActionNeeded>) {
     let path = '/'
     if (result.headers.get('ITB-PATH')) {
       path = result.headers.get('ITB-PATH')!
-    } else if (result.body && result.body.path) {
-      path = result.body.path
+    } else if (result.body != undefined && (<LoginResultOk>result.body).path != undefined) {
+      path = (<LoginResultOk>result.body).path!
     }
     this.loginState = {
       tokens: result.body, 
@@ -213,10 +229,10 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
   }
 
 	registerDisabled(): boolean {
-		return this.spinner || !(
-			this.selfRegData.selfRegOption && this.selfRegData.selfRegOption.communityId && 
+    return this.spinner || !(
+			this.selfRegData.selfRegOption != undefined && this.selfRegData.selfRegOption.communityId && 
 			(this.selfRegData.selfRegOption.selfRegType != Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN || this.textProvided(this.selfRegData.selfRegToken)) && 
-			(!this.selfRegData.selfRegOption.forceTemplateSelection || this.selfRegData.selfRegOption.templates?.length == 0 || this.selfRegData.template) &&
+			(!this.selfRegData.selfRegOption.forceTemplateSelection || (this.selfRegData.selfRegOption.templates == undefined || this.selfRegData.selfRegOption.templates.length == 0) || this.selfRegData.template != undefined) &&
 			(!this.selfRegData.selfRegOption.forceRequiredProperties || this.dataService.customPropertiesValid(this.selfRegData.selfRegOption.organisationProperties, true)) &&
 			this.textProvided(this.selfRegData.orgShortName) && this.textProvided(this.selfRegData.orgFullName) &&
 			this.textProvided(this.selfRegData.adminName) && this.textProvided(this.selfRegData.adminEmail) && 
@@ -267,15 +283,10 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 
 	checkRegisterForm() {
     this.clearAlerts()
-    let valid = true
-		if (!Constants.EMAIL_REGEX.test(this.selfRegData.adminEmail!)) {
-			this.addAlertError('Please enter a valid email address.')
-			valid = false
-    } else if (this.selfRegData.adminPassword != this.selfRegData.adminPasswordConfirm) {
-			this.addAlertError('Your password was not correctly confirmed.')
-      valid = false
-    }
-		return valid
+    const checkEmail = this.requireValidEmail(this.selfRegData.adminEmail, 'Please enter a valid email address.')
+    const checkPasswordConfirmed = this.requireSame(this.selfRegData.adminPassword, this.selfRegData.adminPasswordConfirm, 'Your password was not correctly confirmed.')
+    const checkPasswordComplex = this.requireComplexPassword(this.selfRegData.adminPassword, 'Your password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.')
+		return checkEmail && checkPasswordConfirmed && checkPasswordComplex
   }
 
   replaceDisabled() {
@@ -289,7 +300,8 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
       this.clearAlerts()
       const sameCheck = this.requireDifferent(this.passwordChangeData.currentPassword, this.passwordChangeData.password1, 'The password you provided is the same as the current one.')
       const noConfirmCheck = this.requireSame(this.passwordChangeData.password1, this.passwordChangeData.password2, 'The new password does not match the confirmation.')
-      if (sameCheck && noConfirmCheck) {
+      const complexCheck = this.requireComplexPassword(this.passwordChangeData.password1, 'The new password does not match required complexity rules.')
+      if (sameCheck && noConfirmCheck && complexCheck) {
         // Proceed.
         this.spinner = true
         const data = {
