@@ -1,8 +1,8 @@
-ALTER TABLE `testresults` ADD COLUMN `domain_id` bigint(20) AFTER `sut_id`;
-ALTER TABLE `testresults` ADD COLUMN `specification_id` bigint(20) AFTER `domain_id`;
-ALTER TABLE `testresults` ADD COLUMN `testsuite_id` bigint(20) AFTER `actor_id`;
-ALTER TABLE `testresults` ADD COLUMN `organization_id` bigint(20) AFTER `sut_id`;
-ALTER TABLE `testresults` ADD COLUMN `community_id` bigint(20) AFTER `organization_id`;
+ALTER TABLE `testresults` ADD COLUMN `domain_id` BIGINT AFTER `sut_id`;
+ALTER TABLE `testresults` ADD COLUMN `specification_id` BIGINT AFTER `domain_id`;
+ALTER TABLE `testresults` ADD COLUMN `testsuite_id` BIGINT AFTER `actor_id`;
+ALTER TABLE `testresults` ADD COLUMN `organization_id` BIGINT AFTER `sut_id`;
+ALTER TABLE `testresults` ADD COLUMN `community_id` BIGINT AFTER `organization_id`;
 
 ALTER TABLE `testresults` ADD COLUMN `domain` varchar(254) AFTER `domain_id`;
 ALTER TABLE `testresults` ADD COLUMN `specification` varchar(254) AFTER `specification_id`;
@@ -13,9 +13,9 @@ ALTER TABLE `testresults` ADD COLUMN `sut` varchar(254) AFTER `sut_id`;
 ALTER TABLE `testresults` ADD COLUMN `community` varchar(254) AFTER `community_id`;
 ALTER TABLE `testresults` ADD COLUMN `actor` varchar(254) AFTER `actor_id`;
 
-ALTER TABLE `testresults` MODIFY `actor_id` bigint(20);
-ALTER TABLE `testresults` MODIFY `sut_id` bigint(20);
-ALTER TABLE `testresults` MODIFY `testcase_id` bigint(20);
+ALTER TABLE `testresults` MODIFY `actor_id` BIGINT;
+ALTER TABLE `testresults` MODIFY `sut_id` BIGINT;
+ALTER TABLE `testresults` MODIFY `testcase_id` BIGINT;
 
 update `testresults` set `sut_id` = null where `sut_id` not in (select `id` from `systems`);
 update `testresults` set `actor_id` = null where `actor_id` not in (select `id` from `actors`);

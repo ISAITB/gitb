@@ -10,7 +10,6 @@ import { ROUTES } from 'src/app/common/global';
 import { Utils } from 'src/app/common/utils';
 import { PasswordChangeData } from 'src/app/components/change-password-form/password-change-data.type';
 import { LinkAccountComponent } from 'src/app/modals/link-account/link-account.component';
-import { CommunityResolver } from 'src/app/resolvers/community-resolver';
 import { AuthProviderService } from 'src/app/services/auth-provider.service';
 import { AuthService } from 'src/app/services/auth.service';
 import { CommunityService } from 'src/app/services/community.service';
@@ -295,12 +294,20 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
       || !this.textProvided(this.passwordChangeData.password2)
   }
 
+  private getPasswordComplexityAlertMessage() {
+    if (this.weakPassword) {
+      return 'The new password does not match required complexity rules.'
+    } else {
+      return 'The new password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.'
+    }
+  }
+
   replacePassword() {
     if (!this.replaceDisabled()) {
       this.clearAlerts()
       const sameCheck = this.requireDifferent(this.passwordChangeData.currentPassword, this.passwordChangeData.password1, 'The password you provided is the same as the current one.')
       const noConfirmCheck = this.requireSame(this.passwordChangeData.password1, this.passwordChangeData.password2, 'The new password does not match the confirmation.')
-      const complexCheck = this.requireComplexPassword(this.passwordChangeData.password1, 'The new password does not match required complexity rules.')
+      const complexCheck = this.requireComplexPassword(this.passwordChangeData.password1, this.getPasswordComplexityAlertMessage())
       if (sameCheck && noConfirmCheck && complexCheck) {
         // Proceed.
         this.spinner = true

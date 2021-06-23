@@ -25,7 +25,7 @@ public class TestCaseManager {
         if (testCase != null) {
             return testCase;
         }
-        throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.ARTIFACT_NOT_FOUND, "The TestCase definition not found for [" + testCaseId + "]!"));
+        throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.ARTIFACT_NOT_FOUND, "No test case definition found for ID [" + testCaseId + "]!"));
     }
 
     /**

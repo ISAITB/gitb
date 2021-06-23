@@ -1,9 +1,9 @@
-FROM openjdk:11.0.2-jre
+FROM openjdk:11.0.11-jre
 
 ENV PATH /usr/local/gitb-ui/bin:$PATH
 ENV TESTBED_SERVICE_URL http://gitb-srv:8080/itbsrv/TestbedService
 ENV TESTBED_CLIENT_URL http://gitb-ui:9090/TestbedClient
-ENV DB_DEFAULT_URL jdbc:mysql://gitb-mysql/gitb?characterEncoding=UTF-8&useUnicode=true&autoReconnect=true&useSSL=false
+ENV DB_DEFAULT_URL jdbc:mysql://gitb-mysql/gitb?characterEncoding=UTF-8&useUnicode=true&autoReconnect=true&useSSL=false&verifyServerCertificate=false
 ENV DB_DEFAULT_ROOTURL jdbc:mysql://gitb-mysql/
 ENV REDIS_HOST gitb-redis
 

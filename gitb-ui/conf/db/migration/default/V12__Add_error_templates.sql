@@ -4,7 +4,7 @@ CREATE TABLE errortemplates (
   content LONGTEXT,
   default_flag TINYINT DEFAULT 0 NOT NULL,
   description LONGTEXT,
-  community BIGINT(20) NOT NULL
+  community BIGINT NOT NULL
 );
 ALTER TABLE organizations ADD error_template BIGINT NULL;
 

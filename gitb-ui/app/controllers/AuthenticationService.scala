@@ -109,7 +109,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: C
         completeAccessTokenLogin(result.get)
       }
     } else {
-      ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided password does not match minimum complexity requirements.")
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_CREDENTIALS, "The new password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.")
     }
   }
 

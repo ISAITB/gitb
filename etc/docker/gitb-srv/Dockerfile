@@ -1,4 +1,4 @@
-FROM openjdk:11.0.2-jre
+FROM openjdk:11.0.11-jre
 
 RUN mkdir /itbsrv
 COPY itbsrv.war /itbsrv

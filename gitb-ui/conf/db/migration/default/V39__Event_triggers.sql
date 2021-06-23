@@ -1,5 +1,5 @@
 CREATE TABLE `triggers` (
-  `id` bigint(20) PRIMARY KEY NOT NULL AUTO_INCREMENT,
+  `id` BIGINT PRIMARY KEY NOT NULL AUTO_INCREMENT,
   `name` varchar(254) NOT NULL,
   `description` text,
   `url` varchar(254) NOT NULL,
@@ -8,15 +8,15 @@ CREATE TABLE `triggers` (
   `active` tinyint NOT NULL DEFAULT 1,
   `latest_result_ok` tinyint,
   `latest_result_output` text,
-  `community` bigint(20) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+  `community` BIGINT NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE `triggerdata` (
   `data_type` tinyint NOT NULL,
-  `data_id` bigint(20) NOT NULL,
-  `trigger` bigint(20) NOT NULL,
+  `data_id` BIGINT NOT NULL,
+  `trigger` BIGINT NOT NULL,
   PRIMARY KEY (`data_type`,`data_id`,`trigger`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE INDEX `trigger_community_idx` ON `triggers` (`community`);
 CREATE INDEX `trigger_data_idx` ON `triggerdata` (`trigger`);
