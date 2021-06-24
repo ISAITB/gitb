@@ -743,8 +743,9 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 				x._1._2.name, // Parameter name
 				x._1._1.value, // Parameter value
 				x._1._2.dependsOn, // DependsOn
-				x._1._2.dependsOnValue // DependsOnValue
-			)).result).map(x => new SystemConfigurationParameterMinimal(x._1, x._2, Some(x._3), x._4, x._5))
+				x._1._2.dependsOnValue, // DependsOnValue
+				x._1._2.kind // Kind
+			)).result).map(x => new SystemConfigurationParameterMinimal(x._1, x._2, Some(x._3), x._4, x._5, x._6))
 
 		// Keep only the values that have valid prerequisites defined.
 		parameterData = PrerequisiteUtil.withValidPrerequisites(parameterData)
@@ -760,7 +761,11 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 			}
 			val config = new Configuration()
 			config.setName(p.parameterName)
-			config.setValue(p.parameterValue.get)
+			if (p.parameterKind == "SECRET") {
+				config.setValue(MimeUtil.decryptString(p.parameterValue.get))
+			} else {
+				config.setValue(p.parameterValue.get)
+			}
 			actorConfig.getConfig.add(config)
 		}
 		import scala.collection.JavaConverters._

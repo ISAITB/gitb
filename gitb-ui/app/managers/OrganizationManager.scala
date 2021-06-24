@@ -1,12 +1,14 @@
 package managers
 
 import actors.events.OrganisationUpdatedEvent
+
 import javax.inject.{Inject, Singleton}
 import models.Enums.UserRole
 import models._
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
+import utils.MimeUtil
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -362,8 +364,13 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
               // Create or update
               if (parameterDefinition.kind != "SECRET" || (parameterDefinition.kind == "SECRET" && matchedProvidedParameter.get.value != "")) {
                 // Special case: No update for secret parameters that are defined but not updated.
+                var valueToSet = matchedProvidedParameter.get.value
+                if (parameterDefinition.kind == "SECRET") {
+                  // Encrypt secret value at rest.
+                  valueToSet = MimeUtil.encryptString(valueToSet)
+                }
                 actions += PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterDefinition.id).filter(_.organisation === orgId).delete
-                actions += (PersistenceSchema.organisationParameterValues += matchedProvidedParameter.get.withOrgId(orgId))
+                actions += (PersistenceSchema.organisationParameterValues += OrganisationParameterValues(orgId, matchedProvidedParameter.get.parameter, valueToSet))
               }
             } else {
               // Delete existing (if present)

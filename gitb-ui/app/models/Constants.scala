@@ -11,6 +11,7 @@ object Constants {
 
   // System configuration constants
   val SessionAliveTime = "session_alive_time"
+  val MasterPassword = "master_password"
 
   // env variables
   val EnvironmentTheme = "THEME"

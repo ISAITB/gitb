@@ -276,11 +276,13 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     }
   }
 
-  private def decryptIfNeeded(importSettings: ImportSettings, propertyType: PropertyType, value: Option[String]): Option[String] = {
+  private def manageEncryptionIfNeeded(importSettings: ImportSettings, propertyType: PropertyType, value: Option[String]): Option[String] = {
     var result: Option[String] = None
     if (value.isDefined) {
       if (propertyType == PropertyType.SECRET) {
-        result = Some(decrypt(importSettings, value.get))
+        // In transit the value is clear-text but encrypted with the export password.
+        // When stored this needs to be encrypted with the master password.
+        result = Some(MimeUtil.encryptString(decrypt(importSettings, value.get)))
       } else {
         result = value
       }
@@ -721,10 +723,10 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.DomainParameter, item: ImportItem) => {
                   val domainId = item.parentItem.get.targetKey.get.toLong
-                  conformanceManager.createDomainParameterInternal(models.DomainParameter(0L, data.getName, Option(data.getDescription), propertyTypeToKind(data.getType, isDomainParameter = true), decryptIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), data.isInTests, domainId))
+                  conformanceManager.createDomainParameterInternal(models.DomainParameter(0L, data.getName, Option(data.getDescription), propertyTypeToKind(data.getType, isDomainParameter = true), manageEncryptionIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), data.isInTests, domainId))
                 },
                 (data: com.gitb.xml.export.DomainParameter, targetKey: String, item: ImportItem) => {
-                  conformanceManager.updateDomainParameterInternal(targetKey.toLong, data.getName, Option(data.getDescription), propertyTypeToKind(data.getType, isDomainParameter = true), Option(data.getValue), data.isInTests)
+                  conformanceManager.updateDomainParameterInternal(targetKey.toLong, data.getName, Option(data.getDescription), propertyTypeToKind(data.getType, isDomainParameter = true), manageEncryptionIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), data.isInTests)
                 }
               )
             )
@@ -1550,7 +1552,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                         // The property this value related to has either been updated or inserted.
                         val key = organisationId+"_"+relatedPropertyId.get
                         if (!hasExisting(ImportItemType.OrganisationPropertyValue, key, ctx)) {
-                          (PersistenceSchema.organisationParameterValues += models.OrganisationParameterValues(organisationId, relatedPropertyId.get, decryptIfNeeded(ctx.importSettings, data.getProperty.getType, Option(data.getValue)).get)) andThen
+                          (PersistenceSchema.organisationParameterValues += models.OrganisationParameterValues(organisationId, relatedPropertyId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Option(data.getValue)).get)) andThen
                             DBIO.successful(key)
                         } else {
                           DBIO.successful(())
@@ -1565,7 +1567,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                       val propertyId = keyParts(1).toLong
                       if (getProcessedDbId(data.getProperty, ImportItemType.OrganisationProperty, ctx).isDefined) {
                         val q = for { p <- PersistenceSchema.organisationParameterValues.filter(_.organisation === organisationId).filter(_.parameter === propertyId) } yield p.value
-                        q.update(decryptIfNeeded(ctx.importSettings, data.getProperty.getType, Some(data.getValue)).get)
+                        q.update(manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Some(data.getValue)).get)
                       } else {
                         DBIO.successful(())
                       }
@@ -1642,7 +1644,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                             val key = systemId+"_"+relatedPropertyId.get
                             if (!hasExisting(ImportItemType.SystemPropertyValue, key, ctx)) {
                               // The property this value related to has either been updated or inserted.
-                              (PersistenceSchema.systemParameterValues += models.SystemParameterValues(systemId, relatedPropertyId.get, decryptIfNeeded(ctx.importSettings, data.getProperty.getType, Option(data.getValue)).get)) andThen
+                              (PersistenceSchema.systemParameterValues += models.SystemParameterValues(systemId, relatedPropertyId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Option(data.getValue)).get)) andThen
                                 DBIO.successful(key)
                             } else {
                               DBIO.successful(())
@@ -1657,7 +1659,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                           val propertyId = keyParts(1).toLong
                           if (getProcessedDbId(data.getProperty, ImportItemType.SystemProperty, ctx).isDefined) {
                             val q = for { p <- PersistenceSchema.systemParameterValues.filter(_.system === systemId).filter(_.parameter === propertyId) } yield p.value
-                            q.update(decryptIfNeeded(ctx.importSettings, data.getProperty.getType, Some(data.getValue)).get)
+                            q.update(manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Some(data.getValue)).get)
                           } else {
                             DBIO.successful(())
                           }
@@ -1763,7 +1765,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                                 val key = relatedActorId+"_"+relatedEndpointId.get+"_"+relatedSystemId+"_"+relatedParameterId.get
                                 if (!hasExisting(ImportItemType.StatementConfiguration, key, ctx)) {
                                   systemManager.saveEndpointConfigurationInternal(forceAdd = true, forceUpdate = false,
-                                    models.Configs(relatedSystemId, relatedParameterId.get, relatedEndpointId.get, decryptIfNeeded(ctx.importSettings, data.getParameter.getType, Option(data.getValue)).get)) andThen
+                                    models.Configs(relatedSystemId, relatedParameterId.get, relatedEndpointId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getParameter.getType, Option(data.getValue)).get)) andThen
                                     DBIO.successful(relatedEndpointId.get+"_"+relatedSystemId+"_"+relatedParameterId.get)
                                 } else {
                                   DBIO.successful(())
@@ -1783,7 +1785,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                               if (relatedParameterId.isDefined && relatedEndpointId.isDefined) {
                                 val relatedSystemId = item.parentItem.get.parentItem.get.targetKey.get.toLong // Statement -> System
                                 systemManager.saveEndpointConfigurationInternal(forceAdd = false, forceUpdate = true,
-                                  models.Configs(relatedSystemId, relatedParameterId.get, relatedEndpointId.get, decryptIfNeeded(ctx.importSettings, data.getParameter.getType, Option(data.getValue)).get)) andThen
+                                  models.Configs(relatedSystemId, relatedParameterId.get, relatedEndpointId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getParameter.getType, Option(data.getValue)).get)) andThen
                                 DBIO.successful(relatedActorId+"_"+relatedEndpointId.get+"_"+relatedSystemId+"_"+relatedParameterId.get)
                               } else {
                                 DBIO.successful(())

@@ -981,6 +981,11 @@ object JsonUtil {
     var value: Option[String] = None
     if (kind.equals("BINARY")) {
       value = (jsonConfig \ "valueBinary").asOpt[String]
+    } else if (kind.equals("HIDDEN")) {
+      value = (jsonConfig \ "value").asOpt[String]
+      if (value.isDefined) {
+        value = Some(MimeUtil.encryptString(value.get))
+      }
     } else {
       value = (jsonConfig \ "value").asOpt[String]
     }

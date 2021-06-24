@@ -109,7 +109,11 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
       domainConfiguration.setActor(Constants.domainConfigurationName)
       domainConfiguration.setEndpoint(Constants.domainConfigurationName)
       parameters.foreach { parameter =>
-        addConfig(domainConfiguration, parameter.name, parameter.value.get)
+        if (parameter.kind == "HIDDEN") {
+          addConfig(domainConfiguration, parameter.name, MimeUtil.decryptString(parameter.value.get))
+        } else {
+          addConfig(domainConfiguration, parameter.name, parameter.value.get)
+        }
       }
       Some(domainConfiguration)
     } else {
@@ -131,7 +135,11 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
           throw new IllegalStateException("Missing required parameter")
         }
         if (!property.parameter.notForTests && property.value.isDefined) {
-          addConfig(organisationConfiguration, property.parameter.testKey, property.value.get.value)
+          if (property.parameter.kind == "SECRET") {
+            addConfig(organisationConfiguration, property.parameter.testKey, MimeUtil.decryptString(property.value.get.value))
+          } else {
+            addConfig(organisationConfiguration, property.parameter.testKey, property.value.get.value)
+          }
         }
       }
     }
@@ -153,7 +161,11 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
           throw new IllegalStateException("Missing required parameter")
         }
         if (!property.parameter.notForTests && property.value.isDefined) {
-          addConfig(systemConfiguration, property.parameter.testKey, property.value.get.value)
+          if (property.parameter.kind == "SECRET") {
+            addConfig(systemConfiguration, property.parameter.testKey, MimeUtil.decryptString(property.value.get.value))
+          } else {
+            addConfig(systemConfiguration, property.parameter.testKey, property.value.get.value)
+          }
         }
       }
     }

@@ -542,7 +542,7 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
           exportedParameter.setType(propertyTypeForExport(parameter.kind))
           exportedParameter.setInTests(parameter.inTests)
           if (exportedParameter.getType == PropertyType.SECRET) {
-            exportedParameter.setValue(encryptText(parameter.value, exportSettings.encryptionKey))
+            exportedParameter.setValue(encryptText(parameter.value, isAlreadyEncrypted = true, exportSettings.encryptionKey))
           } else {
             exportedParameter.setValue(parameter.value.orNull)
           }
@@ -939,7 +939,7 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
               exportedProperty.setId(toId(idSequence))
               exportedProperty.setProperty(exportedOrganisationPropertyMap(parameter.parameter))
               if (exportedProperty.getProperty.getType == PropertyType.SECRET) {
-                exportedProperty.setValue(encryptText(Some(parameter.value), exportSettings.encryptionKey))
+                exportedProperty.setValue(encryptText(Some(parameter.value), isAlreadyEncrypted = true, exportSettings.encryptionKey))
               } else {
                 exportedProperty.setValue(parameter.value)
               }
@@ -966,7 +966,7 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
                   exportedProperty.setId(toId(idSequence))
                   exportedProperty.setProperty(exportedSystemPropertyMap(parameter.parameter))
                   if (exportedProperty.getProperty.getType == PropertyType.SECRET) {
-                    exportedProperty.setValue(encryptText(Some(parameter.value), exportSettings.encryptionKey))
+                    exportedProperty.setValue(encryptText(Some(parameter.value), isAlreadyEncrypted = true, exportSettings.encryptionKey))
                   } else {
                     exportedProperty.setValue(parameter.value)
                   }
@@ -1000,7 +1000,7 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
                                 exportedConfiguration.setId(toId(idSequence))
                                 exportedConfiguration.setParameter(domainExportInfo.exportedEndpointParameterMap(config.parameter))
                                 if (exportedConfiguration.getParameter.getType == PropertyType.SECRET) {
-                                  exportedConfiguration.setValue(encryptText(Some(config.value), exportSettings.encryptionKey))
+                                  exportedConfiguration.setValue(encryptText(Some(config.value), isAlreadyEncrypted = true, exportSettings.encryptionKey))
                                 } else {
                                   exportedConfiguration.setValue(config.value)
                                 }

@@ -30,6 +30,8 @@ class OnStopHook @Inject()(lifecycle: ApplicationLifecycle, actorSystem: ActorSy
       }
     )
   })
-  logger.info("Application shutdown...")
+  lifecycle.addStopHook(() => {
+    Future.successful(logger.info("Application shutdown..."))
+  })
 
 }

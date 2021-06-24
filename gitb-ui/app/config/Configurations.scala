@@ -78,7 +78,9 @@ object Configurations {
   var VALIDATION_TDL_EXTERNAL_ENABLED = false
   var VALIDATION_TDL_EXTERNAL_URL = ""
 
-  var MASTER_PASSWORD: Array[Char] = null
+  var MASTER_PASSWORD: Array[Char] = _
+  var MASTER_PASSWORD_TO_REPLACE: Option[Array[Char]] = None
+  var MASTER_PASSWORD_FORCE = false
 
   var AUTHENTICATION_COOKIE_PATH = ""
   var AUTHENTICATION_SSO_ENABLED = false
@@ -198,6 +200,11 @@ object Configurations {
       }
 
       MASTER_PASSWORD = fromEnv("MASTER_PASSWORD", conf.getString("masterPassword")).toCharArray
+      val replacement = fromEnv("MASTER_PASSWORD_TO_REPLACE", "")
+      if (replacement.nonEmpty) {
+        MASTER_PASSWORD_TO_REPLACE = Some(replacement.toCharArray)
+      }
+      MASTER_PASSWORD_FORCE = fromEnv("MASTER_PASSWORD_FORCE", "false").toBoolean
 
       PROXY_SERVER_ENABLED = fromEnv("PROXY_SERVER_ENABLED", conf.getString("proxy.enabled")).toBoolean
       if (PROXY_SERVER_ENABLED) {
