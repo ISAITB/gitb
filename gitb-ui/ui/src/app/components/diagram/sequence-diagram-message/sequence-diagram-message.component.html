@@ -40,14 +40,17 @@
           </span>
         </a>
       </div>
+      <div class="child-steps group" [ngClass]="classForReverseOffset" *ngIf="message.type == 'group'">
+        <app-sequence-diagram-message *ngFor="let subMessage of message.steps" [message]="subMessage" [events]="events"></app-sequence-diagram-message>
+      </div>
       <div class="child-steps loop" [ngClass]="classForReverseOffset" *ngIf="message.type == 'loop'">
         <ng-container *ngIf="currentIterationIndex == -1">
             <app-sequence-diagram-message *ngFor="let subMessage of message.steps" [message]="subMessage" [events]="events"></app-sequence-diagram-message>
         </ng-container>
         <ng-container *ngIf="currentIterationIndex != -1">
           <app-sequence-diagram-message *ngFor="let subMessage of message.sequences![currentIterationIndex].steps!" [message]="subMessage" [events]="events"></app-sequence-diagram-message>
-      </ng-container>
-    </div>
+        </ng-container>
+      </div>
       <div class="child-steps then" [ngClass]="classForReverseOffset" *ngIf="message.type == 'decision'">
         <app-sequence-diagram-message *ngFor="let subMessage of message.then" [message]="subMessage" [events]="events"></app-sequence-diagram-message>
       </div>

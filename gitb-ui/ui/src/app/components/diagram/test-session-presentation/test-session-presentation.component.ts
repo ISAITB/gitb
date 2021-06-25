@@ -120,6 +120,8 @@ export class TestSessionPresentationComponent implements OnInit {
         if (step.type == "decision") {
           this.addStatusToSteps(step.then, statusToSet)
           this.addStatusToSteps(step.else, statusToSet)
+        } else if (step.type == "group") {
+          this.addStatusToSteps(step.steps, statusToSet)
         } else if (step.type == "flow") {
           if (step.threads != undefined) {
             for (let thread of step.threads) {

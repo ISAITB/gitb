@@ -52,6 +52,7 @@ export class SequenceDiagramComponent implements OnInit {
       step.type == 'verify' ||
       step.type == 'interact' ||
       step.type == 'exit' ||
+      (step.type == 'group' && (filter(step.steps, this.stepFilter.bind(this))).length > 0) ||
       (step.type == 'loop' && (filter(step.steps, this.stepFilter.bind(this))).length > 0) ||
       (step.type == 'decision' && (filter(step.then, this.stepFilter.bind(this))).length + (filter(step.else, this.stepFilter.bind(this))).length > 0) ||
       (step.type == 'flow' && (filter(step.threads, ((thread) => (filter(thread, this.stepFilter.bind(this))).length > 0))).length > 0)
@@ -62,6 +63,8 @@ export class SequenceDiagramComponent implements OnInit {
     if (step.type == 'verify' || step.type == 'exit') {
       step.from = Constants.TEST_ENGINE_ACTOR
       step.to = Constants.TEST_ENGINE_ACTOR
+    } else if (step.type == 'group') {
+      step.steps = this.extractSteps(step.steps, actorInfo)
     } else if (step.type == 'loop') {
       step.steps = this.extractSteps(step.steps, actorInfo)
       if (step.sequences != undefined) {
@@ -151,6 +154,8 @@ export class SequenceDiagramComponent implements OnInit {
       let collection: string[][] = map(messages, (message): string[] => {
         if (message.from != undefined && message.to != undefined) {
           return [message.from, message.to]
+        } else if (message.type == 'group') {
+          return this.extractActorsInternal(message.steps, actorInfo)
         } else if (message.type == 'loop') {
           return this.extractActorsInternal(message.steps, actorInfo)
         } else if (message.type == 'decision') {
@@ -216,6 +221,8 @@ export class SequenceDiagramComponent implements OnInit {
       message.order = i
       if (message.type == 'verify' || message.type == 'msg' || message.type == 'exit') {
         this.setIndexes(message)
+      } else if (message.type == 'group') {
+        this.setLoopStepChildIndexes(message)
       } else if (message.type == 'loop') {
         this.setLoopStepChildIndexes(message)
       } else if (message.type == 'decision') {
@@ -248,6 +255,18 @@ export class SequenceDiagramComponent implements OnInit {
         this.setLoopStepChildIndexes(sequence)
       }
     }
+  }
+
+  setGroupStepChildIndexes(message: StepData) {
+    let childSteps = message.steps
+    this.setStepIndexes(childSteps)
+    let firstChild = minBy(childSteps, (childStep) => {return childStep.fromIndex})
+    let lastChild = maxBy(childSteps, (childStep) => {return childStep.toIndex})
+    message.from = firstChild!.from
+    message.to = lastChild!.to
+    message.fromIndex = firstChild!.fromIndex
+    message.toIndex = lastChild!.toIndex
+    message.span = (Math.abs (message.fromIndex! - message.toIndex!))+1
   }
 
   setDecisionStepChildIndexes(message: StepData) {

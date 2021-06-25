@@ -59,16 +59,15 @@ public class TestCaseConverter {
         return presentation;
     }
 
-    private Sequence convertSequence(String testCaseId, String id, com.gitb.tdl.Sequence description) {
+    private Sequence convertSequence(String testCaseId, String id, com.gitb.tdl.Sequence sequenceStep) {
         Sequence sequence = new Sequence();
         sequence.setId(id);
         int index = 1;
 
         String childIdPrefix = id.equals("") ? "" : (id + ".");
 
-        for(int i=0; i<description.getSteps().size(); i++) {
-            Object step = description.getSteps().get(i);
-
+        for(int i=0; i<sequenceStep.getSteps().size(); i++) {
+            Object step = sequenceStep.getSteps().get(i);
             if(step instanceof Verify) {
                 String childId = childIdPrefix + index++;
                 sequence.getSteps().add(convertVerifyStep(testCaseId, childId, (Verify) step));
@@ -100,7 +99,8 @@ public class TestCaseConverter {
                 String childId = childIdPrefix + index++;
                 sequence.getSteps().add(convertExitStep(testCaseId, childId, (com.gitb.tdl.ExitStep) step));
             } else if (step instanceof Group) {
-                // Nothing.
+                String childId = childIdPrefix + index++;
+                sequence.getSteps().add(convertGroupStep(testCaseId, childId, (com.gitb.tdl.Group) step));
             }
         }
 
@@ -123,8 +123,8 @@ public class TestCaseConverter {
         return preliminary;
     }
 
-    private com.gitb.tpl.TestStep convertVerifyStep(String testCaseId, String id, Verify description) {
-        com.gitb.tpl.TestStep verify = new com.gitb.tpl.TestStep();
+    private com.gitb.tpl.VerifyStep convertVerifyStep(String testCaseId, String id, Verify description) {
+        com.gitb.tpl.VerifyStep verify = new com.gitb.tpl.VerifyStep();
         verify.setId(id);
         verify.setDesc(description.getDesc());
         verify.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
@@ -154,8 +154,8 @@ public class TestCaseConverter {
         return decision;
     }
 
-    private Sequence convertRepUntilStep(String testCaseId, String id, RepeatUntilStep description) {
-        Sequence loop = new Sequence();
+    private LoopStep convertRepUntilStep(String testCaseId, String id, RepeatUntilStep description) {
+        LoopStep loop = new LoopStep();
         loop.setId(id);
         loop.setTitle(description.getTitle());
         loop.setDesc(description.getDesc());
@@ -165,8 +165,8 @@ public class TestCaseConverter {
         return loop;
     }
 
-    private Sequence convertForEachStep(String testCaseId, String id, ForEachStep description) {
-        Sequence loop = new Sequence();
+    private LoopStep convertForEachStep(String testCaseId, String id, ForEachStep description) {
+        LoopStep loop = new LoopStep();
         loop.setId(id);
         loop.setTitle(description.getTitle());
         loop.setDesc(description.getDesc());
@@ -176,8 +176,8 @@ public class TestCaseConverter {
         return loop;
     }
 
-    private Sequence convertWhileStep(String testCaseId, String id, WhileStep description) {
-        Sequence loop = new Sequence();
+    private LoopStep convertWhileStep(String testCaseId, String id, WhileStep description) {
+        LoopStep loop = new LoopStep();
         loop.setId(id);
         loop.setTitle(description.getTitle());
         loop.setDesc(description.getDesc());
@@ -200,6 +200,16 @@ public class TestCaseConverter {
         }
 
         return flow;
+    }
+
+    private com.gitb.tpl.GroupStep convertGroupStep(String testCaseId, String id, com.gitb.tdl.Group description) {
+        GroupStep group = new GroupStep();
+        group.setId(id);
+        group.setTitle(description.getTitle());
+        group.setDesc(description.getDesc());
+        group.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
+        group.getSteps().addAll(convertSequence(testCaseId, id, description).getSteps());
+        return group;
     }
 
     private Sequence convertCallStep(String testCaseId, String id, CallStep callStep) {

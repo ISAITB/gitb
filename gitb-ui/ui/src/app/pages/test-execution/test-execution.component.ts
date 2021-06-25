@@ -551,6 +551,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
             }
           }
         }
+      } else if (parent.type == 'group') {
+        s = this.findNodeWithStepId(parent.steps, id)
       } else if (parent.type == 'decision') {
         s = this.findNodeWithStepId(parent.then, id)
         if (s == undefined) {
@@ -597,6 +599,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
           if (step.sequences != undefined) {
             this.setIds(step.sequences, str, replacement)
           }
+        } else if (step.type == 'group') {
+          this.setIds(step.steps, str, replacement)
         } else if (step.type == 'flow') {
           for (let thread of step.threads!) {
             this.setIds(thread, str, replacement)
@@ -617,6 +621,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         if (step.type == 'loop') {
           this.clearStatusesAndReports(step.steps)
           this.clearStatusesAndReports(step.sequences)
+        } else if (step.type == 'group') {
+          this.clearStatusesAndReports(step.steps)
         } else if (step.type == 'decision') {
           this.clearStatusesAndReports(step.then)
           this.clearStatusesAndReports(step.else)
@@ -699,6 +705,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     const regex = new RegExp(this.escapeRegExp(parentStepId)+"(\\[.+\\])?\\.?", "g")
     if (step != undefined && idToCheck != undefined && (idToCheck == parentStepId || idToCheck.match(regex) != null)) {
       if (step.type == 'loop') {
+        this.setChildrenSequenceAsSkipped(step.steps, idToCheck)
+      } else if (step.type == 'group') {
         this.setChildrenSequenceAsSkipped(step.steps, idToCheck)
       } else if (step.type == 'decision') {
         this.setChildrenSequenceAsSkipped(step.then, idToCheck)
@@ -816,6 +824,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
           this.skipPendingStepSequence(sequence.steps)
         }
       }
+    } else if (step.type == 'group') {
+      this.skipPendingStepSequence(step.steps)
     } else if (step.type == 'decision') {
       this.skipPendingStepSequence(step.then)
       this.skipPendingStepSequence(step.else)

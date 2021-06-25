@@ -102,6 +102,9 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
     if (message.type == 'loop') {
       let childDepths = map(message.steps, this.calculateDepth.bind(this))
       return (max(childDepths)!) + 1
+    } else if (message.type == 'group') {
+      let childDepths = map(message.steps, this.calculateDepth.bind(this))
+      return (max(childDepths)!) + 1
     } else if (message.type == 'decision') {
       let childDepths: number[]
       if (message.else != undefined) {
