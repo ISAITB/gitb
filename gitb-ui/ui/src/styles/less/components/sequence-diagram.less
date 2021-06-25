@@ -597,7 +597,13 @@
 		    }
 
 		    & > .message-type {
-			display: block;
+				display: block;
+				max-width: 80%;
+				.message-title {
+					white-space: nowrap;
+					overflow: hidden;
+					text-overflow: ellipsis;					
+				}
 		    }
 
 		    .child-steps {
