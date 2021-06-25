@@ -167,6 +167,7 @@
 		    .iterations {
 				@font-size: 12px;
 				margin-left: 8px;
+				display: inline-flex;
 				// font-size: @font-size;
 				// background-color: @line-color;
 				// padding: 4px;
@@ -597,12 +598,13 @@
 		    }
 
 		    & > .message-type {
-				display: block;
+				display: flex;
 				max-width: 80%;
 				.message-title {
 					white-space: nowrap;
 					overflow: hidden;
-					text-overflow: ellipsis;					
+					text-overflow: ellipsis;
+					display: inline-flex;
 				}
 		    }
 
