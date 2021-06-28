@@ -19,11 +19,7 @@ export class UserManagementComponent implements OnInit {
 
   adminStatus = {status: Constants.STATUS.PENDING}
   communityStatus = {status: Constants.STATUS.PENDING}
-  adminColumns: TableColumnDefinition[] = [
-    { field: 'name', title: 'Name' },
-    { field: 'email', title: 'Email' },
-    { field: 'ssoStatusText', title: 'Status' }
-  ]
+  adminColumns: TableColumnDefinition[] = []
   communityColumns = [
     { field: 'sname', title: 'Short name' },
     { field: 'fname', title: 'Full name' }
@@ -42,7 +38,13 @@ export class UserManagementComponent implements OnInit {
     if (!this.dataService.isSystemAdmin) {
       this.router.navigate(['home'])
     }
-
+    this.adminColumns.push({ field: 'name', title: 'Name' })
+    if (this.dataService.configuration.ssoEnabled) {
+      this.adminColumns.push({ field: 'email', title: 'Email' })
+    } else {
+      this.adminColumns.push({ field: 'email', title: 'Username' })
+    }
+    this.adminColumns.push({ field: 'ssoStatusText', title: 'Status' })
     this.userService.getSystemAdministrators()
     .subscribe((data) => {
       for (let admin of data) {

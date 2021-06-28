@@ -64,9 +64,7 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
     if (isSSO) {
       emailCheckFunction = this.authService.checkEmailOfOrganisationUser.bind(this.authService)
     } else {
-      const emailOk = this.requireValidEmail(this.user.email, "Please enter a valid email address.")
-      const passwordsOk = this.requireSame(this.user.password, this.user.passwordConfirmation, "Please enter equal passwords.")
-      ok = emailOk && passwordsOk
+      ok = this.requireSame(this.user.password, this.user.passwordConfirmation, "Please enter equal passwords.")
       emailCheckFunction = this.authService.checkEmail.bind(this.authService)
     }
     if (ok) {
@@ -82,9 +80,9 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
             )
           } else {
             if (isSSO) {
-              this.addAlertError("A user with email "+this.user.email+" has already been registered with the specified role for this organisation.")
+              this.addAlertError("A user with this email address has already been registered with the specified role for this organisation.")
             } else {
-              this.addAlertError("A user with email "+this.user.email+" has already been registered.")
+              this.addAlertError("A user with this username has already been registered.")
             }
             return EMPTY
           }

@@ -165,7 +165,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: Contro
           } else {
             // Check the user email (only if not SSO)
             if (!authenticationManager.checkEmailAvailability(organisationAdmin.email, None, None, None)) {
-              response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_EXISTS, "The provided email is already defined.")
+              response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_EXISTS, "The provided username is already defined.")
             }
           }
         }

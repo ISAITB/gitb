@@ -69,9 +69,7 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
     if (this.isSSO) {
       ok = this.requireValidEmail(this.user.email, "Please enter a valid email address.")
     } else {
-      const samePasswords = this.requireSame(this.user.password, this.user.passwordConfirmation, "Please enter equal passwords.")
-      const validEmail = this.requireValidEmail(this.user.email, "Please enter a valid email address.")
-      ok = samePasswords && validEmail
+      ok = this.requireSame(this.user.password, this.user.passwordConfirmation, "Please enter equal passwords.")
     }
     if (ok) {
       this.savePending = true
@@ -85,7 +83,11 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
               })
             )
           } else {
-            this.addAlertError('An administrator with email '+this.user.email+' has already been registered.')
+            if (this.dataService.configuration.ssoEnabled) {
+              this.addAlertError('An administrator with this email address has already been registered.')
+            } else {
+              this.addAlertError('An administrator with this username has already been registered.')
+            }
             return EMPTY
           }
         }),

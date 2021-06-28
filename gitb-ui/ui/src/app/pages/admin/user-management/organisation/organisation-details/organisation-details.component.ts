@@ -30,12 +30,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   }
   users: User[] = []
   dataStatus = {status: Constants.STATUS.PENDING}
-  userColumns: TableColumnDefinition[] = [
-    { field: 'name', title: 'Name' },
-    { field: 'email', title: 'Email' },
-    { field: 'roleText', title: 'Role' },
-    { field: 'ssoStatusText', title: 'Status' }
-  ]
+  userColumns: TableColumnDefinition[] = []
   savePending = false
   deletePending = false
 
@@ -57,6 +52,14 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     if (viewPropertiesParam != undefined) {
       this.propertyData.edit = Boolean(viewPropertiesParam)
     }
+    this.userColumns.push({ field: 'name', title: 'Name' })
+    if (this.dataService.configuration.ssoEnabled) {
+      this.userColumns.push({ field: 'email', title: 'Email' })
+    } else {
+      this.userColumns.push({ field: 'email', title: 'Username' })
+    }
+    this.userColumns.push({ field: 'roleText', title: 'Role' })
+    this.userColumns.push({ field: 'ssoStatusText', title: 'Status' })
     this.organisationService.getOrganisationById(this.orgId)
     .subscribe((data) => {
       this.organisation = data

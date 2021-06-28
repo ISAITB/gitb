@@ -6,20 +6,20 @@
         <form class="form-horizontal">
             <app-alert-display [alerts]="alerts" innerClass="col-xs-11 col-centered"></app-alert-display>
             <div class="form-group" *ngIf="!dataService.configuration!.ssoEnabled">
-                <label class="col-xs-3 control-label" for="name">* User name:</label>
+                <label class="col-xs-3 control-label" for="name">* Name:</label>
                 <div class="col-xs-7">
                     <input id="name" name="name" type="text" class="form-control" [(ngModel)]="udata.name">
                 </div>
                 <app-tooltip tbTooltip="This is the full name of the user. It is only used only when displaying the list of members for the {{dataService.labelOrganisationLower()}}."></app-tooltip>
             </div>
             <div class="form-group">
-                <label class="col-xs-3 control-label" for="email">* Email:</label>
+                <label class="col-xs-3 control-label" for="email">{{dataService.configuration!.ssoEnabled?'* Email:':'* Username:'}}</label>
                 <div class="col-xs-7">
                     <input id="email" name="email" type="text" class="form-control" [(ngModel)]="udata.email">
                 </div>
                 <div [ngSwitch]="dataService.configuration!.ssoEnabled">
                     <app-tooltip *ngSwitchCase="true" tbTooltip="This is the email address linked to the user's EU Login account."></app-tooltip>
-                    <app-tooltip *ngSwitchCase="false" tbTooltip="This is used only during login as the user's email-formatted username (no emails will ever be sent to this address)."></app-tooltip>
+                    <app-tooltip *ngSwitchCase="false" tbTooltip="This is used during login alongside the user's password."></app-tooltip>
                 </div>
             </div>
             <div *ngIf="!dataService.configuration!.ssoEnabled">

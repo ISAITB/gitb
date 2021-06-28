@@ -272,20 +272,14 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 
 	checkLoginForm() {
 		this.clearAlerts()
-		let valid = true
-		if (!Constants.EMAIL_REGEX.test(this.email!)) {
-			this.addAlertError('Please enter a valid email address.')
-      valid = false
-    }
-		return valid
+    return true
   }
 
 	checkRegisterForm() {
     this.clearAlerts()
-    const checkEmail = this.requireValidEmail(this.selfRegData.adminEmail, 'Please enter a valid email address.')
     const checkPasswordConfirmed = this.requireSame(this.selfRegData.adminPassword, this.selfRegData.adminPasswordConfirm, 'Your password was not correctly confirmed.')
     const checkPasswordComplex = this.requireComplexPassword(this.selfRegData.adminPassword, 'Your password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.')
-		return checkEmail && checkPasswordConfirmed && checkPasswordComplex
+		return checkPasswordConfirmed && checkPasswordComplex
   }
 
   replaceDisabled() {

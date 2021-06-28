@@ -31,11 +31,7 @@ export class OrganisationComponent extends BaseComponent implements OnInit, Afte
     properties: [],
     edit: false
   }
-  tableColumns: TableColumnDefinition[] = [
-    { field: 'name', title: 'Name' },
-    { field: 'email', title: 'Email' },
-    { field: 'roleText', title: 'Role' }
-  ]
+  tableColumns: TableColumnDefinition[] = []
   canEditOwnOrganisation = false
   vendorUpdatePending = false
 
@@ -62,6 +58,13 @@ export class OrganisationComponent extends BaseComponent implements OnInit, Afte
     if (viewPropertiesParam != undefined) {
       this.propertyData.edit = Boolean(viewPropertiesParam)
     }
+    this.tableColumns.push({ field: 'name', title: 'Name' })
+    if (this.dataService.configuration.ssoEnabled) {
+      this.tableColumns.push({ field: 'email', title: 'Email' })
+    } else {
+      this.tableColumns.push({ field: 'email', title: 'Username' })
+    }
+    this.tableColumns.push({ field: 'roleText', title: 'Role' })
     this.vdata = {
       fname: this.dataService.vendor!.fname,
       sname: this.dataService.vendor!.sname

@@ -85,18 +85,18 @@
               <app-tooltip tbTooltip="This may be your name or a description in case this account will be shared by multiple people."></app-tooltip>
           </div>
           <div class="form-group">
-              <label class="col-xs-3 control-label" for="adminEmail">* Email:</label>
+              <label class="col-xs-3 control-label" for="adminEmail">* Username:</label>
               <div class="col-xs-7">
                   <input id="adminEmail" [(ngModel)]="model.adminEmail" class="form-control" type="text"/>
               </div>
-              <app-tooltip tbTooltip="This is used only during login as an email-formatted username (no emails will ever be sent to this address)."></app-tooltip>
+              <app-tooltip tbTooltip="This is your account's username."></app-tooltip>
           </div>
           <div class="form-group">
               <label class="col-xs-3 control-label" for="adminPassword">* Password:</label>
               <div class="col-xs-7">
                   <input id="adminPassword" [(ngModel)]="model.adminPassword" class="form-control" type="password"/>
               </div>
-              <app-tooltip tbTooltip="The account's password, to be provided with the email when logging in."></app-tooltip>
+              <app-tooltip tbTooltip="The account's password, to be provided with the username when logging in."></app-tooltip>
           </div>
           <div class="form-group">
               <label class="col-xs-3 control-label" for="adminPasswordConfirm">* Confirm password:</label>

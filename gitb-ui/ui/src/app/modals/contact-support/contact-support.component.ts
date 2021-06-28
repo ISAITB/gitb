@@ -39,7 +39,7 @@ export class ContactSupportComponent extends BaseComponent implements OnInit, Af
   }
 
   ngOnInit(): void {
-    if (this.dataService.user) {
+    if (this.dataService.user && this.dataService.configuration.ssoEnabled) {
       this.contactAddress = this.dataService.user.email
     }
     this.surveyAddress = this.dataService.configuration.surveyAddress

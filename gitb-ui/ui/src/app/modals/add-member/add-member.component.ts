@@ -1,6 +1,5 @@
 import { AfterViewInit, Component, EventEmitter, OnInit } from '@angular/core';
 import { BsModalRef } from 'ngx-bootstrap/modal';
-import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { AccountService } from 'src/app/services/account.service';
 import { AuthService } from 'src/app/services/auth.service';
@@ -62,7 +61,11 @@ export class AddMemberComponent extends BaseComponent implements OnInit, AfterVi
         if (data.available) {
           this.addMember()
         } else {
-          this.addAlertError("A user with email "+this.udata.email+" has already been registered.")
+          if (this.dataService.configuration.ssoEnabled) {
+            this.addAlertError("A user with this email address has already been registered.")
+          } else {
+            this.addAlertError("A user with this username has already been registered.")
+          }
           this.udata.email = undefined
           this.udata.password = undefined
           this.udata.passwordConfirmation = undefined
@@ -97,13 +100,12 @@ export class AddMemberComponent extends BaseComponent implements OnInit, AfterVi
   checkForm2() {
     this.clearAlerts()
     let valid = true
-    const emailRegex = Constants.EMAIL_REGEX
     const isSSO = this.dataService.configuration.ssoEnabled
     if (!isSSO && !this.requireText(this.udata.name, "You have to enter the user's name.")) {
       valid = false
-    } else if (!this.requireText(this.udata.email, "You have to enter the user's email.")) {
+    } else if (isSSO && !this.requireText(this.udata.email, "You have to enter the user's email address.")) {
       valid = false
-    } else if (!this.requireValidEmail(this.udata.email, "You have to enter a valid email address.")) {
+    } else if (!isSSO && !this.requireText(this.udata.email, "You have to enter the user's username.")) {
       valid = false
     } else if (!isSSO && (!this.requireText(this.udata.password, "You have to enter the user's password."))) {
       valid = false
@@ -115,7 +117,4 @@ export class AddMemberComponent extends BaseComponent implements OnInit, AfterVi
     return valid
   }
 
-  popup() {
-    this.popupService.success('TEST')
-  }
 }

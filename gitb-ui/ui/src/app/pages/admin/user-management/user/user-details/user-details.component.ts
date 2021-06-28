@@ -108,7 +108,11 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
               })
             )
           } else {
-            this.addAlertError("A user with email "+this.user.email+" has already been registered with the specified role for this organisation.")
+            if (this.dataService.configuration.ssoEnabled) {
+              this.addAlertError('A user with this email address has already been registered with the specified role for this organisation.')
+            } else {
+              this.addAlertError('A user with this username has already been registered.')
+            }
             return EMPTY
           }
         }),

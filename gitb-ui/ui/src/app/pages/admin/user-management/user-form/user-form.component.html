@@ -9,10 +9,10 @@
     <app-tooltip tbTooltip="The name of the user. This is used for display purposes when listing users."></app-tooltip>
 </div>
 <div class="form-group">
-    <label [ngClass]="{'col-xs-3': sso, 'col-xs-4': !sso}" class="control-label" for="email"><span *ngIf="new">* </span>Email:</label>
+    <label [ngClass]="{'col-xs-3': sso, 'col-xs-4': !sso}" class="control-label" for="email"><span *ngIf="new">* </span>{{sso?'Email:':'Username:'}}</label>
     <div class="col-xs-6"><input id="email" name="email" [(ngModel)]="user.email" class="form-control" type="text" [readonly]="!new"></div>
     <app-tooltip *ngIf="sso" tbTooltip="The email address linked to the user's EU Login account."></app-tooltip>
-    <app-tooltip *ngIf="!sso" tbTooltip="An email-formatted username for this user that is used for logging in. No emails are ever sent to this."></app-tooltip>
+    <app-tooltip *ngIf="!sso" tbTooltip="The username for this user that is used for logging in."></app-tooltip>
 </div>
 <div class="form-group" *ngIf="admin && !new">
     <label [ngClass]="{'col-xs-3': sso, 'col-xs-4': !sso}" class="control-label" for="role"><span *ngIf="new">* </span>Role:</label>
