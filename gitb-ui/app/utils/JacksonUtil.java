@@ -293,11 +293,13 @@ public class JacksonUtil {
                     jsonGenerator.writeStringField("title", ((DecisionStep) step).getTitle());
                     jsonGenerator.writeObjectField("then", ((DecisionStep) step).getThen());
                     jsonGenerator.writeObjectField("else", ((DecisionStep) step).getElse());
+                    jsonGenerator.writeBooleanField("collapsed", ((DecisionStep) step).isCollapsed());
                 });
             } else if (step instanceof LoopStep) {
                 writeStep(jsonGenerator, step, () -> {
                     jsonGenerator.writeStringField("type", "loop");
-                    jsonGenerator.writeStringField("title", ((Sequence) step).getTitle());
+                    jsonGenerator.writeStringField("title", ((LoopStep) step).getTitle());
+                    jsonGenerator.writeBooleanField("collapsed", ((LoopStep) step).isCollapsed());
                     jsonGenerator.writeArrayFieldStart("steps");
                     for(TestStep testStep : ((Sequence) step).getSteps()) {
                         jsonGenerator.writeObject(testStep);
@@ -307,7 +309,8 @@ public class JacksonUtil {
             } else if (step instanceof GroupStep) {
                 writeStep(jsonGenerator, step, () -> {
                     jsonGenerator.writeStringField("type", "group");
-                    jsonGenerator.writeStringField("title", ((Sequence) step).getTitle());
+                    jsonGenerator.writeStringField("title", ((GroupStep) step).getTitle());
+                    jsonGenerator.writeBooleanField("collapsed", ((GroupStep) step).isCollapsed());
                     jsonGenerator.writeArrayFieldStart("steps");
                     for(TestStep testStep : ((Sequence) step).getSteps()) {
                         jsonGenerator.writeObject(testStep);
@@ -318,6 +321,7 @@ public class JacksonUtil {
                 writeStep(jsonGenerator, step, () -> {
                     jsonGenerator.writeStringField("type", "flow");
                     jsonGenerator.writeStringField("title", ((FlowStep) step).getTitle());
+                    jsonGenerator.writeBooleanField("collapsed", ((FlowStep) step).isCollapsed());
                     jsonGenerator.writeArrayFieldStart("threads");
                     for(Sequence sequence : ((FlowStep) step).getThread()) {
                         jsonGenerator.writeObject(sequence);
@@ -332,6 +336,7 @@ public class JacksonUtil {
                 writeStep(jsonGenerator, step, () -> {
                     jsonGenerator.writeStringField("type", "interact");
                     jsonGenerator.writeStringField("title", ((UserInteractionStep) step).getTitle());
+                    jsonGenerator.writeBooleanField("collapsed", ((UserInteractionStep) step).isCollapsed());
                     jsonGenerator.writeArrayFieldStart("interactions");
                     for(InstructionOrRequest ior : ((UserInteractionStep) step).getInstructOrRequest()){
                         jsonGenerator.writeStartObject();
@@ -355,6 +360,10 @@ public class JacksonUtil {
             } else if (step instanceof VerifyStep) {
                 writeStep(jsonGenerator, step, () -> {
                     jsonGenerator.writeStringField("type", "verify");
+                });
+            } else if (step instanceof ProcessStep) {
+                writeStep(jsonGenerator, step, () -> {
+                    jsonGenerator.writeStringField("type", "process");
                 });
             } else if (step instanceof Sequence) {
                 jsonGenerator.writeStartArray();

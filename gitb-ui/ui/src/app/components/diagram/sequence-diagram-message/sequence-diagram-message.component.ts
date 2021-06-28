@@ -39,6 +39,7 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.depth = this.calculateDepth(this.message)
+    this.expanded = this.message.collapsed == undefined || !this.message.collapsed
     this.classForMessageFixed = this.calculateFixedMessageClass()
     this.classForWrapper = 'message-wrapper offset-'+this.message.fromIndex+' '+this.message.type+'-type'
     this.classForReverseOffset = 'reverse-offset-'+this.message.fromIndex

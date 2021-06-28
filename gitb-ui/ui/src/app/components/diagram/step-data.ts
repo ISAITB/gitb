@@ -4,6 +4,7 @@ export interface StepData {
 
     id: string, 
     report?: StepReport,
+    collapsed?: boolean,
     status?: number,
     steps: StepData[],
     type: string,

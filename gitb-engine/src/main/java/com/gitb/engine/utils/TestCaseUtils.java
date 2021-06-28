@@ -9,6 +9,7 @@ import com.gitb.engine.remote.RemoteCallContext;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tdl.*;
+import com.gitb.tdl.Process;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -25,7 +26,7 @@ public class TestCaseUtils {
 	// TODO add the test case construct classes to report their statuses (COMPLETED, ERROR, etc.)
 	private static final Class<?>[] TEST_CONSTRUCTS_TO_REPORT = {
         com.gitb.tdl.MessagingStep.class, Verify.class, IfStep.class, RepeatUntilStep.class,
-		ForEachStep.class, WhileStep.class, com.gitb.tdl.FlowStep.class,
+		ForEachStep.class, WhileStep.class, com.gitb.tdl.FlowStep.class, Process.class,
 		CallStep.class, com.gitb.tdl.ExitStep.class, Group.class, UserInteraction.class
 	};
 

@@ -23,10 +23,13 @@
       <div class="step-icon" *ngIf="message.type == 'verify'">
         <i class="fa fa-gear" [ngClass]="{'fa-spin': message.status == TEST_STATUS.PROCESSING}"></i>
       </div>
+      <div class="step-icon" *ngIf="message.type == 'process'">
+        <i class="fa fa-gear" [ngClass]="{'fa-spin': message.status == TEST_STATUS.PROCESSING}"></i>
+      </div>
       <div class="step-icon" *ngIf="message.type == 'exit'">
         <i class="fa fa-dot-circle-o"></i>
       </div>
-      <div><span class="title" *ngIf="message.desc || message.documentation || message.type == 'verify' || message.type == 'exit'" [ngClass]="{'skipped': message.status == TEST_STATUS.SKIPPED}">{{message.desc}}<span *ngIf="message.documentation" (click)="showStepDocumentation(message.documentation)"><i [ngStyle]="{ 'margin-left': message.desc?'5px':'0px'}" class="fa fa-question-circle icon-documentation"></i></span></span></div>
+      <div><span class="title" *ngIf="message.desc || message.documentation || message.type == 'verify' || message.type == 'process' || message.type == 'exit'" [ngClass]="{'skipped': message.status == TEST_STATUS.SKIPPED}">{{message.desc}}<span *ngIf="message.documentation" (click)="showStepDocumentation(message.documentation)"><i [ngStyle]="{ 'margin-left': message.desc?'5px':'0px'}" class="fa fa-question-circle icon-documentation"></i></span></span></div>
     </div>
     <div class="message-body" [collapse]="!expanded" [isAnimated]="false">
       <div class="message-report" *ngIf="message.report != null">

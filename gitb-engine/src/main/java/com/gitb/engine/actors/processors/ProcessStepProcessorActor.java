@@ -4,9 +4,9 @@ import akka.actor.ActorRef;
 import akka.dispatch.Futures;
 import akka.dispatch.OnFailure;
 import akka.dispatch.OnSuccess;
+import com.gitb.core.AnyContent;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.StepStatus;
-import com.gitb.engine.events.model.ErrorStatusEvent;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.processing.ProcessingContext;
 import com.gitb.engine.testcase.TestCaseScope;
@@ -16,9 +16,13 @@ import com.gitb.processing.ProcessingReport;
 import com.gitb.tdl.Process;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
+import com.gitb.types.DataType;
+import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
+
+import java.util.Map;
 
 public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorActor<Process> {
 
@@ -93,6 +97,12 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             if (step.getId() != null) {
                 scope.createVariable(step.getId()).setValue(getValue(report.getData()));
             }
+            if (step.isHidden() != null && !step.isHidden() && !handler.isRemote()) {
+                // We only add to the report's context the created data if this is visible and
+                // if the handler is not a custom one (for custom ones you can return anything
+                // you like).
+                completeProcessingReportContext(report);
+            }
             return report.getReport();
         }, getContext().dispatcher());
 
@@ -118,4 +128,14 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
         }
     }
 
+    private void completeProcessingReportContext(ProcessingReport report) {
+        if (report != null && report.getReport() != null && report.getData() != null && report.getData().getData() != null) {
+            if (report.getReport().getContext() == null) {
+                report.getReport().setContext(new AnyContent());
+            }
+            for (Map.Entry<String, DataType> dataEntry: report.getData().getData().entrySet()) {
+                report.getReport().getContext().getItem().add(DataTypeUtils.convertDataTypeToAnyContent(dataEntry.getKey(), dataEntry.getValue()));
+            }
+        }
+    }
 }

@@ -50,6 +50,7 @@ export class SequenceDiagramComponent implements OnInit {
   stepFilter(this: SequenceDiagramComponent, step: StepData): boolean {
     return step.type == 'msg' ||
       step.type == 'verify' ||
+      step.type == 'process' ||
       step.type == 'interact' ||
       step.type == 'exit' ||
       (step.type == 'group' && (filter(step.steps, this.stepFilter.bind(this))).length > 0) ||
@@ -60,7 +61,7 @@ export class SequenceDiagramComponent implements OnInit {
 
   processStep(step: StepData, actorInfo: ActorInfo[]) {
     step.level = (step.id.split('.')).length
-    if (step.type == 'verify' || step.type == 'exit') {
+    if (step.type == 'verify' || step.type == 'process' || step.type == 'exit') {
       step.from = Constants.TEST_ENGINE_ACTOR
       step.to = Constants.TEST_ENGINE_ACTOR
     } else if (step.type == 'group') {
@@ -219,7 +220,7 @@ export class SequenceDiagramComponent implements OnInit {
   setStepIndexes(this: SequenceDiagramComponent, messages: StepData[]) {
     forEach(messages, (message, i) => {
       message.order = i
-      if (message.type == 'verify' || message.type == 'msg' || message.type == 'exit') {
+      if (message.type == 'verify' || message.type == 'process' || message.type == 'msg' || message.type == 'exit') {
         this.setIndexes(message)
       } else if (message.type == 'group') {
         this.setLoopStepChildIndexes(message)

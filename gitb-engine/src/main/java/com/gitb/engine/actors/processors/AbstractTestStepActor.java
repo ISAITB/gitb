@@ -305,13 +305,11 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		}
 
 		boolean stopTestSession = false;
-		if (step instanceof TestConstruct || step instanceof Sequence) {
-			boolean stopOnError = false;
-			if (step instanceof TestConstruct) {
-				stopOnError = ((TestConstruct)step).isStopOnError();
-				if (((TestConstruct)step).getId() != null) {
-					((MapType)(scope.getVariable(TestCaseContext.STEP_SUCCESS_MAP, true).getValue())).addItem(((TestConstruct)step).getId(), new BooleanType(status == StepStatus.COMPLETED || status == StepStatus.WARNING));
-				}
+		if (step instanceof TestConstruct) {
+			boolean stopOnError;
+			stopOnError = ((TestConstruct)step).isStopOnError();
+			if (((TestConstruct)step).getId() != null) {
+				((MapType)(scope.getVariable(TestCaseContext.STEP_SUCCESS_MAP, true).getValue())).addItem(((TestConstruct)step).getId(), new BooleanType(status == StepStatus.COMPLETED || status == StepStatus.WARNING));
 			}
 			if (step instanceof Sequence) {
 				stopOnError = ((Sequence)step).isStopOnError();

@@ -88,6 +88,8 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
         if (step instanceof IfStep) {
             applyStopOnErrorSemantics(((IfStep) step).getThen(), step.isStopOnError());
             applyStopOnErrorSemantics(((IfStep) step).getElse(), step.isStopOnError());
+        } else if (step instanceof Group) {
+            applyStopOnErrorSemantics(((Group) step), step.isStopOnError());
         } else if (step instanceof WhileStep) {
             applyStopOnErrorSemantics(((WhileStep) step).getDo(), step.isStopOnError());
         } else if (step instanceof ForEachStep) {
