@@ -1,33 +1,34 @@
 <div [ngClass]="classForWrapper">
-    <div [ngClass]="classForMessage()">
-      <div class="message-type">
-        <div class="message-title">{{message.title}}</div>
-        <div *ngIf="message.type == 'loop' && message.sequences != null && message.sequences.length > 0" class="btn-group iterations" dropdown>
-          <button id="button-iterations" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-iterations">Iteration {{currentIterationIndex+1}} of {{message.sequences.length}}</button>
-            <ul id="dropdown-iterations" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-iterations">
-              <ng-container *ngFor="let iteration of message.sequences; let i = index">
-                  <li *ngIf="iteration != null" role="menuitem">
-                    <a class="dropdown-item" [ngClass]="{
-                      'processing': iteration.status == TEST_STATUS.PROCESSING, 
-                      'skipped': iteration.status == TEST_STATUS.SKIPPED, 
-                      'waiting': iteration.status == TEST_STATUS.WAITING, 
-                      'error': iteration.status == TEST_STATUS.ERROR, 
-                      'warning': iteration.status == TEST_STATUS.WARNING, 
-                      'completed': iteration.status == TEST_STATUS.COMPLETED}" (click)="showLoopIteration(i); $event.preventDefault()" href>Iteration {{i+1}}</a>
-                  </li>
-              </ng-container>
-            </ul>
-        </div>
+  <div [ngClass]="classForMessage()" [class.hovering]="hoveringTitle">
+    <div class="message-type" [class.hovering]="hoveringTitle">
+      <div class="message-title" (click)="titleClick()" (mouseover)="hoveringTitle = true" (mouseout)="hoveringTitle = false">{{message.title}}</div>
+      <div *ngIf="message.type == 'loop' && message.sequences != null && message.sequences.length > 0" class="btn-group iterations" dropdown>
+        <button id="button-iterations" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-iterations">Iteration {{currentIterationIndex+1}} of {{message.sequences.length}}</button>
+        <ul id="dropdown-iterations" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-iterations">
+          <ng-container *ngFor="let iteration of message.sequences; let i = index">
+              <li *ngIf="iteration != null" role="menuitem">
+                <a class="dropdown-item" [ngClass]="{
+                  'processing': iteration.status == TEST_STATUS.PROCESSING, 
+                  'skipped': iteration.status == TEST_STATUS.SKIPPED, 
+                  'waiting': iteration.status == TEST_STATUS.WAITING, 
+                  'error': iteration.status == TEST_STATUS.ERROR, 
+                  'warning': iteration.status == TEST_STATUS.WARNING, 
+                  'completed': iteration.status == TEST_STATUS.COMPLETED}" (click)="showLoopIteration(i); $event.preventDefault()" href>Iteration {{i+1}}</a>
+              </li>
+          </ng-container>
+        </ul>
       </div>
-      <div class="message-info">
-        <div class="step-icon" *ngIf="message.type == 'verify'">
-          <i class="fa fa-gear" [ngClass]="{'fa-spin': message.status == TEST_STATUS.PROCESSING}"></i>
-        </div>
-        <div class="step-icon" *ngIf="message.type == 'exit'">
-          <i class="fa fa-dot-circle-o"></i>
-        </div>
-        <div><span class="title" *ngIf="message.desc || message.documentation || message.type == 'verify' || message.type == 'exit'" [ngClass]="{'skipped': message.status == TEST_STATUS.SKIPPED}">{{message.desc}}<span *ngIf="message.documentation" (click)="showStepDocumentation(message.documentation)"><i [ngStyle]="{ 'margin-left': message.desc?'5px':'0px'}" class="fa fa-question-circle icon-documentation"></i></span></span></div>
+    </div>
+    <div class="message-info">
+      <div class="step-icon" *ngIf="message.type == 'verify'">
+        <i class="fa fa-gear" [ngClass]="{'fa-spin': message.status == TEST_STATUS.PROCESSING}"></i>
       </div>
+      <div class="step-icon" *ngIf="message.type == 'exit'">
+        <i class="fa fa-dot-circle-o"></i>
+      </div>
+      <div><span class="title" *ngIf="message.desc || message.documentation || message.type == 'verify' || message.type == 'exit'" [ngClass]="{'skipped': message.status == TEST_STATUS.SKIPPED}">{{message.desc}}<span *ngIf="message.documentation" (click)="showStepDocumentation(message.documentation)"><i [ngStyle]="{ 'margin-left': message.desc?'5px':'0px'}" class="fa fa-question-circle icon-documentation"></i></span></span></div>
+    </div>
+    <div class="message-body" [collapse]="!expanded" [isAnimated]="false">
       <div class="message-report" *ngIf="message.report != null">
         <a href class="report-link" (click)="showReport();$event.preventDefault()">
           <span class="fa-stack">
@@ -66,6 +67,7 @@
         <app-sequence-diagram-message *ngFor="let subMessage of message.interactions" [message]="subMessage" [events]="events"></app-sequence-diagram-message>
       </div>
       <div class="arrow" *ngIf="message.type == 'msg' || message.type == 'instruction' || message.type == 'request'"></div>
-      <app-sequence-diagram-message-status [message]="message" [events]="events"></app-sequence-diagram-message-status>
     </div>
+    <app-sequence-diagram-message-status [message]="message" [events]="events"></app-sequence-diagram-message-status>
+  </div>
 </div>

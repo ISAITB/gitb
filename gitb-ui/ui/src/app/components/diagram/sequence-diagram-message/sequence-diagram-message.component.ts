@@ -28,6 +28,8 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
   classForWrapper!: string 
   classForReverseOffset!: string
   eventSubscription?: Subscription
+  expanded = true
+  hoveringTitle = false
 
   constructor(
     private reportService: ReportService,
@@ -167,6 +169,10 @@ export class SequenceDiagramMessageComponent implements OnInit, OnDestroy {
 
   showLoopIteration(iteration: number) {
     this.currentIterationIndex = iteration
+  }
+
+  titleClick() {
+    this.expanded = !this.expanded
   }
 
 }
