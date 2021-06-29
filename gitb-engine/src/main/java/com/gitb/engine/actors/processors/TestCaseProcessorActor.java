@@ -120,13 +120,12 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
 
             //Start command for test case processing
             if (message instanceof StartCommand) {
-	            logger.debug(MarkerFactory.getDetachedMarker(((StartCommand) message).getSessionId()), "Received start command, starting test case sequence.");
                 sequenceProcessorActor = RootSequenceProcessorActor.create(getContext(), testCase.getSteps(), context.getScope(), "");
 	            sequenceProcessorActor.tell(message, self());
             }
             // Prepare for stop command
             else if (message instanceof PrepareForStopCommand) {
-                logger.debug(MarkerFactory.getDetachedMarker(((PrepareForStopCommand) message).getSessionId()), "Received prepare for stop command.");
+                logger.debug(MarkerFactory.getDetachedMarker(((PrepareForStopCommand) message).getSessionId()), "Preparing to stop");
                 if (sequenceProcessorActor != null) {
                     sequenceProcessorActor.tell(message, getSelf());
                 }
@@ -153,7 +152,7 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
             //Initiate the preliminary phase execution
             else if (message instanceof InitiatePreliminaryCommand) {
 	            if (preliminaryProcessorActor != null) {
-		            logger.debug(MarkerFactory.getDetachedMarker(sessionId), "Initiating preliminary phase.");
+		            logger.debug(MarkerFactory.getDetachedMarker(sessionId), "Initiating preliminary phase");
 		            //Start the processing of preliminary phase
 		            preliminaryProcessorActor.tell(new StartCommand(sessionId), self());
 	            }

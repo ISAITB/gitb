@@ -53,11 +53,7 @@ public class TestbedService {
 	 * @param allConfigurations
 	 */
 	public static List<SUTConfiguration> configure(String sessionId, List<ActorConfiguration> allConfigurations) {
-		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "configure"
-			+ " ( "
-			+ sessionId + " , "
-			+ "actors - " + ((allConfigurations == null)?0:allConfigurations.size())
-			+ " ) ");
+		logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("Configuring session [%s]", sessionId));
 
 		//Find the Processor for the session
 		ActorSystem actorSystem = TestEngine
@@ -109,23 +105,14 @@ public class TestbedService {
 	 * @param userInputs
 	 */
 	public static void provideInput(String sessionId, String stepId, List<UserInput> userInputs) {
-		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "provideInput"
-			+ " ( "
-			+ sessionId + " , "
-			+ stepId
-			+ " ) ");
-
+		logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("Handling user-provided inputs - step [UserInteraction] - ID [%s]", stepId));
 		//Fire TestStepInputEvent
 		TestStepInputEventBus
 			.getInstance().publish(new InputEvent(sessionId, stepId, userInputs));
 	}
 
 	public static void initiatePreliminary(String sessionId) {
-		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "initiatePreliminary"
-			+ " ( "
-			+ sessionId
-			+ " ) ");
-
+		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "Initiating preliminary exchange");
 		TestEngine
 			.getInstance()
 			.getEngineActorSystem()
@@ -140,11 +127,7 @@ public class TestbedService {
 	 * @param sessionId
 	 */
 	public static void start(String sessionId) {
-		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "start"
-			+ " ( "
-			+ sessionId
-			+ " ) ");
-
+		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "Starting session");
 		TestEngine
 			.getInstance()
 			.getEngineActorSystem()
@@ -170,7 +153,7 @@ public class TestbedService {
 				msg = new ConnectionClosedEvent(sessionId);
 			} else {
 				// Regular stop
-				logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("connection ( %s ) ", sessionId));
+				logger.debug(MarkerFactory.getDetachedMarker(sessionId), "Connection closed for session");
 				msg = new StopCommand(sessionId);
 			}
 			TestEngine
@@ -189,31 +172,22 @@ public class TestbedService {
 	 * @return new test execution session id
 	 */
 	public static String restart(String sessionId) {
-
-		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "restart"
-			+ " ( "
-			+ sessionId
-			+ " ) ");
-
+		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "Restarting session");
 		TestEngine
 			.getInstance()
 			.getEngineActorSystem()
 			.getActorSystem()
 			.actorSelection(SessionActor.getPath(sessionId))
 			.tell(new RestartCommand(sessionId), ActorRef.noSender());
-
 		String newSessionId = SessionManager
 			.getInstance()
 			.duplicateSession(sessionId);
-		logger.debug(MarkerFactory.getDetachedMarker(newSessionId), "Restarted session [" + sessionId + "] with the session id [" + newSessionId + "]...");
-
+		logger.debug(MarkerFactory.getDetachedMarker(newSessionId), String.format("Restarted session [" + sessionId + "] as new session", sessionId));
 		TestEngine
 			.getInstance()
 			.getEngineActorSystem()
 			.getSessionSupervisor()
 			.tell(new CreateCommand(newSessionId), ActorRef.noSender());
-		logger.debug(MarkerFactory.getDetachedMarker(newSessionId), "Test execution environment initialized for session [" + newSessionId + "]...");
-
 		return newSessionId;
 	}
 
@@ -239,10 +213,7 @@ public class TestbedService {
 	 * @param interaction
 	 */
 	public static void interactWithUsers(String sessionId, String stepId, UserInteractionRequest interaction) {
-		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "interactWithUsers"
-			+ " ( "
-			+ sessionId
-			+ " ) ");
+		logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("Triggering user interaction - step [UserInteraction] - ID [%s]", stepId));
 		//Get the Callback client
 		ITestbedServiceCallbackHandler tbsCallbackHandle = TestEngine
 			.getInstance()

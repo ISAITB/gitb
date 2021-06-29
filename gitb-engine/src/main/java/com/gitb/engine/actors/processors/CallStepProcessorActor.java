@@ -81,7 +81,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 		for (var output: step.getOutput()) {
 			if (StringUtils.isNotBlank(output.getName())) {
 				if (specificOutputsToReturn.contains(output.getName())) {
-					LOG.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Ignoring duplicate output ["+output.getName()+"].");
+					LOG.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Ignoring duplicate output [%s] - step [%s] - ID [%s]", output.getName(), ErrorUtils.extractStepName(step), stepId));
 				} else {
 					specificOutputsToReturn.add(output.getName());
 				}
@@ -97,7 +97,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 					if (StringUtils.isBlank(output.getValue())) {
 						TestCaseScope.ScopedVariable variable = childScope.getVariable(output.getName());
 						if (variable == null) {
-							throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Scriptlet output ["+output.getName()+"] must either define an expression or match a variable in the scriptlet's scope."));
+							throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, String.format("Scriptlet output [%s] must either define an expression or match a variable in the scriptlet's scope - step [%s] - ID [%s]", output.getName(), ErrorUtils.extractStepName(step), stepId)));
 						}
 						result = variable.getValue();
 					} else {
@@ -111,7 +111,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 		// Log a warning for any expected outputs that were not returned.
 		specificOutputsToReturn.removeAll(elements.keySet());
 		for (var unhandledOutput: specificOutputsToReturn) {
-			LOG.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "Requested output ["+unhandledOutput+"] was not found in the scriptlet's outputs.");
+			LOG.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Requested output [%s] not found in the scriptlet's outputs - step [%s] - ID [%s]", unhandledOutput, ErrorUtils.extractStepName(step), stepId));
 		}
 		if (step.getId() != null) {
 			setOutputWithId(elements);
