@@ -46,6 +46,10 @@ object Configurations {
   var EMAIL_SMTP_AUTH_PASSWORD = ""
   var SURVEY_ENABLED = false
   var SURVEY_ADDRESS = ""
+  var MORE_INFO_ENABLED = false
+  var MORE_INFO_ADDRESS = ""
+  var RELEASE_INFO_ENABLED = false
+  var RELEASE_INFO_ADDRESS = ""
 
   var USERGUIDE_OU = ""
   var USERGUIDE_OA = ""
@@ -177,6 +181,10 @@ object Configurations {
 
       SURVEY_ENABLED = fromEnv("SURVEY_ENABLED", conf.getString("survey.enabled")).toBoolean
       SURVEY_ADDRESS = fromEnv("SURVEY_ADDRESS", conf.getString("survey.address"))
+      MORE_INFO_ENABLED = fromEnv("MORE_INFO_ENABLED", conf.getString("moreinfo.enabled")).toBoolean
+      MORE_INFO_ADDRESS = fromEnv("MORE_INFO_ADDRESS", conf.getString("moreinfo.address"))
+      RELEASE_INFO_ENABLED = fromEnv("RELEASE_INFO_ENABLED", conf.getString("releaseinfo.enabled")).toBoolean
+      RELEASE_INFO_ADDRESS = fromEnv("RELEASE_INFO_ADDRESS", conf.getString("releaseinfo.address"))
 
       USERGUIDE_OU = fromEnv("USERGUIDE_OU", conf.getString("userguide.ou"))
       USERGUIDE_OA = fromEnv("USERGUIDE_OA", conf.getString("userguide.oa"))

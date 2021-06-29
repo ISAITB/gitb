@@ -41,7 +41,11 @@ class Application @Inject() (cc: ControllerComponents, defaultAction: DefaultAct
       Configurations.AUTHENTICATION_COOKIE_PATH,
       enableWebInit,
       Configurations.TESTBED_MODE == Constants.DevelopmentMode,
-      contextPath()
+      contextPath(),
+      Configurations.MORE_INFO_ENABLED,
+      Configurations.MORE_INFO_ADDRESS,
+      Configurations.RELEASE_INFO_ENABLED,
+      Configurations.RELEASE_INFO_ADDRESS
     )))
   }
 

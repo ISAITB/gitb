@@ -44,7 +44,7 @@
 				<div class="container">
 					<div class="row">
 						<div class="col-xs-12">
-							<h4>The Interoperability Test Bed is a platform to help you test conformance against one or more specifications.</h4>
+							<h4>The Interoperability Test Bed is a platform for self-service conformance testing against semantic and technical specifications.</h4>
 							<div style="padding-top:20px">
 								<div style="display:flex; align-items:center;">
 									<div>
@@ -98,7 +98,14 @@
 									@if(config.hasDefaultLegalNotice) {
 										| </span><a href="#" data-toggle="modal" data-target="#legalModal">Legal notice</a><span class="version-text">
 									}
-									| </span><span class="version-text">@config.versionNumber</span>
+									@if(config.moreInfoEnabled) {
+										| </span><a href="@config.moreInfoLink" target="blank">Find out more</a><span class="version-text">
+									}
+									@if(config.releaseInfoEnabled) {
+										| </span><a href="@config.releaseInfoLink" target="blank">@config.versionNumber</a>
+									} else {
+										| </span><span class="version-text">@config.versionNumber</span>
+									}
 								</div>
 							</div>
 						</div>

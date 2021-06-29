@@ -258,6 +258,6 @@ export class Constants {
 	public static DATA_URL_REGEX = /^data:.+\/(.+);base64,(.*)$/
 	public static VARIABLE_NAME_REGEX = /^[a-zA-Z][a-zA-Z\-_\.0-9]*$/
 
-	public static VERSION = "v1.11.1"
+	public static VERSION = "v1.13.0"
 
 }

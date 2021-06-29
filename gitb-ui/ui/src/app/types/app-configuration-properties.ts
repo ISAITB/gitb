@@ -6,6 +6,10 @@ export interface AppConfigurationProperties {
     emailAttachmentsAllowedTypes: string
     surveyEnabled: boolean
     surveyAddress: string
+    moreInfoEnabled: boolean
+    moreInfoAddress: string
+    releaseInfoEnabled: boolean
+    releaseInfoAddress: string
     userGuideOU: string
     userGuideOA: string
     userGuideCA: string

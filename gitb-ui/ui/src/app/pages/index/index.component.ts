@@ -65,6 +65,14 @@ export class IndexComponent implements OnInit {
     return this.dataService.configuration && this.dataService.configuration.emailEnabled
   }
 
+  showMoreInfo(): boolean {
+    return this.dataService.configuration && this.dataService.configuration.moreInfoEnabled
+  }
+
+  showReleaseInfo(): boolean {
+    return this.dataService.configuration && this.dataService.configuration.releaseInfoEnabled
+  }
+
   contactUs() {
     this.modalService.show(ContactSupportComponent, {
       class: 'modal-lg'
@@ -77,6 +85,14 @@ export class IndexComponent implements OnInit {
 
   provideFeedbackLink(): string {
     return this.dataService.configuration.surveyAddress
+  }
+
+  moreInfoLink(): string {
+    return this.dataService.configuration.moreInfoAddress
+  }
+
+  releaseInfoLink(): string {
+    return this.dataService.configuration.releaseInfoAddress
   }
 
   userGuideLink() {
