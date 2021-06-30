@@ -22,4 +22,13 @@ public class ErrorUtils {
 
         return info;
     }
+
+    public static String extractStepName(Object step) {
+        String name = step.getClass().getSimpleName();
+        if (name.endsWith("Step")) {
+            return name.substring(0, name.indexOf("Step"));
+        } else {
+            return name;
+        }
+    }
 }

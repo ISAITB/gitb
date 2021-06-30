@@ -206,8 +206,6 @@ public class CheckTestCaseStructures extends AbstractCheck {
             }
             if (step instanceof TestStep) {
                 handleDocumentation(((TestStep)step).getDocumentation());
-            } else if (step instanceof Group) {
-                handleDocumentation(((Group)step).getDocumentation());
             }
         }
 

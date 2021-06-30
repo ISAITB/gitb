@@ -24,9 +24,6 @@ public class RepeatUntilStepProcessorActor extends AbstractIterationStepActor<Re
 	private Map<Integer, Integer> childActorUidIndexMap;
 	private Map<Integer, ActorRef> iterationIndexActorMap;
 
-	private boolean childrenHasError;
-	private boolean childrenHasWarning;
-
 	public RepeatUntilStepProcessorActor(RepeatUntilStep step, TestCaseScope scope, String stepId)  {
 		super(step, scope, stepId);
 	}
@@ -36,8 +33,6 @@ public class RepeatUntilStepProcessorActor extends AbstractIterationStepActor<Re
 		expressionHandler = new ExpressionHandler(scope);
 		childActorUidIndexMap = new ConcurrentHashMap<>();
 		iterationIndexActorMap = new ConcurrentHashMap<>();
-
-		childrenHasError = false;
 	}
 
 	@Override
@@ -47,30 +42,15 @@ public class RepeatUntilStepProcessorActor extends AbstractIterationStepActor<Re
 	}
 
 	@Override
-	protected void handleStatusEvent(StatusEvent event) throws Exception {
-        StepStatus status = event.getStatus();
-		if (status == StepStatus.ERROR) {
-			childrenHasError = true;
-		} else if (status == StepStatus.WARNING) {
-			childrenHasWarning = true;
+	protected boolean handleStatusEventInternal(StatusEvent event) throws Exception {
+		int senderUid = getSender().path().uid();
+		int iteration = childActorUidIndexMap.get(senderUid);
+		boolean condition = evaluateCondition();
+		if (condition) {
+			checkIteration(iteration+1);
+			loop(iteration+1);
 		}
-		if (status == StepStatus.ERROR || status == StepStatus.WARNING || status == StepStatus.COMPLETED) {
-			int senderUid = getSender().path().uid();
-			int iteration = childActorUidIndexMap.get(senderUid);
-			boolean condition = evaluateCondition();
-			if (condition) {
-				checkIteration(iteration+1);
-				loop(iteration+1);
-			} else {
-				if (childrenHasError) {
-					childrenHasError();
-				} else if (childrenHasWarning) {
-					childrenHasWarning();
-				} else {
-					completed();
-				}
-			}
-		}
+		return condition;
 	}
 
 	private void loop(int iteration) throws Exception {

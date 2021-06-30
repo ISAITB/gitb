@@ -1,0 +1,12 @@
+<span [ngClass]="{'error-assertion-report': assertionReport.type == types.ERROR, 'warning-assertion-report': assertionReport.type == types.WARNING, 'info-assertion-report': assertionReport.type == types.INFO, 'assertion-report': assertionReport.extractedLocation != null, 'assertion-report-nolink': assertionReport.extractedLocation == null}">
+    <span class="report-item report-item-element assertion-report-item" *ngIf="assertionReport.value.assertionID != null"><strong>Assertion ID:</strong> {{assertionReport.value.assertionID}}</span>
+    <span class="report-item report-item-element assertion-report-item">
+        <i class="fa fa-info-circle report-item-icon info-icon" *ngIf="assertionReport.type == types.INFO"></i>
+        <i class="fa fa-warning report-item-icon warning-icon" *ngIf="assertionReport.type == types.WARNING"></i>
+        <i class="fa fa-times-circle report-item-icon error-icon" *ngIf="assertionReport.type == types.ERROR"></i>
+        <span class="description">{{description}}</span> <!-- This was done with ng-bind meaning that this could contain HTML -->
+    </span>
+    <span class="report-item report-item-element assertion-report-item" *ngIf="assertionReport.value.value != undefined"><strong>Value:</strong> {{assertionReport.value.value}}</span>
+    <span class="report-item report-item-element assertion-report-item" *ngIf="assertionReport.extractedLocation == undefined && assertionReport.value.location"><strong>Location:</strong> {{assertionReport.value.location}}</span>
+    <span class="report-item report-item-element assertion-report-item" *ngIf="assertionReport.value.test != undefined"><strong>Test:</strong> {{assertionReport.value.test}}</span>
+</span>

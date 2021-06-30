@@ -18,6 +18,7 @@ import com.gitb.tbs.TestStepStatus;
 import com.gitb.tr.SR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
+import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,7 +72,7 @@ public class SessionActor extends Actor {
                 if (context.getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
                     if (!eventProcessingInProgress) {
                         eventProcessingInProgress = true;
-                        sendUpdateAsync(eventOutbox.values().iterator().next());
+                        sendUpdateSync(eventOutbox.values().iterator().next(), true);
                     }
                 }
             } else if (message instanceof UpdateSentEvent) {
@@ -83,7 +84,7 @@ public class SessionActor extends Actor {
                             self().tell(new StopCommand(getSessionId()), self());
                         }
                     } else {
-                        sendUpdateAsync(eventOutbox.values().iterator().next());
+                        sendUpdateSync(eventOutbox.values().iterator().next(), true);
                     }
                 }
             } else if (message instanceof ConnectionClosedEvent) {
@@ -164,7 +165,7 @@ public class SessionActor extends Actor {
                             context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPING);
                             testCaseProcessorActor.tell(message, self());
                         } else if (message instanceof TestSessionFinishedCommand) {
-                            logger.debug(MarkerFactory.getDetachedMarker(getSessionId()), "Test session finished with result ["+((TestSessionFinishedCommand) message).getStatus()+"]");
+                            logger.debug(MarkerFactory.getDetachedMarker(getSessionId()), String.format("Session finished with result [%s]", ((TestSessionFinishedCommand) message).getStatus()));
                             sessionEndEvent = createSessionEndMessage(((TestSessionFinishedCommand) message).getStatus(), ((TestSessionFinishedCommand) message).getResultReport());
                             if (!eventProcessingInProgress) {
                                 self().tell(new StopCommand(getSessionId()), self());
@@ -173,7 +174,7 @@ public class SessionActor extends Actor {
                             stopTestSession(context);
                             logger.debug("Session ["+getSessionId()+"] stopped.");
                         } else if (message instanceof UnexpectedErrorCommand) {
-                            self().tell(prepareStatusUpdate(getSessionId(), null, StepStatus.ERROR, null, true), self());
+                            self().tell(prepareStatusUpdate(getSessionId(), null, StepStatus.ERROR, null, true, null), self());
                         } else {
                             unexpectedCommand(message, context);
                         }
@@ -199,7 +200,7 @@ public class SessionActor extends Actor {
     }
 
     private UpdateMessage createSessionEndMessage(StepStatus result, TestStepReportType report) {
-        return prepareStatusUpdate(getSessionId(), TEST_CASE_STEP_ID, result, report, false);
+        return prepareStatusUpdate(getSessionId(), TEST_CASE_STEP_ID, result, report, false, null);
     }
 
     @Override
@@ -239,9 +240,9 @@ public class SessionActor extends Actor {
             TestbedService.sendStatusUpdate(getSessionId(), msg.getStatusMessage());
         } catch (Exception e) {
             if (msg != null) {
-                logger.warn(String.format("Error while sending update sent for session [%s] message [%s] (step [%s] - status [%s])", getSessionId(), msg.getUuid(), msg.getStatusMessage().getStepId(), msg.getStatusMessage().getStatus()), e);
+                logger.warn(MarkerFactory.getDetachedMarker(getSessionId()), String.format("Error while sending update for message [%s] - step ID [%s] - status [%s])", msg.getUuid(), msg.getStatusMessage().getStepId(), msg.getStatusMessage().getStatus()), e);
             } else {
-                logger.warn(String.format("Error while sending update sent for session [%s] - message was null", getSessionId()), e);
+                logger.warn(MarkerFactory.getDetachedMarker(getSessionId()), "Error while sending update - message was null", e);
             }
         } finally {
             if (sendConfirmation) {
@@ -253,12 +254,16 @@ public class SessionActor extends Actor {
     }
 
     private UpdateMessage prepareStatusUpdate(TestStepStatusEvent event) {
-        return prepareStatusUpdate(event.getSessionId(), event.getStepId(), event.getStatus(), event.getReport(), true);
+        return prepareStatusUpdate(event.getSessionId(), event.getStepId(), event.getStatus(), event.getReport(), true, ErrorUtils.extractStepName(event.getStep()));
     }
 
-    private UpdateMessage prepareStatusUpdate(String sessionId, String stepId, StepStatus status, TestStepReportType report, boolean sendLogMessage) {
+    private UpdateMessage prepareStatusUpdate(String sessionId, String stepId, StepStatus status, TestStepReportType report, boolean sendLogMessage, String stepType) {
         if (sendLogMessage) {
-            logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("updateStatus (%s, %s , %s) ", sessionId, stepId, status));
+            if (stepId != null && stepType != null) {
+                logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("Status update - step [%s] - ID [%s]: %s", stepType, stepId, status));
+            } else {
+                logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("Status update: %s", status));
+            }
         } else {
             logger.debug(String.format("updateStatus (%s, %s , %s) ", sessionId, stepId, status));
         }
@@ -288,7 +293,11 @@ public class SessionActor extends Actor {
     }
 
     private void ignoredStatusUpdate(TestStepStatusEvent message) {
-		logger.debug(MarkerFactory.getDetachedMarker(message.getSessionId()), "Ignoring the status update ["+message+"]");
+        if (message.getStep() != null && message.getStepId() != null) {
+            logger.debug(MarkerFactory.getDetachedMarker(message.getSessionId()), String.format("Ignoring status update - step [%s]- ID [%s]", ErrorUtils.extractStepName(message.getStep()), message.getStepId()));
+        } else {
+            logger.debug(MarkerFactory.getDetachedMarker(message.getSessionId()), String.format("Ignoring status update [%s]", message));
+        }
 	}
 
 	private void unexpectedCommand(Object message, TestCaseContext context) {

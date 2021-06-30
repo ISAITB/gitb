@@ -1,6 +1,26 @@
 package models
 
-class PublicConfig(_ssoEnabled: Boolean, _logoPath: String, _footerLogoPath: String, _versionNumber: String, _hasDefaultLegalNotice: Boolean, _defaultLegalNotice: String, _inMigrationPeriod: Boolean, _demosEnabled: Boolean, _userGuideLink: String, _registrationEnabled: Boolean, _euLoginUseGuide: String, _euLoginMigrationGuide: String, _cookiePath: String, _initialSandboxRun: Boolean, _developmentMode: Boolean) {
+class PublicConfig(
+  _ssoEnabled: Boolean,
+  _logoPath: String,
+  _footerLogoPath: String,
+  _versionNumber: String,
+  _hasDefaultLegalNotice: Boolean,
+  _defaultLegalNotice: String,
+  _inMigrationPeriod: Boolean,
+  _demosEnabled: Boolean,
+  _userGuideLink: String,
+  _registrationEnabled: Boolean,
+  _euLoginUseGuide: String,
+  _euLoginMigrationGuide: String,
+  _cookiePath: String,
+  _initialSandboxRun: Boolean,
+  _developmentMode: Boolean,
+  _contextPath: String,
+  _moreInfoEnabled: Boolean,
+  _moreInfoLink: String,
+  _releaseInfoEnabled: Boolean,
+  _releaseInfoLink: String) {
 
   var ssoEnabled: Boolean = _ssoEnabled
   var logoPath: String = _logoPath
@@ -17,7 +37,12 @@ class PublicConfig(_ssoEnabled: Boolean, _logoPath: String, _footerLogoPath: Str
   var cookiePath: String = _cookiePath
   var initialSandboxRun: Boolean = _initialSandboxRun
   var developmentMode: Boolean = _developmentMode
+  var contextPath: String = _contextPath
+  var moreInfoEnabled: Boolean = _moreInfoEnabled
+  var moreInfoLink: String = _moreInfoLink
+  var releaseInfoEnabled: Boolean = _releaseInfoEnabled
+  var releaseInfoLink: String = _releaseInfoLink
 
-  def this(_versionNumber: String) =
-    this(false, null, null, _versionNumber, false, null, false, false, null, false, null, null, null, false, false)
+  def this(_versionNumber: String, _cookiePath: String, _contextPath: String) =
+    this(false, null, null, _versionNumber, false, null, false, false, null, false, null, null, _cookiePath, false, false, _contextPath, false, null, false, null)
 }

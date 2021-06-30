@@ -3,10 +3,11 @@ package controllers
 import config.Configurations
 import controllers.util._
 import exceptions._
+
 import javax.inject.Inject
 import managers._
 import models.Enums.UserRole
-import models.Systems
+import models.{Configs, Systems}
 import models.prerequisites.PrerequisiteUtil
 import org.apache.commons.codec.binary.Base64
 import org.slf4j._
@@ -151,7 +152,7 @@ class SystemService @Inject() (accountManager: AccountManager, authorizedAction:
 
   def saveEndpointConfiguration(endpointId: Long) = authorizedAction { request =>
 		val jsConfig = ParameterExtractor.requiredBodyParameter(request, Parameters.CONFIG)
-    val config = JsonUtil.parseJsConfig(jsConfig)
+    var config = JsonUtil.parseJsConfig(jsConfig)
     authorizationManager.canEditEndpointConfiguration(request, config)
     var response: Result = null
     if (Configurations.ANTIVIRUS_SERVER_ENABLED && MimeUtil.isDataURL(config.value)) {
@@ -173,6 +174,10 @@ class SystemService @Inject() (accountManager: AccountManager, authorizedAction:
           }
         }
         if (response == null) {
+          // Encrypt value if type is SECRET.
+          if (parameter.get.kind == "SECRET") {
+            config = Configs(config.system, config.parameter, config.endpoint, MimeUtil.encryptString(config.value))
+          }
           systemManager.saveEndpointConfiguration(config)
           if (parameter.get.kind == "BINARY") {
             // Get the metadata for the parameter.

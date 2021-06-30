@@ -1,0 +1,14 @@
+<div class="col-md-2">
+    <aside class="sidebar">
+        <ul class="nav nav-list primary push-bottom">
+            <li><a routerLink="conformance">Conformance Statements</a></li>
+            <li><a routerLink="info">{{dataService.labelSystem()}} Information</a></li>
+            <li><a routerLink="tests">Test Sessions</a></li>
+            <li *ngIf="!(dataService.isVendorUser && count <= 1)" class="nav-divider"></li>
+            <li *ngIf="!(dataService.isVendorUser && count <= 1)"><a [routerLink]="['/', 'organisation', 'systems']">{{dataService.labelSystems()}}</a></li>
+        </ul>
+    </aside>
+</div>
+<div class="child col-md-10">
+    <router-outlet></router-outlet>
+</div>

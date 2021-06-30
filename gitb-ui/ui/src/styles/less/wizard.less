@@ -1,0 +1,92 @@
+@import "_common.less";
+
+.wizard-directive {
+	position: relative;
+	.steps {
+		display: table;
+		width: 100%;
+		.steps-row {
+			display: table-row;
+			
+			.step {
+				margin: 8px 0;
+				display: table-cell;
+				text-align: center;
+				position: relative;
+				z-index: 1;
+
+				&:before {
+					top: 14px;
+					left: 0;
+					position: absolute;
+					content: " ";
+					width: 100%;
+					height: 1px;
+					background-color: @gray-light;
+					z-index: -1;
+				}
+
+				.step-button {
+					display: inline-block;
+					width: 30px;
+					height: 30px;
+					line-height: 30px;
+					border-radius: 50%;
+					border: 1px solid @gray-light;
+					padding: 0;
+					background-color: @white;
+
+					&:hover, &:focus {
+						text-decoration: none;
+					}
+				}
+
+				.step-title {
+					margin: 10px 0;
+				}
+
+				&.completed {
+					.step-button {
+						cursor: default;
+						color: @white;
+						background-color: lighten(@blue, 10%)
+					}
+				}
+
+				&.active {
+					.step-button {
+						background-color: @blue;
+						color: @white;
+					}
+				}
+
+				&.disabled {
+					.step-button {
+						cursor: default;
+						color: @gray;
+					}
+				}
+
+				&.next {
+					.step-button {
+						cursor: pointer;
+					}
+				}
+			}
+		}
+	}
+	.step-contents {
+		.step-content {
+			display: none;
+			padding: 20px;
+
+			&.active {
+				display: block;
+			}
+		}
+	}
+}
+
+.no-display {
+	display: none;
+}

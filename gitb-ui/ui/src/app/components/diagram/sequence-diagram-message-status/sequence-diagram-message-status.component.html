@@ -1,0 +1,11 @@
+<div [ngClass]="classValue">
+    <div class="status"
+      [ngClass]="{
+      'processing': message.status == TEST_STATUS.PROCESSING, 
+      'skipped': message.status == TEST_STATUS.SKIPPED, 
+      'waiting': message.status == TEST_STATUS.WAITING, 
+      'error': message.status == TEST_STATUS.ERROR, 
+      'warning': message.status == TEST_STATUS.WARNING, 
+      'completed': message.status == TEST_STATUS.COMPLETED}">
+    </div>
+</div>

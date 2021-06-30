@@ -1,14 +1,15 @@
 package managers
 
 import java.util
-
 import actors.events.{ConformanceStatementCreatedEvent, ConformanceStatementUpdatedEvent, SystemCreatedEvent, SystemUpdatedEvent}
+
 import javax.inject.{Inject, Singleton}
 import models.Enums.{TestResultStatus, UserRole}
 import models.{ConformanceResult, ConformanceStatement, _}
 import org.slf4j.LoggerFactory
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
+import utils.MimeUtil
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -137,8 +138,13 @@ class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelp
           // Create or update
           if (parameterDefinition.kind != "SECRET" || (parameterDefinition.kind == "SECRET" && matchedProvidedParameter.get.value != "")) {
             // Special case: No update for secret parameters that are defined but not updated.
+            var valueToSet = matchedProvidedParameter.get.value
+            if (parameterDefinition.kind == "SECRET") {
+              // Encrypt secret value at rest.
+              valueToSet = MimeUtil.encryptString(valueToSet)
+            }
             actions += PersistenceSchema.systemParameterValues.filter(_.parameter === parameterDefinition.id).filter(_.system === systemId).delete
-            actions += (PersistenceSchema.systemParameterValues += matchedProvidedParameter.get.withSystemId(systemId))
+            actions += (PersistenceSchema.systemParameterValues += SystemParameterValues(systemId, matchedProvidedParameter.get.parameter, valueToSet))
           }
         } else {
           // Delete existing (if present)

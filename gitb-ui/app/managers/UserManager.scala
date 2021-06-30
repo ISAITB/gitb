@@ -192,20 +192,4 @@ class UserManager @Inject() (accountManager: AccountManager, organizationManager
     firstOption.isDefined
   }
 
-  /**
-   * Checks if last vendor admin for organization
-   *
-   */
-  def isLastAdmin(userId: Long): Boolean = {
-    var result = false
-    val user = exec(PersistenceSchema.users.filter(_.id === userId).filter(_.role === UserRole.VendorAdmin.id.toShort).result.headOption)
-
-    if (user.isDefined) {
-      val orgId = exec(PersistenceSchema.users.filter(_.id === userId).result.head).organization
-      val size = exec(PersistenceSchema.users.filter(_.organization === orgId).filter(_.role === UserRole.VendorAdmin.id.toShort).filter(_.id =!= userId).size.result)
-      result = size == 0
-    }
-    result
-  }
-
 }

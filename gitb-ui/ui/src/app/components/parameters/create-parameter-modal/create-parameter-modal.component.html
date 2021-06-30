@@ -1,0 +1,18 @@
+<div class="modal-header">
+	<h4>{{modalTitle}}</h4>
+</div>
+<form class="form-horizontal">
+    <div class="modal-body">
+        <app-parameter-form 
+            [nameLabel]="nameLabel"
+            [parameter]="parameter"
+            [hasKey]="hasKey"
+            [hideInExport]="hideInExport"
+            [hideInRegistration]="hideInRegistration"
+            [existingValues]="existingValues"></app-parameter-form>
+    </div>
+    <div class="modal-footer">
+        <button class="btn btn-default" type="submit" (click)="createParameter()" [disabled]="saveDisabled()">Save</button>
+        <button class="btn btn-default" type="button" (click)="cancel()">Cancel</button>
+    </div>
+</form>		

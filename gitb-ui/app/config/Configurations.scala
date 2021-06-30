@@ -46,6 +46,10 @@ object Configurations {
   var EMAIL_SMTP_AUTH_PASSWORD = ""
   var SURVEY_ENABLED = false
   var SURVEY_ADDRESS = ""
+  var MORE_INFO_ENABLED = false
+  var MORE_INFO_ADDRESS = ""
+  var RELEASE_INFO_ENABLED = false
+  var RELEASE_INFO_ADDRESS = ""
 
   var USERGUIDE_OU = ""
   var USERGUIDE_OA = ""
@@ -78,7 +82,9 @@ object Configurations {
   var VALIDATION_TDL_EXTERNAL_ENABLED = false
   var VALIDATION_TDL_EXTERNAL_URL = ""
 
-  var MASTER_PASSWORD: Array[Char] = null
+  var MASTER_PASSWORD: Array[Char] = _
+  var MASTER_PASSWORD_TO_REPLACE: Option[Array[Char]] = None
+  var MASTER_PASSWORD_FORCE = false
 
   var AUTHENTICATION_COOKIE_PATH = ""
   var AUTHENTICATION_SSO_ENABLED = false
@@ -115,8 +121,11 @@ object Configurations {
   var DATA_WEB_INIT_ENABLED = false
 
   var TEST_SESSION_ARCHIVE_THRESHOLD = 30
+  var PASSWORD_COMPLEXITY_RULE_REGEX:Regex = _
 
   var TESTBED_MODE:String = ""
+
+  var API_ROOT = ""
 
   def loadConfigurations() = {
     if (!_IS_LOADED) {
@@ -172,6 +181,10 @@ object Configurations {
 
       SURVEY_ENABLED = fromEnv("SURVEY_ENABLED", conf.getString("survey.enabled")).toBoolean
       SURVEY_ADDRESS = fromEnv("SURVEY_ADDRESS", conf.getString("survey.address"))
+      MORE_INFO_ENABLED = fromEnv("MORE_INFO_ENABLED", conf.getString("moreinfo.enabled")).toBoolean
+      MORE_INFO_ADDRESS = fromEnv("MORE_INFO_ADDRESS", conf.getString("moreinfo.address"))
+      RELEASE_INFO_ENABLED = fromEnv("RELEASE_INFO_ENABLED", conf.getString("releaseinfo.enabled")).toBoolean
+      RELEASE_INFO_ADDRESS = fromEnv("RELEASE_INFO_ADDRESS", conf.getString("releaseinfo.address"))
 
       USERGUIDE_OU = fromEnv("USERGUIDE_OU", conf.getString("userguide.ou"))
       USERGUIDE_OA = fromEnv("USERGUIDE_OA", conf.getString("userguide.oa"))
@@ -195,6 +208,11 @@ object Configurations {
       }
 
       MASTER_PASSWORD = fromEnv("MASTER_PASSWORD", conf.getString("masterPassword")).toCharArray
+      val replacement = fromEnv("MASTER_PASSWORD_TO_REPLACE", "")
+      if (replacement.nonEmpty) {
+        MASTER_PASSWORD_TO_REPLACE = Some(replacement.toCharArray)
+      }
+      MASTER_PASSWORD_FORCE = fromEnv("MASTER_PASSWORD_FORCE", "false").toBoolean
 
       PROXY_SERVER_ENABLED = fromEnv("PROXY_SERVER_ENABLED", conf.getString("proxy.enabled")).toBoolean
       if (PROXY_SERVER_ENABLED) {
@@ -311,6 +329,8 @@ object Configurations {
       }
       // Mode - END
       TEST_SESSION_ARCHIVE_THRESHOLD = fromEnv("TEST_SESSION_ARCHIVE_THRESHOLD", conf.getString("testsession.archive.threshold")).toInt
+      API_ROOT = conf.getString("apiPrefix")
+      PASSWORD_COMPLEXITY_RULE_REGEX = new Regex(conf.getString("passwordComplexityRule"))
       _IS_LOADED = true
     }
   }

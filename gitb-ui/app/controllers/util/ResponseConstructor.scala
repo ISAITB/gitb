@@ -83,7 +83,9 @@ object ResponseConstructor extends Results{
       "\"access_token\":\"" + tokens.access_token + "\"," +
       "\"token_type\":\"Bearer\"," +
       "\"expires_in\":" + Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME + "," + //in seconds ~ 30 days
-      "\"registered\":true}").as(JSON)
+      "\"registered\":true" +
+      "}"
+    ).as(JSON)
   }
 
 }

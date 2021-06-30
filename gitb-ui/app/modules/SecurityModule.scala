@@ -2,6 +2,7 @@ package modules
 
 import com.google.inject.{AbstractModule, Provides}
 import config.Configurations
+import config.Configurations.API_ROOT
 import ecas.ExtendedCasConfiguration
 import org.pac4j.cas.client.{CasClient, CasProxyReceptor}
 import org.pac4j.cas.config.CasProtocol
@@ -10,12 +11,16 @@ import org.pac4j.core.client.Clients
 import org.pac4j.core.client.direct.AnonymousClient
 import org.pac4j.core.config.Config
 import org.pac4j.core.http.ajax.DefaultAjaxRequestResolver
+import org.pac4j.core.http.callback.QueryParameterCallbackUrlResolver
 import org.pac4j.core.matching.matcher.PathMatcher
 import org.pac4j.core.profile.UserProfile
+import org.pac4j.core.util.Pac4jConstants
 import org.pac4j.play.http.PlayHttpActionAdapter
 import org.pac4j.play.store.PlaySessionStore
 import org.pac4j.play.{CallbackController, LogoutController}
 import play.cache.SyncCacheApi
+
+import java.util
 
 class SecurityModule extends AbstractModule {
 
@@ -74,14 +79,23 @@ class SecurityModule extends AbstractModule {
   }
 
   @Provides
-  def provideConfig(casClient: CasClient, casProxyReceptor: CasProxyReceptor): Config = {
+  def provideCallbackUrlResolver() = {
+    val params = new util.HashMap[String, String]()
+    params.put(Pac4jConstants.DEFAULT_FORCE_CLIENT_PARAMETER, CLIENT_NAME)
+    val resolver = new QueryParameterCallbackUrlResolver(params)
+    resolver
+  }
+
+  @Provides
+  def provideConfig(casClient: CasClient, casProxyReceptor: CasProxyReceptor, callbackUrlResolver: QueryParameterCallbackUrlResolver): Config = {
     var clients: Clients = null
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
       clients = new Clients(Configurations.AUTHENTICATION_SSO_CALLBACK_URL, casClient, casProxyReceptor)
+      clients.setCallbackUrlResolver(callbackUrlResolver)
     } else {
-      val anonymoucClient = new AnonymousClient()
-      anonymoucClient.setName(CLIENT_NAME)
-      clients = new Clients(anonymoucClient)
+      val anonymousClient = new AnonymousClient()
+      anonymousClient.setName(CLIENT_NAME)
+      clients = new Clients(anonymousClient)
     }
     val config = new Config(clients)
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
@@ -92,16 +106,15 @@ class SecurityModule extends AbstractModule {
     config.setHttpActionAdapter(new PlayHttpActionAdapter())
     config.addMatcher("excludedPath", new PathMatcher()
       .excludePath("/")
-      .excludePath("/notices/tbdefault")
-      .excludePath("/initdata")
-      .excludePath("/favicon.ico")
-      .excludeBranch("/theme")
+      .excludePath("/"+API_ROOT+"/notices/tbdefault")
+      .excludeBranch("/"+API_ROOT+"/theme")
       .excludeBranch("/assets")
       .excludeBranch("/webjars")
       .excludeBranch("/template")
+      .excludePath("/favicon.ico")
       .excludeBranch("/callback")
-      .excludeBranch("/repository/tests")
-      .excludeBranch("/repository/resource")
+      .excludeBranch("/"+API_ROOT+"/repository/tests")
+      .excludeBranch("/"+API_ROOT+"/repository/resource")
     )
     config
   }

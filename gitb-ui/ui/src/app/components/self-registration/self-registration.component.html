@@ -1,0 +1,111 @@
+<div>
+    <div *ngIf="!selfRegOptions || selfRegOptions.length == 0">
+        <div [ngClass]="{'link-account-separator': sso}">
+            <div class="bg-info div-rounded div-padded">
+                <span>There are currently no communities available that allow self-registration.</span>
+            </div>
+        </div>
+    </div>
+    <div *ngIf="selfRegOptions && selfRegOptions.length > 0">
+      <div [ngClass]="{'link-account-separator': sso, 'bottom-margin': !sso}">
+          <div class="bg-info div-rounded div-padded">
+              <p>Select the community you want to register for and provide the requested information. If your community is not listed you need to request from an administrator to register you on your behalf.</p>
+              <span *ngIf="sso"><b>Privacy note:</b> By registering you grant your consent to link your name, email and EU Login user ID to your new administrator account.</span>
+              <span *ngIf="!sso"><b>Privacy note:</b> By registering you grant your consent to link the provided information to your new administrator account.</span>
+          </div>
+      </div>
+      <div [ngClass]="{'form-separator-popup': sso, 'form-separator form-separator-top-padding': !sso}">
+          <h4 class="title">Community</h4>
+      </div>
+      <div table-directive
+        class="self-reg-option-table"
+        [rowStyle]="optionRowStyle" 
+        [class.self-reg-option-table-popup]="sso" 
+        [columns]="communityColumns"
+        [data]="selfRegOptions"
+        [allowSelect]="true"
+        (onSelect)="communitySelected($event)"></div>
+      <div [collapse]="!model.selfRegOption?.communityId" [isAnimated]="true">
+        <div *ngIf="model.selfRegOption?.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN">
+          <div class="form-group">
+              <label class="col-xs-3 control-label" for="token">* Registration token:</label>
+              <div class="col-xs-7">
+                  <input id="token" [(ngModel)]="model.selfRegToken" class="form-control" type="text"/>
+              </div>
+              <app-tooltip tbTooltip="A community-specific token needs to be provided to allow registration. You need to request this from the community's administrator."></app-tooltip>
+          </div>
+          <div class="form-group" *ngIf="model.selfRegOption?.selfRegTokenHelpText" style="margin-bottom: -20px;">
+              <div class="col-xs-offset-3 col-xs-8">
+                  <div class="form-control-static inline-form-text"><div [innerHtml]="model.selfRegOption?.selfRegTokenHelpText"></div></div>
+              </div>
+          </div>
+        </div>
+        <div [ngClass]="{'form-separator-popup': sso, 'form-separator': !sso}" class="form-separator-top-padding">
+            <h4 class="title">{{dataService.labelOrganisation()}} details <span tbTooltip="This information defines the member of the selected community through which will you be testing for conformance"><i class="fa fa-question-circle"></i></span></h4>
+        </div>
+        <div class="form-group">
+            <label class="col-xs-3 control-label" for="orgShortName">* Short name:</label>
+            <div class="col-xs-7">
+                <input id="orgShortName" [(ngModel)]="model.orgShortName" class="form-control" type="text"/>
+            </div>
+            <app-tooltip tbTooltip="A short name for your {{dataService.labelOrganisationLower()}} to appear in reports."></app-tooltip>
+        </div>
+        <div class="form-group">
+            <label class="col-xs-3 control-label" for="orgFullName">* Full name:</label>
+            <div class="col-xs-7">
+                <input id="orgFullName" [(ngModel)]="model.orgFullName" class="form-control" type="text"/>
+            </div>
+            <app-tooltip tbTooltip="The complete name of your {{dataService.labelOrganisationLower()}}."></app-tooltip>
+        </div>
+        <div class="form-group" *ngIf="model.selfRegOption?.templates && model.selfRegOption!.templates!.length > 0">
+            <label class="col-xs-3 control-label" for="template"><span [hidden]="!model.selfRegOption?.forceTemplateSelection">* </span>Configuration:</label>
+            <div class="col-xs-7">
+                <select id="template" name="template" class="form-control" [disabled]="templateReadonly" [(ngModel)]="model.template">
+                    <option value="" disabled></option>
+                    <option *ngFor="let template of model.selfRegOption?.templates" [ngValue]="template">{{template.name}}</option>
+                </select>
+            </div>
+            <app-tooltip tbTooltip="Predefined test configuration(s) curated by the community administrator."></app-tooltip>
+        </div>
+        <div class="row" *ngIf="model.selfRegOption?.organisationProperties && model.selfRegOption!.organisationProperties!.length > 0">
+          <div class="col-xs-12">
+            <div [ngClass]="{'form-separator-popup selfreg': sso, 'form-separator': !sso}"></div>
+          </div>
+        </div>
+        <app-custom-property-form *ngIf="model.selfRegOption" [tbProperties]="model.selfRegOption!.organisationProperties" [tbShowFormHeader]="false" [tbFormPadded]="false" [tbColInputLess]="1" [tbShowRequiredAsterisks]="model.selfRegOption!.forceRequiredProperties"></app-custom-property-form>
+        <div *ngIf="!sso">
+          <div class="form-separator form-separator-top-padding">
+              <h4 class="title">Administrator account details <span tooltip="Through your administrator account you can manage your {{dataService.labelOrganisationLower()}} users, configure your conformance statements and execute tests"><i class="fa fa-question-circle"></i></span></h4>
+          </div>
+          <div class="form-group">
+              <label class="col-xs-3 control-label" for="adminName">* Name:</label>
+              <div class="col-xs-7">
+                  <input id="adminName" [(ngModel)]="model.adminName" class="form-control" type="text"/>
+              </div>
+              <app-tooltip tbTooltip="This may be your name or a description in case this account will be shared by multiple people."></app-tooltip>
+          </div>
+          <div class="form-group">
+              <label class="col-xs-3 control-label" for="adminEmail">* Username:</label>
+              <div class="col-xs-7">
+                  <input id="adminEmail" [(ngModel)]="model.adminEmail" class="form-control" type="text"/>
+              </div>
+              <app-tooltip tbTooltip="This is your account's username."></app-tooltip>
+          </div>
+          <div class="form-group">
+              <label class="col-xs-3 control-label" for="adminPassword">* Password:</label>
+              <div class="col-xs-7">
+                  <input id="adminPassword" [(ngModel)]="model.adminPassword" class="form-control" type="password"/>
+              </div>
+              <app-tooltip tbTooltip="The account's password, to be provided with the username when logging in."></app-tooltip>
+          </div>
+          <div class="form-group">
+              <label class="col-xs-3 control-label" for="adminPasswordConfirm">* Confirm password:</label>
+              <div class="col-xs-7">
+                  <input id="adminPasswordConfirm" [(ngModel)]="model.adminPasswordConfirm" class="form-control" type="password"/>
+              </div>
+              <app-tooltip tbTooltip="Provide again the account's password to ensure it is correct."></app-tooltip>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>

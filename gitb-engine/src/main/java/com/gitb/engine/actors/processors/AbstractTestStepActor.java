@@ -28,6 +28,7 @@ import com.gitb.tdl.TestConstruct;
 import com.gitb.tr.*;
 import com.gitb.types.BooleanType;
 import com.gitb.types.MapType;
+import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.reflect.ConstructorUtils;
@@ -268,7 +269,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	protected void updateTestStepStatus(ActorContext context, StatusEvent statusEvent, TestStepReportType report, boolean reportTestStepStatus, boolean logError) {
 
 		if (logError && statusEvent instanceof ErrorStatusEvent) {
-			logger.error(addMarker(), "An error status received in [" + stepId + "]", ((ErrorStatusEvent) statusEvent).getException());
+			logger.error(addMarker(), String.format("Unexpected error - step [%s] - ID [%s]", ErrorUtils.extractStepName(step), stepId), ((ErrorStatusEvent) statusEvent).getException());
 		}
 
 		StepStatus status = statusEvent.getStatus();
@@ -305,13 +306,11 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		}
 
 		boolean stopTestSession = false;
-		if (step instanceof TestConstruct || step instanceof Sequence) {
-			boolean stopOnError = false;
-			if (step instanceof TestConstruct) {
-				stopOnError = ((TestConstruct)step).isStopOnError();
-				if (((TestConstruct)step).getId() != null) {
-					((MapType)(scope.getVariable(TestCaseContext.STEP_SUCCESS_MAP, true).getValue())).addItem(((TestConstruct)step).getId(), new BooleanType(status == StepStatus.COMPLETED || status == StepStatus.WARNING));
-				}
+		if (step instanceof TestConstruct) {
+			boolean stopOnError;
+			stopOnError = ((TestConstruct)step).isStopOnError();
+			if (((TestConstruct)step).getId() != null) {
+				((MapType)(scope.getVariable(TestCaseContext.STEP_SUCCESS_MAP, true).getValue())).addItem(((TestConstruct)step).getId(), new BooleanType(status == StepStatus.COMPLETED || status == StepStatus.WARNING));
 			}
 			if (step instanceof Sequence) {
 				stopOnError = ((Sequence)step).isStopOnError();
@@ -325,7 +324,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 			}
 		}
 		if (reportTestStepStatus) {
-			final TestStepStatusEvent event = new TestStepStatusEvent(scope.getContext().getSessionId(), stepId, status, report, self());
+			final TestStepStatusEvent event = new TestStepStatusEvent(scope.getContext().getSessionId(), stepId, status, report, self(), step);
 			TestStepStatusEventBus
 					.getInstance()
 					.publish(event);

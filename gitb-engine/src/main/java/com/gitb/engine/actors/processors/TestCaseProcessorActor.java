@@ -22,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 
 import javax.xml.datatype.DatatypeConfigurationException;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by serbay on 9/5/14.
@@ -87,6 +88,8 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
         if (step instanceof IfStep) {
             applyStopOnErrorSemantics(((IfStep) step).getThen(), step.isStopOnError());
             applyStopOnErrorSemantics(((IfStep) step).getElse(), step.isStopOnError());
+        } else if (step instanceof Group) {
+            applyStopOnErrorSemantics(((Group) step), step.isStopOnError());
         } else if (step instanceof WhileStep) {
             applyStopOnErrorSemantics(((WhileStep) step).getDo(), step.isStopOnError());
         } else if (step instanceof ForEachStep) {
@@ -117,13 +120,12 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
 
             //Start command for test case processing
             if (message instanceof StartCommand) {
-	            logger.debug(MarkerFactory.getDetachedMarker(((StartCommand) message).getSessionId()), "Received start command, starting test case sequence.");
                 sequenceProcessorActor = RootSequenceProcessorActor.create(getContext(), testCase.getSteps(), context.getScope(), "");
 	            sequenceProcessorActor.tell(message, self());
             }
             // Prepare for stop command
             else if (message instanceof PrepareForStopCommand) {
-                logger.debug(MarkerFactory.getDetachedMarker(((PrepareForStopCommand) message).getSessionId()), "Received prepare for stop command.");
+                logger.debug(MarkerFactory.getDetachedMarker(((PrepareForStopCommand) message).getSessionId()), "Preparing to stop");
                 if (sequenceProcessorActor != null) {
                     sequenceProcessorActor.tell(message, getSelf());
                 }
@@ -150,7 +152,7 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
             //Initiate the preliminary phase execution
             else if (message instanceof InitiatePreliminaryCommand) {
 	            if (preliminaryProcessorActor != null) {
-		            logger.debug(MarkerFactory.getDetachedMarker(sessionId), "Initiating preliminary phase.");
+		            logger.debug(MarkerFactory.getDetachedMarker(sessionId), "Initiating preliminary phase");
 		            //Start the processing of preliminary phase
 		            preliminaryProcessorActor.tell(new StartCommand(sessionId), self());
 	            }
@@ -160,7 +162,15 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
 	            if(getSender().equals(sequenceProcessorActor)) {
 		            StepStatus status = ((StatusEvent) message).getStatus();
 		            if (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.WARNING) {
-                        getContext().getParent().tell(new TestSessionFinishedCommand(sessionId, status, constructResultReport(status, context)), self());
+		                // Construct the final report.
+                        TestStepReportType resultReport = constructResultReport(status, context);
+                        // Notify for the completion of the test session after a grace period.
+                        getContext().system().scheduler().scheduleOnce(
+                                scala.concurrent.duration.Duration.apply(500L, TimeUnit.MILLISECONDS), () -> {
+                                    getContext().getParent().tell(new TestSessionFinishedCommand(sessionId, status, resultReport), self());
+                                },
+                                getContext().dispatcher()
+                        );
 		            }
 	            }
             } else {

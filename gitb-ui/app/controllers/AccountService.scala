@@ -3,12 +3,13 @@ package controllers
 import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
+
 import javax.inject.Inject
 import managers._
 import org.apache.tika.Tika
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
-import utils.{ClamAVClient, HtmlUtil, JsonUtil}
+import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil}
 
 
 class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, accountManager: AccountManager, userManager: UserManager, organisationManager: OrganizationManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
@@ -80,6 +81,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
     val json:String = JsonUtil.serializeUser(user)
     ResponseConstructor.constructJsonResponse(json)
   }
+  
   /**
    * Updates the user profile of the authenticated user
    */
@@ -91,8 +93,12 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
     val passwd:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.PASSWORD)
     val oldPasswd:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.OLD_PASSWORD)
 
-    accountManager.updateUserProfile(userId, name, passwd, oldPasswd)
-    ResponseConstructor.constructEmptyResponse
+    if (passwd.isDefined && !CryptoUtil.isAcceptedPassword(passwd.get)) {
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided password does not match minimum complexity requirements.")
+    } else {
+      accountManager.updateUserProfile(userId, name, passwd, oldPasswd)
+      ResponseConstructor.constructEmptyResponse
+    }
   }
 
   def getConfiguration = authorizedAction { request =>
@@ -104,6 +110,10 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
     configProperties.put("email.attachments.allowedTypes", String.valueOf(Configurations.EMAIL_ATTACHMENTS_ALLOWED_TYPES_STR))
     configProperties.put("survey.enabled", String.valueOf(Configurations.SURVEY_ENABLED))
     configProperties.put("survey.address", String.valueOf(Configurations.SURVEY_ADDRESS))
+    configProperties.put("moreinfo.enabled", String.valueOf(Configurations.MORE_INFO_ENABLED))
+    configProperties.put("moreinfo.address", String.valueOf(Configurations.MORE_INFO_ADDRESS))
+    configProperties.put("releaseinfo.enabled", String.valueOf(Configurations.RELEASE_INFO_ENABLED))
+    configProperties.put("releaseinfo.address", String.valueOf(Configurations.RELEASE_INFO_ADDRESS))
     configProperties.put("userguide.ou", String.valueOf(Configurations.USERGUIDE_OU))
     configProperties.put("userguide.oa", String.valueOf(Configurations.USERGUIDE_OA))
     configProperties.put("userguide.ta", String.valueOf(Configurations.USERGUIDE_TA))

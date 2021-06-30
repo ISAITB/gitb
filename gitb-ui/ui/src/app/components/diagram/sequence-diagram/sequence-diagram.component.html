@@ -1,0 +1,11 @@
+<div class="child" [ngClass]="classValue()">
+    <div class="actor-container">
+        <app-sequence-diagram-actor *ngFor="let actor of actors" [actor]="actor" [actorInfo]="actorInfo!"></app-sequence-diagram-actor>
+    </div>
+    <div class="lifeline-container">
+        <div class="lifeline" *ngFor="let actor of actors"></div>
+    </div>
+    <div class="message-container">
+        <app-sequence-diagram-message *ngFor="let message of messages" [message]="message" [events]="events"></app-sequence-diagram-message>
+    </div>
+</div>

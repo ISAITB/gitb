@@ -1,0 +1,89 @@
+import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
+import { Constants } from 'src/app/common/constants';
+import { BaseComponent } from 'src/app/pages/base-component.component';
+import { CommunityService } from 'src/app/services/community.service';
+import { ConformanceService } from 'src/app/services/conformance.service';
+import { DataService } from 'src/app/services/data.service';
+import { PopupService } from 'src/app/services/popup.service';
+import { Community } from 'src/app/types/community';
+import { Domain } from 'src/app/types/domain';
+
+@Component({
+  selector: 'app-create-community',
+  templateUrl: './create-community.component.html',
+  styles: [
+  ]
+})
+export class CreateCommunityComponent extends BaseComponent implements OnInit, AfterViewInit {
+
+  community: Partial<Community> = {
+    selfRegType: Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED,
+    selfRegRestriction: Constants.SELF_REGISTRATION_RESTRICTION.NO_RESTRICTION,
+    allowCertificateDownload: false,
+    allowSystemManagement: true,
+    allowStatementManagement: true,
+    allowPostTestOrganisationUpdates: true,
+    allowPostTestSystemUpdates: true,
+    allowPostTestStatementUpdates: true
+  }
+  domains: Domain[] = []
+  savePending = false
+
+  constructor(
+    private router: Router,
+    private communityService: CommunityService,
+    private conformanceService: ConformanceService,
+    private dataService: DataService,
+    private popupService: PopupService
+  ) { super() }
+
+  ngAfterViewInit(): void {
+    this.dataService.focus('sname')
+  }
+
+  ngOnInit(): void {
+    this.conformanceService.getDomains()
+    .subscribe((data) => {
+      this.domains = data
+    })
+  }
+
+  saveDisabled() {
+    return !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
+      (!this.dataService.configuration.registrationEnabled || 
+        (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED || 
+          (
+            (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || this.textProvided(this.community.selfRegToken)) && 
+            (!this.dataService.configuration.emailEnabled || (!this.community.selfRegNotification || this.textProvided(this.community.email)))
+          )
+        )
+      )
+    )
+  }
+
+  createCommunity() {
+    this.clearAlerts()
+    const emailValid = !this.textProvided(this.community.email) || this.requireValidEmail(this.community.email, "Please enter a valid support email.")
+    const notificationValid = !this.community.selfRegNotification || this.requireText(this.community.email, "A support email needs to be defined to support notifications.")
+    if (emailValid && notificationValid) {
+      let descriptionToUse: string|undefined
+      if (!this.community.sameDescriptionAsDomain) {
+        descriptionToUse = this.community.activeDescription
+      }
+      this.savePending = true
+      this.communityService.createCommunity(this.community.sname!, this.community.fname!, this.community.email, this.community.selfRegType!, this.community.selfRegRestriction!, this.community.selfRegToken, this.community.selfRegTokenHelpText, this.community.selfRegNotification, descriptionToUse, this.community.selfRegForceTemplateSelection, this.community.selfRegForceRequiredProperties, this.community.allowCertificateDownload!, this.community.allowStatementManagement!, this.community.allowSystemManagement!, this.community.allowPostTestOrganisationUpdates!, this.community.allowPostTestSystemUpdates!, this.community.allowPostTestStatementUpdates!, this.community.domainId)
+      .subscribe(() => {
+        this.cancelCreateCommunity()
+        this.popupService.success('Community created.')
+      }).add(() => {
+        this.savePending = false
+      })
+    }
+  }
+
+  cancelCreateCommunity() {
+    this.router.navigate(['admin', 'users'])
+  }
+
+}

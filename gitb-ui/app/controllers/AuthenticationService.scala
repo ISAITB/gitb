@@ -3,14 +3,15 @@ package controllers
 import config.Configurations
 import controllers.util._
 import exceptions._
-import javax.inject.Inject
-import managers.{AuthorizationManager, UserManager, AccountManager, AuthenticationManager}
+import managers.{AccountManager, AuthenticationManager, AuthorizationManager, UserManager}
 import models.Enums
 import org.pac4j.play.store.PlaySessionStore
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.cache.TokenCache
 import play.api.mvc._
-import utils.{JsonUtil, RepositoryUtils}
+import utils.{CryptoUtil, JsonUtil, RepositoryUtils}
+
+import javax.inject.Inject
 
 class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, accountManager: AccountManager, authManager: AuthenticationManager, authorizationManager: AuthorizationManager, playSessionStore: PlaySessionStore, userManager: UserManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
 
@@ -68,9 +69,7 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: C
   def selectFunctionalAccount = authorizedAction { request =>
     val userId = ParameterExtractor.requiredBodyParameter(request, Parameters.ID).toLong
     authorizationManager.canSelectFunctionalAccount(request, userId)
-    val tokens = authManager.generateTokens(userId)
-    disableDataBootstrap()
-    ResponseConstructor.constructOauthResponse(tokens)
+    completeAccessTokenLogin(userId)
   }
 
   def disconnectFunctionalAccount = authorizedAction { request =>
@@ -91,6 +90,29 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: C
     ResponseConstructor.constructEmptyResponse
   }
 
+  private def completeAccessTokenLogin(userId: Long): Result = {
+    val tokens = authManager.generateTokens(userId)
+    disableDataBootstrap()
+    ResponseConstructor.constructOauthResponse(tokens)
+  }
+
+  def replaceOnetimePassword = authorizedAction { request =>
+    authorizationManager.canLogin(request)
+    val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL)
+    val newPassword = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD)
+    if (CryptoUtil.isAcceptedPassword(newPassword)) {
+      val oldPassword = ParameterExtractor.requiredBodyParameter(request, Parameters.OLD_PASSWORD)
+      val result = authManager.replaceOnetimePassword(email, newPassword, oldPassword)
+      if (result.isEmpty) {
+        throw InvalidAuthorizationException(ErrorCodes.INVALID_CREDENTIALS, "Invalid credentials")
+      } else {
+        completeAccessTokenLogin(result.get)
+      }
+    } else {
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_CREDENTIALS, "The new password does not match required complexity rules. It must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit and one symbol.")
+    }
+  }
+
   /**
     * OAuth2.0 request (Resource Owner Password Credentials Grant) for getting or refreshing access token
     */
@@ -98,16 +120,20 @@ class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: C
     authorizationManager.canLogin(request)
     val email = ParameterExtractor.requiredBodyParameter(request, Parameters.EMAIL)
     val passwd = ParameterExtractor.requiredBodyParameter(request, Parameters.PASSWORD)
-
     val result = authManager.checkUserByEmail(email, passwd)
-    //user found
+    // User found
     if (result.isDefined) {
-      val tokens = authManager.generateTokens(result.get.id)
-      disableDataBootstrap()
-      ResponseConstructor.constructOauthResponse(tokens)
-    }
-    //no user with given credentials
-    else {
+      if (result.get.onetimePassword) {
+        // Onetime password needs to be replaced first.
+        Ok("{\"onetime\": true}").as(JSON)
+      } else if (!CryptoUtil.isAcceptedPassword(passwd)) {
+        Ok("{\"weakPassword\": true}").as(JSON)
+      } else {
+        // All ok.
+        completeAccessTokenLogin(result.get.id)
+      }
+    } else {
+      // No user with given credentials
       throw InvalidAuthorizationException(ErrorCodes.INVALID_CREDENTIALS, "Invalid credentials")
     }
   }

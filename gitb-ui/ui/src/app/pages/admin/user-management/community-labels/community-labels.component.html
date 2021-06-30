@@ -1,0 +1,53 @@
+<div class="page users create">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="title">Custom community labels</h4>
+        </div>
+        <form>
+            <div class="panel-body">
+                <div class="bg-info div-rounded div-padded bottom-margin">
+                    <span>Override the default labels of Test Bed concepts to align them with your community. The labels you provide will be used in all screens, reports and exports.</span>
+                </div>
+                <table id="labelTable" class="table">
+                    <thead>
+                        <tr>
+                            <th><span>Concept</span><span class="spaced-left" [tooltip]="'The Test Bed concept to describe with a custom label.'"><i class="fa fa-question-circle"></i></span></th>
+                            <th><span>Override?</span><span class="spaced-left" [tooltip]="'Whether or not to override the default label.'"><i class="fa fa-question-circle"></i></span></th>
+                            <th><span>Singular form</span><span class="spaced-left" [tooltip]="'The label when referring to a single element.'"><i class="fa fa-question-circle"></i></span></th>
+                            <th><span>Plural form</span><span class="spaced-left" [tooltip]="'The label when referring to a multiple elements.'"><i class="fa fa-question-circle"></i></span></th>
+                            <th><span>Fixed casing?</span><span class="spaced-left" [tooltip]="'Whether or not the label\'s casing should never be adapted.'"><i class="fa fa-question-circle"></i></span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let label of labels; let index = index">
+                            <td style="padding-top:14px">
+                                <span>{{labelTypeLabel(label.labelType)}}</span>
+                                <span class="spaced-left" [tooltip]="labelTypeDescription[label.labelType]"><i class="fa fa-question-circle"></i></span>
+                            </td>
+                            <td><input type="checkbox" [name]="'custom'+index" [(ngModel)]="label.custom" class="form-check" (change)="customChecked($event, label)"/></td>
+                            <td>
+                                <div *ngIf="label.custom"><input [attr.id]="'label-singular-'+label.labelType" type="text" [name]="'singular'+index" [(ngModel)]="label.singularForm" class="form-control"/></div>
+                                <div *ngIf="!label.custom"><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].singularForm" class="form-control" readonly="true"/></div>
+                            </td>
+                            <td>
+                                <div *ngIf="label.custom"><input type="text" [name]="'pluralForm'+index" [(ngModel)]="label.pluralForm" class="form-control"/></div>
+                                <div *ngIf="!label.custom"><input type="text" [value]="Constants.LABEL_DEFAULT[label.labelType].pluralForm" class="form-control" readonly="true"/></div>
+                            </td>
+                            <td>
+                                <div *ngIf="label.custom"><input type="checkbox" [name]="'fixedCase'+index" [(ngModel)]="label.fixedCase" class="form-check"/></div>
+                                <div *ngIf="!label.custom"><input type="checkbox" [checked]="Constants.LABEL_DEFAULT[label.labelType].fixedCase" class="form-check" [disabled]="true"/></div>
+                            </td>
+                            <td></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="panel-footer">
+                <div class="btn-toolbar">
+                    <button class="btn btn-default" type="submit" (click)="save()" [disable]="saveDisabled()" [pending]="busy">Save</button>
+                    <button class="btn btn-default" type="button" (click)="cancel()">Back</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

@@ -14,6 +14,7 @@ import managers.export.ImportCompleteManager
 import models.Constants
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.RandomStringUtils
+import org.mindrot.jbcrypt.BCrypt
 import org.slf4j.LoggerFactory
 import play.api.inject.ApplicationLifecycle
 import utils.{RepositoryUtils, TimeUtil, ZipArchiver}
@@ -35,6 +36,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
     System.setProperty("java.io.tmpdir", System.getProperty("user.dir"))
     //start TestbedClient service
     TestbedService.endpoint = Endpoint.publish(Configurations.TESTBED_CLIENT_URL, new TestbedService(testResultManager, reportManager, webSocketActor, testbedBackendClient))
+    checkMasterPassword()
     destroyIdleSessions()
     cleanupPendingTestSuiteUploads()
     cleanupTempFiles()
@@ -42,6 +44,71 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
     loadDataExports()
     archiveOldTestSessions()
     logger.info("Application has started in "+Configurations.TESTBED_MODE+" mode")
+  }
+
+  private def checkMasterPassword(): Unit = {
+    val existingHash = systemConfigurationManager.getSystemConfiguration(Constants.MasterPassword)
+    if (existingHash.parameter.isEmpty) {
+      // Store master password.
+      existingHash.parameter = Some(BCrypt.hashpw(String.valueOf(Configurations.MASTER_PASSWORD), BCrypt.gensalt()))
+      systemConfigurationManager.updateSystemParameter(existingHash.name, existingHash.parameter)
+    }
+    if (BCrypt.checkpw(String.valueOf(Configurations.MASTER_PASSWORD), existingHash.parameter.get)) {
+      // Set master password matches stored value.
+      if (Configurations.MASTER_PASSWORD_TO_REPLACE.isDefined) {
+        Configurations.MASTER_PASSWORD_TO_REPLACE = None
+        logger.warn("You have configured property MASTER_PASSWORD_TO_REPLACE, however the configured MASTER_PASSWORD " +
+          "matches the one currently in place. Property MASTER_PASSWORD_TO_REPLACE will be ignored. To silence this warning " +
+          "remove property MASTER_PASSWORD_TO_REPLACE.")
+      }
+      if (Configurations.MASTER_PASSWORD_FORCE) {
+        logger.warn("You have set property MASTER_PASSWORD_FORCE to true, however the configured MASTER_PASSWORD " +
+          "matches the one currently in place. To silence this warning remove property MASTER_PASSWORD_FORCE or set it to false.")
+      }
+    } else {
+      // Set master password does not match stored value.
+      if (Configurations.MASTER_PASSWORD_TO_REPLACE.isDefined) {
+        if (BCrypt.checkpw(String.valueOf(Configurations.MASTER_PASSWORD_TO_REPLACE.get), existingHash.parameter.get)) {
+          systemConfigurationManager.updateMasterPassword(Configurations.MASTER_PASSWORD_TO_REPLACE.get, Configurations.MASTER_PASSWORD)
+          logger.info("The master password has been successfully updated and existing secrets have been re-encrypted using it. " +
+            "In the application's next startup remove property MASTER_PASSWORD_TO_REPLACE to avoid startup warnings.")
+        } else {
+          if (Configurations.MASTER_PASSWORD_FORCE) {
+            systemConfigurationManager.updateSystemParameter(existingHash.name, Some(BCrypt.hashpw(String.valueOf(Configurations.MASTER_PASSWORD), BCrypt.gensalt())))
+            logger.warn("The configured MASTER_PASSWORD does not match the one currently in place but the previous one to " +
+              "replace, provided via MASTER_PASSWORD_TO_REPLACE, does not match it either. As property MASTER_PASSWORD_FORCE " +
+              "is set to true the new MASTER_PASSWORD will be used from now on, however any existing secret values will be " +
+              "rendered invalid and lost as they cannot be re-encrypted.")
+          } else {
+            throw new IllegalStateException("The configured MASTER_PASSWORD does not match the one currently in place but " +
+              "the previous one to replace, provided via MASTER_PASSWORD_TO_REPLACE, does not match it either. As property " +
+              "MASTER_PASSWORD_FORCE is not set to true this is considered an invalid state resulting in a startup failure. " +
+              "To avoid this you should provide the correct previous password via property MASTER_PASSWORD_TO_REPLACE in the " +
+              "next startup to allow existing secret values to be decrypted and re-encrypted with the new password. If you do " +
+              "not know the previous password or want to proceed without updating existing secrets you can force the startup by " +
+              "setting MASTER_PASSWORD_FORCE to true when you restart. Doing so however will result in the loss of any existing " +
+              "secret values.")
+          }
+        }
+      } else {
+        if (Configurations.MASTER_PASSWORD_FORCE) {
+          systemConfigurationManager.updateSystemParameter(existingHash.name, Some(BCrypt.hashpw(String.valueOf(Configurations.MASTER_PASSWORD), BCrypt.gensalt())))
+          logger.warn("The configured MASTER_PASSWORD does not match the one currently in place but you did not specify " +
+            "the previous password via property MASTER_PASSWORD_TO_REPLACE. As property MASTER_PASSWORD_FORCE is set to true " +
+            "the new MASTER_PASSWORD will be used from now on, however any existing secret values will be rendered invalid and lost " +
+            "as they could not be re-encrypted.")
+        } else {
+          throw new IllegalStateException("The configured MASTER_PASSWORD does not match the one currently in place but " +
+            "you did not specify the previous password via property MASTER_PASSWORD_TO_REPLACE. As property " +
+            "MASTER_PASSWORD_FORCE is not set to true this is considered an invalid state resulting in a startup failure. " +
+            "To avoid this you should provide the previous password via property MASTER_PASSWORD_TO_REPLACE in the next startup " +
+            "to allow existing secret values to be decrypted and re-encrypted with the new password. If you do not know the " +
+            "previous password or want to proceed without updating existing secrets you can force the startup by setting " +
+            "MASTER_PASSWORD_FORCE to true when you restart. Doing so however will result in the loss of any existing secret " +
+            "values.")
+        }
+      }
+    }
   }
 
   private def initialiseActors(triggerManager: TriggerManager): Unit = {

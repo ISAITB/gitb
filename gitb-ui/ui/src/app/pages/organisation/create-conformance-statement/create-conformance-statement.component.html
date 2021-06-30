@@ -1,0 +1,59 @@
+<div class="page conformance create">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <h4>Create conformance statement</h4>
+      </div>
+      <div class="panel-body">
+        <app-alert-display [alerts]="alerts" [outerClass]="''"></app-alert-display>
+        <h5 class="conformanceWizardHeader">{{headerText}}</h5>
+        <div *ngIf="showDomains">
+          <div id="conformanceWizardTable"
+            table-directive [columns]="tableColumns"
+            [data]="domains"
+            [noDataMessage]="'There are no '+dataService.labelDomainsLower()+' available.'"
+            [loadingStatus]="domainsDataStatus"
+            (onSelect)="onDomainSelect($event)"></div>
+        </div>
+        <div *ngIf="showSpecs">
+          <div id="conformanceWizardTable"
+            table-directive [columns]="tableColumns"
+            [data]="specs"
+            [noDataMessage]="'There are no '+dataService.labelSpecificationsLower()+' available.'"
+            [loadingStatus]="specsDataStatus"
+            (onSelect)="onSpecificationSelect($event)"></div>
+        </div>
+        <diV *ngIf="showActors">
+          <div id="conformanceWizardTable"
+              table-directive [columns]="actorTableColumns"
+              [data]="actors"
+              [noDataMessage]="'There are no '+dataService.labelActorsLower()+' available.'"
+              [loadingStatus]="actorsDataStatus"
+              (onSelect)="onActorSelect($event)"></div>
+        </diV>
+        <diV id="conformanceWizardTableSummary" *ngIf="showConfirmation">
+          <div class="row row-display-first">
+            <div class="col-md-2"><strong>{{dataService.labelDomain()}}</strong></div>
+            <div class="col-md-10">{{selectedDomain!.fname}}</div>
+            <div class="col-md-10 col-md-offset-2 row-display-inner" *ngIf="selectedDomain!.description">{{selectedDomain!.description}}</div>
+          </div>
+          <div class="row row-display">
+            <div class="col-md-2"><strong>{{dataService.labelSpecification()}}</strong></div>
+            <div class="col-md-10">{{selectedSpec!.fname}}</div>
+            <div class="col-md-10 col-md-offset-2 row-display-inner" *ngIf="selectedSpec!.description">{{selectedSpec!.description}}</div>
+          </div>
+          <div class="row row-display">
+            <div class="col-md-2"><strong>{{dataService.labelActor()}}</strong></div>
+            <div class="col-md-10">{{selectedActor!.name}}</div>
+            <div class="col-md-10 col-md-offset-2 row-display-inner" *ngIf="selectedActor!.description">{{selectedActor!.description}}</div>
+          </div>
+        </diV>
+      </div>
+      <div class="panel-footer" *ngIf="showButtonPanel">
+          <div class="btn-toolbar">
+              <button type="button" class="btn btn-default" (click)="cancel()">Cancel</button>
+              <button type="button" class="btn btn-default" *ngIf="!showConfirmation" (click)="confirmAction!()" [disabled]="nextDisabled()">Next</button>
+              <button type="button" class="btn btn-default" *ngIf="showConfirmation" (click)="confirmAll()" [pending]="pending" [disable]="confirmDisabled">Confirm</button>
+          </div>
+      </div>
+    </div>
+</div>

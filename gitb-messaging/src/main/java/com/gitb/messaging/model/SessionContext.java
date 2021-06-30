@@ -240,7 +240,7 @@ public class SessionContext {
                 }
             }
         } catch (UnknownHostException e) {
-            logger.error(MarkerFactory.getDetachedMarker(testSessionId), "An error occurred while trying to find the transaction coming from [" + address + "] and binded to ["+incomingPort+"] port.", e);
+            logger.error(MarkerFactory.getDetachedMarker(testSessionId), "An error occurred while trying to find the transaction coming from [" + address + "] and bound to ["+incomingPort+"] port.", e);
         }
         if (lastAwaitingTransaction == null && orFirstAvailable && firstAvailableTransaction != null) {
             lastAwaitingTransaction = firstAvailableTransaction;

@@ -1,0 +1,135 @@
+import { Component, OnInit } from '@angular/core';
+import { BsModalRef } from 'ngx-bootstrap/modal';
+import { Constants } from 'src/app/common/constants';
+import { BaseComponent } from 'src/app/pages/base-component.component';
+import { AuthService } from 'src/app/services/auth.service';
+import { CommunityService } from 'src/app/services/community.service';
+import { DataService } from 'src/app/services/data.service';
+import { ErrorService } from 'src/app/services/error.service';
+import { ActualUserInfo } from 'src/app/types/actual-user-info';
+import { SelfRegistrationModel } from 'src/app/types/self-registration-model.type';
+import { SelfRegistrationOption } from 'src/app/types/self-registration-option.type';
+import { UserAccount } from 'src/app/types/user-account';
+
+@Component({
+  selector: 'app-link-account',
+  templateUrl: './link-account.component.html',
+  styles: [
+  ]
+})
+export class LinkAccountComponent extends BaseComponent implements OnInit {
+
+  createOption!: string
+  selfRegOptions!: SelfRegistrationOption[]
+  linkedAccounts!: UserAccount[]
+  choice = -1
+  selectedAccountId = -1
+  createPending = false
+  selfRegData: SelfRegistrationModel = {}
+  email?:string
+  password?:string
+
+  constructor(
+    public dataService: DataService,
+    private errorService: ErrorService,
+    private authService: AuthService,
+    private communityService: CommunityService,
+    public modalRef: BsModalRef
+  ) { super() }
+
+  ngOnInit(): void {
+    if (this.createOption == Constants.LOGIN_OPTION.REGISTER) {
+      this.choice = Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER
+    } else if (this.createOption == Constants.LOGIN_OPTION.MIGRATE) {
+      this.choice = Constants.CREATE_ACCOUNT_OPTION.MIGRATE
+    } else if (this.createOption == Constants.LOGIN_OPTION.LINK_ACCOUNT) {
+      this.choice = Constants.CREATE_ACCOUNT_OPTION.LINK
+    }
+  }
+
+  resetSelfRegOptions() {
+    this.selfRegData = {}
+  }
+
+  selectAccount(accountId: number) {
+    if (this.selectedAccountId == accountId) {
+        this.selectedAccountId = -1
+    } else {
+      this.selectedAccountId = accountId  
+    }        
+  }
+
+  createEnabled(): boolean {
+    if (this.choice == Constants.CREATE_ACCOUNT_OPTION.LINK) {
+        return this.selectedAccountId != -1
+    } else if (this.choice == Constants.CREATE_ACCOUNT_OPTION.MIGRATE) {
+        return this.textProvided(this.email) && this.textProvided(this.password)
+    } else if (this.choice == Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER) {
+        return this.selfRegData.selfRegOption?.communityId != undefined && 
+            (this.selfRegData.selfRegOption.selfRegType != Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN || this.textProvided(this.selfRegData.selfRegToken)) && 
+            (!this.selfRegData.selfRegOption.forceTemplateSelection || this.selfRegData.selfRegOption.templates?.length == 0 || this.selfRegData.template != undefined) &&
+            (!this.selfRegData.selfRegOption.forceRequiredProperties || this.dataService.customPropertiesValid(this.selfRegData.selfRegOption.organisationProperties, true)) &&
+            this.textProvided(this.selfRegData.orgShortName) && this.textProvided(this.selfRegData.orgFullName)
+    } else {
+        return false  
+    }
+  }
+
+  choiceChanged() {
+    this.selectedAccountId = -1
+    this.email = undefined
+    this.password = undefined
+    this.resetSelfRegOptions()
+    if (this.dataService.configuration.ssoInMigration && this.choice == Constants.CREATE_ACCOUNT_OPTION.MIGRATE) {
+        this.dataService.focus('username')
+    }
+  }
+
+  create() {
+    this.createPending = true
+    if (this.choice == Constants.CREATE_ACCOUNT_OPTION.LINK) {
+      this.authService.linkFunctionalAccount(this.selectedAccountId).subscribe((data) => {
+        this.dataService.setActualUser(data as ActualUserInfo)
+        this.modalRef.hide()
+      }).add(() => {
+        this.createPending = false
+      })
+    } else if (this.choice == Constants.CREATE_ACCOUNT_OPTION.MIGRATE) {
+      this.authService.migrateFunctionalAccount(this.email!, this.password!).subscribe((data) => {
+        if (this.isErrorDescription(data)) {
+          this.errorService.showSimpleErrorMessage('Unable to migrate account', data.error_description!)
+        } else {
+          this.dataService.setActualUser(data as ActualUserInfo)
+          this.modalRef.hide()
+        }
+      }).add(() => {
+        this.createPending = false
+      })
+    } else if (this.choice == Constants.CREATE_ACCOUNT_OPTION.SELF_REGISTER) {
+      let token:string|undefined
+      if (this.selfRegData.selfRegOption!.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN) {
+        token = this.selfRegData.selfRegToken
+      }
+      let templateId:number|undefined
+      if (this.selfRegData.template) {
+        templateId = this.selfRegData.template.id
+      }
+      this.communityService.selfRegister(this.selfRegData.selfRegOption!.communityId!, token, this.selfRegData.orgShortName!, this.selfRegData.orgFullName!, templateId, this.selfRegData.selfRegOption!.organisationProperties, undefined, undefined, undefined)
+      .subscribe((data) => {
+        if (this.isErrorDescription(data)) {
+          this.errorService.showSimpleErrorMessage('Unable to register', data.error_description!)
+        } else {
+          this.dataService.setActualUser(data as ActualUserInfo)
+          this.modalRef.hide()
+        }
+      }).add(() => {
+        this.createPending = false
+      })
+    }
+  }
+
+  cancel() {
+    this.modalRef.hide()
+  }
+
+}

@@ -1,0 +1,15 @@
+<div class="page conformance">
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">Conformance statements</h4>
+            <a [routerLink]="['create']" class="btn btn-default pull-right" *ngIf="showCreate">Create conformance statement</a>
+		</div>
+		<div id="conformance-statements-table" table-directive 
+			[columns]="tableColumns" 
+			[data]="conformanceStatementRepresentations" 
+            [noDataMessage]="'No statements found'"
+			[loadingStatus]="dataStatus" 
+			(onSelect)="onConformanceStatementSelect($event)">
+		</div>
+	</div>
+</div>

@@ -1,11 +1,11 @@
 ALTER TABLE `testcasehasactors` ADD COLUMN `sut` TINYINT DEFAULT 0 NOT NULL;
 CREATE TABLE `testcasehasactors_temp` (
-  `testcase` bigint(20) NOT NULL,
-  `specification` bigint(20) NOT NULL,
-  `actor` bigint(20) NOT NULL,
+  `testcase` BIGINT NOT NULL,
+  `specification` BIGINT NOT NULL,
+  `actor` BIGINT NOT NULL,
   `sut` TINYINT NOT NULL DEFAULT 0,
   PRIMARY KEY (`testcase`, `specification`, `actor`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 INSERT INTO `testcasehasactors_temp`(`testcase`, `specification`, `actor`, `sut`) SELECT `testcase`, `specification`, `actor`, `sut` FROM `testcasehasactors`;
 
 -- Set role for actors that already have conformance statements.

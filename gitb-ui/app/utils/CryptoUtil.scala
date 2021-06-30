@@ -1,5 +1,6 @@
 package utils
 
+import config.Configurations
 import org.mindrot.jbcrypt.BCrypt
 
 object CryptoUtil {
@@ -23,4 +24,11 @@ object CryptoUtil {
     BCrypt.checkpw(string, encrypted)
   }
 
+  /**
+   * Check to see that the provided password is accepted in terms of complexity.
+   * @return The check result.
+   */
+  def isAcceptedPassword(value: String): Boolean = {
+    Configurations.PASSWORD_COMPLEXITY_RULE_REGEX.pattern.matcher(value).matches()
+  }
 }

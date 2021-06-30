@@ -1,0 +1,9 @@
+<div class="modal-header">
+    <h4>{{headerText}}</h4>
+</div>
+<div class="modal-body html-modal">
+    <div id="content" [innerHtml]="html"></div>
+</div>
+<div class="modal-footer">
+    <button type="button" class="btn btn-default" (click)="close()">Close</button>
+</div>

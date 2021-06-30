@@ -11,7 +11,7 @@ CREATE TABLE conformancecertificates (
   keystore_type VARCHAR(255),
   keystore_pass VARCHAR(255),
   key_pass VARCHAR(255),
-  community BIGINT(20) NOT NULL
+  community BIGINT NOT NULL
 );
 CREATE UNIQUE INDEX `cs_co_id_idx` ON `conformancecertificates` (`community`);
 

@@ -1,0 +1,11 @@
+<div *ngIf="stepsOfTests && actorInfoOfTests" class="test-session-presentation-div">
+    <app-sequence-diagram 
+        [stepsOfTests]="stepsOfTests"
+        [test]="sessionId"
+        [actorInfoOfTests]="actorInfoOfTests"
+        [events]="events">
+    </app-sequence-diagram>
+    <div class="test-output-container" *ngIf="outputMessage">
+        <alert [type]="outputMessageType!" [dismissible]="false">{{outputMessage}}</alert>
+    </div>
+</div>

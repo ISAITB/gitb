@@ -11,6 +11,7 @@ object Constants {
 
   // System configuration constants
   val SessionAliveTime = "session_alive_time"
+  val MasterPassword = "master_password"
 
   // env variables
   val EnvironmentTheme = "THEME"
@@ -42,5 +43,5 @@ object Constants {
   val DevelopmentMode = "development"
   val SandboxMode = "sandbox"
 
-  val VersionNumber = "1.12.0"
+  val VersionNumber = "1.13.0"
 }

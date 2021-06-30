@@ -1,7 +1,6 @@
 package modules
 
 import hooks.{BeforeStartHook, OnStopHook, PostStartHook}
-import org.flywaydb.play.PlayInitializer
 
 class Module extends play.api.inject.Module {
 
@@ -12,7 +11,7 @@ class Module extends play.api.inject.Module {
        Calling here the initialisation of FlyWayDB (and not via its own module). The reason for this is to ensure a DB
        is correctly created/migrated before we do other changes that may require DB interactions at start-up.
        */
-      bind[PlayInitializer].toSelf.eagerly,
+      bind[MigrationInitializer].toSelf.eagerly,
       bind[PostStartHook].toSelf.eagerly,
       bind[OnStopHook].toSelf.eagerly
     )

@@ -981,6 +981,11 @@ object JsonUtil {
     var value: Option[String] = None
     if (kind.equals("BINARY")) {
       value = (jsonConfig \ "valueBinary").asOpt[String]
+    } else if (kind.equals("HIDDEN")) {
+      value = (jsonConfig \ "value").asOpt[String]
+      if (value.isDefined) {
+        value = Some(MimeUtil.encryptString(value.get))
+      }
     } else {
       value = (jsonConfig \ "value").asOpt[String]
     }
@@ -1406,22 +1411,26 @@ object JsonUtil {
 
   def serializeConfigurationProperties(config: util.HashMap[String, String]):JsObject = {
     val json = Json.obj(
-      "email.enabled" -> config.get("email.enabled").toBoolean,
-      "email.attachments.maxCount" -> config.get("email.attachments.maxCount").toInt,
-      "email.attachments.maxSize" -> config.get("email.attachments.maxSize").toLong,
-      "email.attachments.allowedTypes" -> config.get("email.attachments.allowedTypes"),
-      "survey.enabled" -> config.get("survey.enabled").toBoolean,
-      "survey.address" -> config.get("survey.address"),
-      "userguide.ou" -> config.get("userguide.ou"),
-      "userguide.oa" -> config.get("userguide.oa"),
-      "userguide.ca" -> config.get("userguide.ca"),
-      "userguide.ta" -> config.get("userguide.ta"),
-      "sso.enabled" -> config.get("sso.enabled").toBoolean,
-      "sso.inMigration" -> config.get("sso.inMigration").toBoolean,
-      "demos.enabled" -> config.get("demos.enabled").toBoolean,
-      "demos.account" -> config.get("demos.account").toLong,
-      "registration.enabled" -> config.get("registration.enabled").toBoolean,
-      "savedFile.maxSize" -> config.get("savedFile.maxSize").toLong,
+      "emailEnabled" -> config.get("email.enabled").toBoolean,
+      "emailAttachmentsMaxCount" -> config.get("email.attachments.maxCount").toInt,
+      "emailAttachmentsMaxSize" -> config.get("email.attachments.maxSize").toLong,
+      "emailAttachmentsAllowedTypes" -> config.get("email.attachments.allowedTypes"),
+      "surveyEnabled" -> config.get("survey.enabled").toBoolean,
+      "surveyAddress" -> config.get("survey.address"),
+      "moreInfoEnabled" -> config.get("moreinfo.enabled").toBoolean,
+      "moreInfoAddress" -> config.get("moreinfo.address"),
+      "releaseInfoEnabled" -> config.get("releaseinfo.enabled").toBoolean,
+      "releaseInfoAddress" -> config.get("releaseinfo.address"),
+      "userGuideOU" -> config.get("userguide.ou"),
+      "userGuideOA" -> config.get("userguide.oa"),
+      "userGuideCA" -> config.get("userguide.ca"),
+      "userGuideTA" -> config.get("userguide.ta"),
+      "ssoEnabled" -> config.get("sso.enabled").toBoolean,
+      "ssoInMigration" -> config.get("sso.inMigration").toBoolean,
+      "demosEnabled" -> config.get("demos.enabled").toBoolean,
+      "demosAccount" -> config.get("demos.account").toLong,
+      "registrationEnabled" -> config.get("registration.enabled").toBoolean,
+      "savedFileMaxSize" -> config.get("savedFile.maxSize").toLong,
       "mode" -> config.get("mode")
     )
     json

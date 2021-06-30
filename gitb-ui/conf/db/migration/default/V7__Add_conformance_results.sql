@@ -1,15 +1,15 @@
 DROP TABLE IF EXISTS `conformanceresults`;
 CREATE TABLE `conformanceresults` (
-  `id` bigint(20) NOT NULL AUTO_INCREMENT,
-  `sut_id` bigint(20) NOT NULL,
-  `spec_id` bigint(20) NOT NULL,
-  `actor_id` bigint(20) NOT NULL,
-  `test_suite_id` bigint(20) NOT NULL,
-  `test_case_id` bigint(20) NOT NULL,
+  `id` BIGINT NOT NULL AUTO_INCREMENT,
+  `sut_id` BIGINT NOT NULL,
+  `spec_id` BIGINT NOT NULL,
+  `actor_id` BIGINT NOT NULL,
+  `test_suite_id` BIGINT NOT NULL,
+  `test_case_id` BIGINT NOT NULL,
   `test_session_id` varchar(254),
   `result` varchar(254) NOT NULL,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 ALTER TABLE `conformanceresults` ADD CONSTRAINT `cr_fk_sut` FOREIGN KEY (`sut_id`) REFERENCES `systems`(`id`);
 ALTER TABLE `conformanceresults` ADD CONSTRAINT `cr_fk_spec` FOREIGN KEY (`spec_id`) REFERENCES `specifications`(`id`);
