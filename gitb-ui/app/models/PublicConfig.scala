@@ -5,6 +5,7 @@ class PublicConfig(
   _logoPath: String,
   _footerLogoPath: String,
   _versionNumber: String,
+  _resourceVersionNumber: String,
   _hasDefaultLegalNotice: Boolean,
   _defaultLegalNotice: String,
   _inMigrationPeriod: Boolean,
@@ -26,6 +27,7 @@ class PublicConfig(
   var logoPath: String = _logoPath
   var footerLogoPath: String = _footerLogoPath
   var versionNumber: String = _versionNumber
+  var resourceVersionNumber: String = _resourceVersionNumber
   var hasDefaultLegalNotice: Boolean = _hasDefaultLegalNotice
   var defaultLegalNotice: String = _defaultLegalNotice
   var inMigrationPeriod: Boolean = _inMigrationPeriod
@@ -43,6 +45,6 @@ class PublicConfig(
   var releaseInfoEnabled: Boolean = _releaseInfoEnabled
   var releaseInfoLink: String = _releaseInfoLink
 
-  def this(_versionNumber: String, _cookiePath: String, _contextPath: String) =
-    this(false, null, null, _versionNumber, false, null, false, false, null, false, null, null, _cookiePath, false, false, _contextPath, false, null, false, null)
+  def this(_versionNumber: String, _resourceVersionNumber: String, _cookiePath: String, _contextPath: String) =
+    this(false, null, null, _versionNumber, _resourceVersionNumber, false, null, false, false, null, false, null, null, _cookiePath, false, false, _contextPath, false, null, false, null)
 }

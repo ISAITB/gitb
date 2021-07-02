@@ -30,6 +30,7 @@ class Application @Inject() (cc: ControllerComponents, defaultAction: DefaultAct
       systemConfigurationManager.getLogoPath(),
       systemConfigurationManager.getFooterLogoPath(),
       Constants.VersionNumber,
+      Constants.ResourceVersionNumber,
       hasDefaultLegalNotice,
       legalNoticeContent,
       Configurations.AUTHENTICATION_SSO_IN_MIGRATION_PERIOD,
@@ -50,7 +51,7 @@ class Application @Inject() (cc: ControllerComponents, defaultAction: DefaultAct
   }
 
   def app() = defaultAction {
-    Ok(views.html.ngApp(new PublicConfig(Constants.VersionNumber, Configurations.AUTHENTICATION_COOKIE_PATH, contextPath()), environment.mode))
+    Ok(views.html.ngApp(new PublicConfig(Constants.VersionNumber, Constants.ResourceVersionNumber, Configurations.AUTHENTICATION_COOKIE_PATH, contextPath()), environment.mode))
   }
 
   private def contextPath(): String = {

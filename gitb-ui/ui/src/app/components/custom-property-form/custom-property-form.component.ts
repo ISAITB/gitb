@@ -62,7 +62,7 @@ export class CustomPropertyFormComponent implements OnInit {
     return property.prerequisiteOk!
   }
 
-  checkPrerequisites(property?: CustomProperty): void {
+  checkPrerequisites(property?: CustomProperty, callInit?: boolean): void {
     if (property === undefined || this.propertiesInvolvedInPrerequisitesMap[property.testKey] !== undefined) {
       if (this.hasPrerequisites) {
         for (let propertyKey of this.propertiesInvolvedInPrerequisites) {
@@ -72,6 +72,9 @@ export class CustomPropertyFormComponent implements OnInit {
           this.checkPrerequisite(this.propertyMap[propertyKey])
         }
       }
+    }
+    if (callInit != undefined && callInit) {
+      this.init();
     }
   }
 
