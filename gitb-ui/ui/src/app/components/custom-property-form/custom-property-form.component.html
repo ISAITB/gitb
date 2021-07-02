@@ -15,20 +15,20 @@
               <div [ngClass]="'col-xs-'+(11-tbColLabel-tbColInputLess)" *ngIf="property.kind == 'SIMPLE'">
                 <div *ngIf="property.hasPresetValues">
                   <p *ngIf="isReadonly" class="form-control-static">{{presetValueLabel(property)}}<span *ngIf="property.desc" [ngStyle]="{'margin-left':(property.value?'20px':'0px')}" [tooltip]="property.desc"><i class="fa fa-question-circle"></i></span></p>
-                  <select *ngIf="!isReadonly" (change)="checkPrerequisites(property)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" (change)="init()" [disabled]="property.adminOnly! && !isAdmin" class="form-control">
-                    <option *ngIf="property.use == 'O'" value=""></option>
+                  <select *ngIf="!isReadonly" (change)="checkPrerequisites(property, true)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" [disabled]="property.adminOnly! && !isAdmin" class="form-control">
+                    <option value=""></option>
                     <option *ngFor="let v of property.presetValues" [ngValue]="v.value">{{v.label}}</option>
                   </select>
                 </div>
                 <div *ngIf="!property.hasPresetValues">
                   <p *ngIf="isReadonly" class="form-control-static">{{property.value}}<span *ngIf="property.desc" [ngStyle]="{'margin-left':(property.value?'20px':'0px')}" [tooltip]="property.desc"><i class="fa fa-question-circle"></i></span></p>
-                  <input *ngIf="!isReadonly" (change)="checkPrerequisites(property)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" (change)="init()" [readonly]="property.adminOnly && !isAdmin" class="form-control" type="text"/>
+                  <input *ngIf="!isReadonly" (change)="checkPrerequisites(property, true)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" [readonly]="property.adminOnly && !isAdmin" class="form-control" type="text"/>
                 </div>
               </div>
               <div *ngIf="property.kind == 'SECRET'">
                 <div [ngClass]="'col-xs-'+(9-tbColLabel-tbColInputLess)">
                   <p *ngIf="isReadonly" class="form-control-static">{{property.value}}<span *ngIf="property.desc" [ngStyle]="{'margin-left':(property.value?'20px':'0px')}" [tooltip]="property.desc"><i class="fa fa-question-circle"></i></span></p>
-                  <input *ngIf="!isReadonly" (change)="checkPrerequisites(property)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" [readonly]="!property.changeValue" class="form-control" [attr.type]="property.showValue?'text':'password'"/>
+                  <input *ngIf="!isReadonly" (change)="checkPrerequisites(property)" (focus)="checkPrerequisites(property)" (focusout)="checkPrerequisites(property)" [attr.id]="'prop-'+property.id" name="{{'prop-'+property.id}}" [(ngModel)]="property.value" [readonly]="!property.changeValue" class="form-control" [attr.type]="property.showValue?'text':'password'"/>
                   <div class="checkbox" *ngIf="property.changeValue">
                     <label>
                       <input type="checkbox" name="{{'prop-show-'+property.id}}" [(ngModel)]="property.showValue" [disabled]="property.adminOnly! && !isAdmin">Show
