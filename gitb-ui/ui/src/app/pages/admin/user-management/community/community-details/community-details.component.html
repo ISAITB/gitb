@@ -38,6 +38,7 @@
             [data]="admins"
 			noDataMessage="No administrators found"
 			[loadingStatus]="adminStatus" 
+            [allowSelect]="true"
             (onSelect)="adminSelect($event)">
         </div>
     </div>
@@ -52,6 +53,7 @@
             [data]="organizations"
 			noDataMessage="No organisations found"
 			[loadingStatus]="organisationStatus" 
+            [allowSelect]="true"
             (onSelect)="organizationSelect($event)">
         </div>
     </div>
@@ -69,6 +71,7 @@
             [data]="landingPages"
 			noDataMessage="No landing pages found"
 			[loadingStatus]="landingPageStatus" 
+            [allowSelect]="true"
             (onSelect)="landingPageSelect($event)">
         </div>
     </div>
@@ -86,6 +89,7 @@
             [data]="legalNotices"
 			noDataMessage="No legal notices found"
 			[loadingStatus]="legalNoticeStatus" 
+            [allowSelect]="true"
             (onSelect)="legalNoticeSelect($event)">
         </div>
     </div>
@@ -103,6 +107,7 @@
             [data]="errorTemplates"
 			noDataMessage="No error templates found"
 			[loadingStatus]="errorTemplateStatus" 
+            [allowSelect]="true"
             (onSelect)="errorTemplateSelect($event)">
         </div>
     </div>
@@ -117,6 +122,7 @@
             [data]="triggers"
 			noDataMessage="No triggers found"
 			[loadingStatus]="triggerStatus" 
+            [allowSelect]="true"
             (onSelect)="triggerSelect($event)">
         </div>
     </div>

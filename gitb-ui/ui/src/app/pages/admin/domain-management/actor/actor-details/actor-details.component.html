@@ -33,6 +33,7 @@
 			[data]="endpointRepresentations"
 			[noDataMessage]="'No '+dataService.labelEndpointsLower()+' found'"
 			[loadingStatus]="dataStatus" 
+			[allowSelect]="true"
 			(onSelect)="onEndpointSelect($event)">
 		</div>
 	</div>

@@ -33,6 +33,7 @@
 			[data]="testSuites"
 			noDataMessage="No test suites found"
 			[loadingStatus]="testSuiteStatus" 
+			[allowSelect]="true"
 			(onSelect)="onTestSuiteSelect($event)">
 		</div>
 	</div>
@@ -46,6 +47,7 @@
 			[data]="actors"
 			[noDataMessage]="'No '+dataService.labelActorsLower()+' found'"
 			[loadingStatus]="actorStatus" 
+			[allowSelect]="true"
 			(onSelect)="onActorSelect($event)">
 		</div>
 	</div>

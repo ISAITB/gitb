@@ -10,6 +10,7 @@
             [data]="admins"
 			noDataMessage="No administrators found"
 			[loadingStatus]="adminStatus" 
+            [allowSelect]="true"
             (onSelect)="adminSelect($event)">
         </div>
     </div>
@@ -24,6 +25,7 @@
             [data]="communities"
 			noDataMessage="No communities found"
 			[loadingStatus]="communityStatus" 
+            [allowSelect]="true"
             (onSelect)="communitySelect($event)">
         </div>
     </div>
