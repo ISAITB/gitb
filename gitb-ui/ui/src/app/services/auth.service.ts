@@ -83,7 +83,7 @@ export class AuthService {
 
   disconnectFunctionalAccount(option: number) {
     return this.restService.post<void>({
-      path: ROUTES.controllers.Aut1henticationService.disconnectFunctionalAccount().url,
+      path: ROUTES.controllers.AuthenticationService.disconnectFunctionalAccount().url,
       data: {
         type: option
       }
