@@ -46,14 +46,14 @@ export class TableComponent extends BaseTableComponent implements OnInit {
         rowClass = rowClass + ' ' + customClass
       }
     }
-    if (this.allowSelect || this.allowMultiSelect || this.onSelect) {
+    if (this.allowSelect || this.allowMultiSelect) {
       rowClass = rowClass + ' selectable'
     }
     return rowClass
   }
 
   select(rowIndex: number) {
-    if (this.allowSelect || this.allowMultiSelect || this.onSelect) {
+    if (this.allowSelect || this.allowMultiSelect) {
       const row = this.data![rowIndex]
       if (row._selected !== undefined && row._selected!) {
         if (this.allowMultiSelect) {

@@ -35,7 +35,8 @@
 			[columns]="tableColumns"
 			[data]="specifications"
 			[noDataMessage]="'No '+dataService.labelSpecificationsLower()+' found'"
-			[loadingStatus]="specificationStatus" 
+			[loadingStatus]="specificationStatus"
+			[allowSelect]="true"
 			(onSelect)="onSpecificationSelect($event)">
 		</div>
 	</div>

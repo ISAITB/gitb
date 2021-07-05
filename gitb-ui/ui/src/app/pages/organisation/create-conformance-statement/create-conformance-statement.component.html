@@ -12,6 +12,7 @@
             [data]="domains"
             [noDataMessage]="'There are no '+dataService.labelDomainsLower()+' available.'"
             [loadingStatus]="domainsDataStatus"
+            [allowSelect]="true"
             (onSelect)="onDomainSelect($event)"></div>
         </div>
         <div *ngIf="showSpecs">
@@ -20,6 +21,7 @@
             [data]="specs"
             [noDataMessage]="'There are no '+dataService.labelSpecificationsLower()+' available.'"
             [loadingStatus]="specsDataStatus"
+            [allowSelect]="true"
             (onSelect)="onSpecificationSelect($event)"></div>
         </div>
         <diV *ngIf="showActors">
@@ -28,6 +30,7 @@
               [data]="actors"
               [noDataMessage]="'There are no '+dataService.labelActorsLower()+' available.'"
               [loadingStatus]="actorsDataStatus"
+              [allowSelect]="true"
               (onSelect)="onActorSelect($event)"></div>
         </diV>
         <diV id="conformanceWizardTableSummary" *ngIf="showConfirmation">

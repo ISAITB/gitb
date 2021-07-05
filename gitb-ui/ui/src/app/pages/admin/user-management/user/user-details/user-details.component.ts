@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { EMPTY, Observable } from 'rxjs';
 import { map, mergeMap, share } from 'rxjs/operators';
@@ -29,6 +29,8 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
   originalRoleId!: number
   changePassword = false
 
+  @ViewChild("role") roleField?: ElementRef;
+
   constructor(
     private router: Router,
     private route: ActivatedRoute,
@@ -41,7 +43,7 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
 
   ngAfterViewInit(): void {
     if (this.dataService.configuration.ssoEnabled) {
-      this.dataService.focus('role')
+      this.roleField?.nativeElement.focus()
     } else {
       this.dataService.focus('name')
     }

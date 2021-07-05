@@ -22,7 +22,7 @@
 <div class="form-group" *ngIf="!admin">
     <label [ngClass]="{'col-xs-3': sso, 'col-xs-4': !sso}" class="control-label" for="role">* Role:</label>
     <div class="col-xs-6">
-        <select id="role" name="role" class="form-control" [(ngModel)]="user.role">
+        <select id="role" #role name="role" class="form-control" [(ngModel)]="user.role">
             <option *ngFor="let role of roles" [ngValue]="role.id">{{role.label}}</option>
         </select>
     </div>

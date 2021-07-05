@@ -62,6 +62,7 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
     let ok = false
     let emailCheckFunction: (email: string, orgId: number, roleId: number) => Observable<{available: boolean}>
     if (isSSO) {
+      ok = true
       emailCheckFunction = this.authService.checkEmailOfOrganisationUser.bind(this.authService)
     } else {
       ok = this.requireSame(this.user.password, this.user.passwordConfirmation, "Please enter equal passwords.")
