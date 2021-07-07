@@ -1,11 +1,10 @@
 package config
 
-import java.util.Properties
-
 import com.gitb.utils.HmacUtils
 import com.typesafe.config.{Config, ConfigFactory}
 import models.Constants
 
+import java.util.Properties
 import scala.util.matching.Regex
 
 object Configurations {
@@ -40,6 +39,7 @@ object Configurations {
   var EMAIL_SMTP_HOST = ""
   var EMAIL_SMTP_PORT = -1
   var EMAIL_SMTP_SSL_ENABLED = false
+  var EMAIL_SMTP_SSL_PROTOCOLS: Option[String] = None
   var EMAIL_SMTP_STARTTLS_ENABLED = false
   var EMAIL_SMTP_AUTH_ENABLED = true
   var EMAIL_SMTP_AUTH_USERNAME = ""
@@ -169,7 +169,12 @@ object Configurations {
         }
         EMAIL_SMTP_SSL_ENABLED = fromEnv("EMAIL_SMTP_SSL_ENABLED", conf.getString("email.smtp.ssl.enabled")).toBoolean
         if (EMAIL_SMTP_SSL_ENABLED) {
-          SMTP_PROPERTIES.setProperty("mail.smtp.ssl.enable", "true");
+          SMTP_PROPERTIES.setProperty("mail.smtp.ssl.enable", "true")
+          val sslProtocolsValue = fromEnv("EMAIL_SMTP_SSL_PROTOCOLS", conf.getString("email.smtp.ssl.protocols"))
+          if (!sslProtocolsValue.isBlank) {
+            EMAIL_SMTP_SSL_PROTOCOLS = Some(sslProtocolsValue.trim)
+            SMTP_PROPERTIES.setProperty("mail.smtp.ssl.protocols", EMAIL_SMTP_SSL_PROTOCOLS.get)
+          }
         }
         EMAIL_SMTP_STARTTLS_ENABLED = fromEnv("EMAIL_SMTP_STARTTLS_ENABLED", conf.getString("email.smtp.starttls.enabled")).toBoolean
         if (EMAIL_SMTP_STARTTLS_ENABLED) {
