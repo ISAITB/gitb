@@ -161,6 +161,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
     this.makeAuthenticationPost(config.path, config.data).subscribe((result: HttpResponse<LoginResultOk|LoginResultActionNeeded>) => {
       // Login successful.
       if (this.isLoginActionNeeded(result.body)) {
+        this.spinner = false        
         // Correct authentication but we need to replace the password to complete the login.
         this.onetimePassword = result.body.onetime != undefined && result.body.onetime
         this.weakPassword = result.body.weakPassword != undefined && result.body.weakPassword
@@ -169,10 +170,9 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
         this.completeLogin(result)
       } else {
         // This case should never occur.
+        this.spinner = false        
         this.addAlertError('You are unable to log in at this time due to an unexpected error.')
       }
-    }).add(() => {
-      this.spinner = false
     })
   }
 
@@ -200,6 +200,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
   }
 
   private handleLoginAuthenticationError(error: any) {
+    this.spinner = false
     if (error.status == 401) {
       if (this.dataService.configuration.ssoEnabled) {
         // We need to re-login to EU Login.

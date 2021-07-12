@@ -81,16 +81,16 @@ export class ProvideInputModalComponent implements OnInit {
           type: interaction.variableType,
           embeddingMethod: interaction.contentType
         }
-        if (interaction.optionData != undefined && interaction.data != undefined) {
+        if (interaction.optionData != undefined && interaction.selectedOption != undefined) {
           if (interaction.multiple) {
-            if (Array.isArray(interaction.data)) {
-              const values = interaction.data.map((item) => { return item.value })
+            if (Array.isArray(interaction.selectedOption)) {
+              const values = interaction.selectedOption.map((item) => { return item.value })
               inputData.value = values.join()
             }
           } else {
             inputData.value = interaction.selectedOption!.value
           }
-        } else {
+        } else if (interaction.optionData == undefined && interaction.data != undefined) {
           inputData.value = interaction.data
         }
         inputs.push(inputData as UserInteractionInput)
