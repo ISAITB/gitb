@@ -69,7 +69,7 @@
 
     .generate-level-reverse-margins(@i, @n);
     & > .message-body > .child-steps.else::before,
-    & > .child-steps.thread::before {
+    & > .message-body > .child-steps.thread::before {
       margin-left: -1 * (@container-padding * @i) !important;
       margin-right: -1 * (@container-padding * @i) !important;
     }
@@ -83,7 +83,7 @@
     width: (@width * @span) + (2 * @i * @container-padding) + 10;
 
     & > .message-body > .child-steps.else::before,
-    & > .child-steps.thread::before {
+    & > .message-body > .child-steps.thread::before {
       width: (@width * @span) + (2 * @i * @container-padding) - 1;
     }
   }
