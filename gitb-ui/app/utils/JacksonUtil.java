@@ -224,6 +224,12 @@ public class JacksonUtil {
                     if (inputRequest.isMultiple() != null) {
                         json.writeBooleanField("multiple", inputRequest.isMultiple());
                     }
+                    if (inputRequest.getInputType() != null) {
+                        json.writeStringField("inputType", inputRequest.getInputType().value());
+                    }
+                    if (inputRequest.getMimeType() != null) {
+                        json.writeStringField("mimeType", inputRequest.getMimeType());
+                    }
                     json.writeEndObject();
                 } else if (ior instanceof com.gitb.tbs.Instruction) {
                     com.gitb.tbs.Instruction instruction = (com.gitb.tbs.Instruction) ior;
@@ -252,6 +258,9 @@ public class JacksonUtil {
                     }
                     if(instruction.getEmbeddingMethod() != null) {
                         json.writeStringField("contentType", instruction.getEmbeddingMethod().value());
+                    }
+                    if (instruction.getMimeType() != null) {
+                        json.writeStringField("mimeType", instruction.getMimeType());
                     }
                     json.writeEndObject();
                 }

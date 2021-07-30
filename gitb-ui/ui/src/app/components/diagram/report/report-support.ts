@@ -10,7 +10,7 @@ export abstract class ReportSupport {
         private modalService: BsModalService
     ) {}
 
-    openEditorWindow(name?: string, value?: string, assertionReports?: AssertionReport[], lineNumber?: number) {
+    openEditorWindow(name?: string, value?: string, assertionReports?: AssertionReport[], lineNumber?: number, mimeType?: string) {
         const indicators = this.extractRelatedIndicators(name, assertionReports)
         this.modalService.show(CodeEditorModalComponent, {
             class: 'modal-lg',
@@ -23,7 +23,8 @@ export abstract class ReportSupport {
                     readOnly: true,
                     lineNumbers: true,
                     smartIndent: false,
-                    electricChars: false
+                    electricChars: false,
+                    mode: (mimeType == undefined)?'application/xml':mimeType
                 }
             }
         })

@@ -13,7 +13,9 @@ import { StepReport } from '../step-report';
 export class AnyContentViewComponent extends ReportSupport implements OnInit {
 
   @Input() context!: AnyContent
-  @Input() report!: StepReport
+  @Input() fileNameDownload?: string
+  @Input() outputContentType?: string
+  @Input() report?: StepReport
 
   value?: string
   isValueTooLong = false
@@ -32,24 +34,61 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   }
 
   open(lineNumber?: number) {
+    let valueToShow
+    if (this.context.embeddingMethod == 'BASE64') {
+      if (this.dataService.isDataURL(this.value!)) {
+        valueToShow = atob(this.dataService.base64FromDataURL(this.value!))
+      } else {
+        valueToShow = atob(this.value!)
+      }
+    } else {
+      valueToShow = this.value!
+    }
     this.openEditorWindow(
       this.context.name,
-      this.value,
+      valueToShow,
       this.report?.reports?.assertionReports,
-      lineNumber)
+      lineNumber, 
+      this.context.mimeType)
+  }
+
+  private toBlob(mimeType: string) {
+    let bb: Blob
+    if (this.context!.embeddingMethod == 'BASE64') {
+      bb = this.dataService.b64toBlob(this.context.value!, mimeType)
+    } else {
+      bb = new Blob([this.context.value!], {type: mimeType})
+    }
+    return bb
   }
 
   download() {
-    this.testService.getBinaryMetadata(this.context.value!, (this.context.embeddingMethod == 'BASE64'))
-    .subscribe((info) => {
-      let bb: Blob
-      if (this.context!.embeddingMethod == 'BASE64') {
-        bb = this.dataService.b64toBlob(this.context.value!, info.mimeType)
+    if (this.outputContentType == undefined) {
+      this.testService.getBinaryMetadata(this.context.value!, (this.context.embeddingMethod == 'BASE64'))
+      .subscribe((info) => {
+        const bb = this.toBlob(info.mimeType)
+        if (this.fileNameDownload != undefined) {
+          saveAs(bb, this.fileNameDownload)
+        } else {
+          saveAs(bb, 'file'+info.extension)
+        }
+      })
+    } else {
+      const bb = this.toBlob(this.outputContentType)
+      if (this.fileNameDownload != undefined) {
+        saveAs(bb, this.fileNameDownload)
       } else {
-        bb = new Blob([this.context.value!], {type: info.mimeType})
+        let extension = this.dataService.extensionFromMimeType(this.outputContentType)
+        if (extension == undefined) {
+          if (this.context.embeddingMethod == 'BASE64') {
+            extension = '.bin'
+          } else {
+            extension = '.txt'
+          }
+        }
+        saveAs(bb, 'file'+extension)
       }
-      saveAs(bb, 'file'+info.extension)
-    })
+    }
   }
 
 }

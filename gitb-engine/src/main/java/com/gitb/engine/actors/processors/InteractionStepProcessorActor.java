@@ -5,6 +5,7 @@ import akka.dispatch.Futures;
 import akka.dispatch.OnFailure;
 import akka.dispatch.OnSuccess;
 import com.gitb.core.ErrorCode;
+import com.gitb.core.InputRequestInputType;
 import com.gitb.core.ValueEmbeddingEnumeration;
 import com.gitb.engine.TestbedService;
 import com.gitb.engine.actors.ActorSystem;
@@ -90,20 +91,22 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             try {
                 VariableResolver variableResolver = new VariableResolver(scope);
                 List<InstructionOrRequest> instructionAndRequests = step.getInstructOrRequest();
-                UserInteractionRequest userInteractionRequest = new UserInteractionRequest();
-                userInteractionRequest.setInputTitle(step.getInputTitle() == null?"Server interaction":step.getInputTitle());
                 String sutActorId = getSUTActor().getId();
                 if (StringUtils.isBlank(step.getWith())) {
-                    userInteractionRequest.setWith(sutActorId);
+                    step.setWith(sutActorId);
                 } else {
-                    userInteractionRequest.setWith(step.getWith());
+                    step.setWith(step.getWith());
                 }
                 int childStepId = 1;
+                // Prepare the message to send to the frontend.
+                UserInteractionRequest userInteractionRequest = new UserInteractionRequest();
+                userInteractionRequest.setInputTitle(step.getInputTitle() == null?"Server interaction":step.getInputTitle());
+                userInteractionRequest.setWith(step.getWith());
                 for (InstructionOrRequest instructionOrRequest : instructionAndRequests) {
                     // Set the type in case this is missing.
                     if (StringUtils.isBlank(instructionOrRequest.getType())) {
-                        if (instructionOrRequest.getContentType() == ValueEmbeddingEnumeration.BASE_64) {
-                            // if the contentTYpe is set to BASE64 this will be a file.
+                        if (instructionOrRequest.getContentType() == ValueEmbeddingEnumeration.BASE_64 || (instructionOrRequest instanceof UserRequest && ((UserRequest)instructionOrRequest).getInputType() == InputRequestInputType.UPLOAD)) {
+                            // if the contentType is set to BASE64 or the inputType is UPLOAD this will be a file.
                             instructionOrRequest.setType(DataType.BINARY_DATA_TYPE);
                         } else {
                             if (variableResolver.isVariableReference(instructionOrRequest.getValue())) {
@@ -119,16 +122,20 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                             }
                         }
                     }
-                    // Set the default content type based on the type.
-                    if (instructionOrRequest.getContentType() == null) {
-                        if (DataType.isFileType(instructionOrRequest.getType())) {
-                            instructionOrRequest.setContentType(ValueEmbeddingEnumeration.BASE_64);
-                        } else {
-                            instructionOrRequest.setContentType(ValueEmbeddingEnumeration.STRING);
+                    // Ensure consistency and complete information for contentType and inputType.
+                    if (DataType.isFileType(instructionOrRequest.getType())) {
+                        instructionOrRequest.setContentType(ValueEmbeddingEnumeration.BASE_64);
+                        if (instructionOrRequest instanceof UserRequest) {
+                            ((UserRequest) instructionOrRequest).setInputType(InputRequestInputType.UPLOAD);
                         }
-                    }
-                    if (StringUtils.isBlank(instructionOrRequest.getWith())) {
-                        instructionOrRequest.setWith(userInteractionRequest.getWith());
+                    } else {
+                        instructionOrRequest.setContentType(ValueEmbeddingEnumeration.STRING);
+                        if (instructionOrRequest instanceof UserRequest) {
+                            var request = (UserRequest)instructionOrRequest;
+                            if (request.getInputType() == null || request.getInputType() == InputRequestInputType.UPLOAD) {
+                                request.setInputType(InputRequestInputType.TEXT);
+                            }
+                        }
                     }
                     //If it is an instruction
                     if (instructionOrRequest instanceof com.gitb.tdl.Instruction) {
@@ -137,9 +144,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                             instructionOrRequest.setValue("''");
                         }
                         userInteractionRequest.getInstructionOrRequest().add(processInstruction(instructionOrRequest, "" + childStepId));
-                    }
-                    //If it is a request
-                    else {
+                    } else { // If it is a request
                         userInteractionRequest.getInstructionOrRequest().add(processRequest((UserRequest) instructionOrRequest, "" + childStepId));
                     }
                     childStepId++;
@@ -182,6 +187,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         instruction.setId(stepId);
         instruction.setName(instructionCommand.getName());
         instruction.setEncoding(instructionCommand.getEncoding());
+        instruction.setMimeType(instructionCommand.getMimeType());
 
         ExpressionHandler exprHandler = new ExpressionHandler(this.scope);
         DataType computedValue = exprHandler.processExpression(instructionCommand, instructionCommand.getType());
@@ -206,23 +212,14 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
         inputRequest.setDesc(instructionCommand.getDesc());
         inputRequest.setName(instructionCommand.getValue()); //name is provided from value node
         inputRequest.setContentType(instructionCommand.getContentType());
-        if (instructionCommand.getContentType() == null) {
-            inputRequest.setContentType(ValueEmbeddingEnumeration.STRING);
-        }
-        if (StringUtils.isNotBlank(instructionCommand.getValue())) {
-            String assignedVariableExpression = instructionCommand.getValue();
-            DataType assignedVariable = variableResolver.resolveVariable(assignedVariableExpression);
-            inputRequest.setType(assignedVariable.getType());
-        } else {
-            if (instructionCommand.getType() == null) {
-                throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "The 'type' should be specified for InputRequest objects"));
-            }
-            inputRequest.setType(instructionCommand.getType());
-        }
+        inputRequest.setType(instructionCommand.getType());
         inputRequest.setEncoding(instructionCommand.getEncoding());
         inputRequest.setId(stepId);
-        // Handle selection options if applicable.
-        if (instructionCommand.getContentType() == ValueEmbeddingEnumeration.STRING) {
+        inputRequest.setInputType(instructionCommand.getInputType());
+        inputRequest.setMimeType(instructionCommand.getMimeType());
+        // Handle text inputs.
+        if (instructionCommand.getInputType() != InputRequestInputType.UPLOAD) {
+            // Select options.
             if (instructionCommand.getOptions() != null) {
                 String options = instructionCommand.getOptions();
                 if (variableResolver.isVariableReference(options)) {
@@ -246,14 +243,28 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "The number of options ("+optionCount+") doesn't match the number of option labels ("+labelCount+")"));
                 }
                 inputRequest.setMultiple(Boolean.FALSE);
-                if (instructionCommand.getMultiple() != null) {
+                if (instructionCommand.getMultiple() == null) {
+                    if (inputRequest.getInputType() == InputRequestInputType.SELECT_MULTIPLE) {
+                        inputRequest.setMultiple(Boolean.TRUE);
+                    }
+                } else {
                     if (variableResolver.isVariableReference(instructionCommand.getMultiple())) {
                         inputRequest.setMultiple((Boolean)(variableResolver.resolveVariableAsBoolean(instructionCommand.getMultiple()).getValue()));
                     } else {
                         inputRequest.setMultiple(Boolean.parseBoolean(instructionCommand.getMultiple()));
                     }
+                    if (inputRequest.isMultiple()) {
+                        inputRequest.setInputType(InputRequestInputType.SELECT_MULTIPLE);
+                    } else {
+                        inputRequest.setInputType(InputRequestInputType.SELECT_SINGLE);
+                    }
                 }
             }
+            if (inputRequest.getInputType() == null) {
+                inputRequest.setInputType(InputRequestInputType.TEXT);
+            }
+            // Set this on the original object as we have now resolved any option-related expressions as well.
+            instructionCommand.setInputType(inputRequest.getInputType());
         }
         return inputRequest;
     }

@@ -452,6 +452,8 @@ export class DataService {
       result = ".cer"
     } else if (mimeType == "application/pdf") {
       result = ".pdf"
+    } else if (mimeType == "application/json") {
+      result = ".json"
     } else if (mimeType == "text/plain") {
       result = ".txt"
     } else if (mimeType == "image/png") {
