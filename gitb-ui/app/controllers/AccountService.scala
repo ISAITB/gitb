@@ -32,7 +32,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
    * Updates the company profile
    */
   def updateVendorProfile = authorizedAction { request =>
-    authorizationManager.canUpdateOwnOrganisation(request)
+    authorizationManager.canUpdateOwnOrganisation(request, ignoreExistingTests = false)
     val adminId = ParameterExtractor.extractUserId(request)
 
     val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_SNAME)

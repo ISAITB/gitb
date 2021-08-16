@@ -271,7 +271,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       if (!Configurations.DEMOS_ENABLED || Configurations.DEMOS_ACCOUNT != userInfo.id) {
         val user = userManager.getById(userId)
         if (userInfo.organization.isDefined && user.organization == userInfo.organization.get.id) {
-          ok = canUpdateOwnOrganisation(request)
+          ok = canUpdateOwnOrganisation(request, ignoreExistingTests = true)
         }
       }
     }
@@ -1121,14 +1121,14 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
   }
 
   def canCreateUserInOwnOrganisation(request: RequestWithAttributes[_]):Boolean = {
-    canUpdateOwnOrganisation(request)
+    canUpdateOwnOrganisation(request, ignoreExistingTests = true)
   }
 
   def canViewOwnOrganisationnUsers(request: RequestWithAttributes[_]):Boolean = {
     checkIsAuthenticated(request)
   }
 
-  def canUpdateOwnOrganisation(request: RequestWithAttributes[_]):Boolean = {
+  def canUpdateOwnOrganisation(request: RequestWithAttributes[_], ignoreExistingTests: Boolean):Boolean = {
     var ok = false
     val userId = getRequestUserId(request)
     if (!Configurations.DEMOS_ENABLED || userId != Configurations.DEMOS_ACCOUNT) {
@@ -1136,12 +1136,16 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
       if (isTestBedAdmin(userInfo) || isCommunityAdmin(userInfo)) {
         ok = true
       } else if (isOrganisationAdmin(userInfo) && userInfo.organization.isDefined) {
-        val community = communityManager.getById(userInfo.organization.get.community)
-        if (community.isDefined) {
-          if (community.get.allowPostTestOrganisationUpdates) {
-            ok = true
-          } else {
-            ok = !testResultManager.testSessionsExistForOrganisation(userInfo.organization.get.id)
+        if (ignoreExistingTests) {
+          ok = true
+        } else {
+          val community = communityManager.getById(userInfo.organization.get.community)
+          if (community.isDefined) {
+            if (community.get.allowPostTestOrganisationUpdates) {
+              ok = true
+            } else {
+              ok = !testResultManager.testSessionsExistForOrganisation(userInfo.organization.get.id)
+            }
           }
         }
       }
