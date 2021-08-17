@@ -133,7 +133,11 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                         if (instructionOrRequest instanceof UserRequest) {
                             var request = (UserRequest)instructionOrRequest;
                             if (request.getInputType() == null || request.getInputType() == InputRequestInputType.UPLOAD) {
-                                request.setInputType(InputRequestInputType.TEXT);
+                                if (request.getOptions() != null) {
+                                    request.setInputType(InputRequestInputType.SELECT_SINGLE);
+                                } else {
+                                    request.setInputType(InputRequestInputType.TEXT);
+                                }
                             }
                         }
                     }
