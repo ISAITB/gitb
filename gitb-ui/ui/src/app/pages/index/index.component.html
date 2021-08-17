@@ -1,6 +1,6 @@
 <div class="page index">
     <div class="header">
-      <div class="navbar-collapse nav-main-collapse collapse">
+      <div class="navbar">
         <div class="container">
           <img [src]="logo" class="logo"/>
           <nav class="nav-main mega-menu">
@@ -17,32 +17,29 @@
               <!-- User menu item, show when authenticated -->
               <li class="dropdown mega-menu-item mega-menu-signin signin logged" id="headerAccount" *ngIf="userLoaded()">
                 <a class="dropdown-toggle">
-                  <i class="fa fa-user"></i> {{dataService.user?.name}}
-                  <i class="fa fa-angle-down"></i>
+                  <i class="fa fa-user"></i><span class="header-user-name"> {{dataService.user?.name}} <i class="fa fa-angle-down"></i></span>
                 </a>
                 <ul class="dropdown-menu">
                   <li>
-                    <div class="mega-menu-content">
-                      <div class="row">
-                        <div class="col-xs-7">
-                          <div class="user-avatar">
-                            <p><strong>{{dataService.user?.name}}</strong></p>
-                            <p class="role-description" *ngIf="userFullyLoaded()">{{dataService.getRoleDescription(false)}}</p>
-                          </div>
+                    <div class="mega-menu-content header-profile-popup">
+                      <div class="header-profile-popup-user">
+                        <div class="user-avatar">
+                          <p><strong>{{dataService.user?.name}}</strong></p>
+                          <p class="role-description" *ngIf="userFullyLoaded()">{{dataService.getRoleDescription(false)}}</p>
                         </div>
-                        <div class="col-xs-5">
-                          <ul class="list-account-options">
-                            <li routerLinkActive="active" *ngIf="!dataService.isDemoAccount() && (dataService.configuration.ssoEnabled || !dataService.user?.onetime) && isAuthenticated()">
-                              <a class="pointer" routerLink="settings/profile">Settings</a>
-                            </li>
-                            <li *ngIf="dataService.configuration.ssoEnabled && isAuthenticated()">
-                                <a class="pointer" (click)="switchAccount()">Switch role</a>
-                            </li>
-                            <li>
-                              <a class="pointer" (click)="logout()">Logout</a>
-                            </li>
-                          </ul>
-                        </div>
+                      </div>
+                      <div class="header-profile-popup-options">
+                        <ul class="list-account-options">
+                          <li routerLinkActive="active" *ngIf="!dataService.isDemoAccount() && (dataService.configuration.ssoEnabled || !dataService.user?.onetime) && isAuthenticated()">
+                            <a class="pointer" routerLink="settings/profile">Settings</a>
+                          </li>
+                          <li *ngIf="dataService.configuration.ssoEnabled && isAuthenticated()">
+                              <a class="pointer" (click)="switchAccount()">Switch role</a>
+                          </li>
+                          <li>
+                            <a class="pointer" (click)="logout()">Logout</a>
+                          </li>
+                        </ul>
                       </div>
                     </div>
                   </li>

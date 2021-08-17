@@ -6,32 +6,38 @@
 		<div *ngFor="let interaction of interactions; let index = index">
 			<div class="form-group">
 				<div class="col-md-12 col-centered" >
-					<label>{{interaction.desc}}</label>
 					<!-- request interaction: server asks operator to send inputs -->
 					<div *ngIf="interaction.type == 'request'">
-						<!-- Case 1: input text -->
-						<input *ngIf="interaction.contentType != 'BASE64' && !interaction.options" [name]="'input-'+index" [attr.id]="'input-'+index" type="text" class="form-control" [(ngModel)]="interaction.data"/>
-						<!-- Case 2: select multiple/single -->
-						<select *ngIf="interaction.contentType != 'BASE64' && interaction.options && interaction.multiple" [name]="'input-'+index" [attr.id]="'input-'+index" multiple="true" class="form-control" [(ngModel)]="interaction.selectedOption">
-                            <option *ngFor="let option of interaction.optionData" [ngValue]="option">{{option.label}}</option>
-                        </select>
-						<select *ngIf="interaction.contentType != 'BASE64' && interaction.options && !interaction.multiple" [name]="'input-'+index" [attr.id]="'input-'+index" class="form-control" [(ngModel)]="interaction.selectedOption">
-                            <option value=""></option>
-                            <option *ngFor="let option of interaction.optionData" [ngValue]="option">{{option.label}}</option>
-                        </select>
-						<!-- Case 3: Upload file -->
-						<div *ngIf="interaction.contentType == 'BASE64'">
-                            <span class="tab" *ngIf="interaction.file != undefined">{{interaction.file.name}} - {{interaction.file.size}} bytes</span>
-                            <span class="tab" *ngIf="interaction.file == undefined">No file selected</span>
-                            <app-file-select label="Select file" (onUpload)="onFileSelect(interaction, $event)"></app-file-select>
-						</div>
+						<label>{{interaction.desc}}</label>
+						<ng-container [ngSwitch]="interaction.inputType">
+							<!-- Select single. -->
+							<select *ngSwitchCase="'SELECT_SINGLE'" [name]="'input-'+index" [attr.id]="'input-'+index" class="form-control" [(ngModel)]="interaction.selectedOption">
+								<option value=""></option>
+								<option *ngFor="let option of interaction.optionData" [ngValue]="option">{{option.label}}</option>
+							</select>
+							<!-- Select multiple -->
+							<select *ngSwitchCase="'SELECT_MULTIPLE'" [name]="'input-'+index" [attr.id]="'input-'+index" multiple="true" class="form-control" [(ngModel)]="interaction.selectedOption">
+								<option *ngFor="let option of interaction.optionData" [ngValue]="option">{{option.label}}</option>
+							</select>
+							<!-- Upload -->
+							<div *ngSwitchCase="'UPLOAD'">
+								<span class="mini-tab" *ngIf="interaction.file != undefined">{{interaction.file.name}} - {{interaction.file.size}} bytes</span>
+								<span class="mini-tab" *ngIf="interaction.file == undefined">No file selected</span>
+								<app-file-select label="Select file" (onUpload)="onFileSelect(interaction, $event)"></app-file-select>
+							</div>
+							<!-- Code editor -->
+							<ngx-codemirror *ngSwitchCase="'CODE'" #codeMirror (focusChange)="codeEditorFocus($event, 'input-'+index)" [name]="'input-'+index" [attr.id]="'input-'+index" [(ngModel)]="interaction.data" [options]="{lineNumbers:true, smartIndent: false, electricChars: false, mode: interaction.mimeType}" [ngClass]="{'focused': editorFocus['input-'+index]}"></ngx-codemirror>
+							<!-- Text area -->
+							<textarea *ngSwitchCase="'MULTILINE_TEXT'" [name]="'input-'+index" [attr.id]="'input-'+index" class="form-control" [(ngModel)]="interaction.data"></textarea>
+							<!-- Secret -->
+							<app-secret-input *ngSwitchCase="'SECRET'" [name]="'input-'+index" [id]="'input-'+index" [(ngModel)]="interaction.data"></app-secret-input>
+							<!-- Text field -->
+							<input *ngSwitchDefault [name]="'input-'+index" [attr.id]="'input-'+index" type="text" class="form-control" [(ngModel)]="interaction.data"/>
+						</ng-container>
 					</div>
 					<!-- instruction interaction: server shows a message -->
-					<div *ngIf="interaction.type == 'instruction' && interaction.value != undefined">
-						<span class="tab" *ngIf="interaction.name != undefined">{{interaction.name}}</span>
-						<button type="button" class="btn btn-default" *ngIf="interaction.contentType == 'BASE64'" (click)="download(interaction)">Download</button>
-						<!-- configuration parameter is a string -->
-						<span class="tab" *ngIf="interaction.contentType != 'BASE64'">{{interaction.value}}</span>
+					<div *ngIf="interaction.type == 'instruction'">
+						<app-any-content-view [context]="instructionAsAnyContent(interaction)" [fileNameDownload]="interaction.name"></app-any-content-view>
 					</div>
 				</div>
 			</div>

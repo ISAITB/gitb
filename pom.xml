@@ -28,6 +28,10 @@
             <url>https://repo1.maven.org/maven2/</url>
         </repository>
         <repository>
+            <id>jaspersoft-third-party</id>
+            <url>http://jaspersoft.jfrog.io/jaspersoft/third-party-ce-artifacts/</url>
+        </repository>
+        <repository>
             <id>itbRepoRead</id>
             <url>${itbRepoReadUrl}</url>
         </repository>
@@ -51,6 +55,35 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
                     <version>3.0.0-M1</version>
+                </plugin>
+                <plugin>
+                    <groupId>com.alexnederlof</groupId>
+                    <artifactId>jasperreports-plugin</artifactId>
+                    <version>2.8</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>net.sf.jasperreports</groupId>
+                            <artifactId>jasperreports-fonts</artifactId>
+                            <version>6.15.0</version>
+                            <exclusions>
+                                <exclusion>
+                                    <groupId>com.lowagie</groupId>
+                                    <artifactId>itext</artifactId>
+                                </exclusion>
+                            </exclusions>
+                        </dependency>
+                        <dependency>
+                            <groupId>net.sf.jasperreports</groupId>
+                            <artifactId>jasperreports</artifactId>
+                            <version>6.15.0</version>
+                            <exclusions>
+                                <exclusion>
+                                    <groupId>com.lowagie</groupId>
+                                    <artifactId>itext</artifactId>
+                                </exclusion>
+                            </exclusions>
+                        </dependency>
+                    </dependencies>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -81,7 +114,7 @@
             <dependency>
                 <groupId>eu.europa.ec.itb</groupId>
                 <artifactId>gitb-types</artifactId>
-                <version>1.13.0</version>
+                <version>1.14.0</version>
             </dependency>
             <dependency>
                 <groupId>com.gitb</groupId>
@@ -342,11 +375,6 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-collections4</artifactId>
                 <version>4.4</version>
-            </dependency>
-            <dependency>
-                <groupId>com.alexnederlof</groupId>
-                <artifactId>jasperreports-plugin</artifactId>
-                <version>2.8</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.jasperreports</groupId>

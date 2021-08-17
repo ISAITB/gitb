@@ -70,7 +70,9 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
           relevantContextItem.name, 
           relevantContextItem.valueToUse, 
           this.report.reports?.assertionReports,
-          location.line)
+          location.line,
+          relevantContextItem.mimeType
+        )
       }
     }
   }

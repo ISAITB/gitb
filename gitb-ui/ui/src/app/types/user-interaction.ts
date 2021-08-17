@@ -18,4 +18,7 @@ export interface UserInteraction {
     contentType?: string
     multiple?: boolean
     value?: string
+    inputType: "TEXT"|"MULTILINE_TEXT"|"SECRET"|"CODE"|"SELECT_SINGLE"|"SELECT_MULTIPLE"|"UPLOAD"
+    mimeType?: string
+
 }

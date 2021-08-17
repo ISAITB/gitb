@@ -5,5 +5,6 @@ export interface AnyContent {
     valueToUse?: string
     embeddingMethod?: 'BASE64'|'STRING'|'URI'
     item?: AnyContent[]
+    mimeType?: string
 
 }

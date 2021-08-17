@@ -133,6 +133,7 @@ import { EditEndpointConfigurationModalComponent } from './modals/edit-endpoint-
 import { EndpointDisplayComponent } from './components/endpoint-display/endpoint-display.component';
 import { ParameterDisplayComponent } from './components/parameter-display/parameter-display.component';
 import { ProvideInputModalComponent } from './modals/provide-input-modal/provide-input-modal.component';
+import { SecretInputComponent } from './components/secret-input/secret-input.component';
 
 @NgModule({
   providers: [ 
@@ -255,7 +256,8 @@ import { ProvideInputModalComponent } from './modals/provide-input-modal/provide
     EditEndpointConfigurationModalComponent,
     EndpointDisplayComponent,
     ParameterDisplayComponent,
-    ProvideInputModalComponent
+    ProvideInputModalComponent,
+    SecretInputComponent
   ],
   imports: [
     BrowserModule,
