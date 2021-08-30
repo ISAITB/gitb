@@ -73,7 +73,7 @@
     <!-- configuration -->
     <div class="panel panel-default" *ngIf="dataService.isSystemAdmin">
         <div class="panel-heading">
-            <h4 class="title">Automatically terminate idle sessions {{ttlEnabled}}</h4>
+            <h4 class="title">Automatically terminate idle sessions</h4>
             <div class="btn-group pull-right">
                 <app-toggle id="dashboard-toggle-ttl" class="btn-group" name="ttlToggle" [(ngModel)]="ttlEnabled" on="Enabled" off="Disabled" (toggle)="ttlToggled()"></app-toggle>
             </div>
