@@ -7,7 +7,9 @@ import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tdl.TestArtifact;
 import com.gitb.types.DataType;
+import com.gitb.types.DataTypeFactory;
 import com.gitb.types.SchemaType;
+import org.apache.commons.io.IOUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -36,7 +38,11 @@ public class ArtifactUtils {
 		if (testCaseRepository != null) {
 			InputStream inputStream = testCaseRepository.getTestArtifact(fromToConsider, context.getTestCase().getId(), pathToLookup);
 			if (inputStream != null) {
-				data = TemplateUtils.generateDataTypeFromTemplate(scope, inputStream, artifact.getType(), artifact.getEncoding());
+				// Create data type from artifact.
+				data = DataTypeFactory.getInstance().create(
+						IOUtils.toByteArray(inputStream),
+						(artifact.getType() == null)?DataType.STRING_DATA_TYPE:artifact.getType(),
+						(artifact.getEncoding() == null)?"UTF-8":artifact.getEncoding());
 			}
 			// Set the location of the artifact if it is a schema type in order to resolve
 			// the location of other artifacts imported by this one.

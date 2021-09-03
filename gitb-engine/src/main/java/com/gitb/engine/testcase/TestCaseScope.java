@@ -2,14 +2,17 @@ package com.gitb.engine.testcase;
 
 import com.gitb.core.ErrorCode;
 import com.gitb.engine.utils.ArtifactUtils;
+import com.gitb.engine.utils.TemplateUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.Imports;
 import com.gitb.tdl.TestArtifact;
 import com.gitb.types.DataType;
+import com.gitb.types.SchemaType;
 import com.gitb.utils.ErrorUtils;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -28,6 +31,7 @@ public class TestCaseScope {
 	private final List<TestCaseScope> children;
 
 	private final Map<String, DataType> symbols;
+	private final Map<String, DataType> resolvedArtifacts;
 	private final Imports scopeImports;
 	private final String testSuiteContext;
 
@@ -39,6 +43,7 @@ public class TestCaseScope {
 		this.context   = context;
 		this.scopeImports = imports;
 		this.symbols   = new ConcurrentHashMap<>();
+		this.resolvedArtifacts   = new ConcurrentHashMap<>();
 		this.children  = new CopyOnWriteArrayList<>();
 		this.testSuiteContext = testSuiteContext;
 	}
@@ -80,17 +85,6 @@ public class TestCaseScope {
 		symbols.put(name, value);
 	}
 
-	private TestArtifact getTestArtifact(String name) {
-		if (name != null && scopeImports != null) {
-			for (var artifact: scopeImports.getArtifactOrModule()) {
-				if (artifact instanceof TestArtifact && name.equals(((TestArtifact) artifact).getName())) {
-					return (TestArtifact) artifact;
-				}
-			}
-		}
-		return null;
-	}
-
 	public ScopedVariable getVariable(String name) {
 		// When we have a scope from another test suite (i.e. a scriptlet) we should not propagate variable searches to parent scopes.
 		boolean searchAncestors = testSuiteContext == null;
@@ -104,18 +98,37 @@ public class TestCaseScope {
 			if (current.symbols.containsKey(name)) {
 				return new ScopedVariable(current, name);
 			}
-			// Step 2: Check to see if this is an imported artefact.
-			TestArtifact artifact = current.getTestArtifact(name);
-			if (artifact != null) {
-				DataType data;
-				try {
-					data = ArtifactUtils.resolveArtifact(context, current, artifact);
-				} catch (IOException e) {
-					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Artifact linked to name ["+name+"] could not be loaded."), e);
+			// Step 2: Check to see if this is an imported artifact (artifact values do not get recorded in the scope).
+			if (current.scopeImports != null) {
+				DataType artifactData = null;
+				for (var artifact: current.scopeImports.getArtifactOrModule()) {
+					if (artifact instanceof TestArtifact && name.equals(((TestArtifact) artifact).getName())) {
+						if (current.resolvedArtifacts.containsKey(name)) {
+							artifactData = current.resolvedArtifacts.get(name);
+							break;
+						} else {
+							try {
+								artifactData = ArtifactUtils.resolveArtifact(context, current, (TestArtifact) artifact);
+								current.resolvedArtifacts.put(name, artifactData);
+								break;
+							} catch (IOException e) {
+								throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Artifact linked to name ["+name+"] could not be loaded."), e);
+							}
+						}
+					}
 				}
-				ScopedVariable variable = new ScopedVariable(current, name);
-				variable.setValue(data);
-				return variable;
+				if (artifactData != null) {
+					/* The loaded data may be a template. We need to process it here to make replacements (the processed
+					   template is however not stored in the scope to allow its reuse with different values). */
+					var processedArtifactData = TemplateUtils.generateDataTypeFromTemplate(current, artifactData, artifactData.getType(), false);
+					if (processedArtifactData instanceof SchemaType) {
+						((SchemaType) processedArtifactData).setSchemaLocation(((SchemaType) artifactData).getSchemaLocation());
+						((SchemaType) processedArtifactData).setTestSuiteId(((SchemaType) artifactData).getTestSuiteId());
+					}
+					ScopedArtifact scopedArtifact = new ScopedArtifact(current, name);
+					scopedArtifact.setValue(processedArtifactData);
+					return scopedArtifact;
+				}
 			}
 			// Step 3: Repeat for parent scope.
 			if (searchAncestors) {
@@ -136,6 +149,7 @@ public class TestCaseScope {
 	}
 
 	public static class ScopedVariable {
+
 		protected final TestCaseScope scope;
 		protected final String name;
 
@@ -172,12 +186,30 @@ public class TestCaseScope {
 
 		@Override
 		public String toString() {
-			return "ScopedVariable{" +
-				"name='" + name + '\'' +
-				", value=" + scope.getValue(name) +
-				'}';
+			return "ScopedVariable{name='" + name + '\'' + ", value=" + getValue() + "}";
 		}
 	}
+
+	public static class ScopedArtifact extends ScopedVariable {
+
+		private DataType artifact;
+
+		public ScopedArtifact(TestCaseScope scope, String name) {
+			super(scope, name);
+		}
+
+		@Override
+		public DataType getValue() {
+			return artifact;
+		}
+
+		@Override
+		public void setValue(DataType value) {
+			this.artifact = value;
+		}
+
+	}
+
 
 	@Override
 	public String toString() {

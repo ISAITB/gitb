@@ -35,7 +35,7 @@ public class TemplateUtils {
 
 		Matcher matcher = placeholderPattern.matcher(str);
 
-		StringBuffer stringBuffer = new StringBuffer();
+		StringBuilder stringBuffer = new StringBuilder();
 
 		VariableResolver variableResolver = new VariableResolver(scope);
 		if (encoding == null) {
@@ -57,11 +57,12 @@ public class TemplateUtils {
 		return DataTypeFactory.getInstance().create(stringBuffer.toString().getBytes(), type, encoding);
 	}
 
-	public static DataType generateDataTypeFromTemplate(TestCaseScope scope, DataType templateVariable, String type) {
-		return generateDataTypeFromTemplate(scope, templateVariable.serializeByDefaultEncoding(), type, null, true);
+	public static DataType generateDataTypeFromTemplate(TestCaseScope scope, DataType templateVariable, String type, boolean forceBinaryTemplateProcessing) {
+		return generateDataTypeFromTemplate(scope, templateVariable.serializeByDefaultEncoding(), type, null, forceBinaryTemplateProcessing);
 	}
 
-	public static DataType generateDataTypeFromTemplate(TestCaseScope scope, InputStream template, String type, String encoding) throws IOException {
-		return generateDataTypeFromTemplate(scope, IOUtils.toByteArray(template), type, encoding, false);
+	public static DataType generateDataTypeFromTemplate(TestCaseScope scope, DataType templateVariable, String type) {
+		return generateDataTypeFromTemplate(scope, templateVariable, type, true);
 	}
+
 }
