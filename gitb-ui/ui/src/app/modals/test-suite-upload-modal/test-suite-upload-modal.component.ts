@@ -6,7 +6,6 @@ import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { ErrorService } from 'src/app/services/error.service';
 import { PopupService } from 'src/app/services/popup.service';
-import { ErrorData } from 'src/app/types/error-data.type';
 import { Specification } from 'src/app/types/specification';
 import { PendingTestSuiteUploadChoice } from './pending-test-suite-upload-choice';
 import { SpecificationChoice } from './specification-choice';
@@ -17,8 +16,7 @@ import { ValidationReport } from './validation-report';
 @Component({
   selector: 'app-test-suite-upload-modal',
   templateUrl: './test-suite-upload-modal.component.html',
-  styles: [
-  ]
+  styleUrls: ['./test-suite-upload-modal.component.less']
 })
 export class TestSuiteUploadModalComponent implements OnInit {
 
@@ -44,6 +42,7 @@ export class TestSuiteUploadModalComponent implements OnInit {
   results?: SpecificationResult[]
   specificationChoices?: SpecificationChoice[]
   specificationChoiceMap: {[key: number]: SpecificationChoice} = {}
+  reportItemsCollapsed = false
 
   constructor(
     public dataService: DataService,

@@ -2,54 +2,6 @@
 
 .test-step-report {
 
-	.summary {
-		display: flex;
-		cursor: pointer;
-		height: 40px;
-
-		&:hover {
-			.summary-labels {
-				background: @gray-light-1;
-			}
-			.summary-cell-title {
-				background: @gray-light !important;
-			}
-		}
-
-		.summary-labels {
-			display: inline-flex;
-			flex-grow: 1;
-
-			& > .summary-cell {
-				flex-grow: 0.33;
-				justify-content: center;
-				border-left: 1px solid @gray-light;
-			}
-		}
-
-		.summary-cell {
-			padding-top: 5px;
-			padding-bottom: 5px;
-			text-align: center;
-			display: inline-flex;
-			align-items: center;
-
-			&.summary-cell-title {
-				background: @gray-light-1;
-				font-weight: bold;
-				text-align: left;
-				padding-left: 30px;
-				padding-right: 80px;
-			}
-
-			.summary-item-label {
-				font-weight: bold;
-				margin-right: 5px;
-			}
-		}
-
-	}
-
     .report-item {
 		display: block;
 		padding: 10px 15px;
