@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { BsModalService } from 'ngx-bootstrap/modal';
+import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
 import { TestService } from 'src/app/services/test.service';
 import { AnyContent } from '../../any-content';
@@ -8,7 +9,13 @@ import { StepReport } from '../step-report';
 
 @Component({
   selector: 'app-any-content-view',
-  templateUrl: './any-content-view.component.html'
+  templateUrl: './any-content-view.component.html',
+  styles: [
+    '.any-content-view-container{ display: flex; }',
+    '.any-content-view-texts{ display: inline-flex; flex-direction: column; flex-grow: 1; word-break: break-all; }',
+    '.any-content-view-texts > .value { padding-top: 5px; }',
+    '.any-content-view-controls{ display: inline-flex; align-items: center; flex-shrink: 0; }'
+  ]
 })
 export class AnyContentViewComponent extends ReportSupport implements OnInit {
 
@@ -23,7 +30,8 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   constructor(
     private testService: TestService,
     private dataService: DataService,
-    modalService: BsModalService
+    modalService: BsModalService,
+    private confirmationDialogService: ConfirmationDialogService
   ) { super(modalService) }
 
   ngOnInit(): void {
@@ -34,22 +42,29 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   }
 
   open(lineNumber?: number) {
-    let valueToShow
-    if (this.context.embeddingMethod == 'BASE64') {
-      if (this.dataService.isDataURL(this.value!)) {
-        valueToShow = atob(this.dataService.base64FromDataURL(this.value!))
+    try {
+      let valueToShow
+      if (this.context.embeddingMethod == 'BASE64') {
+        if (this.dataService.isDataURL(this.value!)) {
+          valueToShow = atob(this.dataService.base64FromDataURL(this.value!))
+        } else {
+          valueToShow = atob(this.value!)
+        }
       } else {
-        valueToShow = atob(this.value!)
+        valueToShow = this.value!
       }
-    } else {
-      valueToShow = this.value!
+      this.openEditorWindow(
+        this.context.name,
+        valueToShow,
+        this.report?.reports?.assertionReports,
+        lineNumber, 
+        this.context.mimeType)
+    } catch (e) {
+      this.confirmationDialogService.confirmed('Unable to open editor', 'It is not possible to display this content as text in an editor, only download it as a file.', 'Download', 'Cancel')
+      .subscribe(() => {
+        this.download()
+      })
     }
-    this.openEditorWindow(
-      this.context.name,
-      valueToShow,
-      this.report?.reports?.assertionReports,
-      lineNumber, 
-      this.context.mimeType)
   }
 
   private toBlob(mimeType: string) {

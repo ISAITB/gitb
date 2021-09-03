@@ -9,12 +9,12 @@ import { StepReport } from '../step-report';
 @Component({
   selector: 'app-test-step-report-tar',
   templateUrl: './test-step-report-tar.component.html',
-  styles: [
-  ]
+  styleUrls: ['./test-step-report-tar.component.less']
 })
 export class TestStepReportTARComponent extends ReportSupport implements OnInit {
 
   @Input() report!: StepReport
+  collapsed = false
 
   constructor(
     modalService: BsModalService

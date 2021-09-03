@@ -44,16 +44,23 @@
 			<div class="row test-step-report ts-upload-validation-report">
 				<div class="step-report test-assertion-step-report">
 					<div class="col-xs-12 test-assertion-group-report" *ngIf="report?.reports != undefined">
-						<div *ngFor="let assertionReport of report!.reports!">
-							<span class="assertion-report-nolink" [ngClass]="{'error-assertion-report': assertionReport.level == 'error', 'warning-assertion-report': assertionReport.level == 'warning', 'info-assertion-report': assertionReport.level == 'info'}">
-								<span class="report-item-element assertion-report-item">
-									<i class="fa fa-info-circle report-item-icon info-icon" *ngIf="assertionReport.level == 'info'"></i>
-									<i class="fa fa-warning report-item-icon warning-icon" *ngIf="assertionReport.level == 'warning'"></i>
-									<i class="fa fa-times-circle report-item-icon error-icon" *ngIf="assertionReport.level == 'error'"></i>
-									<span class="description">{{assertionReport.description}}</span>
-								</span>
-								<span class="report-item assertion-report-item" *ngIf="assertionReport.location != undefined"><strong>Location:</strong> {{assertionReport.location}}</span>
-							</span>
+						<div class="report-details">
+							<div class="report-details-title" (click)="reportItemsCollapsed = !reportItemsCollapsed">Details</div>
+							<div class="report-details-items" [collapse]="reportItemsCollapsed" [isAnimated]="true">
+								<div class="report-details-items-inner">
+									<div *ngFor="let assertionReport of report!.reports!">
+										<span class="assertion-report-nolink" [ngClass]="{'error-assertion-report': assertionReport.level == 'error', 'warning-assertion-report': assertionReport.level == 'warning', 'info-assertion-report': assertionReport.level == 'info'}">
+											<span class="report-item-element assertion-report-item">
+												<i class="fa fa-info-circle report-item-icon info-icon" *ngIf="assertionReport.level == 'info'"></i>
+												<i class="fa fa-warning report-item-icon warning-icon" *ngIf="assertionReport.level == 'warning'"></i>
+												<i class="fa fa-times-circle report-item-icon error-icon" *ngIf="assertionReport.level == 'error'"></i>
+												<span class="description">{{assertionReport.description}}</span>
+											</span>
+											<span class="report-item assertion-report-item" *ngIf="assertionReport.location != undefined"><strong>Location:</strong> {{assertionReport.location}}</span>
+										</span>
+									</div>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
