@@ -1,16 +1,22 @@
 <div class="any-content-view" *ngIf="context != undefined">
-    <span *ngIf="context.name != undefined"><strong>{{context!.name}}</strong></span>
-    <div class="value" *ngIf="value != undefined">
-      <span *ngIf="!isValueTooLong">{{value}}</span>
-      <span *ngIf="isValueTooLong">{{value.length}} bytes</span>
-      <a href class="pull-right clearfix open" (click)="open();$event.preventDefault()" *ngIf="isValueTooLong">
-        Open in editor
-      </a>
-      <a href class="pull-right clearfix open" style="padding-right: 20px;" (click)="download();$event.preventDefault()" *ngIf="isValueTooLong">
-        Download as file
-      </a>
+  <div class="any-content-view-container">
+    <div class="any-content-view-texts">
+      <div *ngIf="context.name != undefined"><strong>{{context!.name}}</strong></div>
+      <div class="value" *ngIf="value != undefined">
+        <div>
+          <span *ngIf="!isValueTooLong">{{value}}</span>
+          <span *ngIf="isValueTooLong">{{value.length}} bytes</span>
+        </div>
+      </div>
     </div>
-    <div class="items" *ngIf="context != undefined && context.item != undefined">
-      <app-any-content-view *ngFor="let item of context!.item!" [context]="item" [report]="report"></app-any-content-view>
+    <div class="any-content-view-controls" *ngIf="value != undefined && isValueTooLong">
+      <div class="btn-toolbar">
+        <button class="btn btn-default" type="button" (click)="download()"><i class="fa fa-download" aria-hidden="true"></i></button>
+        <button class="btn btn-default" type="button" (click)="open()"><i class="fa fa-search" aria-hidden="true"></i></button>
+      </div>
     </div>
+  </div>
+  <div class="items" *ngIf="context != undefined && context.item != undefined">
+    <app-any-content-view *ngFor="let item of context!.item!" [context]="item" [report]="report"></app-any-content-view>
+  </div>
 </div>

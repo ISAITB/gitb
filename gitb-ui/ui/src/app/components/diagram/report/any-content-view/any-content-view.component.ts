@@ -9,7 +9,13 @@ import { StepReport } from '../step-report';
 
 @Component({
   selector: 'app-any-content-view',
-  templateUrl: './any-content-view.component.html'
+  templateUrl: './any-content-view.component.html',
+  styles: [
+    '.any-content-view-container{ display: flex; }',
+    '.any-content-view-texts{ display: inline-flex; flex-direction: column; flex-grow: 1; word-break: break-all; }',
+    '.any-content-view-texts > .value { padding-top: 5px; }',
+    '.any-content-view-controls{ display: inline-flex; align-items: center; flex-shrink: 0; }'
+  ]
 })
 export class AnyContentViewComponent extends ReportSupport implements OnInit {
 
@@ -54,7 +60,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
         lineNumber, 
         this.context.mimeType)
     } catch (e) {
-      this.confirmationDialogService.confirmed('Unable to open editor', 'It is not possible to display this content as text in an editor, only download it as a file.', 'Download as file', 'Cancel')
+      this.confirmationDialogService.confirmed('Unable to open editor', 'It is not possible to display this content as text in an editor, only download it as a file.', 'Download', 'Cancel')
       .subscribe(() => {
         this.download()
       })
