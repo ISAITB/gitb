@@ -25,18 +25,33 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
    * Concurrent map used to hold the sessions' step status updates. Status updates are held in a linked hash map
    * for direct access but also retrieval using insertion order.
    */
-  private val sessionMap = new TrieMap[String, mutable.LinkedHashMap[String, TestStepResultInfo]]()
+  private val sessionMap = new TrieMap[String, (mutable.LinkedHashMap[String, TestStepResultInfo], mutable.Queue[String])]()
+
+  private def getOrCreateSession(sessionId: String) = {
+    var sessionData = sessionMap.get(sessionId)
+    if (sessionData.isEmpty) {
+      sessionData = Some(new mutable.LinkedHashMap[String, TestStepResultInfo], new mutable.Queue[String])
+      sessionMap.put(sessionId, sessionData.get)
+    }
+    sessionData.get
+  }
+
+  def sessionUpdate(sessionId: String, logMessage: String): Unit = {
+    val sessionLogMessages = getOrCreateSession(sessionId)._2
+    sessionLogMessages += logMessage.trim
+  }
+
+  def consumeSessionLogs(sessionId: String) = {
+    val sessionData = getOrCreateSession(sessionId)
+    sessionData._2.dequeueAll(_ => true).toList
+  }
 
   def sessionUpdate(sessionId: String, stepId: String, status: TestStepResultInfo): List[(String, TestStepResultInfo)] = {
-    var sessionSteps = sessionMap.get(sessionId)
-    if (sessionSteps.isEmpty) {
-      sessionSteps = Some(new mutable.LinkedHashMap[String, TestStepResultInfo])
-      sessionMap.put(sessionId, sessionSteps.get)
-    }
-    var stepInfo = sessionSteps.get.get(stepId)
+    val sessionSteps = getOrCreateSession(sessionId)._1
+    var stepInfo = sessionSteps.get(stepId)
     if (stepInfo.isEmpty) {
       stepInfo = Some(status)
-      sessionSteps.get.put(stepId, stepInfo.get)
+      sessionSteps.put(stepId, stepInfo.get)
     } else {
       val existingStatus = stepInfo.get.result
       if (status.result == StepStatus.COMPLETED.ordinal().toShort
@@ -52,7 +67,7 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
       }
     }
     // Return the history of step updates
-    sessionMap(sessionId).map { entry =>
+    sessionSteps.map { entry =>
       (entry._1, entry._2)
     }.toList
   }
@@ -62,7 +77,7 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
     if (sessionSteps.isEmpty) {
       List()
     } else {
-      sessionSteps.get.map { entry =>
+      sessionSteps.get._1.map { entry =>
         (entry._1, entry._2)
       }.toList
     }

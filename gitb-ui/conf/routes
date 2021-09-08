@@ -256,6 +256,7 @@ POST    /api/conformancecertificate/test        @controllers.ConformanceService.
 # Repository file serving and management API
 GET     /api/repository/tests/:test_id/definition               @controllers.RepositoryService.getTestCaseDefinition(test_id:String)
 GET     /api/repository/reports/teststep/:session_id/*file      @controllers.RepositoryService.getTestStepReport(session_id: String, file)
+GET     /api/repository/reports/logs/:session_id                @controllers.RepositoryService.getTestSessionLog(session_id: String)
 GET     /api/repository/export/testcase                         @controllers.RepositoryService.exportTestCaseReport
 GET     /api/repository/export/teststep/:session_id/*path       @controllers.RepositoryService.exportTestStepReport(session_id: String, path)
 GET     /api/repository/export/conformance                      @controllers.RepositoryService.exportConformanceStatementReport

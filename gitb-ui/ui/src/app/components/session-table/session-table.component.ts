@@ -1,6 +1,9 @@
 import { Component, Input, OnInit } from '@angular/core';
+import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
+import { ReportService } from 'src/app/services/report.service';
 import { BaseTableComponent } from '../base-table/base-table.component';
+import { CodeEditorModalComponent } from '../code-editor-modal/code-editor-modal.component';
 import { SessionData } from '../diagram/test-session-presentation/session-data';
 
 @Component({
@@ -16,8 +19,12 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
 
   Constants = Constants
   columnCount = 0
+  viewLogPending: {[key: string]: boolean} = {}
 
-  constructor() { super() }
+  constructor(
+    private reportService: ReportService,
+    private modalService: BsModalService
+  ) { super() }
 
   ngOnInit(): void {
     for (let column of this.columns) {
@@ -31,10 +38,6 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     if (this.actionVisible) this.columnCount += 1
     if (this.operationsVisible) this.columnCount += 1
     if (this.exportVisible) this.columnCount += 1
-  }
-
-  getSessionId(data: SessionData) {
-    return data.session
   }
 
   diagramReady(test: SessionData) {
@@ -70,4 +73,31 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     return rowClass
   }
 
+  showTestSessionLog(row: SessionData) {
+    const sessionId = row.session
+    this.viewLogPending[sessionId] = true
+    this.reportService.getTestSessionLog(sessionId)
+    .subscribe((logs: string) => {
+      this.modalService.show(CodeEditorModalComponent, {
+        class: 'modal-lg',
+        initialState: {
+          documentName: 'Test session log',
+          editorOptions: {
+            value: logs,
+            readOnly: true,
+            lineNumbers: true,
+            smartIndent: false,
+            electricChars: false,
+            mode: 'text/plain',
+            download: {
+              fileName: 'log.txt',
+              mimeType: 'text/plain'
+            }
+          }
+        }
+      })
+    }).add(() => {
+      delete this.viewLogPending[sessionId]
+    })
+  }
 }

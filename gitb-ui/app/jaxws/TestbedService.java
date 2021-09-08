@@ -54,7 +54,6 @@ public class TestbedService implements TestbedClient {
     @Override
     public com.gitb.tbs.Void updateStatus(@WebParam(name = "UpdateStatusRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") TestStepStatus testStepStatus) {
         try {
-            String status  = JacksonUtil.serializeTestStepStatus(testStepStatus);
             String session = testStepStatus.getTcInstanceId();
             String step    = testStepStatus.getStepId();
 
@@ -68,14 +67,18 @@ public class TestbedService implements TestbedClient {
                 ) {
                     outputMessage = ((TAR)testStepStatus.getReport()).getContext().getValue().trim();
                 }
-                var statusUpdates = testResultManager.sessionRemove(session);
                 reportManager.finishTestReport(session, testStepStatus.getReport().getResult(), Option.apply(outputMessage));
+                var statusUpdates = testResultManager.sessionRemove(session);
                 var resultInfo = new TestStepResultInfo((short)testStepStatus.getStatus().ordinal(), Option.empty());
                 String message = JsonUtil.jsTestStepResultInfo(session, step, resultInfo, Option.apply(outputMessage), statusUpdates).toString();
                 webSocketActor.testSessionEnded(session, message);
             } else if (step.equals(LOG_EVENT_STEP_ID)) {
                 //send log event
-                webSocketActor.broadcast(session, status, false);
+                if (testStepStatus.getReport() instanceof TAR) {
+                    String logMessage = ((TAR) testStepStatus.getReport()).getContext().getValue();
+                    testResultManager.sessionUpdate(session, logMessage);
+                }
+                webSocketActor.broadcast(session, JacksonUtil.serializeTestStepStatus(testStepStatus), false);
             } else {
                 Option<String> reportPath = reportManager.createTestStepReport(session, testStepStatus);
                 var resultInfo = new TestStepResultInfo((short)testStepStatus.getStatus().ordinal(), reportPath);

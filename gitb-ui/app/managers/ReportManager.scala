@@ -21,13 +21,13 @@ import utils.signature.{CreateSignature, SigUtils}
 import utils.{JacksonUtil, MimeUtil, RepositoryUtils, TimeUtil}
 
 import java.io.{File, FileOutputStream, StringReader}
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.text.SimpleDateFormat
 import java.util
 import java.util.Date
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
-import scala.collection.JavaConverters.collectionAsScalaIterable
+import scala.collection.JavaConverters.{asJavaIterable, collectionAsScalaIterable}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -35,7 +35,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
   * Created by senan on 03.12.2014.
   */
 @Singleton
-class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: ActorManager, systemManager: SystemManager, organizationManager: OrganizationManager, communityManager: CommunityManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils) extends BaseManager(dbConfigProvider) {
+class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: ActorManager, systemManager: SystemManager, organizationManager: OrganizationManager, communityManager: CommunityManager, testCaseManager: TestCaseManager, testSuiteManager: TestSuiteManager, specificationManager: SpecificationManager, conformanceManager: ConformanceManager, dbConfigProvider: DatabaseConfigProvider, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils, testResultManager: TestResultManager) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -297,6 +297,8 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
         triggerHelper.publishTriggerEvent(new ConformanceStatementSucceededEvent(communityId, systemId, actorId))
       }
     }
+    // Flush remaining log messages
+    flushSessionLogs(sessionId, None)
   }
 
   def setEndTimeNow(sessionId: String) = {
@@ -332,25 +334,38 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
       if (existingTestStepReport.isEmpty) {
         step.getReport.setId(step.getStepId)
 
-        val path = step.getStepId + ".xml"
-        savedPath = Some(path)
+        val sessionFolder = getPathForTestSession(sessionId, isExpected = false).path.toFile
+        sessionFolder.mkdirs()
 
-        //write the report into a file
+        val testStepReportPath = step.getStepId + ".xml"
+        savedPath = Some(testStepReportPath)
+
+        // Write the report into a file
         if (step.getReport != null) {
-          val file = new File(getPathForTestSession(sessionId, isExpected = false).path.toFile, path)
-          file.getParentFile.mkdirs()
+          val file = new File(sessionFolder, testStepReportPath)
           file.createNewFile()
-
           val stream = new FileOutputStream(file)
           stream.write(XMLUtils.marshalToString(new ObjectFactory().createUpdateStatusRequest(step)).getBytes)
           stream.close()
         }
-        //save the path of the report file to the DB
-        val result = TestStepResult(sessionId, step.getStepId, step.getStatus.ordinal().toShort, path)
+        // Save the path of the report file to the DB
+        val result = TestStepResult(sessionId, step.getStepId, step.getStatus.ordinal().toShort, testStepReportPath)
         exec((PersistenceSchema.testStepReports += result).transactionally)
+        // Flush the current log messages
+        flushSessionLogs(sessionId, Some(sessionFolder))
       }
     }
     savedPath
+  }
+
+  private def flushSessionLogs(sessionId: String, sessionFolder: Option[File]): Unit = {
+    val messages = testResultManager.consumeSessionLogs(sessionId)
+    if (messages.nonEmpty) {
+      val logFilePath = new File(sessionFolder.getOrElse(getPathForTestSession(sessionId, isExpected = false).path.toFile), "log.txt")
+      logFilePath.getParentFile.mkdirs()
+      logFilePath.createNewFile()
+      Files.write(logFilePath.toPath, asJavaIterable(messages), StandardOpenOption.APPEND)
+    }
   }
 
   def getTestStepResults(sessionId: String): List[TestStepResult] = {

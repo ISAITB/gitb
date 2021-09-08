@@ -231,4 +231,12 @@ export class ReportService {
     })
   }
 
+  getTestSessionLog(session: string) {
+    return this.restService.get<string>({
+      path: ROUTES.controllers.RepositoryService.getTestSessionLog(session).url,
+      authenticate: true,
+      text: true
+    })
+  }
+
 }
