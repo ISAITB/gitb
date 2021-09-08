@@ -2,7 +2,7 @@
   <div class="any-content-view-container">
     <div class="any-content-view-texts">
       <div *ngIf="context.name != undefined"><strong>{{context!.name}}</strong></div>
-      <div class="value" *ngIf="value != undefined">
+      <div [class.named]="context.name != undefined" class="value" *ngIf="value != undefined">
         <div>
           <span *ngIf="!isValueTooLong">{{value}}</span>
           <span *ngIf="isValueTooLong">{{value.length}} bytes</span>

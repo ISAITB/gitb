@@ -1,0 +1,21 @@
+.any-content-view-container { 
+    display: flex; 
+}
+.any-content-view-texts { 
+    display: inline-flex; 
+    flex-direction: column; 
+    flex-grow: 1; 
+    word-break: break-all;
+    align-self: center;
+    & > .value {
+        &.hasName {
+            padding-top: 5px; 
+        }
+    }
+}
+.any-content-view-controls{ 
+    display: inline-flex; 
+    align-items: center; 
+    flex-shrink: 0; 
+    height: 50px;
+}

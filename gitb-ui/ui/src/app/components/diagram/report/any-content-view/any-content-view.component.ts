@@ -10,12 +10,7 @@ import { StepReport } from '../step-report';
 @Component({
   selector: 'app-any-content-view',
   templateUrl: './any-content-view.component.html',
-  styles: [
-    '.any-content-view-container{ display: flex; }',
-    '.any-content-view-texts{ display: inline-flex; flex-direction: column; flex-grow: 1; word-break: break-all; }',
-    '.any-content-view-texts > .value { padding-top: 5px; }',
-    '.any-content-view-controls{ display: inline-flex; align-items: center; flex-shrink: 0; }'
-  ]
+  styleUrls: ['./any-content-view.component.less']
 })
 export class AnyContentViewComponent extends ReportSupport implements OnInit {
 
