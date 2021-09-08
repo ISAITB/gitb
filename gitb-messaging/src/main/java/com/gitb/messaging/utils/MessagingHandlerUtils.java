@@ -20,6 +20,9 @@ import java.io.InputStream;
 import java.nio.charset.Charset;
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 /**
  * Created by serbay.
@@ -42,68 +45,27 @@ public class MessagingHandlerUtils {
 
 	public static MessagingReport getMessagingReport(TAR tar) {
 		Message outputMessage = getMessageFromReport(tar);
-		MessagingReport report = new MessagingReport(tar, outputMessage);
-		return report;
+		// The TAR's context is itself adapted from this call - no copy is made.
+		tar.setContext(DataTypeFactory.getInstance().applyFilter(tar.getContext(), AnyContent::isForDisplay));
+		return new MessagingReport(tar, outputMessage);
 	}
 
-	public static Message getMessageFromReport(TAR report) {
+	private static Message getMessageFromReport(TAR report) {
 		Message message = new Message();
 		AnyContent context = report.getContext();
-		if (DataType.MAP_DATA_TYPE.equals(context.getType())) {
-			for (AnyContent child: context.getItem()) {
-				message.getFragments().put(child.getName(), toDataType(child));
-			}
-		} else {
-			throw new IllegalStateException("Invalid context type of report");
-		}
-		return message;
-	}
-
-	public static DataType toDataType(AnyContent content) {
-		DataType type;
-		if (DataType.MAP_DATA_TYPE.equals(content.getType())) {
-			type = new MapType();
-			for (AnyContent child: content.getItem()) {
-				((MapType)type).addItem(child.getName(), toDataType(child));
-			}
-		} else if (DataType.STRING_DATA_TYPE.equals(content.getType())) {
-			type = new StringType();
-			type.setValue(content.getValue());
-		} else if (DataType.BINARY_DATA_TYPE.equals(content.getType())) {
-			type = new BinaryType();
-			if (ValueEmbeddingEnumeration.BASE_64.equals(content.getEmbeddingMethod())) {
-				type.setValue(Base64.decodeBase64(content.getValue()));
-			} else {
-				throw new IllegalStateException("Only base64 embedding supported for binary types");
-			}
-		} else if (DataType.BOOLEAN_DATA_TYPE.equals(content.getType())) {
-			type = new BooleanType();
-			type.setValue(Boolean.valueOf(content.getValue()));
-		} else if (DataType.NUMBER_DATA_TYPE.equals(content.getType())) {
-			type = new NumberType();
-			type.setValue(content.getValue());
-		} else if (DataType.LIST_DATA_TYPE.equals(content.getType())) {
-			type = new ListType();
-			for (AnyContent child: content.getItem()) {
-				((ListType)type).append(toDataType(child));
-			}
-		} else if (DataType.OBJECT_DATA_TYPE.equals(content.getType())) {
-			type = new ObjectType();
-			if (ValueEmbeddingEnumeration.BASE_64.equals(content.getEmbeddingMethod())) {
-				type.deserialize(Base64.decodeBase64(content.getValue()));
-			} else if (ValueEmbeddingEnumeration.STRING.equals(content.getEmbeddingMethod())) {
-				if (StringUtils.isBlank(content.getEncoding())) {
-					type.deserialize(content.getValue().getBytes(), Charset.defaultCharset().toString());
-				} else {
-					type.deserialize(content.getValue().getBytes(Charset.forName(content.getEncoding())), content.getEncoding());
+		if (context.isForContext()) {
+			if (DataType.MAP_DATA_TYPE.equals(context.getType())) {
+				for (AnyContent child: context.getItem()) {
+					var dataType = DataTypeFactory.getInstance().create(child, AnyContent::isForContext);
+					if (dataType != null) {
+						message.getFragments().put(child.getName(), dataType);
+					}
 				}
 			} else {
-				throw new IllegalStateException("Only base64 and string embedding supported for object types");
+				throw new IllegalStateException("Invalid context type of report");
 			}
-		} else {
-			throw new IllegalStateException("Unsupported data type ["+content.getType()+"]");
 		}
-		return type;
+		return message;
 	}
 
     public static MessagingReport generateErrorReport(Message message, Collection<Exception> nonCriticalErrors) {

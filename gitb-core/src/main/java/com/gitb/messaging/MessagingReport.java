@@ -10,8 +10,7 @@ public class MessagingReport {
     private final Message message;
 
 	public MessagingReport(TAR report) {
-		this.report = report;
-		this.message = null;
+		this(report, null);
 	}
 
 	public MessagingReport(TAR report, Message message) {

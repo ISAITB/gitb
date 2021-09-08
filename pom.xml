@@ -114,7 +114,7 @@
             <dependency>
                 <groupId>eu.europa.ec.itb</groupId>
                 <artifactId>gitb-types</artifactId>
-                <version>1.14.1</version>
+                <version>1.15.0</version>
             </dependency>
             <dependency>
                 <groupId>com.gitb</groupId>

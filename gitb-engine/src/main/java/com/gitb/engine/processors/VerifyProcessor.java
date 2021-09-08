@@ -128,12 +128,17 @@ public class VerifyProcessor implements IProcessor {
                 scope.createVariable(verify.getId()).setValue(new BooleanType(result));
             }
         }
-        // Record the report's context if specified to do so.
-		if (verify.getOutput() != null && !verify.getOutput().isBlank()) {
-			if ((report instanceof TAR) && ((TAR)report).getContext() != null) {
+		if ((report instanceof TAR) && ((TAR)report).getContext() != null) {
+			// Record the report's context if specified to do so.
+			if (verify.getOutput() != null && !verify.getOutput().isBlank()) {
 				String outputVariable = verify.getOutput().trim();
-				scope.createVariable(outputVariable).setValue(DataTypeFactory.getInstance().create(((TAR)report).getContext()));
+				var contextData = DataTypeFactory.getInstance().create(((TAR)report).getContext(), AnyContent::isForContext);
+				if (contextData != null) {
+					scope.createVariable(outputVariable).setValue(contextData);
+				}
 			}
+			// Remove from the report the context items not meant for display (do this last as this changes the context itself).
+			((TAR) report).setContext(DataTypeFactory.getInstance().applyFilter(((TAR) report).getContext(), AnyContent::isForDisplay));
 		}
 		return report;
 	}
