@@ -85,6 +85,15 @@
                                             </tr>
                                         </tbody>
                                     </table>
+                                    <div class="statementControls">
+                                        <div class="btn-toolbar">
+                                            <button type="button" class="btn btn-default" (click)="toOrganisation(statement)">View {{dataService.labelOrganisationLower()}}</button>
+                                            <button type="button" class="btn btn-default" (click)="toSystem(statement)">View {{dataService.labelSystemLower()}}</button>
+                                            <button type="button" class="btn btn-default" (click)="toStatement(statement)">View conformance statement</button>
+                                            <button type="button" class="btn btn-default" (click)="toSpecification(statement)">View {{dataService.labelSpecificationLower()}}</button>
+                                            <button type="button" class="btn btn-default" (click)="toActor(statement)">View {{dataService.labelActorLower()}}</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </td>

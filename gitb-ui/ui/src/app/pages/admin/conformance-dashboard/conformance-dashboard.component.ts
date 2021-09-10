@@ -8,6 +8,7 @@ import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { OrganisationService } from 'src/app/services/organisation.service';
 import { ReportService } from 'src/app/services/report.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { SystemService } from 'src/app/services/system.service';
 import { Actor } from 'src/app/types/actor';
 import { Community } from 'src/app/types/community';
@@ -28,8 +29,7 @@ import { TestResultSearchCriteria } from 'src/app/types/test-result-search-crite
 @Component({
   selector: 'app-conformance-dashboard',
   templateUrl: './conformance-dashboard.component.html',
-  styles: [
-  ]
+  styleUrls: [ './conformance-dashboard.component.less' ]
 })
 export class ConformanceDashboardComponent implements OnInit {
 
@@ -64,7 +64,8 @@ export class ConformanceDashboardComponent implements OnInit {
     private organisationService: OrganisationService,
     private systemService: SystemService,
     private reportService: ReportService,
-    private modalService: BsModalService
+    private modalService: BsModalService,
+    private routingService: RoutingService
   ) { }
 
   ngOnInit(): void {
@@ -370,4 +371,28 @@ export class ConformanceDashboardComponent implements OnInit {
     })
   }
 
+  toOrganisation(statement: ConformanceResultFull) {
+    if (statement.organizationId == this.dataService.vendor!.id) {
+      // Own organisation
+      this.routingService.toOwnOrganisationDetails()
+    } else {
+      this.routingService.toOrganisationDetails(statement.communityId, statement.organizationId)
+    }
+  }
+
+  toSystem(statement: ConformanceResultFull) {
+    this.routingService.toSystems(statement.organizationId, statement.systemId)
+  }
+
+  toStatement(statement: ConformanceResultFull) {
+    this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.specId)
+  }
+
+  toSpecification(statement: ConformanceResultFull) {
+    this.routingService.toSpecification(statement.domainId, statement.specId)
+  }
+
+  toActor(statement: ConformanceResultFull) {
+    this.routingService.toActor(statement.domainId, statement.specId, statement.actorId)
+  }
 }
