@@ -12,8 +12,7 @@ import { SessionData } from '../diagram/test-session-presentation/session-data';
 @Component({
   selector: '[app-session-table]',
   templateUrl: './session-table.component.html',
-  styles: [
-  ]
+  styleUrls: [ './session-table.component.less' ]
 })
 export class SessionTableComponent extends BaseTableComponent implements OnInit {
 
@@ -28,7 +27,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     private reportService: ReportService,
     private modalService: BsModalService,
     private routingService: RoutingService,
-    private dataService: DataService
+    public dataService: DataService
   ) { super() }
 
   ngOnInit(): void {

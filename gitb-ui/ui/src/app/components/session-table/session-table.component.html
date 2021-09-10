@@ -80,13 +80,13 @@
                                                         </div>
                                                     </div>
                                                 </div>
-                                                <div class="panel-footer">
-                                                    <div class="btn-toolbar">
-                                                        <button type="button" class="btn btn-default" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
-                                                        <button *ngIf="row.organizationId != undefined" type="button" class="btn btn-default" (click)="goToOrganisation(row)">View organisation</button>
-                                                        <button *ngIf="row.organizationId != undefined && row.systemId != undefined" type="button" class="btn btn-default" (click)="goToSystem(row)">View system</button>
-                                                        <button *ngIf="row.organizationId != undefined && row.systemId != undefined && row.actorId != undefined && row.specificationId != undefined" type="button" class="btn btn-default" (click)="goToStatement(row)">View conformance statement</button>
-                                                    </div>
+                                            </div>
+                                            <div class="sessionControls">
+                                                <div class="btn-toolbar">
+                                                    <button type="button" class="btn btn-default" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
+                                                    <button *ngIf="row.organizationId != undefined" type="button" class="btn btn-default" (click)="goToOrganisation(row)">View {{dataService.labelOrganisationLower()}}</button>
+                                                    <button *ngIf="row.organizationId != undefined && row.systemId != undefined" type="button" class="btn btn-default" (click)="goToSystem(row)">View {{dataService.labelSystemLower()}}</button>
+                                                    <button *ngIf="row.organizationId != undefined && row.systemId != undefined && row.actorId != undefined && row.specificationId != undefined" type="button" class="btn btn-default" (click)="goToStatement(row)">View conformance statement</button>
                                                 </div>
                                             </div>
                                         </div>
