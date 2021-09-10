@@ -181,31 +181,33 @@ export class TestFilterComponent implements OnInit {
   }
 
   filterItemTicked(filterType: string) {
-    if (filterType == Constants.FILTER_TYPE.DOMAIN) {
-      this.setSpecificationFilter(<Domain[]>this.filtering[Constants.FILTER_TYPE.DOMAIN].selection, <Domain[]>this.filtering[Constants.FILTER_TYPE.DOMAIN].filter, true)
-    }
-    if (filterType == Constants.FILTER_TYPE.DOMAIN || filterType == Constants.FILTER_TYPE.SPECIFICATION) {
-      this.setActorFilter(<Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].selection, <Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, true)
-      this.setTestSuiteFilter(<Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].selection, <Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, true)
-    }
-    if (filterType == Constants.FILTER_TYPE.DOMAIN || filterType == Constants.FILTER_TYPE.SPECIFICATION || filterType == Constants.FILTER_TYPE.ACTOR || filterType == Constants.FILTER_TYPE.TEST_SUITE) {
-      this.setTestCaseFilter(<TestSuiteWithTestCases[]>this.filtering[Constants.FILTER_TYPE.TEST_SUITE].selection, <TestSuiteWithTestCases[]>this.filtering[Constants.FILTER_TYPE.TEST_SUITE].filter, true)
-    }
-    if (filterType == Constants.FILTER_TYPE.COMMUNITY) {
-      this.setOrganizationFilter(<Community[]>this.filtering[Constants.FILTER_TYPE.COMMUNITY].selection, <Community[]>this.filtering[Constants.FILTER_TYPE.COMMUNITY].filter, true)
-      // Custom properties
-      this.organisationProperties = []
-      this.systemProperties = []
-      if (this.filtering[Constants.FILTER_TYPE.COMMUNITY].selection.length == 1) {
-        this.applicableCommunityId = this.filtering[Constants.FILTER_TYPE.COMMUNITY].selection[0].id      
-      } else {
-        this.applicableCommunityId = undefined
+    setTimeout(() => {
+      if (filterType == Constants.FILTER_TYPE.DOMAIN) {
+        this.setSpecificationFilter(<Domain[]>this.filtering[Constants.FILTER_TYPE.DOMAIN].selection, <Domain[]>this.filtering[Constants.FILTER_TYPE.DOMAIN].filter, true)
       }
-    }
-    if (filterType == Constants.FILTER_TYPE.COMMUNITY || filterType == Constants.FILTER_TYPE.ORGANISATION) {
-      this.setSystemFilter(this.filtering[Constants.FILTER_TYPE.ORGANISATION].selection, this.filtering[Constants.FILTER_TYPE.ORGANISATION].filter, true)
-    }
-    this.applyFilters()
+      if (filterType == Constants.FILTER_TYPE.DOMAIN || filterType == Constants.FILTER_TYPE.SPECIFICATION) {
+        this.setActorFilter(<Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].selection, <Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, true)
+        this.setTestSuiteFilter(<Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].selection, <Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, true)
+      }
+      if (filterType == Constants.FILTER_TYPE.DOMAIN || filterType == Constants.FILTER_TYPE.SPECIFICATION || filterType == Constants.FILTER_TYPE.ACTOR || filterType == Constants.FILTER_TYPE.TEST_SUITE) {
+        this.setTestCaseFilter(<TestSuiteWithTestCases[]>this.filtering[Constants.FILTER_TYPE.TEST_SUITE].selection, <TestSuiteWithTestCases[]>this.filtering[Constants.FILTER_TYPE.TEST_SUITE].filter, true)
+      }
+      if (filterType == Constants.FILTER_TYPE.COMMUNITY) {
+        this.setOrganizationFilter(<Community[]>this.filtering[Constants.FILTER_TYPE.COMMUNITY].selection, <Community[]>this.filtering[Constants.FILTER_TYPE.COMMUNITY].filter, true)
+        // Custom properties
+        this.organisationProperties = []
+        this.systemProperties = []
+        if (this.filtering[Constants.FILTER_TYPE.COMMUNITY].selection.length == 1) {
+          this.applicableCommunityId = this.filtering[Constants.FILTER_TYPE.COMMUNITY].selection[0].id      
+        } else {
+          this.applicableCommunityId = undefined
+        }
+      }
+      if (filterType == Constants.FILTER_TYPE.COMMUNITY || filterType == Constants.FILTER_TYPE.ORGANISATION) {
+        this.setSystemFilter(this.filtering[Constants.FILTER_TYPE.ORGANISATION].selection, this.filtering[Constants.FILTER_TYPE.ORGANISATION].filter, true)
+      }
+      this.applyFilters()
+    })
   }
 
   currentFilters() {
@@ -626,7 +628,9 @@ export class TestFilterComponent implements OnInit {
       searchPlaceholderText: 'Search...', 
       itemsShowLimit: 1, 
       allowSearchFilter: true,
-      enableCheckAll: false
+      enableCheckAll: true,
+      selectAllText: 'Select all',
+      unSelectAllText: 'Clear all',
     }
   }
 

@@ -34,6 +34,8 @@
                       [settings]="filterDropdownSettings[Constants.FILTER_TYPE.DOMAIN]"
                       [data]="filtering[Constants.FILTER_TYPE.DOMAIN].filter" 
                       [(ngModel)]="filtering[Constants.FILTER_TYPE.DOMAIN].selection" 
+                      (onSelectAll)="filterItemTicked(Constants.FILTER_TYPE.DOMAIN)"
+                      (onDeSelectAll)="filterItemTicked(Constants.FILTER_TYPE.DOMAIN)"
                       (onSelect)="filterItemTicked(Constants.FILTER_TYPE.DOMAIN)"
                       (onDeSelect)="filterItemTicked(Constants.FILTER_TYPE.DOMAIN)">
                     </ng-multiselect-dropdown>
@@ -44,6 +46,8 @@
                       [settings]="filterDropdownSettings[Constants.FILTER_TYPE.SPECIFICATION]"
                       [data]="filtering[Constants.FILTER_TYPE.SPECIFICATION].filter" 
                       [(ngModel)]="filtering[Constants.FILTER_TYPE.SPECIFICATION].selection" 
+                      (onSelectAll)="filterItemTicked(Constants.FILTER_TYPE.SPECIFICATION)"
+                      (onDeSelectAll)="filterItemTicked(Constants.FILTER_TYPE.SPECIFICATION)"
                       (onSelect)="filterItemTicked(Constants.FILTER_TYPE.SPECIFICATION)"
                       (onDeSelect)="filterItemTicked(Constants.FILTER_TYPE.SPECIFICATION)">
                     </ng-multiselect-dropdown>
@@ -54,6 +58,8 @@
                       [settings]="filterDropdownSettings[Constants.FILTER_TYPE.ACTOR]"
                       [data]="filtering[Constants.FILTER_TYPE.ACTOR].filter" 
                       [(ngModel)]="filtering[Constants.FILTER_TYPE.ACTOR].selection" 
+                      (onSelectAll)="filterItemTicked(Constants.FILTER_TYPE.ACTOR)"
+                      (onDeSelectAll)="filterItemTicked(Constants.FILTER_TYPE.ACTOR)"
                       (onSelect)="filterItemTicked(Constants.FILTER_TYPE.ACTOR)"
                       (onDeSelect)="filterItemTicked(Constants.FILTER_TYPE.ACTOR)">
                     </ng-multiselect-dropdown>
@@ -64,6 +70,8 @@
                       [settings]="filterDropdownSettings[Constants.FILTER_TYPE.TEST_SUITE]"
                       [data]="filtering[Constants.FILTER_TYPE.TEST_SUITE].filter" 
                       [(ngModel)]="filtering[Constants.FILTER_TYPE.TEST_SUITE].selection" 
+                      (onSelectAll)="filterItemTicked(Constants.FILTER_TYPE.TEST_SUITE)"
+                      (onDeSelectAll)="filterItemTicked(Constants.FILTER_TYPE.TEST_SUITE)" 
                       (onSelect)="filterItemTicked(Constants.FILTER_TYPE.TEST_SUITE)"
                       (onDeSelect)="filterItemTicked(Constants.FILTER_TYPE.TEST_SUITE)">
                     </ng-multiselect-dropdown>
@@ -74,6 +82,8 @@
                       [settings]="filterDropdownSettings[Constants.FILTER_TYPE.TEST_CASE]"
                       [data]="filtering[Constants.FILTER_TYPE.TEST_CASE].filter" 
                       [(ngModel)]="filtering[Constants.FILTER_TYPE.TEST_CASE].selection" 
+                      (onSelectAll)="filterItemTicked(Constants.FILTER_TYPE.TEST_CASE)"
+                      (onDeSelectAll)="filterItemTicked(Constants.FILTER_TYPE.TEST_CASE)"
                       (onSelect)="filterItemTicked(Constants.FILTER_TYPE.TEST_CASE)"
                       (onDeSelect)="filterItemTicked(Constants.FILTER_TYPE.TEST_CASE)">
                     </ng-multiselect-dropdown>
@@ -84,6 +94,8 @@
                       [settings]="filterDropdownSettings[Constants.FILTER_TYPE.COMMUNITY]"
                       [data]="filtering[Constants.FILTER_TYPE.COMMUNITY].filter" 
                       [(ngModel)]="filtering[Constants.FILTER_TYPE.COMMUNITY].selection" 
+                      (onSelectAll)="filterItemTicked(Constants.FILTER_TYPE.COMMUNITY)"
+                      (onDeSelectAll)="filterItemTicked(Constants.FILTER_TYPE.COMMUNITY)"
                       (onSelect)="filterItemTicked(Constants.FILTER_TYPE.COMMUNITY)"
                       (onDeSelect)="filterItemTicked(Constants.FILTER_TYPE.COMMUNITY)">
                     </ng-multiselect-dropdown>
@@ -95,6 +107,8 @@
                       [settings]="filterDropdownSettings[Constants.FILTER_TYPE.ORGANISATION]"
                       [data]="filtering[Constants.FILTER_TYPE.ORGANISATION].filter" 
                       [(ngModel)]="filtering[Constants.FILTER_TYPE.ORGANISATION].selection" 
+                      (onSelectAll)="filterItemTicked(Constants.FILTER_TYPE.ORGANISATION)"
+                      (onDeSelectAll)="filterItemTicked(Constants.FILTER_TYPE.ORGANISATION)"
                       (onSelect)="filterItemTicked(Constants.FILTER_TYPE.ORGANISATION)"
                       (onDeSelect)="filterItemTicked(Constants.FILTER_TYPE.ORGANISATION)">
                     </ng-multiselect-dropdown>
@@ -106,6 +120,8 @@
                       [settings]="filterDropdownSettings[Constants.FILTER_TYPE.SYSTEM]"
                       [data]="filtering[Constants.FILTER_TYPE.SYSTEM].filter" 
                       [(ngModel)]="filtering[Constants.FILTER_TYPE.SYSTEM].selection" 
+                      (onSelectAll)="filterItemTicked(Constants.FILTER_TYPE.SYSTEM)"
+                      (onDeSelectAll)="filterItemTicked(Constants.FILTER_TYPE.SYSTEM)"
                       (onSelect)="filterItemTicked(Constants.FILTER_TYPE.SYSTEM)"
                       (onDeSelect)="filterItemTicked(Constants.FILTER_TYPE.SYSTEM)">
                     </ng-multiselect-dropdown>
@@ -132,6 +148,8 @@
                       [settings]="filterDropdownSettings[Constants.FILTER_TYPE.RESULT]"
                       [data]="filtering[Constants.FILTER_TYPE.RESULT].filter" 
                       [(ngModel)]="filtering[Constants.FILTER_TYPE.RESULT].selection" 
+                      (onSelectAll)="filterItemTicked(Constants.FILTER_TYPE.RESULT)"
+                      (onDeSelectAll)="filterItemTicked(Constants.FILTER_TYPE.RESULT)"
                       (onSelect)="filterItemTicked(Constants.FILTER_TYPE.RESULT)"
                       (onDeSelect)="filterItemTicked(Constants.FILTER_TYPE.RESULT)">
                     </ng-multiselect-dropdown>
