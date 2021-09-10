@@ -15,8 +15,7 @@ export class Constants {
 	public static TESTER_ACTOR = 'Operator'
 
 	public static LOCAL_DATA = {
-		ORGANISATION: 'organisation',
-		COMMUNITY: 'community'
+		ORGANISATION: 'organisation'
 	}
 	
 	public static EMBEDDING_METHOD = {

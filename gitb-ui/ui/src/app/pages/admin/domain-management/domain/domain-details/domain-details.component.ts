@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
 import { CreateEditDomainParameterModalComponent } from 'src/app/modals/create-edit-domain-parameter-modal/create-edit-domain-parameter-modal.component';
@@ -9,6 +9,7 @@ import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { Domain } from 'src/app/types/domain';
 import { DomainParameter } from 'src/app/types/domain-parameter';
 import { Specification } from 'src/app/types/specification';
@@ -43,7 +44,7 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
     private confirmationDialogService: ConfirmationDialogService,
     private modalService: BsModalService,
     private popupService: PopupService,
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute
   ) { super() }
 
@@ -102,7 +103,7 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
       this.conformanceService.deleteDomain(this.domainId)
       .subscribe(() => {
         this.popupService.success(this.dataService.labelDomain()+' deleted.')
-        this.router.navigate(['admin', 'domains'])
+        this.routingService.toDomains()
       }).add(() => {
         this.deletePending = false
       })
@@ -124,11 +125,11 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
   }
 
 	back() {
-    this.router.navigate(['admin', 'domains'])
+    this.routingService.toDomains()
   }
 
 	onSpecificationSelect(specification: Specification) {
-    this.router.navigate(['admin', 'domains', this.domainId, 'specifications', specification.id ])
+    this.routingService.toSpecification(this.domainId, specification.id)
   }
 
 	openParameterModal(domainParameter: Partial<DomainParameter>) {
@@ -167,7 +168,7 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
   }
 
 	createSpecification() {
-    this.router.navigate(['admin', 'domains', this.domainId, 'specifications', 'create'])
+    this.routingService.toCreateSpecification(this.domainId)
   }
   
 }

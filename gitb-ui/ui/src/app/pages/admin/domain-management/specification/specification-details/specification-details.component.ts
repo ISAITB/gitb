@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
 import { TestSuiteUploadModalComponent } from 'src/app/modals/test-suite-upload-modal/test-suite-upload-modal.component';
@@ -8,6 +8,7 @@ import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { SpecificationService } from 'src/app/services/specification.service';
 import { Actor } from 'src/app/types/actor';
 import { Specification } from 'src/app/types/specification';
@@ -50,7 +51,7 @@ export class SpecificationDetailsComponent extends BaseComponent implements OnIn
     private conformanceService: ConformanceService,
     private confirmationDialogService: ConfirmationDialogService,
     private specificationService: SpecificationService,
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private popupService: PopupService,
     private modalService: BsModalService
@@ -92,7 +93,7 @@ export class SpecificationDetailsComponent extends BaseComponent implements OnIn
   }
 
   createActor() {
-    this.router.navigate(['admin', 'domains', this.domainId, 'specifications', this.specificationId, 'actors', 'create'])
+    this.routingService.toCreateActor(this.domainId, this.specificationId)
   }
 
 	uploadTestSuite() {
@@ -114,11 +115,11 @@ export class SpecificationDetailsComponent extends BaseComponent implements OnIn
   }
 
 	onActorSelect(actor: Actor) {
-    this.router.navigate(['admin', 'domains', this.domainId, 'specifications', this.specificationId, 'actors', actor.id])
+    this.routingService.toActor(this.domainId, this.specificationId, actor.id)
   }
 
 	onTestSuiteSelect(testSuite: TestSuite) {
-    this.router.navigate(['admin', 'domains', this.domainId, 'specifications', this.specificationId, 'testsuites', testSuite.id])
+    this.routingService.toTestSuite(this.domainId, this.specificationId, testSuite.id)
   }
 
 	deleteSpecification() {
@@ -127,7 +128,7 @@ export class SpecificationDetailsComponent extends BaseComponent implements OnIn
       this.deletePending = true
       this.specificationService.deleteSpecification(this.specificationId)
       .subscribe(() => {
-        this.router.navigate(['admin', 'domains', this.domainId])
+        this.routingService.toDomain(this.domainId)
         this.popupService.success(this.dataService.labelSpecification()+' deleted.')
       }).add(() => {
         this.deletePending = false
@@ -150,7 +151,7 @@ export class SpecificationDetailsComponent extends BaseComponent implements OnIn
   }
 
 	back() {
-    this.router.navigate(['admin', 'domains', this.domainId])
+    this.routingService.toDomain(this.domainId)
   }
 
 }

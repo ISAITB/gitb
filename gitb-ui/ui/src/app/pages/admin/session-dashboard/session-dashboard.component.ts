@@ -14,7 +14,7 @@ import { TestResultSearchCriteria } from 'src/app/types/test-result-search-crite
 import { map } from 'lodash'
 import { TestResultReport } from 'src/app/types/test-result-report';
 import { TestResultForExport } from './test-result-for-export';
-import { TestResultForDisplay } from './test-result-for-display';
+import { TestResultForDisplay } from '../../../types/test-result-for-display';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { TestService } from 'src/app/services/test.service';
 import { PopupService } from 'src/app/services/popup.service';
@@ -308,7 +308,12 @@ export class SessionDashboardComponent implements OnInit {
       testCase: testResult.test?.sname,
       organization: testResult.organization?.sname,
       system: testResult.system?.sname,
-      startTime: testResult.result.startTime
+      startTime: testResult.result.startTime,
+      specificationId: testResult.specification?.id,
+      actorId: testResult.actor?.id,
+      systemId: testResult.system?.id,
+      organizationId: testResult.organization?.id,
+      communityId: testResult.organization?.community
     }
     if (completed) {
       result.endTime = testResult.result.endTime

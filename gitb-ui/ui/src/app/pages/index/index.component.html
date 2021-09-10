@@ -6,13 +6,13 @@
           <nav class="nav-main mega-menu">
             <ul class="nav nav-pills nav-main" id="mainMenu">
               <li *ngIf="isAuthenticated() && !dataService.user?.onetime">
-                <a routerLink="home">Home</a>
+                <a class="pointer" (click)="routingService.toHome()">Home</a>
               </li>
               <li *ngIf="isAuthenticated() && !dataService.user?.onetime">
                 <a class="pointer" (click)="onTestsClick()">Tests</a>
               </li>
               <li *ngIf="isAuthenticated() && (dataService.isSystemAdmin || dataService.isCommunityAdmin) && !dataService.user?.onetime">
-                <a routerLink="admin/sessions">Admin</a>
+                <a class="pointer" (click)="routingService.toSessionDashboard()">Admin</a>
               </li>
               <!-- User menu item, show when authenticated -->
               <li class="dropdown mega-menu-item mega-menu-signin signin logged" id="headerAccount" *ngIf="userLoaded()">
@@ -30,8 +30,8 @@
                       </div>
                       <div class="header-profile-popup-options">
                         <ul class="list-account-options">
-                          <li routerLinkActive="active" *ngIf="!dataService.isDemoAccount() && (dataService.configuration.ssoEnabled || !dataService.user?.onetime) && isAuthenticated()">
-                            <a class="pointer" routerLink="settings/profile">Settings</a>
+                          <li *ngIf="!dataService.isDemoAccount() && (dataService.configuration.ssoEnabled || !dataService.user?.onetime) && isAuthenticated()">
+                            <a class="pointer" (click)="routingService.toProfile()">Settings</a>
                           </li>
                           <li *ngIf="dataService.configuration.ssoEnabled && isAuthenticated()">
                               <a class="pointer" (click)="switchAccount()">Switch role</a>

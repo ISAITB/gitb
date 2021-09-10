@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
@@ -7,6 +7,7 @@ import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { HtmlService } from 'src/app/services/html.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { TestSuiteService } from 'src/app/services/test-suite.service';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { TestCase } from 'src/app/types/test-case';
@@ -37,7 +38,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
 
   constructor(
     public dataService: DataService,
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private testSuiteService: TestSuiteService,
     private popupService: PopupService,
@@ -106,7 +107,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
   }
 
 	back() {
-    this.router.navigate(['admin', 'domains', this.domainId, 'specifications', this.specificationId])
+    this.routingService.toSpecification(this.domainId, this.specificationId)
   }
 
 	saveDisabled() {
@@ -114,7 +115,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
   }
 
 	onTestCaseSelect(testCase: TestCase) {
-    this.router.navigate(['admin', 'domains', this.domainId, 'specifications', this.specificationId, 'testsuites', this.testSuiteId, 'testcases', testCase.id])
+    this.routingService.toTestCase(this.domainId, this.specificationId, this.testSuiteId, testCase.id)
   }
 
 }

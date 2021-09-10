@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ActorService } from 'src/app/services/actor.service';
@@ -7,6 +7,7 @@ import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { Actor } from 'src/app/types/actor';
 import { Endpoint } from 'src/app/types/endpoint';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
@@ -39,7 +40,7 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
     private conformanceService: ConformanceService,
     private actorService: ActorService,
     private confirmationDialogService: ConfirmationDialogService,
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private popupService: PopupService,
     public dataService: DataService
@@ -101,7 +102,7 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
   }
 
   back() {
-    this.router.navigate(['admin', 'domains', this.domainId, 'specifications', this.specificationId])
+    this.routingService.toSpecification(this.domainId, this.specificationId)
   }
 
   saveDisabled() {
@@ -109,7 +110,11 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
   }
 
   onEndpointSelect(endpoint: EndpointRepresentation) {
-    this.router.navigate(['admin', 'domains', this.domainId, 'specifications', this.specificationId, 'actors', this.actorId, 'endpoints', endpoint.id])
+    this.routingService.toEndpoint(this.domainId, this.specificationId, this.actorId, endpoint.id)
+  }
+
+  createEndpoint() {
+    
   }
 
 }

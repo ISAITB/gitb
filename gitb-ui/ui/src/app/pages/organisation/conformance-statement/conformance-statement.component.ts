@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
@@ -26,6 +26,7 @@ import { Organisation } from 'src/app/types/organisation.type';
 import { forkJoin, Observable } from 'rxjs'
 import { MissingConfigurationModalComponent } from 'src/app/modals/missing-configuration-modal/missing-configuration-modal.component';
 import { EditEndpointConfigurationModalComponent } from 'src/app/modals/edit-endpoint-configuration-modal/edit-endpoint-configuration-modal.component';
+import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-conformance-statement',
@@ -38,6 +39,7 @@ export class ConformanceStatementComponent implements OnInit {
   systemId!: number
   actorId!: number
   specId!: number
+  organisationId!: number
   loadingStatus = {status: Constants.STATUS.PENDING}
   Constants = Constants
   hasTests = false
@@ -72,13 +74,14 @@ export class ConformanceStatementComponent implements OnInit {
     private popupService: PopupService,
     private htmlService: HtmlService,
     private organisationService: OrganisationService,
-    private router: Router
+    private routingService: RoutingService
   ) { }
 
   ngOnInit(): void {
     this.systemId = Number(this.route.snapshot.paramMap.get('id'))
     this.actorId = Number(this.route.snapshot.paramMap.get('actor_id'))
     this.specId = Number(this.route.snapshot.paramMap.get('spec_id'))
+    this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
     const viewPropertiesParam = this.route.snapshot.queryParamMap.get('viewProperties')
     if (viewPropertiesParam != undefined) {
       this.endpointsExpanded = Boolean(viewPropertiesParam)
@@ -330,23 +333,23 @@ export class ConformanceStatementComponent implements OnInit {
             this.endpointsExpanded = true
           } else if (actionType == 'organisation') {
             if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
-              this.router.navigate(['settings', 'organisation'], { queryParams: { 'viewProperties': true } })
+              this.routingService.toOwnOrganisationDetails(true)
             } else {
               const organisation = this.getOrganisation()
               if (this.dataService.vendor!.id == organisation.id) {
-                this.router.navigate(['settings', 'organisation'], { queryParams: { 'viewProperties': true } })
+                this.routingService.toOwnOrganisationDetails(true)
               } else {
                 this.organisationService.getOrganisationBySystemId(this.systemId)
                 .subscribe((data) => {
-                  this.router.navigate(['admin', 'users', 'community', data.community, 'organisation', data.id], { queryParams: { 'viewProperties': true } })
+                  this.routingService.toOrganisationDetails(data.community, data.id, true)
                 })
               }
             }
           } else if (actionType == 'system') {
             if (this.dataService.isVendorUser) {
-              this.router.navigate(['organisation', 'systems', this.systemId, 'info'], { queryParams: { 'viewProperties': true } })
+              this.routingService.toSystemInfo(this.organisationId, this.systemId, true)
             } else {
-              this.router.navigate(['organisation', 'systems'], { queryParams: { 'id': this.systemId, 'viewProperties': true } })
+              this.routingService.toSystems(this.organisationId, this.systemId, true)
             }
           }
         })
@@ -370,7 +373,7 @@ export class ConformanceStatementComponent implements OnInit {
       this.executeHeadless([test])
     } else {
       this.dataService.setTestsToExecute([test])
-      this.router.navigate(['test', this.systemId, this.actorId, this.specId, 'execute'], { queryParams: { tc: test.id }})
+      this.routingService.toTestCaseExecution(this.organisationId, this.systemId, this.actorId, this.specId, test.id)
     }
   }
 
@@ -386,7 +389,7 @@ export class ConformanceStatementComponent implements OnInit {
       this.executeHeadless(testsToExecute)
     } else {
       this.dataService.setTestsToExecute(testsToExecute)
-      this.router.navigate(['test', this.systemId, this.actorId, this.specId, 'execute'], { queryParams: { ts: testSuite.id }})
+      this.routingService.toTestSuiteExecution(this.organisationId, this.systemId, this.actorId, this.specId, testSuite.id)
     }
   }
 
@@ -450,7 +453,7 @@ export class ConformanceStatementComponent implements OnInit {
       this.deletePending = true
       this.systemService.deleteConformanceStatement(this.systemId, [this.actorId])
       .subscribe(() => {
-        this.router.navigate(['organisation', 'systems', this.systemId, 'conformance'])
+        this.routingService.toConformanceStatements(this.organisationId, this.systemId)
         this.popupService.success('Conformance statement deleted.')
       }).add(() => {
         this.deletePending = false

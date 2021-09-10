@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
@@ -18,6 +18,7 @@ import { Parameter } from 'src/app/types/parameter';
 import { EndpointParameter } from 'src/app/types/endpoint-parameter';
 import { ParameterDetailsModalComponent } from 'src/app/components/parameters/parameter-details-modal/parameter-details-modal.component';
 import { ParameterReference } from 'src/app/types/parameter-reference';
+import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-endpoint-details',
@@ -45,7 +46,7 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
     private endpointService: EndpointService,
     private parameterService: ParameterService,
     private confirmationDialogService: ConfirmationDialogService,
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private modalService: BsModalService,
     public dataService: DataService,
@@ -159,7 +160,7 @@ export class EndpointDetailsComponent extends BaseComponent implements OnInit, A
   }
 
 	back() {
-    this.router.navigate(['admin', 'domains', this.domainId, 'specifications', this.specificationId, 'actors', this.actorId])
+    this.routingService.toActor(this.domainId, this.specificationId, this.actorId)
   }
 
 	preparePresetValues(parameter: Parameter) {

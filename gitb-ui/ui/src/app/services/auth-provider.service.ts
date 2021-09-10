@@ -6,9 +6,9 @@ import { LoginEventInfo } from "../types/login-event-info.type";
 import { Constants } from './../common/constants'
 import { CookieService } from 'ngx-cookie-service'
 import { DataService } from './data.service'
-import { Router } from '@angular/router';
 import { Utils } from '../common/utils';
 import { ROUTES } from '../common/global';
+import { RoutingService } from './routing.service';
 
 @Injectable({
   providedIn: 'root'
@@ -34,7 +34,7 @@ export class AuthProviderService {
       private cookieService: CookieService,
       private httpClient: HttpClient,
       private dataService: DataService,
-      private router: Router
+      private routingService: RoutingService
     ) {
     // Check if access token is set in cookies
     let accessTokenValue = cookieService.get(this.atKey)
@@ -62,7 +62,7 @@ export class AuthProviderService {
     })
     // Handle post-login event
     this.afterLogin$.subscribe(() => {
-      this.router.navigate(['home'])
+      this.routingService.toHome()
     })
     // Handle logout event
     this.onLogout$.subscribe((info) => {
@@ -90,7 +90,7 @@ export class AuthProviderService {
             let url = window.location.href
             window.location.href = url.substring(0, url.indexOf('app#'))
           } else {
-            this.router.navigate(['login'])
+            this.routingService.toLogin()
           }
         })
       }

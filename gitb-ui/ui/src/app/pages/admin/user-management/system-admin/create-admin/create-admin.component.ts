@@ -1,5 +1,4 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { AuthService } from 'src/app/services/auth.service';
 import { DataService } from 'src/app/services/data.service';
@@ -8,6 +7,7 @@ import { UserService } from 'src/app/services/user.service';
 import { User } from 'src/app/types/user.type';
 import { mergeMap, map, share } from 'rxjs/operators'
 import { EMPTY } from 'rxjs';
+import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-create-admin',
@@ -26,7 +26,7 @@ export class CreateAdminComponent extends BaseComponent implements OnInit, After
     private userService: UserService,
     private authService: AuthService,
     private popupService: PopupService,
-    private router: Router
+    private routingService: RoutingService
   ) { super() }
 
   ngAfterViewInit(): void {
@@ -96,7 +96,7 @@ export class CreateAdminComponent extends BaseComponent implements OnInit, After
   }
 
   cancelCreateAdmin() {
-    this.router.navigate(['admin', 'users'])
+    this.routingService.toUserManagement()
   }
 
 }

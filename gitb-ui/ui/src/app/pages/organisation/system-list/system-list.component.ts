@@ -1,5 +1,5 @@
-import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
 import { SystemService } from 'src/app/services/system.service';
@@ -10,6 +10,8 @@ import { find } from 'lodash';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { CreateEditSystemModalComponent } from 'src/app/modals/create-edit-system-modal/create-edit-system-modal.component';
 import { System } from 'src/app/types/system';
+import { RoutingService } from 'src/app/services/routing.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-system-list',
@@ -17,7 +19,7 @@ import { System } from 'src/app/types/system';
   styles: [
   ]
 })
-export class SystemListComponent implements OnInit {
+export class SystemListComponent implements OnInit, OnDestroy {
 
   systems: EditableSystem[] = []
   organisation!: Organisation
@@ -32,16 +34,27 @@ export class SystemListComponent implements OnInit {
   ]
   systemIdToEdit?: number
   viewProperties = false
+  sub?: Subscription
 
   constructor(
     public dataService: DataService,
     private systemService: SystemService,
     private route: ActivatedRoute,
-    private router: Router,
+    private routingService: RoutingService,
     private modalService: BsModalService
-  ) {}
+  ) {
+    this.sub = route.params.subscribe(() => {
+      this.initialise()
+    })
+  }
 
-  ngOnInit(): void {
+  ngOnDestroy(): void {
+    if (this.sub) {
+      this.sub.unsubscribe()
+    }
+  }
+
+  initialise() {
     this.organisation = JSON.parse(localStorage.getItem(Constants.LOCAL_DATA.ORGANISATION)!)
     const systemIdToEditParam = this.route.snapshot.queryParamMap.get('id')
     if (systemIdToEditParam != undefined) {
@@ -58,6 +71,10 @@ export class SystemListComponent implements OnInit {
     } else {
       this.getSystems(true)
     }
+  }
+
+  ngOnInit(): void {
+    // Initialisation takes place in the initialise method because we want to reload for parameter changes (observed via event).
   }
 
   private processSystems(systems: System[], initialLoad: boolean) {
@@ -113,7 +130,7 @@ export class SystemListComponent implements OnInit {
 
 	onSystemSelect(system: EditableSystem) {
 		if (!this.editing) {
-      this.router.navigate(['organisation', 'systems', system.id, 'conformance'])
+      this.routingService.toConformanceStatements(this.organisation.id, system.id)
     }
   }
 
@@ -151,7 +168,7 @@ export class SystemListComponent implements OnInit {
   }
 
 	back() {
-    this.router.navigate(['admin', 'users', 'community', this.organisation.community, 'organisation', this.organisation.id])
+    this.routingService.toOrganisationDetails(this.organisation.community, this.organisation.id)
   }
 
 }

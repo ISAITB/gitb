@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, NavigationExtras, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { CommunityService } from 'src/app/services/community.service';
@@ -11,6 +11,7 @@ import { LandingPageService } from 'src/app/services/landing-page.service';
 import { LegalNoticeService } from 'src/app/services/legal-notice.service';
 import { OrganisationService } from 'src/app/services/organisation.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { TriggerService } from 'src/app/services/trigger.service';
 import { UserService } from 'src/app/services/user.service';
 import { Community } from 'src/app/types/community';
@@ -83,7 +84,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
 
   constructor(
     public dataService: DataService,
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private userService: UserService,
     private landingPageService: LandingPageService,
@@ -253,74 +254,70 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   organizationSelect(organization: Organisation) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'organisation', organization.id])
+    this.routingService.toOrganisationDetails(this.communityId, organization.id)
   }
 
   isDefaultCommunity() {
     return this.communityId == Number(Constants.DEFAULT_COMMUNITY_ID)
   }
 
-  private addCopyTestBedDefaultIfNeeded(copyTestBedDefault: boolean) {
-    let extras: NavigationExtras|undefined = undefined
-    if (copyTestBedDefault) {
-      extras = {
-        queryParams: {
-          copyDefault: true
-        }
-      }
-    }
-    return extras
-  }
-
   createLandingPage(copyTestBedDefault: boolean) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'pages', 'create'], this.addCopyTestBedDefaultIfNeeded(copyTestBedDefault))
+    this.routingService.toCreateLandingPage(this.communityId, copyTestBedDefault)
   }
 
   landingPageSelect(landingPage: LandingPage) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'pages', landingPage.id])
+    this.routingService.toLandingPage(this.communityId, landingPage.id)
   }
 
   createLegalNotice(copyTestBedDefault: boolean) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'notices', 'create'], this.addCopyTestBedDefaultIfNeeded(copyTestBedDefault))
+    this.routingService.toCreateLegalNotice(this.communityId, copyTestBedDefault)
   }
 
   legalNoticeSelect(legalNotice: LegalNotice) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'notices', legalNotice.id])
+    this.routingService.toLegalNotice(this.communityId, legalNotice.id)
   }
 
   createErrorTemplate(copyTestBedDefault: boolean) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'errortemplates', 'create'], this.addCopyTestBedDefaultIfNeeded(copyTestBedDefault))
+    this.routingService.toCreateErrorTemplate(this.communityId, copyTestBedDefault)
   }
 
   errorTemplateSelect(errorTemplate: ErrorTemplate) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'errortemplates', errorTemplate.id])
+    this.routingService.toErrorTemplate(this.communityId, errorTemplate.id)
   }
 
   createTrigger() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'triggers', 'create'])
+    this.routingService.toCreateTrigger(this.communityId)
   }
 
   triggerSelect(trigger: Trigger) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'triggers', trigger.id])
+    this.routingService.toTrigger(this.communityId, trigger.id)
   }
 
   adminSelect(admin: User) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'admin', admin.id])
+    this.routingService.toCommunityAdmin(this.communityId, admin.id!)
   }
 
   cancelCommunityDetail() {
-    this.router.navigate(['admin', 'users'])
+    this.routingService.toUserManagement()
   }
 
   updateConformanceCertificateSettings() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'certificate'])
+    this.routingService.toCommunityCertificateSettings(this.communityId)
   }
 
   updateParameters() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'parameters'])
+    this.routingService.toCommunityParameters(this.communityId)
   }
 
   editLabels() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'labels'])
+    this.routingService.toCommunityLabels(this.communityId)
+  }
+
+  createAdmin() {
+    this.routingService.toCreateCommunityAdmin(this.communityId)
+  }
+
+  createOrganisation() {
+    this.routingService.toCreateOrganisation(this.communityId)
   }
 }

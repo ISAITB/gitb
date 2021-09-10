@@ -13,9 +13,9 @@
             <div class="col-md-2">
                 <aside class="sidebar">
                     <ul class="nav nav-list primary push-bottom">
-                        <li routerLinkActive="active"><a class="pointer" routerLink="profile">Profile</a></li>
-                        <li routerLinkActive="active"><a class="pointer" routerLink="organisation">{{dataService.labelOrganisation()}}</a></li>
-                        <li routerLinkActive="active" *ngIf="!dataService.configuration.ssoEnabled"><a class="pointer" routerLink="password">Password</a></li>
+                        <li><a class="pointer" (click)="toProfile()">Profile</a></li>
+                        <li><a class="pointer" (click)="toOrganisation()">{{dataService.labelOrganisation()}}</a></li>
+                        <li *ngIf="!dataService.configuration.ssoEnabled"><a class="pointer" (click)="toChangePassword()">Password</a></li>
                     </ul>
                 </aside>
             </div>

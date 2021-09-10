@@ -62,6 +62,7 @@ import { CreateConformanceStatementComponent } from './pages/organisation/create
 import { ConformanceStatementComponent } from './pages/organisation/conformance-statement/conformance-statement.component';
 import { ConformanceStatementNavigationResolver } from './resolvers/conformance-statement-navigation-resolver';
 import { TestExecutionComponent } from './pages/test-execution/test-execution.component';
+import { OrganisationResolver } from './resolvers/organisation-resolver';
 
 const routes: Routes = [
   { path: '', redirectTo: '/home', pathMatch: 'full' },  
@@ -119,7 +120,7 @@ const routes: Routes = [
           { path: 'export', component: ExportComponent },
           { path: 'import', component: ImportComponent }
       ] },
-      { path: 'organisation', component: OrganisationIndexComponent, children: [
+      { path: 'organisation/:org_id', component: OrganisationIndexComponent, resolve: { organisation: OrganisationResolver }, children: [
         { path: 'systems', component: SystemListComponent, resolve: { systems: SystemNavigationResolver }},
         { path: 'systems/:id', component: SystemDetailsComponent, children: [
           { path: 'info', component: SystemInfoComponent },
@@ -127,15 +128,15 @@ const routes: Routes = [
           { path: 'conformance/create', component: CreateConformanceStatementComponent }, 
           { path: 'conformance/detail/:actor_id/:spec_id', component: ConformanceStatementComponent }, 
           { path: 'tests', component: SystemTestsComponent }
-        ] }
+        ] },
+        { path: 'test/:system_id/:actor_id/:spec_id/execute', component: TestExecutionComponent }
       ] },
-      { path: 'test/:system_id/:actor_id/:spec_id/execute', component: TestExecutionComponent }, 
     ]
   }
 ]
 
 @NgModule({
-  imports: [RouterModule.forRoot(routes, {useHash: true, paramsInheritanceStrategy: 'always'})],
+  imports: [RouterModule.forRoot(routes, {useHash: true, paramsInheritanceStrategy: 'always', onSameUrlNavigation: 'reload'})],
   exports: [RouterModule]
 })
 export class AppRoutingModule { }

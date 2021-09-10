@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
 import { SystemService } from 'src/app/services/system.service';
@@ -7,6 +7,7 @@ import { TableColumnDefinition } from 'src/app/types/table-column-definition.typ
 import { map } from 'lodash'
 import { ConformanceStatementRepresentation } from './conformance-statement-representation';
 import { ConformanceStatement } from 'src/app/types/conformance-statement';
+import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-conformance-statements',
@@ -17,6 +18,7 @@ import { ConformanceStatement } from 'src/app/types/conformance-statement';
 export class ConformanceStatementsComponent implements OnInit {
 
   systemId!: number
+  organisationId!: number
   conformanceStatementRepresentations: ConformanceStatementRepresentation[] = []
   dataStatus = {status: Constants.STATUS.FINISHED}
   tableColumns!: TableColumnDefinition[]
@@ -26,11 +28,12 @@ export class ConformanceStatementsComponent implements OnInit {
     private systemService: SystemService,
     private dataService: DataService,
     private route: ActivatedRoute,
-    private router: Router
+    public routingService: RoutingService
   ) { }
 
   ngOnInit(): void {
     this.systemId = Number(this.route.snapshot.paramMap.get('id'))
+    this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
     this.showCreate = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && this.dataService.community!.allowStatementManagement)
     this.tableColumns = [
       { field: 'domainFull', title: this.dataService.labelDomain() },
@@ -75,7 +78,7 @@ export class ConformanceStatementsComponent implements OnInit {
   }
 
   onConformanceStatementSelect(statement: ConformanceStatementRepresentation) {
-    this.router.navigate(['organisation', 'systems', this.systemId, 'conformance', 'detail', statement.actorId, statement.specificationId])
+    this.routingService.toConformanceStatement(this.organisationId, this.systemId, statement.actorId, statement.specificationId)
   }
 
 }

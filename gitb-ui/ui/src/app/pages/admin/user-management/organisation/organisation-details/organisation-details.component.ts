@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { OptionalCustomPropertyFormData } from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
 import { BaseComponent } from 'src/app/pages/base-component.component';
@@ -7,8 +7,8 @@ import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.
 import { DataService } from 'src/app/services/data.service';
 import { OrganisationService } from 'src/app/services/organisation.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { UserService } from 'src/app/services/user.service';
-import { ErrorDescription } from 'src/app/types/error-description';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { User } from 'src/app/types/user.type';
 import { OrganisationFormData } from '../organisation-form/organisation-form-data';
@@ -35,13 +35,13 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   deletePending = false
 
   constructor(
-    private router: Router,
     private route: ActivatedRoute,
     private confirmationDialogService: ConfirmationDialogService,
     private organisationService: OrganisationService,
     private userService: UserService,
     public dataService: DataService,
-    private popupService: PopupService
+    private popupService: PopupService,
+    private routingService: RoutingService
   ) { super() }
 
   ngOnInit(): void {
@@ -121,16 +121,19 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   }
 
   userSelect(user: User) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'organisation', this.orgId, 'user', user.id])
+    this.routingService.toOrganisationUser(this.communityId, this.orgId, user.id!)
   }
 
   cancelDetailOrganisation() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId])
+    this.routingService.toCommunity(this.communityId)
   }
 
   manageOrganisationTests() {
     localStorage.setItem(Constants.LOCAL_DATA.ORGANISATION, JSON.stringify(this.organisation))
-    this.router.navigate(['organisation', 'systems'])
+    this.routingService.toSystems(this.organisation.id!)
   }
 
+  createUser() {
+    this.routingService.toCreateOrganisationUser(this.communityId, this.organisation.id!)
+  }
 }

@@ -1,10 +1,11 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
 import { LandingPageService } from 'src/app/services/landing-page.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { LandingPage } from 'src/app/types/landing-page';
 
 @Component({
@@ -24,7 +25,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   page: Partial<LandingPage> = {}
 
   constructor(
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     public dataService: DataService,
     private landingPageService: LandingPageService,
@@ -82,7 +83,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
 
   copyLandingPage() {
     this.copyPending = true
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'pages', 'create'], { queryParams: { copy: this.pageId } })
+    this.routingService.toCreateLandingPage(this.communityId, false, this.pageId)
   }
 
   deleteLandingPage() {
@@ -100,7 +101,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   }
 
   cancelDetailLandingPage() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId])
+    this.routingService.toCommunity(this.communityId)
   }
 
 }

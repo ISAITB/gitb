@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { EMPTY, Observable } from 'rxjs';
 import { map, mergeMap, share } from 'rxjs/operators';
 import { Constants } from 'src/app/common/constants';
@@ -7,6 +7,7 @@ import { BaseComponent } from 'src/app/pages/base-component.component';
 import { AuthService } from 'src/app/services/auth.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { UserService } from 'src/app/services/user.service';
 import { IdLabel } from 'src/app/types/id-label';
 import { User } from 'src/app/types/user.type';
@@ -26,7 +27,7 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
   savePending = false
 
   constructor(
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private userService: UserService,
     private authService: AuthService,
@@ -96,7 +97,7 @@ export class CreateUserComponent extends BaseComponent implements OnInit, AfterV
   }
 
   cancelCreateUser() {
-    return this.router.navigate(['admin', 'users', 'community', this.communityId, 'organisation', this.orgId])
+    this.routingService.toOrganisationDetails(this.communityId, this.orgId)
   }
 
 }

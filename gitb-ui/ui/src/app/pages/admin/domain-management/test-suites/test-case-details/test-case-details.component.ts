@@ -1,10 +1,11 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { HtmlService } from 'src/app/services/html.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { TestSuiteService } from 'src/app/services/test-suite.service';
 import { TestCase } from 'src/app/types/test-case';
 
@@ -27,7 +28,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
   constructor(
     private dataService: DataService,
     private testSuiteService: TestSuiteService,
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private popupService: PopupService,
     private htmlService: HtmlService,
@@ -67,7 +68,7 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
   }
 
 	back() {
-    this.router.navigate(['admin', 'domains', this.domainId, 'specifications', this.specificationId, 'testsuites', this.testSuiteId])
+    this.routingService.toTestSuite(this.domainId, this.specificationId, this.testSuiteId)
   }
 
 	saveDisabled() {

@@ -1,4 +1,4 @@
-import { TestResultForDisplay } from "./test-result-for-display";
+import { TestResultForDisplay } from "../../../types/test-result-for-display";
 
 export interface TestResultForExport extends TestResultForDisplay {
 

@@ -1,10 +1,11 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
 import { LegalNoticeService } from 'src/app/services/legal-notice.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { LegalNotice } from 'src/app/types/legal-notice';
 
 @Component({
@@ -22,7 +23,7 @@ export class CreateLegalNoticeComponent extends BaseComponent implements OnInit,
   savePending = false
 
   constructor(
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private legalNoticeService: LegalNoticeService,
     private confirmationDialogService: ConfirmationDialogService,
@@ -76,7 +77,7 @@ export class CreateLegalNoticeComponent extends BaseComponent implements OnInit,
   }
 
   cancelCreateLegalNotice() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId])
+    this.routingService.toCommunity(this.communityId)
   }
 
 }

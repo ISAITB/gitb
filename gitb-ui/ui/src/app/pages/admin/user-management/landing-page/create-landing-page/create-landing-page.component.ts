@@ -1,10 +1,11 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
 import { LandingPageService } from 'src/app/services/landing-page.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { LandingPage } from 'src/app/types/landing-page';
 
 @Component({
@@ -22,7 +23,7 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
   savePending = false
 
   constructor(
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private landingPageService: LandingPageService,
     private confirmationDialogService: ConfirmationDialogService,
@@ -76,7 +77,7 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
   }
 
   cancelCreateLandingPage() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId])
+    this.routingService.toCommunity(this.communityId)
   }
 
 }

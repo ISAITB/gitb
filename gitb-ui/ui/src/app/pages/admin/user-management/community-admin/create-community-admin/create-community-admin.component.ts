@@ -1,11 +1,12 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { EMPTY } from 'rxjs';
 import { map, mergeMap, share } from 'rxjs/operators';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { AuthService } from 'src/app/services/auth.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { UserService } from 'src/app/services/user.service';
 import { User } from 'src/app/types/user.type';
 
@@ -23,7 +24,7 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
   savePending = false
 
   constructor(
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private userService: UserService,
     private authService: AuthService,
@@ -99,7 +100,7 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
   }
 
   cancelCreateAdmin() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId])
+    this.routingService.toCommunity(this.communityId)
   }
 
 }

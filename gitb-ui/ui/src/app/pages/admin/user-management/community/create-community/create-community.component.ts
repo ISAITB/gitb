@@ -1,11 +1,11 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { CommunityService } from 'src/app/services/community.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { Community } from 'src/app/types/community';
 import { Domain } from 'src/app/types/domain';
 
@@ -31,7 +31,7 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit, A
   savePending = false
 
   constructor(
-    private router: Router,
+    private routingService: RoutingService,
     private communityService: CommunityService,
     private conformanceService: ConformanceService,
     private dataService: DataService,
@@ -83,7 +83,7 @@ export class CreateCommunityComponent extends BaseComponent implements OnInit, A
   }
 
   cancelCreateCommunity() {
-    this.router.navigate(['admin', 'users'])
+    this.routingService.toUserManagement()
   }
 
 }

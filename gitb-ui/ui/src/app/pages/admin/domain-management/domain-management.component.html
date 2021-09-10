@@ -2,7 +2,7 @@
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h4 class="title">{{dataService.labelDomains()}}</h4>
-			<a *ngIf="dataService.isSystemAdmin" routerLink="create" class="btn btn-default pull-right">Create {{dataService.labelDomainLower()}}</a>
+			<button *ngIf="dataService.isSystemAdmin" type="button" class="btn btn-default pull-right" (click)="create()">Create {{dataService.labelDomainLower()}}</button>
 		</div>
 		<div table-directive 
 			[columns]="tableColumns" 

@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { DataService } from 'src/app/services/data.service';
+import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-settings',
@@ -9,9 +10,23 @@ import { DataService } from 'src/app/services/data.service';
 })
 export class SettingsComponent implements OnInit {
 
-  constructor(public dataService: DataService) { }
+  constructor(
+    private routingService: RoutingService,
+    public dataService: DataService
+  ) { }
 
   ngOnInit(): void {
   }
 
+  toProfile() {
+    this.routingService.toProfile()
+  }
+
+  toOrganisation() {
+    this.routingService.toOwnOrganisationDetails()
+  }
+
+  toChangePassword() {
+    this.routingService.toChangePassword()
+  }
 }

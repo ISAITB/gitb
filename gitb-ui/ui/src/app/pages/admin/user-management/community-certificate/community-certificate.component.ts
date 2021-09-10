@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
@@ -7,6 +7,7 @@ import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { ErrorService } from 'src/app/services/error.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { ConformanceCertificateSettings } from 'src/app/types/conformance-certificate-settings';
 import { FileData } from 'src/app/types/file-data.type';
 
@@ -32,7 +33,7 @@ export class CommunityCertificateComponent extends BaseComponent implements OnIn
   exportPending = false
 
   constructor(
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private conformanceService: ConformanceService,
     public dataService: DataService,
@@ -146,7 +147,7 @@ export class CommunityCertificateComponent extends BaseComponent implements OnIn
     this.updatePending = true
     this.conformanceService.updateConformanceCertificateSettings(this.communityId, this.settings as ConformanceCertificateSettings, this.updatePasswords, this.removeKeystore)
     .subscribe(() => {
-      this.router.navigate(['admin', 'users', 'community', this.communityId])
+      this.routingService.toCommunity(this.communityId)
       this.popupService.success('Conformance certificate settings updated.')
     }).add(() => {
       this.updatePending = false
@@ -154,7 +155,7 @@ export class CommunityCertificateComponent extends BaseComponent implements OnIn
   }
 
   cancel() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId])
+    this.routingService.toCommunity(this.communityId)
   }
 
 }

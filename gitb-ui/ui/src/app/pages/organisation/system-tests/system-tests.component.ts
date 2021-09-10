@@ -11,7 +11,6 @@ import { ReportService } from 'src/app/services/report.service';
 import { TestSuiteService } from 'src/app/services/test-suite.service';
 import { TestService } from 'src/app/services/test.service';
 import { Actor } from 'src/app/types/actor';
-import { Community } from 'src/app/types/community';
 import { Domain } from 'src/app/types/domain';
 import { FilterState } from 'src/app/types/filter-state';
 import { Organisation } from 'src/app/types/organisation.type';
@@ -21,7 +20,7 @@ import { TestCase } from 'src/app/types/test-case';
 import { TestResultReport } from 'src/app/types/test-result-report';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
 import { TestSuiteWithTestCases } from 'src/app/types/test-suite-with-test-cases';
-import { TestResultForDisplay } from '../../admin/session-dashboard/test-result-for-display';
+import { TestResultForDisplay } from '../../../types/test-result-for-display';
 
 @Component({
   selector: 'app-system-tests',
@@ -39,7 +38,7 @@ export class SystemTestsComponent implements OnInit {
   activeStatus = {status: Constants.STATUS.PENDING} 
   completedStatus = {status: Constants.STATUS.PENDING}
   organisation!: Organisation
-  community!: Community
+  domainId?: number
   activeTestsColumns!: TableColumnDefinition[]
   completedTestsColumns!: TableColumnDefinition[]
   activeTests: TestResultForDisplay[] = []
@@ -80,9 +79,11 @@ export class SystemTestsComponent implements OnInit {
   ngOnInit(): void {
     this.systemId = Number(this.route.snapshot.paramMap.get('id'))
     this.organisation = JSON.parse(localStorage.getItem(Constants.LOCAL_DATA.ORGANISATION)!)
-    this.community = JSON.parse(localStorage.getItem(Constants.LOCAL_DATA.COMMUNITY)!)
+    if (!this.dataService.isSystemAdmin && this.dataService.community?.domainId != undefined) {
+      this.domainId = this.dataService.community.domainId
+    }
     this.initFilterDataLoaders()
-    if (this.community.domain == undefined) {
+    if (this.domainId == undefined) {
       this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
     }
     this.activeTestsColumns = [
@@ -211,8 +212,8 @@ export class SystemTestsComponent implements OnInit {
       searchCriteria.actorIds = filterData[Constants.FILTER_TYPE.ACTOR]
       searchCriteria.testSuiteIds = filterData[Constants.FILTER_TYPE.TEST_SUITE]
       searchCriteria.testCaseIds = filterData[Constants.FILTER_TYPE.TEST_CASE]
-      if (this.community?.domain != undefined) {
-        searchCriteria.domainIds = [this.community.domain.id]
+      if (this.domainId != undefined) {
+        searchCriteria.domainIds = [this.domainId]
       } else {
         searchCriteria.domainIds = filterData[Constants.FILTER_TYPE.DOMAIN]
       }
@@ -239,7 +240,10 @@ export class SystemTestsComponent implements OnInit {
       actor: testResult.actor?.name,
       testSuite: testResult.testSuite?.sname,
       testCase: testResult.test?.sname,
-      startTime: testResult.result.startTime
+      startTime: testResult.result.startTime,
+      specificationId: testResult.specification?.id,
+      actorId: testResult.actor?.id,
+      systemId: testResult.system?.id
     }
     if (completed) {
       result.endTime = testResult.result.endTime

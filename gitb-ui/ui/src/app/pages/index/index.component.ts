@@ -10,7 +10,7 @@ import { AuthProviderService } from '../../services/auth-provider.service'
 import { CookieService } from 'ngx-cookie-service';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { ContactSupportComponent } from 'src/app/modals/contact-support/contact-support.component';
-import { Router } from '@angular/router';
+import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-index',
@@ -31,7 +31,7 @@ export class IndexComponent implements OnInit {
     private authProviderService: AuthProviderService,
     private cookieService: CookieService,
     private modalService: BsModalService,
-    private router: Router
+    public routingService: RoutingService
   ) {}
 
   ngOnInit(): void {
@@ -134,8 +134,7 @@ export class IndexComponent implements OnInit {
 
 	onTestsClick() {
     localStorage.setItem(Constants.LOCAL_DATA.ORGANISATION, JSON.stringify(this.dataService.vendor))
-    localStorage.setItem(Constants.LOCAL_DATA.COMMUNITY, JSON.stringify(this.dataService.community))
-    this.router.navigate(['organisation', 'systems'])
+    this.routingService.toSystems(this.dataService.vendor!.id)
   }
 
 }

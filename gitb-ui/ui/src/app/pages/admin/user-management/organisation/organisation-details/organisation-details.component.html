@@ -30,7 +30,7 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Users</h4>
-            <a [routerLink]="['user', 'create']" class="btn btn-default pull-right">Create user</a>
+            <button type="button" class="btn btn-default pull-right" (click)="createUser()">Create user</button>
         </div>
         <div table-directive 
             [columns]="userColumns" 

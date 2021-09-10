@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { forkJoin, Observable, timer, of, Subscription } from 'rxjs';
 import { map, mergeMap, share } from 'rxjs/operators';
@@ -33,6 +33,7 @@ import { CodeEditorModalComponent } from 'src/app/components/code-editor-modal/c
 import { DiagramEvents } from 'src/app/components/diagram/diagram-events';
 import { UserInteraction } from 'src/app/types/user-interaction';
 import { UserInteractionInput } from 'src/app/types/user-interaction-input';
+import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-test-execution',
@@ -46,6 +47,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   actorId!: number
   systemId!: number
   specificationId!: number
+  organisationId!: number
   isAdmin = false
   documentationExists = false
 
@@ -89,7 +91,6 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
     private modalService: BsModalService,
     private testService: TestService,
     private systemService: SystemService,
@@ -100,7 +101,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     private popupService: PopupService,
     private htmlService: HtmlService,
     private webSocketService: WebSocketService,
-    private errorService: ErrorService
+    private errorService: ErrorService,
+    private routingService: RoutingService
   ) { }
 
   private queryParamToNumber(paramName: string): number|undefined {
@@ -113,6 +115,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
     this.actorId = Number(this.route.snapshot.paramMap.get('actor_id'))
     this.systemId = Number(this.route.snapshot.paramMap.get('system_id'))
     this.specificationId = Number(this.route.snapshot.paramMap.get('spec_id'))
@@ -859,7 +862,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   back() {
-    this.router.navigate(['organisation', 'systems', this.systemId, 'conformance', 'detail', this.actorId, this.specificationId])
+    this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.specificationId)
   }
 
   reinitialise() {
@@ -900,15 +903,15 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
 
   toOrganisationProperties() {
     if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
-      this.router.navigate(['settings', 'organisation'], { queryParams: { 'viewProperties': true } })
+      this.routingService.toOwnOrganisationDetails(true)
     } else {
       const organisation = this.getOrganisation()
       if (this.dataService.vendor!.id == organisation.id) {
-        this.router.navigate(['settings', 'organisation'], { queryParams: { 'viewProperties': true } })
+        this.routingService.toOwnOrganisationDetails(true)
       } else {
         this.organisationService.getOrganisationBySystemId(this.systemId)
         .subscribe((data) => {
-          this.router.navigate(['admin', 'users', 'community', data.community, 'organisation', data.id], { queryParams: { 'viewProperties': true } })
+          this.routingService.toOrganisationDetails(data.community, data.id, true)
         })
       }
     }
@@ -916,14 +919,14 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
 
   toSystemProperties() {
     if (this.dataService.isVendorUser) {
-      this.router.navigate(['organisation', 'systems', this.systemId, 'info'], { queryParams: { 'viewProperties': true } })
+      this.routingService.toSystemInfo(this.organisationId, this.systemId, true)
     } else {
-      this.router.navigate(['organisation', 'systems'], { queryParams: { 'id': this.systemId, 'viewProperties': true } })
+      this.routingService.toSystems(this.organisationId, this.systemId, true)
     }
   }
 
   toConfigurationProperties() {
-    this.router.navigate(['organisation', 'systems', this.systemId, 'conformance', 'detail', this.actorId, this.specificationId], { queryParams: { 'viewProperties': true } })
+    this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.specificationId, true)
   }
 
   getActorName(actorId: string) {

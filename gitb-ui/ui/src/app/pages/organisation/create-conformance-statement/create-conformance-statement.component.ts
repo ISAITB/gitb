@@ -1,8 +1,7 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
-import { ErrorService } from 'src/app/services/error.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { SystemService } from 'src/app/services/system.service';
 import { Actor } from 'src/app/types/actor';
@@ -13,6 +12,7 @@ import { TableColumnDefinition } from 'src/app/types/table-column-definition.typ
 import { remove, find } from 'lodash'
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from '../../base-component.component';
+import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-create-conformance-statement',
@@ -26,6 +26,7 @@ export class CreateConformanceStatementComponent extends BaseComponent implement
   specs: Specification[] = []
   actors: Actor[] = []
   systemId!: number
+  organisationId!: number
   selectedDomain?: Domain
   selectedSpec?: Specification
   selectedActor?: Actor
@@ -57,10 +58,9 @@ export class CreateConformanceStatementComponent extends BaseComponent implement
     private systemService: SystemService,
     public dataService: DataService,
     private popupService: PopupService,
-    private errorService: ErrorService,
     private route: ActivatedRoute,
-    private router: Router,
-    private conformanceService: ConformanceService
+    private conformanceService: ConformanceService,
+    private routingService: RoutingService
   ) { super() }
 
   ngOnInit(): void {
@@ -69,6 +69,7 @@ export class CreateConformanceStatementComponent extends BaseComponent implement
       this.domainId = [community.domainId]
     }
     this.systemId = Number(this.route.snapshot.paramMap.get('id'))
+    this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
     this.getDomains()
   }
 
@@ -81,7 +82,7 @@ export class CreateConformanceStatementComponent extends BaseComponent implement
         this.addAlertError(data.error_description)
         this.confirmDisabled = true
       } else {
-        this.router.navigate(['organisation', 'systems', this.systemId, 'conformance'])
+        this.routingService.toConformanceStatements(this.organisationId, this.systemId)
         this.popupService.success("Conformance statement created.")
       }
     }).add(() => {
@@ -230,7 +231,7 @@ export class CreateConformanceStatementComponent extends BaseComponent implement
   }
 
   cancel() {
-    this.router.navigate(['organisation', 'systems', this.systemId, 'conformance'])
+    this.routingService.toConformanceStatements(this.organisationId, this.systemId)
   }
 
 }

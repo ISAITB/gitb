@@ -26,7 +26,7 @@
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h4 class="title">{{dataService.labelEndpoints()}}</h4>
-			<a [routerLink]="['endpoints', 'create']" class="btn btn-default pull-right">Create {{dataService.labelEndpointLower()}}</a>
+			<button type="button" class="btn btn-default pull-right" (click)="createEndpoint()">Create {{dataService.labelEndpointLower()}}</button>
 		</div>
 		<div table-directive 
 			[columns]="endpointTableColumns"

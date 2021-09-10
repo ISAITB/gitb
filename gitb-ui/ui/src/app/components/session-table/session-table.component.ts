@@ -1,7 +1,10 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
+import { DataService } from 'src/app/services/data.service';
 import { ReportService } from 'src/app/services/report.service';
+import { RoutingService } from 'src/app/services/routing.service';
+import { TestResultForDisplay } from 'src/app/types/test-result-for-display';
 import { BaseTableComponent } from '../base-table/base-table.component';
 import { CodeEditorModalComponent } from '../code-editor-modal/code-editor-modal.component';
 import { SessionData } from '../diagram/test-session-presentation/session-data';
@@ -23,7 +26,9 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
 
   constructor(
     private reportService: ReportService,
-    private modalService: BsModalService
+    private modalService: BsModalService,
+    private routingService: RoutingService,
+    private dataService: DataService
   ) { super() }
 
   ngOnInit(): void {
@@ -48,7 +53,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     }, 200)
   }
 
-  onExpand(data: SessionData) {
+  onExpand(data: TestResultForDisplay) {
     data.expanded = data.expanded === undefined || !data.expanded
     if (this.expandedCounter !== undefined) {
       if (data.expanded) {
@@ -59,7 +64,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     }
   }
 
-  rowClass(row: SessionData) {
+  rowClass(row: TestResultForDisplay) {
     let rowClass = ''
     if (this.rowStyle) {
       let customClass = this.rowStyle(row)
@@ -73,7 +78,7 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     return rowClass
   }
 
-  showTestSessionLog(row: SessionData) {
+  showTestSessionLog(row: TestResultForDisplay) {
     const sessionId = row.session
     this.viewLogPending[sessionId] = true
     this.reportService.getTestSessionLog(sessionId)
@@ -100,4 +105,24 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
       delete this.viewLogPending[sessionId]
     })
   }
+
+  goToSystem(row: TestResultForDisplay) {
+    this.routingService.toSystems(row.organizationId!, row.systemId!)
+  }
+
+  goToStatement(row: TestResultForDisplay) {
+    this.routingService.toConformanceStatement(row.organizationId!, row.systemId!, row.actorId!, row.specificationId!)
+  }
+
+  goToOrganisation(row: TestResultForDisplay) {
+    const targetOrganisationId = row.organizationId!
+    if (targetOrganisationId == this.dataService.vendor!.id) {
+      // This is the user's own organisation
+      this.routingService.toOwnOrganisationDetails()
+    } else {
+      // Another organisation
+      this.routingService.toOrganisationDetails(row.communityId!, targetOrganisationId)
+    }
+  }
+
 }

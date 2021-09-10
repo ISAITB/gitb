@@ -31,7 +31,7 @@
     <div class="panel panel-default" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID">
         <div class="panel-heading">
             <h4 class="title">Community administrators</h4>
-            <a [routerLink]="['admin', 'create']" class="btn btn-default pull-right">Create community administrator</a>
+            <button type="button" class="btn btn-default pull-right" (click)="createAdmin()">Create community administrator</button>
         </div>
         <div table-directive 
             [columns]="adminColumns"
@@ -46,7 +46,7 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">{{dataService.labelOrganisations()}}</h4>
-            <a [routerLink]="['organisation', 'create']" class="btn btn-default pull-right">Create {{dataService.labelOrganisationLower()}}</a>
+            <button type="button" class="btn btn-default pull-right" (click)="createOrganisation()">Create {{dataService.labelOrganisationLower()}}</button>
         </div>
         <div table-directive
             [columns]="organizationColumns"
