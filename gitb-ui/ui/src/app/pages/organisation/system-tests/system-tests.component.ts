@@ -58,6 +58,7 @@ export class SystemTestsComponent implements OnInit {
   isPreviousPageDisabled = false
   isNextPageDisabled = false
   deletePending = false
+  sessionIdToShow?: string
 
   domainLoader?: () => Observable<Domain[]>
   specificationLoader?: () => Observable<Specification[]>
@@ -79,6 +80,10 @@ export class SystemTestsComponent implements OnInit {
   ngOnInit(): void {
     this.systemId = Number(this.route.snapshot.paramMap.get('id'))
     this.organisation = JSON.parse(localStorage.getItem(Constants.LOCAL_DATA.ORGANISATION)!)
+    const sessionIdValue = this.route.snapshot.queryParamMap.get('sessionId')
+    if (sessionIdValue != undefined) {
+      this.sessionIdToShow = sessionIdValue
+    }
     if (!this.dataService.isSystemAdmin && this.dataService.community?.domainId != undefined) {
       this.domainId = this.dataService.community.domainId
     }
@@ -224,6 +229,9 @@ export class SystemTestsComponent implements OnInit {
       searchCriteria.endTimeEndStr = filterData.endTimeEndStr
       searchCriteria.sessionId = filterData.sessionId
     }
+    if (this.sessionIdToShow != undefined) {
+      searchCriteria.sessionId = this.sessionIdToShow
+    }
     searchCriteria.activeSortColumn = this.activeSortColumn
     searchCriteria.activeSortOrder = this.activeSortOrder
     searchCriteria.completedSortColumn = this.completedSortColumn
@@ -256,6 +264,11 @@ export class SystemTestsComponent implements OnInit {
   private newTestResultForDisplay(testResult: TestResultReport, completed: boolean) {
     const result: TestResultForDisplay = this.newTestResult(testResult, completed)
     result.testCaseId = testResult.test?.id
+    if (this.sessionIdToShow != undefined && this.sessionIdToShow == testResult.result.sessionId) {
+      // We have been asked to open a session. Set it as expand and keep it once.
+      result.expanded = true
+      delete this.sessionIdToShow
+    }
     return result
   }
 

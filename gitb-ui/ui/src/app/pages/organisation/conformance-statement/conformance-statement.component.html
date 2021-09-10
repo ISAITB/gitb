@@ -74,20 +74,24 @@
                 <tr>
                     <th style="white-space: nowrap;">{{testSuites.length == 1?"Test case":"Test suite"}}</th>
                     <th>Description</th>
+                    <th *ngIf="testSuites.length <= 1" class="operations">Session</th>
                     <th class="tb-result">Result</th>
                     <th style="width:118px;"></th>
                 </tr>
 			</thead>
 			<tbody *ngIf="loadingStatus.status == Constants.STATUS.PENDING">
-				<td colspan="4" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
+				<td colspan="5" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
 			</tbody>
 			<tbody *ngIf="loadingStatus.status == Constants.STATUS.FINISHED && testSuites.length == 0">
-				<td colspan="4" class="td-no-data"><span>No test cases found</span></td>
+				<td colspan="5" class="td-no-data"><span>No test cases found</span></td>
 			</tbody>
 			<tbody *ngIf="testSuites.length == 1">
 				<tr *ngFor="let testCase of testSuites[0].testCases">
 					<td>{{testCase.sname}}</td>
 					<td>{{testCase.description}}</td>
+					<td class="operations">
+						<button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="toTestSession(testCase.sessionId)"><i class="fa fa-search"></i></button>						
+					</td>
 					<td class="tb-result">
                         <app-test-result-status-display [message]="testCase.outputMessage" [result]="testCase.result"></app-test-result-status-display>
 					</td>
@@ -121,6 +125,7 @@
                                             <tr>
                                                 <th style="white-space: nowrap;">Test case</th>
                                                 <th>Description</th>
+                                                <th class="operations">Session</th>
                                                 <th class="td-centered" style="width:110px">Result</th>
                                                 <th style="width:110px"></th>
                                             </tr>
@@ -129,6 +134,9 @@
                                             <tr *ngFor="let testCase of testSuite.testCases">
                                                 <td>{{testCase.sname}}</td>
                                                 <td>{{testCase.description}}</td>
+												<td class="operations">
+													<button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="toTestSession(testCase.sessionId)"><i class="fa fa-search"></i></button>						
+												</td>
                                                 <td class="tb-result">
                                                     <app-test-result-status-display [message]="testCase.outputMessage" [result]="testCase.result"></app-test-result-status-display>
                                                 </td>

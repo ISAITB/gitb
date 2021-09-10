@@ -45,8 +45,12 @@ export class RoutingService {
     }
   }
 
-  toTestHistory(organisationId: number, systemId: number) {
-    return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'tests'])
+  toTestHistory(organisationId: number, systemId: number, sessionIdToShow?: string) {
+    if (sessionIdToShow != undefined) {
+      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'tests'], { queryParams: { sessionId: sessionIdToShow }})
+    } else {
+      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'tests'])
+    }
   }
 
   toCreateConformanceStatement(organisationId: number, systemId: number) {

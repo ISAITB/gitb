@@ -103,6 +103,7 @@ export class ConformanceStatementComponent implements OnInit {
           description: result.testCaseDescription,
           outputMessage: result.outputMessage,
           hasDocumentation: result.testCaseHasDocumentation,
+          sessionId: result.sessionId,
           result: result.result
         }
         totalCount += 1
@@ -513,4 +514,7 @@ export class ConformanceStatementComponent implements OnInit {
     })
   }
 
+  toTestSession(sessionId: string) {
+    this.routingService.toTestHistory(this.organisationId, this.systemId, sessionId)
+  }
 }
