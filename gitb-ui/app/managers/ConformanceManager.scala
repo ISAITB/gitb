@@ -505,11 +505,29 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 		exec(PersistenceSchema.domains.filter(_.id === id).result.head)
 	}
 
-	def getConformanceStatus(actorId: Long, sutId: Long, testSuiteId: Option[Long]): List[ConformanceStatusItem] = {
+	def getConformanceStatusWithSessionData(actorId: Long, sutId: Long, testSuiteId: Option[Long]): List[ConformanceStatusItem] = {
 		var query = PersistenceSchema.conformanceResults
-  			.join(PersistenceSchema.testCases).on(_.testcase === _.id)
-  			.join(PersistenceSchema.testSuites).on(_._1.testsuite === _.id)
-		query = query
+			.join(PersistenceSchema.testCases).on(_.testcase === _.id)
+			.join(PersistenceSchema.testSuites).on(_._1.testsuite === _.id)
+			.joinLeft(PersistenceSchema.testResults).on(_._1._1.testsession === _.testSessionId)
+			.filter(_._1._1._1.actor === actorId)
+			.filter(_._1._1._1.sut === sutId)
+		if (testSuiteId.isDefined) {
+			query = query.filter(_._1._1._1.testsuite === testSuiteId.get)
+		}
+		val finalQuery = query
+			.sortBy(x => (x._1._2.shortname, x._1._1._2.testSuiteOrder))
+			.map(x => (x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._1._2.id, x._1._1._2.shortname, x._1._1._2.description, x._1._1._2.hasDocumentation, x._1._1._1.result, x._1._1._1.outputMessage, x._1._1._1.testsession, x._2.map(x => {x.endTime})))
+		val results = exec(finalQuery.result.map(_.toList)).map(r => {
+			ConformanceStatusItem(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10, r._11, r._12.flatten)
+		})
+		results
+	}
+
+	def getConformanceStatusWithoutSessionData(actorId: Long, sutId: Long, testSuiteId: Option[Long]): List[ConformanceStatusItem] = {
+		var query = PersistenceSchema.conformanceResults
+			.join(PersistenceSchema.testCases).on(_.testcase === _.id)
+			.join(PersistenceSchema.testSuites).on(_._1.testsuite === _.id)
 			.filter(_._1._1.actor === actorId)
 			.filter(_._1._1.sut === sutId)
 		if (testSuiteId.isDefined) {
@@ -519,9 +537,17 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 			.sortBy(x => (x._2.shortname, x._1._2.testSuiteOrder))
 			.map(x => (x._2.id, x._2.shortname, x._2.description, x._2.hasDocumentation, x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._1.result, x._1._1.outputMessage, x._1._1.testsession))
 		val results = exec(finalQuery.result.map(_.toList)).map(r => {
-			ConformanceStatusItem(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10, r._11)
+			ConformanceStatusItem(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10, r._11, None)
 		})
 		results
+	}
+
+	def getConformanceStatus(actorId: Long, sutId: Long, testSuiteId: Option[Long], loadSessionData: Boolean): List[ConformanceStatusItem] = {
+		if (loadSessionData) {
+			getConformanceStatusWithSessionData(actorId, sutId, testSuiteId)
+		} else {
+			getConformanceStatusWithoutSessionData(actorId, sutId, testSuiteId)
+		}
 	}
 
 	def getSpecificationIdForTestCaseFromConformanceStatements(testCaseId: Long): Option[Long] = {

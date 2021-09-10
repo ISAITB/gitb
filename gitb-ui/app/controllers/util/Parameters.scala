@@ -157,6 +157,7 @@ object Parameters {
   val HIDDEN = "hidden"
   val DEPENDS_ON = "dependsOn"
   val DEPENDS_ON_VALUE = "dependsOnValue"
+  val SESSION_DATA     = "sessionData"
 
   val FILE       = "file"
 	val LIMIT      = "limit"

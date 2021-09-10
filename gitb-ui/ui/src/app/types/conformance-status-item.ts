@@ -14,5 +14,6 @@ export interface ConformanceStatusItem {
     result: string
     outputMessage?: string
     sessionId?: string
+    sessionTime?: string
 
 }

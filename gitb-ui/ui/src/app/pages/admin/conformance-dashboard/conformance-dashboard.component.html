@@ -60,31 +60,50 @@
                         <td colspan="9" class="expandable-table-expandable-cell">
                             <div [collapse]="!isExpanded(statement)" [isAnimated]="true">
                                 <div class="collapsing-div">
-                                    <table class="table table-directive expandable-table conformance-dashboard-tests-table">
-                                        <thead>
-                                            <tr>
-                                                <th width="45%">Test suite</th>
-                                                <th width="45%">Test case</th>
-                                                <th class="tb-result">Result</th>
-                                                <th class="operations">Export</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr *ngIf="statement.testCasesLoaded == undefined || !statement.testCasesLoaded">
-                                                <td colspan="4" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
-                                            </tr>
-                                            <tr *ngFor="let testCase of statement.testCases">
-                                                <td>{{testCase.testSuiteName}}</td>
-                                                <td>{{testCase.testCaseName}}</td>
-                                                <td class="tb-result">
-                                                    <app-test-result-status-display [message]="testCase.outputMessage" [result]="testCase.result"></app-test-result-status-display>
-                                                </td>
-                                                <td class="operations">
-                                                    <button *ngIf="showExportTestCase(testCase)" [pending]="testCase.exportPending != undefined && testCase.exportPending" [icon]="true" class="btn btn-default" (click)="onExportTestCase(statement, testCase)"><i class="fa fa-file-pdf-o"></i></button>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                    <div *ngIf="statement.testCasesLoaded == undefined || !statement.testCasesLoaded">
+                                        <span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>
+                                    </div>
+                                    <div class="testSuitePanel" *ngFor="let testSuite of statement.testSuites">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading" (click)="testSuite.expanded = !testSuite.expanded">
+                                                <div class="testSuiteHeaderLabel">Test suite</div>
+                                                <div class="testSuiteHeaderValue">{{testSuite.testSuiteName}}</div>
+                                                <div class="testSuiteResult"><app-test-result-status-display [result]="testSuite.result"></app-test-result-status-display></div>
+                                            </div>
+                                            <div class="collapsibleTestCaseDiv" [collapse]="!testSuite.expanded" [isAnimated]="true">
+                                                <div class="panel-body">
+                                                    <div class="testCaseContainer">
+                                                        <table class="table table-directive">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th width="90%">Test case</th>
+                                                                    <th class="sessionTime">Last updated</th>
+                                                                    <th class="operations">Session</th>
+                                                                    <th class="operations">Export</th>
+                                                                    <th class="tb-result">Result</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <tr *ngFor="let testCase of testSuite.testCases">
+                                                                    <td>{{testCase.testCaseName}}</td>
+                                                                    <td class="sessionTime">{{testCase.sessionTime}}</td>
+                                                                    <td class="operations">
+                                                                        <button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="toTestSession(testCase.sessionId)"><i class="fa fa-search"></i></button>
+                                                                    </td>
+                                                                    <td class="operations">
+                                                                        <button *ngIf="showExportTestCase(testCase)" [pending]="testCase.exportPending != undefined && testCase.exportPending" [icon]="true" class="btn btn-default" (click)="onExportTestCase(statement, testCase)"><i class="fa fa-file-pdf-o"></i></button>
+                                                                    </td>
+                                                                    <td class="tb-result">
+                                                                        <app-test-result-status-display [message]="testCase.outputMessage" [result]="testCase.result"></app-test-result-status-display>
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                     <div class="statementControls">
                                         <div class="btn-toolbar">
                                             <button type="button" class="btn btn-default" (click)="toOrganisation(statement)">View {{dataService.labelOrganisationLower()}}</button>

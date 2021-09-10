@@ -1824,7 +1824,8 @@ object JsonUtil {
       "testCaseHasDocumentation"    -> listItem.testCaseHasDocumentation,
       "result"    -> listItem.result,
       "outputMessage" -> listItem.outputMessage,
-      "sessionId"    -> listItem.sessionId
+      "sessionId"    -> listItem.sessionId,
+      "sessionTime"    -> (if (listItem.sessionTime.isDefined) TimeUtil.serializeTimestamp(listItem.sessionTime.get) else JsNull)
     )
     json
   }

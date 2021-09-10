@@ -198,9 +198,12 @@ export class ConformanceService {
     })
   }
 
-  getConformanceStatus(actorId: number, sutId: number) {
+  getConformanceStatus(actorId: number, sutId: number, loadSessionData?: boolean) {
     return this.restService.get<ConformanceStatusItem[]>({
       path: ROUTES.controllers.ConformanceService.getConformanceStatus(actorId, sutId).url,
+      params: {
+        sessionData: loadSessionData
+      },
       authenticate: true
     })
   }

@@ -84,7 +84,9 @@ export class BaseRestService {
       if (config.params) {
         let params = new HttpParams()
         for (let key in config.params) {
-          params = params.set(key, config.params[key])
+          if (config.params[key] != undefined) {
+            params = params.set(key, config.params[key])
+          }
         }
         configToUse.params = params
       }

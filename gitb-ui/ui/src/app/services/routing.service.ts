@@ -221,8 +221,12 @@ export class RoutingService {
     return this.router.navigate(['admin', 'users', 'community', communityId, 'organisation', organisationId, 'user', userId])
   }
 
-  toSessionDashboard() {
-    return this.router.navigate(['admin', 'sessions'])
+  toSessionDashboard(sessionIdToShow?: string) {
+    if (sessionIdToShow != undefined) {
+      return this.router.navigate(['admin', 'sessions'], { queryParams: { sessionId: sessionIdToShow }})
+    } else {
+      return this.router.navigate(['admin', 'sessions'])
+    }
   }
 
   toConformanceDashboard() {

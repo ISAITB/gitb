@@ -309,14 +309,15 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
 
   def getConformanceStatus(actorId: Long, sutId: Long) = authorizedAction { request =>
     authorizationManager.canViewConformanceStatus(request, actorId, sutId)
-    val results = conformanceManager.getConformanceStatus(actorId, sutId, None)
+    val loadSessionData = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SESSION_DATA).getOrElse(false)
+    val results = conformanceManager.getConformanceStatus(actorId, sutId, None, loadSessionData)
     val json: String = JsonUtil.jsConformanceResultList(results).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getConformanceStatusForTestSuite(actorId: Long, sutId: Long, testSuite: Long) = authorizedAction { request =>
     authorizationManager.canViewConformanceStatus(request, actorId, sutId)
-    val results = conformanceManager.getConformanceStatus(actorId, sutId, Some(testSuite))
+    val results = conformanceManager.getConformanceStatus(actorId, sutId, Some(testSuite), loadSessionData = false)
     val json: String = JsonUtil.jsConformanceResultList(results).toString
     ResponseConstructor.constructJsonResponse(json)
   }

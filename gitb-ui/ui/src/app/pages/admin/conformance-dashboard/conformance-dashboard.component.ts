@@ -15,6 +15,8 @@ import { Community } from 'src/app/types/community';
 import { ConformanceCertificateSettings } from 'src/app/types/conformance-certificate-settings';
 import { ConformanceResultFull } from 'src/app/types/conformance-result-full';
 import { ConformanceResultFullList } from 'src/app/types/conformance-result-full-list';
+import { ConformanceResultFullWithTestSuites } from 'src/app/types/conformance-result-full-with-test-suites';
+import { ConformanceResultTestSuite } from 'src/app/types/conformance-result-test-suite';
 import { ConformanceStatusItem } from 'src/app/types/conformance-status-item';
 import { Domain } from 'src/app/types/domain';
 import { FilterState } from 'src/app/types/filter-state';
@@ -45,7 +47,7 @@ export class ConformanceDashboardComponent implements OnInit {
   expandedStatements: { [key: string]: any, count: number } = {
     count: 0
   }
-  conformanceStatements: ConformanceResultFull[] = []
+  conformanceStatements: ConformanceResultFullWithTestSuites[] = []
   settings?: Partial<ConformanceCertificateSettings>
   domainLoader?: () => Observable<Domain[]>
   specificationLoader?: () => Observable<Specification[]>
@@ -233,6 +235,39 @@ export class ConformanceDashboardComponent implements OnInit {
     })
   }
 
+  organiseTestSuites(statement: ConformanceResultFullWithTestSuites) {
+    if (statement.testCases != undefined) {
+      const testSuites: ConformanceResultTestSuite[] = []
+      let testSuite: ConformanceResultTestSuite|undefined
+      for (let item of statement.testCases) {
+        if (testSuite == undefined || testSuite.testSuiteId != item.testSuiteId) {
+          if (testSuite != undefined) {
+            testSuites.push(testSuite)
+          }
+          testSuite = {
+            testSuiteId: item.testSuiteId!,
+            testSuiteName: item.testSuiteName!,
+            expanded: true,
+            result: item.result!,
+            testCases: []
+          }
+        }
+        if (item.result != testSuite.result) {
+          if (item.result == Constants.TEST_CASE_RESULT.FAILURE) {
+            testSuite.result = Constants.TEST_CASE_RESULT.FAILURE
+          } else if (item.result == Constants.TEST_CASE_RESULT.UNDEFINED && testSuite.result == Constants.TEST_CASE_RESULT.SUCCESS) {
+            testSuite.result = Constants.TEST_CASE_RESULT.UNDEFINED
+          }
+        }
+        testSuite.testCases.push(item as ConformanceStatusItem)
+      }
+      if (testSuite != undefined) {
+        testSuites.push(testSuite)
+      }
+      statement.testSuites = testSuites
+    }
+  }
+
 	onExpand(statement: ConformanceResultFull) {
 		if (this.isExpanded(statement)) {
 			this.collapse(statement)
@@ -240,20 +275,24 @@ export class ConformanceDashboardComponent implements OnInit {
       this.expand(statement)
       if (statement.testCases == undefined) {
         statement.testCasesLoaded = false
-        this.conformanceService.getConformanceStatus(statement.actorId, statement.systemId)
+        this.conformanceService.getConformanceStatus(statement.actorId, statement.systemId, true)
         .subscribe((data) => {
           const testCases: Partial<ConformanceStatusItem>[] = []
           for (let result of data) {
             testCases.push({
               id: result.testCaseId,
               sessionId: result.sessionId,
+              testSuiteId: result.testSuiteId,
               testSuiteName: result.testSuiteName,
+              testCaseId: result.testCaseId,
               testCaseName: result.testCaseName,
               result: result.result,
-              outputMessage: result.outputMessage
+              outputMessage: result.outputMessage,
+              sessionTime: result.sessionTime
             })
           }
           statement.testCases = testCases
+          this.organiseTestSuites(statement)
         }).add(() => {
           statement.testCasesLoaded = true
         })
@@ -339,7 +378,7 @@ export class ConformanceDashboardComponent implements OnInit {
 	onExportConformanceStatement(statement?: ConformanceResultFull) {
 		let statementToProcess: ConformanceResultFull
 		if (statement == undefined) {
-			statementToProcess = this.conformanceStatements[0]
+			statementToProcess = this.conformanceStatements[0] as ConformanceResultFull
     } else {
       statementToProcess = statement!
     }
@@ -395,4 +434,9 @@ export class ConformanceDashboardComponent implements OnInit {
   toActor(statement: ConformanceResultFull) {
     this.routingService.toActor(statement.domainId, statement.specId, statement.actorId)
   }
+
+  toTestSession(sessionId: string) {
+    this.routingService.toSessionDashboard(sessionId)
+  }
+
 }

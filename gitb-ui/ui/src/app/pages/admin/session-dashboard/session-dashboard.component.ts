@@ -29,6 +29,7 @@ import { System } from 'src/app/types/system';
 import { OrganisationParameter } from 'src/app/types/organisation-parameter';
 import { SystemParameter } from 'src/app/types/system-parameter';
 import { TestSuiteWithTestCases } from 'src/app/types/test-suite-with-test-cases';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-session-dashboard',
@@ -72,6 +73,7 @@ export class SessionDashboardComponent implements OnInit {
   }
   deletePending = false
   deleteSessionsPending = false
+  sessionIdToShow?: string
 
   domainLoader?: () => Observable<Domain[]>
   specificationLoader?: () => Observable<Specification[]>
@@ -95,10 +97,15 @@ export class SessionDashboardComponent implements OnInit {
     private systemService: SystemService,
     private confirmationDialogService: ConfirmationDialogService,
     private testService: TestService,
-    private popupService: PopupService
+    private popupService: PopupService,
+    private route: ActivatedRoute
   ) { }
 
   ngOnInit(): void {
+    const sessionIdValue = this.route.snapshot.queryParamMap.get('sessionId')
+    if (sessionIdValue != undefined) {
+      this.sessionIdToShow = sessionIdValue
+    }
     this.initFilterDataLoaders()
     if (this.dataService.isCommunityAdmin) {
       this.communityId = this.dataService.community!.id
@@ -253,6 +260,9 @@ export class SessionDashboardComponent implements OnInit {
       searchCriteria.organisationProperties = filterData.organisationProperties
       searchCriteria.systemProperties = filterData.systemProperties
     }
+    if (this.sessionIdToShow != undefined) {
+      searchCriteria.sessionId = this.sessionIdToShow
+    }
     searchCriteria.activeSortColumn = this.activeSortColumn
     searchCriteria.activeSortOrder = this.activeSortOrder
     searchCriteria.completedSortColumn = this.completedSortColumn
@@ -345,6 +355,11 @@ export class SessionDashboardComponent implements OnInit {
   private newTestResultForDisplay(testResult: TestResultReport, completed: boolean) {
     const result: TestResultForDisplay = this.newTestResult(testResult, completed)
     result.testCaseId = testResult.test?.id
+    if (this.sessionIdToShow != undefined && this.sessionIdToShow == testResult.result.sessionId) {
+      // We have been asked to open a session. Set it as expand and keep it once.
+      result.expanded = true
+      delete this.sessionIdToShow
+    }
     return result
   }
 

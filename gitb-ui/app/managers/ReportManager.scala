@@ -285,7 +285,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
         triggerHelper.publishTriggerEvent(new TestSessionFailedEvent(communityId, systemId, actorId))
       }
       // See if the conformance statement is now successfully completed and fire an additional trigger if so.
-      val statementStatus = conformanceManager.getConformanceStatus(actorId, systemId, None)
+      val statementStatus = conformanceManager.getConformanceStatus(actorId, systemId, None, loadSessionData = false)
       var successCount = 0
       statementStatus.foreach { status =>
         if ("SUCCESS".equals(status.result)) {
