@@ -1,17 +1,11 @@
 package controllers
 
-import java.io.ByteArrayInputStream
-import java.nio.file.Paths
-import java.security.cert.{Certificate, CertificateExpiredException, CertificateNotYetValidException, X509Certificate}
-import java.security.{KeyStore, NoSuchAlgorithmException}
 import config.Configurations
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.{ErrorCodes, NotFoundException}
-
-import javax.inject.Inject
 import managers._
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
-import models.Enums.{LabelType, TestSuiteReplacementChoice, TestSuiteReplacementChoiceHistory, TestSuiteReplacementChoiceMetadata, UserRole}
+import models.Enums.{Result => _, _}
 import models._
 import models.prerequisites.PrerequisiteUtil
 import org.apache.commons.codec.binary.Base64
@@ -20,7 +14,13 @@ import org.apache.commons.lang3.RandomStringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import utils.signature.SigUtils
-import utils.{ClamAVClient, HtmlUtil, JsonUtil, MimeUtil, RepositoryUtils}
+import utils._
+
+import java.io.ByteArrayInputStream
+import java.nio.file.Paths
+import java.security.cert.{Certificate, CertificateExpiredException, CertificateNotYetValidException, X509Certificate}
+import java.security.{KeyStore, NoSuchAlgorithmException}
+import javax.inject.Inject
 
 class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, communityManager: CommunityManager, conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, systemManager: SystemManager, testResultManager: TestResultManager, organizationManager: OrganizationManager, testCaseManager: TestCaseManager, endPointManager: EndPointManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ConformanceService])

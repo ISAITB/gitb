@@ -48,6 +48,7 @@ export class ConformanceDashboardComponent implements OnInit {
     count: 0
   }
   conformanceStatements: ConformanceResultFullWithTestSuites[] = []
+  conformanceStatementsPage: ConformanceResultFullWithTestSuites[] = []
   settings?: Partial<ConformanceCertificateSettings>
   domainLoader?: () => Observable<Domain[]>
   specificationLoader?: () => Observable<Specification[]>
@@ -58,6 +59,11 @@ export class ConformanceDashboardComponent implements OnInit {
   organisationPropertyLoader?: (_:number) => Observable<OrganisationParameter[]>
   systemPropertyLoader?: (_:number) => Observable<SystemParameter[]>
   Constants = Constants
+
+  conformanceStatementsTotalCount = 0
+  currentPage = 1
+  prevDisabled = false
+  nextDisabled = false
 
   constructor(
     public dataService: DataService,
@@ -229,6 +235,9 @@ export class ConformanceDashboardComponent implements OnInit {
     this.getConformanceStatementsInternal(false, false)
     .subscribe((data) => {
 			this.conformanceStatements = data.data
+      this.conformanceStatementsTotalCount = this.conformanceStatements.length
+      this.currentPage = 1      
+      this.selectPage()
 			this.onCollapseAll()
     }).add(() => {
 			this.filterState.updatePending = false
@@ -437,6 +446,54 @@ export class ConformanceDashboardComponent implements OnInit {
 
   toTestSession(sessionId: string) {
     this.routingService.toSessionDashboard(sessionId)
+  }
+
+  doFirstPage() {
+    if (!this.prevDisabled) {
+      this.currentPage = 1
+      this.selectPage()
+    }
+  }
+
+  doPrevPage() {
+    if (!this.prevDisabled) {
+      this.currentPage -= 1
+      this.selectPage()
+    }
+  }
+
+  doNextPage() {
+    if (!this.nextDisabled) {
+      this.currentPage += 1
+      this.selectPage()
+    }
+  }
+
+  doLastPage() {
+    if (!this.nextDisabled) {
+      this.currentPage = Math.ceil(this.conformanceStatementsTotalCount / Constants.TABLE_PAGE_SIZE)
+      this.selectPage()
+    }
+  }
+
+  selectPage() {
+    const startIndex = (this.currentPage - 1) * Constants.TABLE_PAGE_SIZE
+    const endIndex = startIndex + Constants.TABLE_PAGE_SIZE
+    this.conformanceStatementsPage = this.conformanceStatements.slice(startIndex, endIndex)
+    this.updatePagination()
+  }
+
+  updatePagination() {
+    if (this.currentPage == 1) {
+      this.nextDisabled = this.conformanceStatementsTotalCount <= Constants.TABLE_PAGE_SIZE
+      this.prevDisabled = true
+    } else if (this.currentPage == Math.ceil(this.conformanceStatementsTotalCount / Constants.TABLE_PAGE_SIZE)) {
+      this.nextDisabled = true
+      this.prevDisabled = false
+    } else {
+      this.nextDisabled = false
+      this.prevDisabled = false
+    }
   }
 
 }

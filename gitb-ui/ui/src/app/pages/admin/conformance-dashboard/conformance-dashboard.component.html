@@ -41,7 +41,7 @@
 				<tr><td [attr.colspan]="columnCount" class="td-no-data"><span>No conformance data found</span></td></tr>
 			</tbody>
 			<tbody *ngIf="conformanceStatements.length > 0">
-                <ng-container *ngFor="let statement of conformanceStatements">
+                <ng-container *ngFor="let statement of conformanceStatementsPage">
                     <tr (click)="onExpand(statement)"
                         class="table-row-directive expandable-table-row-collapsed">
                         <td *ngIf="!dataService.isCommunityAdmin">{{statement.communityName}}</td>
@@ -119,6 +119,14 @@
                     </tr>
                 </ng-container>
 			</tbody>
-		</table>		
+		</table>
+        <div *ngIf="conformanceStatements && conformanceStatements.length > 0" class="text-center table-paging-controls-expandable">
+            <ul class="pagination pagination-sm">
+                <li [ngClass]="prevDisabled ? 'disabled' : ''"><a href (click)="doFirstPage(); $event.preventDefault()">First</a></li>
+                <li [ngClass]="prevDisabled ? 'disabled' : ''"><a href (click)="doPrevPage(); $event.preventDefault()">Previous</a></li>
+                <li [ngClass]="nextDisabled ? 'disabled' : ''"><a href (click)="doNextPage(); $event.preventDefault()">Next</a></li>
+                <li [ngClass]="nextDisabled ? 'disabled' : ''"><a href (click)="doLastPage(); $event.preventDefault()">Last</a></li>
+            </ul>
+        </div>
 	</div>
 </div>
