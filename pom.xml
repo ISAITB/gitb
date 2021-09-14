@@ -7,7 +7,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>2.4.2</version>
+        <version>2.5.4</version>
     </parent>
     <groupId>com.gitb</groupId>
     <artifactId>GITB</artifactId>
@@ -18,7 +18,7 @@
     <properties>
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
-        <version.springBoot>2.4.2</version.springBoot>
+        <version.springBoot>2.5.4</version.springBoot>
         <version.helgerSchematron>6.0.3</version.helgerSchematron>
     </properties>
 
@@ -64,7 +64,7 @@
                         <dependency>
                             <groupId>net.sf.jasperreports</groupId>
                             <artifactId>jasperreports-fonts</artifactId>
-                            <version>6.15.0</version>
+                            <version>6.16.0</version>
                             <exclusions>
                                 <exclusion>
                                     <groupId>com.lowagie</groupId>
@@ -75,7 +75,7 @@
                         <dependency>
                             <groupId>net.sf.jasperreports</groupId>
                             <artifactId>jasperreports</artifactId>
-                            <version>6.15.0</version>
+                            <version>6.16.0</version>
                             <exclusions>
                                 <exclusion>
                                     <groupId>com.lowagie</groupId>
@@ -170,7 +170,7 @@
             <dependency>
                 <groupId>org.apache.cxf</groupId>
                 <artifactId>cxf-spring-boot-starter-jaxws</artifactId>
-                <version>3.4.2</version>
+                <version>3.4.4</version>
             </dependency>
             <dependency>
                 <groupId>org.springframework.boot</groupId>
@@ -195,12 +195,12 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.2.3</version>
+                <version>1.2.6</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-api</artifactId>
-                <version>1.7.30</version>
+                <version>1.7.32</version>
             </dependency>
             <dependency>
                 <groupId>commons-codec</groupId>
@@ -215,17 +215,17 @@
             <dependency>
                 <groupId>commons-io</groupId>
                 <artifactId>commons-io</artifactId>
-                <version>2.8.0</version>
+                <version>2.11.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
-                <version>3.11</version>
+                <version>3.12.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.tika</groupId>
                 <artifactId>tika-core</artifactId>
-                <version>1.25</version>
+                <version>2.1.0</version>
             </dependency>
             <dependency>
                 <groupId>xerces</groupId>
@@ -246,7 +246,7 @@
             <dependency>
                 <groupId>net.sf.saxon</groupId>
                 <artifactId>Saxon-HE</artifactId>
-                <version>10.3</version>
+                <version>10.5</version>
             </dependency>
             <dependency>
                 <groupId>javax.xml.ws</groupId>
@@ -301,12 +301,12 @@
             <dependency>
                 <groupId>com.typesafe.akka</groupId>
                 <artifactId>akka-actor_2.12</artifactId>
-                <version>2.6.11</version>
+                <version>2.6.16</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
-                <version>30.1-jre</version>
+                <version>30.1.1-jre</version>
             </dependency>
             <dependency>
                 <groupId>com.github.mifmif</groupId>
@@ -333,12 +333,12 @@
             <dependency>
                 <groupId>com.helger</groupId>
                 <artifactId>ph-xml</artifactId>
-                <version>9.5.4</version>
+                <version>9.5.5</version>
             </dependency>
             <dependency>
                 <groupId>com.helger</groupId>
                 <artifactId>ph-datetime</artifactId>
-                <version>9.5.4</version>
+                <version>9.5.5</version>
             </dependency>
             <dependency>
                 <groupId>com.helger.peppol</groupId>
@@ -364,7 +364,7 @@
             <dependency>
                 <groupId>dnsjava</groupId>
                 <artifactId>dnsjava</artifactId>
-                <version>3.3.1</version>
+                <version>3.4.1</version>
             </dependency>
             <dependency>
                 <groupId>commons-fileupload</groupId>
@@ -410,12 +410,12 @@
             <dependency>
                 <groupId>com.helger</groupId>
                 <artifactId>ph-commons</artifactId>
-                <version>9.5.4</version>
+                <version>9.5.5</version>
             </dependency>
             <dependency>
                 <groupId>com.helger</groupId>
                 <artifactId>ph-jaxb</artifactId>
-                <version>9.5.4</version>
+                <version>9.5.5</version>
             </dependency>
             <dependency>
                 <groupId>org.xmlunit</groupId>
@@ -430,7 +430,7 @@
             <dependency>
                 <groupId>com.sun.jersey</groupId>
                 <artifactId>jersey-client</artifactId>
-                <version>1.19</version>
+                <version>1.19.4</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
