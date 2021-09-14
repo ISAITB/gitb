@@ -73,6 +73,7 @@ export class SessionDashboardComponent implements OnInit {
   }
   deletePending = false
   deleteSessionsPending = false
+  stopAllPending = false
   sessionIdToShow?: string
 
   domainLoader?: () => Observable<Domain[]>
@@ -375,13 +376,32 @@ export class SessionDashboardComponent implements OnInit {
     this.getCompletedTests()
   }
 
+  stopAll() {
+    this.confirmationDialogService.confirmed('Confirm delete', 'Are you certain you want to terminate all active sessions?', 'Yes', 'No')
+    .subscribe(() => {
+      let result: Observable<void>
+      if (this.dataService.isSystemAdmin) {
+        result = this.testService.stopAll()
+      } else {
+        result = this.testService.stopAllCommunitySessions(this.communityId!)
+      }
+      this.stopAllPending = true
+      result.subscribe(() => {
+        this.queryDatabase()
+        this.popupService.success('Test sessions terminated.')
+      }).add(() => {
+        this.stopAllPending = false
+      })
+    })
+  }
+
   stopSession(session: TestResultForDisplay) {
     this.confirmationDialogService.confirmed('Confirm delete', 'Are you certain you want to terminate this session?', 'Yes', 'No')
     .subscribe(() => {
       session.deletePending = true
       this.testService.stop(session.session)
       .subscribe(() => {
-        this.getActiveTests()
+        this.queryDatabase()
         this.popupService.success('Test session terminated.')
       }).add(() => {
         session.deletePending = false

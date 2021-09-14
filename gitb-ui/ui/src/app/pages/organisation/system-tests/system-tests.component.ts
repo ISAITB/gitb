@@ -58,6 +58,7 @@ export class SystemTestsComponent implements OnInit {
   isPreviousPageDisabled = false
   isNextPageDisabled = false
   deletePending = false
+  stopAllPending = false
   sessionIdToShow?: string
 
   domainLoader?: () => Observable<Domain[]>
@@ -251,7 +252,8 @@ export class SystemTestsComponent implements OnInit {
       startTime: testResult.result.startTime,
       specificationId: testResult.specification?.id,
       actorId: testResult.actor?.id,
-      systemId: testResult.system?.id
+      systemId: testResult.system?.id,
+      organizationId: testResult.organization?.id
     }
     if (completed) {
       result.endTime = testResult.result.endTime
@@ -368,13 +370,27 @@ export class SystemTestsComponent implements OnInit {
     this.activeExpandedCounter.count = 0
   }
 
+  stopAll() {
+    this.confirmationDialogService.confirmed('Confirm delete', 'Are you certain you want to terminate all active sessions?', 'Yes', 'No')
+    .subscribe(() => {
+      let result = this.testService.stopAllOrganisationSessions(this.organisation.id)
+      this.stopAllPending = true
+      result.subscribe(() => {
+        this.queryDatabase()
+        this.popupService.success('Test sessions terminated.')
+      }).add(() => {
+        this.stopAllPending = false
+      })
+    })
+  }
+  
   stopSession(session: TestResultForDisplay) {
     this.confirmationDialogService.confirmed('Confirm delete', 'Are you certain you want to terminate this session?', 'Yes', 'No')
     .subscribe(() => {
       session.deletePending = true
       this.testService.stop(session.session)
       .subscribe(() => {
-        this.getActiveTests()
+        this.queryDatabase()
         this.popupService.success('Test session terminated.')
       }).add(() => {
         session.deletePending = false

@@ -22,6 +22,27 @@ export class TestService {
     })
   }
 
+  stopAll() {
+    return this.restService.post<void>({
+        path: ROUTES.controllers.TestService.stopAll().url,
+        authenticate: true
+    })
+  }
+
+  stopAllCommunitySessions(communityId: number) {
+    return this.restService.post<void>({
+        path: ROUTES.controllers.TestService.stopAllCommunitySessions(communityId).url,
+        authenticate: true
+    })
+  }
+
+  stopAllOrganisationSessions(organisationId: number) {
+    return this.restService.post<void>({
+        path: ROUTES.controllers.TestService.stopAllOrganisationSessions(organisationId).url,
+        authenticate: true
+    })
+  }
+
   getBinaryMetadata(data: string, isBase64: boolean) {
     return this.restService.post<{mimeType: string, extension: string}>({
         path: ROUTES.controllers.TestResultService.getBinaryMetadata().url,

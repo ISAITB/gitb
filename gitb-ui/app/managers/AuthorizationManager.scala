@@ -651,6 +651,10 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     checkTestBedAdmin(request)
   }
 
+  def canManageAnyTestSession(request: RequestWithAttributes[_]):Boolean = {
+    checkTestBedAdmin(request)
+  }
+
   def canUpdateSpecification(request: RequestWithAttributes[_], specId: Long):Boolean = {
     canManageSpecification(request, specId)
   }

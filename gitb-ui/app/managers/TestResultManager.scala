@@ -111,6 +111,38 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
     results
   }
 
+  def getAllRunningSessions(): List[String] = {
+    val results = exec(
+      PersistenceSchema.testResults
+        .filter(_.endTime.isEmpty)
+        .map(x => x.testSessionId)
+        .result.map(_.toList)
+    )
+    results
+  }
+
+  def getRunningSessionsForCommunity(community: Long): List[String] = {
+    val results = exec(
+      PersistenceSchema.testResults
+        .filter(_.communityId === community)
+        .filter(_.endTime.isEmpty)
+        .map(x => x.testSessionId)
+        .result.map(_.toList)
+    )
+    results
+  }
+
+  def getRunningSessionsForOrganisation(organisation: Long): List[String] = {
+    val results = exec(
+      PersistenceSchema.testResults
+        .filter(_.organizationId === organisation)
+        .filter(_.endTime.isEmpty)
+        .map(x => x.testSessionId)
+        .result.map(_.toList)
+    )
+    results
+  }
+
   def updateForUpdatedSystem(id: Long, name: String): DBIO[_] = {
     val q1 = for {t <- PersistenceSchema.testResults if t.sutId === id} yield t.sut
     q1.update(Some(name))

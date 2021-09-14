@@ -18,7 +18,8 @@
         <div class="panel-heading">
             <h4 class="title">Active test sessions</h4>
             <div class="btn-toolbar pull-right">
-                <button type="button" class="btn btn-default" (click)="exportActiveSessionsToCsv()" [pending]="exportActivePending" [disable]="activeTests.length == 0">Export CSV</button>
+                <button type="button" class="btn btn-default" (click)="stopAll()" [pending]="stopAllPending" [disable]="activeTests.length == 0 || exportActivePending">Terminate all</button>
+                <button type="button" class="btn btn-default" (click)="exportActiveSessionsToCsv()" [pending]="exportActivePending" [disable]="activeTests.length == 0 || stopAllPending">Export CSV</button>
                 <button type="button" class="btn btn-default" *ngIf="showCollapseAllActive()" (click)="onCollapseAllActive()">Collapse all</button>
             </div>
         </div>

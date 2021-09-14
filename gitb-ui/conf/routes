@@ -224,6 +224,9 @@ POST	/api/tests/:session_id/start            @controllers.TestService.start(sess
 POST	/api/tests/:session_id/stop             @controllers.TestService.stop(session_id:String)
 POST	/api/tests/:session_id/restart          @controllers.TestService.restart(session_id:String)
 POST    /api/tests/startHeadless                @controllers.TestService.startHeadlessTestSessions
+POST	/api/tests/stopAll                      @controllers.TestService.stopAll()
+POST	/api/tests/stopAllCommunity             @controllers.TestService.stopAllCommunitySessions(communityId:Long)
+POST	/api/tests/stopAllOrganisation          @controllers.TestService.stopAllOrganisationSessions(organisationId:Long)
 
 # WebSocket management API
 GET     /api/ws                                 @controllers.WebSocketService.socket

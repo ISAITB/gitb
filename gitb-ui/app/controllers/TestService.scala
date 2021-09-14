@@ -22,7 +22,7 @@ import scala.concurrent.duration._
 import scala.util.{Failure, Success}
 
 @Singleton
-class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, reportManager: ReportManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager, organisationManager: OrganizationManager, systemManager: SystemManager, testbedClient: managers.TestbedBackendClient, actorSystem: ActorSystem, webSocketActor: WebSocketActor) extends AbstractController(cc) {
+class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, reportManager: ReportManager, conformanceManager: ConformanceManager, authorizationManager: AuthorizationManager, organisationManager: OrganizationManager, systemManager: SystemManager, testbedClient: managers.TestbedBackendClient, actorSystem: ActorSystem, webSocketActor: WebSocketActor, testResultManager: TestResultManager) extends AbstractController(cc) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[TestService])
 
@@ -35,12 +35,11 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
     testbedClient.service().getTestCaseDefinition(request)
   }
 
-  def endSession(session_id:String) = {
+  def endSession(session:String) = {
     val request: BasicCommand = new BasicCommand
-    request.setTcInstanceId(session_id)
+    request.setTcInstanceId(session)
     testbedClient.service().stop(request)
-
-    reportManager.setEndTimeNow(session_id)
+    reportManager.setEndTimeNow(session)
   }
 
   /**
@@ -278,10 +277,34 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
    */
   def stop(session_id:String) = authorizedAction { request =>
     authorizationManager.canExecuteTestSession(request, session_id)
-
     endSession(session_id)
     ResponseConstructor.constructEmptyResponse
   }
+
+  def stopAll() = authorizedAction { request =>
+    authorizationManager.canManageAnyTestSession(request)
+    testResultManager.getAllRunningSessions().foreach { sessionId =>
+      endSession(sessionId)
+    }
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def stopAllCommunitySessions(communityId: Long) = authorizedAction { request =>
+    authorizationManager.canManageCommunity(request, communityId)
+    testResultManager.getRunningSessionsForCommunity(communityId).foreach { sessionId =>
+      endSession(sessionId)
+    }
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def stopAllOrganisationSessions(organisationId: Long) = authorizedAction { request =>
+    authorizationManager.canManageOrganisationBasic(request, organisationId)
+    testResultManager.getRunningSessionsForOrganisation(organisationId).foreach { sessionId =>
+      endSession(sessionId)
+    }
+    ResponseConstructor.constructEmptyResponse
+  }
+
   /**
    * Restarts the test case with same preliminary data
    */
