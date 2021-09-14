@@ -115,7 +115,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
           selfRegOptions: data[1]
         }
       })
-      modalRef.onHide.subscribe(() => {
+      modalRef.onHide!.subscribe(() => {
         this.createPending = false
       })
     })

@@ -75,7 +75,7 @@
         <app-custom-property-form *ngIf="model.selfRegOption" [tbProperties]="model.selfRegOption!.organisationProperties" [tbShowFormHeader]="false" [tbFormPadded]="false" [tbColInputLess]="1" [tbShowRequiredAsterisks]="model.selfRegOption!.forceRequiredProperties"></app-custom-property-form>
         <div *ngIf="!sso">
           <div class="form-separator form-separator-top-padding">
-              <h4 class="title">Administrator account details <span tooltip="Through your administrator account you can manage your {{dataService.labelOrganisationLower()}} users, configure your conformance statements and execute tests"><i class="fa fa-question-circle"></i></span></h4>
+              <h4 class="title">Administrator account details <span [tooltip]="'Through your administrator account you can manage your' + dataService.labelOrganisationLower() + ' users, configure your conformance statements and execute tests'" [containerClass]="'tooltipContainerBig'"><i class="fa fa-question-circle"></i></span></h4>
           </div>
           <div class="form-group">
               <label class="col-xs-3 control-label" for="adminName">* Name:</label>

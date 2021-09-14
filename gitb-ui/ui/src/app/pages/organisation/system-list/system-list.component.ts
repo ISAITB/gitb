@@ -149,7 +149,7 @@ export class SystemListComponent implements OnInit, OnDestroy {
       modal.content!.reload.subscribe(() => {
         this.getSystems(false)
       })
-      modal.onHidden.subscribe(() => {
+      modal.onHidden!.subscribe(() => {
         this.editing = false
       })
     }

@@ -17,7 +17,7 @@ import { UserInteractionInput } from 'src/app/types/user-interaction-input';
       'box-shadow: 0 0px 0px rgb(82 168 236 / 80%) inset, 0 0 5px rgb(82 168 236 / 80%);'+
       'outline: 0 none; '+
     '}' ,
-    'textarea { resize: vertical; } }'
+    'textarea { resize: vertical; }'
   ]
 })
 export class ProvideInputModalComponent implements OnInit, AfterViewInit {

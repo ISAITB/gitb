@@ -1,5 +1,5 @@
 <div [ngClass]="{'inline-tooltip': inline}">
     <div [ngClass]="{'form-control-static': (!inline || inlineType == 'button'), 'checkLabel': (inline && inlineType == 'checkLabel'), 'checkLabelText': (inline && inlineType == 'checkLabelText'), 'check': (inline && inlineType == 'check'), 'radio': (inline && inlineType == 'radio')}">
-        <span [tooltip]="tbTooltip"><i class="fa fa-question-circle"></i></span>
+        <span [tooltip]="tbTooltip" [containerClass]="'tooltipContainer'"><i class="fa fa-question-circle"></i></span>
     </div>
 </div>
