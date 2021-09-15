@@ -389,19 +389,19 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
   }
 
   def getConformanceOverview() = authorizedAction { request =>
-    val communityIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.COMMUNITY_IDS)
+    val communityIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.COMMUNITY_IDS)
     authorizationManager.canViewConformanceOverview(request, communityIds)
-    val fullResults = ParameterExtractor.requiredQueryParameter(request, Parameters.FULL).toBoolean
-    val domainIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.DOMAIN_IDS)
-    val specIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SPEC_IDS)
-    val organizationIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.ORG_IDS)
-    val systemIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SYSTEM_IDS)
-    val actorIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.ACTOR_IDS)
-    val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalQueryParameter(request, Parameters.ORGANISATION_PARAMETERS))
-    val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalQueryParameter(request, Parameters.SYSTEM_PARAMETERS))
-    val forExport: Boolean = ParameterExtractor.optionalQueryParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
-    val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
-    val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
+    val fullResults = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL).toBoolean
+    val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
+    val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
+    val organizationIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ORG_IDS)
+    val systemIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SYSTEM_IDS)
+    val actorIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ACTOR_IDS)
+    val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.ORGANISATION_PARAMETERS))
+    val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_PARAMETERS))
+    val forExport: Boolean = ParameterExtractor.optionalBodyParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
+    val sortColumn = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_COLUMN)
+    val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
     var results: List[ConformanceStatementFull] = null
     if (fullResults) {
       results = conformanceManager.getConformanceStatementsFull(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, orgParameters, sysParameters, sortColumn, sortOrder)

@@ -59,8 +59,6 @@ DELETE  /api/suts/:sut_id                       @controllers.SystemService.delet
 POST    /api/suts/:sut_id/conformance           @controllers.SystemService.defineConformanceStatement(sut_id : Long)
 DELETE  /api/suts/:sut_id/conformance           @controllers.SystemService.deleteConformanceStatement(sut_id: Long)
 GET     /api/suts/:sut_id/conformance           @controllers.SystemService.getConformanceStatements(sut_id : Long)
-#GET	/api/suts/:sut_id/configs               @controllers.SystemService.getSystemConfigurations(sut_id : Long)
-#POST	/api/suts/:sut_id/configs               @controllers.SystemService.updateSystemConfigurations(sut_id : Long)
 GET	    /api/vendor/systems                     @controllers.SystemService.getSystemsByOrganization
 GET	    /api/vendor/systems/community           @controllers.SystemService.getSystemsByCommunity(communityId: Long)
 POST	/api/vendor/systems/register            @controllers.SystemService.registerSystemWithOrganization
@@ -70,7 +68,7 @@ GET	    /api/specDomain                         @controllers.ConformanceService.
 GET	    /api/domains                            @controllers.ConformanceService.getDomains
 GET	    /api/domains/system                     @controllers.ConformanceService.getDomainsForSystem(systemId: Long)
 GET	    /api/domains/community                  @controllers.ConformanceService.getCommunityDomain
-GET     /api/domains/conformance                @controllers.ConformanceService.getConformanceOverview
+POST    /api/domains/conformance                @controllers.ConformanceService.getConformanceOverview
 POST    /api/domains                            @controllers.ConformanceService.createDomain
 DELETE  /api/domains/:domain_id                 @controllers.ConformanceService.deleteDomain(domain_id: Long)
 POST    /api/domains/:domain_id                 @controllers.ConformanceService.updateDomain(domain_id: Long)
@@ -132,8 +130,8 @@ GET     /api/dashboard/tests/all                @controllers.RepositoryService.g
 GET     /api/dashboard/tests/system             @controllers.RepositoryService.getTestCasesForSystem(systemId: Long)
 GET     /api/dashboard/tests/community          @controllers.RepositoryService.getTestCasesForCommunity(communityId: Long)
 GET     /api/dashboard/systems                  @controllers.SystemService.getSystems
-GET     /api/dashboard/active                   @controllers.ReportService.getActiveTestResults
-GET     /api/dashboard/finished                 @controllers.ReportService.getFinishedTestResults
+POST    /api/dashboard/active                   @controllers.ReportService.getActiveTestResults
+POST    /api/dashboard/finished                 @controllers.ReportService.getFinishedTestResults
 GET     /api/dashboard/config                   @controllers.SystemConfigurationService.getSessionAliveTime
 POST    /api/dashboard/config                   @controllers.SystemConfigurationService.updateSessionAliveTime
 GET     /api/dashboard/suites/all               @controllers.TestSuiteService.getAllTestSuitesWithTestCases
@@ -245,8 +243,8 @@ POST    /api/endpoints/:endpoint_id/config      @controllers.SystemService.saveE
 DELETE  /api/endpoints/:endpoint_id/config      @controllers.SystemService.deleteEndpointConfiguration(endpoint_id: Long)
 
 # Report management API
-GET     /api/reports/active                     @controllers.ReportService.getSystemActiveTestResults
-GET     /api/reports                            @controllers.ReportService.getTestResults
+POST    /api/reports/active                     @controllers.ReportService.getSystemActiveTestResults
+POST    /api/reports                            @controllers.ReportService.getTestResults
 GET     /api/reports/:session_id                @controllers.ReportService.getTestResultOfSession(session_id: String)
 POST    /api/reports/create                     @controllers.ReportService.createTestReport
 GET     /api/reports/:session_id/steps          @controllers.ReportService.getTestStepResults(session_id:String)

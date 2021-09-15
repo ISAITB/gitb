@@ -645,6 +645,15 @@ object ParameterExtractor {
     list
   }
 
+  def optionalListBodyParameter(request:Request[AnyContent],parameter:String): Option[List[String]] = {
+    val listStr = ParameterExtractor.optionalBodyParameter(request, parameter)
+    val list = listStr match {
+      case Some(str) => Some(str.split(",").toList)
+      case None => None
+    }
+    list
+  }
+
   def optionalLongListQueryParameter(request:Request[AnyContent],parameter:String): Option[List[Long]] = {
     val listStr = ParameterExtractor.optionalQueryParameter(request, parameter)
     val list = listStr match {

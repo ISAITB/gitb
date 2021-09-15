@@ -193,10 +193,10 @@ export class ConformanceService {
     params.export = forExport != undefined && forExport
     params.sort_column = sortColumn
     params.sort_order = sortOrder
-    return this.restService.get<ConformanceResultFullList>({
+    return this.restService.post<ConformanceResultFullList>({
       path: ROUTES.controllers.ConformanceService.getConformanceOverview().url,
       authenticate: true,
-      params: params
+      data: params
     })
   }
 

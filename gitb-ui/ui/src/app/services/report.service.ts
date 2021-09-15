@@ -119,19 +119,19 @@ export class ReportService {
   getActiveTestResults(criteria: TestResultSearchCriteria, forExport?: boolean) {
     const params = this.criteriaToRequestParams(criteria, true)
     params.export = forExport != undefined && forExport
-    return this.restService.get<TestResultData>({
+    return this.restService.post<TestResultData>({
       path: ROUTES.controllers.ReportService.getActiveTestResults().url,
       authenticate: true,
-      params: params
+      data: params
     })
   }
 
   getSystemActiveTestResults(systemId: number, criteria: TestResultSearchCriteria) {
     const params = this.criteriaToRequestParams(criteria, true, systemId)
-    return this.restService.get<TestResultData>({
+    return this.restService.post<TestResultData>({
       path: ROUTES.controllers.ReportService.getSystemActiveTestResults().url,
       authenticate: true,
-      params: params
+      data: params
     })
   }
 
@@ -140,10 +140,10 @@ export class ReportService {
     params.page = page
     params.limit = limit
     params.export = forExport !== undefined && forExport
-    return this.restService.get<TestResultData>({
+    return this.restService.post<TestResultData>({
       path: ROUTES.controllers.ReportService.getFinishedTestResults().url,
       authenticate: true,
-      params: params
+      data: params
     })
   }
 
@@ -151,10 +151,10 @@ export class ReportService {
     const params = this.criteriaToRequestParams(criteria, false, systemId)
     params.page = page
     params.limit = limit
-    return this.restService.get<TestResultData>({
+    return this.restService.post<TestResultData>({
       path: ROUTES.controllers.ReportService.getTestResults().url,
       authenticate: true,
-      params: params
+      data: params
     })
   }
 
