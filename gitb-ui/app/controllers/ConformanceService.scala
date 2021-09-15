@@ -400,11 +400,13 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
     val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalQueryParameter(request, Parameters.ORGANISATION_PARAMETERS))
     val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalQueryParameter(request, Parameters.SYSTEM_PARAMETERS))
     val forExport: Boolean = ParameterExtractor.optionalQueryParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
+    val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
+    val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
     var results: List[ConformanceStatementFull] = null
     if (fullResults) {
-      results = conformanceManager.getConformanceStatementsFull(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, orgParameters, sysParameters)
+      results = conformanceManager.getConformanceStatementsFull(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, orgParameters, sysParameters, sortColumn, sortOrder)
     } else {
-      results = conformanceManager.getConformanceStatements(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, orgParameters, sysParameters)
+      results = conformanceManager.getConformanceStatements(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, orgParameters, sysParameters, sortColumn, sortOrder)
     }
     var orgParameterDefinitions: Option[List[OrganisationParameters]] = None
     var orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None

@@ -40,6 +40,11 @@ export class Constants {
 		SYSTEM_PROPERTY: 'sys_property'
 	}
 
+	public static ORDER = {
+		ASC: 'asc',
+		DESC: 'desc'
+	}
+
     public static USER_ROLE = {
 		VENDOR_ADMIN: 1,
 		VENDOR_USER : 2,

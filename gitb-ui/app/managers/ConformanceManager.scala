@@ -1,9 +1,6 @@
 package managers
 
-import java.util
-
 import com.gitb.core.{ActorConfiguration, Configuration}
-import javax.inject.{Inject, Singleton}
 import models.Enums.{TestResultStatus, TriggerDataType}
 import models._
 import models.prerequisites.PrerequisiteUtil
@@ -13,6 +10,8 @@ import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{MimeUtil, RepositoryUtils}
 
+import java.util
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -560,8 +559,8 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 		spec
 	}
 
-	def getConformanceStatementsFull(domainIds: Option[List[Long]], specIds: Option[List[Long]], actorIds: Option[List[Long]], communityIds: Option[List[Long]], organizationIds: Option[List[Long]], systemIds: Option[List[Long]], orgParameters: Option[Map[Long, Set[String]]], sysParameters: Option[Map[Long, Set[String]]]): List[ConformanceStatementFull] = {
-		val query = PersistenceSchema.conformanceResults
+	def getConformanceStatementsFull(domainIds: Option[List[Long]], specIds: Option[List[Long]], actorIds: Option[List[Long]], communityIds: Option[List[Long]], organizationIds: Option[List[Long]], systemIds: Option[List[Long]], orgParameters: Option[Map[Long, Set[String]]], sysParameters: Option[Map[Long, Set[String]]], sortColumn: Option[String], sortOrder: Option[String]): List[ConformanceStatementFull] = {
+		var query = PersistenceSchema.conformanceResults
 			.join(PersistenceSchema.specifications).on(_.spec === _.id)
 			.join(PersistenceSchema.actors).on(_._1.actor === _.id)
 			.join(PersistenceSchema.domains).on(_._2.domain === _.id)
@@ -576,13 +575,34 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 			.filterOpt(communityIds)((q, ids) => q._1._1._2.id inSet ids)
 			.filterOpt(organisationIdsToUse(organizationIds, orgParameters))((q, ids) => q._1._1._1._2.id inSet ids)
 			.filterOpt(systemIdsToUse(systemIds, sysParameters))((q, ids) => q._1._1._1._1._1._1._1._1.sut inSet ids)
-			.sortBy(x => (x._1._1._2.shortname, x._1._1._1._2.shortname, x._1._1._1._1._2.shortname, x._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._1._2.shortname, x._1._1._1._1._1._1._2.actorId, x._1._2.shortname, x._2.shortname))
+
+		// Apply sorting
+		val sortColumnToApply = sortColumn.getOrElse("community")
+		val sortOrderToApply = sortOrder.getOrElse("asc")
+		query = query.sortBy(x => {
+			val community = x._1._1._2.shortname.asc
+			val organisation = x._1._1._1._2.shortname.asc
+			val system = x._1._1._1._1._2.shortname.asc
+			val domain = x._1._1._1._1._1._2.shortname.asc
+			val specification = x._1._1._1._1._1._1._1._2.shortname.asc
+			val actor = x._1._1._1._1._1._1._2.actorId.asc
+			val testSuite = x._1._2.shortname.asc
+			val testCase = x._2.shortname.asc
+			sortColumnToApply match {
+				case "organisation" => (if (sortOrderToApply == "asc") organisation.asc else organisation.desc, community, system, domain, specification, actor, testSuite, testCase)
+				case "system" => (if (sortOrderToApply == "asc") system.asc else system.desc, community, organisation, domain, specification, actor, testSuite, testCase)
+				case "domain" => (if (sortOrderToApply == "asc") domain.asc else domain.desc, specification, community, organisation, system, actor, testSuite, testCase)
+				case "specification" => (if (sortOrderToApply == "asc") specification.asc else specification.desc, community, organisation, system, domain, actor, testSuite, testCase)
+				case "actor" => (if (sortOrderToApply == "asc") actor.asc else actor.desc, community, organisation, system, domain, specification, testSuite, testCase)
+				case _ => (if (sortOrderToApply == "asc") community.asc else community.desc, organisation, system, domain, specification, actor, testSuite, testCase) // Community (or default)
+			}
+		})
 
 		val results = exec(query
 			.result
   		.map(_.toList))
 
-		var statements = new ListBuffer[ConformanceStatementFull]
+		val statements = new ListBuffer[ConformanceStatementFull]
 		results.foreach { result =>
 			val resultCommunities = result._1._1._2
 			val resultConfResult = result._1._1._1._1._1._1._1._1
@@ -607,8 +627,8 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 		statements.toList
 	}
 
-	def getConformanceStatements(domainIds: Option[List[Long]], specIds: Option[List[Long]], actorIds: Option[List[Long]], communityIds: Option[List[Long]], organizationIds: Option[List[Long]], systemIds: Option[List[Long]], orgParameters: Option[Map[Long, Set[String]]], sysParameters: Option[Map[Long, Set[String]]]): List[ConformanceStatementFull] = {
-		val query = PersistenceSchema.conformanceResults
+	def getConformanceStatements(domainIds: Option[List[Long]], specIds: Option[List[Long]], actorIds: Option[List[Long]], communityIds: Option[List[Long]], organizationIds: Option[List[Long]], systemIds: Option[List[Long]], orgParameters: Option[Map[Long, Set[String]]], sysParameters: Option[Map[Long, Set[String]]], sortColumn: Option[String], sortOrder: Option[String]): List[ConformanceStatementFull] = {
+		var query = PersistenceSchema.conformanceResults
 			.join(PersistenceSchema.specifications).on(_.spec === _.id)
 			.join(PersistenceSchema.actors).on(_._1.actor === _.id)
 			.join(PersistenceSchema.domains).on(_._2.domain === _.id)
@@ -621,7 +641,26 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 			.filterOpt(communityIds)((q, ids) => q._2.id inSet ids)
 			.filterOpt(organisationIdsToUse(organizationIds, orgParameters))((q, ids) => q._1._2.id inSet ids)
 			.filterOpt(systemIdsToUse(systemIds, sysParameters))((q, ids) => q._1._1._1._1._1._1.sut inSet ids)
-			.sortBy(x => (x._2.shortname, x._1._2.shortname, x._1._1._2.shortname, x._1._1._1._2.shortname, x._1._1._1._1._1._2.shortname, x._1._1._1._1._2.actorId))
+
+		// Apply sorting
+		val sortColumnToApply = sortColumn.getOrElse("community")
+		val sortOrderToApply = sortOrder.getOrElse("asc")
+		query = query.sortBy(x => {
+			val community = x._2.shortname.asc
+			val organisation = x._1._2.shortname.asc
+			val system = x._1._1._2.shortname.asc
+			val domain = x._1._1._1._2.shortname.asc
+			val specification = x._1._1._1._1._1._2.shortname.asc
+			val actor = x._1._1._1._1._2.actorId.asc
+			sortColumnToApply match {
+				case "organisation" => (if (sortOrderToApply == "asc") organisation.asc else organisation.desc, community, system, domain, specification, actor)
+				case "system" => (if (sortOrderToApply == "asc") system.asc else system.desc, community, organisation, domain, specification, actor)
+				case "domain" => (if (sortOrderToApply == "asc") domain.asc else domain.desc, specification, community, organisation, system, actor)
+				case "specification" => (if (sortOrderToApply == "asc") specification.asc else specification.desc, community, organisation, system, domain, actor)
+				case "actor" => (if (sortOrderToApply == "asc") actor.asc else actor.desc, community, organisation, system, domain, specification)
+				case _ => (if (sortOrderToApply == "asc") community.asc else community.desc, organisation, system, domain, specification, actor) // Community (or default)
+			}
+		})
 
 		val results = exec(query.result.map(_.toList))
 		val conformanceMap = new util.LinkedHashMap[String, ConformanceStatementFull]

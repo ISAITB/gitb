@@ -163,7 +163,7 @@ export class ConformanceService {
     })
   }
 
-  getConformanceOverview(criteria: TestResultSearchCriteria, fullResults: boolean, forExport: boolean) {
+  getConformanceOverview(criteria: TestResultSearchCriteria, fullResults: boolean, forExport: boolean, sortColumn: string, sortOrder: string) {
     let params: any = {}
     params.full = fullResults
     if (criteria.domainIds != undefined && criteria.domainIds.length > 0) {
@@ -191,6 +191,8 @@ export class ConformanceService {
       params.sys_params = JSON.stringify(criteria.systemProperties)
     }
     params.export = forExport != undefined && forExport
+    params.sort_column = sortColumn
+    params.sort_order = sortOrder
     return this.restService.get<ConformanceResultFullList>({
       path: ROUTES.controllers.ConformanceService.getConformanceOverview().url,
       authenticate: true,

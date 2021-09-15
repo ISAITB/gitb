@@ -25,7 +25,6 @@ import { Organisation } from 'src/app/types/organisation.type';
 import { Specification } from 'src/app/types/specification';
 import { System } from 'src/app/types/system';
 import { SystemParameter } from 'src/app/types/system-parameter';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
 
 @Component({
@@ -43,7 +42,6 @@ export class ConformanceDashboardComponent implements OnInit {
   }
   communityId?: number
   columnCount!: number
-  tableColumns: TableColumnDefinition[] = []
   expandedStatements: { [key: string]: any, count: number } = {
     count: 0
   }
@@ -64,6 +62,8 @@ export class ConformanceDashboardComponent implements OnInit {
   currentPage = 1
   prevDisabled = false
   nextDisabled = false
+  sortOrder = Constants.ORDER.ASC
+  sortColumn = Constants.FILTER_TYPE.COMMUNITY
 
   constructor(
     public dataService: DataService,
@@ -77,13 +77,13 @@ export class ConformanceDashboardComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
-		if (this.dataService.isCommunityAdmin)
-			this.communityId = this.dataService.community!.id
 		if (this.dataService.isSystemAdmin) {
 			this.columnCount = 9
 			this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
 			this.filterState.filters.push(Constants.FILTER_TYPE.COMMUNITY)
     } else if (this.dataService.isCommunityAdmin) {
+      this.sortColumn = Constants.FILTER_TYPE.ORGANISATION
+			this.communityId = this.dataService.community!.id
 			if (this.dataService.community!.domain == undefined) {
 				this.columnCount = 8
 				this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
@@ -91,38 +91,6 @@ export class ConformanceDashboardComponent implements OnInit {
 				this.columnCount = 7
       }
     }
-		if (this.dataService.isCommunityAdmin) {
-			this.tableColumns.push({
-				field: 'communityName',
-				title: 'Community'
-			})
-    }
-		this.tableColumns.push({
-			field: 'organizationName',
-			title: this.dataService.labelOrganisation()
-		})
-		this.tableColumns.push({
-			field: 'systemName',
-			title: this.dataService.labelSystem()
-		})
-		if (this.dataService.community?.domainId == undefined) {
-			this.tableColumns.push({
-				field: 'domainName',
-				title: this.dataService.labelDomain()
-			})
-    }
-		this.tableColumns.push({
-			field: 'specName',
-			title: this.dataService.labelSpecification()
-		})
-		this.tableColumns.push({
-			field: 'actorName',
-			title: this.dataService.labelActor()
-		})
-		this.tableColumns.push({
-			field: 'status',
-			title: 'Status'
-		})
     this.initFilterDataLoaders()
     this.getConformanceStatements()
   }
@@ -212,7 +180,7 @@ export class ConformanceDashboardComponent implements OnInit {
 	getConformanceStatementsInternal(fullResults: boolean, forExport: boolean) {
     const result = new Observable<ConformanceResultFullList>((subscriber) => {
       let params = this.getCurrentSearchCriteria()
-      this.conformanceService.getConformanceOverview(params, fullResults, forExport)
+      this.conformanceService.getConformanceOverview(params, fullResults, forExport, this.sortColumn, this.sortOrder)
       .subscribe((data: ConformanceResultFullList) => {
         for (let conformanceStatement of data.data) {
           const completedCount = Number(conformanceStatement.completed)
@@ -236,7 +204,7 @@ export class ConformanceDashboardComponent implements OnInit {
     .subscribe((data) => {
 			this.conformanceStatements = data.data
       this.conformanceStatementsTotalCount = this.conformanceStatements.length
-      this.currentPage = 1      
+      this.currentPage = 1
       this.selectPage()
 			this.onCollapseAll()
     }).add(() => {
@@ -411,7 +379,7 @@ export class ConformanceDashboardComponent implements OnInit {
 
   private showSettingsPopup(statement: ConformanceResultFull) {
     const modalRef = this.modalService.show(ConformanceCertificateModalComponent, {
-      class: 'modal-lg', 
+      class: 'modal-lg',
       initialState: {
         settings: JSON.parse(JSON.stringify(this.settings)),
         conformanceStatement: statement
@@ -494,6 +462,20 @@ export class ConformanceDashboardComponent implements OnInit {
       this.nextDisabled = false
       this.prevDisabled = false
     }
+  }
+
+  sort(column: string) {
+    if (column == this.sortColumn) {
+      if (this.sortOrder == Constants.ORDER.DESC) {
+        this.sortOrder = Constants.ORDER.ASC
+      } else {
+        this.sortOrder = Constants.ORDER.DESC
+      }
+    } else {
+      this.sortColumn = column
+      this.sortOrder = Constants.ORDER.DESC
+    }
+    this.getConformanceStatements()
   }
 
 }

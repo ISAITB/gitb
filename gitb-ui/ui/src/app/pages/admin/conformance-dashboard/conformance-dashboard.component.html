@@ -23,12 +23,12 @@
 		<table class="table table-directive expandable-table">
 			<thead>
                 <tr>
-                    <th *ngIf="!dataService.isCommunityAdmin">Community</th>
-                    <th>{{dataService.labelOrganisation()}}</th>
-                    <th>{{dataService.labelSystem()}}</th>
-                    <th *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community!.domain == undefined)">{{dataService.labelDomain()}}</th>
-                    <th>{{dataService.labelSpecification()}}</th>
-                    <th>{{dataService.labelActor()}}</th>
+                    <th class="sortableHeader" *ngIf="!dataService.isCommunityAdmin" (click)="sort(Constants.FILTER_TYPE.COMMUNITY)">Community <i *ngIf="sortColumn == Constants.FILTER_TYPE.COMMUNITY" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
+                    <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ORGANISATION)">{{dataService.labelOrganisation()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.ORGANISATION" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
+                    <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SYSTEM)">{{dataService.labelSystem()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.SYSTEM" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
+                    <th class="sortableHeader" *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community!.domain == undefined)" (click)="sort(Constants.FILTER_TYPE.DOMAIN)">{{dataService.labelDomain()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.DOMAIN" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
+                    <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SPECIFICATION)">{{dataService.labelSpecification()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.SPECIFICATION" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
+                    <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ACTOR)">{{dataService.labelActor()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.ACTOR" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
                     <th width="20%">Test results</th>
                     <th class="th-min-centered">Status</th>
                     <th class="operations">Export</th>
