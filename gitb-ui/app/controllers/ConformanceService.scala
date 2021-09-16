@@ -309,15 +309,14 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
 
   def getConformanceStatus(actorId: Long, sutId: Long) = authorizedAction { request =>
     authorizationManager.canViewConformanceStatus(request, actorId, sutId)
-    val loadSessionData = ParameterExtractor.optionalBooleanQueryParameter(request, Parameters.SESSION_DATA).getOrElse(false)
-    val results = conformanceManager.getConformanceStatus(actorId, sutId, None, loadSessionData)
+    val results = conformanceManager.getConformanceStatus(actorId, sutId, None)
     val json: String = JsonUtil.jsConformanceResultList(results).toString
     ResponseConstructor.constructJsonResponse(json)
   }
 
   def getConformanceStatusForTestSuite(actorId: Long, sutId: Long, testSuite: Long) = authorizedAction { request =>
     authorizationManager.canViewConformanceStatus(request, actorId, sutId)
-    val results = conformanceManager.getConformanceStatus(actorId, sutId, Some(testSuite), loadSessionData = false)
+    val results = conformanceManager.getConformanceStatus(actorId, sutId, Some(testSuite))
     val json: String = JsonUtil.jsConformanceResultList(results).toString
     ResponseConstructor.constructJsonResponse(json)
   }
@@ -400,13 +399,22 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
     val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.ORGANISATION_PARAMETERS))
     val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_PARAMETERS))
     val forExport: Boolean = ParameterExtractor.optionalBodyParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
+    val status = ParameterExtractor.optionalListBodyParameter(request, Parameters.STATUS)
+    val updateTimeBegin = ParameterExtractor.optionalBodyParameter(request, Parameters.UPDATE_TIME_BEGIN)
+    val updateTimeEnd = ParameterExtractor.optionalBodyParameter(request, Parameters.UPDATE_TIME_END)
     val sortColumn = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_COLUMN)
     val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
     var results: List[ConformanceStatementFull] = null
     if (fullResults) {
-      results = conformanceManager.getConformanceStatementsFull(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, orgParameters, sysParameters, sortColumn, sortOrder)
+      results = conformanceManager.getConformanceStatementsFull(domainIds, specIds, actorIds,
+        communityIds, organizationIds, systemIds, orgParameters, sysParameters,
+        status, updateTimeBegin, updateTimeEnd,
+        sortColumn, sortOrder)
     } else {
-      results = conformanceManager.getConformanceStatements(domainIds, specIds, actorIds, communityIds, organizationIds, systemIds, orgParameters, sysParameters, sortColumn, sortOrder)
+      results = conformanceManager.getConformanceStatements(domainIds, specIds, actorIds,
+        communityIds, organizationIds, systemIds, orgParameters, sysParameters,
+        status, updateTimeBegin, updateTimeEnd,
+        sortColumn, sortOrder)
     }
     var orgParameterDefinitions: Option[List[OrganisationParameters]] = None
     var orgParameterValues: Option[scala.collection.mutable.Map[Long, scala.collection.mutable.Map[Long, String]]] = None

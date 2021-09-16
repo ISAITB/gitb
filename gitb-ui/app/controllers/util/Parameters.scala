@@ -14,10 +14,13 @@ object Parameters {
   val ORG_IDS = "organization_ids"
   val SYSTEM_IDS = "system_ids"
   val RESULTS = "results"
+  val STATUS = "status"
   val START_TIME_BEGIN = "start_time_begin"
   val START_TIME_END = "start_time_end"
   val END_TIME_BEGIN = "end_time_begin"
   val END_TIME_END = "end_time_end"
+  val UPDATE_TIME_BEGIN = "update_time_begin"
+  val UPDATE_TIME_END = "update_time_end"
 
   //Dashboard sorting
   val SORT_COLUMN = "sort_column"
@@ -157,7 +160,6 @@ object Parameters {
   val HIDDEN = "hidden"
   val DEPENDS_ON = "dependsOn"
   val DEPENDS_ON_VALUE = "dependsOnValue"
-  val SESSION_DATA     = "sessionData"
 
   val FILE       = "file"
 	val LIMIT      = "limit"

@@ -39,6 +39,7 @@ export class ConformanceStatementsComponent implements OnInit {
       { field: 'domainFull', title: this.dataService.labelDomain() },
       { field: 'specificationFull', title: this.dataService.labelSpecification() },
       { field: 'actorFull', title: this.dataService.labelActor() },
+      { field: 'updateTime', title: 'Updated' },
       { field: 'results', title: 'Test results' },
       { field: 'status', title: 'Status', iconFn: this.dataService.iconForTestResult }
     ]
@@ -57,6 +58,7 @@ export class ConformanceStatementsComponent implements OnInit {
         domainId: conformanceStatement.domainId,
         domain: conformanceStatement.domain,
         domainFull: conformanceStatement.domainFull,
+        updateTime: conformanceStatement.updateTime,
         results: this.dataService.testStatusText(Number(conformanceStatement.results.completed), Number(conformanceStatement.results.failed), Number(conformanceStatement.results.undefined)),
         status: this.dataService.conformanceStatusForTests(Number(conformanceStatement.results.completed), Number(conformanceStatement.results.failed), Number(conformanceStatement.results.undefined))
       }

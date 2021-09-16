@@ -37,7 +37,7 @@ export class ConformanceDashboardComponent implements OnInit {
   exportPending = false
   dataStatus = {status: Constants.STATUS.PENDING}
   filterState: FilterState = {
-    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY ],
+    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.END_TIME ],
     updatePending: false
   }
   communityId?: number
@@ -77,6 +77,9 @@ export class ConformanceDashboardComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.filterState.names = {}
+    this.filterState.names[Constants.FILTER_TYPE.RESULT] = 'Status'
+    this.filterState.names[Constants.FILTER_TYPE.END_TIME] = 'Last update time'
 		if (this.dataService.isSystemAdmin) {
 			this.columnCount = 9
 			this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
@@ -171,6 +174,9 @@ export class ConformanceDashboardComponent implements OnInit {
       searchCriteria.actorIds = filterData[Constants.FILTER_TYPE.ACTOR]
       searchCriteria.organisationIds = filterData[Constants.FILTER_TYPE.ORGANISATION]
       searchCriteria.systemIds = filterData[Constants.FILTER_TYPE.SYSTEM]
+      searchCriteria.results = filterData[Constants.FILTER_TYPE.RESULT]
+      searchCriteria.endTimeBeginStr = filterData.endTimeBeginStr
+      searchCriteria.endTimeEndStr = filterData.endTimeEndStr
       searchCriteria.organisationProperties = filterData.organisationProperties
       searchCriteria.systemProperties = filterData.systemProperties
     }
@@ -252,10 +258,10 @@ export class ConformanceDashboardComponent implements OnInit {
       this.expand(statement)
       if (statement.testCases == undefined) {
         statement.testCasesLoaded = false
-        this.conformanceService.getConformanceStatus(statement.actorId, statement.systemId, true)
+        this.conformanceService.getConformanceStatus(statement.actorId, statement.systemId)
         .subscribe((data) => {
           const testCases: Partial<ConformanceStatusItem>[] = []
-          for (let result of data) {
+          for (let result of data.items) {
             testCases.push({
               id: result.testCaseId,
               sessionId: result.sessionId,

@@ -11,5 +11,6 @@ export interface ConformanceStatementRepresentation {
     specificationFull: string
     results: string
     status: string
+    updateTime?: string
     
 }

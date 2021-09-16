@@ -45,6 +45,7 @@ export class ConformanceStatementComponent implements OnInit {
   hasTests = false
   testSuites: ConformanceTestSuite[] = []
   testStatus = ''
+  lastUpdate?: string
   conformanceStatus = ''
   allTestsSuccessful = false
   actor?: Actor
@@ -92,11 +93,7 @@ export class ConformanceStatementComponent implements OnInit {
       let testSuiteResults: ConformanceTestSuite[] = []
       let testSuiteIds: number[] = []
       let testSuiteData: {[key: number]: ConformanceTestSuite} = {}
-      let completedCount = 0
-      let failedCount = 0
-      let undefinedCount = 0
-      let totalCount = 0
-      for (let result of data) {
+      for (let result of data.items) {
         let testCase: ConformanceTestCase = {
           id: result.testCaseId,
           sname: result.testCaseName,
@@ -104,15 +101,8 @@ export class ConformanceStatementComponent implements OnInit {
           outputMessage: result.outputMessage,
           hasDocumentation: result.testCaseHasDocumentation,
           sessionId: result.sessionId,
-          result: result.result
-        }
-        totalCount += 1
-        if (testCase.result == Constants.TEST_CASE_RESULT.FAILURE) {
-          failedCount += 1
-        } else if (testCase.result == Constants.TEST_CASE_RESULT.UNDEFINED) {
-          undefinedCount += 1
-        } else {
-          completedCount += 1
+          result: result.result,
+          updateTime: result.sessionTime
         }
         if (testSuiteData[result.testSuiteId] == undefined) {
           let currentTestSuite: ConformanceTestSuite = {
@@ -139,14 +129,15 @@ export class ConformanceStatementComponent implements OnInit {
         }
         testSuiteData[result.testSuiteId].testCases.push(testCase)
       }
-      this.hasTests = failedCount > 0 || completedCount > 0
+      this.hasTests = data.summary.failed > 0 || data.summary.completed > 0
       for (let testSuiteId of testSuiteIds) {
         testSuiteResults.push(testSuiteData[testSuiteId])
       }
       this.testSuites = testSuiteResults
-      this.testStatus = this.dataService.testStatusText(completedCount, failedCount, undefinedCount)
-      this.conformanceStatus = this.dataService.conformanceStatusForTests(completedCount, failedCount, undefinedCount)
-      this.allTestsSuccessful = completedCount == totalCount
+      this.testStatus = this.dataService.testStatusText(data.summary.completed, data.summary.failed, data.summary.undefined)
+      this.lastUpdate = data.summary.updateTime
+      this.conformanceStatus = data.summary.result
+      this.allTestsSuccessful = data.summary.failed == 0 && data.summary.undefined == 0
     }).add(() => {
       this.loadingStatus.status = Constants.STATUS.FINISHED
     })

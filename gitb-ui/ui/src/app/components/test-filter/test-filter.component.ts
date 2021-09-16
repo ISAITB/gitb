@@ -24,8 +24,7 @@ import { CustomProperty } from '../custom-property-filter/custom-property';
 @Component({
   selector: 'app-test-filter',
   templateUrl: './test-filter.component.html',
-  styles: [
-  ]
+  styleUrls: [ './test-filter.component.less' ]
 })
 export class TestFilterComponent implements OnInit {
 
@@ -77,12 +76,35 @@ export class TestFilterComponent implements OnInit {
   loadingSystemProperties = false
   applicableCommunityId?: number
   filterDataLoaded = false
+  names: {[key: string]: string} = {}
 
   constructor(
     public dataService: DataService
   ) { }
 
   ngOnInit(): void {
+    // Set up filter title names
+    this.names[Constants.FILTER_TYPE.ACTOR] = this.dataService.labelActor()
+    this.names[Constants.FILTER_TYPE.COMMUNITY] = 'Community'
+    this.names[Constants.FILTER_TYPE.DOMAIN] = this.dataService.labelDomain()
+    this.names[Constants.FILTER_TYPE.END_TIME] = 'End time'
+    this.names[Constants.FILTER_TYPE.ORGANISATION] = this.dataService.labelOrganisation()
+    this.names[Constants.FILTER_TYPE.ORGANISATION_PROPERTY] = this.dataService.labelOrganisation() + ' properties'
+    this.names[Constants.FILTER_TYPE.RESULT] = 'Result'
+    this.names[Constants.FILTER_TYPE.SESSION] = 'Session'
+    this.names[Constants.FILTER_TYPE.SPECIFICATION] = this.dataService.labelSpecification()
+    this.names[Constants.FILTER_TYPE.START_TIME] = 'Start time'
+    this.names[Constants.FILTER_TYPE.SYSTEM] = this.dataService.labelSystem()
+    this.names[Constants.FILTER_TYPE.SYSTEM_PROPERTY] = this.dataService.labelSystem() + ' properties'
+    this.names[Constants.FILTER_TYPE.TEST_CASE] = 'Test case'
+    this.names[Constants.FILTER_TYPE.TEST_SUITE] = 'Test suite'
+    if (this.filterState.names != undefined) {
+      for (let filter in this.filterState.names) {
+        if (this.filterState.names[filter] != undefined) {
+          this.names[filter] = this.filterState.names[filter]
+        }
+      }
+    }
   }
 
   private resetApplicableCommunityId() {
@@ -221,13 +243,15 @@ export class TestFilterComponent implements OnInit {
     filters[Constants.FILTER_TYPE.ORGANISATION] = this.filterValue(Constants.FILTER_TYPE.ORGANISATION)
     filters[Constants.FILTER_TYPE.SYSTEM] = this.filterValue(Constants.FILTER_TYPE.SYSTEM)
     filters[Constants.FILTER_TYPE.RESULT] = this.filterValue(Constants.FILTER_TYPE.RESULT)
-    if (this.filterDefined(Constants.FILTER_TYPE.TIME)) {
+    if (this.filterDefined(Constants.FILTER_TYPE.START_TIME)) {
       if (this.startDateModel !== undefined) {
         filters.startTimeBegin = this.startDateModel[0]
         filters.startTimeBeginStr = formatDate(this.startDateModel[0], 'dd-MM-YYYY HH:mm:ss', 'en')
         filters.startTimeEnd = this.startDateModel[1]
         filters.startTimeEndStr = formatDate(this.startDateModel[1], 'dd-MM-YYYY HH:mm:ss', 'en')
       }
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.END_TIME)) {
       if (this.endDateModel !== undefined) {
         filters.endTimeBegin = this.endDateModel[0]
         filters.endTimeBeginStr = formatDate(this.endDateModel[0], 'dd-MM-YYYY HH:mm:ss', 'en')
@@ -284,8 +308,10 @@ export class TestFilterComponent implements OnInit {
     this.clearFilter(Constants.FILTER_TYPE.ORGANISATION)
     this.clearFilter(Constants.FILTER_TYPE.SYSTEM)
     this.clearFilter(Constants.FILTER_TYPE.RESULT)
-    if (this.filterDefined(Constants.FILTER_TYPE.TIME)) {
+    if (this.filterDefined(Constants.FILTER_TYPE.START_TIME)) {
       this.startDateModel = undefined
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.END_TIME)) {
       this.endDateModel = undefined
     }
     this.resetApplicableCommunityId()
@@ -321,7 +347,9 @@ export class TestFilterComponent implements OnInit {
 
   applyTimeFiltering() {
     if (this.enableFiltering && this.filterDataLoaded) {
-      this.applyFilters()
+      setTimeout(() => {
+        this.applyFilters()
+      })
     }
   }
 

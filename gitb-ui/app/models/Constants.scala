@@ -43,6 +43,8 @@ object Constants {
   val DevelopmentMode = "development"
   val SandboxMode = "sandbox"
 
+  val FilterDateFormat = "dd-MM-yyyy HH:mm:ss"
+
   val VersionNumber = "1.14.1"
   val ResourceVersionNumber = "1.14.1"
 }

@@ -22,6 +22,7 @@ import { DataService } from './data.service';
 import { RestService } from './rest.service';
 import { SystemConfigurationEndpoint } from '../types/system-configuration-endpoint';
 import { TestCase } from '../types/test-case';
+import { ConformanceStatus } from '../types/conformance-status';
 
 @Injectable({
   providedIn: 'root'
@@ -190,6 +191,15 @@ export class ConformanceService {
     if (criteria.systemProperties && criteria.systemProperties.length > 0) {
       params.sys_params = JSON.stringify(criteria.systemProperties)
     }
+    if (criteria.results !== undefined && criteria.results.length > 0) {
+      params.status = criteria.results.join(',')
+    }
+    if (criteria.endTimeBeginStr !== undefined) {
+      params.update_time_begin = criteria.endTimeBeginStr
+    }
+    if (criteria.endTimeEndStr !== undefined) {
+      params.update_time_end = criteria.endTimeEndStr
+    }
     params.export = forExport != undefined && forExport
     params.sort_column = sortColumn
     params.sort_order = sortOrder
@@ -200,18 +210,15 @@ export class ConformanceService {
     })
   }
 
-  getConformanceStatus(actorId: number, sutId: number, loadSessionData?: boolean) {
-    return this.restService.get<ConformanceStatusItem[]>({
+  getConformanceStatus(actorId: number, sutId: number) {
+    return this.restService.get<ConformanceStatus>({
       path: ROUTES.controllers.ConformanceService.getConformanceStatus(actorId, sutId).url,
-      params: {
-        sessionData: loadSessionData
-      },
       authenticate: true
     })
   }
 
   getConformanceStatusForTestSuite(actorId: number, sutId: number, testSuiteId: number) {
-    return this.restService.get<ConformanceStatusItem[]>({
+    return this.restService.get<ConformanceStatus>({
       path: ROUTES.controllers.ConformanceService.getConformanceStatusForTestSuite(actorId, sutId, testSuiteId).url,
       authenticate: true
     })

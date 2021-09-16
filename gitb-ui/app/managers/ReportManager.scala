@@ -238,7 +238,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     removeStepDocumentation(testCasePresentation)
     val presentation = XMLUtils.marshalToString(new com.gitb.tpl.ObjectFactory().createTestcase(testCasePresentation))
 
-    val q = for {c <- PersistenceSchema.conformanceResults if c.sut === systemId && c.testcase === testCase.id} yield (c.testsession, c.result, c.outputMessage)
+    val q = for {c <- PersistenceSchema.conformanceResults if c.sut === systemId && c.testcase === testCase.id} yield (c.testsession, c.result, c.outputMessage, c.updateTime)
 
     exec(
       (
@@ -249,7 +249,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
           Some(actor.id), Some(actor.name), Some(specification.id), Some(specification.shortname), Some(domain.id), Some(domain.shortname),
           initialStatus, startTime, None, None, presentation)) andThen
         // Update also the conformance results for the system
-        q.update(Some(sessionId), initialStatus, None)
+        q.update(Some(sessionId), initialStatus, None, Some(startTime))
       ).transactionally
     )
   }
@@ -258,12 +258,13 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     val q = for {
       t <- PersistenceSchema.testResults if t.testSessionId === sessionId
     } yield (t.result, t.endTime, t.outputMessage)
-    val q1 = for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield (c.result, c.outputMessage)
+    val now = Some(TimeUtil.getCurrentTimestamp())
+    val q1 = for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield (c.result, c.outputMessage, c.updateTime)
     exec(
       (
-        q.update(status.value(), Some(TimeUtil.getCurrentTimestamp()), outputMessage) andThen
+        q.update(status.value(), now, outputMessage) andThen
         // Update also the conformance results for the system
-        q1.update(status.value(), outputMessage)
+        q1.update(status.value(), outputMessage, now)
       ).transactionally
     )
     // Triggers linked to test sessions: (communityID, systemID, actorID)
@@ -285,7 +286,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
         triggerHelper.publishTriggerEvent(new TestSessionFailedEvent(communityId, systemId, actorId))
       }
       // See if the conformance statement is now successfully completed and fire an additional trigger if so.
-      val statementStatus = conformanceManager.getConformanceStatus(actorId, systemId, None, loadSessionData = false)
+      val statementStatus = conformanceManager.getConformanceStatus(actorId, systemId, None)
       var successCount = 0
       statementStatus.foreach { status =>
         if ("SUCCESS".equals(status.result)) {
@@ -302,17 +303,21 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   }
 
   def setEndTimeNow(sessionId: String) = {
-    val testSession = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption)
-    if (testSession.isDefined) {
-      val q = for {t <- PersistenceSchema.testResults if t.testSessionId === sessionId} yield t.endTime
-      val q1 = for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield c.result
-      exec(
-        (
-          q.update(Some(TimeUtil.getCurrentTimestamp())) andThen
-          q1.update(testSession.get.result)
-        ).transactionally
-      )
-    }
+    val now = Some(TimeUtil.getCurrentTimestamp())
+    exec (
+      (for {
+        testSession <- PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption
+        _ <- {
+          if (testSession.isDefined) {
+            (for {t <- PersistenceSchema.testResults if t.testSessionId === sessionId} yield t.endTime).update(now) andThen
+              (for {c <- PersistenceSchema.conformanceResults if c.testsession === sessionId} yield (c.result, c.updateTime)).update(testSession.get.result, now)
+          } else {
+            DBIO.successful(())
+          }
+        }
+      } yield ()
+      ).transactionally
+    )
   }
 
   def getPathForTestSessionWrapper(sessionId: String, isExpected: Boolean): SessionFolderInfo = {
@@ -514,15 +519,15 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   }
 
   private def getSampleConformanceStatement(index: Int, labels: Map[Short, CommunityLabels]): ConformanceStatementFull = {
-    ConformanceStatementFull(
+    new ConformanceStatementFull(
       0L, "Sample Community",
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Organisation),
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.System),
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Domain),
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Actor),
       0L, "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification), "Sample " + communityLabelManager.getLabel(labels, models.Enums.LabelType.Specification),
-      Some("Sample Test Suite "+index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), Some("SUCCESS"), Some("An output message for the test session"),
-      None, 0L, 0L, 0L)
+      Some("Sample Test Suite "+index), Some("Sample Test Case "+index), Some("Description for Sample Test Case "+index), "SUCCESS", Some("An output message for the test session"),
+      None, None, 0L, 0L, 0L)
   }
 
   def generateDemoConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, communityId: Long): Path = {
@@ -538,7 +543,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   }
 
   def generateConformanceCertificate(reportPath: Path, settings: ConformanceCertificates, actorId: Long, systemId: Long): Path = {
-    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None)
+    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None)
     generateConformanceCertificate(reportPath, settings, conformanceInfo)
   }
 
@@ -589,7 +594,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   }
 
   private def generateCoreConformanceReport(reportPath: Path, addTestCases: Boolean, title: String, addDetails: Boolean, addTestCaseResults: Boolean, addTestStatus: Boolean, addMessage: Boolean, message: Option[String], actorId: Long, systemId: Long, labels: Map[Short, CommunityLabels]): Path = {
-    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None)
+    val conformanceInfo = conformanceManager.getConformanceStatementsFull(None, None, Some(List(actorId)), None, None, Some(List(systemId)), None, None, None, None, None, None, None)
     generateCoreConformanceReport(reportPath, addTestCases, title, addDetails, addTestCaseResults, addTestStatus, addMessage, message, conformanceInfo, labels)
   }
 
@@ -641,7 +646,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     var index = 1
     conformanceInfo.foreach { info =>
       totalTests += 1
-      val result = TestResultStatus.withName(info.result.get)
+      val result = TestResultStatus.withName(info.result)
       if (result == TestResultStatus.SUCCESS) {
         completedTests += 1
       } else if (result == TestResultStatus.FAILURE) {
@@ -666,7 +671,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
         } else {
           testCaseOverview.setTestDescription("-")
         }
-        testCaseOverview.setReportResult(info.result.get)
+        testCaseOverview.setReportResult(info.result)
         testCaseOverview.setOutputMessage(info.outputMessage.orNull)
         if (addTestCases) {
           testCaseOverview.setTitle("Test Case Report #" + index)

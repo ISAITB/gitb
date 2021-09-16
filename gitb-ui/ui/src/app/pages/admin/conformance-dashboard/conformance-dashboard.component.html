@@ -29,7 +29,8 @@
                     <th class="sortableHeader" *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community!.domain == undefined)" (click)="sort(Constants.FILTER_TYPE.DOMAIN)">{{dataService.labelDomain()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.DOMAIN" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
                     <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SPECIFICATION)">{{dataService.labelSpecification()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.SPECIFICATION" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
                     <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ACTOR)">{{dataService.labelActor()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.ACTOR" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
-                    <th width="20%">Test results</th>
+                    <th class="th-min">Updated</th>
+                    <th width="17%">Test results</th>
                     <th class="th-min-centered">Status</th>
                     <th class="operations">Export</th>
                 </tr>
@@ -50,6 +51,7 @@
                         <td *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community!.domain == undefined)">{{statement.domainName}}</td>
                         <td>{{statement.specName}}</td>
                         <td>{{statement.actorName}}</td>
+                        <td class="td-min">{{statement.updateTime}}</td>
                         <td>{{statement.status}}</td>
                         <td class="td-min-centered"><span><i [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
                         <td class="operations">
@@ -57,7 +59,7 @@
                         </td>
                     </tr>
                     <tr class="expandable-table-row-expanded">
-                        <td colspan="9" class="expandable-table-expandable-cell">
+                        <td colspan="10" class="expandable-table-expandable-cell">
                             <div [collapse]="!isExpanded(statement)" [isAnimated]="true">
                                 <div class="collapsing-div">
                                     <div *ngIf="statement.testCasesLoaded == undefined || !statement.testCasesLoaded">
@@ -77,7 +79,7 @@
                                                             <thead>
                                                                 <tr>
                                                                     <th width="90%">Test case</th>
-                                                                    <th class="sessionTime">Last updated</th>
+                                                                    <th class="sessionTime">Updated</th>
                                                                     <th class="operations">Session</th>
                                                                     <th class="operations">Export</th>
                                                                     <th class="tb-result">Result</th>

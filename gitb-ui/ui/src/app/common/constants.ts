@@ -34,7 +34,8 @@ export class Constants {
 		ORGANISATION: 'organisation',
 		SYSTEM: 'system',
 		RESULT: 'result',
-		TIME: 'time',
+		START_TIME: 'start_time',
+		END_TIME: 'end_time',
 		SESSION: 'session',
 		ORGANISATION_PROPERTY: 'org_property',
 		SYSTEM_PROPERTY: 'sys_property'

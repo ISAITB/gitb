@@ -1,21 +1,21 @@
 package managers
 
-import java.util
-import actors.events.{ConformanceStatementCreatedEvent, ConformanceStatementUpdatedEvent, SystemCreatedEvent, SystemUpdatedEvent}
-
-import javax.inject.{Inject, Singleton}
+import actors.events.{ConformanceStatementCreatedEvent, ConformanceStatementUpdatedEvent, SystemUpdatedEvent}
 import models.Enums.{TestResultStatus, UserRole}
-import models.{ConformanceResult, ConformanceStatement, _}
+import models._
 import org.slf4j.LoggerFactory
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 import utils.MimeUtil
 
+import java.sql.Timestamp
+import java.util
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelper: TriggerHelper, triggerManager: TriggerManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelper: TriggerHelper, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -30,7 +30,7 @@ class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelp
     val actions = new ListBuffer[DBIO[_]]()
     val linkedActorIds = ListBuffer[Long]()
     val conformanceStatements = getConformanceStatementReferences(fromSystem)
-    var addedStatements = scala.collection.mutable.Set[String]()
+    val addedStatements = scala.collection.mutable.Set[String]()
     conformanceStatements.foreach { otherConformanceStatement =>
       val key = otherConformanceStatement.spec+"-"+otherConformanceStatement.actor
       if (!addedStatements.contains(key)) {
@@ -344,10 +344,10 @@ class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelp
         .sortBy(_.endTime.desc)
         .result
       existingResultsMap <- {
-        val existingResultsMap = new util.HashMap[Long, (String, String, Option[String])]
+        val existingResultsMap = new util.HashMap[Long, (String, String, Option[String], Option[Timestamp])]
         existingResults.foreach { existingResult =>
           if (!existingResultsMap.containsKey(existingResult.testCaseId.get)) {
-            existingResultsMap.put(existingResult.testCaseId.get, (existingResult.sessionId, existingResult.result, existingResult.outputMessage))
+            existingResultsMap.put(existingResult.testCaseId.get, (existingResult.sessionId, existingResult.result, existingResult.outputMessage, existingResult.endTime))
           }
         }
         DBIO.successful(existingResultsMap)
@@ -360,13 +360,15 @@ class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelp
           var result = TestResultStatus.UNDEFINED
           var outputMessage: Option[String] = None
           var sessionId: Option[String] = None
+          var updateTime: Option[Timestamp] = None
           if (existingResultsMap.containsKey(testCase)) {
             val existingData = existingResultsMap.get(testCase)
             sessionId = Some(existingData._1)
             result = TestResultStatus.withName(existingData._2)
             outputMessage = existingData._3
+            updateTime = existingData._4
           }
-          actions += (PersistenceSchema.conformanceResults += ConformanceResult(0L, system, spec, actor, testSuite, testCase, result.toString, outputMessage, sessionId))
+          actions += (PersistenceSchema.conformanceResults += ConformanceResult(0L, system, spec, actor, testSuite, testCase, result.toString, outputMessage, sessionId, updateTime))
         }
         toDBIO(actions)
       }
@@ -374,7 +376,6 @@ class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelp
   }
 
   def getConformanceStatementReferences(systemId: Long) = {
-    //1) Get organization id of the user, first
     val conformanceStatements = exec(PersistenceSchema.conformanceResults.filter(_.sut === systemId).result.map(_.toList))
     conformanceStatements
   }
@@ -393,31 +394,18 @@ class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelp
     query = query.sortBy(x => (x._2.fullname, x._1._1._2.fullname, x._1._2.name))
 
     val results = exec(query.result.map(_.toList))
-    val conformanceMap = new util.LinkedHashMap[Long, ConformanceStatement]
+    val resultBuilder = new ConformanceStatusBuilder[ConformanceStatement](recordDetails = false)
     results.foreach { result =>
-      var conformanceStatement = conformanceMap.get(result._1._1._1.actor)
-      if (conformanceStatement == null) {
-        conformanceStatement = ConformanceStatement(
+      resultBuilder.addConformanceResult(
+        new ConformanceStatement(
           result._2.id, result._2.shortname, result._2.fullname,
           result._1._2.id, result._1._2.actorId, result._1._2.name,
           result._1._1._2.id, result._1._1._2.shortname, result._1._1._2.fullname,
+          result._1._1._1.sut, result._1._1._1.result, result._1._1._1.updateTime,
           0L, 0L, 0L)
-        conformanceMap.put(result._1._1._1.actor, conformanceStatement)
-      }
-      if (TestResultStatus.withName(result._1._1._1.result) == TestResultStatus.SUCCESS) {
-        conformanceStatement.completedTests += 1
-      } else if (TestResultStatus.withName(result._1._1._1.result) == TestResultStatus.FAILURE) {
-        conformanceStatement.failedTests += 1
-      } else {
-        conformanceStatement.undefinedTests += 1
-      }
+      )
     }
-    var statements = new ListBuffer[ConformanceStatement]
-    import scala.collection.JavaConverters._
-    for (conformanceEntry <- mapAsScalaMap(conformanceMap)) {
-      statements += conformanceEntry._2
-    }
-    statements.toList
+    resultBuilder.getOverview(None)
   }
 
 

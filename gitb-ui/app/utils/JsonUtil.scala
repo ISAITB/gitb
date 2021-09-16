@@ -17,6 +17,7 @@ import models.{TestStepResultInfo, _}
 import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsObject, _}
 
+import java.sql.Timestamp
 import scala.collection.JavaConverters._
 import scala.collection.{immutable, mutable}
 import scala.collection.mutable.{ListBuffer, Map}
@@ -656,6 +657,7 @@ object JsonUtil {
       "specificationId" -> conformanceStatement.specificationId,
       "specification" -> conformanceStatement.specificationName,
       "specificationFull" -> conformanceStatement.specificationNameFull,
+      "updateTime" -> (if(conformanceStatement.updateTime.isDefined) TimeUtil.serializeTimestamp(conformanceStatement.updateTime.get) else JsNull),
 			"results" -> Json.obj(
 				"undefined" -> conformanceStatement.undefinedTests,
         "failed" -> conformanceStatement.failedTests,
@@ -1804,11 +1806,41 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceResultList(list: List[ConformanceStatusItem]): JsArray = {
-    var json = Json.arr()
+  def jsConformanceResultList(list: List[ConformanceStatusItem]): JsObject = {
+    var updateTime: Option[Timestamp] = None
+    var undefinedTests = 0L
+    var completedTests = 0L
+    var failedTests = 0L
+    var itemArray = Json.arr()
     list.foreach{ info =>
-      json = json.append(jsConformanceResult(info))
+      if (info.sessionTime.isDefined && (updateTime.isEmpty || updateTime.get.before(info.sessionTime.get))) {
+        updateTime = info.sessionTime
+      }
+      if (TestResultStatus.withName(info.result) == TestResultStatus.SUCCESS) {
+        completedTests += 1
+      } else if (TestResultStatus.withName(info.result) == TestResultStatus.FAILURE) {
+        failedTests += 1
+      } else {
+        undefinedTests += 1
+      }
+      itemArray = itemArray.append(jsConformanceResult(info))
     }
+    var result = TestResultStatus.SUCCESS.toString
+    if (failedTests > 0) {
+      result = TestResultStatus.FAILURE.toString
+    } else if (undefinedTests > 0) {
+      result = TestResultStatus.UNDEFINED.toString
+    }
+    val json = Json.obj(
+      "summary" -> Json.obj(
+        "failed"    -> failedTests,
+        "completed"    -> completedTests,
+        "undefined"    -> undefinedTests,
+        "result" -> result,
+        "updateTime" -> (if (updateTime.isDefined) TimeUtil.serializeTimestamp(updateTime.get) else JsNull)
+      ),
+      "items" -> itemArray
+    )
     json
   }
 
@@ -1880,6 +1912,7 @@ object JsonUtil {
       "completed"    -> item.completedTests,
       "undefined"    -> item.undefinedTests,
       "result" -> item.result,
+      "updateTime" -> (if(item.updateTime.isDefined) TimeUtil.serializeTimestamp(item.updateTime.get) else JsNull),
       "outputMessage" -> item.outputMessage
     )
     if (orgParameterDefinitions.isDefined && orgParameterValues.isDefined) {

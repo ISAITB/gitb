@@ -166,7 +166,8 @@ object PersistenceSchema {
     def result  = column[String]("result")
     def outputMessage = column[Option[String]]("output_message", O.SqlType("TEXT"))
     def testsession = column[Option[String]]("test_session_id")
-    def * = (id, sut, spec, actor, testsuite, testcase, result, outputMessage, testsession) <> (models.ConformanceResult.tupled, models.ConformanceResult.unapply)
+    def updateTime = column[Option[Timestamp]]("update_time", O.SqlType("TIMESTAMP"))
+    def * = (id, sut, spec, actor, testsuite, testcase, result, outputMessage, testsession, updateTime) <> (models.ConformanceResult.tupled, models.ConformanceResult.unapply)
   }
   val conformanceResults = TableQuery[ConformanceResultsTable]
 

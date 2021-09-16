@@ -10,5 +10,6 @@ export interface ConformanceTestCase {
     result: string
     preliminary?: UserInteraction[]
     sessionId?: string
+    updateTime?: string
 
 }

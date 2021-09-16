@@ -1,7 +1,7 @@
 package managers
 
 import com.gitb.core.{ActorConfiguration, Configuration}
-import models.Enums.{TestResultStatus, TriggerDataType}
+import models.Enums.TriggerDataType
 import models._
 import models.prerequisites.PrerequisiteUtil
 import org.apache.commons.io.FileUtils
@@ -10,7 +10,9 @@ import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{MimeUtil, RepositoryUtils}
 
+import java.text.SimpleDateFormat
 import java.util
+import java.util.Date
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -504,26 +506,7 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 		exec(PersistenceSchema.domains.filter(_.id === id).result.head)
 	}
 
-	def getConformanceStatusWithSessionData(actorId: Long, sutId: Long, testSuiteId: Option[Long]): List[ConformanceStatusItem] = {
-		var query = PersistenceSchema.conformanceResults
-			.join(PersistenceSchema.testCases).on(_.testcase === _.id)
-			.join(PersistenceSchema.testSuites).on(_._1.testsuite === _.id)
-			.joinLeft(PersistenceSchema.testResults).on(_._1._1.testsession === _.testSessionId)
-			.filter(_._1._1._1.actor === actorId)
-			.filter(_._1._1._1.sut === sutId)
-		if (testSuiteId.isDefined) {
-			query = query.filter(_._1._1._1.testsuite === testSuiteId.get)
-		}
-		val finalQuery = query
-			.sortBy(x => (x._1._2.shortname, x._1._1._2.testSuiteOrder))
-			.map(x => (x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._1._2.id, x._1._1._2.shortname, x._1._1._2.description, x._1._1._2.hasDocumentation, x._1._1._1.result, x._1._1._1.outputMessage, x._1._1._1.testsession, x._2.map(x => {x.endTime})))
-		val results = exec(finalQuery.result.map(_.toList)).map(r => {
-			ConformanceStatusItem(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10, r._11, r._12.flatten)
-		})
-		results
-	}
-
-	def getConformanceStatusWithoutSessionData(actorId: Long, sutId: Long, testSuiteId: Option[Long]): List[ConformanceStatusItem] = {
+	def getConformanceStatus(actorId: Long, sutId: Long, testSuiteId: Option[Long]): List[ConformanceStatusItem] = {
 		var query = PersistenceSchema.conformanceResults
 			.join(PersistenceSchema.testCases).on(_.testcase === _.id)
 			.join(PersistenceSchema.testSuites).on(_._1.testsuite === _.id)
@@ -534,19 +517,11 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 		}
 		val finalQuery = query
 			.sortBy(x => (x._2.shortname, x._1._2.testSuiteOrder))
-			.map(x => (x._2.id, x._2.shortname, x._2.description, x._2.hasDocumentation, x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._1.result, x._1._1.outputMessage, x._1._1.testsession))
+			.map(x => (x._2.id, x._2.shortname, x._2.description, x._2.hasDocumentation, x._1._2.id, x._1._2.shortname, x._1._2.description, x._1._2.hasDocumentation, x._1._1.result, x._1._1.outputMessage, x._1._1.testsession, x._1._1.updateTime))
 		val results = exec(finalQuery.result.map(_.toList)).map(r => {
-			ConformanceStatusItem(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10, r._11, None)
+			ConformanceStatusItem(r._1, r._2, r._3, r._4, r._5, r._6, r._7, r._8, r._9, r._10, r._11, r._12)
 		})
 		results
-	}
-
-	def getConformanceStatus(actorId: Long, sutId: Long, testSuiteId: Option[Long], loadSessionData: Boolean): List[ConformanceStatusItem] = {
-		if (loadSessionData) {
-			getConformanceStatusWithSessionData(actorId, sutId, testSuiteId)
-		} else {
-			getConformanceStatusWithoutSessionData(actorId, sutId, testSuiteId)
-		}
 	}
 
 	def getSpecificationIdForTestCaseFromConformanceStatements(testCaseId: Long): Option[Long] = {
@@ -559,7 +534,7 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 		spec
 	}
 
-	def getConformanceStatementsFull(domainIds: Option[List[Long]], specIds: Option[List[Long]], actorIds: Option[List[Long]], communityIds: Option[List[Long]], organizationIds: Option[List[Long]], systemIds: Option[List[Long]], orgParameters: Option[Map[Long, Set[String]]], sysParameters: Option[Map[Long, Set[String]]], sortColumn: Option[String], sortOrder: Option[String]): List[ConformanceStatementFull] = {
+	def getConformanceStatementsFull(domainIds: Option[List[Long]], specIds: Option[List[Long]], actorIds: Option[List[Long]], communityIds: Option[List[Long]], organizationIds: Option[List[Long]], systemIds: Option[List[Long]], orgParameters: Option[Map[Long, Set[String]]], sysParameters: Option[Map[Long, Set[String]]], status: Option[List[String]], updateTimeStart: Option[String], updateTimeEnd: Option[String], sortColumn: Option[String], sortOrder: Option[String]): List[ConformanceStatementFull] = {
 		var query = PersistenceSchema.conformanceResults
 			.join(PersistenceSchema.specifications).on(_.spec === _.id)
 			.join(PersistenceSchema.actors).on(_._1.actor === _.id)
@@ -602,7 +577,7 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 			.result
   		.map(_.toList))
 
-		val statements = new ListBuffer[ConformanceStatementFull]
+		val resultBuilder = new ConformanceStatusBuilder[ConformanceStatementFull](recordDetails = true)
 		results.foreach { result =>
 			val resultCommunities = result._1._1._2
 			val resultConfResult = result._1._1._1._1._1._1._1._1
@@ -613,21 +588,24 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 			val resultDomain = result._1._1._1._1._1._2
 			val resultActor = result._1._1._1._1._1._1._2
 			val resultSpec = result._1._1._1._1._1._1._1._2
-
-			val conformanceStatement = ConformanceStatementFull(
+			val conformanceStatement = new ConformanceStatementFull(
 				resultCommunities.id, resultCommunities.shortname, resultOrganisation.id, resultOrganisation.shortname,
 					resultSystem.id, resultSystem.shortname,
 					resultDomain.id, resultDomain.shortname, resultDomain.fullname,
 					resultActor.id, resultActor.actorId, resultActor.name,
 					resultSpec.id, resultSpec.shortname, resultSpec.fullname,
 					Some(resultTestSuite.shortname), Some(resultTestCase.shortname), resultTestCase.description,
-					Some(resultConfResult.result), resultConfResult.outputMessage, resultConfResult.testsession, 0L, 0L, 0L)
-			statements += conformanceStatement
+					resultConfResult.result, resultConfResult.outputMessage, resultConfResult.testsession, resultConfResult.updateTime, 0L, 0L, 0L)
+			resultBuilder.addConformanceResult(conformanceStatement)
 		}
-		statements.toList
+		resultBuilder.getDetails(Some(new ConformanceStatusBuilder.FilterCriteria(
+			dateFromString(updateTimeStart),
+			dateFromString(updateTimeEnd),
+			status))
+		)
 	}
 
-	def getConformanceStatements(domainIds: Option[List[Long]], specIds: Option[List[Long]], actorIds: Option[List[Long]], communityIds: Option[List[Long]], organizationIds: Option[List[Long]], systemIds: Option[List[Long]], orgParameters: Option[Map[Long, Set[String]]], sysParameters: Option[Map[Long, Set[String]]], sortColumn: Option[String], sortOrder: Option[String]): List[ConformanceStatementFull] = {
+	def getConformanceStatements(domainIds: Option[List[Long]], specIds: Option[List[Long]], actorIds: Option[List[Long]], communityIds: Option[List[Long]], organizationIds: Option[List[Long]], systemIds: Option[List[Long]], orgParameters: Option[Map[Long, Set[String]]], sysParameters: Option[Map[Long, Set[String]]], status: Option[List[String]], updateTimeStart: Option[String], updateTimeEnd: Option[String], sortColumn: Option[String], sortOrder: Option[String]): List[ConformanceStatementFull] = {
 		var query = PersistenceSchema.conformanceResults
 			.join(PersistenceSchema.specifications).on(_.spec === _.id)
 			.join(PersistenceSchema.actors).on(_._1.actor === _.id)
@@ -663,7 +641,7 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 		})
 
 		val results = exec(query.result.map(_.toList))
-		val conformanceMap = new util.LinkedHashMap[String, ConformanceStatementFull]
+		val resultBuilder = new ConformanceStatusBuilder[ConformanceStatementFull](recordDetails = false)
 		results.foreach { result =>
 			val resultConfResult = result._1._1._1._1._1._1
 			val resultCommunity = result._2
@@ -672,34 +650,29 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 			val resultDomain = result._1._1._1._2
 			val resultSpecification = result._1._1._1._1._1._2
 			val resultActor = result._1._1._1._1._2
+			val statement = new ConformanceStatementFull(
+				resultCommunity.id, resultCommunity.shortname, resultOrganisation.id, resultOrganisation.shortname,
+				resultSystem.id, resultSystem.shortname,
+				resultDomain.id, resultDomain.shortname, resultDomain.fullname,
+				resultActor.id, resultActor.actorId, resultActor.name,
+				resultSpecification.id, resultSpecification.shortname, resultSpecification.fullname,
+				None, None, None, resultConfResult.result, None, resultConfResult.testsession, resultConfResult.updateTime,
+				0L, 0L, 0L)
+			resultBuilder.addConformanceResult(statement)
+		}
+		resultBuilder.getOverview(Some(new ConformanceStatusBuilder.FilterCriteria(
+			dateFromString(updateTimeStart),
+			dateFromString(updateTimeEnd),
+			status))
+		)
+	}
 
-			val key = resultConfResult.sut + "|" + resultConfResult.actor
-			var conformanceStatement = conformanceMap.get(key)
-			if (conformanceStatement == null) {
-				conformanceStatement = ConformanceStatementFull(
-					resultCommunity.id, resultCommunity.shortname, resultOrganisation.id, resultOrganisation.shortname,
-					resultSystem.id, resultSystem.shortname,
-					resultDomain.id, resultDomain.shortname, resultDomain.fullname,
-					resultActor.id, resultActor.actorId, resultActor.name,
-					resultSpecification.id, resultSpecification.shortname, resultSpecification.fullname,
-					None, None, None, resultConfResult.testsession, None, None,
-					0L, 0L, 0L)
-				conformanceMap.put(key, conformanceStatement)
-			}
-			if (TestResultStatus.withName(resultConfResult.result) == TestResultStatus.SUCCESS) {
-				conformanceStatement.completedTests += 1
-			} else if (TestResultStatus.withName(resultConfResult.result) == TestResultStatus.FAILURE) {
-				conformanceStatement.failedTests += 1
-			} else {
-				conformanceStatement.undefinedTests += 1
-			}
+	private def dateFromString(dateStr: Option[String]): Option[Date] = {
+		if (dateStr.isEmpty) {
+			None
+		} else {
+			Some(new SimpleDateFormat(Constants.FilterDateFormat).parse(dateStr.get))
 		}
-		var statements = new ListBuffer[ConformanceStatementFull]
-		import scala.collection.JavaConverters._
-		for (conformanceEntry <- mapAsScalaMap(conformanceMap)) {
-			statements += conformanceEntry._2
-		}
-		statements.toList
 	}
 
 	def getConformanceCertificateSettingsWrapper(communityId: Long): Option[ConformanceCertificates] = {

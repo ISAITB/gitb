@@ -133,7 +133,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         .subscribe((data) => {
           // There will always be one test suite returned.
           const tests: ConformanceTestCase[] = []
-          for (let result of data) {
+          for (let result of data.items) {
             tests.push({
               id: result.testCaseId!,
               sname: result.testCaseName,

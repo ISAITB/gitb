@@ -280,13 +280,17 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
               .headOption
             // Update the result.
             _ <- {
-              val updateQuery = for { c <- queryConformanceResult } yield (c.testsession, c.result, c.outputMessage)
+              val updateQuery = for { c <- queryConformanceResult } yield (c.testsession, c.result, c.outputMessage, c.updateTime)
               if (latestTestSession.isDefined) {
                 // Replace status
-                updateQuery.update(Some(latestTestSession.get.sessionId), latestTestSession.get.result, latestTestSession.get.outputMessage)
+                var updateTimeToSet = latestTestSession.get.endTime
+                if (updateTimeToSet.isEmpty) {
+                  updateTimeToSet = Some(latestTestSession.get.startTime)
+                }
+                updateQuery.update(Some(latestTestSession.get.sessionId), latestTestSession.get.result, latestTestSession.get.outputMessage, updateTimeToSet)
               } else {
                 // Set as empty status
-                updateQuery.update(None, TestResultStatus.UNDEFINED.toString, None)
+                updateQuery.update(None, TestResultStatus.UNDEFINED.toString, None, None)
               }
             }
           } yield ()

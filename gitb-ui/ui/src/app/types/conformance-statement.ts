@@ -9,6 +9,7 @@ export interface ConformanceStatement {
     specificationId: number
     specification: string
     specificationFull: string
+    updateTime?: string
     results: {
         undefined: number,
         failed: number,
