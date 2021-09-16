@@ -232,6 +232,18 @@ export class TestFilterComponent implements OnInit {
     })
   }
 
+  private toDateStart(date: Date): Date {
+    const newDate = new Date(date.getTime())
+    newDate.setHours(0, 0, 0, 0)
+    return newDate
+  }
+
+  private toDateEnd(date: Date) {
+    const newDate = new Date(date.getTime())
+    newDate.setHours(23, 59, 59, 999)
+    return newDate
+  }
+
   currentFilters() {
     const filters: { [key: string]: any } = {}
     filters[Constants.FILTER_TYPE.DOMAIN] = this.filterValue(Constants.FILTER_TYPE.DOMAIN)
@@ -245,18 +257,18 @@ export class TestFilterComponent implements OnInit {
     filters[Constants.FILTER_TYPE.RESULT] = this.filterValue(Constants.FILTER_TYPE.RESULT)
     if (this.filterDefined(Constants.FILTER_TYPE.START_TIME)) {
       if (this.startDateModel !== undefined) {
-        filters.startTimeBegin = this.startDateModel[0]
-        filters.startTimeBeginStr = formatDate(this.startDateModel[0], 'dd-MM-YYYY HH:mm:ss', 'en')
-        filters.startTimeEnd = this.startDateModel[1]
-        filters.startTimeEndStr = formatDate(this.startDateModel[1], 'dd-MM-YYYY HH:mm:ss', 'en')
+        filters.startTimeBegin = this.toDateStart(this.startDateModel[0])
+        filters.startTimeBeginStr = formatDate(filters.startTimeBegin, 'dd-MM-YYYY HH:mm:ss', 'en')
+        filters.startTimeEnd = this.toDateEnd(this.startDateModel[1])
+        filters.startTimeEndStr = formatDate(filters.startTimeEnd, 'dd-MM-YYYY HH:mm:ss', 'en')
       }
     }
     if (this.filterDefined(Constants.FILTER_TYPE.END_TIME)) {
       if (this.endDateModel !== undefined) {
-        filters.endTimeBegin = this.endDateModel[0]
-        filters.endTimeBeginStr = formatDate(this.endDateModel[0], 'dd-MM-YYYY HH:mm:ss', 'en')
-        filters.endTimeEnd = this.endDateModel[1]
-        filters.endTimeEndStr = formatDate(this.endDateModel[1], 'dd-MM-YYYY HH:mm:ss', 'en')
+        filters.endTimeBegin = this.toDateStart(this.endDateModel[0])
+        filters.endTimeBeginStr = formatDate(filters.endTimeBegin, 'dd-MM-YYYY HH:mm:ss', 'en')
+        filters.endTimeEnd = this.toDateEnd(this.endDateModel[1])
+        filters.endTimeEndStr = formatDate(filters.endTimeEnd, 'dd-MM-YYYY HH:mm:ss', 'en')
       }
     }
     if (this.filterDefined(Constants.FILTER_TYPE.SESSION)) {
