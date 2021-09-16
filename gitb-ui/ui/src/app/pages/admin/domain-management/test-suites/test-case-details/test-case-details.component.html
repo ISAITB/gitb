@@ -6,7 +6,7 @@
 		<form class="form-horizontal">
 			<div class="panel-body">
 				<div class="row">
-          <div class="col-xs-10 col-xs-offset-1">
+         			<div class="col-xs-10 col-xs-offset-1">
 						<div class="form-group">
 							<label class="col-xs-3 control-label" for="identifier">ID:</label>
 							<div class="col-xs-7"><input id="identifier" name="identifier" [(ngModel)]="testCase.identifier" class="form-control" type="text" readonly="readonly"></div>
@@ -62,4 +62,26 @@
 			</div>
 		</form>
 	</div>
+	<div class="panel panel-default">
+		<div class="panel-heading">
+			<h4 class="title">Test case preview</h4>
+		</div>
+        <div class="panel-body" style="overflow-x: auto; overflow-y: hidden;">
+            <ng-container [ngSwitch]="diagramLoaded">
+                <ng-container *ngSwitchCase="true">
+                    <div class="diagramContainer" *ngIf="diagramLoaded">
+                        <app-sequence-diagram 
+                            [stepsOfTests]="steps"
+                            [test]="testCaseId+''"
+                            [actorInfoOfTests]="actorInfo"
+                            [events]="testEvents[testCaseId]">
+                        </app-sequence-diagram>            
+                    </div>
+                </ng-container>
+                <div *ngSwitchDefault>
+                    <app-pending-block [pending]="true" [icon]="true"></app-pending-block>
+                </div>            
+            </ng-container>
+        </div>
+    </div>
 </div>
