@@ -52,7 +52,7 @@
                                     <div [collapse]="!row.expanded" [isAnimated]="true">
                                         <div class="collapsing-div">
                                             <div class="panel panel-default">
-                                                <div class="panel-heading session-table-title">
+                                                <div class="panel-heading session-table-title clickable" (click)="diagramCollapsed[row.session] = !diagramCollapsed[row.session]">
                                                     <div class="session-table-title-part">
                                                         <div class="session-table-title-label">Test suite</div>
                                                         <div class="session-table-title-value">{{row.testSuite}}</div>
@@ -66,20 +66,22 @@
                                                         <div class="session-table-title-value">{{row.session}}</div>
                                                     </div>
                                                 </div>
-                                                <div class="panel-body" style="overflow-x: auto; overflow-y: hidden;">
-                                                    <div *ngIf="!row.hideLoadingIcon"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></div>
-                                                    <div [collapse]="!row.diagramExpanded" [isAnimated]="true">
-                                                        <div class="no-margin">
-                                                            <div *ngIf="row.expanded || row.diagramLoaded">
-                                                                <app-test-session-presentation 
-                                                                    [sessionId]="row.session" 
-                                                                    [sessionObject]="row" 
-                                                                    (ready)="diagramReady($event)">
-                                                                </app-test-session-presentation>
+                                                <div [collapse]="diagramCollapsed[row.session]" [isAnimated]="true">
+                                                    <div class="panel-body" style="overflow-x: auto; overflow-y: hidden;">
+                                                        <div *ngIf="!row.hideLoadingIcon"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></div>
+                                                        <div [collapse]="!row.diagramExpanded" [isAnimated]="true">
+                                                            <div class="no-margin">
+                                                                <div *ngIf="row.expanded || row.diagramLoaded">
+                                                                    <app-test-session-presentation 
+                                                                        [sessionId]="row.session" 
+                                                                        [sessionObject]="row" 
+                                                                        (ready)="diagramReady($event)">
+                                                                    </app-test-session-presentation>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
+                                                </div>                                                
                                             </div>
                                             <div class="sessionControls">
                                                 <div class="btn-toolbar">
