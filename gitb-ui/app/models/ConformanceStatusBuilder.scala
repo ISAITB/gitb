@@ -6,6 +6,7 @@ import models.Enums.TestResultStatus
 import java.util
 import java.util.Date
 import scala.collection.mutable.ListBuffer
+import scala.jdk.CollectionConverters.MapHasAsScala
 
 object ConformanceStatusBuilder {
 
@@ -49,7 +50,7 @@ class ConformanceStatusBuilder[A <: ConformanceStatement](recordDetails: Boolean
   private val conformanceMap = new util.LinkedHashMap[String, (A, ListBuffer[A])]
 
   def addConformanceResult(result: A): Unit = {
-    val key = result.systemId + "|" + result.actorId
+    val key = s"${result.systemId}|${result.actorId}"
     var data = conformanceMap.get(key)
     if (data == null) {
       data = (result, new ListBuffer[A])
@@ -75,8 +76,7 @@ class ConformanceStatusBuilder[A <: ConformanceStatement](recordDetails: Boolean
 
   def getOverview(filter: Option[FilterCriteria[A]]): List[A] = {
     val statements = new ListBuffer[A]
-    import scala.collection.JavaConverters._
-    for (conformanceEntry <- mapAsScalaMap(conformanceMap)) {
+    for (conformanceEntry <- conformanceMap.asScala) {
       if (filter.isEmpty || filter.get.check(conformanceEntry._2._1)) {
         statements += conformanceEntry._2._1
       }
@@ -86,8 +86,7 @@ class ConformanceStatusBuilder[A <: ConformanceStatement](recordDetails: Boolean
 
   def getDetails(filter: Option[FilterCriteria[A]]): List[A] = {
     val statements = new ListBuffer[A]
-    import scala.collection.JavaConverters._
-    for (conformanceEntry <- mapAsScalaMap(conformanceMap)) {
+    for (conformanceEntry <- conformanceMap.asScala) {
       if (filter.isEmpty || filter.get.check(conformanceEntry._2._1)) {
         statements ++= conformanceEntry._2._2
       }

@@ -3,10 +3,9 @@ package managers.export
 import models.Enums.ImportItemType
 
 import scala.collection.mutable.ListBuffer
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 object ImportTargets {
-
-  import scala.collection.JavaConverters._
 
   private def updateForCommunity(community: com.gitb.xml.export.Community, result: ImportTargets): Unit = {
     if (community != null) {
@@ -43,7 +42,7 @@ object ImportTargets {
       }
       if (community.getOrganisations != null && !community.getOrganisations.getOrganisation.isEmpty) {
         result.hasOrganisations = true
-        collectionAsScalaIterable(community.getOrganisations.getOrganisation).foreach { exportedOrganisation =>
+        community.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
           if (exportedOrganisation.getUsers != null && !exportedOrganisation.getUsers.getUser.isEmpty) {
             result.hasOrganisationUsers = true
           }
@@ -52,13 +51,13 @@ object ImportTargets {
           }
           if (exportedOrganisation.getSystems != null && !exportedOrganisation.getSystems.getSystem.isEmpty) {
             result.hasSystems = true
-            collectionAsScalaIterable(exportedOrganisation.getSystems.getSystem).foreach { exportedSystem =>
+            exportedOrganisation.getSystems.getSystem.asScala.foreach { exportedSystem =>
               if (exportedSystem.getPropertyValues != null && !exportedSystem.getPropertyValues.getProperty.isEmpty) {
                 result.hasSystemPropertyValues = true
               }
               if (exportedSystem.getStatements != null && !exportedSystem.getStatements.getStatement.isEmpty) {
                 result.hasStatements = true
-                collectionAsScalaIterable(exportedSystem.getStatements.getStatement).foreach { exportedStatement =>
+                exportedSystem.getStatements.getStatement.asScala.foreach { exportedStatement =>
                   if (exportedStatement.getConfigurations != null && !exportedStatement.getConfigurations.getConfiguration.isEmpty) {
                     result.hasStatementConfigurations = true
                   }
@@ -129,17 +128,17 @@ object ImportTargets {
       result.hasDomain = true
       if (domain.getSpecifications != null && !domain.getSpecifications.getSpecification.isEmpty) {
         result.hasSpecifications = true
-        collectionAsScalaIterable(domain.getSpecifications.getSpecification).foreach { specification =>
+        domain.getSpecifications.getSpecification.asScala.foreach { specification =>
           if (specification.getTestSuites != null && !specification.getTestSuites.getTestSuite.isEmpty) {
             result.hasTestSuites = true
           }
           if (specification.getActors != null && !specification.getActors.getActor.isEmpty) {
             result.hasActors = true
-            collectionAsScalaIterable(specification.getActors.getActor).foreach { actor =>
+            specification.getActors.getActor.asScala.foreach { actor =>
               if (actor.getEndpoints != null) {
                 if (!actor.getEndpoints.getEndpoint.isEmpty) {
                   result.hasEndpoints = true
-                  collectionAsScalaIterable(actor.getEndpoints.getEndpoint).foreach { endpoint =>
+                  actor.getEndpoints.getEndpoint.asScala.foreach { endpoint =>
                     if (endpoint.getParameters != null && !endpoint.getParameters.getParameter.isEmpty) {
                       result.hasEndpointParameters = true
                     }

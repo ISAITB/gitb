@@ -16,7 +16,7 @@ export class FileSelectComponent implements OnInit {
   @Input() multipart = false
   @Input() maxSize!: number
   @Output() onUpload: EventEmitter<FileData> = new EventEmitter()
-  @Output() onUploadForMultipart: EventEmitter<File> = new EventEmitter()
+  @Output() onUploadForMultipart: EventEmitter<FileData> = new EventEmitter()
   @ViewChild('fileInput') fileInput?: ElementRef
 
   isButton = false
@@ -46,7 +46,12 @@ export class FileSelectComponent implements OnInit {
       this.errorService.showSimpleErrorMessage('File upload problem', 'The maximum allowed size for files is '+this.maxSizeKbs+' KBs.')
     } else {
       if (this.multipart) {
-        this.onUploadForMultipart.emit(file)
+        this.onUploadForMultipart.emit({
+          name: file.name,
+          size: file.size,
+          type: file.type,
+          file: file
+        })
       } else {
         const reader = new FileReader()
         reader.onload = (event) => {

@@ -32,7 +32,7 @@ class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelp
     val conformanceStatements = getConformanceStatementReferences(fromSystem)
     val addedStatements = scala.collection.mutable.Set[String]()
     conformanceStatements.foreach { otherConformanceStatement =>
-      val key = otherConformanceStatement.spec+"-"+otherConformanceStatement.actor
+      val key = s"${otherConformanceStatement.spec}-${otherConformanceStatement.actor}"
       if (!addedStatements.contains(key)) {
         addedStatements += key
         linkedActorIds += otherConformanceStatement.actor
@@ -49,7 +49,7 @@ class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelp
             otherValues.map(otherValue => {
               copyActions += (PersistenceSchema.systemParameterValues += SystemParameterValues(toSystem, otherValue.parameter, otherValue.value))
             })
-            DBIO.seq(copyActions.map(a => a): _*)
+            DBIO.seq(copyActions.toList.map(a => a): _*)
           }
         } yield()
       )
@@ -64,12 +64,12 @@ class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelp
             otherValues.map(otherValue => {
               copyActions += (PersistenceSchema.configs += Configs(toSystem, otherValue.parameter, otherValue.endpoint, otherValue.value))
             })
-            DBIO.seq(copyActions.map(a => a): _*)
+            DBIO.seq(copyActions.toList.map(a => a): _*)
           }
         } yield()
         )
     }
-    DBIO.seq(actions.map(a => a): _*) andThen DBIO.successful(linkedActorIds.toList)
+    DBIO.seq(actions.toList.map(a => a): _*) andThen DBIO.successful(linkedActorIds.toList)
   }
 
   private def getCommunityIdForOrganisationId(organisationId: Long): Long = {
@@ -153,7 +153,7 @@ class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelp
       }
     }
     if (actions.nonEmpty) {
-      DBIO.seq(actions.map(a => a): _*)
+      DBIO.seq(actions.toList.map(a => a): _*)
     } else
       DBIO.successful(())
   }
@@ -463,7 +463,7 @@ class SystemManager @Inject() (testResultManager: TestResultManager, triggerHelp
     if (actions.isEmpty) {
       DBIO.successful(())
     } else {
-      DBIO.seq(actions.map(a => a): _*)
+      DBIO.seq(actions.toList.map(a => a): _*)
     }
 	}
 

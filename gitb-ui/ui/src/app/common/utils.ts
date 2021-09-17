@@ -21,7 +21,7 @@ export class Utils {
         if (accessToken) {
           headersToUse = headersToUse.set('Authorization', 'Bearer ' + accessToken)
         }
-        if (config && config.file) {
+        if (config && config.files != undefined && config.files.length > 0) {
             headersToUse = headersToUse.set('enctype', 'multipart/form-data')
         } else {
             headersToUse = headersToUse.set('Content-Type', 'application/x-www-form-urlencoded')

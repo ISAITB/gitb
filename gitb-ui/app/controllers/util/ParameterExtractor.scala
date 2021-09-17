@@ -1,11 +1,10 @@
 package controllers.util
 
 import java.util.concurrent.ThreadLocalRandom
-
 import config.Configurations
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
-import models._
+import models.{Actors, Communities, Domain, Endpoints, ErrorTemplates, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
 import org.apache.commons.codec.binary.Base64
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
@@ -16,8 +15,8 @@ object ParameterExtractor {
 
   def requiredQueryParameter(request:Request[AnyContent], parameter:String):String = {
     val param = request.getQueryString(parameter)
-    if(!param.isDefined)
-      throw new InvalidRequestException(ErrorCodes.MISSING_PARAMS, "Parameter '"+parameter+"' is missing in the request")
+    if(param.isEmpty)
+      throw InvalidRequestException(ErrorCodes.MISSING_PARAMS, "Parameter '" + parameter + "' is missing in the request")
     param.get
   }
 
@@ -116,7 +115,7 @@ object ParameterExtractor {
         try {
           param.get.head
         } catch {
-          case e:NoSuchElementException =>
+          case _:NoSuchElementException =>
             throw InvalidRequestException(ErrorCodes.MISSING_PARAMS, "Parameter '"+parameter+"' is missing in the request")
         }
       } else {
@@ -132,8 +131,8 @@ object ParameterExtractor {
       }
       Base64.decodeBase64(paramStr)
     } catch {
-      case e:NoSuchElementException =>
-        throw new InvalidRequestException(ErrorCodes.MISSING_PARAMS, "Parameter '"+parameter+"' is missing in the request")
+      case _:NoSuchElementException =>
+        throw InvalidRequestException(ErrorCodes.MISSING_PARAMS, "Parameter '" + parameter + "' is missing in the request")
     }
   }
 
@@ -142,21 +141,17 @@ object ParameterExtractor {
       val param = request.body.asFormUrlEncoded.get(parameter).head
       param
     } catch {
-      case e:NoSuchElementException =>
-        throw new InvalidRequestException(ErrorCodes.MISSING_PARAMS, "Parameter '"+parameter+"' is missing in the request")
+      case _:NoSuchElementException =>
+        throw InvalidRequestException(ErrorCodes.MISSING_PARAMS, "Parameter '" + parameter + "' is missing in the request")
     }
   }
 
   def optionalBodyParameter(request:Request[AnyContent], parameter:String):Option[String] = {
     try {
       val paramList = request.body.asFormUrlEncoded.get(parameter)
-      if(paramList.length > 0){
-        Some(paramList(0))
-      } else{
-        None
-      }
+      paramList.headOption
     } catch {
-      case e:NoSuchElementException =>
+      case _:NoSuchElementException =>
       None
     }
   }
@@ -245,10 +240,10 @@ object ParameterExtractor {
         templateName = optionalBodyParameter(request, Parameters.TEMPLATE_NAME)
       }
     }
-    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, false, landingPageId, legalNoticeId, errorTemplateId, template, templateName, communityId)
+    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, adminOrganization = false, landingPageId, legalNoticeId, errorTemplateId, template = template, templateName, communityId)
   }
 
-  def validCommunitySelfRegType(selfRegType: Short) = {
+  def validCommunitySelfRegType(selfRegType: Short): Boolean = {
     selfRegType == SelfRegistrationType.NotSupported.id.toShort || selfRegType == SelfRegistrationType.PublicListing.id.toShort || selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort || selfRegType == SelfRegistrationType.Token.id.toShort
   }
 
@@ -320,7 +315,7 @@ object ParameterExtractor {
       val name = requiredBodyParameter(request, Parameters.USER_NAME)
       val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
       val password = requiredBodyParameter(request, Parameters.PASSWORD)
-      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.SystemAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), onetimePassword = true, UserRole.SystemAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
     }
   }
 
@@ -332,7 +327,7 @@ object ParameterExtractor {
       val name = requiredBodyParameter(request, Parameters.USER_NAME)
       val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
       val password = requiredBodyParameter(request, Parameters.PASSWORD)
-      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.CommunityAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), onetimePassword = true, UserRole.CommunityAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
     }
   }
 
@@ -359,10 +354,10 @@ object ParameterExtractor {
 
   private def getUserInfoForSSO(ssoEmail: String, role: Short): Users = {
     val randomPart = ThreadLocalRandom.current.nextInt(10000000, 99999999 + 1)
-    val name = "User ["+randomPart+"]"
-    val email = randomPart+"@itb.ec.europa.eu"
+    val name = s"User [$randomPart]"
+    val email = s"$randomPart@itb.ec.europa.eu"
     val password = randomPart.toString
-    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, role, 0L, None, Some(ssoEmail), UserSSOStatus.NotLinked.id.toShort)
+    Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), onetimePassword = true, role, 0L, None, Some(ssoEmail), UserSSOStatus.NotLinked.id.toShort)
   }
 
   def extractUserInfo(request:Request[AnyContent]):Users = {
@@ -373,7 +368,7 @@ object ParameterExtractor {
       val name = requiredBodyParameter(request, Parameters.USER_NAME)
       val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
       val password = requiredBodyParameter(request, Parameters.PASSWORD)
-      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), true, UserRole.VendorUser.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
+      Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), onetimePassword = true, UserRole.VendorUser.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
     }
   }
 
@@ -398,7 +393,7 @@ object ParameterExtractor {
 		val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SHORT_NAME)
 		val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
 		val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-		Domain(0l, sname, fname, descr)
+		Domain(0L, sname, fname, descr)
 	}
 
 	def extractOption(request:Request[AnyContent]):Options = {
@@ -406,7 +401,7 @@ object ParameterExtractor {
 		val fname = ParameterExtractor.requiredBodyParameter(request, Parameters.FULL_NAME)
 		val actor = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR).toLong
 		val descr = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
-		Options(0l, sname, fname, descr, actor)
+		Options(0L, sname, fname, descr, actor)
 	}
 
 	def extractSpecification(request:Request[AnyContent]): Specifications = {
@@ -419,13 +414,13 @@ object ParameterExtractor {
 			case _ => None
 		}
 
-		Specifications(0l, sname, fname, descr, hidden, domain.getOrElse(0l))
+		Specifications(0L, sname, fname, descr, hidden, domain.getOrElse(0L))
 	}
 
 	def extractActor(request:Request[AnyContent]):Actors = {
     val id:Long = ParameterExtractor. optionalBodyParameter(request, Parameters.ID) match {
       case Some(i) => i.toLong
-      case _ => 0l
+      case _ => 0L
     }
 		val actorId:String = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID)
 		val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
@@ -450,7 +445,7 @@ object ParameterExtractor {
   def extractEndpoint(request:Request[AnyContent]):Endpoints = {
     val id:Long = ParameterExtractor.optionalBodyParameter(request, Parameters.ID) match {
       case Some(i) => i.toLong
-      case _ => 0l
+      case _ => 0L
     }
     val name:String = ParameterExtractor.requiredBodyParameter(request, Parameters.NAME)
     val desc:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DESC)
@@ -474,13 +469,13 @@ object ParameterExtractor {
     val allowedValues:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.ALLOWED_VALUES)
     var dependsOn:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DEPENDS_ON)
     var dependsOnValue:Option[String] = None
-    if (dependsOn.isDefined && dependsOn.get.trim.length == 0) {
+    if (dependsOn.isDefined && dependsOn.get.trim.isEmpty) {
       dependsOn = None
     }
     if (dependsOn.isDefined) {
       dependsOnValue = ParameterExtractor.optionalBodyParameter(request, Parameters.DEPENDS_ON_VALUE)
     }
-    if (dependsOnValue.isDefined && dependsOnValue.get.trim.length == 0) {
+    if (dependsOnValue.isDefined && dependsOnValue.get.trim.isEmpty) {
       dependsOnValue = None
     }
     if (!adminOnly) {
@@ -508,13 +503,13 @@ object ParameterExtractor {
     val allowedValues:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.ALLOWED_VALUES)
     var dependsOn:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DEPENDS_ON)
     var dependsOnValue:Option[String] = None
-    if (dependsOn.isDefined && dependsOn.get.trim.length == 0) {
+    if (dependsOn.isDefined && dependsOn.get.trim.isEmpty) {
       dependsOn = None
     }
     if (dependsOn.isDefined) {
       dependsOnValue = ParameterExtractor.optionalBodyParameter(request, Parameters.DEPENDS_ON_VALUE)
     }
-    if (dependsOnValue.isDefined && dependsOnValue.get.trim.length == 0) {
+    if (dependsOnValue.isDefined && dependsOnValue.get.trim.isEmpty) {
       dependsOnValue = None
     }
     if (!adminOnly) {
@@ -541,13 +536,13 @@ object ParameterExtractor {
     val allowedValues:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.ALLOWED_VALUES)
     var dependsOn:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.DEPENDS_ON)
     var dependsOnValue:Option[String] = None
-    if (dependsOn.isDefined && dependsOn.get.trim.length == 0) {
+    if (dependsOn.isDefined && dependsOn.get.trim.isEmpty) {
       dependsOn = None
     }
     if (dependsOn.isDefined) {
       dependsOnValue = ParameterExtractor.optionalBodyParameter(request, Parameters.DEPENDS_ON_VALUE)
     }
-    if (dependsOnValue.isDefined && dependsOnValue.get.trim.length == 0) {
+    if (dependsOnValue.isDefined && dependsOnValue.get.trim.isEmpty) {
       dependsOnValue = None
     }
     if (!adminOnly) {

@@ -273,38 +273,41 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
   }
 
   def deployTestSuiteToSpecifications() = authorizedAction(parse.multipartFormData) { request =>
-    val specIds: List[Long] = ParameterExtractor.requiredBodyParameterMulti(request, Parameters.SPEC_IDS).split(",").map(_.toLong).toList
-    authorizationManager.canManageSpecifications(request, specIds)
-    var response:Result = null
-    val testSuiteFileName = "ts_"+RandomStringUtils.random(10, false, true)+".zip"
-    request.body.file(Parameters.FILE) match {
-      case Some(testSuite) =>
-        if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
-          val fileBytes = FileUtils.readFileToByteArray(testSuite.ref.path.toFile)
-          val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-          val scanResult = virusScanner.scan(fileBytes)
-          if (!ClamAVClient.isCleanReply(scanResult)) {
-            response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Test suite failed virus scan.")
+    try {
+      val specIds: List[Long] = ParameterExtractor.requiredBodyParameterMulti(request, Parameters.SPEC_IDS).split(",").map(_.toLong).toList
+      authorizationManager.canManageSpecifications(request, specIds)
+      var response:Result = null
+      val testSuiteFileName = "ts_"+RandomStringUtils.random(10, false, true)+".zip"
+      request.body.file(Parameters.FILE) match {
+        case Some(testSuite) =>
+          if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
+            val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+            val scanResult = virusScanner.scan(testSuite.ref)
+            if (!ClamAVClient.isCleanReply(scanResult)) {
+              response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Test suite failed virus scan.")
+            }
           }
-        }
-        if (response == null) {
-          val file = Paths.get(
-            repositoryUtils.getTempFolder().getAbsolutePath,
-            RandomStringUtils.random(10, false, true),
-            testSuiteFileName
-          ).toFile
-          file.getParentFile.mkdirs()
-          testSuite.ref.moveTo(file, replace = true)
-          val contentType = testSuite.contentType
-          logger.debug("Test suite file uploaded - filename: [" + testSuiteFileName + "] content type: [" + contentType + "]")
-          val result = testSuiteManager.deployTestSuiteFromZipFile(specIds, file)
-          val json = JsonUtil.jsTestSuiteUploadResult(result).toString()
-          response = ResponseConstructor.constructJsonResponse(json)
-        }
-      case None =>
-        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + Parameters.FILE + "] parameter is missing.")
+          if (response == null) {
+            val file = Paths.get(
+              repositoryUtils.getTempFolder().getAbsolutePath,
+              RandomStringUtils.random(10, false, true),
+              testSuiteFileName
+            ).toFile
+            file.getParentFile.mkdirs()
+            testSuite.ref.moveTo(file, replace = true)
+            val contentType = testSuite.contentType
+            logger.debug("Test suite file uploaded - filename: [" + testSuiteFileName + "] content type: [" + contentType + "]")
+            val result = testSuiteManager.deployTestSuiteFromZipFile(specIds, file)
+            val json = JsonUtil.jsTestSuiteUploadResult(result).toString()
+            response = ResponseConstructor.constructJsonResponse(json)
+          }
+        case None =>
+          response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + Parameters.FILE + "] parameter is missing.")
+      }
+      response
+    } finally {
+      request.body.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
-    response
   }
 
   def getConformanceStatus(actorId: Long, sutId: Long) = authorizedAction { request =>

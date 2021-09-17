@@ -25,7 +25,7 @@ class Endpoint(_id: Long, _name: String, _desc: Option[String],
 	def toCaseObject = {
 		val actorId = actor match {
 			case Some(a) => a.id
-			case None => 0l
+			case None => 0L
 		}
 		Endpoints(this.id, this.name, this.desc, actorId)
 	}

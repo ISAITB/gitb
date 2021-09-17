@@ -462,7 +462,7 @@ export class ConformanceService {
       data: {
         specification_ids: specificationIds.join(',')
       },
-      file: file,
+      files: [{param: 'file', data: file}],
       authenticate: true
     })
   }

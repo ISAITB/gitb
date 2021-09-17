@@ -44,7 +44,7 @@ export class BaseRestService {
     return this.call<T>(config, () => {
       // Prepare body
       let body:any
-      if (config.file == undefined) {
+      if (config.files == undefined || config.files.length == 0) {
         if (config.asJSON) {
           body = config.data
         } else {
@@ -52,7 +52,9 @@ export class BaseRestService {
         }
       } else {
         body = new FormData()
-        body.append('file', config.file)
+        for (let fileConfig of config.files) {
+          body.append(fileConfig.param, fileConfig.data)
+        }
         if (config.data != undefined) {
           for (let key in config.data) {
             body.append(key, config.data[key])
@@ -71,7 +73,7 @@ export class BaseRestService {
     const configToUse: any = {}
     // Headers
     let contentType: string|undefined
-    if (config && config.file) {
+    if (config && config.files != undefined && config.files.length > 0) {
       contentType = 'multipart/form-data'
     }
     if (this.authProviderService.isAuthenticated()) {

@@ -1,26 +1,25 @@
 package utils
 
-import java.util
 import com.gitb.core.ValueEmbeddingEnumeration
-import com.gitb.tbs.{TestStepStatus, UserInput}
+import com.gitb.tbs.UserInput
 import com.gitb.tr._
 import config.Configurations
-
-import javax.xml.bind.JAXBElement
-import managers.AttachmentType
 import managers.export.{ExportSettings, ImportItem, ImportSettings}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoiceHistory.TestSuiteReplacementChoiceHistory
 import models.Enums.TestSuiteReplacementChoiceMetadata.TestSuiteReplacementChoiceMetadata
 import models.Enums._
-import models.{TestStepResultInfo, _}
+import models._
 import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsObject, _}
 
 import java.sql.Timestamp
-import scala.collection.JavaConverters._
+import java.util
+import javax.xml.bind.JAXBElement
+import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
-import scala.collection.mutable.{ListBuffer, Map}
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+
 object JsonUtil {
 
   def jsTextArray(texts: List[String]): JsObject = {
@@ -714,7 +713,7 @@ object JsonUtil {
   }
 
   def parseJsOrganisationParameterValues(json:String):List[OrganisationParameterValues] = {
-    val jsArray = Json.parse(json).as[List[JsObject]]
+    val jsArray = Json.parse(json).as[JsArray].value
     var list:List[OrganisationParameterValues] = List()
     jsArray.foreach { jsonConfig =>
       var value = (jsonConfig \ "value").asOpt[String]
@@ -731,7 +730,7 @@ object JsonUtil {
   }
 
   def parseJsPendingTestSuiteActions(json: String): List[PendingTestSuiteAction] = {
-    val jsArray = Json.parse(json).as[List[JsObject]]
+    val jsArray = Json.parse(json).as[JsArray].value
     val values = new ListBuffer[PendingTestSuiteAction]()
     jsArray.foreach { jsonConfig =>
       val pendingActionStr = (jsonConfig \ "action").as[String]
@@ -771,7 +770,7 @@ object JsonUtil {
   }
 
   def parseJsSystemParameterValues(json:String):List[SystemParameterValues] = {
-    val jsArray = Json.parse(json).as[List[JsObject]]
+    val jsArray = Json.parse(json).as[JsArray].value
     var list:List[SystemParameterValues] = List()
     jsArray.foreach { jsonConfig =>
       var value = (jsonConfig \ "value").asOpt[String]
@@ -787,7 +786,7 @@ object JsonUtil {
     list
   }
 
-  private def parseJsImportItem(jsonConfig: JsObject, parentItem: Option[ImportItem]): ImportItem = {
+  private def parseJsImportItem(jsonConfig: JsValue, parentItem: Option[ImportItem]): ImportItem = {
     val item = new ImportItem(
       (jsonConfig \ "name").asOpt[String],
       ImportItemType.apply((jsonConfig \ "type").as[Short]),
@@ -797,9 +796,9 @@ object JsonUtil {
       ImportItemChoice.apply((jsonConfig \ "process").as[Short])
     )
     item.parentItem = parentItem
-    val children = (jsonConfig \ "children").asOpt[List[JsObject]]
+    val children = (jsonConfig \ "children").asOpt[JsArray]
     if (children.isDefined) {
-      children.get.foreach { childObj =>
+      children.get.value.foreach { childObj =>
         item.childrenItems += parseJsImportItem(childObj, Some(item))
       }
     }
@@ -807,15 +806,15 @@ object JsonUtil {
   }
 
   def parseJsTriggerDataItems(json:String, triggerId: Option[Long]): List[TriggerData] = {
-    val jsArray = Json.parse(json).as[List[JsObject]]
-    var list = ListBuffer[TriggerData]()
+    val jsArray = Json.parse(json).as[JsArray].value
+    val list = ListBuffer[TriggerData]()
     jsArray.foreach { jsonConfig =>
       list += parseJsTriggerDataItem(jsonConfig, triggerId)
     }
     list.toList
   }
 
-  private def parseJsTriggerDataItem(jsonConfig: JsObject, triggerId: Option[Long]): TriggerData = {
+  private def parseJsTriggerDataItem(jsonConfig: JsValue, triggerId: Option[Long]): TriggerData = {
     val dataType = (jsonConfig \ "dataType").as[Short]
     val dataTypeEnum = TriggerDataType.apply(dataType)
     var dataIdToUse: Long = -1
@@ -833,8 +832,8 @@ object JsonUtil {
   }
 
   def parseJsImportItems(json:String): List[ImportItem] = {
-    val jsArray = Json.parse(json).as[List[JsObject]]
-    var list = ListBuffer[ImportItem]()
+    val jsArray = Json.parse(json).as[JsArray].value
+    val list = ListBuffer[ImportItem]()
     jsArray.foreach { jsonConfig =>
       list += parseJsImportItem(jsonConfig, None)
     }
@@ -842,7 +841,9 @@ object JsonUtil {
   }
 
   def parseStringArray(json: String): List[String] = {
-    Json.parse(json).as[List[String]]
+    Json.parse(json).as[JsArray].value.iterator.map { value =>
+      value.as[JsString].value
+    }.toList
   }
 
   def parseJsImportSettings(json:String):ImportSettings = {
@@ -855,7 +856,7 @@ object JsonUtil {
   def parseJsIdToValuesMap(json: Option[String]): Option[immutable.Map[Long, Set[String]]] = {
     var result: Option[immutable.Map[Long, Set[String]]] = None
     if (json.isDefined) {
-      val jsArray = Json.parse(json.get).as[List[JsObject]]
+      val jsArray = Json.parse(json.get).as[JsArray].value
       val tempMap = new mutable.HashMap[Long, mutable.HashSet[String]]()
       jsArray.foreach { jsonObj =>
         val id = (jsonObj \ "id").as[Long]
@@ -863,16 +864,9 @@ object JsonUtil {
         val idValues = tempMap.getOrElseUpdate(id, new mutable.HashSet[String]())
         idValues += value
       }
-      result = Some(tempMap.map(x => x._1 -> x._2.toSet).toMap)
+      result = Some(tempMap.map(x => x._1 -> x._2.toSet).iterator.toMap)
     }
     result
-  }
-
-  def parseJsIdsToValues(json: String): List[(Long, String)] = {
-    val jsArray = Json.parse(json).as[List[JsObject]]
-    jsArray.map(jsonConfig =>
-      ((jsonConfig \ "id").as[Long], (jsonConfig \ "value").as[String])
-    )
   }
 
   def parseJsExportSettings(json:String):ExportSettings = {
@@ -904,7 +898,7 @@ object JsonUtil {
   }
 
   def parseJsCommunityLabels(communityId: Long, json:String):List[CommunityLabels] = {
-    val jsArray = Json.parse(json).as[List[JsObject]]
+    val jsArray = Json.parse(json).as[JsArray].value
     var list:List[CommunityLabels] = List()
     jsArray.foreach { jsonConfig =>
       list ::= CommunityLabels(
@@ -914,17 +908,6 @@ object JsonUtil {
         (jsonConfig \ "pluralForm").as[String],
         (jsonConfig \ "fixedCase").as[Boolean]
       )
-    }
-    list
-  }
-
-  def parseJsAttachments(json: String):List[AttachmentType] = {
-    val jsArray = Json.parse(json).as[List[JsObject]]
-    var list:List[AttachmentType] = List()
-    jsArray.foreach { jsonAttachment =>
-      val attachmentName = (jsonAttachment \ "name").as[String]
-      val attachmentData = stringContentToByteArray((jsonAttachment \ "data").as[String])
-      list ::= new AttachmentType(attachmentName, attachmentData)
     }
     list
   }
@@ -953,7 +936,7 @@ object JsonUtil {
   }
 
   def parseJsUserInputs(json:String): List[UserInput] = {
-    val jsArray = Json.parse(json).as[List[JsObject]]
+    val jsArray = Json.parse(json).as[JsArray].value
     var list:List[UserInput] = List()
     jsArray.foreach { jsonInput =>
       val input = new UserInput()
@@ -1772,8 +1755,7 @@ object JsonUtil {
   def jsTARReports(reports: TestAssertionGroupReportsType): JsArray = {
     var json = Json.arr()
     if (reports != null && reports.getInfoOrWarningOrError != null) {
-      import scala.collection.JavaConverters._
-      collectionAsScalaIterable(reports.getInfoOrWarningOrError).toList.foreach(item => {
+      reports.getInfoOrWarningOrError.asScala.toList.foreach(item => {
         val jsItem = jsTestAssertionReportType(item)
         if (jsItem != null) {
           json = json.append(jsItem)

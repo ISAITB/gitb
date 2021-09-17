@@ -26,6 +26,7 @@ import javax.xml.bind.JAXBElement
 import javax.xml.namespace.QName
 import javax.xml.transform.stream.StreamSource
 import scala.concurrent.ExecutionContext
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 /**
  * Created by serbay on 10/16/14.
@@ -37,9 +38,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
   private val EXPORT_QNAME:QName = new QName("http://www.gitb.com/export/v1/", "export")
   private val TESTCASE_STEP_REPORT_NAME = "step.pdf"
 
-  import scala.collection.JavaConverters._
-
-	def getTestSuiteResource(locationKey: String, filePath:String) = authorizedAction { request =>
+	def getTestSuiteResource(locationKey: String, filePath:String): Action[AnyContent] = authorizedAction { request =>
     // Location key is either a test case ID (e.g. '123') or a test case ID prefixed by a test suite string identifier [TEST_SUITE_IDENTIFIER]|123.
     authorizationManager.canViewTestSuiteResource(request, locationKey)
     var testSuiteIdentifier: Option[String] = None
@@ -89,7 +88,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
 	}
 
-  def getTestSessionLog(sessionId: String) = authorizedAction { request =>
+  def getTestSessionLog(sessionId: String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewTestResultForSession(request, sessionId)
     val sessionFolderInfo = reportManager.getPathForTestSessionWrapper(sessionId, isExpected = true)
     try {
@@ -107,7 +106,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
   }
 
-  def getTestStepReport(sessionId: String, reportPath: String) = authorizedAction { request =>
+  def getTestStepReport(sessionId: String, reportPath: String): Action[AnyContent] = authorizedAction { request =>
 //    34888315-6781-4d74-a677-8f9001a02cb8/4.xml
     authorizationManager.canViewTestResultForSession(request, sessionId)
 
@@ -130,7 +129,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 
       if(file.exists()) {
         //read file into a string
-        val bytes  = Files.readAllBytes(Paths.get(file.getAbsolutePath));
+        val bytes  = Files.readAllBytes(Paths.get(file.getAbsolutePath))
         val string = new String(bytes)
 
         //convert string in xml format into its object representation
@@ -148,7 +147,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
 	}
 
-  def exportTestStepReport(sessionId: String, reportPath: String) = authorizedAction { request =>
+  def exportTestStepReport(sessionId: String, reportPath: String): Action[AnyContent] = authorizedAction { request =>
     //    34888315-6781-4d74-a677-8f9001a02cb8/4.xml
     authorizationManager.canViewTestResultForSession(request, sessionId)
     var path: String = null
@@ -192,7 +191,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
   }
 
-  def exportTestCaseReport() = authorizedAction { request =>
+  def exportTestCaseReport(): Action[AnyContent] = authorizedAction { request =>
     val session = ParameterExtractor.requiredQueryParameter(request, Parameters.SESSION_ID)
     authorizationManager.canViewTestResultForSession(request, session)
     val testCaseId = ParameterExtractor.requiredQueryParameter(request, Parameters.TEST_ID)
@@ -215,7 +214,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
         if (!exportedReport.exists()) {
           val list = reportManager.getListOfTestSteps(testcasePresentation, sessionFolderInfo.path.toFile)
           val labels = communityLabelManager.getLabels(request)
-          reportManager.generateDetailedTestCaseReport(list, exportedReport.getAbsolutePath, testCase, session, false, labels)
+          reportManager.generateDetailedTestCaseReport(list, exportedReport.getAbsolutePath, testCase, session, addContext = false, labels)
         }
         Ok.sendFile(
           content = exportedReport,
@@ -238,7 +237,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
   }
 
-  def exportConformanceStatementReport() = authorizedAction { request =>
+  def exportConformanceStatementReport(): Action[AnyContent] = authorizedAction { request =>
     val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID)
     authorizationManager.canViewConformanceStatementReport(request, systemId)
     val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID)
@@ -292,7 +291,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
   }
 
-  def exportOwnConformanceCertificateReport() = authorizedAction { request =>
+  def exportOwnConformanceCertificateReport(): Action[AnyContent] = authorizedAction { request =>
     val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
     val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
     authorizationManager.canViewOwnConformanceCertificateReport(request, systemId)
@@ -317,7 +316,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     exportConformanceCertificateInternal(settingsToUse.get, communityId, systemId, actorId)
   }
 
-  def exportConformanceCertificateReport() = authorizedAction { request =>
+  def exportConformanceCertificateReport(): Action[AnyContent] = authorizedAction { request =>
     val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
     val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
     val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
@@ -338,7 +337,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     exportConformanceCertificateInternal(settings, communityId, systemId, actorId)
   }
 
-  def exportDemoConformanceCertificateReport(communityId: Long) = authorizedAction { request =>
+  def exportDemoConformanceCertificateReport(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canPreviewConformanceCertificateReport(request, communityId)
     val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
     var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
@@ -385,14 +384,14 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     response
   }
 
-	def getTestCaseDefinition(testId: String) = authorizedAction { request =>
+	def getTestCaseDefinition(testId: String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewTestCase(request, testId)
     val tc = testCaseManager.getTestCase(testId)
     if (tc.isDefined) {
       val file = repositoryUtils.getTestSuitesResource(specificationManager.getSpecificationById(tc.get.targetSpec), tc.get.path, None)
       logger.debug("Reading test case ["+testId+"] definition from the file ["+file+"]")
       if(file.exists()) {
-        Ok.sendFile(file, true)
+        Ok.sendFile(file, inline = true)
       } else {
         NotFound
       }
@@ -401,35 +400,35 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
 	}
 
-  def getAllTestCases() = authorizedAction { request =>
+  def getAllTestCases: Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewAllTestCases(request)
     val testCases = testCaseManager.getAllTestCases()
     val json = JsonUtil.jsTestCasesList(testCases).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def getTestCasesForSystem(systemId: Long) = authorizedAction { request =>
+  def getTestCasesForSystem(systemId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewTestCasesBySystemId(request, systemId)
     val testCases = testCaseManager.getTestCasesForSystem(systemId)
     val json = JsonUtil.jsTestCasesList(testCases).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def getTestCasesForCommunity(communityId: Long) = authorizedAction { request =>
+  def getTestCasesForCommunity(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewTestCasesByCommunityId(request, communityId)
     val testCases = testCaseManager.getTestCasesForCommunity(communityId)
     val json = JsonUtil.jsTestCasesList(testCases).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def exportDomain(domainId: Long) = authorizedAction { request =>
+  def exportDomain(domainId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageDomain(request, domainId)
     exportInternal(request, (exportSettings: ExportSettings) => {
       exportManager.exportDomain(domainId, exportSettings)
     })
   }
 
-  def exportCommunity(communityId: Long) = authorizedAction { request =>
+  def exportCommunity(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageCommunity(request, communityId)
     exportInternal(request, (exportSettings: ExportSettings) => {
       exportManager.exportCommunity(communityId, exportSettings)
@@ -470,10 +469,9 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
         onClose = () => FileUtils.deleteQuietly(exportPathZip.toFile)
       )
     } catch {
-      case e:Exception => {
+      case e:Exception =>
         FileUtils.deleteQuietly(exportPathZip.toFile)
         throw e
-      }
     } finally {
       FileUtils.deleteQuietly(exportPathXml.toFile)
     }
@@ -494,19 +492,18 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
         val json = JsonUtil.jsImportPreviewResult(result._3.get, importItems).toString()
         ResponseConstructor.constructJsonResponse(json)
       } catch {
-        case e:Exception => {
+        case e:Exception =>
           logger.error("An unexpected error occurred while processing the provided archive.", e)
           // Delete the temporary file.
           if (result._4.isDefined) {
             FileUtils.deleteQuietly(result._4.get.toFile)
           }
           ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "An error occurred while processing the provided archive.")
-        }
       }
     }
   }
 
-  def uploadCommunityExport(communityId: Long) = authorizedAction { request =>
+  def uploadCommunityExport(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageCommunity(request, communityId)
     processImport(request, isDomain = false, (exportData: Export, settings: ImportSettings) => {
       val result = importPreviewManager.previewCommunityImport(exportData.getCommunities.getCommunity.get(0), Some(communityId))
@@ -518,7 +515,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     })
   }
 
-  def uploadDomainExport(domainId: Long) = authorizedAction { request =>
+  def uploadDomainExport(domainId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageDomain(request, domainId)
     processImport(request, isDomain = true, (exportData: Export, settings: ImportSettings) => {
       val result = importPreviewManager.previewDomainImport(exportData.getDomains.getDomain.get(0), Some(domainId))
@@ -534,12 +531,12 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     ResponseConstructor.constructEmptyResponse
   }
 
-  def cancelDomainImport(domainId: Long) = authorizedAction { request =>
+  def cancelDomainImport(domainId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageDomain(request, domainId)
     cancelImportInternal(request)
   }
 
-  def cancelCommunityImport(communityId: Long) = authorizedAction { request =>
+  def cancelCommunityImport(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageCommunity(request, communityId)
     cancelImportInternal(request)
   }
@@ -568,13 +565,13 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 
   private def confirmDomainImportInternal(request: Request[AnyContent], domainId: Long, canAddOrDeleteDomain: Boolean) = {
     confirmImportInternal(request, (export: Export, importSettings: ImportSettings, importItems: List[ImportItem]) => {
-      importCompleteManager.completeDomainImport(collectionAsScalaIterable(export.getDomains.getDomain).head, importSettings, importItems, Some(domainId), canAddOrDeleteDomain)
+      importCompleteManager.completeDomainImport(export.getDomains.getDomain.asScala.head, importSettings, importItems, Some(domainId), canAddOrDeleteDomain)
     })
   }
 
   private def confirmCommunityImportInternal(request: Request[AnyContent], communityId: Long, canAddOrDeleteDomain: Boolean) = {
     confirmImportInternal(request, (export: Export, importSettings: ImportSettings, importItems: List[ImportItem]) => {
-      importCompleteManager.completeCommunityImport(collectionAsScalaIterable(export.getCommunities.getCommunity).head, importSettings, importItems, Some(communityId), canAddOrDeleteDomain, Some(ParameterExtractor.extractUserId(request)))
+      importCompleteManager.completeCommunityImport(export.getCommunities.getCommunity.asScala.head, importSettings, importItems, Some(communityId), canAddOrDeleteDomain, Some(ParameterExtractor.extractUserId(request)))
     })
   }
 
@@ -603,7 +600,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     var response:Result = null
     val archivePassword = ParameterExtractor.requiredBodyParameterMulti(request, Parameters.PASSWORD)
     request.body.file(Parameters.FILE) match {
-      case Some(archive) => {
+      case Some(archive) =>
         val archiveFile = archive.ref.path.toFile
         try {
           val importResult = importCompleteManager.importSandboxData(archiveFile, archivePassword)
@@ -624,7 +621,6 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
         } finally {
           FileUtils.deleteQuietly(archiveFile)
         }
-      }
       case None =>
         response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.MISSING_PARAMS, "[" + Parameters.FILE + "] parameter is missing.")
     }

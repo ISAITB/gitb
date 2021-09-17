@@ -93,8 +93,8 @@ with a self-signed server certificate).
 ### Option 1: Work on Angular UI through Play application
 
 Using this approach you build the Angular app using Angular CLI but access it through the Play application. To do this:
-1. From ``gitb-ui/ui`` issue ``npm run build``. This will build the app, copy it under the Play application's ``assets``
-   folder and watch to rebuild automatically for any changes.
+1. From ``gitb-ui/ui`` issue ``npm run build``. This will build the app and copy it under the Play application's ``assets``
+   folder. To rebuild automatically for any changes use ``npm run build:dev``.
 2. Access the application by first going to the Play application's welcome page at http://localhost:9000. Once you click
    any of the login options the Angular app will be launched.
 3. Once any part of the Angular app is rebuilt you will need to refresh the browser page to see
@@ -110,7 +110,9 @@ include:
 
 Using this approach you build and serve the Angular app using Angular CLI. In this scenario the Play application
 is only used through its REST API which the Angular app proxies and uses. To use this approach:
-- From ``gitb-ui/ui`` issue ``npm start``.
+- Only once from ``gitb-ui/ui`` issue  ``npm run build``. This is needed to put in place static resources used by the Angular app
+  (most notably tinymce styles).
+- From ``gitb-ui/ui`` issue ``npm start``. This reloads the app upon detected changes.
 - Access the application at http://localhost:4200 (this will be automatically opened for you).  
 
 **When to use this approach:** This approach is the most efficient as it allows use of the lightweight CLI server

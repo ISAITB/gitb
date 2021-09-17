@@ -4,6 +4,7 @@ import java.io.*;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.Arrays;
 
 /**
@@ -118,10 +119,24 @@ public class ClamAVClient {
      *
      * @param in data to scan
      * @return server reply
+     * @deprecated Use the streaming version.
      **/
+    @Deprecated
     public byte[] scan(byte[] in) throws IOException {
         ByteArrayInputStream bis = new ByteArrayInputStream(in);
         return scan(bis);
+    }
+
+    /**
+     * Scans a file for virus by passing the file to clamav
+     *
+     * @param file file to scan
+     * @return server reply
+     **/
+    public byte[] scan(File file) throws IOException {
+        try (InputStream in = Files.newInputStream(file.toPath())) {
+            return scan(in);
+        }
     }
 
     /**

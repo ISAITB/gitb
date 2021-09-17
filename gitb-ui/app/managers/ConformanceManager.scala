@@ -308,7 +308,7 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 			}
 	}
 
-	def deleteDomain(domain: Long) {
+	def deleteDomain(domain: Long): Unit = {
 		val onSuccessCalls = mutable.ListBuffer[() => _]()
 		val action = deleteDomainInternal(domain, onSuccessCalls)
 		exec(
@@ -363,7 +363,7 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 					// Ensure no other default actors are defined.
 					actions += actorManager.setOtherActorsAsNonDefault(savedActorId, specificationId)
 				}
-				DBIO.seq(actions.map(a => a): _*)
+				DBIO.seq(actions.toList.map(a => a): _*)
 			}
 		} yield savedActorId
 	}
@@ -406,7 +406,7 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 				specMap += (specId -> mutable.Set[String]())
 			}
 		}
-		specMap.toMap.map(x => (x._1, x._2.toSet))
+		specMap.iterator.toMap.map(x => (x._1, x._2.toSet))
 	}
 
   def getActorsWithSpecificationId(actorIds:Option[List[Long]], spec:Option[Long]): List[Actor] = {
@@ -806,8 +806,8 @@ class ConformanceManager @Inject() (triggerManager: TriggerManager, actorManager
 			}
 			actorConfig.getConfig.add(config)
 		}
-		import scala.collection.JavaConverters._
-		collectionAsScalaIterable(actorMap.values()).toList
+		import scala.jdk.CollectionConverters._
+		actorMap.values().asScala.toList
 	}
 
 	def getSystemConfigurationStatus(systemId: Long, actorId: Long): List[SystemConfigurationEndpoint] = {

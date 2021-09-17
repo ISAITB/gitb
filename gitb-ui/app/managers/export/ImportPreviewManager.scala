@@ -33,8 +33,7 @@ import scala.collection.mutable.ListBuffer
 class ImportPreviewManager @Inject()(exportManager: ExportManager, communityManager: CommunityManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
-
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   private val logger = LoggerFactory.getLogger(classOf[ImportPreviewManager])
   private val VERSION_NUMBER_PATTERN = Pattern.compile("^(\\d+)\\.(\\d+)\\.(\\d+).*$")
@@ -121,10 +120,10 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         targetSpecificationIdMap += (x.id -> x)
       })
       if (targetSpecificationMap.nonEmpty) {
-        exportManager.loadSpecificationTestSuiteMap(targetDomain.get.id).map { x =>
+        exportManager.loadSpecificationTestSuiteMap(targetDomain.get.id).iterator.map { x =>
           targetSpecificationTestSuiteMap += (x._1 -> listBufferToNameMap(x._2, { t => t.identifier }))
         }
-        exportManager.loadSpecificationActorMap(targetDomain.get.id).map { x =>
+        exportManager.loadSpecificationActorMap(targetDomain.get.id).iterator.map { x =>
           targetSpecificationActorMap += (x._1 -> listBufferToNameMap(x._2, { a => a.actorId }))
           x._2.foreach { a =>
             referenceActorToSpecificationMap += (a.id -> targetSpecificationIdMap(x._1))
@@ -132,12 +131,12 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
           true
         }
         if (targetSpecificationActorMap.nonEmpty) {
-          exportManager.loadActorEndpointMap(targetDomain.get.id).map { x =>
+          exportManager.loadActorEndpointMap(targetDomain.get.id).iterator.map { x =>
             targetActorEndpointMap += (x._1 -> listBufferToNameMap(x._2, { e => e.name }))
             referenceActorEndpointMap += (x._1 -> listBufferToNameMap(x._2, { e => e.name }))
           }
           if (targetActorEndpointMap.nonEmpty) {
-            exportManager.loadEndpointParameterMap(targetDomain.get.id).map { x =>
+            exportManager.loadEndpointParameterMap(targetDomain.get.id).iterator.map { x =>
               targetEndpointParameterMap += (x._1 -> listBufferToNameMap(x._2, { p => p.name }))
               referenceEndpointParameterMap += (x._1 -> listBufferToNameMap(x._2, { p => p.name }))
               x._2.foreach { p =>
@@ -162,7 +161,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     }
     // Domain parameters.
     if (importTargets.hasDomainParameters) {
-      collectionAsScalaIterable(exportedDomain.getParameters.getParameter).foreach { exportedDomainParameter =>
+      exportedDomain.getParameters.getParameter.asScala.foreach { exportedDomainParameter =>
         var targetParameter: Option[models.DomainParameter] = None
         if (targetDomain.isDefined) {
           targetParameter = targetDomainParametersMap.remove(exportedDomainParameter.getName)
@@ -176,7 +175,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     }
     // Specifications.
     if (importTargets.hasSpecifications) {
-      collectionAsScalaIterable(exportedDomain.getSpecifications.getSpecification).foreach { exportedSpecification =>
+      exportedDomain.getSpecifications.getSpecification.asScala.foreach { exportedSpecification =>
         var targetSpecification: Option[models.Specifications] = None
         var importItemSpecification: ImportItem = null
         if (targetDomain.isDefined) {
@@ -190,7 +189,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         }
         // Test suites.
         if (exportedSpecification.getTestSuites != null) {
-          collectionAsScalaIterable(exportedSpecification.getTestSuites.getTestSuite).foreach { exportedTestSuite =>
+          exportedSpecification.getTestSuites.getTestSuite.asScala.foreach { exportedTestSuite =>
             var targetTestSuite: Option[models.TestSuites] = None
             if (targetSpecification.isDefined && targetSpecificationTestSuiteMap.contains(targetSpecification.get.id)) {
               targetTestSuite = targetSpecificationTestSuiteMap(targetSpecification.get.id).remove(exportedTestSuite.getIdentifier)
@@ -204,7 +203,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         }
         // Actors
         if (exportedSpecification.getActors != null) {
-          collectionAsScalaIterable(exportedSpecification.getActors.getActor).foreach { exportedActor =>
+          exportedSpecification.getActors.getActor.asScala.foreach { exportedActor =>
             var targetActor: Option[models.Actors] = None
             var importItemActor: ImportItem = null
             if (targetSpecification.isDefined && targetSpecificationActorMap.contains(targetSpecification.get.id)) {
@@ -219,7 +218,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
             actorXmlIdToImportItemMap += (exportedActor.getId -> importItemActor)
             // Endpoints
             if (exportedActor.getEndpoints != null) {
-              collectionAsScalaIterable(exportedActor.getEndpoints.getEndpoint).foreach { exportedEndpoint =>
+              exportedActor.getEndpoints.getEndpoint.asScala.foreach { exportedEndpoint =>
                 var targetEndpoint: Option[models.Endpoints] = None
                 var importItemEndpoint: ImportItem = null
                 if (targetActor.isDefined && targetActorEndpointMap.contains(targetActor.get.id)) {
@@ -233,7 +232,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
                 }
                 // Endpoint parameters
                 if (exportedEndpoint.getParameters != null) {
-                  collectionAsScalaIterable(exportedEndpoint.getParameters.getParameter).foreach { exportedEndpointParameter =>
+                  exportedEndpoint.getParameters.getParameter.asScala.foreach { exportedEndpointParameter =>
                     var targetEndpointParameter: Option[models.Parameters] = None
                     if (targetEndpoint.isDefined && targetEndpointParameterMap.contains(targetEndpoint.get.id)) {
                       targetEndpointParameter = targetEndpointParameterMap(targetEndpoint.get.id).remove(exportedEndpointParameter.getName)
@@ -404,17 +403,17 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
       }
       if (targetOrganisationMap.nonEmpty) {
         // Users.
-        exportManager.loadOrganisationUserMap(targetCommunity.get.id).map { x =>
+        exportManager.loadOrganisationUserMap(targetCommunity.get.id).iterator.map { x =>
           targetOrganisationUserMap += (x._1 -> listBufferToNameMap(x._2, { u => u.email }))
         }
         if (targetOrganisationPropertyMap.nonEmpty) {
           // Organisation property values.
-          exportManager.loadOrganisationParameterValueMap(targetCommunity.get.id).map { x =>
+          exportManager.loadOrganisationParameterValueMap(targetCommunity.get.id).iterator.map { x =>
             targetOrganisationPropertyValueMap += (x._1 -> listBufferToNameMap(x._2, { v => targetOrganisationPropertyIdMap(v.parameter).testKey }))
           }
         }
         // Systems.
-        exportManager.loadOrganisationSystemMap(targetCommunity.get.id).map { x =>
+        exportManager.loadOrganisationSystemMap(targetCommunity.get.id).iterator.map { x =>
           targetSystemMap += (x._1 -> listBufferToNonUniqueNameMap(x._2, { s => s.shortname }))
           x._2.foreach { system =>
             targetSystemIdMap += (system.id -> system)
@@ -424,13 +423,13 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         if (targetSystemMap.nonEmpty) {
           if (targetSystemPropertyMap.nonEmpty) {
             // System property values.
-            exportManager.loadSystemParameterValues(targetCommunity.get.id).map { x =>
+            exportManager.loadSystemParameterValues(targetCommunity.get.id).iterator.map { x =>
               targetSystemPropertyValueMap += (x._1 -> listBufferToNameMap(x._2, { v => targetSystemPropertyIdMap(v.parameter).testKey }))
             }
           }
           if (domainImportInfo.targetActorToSpecificationMap.nonEmpty) {
             // Statements.
-            exportManager.loadSystemStatementsMap(targetCommunity.get.id, targetCommunity.get.domain).map { x =>
+            exportManager.loadSystemStatementsMap(targetCommunity.get.id, targetCommunity.get.domain).iterator.map { x =>
               var statements = targetStatementMap.get(x._1)
               if (statements.isEmpty) {
                 statements = Some(mutable.Map[Long, (models.Specifications, models.Actors)]())
@@ -443,7 +442,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
             }
             // Statement configurations.
             if (domainImportInfo.targetEndpointParameterIdMap.nonEmpty) {
-              exportManager.loadSystemConfigurationsMap(targetCommunity.get).map { x =>
+              exportManager.loadSystemConfigurationsMap(targetCommunity.get).iterator.map { x =>
                 // [actor ID]_[endpoint ID]_[System ID]_[Parameter ID]
                 targetStatementConfigurationMap += (x._1 -> listBufferToNameMap(x._2, { v => domainImportInfo.targetEndpointParameterIdMap(v.parameter).name }))
               }
@@ -456,7 +455,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     }
     // Administrators.
     if (importTargets.hasAdministrators && !Configurations.AUTHENTICATION_SSO_ENABLED) {
-      collectionAsScalaIterable(exportedCommunity.getAdministrators.getAdministrator).foreach { exportedAdministrator =>
+      exportedCommunity.getAdministrators.getAdministrator.asScala.foreach { exportedAdministrator =>
         var targetAdministrator: Option[models.Users] = None
         if (targetCommunity.isDefined) {
           targetAdministrator = targetAdministratorsMap.remove(exportedAdministrator.getEmail)
@@ -473,7 +472,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     }
     // Organisation properties.
     if (importTargets.hasOrganisationProperties) {
-      collectionAsScalaIterable(exportedCommunity.getOrganisationProperties.getProperty).foreach { exportedProperty =>
+      exportedCommunity.getOrganisationProperties.getProperty.asScala.foreach { exportedProperty =>
         var targetProperty: Option[OrganisationParameters] = None
         if (targetCommunity.isDefined) {
           targetProperty = targetOrganisationPropertyMap.remove(exportedProperty.getName)
@@ -487,7 +486,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     }
     // System properties.
     if (importTargets.hasSystemProperties) {
-      collectionAsScalaIterable(exportedCommunity.getSystemProperties.getProperty).foreach { exportedProperty =>
+      exportedCommunity.getSystemProperties.getProperty.asScala.foreach { exportedProperty =>
         var targetProperty: Option[SystemParameters] = None
         if (targetCommunity.isDefined) {
           targetProperty = targetSystemPropertyMap.remove(exportedProperty.getName)
@@ -501,7 +500,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     }
     // Custom labels.
     if (importTargets.hasCustomLabels) {
-      collectionAsScalaIterable(exportedCommunity.getCustomLabels.getLabel).foreach { exportedLabel =>
+      exportedCommunity.getCustomLabels.getLabel.asScala.foreach { exportedLabel =>
         var targetLabel: Option[CommunityLabels] = None
         var labelType: LabelType = null
         exportedLabel.getLabelType match {
@@ -517,7 +516,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
           targetLabel = targetCustomLabelMap.remove(labelType)
         }
         if (targetLabel.isDefined) {
-          new ImportItem(Some(targetLabel.get.labelType.toString), ImportItemType.CustomLabel, ImportItemMatch.Both, Some(targetCommunity.get.id + "_" + targetLabel.get.labelType.toString), Some(exportedLabel.getId), importItemCommunity)
+          new ImportItem(Some(targetLabel.get.labelType.toString), ImportItemType.CustomLabel, ImportItemMatch.Both, Some(s"${targetCommunity.get.id}_${targetLabel.get.labelType.toString}"), Some(exportedLabel.getId), importItemCommunity)
         } else {
           new ImportItem(Some(labelType.id.toString), ImportItemType.CustomLabel, ImportItemMatch.ArchiveOnly, None, Some(exportedLabel.getId), importItemCommunity)
         }
@@ -525,7 +524,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     }
     // Landing pages.
     if (importTargets.hasLandingPages) {
-      collectionAsScalaIterable(exportedCommunity.getLandingPages.getLandingPage).foreach { exportedLandingPage =>
+      exportedCommunity.getLandingPages.getLandingPage.asScala.foreach { exportedLandingPage =>
         var targetLandingPage: Option[Long] = None
         if (targetCommunity.isDefined) {
           val foundContent = targetLandingPageMap.get(exportedLandingPage.getName)
@@ -545,7 +544,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     }
     // Legal notices.
     if (importTargets.hasLegalNotices) {
-      collectionAsScalaIterable(exportedCommunity.getLegalNotices.getLegalNotice).foreach { exportedLegalNotice =>
+      exportedCommunity.getLegalNotices.getLegalNotice.asScala.foreach { exportedLegalNotice =>
         var targetLegalNotice: Option[Long] = None
         if (targetCommunity.isDefined) {
           val foundContent = targetLegalNoticeMap.get(exportedLegalNotice.getName)
@@ -565,7 +564,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     }
     // Error templates.
     if (importTargets.hasErrorTemplates) {
-      collectionAsScalaIterable(exportedCommunity.getErrorTemplates.getErrorTemplate).foreach { exportedErrorTemplate =>
+      exportedCommunity.getErrorTemplates.getErrorTemplate.asScala.foreach { exportedErrorTemplate =>
         var targetErrorTemplate: Option[Long] = None
         if (targetCommunity.isDefined) {
           val foundContent = targetErrorTemplateMap.get(exportedErrorTemplate.getName)
@@ -585,7 +584,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     }
     // Triggers.
     if (importTargets.hasTriggers) {
-      collectionAsScalaIterable(exportedCommunity.getTriggers.getTrigger).foreach { exportedTrigger =>
+      exportedCommunity.getTriggers.getTrigger.asScala.foreach { exportedTrigger =>
         var targetTrigger: Option[Long] = None
         if (targetCommunity.isDefined) {
           val foundContent = targetTriggerMap.get(exportedTrigger.getName)
@@ -605,7 +604,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     }
     // Organisations.
     if (importTargets.hasOrganisations) {
-      collectionAsScalaIterable(exportedCommunity.getOrganisations.getOrganisation).foreach { exportedOrganisation =>
+      exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
         var targetOrganisation: Option[models.Organizations] = None
         var importItemOrganisation: ImportItem = null
         if (targetCommunity.isDefined) {
@@ -625,7 +624,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         }
         // Users.
         if (!Configurations.AUTHENTICATION_SSO_ENABLED && exportedOrganisation.getUsers != null) {
-          collectionAsScalaIterable(exportedOrganisation.getUsers.getUser).foreach { exportedUser =>
+          exportedOrganisation.getUsers.getUser.asScala.foreach { exportedUser =>
             var targetUser: Option[models.Users] = None
             if (targetOrganisation.isDefined && targetOrganisationUserMap.contains(targetOrganisation.get.id)) {
               targetUser = targetOrganisationUserMap(targetOrganisation.get.id).remove(exportedUser.getEmail)
@@ -642,7 +641,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         }
         // Organisation property values.
         if (exportedOrganisation.getPropertyValues != null) {
-          collectionAsScalaIterable(exportedOrganisation.getPropertyValues.getProperty).foreach { exportedProperty =>
+          exportedOrganisation.getPropertyValues.getProperty.asScala.foreach { exportedProperty =>
             var targetPropertyValue: Option[models.OrganisationParameterValues] = None
             if (targetOrganisation.isDefined && targetOrganisationPropertyValueMap.contains(targetOrganisation.get.id)) {
               targetPropertyValue = targetOrganisationPropertyValueMap(targetOrganisation.get.id).remove(exportedProperty.getProperty.getName)
@@ -656,7 +655,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         }
         // Systems.
         if (exportedOrganisation.getSystems != null) {
-          collectionAsScalaIterable(exportedOrganisation.getSystems.getSystem).foreach { exportedSystem =>
+          exportedOrganisation.getSystems.getSystem.asScala.foreach { exportedSystem =>
             var targetSystem: Option[models.Systems] = None
             var importItemSystem: ImportItem = null
             if (targetOrganisation.isDefined && targetSystemMap.contains(targetOrganisation.get.id)) {
@@ -678,7 +677,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
             }
             // System property values.
             if (exportedSystem.getPropertyValues != null) {
-              collectionAsScalaIterable(exportedSystem.getPropertyValues.getProperty).foreach { exportedValue =>
+              exportedSystem.getPropertyValues.getProperty.asScala.foreach { exportedValue =>
                 var targetPropertyValue: Option[models.SystemParameterValues] = None
                 if (targetSystem.isDefined && targetSystemPropertyValueMap.contains(targetSystem.get.id)) {
                   targetPropertyValue = targetSystemPropertyValueMap(targetSystem.get.id).remove(exportedValue.getProperty.getName)
@@ -692,7 +691,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
             }
             // Statements.
             if (exportedSystem.getStatements != null) {
-              collectionAsScalaIterable(exportedSystem.getStatements.getStatement).foreach { exportedStatement =>
+              exportedSystem.getStatements.getStatement.asScala.foreach { exportedStatement =>
                 var targetStatement: Option[(models.Systems, models.Actors)] = None
                 var importItemStatement: ImportItem = null
                 if (targetSystem.isDefined) {
@@ -720,7 +719,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
                 }
                 // Statement configurations.
                 if (exportedStatement.getConfigurations != null) {
-                  collectionAsScalaIterable(exportedStatement.getConfigurations.getConfiguration).foreach { exportedConfig =>
+                  exportedStatement.getConfigurations.getConfiguration.asScala.foreach { exportedConfig =>
                     var targetConfig: Option[models.Configs] = None
                     var targetConfigParam: Option[models.Parameters] = None
                     var targetEndpoint: Option[models.Endpoints] = None
@@ -729,7 +728,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
                       if (targetEndpoint.isDefined && domainImportInfo.targetEndpointParameterMap.contains(targetEndpoint.get.id)) {
                         targetConfigParam = domainImportInfo.targetEndpointParameterMap(targetEndpoint.get.id).get(exportedConfig.getParameter.getName)
                         if (targetConfigParam.isDefined) {
-                          val key = targetEndpoint.get.actor + "_" + targetEndpoint.get.id + "_" + targetStatement.get._1.id + "_" + targetConfigParam.get.id
+                          val key = s"${targetEndpoint.get.actor}_${targetEndpoint.get.id}_${targetStatement.get._1.id}_${targetConfigParam.get.id}"
                           if (targetStatementConfigurationMap.contains(key)) {
                             targetConfig = targetStatementConfigurationMap(key).remove(exportedConfig.getParameter.getName)
                           }
@@ -738,7 +737,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
                     }
                     if (targetConfig.isDefined) {
                       // [Actor ID]_[Endpoint ID]_[System ID]_[Parameter ID]
-                      new ImportItem(Some(targetConfigParam.get.name), ImportItemType.StatementConfiguration, ImportItemMatch.Both, Some(targetEndpoint.get.actor + "_" + targetEndpoint.get.id+"_"+targetConfig.get.system + "_" + targetConfig.get.parameter), Some(exportedConfig.getId), importItemStatement)
+                      new ImportItem(Some(targetConfigParam.get.name), ImportItemType.StatementConfiguration, ImportItemMatch.Both, Some(s"${targetEndpoint.get.actor}_${targetEndpoint.get.id}_${targetConfig.get.system}_${targetConfig.get.parameter}"), Some(exportedConfig.getId), importItemStatement)
                     } else {
                       new ImportItem(Some(exportedConfig.getParameter.getName), ImportItemType.StatementConfiguration, ImportItemMatch.ArchiveOnly, None, Some(exportedConfig.getId), importItemStatement)
                     }
@@ -761,7 +760,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
       new ImportItem(Some(property.name), ImportItemType.SystemProperty, ImportItemMatch.DBOnly, Some(property.id.toString), None, importItemCommunity)
     }
     targetCustomLabelMap.values.foreach { label =>
-      new ImportItem(Some(label.labelType.toString), ImportItemType.CustomLabel, ImportItemMatch.DBOnly, Some(label.community + "_" + label.labelType), None, importItemCommunity)
+      new ImportItem(Some(label.labelType.toString), ImportItemType.CustomLabel, ImportItemMatch.DBOnly, Some(s"${label.community}_${label.labelType}"), None, importItemCommunity)
     }
     targetLandingPageMap.foreach { entry =>
       entry._2.foreach { x =>
@@ -816,8 +815,8 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
       x._2.values.foreach { statement =>
         val specification = statement._1
         val actor = statement._2
-        val item = new ImportItem(Some(specification.fullname + " (" + actor.name + ")"), ImportItemType.Statement, ImportItemMatch.DBOnly, Some(x._1 + "_" + actor.id.toString), None, importItemMapSystem(x._1.toString))
-        importItemMapStatement += (x._1 + "_" + actor.id -> item)
+        val item = new ImportItem(Some(s"${specification.fullname} (${actor.name})"), ImportItemType.Statement, ImportItemMatch.DBOnly, Some(s"${x._1}_${actor.id.toString}"), None, importItemMapSystem(x._1.toString))
+        importItemMapStatement += (s"${x._1}_${actor.id}" -> item)
       }
     }
     targetStatementConfigurationMap.foreach { entry1 =>
@@ -914,7 +913,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         }
       }
       if (errorInformation.isEmpty) {
-        val importFileName = "export_"+RandomStringUtils.random(10, false, true)+".zip"
+        val importFileName = s"export_${RandomStringUtils.random(10, false, true)}.zip"
         pendingImportId = Some(RandomStringUtils.random(10, false, true))
         val zipFile = Paths.get(
           getPendingFolder().getAbsolutePath,
@@ -946,7 +945,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
               errorInformation = Some((ErrorCodes.INVALID_REQUEST, "The provided archive must contain a single data file."))
             }
             if (errorInformation.isEmpty) {
-              var xmlFile: Path = collectionAsScalaIterable(extractedFiles.values()).head
+              var xmlFile: Path = extractedFiles.values().asScala.head
               // Get export file version
               val dataVersion = getDataFileVersion(xmlFile)
               // XSD validation

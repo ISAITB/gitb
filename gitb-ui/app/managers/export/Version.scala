@@ -6,7 +6,7 @@ class Version(_major: Int, _minor: Int, _patch: Int) extends Comparable[Version]
   var patch: Int = _patch
 
   override def toString: String = {
-    major+"."+minor+"."+patch
+    s"$major.$minor.$patch"
   }
 
   override def hashCode(): Int = {

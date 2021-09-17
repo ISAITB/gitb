@@ -1,10 +1,7 @@
 package managers.export
 
-import java.nio.file.Files
-
 import com.gitb.xml
 import com.gitb.xml.export._
-import javax.inject.{Inject, Singleton}
 import managers._
 import models.Enums.{LabelType, SelfRegistrationRestriction, SelfRegistrationType, UserRole}
 import models.{TestCases, Actors => _, Endpoints => _, Systems => _, _}
@@ -15,10 +12,12 @@ import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
 import utils.MimeUtil
 
+import java.nio.file.Files
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
 
 @Singleton
-class ExportManager @Inject() (triggerManager: TriggerManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ExportManager @Inject() (triggerManager: TriggerManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ExportManager])
 
@@ -161,7 +160,7 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
   }
 
   private [export] def loadOrganisationParameterValueMap(communityId: Long): scala.collection.mutable.Map[Long, ListBuffer[models.OrganisationParameterValues]] = {
-    var organisationParameterValueMap: scala.collection.mutable.Map[Long, ListBuffer[models.OrganisationParameterValues]] = scala.collection.mutable.Map()
+    val organisationParameterValueMap: scala.collection.mutable.Map[Long, ListBuffer[models.OrganisationParameterValues]] = scala.collection.mutable.Map()
     exec(PersistenceSchema.organisationParameterValues
       .join(PersistenceSchema.organizations).on(_.organisation === _.id)
       .filter(_._2.adminOrganization === false)
@@ -180,7 +179,7 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
   }
 
   private[export] def loadOrganisationSystemMap(communityId:Long): scala.collection.mutable.Map[Long, ListBuffer[models.Systems]] = {
-    var organisationSystemMap: scala.collection.mutable.Map[Long, ListBuffer[models.Systems]] = scala.collection.mutable.Map()
+    val organisationSystemMap: scala.collection.mutable.Map[Long, ListBuffer[models.Systems]] = scala.collection.mutable.Map()
     exec(PersistenceSchema.systems
       .join(PersistenceSchema.organizations).on(_.owner === _.id)
       .filter(_._2.adminOrganization === false)
@@ -199,7 +198,7 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
   }
 
   private[export] def loadSystemStatementsMap(communityId: Long, domainId: Option[Long]): scala.collection.mutable.Map[Long, ListBuffer[(models.Specifications, models.Actors)]] = {
-    var systemStatementsMap: scala.collection.mutable.Map[Long, ListBuffer[(models.Specifications, models.Actors)]] = scala.collection.mutable.Map()
+    val systemStatementsMap: scala.collection.mutable.Map[Long, ListBuffer[(models.Specifications, models.Actors)]] = scala.collection.mutable.Map()
     var query = PersistenceSchema.systemImplementsActors
       .join(PersistenceSchema.systems).on(_.systemId === _.id)
       .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
@@ -226,7 +225,7 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
   }
 
   private[export] def loadSystemConfigurationsMap(community: models.Communities): scala.collection.mutable.Map[String, ListBuffer[models.Configs]] = {
-    var systemConfigurationsMap: scala.collection.mutable.Map[String, ListBuffer[models.Configs]] = scala.collection.mutable.Map()
+    val systemConfigurationsMap: scala.collection.mutable.Map[String, ListBuffer[models.Configs]] = scala.collection.mutable.Map()
     var query = PersistenceSchema.configs
       .join(PersistenceSchema.endpoints).on(_.endpoint === _.id)
       .join(PersistenceSchema.actors).on(_._2.actor === _.id)
@@ -241,7 +240,7 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
       .map(x => (x._1._1._1._1, x._1._2.id, x._1._1._2.id, x._1._1._1._2.actor))
       .result
     ).foreach { x =>
-      val key = x._4+"_"+x._1.endpoint+"_"+x._2+"_"+x._1.parameter // [Actor ID]_[Endpoint ID]_[System ID]_[Endpoint parameter ID]
+      val key = s"${x._4}_${x._1.endpoint}_${x._2}_${x._1.parameter}" // [Actor ID]_[Endpoint ID]_[System ID]_[Endpoint parameter ID]
       var configs = systemConfigurationsMap.get(key)
       if (configs.isEmpty) {
         configs = Some(new ListBuffer[Configs])
@@ -253,7 +252,7 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
   }
 
   private[export] def loadSystemParameterValues(communityId:Long): scala.collection.mutable.Map[Long, ListBuffer[models.SystemParameterValues]] = {
-    var systemParameterValueMap: scala.collection.mutable.Map[Long, ListBuffer[models.SystemParameterValues]] = scala.collection.mutable.Map()
+    val systemParameterValueMap: scala.collection.mutable.Map[Long, ListBuffer[models.SystemParameterValues]] = scala.collection.mutable.Map()
     exec(PersistenceSchema.systemParameterValues
       .join(PersistenceSchema.systems).on(_.system === _.id)
       .join(PersistenceSchema.organizations).on(_._2.owner === _.id)
@@ -989,7 +988,7 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
                         if (domainExportInfo.endpointParameterMap.contains(endpoint.id)) {
                           domainExportInfo.endpointParameterMap(endpoint.id).foreach { parameter =>
                             // Get the system configurations for the parameter.
-                            val key = endpoint.actor+"_"+parameter.endpoint+"_"+system.id+"_"+parameter.id
+                            val key = s"${endpoint.actor}_${parameter.endpoint}_${system.id}_${parameter.id}"
                             if (systemConfigurationsMap.contains(key)) {
                               if (exportedStatement.getConfigurations == null) {
                                 exportedStatement.setConfigurations(new com.gitb.xml.export.Configurations)

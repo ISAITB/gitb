@@ -29,7 +29,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
 
   import dbConfig.profile.api._
 
-  import scala.collection.JavaConverters._
+  import scala.jdk.CollectionConverters._
 
   def completeDomainImport(exportedDomain: com.gitb.xml.export.Domain, importSettings: ImportSettings, importItems: List[ImportItem], targetDomainId: Option[Long], canAddOrDeleteDomain: Boolean): Unit = {
     // Load context
@@ -322,7 +322,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       paths += (testCase.getShortName -> pathToSet)
     }
-    paths.toMap
+    paths.iterator.toMap
   }
 
   private def saveTestSuiteFiles(data: TestSuite, item: ImportItem, domainId: Long, specificationId: Long, ctx: ImportContext): File = {
@@ -424,7 +424,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     var modelDataItems: Option[List[models.TriggerData]] = None
     if (data.getDataItems != null) {
       val modelDataItemsToProcess = ListBuffer[models.TriggerData]()
-      collectionAsScalaIterable(data.getDataItems.getTriggerDataItem).foreach { dataItem =>
+      data.getDataItems.getTriggerDataItem.asScala.foreach { dataItem =>
         var dataId: Option[Long] = None
         if (dataItem.getDataType == com.gitb.xml.export.TriggerDataType.ORGANISATION_PARAMETER) {
           dataId = getProcessedDbId(dataItem.getData, ImportItemType.OrganisationProperty, ctx)
@@ -481,9 +481,9 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
   private def getSavedActorMap(exportedTestSuite: com.gitb.xml.export.TestSuite, specificationId: Long, ctx: ImportContext): java.util.Map[String, Long] = {
     val savedActorMap = new java.util.HashMap[String, Long]()
     if (exportedTestSuite.getTestCases != null) {
-      collectionAsScalaIterable(exportedTestSuite.getTestCases.getTestCase).foreach { exportedTestCase =>
+      exportedTestSuite.getTestCases.getTestCase.asScala.foreach { exportedTestCase =>
         if (exportedTestCase.getActors != null) {
-          collectionAsScalaIterable(exportedTestCase.getActors.getActor).foreach { actor =>
+          exportedTestCase.getActors.getActor.asScala.foreach { actor =>
             if (!savedActorMap.containsKey(actor.getActor.getActorId)) {
               savedActorMap.put(actor.getActor.getActorId, ctx.savedSpecificationActors(specificationId)(actor.getActor.getActorId))
             }
@@ -507,7 +507,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     })
     var testCases: List[TestCase] = null
     if (data.getTestCases != null && data.getTestCases.getTestCase != null) {
-      testCases = collectionAsScalaIterable(data.getTestCases.getTestCase).toList
+      testCases = data.getTestCases.getTestCase.asScala.toList
     } else {
       testCases = List.empty
     }
@@ -528,7 +528,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
             Some(toModelTestCases(testCases, specificationId)),
             getResourcePaths(testSuiteFile.getName, testCases),
             new java.util.HashMap[String, (java.lang.Long, String)](), // existingTestCaseMap
-            mapAsJavaMap(ctx.savedSpecificationActors(specificationId)), // savedActorIds
+            ctx.savedSpecificationActors(specificationId).asJava, // savedActorIds
             existingActorToSystemMap,
             updateMetadata = true
           )
@@ -552,7 +552,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     val testSuiteFile = saveTestSuiteFiles(data, item, domainId, specificationId, ctx)
     var testCases: List[TestCase] = null
     if (data.getTestCases != null && data.getTestCases.getTestCase != null) {
-      testCases = collectionAsScalaIterable(data.getTestCases.getTestCase).toList
+      testCases = data.getTestCases.getTestCase.asScala.toList
     } else {
       testCases = List.empty
     }
@@ -581,7 +581,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
             Some(toModelTestCases(testCases, specificationId)),
             getResourcePaths(testSuiteFile.getName, testCases),
             existingTestCaseMap,
-            mapAsJavaMap(ctx.savedSpecificationActors(specificationId)), // savedActorIds
+            ctx.savedSpecificationActors(specificationId).asJava, // savedActorIds
             existingActorToSystemMap,
             updateMetadata = true
           )
@@ -643,7 +643,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
           ctx.existingIds.map(ImportItemType.Specification) += x.id.toString
         })
         if (ctx.importTargets.hasTestSuites) {
-          exportManager.loadSpecificationTestSuiteMap(targetDomainId.get).map { x =>
+          exportManager.loadSpecificationTestSuiteMap(targetDomainId.get).iterator.map { x =>
             x._2.foreach { testSuite =>
               ctx.existingIds.map(ImportItemType.TestSuite) += testSuite.id.toString
             }
@@ -651,21 +651,21 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
           }
         }
         if (ctx.importTargets.hasActors) {
-          exportManager.loadSpecificationActorMap(targetDomainId.get).map { x =>
+          exportManager.loadSpecificationActorMap(targetDomainId.get).iterator.map { x =>
             x._2.foreach { actor =>
               ctx.existingIds.map(ImportItemType.Actor) += actor.id.toString
             }
             true
           }
           if (ctx.importTargets.hasEndpoints) {
-            exportManager.loadActorEndpointMap(targetDomainId.get).map { x =>
+            exportManager.loadActorEndpointMap(targetDomainId.get).iterator.map { x =>
               x._2.foreach { endpoint =>
                 ctx.existingIds.map(ImportItemType.Endpoint) += endpoint.id.toString
               }
               true
             }
             if (ctx.importTargets.hasEndpointParameters) {
-              exportManager.loadEndpointParameterMap(targetDomainId.get).map { x =>
+              exportManager.loadEndpointParameterMap(targetDomainId.get).iterator.map { x =>
                 x._2.foreach { parameter =>
                   ctx.existingIds.map(ImportItemType.EndpointParameter) += parameter.id.toString
                 }
@@ -718,7 +718,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
         // Domain parameters
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedDomain.getParameters != null) {
-          collectionAsScalaIterable(exportedDomain.getParameters.getParameter).foreach { parameter =>
+          exportedDomain.getParameters.getParameter.asScala.foreach { parameter =>
             dbActions += processFromArchive(ImportItemType.DomainParameter, parameter, parameter.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.DomainParameter, item: ImportItem) => {
@@ -745,7 +745,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
         // Specifications
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedDomain.getSpecifications != null) {
-          collectionAsScalaIterable(exportedDomain.getSpecifications.getSpecification).foreach { exportedSpecification =>
+          exportedDomain.getSpecifications.getSpecification.asScala.foreach { exportedSpecification =>
             dbActions += processFromArchive(ImportItemType.Specification, exportedSpecification, exportedSpecification.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.Specification, item: ImportItem) => {
@@ -781,9 +781,9 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
         // Actors
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedDomain.getSpecifications != null) {
-          collectionAsScalaIterable(exportedDomain.getSpecifications.getSpecification).foreach { exportedSpecification =>
+          exportedDomain.getSpecifications.getSpecification.asScala.foreach { exportedSpecification =>
             if (exportedSpecification.getActors != null) {
-              collectionAsScalaIterable(exportedSpecification.getActors.getActor).foreach { exportedActor =>
+              exportedSpecification.getActors.getActor.asScala.foreach { exportedActor =>
                 dbActions += processFromArchive(ImportItemType.Actor, exportedActor, exportedActor.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.Actor, item: ImportItem) => {
@@ -836,11 +836,11 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
         // Endpoints
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedDomain.getSpecifications != null) {
-          collectionAsScalaIterable(exportedDomain.getSpecifications.getSpecification).foreach { exportedSpecification =>
+          exportedDomain.getSpecifications.getSpecification.asScala.foreach { exportedSpecification =>
             if (exportedSpecification.getActors != null) {
-              collectionAsScalaIterable(exportedSpecification.getActors.getActor).foreach { exportedActor =>
+              exportedSpecification.getActors.getActor.asScala.foreach { exportedActor =>
                 if (exportedActor.getEndpoints != null) {
-                  collectionAsScalaIterable(exportedActor.getEndpoints.getEndpoint).foreach { exportedEndpoint =>
+                  exportedActor.getEndpoints.getEndpoint.asScala.foreach { exportedEndpoint =>
                     dbActions += processFromArchive(ImportItemType.Endpoint, exportedEndpoint, exportedEndpoint.getId, ctx,
                       ImportCallbacks.set(
                         (data: com.gitb.xml.export.Endpoint, item: ImportItem) => {
@@ -870,14 +870,14 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
         // Endpoint parameters
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedDomain.getSpecifications != null) {
-          collectionAsScalaIterable(exportedDomain.getSpecifications.getSpecification).foreach { exportedSpecification =>
+          exportedDomain.getSpecifications.getSpecification.asScala.foreach { exportedSpecification =>
             if (exportedSpecification.getActors != null) {
-              collectionAsScalaIterable(exportedSpecification.getActors.getActor).foreach { exportedActor =>
+              exportedSpecification.getActors.getActor.asScala.foreach { exportedActor =>
                 if (exportedActor.getEndpoints != null) {
-                  collectionAsScalaIterable(exportedActor.getEndpoints.getEndpoint).foreach { exportedEndpoint =>
+                  exportedActor.getEndpoints.getEndpoint.asScala.foreach { exportedEndpoint =>
                     var defaultDisplayOrder = 0
                     if (exportedEndpoint.getParameters != null) {
-                      collectionAsScalaIterable(exportedEndpoint.getParameters.getParameter).foreach { exportedParameter =>
+                      exportedEndpoint.getParameters.getParameter.asScala.foreach { exportedParameter =>
                         defaultDisplayOrder = defaultDisplayOrder + 1
                         var displayOrderToUse = defaultDisplayOrder
                         if (exportedParameter.getDisplayOrder != null) {
@@ -914,9 +914,9 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
         // Test suites
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedDomain.getSpecifications != null) {
-          collectionAsScalaIterable(exportedDomain.getSpecifications.getSpecification).foreach { exportedSpecification =>
+          exportedDomain.getSpecifications.getSpecification.asScala.foreach { exportedSpecification =>
             if (exportedSpecification.getTestSuites != null) {
-              collectionAsScalaIterable(exportedSpecification.getTestSuites.getTestSuite).foreach { exportedTestSuite =>
+              exportedSpecification.getTestSuites.getTestSuite.asScala.foreach { exportedTestSuite =>
                 dbActions += processFromArchive(ImportItemType.TestSuite, exportedTestSuite, exportedTestSuite.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.TestSuite, item: ImportItem) => {
@@ -998,7 +998,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       // Labels
       if (ctx.importTargets.hasCustomLabels) {
-        exec(PersistenceSchema.communityLabels.filter(_.community === targetCommunityId.get).map(x => (x.community, x.labelType)).result).foreach(x => ctx.existingIds.map(ImportItemType.CustomLabel) += x._1+"_"+x._2)
+        exec(PersistenceSchema.communityLabels.filter(_.community === targetCommunityId.get).map(x => (x.community, x.labelType)).result).foreach(x => ctx.existingIds.map(ImportItemType.CustomLabel) += s"${x._1}_${x._2}")
       }
       // Organisation properties
       if (ctx.importTargets.hasOrganisationProperties) {
@@ -1041,7 +1041,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
         }
         // Organisation users
         if (!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasOrganisationUsers) {
-          exportManager.loadOrganisationUserMap(targetCommunityId.get).map { x =>
+          exportManager.loadOrganisationUserMap(targetCommunityId.get).iterator.map { x =>
             x._2.foreach { user =>
               ctx.existingIds.map(ImportItemType.OrganisationUser) +=  user.id.toString
             }
@@ -1050,16 +1050,16 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
         }
         // Organisation property values
         if (ctx.importTargets.hasOrganisationPropertyValues) {
-          exportManager.loadOrganisationParameterValueMap(targetCommunityId.get).map { x =>
+          exportManager.loadOrganisationParameterValueMap(targetCommunityId.get).iterator.map { x =>
             x._2.foreach { value =>
-              ctx.existingIds.map(ImportItemType.OrganisationPropertyValue) +=  value.organisation+"_"+value.parameter
+              ctx.existingIds.map(ImportItemType.OrganisationPropertyValue) += s"${value.organisation}_${value.parameter}"
             }
             true
           }
         }
         // Systems
         if (ctx.importTargets.hasSystems) {
-          exportManager.loadOrganisationSystemMap(targetCommunityId.get).map { x =>
+          exportManager.loadOrganisationSystemMap(targetCommunityId.get).iterator.map { x =>
             x._2.foreach { system =>
               ctx.existingIds.map(ImportItemType.System) +=  system.id.toString
             }
@@ -1067,24 +1067,24 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
           }
           // System property values
           if (ctx.importTargets.hasSystemPropertyValues) {
-            exportManager.loadSystemParameterValues(targetCommunityId.get).map { x =>
+            exportManager.loadSystemParameterValues(targetCommunityId.get).iterator.map { x =>
               x._2.foreach { value =>
-                ctx.existingIds.map(ImportItemType.SystemPropertyValue) +=  value.system+"_"+value.parameter
+                ctx.existingIds.map(ImportItemType.SystemPropertyValue) +=  s"${value.system}_${value.parameter}"
               }
               true
             }
           }
           // Statements
           if (ctx.importTargets.hasStatements && targetCommunity.isDefined) {
-            exportManager.loadSystemStatementsMap(targetCommunity.get.id, targetCommunity.get.domain).map { x =>
+            exportManager.loadSystemStatementsMap(targetCommunity.get.id, targetCommunity.get.domain).iterator.map { x =>
               x._2.foreach { statement =>
-                ctx.existingIds.map(ImportItemType.Statement) +=  x._1 +"_"+statement._2.id // [System ID]_[Actor ID]
+                ctx.existingIds.map(ImportItemType.Statement) +=  s"${x._1}_${statement._2.id}" // [System ID]_[Actor ID]
               }
               true
             }
             // Statement configurations
             if (ctx.importTargets.hasStatementConfigurations) {
-              exportManager.loadSystemConfigurationsMap(targetCommunity.get).map { x =>
+              exportManager.loadSystemConfigurationsMap(targetCommunity.get).iterator.map { x =>
                 ctx.existingIds.map(ImportItemType.StatementConfiguration) += x._1 // [Actor ID]_[Endpoint ID]_[System ID]_[Endpoint parameter ID]
               }
             }
@@ -1200,13 +1200,13 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getCustomLabels != null) {
-          collectionAsScalaIterable(exportedCommunity.getCustomLabels.getLabel).foreach { exportedLabel =>
+          exportedCommunity.getCustomLabels.getLabel.asScala.foreach { exportedLabel =>
             dbActions += processFromArchive(ImportItemType.CustomLabel, exportedLabel, exportedLabel.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.CustomLabel, item: ImportItem) => {
                   val communityId = item.parentItem.get.targetKey.get.toLong
                   val labelObject = toModelCustomLabel(data, communityId)
-                  val key = communityId+"_"+labelObject.labelType
+                  val key = s"${communityId}_${labelObject.labelType}"
                   if (!hasExisting(ImportItemType.CustomLabel, key, ctx)) {
                     communityManager.createCommunityLabel(labelObject) andThen
                       DBIO.successful(key)
@@ -1237,7 +1237,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getOrganisationProperties != null) {
-          collectionAsScalaIterable(exportedCommunity.getOrganisationProperties.getProperty).foreach { exportedProperty =>
+          exportedCommunity.getOrganisationProperties.getProperty.asScala.foreach { exportedProperty =>
             dbActions += processFromArchive(ImportItemType.OrganisationProperty, exportedProperty, exportedProperty.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.OrganisationProperty, item: ImportItem) => {
@@ -1263,7 +1263,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getSystemProperties != null) {
-          collectionAsScalaIterable(exportedCommunity.getSystemProperties.getProperty).foreach { exportedProperty =>
+          exportedCommunity.getSystemProperties.getProperty.asScala.foreach { exportedProperty =>
             dbActions += processFromArchive(ImportItemType.SystemProperty, exportedProperty, exportedProperty.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.SystemProperty, item: ImportItem) => {
@@ -1289,7 +1289,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getLandingPages != null) {
-          collectionAsScalaIterable(exportedCommunity.getLandingPages.getLandingPage).foreach { exportedContent =>
+          exportedCommunity.getLandingPages.getLandingPage.asScala.foreach { exportedContent =>
             dbActions += processFromArchive(ImportItemType.LandingPage, exportedContent, exportedContent.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.LandingPage, item: ImportItem) => {
@@ -1315,7 +1315,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getLegalNotices != null) {
-          collectionAsScalaIterable(exportedCommunity.getLegalNotices.getLegalNotice).foreach { exportedContent =>
+          exportedCommunity.getLegalNotices.getLegalNotice.asScala.foreach { exportedContent =>
             dbActions += processFromArchive(ImportItemType.LegalNotice, exportedContent, exportedContent.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.LegalNotice, item: ImportItem) => {
@@ -1341,7 +1341,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getErrorTemplates != null) {
-          collectionAsScalaIterable(exportedCommunity.getErrorTemplates.getErrorTemplate).foreach { exportedContent =>
+          exportedCommunity.getErrorTemplates.getErrorTemplate.asScala.foreach { exportedContent =>
             dbActions += processFromArchive(ImportItemType.ErrorTemplate, exportedContent, exportedContent.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.ErrorTemplate, item: ImportItem) => {
@@ -1367,7 +1367,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getTriggers != null) {
-          collectionAsScalaIterable(exportedCommunity.getTriggers.getTrigger).foreach { exportedContent =>
+          exportedCommunity.getTriggers.getTrigger.asScala.foreach { exportedContent =>
             dbActions += processFromArchive(ImportItemType.Trigger, exportedContent, exportedContent.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.Trigger, item: ImportItem) => {
@@ -1393,7 +1393,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (!Configurations.AUTHENTICATION_SSO_ENABLED && exportedCommunity.getAdministrators != null) {
-          collectionAsScalaIterable(exportedCommunity.getAdministrators.getAdministrator).foreach { exportedUser =>
+          exportedCommunity.getAdministrators.getAdministrator.asScala.foreach { exportedUser =>
             dbActions += processFromArchive(ImportItemType.Administrator, exportedUser, exportedUser.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.CommunityAdministrator, item: ImportItem) => {
@@ -1442,7 +1442,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getOrganisations != null) {
-          collectionAsScalaIterable(exportedCommunity.getOrganisations.getOrganisation).foreach { exportedOrganisation =>
+          exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
             dbActions += processFromArchive(ImportItemType.Organisation, exportedOrganisation, exportedOrganisation.getId, ctx,
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.Organisation, item: ImportItem) => {
@@ -1495,9 +1495,9 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (!Configurations.AUTHENTICATION_SSO_ENABLED && exportedCommunity.getOrganisations != null) {
-          collectionAsScalaIterable(exportedCommunity.getOrganisations.getOrganisation).foreach { exportedOrganisation =>
+          exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
             if (exportedOrganisation.getUsers != null) {
-              collectionAsScalaIterable(exportedOrganisation.getUsers.getUser).foreach { exportedUser =>
+              exportedOrganisation.getUsers.getUser.asScala.foreach { exportedUser =>
                 dbActions += processFromArchive(ImportItemType.OrganisationUser, exportedUser, exportedUser.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.OrganisationUser, item: ImportItem) => {
@@ -1540,9 +1540,9 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getOrganisations != null) {
-          collectionAsScalaIterable(exportedCommunity.getOrganisations.getOrganisation).foreach { exportedOrganisation =>
+          exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
             if (exportedOrganisation.getPropertyValues != null) {
-              collectionAsScalaIterable(exportedOrganisation.getPropertyValues.getProperty).foreach { exportedValue =>
+              exportedOrganisation.getPropertyValues.getProperty.asScala.foreach { exportedValue =>
                 dbActions += processFromArchive(ImportItemType.OrganisationPropertyValue, exportedValue, exportedValue.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.OrganisationPropertyValue, item: ImportItem) => {
@@ -1550,7 +1550,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                       if (relatedPropertyId.isDefined) {
                         val organisationId = item.parentItem.get.targetKey.get.toLong
                         // The property this value related to has either been updated or inserted.
-                        val key = organisationId+"_"+relatedPropertyId.get
+                        val key = s"${organisationId}_${relatedPropertyId.get}"
                         if (!hasExisting(ImportItemType.OrganisationPropertyValue, key, ctx)) {
                           (PersistenceSchema.organisationParameterValues += models.OrganisationParameterValues(organisationId, relatedPropertyId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Option(data.getValue)).get)) andThen
                             DBIO.successful(key)
@@ -1594,9 +1594,9 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getOrganisations != null) {
-          collectionAsScalaIterable(exportedCommunity.getOrganisations.getOrganisation).foreach { exportedOrganisation =>
+          exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
             if (exportedOrganisation.getSystems != null) {
-              collectionAsScalaIterable(exportedOrganisation.getSystems.getSystem).foreach { exportedSystem =>
+              exportedOrganisation.getSystems.getSystem.asScala.foreach { exportedSystem =>
                 dbActions += processFromArchive(ImportItemType.System, exportedSystem, exportedSystem.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.System, item: ImportItem) => {
@@ -1630,18 +1630,18 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getOrganisations != null) {
-          collectionAsScalaIterable(exportedCommunity.getOrganisations.getOrganisation).foreach { exportedOrganisation =>
+          exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
             if (exportedOrganisation.getSystems != null) {
-              collectionAsScalaIterable(exportedOrganisation.getSystems.getSystem).foreach { exportedSystem =>
+              exportedOrganisation.getSystems.getSystem.asScala.foreach { exportedSystem =>
                 if (exportedSystem.getPropertyValues != null) {
-                  collectionAsScalaIterable(exportedSystem.getPropertyValues.getProperty).foreach { exportedValue =>
+                  exportedSystem.getPropertyValues.getProperty.asScala.foreach { exportedValue =>
                     dbActions += processFromArchive(ImportItemType.SystemPropertyValue, exportedValue, exportedValue.getId, ctx,
                       ImportCallbacks.set(
                         (data: com.gitb.xml.export.SystemPropertyValue, item: ImportItem) => {
                           val relatedPropertyId = getProcessedDbId(data.getProperty, ImportItemType.SystemProperty, ctx)
                           if (relatedPropertyId.isDefined) {
                             val systemId = item.parentItem.get.targetKey.get.toLong
-                            val key = systemId+"_"+relatedPropertyId.get
+                            val key = s"${systemId}_${relatedPropertyId.get}"
                             if (!hasExisting(ImportItemType.SystemPropertyValue, key, ctx)) {
                               // The property this value related to has either been updated or inserted.
                               (PersistenceSchema.systemParameterValues += models.SystemParameterValues(systemId, relatedPropertyId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Option(data.getValue)).get)) andThen
@@ -1688,11 +1688,11 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getOrganisations != null) {
-          collectionAsScalaIterable(exportedCommunity.getOrganisations.getOrganisation).foreach { exportedOrganisation =>
+          exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
             if (exportedOrganisation.getSystems != null) {
-              collectionAsScalaIterable(exportedOrganisation.getSystems.getSystem).foreach { exportedSystem =>
+              exportedOrganisation.getSystems.getSystem.asScala.foreach { exportedSystem =>
                 if (exportedSystem.getStatements != null) {
-                  collectionAsScalaIterable(exportedSystem.getStatements.getStatement).foreach { exportedStatement =>
+                  exportedSystem.getStatements.getStatement.asScala.foreach { exportedStatement =>
                     dbActions += processFromArchive(ImportItemType.Statement, exportedStatement, exportedStatement.getId, ctx,
                       ImportCallbacks.set(
                         (data: com.gitb.xml.export.ConformanceStatement, item: ImportItem) => {
@@ -1703,7 +1703,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                           }
                           if (relatedActorId.isDefined && relatedSpecId.isDefined) {
                             val systemId = item.parentItem.get.targetKey.get.toLong
-                            val key = systemId+"_"+relatedActorId.get
+                            val key = s"${systemId}_${relatedActorId.get}"
                             if (!hasExisting(ImportItemType.Statement, key, ctx)) {
                               systemManager.defineConformanceStatement(systemId, relatedSpecId.get, relatedActorId.get, None) andThen
                                 DBIO.successful(key)
@@ -1743,13 +1743,13 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         val dbActions = ListBuffer[DBIO[_]]()
         if (exportedCommunity.getOrganisations != null) {
-          collectionAsScalaIterable(exportedCommunity.getOrganisations.getOrganisation).foreach { exportedOrganisation =>
+          exportedCommunity.getOrganisations.getOrganisation.asScala.foreach { exportedOrganisation =>
             if (exportedOrganisation.getSystems != null) {
-              collectionAsScalaIterable(exportedOrganisation.getSystems.getSystem).foreach { exportedSystem =>
+              exportedOrganisation.getSystems.getSystem.asScala.foreach { exportedSystem =>
                 if (exportedSystem.getStatements != null) {
-                  collectionAsScalaIterable(exportedSystem.getStatements.getStatement).foreach { exportedStatement =>
+                  exportedSystem.getStatements.getStatement.asScala.foreach { exportedStatement =>
                     if (exportedStatement.getConfigurations != null) {
-                      collectionAsScalaIterable(exportedStatement.getConfigurations.getConfiguration).foreach { exportedValue =>
+                      exportedStatement.getConfigurations.getConfiguration.asScala.foreach { exportedValue =>
                         dbActions += processFromArchive(ImportItemType.StatementConfiguration, exportedValue, exportedValue.getId, ctx,
                           ImportCallbacks.set(
                             (data: com.gitb.xml.export.Configuration, item: ImportItem) => {
@@ -1762,11 +1762,11 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                               val relatedActorId = statementTargetKeyParts(1).toLong
                               if (relatedParameterId.isDefined && relatedEndpointId.isDefined) {
                                 val relatedSystemId = item.parentItem.get.parentItem.get.targetKey.get.toLong // Statement -> System
-                                val key = relatedActorId+"_"+relatedEndpointId.get+"_"+relatedSystemId+"_"+relatedParameterId.get
+                                val key = s"${relatedActorId}_${relatedEndpointId.get}_${relatedSystemId}_${relatedParameterId.get}"
                                 if (!hasExisting(ImportItemType.StatementConfiguration, key, ctx)) {
                                   systemManager.saveEndpointConfigurationInternal(forceAdd = true, forceUpdate = false,
                                     models.Configs(relatedSystemId, relatedParameterId.get, relatedEndpointId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getParameter.getType, Option(data.getValue)).get)) andThen
-                                    DBIO.successful(relatedEndpointId.get+"_"+relatedSystemId+"_"+relatedParameterId.get)
+                                    DBIO.successful(s"${relatedEndpointId.get}_${relatedSystemId}_${relatedParameterId.get}")
                                 } else {
                                   DBIO.successful(())
                                 }
@@ -1786,7 +1786,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                                 val relatedSystemId = item.parentItem.get.parentItem.get.targetKey.get.toLong // Statement -> System
                                 systemManager.saveEndpointConfigurationInternal(forceAdd = false, forceUpdate = true,
                                   models.Configs(relatedSystemId, relatedParameterId.get, relatedEndpointId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getParameter.getType, Option(data.getValue)).get)) andThen
-                                DBIO.successful(relatedActorId+"_"+relatedEndpointId.get+"_"+relatedSystemId+"_"+relatedParameterId.get)
+                                DBIO.successful(s"${relatedActorId}_${relatedEndpointId.get}_${relatedSystemId}_${relatedParameterId.get}")
                               } else {
                                 DBIO.successful(())
                               }
@@ -1869,9 +1869,8 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
         }
       }
     } catch {
-      case e:Exception => {
+      case e:Exception =>
         logger.warn("Unexpected exception while processing data archive ["+archive.getName+"]", e)
-      }
     } finally {
       if (preparationResult._4.isDefined) {
         FileUtils.deleteQuietly(preparationResult._4.get.toFile)

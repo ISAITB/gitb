@@ -113,12 +113,12 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
             otherValues.map(otherValue => {
               copyActions += (PersistenceSchema.organisationParameterValues += OrganisationParameterValues(toOrganisation, otherValue.parameter, otherValue.value))
             })
-            DBIO.seq(copyActions.map(a => a): _*)
+            DBIO.seq(copyActions.toList.map(a => a): _*)
           }
         } yield()) andThen DBIO.successful(None)
       )
     }
-    DBIO.fold(actions, None) {
+    DBIO.fold(actions.toList, None) {
       (aggregated, current) => {
         Some(aggregated.getOrElse(List[SystemCreationDbInfo]()) ++ current.getOrElse(List[SystemCreationDbInfo]()))
       }
@@ -180,7 +180,7 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
       val isAdmin = user.role == UserRole.SystemAdmin.id.toShort || user.role == UserRole.CommunityAdmin.id.toShort
       actions += saveOrganisationParameterValues(user.organization, organisation.community, isAdmin, propertyValues.get)
     }
-    exec(DBIO.seq(actions.map(a => a): _*).transactionally)
+    exec(DBIO.seq(actions.toList.map(a => a): _*).transactionally)
     triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(organisation.community, organisation.id))
   }
 
@@ -261,14 +261,14 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
   /**
     * Deletes organization with specified id
     */
-  def deleteOrganizationWrapper(orgId: Long) {
+  def deleteOrganizationWrapper(orgId: Long): Unit = {
     exec(deleteOrganization(orgId).transactionally)
   }
 
   /**
     * Deletes all users with specified organization
     */
-  def deleteUserByOrganization(orgId: Long) = {
+  def deleteUserByOrganization(orgId: Long): DBIO[_] = {
     PersistenceSchema.users.filter(_.organization === orgId).delete
   }
 

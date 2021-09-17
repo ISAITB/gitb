@@ -172,7 +172,7 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
       }
     }
     if (actions.nonEmpty) {
-      exec(DBIO.seq(actions.map(a => a): _*).transactionally)
+      exec(DBIO.seq(actions.toList.map(a => a): _*).transactionally)
     }
   }
 
@@ -251,12 +251,12 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
       if (user.organization.isDefined) {
         community = getCommunityById(user.organization.get.community)
       }
-      content += "<b>User:</b> " + user.name + " [" + userEmail + "]<br/>"
+      content += s"<b>User:</b> ${user.name} [$userEmail]<br/>"
       if (user.organization.isDefined) {
-        content += "<b>Organisation:</b> " + user.organization.get.fullname + "<br/>"
+        content += s"<b>Organisation:</b> ${user.organization.get.fullname}<br/>"
       }
       if (community != null) {
-        content += "<b>Community:</b> " + community.fullname + "<br/>"
+        content += s"<b>Community:</b> ${community.fullname}<br/>"
         if (community.supportEmail.isDefined) {
           toAddresses = Array[String](community.supportEmail.get)
           ccAddresses = Configurations.EMAIL_TO
@@ -264,11 +264,11 @@ class AccountManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
       }
     } else {
       // Form submission before an account is selected
-      content += "<b>User: </b>" + userEmail + "<br/>"
+      content += s"<b>User: </b>$userEmail<br/>"
     }
-    content += "<b>Message type:</b> " + messageTypeId + " - " + messageTypeDescription + "<br/>"
+    content += s"<b>Message type:</b> $messageTypeId - $messageTypeDescription<br/>"
     content += "<h2>Message content</h2>"
-    content += "<p>" + messageContent + "</p>"
+    content += s"<p>$messageContent</p>"
     EmailUtil.sendEmail(Configurations.EMAIL_FROM, toAddresses, ccAddresses, subject, content, attachments)
   }
 }

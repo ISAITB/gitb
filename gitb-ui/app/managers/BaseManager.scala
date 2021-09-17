@@ -25,7 +25,7 @@ abstract class BaseManager @Inject() (dbConfigProvider: DatabaseConfigProvider) 
 
 	protected def toDBIO(actions: ListBuffer[DBIO[_]]): DBIO[_] = {
 		if (actions.nonEmpty) {
-			DBIO.seq(actions.map(a => a): _*)
+			DBIO.seq(actions.toList.map(a => a): _*)
 		} else {
 			DBIO.successful(())
 		}

@@ -27,7 +27,6 @@ import java.util
 import java.util.Date
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
-import scala.collection.JavaConverters.{asJavaIterable, collectionAsScalaIterable}
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -216,7 +215,8 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
 
   private def removeStepDocumentation(testCase: com.gitb.tpl.TestCase): Unit = {
     if (testCase.getSteps != null && testCase.getSteps.getSteps != null) {
-      collectionAsScalaIterable(testCase.getSteps.getSteps).foreach { step =>
+      import scala.jdk.CollectionConverters._
+      testCase.getSteps.getSteps.asScala.foreach { step =>
         step.setDocumentation(null)
       }
     }
@@ -369,7 +369,8 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
       val logFilePath = new File(sessionFolder.getOrElse(getPathForTestSession(sessionId, isExpected = false).path.toFile), "log.txt")
       logFilePath.getParentFile.mkdirs()
       logFilePath.createNewFile()
-      Files.write(logFilePath.toPath, asJavaIterable(messages), StandardOpenOption.APPEND)
+      import scala.jdk.CollectionConverters._
+      Files.write(logFilePath.toPath, messages.asJava, StandardOpenOption.APPEND)
     }
   }
 
@@ -400,16 +401,16 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
         collectStepReportsForSequence(testStep.asInstanceOf[DecisionStep].getElse, collectedSteps, folder)
       }
     } else if (testStep.isInstanceOf[FlowStep]) {
-      import scala.collection.JavaConverters._
-      for (thread <- collectionAsScalaIterable(testStep.asInstanceOf[FlowStep].getThread)) {
+      import scala.jdk.CollectionConverters._
+      for (thread <- testStep.asInstanceOf[FlowStep].getThread.asScala) {
         collectStepReportsForSequence(thread, collectedSteps, folder)
       }
     }
   }
 
   def collectStepReportsForSequence(testStepSequence: com.gitb.tpl.Sequence, collectedSteps: ListBuffer[TitledTestStepReportType], folder: File): Unit = {
-    import scala.collection.JavaConverters._
-    for (testStep <- collectionAsScalaIterable(testStepSequence.getSteps)) {
+    import scala.jdk.CollectionConverters._
+    for (testStep <- testStepSequence.getSteps.asScala) {
       collectStepReports(testStep, collectedSteps, folder)
     }
   }

@@ -4,51 +4,51 @@
 # Note: @controllers syntax signifies the actual controller instance, retrieved via GlobalSettings.getController().
 # ~~~~
 
-GET      /favicon.ico   @controllers.SystemConfigurationService.getFaviconForTheme
+GET      /favicon.ico   @controllers.SystemConfigurationService.getFaviconForTheme()
 
 GET      /callback      @org.pac4j.play.CallbackController.callback(request: Request)
 POST     /callback      @org.pac4j.play.CallbackController.callback(request: Request)
 
 # Single endpoint for serving AngularJS
-GET     /                                   @controllers.Application.index
-GET     /app                                @controllers.Application.app
+GET     /                                   @controllers.Application.index()
+GET     /app                                @controllers.Application.app()
 OPTIONS /*all                               @controllers.Application.preFlight(all: String)
-GET     /assets/javascripts/routes          @controllers.Application.javascriptRoutes
+GET     /assets/javascripts/routes          @controllers.Application.javascriptRoutes()
 
 # Theme API
-GET     /api/theme/css                          @controllers.SystemConfigurationService.getCssForTheme
-GET     /api/theme/logo                         @controllers.SystemConfigurationService.getLogo
-GET     /api/theme/footer                       @controllers.SystemConfigurationService.getFooterLogo
+GET     /api/theme/css                          @controllers.SystemConfigurationService.getCssForTheme()
+GET     /api/theme/logo                         @controllers.SystemConfigurationService.getLogo()
+GET     /api/theme/footer                       @controllers.SystemConfigurationService.getFooterLogo()
 
 # Authentication management API
-POST    /api/oauth/access_token                 @controllers.AuthenticationService.access_token
-POST    /api/oauth/replacePassword              @controllers.AuthenticationService.replaceOnetimePassword
-POST    /api/oauth/logout                       @controllers.AuthenticationService.logout
-GET     /api/check/email                        @controllers.AuthenticationService.checkEmail
-GET     /api/check/memberemail                  @controllers.AuthenticationService.checkEmailOfOrganisationMember
-GET     /api/check/sysadminemail                @controllers.AuthenticationService.checkEmailOfSystemAdmin
-GET     /api/check/comadminemail                @controllers.AuthenticationService.checkEmailOfCommunityAdmin
-GET     /api/check/orguseremail                 @controllers.AuthenticationService.checkEmailOfOrganisationUser
-GET     /api/sso/accounts                       @controllers.AuthenticationService.getUserFunctionalAccounts
-POST    /api/sso/linkFunctionalAccount          @controllers.AuthenticationService.linkFunctionalAccount
-GET     /api/sso/unlinkedAccounts               @controllers.AuthenticationService.getUserUnlinkedFunctionalAccounts
-POST    /api/sso/select                         @controllers.AuthenticationService.selectFunctionalAccount
-POST    /api/sso/migrate                        @controllers.AuthenticationService.migrateFunctionalAccount
-POST    /api/user/disconnect                    @controllers.AuthenticationService.disconnectFunctionalAccount
+POST    /api/oauth/access_token                 @controllers.AuthenticationService.access_token()
+POST    /api/oauth/replacePassword              @controllers.AuthenticationService.replaceOnetimePassword()
+POST    /api/oauth/logout                       @controllers.AuthenticationService.logout()
+GET     /api/check/email                        @controllers.AuthenticationService.checkEmail()
+GET     /api/check/memberemail                  @controllers.AuthenticationService.checkEmailOfOrganisationMember()
+GET     /api/check/sysadminemail                @controllers.AuthenticationService.checkEmailOfSystemAdmin()
+GET     /api/check/comadminemail                @controllers.AuthenticationService.checkEmailOfCommunityAdmin()
+GET     /api/check/orguseremail                 @controllers.AuthenticationService.checkEmailOfOrganisationUser()
+GET     /api/sso/accounts                       @controllers.AuthenticationService.getUserFunctionalAccounts()
+POST    /api/sso/linkFunctionalAccount          @controllers.AuthenticationService.linkFunctionalAccount()
+GET     /api/sso/unlinkedAccounts               @controllers.AuthenticationService.getUserUnlinkedFunctionalAccounts()
+POST    /api/sso/select                         @controllers.AuthenticationService.selectFunctionalAccount()
+POST    /api/sso/migrate                        @controllers.AuthenticationService.migrateFunctionalAccount()
+POST    /api/user/disconnect                    @controllers.AuthenticationService.disconnectFunctionalAccount()
 
 # Account management API
-GET	    /api/vendor/profile                     @controllers.AccountService.getVendorProfile
-POST	/api/vendor/profile                     @controllers.AccountService.updateVendorProfile
-GET	    /api/vendor/users                       @controllers.AccountService.getVendorUsers
-POST	/api/user/register                      @controllers.AccountService.registerUser
-GET	    /api/user/profile                       @controllers.AccountService.getUserProfile
-GET	    /api/user/community                     @controllers.CommunityService.getUserCommunity
-POST	/api/user/profile                       @controllers.AccountService.updateUserProfile
-GET     /api/app/configuration                  @controllers.AccountService.getConfiguration
-POST    /api/user/feedback                      @controllers.AccountService.submitFeedback
-POST    /api/user/selfreg                       @controllers.CommunityService.selfRegister
-GET     /api/user/selfreg                       @controllers.CommunityService.getSelfRegistrationOptions
-GET     /api/vendor/organisation/hasTests       @controllers.OrganizationService.ownOrganisationHasTests
+GET	    /api/vendor/profile                     @controllers.AccountService.getVendorProfile()
+POST	/api/vendor/profile                     @controllers.AccountService.updateVendorProfile()
+GET	    /api/vendor/users                       @controllers.AccountService.getVendorUsers()
+POST	/api/user/register                      @controllers.AccountService.registerUser()
+GET	    /api/user/profile                       @controllers.AccountService.getUserProfile()
+GET	    /api/user/community                     @controllers.CommunityService.getUserCommunity()
+POST	/api/user/profile                       @controllers.AccountService.updateUserProfile()
+GET     /api/app/configuration                  @controllers.AccountService.getConfiguration()
+POST    /api/user/feedback                      @controllers.AccountService.submitFeedback()
+POST    /api/user/selfreg                       @controllers.CommunityService.selfRegister()
+GET     /api/user/selfreg                       @controllers.CommunityService.getSelfRegistrationOptions()
+GET     /api/vendor/organisation/hasTests       @controllers.OrganizationService.ownOrganisationHasTests()
 
 # System mangement API
 GET     /api/suts/sysparam/:id                  @controllers.SystemService.getSystemParameterValues(id: Long)
@@ -59,33 +59,33 @@ DELETE  /api/suts/:sut_id                       @controllers.SystemService.delet
 POST    /api/suts/:sut_id/conformance           @controllers.SystemService.defineConformanceStatement(sut_id : Long)
 DELETE  /api/suts/:sut_id/conformance           @controllers.SystemService.deleteConformanceStatement(sut_id: Long)
 GET     /api/suts/:sut_id/conformance           @controllers.SystemService.getConformanceStatements(sut_id : Long)
-GET	    /api/vendor/systems                     @controllers.SystemService.getSystemsByOrganization
+GET	    /api/vendor/systems                     @controllers.SystemService.getSystemsByOrganization()
 GET	    /api/vendor/systems/community           @controllers.SystemService.getSystemsByCommunity(communityId: Long)
-POST	/api/vendor/systems/register            @controllers.SystemService.registerSystemWithOrganization
+POST	/api/vendor/systems/register            @controllers.SystemService.registerSystemWithOrganization()
 
 # Test Case management API
 GET	    /api/specDomain                         @controllers.ConformanceService.getDomainOfSpecification(spec_id: Long)
-GET	    /api/domains                            @controllers.ConformanceService.getDomains
+GET	    /api/domains                            @controllers.ConformanceService.getDomains()
 GET	    /api/domains/system                     @controllers.ConformanceService.getDomainsForSystem(systemId: Long)
-GET	    /api/domains/community                  @controllers.ConformanceService.getCommunityDomain
-POST    /api/domains/conformance                @controllers.ConformanceService.getConformanceOverview
-POST    /api/domains                            @controllers.ConformanceService.createDomain
+GET	    /api/domains/community                  @controllers.ConformanceService.getCommunityDomain()
+POST    /api/domains/conformance                @controllers.ConformanceService.getConformanceOverview()
+POST    /api/domains                            @controllers.ConformanceService.createDomain()
 DELETE  /api/domains/:domain_id                 @controllers.ConformanceService.deleteDomain(domain_id: Long)
 POST    /api/domains/:domain_id                 @controllers.ConformanceService.updateDomain(domain_id: Long)
 GET	    /api/domains/:domain_id/specs           @controllers.ConformanceService.getDomainSpecs(domain_id : Long)
-GET     /api/specs                              @controllers.ConformanceService.getSpecs
+GET     /api/specs                              @controllers.ConformanceService.getSpecs()
 GET     /api/specs/system                       @controllers.ConformanceService.getSpecsForSystem(systemId: Long)
 GET     /api/actors/system                      @controllers.ConformanceService.getActorsForSystem(systemId: Long)
-POST    /api/specs                              @controllers.ConformanceService.createSpecification
+POST    /api/specs                              @controllers.ConformanceService.createSpecification()
 GET	    /api/specs/:spec_id/actors              @controllers.ConformanceService.getSpecActors(spec_id : Long)
 GET	    /api/specs/:spec_id/suites              @controllers.ConformanceService.getSpecTestSuites(spec_id : Long)
 POST    /api/specs/deploy                       @controllers.ConformanceService.deployTestSuiteToSpecifications()
 POST    /api/specs/deploy/resolve               @controllers.ConformanceService.resolvePendingTestSuites()
 DELETE  /api/specs/:spec_id                     @controllers.SpecificationService.deleteSpecification(spec_id: Long)
 POST    /api/specs/:spec_id                     @controllers.SpecificationService.updateSpecification(spec_id: Long)
-GET     /api/actors                             @controllers.ConformanceService.getActors
+GET     /api/actors                             @controllers.ConformanceService.getActors()
 GET     /api/actors/domain                      @controllers.ConformanceService.getActorsForDomain(domainId: Long)
-POST    /api/actors                             @controllers.ConformanceService.createActor
+POST    /api/actors                             @controllers.ConformanceService.createActor()
 DELETE  /api/actors/:actor_id                   @controllers.ActorService.deleteActor(actor_id : Long)
 POST    /api/actors/:actor_id                   @controllers.ActorService.updateActor(actor_id : Long)
 GET	    /api/actors/:actor_id/conformance/:sut_id @controllers.ConformanceService.getConformanceStatus(actor_id : Long, sut_id : Long)
@@ -93,12 +93,12 @@ GET	    /api/actors/:actor_id/conformance/:sut_id/:testsuite_id @controllers.Con
 GET	    /api/testcases/:testCaseId              @controllers.ConformanceService.getTestSuiteTestCase(testCaseId : Long)
 GET	    /api/testcases/:id/documentation        @controllers.ConformanceService.getTestCaseDocumentation(id : Long)
 GET	    /api/testsuites/:id/documentation       @controllers.ConformanceService.getTestSuiteDocumentation(id : Long)
-POST    /api/testdocumentation/                 @controllers.ConformanceService.getDocumentationForPreview
+POST    /api/testdocumentation/                 @controllers.ConformanceService.getDocumentationForPreview()
 GET     /api/actors/:actor_id/endpoints         @controllers.ConformanceService.getEndpointsForActor(actor_id : Long)
-POST    /api/endpoints                          @controllers.ConformanceService.createEndpoint
+POST    /api/endpoints                          @controllers.ConformanceService.createEndpoint()
 DELETE  /api/endpoints/:endpoint_id             @controllers.EndPointService.deleteEndPoint(endpoint_id : Long)
 POST    /api/endpoints/:endpoint_id             @controllers.EndPointService.updateEndPoint(endpoint_id : Long)
-POST    /api/parameters                         @controllers.ConformanceService.createParameter
+POST    /api/parameters                         @controllers.ConformanceService.createParameter()
 DELETE  /api/parameters/:parameter_id           @controllers.ParameterService.deleteParameter(parameter_id : Long)
 POST    /api/parameters/:parameter_id           @controllers.ParameterService.updateParameter(parameter_id : Long)
 POST    /api/parameters/order/:endpoint_id      @controllers.ParameterService.orderParameters(endpoint_id : Long)
@@ -113,43 +113,43 @@ POST    /api/testsuites/:test_suite_id                              @controllers
 GET     /api/fulltestcases/:test_case_id                            @controllers.TestSuiteService.getTestCase(test_case_id: Long)
 POST    /api/fulltestcases/:test_case_id                            @controllers.TestSuiteService.updateTestCaseMetadata(test_case_id: Long)
 
-DELETE  /api/testresults/obsolete/all           @controllers.ConformanceService.deleteAllObsoleteTestResults
-DELETE  /api/testresults/obsolete/system        @controllers.ConformanceService.deleteObsoleteTestResultsForSystem
-DELETE  /api/testresults/obsolete/community     @controllers.ConformanceService.deleteObsoleteTestResultsForCommunity
-POST    /api/testresults                        @controllers.ConformanceService.deleteTestResults
+DELETE  /api/testresults/obsolete/all           @controllers.ConformanceService.deleteAllObsoleteTestResults()
+DELETE  /api/testresults/obsolete/system        @controllers.ConformanceService.deleteObsoleteTestResultsForSystem()
+DELETE  /api/testresults/obsolete/community     @controllers.ConformanceService.deleteObsoleteTestResultsForCommunity()
+POST    /api/testresults                        @controllers.ConformanceService.deleteTestResults()
 
 # User management API
-GET     /api/admins/all                         @controllers.UserService.getSystemAdministrators
-POST    /api/admins/create                      @controllers.UserService.createSystemAdmin
+GET     /api/admins/all                         @controllers.UserService.getSystemAdministrators()
+POST    /api/admins/create                      @controllers.UserService.createSystemAdmin()
 GET     /api/admins/:id                         @controllers.UserService.getUserById(id : Long)
 POST    /api/admins/:id                         @controllers.UserService.updateSystemAdminProfile(id : Long)
 DELETE  /api/admins/:id                         @controllers.UserService.deleteAdmin(id : Long)
 
 # Session management API
-GET     /api/dashboard/tests/all                @controllers.RepositoryService.getAllTestCases
+GET     /api/dashboard/tests/all                @controllers.RepositoryService.getAllTestCases()
 GET     /api/dashboard/tests/system             @controllers.RepositoryService.getTestCasesForSystem(systemId: Long)
 GET     /api/dashboard/tests/community          @controllers.RepositoryService.getTestCasesForCommunity(communityId: Long)
-GET     /api/dashboard/systems                  @controllers.SystemService.getSystems
-POST    /api/dashboard/active                   @controllers.ReportService.getActiveTestResults
-POST    /api/dashboard/finished                 @controllers.ReportService.getFinishedTestResults
-GET     /api/dashboard/config                   @controllers.SystemConfigurationService.getSessionAliveTime
-POST    /api/dashboard/config                   @controllers.SystemConfigurationService.updateSessionAliveTime
-GET     /api/dashboard/suites/all               @controllers.TestSuiteService.getAllTestSuitesWithTestCases
+GET     /api/dashboard/systems                  @controllers.SystemService.getSystems()
+POST    /api/dashboard/active                   @controllers.ReportService.getActiveTestResults()
+POST    /api/dashboard/finished                 @controllers.ReportService.getFinishedTestResults()
+GET     /api/dashboard/config                   @controllers.SystemConfigurationService.getSessionAliveTime()
+POST    /api/dashboard/config                   @controllers.SystemConfigurationService.updateSessionAliveTime()
+GET     /api/dashboard/suites/all               @controllers.TestSuiteService.getAllTestSuitesWithTestCases()
 GET     /api/dashboard/suites/community         @controllers.TestSuiteService.getTestSuitesWithTestCasesForCommunity(communityId: Long)
 GET     /api/dashboard/suites/system            @controllers.TestSuiteService.getTestSuitesWithTestCasesForSystem(systemId: Long)
 
-GET     /api/pages/default                      @controllers.LandingPageService.getCommunityDefaultLandingPage
+GET     /api/pages/default                      @controllers.LandingPageService.getCommunityDefaultLandingPage()
 GET     /api/pages/:id                          @controllers.LandingPageService.getLandingPageById(id : Long)
 DELETE  /api/pages/:id                          @controllers.LandingPageService.deleteLandingPage(id : Long)
 POST    /api/pages/:id                          @controllers.LandingPageService.updateLandingPage(id : Long)
 
-GET     /api/notices/default                    @controllers.LegalNoticeService.getCommunityDefaultLegalNotice
-GET     /api/notices/tbdefault                  @controllers.LegalNoticeService.getTestBedDefaultLegalNotice
+GET     /api/notices/default                    @controllers.LegalNoticeService.getCommunityDefaultLegalNotice()
+GET     /api/notices/tbdefault                  @controllers.LegalNoticeService.getTestBedDefaultLegalNotice()
 GET     /api/notices/:id                        @controllers.LegalNoticeService.getLegalNoticeById(id : Long)
 DELETE  /api/notices/:id                        @controllers.LegalNoticeService.deleteLegalNotice(id : Long)
 POST    /api/notices/:id                        @controllers.LegalNoticeService.updateLegalNotice(id : Long)
 
-GET     /api/errortemplates/default             @controllers.ErrorTemplateService.getCommunityDefaultErrorTemplate
+GET     /api/errortemplates/default             @controllers.ErrorTemplateService.getCommunityDefaultErrorTemplate()
 GET     /api/errortemplates/:id                 @controllers.ErrorTemplateService.getErrorTemplateById(id : Long)
 DELETE  /api/errortemplates/:id                 @controllers.ErrorTemplateService.deleteErrorTemplate(id : Long)
 POST    /api/errortemplates/:id                 @controllers.ErrorTemplateService.updateErrorTemplate(id : Long)
@@ -158,11 +158,11 @@ GET     /api/triggers/:id                       @controllers.TriggerService.getT
 DELETE  /api/triggers/:id                       @controllers.TriggerService.deleteTrigger(id : Long)
 POST    /api/triggers/:id                       @controllers.TriggerService.updateTrigger(id : Long)
 POST    /api/triggers/:id/clearStatus           @controllers.TriggerService.clearStatus(id : Long)
-POST    /api/trigger/test                       @controllers.TriggerService.testTriggerEndpoint
-POST    /api/trigger/previewTriggerCall         @controllers.TriggerService.previewTriggerCall
+POST    /api/trigger/test                       @controllers.TriggerService.testTriggerEndpoint()
+POST    /api/trigger/previewTriggerCall         @controllers.TriggerService.previewTriggerCall()
 
-GET     /api/organizations/all                  @controllers.OrganizationService.getOrganizations
-POST    /api/organizations/create               @controllers.OrganizationService.createOrganization
+GET     /api/organizations/all                  @controllers.OrganizationService.getOrganizations()
+POST    /api/organizations/create               @controllers.OrganizationService.createOrganization()
 GET     /api/organizations/users                @controllers.UserService.getUsersByOrganization(id : Long)
 GET     /api/organizations/:org_id              @controllers.OrganizationService.getOrganizationById(org_id : Long)
 GET     /api/organizations/system/:system_id    @controllers.OrganizationService.getOrganizationBySystemId(system_id : Long)
@@ -174,36 +174,36 @@ POST    /api/users/:user_id                     @controllers.UserService.updateU
 DELETE  /api/users/:user_id                     @controllers.UserService.deleteVendorUser(user_id: Long)
 GET     /api/organizations/orgparam/:id         @controllers.OrganizationService.getOrganisationParameterValues(id: Long)
 GET     /api/organizations/orgparam/check/:id   @controllers.OrganizationService.checkOrganisationParameterValues(id: Long)
-GET     /api/organizations/own/orgparam         @controllers.OrganizationService.getOwnOrganisationParameterValues
+GET     /api/organizations/own/orgparam         @controllers.OrganizationService.getOwnOrganisationParameterValues()
 POST    /api/organizations/orgparam/:id         @controllers.OrganizationService.updateOrganisationParameterValues(id: Long)
 
-GET     /api/communities/all                    @controllers.CommunityService.getCommunities
-POST    /api/communities/create                 @controllers.CommunityService.createCommunity
+GET     /api/communities/all                    @controllers.CommunityService.getCommunities()
+POST    /api/communities/create                 @controllers.CommunityService.createCommunity()
 GET     /api/communities/:id                    @controllers.CommunityService.getCommunityById(id : Long)
 POST    /api/communities/:id                    @controllers.CommunityService.updateCommunity(id : Long)
 DELETE  /api/communities/:id                    @controllers.CommunityService.deleteCommunity(id: Long)
-POST    /api/communities/orgparam/create        @controllers.CommunityService.createOrganisationParameter
+POST    /api/communities/orgparam/create        @controllers.CommunityService.createOrganisationParameter()
 POST    /api/communities/orgparam/:id           @controllers.CommunityService.updateOrganisationParameter(id: Long)
 DELETE  /api/communities/orgparam/:id           @controllers.CommunityService.deleteOrganisationParameter(id: Long)
 GET     /api/communities/orgparam/:id           @controllers.CommunityService.getOrganisationParameters(id: Long)
 POST    /api/communities/orgparam/order/:id     @controllers.CommunityService.orderOrganisationParameters(id: Long)
-POST    /api/communities/sysparam/create        @controllers.CommunityService.createSystemParameter
+POST    /api/communities/sysparam/create        @controllers.CommunityService.createSystemParameter()
 POST    /api/communities/sysparam/:id           @controllers.CommunityService.updateSystemParameter(id: Long)
 DELETE  /api/communities/sysparam/:id           @controllers.CommunityService.deleteSystemParameter(id: Long)
 GET     /api/communities/sysparam/:id           @controllers.CommunityService.getSystemParameters(id: Long)
 POST    /api/communities/sysparam/order/:id     @controllers.CommunityService.orderSystemParameters(id: Long)
 GET     /api/communities/organizations/:id      @controllers.OrganizationService.getOrganizationsByCommunity(id: Long)
 GET     /api/communities/pages/:id              @controllers.LandingPageService.getLandingPagesByCommunity(id: Long)
-POST    /api/communities/pages/create           @controllers.LandingPageService.createLandingPage
+POST    /api/communities/pages/create           @controllers.LandingPageService.createLandingPage()
 GET     /api/communities/notices/:id            @controllers.LegalNoticeService.getLegalNoticesByCommunity(id: Long)
-POST    /api/communities/notices/create         @controllers.LegalNoticeService.createLegalNotice
+POST    /api/communities/notices/create         @controllers.LegalNoticeService.createLegalNotice()
 GET     /api/communities/errortemplates/:id     @controllers.ErrorTemplateService.getErrorTemplatesByCommunity(id: Long)
-POST    /api/communities/errortemplates/create  @controllers.ErrorTemplateService.createErrorTemplate
+POST    /api/communities/errortemplates/create  @controllers.ErrorTemplateService.createErrorTemplate()
 GET     /api/communities/triggers/:id           @controllers.TriggerService.getTriggersByCommunity(id: Long)
-POST    /api/communities/triggers/create        @controllers.TriggerService.createTrigger
-GET     /api/communities/admins/all             @controllers.UserService.getCommunityAdministrators
-POST    /api/communities/admins/create          @controllers.UserService.createCommunityAdmin
-POST    /api/communities/admins/create          @controllers.UserService.createCommunityAdmin
+POST    /api/communities/triggers/create        @controllers.TriggerService.createTrigger()
+GET     /api/communities/admins/all             @controllers.UserService.getCommunityAdministrators()
+POST    /api/communities/admins/create          @controllers.UserService.createCommunityAdmin()
+POST    /api/communities/admins/create          @controllers.UserService.createCommunityAdmin()
 POST    /api/communities/admins/:id             @controllers.UserService.updateCommunityAdminProfile(id : Long)
 GET     /api/communities/labels/:id             @controllers.CommunityService.getCommunityLabels(id: Long)
 POST    /api/communities/labels/:id             @controllers.CommunityService.setCommunityLabels(id: Long)
@@ -221,7 +221,7 @@ POST	/api/tests/:session_id/preliminary      @controllers.TestService.initiatePr
 POST	/api/tests/:session_id/start            @controllers.TestService.start(session_id:String)
 POST	/api/tests/:session_id/stop             @controllers.TestService.stop(session_id:String)
 POST	/api/tests/:session_id/restart          @controllers.TestService.restart(session_id:String)
-POST    /api/tests/startHeadless                @controllers.TestService.startHeadlessTestSessions
+POST    /api/tests/startHeadless                @controllers.TestService.startHeadlessTestSessions()
 POST	/api/tests/stopAll                      @controllers.TestService.stopAll()
 POST	/api/tests/stopAllCommunity             @controllers.TestService.stopAllCommunitySessions(communityId:Long)
 POST	/api/tests/stopAllOrganisation          @controllers.TestService.stopAllOrganisationSessions(organisationId:Long)
@@ -234,19 +234,19 @@ DELETE  /api/suite/:suite_id/undeploy           @controllers.TestSuiteService.un
 GET     /api/suite/:suite_id                    @controllers.TestSuiteService.downloadTestSuite(suite_id: Long)
 
 # Endpoint management API
-GET     /api/endpoints                          @controllers.ConformanceService.getEndpoints
-GET     /api/endpoints/checkConfig              @controllers.ConformanceService.checkConfigurations
-GET     /api/endpoints/systemConfig             @controllers.ConformanceService.getSystemConfigurations
+GET     /api/endpoints                          @controllers.ConformanceService.getEndpoints()
+GET     /api/endpoints/checkConfig              @controllers.ConformanceService.checkConfigurations()
+GET     /api/endpoints/systemConfig             @controllers.ConformanceService.getSystemConfigurations()
 GET     /api/endpoints/:endpoint_id/config      @controllers.SystemService.getEndpointConfigurations(endpoint_id: Long)
 GET     /api/endpoints/config                   @controllers.SystemService.getConfigurationsWithEndpointIds()
 POST    /api/endpoints/:endpoint_id/config      @controllers.SystemService.saveEndpointConfiguration(endpoint_id: Long)
 DELETE  /api/endpoints/:endpoint_id/config      @controllers.SystemService.deleteEndpointConfiguration(endpoint_id: Long)
 
 # Report management API
-POST    /api/reports/active                     @controllers.ReportService.getSystemActiveTestResults
-POST    /api/reports                            @controllers.ReportService.getTestResults
+POST    /api/reports/active                     @controllers.ReportService.getSystemActiveTestResults()
+POST    /api/reports                            @controllers.ReportService.getTestResults()
 GET     /api/reports/:session_id                @controllers.ReportService.getTestResultOfSession(session_id: String)
-POST    /api/reports/create                     @controllers.ReportService.createTestReport
+POST    /api/reports/create                     @controllers.ReportService.createTestReport()
 GET     /api/reports/:session_id/steps          @controllers.ReportService.getTestStepResults(session_id:String)
 
 # Conformance certificate API
@@ -258,9 +258,9 @@ POST    /api/conformancecertificate/test        @controllers.ConformanceService.
 GET     /api/repository/tests/:test_id/definition               @controllers.RepositoryService.getTestCaseDefinition(test_id:String)
 GET     /api/repository/reports/teststep/:session_id/*file      @controllers.RepositoryService.getTestStepReport(session_id: String, file)
 GET     /api/repository/reports/logs/:session_id                @controllers.RepositoryService.getTestSessionLog(session_id: String)
-GET     /api/repository/export/testcase                         @controllers.RepositoryService.exportTestCaseReport
+GET     /api/repository/export/testcase                         @controllers.RepositoryService.exportTestCaseReport()
 GET     /api/repository/export/teststep/:session_id/*path       @controllers.RepositoryService.exportTestStepReport(session_id: String, path)
-GET     /api/repository/export/conformance                      @controllers.RepositoryService.exportConformanceStatementReport
+GET     /api/repository/export/conformance                      @controllers.RepositoryService.exportConformanceStatementReport()
 POST    /api/repository/export/certificatedemo                  @controllers.RepositoryService.exportDemoConformanceCertificateReport(community_id: Long)
 POST    /api/repository/export/certificate                      @controllers.RepositoryService.exportConformanceCertificateReport()
 POST    /api/repository/exportOwn/certificate                   @controllers.RepositoryService.exportOwnConformanceCertificateReport()
@@ -276,7 +276,7 @@ POST    /api/domains/import/preview/:id                         @controllers.Rep
 POST    /api/domains/import/cancel/:id                          @controllers.RepositoryService.cancelDomainImport(id: Long)
 POST    /api/domains/import/confirm/:id                         @controllers.RepositoryService.confirmDomainImportCommunityAdmin(id: Long)
 POST    /api/domains/import/confirm/admin/:id                   @controllers.RepositoryService.confirmDomainImportTestBedAdmin(id: Long)
-POST    /api/initdata                                           @controllers.RepositoryService.applySandboxData
+POST    /api/initdata                                           @controllers.RepositoryService.applySandboxData()
 
 # Map static resources from the /public folder to the /assets URL path
 # TODO CHECK

@@ -1,17 +1,8 @@
 package managers
 
-import java.io.ByteArrayOutputStream
-import java.net.MalformedURLException
-import java.nio.charset.{Charset, StandardCharsets}
-import java.util.Base64
-
 import com.gitb.core.{AnyContent, ValueEmbeddingEnumeration}
 import com.gitb.ps.{GetModuleDefinitionResponse, ProcessRequest, ProcessingServiceService}
 import com.gitb.utils.XMLUtils
-import javax.inject.{Inject, Singleton}
-import javax.xml.bind.JAXBElement
-import javax.xml.namespace.QName
-import javax.xml.ws.WebServiceException
 import models.Enums.TriggerDataType.TriggerDataType
 import models.Enums.TriggerEventType.TriggerEventType
 import models.Enums.{TriggerDataType, TriggerEventType}
@@ -21,9 +12,16 @@ import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import utils.{JsonUtil, MimeUtil}
 
+import java.io.ByteArrayOutputStream
+import java.nio.charset.{Charset, StandardCharsets}
+import java.util.Base64
+import javax.inject.{Inject, Singleton}
+import javax.xml.bind.JAXBElement
+import javax.xml.namespace.QName
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 @Singleton
 class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
@@ -261,7 +259,7 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
     data.foreach { dataItem =>
       resultMap += (dataItem._1 -> (dataItem._2, dataItem._3, dataItem._4))
     }
-    resultMap.toMap
+    resultMap.iterator.toMap
   }
 
   private def loadSystemParameterData(parameterIds: List[Long], systemId: Option[Long]): Map[Long, (String, String, Option[String])] = {
@@ -280,7 +278,7 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
     data.foreach { dataItem =>
       resultMap += (dataItem._1 -> (dataItem._2, dataItem._3, dataItem._4))
     }
-    resultMap.toMap
+    resultMap.iterator.toMap
   }
 
   private def loadDomainParameterData(parameterIds: List[Long]): Map[Long, (String, String, Option[String])] = {
@@ -291,7 +289,7 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
     data.foreach { dataItem =>
       resultMap += (dataItem._1 -> (dataItem._2, dataItem._3, dataItem._4))
     }
-    resultMap.toMap
+    resultMap.iterator.toMap
   }
 
   private def fromCache[T](cache: mutable.Map[String, Any], cacheKey: String, fnLoad: () => T): T = {
@@ -632,7 +630,6 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
   }
 
   private def fireTrigger(trigger: Triggers, callbacks: TriggerCallbacks, request: ProcessRequest): Unit = {
-    import scala.collection.JavaConverters._
     scala.concurrent.Future {
       try {
         val service = new ProcessingServiceService(new java.net.URL(trigger.url))
@@ -640,14 +637,14 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
         val dbActions = ListBuffer[DBIO[_]]()
         if (response != null) {
           val triggerEvent = TriggerEventType.apply(trigger.eventType)
-          collectionAsScalaIterable(response.getOutput).foreach { output =>
+          response.getOutput.asScala.foreach { output =>
             if ("organisationProperties".equals(output.getName) &&
               (TriggerEventType.OrganisationCreated == triggerEvent || TriggerEventType.SystemCreated == triggerEvent || TriggerEventType.ConformanceStatementCreated == triggerEvent ||
                 TriggerEventType.OrganisationUpdated == triggerEvent || TriggerEventType.SystemUpdated == triggerEvent || TriggerEventType.ConformanceStatementUpdated == triggerEvent)
             ) {
               val organisationId = callbacks.organisationId()
               if (organisationId.isDefined) {
-                dbActions += saveAsOrganisationPropertyValues(trigger.community, organisationId.get, collectionAsScalaIterable(output.getItem))
+                dbActions += saveAsOrganisationPropertyValues(trigger.community, organisationId.get, output.getItem.asScala)
               }
             } else if ("systemProperties".equals(output.getName) &&
               (TriggerEventType.SystemCreated == triggerEvent || TriggerEventType.ConformanceStatementCreated == triggerEvent ||
@@ -655,7 +652,7 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
             ) {
               val systemId = callbacks.systemId()
               if (systemId.isDefined) {
-                dbActions += saveAsSystemPropertyValues(trigger.community, systemId.get, collectionAsScalaIterable(output.getItem))
+                dbActions += saveAsSystemPropertyValues(trigger.community, systemId.get, output.getItem.asScala)
               }
             } else if ("statementProperties".equals(output.getName) &&
               (TriggerEventType.ConformanceStatementCreated == triggerEvent || TriggerEventType.ConformanceStatementUpdated == triggerEvent)
@@ -663,7 +660,7 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
               val systemId = callbacks.systemId()
               val actorId = callbacks.actorId()
               if (systemId.isDefined && actorId.isDefined) {
-                dbActions += saveAsStatementPropertyValues(trigger.community, systemId.get, actorId.get, collectionAsScalaIterable(output.getItem))
+                dbActions += saveAsStatementPropertyValues(trigger.community, systemId.get, actorId.get, output.getItem.asScala)
               }
             }
           }

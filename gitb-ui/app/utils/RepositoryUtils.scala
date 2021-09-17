@@ -21,7 +21,6 @@ import java.time.LocalDateTime
 import java.util.zip.{ZipEntry, ZipFile}
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.xml.XML
 
@@ -29,6 +28,7 @@ import scala.xml.XML
 class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
 	import dbConfig.profile.api._
+	import scala.jdk.CollectionConverters._
 
 	private final val logger = LoggerFactory.getLogger("RepositoryUtils")
 	private final val objectMapper = new ObjectMapper()
@@ -195,7 +195,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 			zip.close()
 		}
 
-		testCasePaths.toMap
+		testCasePaths.iterator.toMap
 	}
 
 	def generateTestSuiteFileName(): String = {

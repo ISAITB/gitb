@@ -19,7 +19,7 @@ object TokenCache {
     val redisClient = Redis.getClient()
     try {
       val currentTime = System.currentTimeMillis()
-      redisClient.setex(act_key, Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME, userId+":"+currentTime)
+      redisClient.setex(act_key, Configurations.AUTHENTICATION_SESSION_MAX_IDLE_TIME, s"$userId:$currentTime")
     } finally {
       Redis.releaseClient(redisClient)
     }

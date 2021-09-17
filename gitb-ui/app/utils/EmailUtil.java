@@ -5,29 +5,28 @@ import managers.AttachmentType;
 
 import javax.activation.DataHandler;
 import javax.activation.DataSource;
+import javax.activation.FileDataSource;
 import javax.mail.*;
 import javax.mail.internet.InternetAddress;
 import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
-import javax.mail.util.ByteArrayDataSource;
 
 public class EmailUtil {
 
     private static Authenticator authenticator;
-    private static Object mutex = new Object();
+    private static final Object mutex = new Object();
 
     private static Authenticator getAuthenticator(String username, String password) {
         if (authenticator == null) {
             synchronized (mutex) {
                 if (authenticator == null) {
-                    Authenticator tempAuthenticator = new Authenticator() {
+                    authenticator = new Authenticator() {
                         @Override
                         protected PasswordAuthentication getPasswordAuthentication() {
                             return new PasswordAuthentication(username, password);
                         }
                     };
-                    authenticator = tempAuthenticator;
                 }
             }
         }
@@ -35,7 +34,7 @@ public class EmailUtil {
     }
 
     public static void sendEmail(String from, String[] tos, String[] ccs, String subject, String content, AttachmentType[] attachments) {
-        Session session = Session.getDefaultInstance(Configurations.SMTP_PROPERTIES(), getAuthenticator(Configurations.EMAIL_SMTP_AUTH_USERNAME(), Configurations.EMAIL_SMTP_AUTH_PASSWORD()));
+        Session session = Session.getInstance(Configurations.SMTP_PROPERTIES(), getAuthenticator(Configurations.EMAIL_SMTP_AUTH_USERNAME(), Configurations.EMAIL_SMTP_AUTH_PASSWORD()));
         MimeMessage message = new MimeMessage(session);
         try {
             message.setFrom(new InternetAddress(from));
@@ -57,7 +56,7 @@ public class EmailUtil {
                 message.saveChanges();
                 for (AttachmentType attachment: attachments) {
                     MimeBodyPart attachmentBodyPart = new MimeBodyPart();
-                    DataSource source = new ByteArrayDataSource(attachment.getContent(), attachment.getType());
+                    DataSource source = new FileDataSource(attachment.getContent());
                     attachmentBodyPart.setDataHandler(new DataHandler(source));
                     attachmentBodyPart.setFileName(attachment.getName());
                     multipart.addBodyPart(attachmentBodyPart);

@@ -33,7 +33,7 @@ class Actor(_id: Long, _actorId: String, _name: String, _description: Option[Str
 	def toCaseObject = {
 		val domainId = domain match {
 			case Some(d) => d.id
-			case None => 0l
+			case None => 0L
 		}
 		Actors(this.id, this.actorId, this.name, this.description, this.default, this.hidden, this.displayOrder, domainId)
 	}

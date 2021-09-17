@@ -1,7 +1,6 @@
 package managers
 
 import java.util
-
 import javax.inject.{Inject, Singleton}
 import models.Enums._
 import models._
@@ -209,8 +208,8 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
             actorIds.add(systemActorPair._1)
             systemIds.add(systemActorPair._2)
           }
-          import scala.collection.JavaConverters._
-          DBIO.successful((collectionAsScalaIterable(actorIds).toSet, collectionAsScalaIterable(systemIds).toSet))
+          import scala.jdk.CollectionConverters._
+          DBIO.successful((actorIds.asScala.toSet, systemIds.asScala.toSet))
         }
         _ <- {
           // Delete conformance statement data for collected IDs.
@@ -290,7 +289,7 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
   /**
     * Deletes the community with specified id
     */
-  def deleteCommunity(communityId: Long) {
+  def deleteCommunity(communityId: Long): Unit = {
     exec(
       (
         organizationManager.deleteOrganizationByCommunity(communityId) andThen

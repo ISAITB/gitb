@@ -4,8 +4,8 @@ import java.io.File
 import java.nio.file.{Path, Paths}
 import java.util
 import java.util.Objects
-
 import com.gitb.tr.{TAR, TestResultType}
+
 import javax.inject.{Inject, Singleton}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoiceHistory.TestSuiteReplacementChoiceHistory
@@ -20,10 +20,10 @@ import slick.lifted.Rep
 import utils.tdlvalidator.tdl.{FileSource, TestSuiteValidationAdapter}
 import utils.{RepositoryUtils, ZipArchiver}
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.jdk.CollectionConverters.SetHasAsScala
 
 object TestSuiteManager {
 
@@ -77,13 +77,11 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 
 	def getTestSuites(ids: Option[List[Long]]): List[TestSuites] = {
 		val q = ids match {
-			case Some(idList) => {
+			case Some(idList) =>
 				PersistenceSchema.testSuites
 					.filter(_.id inSet idList)
-			}
-			case None => {
+			case None =>
 				PersistenceSchema.testSuites
-			}
 		}
 		exec(q.sortBy(_.shortname.asc).map(TestSuiteManager.withoutDocumentation)
 		 .result.map(_.toList)).map(TestSuiteManager.tupleToTestSuite)
@@ -167,7 +165,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		}
 	}
 
-	def removeActorLinksForTestSuite(testSuiteId: Long) = {
+	def removeActorLinksForTestSuite(testSuiteId: Long): DBIO[_] = {
 		PersistenceSchema.testSuiteHasActors
 			.filter(_.testsuite === testSuiteId)
 			.delete
@@ -207,7 +205,8 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 								}
 							}
 							val mergedDbAction: DBIO[List[TestSuiteUploadItemResult]] = mergeActionsWithResults(dbActions.toList)
-							result.items.addAll(asJavaCollection(exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), mergedDbAction).transactionally)))
+							import scala.jdk.CollectionConverters._
+							result.items.addAll(exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), mergedDbAction).transactionally).asJavaCollection)
 							result.success = true
 						} else {
 							result.errorInformation = "The pending test suite archive [" + pendingTestSuiteIdentifier + "] was corrupted "
@@ -247,11 +246,12 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 				actorIdSet = Some(actorIdSet.get & specActorIds)
 			}
 		}
-		val report = TestSuiteValidationAdapter.getInstance().doValidation(new FileSource(tempTestSuiteArchive), setAsJavaSet(actorIdSet.getOrElse(mutable.Set[String]())), setAsJavaSet(parameterSet), repositoryUtils.getTmpValidationFolder().getAbsolutePath)
+		import scala.jdk.CollectionConverters._
+		val report = TestSuiteValidationAdapter.getInstance().doValidation(new FileSource(tempTestSuiteArchive), actorIdSet.getOrElse(mutable.Set[String]()).toSet.asJava, parameterSet.asJava, repositoryUtils.getTmpValidationFolder().getAbsolutePath)
 		report
 	}
 
-	private def setTestSuiteSpecification(testSuite: TestSuite, specification: Long) = {
+	private def setTestSuiteSpecification(testSuite: TestSuite, specification: Long): Unit = {
 		testSuite.specification = specification
 		if (testSuite.testCases.isDefined) {
 			testSuite.testCases = Some(
@@ -326,7 +326,8 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 							dbActions += saveTestSuite(testSuite.get.toCaseObject, null, updateMetadata = true, testSuite.get.actors, testSuite.get.testCases, tempTestSuiteArchive, onSuccessCalls, onFailureCalls)
 						}
 						val action: DBIO[List[TestSuiteUploadItemResult]] = mergeActionsWithResults(dbActions.toList)
-						result.items.addAll(asJavaCollection(exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), action).transactionally)))
+						import scala.jdk.CollectionConverters._
+						result.items.addAll(exec(dbActionFinalisation(Some(onSuccessCalls), Some(onFailureCalls), action).transactionally).asJavaCollection)
 						result.success = true
 					}
 				}
@@ -392,7 +393,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 			).foreach { x =>
 				testCaseMap += (x._1 -> new TestArtifactMetadata(x._2, x._3, x._4, x._5))
 			}
-			result.get.testCases = testCaseMap.toMap
+			result.get.testCases = testCaseMap.iterator.toMap
 		}
 		result
 	}
@@ -456,7 +457,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		action
 	}
 
-	def updateTestSuiteMetadata(testSuiteId: Long, name: String, description: Option[String], documentation: Option[String], version: String) = {
+	def updateTestSuiteMetadata(testSuiteId: Long, name: String, description: Option[String], documentation: Option[String], version: String): Unit = {
 		var hasDocumentationToSet = false
 		var documentationToSet: Option[String] = None
 		if (documentation.isDefined && !documentation.get.isBlank) {
@@ -471,7 +472,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		)
 	}
 
-	def updateTestCaseMetadata(testCaseId: Long, name: String, description: Option[String], documentation: Option[String]) = {
+	def updateTestCaseMetadata(testCaseId: Long, name: String, description: Option[String], documentation: Option[String]): Unit = {
 		var hasDocumentationToSet = false
 		var documentationToSet: Option[String] = None
 		if (documentation.isDefined && !documentation.get.isBlank) {
@@ -525,7 +526,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 			)
 	}
 
-	def isActorReference(actorToSave: Actors) = {
+	def isActorReference(actorToSave: Actors): Boolean = {
 		actorToSave.actorId != null && actorToSave.name == null && actorToSave.description.isEmpty
 	}
 
@@ -710,14 +711,14 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		}
 		var combinedAction: DBIO[_] = null
 		if (actions.nonEmpty) {
-			combinedAction = DBIO.seq(actions.map(a => a): _*)
+			combinedAction = DBIO.seq(actions.toList.map(a => a): _*)
 		} else {
 			combinedAction = DBIO.successful(())
 		}
 		combinedAction andThen DBIO.successful(result.toList)
 	}
 
-	def stepProcessTestCases(specificationId: Long, savedTestSuiteId: Long, testCases: Option[List[TestCases]], resourcePaths: Map[String, String], existingTestCaseMap: util.HashMap[String, (java.lang.Long, String)], savedActorIds: util.Map[String, Long], existingActorToSystemMap: util.HashMap[Long, util.HashSet[Long]], updateMetadata: Boolean): DBIO[(util.List[Long], List[TestSuiteUploadItemResult])] = {
+	def stepProcessTestCases(specificationId: Long, savedTestSuiteId: Long, testCases: Option[List[TestCases]], resourcePaths: Map[String, String], existingTestCaseMap: util.HashMap[String, (java.lang.Long, String)], savedActorIds: util.Map[String, Long], existingActorToSystemMap: util.Map[Long, util.Set[Long]], updateMetadata: Boolean): DBIO[(util.List[Long], List[TestSuiteUploadItemResult])] = {
 		val savedTestCaseIds: util.List[Long] = new util.ArrayList[Long]
 		var combinedAction: DBIO[_] = DBIO.successful(())
 		val result = new ListBuffer[TestSuiteUploadItemResult]()
@@ -742,8 +743,8 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 							testCaseToStore.targetActors.get)
 				}
 				// Update test case relation to actors.
-				val actorsToFurtherProcess = new util.HashSet[Long]
-				val actorsThatExistAndChangedToSut = new util.HashSet[Long]
+				val actorsToFurtherProcess: util.Set[Long] = new util.HashSet()
+				val actorsThatExistAndChangedToSut: util.Set[Long] = new util.HashSet()
 				var sutActor: Long = -1
 				testCase.targetActors.getOrElse("").split(",").foreach { actorId =>
 					var actorIdToSet: String = null
@@ -790,13 +791,13 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 							}
 						})
 						if (actions.nonEmpty) {
-							DBIO.seq(actions.map(a => a): _*)
+							DBIO.seq(actions.toList.map(a => a): _*)
 						} else {
 							DBIO.successful(())
 						}
 					}
 					_ <- {
-						val actions = asScalaSet(actorsToFurtherProcess).map(newTestCaseActor => {
+						val actions = actorsToFurtherProcess.asScala.map(newTestCaseActor => {
 							var action: DBIO[_] = null
               if (actorsThatExistAndChangedToSut.contains(newTestCaseActor)) {
                 action = DBIO.successful(())
@@ -805,7 +806,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
               }
 							val implementingSystems = existingActorToSystemMap.get(newTestCaseActor)
 							if (implementingSystems != null) {
-								for (implementingSystem <- asScalaSet(implementingSystems)) {
+								implementingSystems.asScala.foreach { implementingSystem: Long =>
 									// Check to see if there are existing test sessions for this test case.
 									action = action andThen (for {
 										previousResult <- PersistenceSchema.testResults.filter(_.sutId === implementingSystem).filter(_.testCaseId === existingTestCaseId).sortBy(_.endTime.desc).result.headOption
@@ -856,7 +857,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 								if (isSut) {
 									val implementingSystems = existingActorToSystemMap.get(actorInternalId)
 									if (implementingSystems != null) {
-										for (implementingSystem <- asScalaSet(implementingSystems)) {
+										for (implementingSystem <- implementingSystems.asScala) {
 											action = action andThen
 												(PersistenceSchema.conformanceResults += ConformanceResult(0L, implementingSystem, specificationId, actorInternalId, savedTestSuiteId, existingTestCaseId, TestResultStatus.UNDEFINED.toString, None, None, None))
 										}
@@ -877,8 +878,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		// Remove test cases not in new test suite.
 		val actions = new ListBuffer[DBIO[_]]()
 		val results = new ListBuffer[TestSuiteUploadItemResult]()
-
-		for (testCaseEntry <- asScalaSet(existingTestCaseMap.entrySet())) {
+		existingTestCaseMap.entrySet().forEach { testCaseEntry =>
 			actions += testCaseManager.delete(testCaseEntry.getValue._1)
 			results += new TestSuiteUploadItemResult(testCaseEntry.getValue._2, TestSuiteUploadItemResult.ITEM_TYPE_TEST_CASE, TestSuiteUploadItemResult.ACTION_TYPE_REMOVE, specificationId)
 		}
@@ -888,8 +888,8 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	def stepUpdateTestSuiteActorLinks(savedTestSuiteId: Long, savedActorIds: util.Map[String, Long]): DBIO[_] = {
 		// Add new test suite actor links.
 		val actions = new ListBuffer[DBIO[_]]()
-		for (actorEntry <- asScalaSet(savedActorIds.entrySet())) {
-				actions += (PersistenceSchema.testSuiteHasActors += (savedTestSuiteId, actorEntry.getValue))
+		savedActorIds.entrySet().forEach { actorEntry =>
+			actions += (PersistenceSchema.testSuiteHasActors += (savedTestSuiteId, actorEntry.getValue))
 		}
 		DBIO.seq(actions.toList: _*)
 	}
@@ -897,7 +897,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 	def stepUpdateTestSuiteTestCaseLinks(savedTestSuiteId: Long, savedTestCaseIds: util.List[Long]): DBIO[_] = {
 		// Update test suite test case links.
 		val actions = new ListBuffer[DBIO[_]]()
-		for (testCaseId <- collectionAsScalaIterable(savedTestCaseIds)) {
+		savedTestCaseIds.forEach { testCaseId =>
 			actions += (PersistenceSchema.testSuiteHasTestCases += (savedTestSuiteId, testCaseId))
 		}
 		DBIO.seq(actions.toList: _*)
@@ -909,7 +909,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 
 	def getExistingActorToSystemMap(systemActors: List[(Long, Long, Long)]) = {
 		// First get the map of existing actorIds to systems
-		val existingActorToSystemMap = new util.HashMap[Long, util.HashSet[Long]]()
+		val existingActorToSystemMap: util.Map[Long, util.Set[Long]] = new util.HashMap()
 		systemActors.foreach { systemToActor =>
 			val systemId = systemToActor._1
 			val actorId = systemToActor._3

@@ -7,6 +7,7 @@ import com.gitb.tbs._
 import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
+
 import javax.inject.{Inject, Singleton}
 import managers._
 import models.Constants
@@ -19,6 +20,7 @@ import utils.{ClamAVClient, JacksonUtil, JsonUtil, MimeUtil}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.util.{Failure, Success}
 
 @Singleton
@@ -35,7 +37,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
     testbedClient.service().getTestCaseDefinition(request)
   }
 
-  def endSession(session:String) = {
+  def endSession(session:String): Unit = {
     val request: BasicCommand = new BasicCommand
     request.setTcInstanceId(session)
     testbedClient.service().stop(request)
@@ -45,7 +47,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   /**
    * Gets the test case definition for a specific test
    */
-  def getTestCaseDefinition(test_id:String) = authorizedAction { request =>
+  def getTestCaseDefinition(test_id:String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewTestCase(request, test_id)
     val response = getTestCasePresentation(test_id, None)
     val json = JacksonUtil.serializeTestCasePresentation(response.getTestcase)
@@ -54,7 +56,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   /**
    * Gets the definition for a actor test
    */
-  def getActorDefinitions() = authorizedAction { request =>
+  def getActorDefinitions: Action[AnyContent] = authorizedAction { request =>
     val specId = ParameterExtractor.requiredQueryParameter(request, Parameters.SPECIFICATION_ID).toLong
     authorizationManager.canViewActorsBySpecificationId(request, specId)
     val actors = conformanceManager.getActorsWithSpecificationId(None, Some(specId))
@@ -65,7 +67,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   /**
    * Initiates the test case
    */
-  def initiate(test_id:String) = authorizedAction { request =>
+  def initiate(test_id:String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canExecuteTestCase(request, test_id)
     ResponseConstructor.constructStringResponse(initiateInternal(test_id.toLong))
   }
@@ -80,7 +82,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   /**
    * Sends the required data on preliminary steps
    */
-  def configure(sessionId:String) = authorizedAction { request =>
+  def configure(sessionId:String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canExecuteTestSession(request, sessionId)
     val specId = ParameterExtractor.requiredQueryParameter(request, Parameters.SPECIFICATION_ID).toLong
     val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
@@ -174,8 +176,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   private def configureInternal(sessionId: String, statementParameters: List[ActorConfiguration], domainParameters: Option[ActorConfiguration], organisationParameters: ActorConfiguration, systemParameters: ActorConfiguration) = {
     val cRequest: ConfigureRequest = new ConfigureRequest
     cRequest.setTcInstanceId(sessionId)
-    import scala.collection.JavaConverters._
-    cRequest.getConfigs.addAll(asJavaCollection(statementParameters))
+    import scala.jdk.CollectionConverters._
+    cRequest.getConfigs.addAll(statementParameters.asJava)
     if (domainParameters.nonEmpty) {
       cRequest.getConfigs.add(domainParameters.get)
     }
@@ -202,8 +204,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
             found = true
           }
         } else if (input.getItem != null && !input.getItem.isEmpty) {
-          import scala.collection.JavaConverters._
-          found = scanForVirus(collectionAsScalaIterable(input.getItem).toList, scanner)
+          found = scanForVirus(input.getItem.asScala.toList, scanner)
         }
         if (found) {
           return found
@@ -216,7 +217,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   /**
    * Sends inputs to the TestbedService
    */
-  def provideInput(session_id:String) = authorizedAction { request =>
+  def provideInput(session_id:String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canExecuteTestSession(request, session_id)
 
     val inputs = ParameterExtractor.requiredBodyParameter(request, Parameters.INPUTS)
@@ -235,8 +236,8 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
       val pRequest: ProvideInputRequest = new ProvideInputRequest
       pRequest.setTcInstanceId(session_id)
       pRequest.setStepId(step)
-      import scala.collection.JavaConverters._
-      pRequest.getInput.addAll(asJavaCollection(userInputs))
+      import scala.jdk.CollectionConverters._
+      pRequest.getInput.addAll(userInputs.asJava)
 
       testbedClient.service().provideInput(pRequest)
       response = ResponseConstructor.constructEmptyResponse
@@ -247,7 +248,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   /**
    * Starts the preliminary phase if test case description has one
    */
-  def initiatePreliminary(session_id:String) = authorizedAction { request =>
+  def initiatePreliminary(session_id:String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canExecuteTestSession(request, session_id)
 
     val bRequest:BasicCommand = new BasicCommand
@@ -260,7 +261,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   /**
    * Starts the test case
    */
-  def start(sessionId:String) = authorizedAction { request =>
+  def start(sessionId:String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canExecuteTestSession(request, sessionId)
     startInternal(sessionId)
     ResponseConstructor.constructEmptyResponse
@@ -275,13 +276,13 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   /**
    * Stops the test case
    */
-  def stop(session_id:String) = authorizedAction { request =>
+  def stop(session_id:String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canExecuteTestSession(request, session_id)
     endSession(session_id)
     ResponseConstructor.constructEmptyResponse
   }
 
-  def stopAll() = authorizedAction { request =>
+  def stopAll(): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageAnyTestSession(request)
     testResultManager.getAllRunningSessions().foreach { sessionId =>
       endSession(sessionId)
@@ -289,7 +290,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
     ResponseConstructor.constructEmptyResponse
   }
 
-  def stopAllCommunitySessions(communityId: Long) = authorizedAction { request =>
+  def stopAllCommunitySessions(communityId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageCommunity(request, communityId)
     testResultManager.getRunningSessionsForCommunity(communityId).foreach { sessionId =>
       endSession(sessionId)
@@ -297,7 +298,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
     ResponseConstructor.constructEmptyResponse
   }
 
-  def stopAllOrganisationSessions(organisationId: Long) = authorizedAction { request =>
+  def stopAllOrganisationSessions(organisationId: Long): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canManageOrganisationBasic(request, organisationId)
     testResultManager.getRunningSessionsForOrganisation(organisationId).foreach { sessionId =>
       endSession(sessionId)
@@ -308,7 +309,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   /**
    * Restarts the test case with same preliminary data
    */
-  def restart(session_id:String) = authorizedAction { request =>
+  def restart(session_id:String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canExecuteTestSession(request, session_id)
 
     val bRequest: BasicCommand = new BasicCommand
@@ -318,7 +319,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
     ResponseConstructor.constructEmptyResponse
   }
 
-  def startHeadlessTestSessions() = authorizedAction { request =>
+  def startHeadlessTestSessions(): Action[AnyContent] = authorizedAction { request =>
     val testCaseIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_CASE_IDS)
     val specId = ParameterExtractor.requiredBodyParameter(request, Parameters.SPECIFICATION_ID).toLong
     val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong

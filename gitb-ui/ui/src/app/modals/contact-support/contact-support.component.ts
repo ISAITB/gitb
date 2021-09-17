@@ -113,12 +113,7 @@ export class ContactSupportComponent extends BaseComponent implements OnInit, Af
   }
 
   attachFile(file: FileData) {
-    this.attachments.push({
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      data: file.data
-    })
+    this.attachments.push(file)
   }
 
   removeAttachment(index: number) {

@@ -29,7 +29,7 @@
         <div class="form-group" *ngIf="showUpload() && attachments.length == 0">
             <label class="col-xs-3 control-label">Attachment(s):</label>
             <div class="col-xs-8">
-                <app-file-select label="Select file" (onUpload)="attachFile($event)"></app-file-select>
+                <app-file-select label="Select file" (onUploadForMultipart)="attachFile($event)" [multipart]="true"></app-file-select>
             </div>
         </div>
         <div class="form-group" *ngFor="let attachment of attachments; let first = first; let index = index"> 
@@ -41,7 +41,7 @@
         </div>
         <div class="form-group" *ngIf="attachments.length > 0">
             <div class="col-xs-8 col-xs-offset-3">
-                <app-file-select *ngIf="maximumAttachments > attachments.length" label="Select file" (onUpload)="attachFile($event)"></app-file-select>
+                <app-file-select *ngIf="maximumAttachments > attachments.length" label="Select file" (onUploadForMultipart)="attachFile($event)" [multipart]="true"></app-file-select>
             </div>
         </div>
         <div class="form-group" *ngIf="showSurveyLink()">

@@ -129,7 +129,7 @@ class TestCaseManager @Inject() (testResultManager: TestResultManager, dbConfigP
 			actions += PersistenceSchema.conformanceResults.filter(_.testcase === testCaseId).delete
 		}
 		actions += PersistenceSchema.testCases.filter(_.id === testCaseId).delete
-		DBIO.seq(actions.map(a => a): _*)
+		DBIO.seq(actions.toList.map(a => a): _*)
 	}
 
 	def removeActorLinksForTestCase(testCaseId: Long): DBIO[_] = {

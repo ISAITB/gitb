@@ -5,6 +5,7 @@ import com.typesafe.config.{Config, ConfigFactory}
 import models.Constants
 
 import java.util.Properties
+import scala.jdk.CollectionConverters.CollectionHasAsScala
 import scala.util.matching.Regex
 
 object Configurations {
@@ -35,9 +36,9 @@ object Configurations {
 
   var EMAIL_ENABLED = false
   var EMAIL_FROM = ""
-  var EMAIL_TO: Array[String] = null
+  var EMAIL_TO: Array[String] = _
   var EMAIL_SMTP_HOST = ""
-  var EMAIL_SMTP_PORT = -1
+  var EMAIL_SMTP_PORT: Int = -1
   var EMAIL_SMTP_SSL_ENABLED = false
   var EMAIL_SMTP_SSL_PROTOCOLS: Option[String] = None
   var EMAIL_SMTP_STARTTLS_ENABLED = false
@@ -59,19 +60,19 @@ object Configurations {
   var GUIDES_EULOGIN_USE = ""
   var GUIDES_EULOGIN_MIGRATION = ""
 
-  var EMAIL_ATTACHMENTS_MAX_SIZE = -1
-  var EMAIL_ATTACHMENTS_MAX_COUNT = -1
+  var EMAIL_ATTACHMENTS_MAX_SIZE: Int = -1
+  var EMAIL_ATTACHMENTS_MAX_COUNT: Int = -1
   var EMAIL_ATTACHMENTS_ALLOWED_TYPES_STR = ""
-  var EMAIL_ATTACHMENTS_ALLOWED_TYPES: Set[String] = null
+  var EMAIL_ATTACHMENTS_ALLOWED_TYPES: Set[String] = _
 
   var ANTIVIRUS_SERVER_ENABLED = false
   var ANTIVIRUS_SERVER_HOST = ""
-  var ANTIVIRUS_SERVER_PORT = -1
+  var ANTIVIRUS_SERVER_PORT: Int = -1
   var ANTIVIRUS_SERVER_TIMEOUT = 0
 
   var PROXY_SERVER_ENABLED = false
   var PROXY_SERVER_HOST = ""
-  var PROXY_SERVER_PORT = -1
+  var PROXY_SERVER_PORT: Int = -1
   var PROXY_SERVER_AUTH_ENABLED = false
   var PROXY_SERVER_AUTH_USERNAME = ""
   var PROXY_SERVER_AUTH_PASSWORD = ""
@@ -127,7 +128,7 @@ object Configurations {
 
   var API_ROOT = ""
 
-  def loadConfigurations() = {
+  def loadConfigurations(): Unit = {
     if (!_IS_LOADED) {
       //Load configuration file
       val conf:Config = ConfigFactory.load()
@@ -221,23 +222,23 @@ object Configurations {
 
       PROXY_SERVER_ENABLED = fromEnv("PROXY_SERVER_ENABLED", conf.getString("proxy.enabled")).toBoolean
       if (PROXY_SERVER_ENABLED) {
-        PROXY_SERVER_HOST = fromEnv("PROXY_SERVER_HOST", conf.getString("proxy.host")).toString
+        PROXY_SERVER_HOST = fromEnv("PROXY_SERVER_HOST", conf.getString("proxy.host"))
         PROXY_SERVER_PORT = fromEnv("PROXY_SERVER_PORT", conf.getString("proxy.port")).toInt
         PROXY_SERVER_AUTH_ENABLED = fromEnv("PROXY_SERVER_AUTH_ENABLED", conf.getString("proxy.auth.enabled")).toBoolean
         if (PROXY_SERVER_AUTH_ENABLED) {
-          PROXY_SERVER_AUTH_USERNAME = fromEnv("PROXY_SERVER_AUTH_USERNAME", conf.getString("proxy.auth.user")).toString
-          PROXY_SERVER_AUTH_PASSWORD = fromEnv("PROXY_SERVER_AUTH_PASSWORD", conf.getString("proxy.auth.password")).toString
+          PROXY_SERVER_AUTH_USERNAME = fromEnv("PROXY_SERVER_AUTH_USERNAME", conf.getString("proxy.auth.user"))
+          PROXY_SERVER_AUTH_PASSWORD = fromEnv("PROXY_SERVER_AUTH_PASSWORD", conf.getString("proxy.auth.password"))
         }
       }
 
       TSA_SERVER_ENABLED = fromEnv("TSA_SERVER_ENABLED", conf.getString("signature.tsa.enabled")).toBoolean
       if (TSA_SERVER_ENABLED) {
-        TSA_SERVER_URL = fromEnv("TSA_SERVER_URL", conf.getString("signature.tsa.url")).toString
+        TSA_SERVER_URL = fromEnv("TSA_SERVER_URL", conf.getString("signature.tsa.url"))
       }
 
       VALIDATION_TDL_EXTERNAL_ENABLED = fromEnv("VALIDATION_TDL_EXTERNAL_ENABLED", conf.getString("validation.tdl.external.enabled")).toBoolean
       if (VALIDATION_TDL_EXTERNAL_ENABLED) {
-        VALIDATION_TDL_EXTERNAL_URL = fromEnv("VALIDATION_TDL_EXTERNAL_URL", conf.getString("validation.tdl.external.url")).toString
+        VALIDATION_TDL_EXTERNAL_URL = fromEnv("VALIDATION_TDL_EXTERNAL_URL", conf.getString("validation.tdl.external.url"))
       }
 
       // Configure HMAC processing
@@ -245,29 +246,29 @@ object Configurations {
       val hmacKeyWindow = System.getenv.getOrDefault("HMAC_WINDOW", "10000")
       HmacUtils.configure(hmacKey, hmacKeyWindow.toLong)
 
-      AUTHENTICATION_COOKIE_PATH = fromEnv("AUTHENTICATION_COOKIE_PATH", conf.getString("authentication.cookie.path")).toString
+      AUTHENTICATION_COOKIE_PATH = fromEnv("AUTHENTICATION_COOKIE_PATH", conf.getString("authentication.cookie.path"))
       AUTHENTICATION_SSO_ENABLED = fromEnv("AUTHENTICATION_SSO_ENABLED", conf.getString("authentication.sso.enabled")).toBoolean
       AUTHENTICATION_SSO_IN_MIGRATION_PERIOD = fromEnv("AUTHENTICATION_SSO_IN_MIGRATION_PERIOD", conf.getString("authentication.sso.inMigrationPeriod")).toBoolean
-      AUTHENTICATION_SSO_LOGIN_URL = fromEnv("AUTHENTICATION_SSO_LOGIN_URL", conf.getString("authentication.sso.url.login")).toString
-      AUTHENTICATION_SSO_CALLBACK_URL = fromEnv("AUTHENTICATION_SSO_CALLBACK_URL", conf.getString("authentication.sso.url.callback")).toString
+      AUTHENTICATION_SSO_LOGIN_URL = fromEnv("AUTHENTICATION_SSO_LOGIN_URL", conf.getString("authentication.sso.url.login"))
+      AUTHENTICATION_SSO_CALLBACK_URL = fromEnv("AUTHENTICATION_SSO_CALLBACK_URL", conf.getString("authentication.sso.url.callback"))
       AUTHENTICATION_SSO_CAS_VERSION = fromEnv("AUTHENTICATION_SSO_CAS_VERSION", conf.getString("authentication.sso.casVersion")).toShort
 
-      AUTHENTICATION_SSO_CUSTOM_PARAMETERS__USER_DETAILS = fromEnv("AUTHENTICATION_SSO_CUSTOM_PARAMETERS__USER_DETAILS", conf.getString("authentication.sso.customParameters.userDetails")).toString
-      AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL", conf.getString("authentication.sso.userAttributes.email")).toString
-      AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME", conf.getString("authentication.sso.userAttributes.firstName")).toString
-      AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME", conf.getString("authentication.sso.userAttributes.lastName")).toString
-      AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX = fromEnv("AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX", conf.getString("authentication.sso.ticketValidationUrlSuffix")).toString
+      AUTHENTICATION_SSO_CUSTOM_PARAMETERS__USER_DETAILS = fromEnv("AUTHENTICATION_SSO_CUSTOM_PARAMETERS__USER_DETAILS", conf.getString("authentication.sso.customParameters.userDetails"))
+      AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__EMAIL", conf.getString("authentication.sso.userAttributes.email"))
+      AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__FIRST_NAME", conf.getString("authentication.sso.userAttributes.firstName"))
+      AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME = fromEnv("AUTHENTICATION_SSO_USER_ATTRIBUTES__LAST_NAME", conf.getString("authentication.sso.userAttributes.lastName"))
+      AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX = fromEnv("AUTHENTICATION_SSO_TICKET_VALIDATION_URL_SUFFIX", conf.getString("authentication.sso.ticketValidationUrlSuffix"))
 
       DEMOS_ENABLED = fromEnv("DEMOS_ENABLED", conf.getString("demos.enabled")).toBoolean
       DEMOS_ACCOUNT = fromEnv("DEMOS_ACCOUNT", conf.getString("demos.account")).toLong
 
       REGISTRATION_ENABLED = fromEnv("REGISTRATION_ENABLED", conf.getString("registration.enabled")).toBoolean
-      TESTBED_HOME_LINK = fromEnv("TESTBED_HOME_LINK", TESTBED_HOME_LINK).toString
+      TESTBED_HOME_LINK = fromEnv("TESTBED_HOME_LINK", TESTBED_HOME_LINK)
 
       SAVED_FILE_MAX_SIZE = fromEnv("SAVED_FILE_MAX_SIZE", SAVED_FILE_MAX_SIZE.toString).toLong
 
-      GUIDES_EULOGIN_USE = fromEnv("GUIDES_EULOGIN_USE", conf.getString("guides.eulogin.use")).toString
-      GUIDES_EULOGIN_MIGRATION = fromEnv("GUIDES_EULOGIN_MIGRATION", conf.getString("guides.eulogin.migration")).toString
+      GUIDES_EULOGIN_USE = fromEnv("GUIDES_EULOGIN_USE", conf.getString("guides.eulogin.use"))
+      GUIDES_EULOGIN_MIGRATION = fromEnv("GUIDES_EULOGIN_MIGRATION", conf.getString("guides.eulogin.migration"))
 
       // Input sanitiser - START
       INPUT_SANITIZER__ENABLED = fromEnv("INPUT_SANITIZER__ENABLED", conf.getString("inputSanitizer.enabled")).toBoolean
@@ -277,33 +278,30 @@ object Configurations {
         tempSet += method
       }
       INPUT_SANITIZER__METHODS_TO_CHECK = tempSet.toSet
-      INPUT_SANITIZER__DEFAULT_BLACKLIST_EXPRESSION = new Regex(fromEnv("INPUT_SANITIZER__DEFAULT_BLACKLIST_EXPRESSION", conf.getString("inputSanitizer.defaultBlacklistExpression")).toString)
+      INPUT_SANITIZER__DEFAULT_BLACKLIST_EXPRESSION = new Regex(fromEnv("INPUT_SANITIZER__DEFAULT_BLACKLIST_EXPRESSION", conf.getString("inputSanitizer.defaultBlacklistExpression")))
       val sanitizerExpressionsConfig = conf.getObjectList("inputSanitizer.parameterWhitelistExpressions")
       if (sanitizerExpressionsConfig == null) {
         INPUT_SANITIZER__PARAMETER_WHITELIST_EXPRESSIONS = Map()
       } else {
         val tempMap: scala.collection.mutable.Map[String, Regex] = scala.collection.mutable.Map()
-        import scala.collection.JavaConverters._
-        collectionAsScalaIterable(sanitizerExpressionsConfig).foreach { entry =>
-          collectionAsScalaIterable(entry.entrySet()).foreach { mapping =>
+        sanitizerExpressionsConfig.forEach { entry =>
+          entry.entrySet().forEach { mapping =>
             tempMap(mapping.getKey) = new Regex(mapping.getValue.unwrapped.asInstanceOf[String])
           }
         }
-        INPUT_SANITIZER__PARAMETER_WHITELIST_EXPRESSIONS = tempMap.toMap
+        INPUT_SANITIZER__PARAMETER_WHITELIST_EXPRESSIONS = tempMap.iterator.toMap
       }
       val sanitizerSkipped = conf.getStringList("inputSanitizer.parametersToSkip")
       if (sanitizerSkipped == null) {
         INPUT_SANITIZER__PARAMETERS_TO_SKIP = Set()
       } else {
-        import scala.collection.JavaConverters._
-        INPUT_SANITIZER__PARAMETERS_TO_SKIP = collectionAsScalaIterable(sanitizerSkipped).toSet
+        INPUT_SANITIZER__PARAMETERS_TO_SKIP = sanitizerSkipped.asScala.toSet
       }
       val sanitizerJsonParameters = conf.getStringList("inputSanitizer.parametersAsJson")
       if (sanitizerJsonParameters == null) {
         INPUT_SANITIZER__PARAMETERS_AS_JSON = Set()
       } else {
-        import scala.collection.JavaConverters._
-        INPUT_SANITIZER__PARAMETERS_AS_JSON = collectionAsScalaIterable(sanitizerJsonParameters).toSet
+        INPUT_SANITIZER__PARAMETERS_AS_JSON = sanitizerJsonParameters.asScala.toSet
       }
       // Input sanitiser - END
 
@@ -314,7 +312,7 @@ object Configurations {
       /*
         Use of default values for secrets should only be allowed for a development instance.
        */
-      if (DATA_ARCHIVE_KEY.length > 0 || DATA_WEB_INIT_ENABLED) {
+      if (DATA_ARCHIVE_KEY.nonEmpty || DATA_WEB_INIT_ENABLED) {
         TESTBED_MODE = Constants.SandboxMode
       } else {
         TESTBED_MODE = fromEnv("TESTBED_MODE", Constants.DevelopmentMode)
