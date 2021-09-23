@@ -1,17 +1,39 @@
 package controllers.util
 
-import java.util.concurrent.ThreadLocalRandom
 import config.Configurations
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
-import models.{Actors, Communities, Domain, Endpoints, ErrorTemplates, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
-import org.apache.commons.codec.binary.Base64
+import controllers.util.Parameters
+import models.{Actors, Communities, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
-import utils.{ClamAVClient, HtmlUtil, JsonUtil, MimeUtil}
+import utils.{ClamAVClient, HtmlUtil, JsonUtil}
+
+import java.io.File
+import java.util.concurrent.ThreadLocalRandom
 
 object ParameterExtractor {
+
+  def paramMap(request: Request[AnyContent]): Option[Map[String, Seq[String]]] = {
+    var paramMap: Option[Map[String, Seq[String]]] = None
+    if (request.body.asMultipartFormData.isDefined) {
+      paramMap = Some(request.body.asMultipartFormData.get.dataParts)
+    } else {
+      paramMap = request.body.asFormUrlEncoded
+    }
+    paramMap
+  }
+
+  def extractFiles(request: Request[AnyContent]): Map[String, FileInfo] = {
+    val fileMap = scala.collection.mutable.Map[String, FileInfo]()
+    if (request.body.asMultipartFormData.isDefined) {
+      request.body.asMultipartFormData.get.files.foreach { file =>
+        fileMap += (file.key -> new FileInfo(file.key, file.contentType, file.ref))
+      }
+    }
+    fileMap.iterator.toMap
+  }
 
   def requiredQueryParameter(request:Request[AnyContent], parameter:String):String = {
     val param = request.getQueryString(parameter)
@@ -43,65 +65,39 @@ object ParameterExtractor {
     }
   }
 
-  def extractOrganisationParameterValues(request:Request[AnyContent], parameterName: String, optional: Boolean): Option[List[OrganisationParameterValues]] = {
+  def extractOrganisationParameterValues(paramMap: Option[Map[String, Seq[String]]], parameterName: String, optional: Boolean): Option[List[OrganisationParameterValues]] = {
     var values: Option[List[OrganisationParameterValues]] = None
     if (optional) {
-      val valuesJson = optionalBodyParameter(request, parameterName)
+      val valuesJson = optionalBodyParameter(paramMap, parameterName)
       if (valuesJson.isDefined) {
         values = Some(JsonUtil.parseJsOrganisationParameterValues(valuesJson.get))
       }
     } else {
-      val valuesJson = requiredBodyParameter(request, parameterName)
+      val valuesJson = requiredBodyParameter(paramMap, parameterName)
       values = Some(JsonUtil.parseJsOrganisationParameterValues(valuesJson))
     }
     values
   }
 
-  def checkOrganisationParameterValues(values: Option[List[OrganisationParameterValues]]): Result = {
-    var response: Result = null
-    if (Configurations.ANTIVIRUS_SERVER_ENABLED && values.isDefined) {
-      val dataUrls = values.get.collect({
-        case x if MimeUtil.isDataURL(x.value) => x.value
-      })
-      if (virusPresent(dataUrls)) {
-        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
-      }
-    }
-    response
-  }
-
-  def extractSystemParameterValues(request:Request[AnyContent], parameterName: String, optional: Boolean): Option[List[SystemParameterValues]] = {
+  def extractSystemParameterValues(paramMap:Option[Map[String, Seq[String]]], parameterName: String, optional: Boolean): Option[List[SystemParameterValues]] = {
     var values: Option[List[SystemParameterValues]] = None
     if (optional) {
-      val valuesJson = optionalBodyParameter(request, parameterName)
+      val valuesJson = optionalBodyParameter(paramMap, parameterName)
       if (valuesJson.isDefined) {
         values = Some(JsonUtil.parseJsSystemParameterValues(valuesJson.get))
       }
     } else {
-      val valuesJson = requiredBodyParameter(request, parameterName)
+      val valuesJson = requiredBodyParameter(paramMap, parameterName)
       values = Some(JsonUtil.parseJsSystemParameterValues(valuesJson))
     }
     values
   }
 
-  def checkSystemParameterValues(values: Option[List[SystemParameterValues]]): Result = {
-    var response: Result = null
-    if (Configurations.ANTIVIRUS_SERVER_ENABLED && values.isDefined) {
-      val dataUrls = values.get.collect({
-        case x if MimeUtil.isDataURL(x.value) => x.value
-      })
-      if (virusPresent(dataUrls)) {
-        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
-      }
-    }
-    response
-  }
-
-  def virusPresent(values: List[String]): Boolean = {
+  def virusPresentInFiles(values: Iterable[File]): Boolean = {
     val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
     values.foreach { value =>
       // Check for virus. Do this regardless of the type of parameter as this can be changed later on.
-      val scanResult = virusScanner.scan(Base64.decodeBase64(MimeUtil.getBase64FromDataURL(value)))
+      val scanResult = virusScanner.scan(value)
       if (!ClamAVClient.isCleanReply(scanResult)) {
         return true
       }
@@ -109,65 +105,72 @@ object ParameterExtractor {
     false
   }
 
-  def requiredBodyParameterMulti(request:Request[MultipartFormData[_]], parameter:String):String = {
-      val param = request.body.dataParts.get(parameter)
-      if (param.isDefined) {
-        try {
-          param.get.head
-        } catch {
-          case _:NoSuchElementException =>
-            throw InvalidRequestException(ErrorCodes.MISSING_PARAMS, "Parameter '"+parameter+"' is missing in the request")
-        }
-      } else {
-        throw InvalidRequestException(ErrorCodes.MISSING_PARAMS, "Parameter '"+parameter+"' is missing in the request")
+  def optionalBodyParameterMulti(body: MultipartFormData[_], parameter:String): Option[String] = {
+    var result: Option[String] = None
+    val param = body.dataParts.get(parameter)
+    if (param.isDefined) {
+      val seq = param.get
+      if (seq.nonEmpty) {
+        result = Some(seq.head)
       }
+    }
+    result
   }
 
-  def requiredBinaryBodyParameter(request:Request[AnyContent], parameter:String):Array[Byte] = {
+  def requiredBodyParameterMulti(body: MultipartFormData[_], parameter:String):String = {
+    requiredBodyParameter(Some(body.dataParts), parameter)
+  }
+
+  def requiredBodyParameterMulti(request:Request[MultipartFormData[_]], parameter:String):String = {
+    requiredBodyParameterMulti(request.body, parameter)
+  }
+
+  def requiredBodyParameter(request:Request[AnyContent], parameter:String):String = {
+    requiredBodyParameter(request.body.asFormUrlEncoded, parameter)
+  }
+
+  def requiredBodyParameter(paramMap: Option[Map[String, Seq[String]]], parameter:String):String = {
     try {
-      var paramStr = request.body.asFormUrlEncoded.get(parameter).head
-      if (MimeUtil.isDataURL(paramStr)) {
-        paramStr = MimeUtil.getBase64FromDataURL(paramStr)
-      }
-      Base64.decodeBase64(paramStr)
+      paramMap.get(parameter).head
     } catch {
       case _:NoSuchElementException =>
         throw InvalidRequestException(ErrorCodes.MISSING_PARAMS, "Parameter '" + parameter + "' is missing in the request")
     }
   }
 
-  def requiredBodyParameter(request:Request[AnyContent], parameter:String):String = {
+  def optionalBodyParameter(paramMap: Option[Map[String, Seq[String]]], parameter:String): Option[String] = {
     try {
-      val param = request.body.asFormUrlEncoded.get(parameter).head
-      param
+      paramMap.get(parameter).headOption
     } catch {
       case _:NoSuchElementException =>
-        throw InvalidRequestException(ErrorCodes.MISSING_PARAMS, "Parameter '" + parameter + "' is missing in the request")
+        None
+    }
+  }
+
+  def optionalLongBodyParameter(paramMap: Option[Map[String, Seq[String]]], parameter:String): Option[Long] = {
+    try {
+      val paramString = paramMap.get(parameter).headOption
+      if (paramString.isDefined) {
+        Some(paramString.get.toLong)
+      } else {
+        None
+      }
+    } catch {
+      case _:NoSuchElementException =>
+        None
     }
   }
 
   def optionalBodyParameter(request:Request[AnyContent], parameter:String):Option[String] = {
-    try {
-      val paramList = request.body.asFormUrlEncoded.get(parameter)
-      paramList.headOption
-    } catch {
-      case _:NoSuchElementException =>
-      None
-    }
+    optionalBodyParameter(request.body.asFormUrlEncoded, parameter)
   }
 
   def optionalLongBodyParameter(request:Request[AnyContent], parameter:String):Option[Long] = {
-    try {
-      val paramList = request.body.asFormUrlEncoded.get(parameter)
-      if(paramList.nonEmpty){
-        Some(paramList.head.toLong)
-      } else{
-        None
-      }
-    } catch {
-      case _:NoSuchElementException =>
-        None
-    }
+    optionalLongBodyParameter(request.body.asFormUrlEncoded, parameter)
+  }
+
+  def optionalLongBodyParameterMulti(request:Request[AnyContent], parameter:String):Option[Long] = {
+    optionalLongBodyParameter(Some(request.body.asMultipartFormData.get.dataParts), parameter)
   }
 
   def optionalBooleanBodyParameter(request:Request[AnyContent], parameter:String):Option[Boolean] = {
@@ -225,19 +228,19 @@ object ParameterExtractor {
     request.headers.get(Parameters.USER_ID).get.toLong
   }
 
-  def extractOrganizationInfo(request:Request[AnyContent]):Organizations = {
-    val vendorSname = requiredBodyParameter(request, Parameters.VENDOR_SNAME)
-    val vendorFname = requiredBodyParameter(request, Parameters.VENDOR_FNAME)
-    val communityId = requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
-    val landingPageId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LANDING_PAGE_ID)
-    val legalNoticeId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.LEGAL_NOTICE_ID)
-    val errorTemplateId:Option[Long] = ParameterExtractor.optionalLongBodyParameter(request, Parameters.ERROR_TEMPLATE_ID)
+  def extractOrganizationInfo(paramMap: Option[Map[String, Seq[String]]]): Organizations = {
+    val vendorSname = requiredBodyParameter(paramMap, Parameters.VENDOR_SNAME)
+    val vendorFname = requiredBodyParameter(paramMap, Parameters.VENDOR_FNAME)
+    val communityId = requiredBodyParameter(paramMap, Parameters.COMMUNITY_ID).toLong
+    val landingPageId:Option[Long] = optionalLongBodyParameter(paramMap, Parameters.LANDING_PAGE_ID)
+    val legalNoticeId:Option[Long] = optionalLongBodyParameter(paramMap, Parameters.LEGAL_NOTICE_ID)
+    val errorTemplateId:Option[Long] = optionalLongBodyParameter(paramMap, Parameters.ERROR_TEMPLATE_ID)
     var template:Boolean = false
     var templateName: Option[String] = None
     if (Configurations.REGISTRATION_ENABLED) {
-      template = optionalBodyParameter(request, Parameters.TEMPLATE).getOrElse("false").toBoolean
+      template = optionalBodyParameter(paramMap, Parameters.TEMPLATE).getOrElse("false").toBoolean
       if (template) {
-        templateName = optionalBodyParameter(request, Parameters.TEMPLATE_NAME)
+        templateName = optionalBodyParameter(paramMap, Parameters.TEMPLATE_NAME)
       }
     }
     Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, adminOrganization = false, landingPageId, legalNoticeId, errorTemplateId, template = template, templateName, communityId)
@@ -331,25 +334,25 @@ object ParameterExtractor {
     }
   }
 
-  def extractAdminInfo(request:Request[AnyContent], ssoEmailToForce: Option[String], passwordIsOneTime: Option[Boolean]):Users = {
+  def extractAdminInfo(paramMap:Option[Map[String, Seq[String]]], ssoEmailToForce: Option[String], passwordIsOneTime: Option[Boolean]):Users = {
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
       var ssoEmail: String = null
       if (ssoEmailToForce.isDefined) {
         ssoEmail = ssoEmailToForce.get
       } else {
-        ssoEmail = requiredBodyParameter(request, Parameters.USER_EMAIL)
+        ssoEmail = requiredBodyParameter(paramMap, Parameters.USER_EMAIL)
       }
       getUserInfoForSSO(ssoEmail, UserRole.VendorAdmin.id.toShort)
     } else {
-      val name = requiredBodyParameter(request, Parameters.USER_NAME)
-      val email = requiredBodyParameter(request, Parameters.USER_EMAIL)
-      val password = requiredBodyParameter(request, Parameters.PASSWORD)
+      val name = requiredBodyParameter(paramMap, Parameters.USER_NAME)
+      val email = requiredBodyParameter(paramMap, Parameters.USER_EMAIL)
+      val password = requiredBodyParameter(paramMap, Parameters.PASSWORD)
       Users(0L, name, email, BCrypt.hashpw(password, BCrypt.gensalt()), passwordIsOneTime.getOrElse(true), UserRole.VendorAdmin.id.toShort, 0L, None, None, UserSSOStatus.NotMigrated.id.toShort)
     }
   }
 
   def extractAdminInfo(request:Request[AnyContent]):Users = {
-    extractAdminInfo(request, None, None)
+    extractAdminInfo(ParameterExtractor.paramMap(request), None, None)
   }
 
   private def getUserInfoForSSO(ssoEmail: String, role: Short): Users = {
@@ -380,12 +383,12 @@ object ParameterExtractor {
     Systems(0L, sname, fname, descr, version, 0L)
   }
 
-  def extractSystemWithOrganizationInfo(request:Request[AnyContent]):Systems = {
-    val sname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_SNAME)
-    val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_FNAME)
-    val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_DESC)
-    val version:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_VERSION)
-    val owner:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.ORGANIZATION_ID).toLong
+  def extractSystemWithOrganizationInfo(paramMap:Option[Map[String, Seq[String]]]):Systems = {
+    val sname:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_SNAME)
+    val fname:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_FNAME)
+    val descr:Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_DESC)
+    val version:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_VERSION)
+    val owner:Long = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ORGANIZATION_ID).toLong
     Systems(0L, sname, fname, descr, version, owner)
   }
 

@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { ROUTES } from '../common/global';
 import { CustomProperty } from '../types/custom-property.type';
 import { ErrorDescription } from '../types/error-description';
+import { FileParam } from '../types/file-param.type';
 import { OrganisationParameterWithValue } from '../types/organisation-parameter-with-value';
 import { Organisation } from '../types/organisation.type';
 import { DataService } from './data.service';
@@ -73,13 +74,17 @@ export class OrganisationService {
       data.stm_params = copyStatementParameters
     }
 
+    let files: FileParam[]|undefined
     if (processProperties) {
-      data.properties = this.dataService.customPropertiesForPost(properties)
+      const props = this.dataService.customPropertiesForPost(properties)
+      data.properties = props.parameterJson
+      files = props.files
     }
 
     return this.restService.post<ErrorDescription|undefined>({
       path: ROUTES.controllers.OrganizationService.createOrganization().url,
-      data: data
+      data: data,
+      files: files
     })
   }
 
@@ -116,13 +121,17 @@ export class OrganisationService {
       data.sys_params = copySystemParameters
       data.stm_params = copyStatementParameters
     }
+    let files: FileParam[]|undefined
     if (processProperties) {
-      data.properties = this.dataService.customPropertiesForPost(properties)
+      const props = this.dataService.customPropertiesForPost(properties)
+      data.properties = props.parameterJson
+      files = props.files
     }
 
     return this.restService.post<ErrorDescription|undefined>({
       path: ROUTES.controllers.OrganizationService.updateOrganization(orgId).url,
       data: data,
+      files: files,
       authenticate: true
     })
   }
@@ -153,6 +162,14 @@ export class OrganisationService {
       path: ROUTES.controllers.OrganizationService.ownOrganisationHasTests().url,
       authenticate: true
     })  
+  }
+
+  downloadOrganisationParameterFile(organisationId: number, parameterId: number) {
+		return this.restService.get<ArrayBuffer>({
+			path: ROUTES.controllers.OrganizationService.downloadOrganisationParameterFile(organisationId, parameterId).url,
+			authenticate: true,
+			arrayBuffer: true
+		})
   }
 
 }

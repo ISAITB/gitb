@@ -7,6 +7,7 @@ import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.dbio.DBIOAction
 
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
@@ -33,21 +34,23 @@ class ActorManager @Inject() (testResultManager: TestResultManager, endPointMana
   }
 
   def deleteActorWrapper(actorId: Long) = {
-    exec(deleteActor(actorId).transactionally)
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = deleteActor(actorId, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def deleteActor(actorId: Long) = {
-    delete(actorId)
+  def deleteActor(actorId: Long, onSuccessCalls: mutable.ListBuffer[() => _]) = {
+    delete(actorId, onSuccessCalls)
   }
 
-  private def delete(actorId: Long) = {
+  private def delete(actorId: Long, onSuccessCalls: mutable.ListBuffer[() => _]) = {
     testResultManager.updateForDeletedActor(actorId) andThen
     PersistenceSchema.testCaseHasActors.filter(_.actor === actorId).delete andThen
     PersistenceSchema.testSuiteHasActors.filter(_.actor === actorId).delete andThen
     PersistenceSchema.systemImplementsActors.filter(_.actorId === actorId).delete andThen
     PersistenceSchema.specificationHasActors.filter(_.actorId === actorId).delete andThen
     PersistenceSchema.endpointSupportsTransactions.filter(_.actorId === actorId).delete andThen
-    endPointManager.deleteEndPointByActor(actorId) andThen
+    endPointManager.deleteEndPointByActor(actorId, onSuccessCalls) andThen
     optionManager.deleteOptionByActor(actorId) andThen
     PersistenceSchema.conformanceResults.filter(_.actor === actorId).delete andThen
     PersistenceSchema.actors.filter(_.id === actorId).delete

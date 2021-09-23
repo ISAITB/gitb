@@ -52,6 +52,7 @@ GET     /api/vendor/organisation/hasTests       @controllers.OrganizationService
 
 # System mangement API
 GET     /api/suts/sysparam/:id                  @controllers.SystemService.getSystemParameterValues(id: Long)
+GET     /api/suts/sysparam/:sut_id/parameters/:parameterId/download @controllers.SystemService.downloadSystemParameterFile(sut_id : Long, parameterId : Long)
 GET     /api/suts/sysparam/check/:id            @controllers.SystemService.checkSystemParameterValues(id: Long)
 POST	/api/suts/:sut_id/profile               @controllers.SystemService.updateSystemProfile(sut_id : Long)
 GET	    /api/suts/:sut_id                       @controllers.SystemService.getSystemProfile(sut_id : Long)
@@ -108,6 +109,7 @@ GET     /api/domains/:domain_id/parameters/:domain_parameter_id     @controllers
 POST    /api/domains/:domain_id/parameters                          @controllers.ConformanceService.createDomainParameter(domain_id : Long)
 DELETE  /api/domains/:domain_id/parameters/:domain_parameter_id     @controllers.ConformanceService.deleteDomainParameter(domain_id : Long, domain_parameter_id : Long)
 POST    /api/domains/:domain_id/parameters/:domain_parameter_id     @controllers.ConformanceService.updateDomainParameter(domain_id : Long, domain_parameter_id : Long)
+GET     /api/domains/:domain_id/parameters/:domain_parameter_id/download @controllers.ConformanceService.downloadDomainParameterFile(domain_id : Long, domain_parameter_id : Long)
 GET     /api/testsuites/:test_suite_id                              @controllers.TestSuiteService.getTestSuiteWithTestCases(test_suite_id: Long)
 POST    /api/testsuites/:test_suite_id                              @controllers.TestSuiteService.updateTestSuiteMetadata(test_suite_id: Long)
 GET     /api/fulltestcases/:test_case_id                            @controllers.TestSuiteService.getTestCase(test_case_id: Long)
@@ -176,6 +178,7 @@ GET     /api/organizations/orgparam/:id         @controllers.OrganizationService
 GET     /api/organizations/orgparam/check/:id   @controllers.OrganizationService.checkOrganisationParameterValues(id: Long)
 GET     /api/organizations/own/orgparam         @controllers.OrganizationService.getOwnOrganisationParameterValues()
 POST    /api/organizations/orgparam/:id         @controllers.OrganizationService.updateOrganisationParameterValues(id: Long)
+GET     /api/organizations/orgparam/:orgId/parameters/:parameterId/download @controllers.OrganizationService.downloadOrganisationParameterFile(orgId : Long, parameterId : Long)
 
 GET     /api/communities/all                    @controllers.CommunityService.getCommunities()
 POST    /api/communities/create                 @controllers.CommunityService.createCommunity()
@@ -241,6 +244,7 @@ GET     /api/endpoints/:endpoint_id/config      @controllers.SystemService.getEn
 GET     /api/endpoints/config                   @controllers.SystemService.getConfigurationsWithEndpointIds()
 POST    /api/endpoints/:endpoint_id/config      @controllers.SystemService.saveEndpointConfiguration(endpoint_id: Long)
 DELETE  /api/endpoints/:endpoint_id/config      @controllers.SystemService.deleteEndpointConfiguration(endpoint_id: Long)
+GET     /api/endpoints/:endpoint_id/config/download @controllers.SystemService.downloadEndpointConfigurationFile(endpoint_id: Long)
 
 # Report management API
 POST    /api/reports/active                     @controllers.ReportService.getSystemActiveTestResults()
@@ -253,6 +257,7 @@ GET     /api/reports/:session_id/steps          @controllers.ReportService.getTe
 GET     /api/conformancecertificate             @controllers.ConformanceService.getConformanceCertificateSettings(community_id: Long)
 POST    /api/conformancecertificate             @controllers.ConformanceService.updateConformanceCertificateSettings(community_id: Long)
 POST    /api/conformancecertificate/test        @controllers.ConformanceService.testKeystoreSettings(community_id: Long)
+GET     /api/conformancecertificate/download    @controllers.ConformanceService.downloadConformanceCertificateKeystore(community_id: Long)
 
 # Repository file serving and management API
 GET     /api/repository/tests/:test_id/definition               @controllers.RepositoryService.getTestCaseDefinition(test_id:String)

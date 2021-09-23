@@ -45,7 +45,7 @@
                                 <label class="col-xs-3 control-label">* Data archive:</label>
                                 <div class="col-xs-7">
                                     <app-file-select 
-                                        (onUpload)="uploadArchive($event)" 
+                                        (onUpload)="uploadArchive($event)"
                                         [accepts]="['application/zip']" 
                                         [placeholder]="'Select data archive ...'"
                                         [fileName]="archiveData?.name"></app-file-select>

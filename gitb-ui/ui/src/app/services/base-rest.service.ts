@@ -57,7 +57,9 @@ export class BaseRestService {
         }
         if (config.data != undefined) {
           for (let key in config.data) {
-            body.append(key, config.data[key])
+            if (config.data[key] != undefined) {
+              body.append(key, config.data[key])
+            }
           }
         }
       }
@@ -72,10 +74,6 @@ export class BaseRestService {
   private prepareRequestOptions(config?: HttpRequestConfig): {headers: HttpHeaders} {
     const configToUse: any = {}
     // Headers
-    let contentType: string|undefined
-    if (config && config.files != undefined && config.files.length > 0) {
-      contentType = 'multipart/form-data'
-    }
     if (this.authProviderService.isAuthenticated()) {
       configToUse.headers = Utils.createHttpHeaders(this.authProviderService.accessToken, config)
     } else {

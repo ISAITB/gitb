@@ -71,7 +71,7 @@ public class ClamAVClient {
      * Streams the given data to the server in chunks. The whole data is not kept in memory.
      * This method is preferred if you don't want to keep the data in memory, for instance by scanning a file on disk.
      * Since the parameter InputStream is not reset, you can not use the stream afterwards, as it will be left in a EOF-state.
-     * If your goal is to scan some data, and then pass that data further, consider using {@link #scan(byte[]) scan(byte[] in)}.
+     * If your goal is to scan some data, and then pass that data further, consider using a temporary file with {@link #scan(File) scan(File in)}.
      * <p>
      * Opens a socket and reads the reply. Parameter input stream is NOT closed.
      *
@@ -119,7 +119,7 @@ public class ClamAVClient {
      *
      * @param in data to scan
      * @return server reply
-     * @deprecated Use the streaming version.
+     * @deprecated Use the streaming or file based version.
      **/
     @Deprecated
     public byte[] scan(byte[] in) throws IOException {

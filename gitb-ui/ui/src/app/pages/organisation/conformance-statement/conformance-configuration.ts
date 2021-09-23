@@ -6,7 +6,6 @@ export interface ConformanceConfiguration {
     endpoint: number
     parameter: number
     mimeType?: string
-    extension?: string
     configured: boolean
 
 }

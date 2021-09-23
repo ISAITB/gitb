@@ -67,7 +67,7 @@ export class RestService {
       } else {
         // Default handling - Display error popup and log error.
         this.errorService.showErrorMessage(error)
-        result = throwError(error)
+        result = throwError(() => error)
       }
     }
     return result

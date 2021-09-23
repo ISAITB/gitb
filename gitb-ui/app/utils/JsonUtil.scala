@@ -115,11 +115,8 @@ object JsonUtil {
       if (parameter.parameter.kind != "SECRET") {
         json = json.+("value" -> JsString(parameter.config.get.value))
         if (parameter.parameter.kind == "BINARY") {
-          if (parameter.mimeType.isDefined) {
-            json = json.+("mimeType" -> JsString(parameter.mimeType.get))
-          }
-          if (parameter.extension.isDefined) {
-            json = json.+("extension" -> JsString(parameter.extension.get))
+          if (parameter.config.get.contentType.isDefined) {
+            json = json.+("mimeType" -> JsString(parameter.config.get.contentType.get))
           }
         }
       }
@@ -524,27 +521,20 @@ object JsonUtil {
   }
 
   def jsDomainParameter(domainParameter:DomainParameter):JsObject = {
-    if (domainParameter.kind == "HIDDEN") {
-      val json = Json.obj(
-        "id" -> domainParameter.id,
-        "name" -> domainParameter.name,
-        "description" -> domainParameter.desc,
-        "kind" -> domainParameter.kind,
-        "inTests" -> domainParameter.inTests,
-        "value" -> ""
-      )
-      json
-    } else {
-      val json = Json.obj(
-        "id" -> domainParameter.id,
-        "name" -> domainParameter.name,
-        "description" -> domainParameter.desc,
-        "kind" -> domainParameter.kind,
-        "inTests" -> domainParameter.inTests,
-        "value" -> domainParameter.value
-      )
-      json
+    var valueToUse = ""
+    if (domainParameter.kind == "SIMPLE" && domainParameter.value.isDefined) {
+      valueToUse = domainParameter.value.get
     }
+    val json = Json.obj(
+      "id" -> domainParameter.id,
+      "name" -> domainParameter.name,
+      "description" -> domainParameter.desc,
+      "kind" -> domainParameter.kind,
+      "inTests" -> domainParameter.inTests,
+      "contentType" -> (if(domainParameter.contentType.isDefined) JsString(domainParameter.contentType.get) else JsNull),
+      "value" -> valueToUse
+    )
+    json
   }
 
   /**
@@ -716,14 +706,12 @@ object JsonUtil {
     val jsArray = Json.parse(json).as[JsArray].value
     var list:List[OrganisationParameterValues] = List()
     jsArray.foreach { jsonConfig =>
-      var value = (jsonConfig \ "value").asOpt[String]
-      if (value.isEmpty) {
-        value = Some((jsonConfig \ "valueBinary").as[String])
-      }
+      val value = (jsonConfig \ "value").asOpt[String]
       list ::= OrganisationParameterValues(
         -1, // Will be forced later
         (jsonConfig \ "parameter").as[Long],
-        value.get
+        value.get,
+        None
       )
     }
     list
@@ -773,14 +761,12 @@ object JsonUtil {
     val jsArray = Json.parse(json).as[JsArray].value
     var list:List[SystemParameterValues] = List()
     jsArray.foreach { jsonConfig =>
-      var value = (jsonConfig \ "value").asOpt[String]
-      if (value.isEmpty) {
-        value = Some((jsonConfig \ "valueBinary").as[String])
-      }
+      val value = (jsonConfig \ "value").asOpt[String]
       list ::= SystemParameterValues(
         -1, // Will be forced later
         (jsonConfig \ "parameter").as[Long],
-        value.get
+        value.get,
+        None
       )
     }
     list
@@ -923,15 +909,13 @@ object JsonUtil {
 
   def parseJsConfig(json:String):Configs = {
     val jsonConfig = Json.parse(json).as[JsObject]
-    var value: Option[String] = (jsonConfig \ "value").asOpt[String]
-    if (value.isEmpty) {
-      value = Some((jsonConfig \ "valueBinary").as[String])
-    }
+    val value = (jsonConfig \ "value").asOpt[String]
     Configs(
       (jsonConfig \ "system").as[Long],
 	    (jsonConfig \ "parameter").as[Long],
 	    (jsonConfig \ "endpoint").as[Long],
-      value.get
+      value.get,
+      None
     )
   }
 
@@ -944,12 +928,7 @@ object JsonUtil {
       input.setName((jsonInput \ "name").as[String])
       input.setType((jsonInput \ "type").as[String])
       input.setEmbeddingMethod(ValueEmbeddingEnumeration.fromValue((jsonInput \ "embeddingMethod").as[String]))
-      var inputValue: Option[String] = None
-      if (input.getEmbeddingMethod == ValueEmbeddingEnumeration.BASE_64) {
-        inputValue = (jsonInput \ "valueBinary").asOpt[String]
-      } else {
-        inputValue = (jsonInput \ "value").asOpt[String]
-      }
+      val inputValue = (jsonInput \ "value").asOpt[String]
       input.setValue(inputValue.orNull)
       list ::= input
     }
@@ -964,15 +943,17 @@ object JsonUtil {
     }
     val kind = (jsonConfig \ "kind").as[String]
     var value: Option[String] = None
-    if (kind.equals("BINARY")) {
-      value = (jsonConfig \ "valueBinary").asOpt[String]
-    } else if (kind.equals("HIDDEN")) {
+    var contentType: Option[String] = None
+    if (kind.equals("HIDDEN")) {
       value = (jsonConfig \ "value").asOpt[String]
       if (value.isDefined) {
         value = Some(MimeUtil.encryptString(value.get))
       }
-    } else {
+    } else if (kind.equals("SIMPLE")) {
       value = (jsonConfig \ "value").asOpt[String]
+    } else {
+      value = Some("")
+      contentType = (jsonConfig \ "contentType").asOpt[String]
     }
     DomainParameter(
       idToUse,
@@ -981,11 +962,12 @@ object JsonUtil {
       kind,
       value,
       (jsonConfig \ "inTests").as[Boolean],
+      contentType,
       domainId
     )
   }
 
-  def parseJsConformanceCertificateSettings(json:String, communityId: Long): ConformanceCertificates = {
+  def parseJsConformanceCertificateSettings(json:String, communityId: Long, keystoreData: Option[String]): ConformanceCertificates = {
     val jsonConfig = Json.parse(json).as[JsObject]
     // Ensure the message content (if provided) is correctly sanitized.
     var certificateMessage = (jsonConfig \ "message").asOpt[String]
@@ -1001,7 +983,7 @@ object JsonUtil {
       (jsonConfig \ "includeTestCases").as[Boolean],
       (jsonConfig \ "includeDetails").as[Boolean],
       (jsonConfig \ "includeSignature").as[Boolean],
-      (jsonConfig \ "keystoreFile").asOpt[String],
+      keystoreData,
       (jsonConfig \ "keystoreType").asOpt[String],
       (jsonConfig \ "keystorePassword").asOpt[String],
       (jsonConfig \ "keyPassword").asOpt[String],
@@ -1020,7 +1002,7 @@ object JsonUtil {
       includeTestCases = false,
       includeDetails = false,
       includeSignature = false,
-      (jsonConfig \ "keystoreFile").asOpt[String],
+      None,
       (jsonConfig \ "keystoreType").asOpt[String],
       (jsonConfig \ "keystorePassword").asOpt[String],
       (jsonConfig \ "keyPassword").asOpt[String],
@@ -1931,7 +1913,6 @@ object JsonUtil {
         "includeTestCases" -> settings.get.includeTestCases,
         "includeDetails" -> settings.get.includeDetails,
         "includeSignature" -> settings.get.includeSignature,
-        "keystoreFile" -> (if(includeKeystoreData && settings.get.keystoreFile.isDefined) settings.get.keystoreFile.get else JsNull),
         "keystoreType" -> (if(includeKeystoreData && settings.get.keystoreType.isDefined) settings.get.keystoreType.get else JsNull),
         "passwordsSet" -> (if(includeKeystoreData && settings.get.keystorePassword.isDefined && settings.get.keyPassword.isDefined) true else false),
         "keystoreDefined" -> (if(settings.get.keystoreFile.isDefined && settings.get.keystoreType.isDefined && settings.get.keystorePassword.isDefined && settings.get.keyPassword.isDefined) true else false),
@@ -1962,8 +1943,13 @@ object JsonUtil {
   def jsOrganisationParametersWithValue(param: OrganisationParametersWithValue, includeValues: Boolean): JsObject = {
     var json = jsOrganisationParameter(param.parameter)
     json = json.+("configured" -> JsBoolean(param.value.isDefined))
-    if (includeValues && param.value.isDefined && param.parameter.kind != "SECRET") {
-      json = json.+("value" -> JsString(param.value.get.value))
+    if (includeValues) {
+      if (param.value.isDefined && param.parameter.kind != "SECRET") {
+        json = json.+("value" -> JsString(param.value.get.value))
+        if (param.value.get.contentType.isDefined && param.parameter.kind == "BINARY") {
+          json = json.+("mimeType" -> JsString(param.value.get.contentType.get))
+        }
+      }
     }
     json
   }
@@ -1979,8 +1965,13 @@ object JsonUtil {
   def jsSystemParametersWithValue(param: SystemParametersWithValue, includeValues: Boolean): JsObject = {
     var json = jsSystemParameter(param.parameter)
     json = json.+("configured" -> JsBoolean(param.value.isDefined))
-    if (includeValues && param.value.isDefined && param.parameter.kind != "SECRET") {
-      json = json.+("value" -> JsString(param.value.get.value))
+    if (includeValues) {
+      if (param.value.isDefined && param.parameter.kind != "SECRET") {
+        json = json.+("value" -> JsString(param.value.get.value))
+        if (param.value.get.contentType.isDefined && param.parameter.kind == "BINARY") {
+          json = json.+("mimeType" -> JsString(param.value.get.contentType.get))
+        }
+      }
     }
     json
   }

@@ -17,7 +17,8 @@ export class SystemInfoComponent implements OnInit {
   systemId!: number
   propertyData: OptionalCustomPropertyFormData = {
     properties: [],
-    edit: false
+    edit: false,
+    propertyType: 'system'
   }  
 
   constructor(

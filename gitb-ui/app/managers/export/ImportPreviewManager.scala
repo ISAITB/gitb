@@ -120,29 +120,27 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         targetSpecificationIdMap += (x.id -> x)
       })
       if (targetSpecificationMap.nonEmpty) {
-        exportManager.loadSpecificationTestSuiteMap(targetDomain.get.id).iterator.map { x =>
+        exportManager.loadSpecificationTestSuiteMap(targetDomain.get.id).foreach { x =>
           targetSpecificationTestSuiteMap += (x._1 -> listBufferToNameMap(x._2, { t => t.identifier }))
         }
-        exportManager.loadSpecificationActorMap(targetDomain.get.id).iterator.map { x =>
+        exportManager.loadSpecificationActorMap(targetDomain.get.id).foreach { x =>
           targetSpecificationActorMap += (x._1 -> listBufferToNameMap(x._2, { a => a.actorId }))
           x._2.foreach { a =>
             referenceActorToSpecificationMap += (a.id -> targetSpecificationIdMap(x._1))
           }
-          true
         }
         if (targetSpecificationActorMap.nonEmpty) {
-          exportManager.loadActorEndpointMap(targetDomain.get.id).iterator.map { x =>
+          exportManager.loadActorEndpointMap(targetDomain.get.id).foreach { x =>
             targetActorEndpointMap += (x._1 -> listBufferToNameMap(x._2, { e => e.name }))
             referenceActorEndpointMap += (x._1 -> listBufferToNameMap(x._2, { e => e.name }))
           }
           if (targetActorEndpointMap.nonEmpty) {
-            exportManager.loadEndpointParameterMap(targetDomain.get.id).iterator.map { x =>
+            exportManager.loadEndpointParameterMap(targetDomain.get.id).foreach { x =>
               targetEndpointParameterMap += (x._1 -> listBufferToNameMap(x._2, { p => p.name }))
               referenceEndpointParameterMap += (x._1 -> listBufferToNameMap(x._2, { p => p.name }))
               x._2.foreach { p =>
                 referenceEndpointParameterIdMap += (p.id -> p)
               }
-              true
             }
           }
         }
@@ -403,17 +401,17 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
       }
       if (targetOrganisationMap.nonEmpty) {
         // Users.
-        exportManager.loadOrganisationUserMap(targetCommunity.get.id).iterator.map { x =>
+        exportManager.loadOrganisationUserMap(targetCommunity.get.id).foreach { x =>
           targetOrganisationUserMap += (x._1 -> listBufferToNameMap(x._2, { u => u.email }))
         }
         if (targetOrganisationPropertyMap.nonEmpty) {
           // Organisation property values.
-          exportManager.loadOrganisationParameterValueMap(targetCommunity.get.id).iterator.map { x =>
+          exportManager.loadOrganisationParameterValueMap(targetCommunity.get.id).foreach { x =>
             targetOrganisationPropertyValueMap += (x._1 -> listBufferToNameMap(x._2, { v => targetOrganisationPropertyIdMap(v.parameter).testKey }))
           }
         }
         // Systems.
-        exportManager.loadOrganisationSystemMap(targetCommunity.get.id).iterator.map { x =>
+        exportManager.loadOrganisationSystemMap(targetCommunity.get.id).foreach { x =>
           targetSystemMap += (x._1 -> listBufferToNonUniqueNameMap(x._2, { s => s.shortname }))
           x._2.foreach { system =>
             targetSystemIdMap += (system.id -> system)
@@ -423,13 +421,13 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         if (targetSystemMap.nonEmpty) {
           if (targetSystemPropertyMap.nonEmpty) {
             // System property values.
-            exportManager.loadSystemParameterValues(targetCommunity.get.id).iterator.map { x =>
+            exportManager.loadSystemParameterValues(targetCommunity.get.id).foreach { x =>
               targetSystemPropertyValueMap += (x._1 -> listBufferToNameMap(x._2, { v => targetSystemPropertyIdMap(v.parameter).testKey }))
             }
           }
           if (domainImportInfo.targetActorToSpecificationMap.nonEmpty) {
             // Statements.
-            exportManager.loadSystemStatementsMap(targetCommunity.get.id, targetCommunity.get.domain).iterator.map { x =>
+            exportManager.loadSystemStatementsMap(targetCommunity.get.id, targetCommunity.get.domain).foreach { x =>
               var statements = targetStatementMap.get(x._1)
               if (statements.isEmpty) {
                 statements = Some(mutable.Map[Long, (models.Specifications, models.Actors)]())
@@ -438,11 +436,10 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
               x._2.foreach { y =>
                 statements.get += (y._2.id -> y)
               }
-              true
             }
             // Statement configurations.
             if (domainImportInfo.targetEndpointParameterIdMap.nonEmpty) {
-              exportManager.loadSystemConfigurationsMap(targetCommunity.get).iterator.map { x =>
+              exportManager.loadSystemConfigurationsMap(targetCommunity.get).foreach { x =>
                 // [actor ID]_[endpoint ID]_[System ID]_[Parameter ID]
                 targetStatementConfigurationMap += (x._1 -> listBufferToNameMap(x._2, { v => domainImportInfo.targetEndpointParameterIdMap(v.parameter).name }))
               }
@@ -895,7 +892,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
     Thread.currentThread().getContextClassLoader.getResourceAsStream(xsdPath)
   }
 
-  def prepareImportPreview(archiveData: Array[Byte], importSettings: ImportSettings, requireDomain: Boolean, requireCommunity: Boolean): (Option[(Int, String)], Option[Export], Option[String], Option[Path]) = {
+  def prepareImportPreview(tempArchiveFile: File, importSettings: ImportSettings, requireDomain: Boolean, requireCommunity: Boolean): (Option[(Int, String)], Option[Export], Option[String], Option[Path]) = {
     var errorInformation: Option[(Int, String)] = None
     var exportData: Option[Export] = None
     var pendingImportId: Option[String] = None
@@ -907,7 +904,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
       // Get import file.
       if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
         val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-        val scanResult = virusScanner.scan(archiveData)
+        val scanResult = virusScanner.scan(tempArchiveFile)
         if (!ClamAVClient.isCleanReply(scanResult)) {
           errorInformation = Some((ErrorCodes.VIRUS_FOUND, "Archive failed virus scan."))
         }
@@ -925,7 +922,7 @@ class ImportPreviewManager @Inject()(exportManager: ExportManager, communityMana
         var deleteUploadFolder = false
         try {
           // Write file.
-          FileUtils.writeByteArrayToFile(zipFile.toFile, archiveData)
+          Files.copy(tempArchiveFile.toPath, zipFile)
           // Extract the XML document.
           var extractedFiles: java.util.Map[String, Path] = null
           try {

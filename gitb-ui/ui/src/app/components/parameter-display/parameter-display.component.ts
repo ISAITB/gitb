@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { DataService } from 'src/app/services/data.service';
 import { filter } from 'lodash'
 import { Parameter } from 'src/app/types/parameter';
+import { SystemService } from 'src/app/services/system.service';
 
 @Component({
   selector: 'app-parameter-display',
@@ -18,12 +19,14 @@ export class ParameterDisplayComponent<T extends Parameter> implements OnInit {
   @Input() canEdit?: (p: T) => boolean
   @Input() parameterLabel = 'Parameter'
   @Output() edit = new EventEmitter<T>()
+  @Output() download = new EventEmitter<T>()
 
   isAdmin!: boolean
   showActions = false
 
   constructor(
-    private dataService: DataService
+    private dataService: DataService,
+    private systemService: SystemService
   ) { }
 
   ngOnInit(): void {
@@ -47,8 +50,7 @@ export class ParameterDisplayComponent<T extends Parameter> implements OnInit {
   }
 
   downloadBinaryParameter(parameter: T) {
-    const blob = this.dataService.b64toBlob(this.dataService.base64FromDataURL(parameter.value!), parameter.mimeType)
-    saveAs(blob, parameter.fileName)
+    this.download.emit(parameter)
   }
 
   onEdit(parameter: T) {

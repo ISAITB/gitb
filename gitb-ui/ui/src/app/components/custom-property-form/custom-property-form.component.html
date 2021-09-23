@@ -44,14 +44,14 @@
               </div>
               <div [ngClass]="'col-xs-'+(11-tbColLabel-tbColInputLess)" *ngIf="property.kind == 'BINARY'">
                 <div *ngIf="isReadonly">
-                  <p class="form-control-static"><a *ngIf="property.value" href (click)="downloadProperty(property);$event.preventDefault()" style="padding-right:10px;">{{fileName(property)}}</a><span *ngIf="isReadonly && property.desc" [ngStyle]="{'margin-left':(property.value?'20px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa fa-question-circle"></i></span></p>
+                  <p class="form-control-static"><a *ngIf="property.value != undefined" href (click)="downloadProperty(property);$event.preventDefault()" style="padding-right:10px;">{{fileName(property)}}</a><span *ngIf="isReadonly && property.desc" [ngStyle]="{'margin-left':(property.value?'20px':'0px')}" [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa fa-question-circle"></i></span></p>
                 </div>
                 <div *ngIf="!isReadonly">
-                  <span *ngIf="!property.value && property.adminOnly && !isAdmin" class="form-control-static">&nbsp;</span>
-                  <p *ngIf="property.value && property.adminOnly && !isAdmin" class="form-control-static"><a href (click)="downloadProperty(property);$event.preventDefault()" style="padding-right:10px;">{{fileName(property)}}</a></p>
-                  <span *ngIf="property.value && (!property.adminOnly || isAdmin)" class="form-control-static"><a href (click)="downloadProperty(property);$event.preventDefault()" style="padding-right:10px;">{{fileName(property)}}</a></span>
+                  <span *ngIf="property.value == undefined && property.adminOnly && !isAdmin" class="form-control-static">&nbsp;</span>
+                  <p *ngIf="property.value != undefined && property.adminOnly && !isAdmin" class="form-control-static"><a href (click)="downloadProperty(property);$event.preventDefault()" style="padding-right:10px;">{{fileName(property)}}</a></p>
+                  <span *ngIf="property.value != undefined && (!property.adminOnly || isAdmin)" class="form-control-static"><a href (click)="downloadProperty(property);$event.preventDefault()" style="padding-right:10px;">{{fileName(property)}}</a></span>
                   <app-file-select *ngIf="!property.adminOnly || isAdmin" label="Upload" (onUpload)="onFileSelect(property, $event)"></app-file-select>                  
-                  <button type="button" class="btn btn-default" *ngIf="property.value && (!property.adminOnly || isAdmin)" style="margin-left:5px" (click)="removeFile(property)">Remove</button>
+                  <button type="button" class="btn btn-default" *ngIf="property.value != undefined && (!property.adminOnly || isAdmin)" style="margin-left:5px" (click)="removeFile(property)">Remove</button>
                 </div>
               </div>
               <div class="form-control-static" *ngIf="!isReadonly && property.desc"><span [tooltip]="property.desc" [containerClass]="'tooltipContainer'"><i class="fa fa-question-circle"></i></span></div>

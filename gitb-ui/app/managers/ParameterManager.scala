@@ -4,12 +4,14 @@ import javax.inject.{Inject, Singleton}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
+import utils.RepositoryUtils
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class ParameterManager @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
   def logger = LoggerFactory.getLogger("ParameterManager")
 
   import dbConfig.profile.api._
@@ -32,19 +34,22 @@ class ParameterManager @Inject() (dbConfigProvider: DatabaseConfigProvider) exte
     PersistenceSchema.parameters.returning(PersistenceSchema.parameters.map(_.id)) += parameter
   }
 
-  def deleteParameterByEndPoint(endPointId: Long) = {
+  def deleteParameterByEndPoint(endPointId: Long, onSuccessCalls: mutable.ListBuffer[() => _]) = {
     val action = for {
       ids <- PersistenceSchema.parameters.filter(_.endpoint === endPointId).map(_.id).result
-      _ <- DBIO.seq(ids.map(id => delete(id)): _*)
+      _ <- DBIO.seq(ids.map(id => delete(id, onSuccessCalls)): _*)
     } yield()
     action
   }
 
   def deleteParameter(parameterId: Long) = {
-    exec(delete(parameterId).transactionally)
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = delete(parameterId, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def delete(parameterId: Long): DBIO[_] = {
+  def delete(parameterId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+    onSuccessCalls += (() => repositoryUtils.deleteStatementParametersFolder(parameterId))
     PersistenceSchema.configs.filter(_.parameter === parameterId).delete andThen
         (for {
           existingParameter <- PersistenceSchema.parameters.filter(_.id === parameterId).map(x => (x.endpoint, x.name, x.kind)).result.head

@@ -10,10 +10,11 @@ import models._
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{JsonUtil, MimeUtil}
+import utils.{JsonUtil, MimeUtil, RepositoryUtils}
 
 import java.io.ByteArrayOutputStream
 import java.nio.charset.{Charset, StandardCharsets}
+import java.nio.file.Files
 import java.util.Base64
 import javax.inject.{Inject, Singleton}
 import javax.xml.bind.JAXBElement
@@ -24,7 +25,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
 @Singleton
-class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class TriggerManager @Inject()(repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -243,51 +244,51 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
     }
   }
 
-  private def loadOrganisationParameterData(parameterIds: List[Long], organisationId: Option[Long]): Map[Long, (String, String, Option[String])] = {
-    var data: List[(Long, String, String, Option[String])] = null // id, key, kind, value
+  private def loadOrganisationParameterData(parameterIds: List[Long], organisationId: Option[Long]): Map[Long, (String, String, Option[String], Option[Long], Option[String])] = {
+    var data: List[(Long, String, String, Option[String], Option[Long], Option[String])] = null // id, key, kind, value, orgId, contentType
     if (organisationId.isDefined) {
       data = exec(PersistenceSchema.organisationParameters
         .join(PersistenceSchema.organisationParameterValues).on(_.id === _.parameter)
         .filter(_._1.id inSet parameterIds).filter(_._2.organisation === organisationId.get)
-        .map(x => (x._1.id, x._1.testKey, x._1.kind, x._2.value))
+        .map(x => (x._1.id, x._1.testKey, x._1.kind, x._2.value, x._2.organisation, x._2.contentType))
         .result
-      ).map(x => (x._1, x._2, x._3, Some(x._4))).toList
+      ).map(x => (x._1, x._2, x._3, Some(x._4), Some(x._5), x._6)).toList
     } else {
-      data = exec(PersistenceSchema.organisationParameters.filter(_.id inSet parameterIds).map(x => (x.id, x.testKey, x.kind)).result).map(x => (x._1, x._2, x._3, None)).toList
+      data = exec(PersistenceSchema.organisationParameters.filter(_.id inSet parameterIds).map(x => (x.id, x.testKey, x.kind)).result).map(x => (x._1, x._2, x._3, None, None, None)).toList
     }
-    val resultMap = mutable.Map[Long, (String, String, Option[String])]()
+    val resultMap = mutable.Map[Long, (String, String, Option[String], Option[Long], Option[String])]()
     data.foreach { dataItem =>
-      resultMap += (dataItem._1 -> (dataItem._2, dataItem._3, dataItem._4))
+      resultMap += (dataItem._1 -> (dataItem._2, dataItem._3, dataItem._4, dataItem._5, dataItem._6))
     }
     resultMap.iterator.toMap
   }
 
-  private def loadSystemParameterData(parameterIds: List[Long], systemId: Option[Long]): Map[Long, (String, String, Option[String])] = {
-    var data: List[(Long, String, String, Option[String])] = null // id, key, kind, value
+  private def loadSystemParameterData(parameterIds: List[Long], systemId: Option[Long]): Map[Long, (String, String, Option[String], Option[Long], Option[String])] = {
+    var data: List[(Long, String, String, Option[String], Option[Long], Option[String])] = null // id, key, kind, value, sysId, contentType
     if (systemId.isDefined) {
       data = exec(PersistenceSchema.systemParameters
         .join(PersistenceSchema.systemParameterValues).on(_.id === _.parameter)
         .filter(_._1.id inSet parameterIds).filter(_._2.system === systemId.get)
-        .map(x => (x._1.id, x._1.testKey, x._1.kind, x._2.value))
+        .map(x => (x._1.id, x._1.testKey, x._1.kind, x._2.value, x._2.system, x._2.contentType))
         .result
-      ).map(x => (x._1, x._2, x._3, Some(x._4))).toList
+      ).map(x => (x._1, x._2, x._3, Some(x._4), Some(x._5), x._6)).toList
     } else {
-      data = exec(PersistenceSchema.systemParameters.filter(_.id inSet parameterIds).map(x => (x.id, x.testKey, x.kind)).result).map(x => (x._1, x._2, x._3, None)).toList
+      data = exec(PersistenceSchema.systemParameters.filter(_.id inSet parameterIds).map(x => (x.id, x.testKey, x.kind)).result).map(x => (x._1, x._2, x._3, None, None, None)).toList
     }
-    val resultMap = mutable.Map[Long, (String, String, Option[String])]()
+    val resultMap = mutable.Map[Long, (String, String, Option[String], Option[Long], Option[String])]()
     data.foreach { dataItem =>
-      resultMap += (dataItem._1 -> (dataItem._2, dataItem._3, dataItem._4))
+      resultMap += (dataItem._1 -> (dataItem._2, dataItem._3, dataItem._4, dataItem._5, dataItem._6))
     }
     resultMap.iterator.toMap
   }
 
-  private def loadDomainParameterData(parameterIds: List[Long]): Map[Long, (String, String, Option[String])] = {
-    val data: List[(Long, String, String, Option[String])] = exec(
-      PersistenceSchema.domainParameters.filter(_.id inSet parameterIds).map(x => (x.id, x.name, x.kind, x.value)).result
-    ).map(x => (x._1, x._2, x._3, x._4)).toList
-    val resultMap = mutable.Map[Long, (String, String, Option[String])]()
+  private def loadDomainParameterData(parameterIds: List[Long]): Map[Long, (String, String, Option[String], Long, Option[String])] = {
+    val data: List[(Long, String, String, Option[String], Long, Option[String])] = exec(
+      PersistenceSchema.domainParameters.filter(_.id inSet parameterIds).map(x => (x.id, x.name, x.kind, x.value, x.domain, x.contentType)).result
+    ).map(x => (x._1, x._2, x._3, x._4, x._5, x._6)).toList
+    val resultMap = mutable.Map[Long, (String, String, Option[String], Long, Option[String])]()
     data.foreach { dataItem =>
-      resultMap += (dataItem._1 -> (dataItem._2, dataItem._3, dataItem._4))
+      resultMap += (dataItem._1 -> (dataItem._2, dataItem._3, dataItem._4, dataItem._5, dataItem._6))
     }
     resultMap.iterator.toMap
   }
@@ -303,9 +304,9 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
   }
 
   private def prepareTriggerInput(trigger: Trigger, dataCache: mutable.Map[String, Any], callbacks: Option[TriggerCallbacks]): ProcessRequest = {
-    var organisationParameterData: Map[Long, (String, String, Option[String])] = null
-    var systemParameterData: Map[Long, (String, String, Option[String])] = null
-    var domainParameterData: Map[Long, (String, String, Option[String])] = null
+    var organisationParameterData: Map[Long, (String, String, Option[String], Option[Long], Option[String])] = null
+    var systemParameterData: Map[Long, (String, String, Option[String], Option[Long], Option[String])] = null
+    var domainParameterData: Map[Long, (String, String, Option[String], Long, Option[String])] = null
     if (trigger.data.isDefined) {
       if (hasTriggerDataType(trigger.data.get, TriggerDataType.OrganisationParameter)) {
         organisationParameterData = fromCache(dataCache, "organisationParameterData", () => loadOrganisationParameterData(trigger.data.get.map(x => x.dataId), TriggerCallbacks.organisationId(callbacks)))
@@ -408,8 +409,8 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
             if (paramInfo.isDefined) {
               if ("BINARY".equals(paramInfo.get._2)) {
                 var value = "BASE64_CONTENT_OF_FILE"
-                if (paramInfo.get._3.isDefined) {
-                  value = MimeUtil.getBase64FromDataURL(paramInfo.get._3.get)
+                if (paramInfo.get._3.isDefined && paramInfo.get._4.isDefined) {
+                  value = Base64.getEncoder.encodeToString(Files.readAllBytes(repositoryUtils.getOrganisationPropertyFile(dataItem.dataId, paramInfo.get._4.get).toPath))
                 }
                 orgParamData.get.getItem.add(toAnyContent(paramInfo.get._1, "binary", value, Some(ValueEmbeddingEnumeration.BASE_64)))
               } else {
@@ -422,8 +423,8 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
             if (paramInfo.isDefined) {
               if ("BINARY".equals(paramInfo.get._2)) {
                 var value = "BASE64_CONTENT_OF_FILE"
-                if (paramInfo.get._3.isDefined) {
-                  value = MimeUtil.getBase64FromDataURL(paramInfo.get._3.get)
+                if (paramInfo.get._3.isDefined && paramInfo.get._4.isDefined) {
+                  value = Base64.getEncoder.encodeToString(Files.readAllBytes(repositoryUtils.getSystemPropertyFile(dataItem.dataId, paramInfo.get._4.get).toPath))
                 }
                 sysParamData.get.getItem.add(toAnyContent(paramInfo.get._1, "binary", value, Some(ValueEmbeddingEnumeration.BASE_64)))
               } else {
@@ -437,7 +438,7 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
               if ("BINARY".equals(paramInfo.get._2)) {
                 var value = "BASE64_CONTENT_OF_FILE"
                 if (paramInfo.get._3.isDefined) {
-                  value = MimeUtil.getBase64FromDataURL(paramInfo.get._3.get)
+                  value = Base64.getEncoder.encodeToString(Files.readAllBytes(repositoryUtils.getDomainParameterFile(paramInfo.get._4, dataItem.dataId).toPath))
                 }
                 domainParamData.get.getItem.add(toAnyContent(paramInfo.get._1, "binary", value, Some(ValueEmbeddingEnumeration.BASE_64)))
               } else {
@@ -550,8 +551,9 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
   }
 
 
-  def getParameterValue(item: AnyContent, parameterType: String): String = {
-    var result: Option[String] = None
+  def getParameterValue(item: AnyContent, parameterType: String, handleBinary: Array[Byte] => _): (String, Option[String]) = {
+    var value: Option[String] = None
+    var contentType: Option[String] = None
     var encoding = StandardCharsets.UTF_8
     if (item.getEncoding != null) {
       encoding = Charset.forName(item.getEncoding)
@@ -559,71 +561,88 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
     if ("BINARY".equals(parameterType)) {
       if (item.getEmbeddingMethod == ValueEmbeddingEnumeration.BASE_64) {
         if (MimeUtil.isDataURL(item.getValue)) {
-          result = Some(item.getValue)
+          value = Some("")
+          contentType = Some(MimeUtil.getMimeTypeFromDataURL(item.getValue))
+          handleBinary.apply(Base64.getDecoder.decode(MimeUtil.getBase64FromDataURL(item.getValue)))
         } else {
           var mimeType = MimeUtil.getMimeTypeFromBase64(item.getValue)
           if (mimeType == null) {
             mimeType = "application/octet-stream"
           }
-          result = Some("data:"+mimeType+";base64,"+item.getValue)
+          value = Some("")
+          contentType = Some(mimeType)
+          handleBinary.apply(Base64.getDecoder.decode(item.getValue))
         }
       } else {
-        val base64 = Base64.getEncoder.encodeToString(item.getValue.getBytes(encoding))
-        result = Some("data:text/plain;base64,"+base64)
+        value = Some("")
+        contentType = Some("text/plain")
+        handleBinary.apply(item.getValue.getBytes(encoding))
       }
     } else {
       if (item.getEmbeddingMethod == ValueEmbeddingEnumeration.BASE_64) {
-        result = Some(new String(Base64.getDecoder.decode(item.getValue), encoding))
+        value = Some(new String(Base64.getDecoder.decode(item.getValue), encoding))
       } else {
-        result = Some(item.getValue)
+        value = Some(item.getValue)
       }
     }
-    result.get
+    (value.get, contentType)
   }
 
-  private def saveAsOrganisationPropertyValues(community: Long, organisation: Long, items: Iterable[AnyContent]): DBIO[_] = {
+  private def saveAsOrganisationPropertyValues(community: Long, organisation: Long, items: Iterable[AnyContent], onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {
     val dbActions = ListBuffer[DBIO[_]]()
-    var parameterMap = mutable.Map[String, (Long, String)]()
+    val parameterMap = mutable.Map[String, (Long, String)]()
     exec(PersistenceSchema.organisationParameters.filter(_.community === community).map(x => (x.id, x.testKey, x.kind)).result).foreach { param =>
       parameterMap += (param._2 -> (param._1, param._3))
     }
     items.foreach { item =>
       val paramReference = parameterMap.get(item.getName)
       if (paramReference.isDefined) {
+        onSuccess += (() => repositoryUtils.deleteOrganisationPropertyFile(paramReference.get._1, organisation))
+        val paramData = getParameterValue(item, paramReference.get._2, bytes => {
+          onSuccess += (() => repositoryUtils.setOrganisationPropertyFile(paramReference.get._1, organisation, Files.write(Files.createTempFile("itb", "trigger"), bytes).toFile))
+        })
         dbActions += PersistenceSchema.organisationParameterValues.filter(_.organisation === organisation).filter(_.parameter === paramReference.get._1).delete
-        dbActions += (PersistenceSchema.organisationParameterValues += OrganisationParameterValues(organisation, paramReference.get._1, getParameterValue(item, paramReference.get._2)))
+        dbActions += (PersistenceSchema.organisationParameterValues += OrganisationParameterValues(organisation, paramReference.get._1, paramData._1, paramData._2))
       }
     }
     toDBIO(dbActions)
   }
 
-  private def saveAsSystemPropertyValues(community: Long, system: Long, items: Iterable[AnyContent]): DBIO[_] = {
+  private def saveAsSystemPropertyValues(community: Long, system: Long, items: Iterable[AnyContent], onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {
     val dbActions = ListBuffer[DBIO[_]]()
-    var parameterMap = mutable.Map[String, (Long, String)]()
+    val parameterMap = mutable.Map[String, (Long, String)]()
     exec(PersistenceSchema.systemParameters.filter(_.community === community).map(x => (x.id, x.testKey, x.kind)).result).foreach { param =>
       parameterMap += (param._2 -> (param._1, param._3))
     }
     items.foreach { item =>
       val paramReference = parameterMap.get(item.getName)
       if (paramReference.isDefined) {
+        onSuccess += (() => repositoryUtils.deleteSystemPropertyFile(paramReference.get._1, system))
+        val paramData = getParameterValue(item, paramReference.get._2, bytes => {
+          onSuccess += (() => repositoryUtils.setSystemPropertyFile(paramReference.get._1, system, Files.write(Files.createTempFile("itb", "trigger"), bytes).toFile))
+        })
         dbActions += PersistenceSchema.systemParameterValues.filter(_.system === system).filter(_.parameter === paramReference.get._1).delete
-        dbActions += (PersistenceSchema.systemParameterValues += SystemParameterValues(system, paramReference.get._1, getParameterValue(item, paramReference.get._2)))
+        dbActions += (PersistenceSchema.systemParameterValues += SystemParameterValues(system, paramReference.get._1, paramData._1, paramData._2))
       }
     }
     toDBIO(dbActions)
   }
 
-  private def saveAsStatementPropertyValues(community: Long, system: Long, actor: Long, items: Iterable[AnyContent]): DBIO[_] = {
+  private def saveAsStatementPropertyValues(community: Long, system: Long, actor: Long, items: Iterable[AnyContent], onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {
     val dbActions = ListBuffer[DBIO[_]]()
-    var parameterMap = mutable.Map[String, (Long, String, Long)]()
+    val parameterMap = mutable.Map[String, (Long, String, Long)]()
     exec(PersistenceSchema.parameters.join(PersistenceSchema.endpoints).on(_.endpoint === _.id).filter(_._2.actor === actor).map(x => (x._1.id, x._1.name, x._1.kind, x._1.endpoint)).result).foreach { param =>
       parameterMap += (param._2 -> (param._1, param._3, param._4))
     }
     items.foreach { item =>
       val paramReference = parameterMap.get(item.getName)
       if (paramReference.isDefined) {
+        onSuccess += (() => repositoryUtils.deleteStatementParameterFile(paramReference.get._1, system))
+        val paramData = getParameterValue(item, paramReference.get._2, bytes => {
+          onSuccess += (() => repositoryUtils.setStatementParameterFile(paramReference.get._1, system, Files.write(Files.createTempFile("itb", "trigger"), bytes).toFile))
+        })
         dbActions += PersistenceSchema.configs.filter(_.system === system).filter(_.parameter === paramReference.get._1).delete
-        dbActions += (PersistenceSchema.configs += Configs(system, paramReference.get._1, paramReference.get._3, getParameterValue(item, paramReference.get._2)))
+        dbActions += (PersistenceSchema.configs += Configs(system, paramReference.get._1, paramReference.get._3, paramData._1, paramData._2))
       }
     }
     toDBIO(dbActions)
@@ -634,6 +653,7 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
       try {
         val service = new ProcessingServiceService(new java.net.URL(trigger.url))
         val response = service.getProcessingServicePort.process(request)
+        val onSuccessCalls = mutable.ListBuffer[() => _]()
         val dbActions = ListBuffer[DBIO[_]]()
         if (response != null) {
           val triggerEvent = TriggerEventType.apply(trigger.eventType)
@@ -644,7 +664,7 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
             ) {
               val organisationId = callbacks.organisationId()
               if (organisationId.isDefined) {
-                dbActions += saveAsOrganisationPropertyValues(trigger.community, organisationId.get, output.getItem.asScala)
+                dbActions += saveAsOrganisationPropertyValues(trigger.community, organisationId.get, output.getItem.asScala, onSuccessCalls)
               }
             } else if ("systemProperties".equals(output.getName) &&
               (TriggerEventType.SystemCreated == triggerEvent || TriggerEventType.ConformanceStatementCreated == triggerEvent ||
@@ -652,7 +672,7 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
             ) {
               val systemId = callbacks.systemId()
               if (systemId.isDefined) {
-                dbActions += saveAsSystemPropertyValues(trigger.community, systemId.get, output.getItem.asScala)
+                dbActions += saveAsSystemPropertyValues(trigger.community, systemId.get, output.getItem.asScala, onSuccessCalls)
               }
             } else if ("statementProperties".equals(output.getName) &&
               (TriggerEventType.ConformanceStatementCreated == triggerEvent || TriggerEventType.ConformanceStatementUpdated == triggerEvent)
@@ -660,7 +680,7 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
               val systemId = callbacks.systemId()
               val actorId = callbacks.actorId()
               if (systemId.isDefined && actorId.isDefined) {
-                dbActions += saveAsStatementPropertyValues(trigger.community, systemId.get, actorId.get, output.getItem.asScala)
+                dbActions += saveAsStatementPropertyValues(trigger.community, systemId.get, actorId.get, output.getItem.asScala, onSuccessCalls)
               }
             }
           }
@@ -669,7 +689,7 @@ class TriggerManager @Inject()(dbConfigProvider: DatabaseConfigProvider) extends
           // Update latest result if this is none is recorded or if the previous one was a failure.
           dbActions += recordTriggerResultInternal(trigger.id, success = true, None)
         }
-        exec(toDBIO(dbActions).transactionally)
+        exec(dbActionFinalisation(Some(onSuccessCalls), None, toDBIO(dbActions)).transactionally)
       } catch {
         case e:Exception =>
           logger.warn("Trigger call resulted in error [community: "+trigger.community+"][type: "+trigger.eventType+"][url: "+trigger.url+"]", e)

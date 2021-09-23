@@ -13,16 +13,18 @@ import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.RandomStringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
-import utils.signature.SigUtils
 import utils._
+import utils.signature.SigUtils
 
-import java.io.ByteArrayInputStream
-import java.nio.file.Paths
+import java.io.File
+import java.nio.file.{Files, Paths}
 import java.security.cert.{Certificate, CertificateExpiredException, CertificateNotYetValidException, X509Certificate}
 import java.security.{KeyStore, NoSuchAlgorithmException}
 import javax.inject.Inject
+import scala.concurrent.ExecutionContext
+import scala.util.Using
 
-class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, communityManager: CommunityManager, conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, systemManager: SystemManager, testResultManager: TestResultManager, organizationManager: OrganizationManager, testCaseManager: TestCaseManager, endPointManager: EndPointManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
+class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAction: AuthorizedAction, cc: ControllerComponents, communityManager: CommunityManager, conformanceManager: ConformanceManager, accountManager: AccountManager, actorManager: ActorManager, testSuiteManager: TestSuiteManager, systemManager: SystemManager, testResultManager: TestResultManager, organizationManager: OrganizationManager, testCaseManager: TestCaseManager, endPointManager: EndPointManager, parameterManager: ParameterManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ConformanceService])
 
   /**
@@ -355,38 +357,88 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
   }
 
   def createDomainParameter(domainId: Long) = authorizedAction { request =>
-    authorizationManager.canManageDomainParameters(request, domainId)
-    val jsDomainParameter = ParameterExtractor.requiredBodyParameter(request, Parameters.CONFIG)
-    val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, None, domainId)
-    if (conformanceManager.getDomainParameterByDomainAndName(domainId, domainParameter.name).isDefined) {
-      ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the "+communityLabelManager.getLabel(request, models.Enums.LabelType.Domain, true, true)+".")
-    } else if (domainParameter.kind == "BINARY" && Configurations.ANTIVIRUS_SERVER_ENABLED && domainParameter.value.isDefined && ParameterExtractor.virusPresent(List(domainParameter.value.get))) {
-      ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
-    } else {
-      conformanceManager.createDomainParameter(domainParameter)
-      ResponseConstructor.constructEmptyResponse
+    try {
+      authorizationManager.canManageDomainParameters(request, domainId)
+      val paramMap = ParameterExtractor.paramMap(request)
+      val files = ParameterExtractor.extractFiles(request)
+      val jsDomainParameter = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.CONFIG)
+      var fileToStore: Option[File] = None
+      if (files.contains(Parameters.FILE)) {
+        fileToStore = Some(files(Parameters.FILE).file)
+      }
+      var response: Result = null
+      val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, None, domainId)
+      if (conformanceManager.getDomainParameterByDomainAndName(domainId, domainParameter.name).isDefined) {
+        response = ResponseConstructor.constructBadRequestResponse(500, s"A parameter with this name already exists for the ${communityLabelManager.getLabel(request, models.Enums.LabelType.Domain, single = true, lowercase = true)}.")
+      } else {
+        if (domainParameter.kind == "BINARY") {
+          if (fileToStore.isDefined) {
+            if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore.get))) {
+              response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+            }
+          } else {
+            response = ResponseConstructor.constructBadRequestResponse(500, "No file provided for binary parameter.")
+          }
+        }
+      }
+      if (response == null) {
+        conformanceManager.createDomainParameter(domainParameter, fileToStore)
+        response = ResponseConstructor.constructEmptyResponse
+      }
+      response
+    } finally {
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
   }
 
   def deleteDomainParameter(domainId: Long, domainParameterId: Long) = authorizedAction { request =>
     authorizationManager.canManageDomainParameters(request, domainId)
-    conformanceManager.deleteDomainParameterWrapper(domainParameterId)
+    conformanceManager.deleteDomainParameterWrapper(domainId, domainParameterId)
     ResponseConstructor.constructEmptyResponse
   }
 
   def updateDomainParameter(domainId: Long, domainParameterId: Long) = authorizedAction { request =>
-    authorizationManager.canManageDomainParameters(request, domainId)
-    val jsDomainParameter = ParameterExtractor.requiredBodyParameter(request, Parameters.CONFIG)
-    val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, Some(domainParameterId), domainId)
+    try {
+      authorizationManager.canManageDomainParameters(request, domainId)
+      val paramMap = ParameterExtractor.paramMap(request)
+      val files = ParameterExtractor.extractFiles(request)
+      var result: Result = null
+      val jsDomainParameter = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.CONFIG)
+      var fileToStore: Option[File] = None
+      if (files.contains(Parameters.FILE)) {
+        fileToStore = Some(files(Parameters.FILE).file)
+      }
+      val domainParameter = JsonUtil.parseJsDomainParameter(jsDomainParameter, Some(domainParameterId), domainId)
+      val existingDomainParameter = conformanceManager.getDomainParameterByDomainAndName(domainId, domainParameter.name)
+      if (existingDomainParameter.isDefined && (existingDomainParameter.get.id != domainParameterId)) {
+        result = ResponseConstructor.constructBadRequestResponse(500, s"A parameter with this name already exists for the ${communityLabelManager.getLabel(request, models.Enums.LabelType.Domain, single = true, lowercase = true)}.")
+      } else if (domainParameter.kind == "BINARY") {
+        if (fileToStore.isDefined) {
+          if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(List(fileToStore.get))) {
+            result = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+          }
+        }
+      }
+      if (result == null) {
+        conformanceManager.updateDomainParameter(domainId, domainParameterId, domainParameter.name, domainParameter.desc, domainParameter.kind, domainParameter.value, domainParameter.inTests, domainParameter.contentType, fileToStore)
+        result = ResponseConstructor.constructEmptyResponse
+      }
+      result
+    } finally {
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
+    }
+  }
 
-    val existingDomainParameter = conformanceManager.getDomainParameterByDomainAndName(domainId, domainParameter.name)
-    if (existingDomainParameter.isDefined && (existingDomainParameter.get.id != domainParameterId)) {
-      ResponseConstructor.constructBadRequestResponse(500, "A parameter with this name already exists for the "+communityLabelManager.getLabel(request, models.Enums.LabelType.Domain, true, true)+".")
-    } else if (domainParameter.kind == "BINARY" && Configurations.ANTIVIRUS_SERVER_ENABLED && domainParameter.value.isDefined && ParameterExtractor.virusPresent(List(domainParameter.value.get))) {
-      ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+  def downloadDomainParameterFile(domainId: Long, domainParameterId: Long) = authorizedAction { request =>
+    authorizationManager.canManageDomainParameters(request, domainId)
+    val file = repositoryUtils.getDomainParameterFile(domainId, domainParameterId)
+    if (file.exists()) {
+      Ok.sendFile(
+        content = file,
+        inline = false
+      )
     } else {
-      conformanceManager.updateDomainParameter(domainParameterId, domainParameter.name, domainParameter.desc, domainParameter.kind, domainParameter.value, domainParameter.inTests)
-      ResponseConstructor.constructEmptyResponse
+      ResponseConstructor.constructNotFoundResponse(ErrorCodes.INVALID_PARAM, "Domain parameter was not found")
     }
   }
 
@@ -461,6 +513,28 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
     ResponseConstructor.constructEmptyResponse
   }
 
+  def downloadConformanceCertificateKeystore(communityId: Long) = authorizedAction { request =>
+    authorizationManager.canViewConformanceCertificateSettings(request, communityId)
+    val settings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+    if (settings.isDefined && settings.get.keystoreFile.isDefined) {
+      val tempFile = Files.createTempFile("itb", "store")
+      try {
+        Files.write(tempFile, Base64.decodeBase64(MimeUtil.getBase64FromDataURL(settings.get.keystoreFile.get)))
+      } catch {
+        case e:Exception =>
+          FileUtils.deleteQuietly(tempFile.toFile)
+          throw new IllegalStateException("Unable to generate keystore file", e)
+      }
+      Ok.sendFile(
+        content = tempFile.toFile,
+        inline = false,
+        onClose = () => { FileUtils.deleteQuietly(tempFile.toFile) }
+      )
+    } else {
+      ResponseConstructor.constructEmptyResponse
+    }
+  }
+
   def getConformanceCertificateSettings(communityId: Long) = authorizedAction { request =>
     authorizationManager.canViewConformanceCertificateSettings(request, communityId)
     val settings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
@@ -475,115 +549,149 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
 
   def updateConformanceCertificateSettings(communityId: Long) = authorizedAction { request =>
     authorizationManager.canUpdateConformanceCertificateSettings(request, communityId)
-    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
-    val removeKeystore = ParameterExtractor.requiredBodyParameter(request, Parameters.REMOVE_KEYSTORE).toBoolean
-    val updatePasswords = ParameterExtractor.requiredBodyParameter(request, Parameters.UPDATE_PASSWORDS).toBoolean
-    val settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
-    var response: Result = null
-    if (settings.keystoreFile.isDefined && Configurations.ANTIVIRUS_SERVER_ENABLED) {
-      val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-      val scanResult = virusScanner.scan(Base64.decodeBase64(MimeUtil.getBase64FromDataURL(settings.keystoreFile.get)))
-      if (!ClamAVClient.isCleanReply(scanResult)) {
-        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Keystore file failed virus scan.")
+    try {
+      val paramMap = ParameterExtractor.paramMap(request)
+      val files = ParameterExtractor.extractFiles(request)
+      var response: Result = null
+      var keystoreData: Option[String] = None
+      if (files.contains(Parameters.FILE)) {
+        if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
+          val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+          val scanResult = virusScanner.scan(files(Parameters.FILE).file)
+          if (!ClamAVClient.isCleanReply(scanResult)) {
+            response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Keystore file failed virus scan.")
+          }
+        }
+        if (response == null) {
+          keystoreData = Some(MimeUtil.getFileAsDataURL(files(Parameters.FILE).file, "application/octet-stream"))
+        }
       }
+      if (response == null) {
+        val jsSettings = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SETTINGS)
+        val removeKeystore = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.REMOVE_KEYSTORE).toBoolean
+        val updatePasswords = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.UPDATE_PASSWORDS).toBoolean
+        val settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId, keystoreData)
+        conformanceManager.updateConformanceCertificateSettings(settings, updatePasswords, removeKeystore)
+        response = ResponseConstructor.constructEmptyResponse
+      }
+      response
+    } finally {
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
-    if (response == null) {
-      conformanceManager.updateConformanceCertificateSettings(settings, updatePasswords, removeKeystore)
-      response = ResponseConstructor.constructEmptyResponse
-    }
-    response
   }
 
   def testKeystoreSettings(communityId: Long) = authorizedAction { request =>
-    authorizationManager.canUpdateConformanceCertificateSettings(request, communityId)
-    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
-    val updatePasswords = ParameterExtractor.requiredBodyParameter(request, Parameters.UPDATE_PASSWORDS).toBoolean
-    val settings = JsonUtil.parseJsConformanceCertificateSettingsForKeystoreTest(jsSettings, communityId)
-    val keystoreBytes = Base64.decodeBase64(MimeUtil.getBase64FromDataURL(settings.keystoreFile.get))
-    var response: Result = null
-    if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
-      val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-      val scanResult = virusScanner.scan(keystoreBytes)
-      if (!ClamAVClient.isCleanReply(scanResult)) {
-        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Keystore file failed virus scan.")
-      }
-    }
-    if (response == null) {
-      var keystorePassword: String = null
-      var keyPassword: String = null
-      if (updatePasswords) {
-        if (settings.keystorePassword.isDefined && settings.keyPassword.isDefined) {
-          keystorePassword = settings.keystorePassword.get
-          keyPassword = settings.keyPassword.get
-        }
-      } else {
-        val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
-        if (storedSettings.isDefined && storedSettings.get.keystorePassword.isDefined && storedSettings.get.keyPassword.isDefined) {
-          keystorePassword = MimeUtil.decryptString(storedSettings.get.keystorePassword.get)
-          keyPassword = MimeUtil.decryptString(storedSettings.get.keyPassword.get)
-        }
-      }
-
-      if (keystorePassword == null || keyPassword == null) {
-        throw new IllegalArgumentException("Passwords could not be loaded")
-      }
-
-      var problem:String = null
-      var level: String = null
-
-      val keystore = KeyStore.getInstance(settings.keystoreType.get)
-      val bin = new ByteArrayInputStream(keystoreBytes)
-      try {
-        keystore.load(bin, keystorePassword.toCharArray)
-      } catch {
-        case e: NoSuchAlgorithmException =>
-          problem = "The keystore defines an invalid integrity check algorithm"
-          level = "error"
-        case e: Exception =>
-          problem = "The keystore could not be opened"
-          level = "error"
-      } finally if (bin != null) bin.close()
-      if (problem == null) {
-        var certificate: Certificate = null
-        try {
-          certificate = SigUtils.checkKeystore(keystore, keyPassword.toCharArray)
-          if (certificate == null) {
-            problem = "A valid key could not be found in the keystore"
-            level = "error"
+    var keystoreFile: Option[File] = None
+    try {
+      authorizationManager.canUpdateConformanceCertificateSettings(request, communityId)
+      val paramMap = ParameterExtractor.paramMap(request)
+      val files = ParameterExtractor.extractFiles(request)
+      var response: Result = null
+      if (files.contains(Parameters.FILE)) {
+        keystoreFile = Some(files(Parameters.FILE).file)
+        if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
+          val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+          val scanResult = virusScanner.scan(keystoreFile.get)
+          if (!ClamAVClient.isCleanReply(scanResult)) {
+            response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Keystore file failed virus scan.")
           }
-        } catch {
-          case e: Exception =>
-            problem = "The key could not be read from the keystore"
-            level = "error"
         }
-        if (problem == null) {
-          if (certificate.isInstanceOf[X509Certificate]) {
-            val x509Cert = certificate.asInstanceOf[X509Certificate]
-            try {
-              SigUtils.checkCertificateValidity(x509Cert)
-              if (!SigUtils.checkCertificateUsage(x509Cert) || !SigUtils.checkCertificateExtendedUsage(x509Cert)) {
-                problem = "The provided certificate is not valid for signature use"
-                level = "warning"
-              }
-            } catch {
-              case e: CertificateExpiredException =>
-                problem = "The contained certificate is expired"
-                level = "error"
-              case e: CertificateNotYetValidException =>
-                problem = "The certificate is not yet valid"
-                level = "error"
+      }
+      if (response == null) {
+        val jsSettings = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SETTINGS)
+        val updatePasswords = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.UPDATE_PASSWORDS).toBoolean
+        val settings = JsonUtil.parseJsConformanceCertificateSettingsForKeystoreTest(jsSettings, communityId)
+        var keystorePassword: Option[String] = None
+        var keyPassword: Option[String] = None
+        if (updatePasswords) {
+          if (settings.keystorePassword.isDefined && settings.keyPassword.isDefined) {
+            keystorePassword = settings.keystorePassword
+            keyPassword = settings.keyPassword
+          }
+        }
+        if (keyPassword.isEmpty || keystorePassword.isEmpty || keystoreFile.isEmpty) {
+          val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+          if (storedSettings.isDefined) {
+            if (keyPassword.isEmpty && storedSettings.get.keyPassword.isDefined) {
+              keyPassword = Some(MimeUtil.decryptString(storedSettings.get.keyPassword.get))
+            }
+            if (keystorePassword.isEmpty && storedSettings.get.keystorePassword.isDefined) {
+              keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
+            }
+            if (keystoreFile.isEmpty && storedSettings.get.keystoreFile.isDefined) {
+              val tempFile = Files.createTempFile("itb", "store")
+              Files.write(tempFile, Base64.decodeBase64(MimeUtil.getBase64FromDataURL(storedSettings.get.keystoreFile.get)))
+              keystoreFile = Some(tempFile.toFile)
             }
           }
         }
+        if (keyPassword.isEmpty || keystorePassword.isEmpty || keystoreFile.isEmpty) {
+          throw new IllegalArgumentException("Passwords and keystore could not be loaded")
+        }
+        var problem:String = null
+        var level: String = null
+        val keystore = KeyStore.getInstance(settings.keystoreType.get)
+        Using(Files.newInputStream(keystoreFile.get.toPath)) { input =>
+          try {
+            keystore.load(input, keystorePassword.get.toCharArray)
+          } catch {
+            case _: NoSuchAlgorithmException =>
+              problem = "The keystore defines an invalid integrity check algorithm"
+              level = "error"
+            case _: Exception =>
+              problem = "The keystore could not be opened"
+              level = "error"
+          }
+        }
+        if (problem == null) {
+          var certificate: Certificate = null
+          try {
+            certificate = SigUtils.checkKeystore(keystore, keyPassword.get.toCharArray)
+            if (certificate == null) {
+              problem = "A valid key could not be found in the keystore"
+              level = "error"
+            }
+          } catch {
+            case _: Exception =>
+              problem = "The key could not be read from the keystore"
+              level = "error"
+          }
+          if (problem == null) {
+            if (certificate.isInstanceOf[X509Certificate]) {
+              val x509Cert = certificate.asInstanceOf[X509Certificate]
+              try {
+                SigUtils.checkCertificateValidity(x509Cert)
+                if (!SigUtils.checkCertificateUsage(x509Cert) || !SigUtils.checkCertificateExtendedUsage(x509Cert)) {
+                  problem = "The provided certificate is not valid for signature use"
+                  level = "warning"
+                }
+              } catch {
+                case _: CertificateExpiredException =>
+                  problem = "The contained certificate is expired"
+                  level = "error"
+                case _: CertificateNotYetValidException =>
+                  problem = "The certificate is not yet valid"
+                  level = "error"
+              }
+            }
+          }
+        }
+        if (problem == null) {
+          response = ResponseConstructor.constructEmptyResponse
+        } else {
+          val json = JsonUtil.jsConformanceSettingsValidation(problem, level)
+          response = ResponseConstructor.constructJsonResponse(json.toString)
+        }
       }
-      if (problem == null) {
-        response = ResponseConstructor.constructEmptyResponse
-      } else {
-        val json = JsonUtil.jsConformanceSettingsValidation(problem, level)
-        response = ResponseConstructor.constructJsonResponse(json.toString)
+      response
+    } finally {
+      if (request.body.asMultipartFormData.isDefined) {
+        request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
+      }
+      if (keystoreFile.isDefined) {
+        FileUtils.deleteQuietly(keystoreFile.get)
       }
     }
-    response
   }
 
   def getSystemConfigurations() = authorizedAction { request =>
@@ -591,21 +699,6 @@ class ConformanceService @Inject() (authorizedAction: AuthorizedAction, cc: Cont
     authorizationManager.canViewEndpointConfigurationsForSystem(request, system)
     val actor = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
     val configs = conformanceManager.getSystemConfigurationStatus(system, actor)
-    configs.foreach{ config =>
-      // config.
-      if (config.endpointParameters.isDefined) {
-        config.endpointParameters.get.foreach{ systemConfig =>
-          if (systemConfig.config.isDefined) {
-            if (MimeUtil.isDataURL(systemConfig.config.get.value)) {
-              val detectedMimeType = MimeUtil.getMimeTypeFromDataURL(systemConfig.config.get.value)
-              val extension = MimeUtil.getExtensionFromMimeType(detectedMimeType)
-              systemConfig.extension = Some(extension)
-              systemConfig.mimeType = Some(detectedMimeType)
-            }
-          }
-        }
-      }
-    }
     val isAdmin = accountManager.checkUserRole(ParameterExtractor.extractUserId(request), UserRole.SystemAdmin, UserRole.CommunityAdmin)
     val json = JsonUtil.jsSystemConfigurationEndpoints(configs, addValues = true, isAdmin)
     ResponseConstructor.constructJsonResponse(json.toString)

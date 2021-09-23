@@ -8,7 +8,7 @@ import models._
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.MimeUtil
+import utils.{MimeUtil, RepositoryUtils}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -18,11 +18,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
  * Created by VWYNGAET on 26/10/2016.
  */
 @Singleton
-class OrganizationManager @Inject() (systemManager: SystemManager, testResultManager: TestResultManager, triggerHelper: TriggerHelper, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemManager: SystemManager, testResultManager: TestResultManager, triggerHelper: TriggerHelper, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
-  def logger = LoggerFactory.getLogger("OrganizationManager")
+  private def logger = LoggerFactory.getLogger("OrganizationManager")
 
   /**
     * Checks if organization exists (ignoring the default)
@@ -85,59 +85,66 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
       .result.head)
   }
 
-  private def copyTestSetup(fromOrganisation: Long, toOrganisation: Long, copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean): DBIO[Option[List[SystemCreationDbInfo]]] = {
-    val actions = new ListBuffer[DBIO[Option[List[SystemCreationDbInfo]]]]()
-    val systems = systemManager.getSystemsByOrganization(fromOrganisation)
-    systems.foreach { otherSystem =>
-      actions += (
-        for {
-          newSystemId <- systemManager.registerSystem(Systems(0L, otherSystem.shortname, otherSystem.fullname, otherSystem.description, otherSystem.version, toOrganisation), None, None, None)
-          createdSystemInfo <- {
-            DBIO.successful(Some(List[SystemCreationDbInfo](new SystemCreationDbInfo(newSystemId, None))))
+  private def copyTestSetup(fromOrganisation: Long, toOrganisation: Long, copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Option[List[SystemCreationDbInfo]]] = {
+    for {
+      systems <- systemManager.getSystemsByOrganizationInternal(fromOrganisation)
+      createdSystemInfo <- {
+        val actions = new ListBuffer[DBIO[Option[List[SystemCreationDbInfo]]]]()
+        systems.foreach { otherSystem =>
+          actions += (
+            for {
+              newSystemId <- systemManager.registerSystem(Systems(0L, otherSystem.shortname, otherSystem.fullname, otherSystem.description, otherSystem.version, toOrganisation), None, None, None, None, onSuccessCalls)
+              createdSystemInfo <- {
+                DBIO.successful(Some(List[SystemCreationDbInfo](new SystemCreationDbInfo(newSystemId, None))))
+              }
+              linkedActorIds <- systemManager.copyTestSetup(otherSystem.id, newSystemId, copySystemParameters, copyStatementParameters, onSuccessCalls)
+              _ <- {
+                createdSystemInfo.get.head.linkedActorIds = Some(linkedActorIds)
+                DBIO.successful(())
+              }
+            } yield createdSystemInfo
+          )
+        }
+        DBIO.fold(actions.toList, None) {
+          (aggregated, current) => {
+            Some(aggregated.getOrElse(List[SystemCreationDbInfo]()) ++ current.getOrElse(List[SystemCreationDbInfo]()))
           }
-          linkedActorIds <- systemManager.copyTestSetup(otherSystem.id, newSystemId, copySystemParameters, copyStatementParameters)
-          _ <- {
-            createdSystemInfo.get.head.linkedActorIds = Some(linkedActorIds)
-            DBIO.successful(())
-          }
-        } yield createdSystemInfo
-      )
-    }
-    if (copyOrganisationParameters) {
-      actions += PersistenceSchema.organisationParameterValues.filter(_.organisation === toOrganisation).delete andThen DBIO.successful(None)
-      actions += (
-        (for {
-          otherValues <- PersistenceSchema.organisationParameterValues.filter(_.organisation === fromOrganisation).result.map(_.toList)
-          _ <- {
-            val copyActions = new ListBuffer[DBIO[_]]()
-            otherValues.map(otherValue => {
-              copyActions += (PersistenceSchema.organisationParameterValues += OrganisationParameterValues(toOrganisation, otherValue.parameter, otherValue.value))
-            })
-            DBIO.seq(copyActions.toList.map(a => a): _*)
-          }
-        } yield()) andThen DBIO.successful(None)
-      )
-    }
-    DBIO.fold(actions.toList, None) {
-      (aggregated, current) => {
-        Some(aggregated.getOrElse(List[SystemCreationDbInfo]()) ++ current.getOrElse(List[SystemCreationDbInfo]()))
+        }
       }
-    }
+      _ <- {
+        val actions = new ListBuffer[DBIO[_]]()
+        if (copyOrganisationParameters) {
+          actions += deleteOrganizationParameterValues(toOrganisation, onSuccessCalls) andThen DBIO.successful(None)
+          actions += (for {
+            otherValues <- PersistenceSchema.organisationParameterValues.filter(_.organisation === fromOrganisation).result.map(_.toList)
+            _ <- {
+              val copyActions = new ListBuffer[DBIO[_]]()
+              otherValues.foreach(otherValue => {
+                onSuccessCalls += (() => repositoryUtils.setOrganisationPropertyFile(otherValue.parameter, toOrganisation, repositoryUtils.getOrganisationPropertyFile(otherValue.parameter, fromOrganisation), copy = true))
+                copyActions += (PersistenceSchema.organisationParameterValues += OrganisationParameterValues(toOrganisation, otherValue.parameter, otherValue.value, otherValue.contentType))
+              })
+              toDBIO(copyActions)
+            }
+          } yield())
+        }
+        toDBIO(actions)
+      }
+    } yield createdSystemInfo
   }
 
-  def createOrganizationInTrans(organization: Organizations, otherOrganisationId: Option[Long], propertyValues: Option[List[OrganisationParameterValues]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean): DBIO[OrganisationCreationDbInfo] = {
+  def createOrganizationInTrans(organization: Organizations, otherOrganisationId: Option[Long], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[OrganisationCreationDbInfo] = {
     for {
       newOrganisationId <- PersistenceSchema.insertOrganization += organization
       _ <- {
         if (propertyValues.isDefined && (otherOrganisationId.isEmpty || !copyOrganisationParameters)) {
-          saveOrganisationParameterValues(newOrganisationId, organization.community, isAdmin = true, propertyValues.get)
+          saveOrganisationParameterValues(newOrganisationId, organization.community, isAdmin = true, propertyValues.get, propertyFiles.get, onSuccessCalls)
         } else {
           DBIO.successful(())
         }
       }
       createdSystemsInfo <- {
         if (otherOrganisationId.isDefined) {
-          copyTestSetup(otherOrganisationId.get, newOrganisationId, copyOrganisationParameters, copySystemParameters, copyStatementParameters)
+          copyTestSetup(otherOrganisationId.get, newOrganisationId, copyOrganisationParameters, copySystemParameters, copyStatementParameters, onSuccessCalls)
         } else {
           DBIO.successful(Some(List[SystemCreationDbInfo]()))
         }
@@ -149,10 +156,10 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
   /**
     * Creates new organization
     */
-  def createOrganization(organization: Organizations, otherOrganisationId: Option[Long], propertyValues: Option[List[OrganisationParameterValues]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
-    val orgInfo = exec(
-      createOrganizationInTrans(organization, otherOrganisationId, propertyValues, copyOrganisationParameters, copySystemParameters, copyStatementParameters).transactionally
-    )
+  def createOrganization(organization: Organizations, otherOrganisationId: Option[Long], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = createOrganizationInTrans(organization, otherOrganisationId, propertyValues, propertyFiles, copyOrganisationParameters, copySystemParameters, copyStatementParameters, onSuccessCalls)
+    val orgInfo = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
     triggerHelper.triggersFor(organization.community, orgInfo)
     orgInfo.organisationId
   }
@@ -169,22 +176,24 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     result.isEmpty
   }
 
-  def updateOwnOrganization(userId: Long, shortName: String, fullName: String, propertyValues: Option[List[OrganisationParameterValues]]) = {
+  def updateOwnOrganization(userId: Long, shortName: String, fullName: String, propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]]) = {
     val user = exec(PersistenceSchema.users.filter(_.id === userId).result.head)
     val organisation = exec(PersistenceSchema.organizations.filter(_.id === user.organization).result.head)
 
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
     val actions = new ListBuffer[DBIO[_]]()
     val q = for {o <- PersistenceSchema.organizations if o.id === user.organization} yield (o.shortname, o.fullname)
     actions += q.update(shortName, fullName)
-    if (propertyValues.isDefined) {
+    if (propertyValues.isDefined && propertyFiles.isDefined) {
       val isAdmin = user.role == UserRole.SystemAdmin.id.toShort || user.role == UserRole.CommunityAdmin.id.toShort
-      actions += saveOrganisationParameterValues(user.organization, organisation.community, isAdmin, propertyValues.get)
+      actions += saveOrganisationParameterValues(user.organization, organisation.community, isAdmin, propertyValues.get, propertyFiles.get, onSuccessCalls)
     }
-    exec(DBIO.seq(actions.toList.map(a => a): _*).transactionally)
+    val dbAction = DBIO.seq(actions.toList.map(a => a): _*)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
     triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(organisation.community, organisation.id))
   }
 
-  def updateOrganizationInternal(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], propertyValues: Option[List[OrganisationParameterValues]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean): DBIO[Option[List[SystemCreationDbInfo]]] = {
+  def updateOrganizationInternal(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[Option[List[SystemCreationDbInfo]]] = {
     for {
       org <- PersistenceSchema.organizations.filter(_.id === orgId).result.headOption
       _ <- {
@@ -198,7 +207,7 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
           }
           val q = for {o <- PersistenceSchema.organizations if o.id === orgId} yield (o.shortname, o.fullname, o.landingPage, o.legalNotice, o.errorTemplate, o.template, o.templateName)
           actions += q.update(shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, template, templateNameToSet)
-          if (!shortName.isEmpty && !org.get.shortname.equals(shortName)) {
+          if (shortName.nonEmpty && !org.get.shortname.equals(shortName)) {
             actions += testResultManager.updateForUpdatedOrganisation(orgId, shortName)
           }
         }
@@ -208,16 +217,16 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
         if (otherOrganisation.isDefined) {
           for {
             // Replace the test setup for the organisation with the one from the provided one.
-            _ <- systemManager.deleteSystemByOrganization(orgId)
-            createdSystemInfo <- copyTestSetup(otherOrganisation.get, orgId, copyOrganisationParameters, copySystemParameters, copyStatementParameters)
+            _ <- systemManager.deleteSystemByOrganization(orgId, onSuccessCalls)
+            createdSystemInfo <- copyTestSetup(otherOrganisation.get, orgId, copyOrganisationParameters, copySystemParameters, copyStatementParameters, onSuccessCalls)
           } yield createdSystemInfo
         } else {
           DBIO.successful(Some(List[SystemCreationDbInfo]()))
         }
       }
       _ <- {
-        if (propertyValues.isDefined && (otherOrganisation.isEmpty || !copyOrganisationParameters)) {
-          saveOrganisationParameterValues(orgId, org.get.community, isAdmin = true, propertyValues.get)
+        if (propertyValues.isDefined && propertyFiles.isDefined && (otherOrganisation.isEmpty || !copyOrganisationParameters)) {
+          saveOrganisationParameterValues(orgId, org.get.community, isAdmin = true, propertyValues.get, propertyFiles.get, onSuccessCalls)
         } else {
           DBIO.successful(())
         }
@@ -225,35 +234,51 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     } yield createdSystemInfo
   }
 
-  private def getCommunityIdByOrganisationId(organisationId: Long): Long = {
-    exec(PersistenceSchema.organizations.filter(_.id === organisationId).map(x => x.community).result.head)
+  private def getCommunityIdByOrganisationId(organisationId: Long): DBIO[Long] = {
+    PersistenceSchema.organizations.filter(_.id === organisationId).map(x => x.community).result.head
   }
 
-  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], propertyValues: Option[List[OrganisationParameterValues]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean): Unit = {
-    val createdSystemInfo = exec(updateOrganizationInternal(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation, template, templateName, propertyValues, copyOrganisationParameters, copySystemParameters, copyStatementParameters).transactionally)
-    val communityId = getCommunityIdByOrganisationId(orgId)
-    triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(communityId, orgId))
-    triggerHelper.triggersFor(communityId, createdSystemInfo)
+  def updateOrganization(orgId: Long, shortName: String, fullName: String, landingPageId: Option[Long], legalNoticeId: Option[Long], errorTemplateId: Option[Long], otherOrganisation: Option[Long], template: Boolean, templateName: Option[String], propertyValues: Option[List[OrganisationParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copyOrganisationParameters: Boolean, copySystemParameters: Boolean, copyStatementParameters: Boolean): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = for {
+      communityId <- getCommunityIdByOrganisationId(orgId)
+      createdSystemInfo <- updateOrganizationInternal(orgId, shortName, fullName, landingPageId, legalNoticeId, errorTemplateId, otherOrganisation, template, templateName, propertyValues, propertyFiles, copyOrganisationParameters, copySystemParameters, copyStatementParameters, onSuccessCalls)
+    } yield (communityId, createdSystemInfo)
+    val result = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
+    triggerHelper.publishTriggerEvent(new OrganisationUpdatedEvent(result._1, orgId))
+    triggerHelper.triggersFor(result._1, result._2)
   }
 
   /**
     * Deletes organization by community
     */
-  def deleteOrganizationByCommunity(communityId: Long) = {
+  def deleteOrganizationByCommunity(communityId: Long, onSuccess: mutable.ListBuffer[() => _]) = {
     testResultManager.updateForDeletedOrganisationByCommunityId(communityId) andThen
       (for {
         list <- PersistenceSchema.organizations.filter(_.community === communityId).result
         _ <- DBIO.seq(list.map { org =>
-          deleteOrganization(org.id)
+          deleteOrganization(org.id, onSuccess)
         }: _*)
       } yield ())
   }
 
-  def deleteOrganization(orgId: Long) = {
+  private def deleteOrganizationParameterValues(orgId: Long, onSuccess: mutable.ListBuffer[() => _]) = {
+    for {
+      parameterValueIds <- PersistenceSchema.organisationParameterValues.filter(_.organisation === orgId).map(x => x.parameter).result
+      _ <- {
+        parameterValueIds.foreach { paramId =>
+          onSuccess += (() => repositoryUtils.deleteOrganisationPropertyFile(paramId, orgId))
+        }
+        PersistenceSchema.organisationParameterValues.filter(_.organisation === orgId).delete
+      }
+    } yield ()
+  }
+
+  def deleteOrganization(orgId: Long, onSuccess: mutable.ListBuffer[() => _]) = {
     testResultManager.updateForDeletedOrganisation(orgId) andThen
       deleteUserByOrganization(orgId) andThen
-      systemManager.deleteSystemByOrganization(orgId) andThen
-      PersistenceSchema.organisationParameterValues.filter(_.organisation === orgId).delete andThen
+      systemManager.deleteSystemByOrganization(orgId, onSuccess) andThen
+      deleteOrganizationParameterValues(orgId, onSuccess) andThen
       PersistenceSchema.organizations.filter(_.id === orgId).delete andThen
       DBIO.successful(())
   }
@@ -262,7 +287,9 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     * Deletes organization with specified id
     */
   def deleteOrganizationWrapper(orgId: Long): Unit = {
-    exec(deleteOrganization(orgId).transactionally)
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = deleteOrganization(orgId, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
   /**
@@ -315,11 +342,11 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     satisfied
   }
 
-  def saveOrganisationParameterValues(orgId: Long, communityId: Long, isAdmin: Boolean, values: List[OrganisationParameterValues]): DBIO[_] = {
-    saveOrganisationParameterValues(orgId, communityId, isAdmin, isSelfRegistration = false, values, requireMandatoryPropertyValues = false)
+  def saveOrganisationParameterValues(orgId: Long, communityId: Long, isAdmin: Boolean, values: List[OrganisationParameterValues], files: Map[Long, FileInfo], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+    saveOrganisationParameterValues(orgId, communityId, isAdmin, isSelfRegistration = false, values, files, requireMandatoryPropertyValues = false, onSuccessCalls)
   }
 
-  def saveOrganisationParameterValues(orgId: Long, communityId: Long, isAdmin: Boolean, isSelfRegistration: Boolean, values: List[OrganisationParameterValues], requireMandatoryPropertyValues: Boolean): DBIO[_] = {
+  def saveOrganisationParameterValues(orgId: Long, communityId: Long, isAdmin: Boolean, isSelfRegistration: Boolean, values: List[OrganisationParameterValues], files: Map[Long, FileInfo], requireMandatoryPropertyValues: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
       // Create a map of the provided parameters
       providedParameters <- DBIO.successful(values.map(x => (x.parameter, x)).toMap)
@@ -365,15 +392,28 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
               if (parameterDefinition.kind != "SECRET" || (parameterDefinition.kind == "SECRET" && matchedProvidedParameter.get.value != "")) {
                 // Special case: No update for secret parameters that are defined but not updated.
                 var valueToSet = matchedProvidedParameter.get.value
+                var existingBinaryNotUpdated = false
+                var contentTypeToSet: Option[String] = None
                 if (parameterDefinition.kind == "SECRET") {
                   // Encrypt secret value at rest.
                   valueToSet = MimeUtil.encryptString(valueToSet)
+                } else if (parameterDefinition.kind == "BINARY") {
+                  // Store file.
+                  if (files.contains(parameterDefinition.id)) {
+                    contentTypeToSet = files(parameterDefinition.id).contentType
+                    onSuccessCalls += (() => repositoryUtils.setOrganisationPropertyFile(parameterDefinition.id, orgId, files(parameterDefinition.id).file))
+                  } else {
+                    existingBinaryNotUpdated = true
+                  }
                 }
-                actions += PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterDefinition.id).filter(_.organisation === orgId).delete
-                actions += (PersistenceSchema.organisationParameterValues += OrganisationParameterValues(orgId, matchedProvidedParameter.get.parameter, valueToSet))
+                if (!existingBinaryNotUpdated) {
+                  actions += PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterDefinition.id).filter(_.organisation === orgId).delete
+                  actions += (PersistenceSchema.organisationParameterValues += OrganisationParameterValues(orgId, matchedProvidedParameter.get.parameter, valueToSet, contentTypeToSet))
+                }
               }
             } else {
               // Delete existing (if present)
+              onSuccessCalls += (() => repositoryUtils.deleteOrganisationPropertyFile(parameterDefinition.id, orgId))
               actions += PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterDefinition.id).filter(_.organisation === orgId).delete
             }
           }
@@ -383,10 +423,12 @@ class OrganizationManager @Inject() (systemManager: SystemManager, testResultMan
     } yield()
   }
 
-  def saveOrganisationParameterValuesWrapper(userId: Long, orgId: Long, values: List[OrganisationParameterValues]) = {
+  def saveOrganisationParameterValuesWrapper(userId: Long, orgId: Long, values: List[OrganisationParameterValues], propertyFiles: Map[Long, FileInfo]) = {
     val userRole: Short = exec(PersistenceSchema.users.filter(_.id === userId).map(x => x.role).result).head
     val isAdmin: Boolean = userRole == UserRole.CommunityAdmin.id.toShort || userRole == UserRole.SystemAdmin.id.toShort
     val organisation = getById(orgId)
-    exec(saveOrganisationParameterValues(orgId, organisation.get.community, isAdmin, values).transactionally)
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = saveOrganisationParameterValues(orgId, organisation.get.community, isAdmin, values, propertyFiles, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 }

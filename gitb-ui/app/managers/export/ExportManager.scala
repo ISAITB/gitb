@@ -10,16 +10,17 @@ import org.apache.commons.io.{FileUtils, IOUtils}
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
-import utils.MimeUtil
+import utils.{MimeUtil, RepositoryUtils}
 
 import java.nio.file.Files
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable.ListBuffer
 
 @Singleton
-class ExportManager @Inject() (triggerManager: TriggerManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager: TriggerManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[ExportManager])
+  private final val DEFAULT_CONTENT_TYPE = "application/octet-stream"
 
   import dbConfig.profile.api._
 
@@ -542,6 +543,8 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
           exportedParameter.setInTests(parameter.inTests)
           if (exportedParameter.getType == PropertyType.SECRET) {
             exportedParameter.setValue(encryptText(parameter.value, isAlreadyEncrypted = true, exportSettings.encryptionKey))
+          } else if (exportedParameter.getType == PropertyType.BINARY) {
+            exportedParameter.setValue(MimeUtil.getFileAsDataURL(repositoryUtils.getDomainParameterFile(domain.id, parameter.id), parameter.contentType.getOrElse(DEFAULT_CONTENT_TYPE)))
           } else {
             exportedParameter.setValue(parameter.value.orNull)
           }
@@ -939,6 +942,8 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
               exportedProperty.setProperty(exportedOrganisationPropertyMap(parameter.parameter))
               if (exportedProperty.getProperty.getType == PropertyType.SECRET) {
                 exportedProperty.setValue(encryptText(Some(parameter.value), isAlreadyEncrypted = true, exportSettings.encryptionKey))
+              } else if (exportedProperty.getProperty.getType == PropertyType.BINARY) {
+                exportedProperty.setValue(MimeUtil.getFileAsDataURL(repositoryUtils.getOrganisationPropertyFile(parameter.parameter, organisation.id), parameter.contentType.getOrElse(DEFAULT_CONTENT_TYPE)))
               } else {
                 exportedProperty.setValue(parameter.value)
               }
@@ -966,6 +971,8 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
                   exportedProperty.setProperty(exportedSystemPropertyMap(parameter.parameter))
                   if (exportedProperty.getProperty.getType == PropertyType.SECRET) {
                     exportedProperty.setValue(encryptText(Some(parameter.value), isAlreadyEncrypted = true, exportSettings.encryptionKey))
+                  } else if (exportedProperty.getProperty.getType == PropertyType.BINARY) {
+                    exportedProperty.setValue(MimeUtil.getFileAsDataURL(repositoryUtils.getSystemPropertyFile(parameter.parameter, system.id), parameter.contentType.getOrElse(DEFAULT_CONTENT_TYPE)))
                   } else {
                     exportedProperty.setValue(parameter.value)
                   }
@@ -1000,6 +1007,8 @@ class ExportManager @Inject() (triggerManager: TriggerManager, communityManager:
                                 exportedConfiguration.setParameter(domainExportInfo.exportedEndpointParameterMap(config.parameter))
                                 if (exportedConfiguration.getParameter.getType == PropertyType.SECRET) {
                                   exportedConfiguration.setValue(encryptText(Some(config.value), isAlreadyEncrypted = true, exportSettings.encryptionKey))
+                                } else if (exportedConfiguration.getParameter.getType == PropertyType.BINARY) {
+                                  exportedConfiguration.setValue(MimeUtil.getFileAsDataURL(repositoryUtils.getStatementParameterFile(config.parameter, config.system), config.contentType.getOrElse(DEFAULT_CONTENT_TYPE)))
                                 } else {
                                   exportedConfiguration.setValue(config.value)
                                 }

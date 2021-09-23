@@ -61,7 +61,7 @@ export class CommunityService {
       user_name: userName,
       user_email: userEmail,
       password: userPassword,
-      properties: this.dataService.customPropertiesForPost(organisationProperties)
+      properties: this.dataService.customPropertiesForPost(organisationProperties).parameterJson
     }
     if (token != undefined) {
       data.community_selfreg_token = token
@@ -352,9 +352,9 @@ export class CommunityService {
   uploadCommunityExport(communityId: number, settings: ImportSettings, archiveData: FileData) {
     return this.restService.post<ImportPreview>({
       path: ROUTES.controllers.RepositoryService.uploadCommunityExport(communityId).url,
+      files: [{param: 'file', data: archiveData.file!}],
       data: {
-        settings: JSON.stringify(settings),
-        data: archiveData.data
+        settings: JSON.stringify(settings)
       },
       authenticate: true
     })

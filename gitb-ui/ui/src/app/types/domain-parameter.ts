@@ -7,6 +7,7 @@ export interface DomainParameter {
     kindLabel?: string
     inTests: boolean
     value?: string
+    contentType?: string
 
     valueToShow?: string
     selected?: boolean

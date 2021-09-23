@@ -27,7 +27,8 @@ export class CreateEditSystemModalComponent extends BaseComponent implements OnI
   otherSystems: System[] = []
   propertyData: OptionalCustomPropertyFormData = {
     properties: [],
-    edit: false
+    edit: false,
+    propertyType: 'system'
   }
   title!: string
   otherSystem?: number

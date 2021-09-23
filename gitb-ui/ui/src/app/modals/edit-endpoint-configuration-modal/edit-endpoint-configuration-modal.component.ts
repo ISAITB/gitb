@@ -87,7 +87,7 @@ export class EditEndpointConfigurationModalComponent extends BaseComponent imple
   }
 
   showFileName() {
-    return this.file != undefined || this.configuration?.value != undefined
+    return this.file != undefined || this.configuration?.configured
   }
 
   fileName() {
@@ -95,9 +95,8 @@ export class EditEndpointConfigurationModalComponent extends BaseComponent imple
     if (this.file != undefined) {
       name = this.file.name
     } else {
-      if (this.configuration != undefined) {
-        const mimeType = this.dataService.mimeTypeFromDataURL(this.configuration.value!)
-        const extension = this.dataService.extensionFromMimeType(mimeType)
+      if (this.configuration?.configured) {
+        const extension = this.dataService.extensionFromMimeType(this.parameter.mimeType)
         name = this.parameter.name + extension
       }
     }
@@ -106,14 +105,13 @@ export class EditEndpointConfigurationModalComponent extends BaseComponent imple
 
   download() {
     if (this.file == undefined) {
-      const mimeType = this.dataService.mimeTypeFromDataURL(this.configuration.value!)
-      const blob = this.dataService.b64toBlob(this.dataService.base64FromDataURL(this.configuration.value!), mimeType)
-      const extension = this.dataService.extensionFromMimeType(mimeType)
-      saveAs(blob, this.parameter.name+extension)
+      this.systemService.downloadEndpointConfigurationFile(this.systemId, this.parameter.id, this.parameter.endpoint)
+      .subscribe((data) => {
+        const blobData = new Blob([data], {type: this.parameter.mimeType})
+        saveAs(blobData, this.fileName())
+      })
     } else {
-      const mimeType = this.file.type
-      const blob = this.dataService.b64toBlob(this.dataService.base64FromDataURL(this.file.data), mimeType)
-      saveAs(blob, this.file.name)
+      saveAs(this.file.file!, this.fileName())
     }
   }
 
@@ -189,25 +187,22 @@ export class EditEndpointConfigurationModalComponent extends BaseComponent imple
         }).add(() => { this.savePending = false })
       }
     } else if (this.parameter.kind == "BINARY") {
-      if (this.file != undefined) {
-        this.configuration.value = this.file.data
-        this.savePending = true
-        this.systemService.saveEndpointConfiguration(this.endpoint.id, this.configuration, true)
-        .subscribe((metadata) => {
-          if (metadata != undefined) {
-            this.configuration.extension = metadata.extension
-            this.configuration.mimeType = metadata.mimeType
-          }
-          this.closeDialog()
-          this.popupService.success('Parameter updated.')
-        }).add(() => { this.savePending = false })
-      }
+      this.configuration.value = ''
+      this.savePending = true
+      this.systemService.saveEndpointConfiguration(this.endpoint.id, this.configuration, this.file?.file)
+      .subscribe((metadata) => {
+        if (metadata != undefined) {
+          this.configuration.mimeType = metadata.mimeType
+        }
+        this.closeDialog()
+        this.popupService.success('Parameter updated.')
+      }).add(() => { this.savePending = false })
     }
   }
   
   saveDisabled() {
     return this.deletePending 
-      || (this.parameter.kind == 'BINARY' && !this.file)
+      || (this.parameter.kind == 'BINARY' && this.file == undefined && this.configuration.configured)
       || (this.parameter.kind == 'SIMPLE' && !this.textProvided(this.configuration.value))
       || (this.parameter.kind == 'SECRET' && (!this.textProvided(this.configuration.value) || !this.textProvided(this.configuration.valueConfirm)))
   }

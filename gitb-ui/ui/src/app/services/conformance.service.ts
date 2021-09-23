@@ -23,6 +23,7 @@ import { RestService } from './rest.service';
 import { SystemConfigurationEndpoint } from '../types/system-configuration-endpoint';
 import { TestCase } from '../types/test-case';
 import { ConformanceStatus } from '../types/conformance-status';
+import { FileParam } from '../types/file-param.type';
 
 @Injectable({
   providedIn: 'root'
@@ -234,6 +235,14 @@ export class ConformanceService {
     })
   }
 
+  downloadConformanceCertificateKeystore(communityId: number) {
+		return this.restService.get<ArrayBuffer>({
+			path: ROUTES.controllers.ConformanceService.downloadConformanceCertificateKeystore(communityId).url,
+			authenticate: true,
+			arrayBuffer: true
+		})
+  }
+
   updateConformanceCertificateSettings(communityId: number, settings: ConformanceCertificateSettings, updatePasswords: boolean, removeKeystore: boolean) {
     const data:any = {}
     if (settings != undefined) {
@@ -244,14 +253,18 @@ export class ConformanceService {
       data.includeTestCases = settings.includeTestCases != undefined && settings.includeTestCases
       data.includeDetails = settings.includeDetails != undefined && settings.includeDetails
       data.includeSignature = settings.includeSignature != undefined && settings.includeSignature
-      data.keystoreFile = settings.keystoreFile
       data.keystoreType = settings.keystoreType
       data.keystorePassword = settings.keystorePassword
       data.keyPassword = settings.keyPassword
     }
+    let files: FileParam[]|undefined
+    if (settings.keystoreFile != undefined) {
+      files = [{param: 'file', data: settings.keystoreFile}]
+    }
     return this.restService.post<void>({
       path: ROUTES.controllers.ConformanceService.updateConformanceCertificateSettings(communityId).url,
       authenticate: true,
+      files: files,
       data: {
         settings: JSON.stringify(data),
         updatePasswords: updatePasswords,
@@ -262,15 +275,19 @@ export class ConformanceService {
 
   testKeystoreSettings(communityId: number, settings: ConformanceCertificateSettings|undefined, updatePasswords: boolean) {
     const data: any = {}
+    let files: FileParam[]|undefined
     if (settings != undefined) {
-      data.keystoreFile = settings.keystoreFile
       data.keystoreType = settings.keystoreType
       data.keystorePassword = settings.keystorePassword
       data.keyPassword = settings.keyPassword
+      if (settings.keystoreFile != undefined) {
+        files = [{param: 'file', data: settings.keystoreFile}]
+      }
     }
     return this.restService.post<{problem: string, level: string}|undefined>({
       path: ROUTES.controllers.ConformanceService.testKeystoreSettings(communityId).url,
       authenticate: true,
+      files: files,
       data: {
         settings: JSON.stringify(data),
         updatePasswords: updatePasswords
@@ -279,6 +296,7 @@ export class ConformanceService {
   }
 
   exportDemoConformanceCertificateReport(communityId: number, settings: ConformanceCertificateSettings) {
+    let files: FileParam[]|undefined
     const data: any = {}
     if (settings != undefined) {
       data.title = settings.title
@@ -291,14 +309,17 @@ export class ConformanceService {
         data.message = settings.message
       }
       if (data.includeSignature) {
-        data.keystoreFile = settings.keystoreFile
         data.keystoreType = settings.keystoreType
         data.keystorePassword = settings.keystorePassword
         data.keyPassword = settings.keyPassword
       }
+      if (settings.keystoreFile != undefined) {
+        files = [{param: 'file', data: settings.keystoreFile}]
+      }
     }
     return this.restService.post<ArrayBuffer>({
       path: ROUTES.controllers.RepositoryService.exportDemoConformanceCertificateReport(communityId).url,
+      files: files,
       data: {
         settings: JSON.stringify(data)
       },
@@ -395,7 +416,15 @@ export class ConformanceService {
     })
   }
 
-  updateDomainParameter(domainParameterId: number, domainParameterName: string, domainParameterDescription: string|undefined, domainParameterValue: string, domainParameterKind: string, inTests: boolean|undefined, domainId: number) {
+  downloadDomainParameterFile(domainId: number, domainParameterId: number) {
+		return this.restService.get<ArrayBuffer>({
+			path: ROUTES.controllers.ConformanceService.downloadDomainParameterFile(domainId, domainParameterId).url,
+			authenticate: true,
+			arrayBuffer: true
+		})
+  }
+
+  updateDomainParameter(domainParameterId: number, domainParameterName: string, domainParameterDescription: string|undefined, domainParameterValue: string|File|undefined, domainParameterKind: string, inTests: boolean|undefined, domainId: number) {
     const params: any = {
       name: domainParameterName,
       kind: domainParameterKind
@@ -408,8 +437,12 @@ export class ConformanceService {
     } else {
       params.inTests = false
     }
+    let files: FileParam[]|undefined
     if (domainParameterKind == 'BINARY') {
-      params.valueBinary = domainParameterValue
+      if (domainParameterValue != undefined) {
+        params.contentType = (domainParameterValue as File).type
+        files = [{param: 'file', data: domainParameterValue as File}]
+      }
     } else {
       params.value = domainParameterValue
     }
@@ -418,11 +451,12 @@ export class ConformanceService {
       authenticate: true,
       data: {
         config: JSON.stringify(params)
-      }
+      },
+      files: files
     })
   }
 
-  createDomainParameter(domainParameterName: string, domainParameterDescription: string|undefined, domainParameterValue: string, domainParameterKind: string, inTests: boolean|undefined, domainId: number) {
+  createDomainParameter(domainParameterName: string, domainParameterDescription: string|undefined, domainParameterValue: string|File, domainParameterKind: string, inTests: boolean|undefined, domainId: number) {
     const params: any = {
       name: domainParameterName,
       kind: domainParameterKind
@@ -435,17 +469,20 @@ export class ConformanceService {
     } else {
       params.inTests = false
     }
+    let files: FileParam[]|undefined
     if (domainParameterKind == 'BINARY') {
-      params.valueBinary = domainParameterValue
+      params.contentType = (domainParameterValue as File).type
+      files = [{param: 'file', data: domainParameterValue as File}]
     } else {
-      params.value = domainParameterValue
+      params.value = domainParameterValue as string
     }
     return this.restService.post<void>({
       path: ROUTES.controllers.ConformanceService.createDomainParameter(domainId).url,
       authenticate: true,
       data: {
         config: JSON.stringify(params)
-      }
+      },
+      files: files
     })
   }
 
@@ -617,9 +654,9 @@ export class ConformanceService {
   uploadDomainExport(domainId: number, settings: ImportSettings, archiveData: FileData) {
     return this.restService.post<ImportPreview>({
       path: ROUTES.controllers.RepositoryService.uploadDomainExport(domainId).url,
+      files: [{param: 'file', data: archiveData.file!}],
       data: {
-        settings: JSON.stringify(settings),
-        data: archiveData.data
+        settings: JSON.stringify(settings)
       },
       authenticate: true
     })

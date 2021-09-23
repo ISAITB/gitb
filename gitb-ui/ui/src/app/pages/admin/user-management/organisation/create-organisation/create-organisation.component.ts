@@ -20,7 +20,8 @@ export class CreateOrganisationComponent extends BaseComponent implements OnInit
   organisation: Partial<OrganisationFormData> = {}
   propertyData: OptionalCustomPropertyFormData = {
     properties: [],
-    edit: false
+    edit: false,
+    propertyType: 'organisation'
   }
   savePending = false
 

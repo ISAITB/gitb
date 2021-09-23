@@ -26,7 +26,8 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   organisation: Partial<OrganisationFormData> = {}
   propertyData: OptionalCustomPropertyFormData = {
     properties: [],
-    edit: false
+    edit: false,
+    propertyType: 'organisation'
   }
   users: User[] = []
   dataStatus = {status: Constants.STATUS.PENDING}

@@ -76,8 +76,7 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
         if (parameter.kind == 'HIDDEN') {
           parameter.valueToShow = "*****"
         } else if (parameter.kind == 'BINARY') {
-          const mimeType = this.dataService.mimeTypeFromDataURL(parameter.value!)
-          const extension = this.dataService.extensionFromMimeType(mimeType)
+          const extension = this.dataService.extensionFromMimeType(parameter.contentType)
           parameter.valueToShow =  parameter.name+extension
         } else {
           parameter.valueToShow = parameter.value
@@ -90,10 +89,12 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
   }
 
 	downloadParameter(parameter: DomainParameter) {
-		const mimeType = this.dataService.mimeTypeFromDataURL(parameter.value!)
-		const blob = this.dataService.b64toBlob(this.dataService.base64FromDataURL(parameter.value!), mimeType)
-		const extension = this.dataService.extensionFromMimeType(mimeType)
-		saveAs(blob, parameter.name+extension)
+    this.conformanceService.downloadDomainParameterFile(this.domainId, parameter.id)
+    .subscribe((data) => {
+      const blobData = new Blob([data], {type: parameter.contentType})
+      const extension = this.dataService.extensionFromMimeType(parameter.contentType)
+      saveAs(blobData, parameter.name+extension)
+    })
   }
 
 	deleteDomain() {

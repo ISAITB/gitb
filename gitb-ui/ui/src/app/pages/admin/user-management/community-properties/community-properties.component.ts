@@ -119,23 +119,24 @@ export class CommunityPropertiesComponent implements OnInit {
     return references
   }
 
-  previewParameters<T extends CustomProperty>(title: string, parameters: T[], hasRegistrationCase: boolean) {
+  previewParameters<T extends CustomProperty>(title: string, parameters: T[], hasRegistrationCase: boolean, parameterType: 'organisation'|'system') {
     this.modalService.show(PreviewParametersModalComponent, {
       class: 'modal-lg',
       initialState: {
         modalTitle: title,
         parameters: parameters,
-        hasRegistrationCase: hasRegistrationCase
+        hasRegistrationCase: hasRegistrationCase,
+        parameterType: parameterType
       }
     })
   }
 
   previewOrganisationParameters() {
-    this.previewParameters(this.dataService.labelOrganisation()+" property form preview", this.organisationParameters, true)
+    this.previewParameters(this.dataService.labelOrganisation()+" property form preview", this.organisationParameters, true, 'organisation')
   }
 
   previewSystemParameters() {
-    this.previewParameters(this.dataService.labelSystem()+" property form preview", this.systemParameters, false)  
+    this.previewParameters(this.dataService.labelSystem()+" property form preview", this.systemParameters, false, 'system')
   }
 
   orderOrganisationParameters() {

@@ -32,6 +32,8 @@
                 </div>
                 <app-optional-custom-property-form
                     [tbPropertyData]="propertyData"
+                    [tbPropertyType]="'organisation'"
+                    [tbOwner]="this.dataService.vendor!.id"
                     [tbColInputLess]="1"
                     [tbReadonly]="!canEditOwnOrganisation">
                 </app-optional-custom-property-form>

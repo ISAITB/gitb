@@ -323,7 +323,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     authorizationManager.canViewConformanceCertificateReport(request, communityId)
 
     val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
-    var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
+    var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId, None)
     if (settings.includeSignature) {
       // The signature information needs to be looked up from the stored data.
       val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
@@ -338,50 +338,65 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
   }
 
   def exportDemoConformanceCertificateReport(communityId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canPreviewConformanceCertificateReport(request, communityId)
-    val jsSettings = ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS)
-    var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId)
-
-    var response: Result = null
-    if (settings.keystoreFile.isDefined && Configurations.ANTIVIRUS_SERVER_ENABLED) {
-      val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-      val scanResult = virusScanner.scan(Base64.decodeBase64(MimeUtil.getBase64FromDataURL(settings.keystoreFile.get)))
-      if (!ClamAVClient.isCleanReply(scanResult)) {
-        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Keystore file failed virus scan.")
-      }
-    }
-    if (response == null) {
-      val reportPath = Paths.get(
-        repositoryUtils.getTempReportFolder().getAbsolutePath,
-        "conformance_reports",
-        "c"+communityId,
-        "report_"+System.currentTimeMillis+".pdf"
-      )
-      FileUtils.deleteQuietly(reportPath.toFile.getParentFile)
-      if (settings.includeSignature && (settings.keystorePassword.isEmpty || settings.keyPassword.isEmpty)) {
-        // The passwords need to be looked up from the stored data.
-        val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
-        val completeSettings = new ConformanceCertificate(settings)
-        completeSettings.keyPassword = Some(MimeUtil.decryptString(storedSettings.get.keyPassword.get))
-        completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
-        settings = completeSettings.toCaseObject
-      }
-      try {
-        reportManager.generateDemoConformanceCertificate(reportPath, settings, communityId)
-        response = Ok.sendFile(
-          content = reportPath.toFile,
-          fileName = _ => Some(reportPath.toFile.getName),
-          onClose = () => {
-            FileUtils.deleteQuietly(reportPath.toFile)
+    try {
+      authorizationManager.canPreviewConformanceCertificateReport(request, communityId)
+      val paramMap = ParameterExtractor.paramMap(request)
+      val files = ParameterExtractor.extractFiles(request)
+      var response: Result = null
+      var keystoreData: Option[String] = None
+      if (files.contains(Parameters.FILE)) {
+        if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
+          val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+          val scanResult = virusScanner.scan(files(Parameters.FILE).file)
+          if (!ClamAVClient.isCleanReply(scanResult)) {
+            response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "Keystore file failed virus scan.")
           }
-        )
-      } catch {
-        case e: Exception =>
-          FileUtils.deleteQuietly(reportPath.toFile)
-          throw e
+        }
+        if (response == null) {
+          keystoreData = Some(MimeUtil.getFileAsDataURL(files(Parameters.FILE).file, "application/octet-stream"))
+        }
       }
+      if (response == null) {
+        val jsSettings = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SETTINGS)
+        var settings = JsonUtil.parseJsConformanceCertificateSettings(jsSettings, communityId, keystoreData)
+        val reportPath = Paths.get(
+          repositoryUtils.getTempReportFolder().getAbsolutePath,
+          "conformance_reports",
+          "c" + communityId,
+          "report_" + System.currentTimeMillis + ".pdf"
+        )
+        FileUtils.deleteQuietly(reportPath.toFile.getParentFile)
+        if (settings.includeSignature && (settings.keystorePassword.isEmpty || settings.keyPassword.isEmpty || settings.keystoreFile.isEmpty)) {
+          // The passwords or file need to be looked up from the stored data.
+          val storedSettings = conformanceManager.getConformanceCertificateSettingsWrapper(communityId)
+          val completeSettings = new ConformanceCertificate(settings)
+          completeSettings.keyPassword = Some(MimeUtil.decryptString(storedSettings.get.keyPassword.get))
+          completeSettings.keystorePassword = Some(MimeUtil.decryptString(storedSettings.get.keystorePassword.get))
+          if (settings.keystoreFile.isEmpty) {
+            completeSettings.keystoreFile = storedSettings.get.keystoreFile
+          }
+          settings = completeSettings.toCaseObject
+        }
+        try {
+          reportManager.generateDemoConformanceCertificate(reportPath, settings, communityId)
+          response = Ok.sendFile(
+            content = reportPath.toFile,
+            fileName = _ => Some(reportPath.toFile.getName),
+            onClose = () => {
+              FileUtils.deleteQuietly(reportPath.toFile)
+            }
+          )
+        } catch {
+          case e: Exception =>
+            FileUtils.deleteQuietly(reportPath.toFile)
+            logger.warn("Error while generating conformance certificate preview", e)
+            response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "Preview failed. Please check your configuration and try again.")
+        }
+      }
+      response
+    } finally {
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
-    response
   }
 
 	def getTestCaseDefinition(testId: String): Action[AnyContent] = authorizedAction { request =>
@@ -479,48 +494,61 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 
   private def processImport(request: Request[AnyContent], isDomain: Boolean, fnImportData: (Export, ImportSettings) => List[ImportItem]) = {
     // Get import settings.
-    val importSettings = JsonUtil.parseJsImportSettings(ParameterExtractor.requiredBodyParameter(request, Parameters.SETTINGS))
-    val archiveData = ParameterExtractor.requiredBinaryBodyParameter(request, Parameters.DATA)
-    val result = importPreviewManager.prepareImportPreview(archiveData, importSettings, requireDomain = isDomain, requireCommunity = !isDomain)
-    if (result._1.isDefined) {
-      // We have an error.
-      ResponseConstructor.constructBadRequestResponse(result._1.get._1, result._1.get._2)
-    } else {
-      // All ok.
-      try {
-        val importItems = fnImportData.apply(result._2.get, importSettings)
-        val json = JsonUtil.jsImportPreviewResult(result._3.get, importItems).toString()
-        ResponseConstructor.constructJsonResponse(json)
-      } catch {
-        case e:Exception =>
-          logger.error("An unexpected error occurred while processing the provided archive.", e)
-          // Delete the temporary file.
-          if (result._4.isDefined) {
-            FileUtils.deleteQuietly(result._4.get.toFile)
-          }
-          ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "An error occurred while processing the provided archive.")
+    val paramMap = ParameterExtractor.paramMap(request)
+    val files = ParameterExtractor.extractFiles(request)
+    val importSettings = JsonUtil.parseJsImportSettings(ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SETTINGS))
+    if (files.contains(Parameters.FILE)) {
+      val result = importPreviewManager.prepareImportPreview(files(Parameters.FILE).file, importSettings, requireDomain = isDomain, requireCommunity = !isDomain)
+      if (result._1.isDefined) {
+        // We have an error.
+        ResponseConstructor.constructBadRequestResponse(result._1.get._1, result._1.get._2)
+      } else {
+        // All ok.
+        try {
+          val importItems = fnImportData.apply(result._2.get, importSettings)
+          val json = JsonUtil.jsImportPreviewResult(result._3.get, importItems).toString()
+          ResponseConstructor.constructJsonResponse(json)
+        } catch {
+          case e:Exception =>
+            logger.error("An unexpected error occurred while processing the provided archive.", e)
+            // Delete the temporary file.
+            if (result._4.isDefined) {
+              FileUtils.deleteQuietly(result._4.get.toFile)
+            }
+            ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "An error occurred while processing the provided archive.")
+        }
       }
+    } else {
+      ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_REQUEST, "No archive was provided")
     }
   }
 
   def uploadCommunityExport(communityId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canManageCommunity(request, communityId)
-    processImport(request, isDomain = false, (exportData: Export, settings: ImportSettings) => {
-      val result = importPreviewManager.previewCommunityImport(exportData.getCommunities.getCommunity.get(0), Some(communityId))
-      if (result._2.isDefined) {
-        List(result._2.get, result._1)
-      } else {
-        List(result._1)
-      }
-    })
+    try {
+      authorizationManager.canManageCommunity(request, communityId)
+      processImport(request, isDomain = false, (exportData: Export, settings: ImportSettings) => {
+        val result = importPreviewManager.previewCommunityImport(exportData.getCommunities.getCommunity.get(0), Some(communityId))
+        if (result._2.isDefined) {
+          List(result._2.get, result._1)
+        } else {
+          List(result._1)
+        }
+      })
+    } finally {
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
+    }
   }
 
   def uploadDomainExport(domainId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canManageDomain(request, domainId)
-    processImport(request, isDomain = true, (exportData: Export, settings: ImportSettings) => {
-      val result = importPreviewManager.previewDomainImport(exportData.getDomains.getDomain.get(0), Some(domainId))
-      List(result)
-    })
+    try {
+      authorizationManager.canManageDomain(request, domainId)
+      processImport(request, isDomain = true, (exportData: Export, settings: ImportSettings) => {
+        val result = importPreviewManager.previewDomainImport(exportData.getDomains.getDomain.get(0), Some(domainId))
+        List(result)
+      })
+    } finally {
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
+    }
   }
 
   private def cancelImportInternal(request: Request[AnyContent]) = {

@@ -11,6 +11,7 @@ import { ROUTES } from '../common/global';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Organisation } from '../types/organisation.type';
 import { ErrorTemplate } from '../types/error-template';
+import { ErrorDescription } from '../types/error-description';
 
 @Injectable({
   providedIn: 'root'
@@ -64,10 +65,22 @@ export class ErrorService {
               }
             }
           } else if (error instanceof HttpErrorResponse) {
+            let errorInfoToUse: ErrorDescription = {}
+            if (error.error != undefined) {
+              if (error.error instanceof ArrayBuffer) {
+                const decoder = new TextDecoder("utf-8")
+                const decoded = JSON.parse(decoder.decode(error.error)) as ErrorDescription|undefined
+                if (decoded?.error_description != undefined) {
+                  errorInfoToUse = decoded
+                }
+              } else {
+                errorInfoToUse = error.error
+              }
+            }
             errorObj = { 
               error: {
-                error_code: error.error?.error_code,
-                error_description: error.error?.error_description
+                error_code: errorInfoToUse.error_code,
+                error_description: errorInfoToUse.error_description
               } 
             }
             if (errorObj.error?.error_description == undefined) {

@@ -10,6 +10,7 @@ import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil}
 
+import java.nio.file.Files
 import javax.inject.Inject
 import scala.collection.mutable.ListBuffer
 
@@ -34,18 +35,26 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
    * Updates the company profile
    */
   def updateVendorProfile = authorizedAction { request =>
-    authorizationManager.canUpdateOwnOrganisation(request, ignoreExistingTests = false)
-    val adminId = ParameterExtractor.extractUserId(request)
+    try {
+      authorizationManager.canUpdateOwnOrganisation(request, ignoreExistingTests = false)
+      val adminId = ParameterExtractor.extractUserId(request)
+      val paramMap = ParameterExtractor.paramMap(request)
 
-    val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_SNAME)
-    val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_FNAME)
-    val values = ParameterExtractor.extractOrganisationParameterValues(request, Parameters.PROPERTIES, true)
-    var response: Result = ParameterExtractor.checkOrganisationParameterValues(values)
-    if (response == null) {
-      organisationManager.updateOwnOrganization(adminId, shortName, fullName, values)
-      response = ResponseConstructor.constructEmptyResponse
+      val shortName = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.VENDOR_SNAME)
+      val fullName = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.VENDOR_FNAME)
+      val values = ParameterExtractor.extractOrganisationParameterValues(paramMap, Parameters.PROPERTIES, optional = true)
+      val files = ParameterExtractor.extractFiles(request).map {
+        case (key, value) => (key.substring(key.indexOf('_')+1).toLong, value)
+      }
+      if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(files.map(entry => entry._2.file))) {
+        ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+      } else {
+        organisationManager.updateOwnOrganization(adminId, shortName, fullName, values, Some(files))
+        ResponseConstructor.constructEmptyResponse
+      }
+    } finally {
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
-    response
   }
 
   /**
@@ -131,25 +140,25 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
     ResponseConstructor.constructJsonResponse(json.toString())
   }
 
-  def submitFeedback = authorizedAction(parse.multipartFormData) { request =>
+  //authorizedAction(parse.multipartFormData)
+  def submitFeedback = authorizedAction { request =>
     try {
       authorizationManager.canSubmitFeedback(request)
+      val paramMap = ParameterExtractor.paramMap(request)
       val userId = ParameterExtractor.extractOptionalUserId(request)
-      val userEmail: String = ParameterExtractor.requiredBodyParameterMulti(request, Parameters.USER_EMAIL)
-      val messageTypeId: String = ParameterExtractor.requiredBodyParameterMulti(request, Parameters.MESSAGE_TYPE_ID)
-      val messageTypeDescription: String = ParameterExtractor.requiredBodyParameterMulti(request, Parameters.MESSAGE_TYPE_DESCRIPTION)
-      val messageContent: String = HtmlUtil.sanitizeMinimalEditorContent(ParameterExtractor.requiredBodyParameterMulti(request, Parameters.MESSAGE_CONTENT))
+      val userEmail: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.USER_EMAIL)
+      val messageTypeId: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MESSAGE_TYPE_ID)
+      val messageTypeDescription: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MESSAGE_TYPE_DESCRIPTION)
+      val messageContent: String = HtmlUtil.sanitizeMinimalEditorContent(ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MESSAGE_CONTENT))
       var response: Result = null
       // Extract attachments
       val attachments = ListBuffer[AttachmentType]()
-      if (request.body.files.nonEmpty) {
+      val files = ParameterExtractor.extractFiles(request)
+      if (files.nonEmpty) {
         var totalAttachmentSize = 0L
-        for (i <- request.body.files.indices) {
-          val file = request.body.file(s"file$i")
-          if (file.isDefined) {
-            attachments += new AttachmentType(file.get.filename, file.get.ref)
-            totalAttachmentSize += file.get.fileSize
-          }
+        for (file <- files) {
+          attachments += new AttachmentType(file._2.file.getName, file._2.file)
+          totalAttachmentSize += Files.size(file._2.file.toPath)
         }
         // Validate attachments
         if (attachments.size > Configurations.EMAIL_ATTACHMENTS_MAX_COUNT) {
@@ -189,7 +198,7 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
       }
       response
     } finally {
-      request.body.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
   }
 }

@@ -177,7 +177,6 @@ export class ConformanceStatementComponent implements OnInit {
               endpoint: endpointConfig.id,
               parameter: parameterConfig.id,
               mimeType: parameterConfig.mimeType,
-              extension: parameterConfig.extension,
               configured: parameterConfig.configured
             })
           }
@@ -231,8 +230,8 @@ export class ConformanceStatementComponent implements OnInit {
         if (repr.configured) {
           if (parameter.kind == 'BINARY') {
             repr.fileName = parameter.name
-            if (relevantConfig.extension != undefined) {
-              repr.fileName += relevantConfig.extension
+            if (relevantConfig.mimeType != undefined) {
+              repr.fileName += this.dataService.extensionFromMimeType(relevantConfig.mimeType)
             }
             repr.mimeType = relevantConfig.mimeType
           } else if (parameter.kind == 'SECRET') {
@@ -413,7 +412,6 @@ export class ConformanceStatementComponent implements OnInit {
             oldConfiguration.value = result.configuration.value
             oldConfiguration.configured = result.configuration.configured
             oldConfiguration.mimeType = result.configuration.mimeType
-            oldConfiguration.extension = result.configuration.extension
           }
           break
         case Constants.OPERATION.DELETE:
@@ -428,6 +426,16 @@ export class ConformanceStatementComponent implements OnInit {
           break;
       }
       this.constructEndpointRepresentations()
+    })
+  }
+
+  onParameterDownload(parameter: SystemConfigurationParameter) {
+    this.systemService.downloadEndpointConfigurationFile(this.systemId, parameter.id, parameter.endpoint)
+    .subscribe((data) => {
+      const extension = this.dataService.extensionFromMimeType(parameter.mimeType)
+      let fileName = parameter.name + extension      
+      const blobData = new Blob([data], {type: parameter.mimeType})
+      saveAs(blobData, fileName)
     })
   }
 
@@ -456,14 +464,9 @@ export class ConformanceStatementComponent implements OnInit {
   onExportConformanceStatement() {
     this.confirmationDialogService.confirm("Report options", "Would you like to include the detailed test step results per test session?", "Yes, include step results", "No, summary only", true)
     .subscribe((choice: boolean) => {
-      let exportResult: Observable<ArrayBuffer>
-      if (choice) {
-        exportResult = this.reportService.exportConformanceStatementReport(this.actorId, this.systemId, true)
-      } else {
-        exportResult = this.reportService.exportConformanceStatementReport(this.actorId, this.systemId, false)
-      }
       this.exportPending = true
-      exportResult.subscribe((data) => {
+      this.reportService.exportConformanceStatementReport(this.actorId, this.systemId, choice)
+      .subscribe((data) => {
         const blobData = new Blob([data], {type: 'application/pdf'});
         saveAs(blobData, "conformance_report.pdf");
       }).add(() => {

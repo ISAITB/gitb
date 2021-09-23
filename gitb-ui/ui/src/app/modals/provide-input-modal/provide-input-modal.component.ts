@@ -161,8 +161,12 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
           } else {
             inputData.value = interaction.selectedOption!.value
           }
-        } else if (interaction.optionData == undefined && interaction.data != undefined) {
-          inputData.value = interaction.data
+        } else if (interaction.optionData == undefined) {
+          if (interaction.data != undefined) {
+            inputData.value = interaction.data
+          } else if (interaction.file?.file) {
+            inputData.file = interaction.file.file
+          }
         }
         inputs.push(inputData as UserInteractionInput)
       }
@@ -173,18 +177,6 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
 
   onFileSelect(request: UserInteraction, file: FileData) {
     request.file = file
-    request.data = file.data
-  }
-
-  download(interaction: UserInteraction) {
-    const blob = this.dataService.b64toBlob(interaction.value!)
-    if (interaction.name != undefined) {
-      saveAs(blob, interaction.name)
-    } else {
-      this.dataService.getFileInfo(blob).subscribe((data) => {
-        saveAs(blob, data.filename)
-      })
-    }
   }
 
   private interactionNeedsInput() {

@@ -12,6 +12,7 @@ import { CustomProperty } from 'src/app/types/custom-property.type';
 export class PreviewParametersModalComponent implements OnInit {
 
   @Input() parameters!: CustomProperty[]
+  @Input() parameterType!: 'organisation'|'system'
   @Input() modalTitle!: string
   @Input() hasRegistrationCase!: boolean
   mode = 'user'

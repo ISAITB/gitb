@@ -29,12 +29,16 @@ export class AccountService {
     if (vendorSname != undefined) {
       data.vendor_sname = vendorSname
     }
+    let files: FileParam[]|undefined
     if (processProperties) {
-      data.properties = this.dataService.customPropertiesForPost(properties)
+      const props = this.dataService.customPropertiesForPost(properties)
+      data.properties = props.parameterJson
+      files = props.files
     }
     return this.restService.post<void>({
       path: ROUTES.controllers.AccountService.updateVendorProfile().url,
       data: data,
+      files: files,
       authenticate: true
     })
   }

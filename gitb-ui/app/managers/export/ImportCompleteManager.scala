@@ -1,10 +1,10 @@
 package managers.export
 
-import java.io.File
+import java.io.{ByteArrayInputStream, File}
 import java.nio.file.{Files, Paths}
-
 import com.gitb.xml.export.{SelfRegistrationRestriction => _, _}
 import config.Configurations
+
 import javax.inject.{Inject, Singleton}
 import managers._
 import models.Enums.ImportItemType.ImportItemType
@@ -21,6 +21,7 @@ import utils.{ClamAVClient, MimeUtil, RepositoryUtils}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.Using
 
 @Singleton
 class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportManager: ExportManager, communityManager: CommunityManager, conformanceManager: ConformanceManager, specificationManager: SpecificationManager, actorManager: ActorManager, endpointManager: EndPointManager, parameterManager: ParameterManager, testSuiteManager: TestSuiteManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, organisationManager: OrganizationManager, systemManager: SystemManager, importPreviewManager: ImportPreviewManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
@@ -180,7 +181,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     dbAction.get
   }
 
-  private def processRemaining(itemType: ImportItemType, ctx: ImportContext, fnDelete: String => DBIO[_]): DBIO[_] = {
+  private def processRemaining(itemType: ImportItemType, ctx: ImportContext, fnDelete: (String, ImportItem) => DBIO[_]): DBIO[_] = {
     val dbActions = ListBuffer[DBIO[_]]()
     val itemMap = ctx.importItemMaps.targetMap.get(itemType)
     if (itemMap.isDefined) {
@@ -188,7 +189,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
         if (item.sourceKey.isEmpty && item.itemChoice.get == ImportItemChoice.Proceed) {
           // Delete - check also to see if this is one of the expected IDs.
           if (ctx.existingIds.map(itemType).contains(item.targetKey.get)) {
-            dbActions += fnDelete.apply(item.targetKey.get)
+            dbActions += fnDelete.apply(item.targetKey.get, item)
             // We can also mark all children of this item as skipped as these will already have been deleted.
             item.markAllChildrenAsSkipped()
           }
@@ -283,6 +284,9 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
         // In transit the value is clear-text but encrypted with the export password.
         // When stored this needs to be encrypted with the master password.
         result = Some(MimeUtil.encryptString(decrypt(importSettings, value.get)))
+      } else if (propertyType == PropertyType.BINARY) {
+        // In transit this is a data URL that will be stored empty with a separate file.
+        result = Some("")
       } else {
         result = value
       }
@@ -320,7 +324,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       if (pathToSet.startsWith("/")) {
         pathToSet = testSuiteFolderName + pathToSet
       }
-      paths += (testCase.getShortName -> pathToSet)
+      paths += (testCase.getIdentifier -> pathToSet)
     }
     paths.iterator.toMap
   }
@@ -330,7 +334,9 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     val testSuiteData = Base64.decodeBase64(data.getData)
     if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
       val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
-      require(ClamAVClient.isCleanReply(virusScanner.scan(testSuiteData)), "A virus was found in one of the imported test suites")
+      Using(new ByteArrayInputStream(testSuiteData)) { input =>
+        require(ClamAVClient.isCleanReply(virusScanner.scan(input)), "A virus was found in one of the imported test suites")
+      }
     }
     val tempTestSuitePath = Paths.get(ctx.importSettings.dataFilePath.get.getParent.toFile.getAbsolutePath, "testcases", item.sourceKey.get+".zip")
     Files.createDirectories(tempTestSuitePath.getParent)
@@ -643,33 +649,29 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
           ctx.existingIds.map(ImportItemType.Specification) += x.id.toString
         })
         if (ctx.importTargets.hasTestSuites) {
-          exportManager.loadSpecificationTestSuiteMap(targetDomainId.get).iterator.map { x =>
+          exportManager.loadSpecificationTestSuiteMap(targetDomainId.get).foreach { x =>
             x._2.foreach { testSuite =>
               ctx.existingIds.map(ImportItemType.TestSuite) += testSuite.id.toString
             }
-            true
           }
         }
         if (ctx.importTargets.hasActors) {
-          exportManager.loadSpecificationActorMap(targetDomainId.get).iterator.map { x =>
+          exportManager.loadSpecificationActorMap(targetDomainId.get).foreach { x =>
             x._2.foreach { actor =>
               ctx.existingIds.map(ImportItemType.Actor) += actor.id.toString
             }
-            true
           }
           if (ctx.importTargets.hasEndpoints) {
-            exportManager.loadActorEndpointMap(targetDomainId.get).iterator.map { x =>
+            exportManager.loadActorEndpointMap(targetDomainId.get).foreach { x =>
               x._2.foreach { endpoint =>
                 ctx.existingIds.map(ImportItemType.Endpoint) += endpoint.id.toString
               }
-              true
             }
             if (ctx.importTargets.hasEndpointParameters) {
-              exportManager.loadEndpointParameterMap(targetDomainId.get).iterator.map { x =>
+              exportManager.loadEndpointParameterMap(targetDomainId.get).foreach { x =>
                 x._2.foreach { parameter =>
                   ctx.existingIds.map(ImportItemType.EndpointParameter) += parameter.id.toString
                 }
-                true
               }
             }
           }
@@ -709,7 +711,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.Domain, ctx,
-          (targetKey: String) => {
+          (targetKey: String, item: ImportItem) => {
             conformanceManager.deleteDomainInternal(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
@@ -723,10 +725,19 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
               ImportCallbacks.set(
                 (data: com.gitb.xml.export.DomainParameter, item: ImportItem) => {
                   val domainId = item.parentItem.get.targetKey.get.toLong
-                  conformanceManager.createDomainParameterInternal(models.DomainParameter(0L, data.getName, Option(data.getDescription), propertyTypeToKind(data.getType, isDomainParameter = true), manageEncryptionIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), data.isInTests, domainId))
+                  val fileData = parameterFileMetadata(ctx, data.getType, isDomainParameter = true, data.getValue)
+                  conformanceManager.createDomainParameterInternal(
+                    models.DomainParameter(0L, data.getName, Option(data.getDescription),
+                      fileData._1, manageEncryptionIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), data.isInTests,
+                      fileData._2, domainId), fileData._3, ctx.onSuccessCalls)
                 },
                 (data: com.gitb.xml.export.DomainParameter, targetKey: String, item: ImportItem) => {
-                  conformanceManager.updateDomainParameterInternal(targetKey.toLong, data.getName, Option(data.getDescription), propertyTypeToKind(data.getType, isDomainParameter = true), manageEncryptionIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), data.isInTests)
+                  val domainId = item.parentItem.get.targetKey.get.toLong
+                  val fileData = parameterFileMetadata(ctx, data.getType, isDomainParameter = true, data.getValue)
+                  conformanceManager.updateDomainParameterInternal(domainId,
+                    targetKey.toLong, data.getName, Option(data.getDescription), fileData._1,
+                    manageEncryptionIfNeeded(ctx.importSettings, data.getType, Option(data.getValue)), data.isInTests,
+                    fileData._2, fileData._3, ctx.onSuccessCalls)
                 }
               )
             )
@@ -736,8 +747,9 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.DomainParameter, ctx,
-          (targetKey: String) => {
-            conformanceManager.deleteDomainParameter(targetKey.toLong)
+          (targetKey: String, item: ImportItem) => {
+            val domainId = item.parentItem.get.targetKey.get.toLong
+            conformanceManager.deleteDomainParameter(domainId, targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }
@@ -772,7 +784,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.Specification, ctx,
-          (targetKey: String) => {
+          (targetKey: String, item: ImportItem) => {
             conformanceManager.delete(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
@@ -827,8 +839,8 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.Actor, ctx,
-          (targetKey: String) => {
-            actorManager.deleteActor(targetKey.toLong)
+          (targetKey: String, item: ImportItem) => {
+            actorManager.deleteActor(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }
@@ -861,8 +873,8 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       - <- {
         processRemaining(ImportItemType.Endpoint, ctx,
-          (targetKey: String) => {
-            endpointManager.delete(targetKey.toLong)
+          (targetKey: String, item: ImportItem) => {
+            endpointManager.delete(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }
@@ -905,8 +917,8 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.EndpointParameter, ctx,
-          (targetKey: String) => {
-            parameterManager.delete(targetKey.toLong)
+          (targetKey: String, item: ImportItem) => {
+            parameterManager.delete(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }
@@ -935,7 +947,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.TestSuite, ctx,
-          (targetKey: String) => {
+          (targetKey: String, item: ImportItem) => {
             conformanceManager.undeployTestSuite(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
@@ -1041,50 +1053,45 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
         }
         // Organisation users
         if (!Configurations.AUTHENTICATION_SSO_ENABLED && ctx.importTargets.hasOrganisationUsers) {
-          exportManager.loadOrganisationUserMap(targetCommunityId.get).iterator.map { x =>
+          exportManager.loadOrganisationUserMap(targetCommunityId.get).foreach { x =>
             x._2.foreach { user =>
               ctx.existingIds.map(ImportItemType.OrganisationUser) +=  user.id.toString
             }
-            true
           }
         }
         // Organisation property values
         if (ctx.importTargets.hasOrganisationPropertyValues) {
-          exportManager.loadOrganisationParameterValueMap(targetCommunityId.get).iterator.map { x =>
+          exportManager.loadOrganisationParameterValueMap(targetCommunityId.get).foreach { x =>
             x._2.foreach { value =>
               ctx.existingIds.map(ImportItemType.OrganisationPropertyValue) += s"${value.organisation}_${value.parameter}"
             }
-            true
           }
         }
         // Systems
         if (ctx.importTargets.hasSystems) {
-          exportManager.loadOrganisationSystemMap(targetCommunityId.get).iterator.map { x =>
+          exportManager.loadOrganisationSystemMap(targetCommunityId.get).foreach { x =>
             x._2.foreach { system =>
               ctx.existingIds.map(ImportItemType.System) +=  system.id.toString
             }
-            true
           }
           // System property values
           if (ctx.importTargets.hasSystemPropertyValues) {
-            exportManager.loadSystemParameterValues(targetCommunityId.get).iterator.map { x =>
+            exportManager.loadSystemParameterValues(targetCommunityId.get).foreach { x =>
               x._2.foreach { value =>
                 ctx.existingIds.map(ImportItemType.SystemPropertyValue) +=  s"${value.system}_${value.parameter}"
               }
-              true
             }
           }
           // Statements
           if (ctx.importTargets.hasStatements && targetCommunity.isDefined) {
-            exportManager.loadSystemStatementsMap(targetCommunity.get.id, targetCommunity.get.domain).iterator.map { x =>
+            exportManager.loadSystemStatementsMap(targetCommunity.get.id, targetCommunity.get.domain).foreach { x =>
               x._2.foreach { statement =>
                 ctx.existingIds.map(ImportItemType.Statement) +=  s"${x._1}_${statement._2.id}" // [System ID]_[Actor ID]
               }
-              true
             }
             // Statement configurations
             if (ctx.importTargets.hasStatementConfigurations) {
-              exportManager.loadSystemConfigurationsMap(targetCommunity.get).iterator.map { x =>
+              exportManager.loadSystemConfigurationsMap(targetCommunity.get).foreach { x =>
                 ctx.existingIds.map(ImportItemType.StatementConfiguration) += x._1 // [Actor ID]_[Endpoint ID]_[System ID]_[Endpoint parameter ID]
               }
             }
@@ -1136,7 +1143,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                 data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
                 data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
                 data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates,
-                domainId
+                domainId, ctx.onSuccessCalls
               )
             },
             None,
@@ -1156,7 +1163,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
              being processed as the domain is processed separately.
              */
             val domainId = determineDomainIdForCommunityUpdate(exportedCommunity, targetCommunity, ctx)
-            communityManager.updateCommunityDomain(targetCommunity.get, domainId)
+            communityManager.updateCommunityDomain(targetCommunity.get, domainId, ctx.onSuccessCalls)
           })
         )
       }
@@ -1227,7 +1234,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.CustomLabel, ctx,
-          (targetKey: String) => {
+          (targetKey: String, item: ImportItem) => {
             val keyParts = StringUtils.split(targetKey, "_") // [community_id]_[label_type]
             communityManager.deleteCommunityLabel(keyParts(0).toLong, keyParts(1).toShort)
           }
@@ -1254,8 +1261,8 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.OrganisationProperty, ctx,
-          (targetKey: String) => {
-            communityManager.deleteOrganisationParameter(targetKey.toLong)
+          (targetKey: String, item: ImportItem) => {
+            communityManager.deleteOrganisationParameter(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }
@@ -1280,8 +1287,8 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.SystemProperty, ctx,
-          (targetKey: String) => {
-            communityManager.deleteSystemParameter(targetKey.toLong)
+          (targetKey: String, item: ImportItem) => {
+            communityManager.deleteSystemParameter(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }
@@ -1306,7 +1313,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.LandingPage, ctx,
-          (targetKey: String) => {
+          (targetKey: String, item: ImportItem) => {
             landingPageManager.deleteLandingPageInternal(targetKey.toLong)
           }
         )
@@ -1332,7 +1339,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.LegalNotice, ctx,
-          (targetKey: String) => {
+          (targetKey: String, item: ImportItem) => {
             legalNoticeManager.deleteLegalNoticeInternal(targetKey.toLong)
           }
         )
@@ -1358,7 +1365,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.ErrorTemplate, ctx,
-          (targetKey: String) => {
+          (targetKey: String, item: ImportItem) => {
             errorTemplateManager.deleteErrorTemplateInternal(targetKey.toLong)
           }
         )
@@ -1384,7 +1391,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.Trigger, ctx,
-          (targetKey: String) => {
+          (targetKey: String, item: ImportItem) => {
             triggerManager.deleteTriggerInternal(targetKey.toLong)
           }
         )
@@ -1424,7 +1431,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         if (!Configurations.AUTHENTICATION_SSO_ENABLED) {
           processRemaining(ImportItemType.Administrator, ctx,
-            (targetKey: String) => {
+            (targetKey: String, item: ImportItem) => {
               val userId = targetKey.toLong
               if (ownUserId.isDefined && ownUserId.get.longValue() != userId) {
                 // Avoid deleting self
@@ -1455,7 +1462,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                           getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
                           getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
                           template = data.isTemplate, Option(data.getTemplateName), item.parentItem.get.targetKey.get.toLong
-                        ), None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false
+                        ), None, None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false, ctx.onSuccessCalls
                       )
                     }
                   } yield orgInfo.organisationId
@@ -1469,7 +1476,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                       getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
                       getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
                       getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
-                      None, data.isTemplate, Option(data.getTemplateName), None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false
+                      None, data.isTemplate, Option(data.getTemplateName), None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false, ctx.onSuccessCalls
                     )
                   }
                 }
@@ -1481,12 +1488,12 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.Organisation, ctx,
-          (targetKey: String) => {
+          (targetKey: String, item: ImportItem) => {
             if (communityAdminOrganisationId.get.longValue() == targetKey.toLong.longValue()) {
               // Prevent deleting the community's admin organisation.
               DBIO.successful(())
             } else {
-              organisationManager.deleteOrganization(targetKey.toLong)
+              organisationManager.deleteOrganization(targetKey.toLong, ctx.onSuccessCalls)
             }
           }
         )
@@ -1528,7 +1535,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       _ <- {
         if (!Configurations.AUTHENTICATION_SSO_ENABLED) {
           processRemaining(ImportItemType.OrganisationUser, ctx,
-            (targetKey: String) => {
+            (targetKey: String, item: ImportItem) => {
               PersistenceSchema.users.filter(_.id === targetKey.toLong).delete
             }
           )
@@ -1552,7 +1559,11 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                         // The property this value related to has either been updated or inserted.
                         val key = s"${organisationId}_${relatedPropertyId.get}"
                         if (!hasExisting(ImportItemType.OrganisationPropertyValue, key, ctx)) {
-                          (PersistenceSchema.organisationParameterValues += models.OrganisationParameterValues(organisationId, relatedPropertyId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Option(data.getValue)).get)) andThen
+                          val fileData = parameterFileMetadata(ctx, data.getProperty.getType, isDomainParameter = false, data.getValue)
+                          if (fileData._3.isDefined) {
+                            ctx.onSuccessCalls += (() => repositoryUtils.setOrganisationPropertyFile(relatedPropertyId.get, organisationId, fileData._3.get))
+                          }
+                          (PersistenceSchema.organisationParameterValues += models.OrganisationParameterValues(organisationId, relatedPropertyId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Option(data.getValue)).get, fileData._2)) andThen
                             DBIO.successful(key)
                         } else {
                           DBIO.successful(())
@@ -1566,8 +1577,12 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                       val organisationId = keyParts(0).toLong
                       val propertyId = keyParts(1).toLong
                       if (getProcessedDbId(data.getProperty, ImportItemType.OrganisationProperty, ctx).isDefined) {
-                        val q = for { p <- PersistenceSchema.organisationParameterValues.filter(_.organisation === organisationId).filter(_.parameter === propertyId) } yield p.value
-                        q.update(manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Some(data.getValue)).get)
+                        val fileData = parameterFileMetadata(ctx, data.getProperty.getType, isDomainParameter = false, data.getValue)
+                        if (fileData._3.isDefined) {
+                          ctx.onSuccessCalls += (() => repositoryUtils.setOrganisationPropertyFile(propertyId, organisationId, fileData._3.get))
+                        }
+                        val q = for { p <- PersistenceSchema.organisationParameterValues.filter(_.organisation === organisationId).filter(_.parameter === propertyId) } yield (p.value, p.contentType)
+                        q.update(manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Some(data.getValue)).get, fileData._2)
                       } else {
                         DBIO.successful(())
                       }
@@ -1582,10 +1597,11 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.OrganisationPropertyValue, ctx,
-          (targetKey: String) => {
+          (targetKey: String, item: ImportItem) => {
             val keyParts = StringUtils.split(targetKey, "_") // target key: [organisation ID]_[property ID]
             val organisationId = keyParts(0).toLong
             val propertyId = keyParts(1).toLong
+            ctx.onSuccessCalls += (() => repositoryUtils.deleteOrganisationPropertyFile(propertyId, organisationId))
             PersistenceSchema.organisationParameterValues.filter(_.organisation === organisationId).filter(_.parameter === propertyId).delete
           }
         )
@@ -1608,7 +1624,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                         descriptionToSet = data.getDescription
                       }
                       systemManager.updateSystemProfileInternal(None, targetCommunityId, item.targetKey.get.toLong, Some(data.getShortName), Some(data.getFullName), Some(descriptionToSet), Some(data.getVersion),
-                        None, None, copySystemParameters = false, copyStatementParameters = false
+                        None, None, None, copySystemParameters = false, copyStatementParameters = false, ctx.onSuccessCalls
                       )
                     }
                   )
@@ -1621,8 +1637,8 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.System, ctx,
-          (targetKey: String) => {
-            systemManager.deleteSystem(targetKey.toLong)
+          (targetKey: String, item: ImportItem) => {
+            systemManager.deleteSystem(targetKey.toLong, ctx.onSuccessCalls)
           }
         )
       }
@@ -1641,10 +1657,14 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                           val relatedPropertyId = getProcessedDbId(data.getProperty, ImportItemType.SystemProperty, ctx)
                           if (relatedPropertyId.isDefined) {
                             val systemId = item.parentItem.get.targetKey.get.toLong
+                            // The property this value related to has either been updated or inserted.
                             val key = s"${systemId}_${relatedPropertyId.get}"
                             if (!hasExisting(ImportItemType.SystemPropertyValue, key, ctx)) {
-                              // The property this value related to has either been updated or inserted.
-                              (PersistenceSchema.systemParameterValues += models.SystemParameterValues(systemId, relatedPropertyId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Option(data.getValue)).get)) andThen
+                              val fileData = parameterFileMetadata(ctx, data.getProperty.getType, isDomainParameter = false, data.getValue)
+                              if (fileData._3.isDefined) {
+                                ctx.onSuccessCalls += (() => repositoryUtils.setSystemPropertyFile(relatedPropertyId.get, systemId, fileData._3.get))
+                              }
+                              (PersistenceSchema.systemParameterValues += models.SystemParameterValues(systemId, relatedPropertyId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Option(data.getValue)).get, fileData._2)) andThen
                                 DBIO.successful(key)
                             } else {
                               DBIO.successful(())
@@ -1658,8 +1678,12 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                           val systemId = keyParts(0).toLong
                           val propertyId = keyParts(1).toLong
                           if (getProcessedDbId(data.getProperty, ImportItemType.SystemProperty, ctx).isDefined) {
-                            val q = for { p <- PersistenceSchema.systemParameterValues.filter(_.system === systemId).filter(_.parameter === propertyId) } yield p.value
-                            q.update(manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Some(data.getValue)).get)
+                            val fileData = parameterFileMetadata(ctx, data.getProperty.getType, isDomainParameter = false, data.getValue)
+                            if (fileData._3.isDefined) {
+                              ctx.onSuccessCalls += (() => repositoryUtils.setSystemPropertyFile(propertyId, systemId, fileData._3.get))
+                            }
+                            val q = for { p <- PersistenceSchema.systemParameterValues.filter(_.system === systemId).filter(_.parameter === propertyId) } yield (p.value, p.contentType)
+                            q.update(manageEncryptionIfNeeded(ctx.importSettings, data.getProperty.getType, Some(data.getValue)).get, fileData._2)
                           } else {
                             DBIO.successful(())
                           }
@@ -1676,10 +1700,11 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.SystemPropertyValue, ctx,
-          (targetKey: String) => {
+          (targetKey: String, item: ImportItem) => {
             val keyParts = StringUtils.split(targetKey, "_") // target key: [system ID]_[property ID]
             val systemId = keyParts(0).toLong
             val propertyId = keyParts(1).toLong
+            ctx.onSuccessCalls += (() => repositoryUtils.deleteSystemPropertyFile(propertyId, systemId))
             PersistenceSchema.systemParameterValues.filter(_.system === systemId).filter(_.parameter === propertyId).delete
           }
         )
@@ -1730,12 +1755,12 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.Statement, ctx,
-          (targetKey: String) => {
+          (targetKey: String, item: ImportItem) => {
             // Key: [System ID]_[actor ID]
             val keyParts = StringUtils.split(targetKey, "_")
             val systemId = keyParts(0).toLong
             val actorId = keyParts(1).toLong
-            systemManager.deleteConformanceStatments(systemId, List(actorId))
+            systemManager.deleteConformanceStatements(systemId, List(actorId), ctx.onSuccessCalls)
           }
         )
       }
@@ -1764,8 +1789,9 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                                 val relatedSystemId = item.parentItem.get.parentItem.get.targetKey.get.toLong // Statement -> System
                                 val key = s"${relatedActorId}_${relatedEndpointId.get}_${relatedSystemId}_${relatedParameterId.get}"
                                 if (!hasExisting(ImportItemType.StatementConfiguration, key, ctx)) {
+                                  val fileData = parameterFileMetadata(ctx, data.getParameter.getType, isDomainParameter = false, data.getValue)
                                   systemManager.saveEndpointConfigurationInternal(forceAdd = true, forceUpdate = false,
-                                    models.Configs(relatedSystemId, relatedParameterId.get, relatedEndpointId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getParameter.getType, Option(data.getValue)).get)) andThen
+                                    models.Configs(relatedSystemId, relatedParameterId.get, relatedEndpointId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getParameter.getType, Option(data.getValue)).get, fileData._2), fileData._3, ctx.onSuccessCalls) andThen
                                     DBIO.successful(s"${relatedEndpointId.get}_${relatedSystemId}_${relatedParameterId.get}")
                                 } else {
                                   DBIO.successful(())
@@ -1783,9 +1809,10 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                                 relatedEndpointId = getProcessedDbId(data.getParameter.getEndpoint, ImportItemType.Endpoint, ctx)
                               }
                               if (relatedParameterId.isDefined && relatedEndpointId.isDefined) {
+                                val fileData = parameterFileMetadata(ctx, data.getParameter.getType, isDomainParameter = false, data.getValue)
                                 val relatedSystemId = item.parentItem.get.parentItem.get.targetKey.get.toLong // Statement -> System
                                 systemManager.saveEndpointConfigurationInternal(forceAdd = false, forceUpdate = true,
-                                  models.Configs(relatedSystemId, relatedParameterId.get, relatedEndpointId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getParameter.getType, Option(data.getValue)).get)) andThen
+                                  models.Configs(relatedSystemId, relatedParameterId.get, relatedEndpointId.get, manageEncryptionIfNeeded(ctx.importSettings, data.getParameter.getType, Option(data.getValue)).get, fileData._2), fileData._3, ctx.onSuccessCalls) andThen
                                 DBIO.successful(s"${relatedActorId}_${relatedEndpointId.get}_${relatedSystemId}_${relatedParameterId.get}")
                               } else {
                                 DBIO.successful(())
@@ -1805,13 +1832,13 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
       }
       _ <- {
         processRemaining(ImportItemType.StatementConfiguration, ctx,
-          (targetKey: String) => {
+          (targetKey: String, item: ImportItem) => {
             // Key: [Actor ID]_[Endpoint ID]_[System ID]_[Endpoint parameter ID]
             val keyParts = StringUtils.split(targetKey, "_")
             val endpointId = keyParts(1).toLong
             val systemId = keyParts(2).toLong
             val parameterId = keyParts(3).toLong
-            systemManager.deleteEndpointConfigurationInternal(systemId, parameterId, endpointId)
+            systemManager.deleteEndpointConfigurationInternal(systemId, parameterId, endpointId, ctx.onSuccessCalls)
           }
         )
       }
@@ -1825,9 +1852,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
     logger.info("Processing data archive ["+archive.getName+"]")
     val importSettings = new ImportSettings()
     importSettings.encryptionKey = Some(archiveKey)
-    var archiveData = FileUtils.readFileToByteArray(archive)
-    val preparationResult = importPreviewManager.prepareImportPreview(archiveData, importSettings, requireDomain = false, requireCommunity = false)
-    archiveData = null // GC
+    val preparationResult = importPreviewManager.prepareImportPreview(archive, importSettings, requireDomain = false, requireCommunity = false)
     try {
       if (preparationResult._1.isDefined) {
         errorMessage = Some(preparationResult._1.get._2)
@@ -1889,6 +1914,26 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
         }
       }
     }
+  }
+
+  private def dataUrlToTempFile(dataUrl: String): File = {
+    Files.write(Files.createTempFile("itb", null), Base64.decodeBase64(MimeUtil.getBase64FromDataURL(dataUrl))).toFile
+  }
+
+  private def parameterFileMetadata(ctx: ImportContext, parameterType: PropertyType, isDomainParameter: Boolean, parameterValue: String): (String, Option[String], Option[File]) = {
+    val kind = propertyTypeToKind(parameterType, isDomainParameter)
+    var fileToStore: Option[File] = None
+    var contentType: Option[String] = None
+    if (kind == "BINARY") {
+      contentType = Some(MimeUtil.getMimeTypeFromDataURL(parameterValue))
+      fileToStore = Some(dataUrlToTempFile(parameterValue))
+      ctx.onFailureCalls += (() => if (fileToStore.get.exists()) { FileUtils.deleteQuietly(fileToStore.get) })
+      if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
+        val virusScanner = new ClamAVClient(Configurations.ANTIVIRUS_SERVER_HOST, Configurations.ANTIVIRUS_SERVER_PORT, Configurations.ANTIVIRUS_SERVER_TIMEOUT)
+        require(ClamAVClient.isCleanReply(virusScanner.scan(fileToStore.get)), "A virus was found in one of the imported files")
+      }
+    }
+    (kind, contentType, fileToStore)
   }
 
 }

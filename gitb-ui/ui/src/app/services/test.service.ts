@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { ROUTES } from '../common/global';
 import { Actor } from '../types/actor';
 import { ConfigureResponse } from '../types/configure-response';
+import { FileParam } from '../types/file-param.type';
 import { TestCaseDefinition } from '../types/test-case-definition';
 import { UserInteractionInput } from '../types/user-interaction-input';
 import { RestService } from './rest.service';
@@ -130,6 +131,7 @@ export class TestService {
 
   provideInput(session: string, step: string, inputs: UserInteractionInput[]) {
     const inputsToSend: any[] = []
+    let files: FileParam[] = []
     for (let input of inputs) {
       const inputToSend: any = {
         id: input.id,
@@ -137,8 +139,8 @@ export class TestService {
         type: input.type,
         embeddingMethod: input.embeddingMethod
       }
-      if (inputToSend.embeddingMethod == 'BASE64') {
-        inputToSend.valueBinary = input.value
+      if (input.file) {
+        files.push({param: 'file_'+input.id, data: input.file})
       } else {
         inputToSend.value = input.value
       }
@@ -150,6 +152,7 @@ export class TestService {
             teststep: step,
             inputs: JSON.stringify(inputsToSend)
         },
+        files: files,
         authenticate: true
     })
   }

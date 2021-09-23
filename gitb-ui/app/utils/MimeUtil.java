@@ -4,13 +4,32 @@ import config.Configurations;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
+import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.jasypt.util.text.BasicTextEncryptor;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+
 public class MimeUtil {
 
     private final static Tika tika = new Tika();
+
+    public static String getFileAsDataURL(File file, String mimeType) {
+        if (mimeType == null) {
+            mimeType = "application/octet-stream";
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append("data:").append(mimeType).append(";base64,");
+        try {
+            builder.append(Base64.encodeBase64String(Files.readAllBytes(file.toPath())));
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to convert file to Base64 string", e);
+        }
+        return builder.toString();
+    }
 
     public static String getBase64FromDataURL(String dataURL) {
         String result = null;
