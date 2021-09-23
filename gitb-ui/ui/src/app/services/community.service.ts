@@ -17,6 +17,7 @@ import { ImportItem } from '../types/import-item';
 import { ErrorDescription } from '../types/error-description';
 import { ActualUserInfo } from '../types/actual-user-info';
 import { CustomProperty } from '../types/custom-property.type';
+import { FileParam } from '../types/file-param.type';
 
 @Injectable({
   providedIn: 'root'
@@ -61,8 +62,11 @@ export class CommunityService {
       user_name: userName,
       user_email: userEmail,
       password: userPassword,
-      properties: this.dataService.customPropertiesForPost(organisationProperties).parameterJson
     }
+    let files: FileParam[]|undefined
+    const props = this.dataService.customPropertiesForPost(organisationProperties)
+    data.properties = props.parameterJson
+    files = props.files
     if (token != undefined) {
       data.community_selfreg_token = token
     }
@@ -71,6 +75,7 @@ export class CommunityService {
     }
     return this.restService.post<ErrorDescription|{id: number}|ActualUserInfo>({
       path: ROUTES.controllers.CommunityService.selfRegister().url,
+      files: files,
       data: data
     })
   }

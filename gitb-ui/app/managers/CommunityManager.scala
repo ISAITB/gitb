@@ -340,7 +340,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
     }
   }
 
-  def updateOrganisationParameterInternal(parameter: OrganisationParameters): DBIO[_] = {
+  def updateOrganisationParameterInternal(parameter: OrganisationParameters, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
       existingParameter <- PersistenceSchema.organisationParameters.filter(_.id === parameter.id).map(x => (x.community, x.testKey, x.kind)).result.head
       _ <- {
@@ -355,6 +355,15 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
         }
       }
       _ <- {
+        if (existingParameter._3 != parameter.kind) {
+          // Remove previous values.
+          onSuccessCalls += (() => repositoryUtils.deleteOrganisationPropertiesFolder(parameter.id))
+          PersistenceSchema.organisationParameterValues.filter(_.parameter === parameter.id).delete
+        } else {
+          DBIO.successful(())
+        }
+      }
+      _ <- {
         // Don't update display order here.
         val q = for {p <- PersistenceSchema.organisationParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.inSelfRegistration, p.hidden, p.allowedValues, p.dependsOn, p.dependsOnValue)
         q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.inSelfRegistration, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue)
@@ -363,7 +372,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
   }
 
   def updateOrganisationParameter(parameter: OrganisationParameters) = {
-    exec(updateOrganisationParameterInternal(parameter).transactionally)
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, updateOrganisationParameterInternal(parameter, onSuccessCalls)).transactionally)
   }
 
   def deleteOrganisationParameterWrapper(parameterId: Long) = {
@@ -424,7 +434,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
     exec(createSystemParameterInternal(parameter).transactionally)
   }
 
-  def updateSystemParameterInternal(parameter: SystemParameters): DBIO[_] = {
+  def updateSystemParameterInternal(parameter: SystemParameters, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
       existingParameter <- PersistenceSchema.systemParameters.filter(_.id === parameter.id).map(x => (x.community, x.testKey, x.kind)).result.head
       _ <- {
@@ -439,6 +449,15 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
         }
       }
       _ <- {
+        if (existingParameter._3 != parameter.kind) {
+          // Remove previous values.
+          onSuccessCalls += (() => repositoryUtils.deleteSystemPropertiesFolder(parameter.id))
+          PersistenceSchema.systemParameterValues.filter(_.parameter === parameter.id).delete
+        } else {
+          DBIO.successful(())
+        }
+      }
+      _ <- {
         // Don't update display order here.
         val q = for {p <- PersistenceSchema.systemParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.hidden, p.allowedValues, p.dependsOn, p.dependsOnValue)
         q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue)
@@ -447,7 +466,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
   }
 
   def updateSystemParameter(parameter: SystemParameters) = {
-    exec(updateSystemParameterInternal(parameter).transactionally)
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, updateSystemParameterInternal(parameter, onSuccessCalls)).transactionally)
   }
 
   def deleteSystemParameterWrapper(parameterId: Long) = {

@@ -19,6 +19,7 @@ export class CustomPropertyFormComponent implements OnInit {
   @Input() tbColOffset = 1
   @Input() tbColInputLess = 0
   @Input() tbReadonly = false
+  @Input() tbForceEditable = false
   @Input() tbFormPadded = true
   @Input() tbShowFormHeader = true
   @Input() tbShowRequiredAsterisks = true
@@ -46,7 +47,15 @@ export class CustomPropertyFormComponent implements OnInit {
     } else {
       this.isAdmin = this.tbAdmin
     }
-    this.isReadonly = this.tbReadonly || this.dataService.isVendorUser || !this.isAdmin
+    if (this.tbForceEditable) {
+      this.isReadonly = false
+    } else {
+      if (this.isAdmin) {
+        this.isReadonly = this.tbReadonly
+      } else {
+        this.isReadonly = this.tbReadonly || this.dataService.isVendorUser
+      }
+    }
     if (this.tbFormPadded) {
       this.innerDivStyle = 'col-xs-'+(11-this.tbColOffset)+' col-xs-offset-'+this.tbColOffset
     }

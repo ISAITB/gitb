@@ -576,7 +576,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		}
 	}
 
-	private def stepSaveActors(testSuiteActors: Option[List[Actor]], domainId: Long, specificationActors: List[Actors], suite: TestSuites, updateMetadata: Boolean): DBIO[(util.Map[String, Long], List[TestSuiteUploadItemResult])] = {
+	private def stepSaveActors(testSuiteActors: Option[List[Actor]], domainId: Long, specificationActors: List[Actors], suite: TestSuites, updateMetadata: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[(util.Map[String, Long], List[TestSuiteUploadItemResult])] = {
 		// Get the (new, existing or referenced) actor IDs resulting from the import.
 		var finalAction: DBIO[List[TestSuiteUploadItemResult]] = DBIO.successful(List[TestSuiteUploadItemResult]())
 		val actions = new ListBuffer[DBIO[List[TestSuiteUploadItemResult]]]()
@@ -614,7 +614,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 				savedActorIds.put(savedActorStringId, id)
 				for {
 					existingEndpoints <- PersistenceSchema.endpoints.filter(_.actor === id).result.map(_.toList)
-					endpointResults <- stepSaveEndpoints(id, testSuiteActor, actorToSave, existingEndpoints, suite, updateMetadata)
+					endpointResults <- stepSaveEndpoints(id, testSuiteActor, actorToSave, existingEndpoints, suite, updateMetadata, onSuccessCalls)
 				} yield endpointResults
 			})
 			actions += mergeActionsWithResults(combinedAction, DBIO.successful(result.toList))
@@ -632,7 +632,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		})
 	}
 
-	private def stepSaveEndpoints(savedActorId: Long, testSuiteActor: Actor, actorToSave: Actors, existingEndpoints: List[Endpoints], suite: TestSuites, updateMetadata: Boolean): DBIO[List[TestSuiteUploadItemResult]] = {
+	private def stepSaveEndpoints(savedActorId: Long, testSuiteActor: Actor, actorToSave: Actors, existingEndpoints: List[Endpoints], suite: TestSuites, updateMetadata: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[List[TestSuiteUploadItemResult]] = {
 		val actions = new ListBuffer[DBIO[List[TestSuiteUploadItemResult]]]()
 		val existingEndpointMap = new util.HashMap[String, Endpoints]()
 		for (existingEndpoint <- existingEndpoints) {
@@ -665,7 +665,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 				val combinedAction = (updateAction.getOrElse(DBIO.successful(())) andThen endpointId).flatMap(id => {
 					for {
 						existingEndpointParameters <- PersistenceSchema.parameters.filter(_.endpoint === id.longValue()).result.map(_.toList)
-						parameterResults <- stepSaveParameters(id, endpoint, actorToSave, existingEndpointParameters, suite, updateMetadata)
+						parameterResults <- stepSaveParameters(id, endpoint, actorToSave, existingEndpointParameters, suite, updateMetadata, onSuccessCalls)
 					} yield parameterResults
 				})
 				actions += mergeActionsWithResults(combinedAction, DBIO.successful(result.toList))
@@ -678,7 +678,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		}
 	}
 
-	private def stepSaveParameters(endpointId: Long, endpoint: Endpoint, actorToSave: Actors, existingEndpointParameters: List[models.Parameters], suite: TestSuites, updateMetadata: Boolean): DBIO[List[TestSuiteUploadItemResult]] = {
+	private def stepSaveParameters(endpointId: Long, endpoint: Endpoint, actorToSave: Actors, existingEndpointParameters: List[models.Parameters], suite: TestSuites, updateMetadata: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[List[TestSuiteUploadItemResult]] = {
 		val actions = new ListBuffer[DBIO[_]]()
 		val result = new ListBuffer[TestSuiteUploadItemResult]()
 		val existingParameterMap = new util.HashMap[String, models.Parameters]()
@@ -698,7 +698,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 					if (!updateMetadata || theSameParameter(parameter, existingParameter)) {
 						result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.name, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED, suite.specification)
 					} else {
-						action = Some(parameterManager.updateParameter(parameterId, parameter.name, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue))
+						action = Some(parameterManager.updateParameter(parameterId, parameter.name, parameter.desc, parameter.use, parameter.kind, parameter.adminOnly, parameter.notForTests, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue, onSuccessCalls))
 						result += new TestSuiteUploadItemResult(actorToSave.actorId+"["+endpoint.name+"]."+parameter.name, TestSuiteUploadItemResult.ITEM_TYPE_PARAMETER, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE, suite.specification)
 					}
 				} else {
@@ -972,7 +972,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
   				.map(_.toList)
 			}
 			// Process the actors (inserting and saving them as needed) and return their ID information for further processing.
-			saveActorsStep <- stepSaveActors(testSuiteActors, spec.domain, specificationActors, suite, updateMetadata)
+			saveActorsStep <- stepSaveActors(testSuiteActors, spec.domain, specificationActors, suite, updateMetadata, onSuccessCalls)
 			// Lookup the existing test cases for the test suite (if it already exists).
 			existingTestCasesForTestSuite <- {
 				if (existingSuite != null) {

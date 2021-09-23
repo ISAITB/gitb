@@ -65,7 +65,9 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
   }
 
   def updateParameterWrapper(parameterId: Long, name: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean, hidden: Boolean, allowedValues: Option[String], dependsOn: Option[String], dependsOnValue: Option[String]): Unit = {
-    exec(updateParameter(parameterId, name, description, use, kind, adminOnly, notForTests, hidden, allowedValues, dependsOn, dependsOnValue).transactionally)
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = updateParameter(parameterId, name, description, use, kind, adminOnly, notForTests, hidden, allowedValues, dependsOn, dependsOnValue, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
   def getParameterById(parameterId: Long) = {
@@ -82,7 +84,7 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
     }
   }
 
-  def updateParameter(parameterId: Long, name: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean, hidden: Boolean, allowedValues: Option[String], dependsOn: Option[String], dependsOnValue: Option[String]): DBIO[_] = {
+  def updateParameter(parameterId: Long, name: String, description: Option[String], use: String, kind: String, adminOnly: Boolean, notForTests: Boolean, hidden: Boolean, allowedValues: Option[String], dependsOn: Option[String], dependsOnValue: Option[String], onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
       existingParameter <- PersistenceSchema.parameters.filter(_.id === parameterId).map(x => (x.endpoint, x.name, x.kind)).result.head
       _ <- {
@@ -92,6 +94,15 @@ class ParameterManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigProv
         } else if (existingParameter._3.equals("SIMPLE") && !existingParameter._3.equals(kind)) {
           // Remove the dependsOn of other properties.
           setParameterPrerequisitesForKey(existingParameter._1, existingParameter._2, None)
+        } else {
+          DBIO.successful(())
+        }
+      }
+      _ <- {
+        if (existingParameter._3 != kind) {
+          // Remove previous values.
+          onSuccessCalls += (() => repositoryUtils.deleteStatementParametersFolder(parameterId))
+          PersistenceSchema.configs.filter(_.parameter === parameterId).delete
         } else {
           DBIO.successful(())
         }
