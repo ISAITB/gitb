@@ -64,6 +64,7 @@
                     <executions>
                         <execution>
                             <phase>none</phase>
+                            <!-- Run manually with mvn dependency-check:aggregate -->
                         </execution>
                     </executions>
                 </plugin>
