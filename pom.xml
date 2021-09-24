@@ -19,6 +19,8 @@
         <maven.compiler.source>11</maven.compiler.source>
         <maven.compiler.target>11</maven.compiler.target>
         <version.springBoot>2.5.4</version.springBoot>
+        <version.jasperReports>6.16.0</version.jasperReports>
+        <version.bouncycastle>1.69</version.bouncycastle>
         <version.helgerSchematron>6.0.3</version.helgerSchematron>
     </properties>
 
@@ -52,6 +54,20 @@
         <pluginManagement>
             <plugins>
                 <plugin>
+                    <groupId>org.owasp</groupId>
+                    <artifactId>dependency-check-maven</artifactId>
+                    <version>6.3.1</version>
+                    <configuration>
+                        <failBuildOnCVSS>0</failBuildOnCVSS>
+                        <suppressionFile>etc/owasp-suppressions.xml</suppressionFile>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <phase>none</phase>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-deploy-plugin</artifactId>
                     <version>3.0.0-M1</version>
@@ -64,7 +80,7 @@
                         <dependency>
                             <groupId>net.sf.jasperreports</groupId>
                             <artifactId>jasperreports-fonts</artifactId>
-                            <version>6.16.0</version>
+                            <version>${version.jasperReports}</version>
                             <exclusions>
                                 <exclusion>
                                     <groupId>com.lowagie</groupId>
@@ -75,7 +91,7 @@
                         <dependency>
                             <groupId>net.sf.jasperreports</groupId>
                             <artifactId>jasperreports</artifactId>
-                            <version>6.16.0</version>
+                            <version>${version.jasperReports}</version>
                             <exclusions>
                                 <exclusion>
                                     <groupId>com.lowagie</groupId>
@@ -96,6 +112,10 @@
                     <release>11</release>
                     <forceJavacCompilerUse>true</forceJavacCompilerUse>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
             </plugin>
         </plugins>
     </build>
@@ -357,11 +377,6 @@
             </dependency>
             <!-- TODO decouple AS2 - END -->
             <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty</artifactId>
-                <version>3.10.6.Final</version>
-            </dependency> <!-- TODO CHECK THIS -->
-            <dependency>
                 <groupId>dnsjava</groupId>
                 <artifactId>dnsjava</artifactId>
                 <version>3.4.1</version>
@@ -377,14 +392,29 @@
                 <version>4.4</version>
             </dependency>
             <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk15on</artifactId>
+                <version>${version.bouncycastle}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcmail-jdk15on</artifactId>
+                <version>${version.bouncycastle}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk15on</artifactId>
+                <version>${version.bouncycastle}</version>
+            </dependency>
+            <dependency>
                 <groupId>net.sf.jasperreports</groupId>
                 <artifactId>jasperreports</artifactId>
-                <version>6.16.0</version>
+                <version>${version.jasperReports}</version>
             </dependency>
             <dependency>
                 <groupId>net.sf.jasperreports</groupId>
                 <artifactId>jasperreports-fonts</artifactId>
-                <version>6.16.0</version>
+                <version>${version.jasperReports}</version>
             </dependency>
             <dependency>
                 <groupId>javax.servlet</groupId>
