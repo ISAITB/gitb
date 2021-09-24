@@ -3,11 +3,14 @@ version := "1.0-SNAPSHOT"
 maintainer := "DIGIT-ITB@ec.europa.eu"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
+  .settings(dependencyCheckFailBuildOnCVSS := 0)
+  .settings(dependencyCheckSuppressionFile := Some(file("project/owasp-suppressions.xml")))
 
 scalaVersion := "2.13.6"
 val akkaVersion = "2.6.16"
 val jacksonVersion = "2.12.5"
 val cxfVersion = "3.4.4"
+val jettyVersion = "9.4.43.v20210629"
 
 useCoursier := false
 
@@ -33,7 +36,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-json" % "2.9.2",
   "org.pac4j" %% "play-pac4j" % "10.0.2",
   "org.pac4j" % "pac4j-cas" % "4.3.1",
-  "ch.qos.logback" % "logback-classic" % "1.2.5",
+  "ch.qos.logback" % "logback-classic" % "1.2.6",
   "org.apache.commons" % "commons-lang3" % "3.12.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
@@ -41,10 +44,20 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonVersion,
   "com.fasterxml.jackson.module" % "jackson-module-jaxb-annotations" % jacksonVersion,
   "org.mindrot"  % "jbcrypt" % "0.4",  // For password encryption
-  "net.debasishg" %% "redisclient" % "3.40", // although this is the best one, maybe it could be changed into play-redis-plugin when sedis compiled for scala 2.11
-  "org.apache.cxf" % "cxf-rt-frontend-jaxws" % cxfVersion,     //for calling jax-ws services
-  "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion, //for calling jax-ws services
-  "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion, //exporting jax-ws services
+  "net.debasishg" %% "redisclient" % "3.40",
+  // For calling and exporting JAX-WS services.
+  "org.apache.cxf" % "cxf-rt-frontend-jaxws" % cxfVersion,
+  "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
+  "org.apache.cxf" % "cxf-rt-transports-http-jetty" % cxfVersion,
+  // ---
+  // Jetty dependencies set explicitly to address CVEs. If CXF transitive dependencies increase the version to at least 9.4.43 these can be removed.
+  "org.eclipse.jetty" % "jetty-continuation" % jettyVersion,
+  "org.eclipse.jetty" % "jetty-http" % jettyVersion,
+  "org.eclipse.jetty" % "jetty-io" % jettyVersion,
+  "org.eclipse.jetty" % "jetty-security" % jettyVersion,
+  "org.eclipse.jetty" % "jetty-server" % jettyVersion,
+  "org.eclipse.jetty" % "jetty-util" % jettyVersion,
+  // ---
   "org.apache.tika" % "tika-core" % "2.1.0",
   "org.webjars" %% "webjars-play" % "2.8.8",
   "org.webjars" % "jquery" % "3.5.1",
