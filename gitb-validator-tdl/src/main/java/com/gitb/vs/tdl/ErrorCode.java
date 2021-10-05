@@ -23,7 +23,7 @@ public enum ErrorCode {
     TEST_SUITE_DEFINES_ACTOR_MULTIPLE_TIMES(            "TDL-014", "The test suite defines actor [%s] multiple times.", ERROR),
     ACTOR_NOT_REFERENCED_IN_TEST_CASES(                 "TDL-015", "Actor [%s] is not referenced in any test cases.", WARNING),
     INVALID_EXTERNAL_ACTOR_REFERENCE(                   "TDL-016", "Test suite references an external actor [%s] that is not defined.", ERROR),
-    INVALID_EXTERNAL_PARAMETER_REFERENCE(               "TDL-017", "%s [%s] references a domain parameter [%s] in step [%s] that is not defined.", WARNING, true),
+    INVALID_EXTERNAL_PARAMETER_REFERENCE(               "TDL-017", "References are made to non-existent domain parameters %s. Ensure these are valid and will be defined at runtime.", WARNING),
     TEST_CASE_NOT_REFERENCED(                           "TDL-018", "Test case [%s] is not referenced in the test suite.", WARNING),
     DEFAULT_ACTOR_NOT_REFERENCED_IN_TEST_CASES_AS_SUT(  "TDL-019", "The default actor for the specification [%s] is not referenced as a SUT in any test cases.", WARNING),
     INVALID_TEST_CASE_IMPORT(                           "TDL-020", "%s [%s] defines an import [%s] that doesn't exist within the test suite.", ERROR, true),
