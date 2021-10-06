@@ -95,6 +95,9 @@ export class BaseRestService {
       } else if (config.arrayBuffer !== undefined && config.arrayBuffer) {
         configToUse.responseType = 'arraybuffer'
       }
+      if (config.httpResponse) {
+        configToUse.observe = 'response'
+      }
     }
     return configToUse
   }

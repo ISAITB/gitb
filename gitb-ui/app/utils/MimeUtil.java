@@ -4,7 +4,6 @@ import config.Configurations;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
-import org.apache.tika.mime.MediaType;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.jasypt.util.text.BasicTextEncryptor;
@@ -12,6 +11,7 @@ import org.jasypt.util.text.BasicTextEncryptor;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class MimeUtil {
 
@@ -45,6 +45,14 @@ public class MimeUtil {
 
     public static String getMimeType(byte[] bytes) {
         return tika.detect(bytes);
+    }
+
+    public static String getMimeType(Path path) {
+        try {
+            return tika.detect(path);
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to read file", e);
+        }
     }
 
     public static boolean isDataURL(String value) {

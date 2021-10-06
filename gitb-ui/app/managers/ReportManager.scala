@@ -1,7 +1,7 @@
 package managers
 
 import actors.events.{ConformanceStatementSucceededEvent, TestSessionFailedEvent, TestSessionSucceededEvent}
-import com.gitb.core.StepStatus
+import com.gitb.core.{AnyContent, StepStatus, ValueEmbeddingEnumeration}
 import com.gitb.reports.ReportGenerator
 import com.gitb.reports.dto.{ConformanceStatementOverview, TestCaseOverview}
 import com.gitb.tbs.{ObjectFactory, TestStepStatus}
@@ -24,11 +24,12 @@ import java.io.{File, FileOutputStream, StringReader}
 import java.nio.file.{Files, Path, Paths, StandardOpenOption}
 import java.text.SimpleDateFormat
 import java.util
-import java.util.Date
+import java.util.{Date, UUID}
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.Using
 
 /**
   * Created by senan on 03.12.2014.
@@ -321,12 +322,37 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   }
 
   def getPathForTestSessionWrapper(sessionId: String, isExpected: Boolean): SessionFolderInfo = {
-    getPathForTestSession(sessionId, isExpected)
+    repositoryUtils.getPathForTestSession(sessionId, isExpected)
   }
 
-  def getPathForTestSession(sessionId: String, isExpected: Boolean): SessionFolderInfo = {
-    val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption)
-    repositoryUtils.getPathForTestSessionObj(sessionId, testResult, isExpected)
+  private def writeValueToFile(item: AnyContent, sessionFolder: Path, writeFn: Path => Unit) = {
+    val dataFolder = repositoryUtils.getPathForTestSessionData(sessionFolder)
+    Files.createDirectories(dataFolder)
+    val fileUuid = UUID.randomUUID().toString
+    val dataFile = Path.of(dataFolder.toString, fileUuid)
+    writeFn.apply(dataFile)
+    item.setValue(s"___[[$fileUuid]]___")
+  }
+
+  private def decoupleLargeData(item: AnyContent, sessionFolder: Path): Unit = {
+    if (item != null) {
+      // We check first the length of the string as for large content this will already be over the threshold.
+      if (item.getValue != null && (item.getValue.length > Configurations.TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD || item.getValue.getBytes.length > Configurations.TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD)) {
+        if (item.getEmbeddingMethod == ValueEmbeddingEnumeration.BASE_64) {
+          if (MimeUtil.isDataURL(item.getValue)) {
+            writeValueToFile(item, sessionFolder, file => { Files.write(file, Base64.decodeBase64(MimeUtil.getBase64FromDataURL(item.getValue))) })
+          } else {
+            writeValueToFile(item, sessionFolder, file => { Files.write(file, Base64.decodeBase64(item.getValue)) })
+          }
+        } else {
+          writeValueToFile(item, sessionFolder, file => { Files.writeString(file, item.getValue) })
+        }
+      }
+      // Check children.
+      item.getItem.forEach { child =>
+        decoupleLargeData(child, sessionFolder)
+      }
+    }
   }
 
   def createTestStepReport(sessionId: String, step: TestStepStatus): Option[String] = {
@@ -339,25 +365,30 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
       if (existingTestStepReport.isEmpty) {
         step.getReport.setId(step.getStepId)
 
-        val sessionFolder = getPathForTestSession(sessionId, isExpected = false).path.toFile
-        sessionFolder.mkdirs()
+        val sessionFolder = repositoryUtils.getPathForTestSession(sessionId, isExpected = false).path
+        Files.createDirectories(sessionFolder)
 
         val testStepReportPath = step.getStepId + ".xml"
         savedPath = Some(testStepReportPath)
 
         // Write the report into a file
         if (step.getReport != null) {
-          val file = new File(sessionFolder, testStepReportPath)
+          step.getReport match {
+            case tar: TAR =>
+              decoupleLargeData(tar.getContext, sessionFolder)
+            case _ =>
+          }
+          val file = new File(sessionFolder.toFile, testStepReportPath)
           file.createNewFile()
-          val stream = new FileOutputStream(file)
-          stream.write(XMLUtils.marshalToString(new ObjectFactory().createUpdateStatusRequest(step)).getBytes)
-          stream.close()
+          Using(new FileOutputStream(file)) { stream =>
+            stream.write(XMLUtils.marshalToString(new ObjectFactory().createUpdateStatusRequest(step)).getBytes)
+          }
         }
         // Save the path of the report file to the DB
         val result = TestStepResult(sessionId, step.getStepId, step.getStatus.ordinal().toShort, testStepReportPath)
         exec((PersistenceSchema.testStepReports += result).transactionally)
         // Flush the current log messages
-        flushSessionLogs(sessionId, Some(sessionFolder))
+        flushSessionLogs(sessionId, Some(sessionFolder.toFile))
       }
     }
     savedPath
@@ -366,7 +397,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
   private def flushSessionLogs(sessionId: String, sessionFolder: Option[File]): Unit = {
     val messages = testResultManager.consumeSessionLogs(sessionId)
     if (messages.nonEmpty) {
-      val logFilePath = new File(sessionFolder.getOrElse(getPathForTestSession(sessionId, isExpected = false).path.toFile), "log.txt")
+      val logFilePath = new File(sessionFolder.getOrElse(repositoryUtils.getPathForTestSession(sessionId, isExpected = false).path.toFile), "log.txt")
       logFilePath.getParentFile.mkdirs()
       logFilePath.createNewFile()
       import scala.jdk.CollectionConverters._
@@ -425,7 +456,7 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     val fis = Files.newInputStream(xmlFile)
     val fos = Files.newOutputStream(pdfReport)
     try {
-      generator.writeTestStepStatusReport(fis, "Test step report", fos, true)
+      generator.writeTestStepStatusReport(fis, "Test step report", fos, false)
       fos.flush()
     } catch {
       case e: Exception =>

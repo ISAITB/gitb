@@ -60,7 +60,7 @@
 			<artifactId>peppol-sbdh</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.helger</groupId>
+			<groupId>com.helger.commons</groupId>
 			<artifactId>ph-datetime</artifactId>
 		</dependency>
 		<dependency>
@@ -72,8 +72,12 @@
 			<artifactId>ph-ubl21</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.helger</groupId>
+			<groupId>com.helger.commons</groupId>
 			<artifactId>ph-commons</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.helger.commons</groupId>
+			<artifactId>ph-jaxb</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.kohsuke.metainf-services</groupId>
@@ -99,10 +103,6 @@
 		<dependency>
 			<groupId>org.apache.httpcomponents</groupId>
 			<artifactId>httpmime</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.helger</groupId>
-			<artifactId>ph-jaxb</artifactId>
 		</dependency>
 	</dependencies>
 

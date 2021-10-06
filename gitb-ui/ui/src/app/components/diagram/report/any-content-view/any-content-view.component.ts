@@ -2,6 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
+import { ReportService } from 'src/app/services/report.service';
 import { TestService } from 'src/app/services/test.service';
 import { AnyContent } from '../../any-content';
 import { ReportSupport } from '../report-support';
@@ -16,50 +17,67 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
 
   @Input() context!: AnyContent
   @Input() fileNameDownload?: string
-  @Input() outputContentType?: string
   @Input() report?: StepReport
+  @Input() sessionId!: string
 
   value?: string
-  isValueTooLong = false
+  showValueInline = true
+  downloadPending = false
+  openPending = false
 
   constructor(
     private testService: TestService,
+    reportService: ReportService,
     private dataService: DataService,
     modalService: BsModalService,
     private confirmationDialogService: ConfirmationDialogService
-  ) { super(modalService) }
+  ) { super(modalService, reportService) }
 
   ngOnInit(): void {
     this.value = this.context.valueToUse
     if (this.value != undefined) {
-      this.isValueTooLong = this.value?.length! > 100
+      this.showValueInline = this.value.length <= 100 && this.context.embeddingMethod != 'BASE64' && !this.isFileReference(this.context)
     }
   }
 
   open(lineNumber?: number) {
     try {
-      let valueToShow
-      if (this.context.embeddingMethod == 'BASE64') {
-        if (this.dataService.isDataURL(this.value!)) {
-          valueToShow = atob(this.dataService.base64FromDataURL(this.value!))
-        } else {
-          valueToShow = atob(this.value!)
-        }
+      if (this.isFileReference(this.context)) {
+        this.openPending = true
+        this.downloadFileReference(this.sessionId, this.context)
+        .subscribe((data) => {
+          this.openEditor(new TextDecoder("utf-8").decode(data.data), lineNumber)
+        }).add(() => {
+          this.openPending = false
+        })
       } else {
-        valueToShow = this.value!
+        let valueToShow
+        if (this.context.embeddingMethod == 'BASE64') {
+          if (this.dataService.isDataURL(this.value!)) {
+            valueToShow = atob(this.dataService.base64FromDataURL(this.value!))
+          } else {
+            valueToShow = atob(this.value!)
+          }
+        } else {
+          valueToShow = this.value!
+        }
+        this.openEditor(valueToShow, lineNumber)
       }
-      this.openEditorWindow(
-        this.context.name,
-        valueToShow,
-        this.report?.reports?.assertionReports,
-        lineNumber, 
-        this.context.mimeType)
     } catch (e) {
       this.confirmationDialogService.confirmed('Unable to open editor', 'It is not possible to display this content as text in an editor, only download it as a file.', 'Download', 'Cancel')
       .subscribe(() => {
         this.download()
       })
     }
+  }
+
+  private openEditor(valueToShow: string, lineNumber?: number) {
+    this.openEditorWindow(
+      this.context.name,
+      valueToShow,
+      this.report?.reports?.assertionReports,
+      lineNumber, 
+      this.context.mimeType)
   }
 
   private toBlob(mimeType: string) {
@@ -73,32 +91,54 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   }
 
   download() {
-    if (this.outputContentType == undefined) {
-      this.testService.getBinaryMetadata(this.context.value!, (this.context.embeddingMethod == 'BASE64'))
-      .subscribe((info) => {
-        const bb = this.toBlob(info.mimeType)
+    if (this.isFileReference(this.context)) {
+      this.downloadPending = true
+      this.downloadFileReference(this.sessionId, this.context)
+      .subscribe((data) => {
+        const bb = new Blob([data.data], {type: data.mimeType})
         if (this.fileNameDownload != undefined) {
           saveAs(bb, this.fileNameDownload)
         } else {
-          saveAs(bb, 'file'+info.extension)
+          saveAs(bb, 'file'+this.extension(data.mimeType))
         }
+      }).add(() => {
+        this.downloadPending = false
       })
     } else {
-      const bb = this.toBlob(this.outputContentType)
-      if (this.fileNameDownload != undefined) {
-        saveAs(bb, this.fileNameDownload)
-      } else {
-        let extension = this.dataService.extensionFromMimeType(this.outputContentType)
-        if (extension == undefined) {
-          if (this.context.embeddingMethod == 'BASE64') {
-            extension = '.bin'
+      if (this.context.mimeType == undefined) {
+        this.downloadPending = true
+        this.testService.getBinaryMetadata(this.context.value!, (this.context.embeddingMethod == 'BASE64'))
+        .subscribe((info) => {
+          const bb = this.toBlob(info.mimeType)
+          if (this.fileNameDownload != undefined) {
+            saveAs(bb, this.fileNameDownload)
           } else {
-            extension = '.txt'
+            saveAs(bb, 'file'+info.extension)
           }
+        }).add(() => {
+          this.downloadPending = false
+        })
+      } else {
+        const bb = this.toBlob(this.context.mimeType)
+        if (this.fileNameDownload != undefined) {
+          saveAs(bb, this.fileNameDownload)
+        } else {
+          saveAs(bb, 'file'+this.extension(this.context.mimeType))
         }
-        saveAs(bb, 'file'+extension)
       }
     }
+  }
+
+  private extension(mimeType: string|undefined) {
+    let extension = this.dataService.extensionFromMimeType(mimeType)
+    if (extension == undefined) {
+      if (this.context.embeddingMethod == 'BASE64') {
+        extension = '.bin'
+      } else {
+        extension = '.txt'
+      }
+    }
+    return extension
   }
 
 }

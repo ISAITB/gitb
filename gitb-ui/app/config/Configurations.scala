@@ -122,6 +122,7 @@ object Configurations {
   var DATA_WEB_INIT_ENABLED = false
 
   var TEST_SESSION_ARCHIVE_THRESHOLD = 30
+  var TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD = 1000L
   var PASSWORD_COMPLEXITY_RULE_REGEX:Regex = _
 
   var TESTBED_MODE:String = ""
@@ -332,6 +333,7 @@ object Configurations {
       }
       // Mode - END
       TEST_SESSION_ARCHIVE_THRESHOLD = fromEnv("TEST_SESSION_ARCHIVE_THRESHOLD", conf.getString("testsession.archive.threshold")).toInt
+      TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD = fromEnv("TEST_SESSION_EMBEDDED_REPORT_DATA_THRESHOLD", conf.getString("testsession.embeddedReportData.threshold")).toLong
       API_ROOT = conf.getString("apiPrefix")
       PASSWORD_COMPLEXITY_RULE_REGEX = new Regex(conf.getString("passwordComplexityRule"))
       _IS_LOADED = true

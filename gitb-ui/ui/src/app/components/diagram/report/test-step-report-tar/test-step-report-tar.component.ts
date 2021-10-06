@@ -1,6 +1,8 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { BsModalService } from 'ngx-bootstrap/modal';
+import { mergeMap, Observable, of } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
+import { ReportService } from 'src/app/services/report.service';
 import { AnyContent } from '../../any-content';
 import { AssertionReport } from '../../assertion-report';
 import { ReportSupport } from '../report-support';
@@ -14,11 +16,13 @@ import { StepReport } from '../step-report';
 export class TestStepReportTARComponent extends ReportSupport implements OnInit {
 
   @Input() report!: StepReport
+  @Input() sessionId!: string
   collapsed = false
 
   constructor(
-    modalService: BsModalService
-  ) { super(modalService) }
+    modalService: BsModalService,
+    reportService: ReportService
+  ) { super(modalService, reportService) }
 
   ngOnInit(): void {
     // Calculate the value of each item in the report context
@@ -29,10 +33,9 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
 
   private setContextValues(context: AnyContent) {
     if (context.value != undefined) {
-      if (context.embeddingMethod == Constants.EMBEDDING_METHOD.BASE64) {
-        context.valueToUse = this.base64ToString(context.value)
-      } else {
-        context.valueToUse = context.value
+      context.valueToUse = context.value
+      if (!this.isFileReference(context) && context.embeddingMethod == Constants.EMBEDDING_METHOD.BASE64) {
+        context.valueToUse = this.base64ToString(context.valueToUse)
       }
     }
     if (context.item != undefined) {
@@ -66,13 +69,25 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
       // Find the relevant value to display
       const relevantContextItem = this.findContextEntryByName(this.report.context, location.name.toLocaleLowerCase())
       if (relevantContextItem != undefined) {
-        this.openEditorWindow(
-          relevantContextItem.name, 
-          relevantContextItem.valueToUse, 
-          this.report.reports?.assertionReports,
-          location.line,
-          relevantContextItem.mimeType
-        )
+        let valueObservable: Observable<string>
+        if (this.isFileReference(relevantContextItem)) {
+          valueObservable = this.downloadFileReference(this.sessionId, relevantContextItem).pipe(
+            mergeMap((data) => {
+              return of(new TextDecoder("utf-8").decode(data.data))
+            })
+          )
+        } else {
+          valueObservable = of(relevantContextItem.valueToUse!)
+        }
+        valueObservable.subscribe((valueToUse) => {
+          this.openEditorWindow(
+            relevantContextItem.name, 
+            valueToUse,
+            this.report.reports?.assertionReports,
+            location?.line,
+            relevantContextItem.mimeType
+          )
+        })
       }
     }
   }

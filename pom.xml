@@ -349,32 +349,27 @@
             <dependency>
                 <groupId>com.helger.as2</groupId>
                 <artifactId>as2-lib</artifactId>
-                <version>4.6.3</version>
+                <version>4.7.1</version>
             </dependency>
             <dependency>
-                <groupId>com.helger</groupId>
-                <artifactId>ph-xml</artifactId>
-                <version>9.5.5</version>
-            </dependency>
-            <dependency>
-                <groupId>com.helger</groupId>
+                <groupId>com.helger.commons</groupId>
                 <artifactId>ph-datetime</artifactId>
-                <version>9.5.5</version>
+                <version>10.1.3</version>
             </dependency>
             <dependency>
                 <groupId>com.helger.peppol</groupId>
                 <artifactId>peppol-sbdh</artifactId>
-                <version>8.3.1</version>
+                <version>8.6.3</version>
             </dependency>
             <dependency>
                 <groupId>com.helger.peppol</groupId>
                 <artifactId>peppol-commons</artifactId>
-                <version>8.3.1</version>
+                <version>8.6.3</version>
             </dependency>
             <dependency>
                 <groupId>com.helger.ubl</groupId>
                 <artifactId>ph-ubl21</artifactId>
-                <version>6.4.3</version>
+                <version>6.6.3</version>
             </dependency>
             <!-- TODO decouple AS2 - END -->
             <dependency>
@@ -439,14 +434,14 @@
                 <version>${version.helgerSchematron}</version>
             </dependency>
             <dependency>
-                <groupId>com.helger</groupId>
+                <groupId>com.helger.commons</groupId>
                 <artifactId>ph-commons</artifactId>
-                <version>9.5.5</version>
+                <version>10.1.3</version>
             </dependency>
             <dependency>
-                <groupId>com.helger</groupId>
+                <groupId>com.helger.commons</groupId>
                 <artifactId>ph-jaxb</artifactId>
-                <version>9.5.5</version>
+                <version>10.1.3</version>
             </dependency>
             <dependency>
                 <groupId>org.xmlunit</groupId>

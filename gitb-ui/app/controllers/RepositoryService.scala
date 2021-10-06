@@ -11,7 +11,6 @@ import exceptions.ErrorCodes
 import managers._
 import managers.export._
 import models.{ConformanceCertificate, ConformanceCertificates, Constants, TestSuites}
-import org.apache.commons.codec.binary.Base64
 import org.apache.commons.codec.net.URLCodec
 import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
@@ -20,7 +19,7 @@ import play.api.mvc._
 import utils._
 
 import java.io._
-import java.nio.file.{Files, Paths}
+import java.nio.file.{Files, Path, Paths}
 import javax.inject.Inject
 import javax.xml.bind.JAXBElement
 import javax.xml.namespace.QName
@@ -103,6 +102,31 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
       if (sessionFolderInfo.archived) {
         FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
       }
+    }
+  }
+
+  def getTestStepReportData(sessionId: String, dataId: String): Action[AnyContent] = authorizedAction { request =>
+    authorizationManager.canViewTestResultForSession(request, sessionId)
+    val sessionFolderInfo = repositoryUtils.getPathForTestSession(sessionId, isExpected = true)
+    val sessionDataFolder = repositoryUtils.getPathForTestSessionData(sessionFolderInfo)
+    val dataFile = Path.of(sessionDataFolder.toString, dataId)
+    if (!Files.exists(dataFile)) {
+      NotFound
+    } else {
+      var mimeTypeToUse = request.headers.get(ACCEPT)
+      if (mimeTypeToUse.isEmpty || mimeTypeToUse.get.contains("*")) {
+        mimeTypeToUse = Option(MimeUtil.getMimeType(dataFile))
+      }
+      val extension = MimeUtil.getExtensionFromMimeType(mimeTypeToUse.orNull)
+      Ok.sendFile(
+        content = dataFile.toFile,
+        fileName = _ => Some(dataId+extension),
+        onClose = () => {
+          if (sessionFolderInfo.archived) {
+            FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
+          }
+        }
+      )
     }
   }
 

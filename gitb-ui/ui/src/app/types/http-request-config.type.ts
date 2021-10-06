@@ -13,6 +13,8 @@ export interface HttpRequestConfig {
     text?: boolean
     asJSON?: boolean
     files?: FileParam[]
+    accept?: string
+    httpResponse?: boolean
     errorHandler?: (_: any) => Observable<any>
 
 }

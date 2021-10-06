@@ -24,6 +24,7 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
 
   @Input() interactions!: UserInteraction[]
   @Input() inputTitle = 'Server interaction'
+  @Input() sessionId!: string
   @Output() result = new EventEmitter<UserInteractionInput[]>()
   @ViewChildren(CodemirrorComponent) codeMirrors?: QueryList<CodemirrorComponent>
   needsInput = false

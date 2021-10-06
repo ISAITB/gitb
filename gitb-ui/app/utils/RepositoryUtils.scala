@@ -677,6 +677,19 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 		result
 	}
 
+	def getPathForTestSessionData(folderInfo: SessionFolderInfo): Path = {
+		getPathForTestSessionData(folderInfo.path)
+	}
+
+	def getPathForTestSessionData(sessionFolder: Path): Path = {
+		Path.of(sessionFolder.toString, "data")
+	}
+
+	def getPathForTestSession(sessionId: String, isExpected: Boolean): SessionFolderInfo = {
+		val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption)
+		getPathForTestSessionObj(sessionId, testResult, isExpected)
+	}
+
 	def getPathForTestSessionObj(sessionId: String, testResult: Option[TestResultsTable#TableElementType], isExpected: Boolean): SessionFolderInfo = {
 		var startTime: LocalDateTime = null
 		if (testResult.isDefined) {

@@ -4,19 +4,18 @@
       <div *ngIf="context.name != undefined"><strong>{{context!.name}}</strong></div>
       <div [class.named]="context.name != undefined" class="value" *ngIf="value != undefined">
         <div>
-          <span *ngIf="!isValueTooLong">{{value}}</span>
-          <span *ngIf="isValueTooLong">{{value.length}} bytes</span>
+          <span *ngIf="showValueInline">{{value}}</span>
         </div>
       </div>
     </div>
-    <div class="any-content-view-controls" *ngIf="value != undefined && isValueTooLong">
+    <div class="any-content-view-controls" *ngIf="value != undefined && !showValueInline">
       <div class="btn-toolbar">
-        <button class="btn btn-default" type="button" (click)="download()"><i class="fa fa-download" aria-hidden="true"></i></button>
-        <button class="btn btn-default" type="button" (click)="open()"><i class="fa fa-search" aria-hidden="true"></i></button>
+        <button class="btn btn-default" type="button" (click)="download()" [class.pending]="downloadPending" [pending]="downloadPending" [icon]="true"><i class="fa fa-download" aria-hidden="true"></i></button>
+        <button class="btn btn-default" type="button" (click)="open()" [class.pending]="openPending" [pending]="openPending" [icon]="true"><i class="fa fa-search" aria-hidden="true"></i></button>
       </div>
     </div>
   </div>
   <div class="items" *ngIf="context != undefined && context.item != undefined">
-    <app-any-content-view *ngFor="let item of context!.item!" [context]="item" [report]="report"></app-any-content-view>
+    <app-any-content-view *ngFor="let item of context!.item!" [context]="item" [report]="report" [sessionId]="sessionId"></app-any-content-view>
   </div>
 </div>

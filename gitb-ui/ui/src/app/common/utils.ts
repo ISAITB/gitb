@@ -26,6 +26,9 @@ export class Utils {
         } else {
             headersToUse = headersToUse.set('Content-Type', 'application/x-www-form-urlencoded')
         }
+        if (config && config.accept != undefined) {
+            headersToUse = headersToUse.set('Accept', config.accept)
+        }
         return headersToUse
     }
 

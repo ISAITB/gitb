@@ -733,7 +733,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       keyboard: false,
       initialState: {
         interactions: interactions,
-        inputTitle: inputTitle
+        inputTitle: inputTitle,
+        sessionId: this.session!
       }
     })
     modalRef.content!.result.subscribe((result: UserInteractionInput[]) => {

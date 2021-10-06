@@ -1,3 +1,4 @@
+import { HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { ROUTES } from '../common/global';
 import { StepReport } from '../components/diagram/report/step-report';
@@ -207,6 +208,16 @@ export class ReportService {
     return this.restService.get<StepReport>({
       path: ROUTES.controllers.RepositoryService.getTestStepReport(session, reportPath).url,
       authenticate: true
+    })
+  }
+
+  getTestStepReportData(sessionId: string, dataId: string, mimeType?: string) {
+    return this.restService.get<HttpResponse<ArrayBuffer>>({
+      path: ROUTES.controllers.RepositoryService.getTestStepReportData(sessionId, dataId).url,
+      authenticate: true,
+      arrayBuffer: true,
+      accept: mimeType,
+      httpResponse: true
     })
   }
 

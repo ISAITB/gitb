@@ -12,6 +12,7 @@ export class TestStepReportComponent implements OnInit {
 
   @Input() step!: StepData
   @Input() report!: StepReport
+  @Input() sessionId!: string
 
   classValue!: string
 
