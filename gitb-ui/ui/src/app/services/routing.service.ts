@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { NavigationExtras, Params, Router } from '@angular/router';
+import { CommunityTab } from '../pages/admin/user-management/community/community-details/community-tab.enum';
 
 @Injectable({
   providedIn: 'root'
@@ -157,8 +158,12 @@ export class RoutingService {
     return this.router.navigate(['admin', 'users', 'community', 'create'])
   }
 
-  toCommunity(communityId: number) {
-    return this.router.navigate(['admin', 'users', 'community', communityId])
+  toCommunity(communityId: number, tab?: CommunityTab) {
+    if (tab != undefined) {
+      return this.router.navigate(['admin', 'users', 'community', communityId], { queryParams: { tab: CommunityTab[tab] } })
+    } else {
+      return this.router.navigate(['admin', 'users', 'community', communityId])
+    }
   }
 
   toCommunityParameters(communityId: number) {

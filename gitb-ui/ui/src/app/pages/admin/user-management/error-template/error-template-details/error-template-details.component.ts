@@ -9,6 +9,7 @@ import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { ErrorData } from 'src/app/types/error-data.type';
 import { ErrorTemplate } from 'src/app/types/error-template';
+import { CommunityTab } from '../../community/community-details/community-tab.enum';
 
 @Component({
   selector: 'app-error-template-details',
@@ -103,7 +104,7 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   }
 
   cancelDetailErrorTemplate() {
-    this.routingService.toCommunity(this.communityId)
+    this.routingService.toCommunity(this.communityId, CommunityTab.errorTemplates)
   }
 
   preview() {

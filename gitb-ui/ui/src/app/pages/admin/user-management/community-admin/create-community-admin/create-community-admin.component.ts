@@ -9,6 +9,7 @@ import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { UserService } from 'src/app/services/user.service';
 import { User } from 'src/app/types/user.type';
+import { CommunityTab } from '../../community/community-details/community-tab.enum';
 
 @Component({
   selector: 'app-create-community-admin',
@@ -100,7 +101,7 @@ export class CreateCommunityAdminComponent extends BaseComponent implements OnIn
   }
 
   cancelCreateAdmin() {
-    this.routingService.toCommunity(this.communityId)
+    this.routingService.toCommunity(this.communityId, CommunityTab.administrators)
   }
 
 }

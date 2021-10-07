@@ -7,6 +7,7 @@ import { LandingPageService } from 'src/app/services/landing-page.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { LandingPage } from 'src/app/types/landing-page';
+import { CommunityTab } from '../../community/community-details/community-tab.enum';
 
 @Component({
   selector: 'app-landing-page-details',
@@ -101,7 +102,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   }
 
   cancelDetailLandingPage() {
-    this.routingService.toCommunity(this.communityId)
+    this.routingService.toCommunity(this.communityId, CommunityTab.landingPages)
   }
 
 }

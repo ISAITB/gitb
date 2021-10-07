@@ -134,6 +134,7 @@ import { EndpointDisplayComponent } from './components/endpoint-display/endpoint
 import { ParameterDisplayComponent } from './components/parameter-display/parameter-display.component';
 import { ProvideInputModalComponent } from './modals/provide-input-modal/provide-input-modal.component';
 import { SecretInputComponent } from './components/secret-input/secret-input.component';
+import { TabsModule } from 'ngx-bootstrap/tabs';
 
 @NgModule({
   providers: [ 
@@ -275,7 +276,8 @@ import { SecretInputComponent } from './components/secret-input/secret-input.com
     NgMultiSelectDropDownModule.forRoot(),
     CodemirrorModule,
     BsDropdownModule.forRoot(),
-    PopoverModule.forRoot()
+    PopoverModule.forRoot(),
+    TabsModule.forRoot()
   ],
   bootstrap: [AppComponent]
 })

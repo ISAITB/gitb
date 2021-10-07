@@ -22,6 +22,7 @@ import { ErrorDescription } from 'src/app/types/error-description';
 import { CodeEditorModalComponent } from 'src/app/components/code-editor-modal/code-editor-modal.component';
 import { CustomProperty } from 'src/app/types/custom-property.type';
 import { RoutingService } from 'src/app/services/routing.service';
+import { CommunityTab } from '../community/community-details/community-tab.enum';
 
 @Component({
   selector: 'app-trigger',
@@ -300,7 +301,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
   }
 
   back() {
-    this.routingService.toCommunity(this.communityId)
+    this.routingService.toCommunity(this.communityId, CommunityTab.triggers)
   }
 
   testEndpoint() {

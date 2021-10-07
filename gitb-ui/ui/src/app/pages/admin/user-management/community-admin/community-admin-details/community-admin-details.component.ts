@@ -7,6 +7,7 @@ import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { UserService } from 'src/app/services/user.service';
 import { User } from 'src/app/types/user.type';
+import { CommunityTab } from '../../community/community-details/community-tab.enum';
 
 @Component({
   selector: 'app-community-admin-details',
@@ -88,7 +89,7 @@ export class CommunityAdminDetailsComponent extends BaseComponent implements OnI
   }
 
   cancelDetailAdmin() {
-    this.routingService.toCommunity(this.communityId)
+    this.routingService.toCommunity(this.communityId, CommunityTab.administrators)
   }
   
 

@@ -11,6 +11,7 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { UserService } from 'src/app/services/user.service';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { User } from 'src/app/types/user.type';
+import { CommunityTab } from '../../community/community-details/community-tab.enum';
 import { OrganisationFormData } from '../organisation-form/organisation-form-data';
 
 @Component({
@@ -126,7 +127,7 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
   }
 
   cancelDetailOrganisation() {
-    this.routingService.toCommunity(this.communityId)
+    this.routingService.toCommunity(this.communityId, CommunityTab.organisations)
   }
 
   manageOrganisationTests() {

@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
@@ -23,6 +23,8 @@ import { Organisation } from 'src/app/types/organisation.type';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { Trigger } from 'src/app/types/trigger';
 import { User } from 'src/app/types/user.type';
+import { TabsetComponent } from 'ngx-bootstrap/tabs';
+import { CommunityTab } from './community-tab.enum';
 
 @Component({
   selector: 'app-community-details',
@@ -82,6 +84,10 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   testBedLandingPage?: LandingPage
   testBedErrorTemplate?: ErrorTemplate
 
+  tabToShow!: CommunityTab
+  tabTriggers!: Record<CommunityTab, {index: number, loader: () => any}>
+  @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
+
   constructor(
     public dataService: DataService,
     private routingService: RoutingService,
@@ -100,6 +106,9 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
 
   ngAfterViewInit(): void {
     this.dataService.focus('sname')
+    setTimeout(() => {
+      this.triggerTab(this.tabToShow)
+    })
   }
 
   ngOnInit(): void {
@@ -118,77 +127,137 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
       this.organizationColumns.push({ field: 'templateName', title: 'Set as template' })
     }
     this.triggerEventTypeMap = this.dataService.idToLabelMap(this.dataService.triggerEventTypes())
-    this.legalNoticeService.getTestBedDefaultLegalNotice()
-    .subscribe((data) => {
-      if (data.exists) this.testBedLegalNotice = data
-    })
-    this.landingPageService.getCommunityDefaultLandingPage(Constants.DEFAULT_COMMUNITY_ID)
-    .subscribe((data) => {
-      if (data.exists) this.testBedLandingPage = data
-    })
-    this.errorTemplateService.getCommunityDefaultErrorTemplate(Constants.DEFAULT_COMMUNITY_ID)
-    .subscribe((data) => {
-      if (data.exists) this.testBedErrorTemplate = data
-    })
-    this.userService.getCommunityAdministrators(this.communityId)
-    .subscribe((data) => {
-      for (let admin of data) {
-        admin.ssoStatusText = this.dataService.userStatus(admin.ssoStatus)
-      }
-      this.admins = data
-    }).add(() => {
-      this.adminStatus.status = Constants.STATUS.FINISHED
-    })
     if (this.dataService.isSystemAdmin) {
       this.conformanceService.getDomains()
       .subscribe((data) => {
         this.domains = data
       })
     }
-    this.landingPageService.getLandingPagesByCommunity(this.communityId)
-    .subscribe((data) => {
-      this.landingPages = data
-    }).add(() => {
-      this.landingPageStatus.status = Constants.STATUS.FINISHED
-    })
-    this.legalNoticeService.getLegalNoticesByCommunity(this.communityId)
-    .subscribe((data) => {
-      this.legalNotices = data
-    }).add(() => {
-      this.legalNoticeStatus.status = Constants.STATUS.FINISHED
-    })
-    this.errorTemplateService.getErrorTemplatesByCommunity(this.communityId)
-    .subscribe((data) => {
-      this.errorTemplates = data
-    }).add(() => {
-      this.errorTemplateStatus.status = Constants.STATUS.FINISHED
-    })
-    this.triggerService.getTriggersByCommunity(this.communityId)
-    .subscribe((data) => {
-      for (let trigger of data) {
-        trigger.eventTypeLabel = this.triggerEventTypeMap[trigger.eventType]
-        if (trigger.latestResultOk != undefined) {
-          if (trigger.latestResultOk) {
-            trigger.statusText = 'Success'
-          } else {
-            trigger.statusText = 'Error'
-          }
-        } else {
-          trigger.statusText = '-'
-        }
-      }
-      this.triggers = data
-    }).add(() => {
-      this.triggerStatus.status = Constants.STATUS.FINISHED    
-    })
-    this.organisationService.getOrganisationsByCommunity(this.communityId)
-    .subscribe((data) => {
-      this.organizations = data
-    }).add(() => {
-      this.organisationStatus.status = Constants.STATUS.FINISHED    
-    })
+    // Setup tab triggers
+    this.setupTabs()
+    const tabToShowParam = this.route.snapshot.queryParamMap.get('tab')
+    if (tabToShowParam) {
+      this.tabToShow = CommunityTab[tabToShowParam as keyof typeof CommunityTab]
+    } else {
+      this.tabToShow = CommunityTab.organisations
+    }
   }
-  
+
+  private setupTabs() {
+    const temp: Partial<Record<CommunityTab, {index: number, loader: () => any}>> = {}
+    temp[CommunityTab.organisations] = {index: 0, loader: () => {this.showOrganisations()}}
+    let tabIndexOffset = 1
+    if (this.communityId != Constants.DEFAULT_COMMUNITY_ID) {
+      tabIndexOffset = 0
+      temp[CommunityTab.administrators] = {index: 1, loader: () => {this.showAdministrators()}}
+    }
+    temp[CommunityTab.landingPages] = {index: 2-tabIndexOffset, loader: () => {this.showLandingPages()}}
+    temp[CommunityTab.legalNotices] = {index: 3-tabIndexOffset, loader: () => {this.showLegalNotices()}}
+    temp[CommunityTab.errorTemplates] = {index: 4-tabIndexOffset, loader: () => {this.showErrorTemplates()}}
+    temp[CommunityTab.triggers] = {index: 5-tabIndexOffset, loader: () => {this.showTriggers()}}
+    this.tabTriggers = temp as Record<CommunityTab, {index: number, loader: () => any}>
+  }
+
+  triggerTab(tab: CommunityTab) {
+    this.tabTriggers[tab].loader()
+    if (this.tabs) {
+      this.tabs.tabs[this.tabTriggers[tab].index].active = true
+    }
+  }
+
+  showOrganisations() {
+    if (this.organisationStatus.status != Constants.STATUS.FINISHED) {
+      this.organisationService.getOrganisationsByCommunity(this.communityId)
+      .subscribe((data) => {
+        this.organizations = data
+      }).add(() => {
+        this.organisationStatus.status = Constants.STATUS.FINISHED
+      })
+    }
+  }
+
+  showAdministrators() {
+    if (this.adminStatus.status != Constants.STATUS.FINISHED) {
+      this.userService.getCommunityAdministrators(this.communityId)
+      .subscribe((data) => {
+        for (let admin of data) {
+          admin.ssoStatusText = this.dataService.userStatus(admin.ssoStatus)
+        }
+        this.admins = data
+      }).add(() => {
+        this.adminStatus.status = Constants.STATUS.FINISHED
+      })
+    }
+  }
+
+  showLandingPages() {
+    if (this.landingPageStatus.status != Constants.STATUS.FINISHED) {
+      this.landingPageService.getCommunityDefaultLandingPage(Constants.DEFAULT_COMMUNITY_ID)
+      .subscribe((data) => {
+        if (data.exists) this.testBedLandingPage = data
+      })
+      this.landingPageService.getLandingPagesByCommunity(this.communityId)
+      .subscribe((data) => {
+        this.landingPages = data
+      }).add(() => {
+        this.landingPageStatus.status = Constants.STATUS.FINISHED
+      })
+    }
+  }
+
+  showLegalNotices() {
+    if (this.legalNoticeStatus.status != Constants.STATUS.FINISHED) {
+      this.legalNoticeService.getTestBedDefaultLegalNotice()
+      .subscribe((data) => {
+        if (data.exists) this.testBedLegalNotice = data
+      })
+      this.legalNoticeService.getLegalNoticesByCommunity(this.communityId)
+      .subscribe((data) => {
+        this.legalNotices = data
+      }).add(() => {
+        this.legalNoticeStatus.status = Constants.STATUS.FINISHED
+      })
+    }
+  }
+
+  showErrorTemplates() {
+    if (this.errorTemplateStatus.status != Constants.STATUS.FINISHED) {
+      this.errorTemplateService.getCommunityDefaultErrorTemplate(Constants.DEFAULT_COMMUNITY_ID)
+      .subscribe((data) => {
+        if (data.exists) this.testBedErrorTemplate = data
+      })
+      this.errorTemplateService.getErrorTemplatesByCommunity(this.communityId)
+      .subscribe((data) => {
+        this.errorTemplates = data
+      }).add(() => {
+        this.errorTemplateStatus.status = Constants.STATUS.FINISHED
+      })
+    }
+  }
+
+  showTriggers() {
+    if (this.triggerStatus.status != Constants.STATUS.FINISHED) {
+      this.triggerService.getTriggersByCommunity(this.communityId)
+      .subscribe((data) => {
+        for (let trigger of data) {
+          trigger.eventTypeLabel = this.triggerEventTypeMap[trigger.eventType]
+          if (trigger.latestResultOk != undefined) {
+            if (trigger.latestResultOk) {
+              trigger.statusText = 'Success'
+            } else {
+              trigger.statusText = 'Error'
+            }
+          } else {
+            trigger.statusText = '-'
+          }
+        }
+        this.triggers = data
+      }).add(() => {
+        this.triggerStatus.status = Constants.STATUS.FINISHED    
+      })
+    }
+  }
+
   saveDisabled() {
     return !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
       (!this.dataService.configuration.registrationEnabled || 

@@ -6,6 +6,7 @@ import { DataService } from 'src/app/services/data.service';
 import { OrganisationService } from 'src/app/services/organisation.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
+import { CommunityTab } from '../../community/community-details/community-tab.enum';
 import { OrganisationFormData } from '../organisation-form/organisation-form-data';
 
 @Component({
@@ -58,7 +59,7 @@ export class CreateOrganisationComponent extends BaseComponent implements OnInit
   }
 
   cancelCreateOrganisation() {
-    this.routingService.toCommunity(this.communityId)
+    this.routingService.toCommunity(this.communityId, CommunityTab.organisations)
   }
 
 }

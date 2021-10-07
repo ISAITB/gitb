@@ -9,6 +9,7 @@ import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { ErrorData } from 'src/app/types/error-data.type';
 import { ErrorTemplate } from 'src/app/types/error-template';
+import { CommunityTab } from '../../community/community-details/community-tab.enum';
 
 @Component({
   selector: 'app-create-error-template',
@@ -80,7 +81,7 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
   }
 
   cancelCreateErrorTemplate() {
-    this.routingService.toCommunity(this.communityId)
+    this.routingService.toCommunity(this.communityId, CommunityTab.errorTemplates)
   }
 
 preview() {

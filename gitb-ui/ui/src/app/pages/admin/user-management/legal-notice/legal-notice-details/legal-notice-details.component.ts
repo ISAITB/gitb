@@ -7,6 +7,7 @@ import { LegalNoticeService } from 'src/app/services/legal-notice.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { LegalNotice } from 'src/app/types/legal-notice';
+import { CommunityTab } from '../../community/community-details/community-tab.enum';
 
 @Component({
   selector: 'app-legal-notice-details',
@@ -100,7 +101,7 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
   }
 
   cancelDetailLegalNotice() {
-    this.routingService.toCommunity(this.communityId)
+    this.routingService.toCommunity(this.communityId, CommunityTab.legalNotices)
   }
 
 }
