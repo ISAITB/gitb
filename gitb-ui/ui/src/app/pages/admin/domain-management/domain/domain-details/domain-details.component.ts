@@ -27,8 +27,8 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
   specifications: Specification[] = []
   domainParameters: DomainParameter[] = []
   domainId!: number
-  specificationStatus = {status: Constants.STATUS.PENDING}
-  parameterStatus = {status: Constants.STATUS.PENDING}
+  specificationStatus = {status: Constants.STATUS.NONE}
+  parameterStatus = {status: Constants.STATUS.NONE}
   tableColumns: TableColumnDefinition[] = [
     { field: 'sname', title: 'Short name' },
     { field: 'fname', title: 'Full name' },
@@ -62,7 +62,8 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
   }
 
   loadSpecifications() {
-    if (this.specificationStatus.status != Constants.STATUS.FINISHED) {
+    if (this.specificationStatus.status == Constants.STATUS.NONE) {
+      this.specificationStatus.status = Constants.STATUS.PENDING
       this.conformanceService.getSpecifications(this.domainId)
       .subscribe((data) => {
         this.specifications = data
@@ -73,7 +74,7 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
   }
 
   loadDomainParameters(forceLoad?: boolean) {
-    if (this.parameterStatus.status != Constants.STATUS.FINISHED || forceLoad) {
+    if (this.parameterStatus.status == Constants.STATUS.NONE || forceLoad) {
       this.parameterStatus.status = Constants.STATUS.PENDING
       this.conformanceService.getDomainParameters(this.domainId)
       .subscribe((data) => {
