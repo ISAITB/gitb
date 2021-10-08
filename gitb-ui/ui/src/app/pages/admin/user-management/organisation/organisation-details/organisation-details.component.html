@@ -15,14 +15,11 @@
                 ></app-organisation-form>
             </div>
             <div class="panel-footer">
-                <div class="row">
-                    <div class="col-md-3"></div>
-                    <div class="col-md-8 btn-toolbar">
-                        <button class="btn btn-default" type="submit" (click)="updateOrganisation()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Update</button>
-                        <button class="btn btn-default" type="button" (click)="deleteOrganisation()" [disable]="savePending" [pending]="deletePending">Delete</button>
-                        <button class="btn btn-default" type="button" (click)="manageOrganisationTests()">Manage tests</button>
-                        <button class="btn btn-default" type="button" (click)="cancelDetailOrganisation()">Back</button>
-                    </div>
+                <div class="btn-toolbar">
+                    <button class="btn btn-default" type="submit" (click)="updateOrganisation()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Update</button>
+                    <button class="btn btn-default" type="button" (click)="deleteOrganisation()" [disable]="savePending" [pending]="deletePending">Delete</button>
+                    <button class="btn btn-default" type="button" (click)="manageOrganisationTests()">Manage tests</button>
+                    <button class="btn btn-default" type="button" (click)="cancelDetailOrganisation()">Back</button>
                 </div>
             </div>
         </form>

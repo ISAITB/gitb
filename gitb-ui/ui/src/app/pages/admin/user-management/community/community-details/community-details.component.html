@@ -12,17 +12,13 @@
                 <app-community-form [community]="community" [admin]="dataService.isSystemAdmin" [domains]="domains"></app-community-form>
             </div>
             <div class="panel-footer">
-                <div class="row">
-                    <div class="col-lg-offset-2 col-lg-10 col-xs-12">
-                        <div class="btn-toolbar">
-                            <button class="btn btn-default" type="submit" (click)="updateCommunity()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
-                            <button class="btn btn-default" type="button" (click)="updateConformanceCertificateSettings()" [disabled]="savePending || deletePending">Edit conformance certificate settings</button>
-                            <button class="btn btn-default" type="button" (click)="updateParameters()" [disabled]="savePending || deletePending">Edit custom member properties</button>
-                            <button class="btn btn-default" type="button" (click)="editLabels()" [disabled]="savePending || deletePending">Edit labels</button>
-                            <button class="btn btn-default" type="button" *ngIf="dataService.isSystemAdmin && !isDefaultCommunity()" (click)="deleteCommunity()" [disable]="savePending" [pending]="deletePending">Delete</button>
-                            <button class="btn btn-default" type="button" *ngIf="dataService.isSystemAdmin" (click)="cancelCommunityDetail()">Back</button>
-                        </div>
-                    </div>
+                <div class="btn-toolbar">
+                    <button class="btn btn-default" type="submit" (click)="updateCommunity()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+                    <button class="btn btn-default" type="button" (click)="updateConformanceCertificateSettings()" [disabled]="savePending || deletePending">Edit conformance certificate settings</button>
+                    <button class="btn btn-default" type="button" (click)="updateParameters()" [disabled]="savePending || deletePending">Edit custom member properties</button>
+                    <button class="btn btn-default" type="button" (click)="editLabels()" [disabled]="savePending || deletePending">Edit labels</button>
+                    <button class="btn btn-default" type="button" *ngIf="dataService.isSystemAdmin && !isDefaultCommunity()" (click)="deleteCommunity()" [disable]="savePending" [pending]="deletePending">Delete</button>
+                    <button class="btn btn-default" type="button" *ngIf="dataService.isSystemAdmin" (click)="cancelCommunityDetail()">Back</button>
                 </div>
             </div>
         </form>
