@@ -24,20 +24,17 @@
 							</div>
 							<app-tooltip tbTooltip="A description for the test case presented to users when viewing a conformance statement. This should be informative enough for users to understand the purpose of the test case. Where extended information is needed consider complementing the description with the test case's documentation."></app-tooltip>
 						</div>
-						<div class="form-group">
-							<label class="col-xs-3 control-label" for="showDocumentation">Show documentation:</label>
-							<div class="col-xs-7">
-								<input id="showDocumentation" name="showDocumentation" [(ngModel)]="showDocumentation" type="checkbox" class="form-check">
-							</div>
-						</div>
+					</div>
+				</div>
+				<div class="row">
+					<div class="col-xs-12">
+						<div class="form-separator expandable" (click)="showDocumentation = !showDocumentation">
+							<div><h4 class="title">Documentation</h4></div>
+							<div><h4><i class="fa fa-chevron-circle-right" aria-hidden="true" [ngClass]="{'fa-chevron-circle-right': !showDocumentation, 'fa-chevron-circle-down': showDocumentation }"></i></h4></div>
+						</div>						
 					</div>
 				</div>
 				<div [collapse]="!showDocumentation" [isAnimated]="true">
-					<div class="row">
-						<div class="col-xs-12">
-							<div class="form-separator"><h4 class="title">Documentation</h4></div>
-						</div>
-					</div>
 					<div class="row form-group">
 						<div class="col-xs-offset-1 col-xs-10">
                             <app-editor id="documentation" name="documentation" [(ngModel)]="testCase.documentation"></app-editor>

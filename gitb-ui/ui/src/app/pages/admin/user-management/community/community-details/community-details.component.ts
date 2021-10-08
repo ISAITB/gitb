@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { CommunityService } from 'src/app/services/community.service';
@@ -83,8 +83,8 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   testBedLegalNotice?: LegalNotice
   testBedLandingPage?: LandingPage
   testBedErrorTemplate?: ErrorTemplate
+  tabToShow = CommunityTab.organisations
 
-  tabToShow!: CommunityTab
   tabTriggers!: Record<CommunityTab, {index: number, loader: () => any}>
   @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
 
@@ -92,6 +92,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     public dataService: DataService,
     private routingService: RoutingService,
     private route: ActivatedRoute,
+    router: Router,
     private userService: UserService,
     private landingPageService: LandingPageService,
     private legalNoticeService: LegalNoticeService,
@@ -102,7 +103,14 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     private communityService: CommunityService,
     private conformanceService: ConformanceService,
     private popupService: PopupService
-  ) { super() }
+  ) {
+    super()
+    // Access the tab to show via router state to have it cleared upon refresh.
+    const tabParam = router.getCurrentNavigation()?.extras?.state?.tab
+    if (tabParam != undefined) {
+      this.tabToShow = CommunityTab[tabParam as keyof typeof CommunityTab]
+    }
+  }
 
   ngAfterViewInit(): void {
     this.dataService.focus('sname')
@@ -135,12 +143,6 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     }
     // Setup tab triggers
     this.setupTabs()
-    const tabToShowParam = this.route.snapshot.queryParamMap.get('tab')
-    if (tabToShowParam) {
-      this.tabToShow = CommunityTab[tabToShowParam as keyof typeof CommunityTab]
-    } else {
-      this.tabToShow = CommunityTab.organisations
-    }
   }
 
   private setupTabs() {
@@ -253,17 +255,17 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
         }
         this.triggers = data
       }).add(() => {
-        this.triggerStatus.status = Constants.STATUS.FINISHED    
+        this.triggerStatus.status = Constants.STATUS.FINISHED
       })
     }
   }
 
   saveDisabled() {
     return !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
-      (!this.dataService.configuration.registrationEnabled || 
-        (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED || 
+      (!this.dataService.configuration.registrationEnabled ||
+        (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED ||
           (
-            (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || this.textProvided(this.community.selfRegToken)) && 
+            (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || this.textProvided(this.community.selfRegToken)) &&
             (!this.dataService.configuration.emailEnabled || (!this.community.selfRegNotification || this.textProvided(this.community.email)))
           )
         )

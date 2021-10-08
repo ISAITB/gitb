@@ -39,68 +39,71 @@
 <div [collapse]="!selfRegOptionsVisible" [isAnimated]="true">
     <div class="row">
         <div class="col-xs-12">
-            <div class="form-separator">
-                <h4 class="title">Self-registration settings</h4>
+            <div class="form-separator expandable" (click)="selfRegOptionsCollapsed = !selfRegOptionsCollapsed">
+                <div><h4 class="title">Self-registration settings</h4></div>
+                <div><h4><i class="fa fa-chevron-circle-right" aria-hidden="true" [ngClass]="{'fa-chevron-circle-right': selfRegOptionsCollapsed, 'fa-chevron-circle-down': !selfRegOptionsCollapsed }"></i></h4></div>
             </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-xs-10 col-xs-offset-1">
-            <div *ngIf="community.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN">
-                <div class="form-group">
-                    <label class="col-xs-3 control-label" for="selfRegToken">* Self-registration token:</label>
-                    <div class="col-xs-7"><input id="selfRegToken" name="selfRegToken" [(ngModel)]="community.selfRegToken" class="form-control" type="text"></div>
-                    <app-tooltip tbTooltip="This serves as a password for new users to provide during self-registration so that the community is not fully public. Ensure your community members are aware of this or that you provide a support email for relevant requests."></app-tooltip>
-                </div>
-                <div class="form-group">
-                    <label class="col-xs-3 control-label" for="selfRegTokenHelpText">Token help text:</label>
-                    <div class="col-xs-7">
-                        <app-editor id="selfRegTokenHelpText" name="selfRegTokenHelpText" [(ngModel)]="community.selfRegTokenHelpText" type="line"></app-editor>
+    <div [collapse]="selfRegOptionsCollapsed" [isAnimated]="true">
+        <div class="row">
+            <div class="col-xs-10 col-xs-offset-1">
+                <div *ngIf="community.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING_WITH_TOKEN">
+                    <div class="form-group">
+                        <label class="col-xs-3 control-label" for="selfRegToken">* Self-registration token:</label>
+                        <div class="col-xs-7"><input id="selfRegToken" name="selfRegToken" [(ngModel)]="community.selfRegToken" class="form-control" type="text"></div>
+                        <app-tooltip tbTooltip="This serves as a password for new users to provide during self-registration so that the community is not fully public. Ensure your community members are aware of this or that you provide a support email for relevant requests."></app-tooltip>
                     </div>
-                <app-tooltip tbTooltip="A short explanatory text to instruct users on how the token is to be retrieved (e.g. pointer to a link or email address). This is displayed in the self-registration form next to the token input."></app-tooltip>
-            </div>
-            </div>
-            <div class="form-group">
-                <label class="col-xs-3 control-label" for="description">Community description:</label>
-                <div class="col-xs-7">
-                    <label class="checkbox-inline"><input type="checkbox" (change)="descriptionCheckChanged()" [disabled]="community.domain == undefined" name="descriptionCheck" [(ngModel)]="community.sameDescriptionAsDomain">Same as {{dataService.labelDomainLower()}}</label>
+                    <div class="form-group">
+                        <label class="col-xs-3 control-label" for="selfRegTokenHelpText">Token help text:</label>
+                        <div class="col-xs-7">
+                            <app-editor id="selfRegTokenHelpText" name="selfRegTokenHelpText" [(ngModel)]="community.selfRegTokenHelpText" type="line"></app-editor>
+                        </div>
+                    <app-tooltip tbTooltip="A short explanatory text to instruct users on how the token is to be retrieved (e.g. pointer to a link or email address). This is displayed in the self-registration form next to the token input."></app-tooltip>
                 </div>
-            </div>
-            <div class="form-group">
-                <div class="col-xs-offset-3 col-xs-7">
-                    <textarea id="description" name="description" [(ngModel)]="community.activeDescription" class="form-control" [readonly]="community.sameDescriptionAsDomain" (blur)="setSameDescription()"></textarea>
                 </div>
-                <app-tooltip tbTooltip="This description will be displayed in the self-registration screen to explain to prospective members the community's context and purpose."></app-tooltip>
-            </div>
-            <div class="form-group" *ngIf="emailEnabled">
-                <label class="col-xs-3 control-label" for="notifications">Self-registration notifications:</label>
-                <div class="col-xs-7">
-                    <input id="notifications" name="selfRegNotification" [(ngModel)]="community.selfRegNotification" type="checkbox" class="form-check">
-                    <app-tooltip [inline]="true" tbTooltip="Check this if you want new self-registrations to send a notification email to the configured support mailbox."></app-tooltip>
+                <div class="form-group">
+                    <label class="col-xs-3 control-label" for="description">Community description:</label>
+                    <div class="col-xs-7">
+                        <label class="checkbox-inline"><input type="checkbox" (change)="descriptionCheckChanged()" [disabled]="community.domain == undefined" name="descriptionCheck" [(ngModel)]="community.sameDescriptionAsDomain">Same as {{dataService.labelDomainLower()}}</label>
+                    </div>
                 </div>
-            </div>
-            <div class="form-group" *ngIf="ssoEnabled">
-                <label class="col-xs-3 control-label" for="selfRegRestriction">* Self-registration restrictions:</label>
-                <div class="col-xs-7">
-                    <select id="selfRegRestriction" name="selfRegRestriction" class="form-control" [(ngModel)]="community.selfRegRestriction">
-                        <option *ngFor="let type of selfRegRestrictions" [ngValue]="type.id">{{type.label}}</option>
-                    </select>
+                <div class="form-group">
+                    <div class="col-xs-offset-3 col-xs-7">
+                        <textarea id="description" name="description" [(ngModel)]="community.activeDescription" class="form-control" [readonly]="community.sameDescriptionAsDomain" (blur)="setSameDescription()"></textarea>
+                    </div>
+                    <app-tooltip tbTooltip="This description will be displayed in the self-registration screen to explain to prospective members the community's context and purpose."></app-tooltip>
                 </div>
-                <app-tooltip tbTooltip="Use this option to restrict multiple registrations to the community. Restrictions are applied considering the email address of the user that is in the process of self-registering."></app-tooltip>
-            </div>
-            <div class="form-group">
-                <label class="col-xs-3 control-label" for="selfRegForceTemplateSelection">Require from users:</label>
-                <div class="col-xs-7">
-                    <label class="checkbox-inline">
-                        <input type="checkbox" name="selfRegForceTemplateSelection" [(ngModel)]="community.selfRegForceTemplateSelection">Select one of the defined configuration templates
-                        <app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this to force users to select a configuration template when registering. This option applies only if configuration templates are defined."></app-tooltip>
-                    </label>
+                <div class="form-group" *ngIf="emailEnabled">
+                    <label class="col-xs-3 control-label" for="notifications">Self-registration notifications:</label>
+                    <div class="col-xs-7">
+                        <input id="notifications" name="selfRegNotification" [(ngModel)]="community.selfRegNotification" type="checkbox" class="form-check">
+                        <app-tooltip [inline]="true" tbTooltip="Check this if you want new self-registrations to send a notification email to the configured support mailbox."></app-tooltip>
+                    </div>
                 </div>
-                <div class="col-xs-offset-3 col-xs-7">
-                    <label class="checkbox-inline">
-                        <input type="checkbox" name="selfRegForceRequiredProperties" [(ngModel)]="community.selfRegForceRequiredProperties">Complete custom properties defined as required
-                        <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to force users to complete required custom '+dataService.labelOrganisationLower()+' properties on the self-registration screen. This option applies only if such properties are defined.'"></app-tooltip>
-                    </label>
+                <div class="form-group" *ngIf="ssoEnabled">
+                    <label class="col-xs-3 control-label" for="selfRegRestriction">* Self-registration restrictions:</label>
+                    <div class="col-xs-7">
+                        <select id="selfRegRestriction" name="selfRegRestriction" class="form-control" [(ngModel)]="community.selfRegRestriction">
+                            <option *ngFor="let type of selfRegRestrictions" [ngValue]="type.id">{{type.label}}</option>
+                        </select>
+                    </div>
+                    <app-tooltip tbTooltip="Use this option to restrict multiple registrations to the community. Restrictions are applied considering the email address of the user that is in the process of self-registering."></app-tooltip>
+                </div>
+                <div class="form-group">
+                    <label class="col-xs-3 control-label" for="selfRegForceTemplateSelection">Require from users:</label>
+                    <div class="col-xs-7">
+                        <label class="checkbox-inline">
+                            <input type="checkbox" name="selfRegForceTemplateSelection" [(ngModel)]="community.selfRegForceTemplateSelection">Select one of the defined configuration templates
+                            <app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="Check this to force users to select a configuration template when registering. This option applies only if configuration templates are defined."></app-tooltip>
+                        </label>
+                    </div>
+                    <div class="col-xs-offset-3 col-xs-7">
+                        <label class="checkbox-inline">
+                            <input type="checkbox" name="selfRegForceRequiredProperties" [(ngModel)]="community.selfRegForceRequiredProperties">Complete custom properties defined as required
+                            <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to force users to complete required custom '+dataService.labelOrganisationLower()+' properties on the self-registration screen. This option applies only if such properties are defined.'"></app-tooltip>
+                        </label>
+                    </div>
                 </div>
             </div>
         </div>
@@ -108,51 +111,54 @@
 </div>
 <div class="row">
     <div class="col-xs-12">
-        <div class="form-separator">
-            <h4 class="title">User permissions</h4>
+        <div class="form-separator expandable" (click)="userPermissionsCollapsed = !userPermissionsCollapsed">
+            <div><h4 class="title">User permissions</h4></div>
+            <div><h4><i class="fa fa-chevron-circle-right" aria-hidden="true" [ngClass]="{'fa-chevron-circle-right': userPermissionsCollapsed, 'fa-chevron-circle-down': !userPermissionsCollapsed }"></i></h4></div>
         </div>
     </div>
 </div>
-<div class="row">
-    <div class="col-xs-10 col-xs-offset-1">
-        <div class="form-group">
-        <label class="col-xs-3 control-label">{{dataService.labelOrganisation()}} users may:</label>
-        <div class="col-xs-7">
-            <label class="checkbox-inline">
-            <input type="checkbox" name="allowCertificateDownload" [(ngModel)]="community.allowCertificateDownload">Download conformance certificates
-            <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to download a conformance certificate if they have successfully passed their tests. Otherwise only community administrators may create and share such certificates.'"></app-tooltip>
-            </label>
-        </div>
-        <div class="col-xs-offset-3 col-xs-7">
-            <label class="checkbox-inline">
-            <input type="checkbox" name="allowSystemManagement" [(ngModel)]="community.allowSystemManagement">Create or delete {{dataService.labelSystemsLower()}}
-            <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to create and delete '+dataService.labelSystemsLower()+' (editing an existing '+dataService.labelSystemLower()+' is always possible). You may want to restrict this if you predefine fully the setup for your users, either through community administrator actions or via self-registration templates.'"></app-tooltip>
-            </label>
-        </div>
-        <div class="col-xs-offset-3 col-xs-7">
-            <label class="checkbox-inline">
-            <input type="checkbox" name="allowStatementManagement" [(ngModel)]="community.allowStatementManagement">Create or delete conformance statements
-            <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to create and delete conformance statements. You may want to restrict this if you predefine fully the setup for your users, either through community administrator actions or via self-registration templates.'"></app-tooltip>
-            </label>
-        </div>
-        <div class="col-xs-offset-3 col-xs-7">
-            <label class="checkbox-inline">
-            <input type="checkbox" name="allowPostTestOrganisationUpdates" [(ngModel)]="community.allowPostTestOrganisationUpdates">Update {{dataService.labelOrganisationLower()}} data after testing
-            <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to update '+dataService.labelOrganisationLower()+' data and custom properties once tests have been recorded.'"></app-tooltip>
-            </label>
-        </div>
-        <div class="col-xs-offset-3 col-xs-7">
-            <label class="checkbox-inline">
-            <input type="checkbox" name="allowPostTestSystemUpdates" [(ngModel)]="community.allowPostTestSystemUpdates">Update {{dataService.labelSystemLower()}} data after testing
-            <app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="'Check this to allow '+dataService.labelOrganisationLower()+' users to update '+dataService.labelSystemLower()+' data and custom properties once tests have been recorded.'"></app-tooltip>
-            </label>
-        </div>
-        <div class="col-xs-offset-3 col-xs-7">
-            <label class="checkbox-inline">
-            <input type="checkbox" name="allowPostTestStatementUpdates" [(ngModel)]="community.allowPostTestStatementUpdates">Update conformance statement after testing
-                <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to update the configuration parameters for a conformance statement once tests have been recorded.'"></app-tooltip>
-            </label>
-        </div>
+<div [collapse]="userPermissionsCollapsed" [isAnimated]="true">
+    <div class="row">
+        <div class="col-xs-10 col-xs-offset-1">
+            <div class="form-group">
+            <label class="col-xs-3 control-label">{{dataService.labelOrganisation()}} users may:</label>
+            <div class="col-xs-7">
+                <label class="checkbox-inline">
+                <input type="checkbox" name="allowCertificateDownload" [(ngModel)]="community.allowCertificateDownload">Download conformance certificates
+                <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to download a conformance certificate if they have successfully passed their tests. Otherwise only community administrators may create and share such certificates.'"></app-tooltip>
+                </label>
+            </div>
+            <div class="col-xs-offset-3 col-xs-7">
+                <label class="checkbox-inline">
+                <input type="checkbox" name="allowSystemManagement" [(ngModel)]="community.allowSystemManagement">Create or delete {{dataService.labelSystemsLower()}}
+                <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to create and delete '+dataService.labelSystemsLower()+' (editing an existing '+dataService.labelSystemLower()+' is always possible). You may want to restrict this if you predefine fully the setup for your users, either through community administrator actions or via self-registration templates.'"></app-tooltip>
+                </label>
+            </div>
+            <div class="col-xs-offset-3 col-xs-7">
+                <label class="checkbox-inline">
+                <input type="checkbox" name="allowStatementManagement" [(ngModel)]="community.allowStatementManagement">Create or delete conformance statements
+                <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to create and delete conformance statements. You may want to restrict this if you predefine fully the setup for your users, either through community administrator actions or via self-registration templates.'"></app-tooltip>
+                </label>
+            </div>
+            <div class="col-xs-offset-3 col-xs-7">
+                <label class="checkbox-inline">
+                <input type="checkbox" name="allowPostTestOrganisationUpdates" [(ngModel)]="community.allowPostTestOrganisationUpdates">Update {{dataService.labelOrganisationLower()}} data after testing
+                <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to update '+dataService.labelOrganisationLower()+' data and custom properties once tests have been recorded.'"></app-tooltip>
+                </label>
+            </div>
+            <div class="col-xs-offset-3 col-xs-7">
+                <label class="checkbox-inline">
+                <input type="checkbox" name="allowPostTestSystemUpdates" [(ngModel)]="community.allowPostTestSystemUpdates">Update {{dataService.labelSystemLower()}} data after testing
+                <app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="'Check this to allow '+dataService.labelOrganisationLower()+' users to update '+dataService.labelSystemLower()+' data and custom properties once tests have been recorded.'"></app-tooltip>
+                </label>
+            </div>
+            <div class="col-xs-offset-3 col-xs-7">
+                <label class="checkbox-inline">
+                <input type="checkbox" name="allowPostTestStatementUpdates" [(ngModel)]="community.allowPostTestStatementUpdates">Update conformance statement after testing
+                    <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to update the configuration parameters for a conformance statement once tests have been recorded.'"></app-tooltip>
+                </label>
+            </div>
+            </div>
         </div>
     </div>
 </div>

@@ -160,7 +160,7 @@ export class RoutingService {
 
   toCommunity(communityId: number, tab?: CommunityTab) {
     if (tab != undefined) {
-      return this.router.navigate(['admin', 'users', 'community', communityId], { queryParams: { tab: CommunityTab[tab] } })
+      return this.router.navigate(['admin', 'users', 'community', communityId], { state: { tab: CommunityTab[tab] } })
     } else {
       return this.router.navigate(['admin', 'users', 'community', communityId])
     }
