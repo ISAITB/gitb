@@ -58,34 +58,41 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
     .subscribe((data) => {
       this.domain = data[0]
     })
-    this.conformanceService.getSpecifications(this.domainId)
-    .subscribe((data) => {
-      this.specifications = data
-    }).add(() => {
-      this.specificationStatus.status = Constants.STATUS.FINISHED
-    })
-    this.loadDomainParameters()
+    this.loadSpecifications()
   }
 
-  private loadDomainParameters() {
-    this.parameterStatus.status = Constants.STATUS.PENDING
-    this.conformanceService.getDomainParameters(this.domainId)
-    .subscribe((data) => {
-      this.domainParameters = []
-      for (let parameter of data) {
-        if (parameter.kind == 'HIDDEN') {
-          parameter.valueToShow = "*****"
-        } else if (parameter.kind == 'BINARY') {
-          const extension = this.dataService.extensionFromMimeType(parameter.contentType)
-          parameter.valueToShow =  parameter.name+extension
-        } else {
-          parameter.valueToShow = parameter.value
+  loadSpecifications() {
+    if (this.specificationStatus.status != Constants.STATUS.FINISHED) {
+      this.conformanceService.getSpecifications(this.domainId)
+      .subscribe((data) => {
+        this.specifications = data
+      }).add(() => {
+        this.specificationStatus.status = Constants.STATUS.FINISHED
+      })
+    }
+  }
+
+  loadDomainParameters(forceLoad?: boolean) {
+    if (this.parameterStatus.status != Constants.STATUS.FINISHED || forceLoad) {
+      this.parameterStatus.status = Constants.STATUS.PENDING
+      this.conformanceService.getDomainParameters(this.domainId)
+      .subscribe((data) => {
+        this.domainParameters = []
+        for (let parameter of data) {
+          if (parameter.kind == 'HIDDEN') {
+            parameter.valueToShow = "*****"
+          } else if (parameter.kind == 'BINARY') {
+            const extension = this.dataService.extensionFromMimeType(parameter.contentType)
+            parameter.valueToShow =  parameter.name+extension
+          } else {
+            parameter.valueToShow = parameter.value
+          }
+          this.domainParameters.push(parameter)
         }
-        this.domainParameters.push(parameter)
-      }
-    }).add(() => {
-      this.parameterStatus.status = Constants.STATUS.FINISHED			
-    })
+      }).add(() => {
+        this.parameterStatus.status = Constants.STATUS.FINISHED			
+      })
+    }
   }
 
 	downloadParameter(parameter: DomainParameter) {
@@ -143,7 +150,7 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
     })
     modalRef.content!.parametersUpdated.subscribe((updated: boolean) => {
       if (updated) {
-        this.loadDomainParameters()
+        this.loadDomainParameters(true)
       }
     })
   }

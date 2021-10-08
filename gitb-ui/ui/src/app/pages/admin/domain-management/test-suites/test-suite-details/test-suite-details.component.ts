@@ -107,7 +107,7 @@ export class TestSuiteDetailsComponent extends BaseComponent implements OnInit, 
   }
 
 	back() {
-    this.routingService.toSpecification(this.domainId, this.specificationId)
+    this.routingService.toSpecification(this.domainId, this.specificationId, Constants.TAB.SPECIFICATION.TEST_SUITES)
   }
 
 	saveDisabled() {

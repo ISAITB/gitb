@@ -33,7 +33,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr *ngIf="organisationParameterStatus.status == Constants.STATUS.PENDING">
+                            <tr *ngIf="organisationParameterStatus.status != Constants.STATUS.FINISHED">
                                 <td colspan="10" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
                             </tr>
                             <tr *ngIf="organisationParameterStatus.status == Constants.STATUS.FINISHED && organisationParameters.length == 0">
@@ -85,7 +85,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr *ngIf="systemParameterStatus.status == Constants.STATUS.PENDING">
+                            <tr *ngIf="systemParameterStatus.status != Constants.STATUS.FINISHED">
                                 <td colspan="10" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
                             </tr>
                             <tr *ngIf="systemParameterStatus.status == Constants.STATUS.FINISHED && systemParameters.length == 0">

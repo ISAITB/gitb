@@ -35,12 +35,12 @@ import { CommunityTab } from './community-tab.enum';
 export class CommunityDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
 
   community!: Community
-  adminStatus = {status: Constants.STATUS.PENDING}
-  organisationStatus = {status: Constants.STATUS.PENDING}
-  landingPageStatus = {status: Constants.STATUS.PENDING}
-  errorTemplateStatus = {status: Constants.STATUS.PENDING}
-  legalNoticeStatus = {status: Constants.STATUS.PENDING}
-  triggerStatus = {status: Constants.STATUS.PENDING}
+  adminStatus = {status: Constants.STATUS.NONE}
+  organisationStatus = {status: Constants.STATUS.NONE}
+  landingPageStatus = {status: Constants.STATUS.NONE}
+  errorTemplateStatus = {status: Constants.STATUS.NONE}
+  legalNoticeStatus = {status: Constants.STATUS.NONE}
+  triggerStatus = {status: Constants.STATUS.NONE}
   savePending = false
   deletePending = false
   communityId!: number
@@ -168,7 +168,8 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   showOrganisations() {
-    if (this.organisationStatus.status != Constants.STATUS.FINISHED) {
+    if (this.organisationStatus.status == Constants.STATUS.NONE) {
+      this.organisationStatus.status = Constants.STATUS.PENDING
       this.organisationService.getOrganisationsByCommunity(this.communityId)
       .subscribe((data) => {
         this.organizations = data
@@ -179,7 +180,8 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   showAdministrators() {
-    if (this.adminStatus.status != Constants.STATUS.FINISHED) {
+    if (this.adminStatus.status == Constants.STATUS.NONE) {
+      this.adminStatus.status = Constants.STATUS.PENDING
       this.userService.getCommunityAdministrators(this.communityId)
       .subscribe((data) => {
         for (let admin of data) {
@@ -193,7 +195,8 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   showLandingPages() {
-    if (this.landingPageStatus.status != Constants.STATUS.FINISHED) {
+    if (this.landingPageStatus.status == Constants.STATUS.NONE) {
+      this.landingPageStatus.status = Constants.STATUS.PENDING
       this.landingPageService.getCommunityDefaultLandingPage(Constants.DEFAULT_COMMUNITY_ID)
       .subscribe((data) => {
         if (data.exists) this.testBedLandingPage = data
@@ -208,7 +211,8 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   showLegalNotices() {
-    if (this.legalNoticeStatus.status != Constants.STATUS.FINISHED) {
+    if (this.legalNoticeStatus.status == Constants.STATUS.NONE) {
+      this.legalNoticeStatus.status = Constants.STATUS.PENDING
       this.legalNoticeService.getTestBedDefaultLegalNotice()
       .subscribe((data) => {
         if (data.exists) this.testBedLegalNotice = data
@@ -223,7 +227,8 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   showErrorTemplates() {
-    if (this.errorTemplateStatus.status != Constants.STATUS.FINISHED) {
+    if (this.errorTemplateStatus.status == Constants.STATUS.NONE) {
+      this.errorTemplateStatus.status = Constants.STATUS.PENDING
       this.errorTemplateService.getCommunityDefaultErrorTemplate(Constants.DEFAULT_COMMUNITY_ID)
       .subscribe((data) => {
         if (data.exists) this.testBedErrorTemplate = data
@@ -238,7 +243,8 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   showTriggers() {
-    if (this.triggerStatus.status != Constants.STATUS.FINISHED) {
+    if (this.triggerStatus.status == Constants.STATUS.NONE) {
+      this.triggerStatus.status = Constants.STATUS.PENDING
       this.triggerService.getTriggersByCommunity(this.communityId)
       .subscribe((data) => {
         for (let trigger of data) {

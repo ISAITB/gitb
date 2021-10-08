@@ -156,8 +156,9 @@ export class Constants {
 	}
 
 	public static STATUS = {
-		PENDING: 0,
-		FINISHED: 1
+		NONE: 0,
+		PENDING: 1,
+		FINISHED: 2
 	}
 
 	public static REPORT_OPTION_CHOICE = {
@@ -254,6 +255,13 @@ export class Constants {
 		REGISTER: "register",
 		NOTIFY: "notify",
 		PING: "ping"
+	}
+
+	public static TAB = {
+		SPECIFICATION: {
+			TEST_SUITES: 0,
+			ACTORS: 1
+		}
 	}
 
 	public static PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()_–\[{}\]:;'",?/\\*~$^+=<>]).{8,}$/

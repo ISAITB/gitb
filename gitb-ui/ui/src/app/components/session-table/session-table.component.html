@@ -15,7 +15,7 @@
             </tr>
         </thead>
         <tbody>
-            <tr *ngIf="loadingStatus && loadingStatus.status == Constants.STATUS.PENDING">
+            <tr *ngIf="loadingStatus && loadingStatus.status != Constants.STATUS.FINISHED">
                 <td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
             </tr>
             <tr *ngIf="loadingStatus && loadingStatus.status == Constants.STATUS.FINISHED && (!data || data.length == 0)">

@@ -20,32 +20,42 @@
 			</div>
 		</form>
 	</div>
-	<div class="panel panel-default">
-		<div class="panel-heading">
-			<h4 class="title">Test suites</h4>
-			<button class="btn btn-default pull-right" (click)="uploadTestSuite()">Upload test suite</button>
-		</div>
-		<div table-directive id="test-suites-table" 
-			[columns]="testSuiteTableColumns" 
-			[data]="testSuites"
-			noDataMessage="No test suites found"
-			[loadingStatus]="testSuiteStatus" 
-			[allowSelect]="true"
-			(onSelect)="onTestSuiteSelect($event)">
-		</div>
-	</div>
-	<div class="panel panel-default">
-		<div class="panel-heading">
-			<h4 class="title">{{dataService.labelActors()}}</h4>
-            <button class="btn btn-default pull-right" type="button" (click)="createActor()">Create {{dataService.labelActorLower()}}</button>
-		</div>
-		<div table-directive
-			[columns]="actorTableColumns"
-			[data]="actors"
-			[noDataMessage]="'No '+dataService.labelActorsLower()+' found'"
-			[loadingStatus]="actorStatus" 
-			[allowSelect]="true"
-			(onSelect)="onActorSelect($event)">
-		</div>
+	<div>
+		<tabset #tabs>
+			<tab heading="Test suites" (selectTab)="loadTestSuites()">
+				<div class="tabPanel">
+					<div class="tabControls">
+						<button class="btn btn-default" (click)="uploadTestSuite()">Upload test suite</button>
+					</div>
+					<div class="panel panel-default">
+						<div table-directive id="test-suites-table" 
+							[columns]="testSuiteTableColumns" 
+							[data]="testSuites"
+							noDataMessage="No test suites found"
+							[loadingStatus]="testSuiteStatus" 
+							[allowSelect]="true"
+							(onSelect)="onTestSuiteSelect($event)">
+						</div>
+					</div>
+				</div>
+			</tab>
+			<tab heading="{{dataService.labelActors()}}" (selectTab)="loadActors()">
+				<div class="tabPanel">
+					<div class="tabControls">
+						<button class="btn btn-default" type="button" (click)="createActor()">Create {{dataService.labelActorLower()}}</button>
+					</div>
+					<div class="panel panel-default">
+						<div table-directive
+							[columns]="actorTableColumns"
+							[data]="actors"
+							[noDataMessage]="'No '+dataService.labelActorsLower()+' found'"
+							[loadingStatus]="actorStatus" 
+							[allowSelect]="true"
+							(onSelect)="onActorSelect($event)">
+						</div>
+					</div>
+				</div>
+			</tab>
+		</tabset>
 	</div>
 </div>

@@ -63,17 +63,22 @@
 			</div>
 		</form>
 	</div>
-	<div class="panel panel-default">
-		<div class="panel-heading">
-			<h4 class="title">Test cases</h4>
-		</div>
-		<div table-directive
-			[columns]="testCaseTableColumns"
-			[data]="testSuite.testCases"
-			noDataMessage="No test cases found"
-			[loadingStatus]="dataStatus" 
-			[allowSelect]="true"
-			(onSelect)="onTestCaseSelect($event)">
-		</div>
+	<div>
+		<tabset>
+			<tab heading="Test cases">
+				<div class="tabPanel">
+					<div class="panel panel-default">
+						<div table-directive
+							[columns]="testCaseTableColumns"
+							[data]="testSuite.testCases"
+							noDataMessage="No test cases found"
+							[loadingStatus]="dataStatus" 
+							[allowSelect]="true"
+							(onSelect)="onTestCaseSelect($event)">
+						</div>
+					</div>
+				</div>
+			</tab>
+		</tabset>
 	</div>
 </div>

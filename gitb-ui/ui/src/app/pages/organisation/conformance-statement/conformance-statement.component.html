@@ -85,7 +85,7 @@
                     <th style="width:118px;"></th>
                 </tr>
 			</thead>
-			<tbody *ngIf="loadingStatus.status == Constants.STATUS.PENDING">
+			<tbody *ngIf="loadingStatus.status != Constants.STATUS.FINISHED">
 				<td colspan="6" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
 			</tbody>
 			<tbody *ngIf="loadingStatus.status == Constants.STATUS.FINISHED && testSuites.length == 0">

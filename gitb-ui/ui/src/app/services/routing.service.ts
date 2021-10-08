@@ -126,8 +126,8 @@ export class RoutingService {
     return this.router.navigate(['admin', 'domains', domainId, 'specifications', 'create'])
   }
 
-  toSpecification(domainId: number, specificationId: number) {
-    return this.router.navigate(['admin', 'domains', domainId, 'specifications', specificationId])
+  toSpecification(domainId: number, specificationId: number, tab?: number) {
+    return this.router.navigate(['admin', 'domains', domainId, 'specifications', specificationId], this.addTabExtras(tab))
   }
 
   toCreateEndpoint(domainId: number, specificationId: number, actorId: number) {
@@ -248,6 +248,14 @@ export class RoutingService {
 
   toDataExport() {
     return this.router.navigate(['admin', 'export'])
+  }
+
+  private addTabExtras(tabIndex?: number) {
+    let extras: NavigationExtras|undefined = undefined
+    if (tabIndex != undefined) {
+      extras = { state: { tab: tabIndex }}
+    }
+    return extras
   }
 
   private addCommunityContentExtras(copyTestBedDefault: boolean, copySourceId?: number) {

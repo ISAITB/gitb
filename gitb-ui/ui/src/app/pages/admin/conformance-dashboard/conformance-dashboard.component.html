@@ -35,7 +35,7 @@
                     <th class="operations">Export</th>
                 </tr>
 			</thead>
-			<tbody *ngIf="dataStatus.status == Constants.STATUS.PENDING">
+			<tbody *ngIf="dataStatus.status != Constants.STATUS.FINISHED">
 				<tr><td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td></tr>
 			</tbody>
 			<tbody *ngIf="dataStatus.status == Constants.STATUS.FINISHED && conformanceStatements.length == 0">

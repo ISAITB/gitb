@@ -24,18 +24,25 @@
             </div>
         </form>
     </div>
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h4 class="title">Users</h4>
-            <button type="button" class="btn btn-default pull-right" (click)="createUser()">Create user</button>
-        </div>
-        <div table-directive 
-            [columns]="userColumns" 
-            [data]="users"
-			[noDataMessage]="'No users found'"
-			[loadingStatus]="dataStatus" 
-            [allowSelect]="true"
-            (onSelect)="userSelect($event)">
-        </div>
+    <div>
+        <tabset>
+            <tab heading="Users">
+                <div class="tabPanel">
+                    <div class="tabControls">
+                        <button type="button" class="btn btn-default" (click)="createUser()">Create user</button>
+                    </div>
+                    <div class="panel panel-default">
+                        <div table-directive 
+                            [columns]="userColumns" 
+                            [data]="users"
+                            [noDataMessage]="'No users found'"
+                            [loadingStatus]="dataStatus" 
+                            [allowSelect]="true"
+                            (onSelect)="userSelect($event)">
+                        </div>
+                    </div>
+                </div>
+            </tab>
+        </tabset>
     </div>
 </div>

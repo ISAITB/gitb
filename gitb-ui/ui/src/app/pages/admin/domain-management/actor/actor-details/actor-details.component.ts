@@ -102,7 +102,7 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
   }
 
   back() {
-    this.routingService.toSpecification(this.domainId, this.specificationId)
+    this.routingService.toSpecification(this.domainId, this.specificationId, Constants.TAB.SPECIFICATION.ACTORS)
   }
 
   saveDisabled() {

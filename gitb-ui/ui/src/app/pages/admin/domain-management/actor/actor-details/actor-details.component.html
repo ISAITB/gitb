@@ -20,18 +20,25 @@
 			</div>
 		</form>
 	</div>
-	<div class="panel panel-default">
-		<div class="panel-heading">
-			<h4 class="title">{{dataService.labelEndpoints()}}</h4>
-			<button type="button" class="btn btn-default pull-right" (click)="createEndpoint()">Create {{dataService.labelEndpointLower()}}</button>
-		</div>
-		<div table-directive 
-			[columns]="endpointTableColumns"
-			[data]="endpointRepresentations"
-			[noDataMessage]="'No '+dataService.labelEndpointsLower()+' found'"
-			[loadingStatus]="dataStatus" 
-			[allowSelect]="true"
-			(onSelect)="onEndpointSelect($event)">
-		</div>
+	<div>
+		<tabset>
+			<tab heading="{{dataService.labelEndpoints()}}">
+				<div class="tabPanel">
+					<div class="tabControls">
+						<button type="button" class="btn btn-default" (click)="createEndpoint()">Create {{dataService.labelEndpointLower()}}</button>
+					</div>
+					<div class="panel panel-default">
+						<div table-directive 
+							[columns]="endpointTableColumns"
+							[data]="endpointRepresentations"
+							[noDataMessage]="'No '+dataService.labelEndpointsLower()+' found'"
+							[loadingStatus]="dataStatus" 
+							[allowSelect]="true"
+							(onSelect)="onEndpointSelect($event)">
+						</div>
+					</div>
+				</div>
+			</tab>
+		</tabset>
 	</div>
 </div>
