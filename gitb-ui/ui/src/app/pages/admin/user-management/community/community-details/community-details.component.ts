@@ -75,6 +75,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   domains: Domain[] = []
   admins: User[] = []
   organizations: Organisation[] = []
+  organizationsToShow: Organisation[] = []
   landingPages: LandingPage[] = []
   legalNotices: LegalNotice[] = []
   errorTemplates: ErrorTemplate[] = []
@@ -84,9 +85,10 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   testBedLandingPage?: LandingPage
   testBedErrorTemplate?: ErrorTemplate
   tabToShow = CommunityTab.organisations
-
   tabTriggers!: Record<CommunityTab, {index: number, loader: () => any}>
   @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
+
+  organisationFilter?: string
 
   constructor(
     public dataService: DataService,
@@ -173,6 +175,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
       this.organisationService.getOrganisationsByCommunity(this.communityId)
       .subscribe((data) => {
         this.organizations = data
+        this.organizationsToShow = this.organizations
       }).add(() => {
         this.organisationStatus.status = Constants.STATUS.FINISHED
       })
@@ -397,4 +400,22 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   createOrganisation() {
     this.routingService.toCreateOrganisation(this.communityId)
   }
+
+  organisationFilterChanged(value: string|undefined) {
+    const tempOrgs: Organisation[] = []
+    if (value == undefined || value.length == 0) {
+      for (let org of this.organizations) {
+        tempOrgs.push(org)
+      }
+    } else {
+      const filterValueToApply = value.toLowerCase().trim()
+      for (let org of this.organizations) {
+        if ((org.sname != undefined && org.sname.toLowerCase().indexOf(filterValueToApply) != -1) || 
+            (org.fname != undefined && org.fname.toLowerCase().indexOf(filterValueToApply) != -1)) {
+          tempOrgs.push(org)
+        }
+      }
+    }
+    this.organizationsToShow = tempOrgs
+  }  
 }

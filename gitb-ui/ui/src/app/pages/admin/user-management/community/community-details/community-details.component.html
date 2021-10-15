@@ -29,12 +29,20 @@
                 <!-- Organisations -->
                 <div class="tabPanel">
                     <div class="tabControls">
-                        <button type="button" class="btn btn-default" (click)="createOrganisation()">Create {{dataService.labelOrganisationLower()}}</button>
+                        <div class="form-inline">
+                            <div class="form-group btn-toolbar">
+                                <div class="input-group">
+                                    <div class="input-group-addon"><i class="fa fa-search" aria-hidden="true"></i></div>
+                                    <input type="text" class="form-control" (ngModelChange)="organisationFilterChanged($event)" [(ngModel)]="organisationFilter" placeholder="Filter {{dataService.labelOrganisationsLower()}}..."/>
+                                </div>
+                                <button type="button" class="btn btn-default" (click)="createOrganisation()">Create {{dataService.labelOrganisationLower()}}</button>
+                            </div>
+                        </div>
                     </div>
                     <div class="panel panel-default">
                         <div table-directive
                             [columns]="organizationColumns"
-                            [data]="organizations"
+                            [data]="organizationsToShow"
                             [noDataMessage]="'No '+dataService.labelOrganisationsLower()+' found'"
                             [loadingStatus]="organisationStatus" 
                             [allowSelect]="true"
