@@ -101,7 +101,7 @@
             </ng-container>
         </tbody>
     </table>
-    <div *ngIf="paginationVisible && data && data.length > 0" class="text-center table-paging-controls-expandable">
+    <div *ngIf="(!prevDisabled || !nextDisabled) && data && data.length > 0" class="text-center table-paging-controls-expandable">
         <ul class="pagination pagination-sm">
             <li [ngClass]="prevDisabled ? 'disabled' : ''"><a href (click)="doFirstPage(); $event.preventDefault()">First</a></li>
             <li [ngClass]="prevDisabled ? 'disabled' : ''"><a href (click)="doPrevPage(); $event.preventDefault()">Previous</a></li>

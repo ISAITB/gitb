@@ -196,6 +196,7 @@ DELETE  /api/communities/sysparam/:id           @controllers.CommunityService.de
 GET     /api/communities/sysparam/:id           @controllers.CommunityService.getSystemParameters(id: Long)
 POST    /api/communities/sysparam/order/:id     @controllers.CommunityService.orderSystemParameters(id: Long)
 GET     /api/communities/organizations/:id      @controllers.OrganizationService.getOrganizationsByCommunity(id: Long)
+GET     /api/communities/organizations/:id/search @controllers.OrganizationService.searchOrganizationsByCommunity(id: Long)
 GET     /api/communities/pages/:id              @controllers.LandingPageService.getLandingPagesByCommunity(id: Long)
 POST    /api/communities/pages/create           @controllers.LandingPageService.createLandingPage()
 GET     /api/communities/notices/:id            @controllers.LegalNoticeService.getLegalNoticesByCommunity(id: Long)

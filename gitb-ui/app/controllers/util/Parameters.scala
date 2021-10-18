@@ -173,5 +173,6 @@ object Parameters {
   val SKIP_DEFAULT = "skipDefault"
 
   val FILTERING = "filtering"
+  val FILTER = "filter"
 
 }

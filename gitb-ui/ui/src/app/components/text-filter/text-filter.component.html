@@ -1,0 +1,8 @@
+<div class="input-group">
+    <form>
+        <input type="text" [style.width]="width?(width+'px'):null" name="filterValue" [placeholder]="placeholder" class="form-control" (click)="filterClicked()" [(ngModel)]="value" [readonly]="readonly" [ngClass]="{'clickable': readonly}"/>
+        <div class="input-group-btn">
+            <button class="btn btn-default" type="submit" (click)="applyFilter()" [disabled]="value == undefined"><i class="fa" [ngClass]="{'fa-search': !readonly, 'fa-times': readonly, 'faded': value == undefined}"></i></button>
+        </div>
+    </form>
+</div>

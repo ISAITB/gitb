@@ -47,8 +47,8 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   originalDomainId?: number
   adminColumns: TableColumnDefinition[] = []
   organizationColumns: TableColumnDefinition[] = [
-    { field: 'sname', title: 'Short name' },
-    { field: 'fname', title: 'Full name' }
+    { field: 'sname', title: 'Short name', sortable: true, order: 'asc' },
+    { field: 'fname', title: 'Full name', sortable: true }
   ]
   landingPagesColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
@@ -75,7 +75,6 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   domains: Domain[] = []
   admins: User[] = []
   organizations: Organisation[] = []
-  organizationsToShow: Organisation[] = []
   landingPages: LandingPage[] = []
   legalNotices: LegalNotice[] = []
   errorTemplates: ErrorTemplate[] = []
@@ -89,6 +88,12 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
 
   organisationFilter?: string
+  currentOrganisationsPage = 1
+  organisationCount = 0
+  organisationSortOrder = 'asc'
+  organisationSortColumn = 'shortname'
+  isNextPageOrganisationsDisabled = false
+  isPreviousPageOrganisationsDisabled = false
 
   constructor(
     public dataService: DataService,
@@ -134,7 +139,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     }
     this.adminColumns.push({ field: 'ssoStatusText', title: 'Status' })
     if (this.dataService.configuration.registrationEnabled) {
-      this.organizationColumns.push({ field: 'templateName', title: 'Set as template' })
+      this.organizationColumns.push({ field: 'templateName', title: 'Set as template', sortable: true })
     }
     this.triggerEventTypeMap = this.dataService.idToLabelMap(this.dataService.triggerEventTypes())
     if (this.dataService.isSystemAdmin) {
@@ -172,15 +177,21 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   showOrganisations() {
     if (this.organisationStatus.status == Constants.STATUS.NONE) {
       this.organisationStatus.status = Constants.STATUS.PENDING
-      this.organisationService.getOrganisationsByCommunity(this.communityId)
-      .subscribe((data) => {
-        this.organizations = data
-        this.organizationsToShow = this.organizations
-      }).add(() => {
-        this.organisationStatus.status = Constants.STATUS.FINISHED
-      })
+      this.goFirstPageOrganisations()
     }
   }
+
+  private queryOrganisations() {
+    this.organisationService.searchOrganisationsByCommunity(this.communityId, this.organisationFilter, this.organisationSortOrder, this.organisationSortColumn, this.currentOrganisationsPage, Constants.TABLE_PAGE_SIZE)
+    .subscribe((data) => {
+        this.organizations = data.data
+        this.organisationCount = data.count!
+        this.updatePagination()
+    })
+    .add(() => {
+      this.organisationStatus.status = Constants.STATUS.FINISHED
+    })
+}
 
   showAdministrators() {
     if (this.adminStatus.status == Constants.STATUS.NONE) {
@@ -333,7 +344,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     })
   }
 
-  organizationSelect(organization: Organisation) {
+  organisationSelect(organization: Organisation) {
     this.routingService.toOrganisationDetails(this.communityId, organization.id)
   }
 
@@ -401,21 +412,53 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     this.routingService.toCreateOrganisation(this.communityId)
   }
 
-  organisationFilterChanged(value: string|undefined) {
-    const tempOrgs: Organisation[] = []
-    if (value == undefined || value.length == 0) {
-      for (let org of this.organizations) {
-        tempOrgs.push(org)
-      }
+  goPreviousPageOrganisations() {
+    this.currentOrganisationsPage -= 1
+    this.queryOrganisations()
+  }
+
+  goNextPageOrganisations() {
+    this.currentOrganisationsPage += 1
+    this.queryOrganisations()
+  }
+
+  goFirstPageOrganisations() {
+    this.currentOrganisationsPage = 1
+    this.queryOrganisations()
+  }
+
+  goLastPageOrganisations() {
+    this.currentOrganisationsPage = Math.ceil(this.organisationCount / Constants.TABLE_PAGE_SIZE)
+    this.queryOrganisations()
+  }
+
+  private updatePagination() {
+    if (this.currentOrganisationsPage == 1) {
+      this.isNextPageOrganisationsDisabled = this.organisationCount <= Constants.TABLE_PAGE_SIZE
+      this.isPreviousPageOrganisationsDisabled = true
+    } else if (this.currentOrganisationsPage == Math.ceil(this.organisationCount / Constants.TABLE_PAGE_SIZE)) {
+      this.isNextPageOrganisationsDisabled = true
+      this.isPreviousPageOrganisationsDisabled = false
     } else {
-      const filterValueToApply = value.toLowerCase().trim()
-      for (let org of this.organizations) {
-        if ((org.sname != undefined && org.sname.toLowerCase().indexOf(filterValueToApply) != -1) || 
-            (org.fname != undefined && org.fname.toLowerCase().indexOf(filterValueToApply) != -1)) {
-          tempOrgs.push(org)
-        }
-      }
+      this.isNextPageOrganisationsDisabled = false
+      this.isPreviousPageOrganisationsDisabled = false
     }
-    this.organizationsToShow = tempOrgs
-  }  
+  }
+
+  sortOrganisations(column: TableColumnDefinition) {
+    if (column.field == 'sname') {
+      this.organisationSortColumn = 'shortname'
+    } else if (column.field == 'fname') {
+      this.organisationSortColumn = 'fullname'
+    } else {
+      this.organisationSortColumn = 'template'
+    }
+    this.organisationSortOrder = column.order!
+    this.goFirstPageOrganisations()
+  }
+
+  applyOrganisationFilter() {
+    this.goFirstPageOrganisations()
+  }
+
 }

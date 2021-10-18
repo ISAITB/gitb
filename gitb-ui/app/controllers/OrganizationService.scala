@@ -60,6 +60,29 @@ class OrganizationService @Inject() (implicit ec: ExecutionContext, repositoryUt
   }
 
   /**
+   * Gets the organizations with specified community
+   */
+  def searchOrganizationsByCommunity(communityId: Long) = authorizedAction { request =>
+    authorizationManager.canViewOrganisationsByCommunity(request, communityId)
+
+    val filter = ParameterExtractor.optionalQueryParameter(request, Parameters.FILTER)
+    val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
+    val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
+    val page = ParameterExtractor.optionalQueryParameter(request, Parameters.PAGE) match {
+      case Some(v) => v.toLong
+      case None => 1L
+    }
+    val limit = ParameterExtractor.optionalQueryParameter(request, Parameters.LIMIT) match {
+      case Some(v) => v.toLong
+      case None => 10L
+    }
+
+    val result = organizationManager.searchOrganizationsByCommunity(communityId, page, limit, filter, sortOrder, sortColumn)
+    val json: String = JsonUtil.jsOrganizationSearchResults(result._1, result._2).toString
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
+  /**
    * Creates new organization
    */
   def createOrganization() = authorizedAction { request =>

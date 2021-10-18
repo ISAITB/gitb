@@ -45,7 +45,7 @@
                 [exportPendingProperty]="exportPendingProperty"></tr>
         </tbody>
     </table>
-    <div *ngIf="paginationVisible && data && data.length > 0" class="text-center">
+    <div *ngIf="(!prevDisabled || !nextDisabled) && data && data.length > 0" class="text-center table-paging-controls">
         <ul class="pagination pagination-sm">
             <li [class.disabled]="prevDisabled"><a href (click)="doFirstPage();$event.preventDefault()">First</a></li>
             <li [class.disabled]="prevDisabled"><a href (click)="doPrevPage();$event.preventDefault()">Previous</a></li>

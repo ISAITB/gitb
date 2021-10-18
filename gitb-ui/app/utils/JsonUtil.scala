@@ -401,6 +401,18 @@ object JsonUtil {
     json
   }
 
+  def jsOrganizationSearchResults(list: Iterable[Organizations], resultCount: Int): JsObject = {
+    var json = Json.arr()
+    list.foreach { organisation =>
+      json = json.append(jsOrganization(organisation))
+    }
+    val jsonResult = Json.obj(
+      "data" -> json,
+      "count" -> resultCount
+    )
+    jsonResult
+  }
+
   /**
    * Converts a System object into Play!'s JSON notation.
    * Does not support cross object conversion

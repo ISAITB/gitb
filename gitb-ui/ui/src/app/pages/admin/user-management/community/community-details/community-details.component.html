@@ -30,11 +30,8 @@
                 <div class="tabPanel">
                     <div class="tabControls">
                         <div class="form-inline">
-                            <div class="form-group btn-toolbar">
-                                <div class="input-group">
-                                    <div class="input-group-addon"><i class="fa fa-search" aria-hidden="true"></i></div>
-                                    <input type="text" class="form-control" (ngModelChange)="organisationFilterChanged($event)" [(ngModel)]="organisationFilter" placeholder="Filter {{dataService.labelOrganisationsLower()}}..."/>
-                                </div>
+                            <div class="btn-toolbar">
+                                <app-text-filter name="organisationFilter" [width]="300" [placeholder]="'Search '+dataService.labelOrganisationsLower()+'...'" [(ngModel)]="organisationFilter" (apply)="applyOrganisationFilter()"></app-text-filter>
                                 <button type="button" class="btn btn-default" (click)="createOrganisation()">Create {{dataService.labelOrganisationLower()}}</button>
                             </div>
                         </div>
@@ -42,11 +39,18 @@
                     <div class="panel panel-default">
                         <div table-directive
                             [columns]="organizationColumns"
-                            [data]="organizationsToShow"
+                            [data]="organizations"
                             [noDataMessage]="'No '+dataService.labelOrganisationsLower()+' found'"
                             [loadingStatus]="organisationStatus" 
                             [allowSelect]="true"
-                            (onSelect)="organizationSelect($event)">
+                            [nextDisabled]="isNextPageOrganisationsDisabled"
+                            [prevDisabled]="isPreviousPageOrganisationsDisabled"
+                            (nextPage)="goNextPageOrganisations()"
+                            (lastPage)="goLastPageOrganisations()"
+                            (firstPage)="goFirstPageOrganisations()"
+                            (prevPage)="goPreviousPageOrganisations()"
+                            (onSort)="sortOrganisations($event)"
+                            (onSelect)="organisationSelect($event)">
                         </div>
                     </div>
                 </div>

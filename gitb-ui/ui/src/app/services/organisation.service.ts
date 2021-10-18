@@ -4,6 +4,7 @@ import { CustomProperty } from '../types/custom-property.type';
 import { ErrorDescription } from '../types/error-description';
 import { FileParam } from '../types/file-param.type';
 import { OrganisationParameterWithValue } from '../types/organisation-parameter-with-value';
+import { OrganisationSearchResult } from '../types/organisation-search-result.type';
 import { Organisation } from '../types/organisation.type';
 import { DataService } from './data.service';
 import { RestService } from './rest.service';
@@ -43,6 +44,20 @@ export class OrganisationService {
     return this.restService.get<Organisation[]>({
       path: ROUTES.controllers.OrganizationService.getOrganizationsByCommunity(communityId).url,
       authenticate: true
+    })
+  }
+
+  searchOrganisationsByCommunity(communityId: number, filter: string|undefined, sortOrder: string|undefined, sortColumn: string|undefined, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<OrganisationSearchResult>({
+      path: ROUTES.controllers.OrganizationService.searchOrganizationsByCommunity(communityId).url,
+      authenticate: true,
+      params: {
+        filter: filter, 
+        sort_order: sortOrder,
+        sort_column: sortColumn,
+        page: page,
+        limit: limit
+      }
     })
   }
 

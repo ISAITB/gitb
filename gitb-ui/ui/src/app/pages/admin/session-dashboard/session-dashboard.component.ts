@@ -143,7 +143,7 @@ export class SessionDashboardComponent implements OnInit {
         }
       })
     }
-    this.goFirstPage()
+    this.applyFilters()
   }
 
   private initFilterDataLoaders() {
@@ -409,29 +409,36 @@ export class SessionDashboardComponent implements OnInit {
     })
   }
 
-  queryDatabase() {
-    this.getActiveTests()
+  queryDatabase(onlyCompleted?: boolean) {
+    if (onlyCompleted == undefined || !onlyCompleted) {
+      this.getActiveTests()
+    }
     this.getCompletedTests()
   }
 
-  goFirstPage() {
+  applyFilters() {
     this.currentPage = 1
     this.queryDatabase()
   }
 
+  goFirstPage() {
+    this.currentPage = 1
+    this.queryDatabase(true)
+  }
+
   goPreviousPage() {
     this.currentPage -= 1
-    this.queryDatabase()
+    this.queryDatabase(true)
   }
 
   goNextPage() {
     this.currentPage += 1
-    this.queryDatabase()
+    this.queryDatabase(true)
   }
 
   goLastPage() {
     this.currentPage = Math.ceil(this.completedTestsTotalCount / Constants.TABLE_PAGE_SIZE)
-    this.queryDatabase()
+    this.queryDatabase(true)
   }
 
   updatePagination() {

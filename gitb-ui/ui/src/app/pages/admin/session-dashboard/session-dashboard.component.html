@@ -12,7 +12,7 @@
         [loadSystemsFn]="systemLoader"
         [loadOrganisationPropertiesFn]="organisationPropertyLoader"
         [loadSystemPropertiesFn]="systemPropertyLoader"
-        (onApply)="goFirstPage()">
+        (onApply)="applyFilters()">
     </app-test-filter>
     <div class="panel panel-default">
         <div class="panel-heading">
@@ -59,7 +59,6 @@
             [exportVisible]="true"
             (onExport)="onReportExport($event)"
             [exportVisibleForRow]="exportVisible"
-            [paginationVisible]="true"
             (firstPage)="goFirstPage()"
             (prevPage)="goPreviousPage()"
             (onSort)="sortCompletedSessions($event)"

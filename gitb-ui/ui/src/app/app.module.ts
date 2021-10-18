@@ -135,6 +135,7 @@ import { ParameterDisplayComponent } from './components/parameter-display/parame
 import { ProvideInputModalComponent } from './modals/provide-input-modal/provide-input-modal.component';
 import { SecretInputComponent } from './components/secret-input/secret-input.component';
 import { TabsModule } from 'ngx-bootstrap/tabs';
+import { TextFilterComponent } from './components/text-filter/text-filter.component';
 
 @NgModule({
   providers: [ 
@@ -258,7 +259,8 @@ import { TabsModule } from 'ngx-bootstrap/tabs';
     EndpointDisplayComponent,
     ParameterDisplayComponent,
     ProvideInputModalComponent,
-    SecretInputComponent
+    SecretInputComponent,
+    TextFilterComponent
   ],
   imports: [
     BrowserModule,

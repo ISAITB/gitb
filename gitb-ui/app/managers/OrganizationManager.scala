@@ -66,6 +66,35 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
     organizations
   }
 
+  def searchOrganizationsByCommunity(communityId: Long, page: Long, limit: Long, filter: Option[String], sortOrder: Option[String], sortColumn: Option[String]): (Iterable[Organizations], Int) = {
+    var query = PersistenceSchema.organizations
+      .filter(_.adminOrganization === false)
+      .filter(_.community === communityId)
+      .filterOpt(filter)((table, filterValue) => {
+        val filterValueToUse = s"%${filterValue.toLowerCase}%"
+        table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse)
+      })
+    if (sortOrder.getOrElse("asc") == "asc") {
+      query = sortColumn.getOrElse("shortname") match {
+        case "fullname" => query.sortBy(_.fullname)
+        case "template" => query.sortBy(_.templateName)
+        case _ => query.sortBy(_.shortname)
+      }
+    } else {
+      query = sortColumn.getOrElse("shortname") match {
+        case "fullname" => query.sortBy(_.fullname.desc)
+        case "template" => query.sortBy(_.templateName.desc)
+        case _ => query.sortBy(_.shortname.desc)
+      }
+    }
+    exec(
+      for {
+        results <- query.drop((page - 1) * limit).take(limit).result
+        resultCount <- query.size.result
+      } yield (results, resultCount)
+    )
+  }
+
   def getById(id: Long): Option[Organizations] = {
     exec(PersistenceSchema.organizations.filter(_.id === id).result.headOption)
   }
