@@ -159,7 +159,7 @@
                 <div class="input-group">
                   <input class="form-control pointer" bsDaterangepicker [(ngModel)]="startDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
                   <div class="input-group-btn">
-                    <button class="btn btn-default" type="button" (click)="clearStartRange()" [disabled]="startDateModel == undefined"><i class="glyphicon glyphicon-remove" [ngClass]="{'faded': startDateModel == undefined}"></i></button>
+                    <button class="btn btn-default" type="button" (click)="clearStartRange()" [disabled]="startDateModel == undefined"><i class="fa fa-times" [ngClass]="{'faded': startDateModel == undefined}"></i></button>
                   </div>
                 </div>
               </div>
@@ -170,7 +170,7 @@
                 <div class="input-group">
                   <input class="form-control pointer" bsDaterangepicker [(ngModel)]="endDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
                   <div class="input-group-btn">
-                    <button class="btn btn-default" type="button" (click)="clearEndRange()" [disabled]="endDateModel == undefined"><i class="glyphicon glyphicon-remove" [ngClass]="{'faded': endDateModel == undefined}"></i></button>
+                    <button class="btn btn-default" type="button" (click)="clearEndRange()" [disabled]="endDateModel == undefined"><i class="fa fa-times" [ngClass]="{'faded': endDateModel == undefined}"></i></button>
                   </div>
                 </div>
               </div>
@@ -178,12 +178,7 @@
             <div class="filterCell sessionFilter" *ngIf="filterDefined(Constants.FILTER_TYPE.SESSION)">
               <div class="filterName"><span>{{names[Constants.FILTER_TYPE.SESSION]}}</span></div>
               <div class="filterValue">
-                <div class="input-group">
-                  <input type="text" class="form-control" (click)="sessionIdClicked()" [(ngModel)]="sessionState!.id" [readonly]="sessionState!.readonly" [ngClass]="{'clickable': sessionState!.readonly}"/>
-                  <div class="input-group-btn">
-                      <button class="btn btn-default" type="button" (click)="applySessionId()" [disabled]="sessionState!.id == undefined"><i class="glyphicon" [ngClass]="{'glyphicon-remove': sessionState!.readonly, 'glyphicon-ok': !sessionState!.readonly, 'faded': sessionState!.id == undefined}"></i></button>
-                  </div>
-                </div>
+                <app-text-filter name="sessionFilter" [(ngModel)]="sessionId" (apply)="applyFilters()"></app-text-filter>
               </div>
             </div>
           </div>

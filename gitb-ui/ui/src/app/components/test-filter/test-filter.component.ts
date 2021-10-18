@@ -55,7 +55,7 @@ export class TestFilterComponent implements OnInit {
   colStyle!: { width: string }
   enableFiltering = false
   showFiltering = false
-  sessionState?: { id?: string, readonly: boolean }
+  sessionId?: string
   uuidCounter = 0
   cachedOrganisationProperties: { [key: string]: OrganisationParameter[] } = {}
   cachedSystemProperties: { [key: string]: SystemParameter[] } = {}
@@ -155,11 +155,6 @@ export class TestFilterComponent implements OnInit {
       all: this.getAllTestResults(),
       filter: this.getAllTestResults(),
       selection: []
-    }
-    if (this.filterDefined(Constants.FILTER_TYPE.SESSION)) {
-      this.sessionState = {
-        readonly: true
-      }
     }
     forkJoin(this.loadPromises).subscribe(() => {
       this.filterDataLoaded = true
@@ -272,7 +267,7 @@ export class TestFilterComponent implements OnInit {
       }
     }
     if (this.filterDefined(Constants.FILTER_TYPE.SESSION)) {
-      filters.sessionId = this.sessionState?.id
+      filters.sessionId = this.sessionId
     }
     if (this.filterDefined(Constants.FILTER_TYPE.ORGANISATION_PROPERTY)) {
       filters.organisationProperties = []
@@ -504,8 +499,7 @@ export class TestFilterComponent implements OnInit {
     this.setSystemFilter(this.filtering[Constants.FILTER_TYPE.ORGANISATION].filter, [], false)
     this.filtering[Constants.FILTER_TYPE.RESULT].selection = []
     if (this.filterDefined(Constants.FILTER_TYPE.SESSION)) {
-      this.sessionState!.id = undefined
-      this.sessionState!.readonly = true
+      this.sessionId = undefined
     }
     this.organisationProperties = []
     this.systemProperties = []
@@ -519,34 +513,6 @@ export class TestFilterComponent implements OnInit {
       results.push({id: value})
     }
     return results
-  }
-
-  sessionIdClicked() {
-    if (this.sessionState!.readonly) {
-      this.sessionState!.readonly = false
-      if (this.sessionState!.id === undefined) {
-        this.sessionState!.id = ''
-      }
-    }
-  }
-
-  applySessionId() {
-    if (this.sessionState?.id !== undefined) {
-      if (this.sessionState.readonly) {
-        // Clear
-        this.sessionState.id = undefined
-        this.applyFilters()
-      } else {
-        // Apply
-        const trimmed = this.sessionState.id.trim()
-        this.sessionState.id = trimmed
-        if (this.sessionState.id.length == 0) {
-          this.sessionState.id = undefined
-        }
-        this.sessionState.readonly = true
-        this.applyFilters()
-      }
-    }
   }
 
   addOrganisationProperty() {

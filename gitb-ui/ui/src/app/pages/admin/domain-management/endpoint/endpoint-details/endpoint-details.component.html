@@ -55,10 +55,10 @@
 									<td><div><span>{{parameter.name}}</span></div></td>
 									<td><div><span>{{parameter.desc}}</span></div></td>
 									<td><div><span>{{parameter.kindLabel}}</span></div></td>
-									<td class="centered"><div><span><i class="glyphicon" [ngClass]="{'glyphicon-ok': parameter.useLabel, 'glyphicon-remove': !parameter.useLabel}"></i></span></div></td>
-									<td class="centered"><div><span><i class="glyphicon" [ngClass]="{'glyphicon-ok': parameter.adminOnlyLabel, 'glyphicon-remove': !parameter.adminOnlyLabel}"></i></span></div></td>
-									<td class="centered"><div><span><i class="glyphicon" [ngClass]="{'glyphicon-ok': parameter.notForTestsLabel, 'glyphicon-remove': !parameter.notForTestsLabel}"></i></span></div></td>
-									<td class="centered"><div><span><i class="glyphicon" [ngClass]="{'glyphicon-ok': parameter.hidden, 'glyphicon-remove': !parameter.hidden}"></i></span></div></td>
+									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.useLabel, 'fa-times': !parameter.useLabel}"></i></span></div></td>
+									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.adminOnlyLabel, 'fa-times': !parameter.adminOnlyLabel}"></i></span></div></td>
+									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.notForTestsLabel, 'fa-times': !parameter.notForTestsLabel}"></i></span></div></td>
+									<td class="centered"><div><span><i class="fa" [ngClass]="{'fa-check': parameter.hidden, 'fa-times': !parameter.hidden}"></i></span></div></td>
 									<td class="btn-stacked-container" (click)="$event.stopPropagation();">
 										<div class="btn-toolbar btn-stacked">
 											<button *ngIf="!first" class="btn btn-xs btn-default" type="button" (click)="moveParameterUp(index)"><i class="fa fa-chevron-up"></i></button>

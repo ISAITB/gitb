@@ -8,7 +8,7 @@
     <div *ngIf="!columns[i].iconFn">
         <ng-container [ngSwitch]="item.boolean">
             <div *ngSwitchCase="true">
-                <i class="glyphicon" [ngClass]="{'glyphicon-ok': item.data, 'glyphicon-remove': !item.data}"></i>
+                <i class="fa" [ngClass]="{'fa-check': item.data, 'fa-times': !item.data}"></i>
             </div>
             <div *ngSwitchCase="false">
                 {{item.data}}

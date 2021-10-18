@@ -24,8 +24,8 @@ export abstract class BaseTableComponent extends BaseComponent {
 	@Input() exportPendingProperty = 'exportPending'
 	@Input() checkboxEnabled = false
 	@Input() tableCaption?: string
-	@Input() nextDisabled = false
-  @Input() prevDisabled = false
+	@Input() nextDisabled = true
+  @Input() prevDisabled = true
   @Input() allowSelect = false
   @Input() allowMultiSelect = false
 

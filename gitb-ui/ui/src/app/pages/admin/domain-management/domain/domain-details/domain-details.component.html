@@ -69,7 +69,7 @@
 												<td *ngIf="parameter.kind == 'BINARY'"><a href (click)="downloadParameter(parameter);$event.preventDefault();$event.stopPropagation()">{{parameter.valueToShow}}</a></td>
 												<td *ngIf="parameter.kind != 'BINARY'">{{parameter.valueToShow}}</td>
 												<td>{{parameter.description}}</td>
-												<td><div><span><i class="glyphicon" [ngClass]="{'glyphicon-ok': parameter.inTests, 'glyphicon-remove': !parameter.inTests}"></i></span></div></td>
+												<td><div><span><i class="fa" [ngClass]="{'fa-check': parameter.inTests, 'fa-times': !parameter.inTests}"></i></span></div></td>
 											</tr>
 										</ng-container>
 									</ng-container>
