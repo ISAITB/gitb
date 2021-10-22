@@ -12,6 +12,7 @@
 @error-color: #d32f2f;
 @warning-color: #f0ad4e;
 @completed-color: #4caf50;
+@extra-width-for-report-icons: 20;
 
 .icon-documentation {
   font-size: 18px;
@@ -79,11 +80,11 @@
 
 .generate-depth-spans(@width, @span, @n, @i: 0) when (@i =< @n) {
   &.depth-@{i} {
-    width: ((@width * @span) + (2 * @i * @container-padding) + 10);
+    width: ((@width * @span) + (2 * @i * @container-padding) + 10 + @extra-width-for-report-icons);
 
     & > .message-body > .child-steps.else::before,
     & > .message-body > .child-steps.thread::before {
-      width: ((@width * @span) + (2 * @i * @container-padding) - 1);
+      width: ((@width * @span) + (2 * @i * @container-padding) - 1 + @extra-width-for-report-icons);
     }
   }
   .generate-depth-spans(@width, @span, @n, (@i+1));

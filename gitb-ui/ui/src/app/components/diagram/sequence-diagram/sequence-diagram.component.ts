@@ -223,7 +223,7 @@ export class SequenceDiagramComponent implements OnInit {
       if (message.type == 'verify' || message.type == 'process' || message.type == 'msg' || message.type == 'exit') {
         this.setIndexes(message)
       } else if (message.type == 'group') {
-        this.setLoopStepChildIndexes(message)
+        this.setGroupStepChildIndexes(message)
       } else if (message.type == 'loop') {
         this.setLoopStepChildIndexes(message)
       } else if (message.type == 'decision') {
@@ -242,15 +242,29 @@ export class SequenceDiagramComponent implements OnInit {
     message.span = Math.abs(message.fromIndex - message.toIndex)
   }
 
+  private setMessageSpan(message: StepData, firstChild: StepData, lastChild: StepData, extend: boolean) {
+    message.from = firstChild.from
+    message.to = lastChild.to
+    message.fromIndex = firstChild.fromIndex
+    message.toIndex = lastChild.toIndex
+    let span = Math.abs(message.fromIndex! - message.toIndex!)
+    if (extend) {
+      if (message.from == Constants.TEST_ENGINE_ACTOR || message.to == Constants.TEST_ENGINE_ACTOR) {
+        // Extend the span because we may have here validation or processing with a message and a report.
+        span += 1
+      }
+    }
+    if (span == 0) {
+      span = 1
+    }
+    message.span = span
+  }
+
   setLoopStepChildIndexes(message: StepData) {
     this.setStepIndexes(message.steps)
     let firstChild = minBy(message.steps, (childStep) => { return childStep.fromIndex })
     let lastChild = maxBy(message.steps, (childStep) => { return childStep.toIndex })
-    message.from = firstChild!.from
-    message.to = lastChild!.to
-    message.fromIndex = firstChild!.fromIndex
-    message.toIndex = lastChild!.toIndex
-    message.span = Math.abs(message.fromIndex! - message.toIndex!)+1
+    this.setMessageSpan(message, firstChild!, lastChild!, true)
     if (message.sequences != undefined) {
       for (let sequence of message.sequences) {
         this.setLoopStepChildIndexes(sequence)
@@ -263,11 +277,7 @@ export class SequenceDiagramComponent implements OnInit {
     this.setStepIndexes(childSteps)
     let firstChild = minBy(childSteps, (childStep) => {return childStep.fromIndex})
     let lastChild = maxBy(childSteps, (childStep) => {return childStep.toIndex})
-    message.from = firstChild!.from
-    message.to = lastChild!.to
-    message.fromIndex = firstChild!.fromIndex
-    message.toIndex = lastChild!.toIndex
-    message.span = (Math.abs (message.fromIndex! - message.toIndex!))+1
+    this.setMessageSpan(message, firstChild!, lastChild!, true)
   }
 
   setDecisionStepChildIndexes(message: StepData) {
@@ -278,33 +288,21 @@ export class SequenceDiagramComponent implements OnInit {
     this.setStepIndexes(childSteps)
     let firstChild = minBy(childSteps, (childStep) => {return childStep.fromIndex})
     let lastChild = maxBy(childSteps, (childStep) => {return childStep.toIndex})
-    message.from = firstChild!.from
-    message.to = lastChild!.to
-    message.fromIndex = firstChild!.fromIndex
-    message.toIndex = lastChild!.toIndex
-    message.span = (Math.abs (message.fromIndex! - message.toIndex!))+1
+    this.setMessageSpan(message, firstChild!, lastChild!, true)
   }
 
   setFlowStepChildIndexes(message: StepData) {
     forEach(message.threads, this.setStepIndexes.bind(this))
     let firstChild = minBy(flatten(message.threads), (childStep) => {return childStep.fromIndex})
-    let lastChild = maxBy(flatten(message.threads), (childStep) => { return childStep.fromIndex})
-    message.from = firstChild!.from
-    message.to = lastChild!.to
-    message.fromIndex = firstChild!.fromIndex
-    message.toIndex = lastChild!.toIndex
-    message.span = (Math.abs (message.fromIndex! - message.toIndex!))+1
+    let lastChild = maxBy(flatten(message.threads), (childStep) => { return childStep.toIndex})
+    this.setMessageSpan(message, firstChild!, lastChild!, true)
   }
 
   setInteractionStepChildIndexes(message: StepData) {
     forEach(message.interactions, this.setIndexes.bind(this))
     let firstChild = minBy(message.interactions, (interaction) => {return Math.min(interaction.fromIndex!, interaction.toIndex!)})
     let lastChild = maxBy(message.interactions, (interaction) => {return Math.max(interaction.fromIndex!, interaction.toIndex!)})
-    message.fromIndex = Math.min(firstChild!.fromIndex!, firstChild!.toIndex!)
-    message.toIndex = Math.max(lastChild!.fromIndex!, lastChild!.toIndex!)
-    message.from = this.actors![message.fromIndex]
-    message.to = this.actors![message.toIndex]
-    message.span = (Math.abs(message.fromIndex - message.toIndex))
+    this.setMessageSpan(message, firstChild!, lastChild!, false)
   }
 
 }
