@@ -32,7 +32,8 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                     checkConfigs(
                             ((BeginTransaction)stepObj).getConfig(),
                             context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getRequiredTxConfigs(),
-                            context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalTxConfigs()
+                            context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalTxConfigs(),
+                            handler
                     );
                     messagingTxToHandler.put(((BeginTransaction) stepObj).getTxnId(), handler);
                 }
@@ -46,12 +47,14 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                 checkConfigs(
                         ((Send) stepObj).getConfig(),
                         context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getRequiredSendConfigs(),
-                        context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalSendConfigs()
+                        context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalSendConfigs(),
+                        handler
                 );
                 checkInputs(
                         ((Send) stepObj).getInput(),
                         context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getRequiredInputs(),
-                        context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalInputs()
+                        context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalInputs(),
+                        handler
                 );
             }
         } else if (stepObj instanceof ReceiveOrListen) {
@@ -61,12 +64,14 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                 checkConfigs(
                         ((ReceiveOrListen) stepObj).getConfig(),
                         context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getRequiredReceiveConfigs(),
-                        context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalReceiveConfigs()
+                        context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalReceiveConfigs(),
+                        handler
                 );
                 checkInputs(
                         ((ReceiveOrListen) stepObj).getInput(),
                         context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getRequiredInputs(),
-                        context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalInputs()
+                        context.getExternalConfiguration().getEmbeddedMessagingHandlers().get(handler).getOptionalInputs(),
+                        handler
                 );
             }
         } else if (stepObj instanceof BeginProcessingTransaction) {
@@ -77,7 +82,8 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                     checkConfigs(
                             ((BeginProcessingTransaction)stepObj).getConfig(),
                             context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getRequiredConfigs(),
-                            context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getOptionalConfigs()
+                            context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getOptionalConfigs(),
+                            handler
                     );
                     processingTxToHandler.put(((BeginProcessingTransaction)stepObj).getTxnId(), handler);
                 }
@@ -100,15 +106,25 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                     }
                 }
             }
+            if (((Process) stepObj).getOperation() != null && ((Process) stepObj).getOperationAttribute() != null) {
+                addReportItem(ErrorCode.DOUBLE_PROCESSING_OPERATION, currentTestCase.getId(), ((Process) stepObj).getOperationAttribute(), ((Process) stepObj).getOperation());
+            }
+            if (!((Process) stepObj).getInput().isEmpty() && ((Process) stepObj).getInputAttribute() != null) {
+                addReportItem(ErrorCode.DOUBLE_PROCESSING_INPUTS, currentTestCase.getId(), ((Process) stepObj).getOperationAttribute());
+            }
             if (handler != null) {
                 String operation = ((Process) stepObj).getOperation();
+                if (operation == null) {
+                    operation = ((Process) stepObj).getOperationAttribute();
+                }
                 if (operation != null) {
                     // Check operation-specific config.
                     if (context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getOperations().containsKey(operation)) {
                         checkInputs(
-                                ((Process) stepObj).getInput(),
+                                getInputs((Process) stepObj),
                                 context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getOperations().get(operation).getRequiredInputs(),
-                                context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getOperations().get(operation).getOptionalInputs()
+                                context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getOperations().get(operation).getOptionalInputs(),
+                                handler
                         );
                     } else {
                         addReportItem(ErrorCode.INVALID_PROCESSING_HANDLER_OPERATION, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), ((Process) stepObj).getOperation());
@@ -116,9 +132,10 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                 } else {
                     // Check default config.
                     checkInputs(
-                            ((Process) stepObj).getInput(),
+                            getInputs((Process) stepObj),
                             context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getDefaultRequiredInputs(),
-                            context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getDefaultOptionalInputs()
+                            context.getExternalConfiguration().getEmbeddedProcessingHandlers().get(handler).getDefaultOptionalInputs(),
+                            handler
                     );
                 }
             }
@@ -132,46 +149,75 @@ public class CheckHandlers extends AbstractTestCaseObserver {
                     checkConfigs(
                             ((Verify) stepObj).getConfig(),
                             context.getExternalConfiguration().getEmbeddedValidationHandlers().get(handler).getRequiredConfigs(),
-                            context.getExternalConfiguration().getEmbeddedValidationHandlers().get(handler).getOptionalConfigs()
+                            context.getExternalConfiguration().getEmbeddedValidationHandlers().get(handler).getOptionalConfigs(),
+                            handler
                     );
                     checkInputs(
                             ((Verify) stepObj).getInput(),
                             context.getExternalConfiguration().getEmbeddedValidationHandlers().get(handler).getRequiredInputs(),
-                            context.getExternalConfiguration().getEmbeddedValidationHandlers().get(handler).getOptionalInputs()
+                            context.getExternalConfiguration().getEmbeddedValidationHandlers().get(handler).getOptionalInputs(),
+                            handler
                     );
                 }
             }
         }
     }
 
-    private void checkConfigs(List<Configuration> configs, Set<String> expectedRequiredConfigs, Set<String> expectedOptionalConfigs) {
+    private List<Binding> getInputs(Process step) {
+        if (!step.getInput().isEmpty()) {
+            return step.getInput();
+        } else if (step.getInputAttribute() != null) {
+            var binding = new Binding();
+            binding.setValue(step.getInputAttribute());
+            return List.of(binding);
+        } else {
+            return null;
+        }
+    }
+
+    private void checkConfigs(List<Configuration> configs, Set<String> expectedRequiredConfigs, Set<String> expectedOptionalConfigs, String handlerName) {
         if (configs != null) {
             Set<String> remainingRequiredConfigs = new HashSet<>(expectedRequiredConfigs);
             for (Configuration config: configs) {
                 if (!expectedRequiredConfigs.contains(config.getName()) && !expectedOptionalConfigs.contains(config.getName())) {
-                    addReportItem(ErrorCode.UNEXPECTED_HANDLER_CONFIG, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), config.getName());
+                    addReportItem(ErrorCode.UNEXPECTED_HANDLER_CONFIG, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), handlerName, config.getName());
                 } else {
                     remainingRequiredConfigs.remove(config.getName());
                 }
             }
             for (String remainingRequiredConfig: remainingRequiredConfigs) {
-                addReportItem(ErrorCode.MISSING_HANDLER_CONFIG, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), remainingRequiredConfig);
+                addReportItem(ErrorCode.MISSING_HANDLER_CONFIG, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), handlerName, remainingRequiredConfig);
             }
         }
     }
 
-    private void checkInputs(List<Binding> inputs, Set<String> expectedRequiredInputs, Set<String> expectedOptionalInputs) {
+    private void checkInputs(List<Binding> inputs, Set<String> expectedRequiredInputs, Set<String> expectedOptionalInputs, String handlerName) {
         if (inputs != null) {
-            Set<String> remainingRequiredInputs = new HashSet<>(expectedRequiredInputs);
-            for (Binding input: inputs) {
-                if (!expectedRequiredInputs.contains(input.getName()) && !expectedOptionalInputs.contains(input.getName())) {
-                    addReportItem(ErrorCode.UNEXPECTED_HANDLER_INPUT, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), input.getName());
-                } else {
-                    remainingRequiredInputs.remove(input.getName());
+            var namedInputCount = inputs.stream().filter(input -> input.getName() != null).count();
+            if (namedInputCount == 0) {
+                // Inputs by sequence.
+                if (inputs.size() > expectedRequiredInputs.size() + expectedOptionalInputs.size()) {
+                    addReportItem(ErrorCode.UNEXPECTED_HANDLER_UNNAMED_INPUTS, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), handlerName);
+                } else if (inputs.size() < expectedRequiredInputs.size()) {
+                    addReportItem(ErrorCode.MISSING_HANDLER_UNNAMED_INPUTS, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), handlerName);
                 }
-            }
-            for (String remainingRequiredInput: remainingRequiredInputs) {
-                addReportItem(ErrorCode.MISSING_HANDLER_INPUT, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), remainingRequiredInput);
+            } else if (namedInputCount < inputs.size()) {
+                addReportItem(ErrorCode.NAMED_AND_UNNAMED_HANDLER_INPUT, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), handlerName);
+            } else {
+                // Inputs by name.
+                Set<String> remainingRequiredInputs = new HashSet<>(expectedRequiredInputs);
+                for (Binding input: inputs) {
+                    if (input.getName() != null) {
+                        if (!expectedRequiredInputs.contains(input.getName()) && !expectedOptionalInputs.contains(input.getName())) {
+                            addReportItem(ErrorCode.UNEXPECTED_HANDLER_INPUT, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), handlerName, input.getName());
+                        } else {
+                            remainingRequiredInputs.remove(input.getName());
+                        }
+                    }
+                }
+                for (String remainingRequiredInput: remainingRequiredInputs) {
+                    addReportItem(ErrorCode.MISSING_HANDLER_INPUT, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), handlerName, remainingRequiredInput);
+                }
             }
         }
     }

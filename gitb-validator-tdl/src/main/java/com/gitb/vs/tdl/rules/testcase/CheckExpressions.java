@@ -169,6 +169,8 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             checkConfigurations(((BeginProcessingTransaction) step).getConfig());
         } else if (step instanceof Process) {
             checkBindings(((Process) step).getInput());
+            checkToken(((Process) step).getInputAttribute(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            recordVariable(((Process)step).getOutput(), true);
         } else if (step instanceof IfStep) {
             checkExpression(((IfStep) step).getCond());
         } else if (step instanceof WhileStep) {
