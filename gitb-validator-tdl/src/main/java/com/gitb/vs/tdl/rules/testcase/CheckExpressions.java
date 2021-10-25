@@ -170,7 +170,9 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         } else if (step instanceof Process) {
             checkBindings(((Process) step).getInput());
             checkToken(((Process) step).getInputAttribute(), TokenType.STRING_OR_VARIABLE_REFERENCE);
-            recordVariable(((Process)step).getOutput(), true);
+            if (((Process)step).getOutput() != null) {
+                recordVariable(((Process)step).getOutput(), true);
+            }
         } else if (step instanceof IfStep) {
             checkExpression(((IfStep) step).getCond());
         } else if (step instanceof WhileStep) {
@@ -218,6 +220,10 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             }
         } else if (step instanceof CallStep) {
             checkBindings(((CallStep) step).getInput());
+            checkToken(((CallStep) step).getInputAttribute(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            if (((CallStep)step).getOutputAttribute() != null) {
+                recordVariable(((CallStep)step).getOutputAttribute(), true);
+            }
         } else if (step instanceof UserInteraction) {
             if (((UserInteraction)step).getInstructOrRequest() != null) {
                 for (InstructionOrRequest ir: ((UserInteraction)step).getInstructOrRequest()) {

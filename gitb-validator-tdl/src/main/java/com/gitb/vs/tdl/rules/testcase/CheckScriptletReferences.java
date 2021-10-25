@@ -70,17 +70,27 @@ public class CheckScriptletReferences extends AbstractTestCaseObserver {
                             // Scriptlet found - check inputs and outputs.
                             // Check inputs.
                             var definedInputs = toSetOfNames(((CallStep) step).getInput());
+                            String inputAttribute = null;
+                            if (definedInputs.isEmpty()) {
+                                inputAttribute = ((CallStep) step).getInputAttribute();
+                            } else if (((CallStep) step).getInputAttribute() != null) {
+                                addReportItem(ErrorCode.DOUBLE_CALL_INPUTS, currentTestCase.getId(), path);
+                            }
                             var expectedInputs = new HashSet<String>();
                             if (resolvedScriptlet.getParams() != null) {
                                 for (var variable: resolvedScriptlet.getParams().getVar()) {
                                     expectedInputs.add(variable.getName());
                                 }
                             }
-                            for (var definedInput: definedInputs) {
-                                if (!expectedInputs.contains(definedInput)) {
-                                    addReportItem(ErrorCode.UNEXPECTED_SCRIPTLET_INPUT, currentTestCase.getId(), path, definedInput);
-                                } else {
-                                    expectedInputs.remove(definedInput);
+                            if (expectedInputs.size() == 1 && inputAttribute != null) {
+                                expectedInputs.clear();
+                            } else {
+                                for (var definedInput: definedInputs) {
+                                    if (!expectedInputs.contains(definedInput)) {
+                                        addReportItem(ErrorCode.UNEXPECTED_SCRIPTLET_INPUT, currentTestCase.getId(), path, definedInput);
+                                    } else {
+                                        expectedInputs.remove(definedInput);
+                                    }
                                 }
                             }
                             for (var expectedInput: expectedInputs) {
