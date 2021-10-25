@@ -253,7 +253,8 @@ export class SystemTestsComponent implements OnInit {
       specificationId: testResult.specification?.id,
       actorId: testResult.actor?.id,
       systemId: testResult.system?.id,
-      organizationId: testResult.organization?.id
+      organizationId: testResult.organization?.id,
+      communityId: testResult.organization?.community
     }
     if (completed) {
       result.endTime = testResult.result.endTime

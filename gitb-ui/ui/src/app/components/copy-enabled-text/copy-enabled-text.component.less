@@ -1,0 +1,28 @@
+@import '../../../styles/less/_common.less';
+
+.value-container {
+    position: relative;
+    cursor: pointer;
+    &.hovering > .value-container-inner-hover {
+        position: absolute;
+        top: -4px; // padding plus border
+        left: 0px;
+        white-space: nowrap;
+        border: 1px solid @gray-button;
+        border-radius: 3px;
+        padding: 3px;
+        box-shadow: 1px 2px 4px 0px #777;
+        background-color: @white;
+        & > .value {
+            margin-left: 3px;
+        }
+    }
+}
+.value {
+    display: inline;
+}
+.icon {
+    display: inline;
+    margin-left: 10px;
+    margin-right: 5px;
+}

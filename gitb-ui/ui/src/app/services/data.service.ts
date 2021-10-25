@@ -871,4 +871,43 @@ export class DataService {
     })
   }
 
+  copyToClipboard(text: string|undefined): Observable<string|undefined> {
+    return new Observable<string|undefined>((observer) => {
+      if (text != undefined) {
+        if (navigator.clipboard) {
+          // Normal scenario.
+          navigator.clipboard.writeText(text).then(() => {
+            observer.next(text)
+            observer.complete()
+          })
+        } else {
+          // IE11 support.
+          const clipboard = (window as any).clipboardData
+          if (clipboard != undefined) {
+            clipboard.setData("text", text)
+            observer.next(text)
+            observer.complete()
+          } else {
+            // Final fallback solution.
+            let listener = (e: ClipboardEvent) => {
+              let clipboard = e.clipboardData
+              if (clipboard) {
+                clipboard.setData("text", text)
+              }
+              e.preventDefault()
+              observer.next(text)
+              observer.complete()
+            }
+            document.addEventListener("copy", listener, false)
+            document.execCommand("copy");
+            document.removeEventListener("copy", listener, false);            
+          }
+        }
+      } else {
+        observer.next()
+        observer.complete()
+      }
+    })
+  }
+
 }

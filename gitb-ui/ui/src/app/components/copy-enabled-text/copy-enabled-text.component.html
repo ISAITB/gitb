@@ -1,0 +1,9 @@
+<div class="value-container" [class.hovering]="hovering" (click)="copy();$event.stopPropagation()">
+    <div class="value-container-inner">
+        <div class="value"><span>{{value}}</span></div>
+    </div>
+    <div class="value-container-inner-hover" *ngIf="hovering">
+        <div class="value"><span>{{value}}</span></div>
+        <div class="icon" *ngIf="hovering"><i class="fa fa-clipboard" aria-hidden="true"></i></div>
+    </div>
+</div>

@@ -2,6 +2,7 @@ import { Component, Input, OnInit } from '@angular/core';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
+import { PopupService } from 'src/app/services/popup.service';
 import { ReportService } from 'src/app/services/report.service';
 import { TestService } from 'src/app/services/test.service';
 import { AnyContent } from '../../any-content';
@@ -30,6 +31,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
     reportService: ReportService,
     private dataService: DataService,
     modalService: BsModalService,
+    private popupService: PopupService,
     private confirmationDialogService: ConfirmationDialogService
   ) { super(modalService, reportService) }
 
@@ -127,6 +129,12 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
         }
       }
     }
+  }
+
+  copy() {
+    this.dataService.copyToClipboard(this.value).subscribe(() => {
+      this.popupService.success('Value copied to clipboard.')
+    })
   }
 
   private extension(mimeType: string|undefined) {
