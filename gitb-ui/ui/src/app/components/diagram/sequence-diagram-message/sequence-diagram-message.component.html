@@ -1,5 +1,5 @@
 <div [ngClass]="classForWrapper">
-  <div [ngClass]="classForMessage()" [class.hovering]="hoveringTitle">
+  <div [ngClass]="classForMessage()" [class.hovering]="hoveringTitle" [class.notHovering]="!hoveringTitle">
     <div class="message-type" [class.hovering]="hoveringTitle">
       <div class="message-title" (click)="titleClick()" (mouseover)="hoveringTitle = true" (mouseout)="hoveringTitle = false">{{message.title}}</div>
       <div *ngIf="message.type == 'loop' && message.sequences != null && message.sequences.length > 0" class="btn-group iterations" dropdown>
@@ -29,7 +29,7 @@
       <div class="step-icon" *ngIf="message.type == 'exit'">
         <i class="fa fa-dot-circle-o"></i>
       </div>
-      <div><span class="title" *ngIf="message.desc || message.documentation || message.type == 'verify' || message.type == 'process' || message.type == 'exit'" [ngClass]="{'skipped': message.status == TEST_STATUS.SKIPPED}">{{message.desc}}<span *ngIf="message.documentation" (click)="showStepDocumentation(message.documentation)"><i [ngStyle]="{ 'margin-left': message.desc?'5px':'0px'}" class="fa fa-question-circle icon-documentation"></i></span></span></div>
+      <div class="title-container"><div class="title" *ngIf="message.desc || message.documentation || message.type == 'verify' || message.type == 'process' || message.type == 'exit'" [ngClass]="{'skipped': message.status == TEST_STATUS.SKIPPED}">{{message.desc}}<span *ngIf="message.documentation" (click)="showStepDocumentation(message.documentation)"><i [ngStyle]="{ 'margin-left': message.desc?'5px':'0px'}" class="fa fa-question-circle icon-documentation"></i></span></div></div>
     </div>
     <div class="message-body" [collapse]="!expanded" [isAnimated]="false">
       <div class="message-report" *ngIf="message.report != null">

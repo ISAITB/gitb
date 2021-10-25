@@ -292,8 +292,14 @@
           }
         }
 
+        .title-container {
+          display: flex;
+          justify-content: center;
+        }
+
         .title {
-          display: block;
+          display: inline-flex;
+          background: @white;
           text-align: center;
           padding: 0 8px;
 
@@ -573,20 +579,26 @@
 
       @container-type-padding: 40px;
 
-      &.loop-type,
-      &.decision-type,
-      &.flow-type,
-      &.interact-type,
-      &.group-type {
+      &.loop-type, &.decision-type, &.flow-type, &.interact-type, &.group-type {
         & > .message {
           border: 1px solid @line-color;
-		  background: white;
+		      background: white;
           padding: (@container-type-padding / 2) 0;
           margin: @container-type-padding 0 0 0;
 
-		  &.hovering {
-			background: @hover-color;
-		  }
+        &.hovering {
+  			  background: @hover-color;
+          .loop-type, .decision-type, .flow-type, .interact-type, .group-type {
+            & > .message.notHovering {
+              .title {
+                background: @white;
+              }
+            }
+          }
+          .title {
+            background: @hover-color;
+          }
+		    }
 
           .generate-depth-paddings(@macro-limit);
           .generate-spans(@actor-width, true, @macro-limit);
