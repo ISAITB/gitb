@@ -3,7 +3,7 @@
 </div>
 <div class="modal-body">
     <div>
-        <div [innerHtml]="messageToShow"></div>
+        <div [innerHtml]="sanitizer.bypassSecurityTrustHtml(messageToShow!)"></div>
     </div>
 </div>
 <div class="modal-footer">

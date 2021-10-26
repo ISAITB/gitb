@@ -58,9 +58,9 @@ export class EditorComponent implements OnInit, ControlValueAccessor {
       config.plugins = [
           'advlist autolink lists link image charmap print preview anchor',
           'searchreplace visualblocks code fullscreen',
-          'insertdatetime media table paste code'
+          'insertdatetime media table paste code textcolor'
       ]
-      config.toolbar = 'undo redo | insert | styleselect | bold italic | charmap | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | table tabledelete | tableprops tablerowprops tablecellprops | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol'
+      config.toolbar = 'undo redo | insert | styleselect | bold italic | charmap | forecolor backcolor | fontsizeselect | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | link image | table tabledelete | tableprops tablerowprops tablecellprops | tableinsertrowbefore tableinsertrowafter tabledeleterow | tableinsertcolbefore tableinsertcolafter tabledeletecol'
     } else if (this.type == 'minimal') {
       config.plugins = [
         'advlist autolink lists link charmap print preview anchor',

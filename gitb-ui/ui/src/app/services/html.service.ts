@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
 import { BsModalService } from 'ngx-bootstrap/modal'
 import { HtmlComponent } from '../modals/html/html.component'
 
@@ -7,7 +8,9 @@ import { HtmlComponent } from '../modals/html/html.component'
 })
 export class HtmlService {
 
-  constructor(private modalService: BsModalService) { }
+  constructor(
+    private modalService: BsModalService
+  ) { }
 
   showHtml(headerText: string, html: string):void {
     const initialState = {

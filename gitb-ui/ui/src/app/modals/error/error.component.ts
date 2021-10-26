@@ -2,6 +2,7 @@ import { Component, EventEmitter, OnInit } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { ErrorData } from 'src/app/types/error-data.type';
 import { BsModalRef } from 'ngx-bootstrap/modal'
+import { DomSanitizer } from '@angular/platform-browser';
 
 @Component({
   selector: 'app-error',
@@ -19,7 +20,10 @@ export class ErrorComponent implements OnInit {
   errorMessage = '-'
   messageToShow?: string
 
-  constructor(public modalRef: BsModalRef) { }
+  constructor(
+    public modalRef: BsModalRef,
+    public sanitizer: DomSanitizer
+  ) { }
 
   ngOnInit(): void {
     if (this.error?.statusText) {

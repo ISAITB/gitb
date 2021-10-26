@@ -1,4 +1,5 @@
 import { Component, Input, OnInit } from '@angular/core';
+import { DomSanitizer } from '@angular/platform-browser';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { CommunityService } from 'src/app/services/community.service';
@@ -32,7 +33,8 @@ export class SelfRegistrationComponent extends BaseComponent implements OnInit {
 
   constructor(
     public dataService: DataService,
-    private communityService: CommunityService
+    private communityService: CommunityService,
+    public sanitizer: DomSanitizer
   ) { super() }
 
   ngOnInit(): void {

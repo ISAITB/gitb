@@ -79,7 +79,7 @@ libraryDependencies ++= Seq(
   "org.jasypt" % "jasypt" % "1.9.3",
   "org.apache.httpcomponents" % "httpclient" % "4.5.13",
   "org.flywaydb" %% "flyway-play" % "7.14.0",
-  "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20200713.1",
+  "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20211018.2",
   "net.lingala.zip4j" % "zip4j" % "2.9.0"
 )
 

@@ -14,6 +14,9 @@ public class HtmlUtil {
     private final static PolicyFactory MINIMAL_EDITOR_POLICY;
     private final static PolicyFactory PDF_POLICY;
 
+    private final static PolicyFactory TABLES_EXTENDED = new HtmlPolicyBuilder()
+            .allowElements("td").allowAttributes("colspan", "rowspan").onElements("td").toFactory();
+
     private final static PolicyFactory LINKS_WITH_TARGET = new HtmlPolicyBuilder()
             .allowElements((elementName, attrs) -> {
                 int targetIndex = attrs.indexOf("target");
@@ -30,7 +33,7 @@ public class HtmlUtil {
             .toFactory();
 
     static {
-        FULL_EDITOR_POLICY = BLOCKS.and(FORMATTING).and(IMAGES).and(TABLES).and(LINKS_WITH_TARGET).and(STYLES);
+        FULL_EDITOR_POLICY = BLOCKS.and(FORMATTING).and(IMAGES).and(TABLES).and(TABLES_EXTENDED).and(LINKS_WITH_TARGET).and(STYLES);
         MINIMAL_EDITOR_POLICY = BLOCKS.and(FORMATTING).and(LINKS_WITH_TARGET).and(STYLES);
         PDF_POLICY = BLOCKS.and(FORMATTING).and(LINKS);
     }
