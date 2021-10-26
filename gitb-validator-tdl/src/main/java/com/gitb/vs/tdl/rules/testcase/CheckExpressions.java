@@ -212,6 +212,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             checkToken(((Log) step).getValue(), TokenType.EXPRESSION);
         } else if (step instanceof Verify) {
             checkToken(((Verify)step).getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(((Verify)step).getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
             checkConfigurations(((Verify) step).getProperty());
             checkConfigurations(((Verify) step).getConfig());
             checkBindings(((Verify) step).getInput());
@@ -277,6 +278,10 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                         addReportItem(ErrorCode.INVALID_VARIABLE_REFERENCE, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentTestCase, currentScriptlet), token);
                     }
                 } else if (expectedType == TokenType.STRING_OR_VARIABLE_REFERENCE) {
+                    if (isVariableExpression) {
+                        variableResolver.checkVariablesInToken(token);
+                    }
+                } else if (expectedType == TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE) {
                     if (isVariableExpression) {
                         variableResolver.checkVariablesInToken(token);
                     }
@@ -359,6 +364,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     enum TokenType {
         STRING,
         STRING_OR_VARIABLE_REFERENCE,
+        ERROR_LEVEL_OR_VARIABLE_REFERENCE,
         VARIABLE_REFERENCE,
         EXPRESSION
     }

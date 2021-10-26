@@ -20,6 +20,9 @@ import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.validation.IValidationHandler;
 import com.gitb.validation.common.AbstractValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 import javax.xml.bind.JAXBElement;
 import java.math.BigInteger;
@@ -33,6 +36,7 @@ import java.util.*;
  */
 public class VerifyProcessor implements IProcessor {
 
+	private final static Logger logger = LoggerFactory.getLogger(VerifyProcessor.class);
 	private final TestCaseScope scope;
 	protected ObjectFactory objectFactory = new ObjectFactory();
 
@@ -110,8 +114,23 @@ public class VerifyProcessor implements IProcessor {
 
 		// Validate content with given configurations and inputs; and return the report
 		TestStepReportType report = validator.validate(verify.getConfig(), inputs);
+
+		var errorLevel = ErrorLevel.ERROR;
+		if (resolver.isVariableReference(verify.getLevel())) {
+			var resolvedErrorLevel = resolver.resolveVariableAsString(verify.getLevel());
+			try {
+				errorLevel = ErrorLevel.valueOf((String) resolvedErrorLevel.getValue());
+			} catch (NullPointerException e) {
+				logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Severity level for verify step could not be determined using expression [%s]. Using %s level instead.", verify.getLevel(), ErrorLevel.ERROR));
+			} catch (IllegalArgumentException e) {
+				logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Invalid severity level [%s] for verify step determined using expression [%s]. Using %s level instead.", errorLevel, verify.getLevel(), ErrorLevel.ERROR));
+			}
+		} else {
+			errorLevel = ErrorLevel.valueOf(verify.getLevel());
+		}
+
 		// Processing if step is at warning level
-		if (verify.getLevel() == ErrorLevel.WARNING && report.getResult().equals(TestResultType.FAILURE)) {
+		if (errorLevel == ErrorLevel.WARNING && report.getResult().equals(TestResultType.FAILURE)) {
 			// Failed report but with step at warning level - mark as success and convert reported error items to warnings
 			convertErrorItemsToWarnings(report);
 		}
