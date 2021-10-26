@@ -781,7 +781,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   testCaseFinished(result?: number, outputMessage?: string) {
-    if (result == Constants.TEST_STATUS.COMPLETED) {
+    if (result == Constants.TEST_STATUS.COMPLETED || result == Constants.TEST_STATUS.WARNING) {
       this.updateTestCaseStatus(this.currentTest!.id, Constants.TEST_CASE_STATUS.COMPLETED)
     } else if (result == Constants.TEST_STATUS.ERROR) {
       this.updateTestCaseStatus(this.currentTest!.id, Constants.TEST_CASE_STATUS.ERROR)
