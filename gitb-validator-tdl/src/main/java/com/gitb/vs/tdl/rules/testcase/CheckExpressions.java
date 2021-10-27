@@ -61,7 +61,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     @Override
     public void sectionChanged(TestCaseSection section) {
         super.sectionChanged(section);
-        if (section == TestCaseSection.STEPS || section == TestCaseSection.SCRIPTLET_STEPS) {
+        if (section == TestCaseSection.OUTPUT || section == TestCaseSection.SCRIPTLET_OUTPUT) {
             // In this section we have processed variables, parameters, actors and imports. We can now check imports for variable references.
             var currentStepCopy = currentStep;
             // Ensure the step is reported correctly.
