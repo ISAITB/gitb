@@ -100,7 +100,10 @@ public class VerifyProcessor implements IProcessor {
 				inputs.put(inputExpression.getName(), result);
 			}
 		} else {
-			List<TypedParameter> expectedParams = validatorDefinition.getInputs().getParam();
+			List<TypedParameter> expectedParams = new ArrayList<>();
+			if (validatorDefinition != null && validatorDefinition.getInputs() != null) {
+				expectedParams.addAll(validatorDefinition.getInputs().getParam());
+			}
 			Iterator<TypedParameter> expectedParamsIterator = expectedParams.iterator();
 			Iterator<Binding> inputExpressionsIterator = inputExpressions.iterator();
 			while (expectedParamsIterator.hasNext() && inputExpressionsIterator.hasNext()) {
@@ -110,8 +113,9 @@ public class VerifyProcessor implements IProcessor {
 				inputs.put(expectedParam.getName(), result);
 			}
 		}
-		failIfMissingRequiredParameter(inputs, validatorDefinition.getInputs().getParam());
-
+		if (validatorDefinition != null && validatorDefinition.getInputs() != null) {
+			failIfMissingRequiredParameter(inputs, validatorDefinition.getInputs().getParam());
+		}
 		// Validate content with given configurations and inputs; and return the report
 		TestStepReportType report = validator.validate(verify.getConfig(), inputs);
 
@@ -251,7 +255,7 @@ public class VerifyProcessor implements IProcessor {
 
 	private HashMap<String, TypedParameter> constructExpectedParameterMap(TestModule moduleDefinition) {
 		HashMap<String, TypedParameter> expectedParamsMap = new HashMap<>();
-		if (moduleDefinition.getInputs() != null) {
+		if (moduleDefinition != null && moduleDefinition.getInputs() != null) {
 			for (TypedParameter expectedParam : moduleDefinition.getInputs().getParam()) {
 				expectedParamsMap.put(expectedParam.getName(), expectedParam);
 			}
