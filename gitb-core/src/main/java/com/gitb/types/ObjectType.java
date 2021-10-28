@@ -68,18 +68,24 @@ public class ObjectType extends DataType {
             //If return type is a list type, cast each Node in the NodeList to the contained type
             if(result instanceof ListType){
                 String containedType = ((ListType) result).getContainedType();
-                NodeList nodeList = (NodeList) object;
-                for(int i=0; i<nodeList.getLength(); i++) {
-                    Node node = nodeList.item(i);
-                    DataType item = DataTypeFactory.getInstance().create(containedType);
-                    if(item instanceof  PrimitiveType){
-                        item.deserialize(node.getTextContent().getBytes());
-                    }else if (item instanceof ObjectType){
-                        item.setValue(node);
-                    }else {
-                        //For other types, try casting from XML format
-                        item.deserialize(serializeNode(node), ObjectType.DEFAULT_COMMON_ENCODING_FORMAT);
+                if (object instanceof NodeList) {
+                    NodeList nodeList = (NodeList) object;
+                    for(int i=0; i<nodeList.getLength(); i++) {
+                        Node node = nodeList.item(i);
+                        DataType item = DataTypeFactory.getInstance().create(containedType);
+                        if(item instanceof  PrimitiveType){
+                            item.deserialize(node.getTextContent().getBytes());
+                        }else if (item instanceof ObjectType){
+                            item.setValue(node);
+                        }else {
+                            //For other types, try casting from XML format
+                            item.deserialize(serializeNode(node), ObjectType.DEFAULT_COMMON_ENCODING_FORMAT);
+                        }
+                        ((ListType) result).append(item);
                     }
+                } else if (object instanceof String) {
+                    var item = new StringType();
+                    item.setValue(object);
                     ((ListType) result).append(item);
                 }
             }

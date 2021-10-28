@@ -75,7 +75,11 @@ public abstract class DataType {
                 return toMapType();
             default:
                 if (isListType(targetType)) {
-                    return toListType();
+                    if (this instanceof ListType) {
+                        return this;
+                    } else {
+                        return toListType();
+                    }
                 } else {
                     throw new IllegalArgumentException("Unknown target conversion type ["+targetType+"]");
                 }

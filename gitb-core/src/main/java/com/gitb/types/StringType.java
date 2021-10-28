@@ -99,6 +99,8 @@ public class StringType extends PrimitiveType {
 
     @Override
     public StringType toStringType() {
-	    return this;
+        StringType type = new StringType();
+        type.setValue(this.getValue());
+	    return type;
     }
 }
