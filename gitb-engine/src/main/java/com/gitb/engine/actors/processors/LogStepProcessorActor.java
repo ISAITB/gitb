@@ -27,7 +27,7 @@ public class LogStepProcessorActor extends AbstractTestStepActor<Log> {
     protected void start() {
         processing();
         ExpressionHandler exprHandler = new ExpressionHandler(scope);
-        StringType result = exprHandler.processExpression(step).toStringType();
+        StringType result = (StringType) exprHandler.processExpression(step).convertTo(StringType.STRING_DATA_TYPE);
         if (result != null) {
             LOG.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), (String)result.getValue());
         }

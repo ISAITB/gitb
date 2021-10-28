@@ -2,7 +2,6 @@ package com.gitb.types;
 
 import javax.xml.xpath.XPathExpression;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -86,4 +85,19 @@ public class MapType extends ContainerType {
         }
     }
 
+    @Override
+    public StringType toStringType() {
+        StringType type = new StringType();
+        StringBuilder str = new StringBuilder();
+        var iterator = elements.entrySet().iterator();
+        while (iterator.hasNext()) {
+            var entry = iterator.next();
+            str.append("[").append(entry.getKey()).append("]=[").append(entry.getValue().toStringType()).append("]");
+            if (iterator.hasNext()) {
+                str.append(",");
+            }
+        }
+        type.setValue(str.toString());
+        return type;
+    }
 }
