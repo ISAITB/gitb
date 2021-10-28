@@ -18,6 +18,7 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
   @Input() report!: StepReport
   @Input() sessionId!: string
   collapsed = false
+  hasContextItems = false
 
   constructor(
     modalService: BsModalService,
@@ -28,6 +29,9 @@ export class TestStepReportTARComponent extends ReportSupport implements OnInit 
     // Calculate the value of each item in the report context
     if (this.report.context) {
       this.setContextValues(this.report.context)
+      if (this.report.context.value != undefined || (this.report.context.item != undefined && this.report.context.item.length > 0)) {
+        this.hasContextItems = true
+      }
     }
   }
 
