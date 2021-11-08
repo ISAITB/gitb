@@ -26,6 +26,7 @@ import java.util.List;
 public class TestbedService {
 
 	private static final Logger logger = LoggerFactory.getLogger(TestbedService.class);
+	private static final Logger sessionLogger = LoggerFactory.getLogger("TEST_SESSION");
 
 	/**
 	 * Initiate a TestCase Session, return session id
@@ -127,7 +128,8 @@ public class TestbedService {
 	 * @param sessionId
 	 */
 	public static void start(String sessionId) {
-		logger.info(MarkerFactory.getDetachedMarker(sessionId), "Starting session");
+		logger.debug("Starting session {}", sessionId);
+		sessionLogger.info(MarkerFactory.getDetachedMarker(sessionId), "Starting session");
 		TestEngine
 			.getInstance()
 			.getEngineActorSystem()
@@ -153,7 +155,8 @@ public class TestbedService {
 				msg = new ConnectionClosedEvent(sessionId);
 			} else {
 				// Regular stop
-				logger.info(MarkerFactory.getDetachedMarker(sessionId), "Stopping session");
+				logger.debug("Stopping session {}", sessionId);
+				sessionLogger.info(MarkerFactory.getDetachedMarker(sessionId), "Stopping session");
 				msg = new StopCommand(sessionId);
 			}
 			TestEngine
@@ -172,7 +175,8 @@ public class TestbedService {
 	 * @return new test execution session id
 	 */
 	public static String restart(String sessionId) {
-		logger.info(MarkerFactory.getDetachedMarker(sessionId), "Restarting session");
+		logger.debug("Restarting session {}", sessionId);
+		sessionLogger.info(MarkerFactory.getDetachedMarker(sessionId), "Restarting session");
 		TestEngine
 			.getInstance()
 			.getEngineActorSystem()
