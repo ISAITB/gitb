@@ -269,13 +269,13 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         if (StringUtils.isNotBlank(token)) {
             boolean isVariableExpression = Utils.isVariableExpression(token);
             if (isVariableExpression && StringUtils.countMatches(token, '{') != StringUtils.countMatches(token, '}')) {
-                addReportItem(ErrorCode.INVALID_VARIABLE_REFERENCE, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentTestCase, currentScriptlet), token);
+                addReportItem(ErrorCode.INVALID_VARIABLE_REFERENCE, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), token);
             } else {
                 if (expectedType == TokenType.VARIABLE_REFERENCE) {
                     if (isVariableExpression) {
                         variableResolver.checkVariablesInToken(token);
                     } else {
-                        addReportItem(ErrorCode.INVALID_VARIABLE_REFERENCE, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentTestCase, currentScriptlet), token);
+                        addReportItem(ErrorCode.INVALID_VARIABLE_REFERENCE, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), token);
                     }
                 } else if (expectedType == TokenType.STRING_OR_VARIABLE_REFERENCE) {
                     if (isVariableExpression) {
@@ -293,7 +293,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                             XPathExpression expression = createXPathExpression(token);
                             expression.evaluate(Utils.getSecureDocumentBuilderFactory().newDocumentBuilder().newDocument());
                         } catch (XPathExpressionException e) {
-                            addReportItem(ErrorCode.INVALID_EXPRESSION, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentTestCase, currentScriptlet), token);
+                            addReportItem(ErrorCode.INVALID_EXPRESSION, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), token);
                         } catch (ParserConfigurationException e) {
                             throw new IllegalStateException(e);
                         }
