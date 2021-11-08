@@ -24,6 +24,7 @@ export interface StepData {
     sequences?: StepData[],
     desc?: string,
     documentation?: string,
-    currentIndex?: number
+    currentIndex?: number,
+    reply?: boolean
 
 }

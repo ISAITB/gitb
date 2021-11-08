@@ -295,6 +295,7 @@ public class JacksonUtil {
                     jsonGenerator.writeStringField("type", "msg");
                     jsonGenerator.writeStringField("from", ((MessagingStep) step).getFrom());
                     jsonGenerator.writeStringField("to", ((MessagingStep) step).getTo());
+                    jsonGenerator.writeBooleanField("reply", ((MessagingStep) step).isReply());
                 });
             } else if (step instanceof DecisionStep) {
                 writeStep(jsonGenerator, step, () -> {

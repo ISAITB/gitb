@@ -331,7 +331,12 @@
 
         .arrow {
           width: 100%;
-          border-bottom: 3px solid @line-color;
+          &.reply {
+            border-bottom: 3px dashed @line-color;
+          }
+          &.normal {
+            border-bottom: 3px solid @line-color;
+          }
           position: relative;
 
           &::after {
