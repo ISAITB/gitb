@@ -11,7 +11,7 @@ import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.layer.AbstractMessagingHandler;
-import com.gitb.messaging.model.InitiateResponse;
+import com.gitb.ms.InitiateResponse;
 import com.gitb.tbs.SUTConfiguration;
 import com.gitb.tdl.*;
 import com.gitb.types.BooleanType;
@@ -629,7 +629,7 @@ public class TestCaseContext {
 			}
 			if (!configurations.isEmpty()) {
 				for(Map.Entry<Tuple<String>, ActorConfiguration> entry : sutConfigurations.entrySet()) {
-					ActorConfiguration simulatedActor = ActorUtils.getActorConfiguration(initiateResponse.getActorConfigurations(), entry.getValue().getActor(), entry.getValue().getEndpoint());
+					ActorConfiguration simulatedActor = ActorUtils.getActorConfiguration(initiateResponse.getActorConfiguration(), entry.getValue().getActor(), entry.getValue().getEndpoint());
 					if (simulatedActor != null) {
 						Tuple<String> actorTuple = entry.getKey();
 						String actorIdToBeSimulated = actorTuple.getContents()[0];
@@ -649,7 +649,7 @@ public class TestCaseContext {
 					String sutActorId = concatenatedActorTuple.getContents()[2];
 					String sutEndpointName = concatenatedActorTuple.getContents()[3];
 
-					ActorConfiguration simulatedActor = ActorUtils.getActorConfiguration(initiateResponse.getActorConfigurations(), actorIdToBeSimulated, endpointNameToBeSimulated);
+					ActorConfiguration simulatedActor = ActorUtils.getActorConfiguration(initiateResponse.getActorConfiguration(), actorIdToBeSimulated, endpointNameToBeSimulated);
 					if (simulatedActor != null) {
 						Tuple<String> sutActorTuple = new Tuple<>(new String[] {sutActorId, sutEndpointName});
 
@@ -671,7 +671,7 @@ public class TestCaseContext {
 				throw new IllegalStateException("The remote messaging service must return a session identifier");
 			}
 			return new MessagingContext(messagingHandler, initiateResponse.getSessionId(),
-				initiateResponse.getActorConfigurations(), new ArrayList<>(sutHandlerConfigurations.values()), transactionCount);
+				initiateResponse.getActorConfiguration(), new ArrayList<>(sutHandlerConfigurations.values()), transactionCount);
 		}
 
 		public String getHandler() {
