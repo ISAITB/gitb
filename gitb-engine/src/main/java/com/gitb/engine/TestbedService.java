@@ -127,7 +127,7 @@ public class TestbedService {
 	 * @param sessionId
 	 */
 	public static void start(String sessionId) {
-		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "Starting session");
+		logger.info(MarkerFactory.getDetachedMarker(sessionId), "Starting session");
 		TestEngine
 			.getInstance()
 			.getEngineActorSystem()
@@ -153,7 +153,7 @@ public class TestbedService {
 				msg = new ConnectionClosedEvent(sessionId);
 			} else {
 				// Regular stop
-				logger.debug(MarkerFactory.getDetachedMarker(sessionId), "Connection closed for session");
+				logger.info(MarkerFactory.getDetachedMarker(sessionId), "Stopping session");
 				msg = new StopCommand(sessionId);
 			}
 			TestEngine
@@ -172,7 +172,7 @@ public class TestbedService {
 	 * @return new test execution session id
 	 */
 	public static String restart(String sessionId) {
-		logger.debug(MarkerFactory.getDetachedMarker(sessionId), "Restarting session");
+		logger.info(MarkerFactory.getDetachedMarker(sessionId), "Restarting session");
 		TestEngine
 			.getInstance()
 			.getEngineActorSystem()

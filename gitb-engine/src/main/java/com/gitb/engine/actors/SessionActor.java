@@ -15,6 +15,7 @@ import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tbs.SUTConfiguration;
 import com.gitb.tbs.TestStepStatus;
+import com.gitb.tdl.LogLevel;
 import com.gitb.tr.SR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
@@ -62,11 +63,13 @@ public class SessionActor extends Actor {
                 .getContext(getSessionId());
         if (context != null) {
             if (message instanceof LogCommand) {
-                var msg = new UpdateMessage(((LogCommand) message).getTestStepStatus());
-                eventOutbox.put(msg.getUuid(), msg);
-                if (context.getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
-                    // After stopping, any such updates will be handled in the final cleanup.
-                    self().tell(new SendUpdateCommand(), self());
+                if (shouldSignalLogEvent((LogCommand)message, context)) {
+                    var msg = new UpdateMessage(((LogCommand) message).getTestStepStatus());
+                    eventOutbox.put(msg.getUuid(), msg);
+                    if (context.getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
+                        // After stopping, any such updates will be handled in the final cleanup.
+                        self().tell(new SendUpdateCommand(), self());
+                    }
                 }
             } else if (message instanceof SendUpdateCommand) {
                 if (context.getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
@@ -165,7 +168,7 @@ public class SessionActor extends Actor {
                             context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPING);
                             testCaseProcessorActor.tell(message, self());
                         } else if (message instanceof TestSessionFinishedCommand) {
-                            logger.debug(MarkerFactory.getDetachedMarker(getSessionId()), String.format("Session finished with result [%s]", ((TestSessionFinishedCommand) message).getStatus()));
+                            logger.info(MarkerFactory.getDetachedMarker(getSessionId()), String.format("Session finished with result [%s]", ((TestSessionFinishedCommand) message).getStatus()));
                             sessionEndEvent = createSessionEndMessage(((TestSessionFinishedCommand) message).getStatus(), ((TestSessionFinishedCommand) message).getResultReport());
                             if (!eventProcessingInProgress) {
                                 self().tell(new StopCommand(getSessionId()), self());
@@ -191,6 +194,13 @@ public class SessionActor extends Actor {
                 }
             }
         }
+    }
+
+    private boolean shouldSignalLogEvent(LogCommand message, TestCaseContext context) {
+        return (context.getLogLevelToSignal() == LogLevel.DEBUG) ||
+                (context.getLogLevelToSignal() == LogLevel.INFO && message.getLogLevel() != LogLevel.DEBUG) ||
+                (context.getLogLevelToSignal() == LogLevel.WARNING && (message.getLogLevel() == LogLevel.ERROR || message.getLogLevel() == LogLevel.WARNING)) ||
+                (context.getLogLevelToSignal() == LogLevel.ERROR && message.getLogLevel() == LogLevel.ERROR);
     }
 
     private void stopTestSession(TestCaseContext context) {

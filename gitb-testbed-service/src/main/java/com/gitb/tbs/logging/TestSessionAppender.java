@@ -1,6 +1,7 @@
 package com.gitb.tbs.logging;
 
 import akka.actor.ActorRef;
+import ch.qos.logback.classic.Level;
 import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
 import ch.qos.logback.classic.spi.ILoggingEvent;
 import ch.qos.logback.classic.spi.IThrowableProxy;
@@ -12,6 +13,7 @@ import com.gitb.engine.actors.SessionActor;
 import com.gitb.engine.actors.processors.AbstractTestStepActor;
 import com.gitb.engine.commands.interaction.LogCommand;
 import com.gitb.tbs.TestStepStatus;
+import com.gitb.tdl.LogLevel;
 import com.gitb.tr.TAR;
 
 /**
@@ -60,8 +62,20 @@ public class TestSessionAppender extends AppenderBase<ILoggingEvent> {
                     .getEngineActorSystem()
                     .getActorSystem()
                     .actorSelection(SessionActor.getPath(sessionId))
-                    .tell(new LogCommand(sessionId, testStepStatus), ActorRef.noSender());
+                    .tell(new LogCommand(sessionId, testStepStatus, toLogLevel(eventObject.getLevel())), ActorRef.noSender());
         }
+    }
+
+    private LogLevel toLogLevel(Level level) {
+        var logLevel = LogLevel.DEBUG;
+        if (level != null) {
+            switch (level.levelInt) {
+                case Level.ERROR_INT: logLevel = LogLevel.ERROR; break;
+                case Level.WARN_INT: logLevel = LogLevel.WARNING; break;
+                case Level.INFO_INT: logLevel = LogLevel.INFO; break;
+            }
+        }
+        return logLevel;
     }
 
     private String getLogMessage(ILoggingEvent eventObject) {

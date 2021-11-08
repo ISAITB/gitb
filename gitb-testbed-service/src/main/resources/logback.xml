@@ -28,6 +28,10 @@
         </rollingPolicy>
     </appender>
 
+    <logger name="TEST_SESSION" level="debug" additivity="false">
+        <appender-ref ref="TEST_SESSION"/>
+    </logger>
+
     <logger name="com.gitb" level="debug" additivity="false">
         <appender-ref ref="FILE"/>
         <appender-ref ref="STDOUT"/>

@@ -11,7 +11,7 @@ import org.slf4j.MarkerFactory;
 
 public class LogStepProcessorActor extends AbstractTestStepActor<Log> {
 
-    private static final Logger LOG = LoggerFactory.getLogger(LogStepProcessorActor.class);
+    private static final Logger LOG = LoggerFactory.getLogger("TEST_SESSION");
     public static final String NAME = "log-p";
 
     public LogStepProcessorActor(Log step, TestCaseScope scope, String stepId) {
@@ -29,7 +29,14 @@ public class LogStepProcessorActor extends AbstractTestStepActor<Log> {
         ExpressionHandler exprHandler = new ExpressionHandler(scope);
         StringType result = (StringType) exprHandler.processExpression(step).convertTo(StringType.STRING_DATA_TYPE);
         if (result != null) {
-            LOG.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), (String)result.getValue());
+            var marker = MarkerFactory.getDetachedMarker(scope.getContext().getSessionId());
+            var message = (String)result.getValue();
+            switch (step.getLevel()) {
+                case ERROR: LOG.error(marker, message); break;
+                case WARNING: LOG.warn(marker, message); break;
+                case INFO: LOG.info(marker, message); break;
+                default: LOG.debug(marker, message);
+            }
         }
         completed();
     }

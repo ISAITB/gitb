@@ -125,9 +125,9 @@ public class VerifyProcessor implements IProcessor {
 			try {
 				errorLevel = ErrorLevel.valueOf((String) resolvedErrorLevel.getValue());
 			} catch (NullPointerException e) {
-				logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Severity level for verify step could not be determined using expression [%s]. Using %s level instead.", verify.getLevel(), ErrorLevel.ERROR));
+				logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Severity level for verify step could not be determined using expression [%s]. Using %s level instead.", verify.getLevel(), ErrorLevel.ERROR));
 			} catch (IllegalArgumentException e) {
-				logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Invalid severity level [%s] for verify step determined using expression [%s]. Using %s level instead.", errorLevel, verify.getLevel(), ErrorLevel.ERROR));
+				logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Invalid severity level [%s] for verify step determined using expression [%s]. Using %s level instead.", errorLevel, verify.getLevel(), ErrorLevel.ERROR));
 			}
 		} else {
 			errorLevel = ErrorLevel.valueOf(verify.getLevel());

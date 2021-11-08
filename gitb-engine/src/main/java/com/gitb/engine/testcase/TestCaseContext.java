@@ -133,6 +133,8 @@ public class TestCaseContext {
 		STOPPING
     }
 
+	private LogLevel logLevelToSignal = LogLevel.DEBUG;
+
     public TestCaseContext(TestCase testCase, String sessionId) {
         this.currentState = TestCaseStateEnum.IDLE;
         this.testCase = testCase;
@@ -142,7 +144,9 @@ public class TestCaseContext {
         this.messagingContexts = new ConcurrentHashMap<>();
 		this.processingContexts = new ConcurrentHashMap<>();
         this.scope = new TestCaseScope(this, testCase.getImports());
-
+		if (testCase.getSteps() != null) {
+			this.logLevelToSignal = testCase.getSteps().getLogLevel();
+		}
         addStepStatus();
         processVariables();
 
@@ -505,7 +509,11 @@ public class TestCaseContext {
         return sessionId;
     }
 
-    public MessagingContext getMessagingContext(String handler) {
+	public LogLevel getLogLevelToSignal() {
+		return logLevelToSignal;
+	}
+
+	public MessagingContext getMessagingContext(String handler) {
         return messagingContexts.get(handler);
     }
 

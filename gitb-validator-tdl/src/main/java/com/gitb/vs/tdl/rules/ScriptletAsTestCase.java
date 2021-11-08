@@ -40,8 +40,10 @@ public class ScriptletAsTestCase extends TestCase {
     }
 
     @Override
-    public Sequence getSteps() {
-        return scriptlet.getSteps();
+    public TestCaseSteps getSteps() {
+        var steps = new TestCaseSteps();
+        steps.getSteps().addAll(scriptlet.getSteps().getSteps());
+        return steps;
     }
 
     public Scriptlet getWrappedScriptlet() {
