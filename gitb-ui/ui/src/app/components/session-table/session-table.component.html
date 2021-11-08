@@ -55,11 +55,11 @@
                                                 <div class="panel-heading session-table-title clickable" (click)="diagramCollapsed[row.session] = !diagramCollapsed[row.session]">
                                                     <div class="session-table-title-part">
                                                         <div class="session-table-title-label">Test suite</div>
-                                                        <div class="session-table-title-value"><app-copy-enabled-text [value]="row.testSuite"></app-copy-enabled-text></div>
+                                                        <div class="session-table-title-value">{{row.testSuite}}</div>
                                                     </div>
                                                     <div class="session-table-title-part">
                                                         <div class="session-table-title-label">Test case</div>
-                                                        <div class="session-table-title-value"><app-copy-enabled-text [value]="row.testCase"></app-copy-enabled-text></div>
+                                                        <div class="session-table-title-value">{{row.testCase}}</div>
                                                     </div>
                                                     <div class="session-table-title-part">
                                                         <div class="session-table-title-label">Session</div>
