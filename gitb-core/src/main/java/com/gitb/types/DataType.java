@@ -18,8 +18,6 @@ public abstract class DataType {
     public static final String OBJECT_DATA_TYPE = "object";
     public static final String[] CONTAINER_TYPE_PARENTHESIS = {"[", "]"};
 
-	//public static final String DEFAULT_ENCODING = "utf-8";
-
     public abstract String getType();
 
     public abstract DataType processXPath(XPathExpression expression, String returnType);

@@ -3,7 +3,6 @@ package com.gitb.validation.schematron;
 import com.gitb.core.Configuration;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tr.TestStepReportType;
-import com.gitb.types.BinaryType;
 import com.gitb.types.DataType;
 import com.gitb.types.ObjectType;
 import com.gitb.types.SchemaType;
@@ -44,15 +43,8 @@ public class SchematronValidator extends AbstractValidator {
     @Override
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
         // Process inputs.
-        ObjectType xml;
-        DataType content = inputs.get(CONTENT_ARGUMENT_NAME);
-        if (content instanceof BinaryType) {
-            xml = new ObjectType();
-            xml.deserialize((byte[])content.getValue());
-        } else {
-            xml = (ObjectType) inputs.get(CONTENT_ARGUMENT_NAME);
-        }
-        SchemaType sch = (SchemaType) inputs.get(SCHEMATRON_ARGUMENT_NAME);
+        ObjectType xml = (ObjectType) inputs.get(CONTENT_ARGUMENT_NAME).convertTo(DataType.OBJECT_DATA_TYPE);
+        SchemaType sch = (SchemaType) inputs.get(SCHEMATRON_ARGUMENT_NAME).convertTo(DataType.SCHEMA_DATA_TYPE);
         // Process schematron resource.
         SchematronType validationType = determineSchematronType(inputs, sch);
         ISchematronResource schematron;

@@ -29,6 +29,10 @@ public class MapType extends ContainerType {
         return elements.get(key);
     }
 
+    public Map<String, DataType> getItems() {
+        return elements;
+    }
+
     @Override
     public String getType() {
         return DataType.MAP_DATA_TYPE;

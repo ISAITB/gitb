@@ -1,11 +1,21 @@
 package com.gitb.types;
 
+import org.w3c.dom.Node;
+
 /**
  * Created by tuncay on 10/28/14.
  */
 public class SchemaType extends ObjectType{
     protected String testSuiteId;
     protected String schemaLocation;
+
+    public SchemaType() {
+        super();
+    }
+
+    public SchemaType(Node value) {
+        super(value);
+    }
 
     public String getSchemaLocation(){
         return schemaLocation;

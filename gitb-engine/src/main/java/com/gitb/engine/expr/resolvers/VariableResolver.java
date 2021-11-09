@@ -184,7 +184,7 @@ public class VariableResolver implements XPathVariableResolver{
         List<Node> nodeList = new ArrayList<Node>();
         for(DataType object :list){
             DataType temp = DataTypeFactory.getInstance().create(DataType.OBJECT_DATA_TYPE);
-            temp.deserialize(object.serialize(ObjectType.DEFAULT_COMMON_ENCODING_FORMAT));
+            temp.deserialize(object.serialize(ObjectType.DEFAULT_ENCODING));
 
             nodeList.add((Node)temp.getValue());
         }

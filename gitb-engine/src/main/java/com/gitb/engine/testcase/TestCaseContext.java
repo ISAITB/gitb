@@ -2,6 +2,7 @@ package com.gitb.engine.testcase;
 
 import com.gitb.ModuleManager;
 import com.gitb.core.*;
+import com.gitb.engine.TestEngineConfiguration;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
 import com.gitb.engine.processing.ProcessingContext;
@@ -22,10 +23,15 @@ import com.gitb.utils.ActorUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.map.Tuple;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.FileUtils;
+import org.jboss.logging.Logger;
 
+import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -36,6 +42,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * Class that encapsulates all the necessary information for a test case execution session
  */
 public class TestCaseContext {
+
+	private static final Logger logger = Logger.getLogger(TestCaseContext.class);
 
 	/**
 	 * The map containing the status values for each executed step.
@@ -67,7 +75,7 @@ public class TestCaseContext {
      * Note that in the case of an actor having just one endpoint, an empty endpoint value is possible. In this
      * case, the key part will be in the (actorId, null) form.
      */
-    private Map<Tuple<String>, ActorConfiguration> sutConfigurations;
+    private final Map<Tuple<String>, ActorConfiguration> sutConfigurations;
 
     /**
      * MessagingContext for each handler used in the TestCase
@@ -134,6 +142,7 @@ public class TestCaseContext {
     }
 
 	private LogLevel logLevelToSignal = LogLevel.DEBUG;
+	private Path dataFolder;
 
     public TestCaseContext(TestCase testCase, String sessionId) {
         this.currentState = TestCaseStateEnum.IDLE;
@@ -147,6 +156,15 @@ public class TestCaseContext {
 		if (testCase.getSteps() != null) {
 			this.logLevelToSignal = testCase.getSteps().getLogLevel();
 		}
+		if (TestEngineConfiguration.TEMP_STORAGE_ENABLED) {
+			// Initialise storage folder
+			try {
+				dataFolder = Path.of(TestEngineConfiguration.TEMP_STORAGE_LOCATION, sessionId);
+				Files.createDirectories(dataFolder);
+			} catch (IOException e) {
+				throw new IllegalStateException("Unable to create session data storage folder", e);
+			}
+		}
         addStepStatus();
         processVariables();
 
@@ -156,7 +174,11 @@ public class TestCaseContext {
         for(TestRole role : this.testCase.getActors().getActor()) {
             actorRoles.put(role.getId(), role);
         }
-    }
+	}
+
+	public Path getDataFolder() {
+		return dataFolder;
+	}
 
 	public ScriptletCache getScriptletCache() {
     	return this.scriptletCache;
@@ -426,14 +448,7 @@ public class TestCaseContext {
 			groupedSUTConfiguration.getConfigs().addAll(sutConfiguration.getConfigs());
 		}
 
-
-		List<SUTConfiguration> groupedSUTConfigurations = new ArrayList<>();
-
-		for(SUTConfiguration group : groups.values()) {
-			groupedSUTConfigurations.add(group);
-		}
-
-		return groupedSUTConfigurations;
+		return new ArrayList<>(groups.values());
 	}
 
     /**
@@ -525,7 +540,14 @@ public class TestCaseContext {
 		this.currentState = currentState;
 	}
 
-    public void destroy(){
+    public void destroy() {
+		if (dataFolder != null && Files.exists(dataFolder)) {
+			try {
+				FileUtils.deleteDirectory(dataFolder.toFile());
+			} catch (IOException e) {
+				logger.warn(String.format("Unable to delete data folder for session [%s]", sessionId), e);
+			}
+		}
         destroyMessagingContexts();
     }
 

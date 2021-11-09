@@ -44,6 +44,12 @@ public class ListType extends ContainerType {
         return elements.get(index);
     }
 
+    public void replaceItem(int index, DataType value) {
+        if (this.elements != null) {
+            this.elements.set(index, value);
+        }
+    }
+
     /**
      * Get the type of all contained elements
      * @return
