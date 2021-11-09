@@ -83,13 +83,13 @@ public class TestCaseScope {
 
 	private DataType valueToStore(DataType value) {
 		if (TestEngineConfiguration.TEMP_STORAGE_ENABLED) {
-			if (value instanceof BinaryType && TestEngineConfiguration.TEMP_STORAGE_BINARY_ENABLED && ((byte[]) value.getValue()).length > TestEngineConfiguration.TEMP_STORAGE_BINARY_THRESHOLD_BYTES) {
+			if (value instanceof BinaryType && TestEngineConfiguration.TEMP_STORAGE_BINARY_ENABLED && ((TestEngineConfiguration.TEMP_STORAGE_BINARY_THRESHOLD_BYTES <= 0) || (((byte[]) value.getValue()).length > TestEngineConfiguration.TEMP_STORAGE_BINARY_THRESHOLD_BYTES))) {
 				return new StoredBinaryType(context.getDataFolder(), (BinaryType) value);
-			} else if (value instanceof StringType && TestEngineConfiguration.TEMP_STORAGE_STRING_ENABLED && ((String) value.getValue()).length() > TestEngineConfiguration.TEMP_STORAGE_STRING_THRESHOLD_CHARS) {
+			} else if (value instanceof StringType && TestEngineConfiguration.TEMP_STORAGE_STRING_ENABLED && ((TestEngineConfiguration.TEMP_STORAGE_STRING_THRESHOLD_CHARS <= 0) || (((String) value.getValue()).length() > TestEngineConfiguration.TEMP_STORAGE_STRING_THRESHOLD_CHARS))) {
 				return new StoredStringType(context.getDataFolder(), (StringType) value);
-			} else if (value instanceof SchemaType && TestEngineConfiguration.TEMP_STORAGE_XML_ENABLED && (((SchemaType) value).getSize() == null || ((SchemaType) value).getSize() > TestEngineConfiguration.TEMP_STORAGE_XML_THRESHOLD_BYTES)) {
+			} else if (value instanceof SchemaType && TestEngineConfiguration.TEMP_STORAGE_XML_ENABLED && ((TestEngineConfiguration.TEMP_STORAGE_XML_THRESHOLD_BYTES <= 0) || (((SchemaType) value).getSize() == null) || (((SchemaType) value).getSize() > TestEngineConfiguration.TEMP_STORAGE_XML_THRESHOLD_BYTES))) {
 				return new StoredSchemaType(context.getDataFolder(), (SchemaType) value);
-			} else if (value instanceof ObjectType && TestEngineConfiguration.TEMP_STORAGE_XML_ENABLED && (((ObjectType) value).getSize() == null || ((ObjectType) value).getSize() > TestEngineConfiguration.TEMP_STORAGE_XML_THRESHOLD_BYTES)) {
+			} else if (value instanceof ObjectType && TestEngineConfiguration.TEMP_STORAGE_XML_ENABLED && ((TestEngineConfiguration.TEMP_STORAGE_XML_THRESHOLD_BYTES <= 0) || (((ObjectType) value).getSize() == null) || (((ObjectType) value).getSize() > TestEngineConfiguration.TEMP_STORAGE_XML_THRESHOLD_BYTES))) {
 				return new StoredObjectType(context.getDataFolder(), (ObjectType) value);
 			} else if (value instanceof MapType) {
 				for (var key: ((MapType) value).getItems().keySet()) {
