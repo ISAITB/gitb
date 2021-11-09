@@ -4,6 +4,7 @@ import com.gitb.exceptions.GITBEngineInternalError;
 
 import javax.xml.xpath.XPathExpression;
 import java.io.UnsupportedEncodingException;
+import java.util.Objects;
 
 /**
  * Created by senan on 9/8/14.
@@ -21,7 +22,7 @@ public class StringType extends PrimitiveType {
 	}
 
     public StringType(String data, String encoding) {
-        this.data = data;
+        this.data = Objects.requireNonNullElse(data, "");
         this.encoding = encoding;
     }
 
