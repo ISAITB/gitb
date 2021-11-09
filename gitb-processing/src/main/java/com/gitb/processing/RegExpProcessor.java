@@ -7,6 +7,7 @@ import com.gitb.core.UsageEnumeration;
 import com.gitb.ps.ProcessingModule;
 import com.gitb.tr.TestResultType;
 import com.gitb.types.BooleanType;
+import com.gitb.types.DataType;
 import com.gitb.types.ListType;
 import com.gitb.types.StringType;
 import org.apache.commons.lang3.StringUtils;
@@ -64,13 +65,13 @@ public class RegExpProcessor extends AbstractProcessingHandler {
         if (!input.getData().containsKey(INPUT__INPUT)) {
             throw new IllegalArgumentException("The input for the regular expression is required");
         } else {
-            inputText = (String) input.getData().get(INPUT__INPUT).toStringType().getValue();
+            inputText = (String) input.getData().get(INPUT__INPUT).convertTo(DataType.STRING_DATA_TYPE).getValue();
         }
         Pattern expression;
         if (!input.getData().containsKey(INPUT__EXPRESSION)) {
             throw new IllegalArgumentException("The regular expression to apply is required");
         } else {
-            expression = Pattern.compile((String) input.getData().get(INPUT__EXPRESSION).toStringType().getValue());
+            expression = Pattern.compile((String) input.getData().get(INPUT__EXPRESSION).convertTo(DataType.STRING_DATA_TYPE).getValue());
         }
         // Carry out operation
         ProcessingData data = new ProcessingData();

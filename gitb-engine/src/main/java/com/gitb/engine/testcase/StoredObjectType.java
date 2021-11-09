@@ -17,6 +17,8 @@ public class StoredObjectType extends ObjectType {
 
     StoredObjectType(Path sessionFolder, ObjectType wrappedType) {
         super(null);
+        setImportPath(wrappedType.getImportPath());
+        setImportTestSuite(wrappedType.getImportTestSuite());
         try {
             reference = Files.createFile(Path.of(sessionFolder.toString(), UUID.randomUUID().toString()));
             Files.write(reference, wrappedType.serialize(wrappedType.getEncoding()));

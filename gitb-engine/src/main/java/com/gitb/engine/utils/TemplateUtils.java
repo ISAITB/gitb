@@ -20,7 +20,7 @@ import static com.gitb.engine.expr.resolvers.VariableResolver.VARIABLE_EXPRESSIO
 public class TemplateUtils {
 	private static final Pattern placeholderPattern = Pattern.compile("\\$\\{("+VARIABLE_EXPRESSION__NO_DOLLAR+")\\}");
 
-	public static DataType generateDataTypeFromTemplate(TestCaseScope scope, byte[] templateBytes, String type, String encoding, boolean forceBinaryTemplateProcessing) {
+	private static DataType generateDataTypeFromTemplate(TestCaseScope scope, byte[] templateBytes, String type, String encoding, boolean forceBinaryTemplateProcessing) {
 		if (type == null) {
 			type = DataType.STRING_DATA_TYPE;
 		}
@@ -58,7 +58,10 @@ public class TemplateUtils {
 	}
 
 	public static DataType generateDataTypeFromTemplate(TestCaseScope scope, DataType templateVariable, String type, boolean forceBinaryTemplateProcessing) {
-		return generateDataTypeFromTemplate(scope, templateVariable.serializeByDefaultEncoding(), type, null, forceBinaryTemplateProcessing);
+		var result = generateDataTypeFromTemplate(scope, templateVariable.serializeByDefaultEncoding(), type, null, forceBinaryTemplateProcessing);
+		result.setImportPath(templateVariable.getImportPath());
+		result.setImportTestSuite(templateVariable.getImportTestSuite());
+		return result;
 	}
 
 	public static DataType generateDataTypeFromTemplate(TestCaseScope scope, DataType templateVariable, String type) {

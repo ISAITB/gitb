@@ -70,12 +70,12 @@ public class NumberType extends PrimitiveType {
     }
 
     @Override
-    public StringType toStringType() {
+    protected StringType toStringType() {
         return new StringType(String.valueOf(value));
     }
 
     @Override
-    public BooleanType toBooleanType() {
+    protected BooleanType toBooleanType() {
         return new BooleanType(this.value.intValue() == 1);
     }
 }

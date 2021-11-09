@@ -31,7 +31,7 @@ public class ArtifactUtils {
 		VariableResolver variableResolver = new VariableResolver(scope);
 		if (variableResolver.isVariableReference(pathToLookup)) {
 			DataType resolvedType = variableResolver.resolveVariable(pathToLookup);
-			pathToLookup = (String)resolvedType.toStringType().getValue();
+			pathToLookup = (String)(resolvedType.convertTo(DataType.STRING_DATA_TYPE).getValue());
 		}
 		ITestCaseRepository testCaseRepository = ModuleManager.getInstance().getTestCaseRepository();
 		DataType data = null;
@@ -43,12 +43,10 @@ public class ArtifactUtils {
 						IOUtils.toByteArray(inputStream),
 						(artifact.getType() == null)?DataType.STRING_DATA_TYPE:artifact.getType(),
 						(artifact.getEncoding() == null)?"UTF-8":artifact.getEncoding());
-			}
-			// Set the location of the artifact if it is a schema type in order to resolve
-			// the location of other artifacts imported by this one.
-			if (data instanceof SchemaType) {
-				((SchemaType) data).setSchemaLocation(pathToLookup);
-				((SchemaType) data).setTestSuiteId(fromToConsider);
+				// Set the location of the artifact if it is a schema type in order to resolve
+				// the location of other artifacts imported by this one.
+				data.setImportPath(pathToLookup);
+				data.setImportTestSuite(fromToConsider);
 			}
 		}
 		return data;

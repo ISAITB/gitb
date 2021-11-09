@@ -21,6 +21,7 @@ public class TestEngineConfiguration {
 	public static Boolean TEMP_STORAGE_XML_ENABLED;
 	public static Long TEMP_STORAGE_BINARY_THRESHOLD_BYTES;
 	public static Long TEMP_STORAGE_STRING_THRESHOLD_CHARS;
+	public static Long TEMP_STORAGE_XML_THRESHOLD_BYTES;
 
     /**
      * Load the configurations from the configuration files
@@ -41,7 +42,8 @@ public class TestEngineConfiguration {
 			TEMP_STORAGE_STRING_ENABLED = config.getBoolean("gitb.engine.storage.string.enabled", Boolean.TRUE);
 			TEMP_STORAGE_XML_ENABLED = config.getBoolean("gitb.engine.storage.xml.enabled", Boolean.TRUE);
 			TEMP_STORAGE_BINARY_THRESHOLD_BYTES = config.getLong("gitb.engine.storage.binary.threshold", 1024L * 1024L); // 1 MB
-			TEMP_STORAGE_STRING_THRESHOLD_CHARS = config.getLong("gitb.engine.storage.string.threshold", 512L); // 1 MB (considering 2-byte encoding)
+			TEMP_STORAGE_STRING_THRESHOLD_CHARS = config.getLong("gitb.engine.storage.string.threshold", 512L * 1024L); // 1 MB (considering 2-byte encoding)
+			TEMP_STORAGE_XML_THRESHOLD_BYTES = config.getLong("gitb.engine.storage.xml.threshold", 1024L * 1024L); // 1 MB
 			// Temp storage properties - end.
 		} catch (ConfigurationException e) {
 			throw new IllegalStateException("Error loading configuration", e);

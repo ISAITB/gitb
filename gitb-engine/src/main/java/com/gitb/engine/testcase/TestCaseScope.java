@@ -87,9 +87,9 @@ public class TestCaseScope {
 				return new StoredBinaryType(context.getDataFolder(), (BinaryType) value);
 			} else if (value instanceof StringType && TestEngineConfiguration.TEMP_STORAGE_STRING_ENABLED && ((String) value.getValue()).length() > TestEngineConfiguration.TEMP_STORAGE_STRING_THRESHOLD_CHARS) {
 				return new StoredStringType(context.getDataFolder(), (StringType) value);
-			} else if (value instanceof SchemaType && TestEngineConfiguration.TEMP_STORAGE_XML_ENABLED) {
+			} else if (value instanceof SchemaType && TestEngineConfiguration.TEMP_STORAGE_XML_ENABLED && (((SchemaType) value).getSize() == null || ((SchemaType) value).getSize() > TestEngineConfiguration.TEMP_STORAGE_XML_THRESHOLD_BYTES)) {
 				return new StoredSchemaType(context.getDataFolder(), (SchemaType) value);
-			} else if (value instanceof ObjectType && TestEngineConfiguration.TEMP_STORAGE_XML_ENABLED) {
+			} else if (value instanceof ObjectType && TestEngineConfiguration.TEMP_STORAGE_XML_ENABLED && (((ObjectType) value).getSize() == null || ((ObjectType) value).getSize() > TestEngineConfiguration.TEMP_STORAGE_XML_THRESHOLD_BYTES)) {
 				return new StoredObjectType(context.getDataFolder(), (ObjectType) value);
 			} else if (value instanceof MapType) {
 				for (var key: ((MapType) value).getItems().keySet()) {
@@ -144,10 +144,6 @@ public class TestCaseScope {
 					/* The loaded data may be a template. We need to process it here to make replacements (the processed
 					   template is however not stored in the scope to allow its reuse with different values). */
 					var processedArtifactData = TemplateUtils.generateDataTypeFromTemplate(current, artifactData, artifactData.getType(), false);
-					if (processedArtifactData instanceof SchemaType) {
-						((SchemaType) processedArtifactData).setSchemaLocation(((SchemaType) artifactData).getSchemaLocation());
-						((SchemaType) processedArtifactData).setTestSuiteId(((SchemaType) artifactData).getTestSuiteId());
-					}
 					ScopedArtifact scopedArtifact = new ScopedArtifact(current, name);
 					scopedArtifact.setValue(processedArtifactData);
 					return scopedArtifact;

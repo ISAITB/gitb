@@ -17,8 +17,8 @@ public class StoredSchemaType extends SchemaType {
 
     StoredSchemaType(Path sessionFolder, SchemaType wrappedType) {
         super(null);
-        this.testSuiteId = wrappedType.getTestSuiteId();
-        this.schemaLocation = wrappedType.getSchemaLocation();
+        setImportPath(wrappedType.getImportPath());
+        setImportTestSuite(wrappedType.getImportTestSuite());
         try {
             reference = Files.createFile(Path.of(sessionFolder.toString(), UUID.randomUUID().toString()));
             Files.write(reference, wrappedType.serialize(wrappedType.getEncoding()));

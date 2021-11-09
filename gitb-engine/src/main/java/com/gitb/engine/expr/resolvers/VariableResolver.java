@@ -83,7 +83,7 @@ public class VariableResolver implements XPathVariableResolver{
         DataType value = resolveVariable(variableExpression);
         if(value instanceof PrimitiveType){
             if(value instanceof BinaryType){
-                return value.toStringType().getValue();
+                return value.convertTo(DataType.STRING_DATA_TYPE).getValue();
             }
             return value.getValue();
         }else if(value instanceof ObjectType){

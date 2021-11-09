@@ -147,7 +147,7 @@ public class ListType extends ContainerType {
     }
 
     @Override
-    public ListType toListType() {
+    protected ListType toListType() {
         ListType list = new ListType(getContainedType());
         for (DataType obj: elements) {
             list.append(obj);
@@ -156,7 +156,7 @@ public class ListType extends ContainerType {
     }
 
     @Override
-    public MapType toMapType() {
+    protected MapType toMapType() {
         MapType map = new MapType();
         int counter = 0;
         for (DataType obj: elements) {
@@ -172,12 +172,12 @@ public class ListType extends ContainerType {
     }
 
     @Override
-    public StringType toStringType() {
+    protected StringType toStringType() {
         StringType type = new StringType();
         StringBuilder str = new StringBuilder();
         var iterator = elements.iterator();
         while (iterator.hasNext()) {
-            str.append(iterator.next().toStringType());
+            str.append((String) iterator.next().convertTo(STRING_DATA_TYPE).getValue());
             if (iterator.hasNext()) {
                 str.append(",");
             }

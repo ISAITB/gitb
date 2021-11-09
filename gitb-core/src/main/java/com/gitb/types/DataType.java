@@ -18,6 +18,9 @@ public abstract class DataType {
     public static final String OBJECT_DATA_TYPE = "object";
     public static final String[] CONTAINER_TYPE_PARENTHESIS = {"[", "]"};
 
+    protected String importPath;
+    protected String importTestSuite;
+
     public abstract String getType();
 
     public abstract DataType processXPath(XPathExpression expression, String returnType);
@@ -42,6 +45,16 @@ public abstract class DataType {
 
     public abstract void setValue(Object value);
 
+    public void copyFrom(DataType other) {
+        copyFrom(other, getType());
+    }
+
+    public void copyFrom(DataType other, String conversionDataType) {
+        setValue(other.convertTo(conversionDataType).getValue());
+        setImportPath(other.getImportPath());
+        setImportTestSuite(other.getImportTestSuite());
+    }
+
     public static boolean isListType(String typeDefinition) {
         return typeDefinition.equals(LIST_DATA_TYPE) || (typeDefinition.startsWith(LIST_DATA_TYPE+CONTAINER_TYPE_PARENTHESIS[0]) && typeDefinition.endsWith(CONTAINER_TYPE_PARENTHESIS[1]));
     }
@@ -53,54 +66,59 @@ public abstract class DataType {
     }
 
     public DataType convertTo(String targetType) {
+        DataType convertedType;
         if (targetType == null || this.getType().equals(targetType)) {
-            return this;
-        }
-        switch (targetType) {
-            case (DataType.BOOLEAN_DATA_TYPE):
-                return toBooleanType();
-            case (DataType.NUMBER_DATA_TYPE):
-                return toNumberType();
-            case (DataType.STRING_DATA_TYPE):
-                return toStringType();
-            case (DataType.BINARY_DATA_TYPE):
-                return toBinaryType();
-            case (DataType.SCHEMA_DATA_TYPE):
-                return toSchemaType();
-            case (DataType.OBJECT_DATA_TYPE):
-                return toObjectType();
-            case (DataType.MAP_DATA_TYPE):
-                return toMapType();
-            default:
-                if (isListType(targetType)) {
-                    if (this instanceof ListType) {
-                        return this;
+            convertedType = this;
+        } else {
+            switch (targetType) {
+                case (DataType.BOOLEAN_DATA_TYPE):
+                    convertedType = toBooleanType(); break;
+                case (DataType.NUMBER_DATA_TYPE):
+                    convertedType = toNumberType(); break;
+                case (DataType.STRING_DATA_TYPE):
+                    convertedType = toStringType(); break;
+                case (DataType.BINARY_DATA_TYPE):
+                    convertedType = toBinaryType(); break;
+                case (DataType.SCHEMA_DATA_TYPE):
+                    convertedType = toSchemaType(); break;
+                case (DataType.OBJECT_DATA_TYPE):
+                    convertedType = toObjectType(); break;
+                case (DataType.MAP_DATA_TYPE):
+                    convertedType = toMapType(); break;
+                default:
+                    if (isListType(targetType)) {
+                        if (this instanceof ListType) {
+                            convertedType = this;
+                        } else {
+                            convertedType = toListType();
+                        }
                     } else {
-                        return toListType();
+                        throw new IllegalArgumentException("Unknown target conversion type ["+targetType+"]");
                     }
-                } else {
-                    throw new IllegalArgumentException("Unknown target conversion type ["+targetType+"]");
-                }
+            }
+            convertedType.setImportPath(getImportPath());
+            convertedType.setImportTestSuite(getImportTestSuite());
         }
+        return convertedType;
     }
 
-    public BooleanType toBooleanType() {
+    protected BooleanType toBooleanType() {
         throw new IllegalArgumentException("Conversion from ["+this.getType()+"] to ["+BOOLEAN_DATA_TYPE+"] not supported");
     }
 
-    public NumberType toNumberType() {
+    protected NumberType toNumberType() {
         throw new IllegalArgumentException("Conversion from ["+this.getType()+"] to ["+NUMBER_DATA_TYPE+"] not supported");
     }
 
-    public StringType toStringType() {
+    protected StringType toStringType() {
         throw new IllegalArgumentException("Conversion from ["+this.getType()+"] to ["+STRING_DATA_TYPE+"] not supported");
     }
 
-    public BinaryType toBinaryType() {
+    protected BinaryType toBinaryType() {
         throw new IllegalArgumentException("Conversion from ["+this.getType()+"] to ["+BINARY_DATA_TYPE+"] not supported");
     }
 
-    public ListType toListType() {
+    protected ListType toListType() {
         if (this instanceof ListType) {
             return (ListType)this;
         } else {
@@ -110,11 +128,11 @@ public abstract class DataType {
         }
     }
 
-    public MapType toMapType() {
+    protected MapType toMapType() {
         throw new IllegalArgumentException("Conversion from ["+this.getType()+"] to ["+MAP_DATA_TYPE+"] not supported");
     }
 
-    public SchemaType toSchemaType() {
+    protected SchemaType toSchemaType() {
         throw new IllegalArgumentException("Conversion from ["+this.getType()+"] to ["+SCHEMA_DATA_TYPE+"] not supported");
     }
 
@@ -122,4 +140,19 @@ public abstract class DataType {
         throw new IllegalArgumentException("Conversion from ["+this.getType()+"] to ["+OBJECT_DATA_TYPE+"] not supported");
     }
 
+    public String getImportPath() {
+        return importPath;
+    }
+
+    public void setImportPath(String importPath) {
+        this.importPath = importPath;
+    }
+
+    public String getImportTestSuite() {
+        return importTestSuite;
+    }
+
+    public void setImportTestSuite(String importTestSuite) {
+        this.importTestSuite = importTestSuite;
+    }
 }

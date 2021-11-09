@@ -181,7 +181,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 				if (resolver.isVariableReference(step.getInputAttribute())) {
 					var resolvedVariable = resolver.resolveVariable(step.getInputAttribute());
 					value = DataTypeFactory.getInstance().create(resolvedVariable.getType());
-					value.setValue(resolvedVariable.getValue());
+					value.copyFrom(resolvedVariable);
 				} else {
 					value = new StringType(step.getInputAttribute());
 				}
@@ -255,7 +255,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	private void setInputVariable(TestCaseScope childScope, ExpressionHandler expressionHandler, Binding input, Variable variable) {
 		DataType resolvedValue = expressionHandler.processExpression(input, variable.getType());
 		DataType valueToSet = DataTypeFactory.getInstance().create(variable.getType());
-		valueToSet.setValue(resolvedValue.convertTo(variable.getType()).getValue());
+		valueToSet.copyFrom(resolvedValue, variable.getType());
 		setInputVariable(childScope, valueToSet, input.getName(), variable);
 	}
 

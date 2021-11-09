@@ -6,8 +6,6 @@ import org.w3c.dom.Node;
  * Created by tuncay on 10/28/14.
  */
 public class SchemaType extends ObjectType{
-    protected String testSuiteId;
-    protected String schemaLocation;
 
     public SchemaType() {
         super();
@@ -15,22 +13,6 @@ public class SchemaType extends ObjectType{
 
     public SchemaType(Node value) {
         super(value);
-    }
-
-    public String getSchemaLocation(){
-        return schemaLocation;
-    }
-
-    public void setSchemaLocation(String schemaLocation) {
-        this.schemaLocation = schemaLocation;
-    }
-
-    public String getTestSuiteId() {
-        return testSuiteId;
-    }
-
-    public void setTestSuiteId(String testSuiteId) {
-        this.testSuiteId = testSuiteId;
     }
 
     public String getType() {
@@ -41,6 +23,7 @@ public class SchemaType extends ObjectType{
     public ObjectType toObjectType() {
         ObjectType type = new ObjectType();
         type.setValue(getValue());
+        type.setSize(getSize());
         return type;
     }
 }

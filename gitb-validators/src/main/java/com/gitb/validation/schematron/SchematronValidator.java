@@ -51,11 +51,11 @@ public class SchematronValidator extends AbstractValidator {
         boolean convertXPathExpressions = false;
         if (validationType == SchematronType.SCH) {
             // Use the pure implementation as SCH can be very resource and time consuming
-            schematron = new SchematronResourcePure(new StringResource(sch.toString(), sch.getSchemaLocation()));
+            schematron = new SchematronResourcePure(new StringResource(sch.toString(), sch.getImportPath()));
             convertXPathExpressions = true;
         } else {
-            schematron = new SchematronResourceXSLT(new StringResource(sch.toString(), sch.getSchemaLocation()));
-            ((SchematronResourceXSLT) schematron).setURIResolver(new SchematronResolver(sch.getTestSuiteId(), getTestCaseId(), sch.getSchemaLocation()));
+            schematron = new SchematronResourceXSLT(new StringResource(sch.toString(), sch.getImportPath()));
+            ((SchematronResourceXSLT) schematron).setURIResolver(new SchematronResolver(sch.getImportTestSuite(), getTestCaseId(), sch.getImportPath()));
         }
         schematron.setUseCache(false);
         // Carry out validation.
@@ -90,10 +90,10 @@ public class SchematronValidator extends AbstractValidator {
         }
         if (extensionToCheck.isEmpty()) {
             // Determine from file extension.
-            if (schematron.getSchemaLocation() != null) {
-                int dotIndex = schematron.getSchemaLocation().lastIndexOf('.');
-                if (dotIndex != -1 && dotIndex < schematron.getSchemaLocation().length() - 1) {
-                    extensionToCheck = Optional.of(schematron.getSchemaLocation().toLowerCase(Locale.ROOT).substring(dotIndex+1));
+            if (schematron.getImportPath() != null) {
+                int dotIndex = schematron.getImportPath().lastIndexOf('.');
+                if (dotIndex != -1 && dotIndex < schematron.getImportPath().length() - 1) {
+                    extensionToCheck = Optional.of(schematron.getImportPath().toLowerCase(Locale.ROOT).substring(dotIndex+1));
                 }
             }
         }

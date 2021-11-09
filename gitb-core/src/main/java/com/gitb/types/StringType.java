@@ -71,21 +71,21 @@ public class StringType extends PrimitiveType {
     }
 
     @Override
-    public BinaryType toBinaryType() {
+    protected BinaryType toBinaryType() {
         BinaryType type = new BinaryType();
         type.deserialize(serialize(encoding));
         return type;
     }
 
     @Override
-    public NumberType toNumberType() {
+    protected NumberType toNumberType() {
         NumberType type = new NumberType();
         type.setValue(getValue());
         return type;
     }
 
     @Override
-    public BooleanType toBooleanType() {
+    protected BooleanType toBooleanType() {
         BooleanType type = new BooleanType();
         type.setValue(Boolean.valueOf((String) getValue()));
         return type;
@@ -99,14 +99,14 @@ public class StringType extends PrimitiveType {
     }
 
     @Override
-    public SchemaType toSchemaType() {
+    protected SchemaType toSchemaType() {
         SchemaType type = new SchemaType();
         type.deserialize(serialize(encoding));
         return type;
     }
 
     @Override
-    public StringType toStringType() {
+    protected StringType toStringType() {
 	    return new StringType((String) this.getValue(), this.encoding);
     }
 

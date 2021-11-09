@@ -73,7 +73,7 @@ public class MapType extends ContainerType {
     }
 
     @Override
-    public MapType toMapType() {
+    protected MapType toMapType() {
         MapType map = new MapType();
         if (elements != null) {
             for (Map.Entry<String, DataType> entry: elements.entrySet()) {
@@ -90,13 +90,13 @@ public class MapType extends ContainerType {
     }
 
     @Override
-    public StringType toStringType() {
+    protected StringType toStringType() {
         StringType type = new StringType();
         StringBuilder str = new StringBuilder();
         var iterator = elements.entrySet().iterator();
         while (iterator.hasNext()) {
             var entry = iterator.next();
-            str.append("[").append(entry.getKey()).append("]=[").append(entry.getValue().toStringType()).append("]");
+            str.append("[").append(entry.getKey()).append("]=[").append((String) entry.getValue().convertTo(STRING_DATA_TYPE).getValue()).append("]");
             if (iterator.hasNext()) {
                 str.append(",");
             }

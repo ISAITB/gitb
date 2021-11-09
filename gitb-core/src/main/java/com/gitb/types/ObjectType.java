@@ -5,6 +5,7 @@ import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.utils.BomStrippingReader;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLUtils;
+import org.apache.commons.io.input.CountingInputStream;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -32,6 +33,7 @@ public class ObjectType extends DataType {
     //The default storage type is XML
     protected Node value;
     private String encoding = DEFAULT_ENCODING;
+    private Long size = null;
 
     public ObjectType() {
         try {
@@ -121,27 +123,28 @@ public class ObjectType extends DataType {
         return DataType.OBJECT_DATA_TYPE;
     }
 
-
-    @Override
-    public void deserialize(byte[] content, String encoding) {
-        InputSource inputSource = null;
-        if (content != null && content.length > 0) {
-            inputSource = new InputSource(new BomStrippingReader(new ByteArrayInputStream(content)));
-            inputSource.setEncoding(encoding);
-        }
-        deserialize(inputSource);
-    }
-
     @Override
     public void deserialize(byte[] content)  {
         deserialize(content, DEFAULT_ENCODING);
     }
 
     @Override
+    public void deserialize(byte[] content, String encoding) {
+        if (content != null && content.length > 0) {
+            deserialize(new ByteArrayInputStream(content), encoding);
+        }
+    }
+
+    @Override
     public void deserialize(InputStream inputStream, String encoding)   {
-        InputSource inputSource = new InputSource(inputStream);
-        inputSource.setEncoding(encoding);
-        deserialize(inputSource);
+        try (CountingInputStream in = new CountingInputStream(inputStream)) {
+            InputSource inputSource = new InputSource(new BomStrippingReader(in));
+            inputSource.setEncoding(encoding);
+            deserialize(inputSource);
+            size = in.getByteCount();
+        } catch (IOException e) {
+            throw new IllegalStateException("Error while reading stream.", e);
+        }
     }
 
     @Override
@@ -243,6 +246,7 @@ public class ObjectType extends DataType {
     @Override
     public void setValue(Object value) {
         this.value = (Node) value;
+        this.size = null;
     }
 
     private QName XPathConstantForDataType(String type) {
@@ -264,12 +268,12 @@ public class ObjectType extends DataType {
     }
 
     @Override
-    public StringType toStringType() {
+    protected StringType toStringType() {
         return new StringType(new String(serializeByDefaultEncoding()));
     }
 
     @Override
-    public BinaryType toBinaryType() {
+    protected BinaryType toBinaryType() {
         BinaryType type = new BinaryType();
         type.setValue(serialize(getEncoding()));
         return type;
@@ -279,6 +283,7 @@ public class ObjectType extends DataType {
     public SchemaType toSchemaType() {
         SchemaType type = new SchemaType();
         type.setEncoding(getEncoding());
+        type.setSize(getSize());
         type.setValue(getValue());
         return type;
     }
@@ -289,5 +294,13 @@ public class ObjectType extends DataType {
 
     public void setEncoding(String encoding) {
         this.encoding = encoding;
+    }
+
+    public Long getSize() {
+        return size;
+    }
+
+    public void setSize(Long size) {
+        this.size = size;
     }
 }

@@ -43,7 +43,7 @@ public class BinaryType extends PrimitiveType {
     }
 
     @Override
-    public StringType toStringType() {
+    protected StringType toStringType() {
         return new StringType(new String((byte[]) getValue()));
     }
 
@@ -55,7 +55,7 @@ public class BinaryType extends PrimitiveType {
     }
 
     @Override
-    public SchemaType toSchemaType() {
+    protected SchemaType toSchemaType() {
         SchemaType type = new SchemaType();
         type.deserialize((byte[]) getValue());
         return type;

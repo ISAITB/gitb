@@ -13,6 +13,8 @@ public class StoredBinaryType extends BinaryType {
     private final Path reference;
 
     StoredBinaryType(Path sessionFolder, BinaryType wrappedType) {
+        setImportPath(wrappedType.getImportPath());
+        setImportTestSuite(wrappedType.getImportTestSuite());
         try {
             reference = Files.createFile(Path.of(sessionFolder.toString(), UUID.randomUUID().toString()));
             Files.write(reference, (byte[]) wrappedType.getValue());
