@@ -149,7 +149,7 @@
             <div class="col-xs-offset-3 col-xs-7">
                 <label class="checkbox-inline">
                 <input type="checkbox" name="allowPostTestSystemUpdates" [(ngModel)]="community.allowPostTestSystemUpdates">Update {{dataService.labelSystemLower()}} data after testing
-                <app-tooltip [inline]="true" inlineType="checkLabelText" tbTooltip="'Check this to allow '+dataService.labelOrganisationLower()+' users to update '+dataService.labelSystemLower()+' data and custom properties once tests have been recorded.'"></app-tooltip>
+                <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to update '+dataService.labelSystemLower()+' data and custom properties once tests have been recorded.'"></app-tooltip>
                 </label>
             </div>
             <div class="col-xs-offset-3 col-xs-7">

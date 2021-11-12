@@ -120,9 +120,9 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     this.systemId = Number(this.route.snapshot.paramMap.get('system_id'))
     this.specificationId = Number(this.route.snapshot.paramMap.get('spec_id'))
     this.isAdmin = this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin
-    this.documentationExists = this.testCasesHaveDocumentation()
     if (this.dataService.tests != undefined) {
       this.testsToExecute = this.dataService.tests
+      this.documentationExists = this.testCasesHaveDocumentation()
       this.initialiseEvents()
       this.initialiseState()
     } else {
@@ -143,6 +143,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
             })
           }
           this.testsToExecute = tests
+          this.documentationExists = this.testCasesHaveDocumentation()
           this.initialiseEvents()
           this.initialiseState()
         })
@@ -158,6 +159,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
             hasDocumentation: data.hasDocumentation!,
             result: Constants.TEST_CASE_RESULT.UNDEFINED
           }]
+          this.documentationExists = this.testCasesHaveDocumentation()
           this.initialiseEvents()
           this.initialiseState()
         })
