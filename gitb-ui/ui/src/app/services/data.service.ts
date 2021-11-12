@@ -36,6 +36,7 @@ export class DataService {
   public isCommunityAdmin = false
   public isDomainUser = false
   public tests?: ConformanceTestCase[]
+  public currentLandingPageContent?: string
 
   private renderer: Renderer2
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
@@ -59,6 +60,7 @@ export class DataService {
     this.isDomainUser = false
     this.acceptedEmailAttachmentTypes = undefined
     this.tests = undefined
+    this.currentLandingPageContent = undefined
   }
 
   private emptyAppConfiguration(): AppConfigurationProperties {

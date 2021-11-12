@@ -62,6 +62,14 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
     }
   }
 
+  private clearCachedLandingPageIfNeeded() {
+    if ((this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) 
+      && this.dataService.vendor!.community == this.communityId && this.page.default) {
+        // Update if we are Test Bed or community admins and we are editing the default landing page.
+        this.dataService.currentLandingPageContent = undefined
+    }
+  }
+
   doCreate() {
     this.savePending = true
     this.landingPageService.createLandingPage(this.page.name!, this.page.description, this.page.content, this.page.default!, this.communityId)
@@ -69,6 +77,7 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
       if (this.isErrorDescription(data)) {
         this.addAlertError(data.error_description)
       } else {
+        this.clearCachedLandingPageIfNeeded()
         this.cancelCreateLandingPage()
         this.popupService.success('Landing page created.')
       }

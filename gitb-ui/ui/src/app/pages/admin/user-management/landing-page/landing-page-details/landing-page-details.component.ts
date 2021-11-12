@@ -64,6 +64,14 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
     }
   }
 
+  private clearCachedLandingPageIfNeeded() {
+    if ((this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) 
+      && this.dataService.vendor!.community == this.communityId && this.page.default) {
+        // Update if we are Test Bed or community admins and we are editing the default landing page.
+        this.dataService.currentLandingPageContent = undefined
+    }
+  }
+
   doUpdate(copy: boolean) {
     this.savePending = true
     this.landingPageService.updateLandingPage(this.pageId, this.page.name!, this.page.description, this.page.content, this.page.default!, this.communityId)
@@ -74,6 +82,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
         if (copy) {
           this.copyLandingPage()
         } else {
+          this.clearCachedLandingPageIfNeeded()
           this.popupService.success('Landing page updated.')
         }
       }
@@ -93,6 +102,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
       this.deletePending = true
       this.landingPageService.deleteLandingPage(this.pageId)
       .subscribe(() => {
+        this.clearCachedLandingPageIfNeeded()
         this.cancelDetailLandingPage()
         this.popupService.success('Landing page deleted.')
       }).add(() => {
