@@ -198,6 +198,8 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
         }
         // Set output message (if defined).
         if (testCase.getOutput() != null) {
+            var previousState = context.getCurrentState();
+            context.setCurrentState(TestCaseContext.TestCaseStateEnum.OUTPUT);
             try {
                 String outputMessage = null;
                 if (report.getResult() == TestResultType.SUCCESS) {
@@ -213,6 +215,8 @@ public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
                 // Error while calculating output message - report log and fail the test session.
                 logger.error(MarkerFactory.getDetachedMarker(sessionId), "Error calculating output message", e);
                 report.setResult(TestResultType.FAILURE);
+            } finally {
+                context.setCurrentState(previousState);
             }
         }
 		try {

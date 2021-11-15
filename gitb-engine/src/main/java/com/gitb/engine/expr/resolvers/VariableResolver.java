@@ -1,6 +1,7 @@
 package com.gitb.engine.expr.resolvers;
 
 import com.gitb.core.ErrorCode;
+import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.types.*;
@@ -48,12 +49,10 @@ public class VariableResolver implements XPathVariableResolver{
 
     public static final Pattern VARIABLE_EXPRESSION_PATTERN = Pattern.compile(VARIABLE_EXPRESSION);
 	public static final Pattern INDEX_OR_KEY_PATTERN = Pattern.compile(INDEX_OR_KEY);
-	public static final Pattern INDEX_PATTERN = Pattern.compile("("+NUMBERS+")");
-	public static final Pattern KEY_PATTERN = Pattern.compile("("+LITERAL_OR_VARIABLE+")");
     public static final Pattern VARIABLE_PATTERN = Pattern.compile(VARIABLE);
 
 
-    private TestCaseScope scope;
+    private final TestCaseScope scope;
 
     private DocumentBuilder documentBuilder;
 
@@ -128,7 +127,7 @@ public class VariableResolver implements XPathVariableResolver{
             TestCaseScope.ScopedVariable scopeVariable = scope.getVariable(containerVariableName);
             if (scopeVariable == null || !scopeVariable.isDefined()) {
                 // No variable could be matched.
-                if (!tolerateMissing) {
+                if (!tolerateMissing && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.OUTPUT) {
                     logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "No variable could be located in the session context for expression [" + variableExpression + "]");
                 }
             } else {

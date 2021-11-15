@@ -157,6 +157,7 @@ public class SessionActor extends Actor {
                         break;
                     case STOPPING:
                     case EXECUTION:
+                    case OUTPUT:
                         if (message instanceof TestStepStatusEvent) {
                             var msg = prepareStatusUpdate((TestStepStatusEvent)message);
                             eventOutbox.put(msg.getUuid(), msg);

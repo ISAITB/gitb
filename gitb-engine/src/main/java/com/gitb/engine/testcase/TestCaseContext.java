@@ -132,6 +132,10 @@ public class TestCaseContext {
 		 */
         EXECUTION,
 		/**
+		 * Output calculation is in progress
+		 */
+		OUTPUT,
+		/**
 		 * Execution is completed or stopped by user or exit with some error
 		 */
         STOPPED,
