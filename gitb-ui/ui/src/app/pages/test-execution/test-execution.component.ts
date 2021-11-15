@@ -415,8 +415,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     // Register client
     this.ws!.next({
       command: Constants.WEB_SOCKET_COMMAND.REGISTER,
-      sessionId: this.session!,
-      actorId: this.actor!
+      sessionId: this.session!
     })
     // Keep alive heartbeat
     if (this.heartbeat == undefined) {

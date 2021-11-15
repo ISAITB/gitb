@@ -1,7 +1,8 @@
 package hooks
 
-import actors.TriggerActor
+import actors.{TestSessionUpdateActor, TriggerActor}
 import akka.actor.ActorSystem
+
 import javax.inject.{Inject, Singleton}
 import jaxws.TestbedService
 import org.slf4j.LoggerFactory
@@ -24,11 +25,14 @@ class OnStopHook @Inject()(lifecycle: ApplicationLifecycle, actorSystem: ActorSy
   })
   // Stop event listeners.
   lifecycle.addStopHook(() => {
-    Future.successful(
+    Future.successful({
       actorSystem.actorSelection("/user/"+TriggerActor.actorName).resolveOne(1.second).onComplete { ref =>
         actorSystem.stop(ref.get)
       }
-    )
+      actorSystem.actorSelection("/user/"+TestSessionUpdateActor.actorName).resolveOne(1.second).onComplete { ref =>
+        actorSystem.stop(ref.get)
+      }
+    })
   })
   lifecycle.addStopHook(() => {
     Future.successful(logger.info("Application shutdown..."))

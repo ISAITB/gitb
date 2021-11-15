@@ -1,7 +1,7 @@
 package hooks
 
 import java.nio.file.{Files, Path}
-import actors.{TriggerActor, WebSocketActor}
+import actors.{TestSessionUpdateActor, TriggerActor, WebSocketActor}
 import akka.actor.{ActorSystem, Props}
 import config.Configurations
 import controllers.TestService
@@ -34,13 +34,12 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
   def onStart(): Unit = {
     logger.info("Starting Application")
     System.setProperty("java.io.tmpdir", System.getProperty("user.dir"))
-    //start TestbedClient service
-    TestbedService.endpoint = Endpoint.publish(Configurations.TESTBED_CLIENT_URL, new TestbedService(testResultManager, reportManager, webSocketActor, testbedBackendClient))
+    initialiseActors()
+    initialiseTestbedClient()
     checkMasterPassword()
     destroyIdleSessions()
     cleanupPendingTestSuiteUploads()
     cleanupTempFiles()
-    initialiseActors(triggerManager)
     loadDataExports()
     archiveOldTestSessions()
     logger.info("Application has started in "+Configurations.TESTBED_MODE+" mode")
@@ -111,8 +110,13 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
     }
   }
 
-  private def initialiseActors(triggerManager: TriggerManager): Unit = {
+  private def initialiseActors(): Unit = {
     actorSystem.actorOf(Props(new TriggerActor(triggerManager)), TriggerActor.actorName)
+    actorSystem.actorOf(Props(new TestSessionUpdateActor(reportManager, testResultManager, webSocketActor, testbedBackendClient)), TestSessionUpdateActor.actorName)
+  }
+
+  private def initialiseTestbedClient(): Unit = {
+    TestbedService.endpoint = Endpoint.publish(Configurations.TESTBED_CLIENT_URL, new TestbedService(actorSystem))
   }
 
   /**
