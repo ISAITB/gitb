@@ -91,29 +91,9 @@ export class TestCaseDetailsComponent extends BaseComponent implements OnInit, A
   getTestCaseDefinition(testCaseToLookup: number): Observable<void> {
     return this.testService.getTestCaseDefinition(testCaseToLookup).pipe(
       mergeMap((testCase) => {
-        return this.testService.getActorDefinitions(this.specificationId).pipe(
-          map((data) => {
-            let tempActors = testCase.actors.actor
-            for (let domainActorData of data) {
-              for (let testCaseActorData of tempActors) {
-                if (testCaseActorData.id == domainActorData.actorId) {
-                  if (testCaseActorData.name == undefined) {
-                    testCaseActorData.name = domainActorData.name
-                  }
-                  if (testCaseActorData.displayOrder == undefined && domainActorData.displayOrder != undefined) {
-                    testCaseActorData.displayOrder = domainActorData.displayOrder
-                  }
-                  break
-                }
-              }
-            }
-            tempActors = tempActors.sort((a, b) => {
-              if (a.displayOrder == undefined && b.displayOrder == undefined) return 0
-              else if (a.displayOrder != undefined && b.displayOrder == undefined) return -1
-              else if (a.displayOrder == undefined && b.displayOrder != undefined) return 1
-              else return Number(a.displayOrder) - Number(b.displayOrder)
-            })
-            this.actorInfo[testCaseToLookup] = tempActors as ActorInfo[]
+        return this.testService.prepareTestCaseDisplayActors(testCase, this.specificationId).pipe(
+          map((actorData) => {
+            this.actorInfo[testCaseToLookup] = actorData
             this.steps[testCaseToLookup] = testCase.steps
             this.testEvents[testCaseToLookup].signalTestLoad({ testId: testCaseToLookup })
           })

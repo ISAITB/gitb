@@ -1,5 +1,8 @@
 import { Injectable } from '@angular/core';
+import { find } from 'lodash';
+import { map, mergeMap, Observable, of, share } from 'rxjs';
 import { ROUTES } from '../common/global';
+import { ActorInfo } from '../components/diagram/actor-info';
 import { Actor } from '../types/actor';
 import { ConfigureResponse } from '../types/configure-response';
 import { FileParam } from '../types/file-param.type';
@@ -155,6 +158,42 @@ export class TestService {
         files: files,
         authenticate: true
     })
+  }
+
+  prepareTestCaseDisplayActors(testCase: TestCaseDefinition, specificationId: number|undefined): Observable<ActorInfo[]> {
+    let actorData: Observable<ActorInfo[]>
+    if (specificationId == undefined) {
+      actorData = of(testCase.actors.actor)
+    } else {
+      actorData = this.getActorDefinitions(specificationId).pipe(map((domainActors) => {
+        for (let testCaseActor of testCase.actors.actor) {
+          if (testCaseActor.name == undefined || testCaseActor.displayOrder == undefined) {
+            // Lookup name and display order from domain data.
+            const relevantDomainActor = find(domainActors, (actorDef) => actorDef.actorId == testCaseActor.id)
+            if (relevantDomainActor != undefined) {
+              if (testCaseActor.name == undefined) {
+                testCaseActor.name = relevantDomainActor.name
+              }
+              if (testCaseActor.displayOrder == undefined && relevantDomainActor.displayOrder != undefined) {
+                testCaseActor.displayOrder = relevantDomainActor.displayOrder
+              }
+            }
+          }
+        }
+        return testCase.actors.actor
+      }), share())
+    }
+    return actorData.pipe(
+      mergeMap((actorDataToUse) => {
+        actorDataToUse = actorDataToUse.sort((a, b) => {
+          if (a.displayOrder == undefined && b.displayOrder == undefined) return 0
+          else if (a.displayOrder != undefined && b.displayOrder == undefined) return -1
+          else if (a.displayOrder == undefined && b.displayOrder != undefined) return 1
+          else return Number(a.displayOrder) - Number(b.displayOrder)
+        })
+        return of(actorDataToUse)
+      }), share()
+    )
   }
 
 }

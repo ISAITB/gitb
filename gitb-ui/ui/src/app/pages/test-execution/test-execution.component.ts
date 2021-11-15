@@ -251,32 +251,9 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         if (testCase.preliminary != undefined) {
           this.currentTest!.preliminary = testCase.preliminary
         }
-        return this.testService.getActorDefinitions(this.specificationId).pipe(
-          map((data) => {
-            let tempActors = testCase.actors.actor
-            for (let domainActorData of data) {
-              if (domainActorData.id == this.actorId) {
-                this.actor = domainActorData.actorId
-              }
-              for (let testCaseActorData of tempActors) {
-                if (testCaseActorData.id == domainActorData.actorId) {
-                  if (testCaseActorData.name == undefined) {
-                    testCaseActorData.name = domainActorData.name
-                  }
-                  if (testCaseActorData.displayOrder == undefined && domainActorData.displayOrder != undefined) {
-                    testCaseActorData.displayOrder = domainActorData.displayOrder
-                  }
-                  break
-                }
-              }
-            }
-            tempActors = tempActors.sort((a, b) => {
-              if (a.displayOrder == undefined && b.displayOrder == undefined) return 0
-              else if (a.displayOrder != undefined && b.displayOrder == undefined) return -1
-              else if (a.displayOrder == undefined && b.displayOrder != undefined) return 1
-              else return Number(a.displayOrder) - Number(b.displayOrder)
-            })
-            this.actorInfoOfTests[testCaseToLookup] = tempActors as ActorInfo[]
+        return this.testService.prepareTestCaseDisplayActors(testCase, this.specificationId).pipe(
+          map((actorData) => {
+            this.actorInfoOfTests[testCaseToLookup] = actorData
             this.stepsOfTests[testCaseToLookup] = testCase.steps
             this.testEvents[this.currentTest!.id].signalTestLoad({ testId: testCaseToLookup })
           })

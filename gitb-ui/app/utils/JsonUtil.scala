@@ -1126,6 +1126,7 @@ object JsonUtil {
       "systemId"  -> (if (testResult.systemId.isDefined) testResult.systemId else JsNull),
       "actorId"   -> (if (testResult.actorId.isDefined) testResult.actorId else JsNull),
       "testId"    -> (if (testResult.testCaseId.isDefined) testResult.testCaseId else JsNull),
+      "specificationId"    -> (if (testResult.specificationId.isDefined) testResult.specificationId else JsNull),
       "result"    -> testResult.result,
       "startTime" -> TimeUtil.serializeTimestamp(testResult.startTime),
       "endTime"   -> (if(testResult.endTime.isDefined) TimeUtil.serializeTimestamp(testResult.endTime.get) else JsNull),
