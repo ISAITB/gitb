@@ -61,7 +61,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     @Override
     public void sectionChanged(TestCaseSection section) {
         super.sectionChanged(section);
-        if (section == TestCaseSection.STEPS || section == TestCaseSection.SCRIPTLET_STEPS) {
+        if (section == TestCaseSection.OUTPUT || section == TestCaseSection.SCRIPTLET_OUTPUT) {
             // In this section we have processed variables, parameters, actors and imports. We can now check imports for variable references.
             var currentStepCopy = currentStep;
             // Ensure the step is reported correctly.
@@ -169,6 +169,10 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             checkConfigurations(((BeginProcessingTransaction) step).getConfig());
         } else if (step instanceof Process) {
             checkBindings(((Process) step).getInput());
+            checkToken(((Process) step).getInputAttribute(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            if (((Process)step).getOutput() != null) {
+                recordVariable(((Process)step).getOutput(), true);
+            }
         } else if (step instanceof IfStep) {
             checkExpression(((IfStep) step).getCond());
         } else if (step instanceof WhileStep) {
@@ -208,6 +212,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             checkToken(((Log) step).getValue(), TokenType.EXPRESSION);
         } else if (step instanceof Verify) {
             checkToken(((Verify)step).getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            checkToken(((Verify)step).getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
             checkConfigurations(((Verify) step).getProperty());
             checkConfigurations(((Verify) step).getConfig());
             checkBindings(((Verify) step).getInput());
@@ -216,6 +221,10 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
             }
         } else if (step instanceof CallStep) {
             checkBindings(((CallStep) step).getInput());
+            checkToken(((CallStep) step).getInputAttribute(), TokenType.STRING_OR_VARIABLE_REFERENCE);
+            if (((CallStep)step).getOutputAttribute() != null) {
+                recordVariable(((CallStep)step).getOutputAttribute(), true);
+            }
         } else if (step instanceof UserInteraction) {
             if (((UserInteraction)step).getInstructOrRequest() != null) {
                 for (InstructionOrRequest ir: ((UserInteraction)step).getInstructOrRequest()) {
@@ -260,15 +269,19 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         if (StringUtils.isNotBlank(token)) {
             boolean isVariableExpression = Utils.isVariableExpression(token);
             if (isVariableExpression && StringUtils.countMatches(token, '{') != StringUtils.countMatches(token, '}')) {
-                addReportItem(ErrorCode.INVALID_VARIABLE_REFERENCE, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentTestCase, currentScriptlet), token);
+                addReportItem(ErrorCode.INVALID_VARIABLE_REFERENCE, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), token);
             } else {
                 if (expectedType == TokenType.VARIABLE_REFERENCE) {
                     if (isVariableExpression) {
                         variableResolver.checkVariablesInToken(token);
                     } else {
-                        addReportItem(ErrorCode.INVALID_VARIABLE_REFERENCE, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentTestCase, currentScriptlet), token);
+                        addReportItem(ErrorCode.INVALID_VARIABLE_REFERENCE, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), token);
                     }
                 } else if (expectedType == TokenType.STRING_OR_VARIABLE_REFERENCE) {
+                    if (isVariableExpression) {
+                        variableResolver.checkVariablesInToken(token);
+                    }
+                } else if (expectedType == TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE) {
                     if (isVariableExpression) {
                         variableResolver.checkVariablesInToken(token);
                     }
@@ -280,7 +293,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                             XPathExpression expression = createXPathExpression(token);
                             expression.evaluate(Utils.getSecureDocumentBuilderFactory().newDocumentBuilder().newDocument());
                         } catch (XPathExpressionException e) {
-                            addReportItem(ErrorCode.INVALID_EXPRESSION, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentTestCase, currentScriptlet), token);
+                            addReportItem(ErrorCode.INVALID_EXPRESSION, currentTestCase.getId(), Utils.stepNameWithScriptlet(currentStep, currentScriptlet), token);
                         } catch (ParserConfigurationException e) {
                             throw new IllegalStateException(e);
                         }
@@ -337,6 +350,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     @Override
     public void finalise() {
         super.finalise();
+        reportCustomPropertyUsage(ErrorCode.INVALID_EXTERNAL_PARAMETER_REFERENCE, context.getCustomDomainParametersUsed());
         reportCustomPropertyUsage(ErrorCode.POTENTIALLY_INVALID_ORGANISATION_VARIABLE, context.getCustomOrganisationPropertiesUsed());
         reportCustomPropertyUsage(ErrorCode.POTENTIALLY_INVALID_SYSTEM_VARIABLE, context.getCustomSystemPropertiesUsed());
     }
@@ -350,6 +364,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     enum TokenType {
         STRING,
         STRING_OR_VARIABLE_REFERENCE,
+        ERROR_LEVEL_OR_VARIABLE_REFERENCE,
         VARIABLE_REFERENCE,
         EXPRESSION
     }

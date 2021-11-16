@@ -1,3 +1,4 @@
+import { HttpResponse } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { ROUTES } from '../common/global';
 import { StepReport } from '../components/diagram/report/step-report';
@@ -119,19 +120,19 @@ export class ReportService {
   getActiveTestResults(criteria: TestResultSearchCriteria, forExport?: boolean) {
     const params = this.criteriaToRequestParams(criteria, true)
     params.export = forExport != undefined && forExport
-    return this.restService.get<TestResultData>({
+    return this.restService.post<TestResultData>({
       path: ROUTES.controllers.ReportService.getActiveTestResults().url,
       authenticate: true,
-      params: params
+      data: params
     })
   }
 
   getSystemActiveTestResults(systemId: number, criteria: TestResultSearchCriteria) {
     const params = this.criteriaToRequestParams(criteria, true, systemId)
-    return this.restService.get<TestResultData>({
+    return this.restService.post<TestResultData>({
       path: ROUTES.controllers.ReportService.getSystemActiveTestResults().url,
       authenticate: true,
-      params: params
+      data: params
     })
   }
 
@@ -140,10 +141,10 @@ export class ReportService {
     params.page = page
     params.limit = limit
     params.export = forExport !== undefined && forExport
-    return this.restService.get<TestResultData>({
+    return this.restService.post<TestResultData>({
       path: ROUTES.controllers.ReportService.getFinishedTestResults().url,
       authenticate: true,
-      params: params
+      data: params
     })
   }
 
@@ -151,10 +152,10 @@ export class ReportService {
     const params = this.criteriaToRequestParams(criteria, false, systemId)
     params.page = page
     params.limit = limit
-    return this.restService.get<TestResultData>({
+    return this.restService.post<TestResultData>({
       path: ROUTES.controllers.ReportService.getTestResults().url,
       authenticate: true,
-      params: params
+      data: params
     })
   }
 
@@ -210,6 +211,16 @@ export class ReportService {
     })
   }
 
+  getTestStepReportData(sessionId: string, dataId: string, mimeType?: string) {
+    return this.restService.get<HttpResponse<ArrayBuffer>>({
+      path: ROUTES.controllers.RepositoryService.getTestStepReportData(sessionId, dataId).url,
+      authenticate: true,
+      arrayBuffer: true,
+      accept: mimeType,
+      httpResponse: true
+    })
+  }
+
   exportTestStepReport(sessionId: string, reportPath: string) {
     return this.restService.get<ArrayBuffer>({
       path: ROUTES.controllers.RepositoryService.exportTestStepReport(sessionId, reportPath).url,
@@ -228,6 +239,14 @@ export class ReportService {
         test_id: testId
       },
       authenticate: true
+    })
+  }
+
+  getTestSessionLog(session: string) {
+    return this.restService.get<string>({
+      path: ROUTES.controllers.RepositoryService.getTestSessionLog(session).url,
+      authenticate: true,
+      text: true
     })
   }
 

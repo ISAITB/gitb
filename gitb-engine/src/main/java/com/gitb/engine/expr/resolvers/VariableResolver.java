@@ -1,6 +1,7 @@
 package com.gitb.engine.expr.resolvers;
 
 import com.gitb.core.ErrorCode;
+import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.types.*;
@@ -28,7 +29,7 @@ import java.util.regex.Pattern;
  * Created by senan on 9/8/14.
  */
 public class VariableResolver implements XPathVariableResolver{
-    private static Logger logger = LoggerFactory.getLogger(VariableResolver.class);
+    private static final Logger logger = LoggerFactory.getLogger(VariableResolver.class);
     //Regular expression for Variable Expressions and L-Values (Assignment to variables, Expression.source) in TDL
     // Valid Examples ('x' is the variable name):
     //      $x for any type of variable,
@@ -36,24 +37,22 @@ public class VariableResolver implements XPathVariableResolver{
     //      $x{item} for accessing the element of a map with key 'item',
     //      $x{$i} for accessing the element of a map or list with index or key coming from the value of variable 'i' (either String or Number type)
 
-	private static String VARIABLE = "[a-zA-Z][a-zA-Z\\-_0-9]*";
-	private static String LITERAL_OR_VARIABLE = "[a-zA-Z\\-\\._0-9]*";
-	private static String NUMBERS = "[0-9]+";
+	private static final String VARIABLE = "[a-zA-Z][a-zA-Z\\-_0-9]*";
+	private static final String LITERAL_OR_VARIABLE = "[a-zA-Z\\-\\._0-9]*";
+	private static final String NUMBERS = "[0-9]+";
 
-    public static String VARIABLE_EXPRESSION__NO_DOLLAR = "([a-zA-Z][a-zA-Z\\-_0-9]*)(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*";
-    public static String VARIABLE_EXPRESSION = "\\$"+VARIABLE_EXPRESSION__NO_DOLLAR;
-	private static String INDEX_OR_KEY = "(?:(?:\\{((?:"+ LITERAL_OR_VARIABLE +")" +
+    public static final String VARIABLE_EXPRESSION__NO_DOLLAR = "([a-zA-Z][a-zA-Z\\-_0-9]*)(?:\\{(?:[\\$\\{\\}a-zA-Z\\-\\._0-9]*)\\})*";
+    public static final String VARIABLE_EXPRESSION = "\\$"+VARIABLE_EXPRESSION__NO_DOLLAR;
+	private static final String INDEX_OR_KEY = "(?:(?:\\{((?:"+ LITERAL_OR_VARIABLE +")" +
 		"|(?:"+ NUMBERS +")" +
 		"|(?:"+ VARIABLE_EXPRESSION +"))\\})(.*))";
 
     public static final Pattern VARIABLE_EXPRESSION_PATTERN = Pattern.compile(VARIABLE_EXPRESSION);
 	public static final Pattern INDEX_OR_KEY_PATTERN = Pattern.compile(INDEX_OR_KEY);
-	public static final Pattern INDEX_PATTERN = Pattern.compile("("+NUMBERS+")");
-	public static final Pattern KEY_PATTERN = Pattern.compile("("+LITERAL_OR_VARIABLE+")");
     public static final Pattern VARIABLE_PATTERN = Pattern.compile(VARIABLE);
 
 
-    private TestCaseScope scope;
+    private final TestCaseScope scope;
 
     private DocumentBuilder documentBuilder;
 
@@ -83,7 +82,7 @@ public class VariableResolver implements XPathVariableResolver{
         DataType value = resolveVariable(variableExpression);
         if(value instanceof PrimitiveType){
             if(value instanceof BinaryType){
-                return value.toStringType().getValue();
+                return value.convertTo(DataType.STRING_DATA_TYPE).getValue();
             }
             return value.getValue();
         }else if(value instanceof ObjectType){
@@ -128,7 +127,7 @@ public class VariableResolver implements XPathVariableResolver{
             TestCaseScope.ScopedVariable scopeVariable = scope.getVariable(containerVariableName);
             if (scopeVariable == null || !scopeVariable.isDefined()) {
                 // No variable could be matched.
-                if (!tolerateMissing) {
+                if (!tolerateMissing && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.OUTPUT) {
                     logger.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), "No variable could be located in the session context for expression [" + variableExpression + "]");
                 }
             } else {
@@ -184,7 +183,7 @@ public class VariableResolver implements XPathVariableResolver{
         List<Node> nodeList = new ArrayList<Node>();
         for(DataType object :list){
             DataType temp = DataTypeFactory.getInstance().create(DataType.OBJECT_DATA_TYPE);
-            temp.deserialize(object.serialize(ObjectType.DEFAULT_COMMON_ENCODING_FORMAT));
+            temp.deserialize(object.serialize(ObjectType.DEFAULT_ENCODING));
 
             nodeList.add((Node)temp.getValue());
         }
@@ -278,8 +277,12 @@ public class VariableResolver implements XPathVariableResolver{
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Invalid variable reference, you can use index or key only on container types"));
         }
         if(container instanceof ListType){
-            int index = Double.valueOf(keyOrIndex).intValue();
-            return ((ListType) container).getItem(index);
+            try {
+                int index = Double.valueOf(keyOrIndex).intValue();
+                return ((ListType) container).getItem(index);
+            } catch (NumberFormatException e) {
+                throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Value ["+StringUtils.defaultString(keyOrIndex)+"] must be numeric for it to be used as an index of its containing list."), e);
+            }
         }
         //MapType
         else {

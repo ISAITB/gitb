@@ -14,7 +14,7 @@ import { TestResultSearchCriteria } from 'src/app/types/test-result-search-crite
 import { map } from 'lodash'
 import { TestResultReport } from 'src/app/types/test-result-report';
 import { TestResultForExport } from './test-result-for-export';
-import { TestResultForDisplay } from './test-result-for-display';
+import { TestResultForDisplay } from '../../../types/test-result-for-display';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { TestService } from 'src/app/services/test.service';
 import { PopupService } from 'src/app/services/popup.service';
@@ -29,6 +29,7 @@ import { System } from 'src/app/types/system';
 import { OrganisationParameter } from 'src/app/types/organisation-parameter';
 import { SystemParameter } from 'src/app/types/system-parameter';
 import { TestSuiteWithTestCases } from 'src/app/types/test-suite-with-test-cases';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-session-dashboard',
@@ -67,11 +68,13 @@ export class SessionDashboardComponent implements OnInit {
   refreshActivePending = false
   refreshCompletedPending = false
   filterState: FilterState = {
-    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.TEST_SUITE, Constants.FILTER_TYPE.TEST_CASE, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.TIME, Constants.FILTER_TYPE.SESSION, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY ],
+    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.TEST_SUITE, Constants.FILTER_TYPE.TEST_CASE, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.START_TIME, Constants.FILTER_TYPE.END_TIME, Constants.FILTER_TYPE.SESSION, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY ],
     updatePending: false
   }
   deletePending = false
   deleteSessionsPending = false
+  stopAllPending = false
+  sessionIdToShow?: string
 
   domainLoader?: () => Observable<Domain[]>
   specificationLoader?: () => Observable<Specification[]>
@@ -95,10 +98,15 @@ export class SessionDashboardComponent implements OnInit {
     private systemService: SystemService,
     private confirmationDialogService: ConfirmationDialogService,
     private testService: TestService,
-    private popupService: PopupService
+    private popupService: PopupService,
+    private route: ActivatedRoute
   ) { }
 
   ngOnInit(): void {
+    const sessionIdValue = this.route.snapshot.queryParamMap.get('sessionId')
+    if (sessionIdValue != undefined) {
+      this.sessionIdToShow = sessionIdValue
+    }
     this.initFilterDataLoaders()
     if (this.dataService.isCommunityAdmin) {
       this.communityId = this.dataService.community!.id
@@ -135,7 +143,7 @@ export class SessionDashboardComponent implements OnInit {
         }
       })
     }
-    this.goFirstPage()
+    this.applyFilters()
   }
 
   private initFilterDataLoaders() {
@@ -253,6 +261,9 @@ export class SessionDashboardComponent implements OnInit {
       searchCriteria.organisationProperties = filterData.organisationProperties
       searchCriteria.systemProperties = filterData.systemProperties
     }
+    if (this.sessionIdToShow != undefined) {
+      searchCriteria.sessionId = this.sessionIdToShow
+    }
     searchCriteria.activeSortColumn = this.activeSortColumn
     searchCriteria.activeSortOrder = this.activeSortOrder
     searchCriteria.completedSortColumn = this.completedSortColumn
@@ -308,7 +319,12 @@ export class SessionDashboardComponent implements OnInit {
       testCase: testResult.test?.sname,
       organization: testResult.organization?.sname,
       system: testResult.system?.sname,
-      startTime: testResult.result.startTime
+      startTime: testResult.result.startTime,
+      specificationId: testResult.specification?.id,
+      actorId: testResult.actor?.id,
+      systemId: testResult.system?.id,
+      organizationId: testResult.organization?.id,
+      communityId: testResult.organization?.community
     }
     if (completed) {
       result.endTime = testResult.result.endTime
@@ -340,6 +356,11 @@ export class SessionDashboardComponent implements OnInit {
   private newTestResultForDisplay(testResult: TestResultReport, completed: boolean) {
     const result: TestResultForDisplay = this.newTestResult(testResult, completed)
     result.testCaseId = testResult.test?.id
+    if (this.sessionIdToShow != undefined && this.sessionIdToShow == testResult.result.sessionId) {
+      // We have been asked to open a session. Set it as expand and keep it once.
+      result.expanded = true
+      delete this.sessionIdToShow
+    }
     return result
   }
 
@@ -355,13 +376,32 @@ export class SessionDashboardComponent implements OnInit {
     this.getCompletedTests()
   }
 
+  stopAll() {
+    this.confirmationDialogService.confirmed('Confirm delete', 'Are you certain you want to terminate all active sessions?', 'Yes', 'No')
+    .subscribe(() => {
+      let result: Observable<void>
+      if (this.dataService.isSystemAdmin) {
+        result = this.testService.stopAll()
+      } else {
+        result = this.testService.stopAllCommunitySessions(this.communityId!)
+      }
+      this.stopAllPending = true
+      result.subscribe(() => {
+        this.queryDatabase()
+        this.popupService.success('Test sessions terminated.')
+      }).add(() => {
+        this.stopAllPending = false
+      })
+    })
+  }
+
   stopSession(session: TestResultForDisplay) {
     this.confirmationDialogService.confirmed('Confirm delete', 'Are you certain you want to terminate this session?', 'Yes', 'No')
     .subscribe(() => {
       session.deletePending = true
       this.testService.stop(session.session)
       .subscribe(() => {
-        this.getActiveTests()
+        this.queryDatabase()
         this.popupService.success('Test session terminated.')
       }).add(() => {
         session.deletePending = false
@@ -369,29 +409,36 @@ export class SessionDashboardComponent implements OnInit {
     })
   }
 
-  queryDatabase() {
-    this.getActiveTests()
+  queryDatabase(onlyCompleted?: boolean) {
+    if (onlyCompleted == undefined || !onlyCompleted) {
+      this.getActiveTests()
+    }
     this.getCompletedTests()
   }
 
-  goFirstPage() {
+  applyFilters() {
     this.currentPage = 1
     this.queryDatabase()
   }
 
+  goFirstPage() {
+    this.currentPage = 1
+    this.queryDatabase(true)
+  }
+
   goPreviousPage() {
     this.currentPage -= 1
-    this.queryDatabase()
+    this.queryDatabase(true)
   }
 
   goNextPage() {
     this.currentPage += 1
-    this.queryDatabase()
+    this.queryDatabase(true)
   }
 
   goLastPage() {
     this.currentPage = Math.ceil(this.completedTestsTotalCount / Constants.TABLE_PAGE_SIZE)
-    this.queryDatabase()
+    this.queryDatabase(true)
   }
 
   updatePagination() {

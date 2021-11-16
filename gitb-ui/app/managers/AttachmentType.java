@@ -1,12 +1,14 @@
 package managers;
 
+import java.io.File;
+
 public class AttachmentType {
 
     private String name;
-    private byte[] content;
+    private File content;
     private String type;
 
-    public AttachmentType(String name, byte[] content) {
+    public AttachmentType(String name, File content) {
         this.name = name;
         this.content = content;
     }
@@ -19,11 +21,11 @@ public class AttachmentType {
         this.name = name;
     }
 
-    public byte[] getContent() {
+    public File getContent() {
         return content;
     }
 
-    public void setContent(byte[] content) {
+    public void setContent(File content) {
         this.content = content;
     }
 

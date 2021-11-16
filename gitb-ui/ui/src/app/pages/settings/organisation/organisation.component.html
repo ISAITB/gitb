@@ -32,6 +32,8 @@
                 </div>
                 <app-optional-custom-property-form
                     [tbPropertyData]="propertyData"
+                    [tbPropertyType]="'organisation'"
+                    [tbOwner]="this.dataService.vendor!.id"
                     [tbColInputLess]="1"
                     [tbReadonly]="!canEditOwnOrganisation">
                 </app-optional-custom-property-form>
@@ -41,20 +43,27 @@
             </div>
         </form>
     </div>
-	<div class="panel panel-default">
-		<div class="panel-heading">
-            <h4 class="title">Members</h4>
-			<button type="button" class="btn btn-default pull-right" *ngIf="dataService.isVendorAdmin" (click)="popupMemberForm()">Add member</button>
-        </div>
-        <div [attr.id]="dataService.isVendorAdmin?'members-table':'members-table-na'" table-directive 
-            [columns]="tableColumns" 
-            [data]="users" 
-			[loadingStatus]="dataStatus" 
-			noDataMessage="No members found"
-            [allowSelect]="false" 
-            [operationsVisible]="dataService.isVendorAdmin" 
-            (onDelete)="deleteMember($event)" 
-            [deleteVisibleForRow]="deleteVisible()">
-        </div>
+    <div>
+        <tabset>
+            <tab heading="Members">
+                <div class="tabPanel">
+                    <div class="tabControls" *ngIf="dataService.isVendorAdmin">
+                        <button type="button" class="btn btn-default" (click)="popupMemberForm()">Add member</button>
+                    </div>
+                    <div class="panel panel-default">
+                        <div [attr.id]="dataService.isVendorAdmin?'members-table':'members-table-na'" table-directive 
+                            [columns]="tableColumns" 
+                            [data]="users" 
+                            [loadingStatus]="dataStatus" 
+                            noDataMessage="No members found"
+                            [allowSelect]="false" 
+                            [operationsVisible]="dataService.isVendorAdmin" 
+                            (onDelete)="deleteMember($event)" 
+                            [deleteVisibleForRow]="deleteVisible()">
+                        </div>
+                    </div>
+                </div>
+            </tab>
+        </tabset>
     </div>
 </div>

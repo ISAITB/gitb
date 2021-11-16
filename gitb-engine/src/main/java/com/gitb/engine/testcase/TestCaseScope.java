@@ -1,13 +1,13 @@
 package com.gitb.engine.testcase;
 
 import com.gitb.core.ErrorCode;
+import com.gitb.engine.TestEngineConfiguration;
 import com.gitb.engine.utils.ArtifactUtils;
 import com.gitb.engine.utils.TemplateUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.Imports;
 import com.gitb.tdl.TestArtifact;
-import com.gitb.types.DataType;
-import com.gitb.types.SchemaType;
+import com.gitb.types.*;
 import com.gitb.utils.ErrorUtils;
 
 import java.io.IOException;
@@ -81,8 +81,31 @@ public class TestCaseScope {
 		return null;
 	}
 
+	private DataType valueToStore(DataType value) {
+		if (TestEngineConfiguration.TEMP_STORAGE_ENABLED) {
+			if (value instanceof BinaryType && TestEngineConfiguration.TEMP_STORAGE_BINARY_ENABLED && ((TestEngineConfiguration.TEMP_STORAGE_BINARY_THRESHOLD_BYTES <= 0) || (((byte[]) value.getValue()).length > TestEngineConfiguration.TEMP_STORAGE_BINARY_THRESHOLD_BYTES))) {
+				return new StoredBinaryType(context.getDataFolder(), (BinaryType) value);
+			} else if (value instanceof StringType && TestEngineConfiguration.TEMP_STORAGE_STRING_ENABLED && ((TestEngineConfiguration.TEMP_STORAGE_STRING_THRESHOLD_CHARS <= 0) || (((String) value.getValue()).length() > TestEngineConfiguration.TEMP_STORAGE_STRING_THRESHOLD_CHARS))) {
+				return new StoredStringType(context.getDataFolder(), (StringType) value);
+			} else if (value instanceof SchemaType && TestEngineConfiguration.TEMP_STORAGE_XML_ENABLED && ((TestEngineConfiguration.TEMP_STORAGE_XML_THRESHOLD_BYTES <= 0) || (((SchemaType) value).getSize() == null) || (((SchemaType) value).getSize() > TestEngineConfiguration.TEMP_STORAGE_XML_THRESHOLD_BYTES))) {
+				return new StoredSchemaType(context.getDataFolder(), (SchemaType) value);
+			} else if (value instanceof ObjectType && TestEngineConfiguration.TEMP_STORAGE_XML_ENABLED && ((TestEngineConfiguration.TEMP_STORAGE_XML_THRESHOLD_BYTES <= 0) || (((ObjectType) value).getSize() == null) || (((ObjectType) value).getSize() > TestEngineConfiguration.TEMP_STORAGE_XML_THRESHOLD_BYTES))) {
+				return new StoredObjectType(context.getDataFolder(), (ObjectType) value);
+			} else if (value instanceof MapType) {
+				for (var key: ((MapType) value).getItems().keySet()) {
+					((MapType) value).addItem(key, valueToStore(((MapType) value).getItem(key)));
+				}
+			} else if (value instanceof ListType) {
+				for (int i=0; i < ((ListType) value).getSize(); i++) {
+					((ListType) value).replaceItem(i, valueToStore(((ListType) value).getItem(i)));
+				}
+			}
+		}
+		return value;
+	}
+
 	private void setValue(String name, DataType value) {
-		symbols.put(name, value);
+		symbols.put(name, valueToStore(value));
 	}
 
 	public ScopedVariable getVariable(String name) {
@@ -109,7 +132,7 @@ public class TestCaseScope {
 						} else {
 							try {
 								artifactData = ArtifactUtils.resolveArtifact(context, current, (TestArtifact) artifact);
-								current.resolvedArtifacts.put(name, artifactData);
+								current.resolvedArtifacts.put(name, valueToStore(artifactData));
 								break;
 							} catch (IOException e) {
 								throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Artifact linked to name ["+name+"] could not be loaded."), e);
@@ -121,10 +144,6 @@ public class TestCaseScope {
 					/* The loaded data may be a template. We need to process it here to make replacements (the processed
 					   template is however not stored in the scope to allow its reuse with different values). */
 					var processedArtifactData = TemplateUtils.generateDataTypeFromTemplate(current, artifactData, artifactData.getType(), false);
-					if (processedArtifactData instanceof SchemaType) {
-						((SchemaType) processedArtifactData).setSchemaLocation(((SchemaType) artifactData).getSchemaLocation());
-						((SchemaType) processedArtifactData).setTestSuiteId(((SchemaType) artifactData).getTestSuiteId());
-					}
 					ScopedArtifact scopedArtifact = new ScopedArtifact(current, name);
 					scopedArtifact.setValue(processedArtifactData);
 					return scopedArtifact;

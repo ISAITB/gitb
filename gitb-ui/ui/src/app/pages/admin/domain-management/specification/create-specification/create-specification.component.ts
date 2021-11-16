@@ -1,9 +1,10 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { Specification } from 'src/app/types/specification';
 
 @Component({
@@ -22,7 +23,7 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
     private conformanceService: ConformanceService,
     private popupService: PopupService,
     private route: ActivatedRoute,
-    private router: Router
+    private routingService: RoutingService
   ) { super() }
 
   ngAfterViewInit(): void {
@@ -42,7 +43,7 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
       this.pending = true
       this.conformanceService.createSpecification(this.specification.sname!, this.specification.fname!, this.specification.description, this.specification.hidden, domainId)
       .subscribe(() => {
-        this.router.navigate(['admin', 'domains', domainId])
+        this.routingService.toDomain(domainId)
         this.popupService.success(this.dataService.labelSpecification()+' created.')
       }).add(() => {
         this.pending = false
@@ -52,7 +53,7 @@ export class CreateSpecificationComponent extends BaseComponent implements OnIni
 
 	cancel() {
     let domainId = Number(this.route.snapshot.paramMap.get('id'))
-    this.router.navigate(['admin', 'domains', domainId])
+    this.routingService.toDomain(domainId)
   }
 
 }

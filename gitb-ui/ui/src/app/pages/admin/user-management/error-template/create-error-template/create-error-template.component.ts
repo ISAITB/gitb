@@ -1,13 +1,15 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
 import { ErrorTemplateService } from 'src/app/services/error-template.service';
 import { ErrorService } from 'src/app/services/error.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { ErrorData } from 'src/app/types/error-data.type';
 import { ErrorTemplate } from 'src/app/types/error-template';
+import { CommunityTab } from '../../community/community-details/community-tab.enum';
 
 @Component({
   selector: 'app-create-error-template',
@@ -24,7 +26,7 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
   savePending = false
 
   constructor(
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private errorTemplateService: ErrorTemplateService,
     private confirmationDialogService: ConfirmationDialogService,
@@ -79,7 +81,7 @@ export class CreateErrorTemplateComponent extends BaseComponent implements OnIni
   }
 
   cancelCreateErrorTemplate() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId])
+    this.routingService.toCommunity(this.communityId, CommunityTab.errorTemplates)
   }
 
 preview() {

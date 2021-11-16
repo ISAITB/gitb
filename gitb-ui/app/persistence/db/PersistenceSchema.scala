@@ -151,8 +151,9 @@ object PersistenceSchema {
     def kind  = column[String]("kind")
     def value = column[Option[String]]("value", O.SqlType("MEDIUMBLOB"))
     def inTests = column[Boolean]("in_tests")
+    def contentType  = column[Option[String]]("content_type")
     def domain = column[Long]("domain")
-    def * = (id, name, desc, kind, value, inTests, domain) <> (models.DomainParameter.tupled, models.DomainParameter.unapply)
+    def * = (id, name, desc, kind, value, inTests, contentType, domain) <> (models.DomainParameter.tupled, models.DomainParameter.unapply)
   }
   val domainParameters = TableQuery[DomainParametersTable]
 
@@ -166,7 +167,8 @@ object PersistenceSchema {
     def result  = column[String]("result")
     def outputMessage = column[Option[String]]("output_message", O.SqlType("TEXT"))
     def testsession = column[Option[String]]("test_session_id")
-    def * = (id, sut, spec, actor, testsuite, testcase, result, outputMessage, testsession) <> (models.ConformanceResult.tupled, models.ConformanceResult.unapply)
+    def updateTime = column[Option[Timestamp]]("update_time", O.SqlType("TIMESTAMP"))
+    def * = (id, sut, spec, actor, testsuite, testcase, result, outputMessage, testsession, updateTime) <> (models.ConformanceResult.tupled, models.ConformanceResult.unapply)
   }
   val conformanceResults = TableQuery[ConformanceResultsTable]
 
@@ -175,7 +177,8 @@ object PersistenceSchema {
 	  def parameter = column[Long]("parameter")
 	  def endpoint = column[Long] ("endpoint")
 	  def value = column[String]("value", O.SqlType("MEDIUMBLOB"))
-    def * = (system, parameter, endpoint, value) <> (Configs.tupled, Configs.unapply)
+    def contentType  = column[Option[String]]("content_type")
+    def * = (system, parameter, endpoint, value, contentType) <> (Configs.tupled, Configs.unapply)
     def pk = primaryKey("c_pk", (system, parameter, endpoint))
   }
   val configs = TableQuery[ConfigurationsTable]
@@ -479,7 +482,8 @@ object PersistenceSchema {
     def organisation = column[Long] ("organisation")
     def parameter = column[Long]("parameter")
     def value = column[String]("value", O.SqlType("MEDIUMBLOB"))
-    def * = (organisation, parameter, value) <> (OrganisationParameterValues.tupled, OrganisationParameterValues.unapply)
+    def contentType  = column[Option[String]]("content_type")
+    def * = (organisation, parameter, value, contentType) <> (OrganisationParameterValues.tupled, OrganisationParameterValues.unapply)
     def pk = primaryKey("opv_pk", (organisation, parameter))
   }
   val organisationParameterValues = TableQuery[OrganisationParameterValuesTable]
@@ -488,7 +492,8 @@ object PersistenceSchema {
     def system = column[Long] ("system")
     def parameter = column[Long]("parameter")
     def value = column[String]("value", O.SqlType("MEDIUMBLOB"))
-    def * = (system, parameter, value) <> (SystemParameterValues.tupled, SystemParameterValues.unapply)
+    def contentType  = column[Option[String]]("content_type")
+    def * = (system, parameter, value, contentType) <> (SystemParameterValues.tupled, SystemParameterValues.unapply)
     def pk = primaryKey("spv_pk", (system, parameter))
   }
   val systemParameterValues = TableQuery[SystemParameterValuesTable]

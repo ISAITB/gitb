@@ -1,9 +1,10 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { Endpoint } from 'src/app/types/endpoint';
 
 @Component({
@@ -22,7 +23,7 @@ export class CreateEndpointComponent extends BaseComponent implements OnInit, Af
 
   constructor(
     public dataService: DataService,
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private popupService: PopupService,
     private conformanceService: ConformanceService
@@ -56,7 +57,7 @@ export class CreateEndpointComponent extends BaseComponent implements OnInit, Af
   }
 
 	cancel() {
-    this.router.navigate(['admin', 'domains', this.domainId, 'specifications', this.specificationId, 'actors', this.actorId])
+    this.routingService.toActor(this.domainId, this.specificationId, this.actorId)
   }
 
 }

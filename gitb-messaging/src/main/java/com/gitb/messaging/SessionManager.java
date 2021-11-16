@@ -4,11 +4,11 @@ import com.gitb.core.ActorConfiguration;
 import com.gitb.core.Configuration;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.messaging.layer.AbstractMessagingHandler;
-import com.gitb.messaging.model.InitiateResponse;
 import com.gitb.messaging.model.SessionContext;
 import com.gitb.messaging.server.IMessagingServer;
 import com.gitb.messaging.server.IMessagingServerWorker;
 import com.gitb.messaging.server.exceptions.ExistingSessionException;
+import com.gitb.ms.InitiateResponse;
 import com.gitb.utils.ConfigurationUtils;
 
 import java.io.IOException;
@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class SessionManager {
 	private static SessionManager instance;
 
-	private Map<String, SessionContext> sessions;
+	private final Map<String, SessionContext> sessions;
 
 	private SessionManager() {
 		sessions = new ConcurrentHashMap<>();
@@ -83,11 +83,13 @@ public class SessionManager {
 		}
 
 		sessions.put(sessionId, sessionContext);
-
-		return new InitiateResponse(sessionId, sessionContext.getServerActorConfigurations());
+		var response = new InitiateResponse();
+		response.setSessionId(sessionId);
+		response.getActorConfiguration().addAll(sessionContext.getServerActorConfigurations());
+		return response;
 	}
 
-	private void endAllSessions(Map<ActorConfiguration, IMessagingServerWorker> availableWorkers) throws UnknownHostException {
+	private void endAllSessions(Map<ActorConfiguration, IMessagingServerWorker> availableWorkers) {
 		for (Map.Entry<ActorConfiguration, IMessagingServerWorker> entry : availableWorkers.entrySet()) {
 			if (entry.getValue() != null) {
 				InetAddress address = extractInetAddress(entry.getKey());

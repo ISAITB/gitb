@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { OptionalCustomPropertyFormData } from 'src/app/components/optional-custom-property-form/optional-custom-property-form-data.type';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { DataService } from 'src/app/services/data.service';
 import { OrganisationService } from 'src/app/services/organisation.service';
 import { PopupService } from 'src/app/services/popup.service';
-import { ErrorDescription } from 'src/app/types/error-description';
+import { RoutingService } from 'src/app/services/routing.service';
+import { CommunityTab } from '../../community/community-details/community-tab.enum';
 import { OrganisationFormData } from '../organisation-form/organisation-form-data';
 
 @Component({
@@ -20,13 +21,14 @@ export class CreateOrganisationComponent extends BaseComponent implements OnInit
   organisation: Partial<OrganisationFormData> = {}
   propertyData: OptionalCustomPropertyFormData = {
     properties: [],
-    edit: false
+    edit: false,
+    propertyType: 'organisation'
   }
   savePending = false
 
   constructor(
     public dataService: DataService,
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private organisationService: OrganisationService,
     private popupService: PopupService
@@ -57,7 +59,7 @@ export class CreateOrganisationComponent extends BaseComponent implements OnInit
   }
 
   cancelCreateOrganisation() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId])
+    this.routingService.toCommunity(this.communityId, CommunityTab.organisations)
   }
 
 }

@@ -21,7 +21,6 @@ import java.time.LocalDateTime
 import java.util.zip.{ZipEntry, ZipFile}
 import javax.inject.{Inject, Singleton}
 import javax.xml.transform.stream.StreamSource
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 import scala.xml.XML
 
@@ -29,17 +28,157 @@ import scala.xml.XML
 class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
 	import dbConfig.profile.api._
+	import scala.jdk.CollectionConverters._
 
 	private final val logger = LoggerFactory.getLogger("RepositoryUtils")
 	private final val objectMapper = new ObjectMapper()
 
 	private final val TEST_SUITE_ELEMENT_LABEL: String = "testsuite"
 	private final val TEST_CASE_ELEMENT_LABEL: String = "testcase"
+	private final val FILES_PATH: String = "files"
+	private final val FILES_DP_PATH: String = "dp"
+	private final val FILES_OP_PATH: String = "op"
+	private final val FILES_SP_PATH: String = "sp"
+	private final val FILES_EP_PATH: String = "ep"
 	private final val DATA_PATH: String = "data"
 	private final val DATA_PATH_IN: String = "in"
 	private final val DATA_PATH_PROCESSED: String = "processed"
 	private final val DATA_PATH_LOCK: String = "data.lock"
 	private final val STATUS_UPDATES_PATH: String = "status-updates"
+
+	def getFilesRootFolder(): File = {
+		Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH).toFile
+	}
+
+	def getDomainParametersFolder(domainId: Long): File = {
+		Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_DP_PATH, domainId.toString).toFile
+	}
+
+	def getDomainParameterFile(domainId: Long, parameterId: Long): File = {
+		Paths.get(getDomainParametersFolder(domainId).getAbsolutePath, parameterId.toString).toFile
+	}
+
+	def deleteDomainParameterFolder(domainId: Long): Unit = {
+		val folder = getDomainParametersFolder(domainId)
+		if (folder.exists()) {
+			FileUtils.deleteQuietly(folder)
+		}
+	}
+
+	def deleteDomainParameterFile(domainId: Long, parameterId: Long): Unit = {
+		_deleteFile(getDomainParameterFile(domainId, parameterId))
+	}
+
+	def setDomainParameterFile(domainId: Long, parameterId: Long, newFile: File): Unit = {
+		setDomainParameterFile(domainId, parameterId, newFile, copy = false)
+	}
+
+	def setDomainParameterFile(domainId: Long, parameterId: Long, newFile: File, copy: Boolean): Unit = {
+		_setFile(getDomainParameterFile(domainId, parameterId), newFile, copy)
+	}
+
+	def getOrganisationPropertiesFolder(parameterId: Long): File = {
+		Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_OP_PATH, parameterId.toString).toFile
+	}
+
+	def getOrganisationPropertyFile(parameterId: Long, organisationId: Long): File = {
+		Paths.get(getOrganisationPropertiesFolder(parameterId).getAbsolutePath, s"${organisationId}_${parameterId}").toFile
+	}
+
+	def deleteOrganisationPropertiesFolder(parameterId: Long): Unit = {
+		val folder = getOrganisationPropertiesFolder(parameterId)
+		if (folder.exists()) {
+			FileUtils.deleteQuietly(folder)
+		}
+	}
+
+	def deleteOrganisationPropertyFile(parameterId: Long, organisationId: Long): Unit = {
+		_deleteFile(getOrganisationPropertyFile(parameterId, organisationId))
+	}
+
+	def setOrganisationPropertyFile(parameterId: Long, organisationId: Long, newFile: File): Unit = {
+		setOrganisationPropertyFile(parameterId, organisationId, newFile, copy = false)
+	}
+
+	def setOrganisationPropertyFile(parameterId: Long, organisationId: Long, newFile: File, copy: Boolean): Unit = {
+		_setFile(getOrganisationPropertyFile(parameterId, organisationId), newFile, copy)
+	}
+
+	def getSystemPropertiesFolder(parameterId: Long): File = {
+		Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_SP_PATH, parameterId.toString).toFile
+	}
+
+	def getSystemPropertyFile(parameterId: Long, systemId: Long): File = {
+		Paths.get(getSystemPropertiesFolder(parameterId).getAbsolutePath, s"${systemId}_${parameterId}").toFile
+	}
+
+	def deleteSystemPropertiesFolder(parameterId: Long): Unit = {
+		val folder = getSystemPropertiesFolder(parameterId)
+		if (folder.exists()) {
+			FileUtils.deleteQuietly(folder)
+		}
+	}
+
+	def deleteSystemPropertyFile(parameterId: Long, systemId: Long): Unit = {
+		_deleteFile(getSystemPropertyFile(parameterId, systemId))
+	}
+
+	def setSystemPropertyFile(parameterId: Long, systemId: Long, newFile: File): Unit = {
+		setSystemPropertyFile(parameterId: Long, systemId: Long, newFile: File, copy = false)
+	}
+
+	def setSystemPropertyFile(parameterId: Long, systemId: Long, newFile: File, copy: Boolean): Unit = {
+		_setFile(getSystemPropertyFile(parameterId, systemId), newFile, copy)
+	}
+
+	def getStatementParametersFolder(parameterId: Long): File = {
+		Paths.get(Configurations.TEST_CASE_REPOSITORY_PATH, FILES_PATH, FILES_EP_PATH, parameterId.toString).toFile
+	}
+
+	def getStatementParameterFile(parameterId: Long, systemId: Long): File = {
+		Paths.get(getStatementParametersFolder(parameterId).getAbsolutePath, s"${systemId}_${parameterId}").toFile
+	}
+
+	def deleteStatementParametersFolder(parameterId: Long): Unit = {
+		val folder = getStatementParametersFolder(parameterId)
+		if (folder.exists()) {
+			FileUtils.deleteQuietly(folder)
+		}
+	}
+
+	def deleteStatementParameterFile(parameterId: Long, systemId: Long): Unit = {
+		_deleteFile(getStatementParameterFile(parameterId, systemId))
+	}
+
+	def setStatementParameterFile(parameterId: Long, systemId: Long, newFile: File): Unit = {
+		setStatementParameterFile(parameterId, systemId, newFile, copy = false)
+	}
+
+	def setStatementParameterFile(parameterId: Long, systemId: Long, newFile: File, copy: Boolean): Unit = {
+		_setFile(getStatementParameterFile(parameterId, systemId), newFile, copy)
+	}
+
+	private def _setFile(target: File, newFile: File, copy: Boolean): Unit = {
+		if (newFile.exists()) {
+			Files.createDirectories(target.getParentFile.toPath)
+			if (copy) {
+				Files.copy(newFile.toPath, target.toPath, StandardCopyOption.REPLACE_EXISTING)
+			} else {
+				Files.move(newFile.toPath, target.toPath, StandardCopyOption.REPLACE_EXISTING)
+			}
+		}
+	}
+
+	private def _deleteFile(target: File): Unit = {
+		if (target.exists()) {
+			FileUtils.deleteQuietly(target)
+		}
+		// Delete the parameter folder if empty.
+		val parentContents = target.getParentFile.list()
+		if (parentContents == null || parentContents.isEmpty) {
+			FileUtils.deleteQuietly(target.getParentFile)
+		}
+	}
 
 	def getStatusUpdatesFolder(): File = {
 		new File(Configurations.TEST_CASE_REPOSITORY_PATH, STATUS_UPDATES_PATH)
@@ -195,7 +334,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 			zip.close()
 		}
 
-		testCasePaths.toMap
+		testCasePaths.iterator.toMap
 	}
 
 	def generateTestSuiteFileName(): String = {
@@ -536,6 +675,19 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 			}
 		}
 		result
+	}
+
+	def getPathForTestSessionData(folderInfo: SessionFolderInfo): Path = {
+		getPathForTestSessionData(folderInfo.path)
+	}
+
+	def getPathForTestSessionData(sessionFolder: Path): Path = {
+		Path.of(sessionFolder.toString, "data")
+	}
+
+	def getPathForTestSession(sessionId: String, isExpected: Boolean): SessionFolderInfo = {
+		val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption)
+		getPathForTestSessionObj(sessionId, testResult, isExpected)
 	}
 
 	def getPathForTestSessionObj(sessionId: String, testResult: Option[TestResultsTable#TableElementType], isExpected: Boolean): SessionFolderInfo = {

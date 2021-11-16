@@ -1,13 +1,15 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
 import { ErrorTemplateService } from 'src/app/services/error-template.service';
 import { ErrorService } from 'src/app/services/error.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { ErrorData } from 'src/app/types/error-data.type';
 import { ErrorTemplate } from 'src/app/types/error-template';
+import { CommunityTab } from '../../community/community-details/community-tab.enum';
 
 @Component({
   selector: 'app-error-template-details',
@@ -27,7 +29,7 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
 
   constructor(
     public dataService: DataService,
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private errorTemplateService: ErrorTemplateService,
     private confirmationDialogService: ConfirmationDialogService,
@@ -84,7 +86,7 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
 
   copyErrorTemplate() {
     this.copyPending = true
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'errortemplates', 'create'], { queryParams: { copy: this.templateId } })
+    this.routingService.toCreateErrorTemplate(this.communityId, false, this.templateId)
   }
 
   deleteErrorTemplate() {
@@ -102,7 +104,7 @@ export class ErrorTemplateDetailsComponent extends BaseComponent implements OnIn
   }
 
   cancelDetailErrorTemplate() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId])
+    this.routingService.toCommunity(this.communityId, CommunityTab.errorTemplates)
   }
 
   preview() {

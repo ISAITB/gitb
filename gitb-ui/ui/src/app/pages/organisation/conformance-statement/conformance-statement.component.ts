@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
@@ -26,6 +26,7 @@ import { Organisation } from 'src/app/types/organisation.type';
 import { forkJoin, Observable } from 'rxjs'
 import { MissingConfigurationModalComponent } from 'src/app/modals/missing-configuration-modal/missing-configuration-modal.component';
 import { EditEndpointConfigurationModalComponent } from 'src/app/modals/edit-endpoint-configuration-modal/edit-endpoint-configuration-modal.component';
+import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-conformance-statement',
@@ -38,11 +39,13 @@ export class ConformanceStatementComponent implements OnInit {
   systemId!: number
   actorId!: number
   specId!: number
+  organisationId!: number
   loadingStatus = {status: Constants.STATUS.PENDING}
   Constants = Constants
   hasTests = false
   testSuites: ConformanceTestSuite[] = []
   testStatus = ''
+  lastUpdate?: string
   conformanceStatus = ''
   allTestsSuccessful = false
   actor?: Actor
@@ -72,13 +75,14 @@ export class ConformanceStatementComponent implements OnInit {
     private popupService: PopupService,
     private htmlService: HtmlService,
     private organisationService: OrganisationService,
-    private router: Router
+    private routingService: RoutingService
   ) { }
 
   ngOnInit(): void {
     this.systemId = Number(this.route.snapshot.paramMap.get('id'))
     this.actorId = Number(this.route.snapshot.paramMap.get('actor_id'))
     this.specId = Number(this.route.snapshot.paramMap.get('spec_id'))
+    this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
     const viewPropertiesParam = this.route.snapshot.queryParamMap.get('viewProperties')
     if (viewPropertiesParam != undefined) {
       this.endpointsExpanded = Boolean(viewPropertiesParam)
@@ -89,26 +93,16 @@ export class ConformanceStatementComponent implements OnInit {
       let testSuiteResults: ConformanceTestSuite[] = []
       let testSuiteIds: number[] = []
       let testSuiteData: {[key: number]: ConformanceTestSuite} = {}
-      let completedCount = 0
-      let failedCount = 0
-      let undefinedCount = 0
-      let totalCount = 0
-      for (let result of data) {
+      for (let result of data.items) {
         let testCase: ConformanceTestCase = {
           id: result.testCaseId,
           sname: result.testCaseName,
           description: result.testCaseDescription,
           outputMessage: result.outputMessage,
           hasDocumentation: result.testCaseHasDocumentation,
-          result: result.result
-        }
-        totalCount += 1
-        if (testCase.result == Constants.TEST_CASE_RESULT.FAILURE) {
-          failedCount += 1
-        } else if (testCase.result == Constants.TEST_CASE_RESULT.UNDEFINED) {
-          undefinedCount += 1
-        } else {
-          completedCount += 1
+          sessionId: result.sessionId,
+          result: result.result,
+          updateTime: result.sessionTime
         }
         if (testSuiteData[result.testSuiteId] == undefined) {
           let currentTestSuite: ConformanceTestSuite = {
@@ -135,14 +129,15 @@ export class ConformanceStatementComponent implements OnInit {
         }
         testSuiteData[result.testSuiteId].testCases.push(testCase)
       }
-      this.hasTests = failedCount > 0 || completedCount > 0
+      this.hasTests = data.summary.failed > 0 || data.summary.completed > 0
       for (let testSuiteId of testSuiteIds) {
         testSuiteResults.push(testSuiteData[testSuiteId])
       }
       this.testSuites = testSuiteResults
-      this.testStatus = this.dataService.testStatusText(completedCount, failedCount, undefinedCount)
-      this.conformanceStatus = this.dataService.conformanceStatusForTests(completedCount, failedCount, undefinedCount)
-      this.allTestsSuccessful = completedCount == totalCount
+      this.testStatus = this.dataService.testStatusText(data.summary.completed, data.summary.failed, data.summary.undefined)
+      this.lastUpdate = data.summary.updateTime
+      this.conformanceStatus = data.summary.result
+      this.allTestsSuccessful = data.summary.failed == 0 && data.summary.undefined == 0
     }).add(() => {
       this.loadingStatus.status = Constants.STATUS.FINISHED
     })
@@ -182,7 +177,6 @@ export class ConformanceStatementComponent implements OnInit {
               endpoint: endpointConfig.id,
               parameter: parameterConfig.id,
               mimeType: parameterConfig.mimeType,
-              extension: parameterConfig.extension,
               configured: parameterConfig.configured
             })
           }
@@ -236,8 +230,8 @@ export class ConformanceStatementComponent implements OnInit {
         if (repr.configured) {
           if (parameter.kind == 'BINARY') {
             repr.fileName = parameter.name
-            if (relevantConfig.extension != undefined) {
-              repr.fileName += relevantConfig.extension
+            if (relevantConfig.mimeType != undefined) {
+              repr.fileName += this.dataService.extensionFromMimeType(relevantConfig.mimeType)
             }
             repr.mimeType = relevantConfig.mimeType
           } else if (parameter.kind == 'SECRET') {
@@ -330,23 +324,23 @@ export class ConformanceStatementComponent implements OnInit {
             this.endpointsExpanded = true
           } else if (actionType == 'organisation') {
             if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
-              this.router.navigate(['settings', 'organisation'], { queryParams: { 'viewProperties': true } })
+              this.routingService.toOwnOrganisationDetails(true)
             } else {
               const organisation = this.getOrganisation()
               if (this.dataService.vendor!.id == organisation.id) {
-                this.router.navigate(['settings', 'organisation'], { queryParams: { 'viewProperties': true } })
+                this.routingService.toOwnOrganisationDetails(true)
               } else {
                 this.organisationService.getOrganisationBySystemId(this.systemId)
                 .subscribe((data) => {
-                  this.router.navigate(['admin', 'users', 'community', data.community, 'organisation', data.id], { queryParams: { 'viewProperties': true } })
+                  this.routingService.toOrganisationDetails(data.community, data.id, true)
                 })
               }
             }
           } else if (actionType == 'system') {
             if (this.dataService.isVendorUser) {
-              this.router.navigate(['organisation', 'systems', this.systemId, 'info'], { queryParams: { 'viewProperties': true } })
+              this.routingService.toSystemInfo(this.organisationId, this.systemId, true)
             } else {
-              this.router.navigate(['organisation', 'systems'], { queryParams: { 'id': this.systemId, 'viewProperties': true } })
+              this.routingService.toSystems(this.organisationId, this.systemId, true)
             }
           }
         })
@@ -370,7 +364,7 @@ export class ConformanceStatementComponent implements OnInit {
       this.executeHeadless([test])
     } else {
       this.dataService.setTestsToExecute([test])
-      this.router.navigate(['test', this.systemId, this.actorId, this.specId, 'execute'], { queryParams: { tc: test.id }})
+      this.routingService.toTestCaseExecution(this.organisationId, this.systemId, this.actorId, this.specId, test.id)
     }
   }
 
@@ -386,7 +380,7 @@ export class ConformanceStatementComponent implements OnInit {
       this.executeHeadless(testsToExecute)
     } else {
       this.dataService.setTestsToExecute(testsToExecute)
-      this.router.navigate(['test', this.systemId, this.actorId, this.specId, 'execute'], { queryParams: { ts: testSuite.id }})
+      this.routingService.toTestSuiteExecution(this.organisationId, this.systemId, this.actorId, this.specId, testSuite.id)
     }
   }
 
@@ -418,7 +412,6 @@ export class ConformanceStatementComponent implements OnInit {
             oldConfiguration.value = result.configuration.value
             oldConfiguration.configured = result.configuration.configured
             oldConfiguration.mimeType = result.configuration.mimeType
-            oldConfiguration.extension = result.configuration.extension
           }
           break
         case Constants.OPERATION.DELETE:
@@ -436,6 +429,16 @@ export class ConformanceStatementComponent implements OnInit {
     })
   }
 
+  onParameterDownload(parameter: SystemConfigurationParameter) {
+    this.systemService.downloadEndpointConfigurationFile(this.systemId, parameter.id, parameter.endpoint)
+    .subscribe((data) => {
+      const extension = this.dataService.extensionFromMimeType(parameter.mimeType)
+      let fileName = parameter.name + extension      
+      const blobData = new Blob([data], {type: parameter.mimeType})
+      saveAs(blobData, fileName)
+    })
+  }
+
   canDelete() {
     return this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && this.dataService.community!.allowStatementManagement && (this.dataService.community!.allowPostTestStatementUpdates || !this.hasTests))
   }
@@ -450,7 +453,7 @@ export class ConformanceStatementComponent implements OnInit {
       this.deletePending = true
       this.systemService.deleteConformanceStatement(this.systemId, [this.actorId])
       .subscribe(() => {
-        this.router.navigate(['organisation', 'systems', this.systemId, 'conformance'])
+        this.routingService.toConformanceStatements(this.organisationId, this.systemId)
         this.popupService.success('Conformance statement deleted.')
       }).add(() => {
         this.deletePending = false
@@ -461,14 +464,9 @@ export class ConformanceStatementComponent implements OnInit {
   onExportConformanceStatement() {
     this.confirmationDialogService.confirm("Report options", "Would you like to include the detailed test step results per test session?", "Yes, include step results", "No, summary only", true)
     .subscribe((choice: boolean) => {
-      let exportResult: Observable<ArrayBuffer>
-      if (choice) {
-        exportResult = this.reportService.exportConformanceStatementReport(this.actorId, this.systemId, true)
-      } else {
-        exportResult = this.reportService.exportConformanceStatementReport(this.actorId, this.systemId, false)
-      }
       this.exportPending = true
-      exportResult.subscribe((data) => {
+      this.reportService.exportConformanceStatementReport(this.actorId, this.systemId, choice)
+      .subscribe((data) => {
         const blobData = new Blob([data], {type: 'application/pdf'});
         saveAs(blobData, "conformance_report.pdf");
       }).add(() => {
@@ -510,4 +508,7 @@ export class ConformanceStatementComponent implements OnInit {
     })
   }
 
+  toTestSession(sessionId: string) {
+    this.routingService.toTestHistory(this.organisationId, this.systemId, sessionId)
+  }
 }

@@ -1,6 +1,5 @@
 import { HttpClient, HttpResponse } from '@angular/common/http';
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { CookieService } from 'ngx-cookie-service';
 import { forkJoin, Observable, throwError } from 'rxjs';
@@ -17,6 +16,7 @@ import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.
 import { DataService } from 'src/app/services/data.service';
 import { ErrorService } from 'src/app/services/error.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { HttpRequestConfig } from 'src/app/types/http-request-config.type';
 import { LoginEventInfo } from 'src/app/types/login-event-info.type';
 import { LoginResultActionNeeded } from 'src/app/types/login-result-action-needed';
@@ -50,7 +50,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
     private cookieService: CookieService,
     public dataService: DataService,
     private httpClient: HttpClient,
-    private router: Router,
+    private routingService: RoutingService,
     private confirmationDialogService: ConfirmationDialogService,
     private communityService: CommunityService,
     private authService: AuthService,
@@ -63,7 +63,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
 
   ngOnInit(): void {
 		if (this.authProvider.isAuthenticated()) {
-      this.router.navigate(['home'])
+      this.routingService.toHome()
     } else {
       this.loginOption = this.cookieService.get(Constants.LOGIN_OPTION_COOKIE_KEY)
       if (!this.loginOption) {
@@ -115,7 +115,7 @@ export class LoginComponent extends BaseComponent implements OnInit, AfterViewIn
           selfRegOptions: data[1]
         }
       })
-      modalRef.onHide.subscribe(() => {
+      modalRef.onHide!.subscribe(() => {
         this.createPending = false
       })
     })

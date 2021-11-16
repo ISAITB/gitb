@@ -54,6 +54,7 @@ export class OrganisationFormComponent implements OnInit, AfterViewInit {
         this.propertyData.properties = data
       })
     } else {
+      this.propertyData.owner = this.organisation.id
       this.communityService.getOrganisationParameterValues(this.organisation.id)
       .subscribe((data) => {
         this.propertyData.properties = data

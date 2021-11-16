@@ -163,6 +163,7 @@ public class TestCaseConverter {
         messaging.setTo(description.getTo());
         messaging.setDocumentation(getDocumentation(testCaseId, description.getDocumentation()));
         messaging.setHidden(description.isHidden() != null && description.isHidden());
+        messaging.setReply(description.isReply());
         return messaging;
     }
 

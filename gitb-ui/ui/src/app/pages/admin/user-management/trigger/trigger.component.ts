@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
@@ -21,6 +21,8 @@ import { TriggerDataItem } from 'src/app/types/trigger-data-item';
 import { ErrorDescription } from 'src/app/types/error-description';
 import { CodeEditorModalComponent } from 'src/app/components/code-editor-modal/code-editor-modal.component';
 import { CustomProperty } from 'src/app/types/custom-property.type';
+import { RoutingService } from 'src/app/services/routing.service';
+import { CommunityTab } from '../community/community-details/community-tab.enum';
 
 @Component({
   selector: 'app-trigger',
@@ -66,7 +68,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
   }
 
   constructor(
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private modalService: BsModalService,
     private triggerService: TriggerService,
@@ -299,7 +301,7 @@ export class TriggerComponent extends BaseComponent implements OnInit, AfterView
   }
 
   back() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId])
+    this.routingService.toCommunity(this.communityId, CommunityTab.triggers)
   }
 
   testEndpoint() {

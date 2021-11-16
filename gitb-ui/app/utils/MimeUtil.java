@@ -8,9 +8,28 @@ import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.jasypt.util.text.BasicTextEncryptor;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 public class MimeUtil {
 
     private final static Tika tika = new Tika();
+
+    public static String getFileAsDataURL(File file, String mimeType) {
+        if (mimeType == null) {
+            mimeType = "application/octet-stream";
+        }
+        StringBuilder builder = new StringBuilder();
+        builder.append("data:").append(mimeType).append(";base64,");
+        try {
+            builder.append(Base64.encodeBase64String(Files.readAllBytes(file.toPath())));
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to convert file to Base64 string", e);
+        }
+        return builder.toString();
+    }
 
     public static String getBase64FromDataURL(String dataURL) {
         String result = null;
@@ -26,6 +45,14 @@ public class MimeUtil {
 
     public static String getMimeType(byte[] bytes) {
         return tika.detect(bytes);
+    }
+
+    public static String getMimeType(Path path) {
+        try {
+            return tika.detect(path);
+        } catch (IOException e) {
+            throw new IllegalStateException("Unable to read file", e);
+        }
     }
 
     public static boolean isDataURL(String value) {

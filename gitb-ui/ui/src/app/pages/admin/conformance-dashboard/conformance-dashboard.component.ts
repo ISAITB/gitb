@@ -8,12 +8,15 @@ import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { OrganisationService } from 'src/app/services/organisation.service';
 import { ReportService } from 'src/app/services/report.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { SystemService } from 'src/app/services/system.service';
 import { Actor } from 'src/app/types/actor';
 import { Community } from 'src/app/types/community';
 import { ConformanceCertificateSettings } from 'src/app/types/conformance-certificate-settings';
 import { ConformanceResultFull } from 'src/app/types/conformance-result-full';
 import { ConformanceResultFullList } from 'src/app/types/conformance-result-full-list';
+import { ConformanceResultFullWithTestSuites } from 'src/app/types/conformance-result-full-with-test-suites';
+import { ConformanceResultTestSuite } from 'src/app/types/conformance-result-test-suite';
 import { ConformanceStatusItem } from 'src/app/types/conformance-status-item';
 import { Domain } from 'src/app/types/domain';
 import { FilterState } from 'src/app/types/filter-state';
@@ -22,30 +25,28 @@ import { Organisation } from 'src/app/types/organisation.type';
 import { Specification } from 'src/app/types/specification';
 import { System } from 'src/app/types/system';
 import { SystemParameter } from 'src/app/types/system-parameter';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
 
 @Component({
   selector: 'app-conformance-dashboard',
   templateUrl: './conformance-dashboard.component.html',
-  styles: [
-  ]
+  styleUrls: [ './conformance-dashboard.component.less' ]
 })
 export class ConformanceDashboardComponent implements OnInit {
 
   exportPending = false
   dataStatus = {status: Constants.STATUS.PENDING}
   filterState: FilterState = {
-    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY ],
+    filters: [ Constants.FILTER_TYPE.SPECIFICATION, Constants.FILTER_TYPE.ACTOR, Constants.FILTER_TYPE.ORGANISATION, Constants.FILTER_TYPE.SYSTEM, Constants.FILTER_TYPE.ORGANISATION_PROPERTY, Constants.FILTER_TYPE.SYSTEM_PROPERTY, Constants.FILTER_TYPE.RESULT, Constants.FILTER_TYPE.END_TIME ],
     updatePending: false
   }
   communityId?: number
   columnCount!: number
-  tableColumns: TableColumnDefinition[] = []
   expandedStatements: { [key: string]: any, count: number } = {
     count: 0
   }
-  conformanceStatements: ConformanceResultFull[] = []
+  conformanceStatements: ConformanceResultFullWithTestSuites[] = []
+  conformanceStatementsPage: ConformanceResultFullWithTestSuites[] = []
   settings?: Partial<ConformanceCertificateSettings>
   domainLoader?: () => Observable<Domain[]>
   specificationLoader?: () => Observable<Specification[]>
@@ -57,6 +58,13 @@ export class ConformanceDashboardComponent implements OnInit {
   systemPropertyLoader?: (_:number) => Observable<SystemParameter[]>
   Constants = Constants
 
+  conformanceStatementsTotalCount = 0
+  currentPage = 1
+  prevDisabled = false
+  nextDisabled = false
+  sortOrder = Constants.ORDER.ASC
+  sortColumn = Constants.FILTER_TYPE.COMMUNITY
+
   constructor(
     public dataService: DataService,
     private conformanceService: ConformanceService,
@@ -64,17 +72,21 @@ export class ConformanceDashboardComponent implements OnInit {
     private organisationService: OrganisationService,
     private systemService: SystemService,
     private reportService: ReportService,
-    private modalService: BsModalService
+    private modalService: BsModalService,
+    private routingService: RoutingService
   ) { }
 
   ngOnInit(): void {
-		if (this.dataService.isCommunityAdmin)
-			this.communityId = this.dataService.community!.id
+    this.filterState.names = {}
+    this.filterState.names[Constants.FILTER_TYPE.RESULT] = 'Status'
+    this.filterState.names[Constants.FILTER_TYPE.END_TIME] = 'Last update time'
 		if (this.dataService.isSystemAdmin) {
 			this.columnCount = 9
 			this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
 			this.filterState.filters.push(Constants.FILTER_TYPE.COMMUNITY)
     } else if (this.dataService.isCommunityAdmin) {
+      this.sortColumn = Constants.FILTER_TYPE.ORGANISATION
+			this.communityId = this.dataService.community!.id
 			if (this.dataService.community!.domain == undefined) {
 				this.columnCount = 8
 				this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
@@ -82,38 +94,6 @@ export class ConformanceDashboardComponent implements OnInit {
 				this.columnCount = 7
       }
     }
-		if (this.dataService.isCommunityAdmin) {
-			this.tableColumns.push({
-				field: 'communityName',
-				title: 'Community'
-			})
-    }
-		this.tableColumns.push({
-			field: 'organizationName',
-			title: this.dataService.labelOrganisation()
-		})
-		this.tableColumns.push({
-			field: 'systemName',
-			title: this.dataService.labelSystem()
-		})
-		if (this.dataService.community?.domainId == undefined) {
-			this.tableColumns.push({
-				field: 'domainName',
-				title: this.dataService.labelDomain()
-			})
-    }
-		this.tableColumns.push({
-			field: 'specName',
-			title: this.dataService.labelSpecification()
-		})
-		this.tableColumns.push({
-			field: 'actorName',
-			title: this.dataService.labelActor()
-		})
-		this.tableColumns.push({
-			field: 'status',
-			title: 'Status'
-		})
     this.initFilterDataLoaders()
     this.getConformanceStatements()
   }
@@ -194,6 +174,9 @@ export class ConformanceDashboardComponent implements OnInit {
       searchCriteria.actorIds = filterData[Constants.FILTER_TYPE.ACTOR]
       searchCriteria.organisationIds = filterData[Constants.FILTER_TYPE.ORGANISATION]
       searchCriteria.systemIds = filterData[Constants.FILTER_TYPE.SYSTEM]
+      searchCriteria.results = filterData[Constants.FILTER_TYPE.RESULT]
+      searchCriteria.endTimeBeginStr = filterData.endTimeBeginStr
+      searchCriteria.endTimeEndStr = filterData.endTimeEndStr
       searchCriteria.organisationProperties = filterData.organisationProperties
       searchCriteria.systemProperties = filterData.systemProperties
     }
@@ -203,7 +186,7 @@ export class ConformanceDashboardComponent implements OnInit {
 	getConformanceStatementsInternal(fullResults: boolean, forExport: boolean) {
     const result = new Observable<ConformanceResultFullList>((subscriber) => {
       let params = this.getCurrentSearchCriteria()
-      this.conformanceService.getConformanceOverview(params, fullResults, forExport)
+      this.conformanceService.getConformanceOverview(params, fullResults, forExport, this.sortColumn, this.sortOrder)
       .subscribe((data: ConformanceResultFullList) => {
         for (let conformanceStatement of data.data) {
           const completedCount = Number(conformanceStatement.completed)
@@ -226,10 +209,46 @@ export class ConformanceDashboardComponent implements OnInit {
     this.getConformanceStatementsInternal(false, false)
     .subscribe((data) => {
 			this.conformanceStatements = data.data
+      this.conformanceStatementsTotalCount = this.conformanceStatements.length
+      this.currentPage = 1
+      this.selectPage()
 			this.onCollapseAll()
     }).add(() => {
 			this.filterState.updatePending = false
     })
+  }
+
+  organiseTestSuites(statement: ConformanceResultFullWithTestSuites) {
+    if (statement.testCases != undefined) {
+      const testSuites: ConformanceResultTestSuite[] = []
+      let testSuite: ConformanceResultTestSuite|undefined
+      for (let item of statement.testCases) {
+        if (testSuite == undefined || testSuite.testSuiteId != item.testSuiteId) {
+          if (testSuite != undefined) {
+            testSuites.push(testSuite)
+          }
+          testSuite = {
+            testSuiteId: item.testSuiteId!,
+            testSuiteName: item.testSuiteName!,
+            expanded: true,
+            result: item.result!,
+            testCases: []
+          }
+        }
+        if (item.result != testSuite.result) {
+          if (item.result == Constants.TEST_CASE_RESULT.FAILURE) {
+            testSuite.result = Constants.TEST_CASE_RESULT.FAILURE
+          } else if (item.result == Constants.TEST_CASE_RESULT.UNDEFINED && testSuite.result == Constants.TEST_CASE_RESULT.SUCCESS) {
+            testSuite.result = Constants.TEST_CASE_RESULT.UNDEFINED
+          }
+        }
+        testSuite.testCases.push(item as ConformanceStatusItem)
+      }
+      if (testSuite != undefined) {
+        testSuites.push(testSuite)
+      }
+      statement.testSuites = testSuites
+    }
   }
 
 	onExpand(statement: ConformanceResultFull) {
@@ -242,17 +261,21 @@ export class ConformanceDashboardComponent implements OnInit {
         this.conformanceService.getConformanceStatus(statement.actorId, statement.systemId)
         .subscribe((data) => {
           const testCases: Partial<ConformanceStatusItem>[] = []
-          for (let result of data) {
+          for (let result of data.items) {
             testCases.push({
               id: result.testCaseId,
               sessionId: result.sessionId,
+              testSuiteId: result.testSuiteId,
               testSuiteName: result.testSuiteName,
+              testCaseId: result.testCaseId,
               testCaseName: result.testCaseName,
               result: result.result,
-              outputMessage: result.outputMessage
+              outputMessage: result.outputMessage,
+              sessionTime: result.sessionTime
             })
           }
           statement.testCases = testCases
+          this.organiseTestSuites(statement)
         }).add(() => {
           statement.testCasesLoaded = true
         })
@@ -338,7 +361,7 @@ export class ConformanceDashboardComponent implements OnInit {
 	onExportConformanceStatement(statement?: ConformanceResultFull) {
 		let statementToProcess: ConformanceResultFull
 		if (statement == undefined) {
-			statementToProcess = this.conformanceStatements[0]
+			statementToProcess = this.conformanceStatements[0] as ConformanceResultFull
     } else {
       statementToProcess = statement!
     }
@@ -362,12 +385,103 @@ export class ConformanceDashboardComponent implements OnInit {
 
   private showSettingsPopup(statement: ConformanceResultFull) {
     const modalRef = this.modalService.show(ConformanceCertificateModalComponent, {
-      class: 'modal-lg', 
+      class: 'modal-lg',
       initialState: {
         settings: JSON.parse(JSON.stringify(this.settings)),
         conformanceStatement: statement
       }
     })
+  }
+
+  toOrganisation(statement: ConformanceResultFull) {
+    if (statement.organizationId == this.dataService.vendor!.id) {
+      // Own organisation
+      this.routingService.toOwnOrganisationDetails()
+    } else {
+      this.routingService.toOrganisationDetails(statement.communityId, statement.organizationId)
+    }
+  }
+
+  toSystem(statement: ConformanceResultFull) {
+    this.routingService.toSystems(statement.organizationId, statement.systemId)
+  }
+
+  toStatement(statement: ConformanceResultFull) {
+    this.routingService.toConformanceStatement(statement.organizationId, statement.systemId, statement.actorId, statement.specId)
+  }
+
+  toSpecification(statement: ConformanceResultFull) {
+    this.routingService.toSpecification(statement.domainId, statement.specId)
+  }
+
+  toActor(statement: ConformanceResultFull) {
+    this.routingService.toActor(statement.domainId, statement.specId, statement.actorId)
+  }
+
+  toTestSession(sessionId: string) {
+    this.routingService.toSessionDashboard(sessionId)
+  }
+
+  doFirstPage() {
+    if (!this.prevDisabled) {
+      this.currentPage = 1
+      this.selectPage()
+    }
+  }
+
+  doPrevPage() {
+    if (!this.prevDisabled) {
+      this.currentPage -= 1
+      this.selectPage()
+    }
+  }
+
+  doNextPage() {
+    if (!this.nextDisabled) {
+      this.currentPage += 1
+      this.selectPage()
+    }
+  }
+
+  doLastPage() {
+    if (!this.nextDisabled) {
+      this.currentPage = Math.ceil(this.conformanceStatementsTotalCount / Constants.TABLE_PAGE_SIZE)
+      this.selectPage()
+    }
+  }
+
+  selectPage() {
+    const startIndex = (this.currentPage - 1) * Constants.TABLE_PAGE_SIZE
+    const endIndex = startIndex + Constants.TABLE_PAGE_SIZE
+    this.conformanceStatementsPage = this.conformanceStatements.slice(startIndex, endIndex)
+    this.updatePagination()
+  }
+
+  updatePagination() {
+    if (this.currentPage == 1) {
+      this.nextDisabled = this.conformanceStatementsTotalCount <= Constants.TABLE_PAGE_SIZE
+      this.prevDisabled = true
+    } else if (this.currentPage == Math.ceil(this.conformanceStatementsTotalCount / Constants.TABLE_PAGE_SIZE)) {
+      this.nextDisabled = true
+      this.prevDisabled = false
+    } else {
+      this.nextDisabled = false
+      this.prevDisabled = false
+    }
+  }
+
+  sort(column: string) {
+    if (column == this.sortColumn) {
+      if (this.sortOrder == Constants.ORDER.DESC) {
+        this.sortOrder = Constants.ORDER.ASC
+      } else {
+        this.sortOrder = Constants.ORDER.DESC
+      }
+    } else {
+      this.sortColumn = column
+      this.sortOrder = Constants.ORDER.DESC
+    }
+    this.getConformanceStatements()
   }
 
 }

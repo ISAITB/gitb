@@ -3,23 +3,16 @@ package com.gitb.validation.xsd;
 import com.gitb.core.Configuration;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tr.TestStepReportType;
-import com.gitb.types.BinaryType;
 import com.gitb.types.DataType;
 import com.gitb.types.ObjectType;
 import com.gitb.types.SchemaType;
 import com.gitb.utils.XMLUtils;
 import com.gitb.validation.IValidationHandler;
 import com.gitb.validation.common.AbstractValidator;
-import org.apache.xerces.jaxp.validation.XMLSchemaFactory;
 import org.kohsuke.MetaInfServices;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.w3c.dom.Node;
 import org.xml.sax.SAXException;
-import org.xml.sax.SAXNotRecognizedException;
-import org.xml.sax.SAXNotSupportedException;
 
-import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.dom.DOMSource;
@@ -37,13 +30,11 @@ import java.util.Map;
 @MetaInfServices(IValidationHandler.class)
 public class XSDValidator extends AbstractValidator {
 
-    private static final Logger logger = LoggerFactory.getLogger(XSDValidator.class);
+    private final static String SCHEMA_LANGUAGE = "http://www.w3.org/2001/XMLSchema";
+    private final static String CONTENT_ARGUMENT_NAME = "xmldocument";
+    private final static String SCHEMA_ARGUMENT_NAME  = "xsddocument";
 
-    private final String SCHEMA_LANGUAGE = "http://www.w3.org/2001/XMLSchema";
-    private final String CONTENT_ARGUMENT_NAME = "xmldocument";
-    private final String SCHEMA_ARGUMENT_NAME  = "xsddocument";
-
-    private final String MODULE_DEFINITION_XML = "/xsd-validator-definition.xml";
+    private final static String MODULE_DEFINITION_XML = "/xsd-validator-definition.xml";
 
     public XSDValidator() {
         this.validatorDefinition = readModuleDefinition(MODULE_DEFINITION_XML);
@@ -52,20 +43,13 @@ public class XSDValidator extends AbstractValidator {
     @Override
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
         //get inputs
-        ObjectType contentToProcess;
-        DataType content = (DataType) inputs.get(CONTENT_ARGUMENT_NAME);
-        if (content instanceof BinaryType) {
-            contentToProcess = new ObjectType();
-            contentToProcess.deserialize((byte[])content.getValue());
-        } else {
-            contentToProcess = (ObjectType) inputs.get(CONTENT_ARGUMENT_NAME);
-        }
-        SchemaType xsd     = (SchemaType) inputs.get(SCHEMA_ARGUMENT_NAME);
+        ObjectType contentToProcess = (ObjectType) inputs.get(CONTENT_ARGUMENT_NAME).convertTo(DataType.OBJECT_DATA_TYPE);
+        SchemaType xsd = (SchemaType) inputs.get(SCHEMA_ARGUMENT_NAME).convertTo(DataType.SCHEMA_DATA_TYPE);
 
         //create error handler
         XSDReportHandler handler = new XSDReportHandler(contentToProcess, xsd);
 
-        DocumentBuilderFactory factory = null;
+        DocumentBuilderFactory factory;
         try {
             factory = XMLUtils.getSecureDocumentBuilderFactory();
         } catch (ParserConfigurationException e) {
@@ -76,7 +60,7 @@ public class XSDValidator extends AbstractValidator {
         //resolve schema
         SchemaFactory schemaFactory = SchemaFactory.newInstance(SCHEMA_LANGUAGE);
         schemaFactory.setErrorHandler(handler);
-        schemaFactory.setResourceResolver(new XSDResolver(xsd.getTestSuiteId(), getTestCaseId(), xsd.getSchemaLocation()));
+        schemaFactory.setResourceResolver(new XSDResolver(xsd.getImportTestSuite(), getTestCaseId(), xsd.getImportPath()));
         Schema schema;
         try {
             schema = schemaFactory.newSchema(new DOMSource((Node)xsd.getValue()));

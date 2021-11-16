@@ -39,7 +39,7 @@
                         </div>
                     </div>
                 </div>
-                <div [collapse]="!settings.includeMessage" [isAnimated]="true">
+                <div [collapse]="loading ||!settings.includeMessage" [isAnimated]="true">
                     <div class="row">
                         <div class="col-xs-12">
                             <div class="form-separator">
@@ -71,7 +71,7 @@
                         </div>
                     </div>
                 </div>
-                <div [collapse]="!settings.includeSignature" [isAnimated]="true">
+                <div [collapse]="loading || !settings.includeSignature" [isAnimated]="true">
                     <div class="row">
                         <div class="col-xs-12">
                             <div class="form-separator">
@@ -84,9 +84,9 @@
                             <div class="form-group">
                                 <label class="col-xs-3 control-label" for="title">* Keystore:</label>
                                 <div class="col-xs-8">
-                                    <app-file-select *ngIf="!settings.keystoreFile" label="Upload" (onUpload)="attachKeystore($event)"></app-file-select>
-                                    <button class="btn btn-default" type="button" (click)="downloadKeystore()" *ngIf="settings.keystoreFile">Download</button>
-                                    <button class="btn btn-default spaced-left" type="button" (click)="clearKeystore()" *ngIf="settings.keystoreFile">Remove</button>
+                                    <app-file-select *ngIf="!settings.keystoreDefined" label="Upload" (onUpload)="attachKeystore($event)"></app-file-select>
+                                    <button class="btn btn-default" type="button" (click)="downloadKeystore()" *ngIf="settings.keystoreDefined">Download</button>
+                                    <button class="btn btn-default spaced-left" type="button" (click)="clearKeystore()" *ngIf="settings.keystoreDefined">Remove</button>
                                     <app-tooltip [inline]="true" [inlineType]="'button'" tbTooltip="The keystore file that includes the keypair (private and public key) that will be used. The keystore should contain a single keypair."></app-tooltip>
                                 </div>
                             </div>
@@ -104,29 +104,28 @@
                                     <input id="change-passwords" name="changePasswords" [(ngModel)]="updatePasswords" type="checkbox" class="form-check"/>
                                 </div>
                             </div>
-                            <div class="form-group" *ngIf="updatePasswords">
-                                <label class="col-xs-3 control-label" for="keystorePassword">* Keystore password:</label>
-                                <div class="col-xs-3"><input id="keystorePassword" name="keystorePassword" [(ngModel)]="settings.keystorePassword" class="form-control" type="password"></div>
-                                <app-tooltip tbTooltip="The password to open the keystore."></app-tooltip>
-                            </div>
-                            <div class="form-group" *ngIf="updatePasswords">
-                                <label class="col-xs-3 control-label" for="keyPassword">* Key password:</label>
-                                <div class="col-xs-3"><input id="keyPassword" name="keyPassword" [(ngModel)]="settings.keyPassword" class="form-control" type="password"></div>
-                                <app-tooltip tbTooltip="The password to unlock the key used for signing."></app-tooltip>
+                            <div [collapse]="!updatePasswords" [isAnimated]="true">
+                                <div class="form-group">
+                                    <label class="col-xs-3 control-label" for="keystorePassword">* Keystore password:</label>
+                                    <div class="col-xs-3"><input id="keystorePassword" name="keystorePassword" [(ngModel)]="settings.keystorePassword" class="form-control" type="password"></div>
+                                    <app-tooltip tbTooltip="The password to open the keystore."></app-tooltip>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-xs-3 control-label" for="keyPassword">* Key password:</label>
+                                    <div class="col-xs-3"><input id="keyPassword" name="keyPassword" [(ngModel)]="settings.keyPassword" class="form-control" type="password"></div>
+                                    <app-tooltip tbTooltip="The password to unlock the key used for signing."></app-tooltip>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
             <div class="panel-footer">
-                <div class="row">
-                    <div class="col-xs-3"></div>
-                    <div class="col-xs-8 btn-toolbar">
-                        <button class="btn btn-default" type="submit" (click)="update()" [disable]="testPending|| exportPending || !settingsOk()" [pending]="updatePending">Update</button>
-                        <button class="btn btn-default" type="button" (click)="preview()" [disable]="updatePending || testPending || !settingsOk()" [pending]="exportPending">Generate preview</button>
-                        <button class="btn btn-default" type="button" (click)="testKeystore()" [disable]="updatePending || exportPending || !keystoreSettingsOk()" [pending]="testPending" *ngIf="settings.includeSignature">Test keystore configuration</button>
-                        <button class="btn btn-default" type="button" (click)="cancel()">Cancel</button>
-                    </div>
+                <div class="btn-toolbar">
+                    <button class="btn btn-default" type="submit" (click)="update()" [disable]="testPending|| exportPending || !settingsOk()" [pending]="updatePending">Update</button>
+                    <button class="btn btn-default" type="button" (click)="preview()" [disable]="updatePending || testPending || !settingsOk()" [pending]="exportPending">Generate preview</button>
+                    <button class="btn btn-default" type="button" (click)="testKeystore()" [disable]="updatePending || exportPending || !keystoreSettingsOk()" [pending]="testPending" *ngIf="settings.includeSignature">Test keystore configuration</button>
+                    <button class="btn btn-default" type="button" (click)="cancel()">Cancel</button>
                 </div>
             </div>
         </form>

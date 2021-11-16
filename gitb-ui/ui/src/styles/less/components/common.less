@@ -51,14 +51,36 @@
 					padding-top: 8px;
 					padding-bottom: 8px;
 					text-align: center;
-					button.btn {
-						&.pending {
-							padding: 6px;
-						}
-					}
 				}
 			}
 		}
+	}
+}
+
+button.btn {
+	&.pending {
+		padding: 6px;
+	}
+}
+
+.nav-tabs > li.active > a {
+	background-color: @gray-light-1 !important;
+	color: @blueHeading !important;
+}
+
+.tabPanel {
+	border-left: 1px solid @gray-dark-1;
+	border-right: 1px solid @gray-dark-1;
+	border-bottom: 1px solid @gray-dark-1;
+	border-bottom-left-radius: 4px;
+	border-bottom-right-radius: 4px;
+	background-color: @gray-light-1;
+	padding: 10px;
+	.tabControls {
+		margin-bottom: 10px;
+	}
+	div.panel:last-child {
+		margin-bottom: 0px;
 	}
 }
 
@@ -191,6 +213,21 @@ tr.test-result-obsolete {
 }
 .form-separator {
 	border-bottom: 1px solid @gray-light; margin-bottom: 20px;
+	&.expandable {
+		cursor: pointer;
+		display: flex;
+		border-radius: 4px 4px 0px 0px;		
+		&:hover {
+			background-color: @white-hover;
+		}
+		div:first-child {
+			margin-left: 10px;
+			flex-grow: 1;
+		}
+		div:last-child {
+			margin-right: 10px;
+		}
+	}
 }
 .form-separator-popup {
 	border-bottom: 1px solid #e5e5e5;
@@ -269,6 +306,13 @@ li.menu-section-start {
 		&.panel-heading {
 			background-color: #efefef;
 		}
+	}
+}
+
+th.sortableHeader {
+	white-space: nowrap;
+	&:hover {
+		cursor: pointer;
 	}
 }
 
@@ -648,6 +692,7 @@ table.table {
 						text-align: center;
 						font-weight: bold;
 						white-space: nowrap;
+						height: 36px;
 					}
 					.property-value {
 						padding: 6px 12px;
@@ -658,11 +703,13 @@ table.table {
 						background-color: #eee;
 						color: #555;
 						white-space: nowrap;
+						height: 36px;
 					}
 					.property-controls {
 						button {
 							border-top-left-radius: 0px;
 							border-bottom-left-radius: 0px;								
+							height: 36px;
 						}
 					}
 				}

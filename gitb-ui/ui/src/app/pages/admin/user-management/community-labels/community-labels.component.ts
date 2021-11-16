@@ -1,10 +1,11 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { CommunityService } from 'src/app/services/community.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { TypedLabelConfig } from 'src/app/types/typed-label-config.type';
 
 @Component({
@@ -22,7 +23,7 @@ export class CommunityLabelsComponent extends BaseComponent implements OnInit {
   labels: TypedLabelConfig[] = []
 
   constructor(
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private communityService: CommunityService,
     private dataService: DataService,
@@ -85,7 +86,7 @@ export class CommunityLabelsComponent extends BaseComponent implements OnInit {
   }
 
   cancel() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId])
+    this.routingService.toCommunity(this.communityId)
   }
     
   saveDisabled() {

@@ -24,8 +24,7 @@ import { CustomProperty } from '../custom-property-filter/custom-property';
 @Component({
   selector: 'app-test-filter',
   templateUrl: './test-filter.component.html',
-  styles: [
-  ]
+  styleUrls: [ './test-filter.component.less' ]
 })
 export class TestFilterComponent implements OnInit {
 
@@ -56,7 +55,7 @@ export class TestFilterComponent implements OnInit {
   colStyle!: { width: string }
   enableFiltering = false
   showFiltering = false
-  sessionState?: { id?: string, readonly: boolean }
+  sessionId?: string
   uuidCounter = 0
   cachedOrganisationProperties: { [key: string]: OrganisationParameter[] } = {}
   cachedSystemProperties: { [key: string]: SystemParameter[] } = {}
@@ -77,12 +76,35 @@ export class TestFilterComponent implements OnInit {
   loadingSystemProperties = false
   applicableCommunityId?: number
   filterDataLoaded = false
+  names: {[key: string]: string} = {}
 
   constructor(
     public dataService: DataService
   ) { }
 
   ngOnInit(): void {
+    // Set up filter title names
+    this.names[Constants.FILTER_TYPE.ACTOR] = this.dataService.labelActor()
+    this.names[Constants.FILTER_TYPE.COMMUNITY] = 'Community'
+    this.names[Constants.FILTER_TYPE.DOMAIN] = this.dataService.labelDomain()
+    this.names[Constants.FILTER_TYPE.END_TIME] = 'End time'
+    this.names[Constants.FILTER_TYPE.ORGANISATION] = this.dataService.labelOrganisation()
+    this.names[Constants.FILTER_TYPE.ORGANISATION_PROPERTY] = this.dataService.labelOrganisation() + ' properties'
+    this.names[Constants.FILTER_TYPE.RESULT] = 'Result'
+    this.names[Constants.FILTER_TYPE.SESSION] = 'Session'
+    this.names[Constants.FILTER_TYPE.SPECIFICATION] = this.dataService.labelSpecification()
+    this.names[Constants.FILTER_TYPE.START_TIME] = 'Start time'
+    this.names[Constants.FILTER_TYPE.SYSTEM] = this.dataService.labelSystem()
+    this.names[Constants.FILTER_TYPE.SYSTEM_PROPERTY] = this.dataService.labelSystem() + ' properties'
+    this.names[Constants.FILTER_TYPE.TEST_CASE] = 'Test case'
+    this.names[Constants.FILTER_TYPE.TEST_SUITE] = 'Test suite'
+    if (this.filterState.names != undefined) {
+      for (let filter in this.filterState.names) {
+        if (this.filterState.names[filter] != undefined) {
+          this.names[filter] = this.filterState.names[filter]
+        }
+      }
+    }
   }
 
   private resetApplicableCommunityId() {
@@ -134,11 +156,6 @@ export class TestFilterComponent implements OnInit {
       filter: this.getAllTestResults(),
       selection: []
     }
-    if (this.filterDefined(Constants.FILTER_TYPE.SESSION)) {
-      this.sessionState = {
-        readonly: true
-      }
-    }
     forkJoin(this.loadPromises).subscribe(() => {
       this.filterDataLoaded = true
       this.resetFilters()
@@ -181,31 +198,45 @@ export class TestFilterComponent implements OnInit {
   }
 
   filterItemTicked(filterType: string) {
-    if (filterType == Constants.FILTER_TYPE.DOMAIN) {
-      this.setSpecificationFilter(<Domain[]>this.filtering[Constants.FILTER_TYPE.DOMAIN].selection, <Domain[]>this.filtering[Constants.FILTER_TYPE.DOMAIN].filter, true)
-    }
-    if (filterType == Constants.FILTER_TYPE.DOMAIN || filterType == Constants.FILTER_TYPE.SPECIFICATION) {
-      this.setActorFilter(<Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].selection, <Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, true)
-      this.setTestSuiteFilter(<Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].selection, <Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, true)
-    }
-    if (filterType == Constants.FILTER_TYPE.DOMAIN || filterType == Constants.FILTER_TYPE.SPECIFICATION || filterType == Constants.FILTER_TYPE.ACTOR || filterType == Constants.FILTER_TYPE.TEST_SUITE) {
-      this.setTestCaseFilter(<TestSuiteWithTestCases[]>this.filtering[Constants.FILTER_TYPE.TEST_SUITE].selection, <TestSuiteWithTestCases[]>this.filtering[Constants.FILTER_TYPE.TEST_SUITE].filter, true)
-    }
-    if (filterType == Constants.FILTER_TYPE.COMMUNITY) {
-      this.setOrganizationFilter(<Community[]>this.filtering[Constants.FILTER_TYPE.COMMUNITY].selection, <Community[]>this.filtering[Constants.FILTER_TYPE.COMMUNITY].filter, true)
-      // Custom properties
-      this.organisationProperties = []
-      this.systemProperties = []
-      if (this.filtering[Constants.FILTER_TYPE.COMMUNITY].selection.length == 1) {
-        this.applicableCommunityId = this.filtering[Constants.FILTER_TYPE.COMMUNITY].selection[0].id      
-      } else {
-        this.applicableCommunityId = undefined
+    setTimeout(() => {
+      if (filterType == Constants.FILTER_TYPE.DOMAIN) {
+        this.setSpecificationFilter(<Domain[]>this.filtering[Constants.FILTER_TYPE.DOMAIN].selection, <Domain[]>this.filtering[Constants.FILTER_TYPE.DOMAIN].filter, true)
       }
-    }
-    if (filterType == Constants.FILTER_TYPE.COMMUNITY || filterType == Constants.FILTER_TYPE.ORGANISATION) {
-      this.setSystemFilter(this.filtering[Constants.FILTER_TYPE.ORGANISATION].selection, this.filtering[Constants.FILTER_TYPE.ORGANISATION].filter, true)
-    }
-    this.applyFilters()
+      if (filterType == Constants.FILTER_TYPE.DOMAIN || filterType == Constants.FILTER_TYPE.SPECIFICATION) {
+        this.setActorFilter(<Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].selection, <Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, true)
+        this.setTestSuiteFilter(<Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].selection, <Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, true)
+      }
+      if (filterType == Constants.FILTER_TYPE.DOMAIN || filterType == Constants.FILTER_TYPE.SPECIFICATION || filterType == Constants.FILTER_TYPE.ACTOR || filterType == Constants.FILTER_TYPE.TEST_SUITE) {
+        this.setTestCaseFilter(<TestSuiteWithTestCases[]>this.filtering[Constants.FILTER_TYPE.TEST_SUITE].selection, <TestSuiteWithTestCases[]>this.filtering[Constants.FILTER_TYPE.TEST_SUITE].filter, true)
+      }
+      if (filterType == Constants.FILTER_TYPE.COMMUNITY) {
+        this.setOrganizationFilter(<Community[]>this.filtering[Constants.FILTER_TYPE.COMMUNITY].selection, <Community[]>this.filtering[Constants.FILTER_TYPE.COMMUNITY].filter, true)
+        // Custom properties
+        this.organisationProperties = []
+        this.systemProperties = []
+        if (this.filtering[Constants.FILTER_TYPE.COMMUNITY].selection.length == 1) {
+          this.applicableCommunityId = this.filtering[Constants.FILTER_TYPE.COMMUNITY].selection[0].id      
+        } else {
+          this.applicableCommunityId = undefined
+        }
+      }
+      if (filterType == Constants.FILTER_TYPE.COMMUNITY || filterType == Constants.FILTER_TYPE.ORGANISATION) {
+        this.setSystemFilter(this.filtering[Constants.FILTER_TYPE.ORGANISATION].selection, this.filtering[Constants.FILTER_TYPE.ORGANISATION].filter, true)
+      }
+      this.applyFilters()
+    })
+  }
+
+  private toDateStart(date: Date): Date {
+    const newDate = new Date(date.getTime())
+    newDate.setHours(0, 0, 0, 0)
+    return newDate
+  }
+
+  private toDateEnd(date: Date) {
+    const newDate = new Date(date.getTime())
+    newDate.setHours(23, 59, 59, 999)
+    return newDate
   }
 
   currentFilters() {
@@ -219,22 +250,24 @@ export class TestFilterComponent implements OnInit {
     filters[Constants.FILTER_TYPE.ORGANISATION] = this.filterValue(Constants.FILTER_TYPE.ORGANISATION)
     filters[Constants.FILTER_TYPE.SYSTEM] = this.filterValue(Constants.FILTER_TYPE.SYSTEM)
     filters[Constants.FILTER_TYPE.RESULT] = this.filterValue(Constants.FILTER_TYPE.RESULT)
-    if (this.filterDefined(Constants.FILTER_TYPE.TIME)) {
+    if (this.filterDefined(Constants.FILTER_TYPE.START_TIME)) {
       if (this.startDateModel !== undefined) {
-        filters.startTimeBegin = this.startDateModel[0]
-        filters.startTimeBeginStr = formatDate(this.startDateModel[0], 'dd-MM-YYYY HH:mm:ss', 'en')
-        filters.startTimeEnd = this.startDateModel[1]
-        filters.startTimeEndStr = formatDate(this.startDateModel[1], 'dd-MM-YYYY HH:mm:ss', 'en')
+        filters.startTimeBegin = this.toDateStart(this.startDateModel[0])
+        filters.startTimeBeginStr = formatDate(filters.startTimeBegin, 'dd-MM-YYYY HH:mm:ss', 'en')
+        filters.startTimeEnd = this.toDateEnd(this.startDateModel[1])
+        filters.startTimeEndStr = formatDate(filters.startTimeEnd, 'dd-MM-YYYY HH:mm:ss', 'en')
       }
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.END_TIME)) {
       if (this.endDateModel !== undefined) {
-        filters.endTimeBegin = this.endDateModel[0]
-        filters.endTimeBeginStr = formatDate(this.endDateModel[0], 'dd-MM-YYYY HH:mm:ss', 'en')
-        filters.endTimeEnd = this.endDateModel[1]
-        filters.endTimeEndStr = formatDate(this.endDateModel[1], 'dd-MM-YYYY HH:mm:ss', 'en')
+        filters.endTimeBegin = this.toDateStart(this.endDateModel[0])
+        filters.endTimeBeginStr = formatDate(filters.endTimeBegin, 'dd-MM-YYYY HH:mm:ss', 'en')
+        filters.endTimeEnd = this.toDateEnd(this.endDateModel[1])
+        filters.endTimeEndStr = formatDate(filters.endTimeEnd, 'dd-MM-YYYY HH:mm:ss', 'en')
       }
     }
     if (this.filterDefined(Constants.FILTER_TYPE.SESSION)) {
-      filters.sessionId = this.sessionState?.id
+      filters.sessionId = this.sessionId
     }
     if (this.filterDefined(Constants.FILTER_TYPE.ORGANISATION_PROPERTY)) {
       filters.organisationProperties = []
@@ -282,8 +315,10 @@ export class TestFilterComponent implements OnInit {
     this.clearFilter(Constants.FILTER_TYPE.ORGANISATION)
     this.clearFilter(Constants.FILTER_TYPE.SYSTEM)
     this.clearFilter(Constants.FILTER_TYPE.RESULT)
-    if (this.filterDefined(Constants.FILTER_TYPE.TIME)) {
+    if (this.filterDefined(Constants.FILTER_TYPE.START_TIME)) {
       this.startDateModel = undefined
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.END_TIME)) {
       this.endDateModel = undefined
     }
     this.resetApplicableCommunityId()
@@ -319,7 +354,9 @@ export class TestFilterComponent implements OnInit {
 
   applyTimeFiltering() {
     if (this.enableFiltering && this.filterDataLoaded) {
-      this.applyFilters()
+      setTimeout(() => {
+        this.applyFilters()
+      })
     }
   }
 
@@ -462,8 +499,7 @@ export class TestFilterComponent implements OnInit {
     this.setSystemFilter(this.filtering[Constants.FILTER_TYPE.ORGANISATION].filter, [], false)
     this.filtering[Constants.FILTER_TYPE.RESULT].selection = []
     if (this.filterDefined(Constants.FILTER_TYPE.SESSION)) {
-      this.sessionState!.id = undefined
-      this.sessionState!.readonly = true
+      this.sessionId = undefined
     }
     this.organisationProperties = []
     this.systemProperties = []
@@ -477,34 +513,6 @@ export class TestFilterComponent implements OnInit {
       results.push({id: value})
     }
     return results
-  }
-
-  sessionIdClicked() {
-    if (this.sessionState!.readonly) {
-      this.sessionState!.readonly = false
-      if (this.sessionState!.id === undefined) {
-        this.sessionState!.id = ''
-      }
-    }
-  }
-
-  applySessionId() {
-    if (this.sessionState?.id !== undefined) {
-      if (this.sessionState.readonly) {
-        // Clear
-        this.sessionState.id = undefined
-        this.applyFilters()
-      } else {
-        // Apply
-        const trimmed = this.sessionState.id.trim()
-        this.sessionState.id = trimmed
-        if (this.sessionState.id.length == 0) {
-          this.sessionState.id = undefined
-        }
-        this.sessionState.readonly = true
-        this.applyFilters()
-      }
-    }
   }
 
   addOrganisationProperty() {
@@ -626,7 +634,9 @@ export class TestFilterComponent implements OnInit {
       searchPlaceholderText: 'Search...', 
       itemsShowLimit: 1, 
       allowSearchFilter: true,
-      enableCheckAll: false
+      enableCheckAll: true,
+      selectAllText: 'Select all',
+      unSelectAllText: 'Clear all',
     }
   }
 

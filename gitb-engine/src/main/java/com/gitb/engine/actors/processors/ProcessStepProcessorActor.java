@@ -92,10 +92,27 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
 
         Future<TestStepReportType> future = Futures.future(() -> {
             IProcessingHandler handler = context.getHandler();
-            String operation = step.getOperation();
+            String operation = null;
+            if (step.getOperation() != null) {
+                operation = step.getOperation();
+            } else if (step.getOperationAttribute() != null) {
+                operation = step.getOperationAttribute();
+            }
             ProcessingReport report = handler.process(context.getSession(), operation, getData(handler, operation));
-            if (step.getId() != null) {
-                scope.createVariable(step.getId()).setValue(getValue(report.getData()));
+            if (report.getData() != null && (step.getId() != null || step.getOutput() != null)) {
+                if (step.getOutput() != null) {
+                    if (report.getData().getData() != null && report.getData().getData().size() == 1) {
+                        // Single output - set as direct result.
+                        scope.createVariable(step.getOutput()).setValue(report.getData().getData().values().iterator().next());
+                    } else {
+                        // Multiple outputs - set as map result.
+                        scope.createVariable(step.getOutput()).setValue(getValue(report.getData()));
+                    }
+                }
+                if (step.getId() != null) {
+                    // Backwards compatibility - set output map linked to id.
+                    scope.createVariable(step.getId()).setValue(getValue(report.getData()));
+                }
             }
             if (step.isHidden() != null && !step.isHidden() && !handler.isRemote()) {
                 // We only add to the report's context the created data if this is visible and

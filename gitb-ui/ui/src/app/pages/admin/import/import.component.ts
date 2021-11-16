@@ -166,7 +166,7 @@ export class ImportComponent extends BaseComponent implements OnInit, OnDestroy 
   }
 
   importDisabled() {
-    return this.importStep1 && !(this.archiveData?.data != undefined && this.textProvided(this.settings.encryptionKey) && (this.exportType == 'domain' && this.domain != undefined || this.exportType == 'community' && this.community != undefined))
+    return this.importStep1 && !(this.archiveData?.file != undefined && this.textProvided(this.settings.encryptionKey) && (this.exportType == 'domain' && this.domain != undefined || this.exportType == 'community' && this.community != undefined))
   }
 
   import() {

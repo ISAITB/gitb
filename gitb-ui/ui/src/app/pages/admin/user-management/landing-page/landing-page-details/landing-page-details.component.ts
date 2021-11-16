@@ -1,11 +1,13 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
 import { LandingPageService } from 'src/app/services/landing-page.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { LandingPage } from 'src/app/types/landing-page';
+import { CommunityTab } from '../../community/community-details/community-tab.enum';
 
 @Component({
   selector: 'app-landing-page-details',
@@ -24,7 +26,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   page: Partial<LandingPage> = {}
 
   constructor(
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     public dataService: DataService,
     private landingPageService: LandingPageService,
@@ -62,6 +64,14 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
     }
   }
 
+  private clearCachedLandingPageIfNeeded() {
+    if ((this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) 
+      && this.dataService.vendor!.community == this.communityId && this.page.default) {
+        // Update if we are Test Bed or community admins and we are editing the default landing page.
+        this.dataService.currentLandingPageContent = undefined
+    }
+  }
+
   doUpdate(copy: boolean) {
     this.savePending = true
     this.landingPageService.updateLandingPage(this.pageId, this.page.name!, this.page.description, this.page.content, this.page.default!, this.communityId)
@@ -72,6 +82,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
         if (copy) {
           this.copyLandingPage()
         } else {
+          this.clearCachedLandingPageIfNeeded()
           this.popupService.success('Landing page updated.')
         }
       }
@@ -82,7 +93,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
 
   copyLandingPage() {
     this.copyPending = true
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'pages', 'create'], { queryParams: { copy: this.pageId } })
+    this.routingService.toCreateLandingPage(this.communityId, false, this.pageId)
   }
 
   deleteLandingPage() {
@@ -91,6 +102,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
       this.deletePending = true
       this.landingPageService.deleteLandingPage(this.pageId)
       .subscribe(() => {
+        this.clearCachedLandingPageIfNeeded()
         this.cancelDetailLandingPage()
         this.popupService.success('Landing page deleted.')
       }).add(() => {
@@ -100,7 +112,7 @@ export class LandingPageDetailsComponent extends BaseComponent implements OnInit
   }
 
   cancelDetailLandingPage() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId])
+    this.routingService.toCommunity(this.communityId, CommunityTab.landingPages)
   }
 
 }

@@ -1,7 +1,11 @@
 import { Injectable } from '@angular/core';
+import { find } from 'lodash';
+import { map, mergeMap, Observable, of, share } from 'rxjs';
 import { ROUTES } from '../common/global';
+import { ActorInfo } from '../components/diagram/actor-info';
 import { Actor } from '../types/actor';
 import { ConfigureResponse } from '../types/configure-response';
+import { FileParam } from '../types/file-param.type';
 import { TestCaseDefinition } from '../types/test-case-definition';
 import { UserInteractionInput } from '../types/user-interaction-input';
 import { RestService } from './rest.service';
@@ -18,6 +22,27 @@ export class TestService {
   stop(session: string) {
     return this.restService.post<void>({
         path: ROUTES.controllers.TestService.stop(session).url,
+        authenticate: true
+    })
+  }
+
+  stopAll() {
+    return this.restService.post<void>({
+        path: ROUTES.controllers.TestService.stopAll().url,
+        authenticate: true
+    })
+  }
+
+  stopAllCommunitySessions(communityId: number) {
+    return this.restService.post<void>({
+        path: ROUTES.controllers.TestService.stopAllCommunitySessions(communityId).url,
+        authenticate: true
+    })
+  }
+
+  stopAllOrganisationSessions(organisationId: number) {
+    return this.restService.post<void>({
+        path: ROUTES.controllers.TestService.stopAllOrganisationSessions(organisationId).url,
         authenticate: true
     })
   }
@@ -109,6 +134,7 @@ export class TestService {
 
   provideInput(session: string, step: string, inputs: UserInteractionInput[]) {
     const inputsToSend: any[] = []
+    let files: FileParam[] = []
     for (let input of inputs) {
       const inputToSend: any = {
         id: input.id,
@@ -116,8 +142,8 @@ export class TestService {
         type: input.type,
         embeddingMethod: input.embeddingMethod
       }
-      if (inputToSend.embeddingMethod == 'BASE64') {
-        inputToSend.valueBinary = input.value
+      if (input.file) {
+        files.push({param: 'file_'+input.id, data: input.file})
       } else {
         inputToSend.value = input.value
       }
@@ -129,8 +155,45 @@ export class TestService {
             teststep: step,
             inputs: JSON.stringify(inputsToSend)
         },
+        files: files,
         authenticate: true
     })
+  }
+
+  prepareTestCaseDisplayActors(testCase: TestCaseDefinition, specificationId: number|undefined): Observable<ActorInfo[]> {
+    let actorData: Observable<ActorInfo[]>
+    if (specificationId == undefined) {
+      actorData = of(testCase.actors.actor)
+    } else {
+      actorData = this.getActorDefinitions(specificationId).pipe(map((domainActors) => {
+        for (let testCaseActor of testCase.actors.actor) {
+          if (testCaseActor.name == undefined || testCaseActor.displayOrder == undefined) {
+            // Lookup name and display order from domain data.
+            const relevantDomainActor = find(domainActors, (actorDef) => actorDef.actorId == testCaseActor.id)
+            if (relevantDomainActor != undefined) {
+              if (testCaseActor.name == undefined) {
+                testCaseActor.name = relevantDomainActor.name
+              }
+              if (testCaseActor.displayOrder == undefined && relevantDomainActor.displayOrder != undefined) {
+                testCaseActor.displayOrder = relevantDomainActor.displayOrder
+              }
+            }
+          }
+        }
+        return testCase.actors.actor
+      }), share())
+    }
+    return actorData.pipe(
+      mergeMap((actorDataToUse) => {
+        actorDataToUse = actorDataToUse.sort((a, b) => {
+          if (a.displayOrder == undefined && b.displayOrder == undefined) return 0
+          else if (a.displayOrder != undefined && b.displayOrder == undefined) return -1
+          else if (a.displayOrder == undefined && b.displayOrder != undefined) return 1
+          else return Number(a.displayOrder) - Number(b.displayOrder)
+        })
+        return of(actorDataToUse)
+      }), share()
+    )
   }
 
 }

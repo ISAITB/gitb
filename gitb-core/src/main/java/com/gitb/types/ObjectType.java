@@ -5,6 +5,7 @@ import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.utils.BomStrippingReader;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLUtils;
+import org.apache.commons.io.input.CountingInputStream;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -27,11 +28,12 @@ import java.io.*;
  * Created by senan on 9/8/14.
  */
 public class ObjectType extends DataType {
-    public static String DEFAULT_COMMON_ENCODING_FORMAT = "utf-8";
     public static String DEFAULT_ENCODING = "utf-8";
 
     //The default storage type is XML
     protected Node value;
+    private String encoding = DEFAULT_ENCODING;
+    private Long size = null;
 
     public ObjectType() {
         try {
@@ -60,26 +62,32 @@ public class ObjectType extends DataType {
             //Evaluate the expression with the expected type
             Object object;
             try {
-                object = expression.evaluate(this.value, type);
+                object = expression.evaluate(getValue(), type);
             } catch (XPathExpressionException e) {
                 // Make a second attempt, evaluating as a string
-                object = expression.evaluate(this.value);
+                object = expression.evaluate(getValue());
             }
             //If return type is a list type, cast each Node in the NodeList to the contained type
             if(result instanceof ListType){
                 String containedType = ((ListType) result).getContainedType();
-                NodeList nodeList = (NodeList) object;
-                for(int i=0; i<nodeList.getLength(); i++) {
-                    Node node = nodeList.item(i);
-                    DataType item = DataTypeFactory.getInstance().create(containedType);
-                    if(item instanceof  PrimitiveType){
-                        item.deserialize(node.getTextContent().getBytes());
-                    }else if (item instanceof ObjectType){
-                        item.setValue(node);
-                    }else {
-                        //For other types, try casting from XML format
-                        item.deserialize(serializeNode(node), ObjectType.DEFAULT_COMMON_ENCODING_FORMAT);
+                if (object instanceof NodeList) {
+                    NodeList nodeList = (NodeList) object;
+                    for(int i=0; i<nodeList.getLength(); i++) {
+                        Node node = nodeList.item(i);
+                        DataType item = DataTypeFactory.getInstance().create(containedType);
+                        if(item instanceof  PrimitiveType){
+                            item.deserialize(node.getTextContent().getBytes());
+                        }else if (item instanceof ObjectType){
+                            item.setValue(node);
+                        }else {
+                            //For other types, try casting from XML format
+                            item.deserialize(serializeNode(node), ObjectType.DEFAULT_ENCODING);
+                        }
+                        ((ListType) result).append(item);
                     }
+                } else if (object instanceof String) {
+                    var item = new StringType();
+                    item.setValue(object);
                     ((ListType) result).append(item);
                 }
             }
@@ -87,7 +95,7 @@ public class ObjectType extends DataType {
             else {
                 //Try casting from XML format
                 if (object instanceof Node) {
-                    result.deserialize(serializeNode((Node) object), ObjectType.DEFAULT_COMMON_ENCODING_FORMAT);
+                    result.deserialize(serializeNode((Node) object), ObjectType.DEFAULT_ENCODING);
                 } else {
                     DataType resultType;
                     if (object instanceof Boolean) {
@@ -115,18 +123,36 @@ public class ObjectType extends DataType {
         return DataType.OBJECT_DATA_TYPE;
     }
 
+    @Override
+    public void deserialize(byte[] content)  {
+        deserialize(content, DEFAULT_ENCODING);
+    }
 
     @Override
     public void deserialize(byte[] content, String encoding) {
-        InputSource inputSource = null;
         if (content != null && content.length > 0) {
-            inputSource = new InputSource(new BomStrippingReader(new ByteArrayInputStream(content)));
-            inputSource.setEncoding(encoding);
+            deserialize(new ByteArrayInputStream(content), encoding);
         }
-        deserialize(inputSource);
     }
 
-    protected void deserialize(InputSource inputSource) {
+    @Override
+    public void deserialize(InputStream inputStream, String encoding)   {
+        try (CountingInputStream in = new CountingInputStream(inputStream)) {
+            InputSource inputSource = new InputSource(new BomStrippingReader(in));
+            inputSource.setEncoding(encoding);
+            deserialize(inputSource);
+            size = in.getByteCount();
+        } catch (IOException e) {
+            throw new IllegalStateException("Error while reading stream.", e);
+        }
+    }
+
+    @Override
+    public void deserialize(InputStream inputStream)  {
+        deserialize(inputStream, DEFAULT_ENCODING);
+    }
+
+    protected Node deserializeToNode(InputSource inputSource) {
         try {
             DocumentBuilderFactory factory = XMLUtils.getSecureDocumentBuilderFactory();
             factory.setNamespaceAware(true);
@@ -137,40 +163,46 @@ public class ObjectType extends DataType {
             } else {
                 document = builder.newDocument();
             }
-            setValue(document);
+            return document;
         } catch (ParserConfigurationException | SAXException | IOException e) {
             throw new IllegalStateException("Unable to deserialise variable as XML", e);
         }
     }
 
-    @Override
-    public void deserialize(byte[] content)  {
-        deserialize(content, DEFAULT_ENCODING);
+    private void deserialize(InputSource inputSource) {
+        String encoding = DEFAULT_ENCODING;
+        if (inputSource != null && inputSource.getEncoding() != null) {
+            encoding = inputSource.getEncoding();
+        }
+        setEncoding(encoding);
+        setValue(deserializeToNode(inputSource));
     }
 
-    @Override
-    public void deserialize(InputStream inputStream, String encoding)   {
-        InputSource inputSource = new InputSource(inputStream);
-        inputSource.setEncoding(encoding);
-        deserialize(inputSource);
+    private byte[] serializeNode(Node item) {
+        return serializeNodeToByteStream(item, null).toByteArray();
     }
 
-    @Override
-    public void deserialize(InputStream inputStream)  {
-        deserialize(inputStream, DEFAULT_ENCODING);
+    protected ByteArrayOutputStream serializeNodeToByteStream(Node item, String encoding) {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try {
+            Transformer t = constructTransformerForSerialization();
+            if (encoding != null) {
+                t.setOutputProperty(OutputKeys.ENCODING, encoding);
+            }
+            t.transform(new DOMSource(item), new StreamResult(baos));
+        } catch (TransformerException te) {
+            throw new IllegalStateException("Unable to serialize object type", te);
+        }
+        return baos;
+    }
+
+    protected ByteArrayOutputStream serializeToByteStream(String encoding) {
+        return serializeNodeToByteStream((Node) getValue(), encoding);
     }
 
     @Override
     public OutputStream serializeToStream(String encoding)  {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
-            Transformer t = constructTransformerForSerialization();
-            t.setOutputProperty(OutputKeys.ENCODING, encoding);
-            t.transform(new DOMSource(value), new StreamResult(baos));
-        } catch (TransformerException te) {
-            te.printStackTrace();
-        }
-        return baos;
+        return serializeToByteStream(encoding);
     }
 
     @Override
@@ -180,16 +212,7 @@ public class ObjectType extends DataType {
 
     @Override
     public byte[] serialize(String encoding) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
-            Transformer t = constructTransformerForSerialization();
-            t.setOutputProperty(OutputKeys.ENCODING, encoding);
-            t.transform(new DOMSource(value), new StreamResult(baos));
-        } catch (TransformerException te) {
-            te.printStackTrace();
-            //TODO Handle exception
-        }
-        return baos.toByteArray();
+        return serializeToByteStream(encoding).toByteArray();
     }
 
     @Override
@@ -197,23 +220,7 @@ public class ObjectType extends DataType {
         return serialize(DEFAULT_ENCODING);
     }
 
-    /**
-     * Serialize a Node to OutputStream
-     * @param item
-     * @return
-     */
-    protected byte[] serializeNode(Node item) {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        try {
-            Transformer t = constructTransformerForSerialization();
-            t.transform(new DOMSource(item), new StreamResult(baos));
-        } catch (TransformerException te) {
-            throw new IllegalStateException(te);
-        }
-        return baos.toByteArray();
-    }
-
-    protected Transformer constructTransformerForSerialization() throws TransformerConfigurationException {
+    private Transformer constructTransformerForSerialization() throws TransformerConfigurationException {
         Transformer transformer = XMLUtils.getSecureTransformerFactory().newTransformer();
         transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
         transformer.setOutputProperty(OutputKeys.INDENT, "yes");
@@ -224,11 +231,9 @@ public class ObjectType extends DataType {
         StringWriter sw = new StringWriter();
         try {
             Transformer t = constructTransformerForSerialization();
-            t.transform(new DOMSource(value), new StreamResult(sw));
+            t.transform(new DOMSource((Node) getValue()), new StreamResult(sw));
         } catch (TransformerException te) {
             throw new IllegalStateException("Transformer exception when converting Node to String", te);
-        } catch (Exception e) {
-            e.printStackTrace();
         }
         return sw.toString();
     }
@@ -241,9 +246,10 @@ public class ObjectType extends DataType {
     @Override
     public void setValue(Object value) {
         this.value = (Node) value;
+        this.size = null;
     }
 
-    public static QName XPathConstantForDataType(String type) {
+    private QName XPathConstantForDataType(String type) {
         switch(type) {
             case DataType.OBJECT_DATA_TYPE:
                 return XPathConstants.NODE;
@@ -262,22 +268,39 @@ public class ObjectType extends DataType {
     }
 
     @Override
-    public StringType toStringType() {
+    protected StringType toStringType() {
         return new StringType(new String(serializeByDefaultEncoding()));
     }
 
     @Override
-    public BinaryType toBinaryType() {
+    protected BinaryType toBinaryType() {
         BinaryType type = new BinaryType();
-        type.setValue(serializeByDefaultEncoding());
+        type.setValue(serialize(getEncoding()));
         return type;
     }
 
     @Override
     public SchemaType toSchemaType() {
         SchemaType type = new SchemaType();
+        type.setEncoding(getEncoding());
+        type.setSize(getSize());
         type.setValue(getValue());
         return type;
     }
 
+    public String getEncoding() {
+        return encoding;
+    }
+
+    public void setEncoding(String encoding) {
+        this.encoding = encoding;
+    }
+
+    public Long getSize() {
+        return size;
+    }
+
+    public void setSize(Long size) {
+        this.size = size;
+    }
 }

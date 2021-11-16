@@ -319,7 +319,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 if (targetRequest.isAsTemplate()) {
                     DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput, (dataType) -> {
                         DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
-                        dataType.setValue(dataTypeAfterAppliedTemplate.convertTo(dataType.getType()).getValue());
+                        dataType.copyFrom(dataTypeAfterAppliedTemplate);
                     });
                 } else {
                     DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput);
@@ -330,7 +330,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                 if (targetRequest.isAsTemplate()) {
                     DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput, (dataType) -> {
                         DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
-                        dataType.setValue(dataTypeAfterAppliedTemplate.convertTo(dataType.getType()).getValue());
+                        dataType.copyFrom(dataTypeAfterAppliedTemplate);
                     });
                 } else {
                     DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput);

@@ -15,7 +15,7 @@
             </tr>
         </thead>
         <tbody>
-            <tr *ngIf="loadingStatus && loadingStatus.status == Constants.STATUS.PENDING">
+            <tr *ngIf="loadingStatus && loadingStatus.status != Constants.STATUS.FINISHED">
                 <td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
             </tr>
             <tr *ngIf="loadingStatus && loadingStatus.status == Constants.STATUS.FINISHED && (!data || data.length == 0)">
@@ -52,7 +52,7 @@
                                     <div [collapse]="!row.expanded" [isAnimated]="true">
                                         <div class="collapsing-div">
                                             <div class="panel panel-default">
-                                                <div class="panel-heading session-table-title">
+                                                <div class="panel-heading session-table-title clickable" (click)="diagramCollapsed[row.session] = !diagramCollapsed[row.session]">
                                                     <div class="session-table-title-part">
                                                         <div class="session-table-title-label">Test suite</div>
                                                         <div class="session-table-title-value">{{row.testSuite}}</div>
@@ -63,22 +63,32 @@
                                                     </div>
                                                     <div class="session-table-title-part">
                                                         <div class="session-table-title-label">Session</div>
-                                                        <div class="session-table-title-value">{{row.session}}</div>
+                                                        <div class="session-table-title-value"><app-copy-enabled-text [value]="row.session"></app-copy-enabled-text></div>
                                                     </div>
                                                 </div>
-                                                <div class="panel-body" style="overflow-x: auto; overflow-y: hidden;">
-                                                    <div *ngIf="!row.hideLoadingIcon"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></div>
-                                                    <div [collapse]="!row.diagramExpanded" [isAnimated]="true">
-                                                        <div class="no-margin">
-                                                            <div *ngIf="row.expanded || row.diagramLoaded">
-                                                                <app-test-session-presentation 
-                                                                    [sessionId]="getSessionId(row)" 
-                                                                    [sessionObject]="row" 
-                                                                    (ready)="diagramReady($event)">
-                                                                </app-test-session-presentation>
+                                                <div [collapse]="diagramCollapsed[row.session]" [isAnimated]="true">
+                                                    <div class="panel-body" style="overflow-x: auto; overflow-y: hidden;">
+                                                        <div *ngIf="!row.hideLoadingIcon"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></div>
+                                                        <div [collapse]="!row.diagramExpanded" [isAnimated]="true">
+                                                            <div class="no-margin">
+                                                                <div *ngIf="row.expanded || row.diagramLoaded">
+                                                                    <app-test-session-presentation 
+                                                                        [sessionId]="row.session" 
+                                                                        [sessionObject]="row" 
+                                                                        (ready)="diagramReady($event)">
+                                                                    </app-test-session-presentation>
+                                                                </div>
                                                             </div>
                                                         </div>
                                                     </div>
+                                                </div>                                                
+                                            </div>
+                                            <div class="sessionControls">
+                                                <div class="btn-toolbar">
+                                                    <button type="button" class="btn btn-default" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
+                                                    <button *ngIf="row.organizationId != undefined" type="button" class="btn btn-default" (click)="goToOrganisation(row)">View {{dataService.labelOrganisationLower()}}</button>
+                                                    <button *ngIf="row.organizationId != undefined && row.systemId != undefined" type="button" class="btn btn-default" (click)="goToSystem(row)">View {{dataService.labelSystemLower()}}</button>
+                                                    <button *ngIf="row.organizationId != undefined && row.systemId != undefined && row.actorId != undefined && row.specificationId != undefined" type="button" class="btn btn-default" (click)="goToStatement(row)">View conformance statement</button>
                                                 </div>
                                             </div>
                                         </div>
@@ -91,7 +101,7 @@
             </ng-container>
         </tbody>
     </table>
-    <div *ngIf="paginationVisible && data && data.length > 0" class="text-center table-paging-controls-expandable">
+    <div *ngIf="(!prevDisabled || !nextDisabled) && data && data.length > 0" class="text-center table-paging-controls-expandable">
         <ul class="pagination pagination-sm">
             <li [ngClass]="prevDisabled ? 'disabled' : ''"><a href (click)="doFirstPage(); $event.preventDefault()">First</a></li>
             <li [ngClass]="prevDisabled ? 'disabled' : ''"><a href (click)="doPrevPage(); $event.preventDefault()">Previous</a></li>

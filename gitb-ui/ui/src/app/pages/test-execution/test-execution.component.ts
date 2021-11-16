@@ -1,5 +1,5 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { forkJoin, Observable, timer, of, Subscription } from 'rxjs';
 import { map, mergeMap, share } from 'rxjs/operators';
@@ -33,6 +33,7 @@ import { CodeEditorModalComponent } from 'src/app/components/code-editor-modal/c
 import { DiagramEvents } from 'src/app/components/diagram/diagram-events';
 import { UserInteraction } from 'src/app/types/user-interaction';
 import { UserInteractionInput } from 'src/app/types/user-interaction-input';
+import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-test-execution',
@@ -46,6 +47,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   actorId!: number
   systemId!: number
   specificationId!: number
+  organisationId!: number
   isAdmin = false
   documentationExists = false
 
@@ -89,7 +91,6 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
 
   constructor(
     private route: ActivatedRoute,
-    private router: Router,
     private modalService: BsModalService,
     private testService: TestService,
     private systemService: SystemService,
@@ -100,7 +101,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     private popupService: PopupService,
     private htmlService: HtmlService,
     private webSocketService: WebSocketService,
-    private errorService: ErrorService
+    private errorService: ErrorService,
+    private routingService: RoutingService
   ) { }
 
   private queryParamToNumber(paramName: string): number|undefined {
@@ -113,13 +115,14 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
     this.actorId = Number(this.route.snapshot.paramMap.get('actor_id'))
     this.systemId = Number(this.route.snapshot.paramMap.get('system_id'))
     this.specificationId = Number(this.route.snapshot.paramMap.get('spec_id'))
     this.isAdmin = this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin
-    this.documentationExists = this.testCasesHaveDocumentation()
     if (this.dataService.tests != undefined) {
       this.testsToExecute = this.dataService.tests
+      this.documentationExists = this.testCasesHaveDocumentation()
       this.initialiseEvents()
       this.initialiseState()
     } else {
@@ -130,7 +133,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         .subscribe((data) => {
           // There will always be one test suite returned.
           const tests: ConformanceTestCase[] = []
-          for (let result of data) {
+          for (let result of data.items) {
             tests.push({
               id: result.testCaseId!,
               sname: result.testCaseName,
@@ -140,6 +143,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
             })
           }
           this.testsToExecute = tests
+          this.documentationExists = this.testCasesHaveDocumentation()
           this.initialiseEvents()
           this.initialiseState()
         })
@@ -155,6 +159,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
             hasDocumentation: data.hasDocumentation!,
             result: Constants.TEST_CASE_RESULT.UNDEFINED
           }]
+          this.documentationExists = this.testCasesHaveDocumentation()
           this.initialiseEvents()
           this.initialiseState()
         })
@@ -246,32 +251,9 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         if (testCase.preliminary != undefined) {
           this.currentTest!.preliminary = testCase.preliminary
         }
-        return this.testService.getActorDefinitions(this.specificationId).pipe(
-          map((data) => {
-            let tempActors = testCase.actors.actor
-            for (let domainActorData of data) {
-              if (domainActorData.id == this.actorId) {
-                this.actor = domainActorData.actorId
-              }
-              for (let testCaseActorData of tempActors) {
-                if (testCaseActorData.id == domainActorData.actorId) {
-                  if (testCaseActorData.name == undefined) {
-                    testCaseActorData.name = domainActorData.name
-                  }
-                  if (testCaseActorData.displayOrder == undefined && domainActorData.displayOrder != undefined) {
-                    testCaseActorData.displayOrder = domainActorData.displayOrder
-                  }
-                  break
-                }
-              }
-            }
-            tempActors = tempActors.sort((a, b) => {
-              if (a.displayOrder == undefined && b.displayOrder == undefined) return 0
-              else if (a.displayOrder != undefined && b.displayOrder == undefined) return -1
-              else if (a.displayOrder == undefined && b.displayOrder != undefined) return 1
-              else return Number(a.displayOrder) - Number(b.displayOrder)
-            })
-            this.actorInfoOfTests[testCaseToLookup] = tempActors as ActorInfo[]
+        return this.testService.prepareTestCaseDisplayActors(testCase, this.specificationId).pipe(
+          map((actorData) => {
+            this.actorInfoOfTests[testCaseToLookup] = actorData
             this.stepsOfTests[testCaseToLookup] = testCase.steps
             this.testEvents[this.currentTest!.id].signalTestLoad({ testId: testCaseToLookup })
           })
@@ -433,8 +415,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     // Register client
     this.ws!.next({
       command: Constants.WEB_SOCKET_COMMAND.REGISTER,
-      sessionId: this.session!,
-      actorId: this.actor!
+      sessionId: this.session!
     })
     // Keep alive heartbeat
     if (this.heartbeat == undefined) {
@@ -730,7 +711,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       keyboard: false,
       initialState: {
         interactions: interactions,
-        inputTitle: inputTitle
+        inputTitle: inputTitle,
+        sessionId: this.session!
       }
     })
     modalRef.content!.result.subscribe((result: UserInteractionInput[]) => {
@@ -777,7 +759,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   testCaseFinished(result?: number, outputMessage?: string) {
-    if (result == Constants.TEST_STATUS.COMPLETED) {
+    if (result == Constants.TEST_STATUS.COMPLETED || result == Constants.TEST_STATUS.WARNING) {
       this.updateTestCaseStatus(this.currentTest!.id, Constants.TEST_CASE_STATUS.COMPLETED)
     } else if (result == Constants.TEST_STATUS.ERROR) {
       this.updateTestCaseStatus(this.currentTest!.id, Constants.TEST_CASE_STATUS.ERROR)
@@ -859,7 +841,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   back() {
-    this.router.navigate(['organisation', 'systems', this.systemId, 'conformance', 'detail', this.actorId, this.specificationId])
+    this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.specificationId)
   }
 
   reinitialise() {
@@ -900,15 +882,15 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
 
   toOrganisationProperties() {
     if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
-      this.router.navigate(['settings', 'organisation'], { queryParams: { 'viewProperties': true } })
+      this.routingService.toOwnOrganisationDetails(true)
     } else {
       const organisation = this.getOrganisation()
       if (this.dataService.vendor!.id == organisation.id) {
-        this.router.navigate(['settings', 'organisation'], { queryParams: { 'viewProperties': true } })
+        this.routingService.toOwnOrganisationDetails(true)
       } else {
         this.organisationService.getOrganisationBySystemId(this.systemId)
         .subscribe((data) => {
-          this.router.navigate(['admin', 'users', 'community', data.community, 'organisation', data.id], { queryParams: { 'viewProperties': true } })
+          this.routingService.toOrganisationDetails(data.community, data.id, true)
         })
       }
     }
@@ -916,14 +898,14 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
 
   toSystemProperties() {
     if (this.dataService.isVendorUser) {
-      this.router.navigate(['organisation', 'systems', this.systemId, 'info'], { queryParams: { 'viewProperties': true } })
+      this.routingService.toSystemInfo(this.organisationId, this.systemId, true)
     } else {
-      this.router.navigate(['organisation', 'systems'], { queryParams: { 'id': this.systemId, 'viewProperties': true } })
+      this.routingService.toSystems(this.organisationId, this.systemId, true)
     }
   }
 
   toConfigurationProperties() {
-    this.router.navigate(['organisation', 'systems', this.systemId, 'conformance', 'detail', this.actorId, this.specificationId], { queryParams: { 'viewProperties': true } })
+    this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.specificationId, true)
   }
 
   getActorName(actorId: string) {

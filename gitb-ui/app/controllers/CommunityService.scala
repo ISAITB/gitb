@@ -9,6 +9,7 @@ import javax.inject.Inject
 import managers.{AuthenticationManager, AuthorizationManager, CommunityManager, OrganizationManager}
 import models.Enums.{SelfRegistrationRestriction, SelfRegistrationType}
 import models.{ActualUserInfo, Communities, Organizations, Users}
+import org.apache.commons.io.FileUtils
 import org.apache.commons.lang3.StringUtils
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, Result}
@@ -123,75 +124,88 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: Contro
   }
 
   def selfRegister() = authorizedAction { request =>
-    var response: Result = null
-    val selfRegToken = ParameterExtractor.optionalBodyParameter(request, Parameters.COMMUNITY_SELFREG_TOKEN)
-    val organisation = ParameterExtractor.extractOrganizationInfo(request)
-    var organisationAdmin: Users = null
-    var actualUserInfo: Option[ActualUserInfo] = None
-    if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-      actualUserInfo = Some(authorizationManager.getPrincipal(request))
-      organisationAdmin = ParameterExtractor.extractAdminInfo(request, Some(actualUserInfo.get.email), None)
-    } else {
-      organisationAdmin = ParameterExtractor.extractAdminInfo(request, None, Some(false))
-      if (!CryptoUtil.isAcceptedPassword(organisationAdmin.password)) {
-        response = ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided password does not match minimum complexity requirements.")
+    try {
+      val paramMap = ParameterExtractor.paramMap(request)
+      var response: Result = null
+      val selfRegToken = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.COMMUNITY_SELFREG_TOKEN)
+      val organisation = ParameterExtractor.extractOrganizationInfo(paramMap)
+      var organisationAdmin: Users = null
+      var actualUserInfo: Option[ActualUserInfo] = None
+      if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+        actualUserInfo = Some(authorizationManager.getPrincipal(request))
+        organisationAdmin = ParameterExtractor.extractAdminInfo(paramMap, Some(actualUserInfo.get.email), None)
+      } else {
+        organisationAdmin = ParameterExtractor.extractAdminInfo(paramMap, None, Some(false))
+        if (!CryptoUtil.isAcceptedPassword(organisationAdmin.password)) {
+          response = ResponseConstructor.constructErrorResponse(ErrorCodes.INVALID_CREDENTIALS, "The provided password does not match minimum complexity requirements.")
+        }
       }
-    }
-    if (response == null) {
-      val templateId = ParameterExtractor.optionalLongBodyParameter(request, Parameters.TEMPLATE_ID)
-      authorizationManager.canSelfRegister(request, organisation, organisationAdmin, selfRegToken, templateId)
-      val community = communityManager.getById(organisation.community)
-      if (community.isDefined) {
-        // Check in case template selection is required
-        if (community.get.selfRegForceTemplateSelection && templateId.isEmpty) {
-          response = ResponseConstructor.constructErrorResponse(ErrorCodes.MISSING_PARAMS, "A configuration template must be selected.")
-        }
-        if (response == null) {
-          // Check that the token (if required) matches
-          if (community.get.selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort
-            && selfRegToken.isDefined && community.get.selfRegToken.isDefined
-            && community.get.selfRegToken.get != selfRegToken.get) {
-            response = ResponseConstructor.constructErrorResponse(ErrorCodes.INCORRECT_SELFREG_TOKEN, "The provided token is incorrect.")
+
+      if (response == null) {
+        val templateId = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.TEMPLATE_ID)
+        authorizationManager.canSelfRegister(request, organisation, organisationAdmin, selfRegToken, templateId)
+        val community = communityManager.getById(organisation.community)
+        if (community.isDefined) {
+          // Check in case template selection is required
+          if (community.get.selfRegForceTemplateSelection && templateId.isEmpty) {
+            response = ResponseConstructor.constructErrorResponse(ErrorCodes.MISSING_PARAMS, "A configuration template must be selected.")
           }
-        }
-        if (response == null) {
-          if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-            // Check to see whether self-registration restrictions are in force (only if SSO)
-            if (community.get.selfRegRestriction == SelfRegistrationRestriction.UserEmail.id.toShort && communityManager.existsOrganisationWithSameUserEmail(community.get.id, actualUserInfo.get.email)) {
-              response = ResponseConstructor.constructErrorResponse(ErrorCodes.SELF_REG_RESTRICTION_USER_EMAIL, "You are already registered in this community.")
-            } else if (community.get.selfRegRestriction == SelfRegistrationRestriction.UserEmailDomain.id.toShort && communityManager.existsOrganisationWithSameUserEmailDomain(community.get.id, actualUserInfo.get.email)) {
-              response = ResponseConstructor.constructErrorResponse(ErrorCodes.SELF_REG_RESTRICTION_USER_EMAIL_DOMAIN, "Your organisation is already registered in this community.")
-            }
-          } else {
-            // Check the user email (only if not SSO)
-            if (!authenticationManager.checkEmailAvailability(organisationAdmin.email, None, None, None)) {
-              response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_EXISTS, "The provided username is already defined.")
-            }
-          }
-        }
-        if (response == null) {
-          val customPropertyValues = ParameterExtractor.extractOrganisationParameterValues(request, Parameters.PROPERTIES, true)
-          response = ParameterExtractor.checkOrganisationParameterValues(customPropertyValues)
           if (response == null) {
-            val userId = communityManager.selfRegister(organisation, organisationAdmin, templateId, actualUserInfo, customPropertyValues, community.get.selfRegForceRequiredProperties)
-            if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-              val json: String = JsonUtil.jsActualUserInfo(authorizationManager.getAccountInfo(request)).toString
-              response = ResponseConstructor.constructJsonResponse(json)
-            } else {
-              response = ResponseConstructor.constructJsonResponse(JsonUtil.jsId(userId).toString)
+            // Check that the token (if required) matches
+            if (community.get.selfRegType == SelfRegistrationType.PublicListingWithToken.id.toShort
+              && selfRegToken.isDefined && community.get.selfRegToken.isDefined
+              && community.get.selfRegToken.get != selfRegToken.get) {
+              response = ResponseConstructor.constructErrorResponse(ErrorCodes.INCORRECT_SELFREG_TOKEN, "The provided token is incorrect.")
             }
-            // Self registration successful - notify support email if configured to do so.
-            if (Configurations.EMAIL_ENABLED && community.get.selfregNotification) {
-              notifyForSelfRegistration(community.get, organisation)
+          }
+          if (response == null) {
+            if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+              // Check to see whether self-registration restrictions are in force (only if SSO)
+              if (community.get.selfRegRestriction == SelfRegistrationRestriction.UserEmail.id.toShort && communityManager.existsOrganisationWithSameUserEmail(community.get.id, actualUserInfo.get.email)) {
+                response = ResponseConstructor.constructErrorResponse(ErrorCodes.SELF_REG_RESTRICTION_USER_EMAIL, "You are already registered in this community.")
+              } else if (community.get.selfRegRestriction == SelfRegistrationRestriction.UserEmailDomain.id.toShort && communityManager.existsOrganisationWithSameUserEmailDomain(community.get.id, actualUserInfo.get.email)) {
+                response = ResponseConstructor.constructErrorResponse(ErrorCodes.SELF_REG_RESTRICTION_USER_EMAIL_DOMAIN, "Your organisation is already registered in this community.")
+              }
+            } else {
+              // Check the user email (only if not SSO)
+              if (!authenticationManager.checkEmailAvailability(organisationAdmin.email, None, None, None)) {
+                response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_EXISTS, "The provided username is already defined.")
+              }
+            }
+          }
+          if (response == null) {
+            val customPropertyValues = ParameterExtractor.extractOrganisationParameterValues(paramMap, Parameters.PROPERTIES, optional = true)
+            val customPropertyFiles = ParameterExtractor.extractFiles(request).map {
+              case (key, value) => (key.substring(key.indexOf('_')+1).toLong, value)
+            }
+            if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(customPropertyFiles.map(entry => entry._2.file))) {
+              response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+            }
+            if (response == null) {
+              val userId = communityManager.selfRegister(organisation, organisationAdmin, templateId, actualUserInfo, customPropertyValues, Some(customPropertyFiles), community.get.selfRegForceRequiredProperties)
+              if (Configurations.AUTHENTICATION_SSO_ENABLED) {
+                val json: String = JsonUtil.jsActualUserInfo(authorizationManager.getAccountInfo(request)).toString
+                response = ResponseConstructor.constructJsonResponse(json)
+              } else {
+                response = ResponseConstructor.constructJsonResponse(JsonUtil.jsId(userId).toString)
+              }
+              // Self registration successful - notify support email if configured to do so.
+              if (Configurations.EMAIL_ENABLED && community.get.selfregNotification) {
+                notifyForSelfRegistration(community.get, organisation)
+              }
             }
           }
         }
       }
+      if (response == null) {
+        response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_SELFREG_DATA, "Unable to self-register due to error in provided configuration.")
+      }
+      response
+
+
+    } finally {
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
-    if (response == null) {
-      response = ResponseConstructor.constructBadRequestResponse(ErrorCodes.INVALID_SELFREG_DATA, "Unable to self-register due to error in provided configuration.")
-    }
-    response
   }
 
   private def notifyForSelfRegistration(community: Communities, organisation: Organizations) = {

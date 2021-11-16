@@ -1,9 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { CommunityService } from 'src/app/services/community.service';
 import { DataService } from 'src/app/services/data.service';
-import { OrganisationService } from 'src/app/services/organisation.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { UserService } from 'src/app/services/user.service';
 import { Community } from 'src/app/types/community';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
@@ -31,12 +30,12 @@ export class UserManagementComponent implements OnInit {
     private dataService: DataService,
     private userService: UserService,
     private communityService: CommunityService,
-    private router: Router
+    private routingService: RoutingService
   ) { }
 
   ngOnInit(): void {
     if (!this.dataService.isSystemAdmin) {
-      this.router.navigate(['home'])
+      this.routingService.toHome()
     }
     this.adminColumns.push({ field: 'name', title: 'Name' })
     if (this.dataService.configuration.ssoEnabled) {
@@ -63,11 +62,18 @@ export class UserManagementComponent implements OnInit {
   }
 
   adminSelect(admin: User) {
-    this.router.navigate(['admin', 'users', 'admin', admin.id])
+    this.routingService.toTestBedAdmin(admin.id!)
   }
 
   communitySelect(community: Community) {
-    this.router.navigate(['admin', 'users', 'community', community.id])
+    this.routingService.toCommunity(community.id)
   }
 
+  createAdmin() {
+    this.routingService.toCreateTestBedAdmin()
+  }
+
+  createCommunity() {
+    this.routingService.toCreateCommunity()
+  }
 }

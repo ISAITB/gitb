@@ -1,0 +1,54 @@
+@import "../../../../styles/less/_common.less";
+
+.statementControls {
+    margin-top: 15px;
+    margin-left: -5px;
+    button {
+        margin-bottom: 12px; // Applied here for IE11.
+    }
+}
+.testCaseContainer {
+    border: 1px solid @gray-dark-1
+}
+
+.testSuitePanel {
+    padding-bottom: 5px;
+    .panel {
+        overflow: hidden;
+    }
+    .panel-heading {
+        cursor: pointer;
+        border-bottom: 0px;
+        display: flex;
+        .testSuiteHeaderLabel {
+            display: inline-flex;
+            font-weight: bold;
+            padding-right: 10px;
+            align-items: center;
+            white-space: nowrap;        
+        }
+        .testSuiteHeaderValue {
+            display: inline-flex;
+            align-items: center;
+        }
+        .testSuiteResult {
+            display: inline-flex;
+            vertical-align: middle;
+            margin-left: auto;
+            margin-right: 21px;
+        }
+        &:hover {
+            background-color: @white-shaded;
+            +.collapsibleTestCaseDiv {
+                background-color: @white-shaded;
+            }
+        }
+    }
+    .panel-body {
+        padding-top: 5px;
+    }
+    .sessionTime {
+        white-space: nowrap;
+    }
+}
+

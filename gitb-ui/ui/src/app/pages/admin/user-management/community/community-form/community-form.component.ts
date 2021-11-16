@@ -28,12 +28,19 @@ export class CommunityFormComponent extends BaseComponent implements OnInit {
   ]
   selfRegRestrictions: IdLabel[] = []
   selfRegOptionsVisible = false
+  selfRegOptionsCollapsed = false
+  userPermissionsCollapsed = false
 
   constructor(
     public dataService: DataService
   ) { super() }
 
   ngOnInit(): void {
+    if (this.community.id != undefined) {
+      // Update case.
+      this.selfRegOptionsCollapsed = true
+      this.userPermissionsCollapsed = true
+    }
     this.selfRegEnabled = this.dataService.configuration.registrationEnabled
     this.ssoEnabled = this.dataService.configuration.ssoEnabled
     this.emailEnabled = this.dataService.configuration.emailEnabled

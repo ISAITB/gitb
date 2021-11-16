@@ -16,20 +16,20 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
   val defaultLimit = 10L
 
   def getSystemActiveTestResults = authorizedAction { request =>
-    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
 
     authorizationManager.canViewTestResultsForSystem(request, systemId)
 
-    val domainIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.DOMAIN_IDS)
-    val specIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SPEC_IDS)
-    val actorIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.ACTOR_IDS)
-    val testSuiteIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.TEST_SUITE_IDS)
-    val testCaseIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.TEST_CASE_IDS)
-    val startTimeBegin = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_BEGIN)
-    val startTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_END)
-    val sessionId = ParameterExtractor.optionalQueryParameter(request, Parameters.SESSION_ID)
-    val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
-    val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
+    val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
+    val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
+    val actorIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ACTOR_IDS)
+    val testSuiteIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_SUITE_IDS)
+    val testCaseIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_CASE_IDS)
+    val startTimeBegin = ParameterExtractor.optionalBodyParameter(request, Parameters.START_TIME_BEGIN)
+    val startTimeEnd = ParameterExtractor.optionalBodyParameter(request, Parameters.START_TIME_END)
+    val sessionId = ParameterExtractor.optionalBodyParameter(request, Parameters.SESSION_ID)
+    val sortColumn = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_COLUMN)
+    val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
 
     val testResultReports = reportManager.getSystemActiveTestResults(systemId, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, startTimeBegin, startTimeEnd, sessionId, sortColumn, sortOrder)
     val json = JsonUtil.jsTestResultReports(testResultReports, None).toString()
@@ -38,25 +38,25 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
   }
 
   def getTestResults = authorizedAction { request =>
-    val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
+    val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
 
     authorizationManager.canViewTestResultsForSystem(request, systemId)
 
-    val page = getPageOrDefault(ParameterExtractor.optionalQueryParameter(request, Parameters.PAGE))
-    val limit = getLimitOrDefault(ParameterExtractor.optionalQueryParameter(request, Parameters.LIMIT))
-    val domainIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.DOMAIN_IDS)
-    val specIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SPEC_IDS)
-    val actorIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.ACTOR_IDS)
-    val testSuiteIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.TEST_SUITE_IDS)
-    val testCaseIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.TEST_CASE_IDS)
-    val results = ParameterExtractor.optionalListQueryParameter(request, Parameters.RESULTS)
-    val startTimeBegin = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_BEGIN)
-    val startTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_END)
-    val endTimeBegin = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_BEGIN)
-    val endTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_END)
-    val sessionId = ParameterExtractor.optionalQueryParameter(request, Parameters.SESSION_ID)
-    val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
-    val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
+    val page = getPageOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.PAGE))
+    val limit = getLimitOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.LIMIT))
+    val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
+    val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
+    val actorIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ACTOR_IDS)
+    val testSuiteIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_SUITE_IDS)
+    val testCaseIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_CASE_IDS)
+    val results = ParameterExtractor.optionalListBodyParameter(request, Parameters.RESULTS)
+    val startTimeBegin = ParameterExtractor.optionalBodyParameter(request, Parameters.START_TIME_BEGIN)
+    val startTimeEnd = ParameterExtractor.optionalBodyParameter(request, Parameters.START_TIME_END)
+    val endTimeBegin = ParameterExtractor.optionalBodyParameter(request, Parameters.END_TIME_BEGIN)
+    val endTimeEnd = ParameterExtractor.optionalBodyParameter(request, Parameters.END_TIME_END)
+    val sessionId = ParameterExtractor.optionalBodyParameter(request, Parameters.SESSION_ID)
+    val sortColumn = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_COLUMN)
+    val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
 
     val output = reportManager.getTestResults(page, limit, systemId, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, sortColumn, sortOrder)
     val json = JsonUtil.jsTestResultReports(output._1, Some(output._2)).toString()
@@ -64,25 +64,25 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
   }
 
   def getActiveTestResults = authorizedAction { request =>
-    val communityIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.COMMUNITY_IDS)
+    val communityIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.COMMUNITY_IDS)
 
     authorizationManager.canViewTestResultsForCommunity(request, communityIds)
 
-    val domainIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.DOMAIN_IDS)
-    val specIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SPEC_IDS)
-    val actorIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.ACTOR_IDS)
-    val testSuiteIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.TEST_SUITE_IDS)
-    val testCaseIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.TEST_CASE_IDS)
-    val organizationIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.ORG_IDS)
-    val systemIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SYSTEM_IDS)
-    val startTimeBegin = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_BEGIN)
-    val startTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_END)
-    val sessionId = ParameterExtractor.optionalQueryParameter(request, Parameters.SESSION_ID)
-    val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
-    val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
-    val forExport: Boolean = ParameterExtractor.optionalQueryParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
-    val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalQueryParameter(request, Parameters.ORGANISATION_PARAMETERS))
-    val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalQueryParameter(request, Parameters.SYSTEM_PARAMETERS))
+    val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
+    val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
+    val actorIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ACTOR_IDS)
+    val testSuiteIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_SUITE_IDS)
+    val testCaseIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_CASE_IDS)
+    val organizationIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ORG_IDS)
+    val systemIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SYSTEM_IDS)
+    val startTimeBegin = ParameterExtractor.optionalBodyParameter(request, Parameters.START_TIME_BEGIN)
+    val startTimeEnd = ParameterExtractor.optionalBodyParameter(request, Parameters.START_TIME_END)
+    val sessionId = ParameterExtractor.optionalBodyParameter(request, Parameters.SESSION_ID)
+    val sortColumn = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_COLUMN)
+    val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
+    val forExport: Boolean = ParameterExtractor.optionalBodyParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
+    val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.ORGANISATION_PARAMETERS))
+    val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_PARAMETERS))
 
     val testResultReports = reportManager.getActiveTestResults(communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, startTimeBegin, startTimeEnd, sessionId, orgParameters, sysParameters, sortColumn, sortOrder)
 
@@ -101,30 +101,30 @@ class ReportService @Inject() (authorizedAction: AuthorizedAction, cc: Controlle
   }
 
   def getFinishedTestResults = authorizedAction { request =>
-    val communityIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.COMMUNITY_IDS)
+    val communityIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.COMMUNITY_IDS)
 
     authorizationManager.canViewTestResultsForCommunity(request, communityIds)
 
-    val page = getPageOrDefault(ParameterExtractor.optionalQueryParameter(request, Parameters.PAGE))
-    val limit = getLimitOrDefault(ParameterExtractor.optionalQueryParameter(request, Parameters.LIMIT))
-    val domainIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.DOMAIN_IDS)
-    val specIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SPEC_IDS)
-    val actorIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.ACTOR_IDS)
-    val testSuiteIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.TEST_SUITE_IDS)
-    val testCaseIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.TEST_CASE_IDS)
-    val organizationIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.ORG_IDS)
-    val systemIds = ParameterExtractor.optionalLongListQueryParameter(request, Parameters.SYSTEM_IDS)
-    val results = ParameterExtractor.optionalListQueryParameter(request, Parameters.RESULTS)
-    val startTimeBegin = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_BEGIN)
-    val startTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.START_TIME_END)
-    val endTimeBegin = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_BEGIN)
-    val endTimeEnd = ParameterExtractor.optionalQueryParameter(request, Parameters.END_TIME_END)
-    val sessionId = ParameterExtractor.optionalQueryParameter(request, Parameters.SESSION_ID)
-    val sortColumn = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_COLUMN)
-    val sortOrder = ParameterExtractor.optionalQueryParameter(request, Parameters.SORT_ORDER)
-    val forExport: Boolean = ParameterExtractor.optionalQueryParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
-    val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalQueryParameter(request, Parameters.ORGANISATION_PARAMETERS))
-    val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalQueryParameter(request, Parameters.SYSTEM_PARAMETERS))
+    val page = getPageOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.PAGE))
+    val limit = getLimitOrDefault(ParameterExtractor.optionalBodyParameter(request, Parameters.LIMIT))
+    val domainIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.DOMAIN_IDS)
+    val specIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SPEC_IDS)
+    val actorIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ACTOR_IDS)
+    val testSuiteIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_SUITE_IDS)
+    val testCaseIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.TEST_CASE_IDS)
+    val organizationIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.ORG_IDS)
+    val systemIds = ParameterExtractor.optionalLongListBodyParameter(request, Parameters.SYSTEM_IDS)
+    val results = ParameterExtractor.optionalListBodyParameter(request, Parameters.RESULTS)
+    val startTimeBegin = ParameterExtractor.optionalBodyParameter(request, Parameters.START_TIME_BEGIN)
+    val startTimeEnd = ParameterExtractor.optionalBodyParameter(request, Parameters.START_TIME_END)
+    val endTimeBegin = ParameterExtractor.optionalBodyParameter(request, Parameters.END_TIME_BEGIN)
+    val endTimeEnd = ParameterExtractor.optionalBodyParameter(request, Parameters.END_TIME_END)
+    val sessionId = ParameterExtractor.optionalBodyParameter(request, Parameters.SESSION_ID)
+    val sortColumn = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_COLUMN)
+    val sortOrder = ParameterExtractor.optionalBodyParameter(request, Parameters.SORT_ORDER)
+    val forExport: Boolean = ParameterExtractor.optionalBodyParameter(request, Parameters.EXPORT).getOrElse("false").toBoolean
+    val orgParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.ORGANISATION_PARAMETERS))
+    val sysParameters = JsonUtil.parseJsIdToValuesMap(ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_PARAMETERS))
 
     val output = reportManager.getFinishedTestResults(page, limit, communityIds, domainIds, specIds, actorIds, testSuiteIds, testCaseIds, organizationIds, systemIds, results, startTimeBegin, startTimeEnd, endTimeBegin, endTimeEnd, sessionId, orgParameters, sysParameters, sortColumn, sortOrder)
 

@@ -3,13 +3,16 @@ package controllers
 import config.Configurations
 import controllers.util._
 import exceptions.ErrorCodes
-
-import javax.inject.Inject
 import managers._
+import org.apache.commons.io.FileUtils
 import org.apache.tika.Tika
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.mvc._
 import utils.{ClamAVClient, CryptoUtil, HtmlUtil, JsonUtil}
+
+import java.nio.file.Files
+import javax.inject.Inject
+import scala.collection.mutable.ListBuffer
 
 
 class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, accountManager: AccountManager, userManager: UserManager, organisationManager: OrganizationManager, authorizationManager: AuthorizationManager) extends AbstractController(cc) {
@@ -32,18 +35,26 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
    * Updates the company profile
    */
   def updateVendorProfile = authorizedAction { request =>
-    authorizationManager.canUpdateOwnOrganisation(request, ignoreExistingTests = false)
-    val adminId = ParameterExtractor.extractUserId(request)
+    try {
+      authorizationManager.canUpdateOwnOrganisation(request, ignoreExistingTests = false)
+      val adminId = ParameterExtractor.extractUserId(request)
+      val paramMap = ParameterExtractor.paramMap(request)
 
-    val shortName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_SNAME)
-    val fullName = ParameterExtractor.requiredBodyParameter(request, Parameters.VENDOR_FNAME)
-    val values = ParameterExtractor.extractOrganisationParameterValues(request, Parameters.PROPERTIES, true)
-    var response: Result = ParameterExtractor.checkOrganisationParameterValues(values)
-    if (response == null) {
-      organisationManager.updateOwnOrganization(adminId, shortName, fullName, values)
-      response = ResponseConstructor.constructEmptyResponse
+      val shortName = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.VENDOR_SNAME)
+      val fullName = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.VENDOR_FNAME)
+      val values = ParameterExtractor.extractOrganisationParameterValues(paramMap, Parameters.PROPERTIES, optional = true)
+      val files = ParameterExtractor.extractFiles(request).map {
+        case (key, value) => (key.substring(key.indexOf('_')+1).toLong, value)
+      }
+      if (Configurations.ANTIVIRUS_SERVER_ENABLED && ParameterExtractor.virusPresentInFiles(files.map(entry => entry._2.file))) {
+        ResponseConstructor.constructBadRequestResponse(ErrorCodes.VIRUS_FOUND, "File failed virus scan.")
+      } else {
+        organisationManager.updateOwnOrganization(adminId, shortName, fullName, values, Some(files))
+        ResponseConstructor.constructEmptyResponse
+      }
+    } finally {
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
-    response
   }
 
   /**
@@ -129,30 +140,33 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
     ResponseConstructor.constructJsonResponse(json.toString())
   }
 
+  //authorizedAction(parse.multipartFormData)
   def submitFeedback = authorizedAction { request =>
-    authorizationManager.canSubmitFeedback(request)
-    val userId = ParameterExtractor.extractOptionalUserId(request)
-    val userEmail: String = ParameterExtractor.requiredBodyParameter(request, Parameters.USER_EMAIL)
-    val messageTypeId: String = ParameterExtractor.requiredBodyParameter(request, Parameters.MESSAGE_TYPE_ID)
-    val messageTypeDescription: String = ParameterExtractor.requiredBodyParameter(request, Parameters.MESSAGE_TYPE_DESCRIPTION)
-    val messageContent: String = HtmlUtil.sanitizeMinimalEditorContent(ParameterExtractor.requiredBodyParameter(request, Parameters.MESSAGE_CONTENT))
-    var response:Result = null
-    // Extract attachments
-    var attachments: List[AttachmentType] = null
-    val attachmentJson = ParameterExtractor.optionalBodyParameter(request, "msg_attachments")
-    if (attachmentJson.isDefined) {
-      attachments = JsonUtil.parseJsAttachments(attachmentJson.get)
-      if (attachments.nonEmpty) {
-        var totalAttachmentSize = 0
-        attachments.foreach { attachment =>
-          totalAttachmentSize += attachment.getContent.length
+    try {
+      authorizationManager.canSubmitFeedback(request)
+      val paramMap = ParameterExtractor.paramMap(request)
+      val userId = ParameterExtractor.extractOptionalUserId(request)
+      val userEmail: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.USER_EMAIL)
+      val messageTypeId: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MESSAGE_TYPE_ID)
+      val messageTypeDescription: String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MESSAGE_TYPE_DESCRIPTION)
+      val messageContent: String = HtmlUtil.sanitizeMinimalEditorContent(ParameterExtractor.requiredBodyParameter(paramMap, Parameters.MESSAGE_CONTENT))
+      var response: Result = null
+      // Extract attachments
+      val attachments = ListBuffer[AttachmentType]()
+      val files = ParameterExtractor.extractFiles(request)
+      if (files.nonEmpty) {
+        var totalAttachmentSize = 0L
+        for (file <- files) {
+          attachments += new AttachmentType(file._2.file.getName, file._2.file)
+          totalAttachmentSize += Files.size(file._2.file.toPath)
         }
         // Validate attachments
         if (attachments.size > Configurations.EMAIL_ATTACHMENTS_MAX_COUNT) {
-          response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_COUNT_EXCEEDED, "A maximum of " + Configurations.EMAIL_ATTACHMENTS_MAX_COUNT + " attachments can be provided")
+          // Count.
+          response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_COUNT_EXCEEDED, s"A maximum of ${Configurations.EMAIL_ATTACHMENTS_MAX_COUNT} attachments can be provided")
         } else if (totalAttachmentSize > (Configurations.EMAIL_ATTACHMENTS_MAX_SIZE * 1024 * 1024)) {
           // Size.
-          response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_COUNT_EXCEEDED, "The total size of attachments cannot exceed " + Configurations.EMAIL_ATTACHMENTS_MAX_SIZE + " MBs.")
+          response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_COUNT_EXCEEDED, s"The total size of attachments cannot exceed ${Configurations.EMAIL_ATTACHMENTS_MAX_SIZE} MBs.")
         } else {
           var virusScanner: Option[ClamAVClient] = None
           if (Configurations.ANTIVIRUS_SERVER_ENABLED) {
@@ -162,8 +176,8 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
             if (response == null) {
               val detectedMimeType = tika.detect(attachment.getContent)
               if (!Configurations.EMAIL_ATTACHMENTS_ALLOWED_TYPES.contains(detectedMimeType)) {
-                logger.warn("Attachment type [" + detectedMimeType + "] of file [" + attachment.getName + "] not allowed.")
-                response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_TYPE_NOT_ALLOWED, "Attachment ["+attachment.getName+"] not allowed. Allowed types are images, text files and PDFs.")
+                logger.warn(s"Attachment type [$detectedMimeType] of file [${attachment.getName}] not allowed.")
+                response = ResponseConstructor.constructErrorResponse(ErrorCodes.EMAIL_ATTACHMENT_TYPE_NOT_ALLOWED, s"Attachment [${attachment.getName}] not allowed. Allowed types are images, text files and PDFs.")
               } else {
                 attachment.setType(detectedMimeType);
                 if (virusScanner.isDefined) {
@@ -177,16 +191,14 @@ class AccountService @Inject() (authorizedAction: AuthorizedAction, cc: Controll
             }
           }
         }
-      } else {
-        attachments = List()
       }
-    } else {
-      attachments = List()
+      if (response == null) {
+        accountManager.submitFeedback(userId, userEmail, messageTypeId, messageTypeDescription, messageContent, attachments.toArray)
+        response = ResponseConstructor.constructEmptyResponse
+      }
+      response
+    } finally {
+      if (request.body.asMultipartFormData.isDefined) request.body.asMultipartFormData.get.files.foreach { file => FileUtils.deleteQuietly(file.ref) }
     }
-    if (response == null) {
-      accountManager.submitFeedback(userId, userEmail, messageTypeId, messageTypeDescription, messageContent, attachments.toArray)
-      response = ResponseConstructor.constructEmptyResponse
-    }
-    response
   }
 }

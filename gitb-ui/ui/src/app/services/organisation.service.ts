@@ -2,7 +2,9 @@ import { Injectable } from '@angular/core';
 import { ROUTES } from '../common/global';
 import { CustomProperty } from '../types/custom-property.type';
 import { ErrorDescription } from '../types/error-description';
+import { FileParam } from '../types/file-param.type';
 import { OrganisationParameterWithValue } from '../types/organisation-parameter-with-value';
+import { OrganisationSearchResult } from '../types/organisation-search-result.type';
 import { Organisation } from '../types/organisation.type';
 import { DataService } from './data.service';
 import { RestService } from './rest.service';
@@ -45,6 +47,20 @@ export class OrganisationService {
     })
   }
 
+  searchOrganisationsByCommunity(communityId: number, filter: string|undefined, sortOrder: string|undefined, sortColumn: string|undefined, page: number|undefined, limit: number|undefined) {
+    return this.restService.get<OrganisationSearchResult>({
+      path: ROUTES.controllers.OrganizationService.searchOrganizationsByCommunity(communityId).url,
+      authenticate: true,
+      params: {
+        filter: filter, 
+        sort_order: sortOrder,
+        sort_column: sortColumn,
+        page: page,
+        limit: limit
+      }
+    })
+  }
+
   createOrganisation(shortName: string, fullName: string, landingPage: number|undefined, legalNotice: number|undefined, errorTemplate: number|undefined, otherOrganisation: number|undefined, communityId: number, template: boolean, templateName: string|undefined, processProperties: boolean, properties: CustomProperty[], copyOrganisationParameters: boolean, copySystemParameters: boolean, copyStatementParameters: boolean) {
     let data: any = {
       vendor_sname: shortName,
@@ -73,13 +89,17 @@ export class OrganisationService {
       data.stm_params = copyStatementParameters
     }
 
+    let files: FileParam[]|undefined
     if (processProperties) {
-      data.properties = this.dataService.customPropertiesForPost(properties)
+      const props = this.dataService.customPropertiesForPost(properties)
+      data.properties = props.parameterJson
+      files = props.files
     }
 
     return this.restService.post<ErrorDescription|undefined>({
       path: ROUTES.controllers.OrganizationService.createOrganization().url,
-      data: data
+      data: data,
+      files: files
     })
   }
 
@@ -116,13 +136,17 @@ export class OrganisationService {
       data.sys_params = copySystemParameters
       data.stm_params = copyStatementParameters
     }
+    let files: FileParam[]|undefined
     if (processProperties) {
-      data.properties = this.dataService.customPropertiesForPost(properties)
+      const props = this.dataService.customPropertiesForPost(properties)
+      data.properties = props.parameterJson
+      files = props.files
     }
 
     return this.restService.post<ErrorDescription|undefined>({
       path: ROUTES.controllers.OrganizationService.updateOrganization(orgId).url,
       data: data,
+      files: files,
       authenticate: true
     })
   }
@@ -153,6 +177,14 @@ export class OrganisationService {
       path: ROUTES.controllers.OrganizationService.ownOrganisationHasTests().url,
       authenticate: true
     })  
+  }
+
+  downloadOrganisationParameterFile(organisationId: number, parameterId: number) {
+		return this.restService.get<ArrayBuffer>({
+			path: ROUTES.controllers.OrganizationService.downloadOrganisationParameterFile(organisationId, parameterId).url,
+			authenticate: true,
+			arrayBuffer: true
+		})
   }
 
 }

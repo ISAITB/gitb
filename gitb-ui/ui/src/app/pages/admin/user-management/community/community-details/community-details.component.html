@@ -12,118 +12,148 @@
                 <app-community-form [community]="community" [admin]="dataService.isSystemAdmin" [domains]="domains"></app-community-form>
             </div>
             <div class="panel-footer">
-                <div class="row">
-                    <div class="col-lg-offset-2 col-lg-10 col-xs-12">
-                        <div class="btn-toolbar">
-                            <button class="btn btn-default" type="submit" (click)="updateCommunity()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
-                            <button class="btn btn-default" type="button" (click)="updateConformanceCertificateSettings()" [disabled]="savePending || deletePending">Edit conformance certificate settings</button>
-                            <button class="btn btn-default" type="button" (click)="updateParameters()" [disabled]="savePending || deletePending">Edit custom member properties</button>
-                            <button class="btn btn-default" type="button" (click)="editLabels()" [disabled]="savePending || deletePending">Edit labels</button>
-                            <button class="btn btn-default" type="button" *ngIf="dataService.isSystemAdmin && !isDefaultCommunity()" (click)="deleteCommunity()" [disable]="savePending" [pending]="deletePending">Delete</button>
-                            <button class="btn btn-default" type="button" *ngIf="dataService.isSystemAdmin" (click)="cancelCommunityDetail()">Back</button>
-                        </div>
-                    </div>
+                <div class="btn-toolbar">
+                    <button class="btn btn-default" type="submit" (click)="updateCommunity()" [disable]="deletePending || saveDisabled()" [pending]="savePending">Save changes</button>
+                    <button class="btn btn-default" type="button" (click)="updateConformanceCertificateSettings()" [disabled]="savePending || deletePending">Edit conformance certificate settings</button>
+                    <button class="btn btn-default" type="button" (click)="updateParameters()" [disabled]="savePending || deletePending">Edit custom member properties</button>
+                    <button class="btn btn-default" type="button" (click)="editLabels()" [disabled]="savePending || deletePending">Edit labels</button>
+                    <button class="btn btn-default" type="button" *ngIf="dataService.isSystemAdmin && !isDefaultCommunity()" (click)="deleteCommunity()" [disable]="savePending" [pending]="deletePending">Delete</button>
+                    <button class="btn btn-default" type="button" *ngIf="dataService.isSystemAdmin" (click)="cancelCommunityDetail()">Back</button>
                 </div>
             </div>
         </form>
     </div>
-    <!-- Administrators -->
-    <div class="panel panel-default" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID">
-        <div class="panel-heading">
-            <h4 class="title">Community administrators</h4>
-            <a [routerLink]="['admin', 'create']" class="btn btn-default pull-right">Create community administrator</a>
-        </div>
-        <div table-directive 
-            [columns]="adminColumns"
-            [data]="admins"
-			noDataMessage="No administrators found"
-			[loadingStatus]="adminStatus" 
-            [allowSelect]="true"
-            (onSelect)="adminSelect($event)">
-        </div>
-    </div>
-    <!-- Organisations -->
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h4 class="title">{{dataService.labelOrganisations()}}</h4>
-            <a [routerLink]="['organisation', 'create']" class="btn btn-default pull-right">Create {{dataService.labelOrganisationLower()}}</a>
-        </div>
-        <div table-directive
-            [columns]="organizationColumns"
-            [data]="organizations"
-			noDataMessage="No organisations found"
-			[loadingStatus]="organisationStatus" 
-            [allowSelect]="true"
-            (onSelect)="organizationSelect($event)">
-        </div>
-    </div>
-    <!-- Landing pages -->
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h4 class="title">Landing pages</h4>
-            <div class="btn-toolbar pull-right">
-                <button [disabled]="testBedLandingPage == undefined" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" type="button" class="btn btn-default" (click)="createLandingPage(true)">Copy Test Bed landing page</button>
-                <button type="button" class="btn btn-default" (click)="createLandingPage(false)">Create landing page</button>
-            </div>
-        </div>
-        <div table-directive
-            [columns]="landingPagesColumns"
-            [data]="landingPages"
-			noDataMessage="No landing pages found"
-			[loadingStatus]="landingPageStatus" 
-            [allowSelect]="true"
-            (onSelect)="landingPageSelect($event)">
-        </div>
-    </div>
-     <!-- Legal notices -->
-    <div class="panel panel-default">
-        <div class="panel-heading">
-            <h4 class="title">Legal notices</h4>
-            <div class="btn-toolbar pull-right">
-                <button [disabled]="testBedLegalNotice == undefined" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" type="button" class="btn btn-default" (click)="createLegalNotice(true)">Copy Test bed legal notice</button>
-                <button type="button" class="btn btn-default" (click)="createLegalNotice(false)">Create legal notice</button>
-            </div>
-        </div>
-        <div table-directive
-            [columns]="legalNoticesColumns"
-            [data]="legalNotices"
-			noDataMessage="No legal notices found"
-			[loadingStatus]="legalNoticeStatus" 
-            [allowSelect]="true"
-            (onSelect)="legalNoticeSelect($event)">
-        </div>
-    </div>
-     <!-- error templates -->
-     <div class="panel panel-default">
-        <div class="panel-heading">
-            <h4 class="title">Error templates</h4>
-            <div class="btn-toolbar pull-right">
-                <button [disabled]="testBedErrorTemplate == undefined" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" type="button" class="btn btn-default" (click)="createErrorTemplate(true)">Copy Test bed error template</button>
-                <button type="button" class="btn btn-default" (click)="createErrorTemplate(false)">Create error template</button>
-            </div>
-        </div>
-        <div table-directive
-            [columns]="errorTemplatesColumns"
-            [data]="errorTemplates"
-			noDataMessage="No error templates found"
-			[loadingStatus]="errorTemplateStatus" 
-            [allowSelect]="true"
-            (onSelect)="errorTemplateSelect($event)">
-        </div>
-    </div>
-     <!-- Triggers -->
-     <div class="panel panel-default">
-        <div class="panel-heading">
-            <h4 class="title">Triggers</h4>
-            <button type="button" class="btn btn-default pull-right" (click)="createTrigger()">Create trigger</button>
-        </div>
-        <div table-directive
-            [columns]="triggerColumns"
-            [data]="triggers"
-			noDataMessage="No triggers found"
-			[loadingStatus]="triggerStatus" 
-            [allowSelect]="true"
-            (onSelect)="triggerSelect($event)">
-        </div>
-    </div>
+    <div>
+        <tabset #tabs>
+            <tab heading="{{dataService.labelOrganisations()}}" *ngIf="true" (selectTab)="showOrganisations()">
+                <!-- Organisations -->
+                <div class="tabPanel">
+                    <div class="tabControls">
+                        <div class="form-inline">
+                            <div class="btn-toolbar">
+                                <app-text-filter name="organisationFilter" [width]="300" [placeholder]="'Search '+dataService.labelOrganisationsLower()+'...'" [(ngModel)]="organisationFilter" (apply)="applyOrganisationFilter()"></app-text-filter>
+                                <button type="button" class="btn btn-default" (click)="createOrganisation()">Create {{dataService.labelOrganisationLower()}}</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div table-directive
+                            [columns]="organizationColumns"
+                            [data]="organizations"
+                            [noDataMessage]="'No '+dataService.labelOrganisationsLower()+' found'"
+                            [loadingStatus]="organisationStatus" 
+                            [allowSelect]="true"
+                            [nextDisabled]="isNextPageOrganisationsDisabled"
+                            [prevDisabled]="isPreviousPageOrganisationsDisabled"
+                            (nextPage)="goNextPageOrganisations()"
+                            (lastPage)="goLastPageOrganisations()"
+                            (firstPage)="goFirstPageOrganisations()"
+                            (prevPage)="goPreviousPageOrganisations()"
+                            (onSort)="sortOrganisations($event)"
+                            (onSelect)="organisationSelect($event)">
+                        </div>
+                    </div>
+                </div>
+            </tab>
+            <tab heading="Administrators" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" (selectTab)="showAdministrators()">
+                <!-- Administrators -->
+                <div class="tabPanel">
+                    <div class="tabControls">
+                        <button type="button" class="btn btn-default" (click)="createAdmin()">Create community administrator</button>
+                    </div>
+                    <div class="panel panel-default">
+                        <div table-directive 
+                            [columns]="adminColumns"
+                            [data]="admins"
+                            noDataMessage="No administrators found"
+                            [loadingStatus]="adminStatus" 
+                            [allowSelect]="true"
+                            (onSelect)="adminSelect($event)">
+                        </div>
+                    </div>
+                </div>
+            </tab>
+            <tab heading="Landing pages" *ngIf="true" (selectTab)="showLandingPages()">
+                <!-- Landing pages -->
+                <div class="tabPanel">
+                    <div class="tabControls">
+                        <div class="btn-toolbar">
+                            <button [disabled]="testBedLandingPage == undefined" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" type="button" class="btn btn-default" (click)="createLandingPage(true)">Copy Test Bed landing page</button>
+                            <button type="button" class="btn btn-default" (click)="createLandingPage(false)">Create landing page</button>
+                        </div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div table-directive
+                            [columns]="landingPagesColumns"
+                            [data]="landingPages"
+                            noDataMessage="No landing pages found"
+                            [loadingStatus]="landingPageStatus" 
+                            [allowSelect]="true"
+                            (onSelect)="landingPageSelect($event)">
+                        </div>
+                    </div>
+                </div>
+            </tab>
+            <tab heading="Legal notices" *ngIf="true" (selectTab)="showLegalNotices()">
+                <!-- Legal notices -->
+                <div class="tabPanel">
+                    <div class="tabControls">
+                        <div class="btn-toolbar">
+                            <button [disabled]="testBedLegalNotice == undefined" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" type="button" class="btn btn-default" (click)="createLegalNotice(true)">Copy Test Bed legal notice</button>
+                            <button type="button" class="btn btn-default" (click)="createLegalNotice(false)">Create legal notice</button>
+                        </div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div table-directive
+                            [columns]="legalNoticesColumns"
+                            [data]="legalNotices"
+                            noDataMessage="No legal notices found"
+                            [loadingStatus]="legalNoticeStatus" 
+                            [allowSelect]="true"
+                            (onSelect)="legalNoticeSelect($event)">
+                        </div>
+                    </div>
+                </div>
+            </tab>
+            <tab heading="Error templates" *ngIf="true" (selectTab)="showErrorTemplates()">
+                <!-- error templates -->
+                <div class="tabPanel">
+                    <div class="tabControls">
+                        <div class="btn-toolbar">
+                            <button [disabled]="testBedErrorTemplate == undefined" *ngIf="communityId != Constants.DEFAULT_COMMUNITY_ID" type="button" class="btn btn-default" (click)="createErrorTemplate(true)">Copy Test Bed error template</button>
+                            <button type="button" class="btn btn-default" (click)="createErrorTemplate(false)">Create error template</button>
+                        </div>
+                    </div>
+                    <div class="panel panel-default">
+                        <div table-directive
+                            [columns]="errorTemplatesColumns"
+                            [data]="errorTemplates"
+                            noDataMessage="No error templates found"
+                            [loadingStatus]="errorTemplateStatus" 
+                            [allowSelect]="true"
+                            (onSelect)="errorTemplateSelect($event)">
+                        </div>
+                    </div>
+                </div>
+            </tab>
+            <tab heading="Triggers" *ngIf="true" (selectTab)="showTriggers()">
+                <!-- Triggers -->
+                <div class="tabPanel">
+                    <div class="tabControls">
+                        <button type="button" class="btn btn-default" (click)="createTrigger()">Create trigger</button>
+                    </div>
+                    <div class="panel panel-default">
+                        <div table-directive
+                            [columns]="triggerColumns"
+                            [data]="triggers"
+                            noDataMessage="No triggers found"
+                            [loadingStatus]="triggerStatus" 
+                            [allowSelect]="true"
+                            (onSelect)="triggerSelect($event)">
+                        </div>
+                    </div>
+                </div>
+            </tab>
+        </tabset>
+    </div>    
 </div>

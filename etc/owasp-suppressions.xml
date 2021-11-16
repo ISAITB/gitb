@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <suppress>
+        <notes><![CDATA[
+      file name: com.gitb:gitb-processing:1.0-SNAPSHOT
+      ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.gitb/gitb\-processing@.*$</packageUrl>
+        <cpe>cpe:/a:processing:processing</cpe>
+    </suppress>
+</suppressions>

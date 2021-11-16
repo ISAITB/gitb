@@ -19,9 +19,8 @@
 				<div class="col-xs-8">
 					<app-file-select placeholder="Select test suite archive ..." 
 						[fileName]="file?.name" 
-						[multipart]="true" 
 						[accepts]="['application/zip']" 
-						(onUploadForMultipart)="selectArchive($event)"
+						(onUpload)="selectArchive($event)"
 						[maxSize]="-1">
 					</app-file-select>
 				</div>

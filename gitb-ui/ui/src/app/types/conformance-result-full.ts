@@ -21,6 +21,7 @@ export interface ConformanceResultFull {
     completed: number
     undefined: number
     result?: string
+    updateTime?: string
     outputMessage?: string
 
     testCasesLoaded?: boolean

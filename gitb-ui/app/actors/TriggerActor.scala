@@ -14,7 +14,7 @@ class TriggerActor @Inject() (triggerManager: TriggerManager) extends Actor {
 
   private def logger = LoggerFactory.getLogger(classOf[TriggerActor])
 
-  override def preStart:Unit = {
+  override def preStart():Unit = {
     logger.info("Starting trigger actor")
     super.preStart()
     context.system.eventStream.subscribe(context.self, classOf[TriggerEvent])

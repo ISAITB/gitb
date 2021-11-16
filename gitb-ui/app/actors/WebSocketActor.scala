@@ -2,11 +2,12 @@ package actors
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
 import com.gitb.tbs.BasicCommand
-
-import javax.inject.{Inject, Singleton}
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json._
 
+import javax.inject.{Inject, Singleton}
+import scala.collection.concurrent.TrieMap
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
@@ -14,8 +15,8 @@ import scala.concurrent.duration._
 object WebSocketActor {
 
   //references to all the connection handling actors
-  //[sessionId -> [actorId -> Actor]]
-  var webSockets: Map[String, Map[String, ActorRef]] = Map[String, Map[String, ActorRef]]()
+  //[sessionId -> Actor]
+  var webSockets: mutable.Map[String, ActorRef] = TrieMap[String, ActorRef]()
   var activeSessions: Set[String] = Set[String]()
 
 }
@@ -80,17 +81,14 @@ class WebSocketActor @Inject() (actorSystem: ActorSystem, testbedClient: manager
    * Broadcasts given msg (in Json) to all clients with the given session
    */
   def broadcast(sessionId:String, msg:String):Unit = {
-    broadcast(sessionId, msg, true)
+    broadcast(sessionId, msg, retry = true)
   }
 
   def broadcastMessage(sessionId:String, msg:String):Boolean = {
     val webSocketInfo = WebSocketActor.webSockets.get(sessionId)
     if (webSocketInfo.isDefined) {
-      webSocketInfo.get.foreach {
-        case (actorId, out) =>
-          //send message to each ActorRef of the same session ID
-          out ! Json.parse(msg)
-      }
+      // Send message to the ActorRef of the session ID
+      webSocketInfo.get ! Json.parse(msg)
       true
     } else {
       if (WebSocketActor.activeSessions.contains(sessionId)) {
@@ -105,21 +103,17 @@ class WebSocketActor @Inject() (actorSystem: ActorSystem, testbedClient: manager
     /**
    * Pushes given msg (in Json) to the given actor with given session
    */
-  def push(sessionId:String, actorId:String, msg:String) = {
-    if(WebSocketActor.webSockets.contains(sessionId)) {
-      val actors = WebSocketActor.webSockets(sessionId)
-      if (actors.contains(actorId)) {
-        val out = actors(actorId)
-        //send message to the client with given session and actor IDs
-        out ! Json.parse(msg)
-      }
+  def push(sessionId:String, actorId:String, msg:String): Unit = {
+    if (WebSocketActor.webSockets.contains(sessionId)) {
+      // Send message to the client with given session ID
+      WebSocketActor.webSockets(sessionId) ! Json.parse(msg)
     }
   }
 
-  def props(out: ActorRef) = Props(new WebSocketActorHandler(out, this)).withDispatcher("blocking-processor-dispatcher")
+  def props(out: ActorRef): Props = Props(new WebSocketActorHandler(out, this)).withDispatcher("blocking-processor-dispatcher")
 }
 
-class WebSocketActorHandler (out: ActorRef, webSocketActor: WebSocketActor) extends Actor{
+class WebSocketActorHandler (out: ActorRef, webSocketActor: WebSocketActor) extends Actor {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[WebSocketActor])
 
@@ -127,13 +121,12 @@ class WebSocketActorHandler (out: ActorRef, webSocketActor: WebSocketActor) exte
   private final val NOTIFY   = "notify"
   private final val PING   = "ping"
 
-  var sessionId:String = null
-  var actorId:String = null
+  var sessionId:String = _
 
-  def receive = {
+  def receive: Receive = {
 
     case msg: JsValue => //initially each browser client sends its session and actor information
-      val jsCommand   = (msg \ "command")
+      val jsCommand   = msg \ "command"
       var command:String = null
 
       if(!jsCommand.isInstanceOf[JsUndefined]){
@@ -142,21 +135,11 @@ class WebSocketActorHandler (out: ActorRef, webSocketActor: WebSocketActor) exte
         command match  {
           case REGISTER =>
             val jsSessionId = msg \ "sessionId"
-            val jsActorId   = msg \ "actorId"
-            val jsConfigurations = msg \ "configurations"
 
-            //this check is necessary since browser might send other stuff
-            if(!jsSessionId.isInstanceOf[JsUndefined] && !jsActorId.isInstanceOf[JsUndefined]){
+            // This check is necessary since browser might send other stuff
+            if (!jsSessionId.isInstanceOf[JsUndefined]){
               sessionId = jsSessionId.as[String]
-              actorId   = jsActorId.as[String]
-
-              var actors = WebSocketActor.webSockets.getOrElse(sessionId, {
-                //create a new map if there is no actor with the given sessionId
-                Map[String, ActorRef]()
-              })
-              actors += (actorId -> out)
-
-              WebSocketActor.webSockets = WebSocketActor.webSockets.updated(sessionId, actors)
+              WebSocketActor.webSockets += (sessionId -> out)
               webSocketActor.testSessionStarted(sessionId)
             }
           case NOTIFY =>
@@ -183,22 +166,13 @@ class WebSocketActorHandler (out: ActorRef, webSocketActor: WebSocketActor) exte
   /**
    * Called when WebSocket with the client has been closed. Do the clean up
    */
-  override def postStop() = {
+  override def postStop(): Unit = {
     WebSocketActor.webSockets.synchronized {
-      //remove the actor
+      // Remove the actor
       if (WebSocketActor.webSockets.contains(sessionId)) {
-        var actors = WebSocketActor.webSockets(sessionId)
-        actors -= actorId
-        //if all actors are gone within a session, remove the session as well
-        if(actors.isEmpty) {
-          WebSocketActor.webSockets -= sessionId
-          // Ping the test engine - this is needed for cleanup in case a test session has not started yet.
-          webSocketActor.pingTestEngineForClosedConnection(sessionId)
-        }
-        //otherwise, update the webSockets map
-        else {
-          WebSocketActor.webSockets = WebSocketActor.webSockets.updated(sessionId, actors)
-        }
+        WebSocketActor.webSockets -= sessionId
+        // Ping the test engine - this is needed for cleanup in case a test session has not started yet.
+        webSocketActor.pingTestEngineForClosedConnection(sessionId)
       }
     }
   }

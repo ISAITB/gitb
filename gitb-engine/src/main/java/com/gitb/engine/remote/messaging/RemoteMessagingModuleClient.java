@@ -9,7 +9,6 @@ import com.gitb.messaging.DeferredMessagingReport;
 import com.gitb.messaging.IMessagingHandler;
 import com.gitb.messaging.Message;
 import com.gitb.messaging.MessagingReport;
-import com.gitb.messaging.model.InitiateResponse;
 import com.gitb.messaging.utils.MessagingHandlerUtils;
 import com.gitb.ms.Void;
 import com.gitb.ms.*;
@@ -91,9 +90,12 @@ public class RemoteMessagingModuleClient implements IMessagingHandler {
 	public InitiateResponse initiate(List<ActorConfiguration> actorConfigurations) {
         InitiateRequest request = new InitiateRequest();
         request.getActorConfiguration().addAll(actorConfigurations);
-		com.gitb.ms.InitiateResponse wsResponse = call(() -> getServiceClient().initiate(request));
-        InitiateResponse response = new InitiateResponse(wsResponse.getSessionId(), wsResponse.getActorConfiguration());
-		return response;
+		InitiateResponse wsResponse = call(() -> getServiceClient().initiate(request));
+		if (wsResponse.getSessionId() == null) {
+			// Set the test session ID as the default.
+			wsResponse.setSessionId(testSessionId);
+		}
+		return wsResponse;
 	}
 
 	@Override

@@ -4,10 +4,12 @@ import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
 import { TestSuiteUploadModalComponent } from 'src/app/modals/test-suite-upload-modal/test-suite-upload-modal.component';
 import { BaseComponent } from 'src/app/pages/base-component.component';
+import { BaseTabbedComponent } from 'src/app/pages/base-tabbed-component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { SpecificationService } from 'src/app/services/specification.service';
 import { Actor } from 'src/app/types/actor';
 import { Specification } from 'src/app/types/specification';
@@ -20,15 +22,15 @@ import { TestSuite } from 'src/app/types/test-suite';
   styles: [
   ]
 })
-export class SpecificationDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
+export class SpecificationDetailsComponent extends BaseTabbedComponent implements OnInit, AfterViewInit {
 
   specification: Partial<Specification> = {}
   actors: Actor[] = []
   testSuites: TestSuite[] = []
   domainId!: number
   specificationId!: number
-  actorStatus = {status: Constants.STATUS.PENDING}
-  testSuiteStatus = {status: Constants.STATUS.PENDING}
+  actorStatus = {status: Constants.STATUS.NONE}
+  testSuiteStatus = {status: Constants.STATUS.NONE}
   testSuiteTableColumns: TableColumnDefinition[] = [
     { field: 'identifier', title: 'ID' },
     { field: 'sname', title: 'Name' },
@@ -50,14 +52,24 @@ export class SpecificationDetailsComponent extends BaseComponent implements OnIn
     private conformanceService: ConformanceService,
     private confirmationDialogService: ConfirmationDialogService,
     private specificationService: SpecificationService,
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
+    router: Router,
     private popupService: PopupService,
     private modalService: BsModalService
-  ) { super() }
+  ) { super(router) }
+
+  loadTab(tabIndex: number): void {
+    if (tabIndex == 0) {
+      this.loadTestSuites()
+    } else {
+      this.loadActors()
+    }
+  }
 
   ngAfterViewInit(): void {
 		this.dataService.focus('shortName')
+    this.showTab()
   }
 
   ngOnInit(): void {
@@ -67,32 +79,35 @@ export class SpecificationDetailsComponent extends BaseComponent implements OnIn
 		.subscribe((data) => {
       this.specification = data[0]
     })
-    this.loadActors()
-    this.loadTestSuites()
   }
 
-  private loadActors() {
-    this.actorStatus.status = Constants.STATUS.PENDING
-		this.conformanceService.getActorsWithSpecificationId(this.specificationId)
-		.subscribe((data) => {
-			this.actors = data
-    }).add(() => {
-			this.actorStatus.status = Constants.STATUS.FINISHED
-    })
+  loadActors(forceLoad?: boolean) {
+    // TODO THIS IS CALLED TWICE
+    if (this.actorStatus.status == Constants.STATUS.NONE || forceLoad) {
+      this.actorStatus.status = Constants.STATUS.PENDING
+      this.conformanceService.getActorsWithSpecificationId(this.specificationId)
+      .subscribe((data) => {
+        this.actors = data
+      }).add(() => {
+        this.actorStatus.status = Constants.STATUS.FINISHED
+      })
+    }
   }
 
-  private loadTestSuites() {
-    this.testSuiteStatus.status = Constants.STATUS.PENDING
-		this.conformanceService.getTestSuites(this.specificationId)
-		.subscribe((data) => {
-			this.testSuites = data
-    }).add(() => {
-			this.testSuiteStatus.status = Constants.STATUS.FINISHED
-    })
+  loadTestSuites(forceLoad?: boolean) {
+    if (this.testSuiteStatus.status == Constants.STATUS.NONE || forceLoad) {
+      this.testSuiteStatus.status = Constants.STATUS.PENDING
+      this.conformanceService.getTestSuites(this.specificationId)
+      .subscribe((data) => {
+        this.testSuites = data
+      }).add(() => {
+        this.testSuiteStatus.status = Constants.STATUS.FINISHED
+      })
+    }
   }
 
   createActor() {
-    this.router.navigate(['admin', 'domains', this.domainId, 'specifications', this.specificationId, 'actors', 'create'])
+    this.routingService.toCreateActor(this.domainId, this.specificationId)
   }
 
 	uploadTestSuite() {
@@ -107,18 +122,18 @@ export class SpecificationDetailsComponent extends BaseComponent implements OnIn
     })
     modal.content!.completed.subscribe((testSuitesUpdated: boolean) => {
       if (testSuitesUpdated) {
-        this.loadTestSuites()
-        this.loadActors()
+        this.loadTestSuites(true)
+        this.loadActors(true)
       }
     })
   }
 
 	onActorSelect(actor: Actor) {
-    this.router.navigate(['admin', 'domains', this.domainId, 'specifications', this.specificationId, 'actors', actor.id])
+    this.routingService.toActor(this.domainId, this.specificationId, actor.id)
   }
 
 	onTestSuiteSelect(testSuite: TestSuite) {
-    this.router.navigate(['admin', 'domains', this.domainId, 'specifications', this.specificationId, 'testsuites', testSuite.id])
+    this.routingService.toTestSuite(this.domainId, this.specificationId, testSuite.id)
   }
 
 	deleteSpecification() {
@@ -127,7 +142,7 @@ export class SpecificationDetailsComponent extends BaseComponent implements OnIn
       this.deletePending = true
       this.specificationService.deleteSpecification(this.specificationId)
       .subscribe(() => {
-        this.router.navigate(['admin', 'domains', this.domainId])
+        this.routingService.toDomain(this.domainId)
         this.popupService.success(this.dataService.labelSpecification()+' deleted.')
       }).add(() => {
         this.deletePending = false
@@ -150,7 +165,7 @@ export class SpecificationDetailsComponent extends BaseComponent implements OnIn
   }
 
 	back() {
-    this.router.navigate(['admin', 'domains', this.domainId])
+    this.routingService.toDomain(this.domainId)
   }
 
 }

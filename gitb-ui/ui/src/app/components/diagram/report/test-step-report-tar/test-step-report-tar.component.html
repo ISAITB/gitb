@@ -1,6 +1,6 @@
 <div class="step-report test-assertion-step-report">
-    <div class="col-md-12" *ngIf="report.context != null">
-      <app-any-content-view [context]="report.context" [report]="report"></app-any-content-view>
+    <div class="col-md-12" *ngIf="hasContextItems">
+      <app-any-content-view [context]="report.context!" [report]="report" [sessionId]="sessionId"></app-any-content-view>
     </div>
     <div *ngIf="report.reports != null && report.reports.assertionReports != null && report.reports.assertionReports.length > 0">
       <div class="col-md-12 countersDiv" *ngIf="report.counters != null && (report.counters.nrOfErrors > 0 || report.counters.nrOfWarnings > 0 || report.counters.nrOfAssertions > 0)">

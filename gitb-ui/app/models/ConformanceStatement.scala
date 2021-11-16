@@ -1,10 +1,21 @@
 package models
 
-import java.util
+import java.sql.Timestamp
 
-/**
- * Created by serbay on 11/3/14.
- */
-case class ConformanceStatement(domainId: Long, domainName: String, domainNameFull: String, actorId: Long, actorName: String, actorFull: String, specificationId: Long, specificationName: String, specificationNameFull: String, var completedTests: Long, var failedTests: Long, var undefinedTests: Long)
-case class ConformanceStatementFull(communityId: Long, communityName: String, organizationId: Long, organizationName: String, systemId: Long, systemName: String, domainId: Long, domainName: String, domainNameFull: String, actorId: Long, actorName: String, actorFull: String, specificationId: Long, specificationName: String, specificationNameFull: String, testSuiteName: Option[String], testCaseName: Option[String], testCaseDescription: Option[String], result: Option[String], outputMessage: Option[String], sessionId: Option[String], var completedTests: Long, var failedTests: Long, var undefinedTests: Long)
-case class ConformanceStatementSet(domainId: Long, domainName: String, domainNameFull: String, actorId: Long, actorName: String, actorFull: String, specificationId: Long, specificationName: String, specificationNameFull: String, testCaseIds: util.HashSet[Long])
+class ConformanceStatement(
+    val domainId: Long,
+    val domainName: String,
+    val domainNameFull: String,
+    val actorId: Long,
+    val actorName: String,
+    val actorFull: String,
+    val specificationId: Long,
+    val specificationName: String,
+    val specificationNameFull: String,
+    val systemId: Long,
+    var result: String,
+    var updateTime: Option[Timestamp],
+    var completedTests: Long,
+    var failedTests: Long,
+    var undefinedTests: Long
+) {}

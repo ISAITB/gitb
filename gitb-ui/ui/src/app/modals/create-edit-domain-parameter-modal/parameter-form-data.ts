@@ -3,7 +3,7 @@ export interface ParameterFormData {
     initialKind?: string
     showUpdateValue: boolean
     updateValue: boolean
-    data?: string
+    file?: File
     hiddenValue?: string
     hiddenValueRepeat?: string
 }

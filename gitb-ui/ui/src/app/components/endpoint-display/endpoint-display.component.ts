@@ -17,6 +17,7 @@ export class EndpointDisplayComponent implements OnInit {
   @Input() canEdit!: (p: SystemConfigurationParameter) => boolean
   @Input() hideEndpointInfo = true
   @Output() edit = new EventEmitter<SystemConfigurationParameter>()
+  @Output() download = new EventEmitter<SystemConfigurationParameter>()
 
   constructor(
     public dataService: DataService
@@ -27,6 +28,10 @@ export class EndpointDisplayComponent implements OnInit {
 
   onEdit(parameter: SystemConfigurationParameter) {
     this.edit.emit(parameter)
+  }
+
+  onDownload(parameter: SystemConfigurationParameter) {
+    this.download.emit(parameter)
   }
 
 }

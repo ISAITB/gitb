@@ -55,10 +55,8 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
 		this.formData.updateValue = this.formData.initialKind != 'HIDDEN'
 
 		if (this.domainParameter.id != undefined && this.domainParameter.kind == 'BINARY') {
-			this.formData.data = this.domainParameter.value
 			delete this.domainParameter.value
-			const mimeType = this.dataService.mimeTypeFromDataURL(this.formData.data!)
-			const extension = this.dataService.extensionFromMimeType(mimeType)
+			const extension = this.dataService.extensionFromMimeType(this.domainParameter.contentType)
 			this.initialFileName =  this.domainParameter.name+extension
     }
 
@@ -72,7 +70,7 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
   saveAllowed() {
     return this.textProvided(this.domainParameter.name) && this.domainParameter.kind != undefined && (
       (this.domainParameter.kind == 'SIMPLE' && this.textProvided(this.domainParameter.value)) ||
-      (this.domainParameter.kind == 'BINARY' && this.formData.data != undefined) ||
+      (this.domainParameter.kind == 'BINARY' && (this.formData.file != undefined || (this.domainParameter.id != undefined && this.initialFileName != undefined))) ||
       (this.domainParameter.kind == 'HIDDEN' && (!this.formData.updateValue || (this.textProvided(this.formData.hiddenValue) && this.textProvided(this.formData.hiddenValueRepeat))))
     )
   }
@@ -87,13 +85,13 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
         this.savePending = true
         if (this.domainParameter.id != undefined) {
           // Update
-          let valueToSave: string
+          let valueToSave: string|File|undefined
           if (this.domainParameter.kind == 'HIDDEN' && this.formData.updateValue) {
             valueToSave = this.formData.hiddenValue!
+          } else if (this.domainParameter.kind == 'BINARY' && this.formData.file != undefined) {
+            valueToSave = this.formData.file
           } else if (this.domainParameter.kind == 'SIMPLE') {
             valueToSave = this.domainParameter.value!
-          } else {
-            valueToSave = this.formData.data!
           }
           this.conformanceService.updateDomainParameter(this.domainParameter.id, this.domainParameter.name!, this.domainParameter.description, valueToSave, this.domainParameter.kind!, this.domainParameter.inTests, this.domainId)
           .subscribe(() => {
@@ -106,13 +104,15 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
           })
         } else {
           // Create
-          let valueToSave = this.domainParameter.value
+          let valueToSave: string|File
           if (this.domainParameter.kind == 'HIDDEN') {
-            valueToSave = this.formData.hiddenValue
+            valueToSave = this.formData.hiddenValue!
           } else if (this.domainParameter.kind == 'BINARY') {
-            valueToSave = this.formData.data
+            valueToSave = this.formData.file!
+          } else {
+            valueToSave = this.domainParameter.value!
           }
-          this.conformanceService.createDomainParameter(this.domainParameter.name!, this.domainParameter.description, valueToSave!, this.domainParameter.kind!, this.domainParameter.inTests, this.domainId)
+          this.conformanceService.createDomainParameter(this.domainParameter.name!, this.domainParameter.description, valueToSave, this.domainParameter.kind!, this.domainParameter.inTests, this.domainId)
           .subscribe(() => {
             this.parametersUpdated.emit(true)
             this.modalInstance.hide()
@@ -150,27 +150,33 @@ export class CreateEditDomainParameterModalComponent extends BaseComponent imple
 
   onFileSelect(file: FileData) {
     this.fileName = file.name
-    this.formData.data = file.data
+    this.formData.file = file.file
   }
 
   showFileName() {
-    return this.fileName != undefined || this.formData.data != undefined
+    return this.fileName != undefined || this.initialFileName != undefined
   }
 
   getFileName() {
     let name = ''
     if (this.fileName != undefined) {
       name = this.fileName
-    } else if (this.formData.data != undefined) {
+    } else if (this.initialFileName != undefined) {
       name = this.initialFileName!
     }
     return name    
   }
 
   download() {
-    const mimeType = this.dataService.mimeTypeFromDataURL(this.formData.data!)
-    const blob = this.dataService.b64toBlob(this.dataService.base64FromDataURL(this.formData.data!), mimeType)
-    saveAs(blob, this.getFileName())
+    if (this.formData.file) {
+      saveAs(this.formData.file, this.getFileName())
+    } else {
+      this.conformanceService.downloadDomainParameterFile(this.domainId, this.domainParameter.id!)
+      .subscribe((data) => {
+        const blobData = new Blob([data], {type: this.domainParameter.contentType})
+        saveAs(blobData, this.getFileName())
+      })
+    }
   }
 
 }

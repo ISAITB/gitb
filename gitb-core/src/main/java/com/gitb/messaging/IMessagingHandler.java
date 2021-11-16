@@ -4,7 +4,7 @@ import com.gitb.StepHandler;
 import com.gitb.core.ActorConfiguration;
 import com.gitb.core.Configuration;
 import com.gitb.core.MessagingModule;
-import com.gitb.messaging.model.InitiateResponse;
+import com.gitb.ms.InitiateResponse;
 
 import java.util.List;
 

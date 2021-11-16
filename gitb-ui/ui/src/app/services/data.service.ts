@@ -6,7 +6,9 @@ import { ActualUserInfo } from '../types/actual-user-info';
 import { AppConfigurationProperties } from '../types/app-configuration-properties';
 import { Community } from '../types/community';
 import { ConfigurationPropertyVisibility } from '../types/configuration-property-visibility';
+import { CustomPropertySubmissionInfo } from '../types/custom-property-submission-info.type';
 import { CustomProperty } from '../types/custom-property.type';
+import { FileParam } from '../types/file-param.type';
 import { IdLabel } from '../types/id-label';
 import { Organisation } from '../types/organisation.type';
 import { Parameter } from '../types/parameter';
@@ -34,6 +36,7 @@ export class DataService {
   public isCommunityAdmin = false
   public isDomainUser = false
   public tests?: ConformanceTestCase[]
+  public currentLandingPageContent?: string
 
   private renderer: Renderer2
   triggerEventToDataTypeMap?: {[key: number]: { [key: number]: boolean } }
@@ -57,10 +60,11 @@ export class DataService {
     this.isDomainUser = false
     this.acceptedEmailAttachmentTypes = undefined
     this.tests = undefined
+    this.currentLandingPageContent = undefined
   }
 
   private emptyAppConfiguration(): AppConfigurationProperties {
-    this.configurationLoaded = false    
+    this.configurationLoaded = false
     return {
       emailEnabled: (this.configuration?.emailEnabled != undefined)?this.configuration!.emailEnabled:false,
       emailAttachmentsMaxCount: (this.configuration?.emailAttachmentsMaxCount != undefined)?this.configuration!.emailAttachmentsMaxCount:5,
@@ -106,7 +110,7 @@ export class DataService {
     this.isSystemAdmin = (user.role == Constants.USER_ROLE.SYSTEM_ADMIN)
     this.isCommunityAdmin = (user.role == Constants.USER_ROLE.COMMUNITY_ADMIN)
   }
-    
+
   isDevelopmentMode(): boolean {
     return this.configuration != undefined && this.configuration.mode == 'development'
   }
@@ -208,7 +212,7 @@ export class DataService {
         pluralForm: Constants.LABEL_DEFAULT[labelType].pluralForm,
         fixedCase: Constants.LABEL_DEFAULT[labelType].fixedCase,
         custom: false
-      }  
+      }
   }
 
   labelDomain() {
@@ -390,7 +394,7 @@ export class DataService {
       return 'Active'
     }
   }
-  
+
   customPropertiesValid(properties: CustomProperty[]|undefined, forceRequiredValues?: boolean) {
     let valid = true
     if (forceRequiredValues) {
@@ -407,8 +411,9 @@ export class DataService {
     return valid
   }
 
-  customPropertiesForPost(properties: CustomProperty[]|undefined): string {
+  customPropertiesForPost(properties: CustomProperty[]|undefined): CustomPropertySubmissionInfo {
     let propValues = []
+    let files: FileParam[] = []
     if (properties) {
       for (let property of properties) {
         let propValue:any = {}
@@ -419,30 +424,43 @@ export class DataService {
           } else if (!property.changeValue && property.configured) {
             propValue.value = ''
           }
-        } else if (property.value && property.value.trim().length > 0) {
-          if (property.kind == 'BINARY') {
-            propValue.valueBinary = property.value.trim()
-          } else {
+        } else if (property.kind == 'BINARY') {
+          if (property.file?.file != undefined) {
+            propValue.value = ''
+            files.push({
+              param: 'file_'+propValue.parameter,
+              data: property.file.file
+            })
+          } else if (property.configured) {
+            propValue.value = ''
+          }
+        } else {
+          if (property.value && property.value.trim().length > 0) {
             propValue.value = property.value.trim()
           }
         }
-        if (propValue.value || propValue.valueBinary) {
+        if (propValue.value != undefined) {
           propValues.push(propValue)
         }
       }
     }
-    return JSON.stringify(propValues)
+    return {
+      parameterJson: JSON.stringify(propValues),
+      files: files
+    }
   }
 
   base64FromDataURL(dataURL: string) {
+    // DEPRECATED - To be removed
     return dataURL.substring(dataURL.indexOf(',')+1)
   }
 
   mimeTypeFromDataURL(dataURL: string) {
+    // DEPRECATED - This should be handled server-side
     return dataURL.substring(dataURL.indexOf(':')+1, dataURL.indexOf(';'))
   }
 
-  extensionFromMimeType(mimeType: string) {
+  extensionFromMimeType(mimeType: string|undefined) {
     let result = ""
     if (mimeType == "text/xml" || mimeType == "application/xml") {
       result = ".xml"
@@ -854,5 +872,44 @@ export class DataService {
       fileReader.readAsArrayBuffer(blob)
     })
   }
-  
+
+  copyToClipboard(text: string|undefined): Observable<string|undefined> {
+    return new Observable<string|undefined>((observer) => {
+      if (text != undefined) {
+        if (navigator.clipboard) {
+          // Normal scenario.
+          navigator.clipboard.writeText(text).then(() => {
+            observer.next(text)
+            observer.complete()
+          })
+        } else {
+          // IE11 support.
+          const clipboard = (window as any).clipboardData
+          if (clipboard != undefined) {
+            clipboard.setData("text", text)
+            observer.next(text)
+            observer.complete()
+          } else {
+            // Final fallback solution.
+            let listener = (e: ClipboardEvent) => {
+              let clipboard = e.clipboardData
+              if (clipboard) {
+                clipboard.setData("text", text)
+              }
+              e.preventDefault()
+              observer.next(text)
+              observer.complete()
+            }
+            document.addEventListener("copy", listener, false)
+            document.execCommand("copy");
+            document.removeEventListener("copy", listener, false);            
+          }
+        }
+      } else {
+        observer.next()
+        observer.complete()
+      }
+    })
+  }
+
 }

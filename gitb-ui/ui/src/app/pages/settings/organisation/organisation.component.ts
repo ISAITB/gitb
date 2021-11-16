@@ -29,7 +29,8 @@ export class OrganisationComponent extends BaseComponent implements OnInit, Afte
   dataStatus = new LoadStatus()
   propertyData:OptionalCustomPropertyFormData = {
     properties: [],
-    edit: false
+    edit: false,
+    propertyType: 'organisation'
   }
   tableColumns: TableColumnDefinition[] = []
   canEditOwnOrganisation = false

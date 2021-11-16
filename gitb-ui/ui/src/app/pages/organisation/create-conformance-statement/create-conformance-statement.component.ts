@@ -1,18 +1,18 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
-import { ErrorService } from 'src/app/services/error.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { SystemService } from 'src/app/services/system.service';
 import { Actor } from 'src/app/types/actor';
-import { Community } from 'src/app/types/community';
 import { Domain } from 'src/app/types/domain';
 import { Specification } from 'src/app/types/specification';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { remove, find } from 'lodash'
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from '../../base-component.component';
+import { RoutingService } from 'src/app/services/routing.service';
+import { Organisation } from 'src/app/types/organisation.type';
 
 @Component({
   selector: 'app-create-conformance-statement',
@@ -26,6 +26,7 @@ export class CreateConformanceStatementComponent extends BaseComponent implement
   specs: Specification[] = []
   actors: Actor[] = []
   systemId!: number
+  organisationId!: number
   selectedDomain?: Domain
   selectedSpec?: Specification
   selectedActor?: Actor
@@ -57,19 +58,31 @@ export class CreateConformanceStatementComponent extends BaseComponent implement
     private systemService: SystemService,
     public dataService: DataService,
     private popupService: PopupService,
-    private errorService: ErrorService,
     private route: ActivatedRoute,
-    private router: Router,
-    private conformanceService: ConformanceService
+    private conformanceService: ConformanceService,
+    private routingService: RoutingService
   ) { super() }
 
   ngOnInit(): void {
-    const community: Community = JSON.parse(localStorage.getItem('community')!)
-    if (community.domainId != undefined) {
-      this.domainId = [community.domainId]
-    }
     this.systemId = Number(this.route.snapshot.paramMap.get('id'))
-    this.getDomains()
+    this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
+    if (this.dataService.vendor?.id == this.organisationId || this.dataService.isCommunityAdmin) {
+      // Use own community domain.
+      if (this.dataService.community?.domainId != undefined) {
+        this.domainId = [this.dataService.community.domainId]
+      }
+      this.getDomains()
+    } else if (this.dataService.isSystemAdmin) {
+      // Lookup from organisation.
+      const organisation: Organisation = JSON.parse(localStorage.getItem(Constants.LOCAL_DATA.ORGANISATION)!)
+      this.conformanceService.getCommunityDomain(organisation.community)
+      .subscribe((data) => {
+        if (data) {
+          this.domainId = [data.id]
+        }
+        this.getDomains()
+      })
+    }
   }
 
   finish() {
@@ -81,7 +94,7 @@ export class CreateConformanceStatementComponent extends BaseComponent implement
         this.addAlertError(data.error_description)
         this.confirmDisabled = true
       } else {
-        this.router.navigate(['organisation', 'systems', this.systemId, 'conformance'])
+        this.routingService.toConformanceStatements(this.organisationId, this.systemId)
         this.popupService.success("Conformance statement created.")
       }
     }).add(() => {
@@ -230,7 +243,7 @@ export class CreateConformanceStatementComponent extends BaseComponent implement
   }
 
   cancel() {
-    this.router.navigate(['organisation', 'systems', this.systemId, 'conformance'])
+    this.routingService.toConformanceStatements(this.organisationId, this.systemId)
   }
 
 }

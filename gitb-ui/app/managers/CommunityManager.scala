@@ -1,7 +1,6 @@
 package managers
 
 import java.util
-
 import javax.inject.{Inject, Singleton}
 import models.Enums._
 import models._
@@ -9,12 +8,14 @@ import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
+import utils.RepositoryUtils
 
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
-class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManager: TestResultManager, organizationManager: OrganizationManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, conformanceManager: ConformanceManager, accountManager: AccountManager, triggerManager: TriggerManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
+class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelper: TriggerHelper, testResultManager: TestResultManager, organizationManager: OrganizationManager, landingPageManager: LandingPageManager, legalNoticeManager: LegalNoticeManager, errorTemplateManager: ErrorTemplateManager, conformanceManager: ConformanceManager, accountManager: AccountManager, triggerManager: TriggerManager, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
   import dbConfig.profile.api._
 
@@ -61,32 +62,30 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
     result.isEmpty
   }
 
-  def selfRegister(organisation: Organizations, organisationAdmin: Users, templateId: Option[Long], actualUserInfo: Option[ActualUserInfo], customPropertyValues: Option[List[OrganisationParameterValues]], requireMandatoryPropertyValues: Boolean): Long = {
-    val ids = exec(
-      (
-        for {
-          // Save organisation
-          organisationInfo <- organizationManager.createOrganizationInTrans(organisation, templateId, None, true, true, true)
-          // Save custom organisation property values
-          _ <- {
-            if (customPropertyValues.isDefined) {
-              organizationManager.saveOrganisationParameterValues(organisationInfo.organisationId, organisation.community, isAdmin = false, isSelfRegistration = true, customPropertyValues.get, requireMandatoryPropertyValues)
-            } else {
-              DBIO.successful(())
-            }
-          }
-          // Save admin user account
-          userId <- PersistenceSchema.insertUser += organisationAdmin.withOrganizationId(organisationInfo.organisationId)
-          // Link current session user with created admin user account
-          _ <-
-            if (actualUserInfo.isDefined) {
-              accountManager.linkAccountInternal(userId, actualUserInfo.get)
-            } else {
-              DBIO.successful(())
-            }
-        } yield (userId, organisationInfo)
-        ).transactionally
-    )
+  def selfRegister(organisation: Organizations, organisationAdmin: Users, templateId: Option[Long], actualUserInfo: Option[ActualUserInfo], customPropertyValues: Option[List[OrganisationParameterValues]], customPropertyFiles: Option[Map[Long, FileInfo]], requireMandatoryPropertyValues: Boolean): Long = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction: DBIO[(Long, OrganisationCreationDbInfo)] = for {
+      // Save organisation
+      organisationInfo <- organizationManager.createOrganizationInTrans(organisation, templateId, None, None, copyOrganisationParameters = true, copySystemParameters = true, copyStatementParameters = true, onSuccessCalls)
+      // Save custom organisation property values
+      _ <- {
+        if (customPropertyValues.isDefined && customPropertyFiles.isDefined) {
+          organizationManager.saveOrganisationParameterValues(organisationInfo.organisationId, organisation.community, isAdmin = false, isSelfRegistration = true, customPropertyValues.get, customPropertyFiles.get, requireMandatoryPropertyValues, onSuccessCalls)
+        } else {
+          DBIO.successful(())
+        }
+      }
+      // Save admin user account
+      userId <- PersistenceSchema.insertUser += organisationAdmin.withOrganizationId(organisationInfo.organisationId)
+      // Link current session user with created admin user account
+      _ <-
+        if (actualUserInfo.isDefined) {
+          accountManager.linkAccountInternal(userId, actualUserInfo.get)
+        } else {
+          DBIO.successful(())
+        }
+    } yield (userId, organisationInfo)
+    val ids = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
     triggerHelper.triggersFor(organisation.community, ids._2)
     ids._1
   }
@@ -179,11 +178,11 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
     community
   }
 
-  private def updateCommunityDomainDependencies(community: Communities, domainId: Option[Long]): DBIO[_] = {
+  private def updateCommunityDomainDependencies(community: Communities, domainId: Option[Long], onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {
     val actions = new ListBuffer[DBIO[_]]()
     if (community.domain.isDefined && domainId.isDefined && community.domain.get != domainId.get) {
       // New domain doesn't match previous domain. Remove conformance statements for previous domain.
-      actions += conformanceManager.deleteConformanceStatementsForDomainAndCommunity(community.domain.get, community.id)
+      actions += conformanceManager.deleteConformanceStatementsForDomainAndCommunity(community.domain.get, community.id, onSuccess)
       // Remove also any trigger data that referred to domain parameters.
       actions += triggerManager.deleteTriggerDataOfCommunityAndDomain(community.id, community.domain.get)
     } else if (community.domain.isEmpty && domainId.isDefined) {
@@ -209,8 +208,8 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
             actorIds.add(systemActorPair._1)
             systemIds.add(systemActorPair._2)
           }
-          import scala.collection.JavaConverters._
-          DBIO.successful((collectionAsScalaIterable(actorIds).toSet, collectionAsScalaIterable(systemIds).toSet))
+          import scala.jdk.CollectionConverters._
+          DBIO.successful((actorIds.asScala.toSet, systemIds.asScala.toSet))
         }
         _ <- {
           // Delete conformance statement data for collected IDs.
@@ -223,8 +222,8 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
     toDBIO(actions)
   }
 
-  private[managers] def updateCommunityDomain(community: Communities, domainId: Option[Long]): DBIO[_] = {
-    updateCommunityDomainDependencies(community, domainId) andThen {
+  private[managers] def updateCommunityDomain(community: Communities, domainId: Option[Long], onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {
+    updateCommunityDomainDependencies(community, domainId, onSuccess) andThen {
       val qs = for {c <- PersistenceSchema.communities if c.id === community.id} yield c.domain
       qs.update(domainId)
     }
@@ -235,16 +234,16 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
                                                 description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                                                 allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                                                 allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean,
-                                                domainId: Option[Long]) = {
+                                                domainId: Option[Long], onSuccess: mutable.ListBuffer[() => _]) = {
     val actions = new ListBuffer[DBIO[_]]()
-    if (!shortName.isEmpty && community.shortname != shortName) {
+    if (shortName.nonEmpty && community.shortname != shortName) {
       val q = for {c <- PersistenceSchema.communities if c.id === community.id} yield (c.shortname)
       actions += q.update(shortName)
       actions += testResultManager.updateForUpdatedCommunity(community.id, shortName)
     }
     // Handle domain update (if any)
-    actions += updateCommunityDomainDependencies(community, domainId)
-    if (!fullName.isEmpty && community.fullname != fullName) {
+    actions += updateCommunityDomainDependencies(community, domainId, onSuccess)
+    if (fullName.nonEmpty && community.fullname != fullName) {
       val q = for {c <- PersistenceSchema.communities if c.id === community.id} yield (c.fullname)
       actions += q.update(fullName)
     }
@@ -273,39 +272,44 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
                       allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
                       allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean,
                       domainId: Option[Long]) = {
-    val community = exec(PersistenceSchema.communities.filter(_.id === communityId).result.headOption)
-    if (community.isDefined) {
-      exec(updateCommunityInternal(
-        community.get, shortName, fullName, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText,
-        selfRegNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
-        allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-        allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates,
-        domainId
-      ).transactionally)
-    } else {
-      throw new IllegalArgumentException("Community with ID '" + communityId + "' not found")
-    }
+
+    val onSuccess = ListBuffer[() => _]()
+    val dbAction = for {
+      community <- PersistenceSchema.communities.filter(_.id === communityId).result.headOption
+      _ <- {
+        if (community.isDefined) {
+          updateCommunityInternal(
+            community.get, shortName, fullName, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText,
+            selfRegNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
+            allowCertificateDownload, allowStatementManagement, allowSystemManagement,
+            allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates,
+            domainId, onSuccess
+          )
+        } else {
+          throw new IllegalArgumentException("Community with ID '" + communityId + "' not found")
+        }
+      }
+    } yield ()
+    exec(dbActionFinalisation(Some(onSuccess), None, dbAction).transactionally)
   }
 
   /**
     * Deletes the community with specified id
     */
-  def deleteCommunity(communityId: Long) {
-    exec(
-      (
-        organizationManager.deleteOrganizationByCommunity(communityId) andThen
-          landingPageManager.deleteLandingPageByCommunity(communityId) andThen
-          legalNoticeManager.deleteLegalNoticeByCommunity(communityId) andThen
-          errorTemplateManager.deleteErrorTemplateByCommunity(communityId) andThen
-          triggerManager.deleteTriggersByCommunity(communityId) andThen
-          testResultManager.updateForDeletedCommunity(communityId) andThen
-          conformanceManager.deleteConformanceCertificateSettings(communityId) andThen
-          deleteOrganisationParametersByCommunity(communityId) andThen
-          deleteSystemParametersByCommunity(communityId) andThen
-          PersistenceSchema.communityLabels.filter(_.community === communityId).delete andThen
-          PersistenceSchema.communities.filter(_.id === communityId).delete
-        ).transactionally
-    )
+  def deleteCommunity(communityId: Long): Unit = {
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = organizationManager.deleteOrganizationByCommunity(communityId, onSuccessCalls) andThen
+      landingPageManager.deleteLandingPageByCommunity(communityId) andThen
+      legalNoticeManager.deleteLegalNoticeByCommunity(communityId) andThen
+      errorTemplateManager.deleteErrorTemplateByCommunity(communityId) andThen
+      triggerManager.deleteTriggersByCommunity(communityId) andThen
+      testResultManager.updateForDeletedCommunity(communityId) andThen
+      conformanceManager.deleteConformanceCertificateSettings(communityId) andThen
+      deleteOrganisationParametersByCommunity(communityId) andThen
+      deleteSystemParametersByCommunity(communityId) andThen
+      PersistenceSchema.communityLabels.filter(_.community === communityId).delete andThen
+      PersistenceSchema.communities.filter(_.id === communityId).delete
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
   def createOrganisationParameterInternal(parameter: OrganisationParameters) = {
@@ -336,7 +340,7 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
     }
   }
 
-  def updateOrganisationParameterInternal(parameter: OrganisationParameters): DBIO[_] = {
+  def updateOrganisationParameterInternal(parameter: OrganisationParameters, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
       existingParameter <- PersistenceSchema.organisationParameters.filter(_.id === parameter.id).map(x => (x.community, x.testKey, x.kind)).result.head
       _ <- {
@@ -351,6 +355,15 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
         }
       }
       _ <- {
+        if (existingParameter._3 != parameter.kind) {
+          // Remove previous values.
+          onSuccessCalls += (() => repositoryUtils.deleteOrganisationPropertiesFolder(parameter.id))
+          PersistenceSchema.organisationParameterValues.filter(_.parameter === parameter.id).delete
+        } else {
+          DBIO.successful(())
+        }
+      }
+      _ <- {
         // Don't update display order here.
         val q = for {p <- PersistenceSchema.organisationParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.inSelfRegistration, p.hidden, p.allowedValues, p.dependsOn, p.dependsOnValue)
         q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.inSelfRegistration, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue)
@@ -359,14 +372,18 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
   }
 
   def updateOrganisationParameter(parameter: OrganisationParameters) = {
-    exec(updateOrganisationParameterInternal(parameter).transactionally)
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, updateOrganisationParameterInternal(parameter, onSuccessCalls)).transactionally)
   }
 
   def deleteOrganisationParameterWrapper(parameterId: Long) = {
-    exec(deleteOrganisationParameter(parameterId).transactionally)
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = deleteOrganisationParameter(parameterId, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def deleteOrganisationParameter(parameterId: Long): DBIO[_] = {
+  def deleteOrganisationParameter(parameterId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+    onSuccessCalls += (() => repositoryUtils.deleteOrganisationPropertiesFolder(parameterId))
     triggerManager.deleteTriggerDataByDataType(parameterId, TriggerDataType.OrganisationParameter) andThen
       PersistenceSchema.organisationParameterValues.filter(_.parameter === parameterId).delete andThen
       (for {
@@ -382,8 +399,8 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
       PersistenceSchema.organisationParameters.filter(_.id === parameterId).delete
   }
 
-  def deleteOrganisationParametersByCommunity(communityId: Long) = {
-    // The values are already deleted as part of the organisation deletes
+  private def deleteOrganisationParametersByCommunity(communityId: Long) = {
+    // The values and files are already deleted as part of the organisation deletes
     PersistenceSchema.organisationParameters.filter(_.community === communityId).delete
   }
 
@@ -417,7 +434,7 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
     exec(createSystemParameterInternal(parameter).transactionally)
   }
 
-  def updateSystemParameterInternal(parameter: SystemParameters): DBIO[_] = {
+  def updateSystemParameterInternal(parameter: SystemParameters, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     for {
       existingParameter <- PersistenceSchema.systemParameters.filter(_.id === parameter.id).map(x => (x.community, x.testKey, x.kind)).result.head
       _ <- {
@@ -432,6 +449,15 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
         }
       }
       _ <- {
+        if (existingParameter._3 != parameter.kind) {
+          // Remove previous values.
+          onSuccessCalls += (() => repositoryUtils.deleteSystemPropertiesFolder(parameter.id))
+          PersistenceSchema.systemParameterValues.filter(_.parameter === parameter.id).delete
+        } else {
+          DBIO.successful(())
+        }
+      }
+      _ <- {
         // Don't update display order here.
         val q = for {p <- PersistenceSchema.systemParameters if p.id === parameter.id} yield (p.description, p.use, p.kind, p.name, p.testKey, p.adminOnly, p.notForTests, p.inExports, p.hidden, p.allowedValues, p.dependsOn, p.dependsOnValue)
         q.update(parameter.description, parameter.use, parameter.kind, parameter.name, parameter.testKey, parameter.adminOnly, parameter.notForTests, parameter.inExports, parameter.hidden, parameter.allowedValues, parameter.dependsOn, parameter.dependsOnValue)
@@ -440,14 +466,18 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
   }
 
   def updateSystemParameter(parameter: SystemParameters) = {
-    exec(updateSystemParameterInternal(parameter).transactionally)
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, updateSystemParameterInternal(parameter, onSuccessCalls)).transactionally)
   }
 
   def deleteSystemParameterWrapper(parameterId: Long) = {
-    exec(deleteSystemParameter(parameterId).transactionally)
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = deleteSystemParameter(parameterId, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def deleteSystemParameter(parameterId: Long): DBIO[_] = {
+  def deleteSystemParameter(parameterId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
+    onSuccessCalls += (() => repositoryUtils.deleteSystemPropertiesFolder(parameterId))
     triggerManager.deleteTriggerDataByDataType(parameterId, TriggerDataType.SystemParameter) andThen
     PersistenceSchema.systemParameterValues.filter(_.parameter === parameterId).delete andThen
       (for {
@@ -464,7 +494,7 @@ class CommunityManager @Inject() (triggerHelper: TriggerHelper, testResultManage
   }
 
   def deleteSystemParametersByCommunity(communityId: Long) = {
-    // The values are already deleted as part of the system deletes
+    // The values and files are already deleted as part of the system deletes
     PersistenceSchema.systemParameters.filter(_.community === communityId).delete
   }
 

@@ -2,7 +2,7 @@
 	<h4>Step report</h4>
 </div>
 <div class="modal-body">
-	<app-test-step-report id="report" [step]="step" [report]="report"></app-test-step-report>
+	<app-test-step-report id="report" [step]="step" [report]="report" [sessionId]="sessionId"></app-test-step-report>
 </div>
 <div class="modal-footer">
     <button type="button" class="btn btn-default" (click)="export()" [pending]="exportDisabled">Export</button>

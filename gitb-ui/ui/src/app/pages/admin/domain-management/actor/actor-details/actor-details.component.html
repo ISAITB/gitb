@@ -12,29 +12,33 @@
 				</div>
 			</div>
 			<div class="panel-footer">
-				<div class="row">
-					<div class="col-md-3"></div>
-					<div class="col-md-8 btn-toolbar">
-						<button (click)="saveChanges()" type="submit" class="btn btn-default" [disable]="saveDisabled()" [pending]="savePending">Save changes</button>
-						<button (click)="delete()" type="button" class="btn btn-default" [pending]="deletePending">Delete</button>
-						<button (click)="back()" type="button" class="btn btn-default">Back</button>
-					</div>
+				<div class="btn-toolbar">
+					<button (click)="saveChanges()" type="submit" class="btn btn-default" [disable]="saveDisabled()" [pending]="savePending">Save changes</button>
+					<button (click)="delete()" type="button" class="btn btn-default" [pending]="deletePending">Delete</button>
+					<button (click)="back()" type="button" class="btn btn-default">Back</button>
 				</div>
 			</div>
 		</form>
 	</div>
-	<div class="panel panel-default">
-		<div class="panel-heading">
-			<h4 class="title">{{dataService.labelEndpoints()}}</h4>
-			<a [routerLink]="['endpoints', 'create']" class="btn btn-default pull-right">Create {{dataService.labelEndpointLower()}}</a>
-		</div>
-		<div table-directive 
-			[columns]="endpointTableColumns"
-			[data]="endpointRepresentations"
-			[noDataMessage]="'No '+dataService.labelEndpointsLower()+' found'"
-			[loadingStatus]="dataStatus" 
-			[allowSelect]="true"
-			(onSelect)="onEndpointSelect($event)">
-		</div>
+	<div>
+		<tabset>
+			<tab heading="{{dataService.labelEndpoints()}}">
+				<div class="tabPanel">
+					<div class="tabControls">
+						<button type="button" class="btn btn-default" (click)="createEndpoint()">Create {{dataService.labelEndpointLower()}}</button>
+					</div>
+					<div class="panel panel-default">
+						<div table-directive 
+							[columns]="endpointTableColumns"
+							[data]="endpointRepresentations"
+							[noDataMessage]="'No '+dataService.labelEndpointsLower()+' found'"
+							[loadingStatus]="dataStatus" 
+							[allowSelect]="true"
+							(onSelect)="onEndpointSelect($event)">
+						</div>
+					</div>
+				</div>
+			</tab>
+		</tabset>
 	</div>
 </div>

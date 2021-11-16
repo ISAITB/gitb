@@ -1,11 +1,13 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
 import { LegalNoticeService } from 'src/app/services/legal-notice.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { LegalNotice } from 'src/app/types/legal-notice';
+import { CommunityTab } from '../../community/community-details/community-tab.enum';
 
 @Component({
   selector: 'app-legal-notice-details',
@@ -25,7 +27,7 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
 
   constructor(
     public dataService: DataService,
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private legalNoticeService: LegalNoticeService,
     private confirmationDialogService: ConfirmationDialogService,
@@ -81,7 +83,7 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
 
   copyLegalNotice() {
     this.copyPending = true
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'notices', 'create'], { queryParams: { copy: this.noticeId } })
+    this.routingService.toCreateLegalNotice(this.communityId, false, this.noticeId)
   }
 
   deleteLegalNotice() {
@@ -99,7 +101,7 @@ export class LegalNoticeDetailsComponent extends BaseComponent implements OnInit
   }
 
   cancelDetailLegalNotice() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId])
+    this.routingService.toCommunity(this.communityId, CommunityTab.legalNotices)
   }
 
 }

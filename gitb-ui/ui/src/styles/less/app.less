@@ -121,6 +121,10 @@
 	border-top: 2px solid #ddd;
 }
 
+.table-paging-controls {
+	border-top: 2px solid #ddd;
+}
+
 table.expandable-table {
 	border-collapse: separate;
 	table.expandable-table {
@@ -137,6 +141,13 @@ table.expandable-table {
 		.panel-heading {
 			background-color: white;
     		color: #777;
+			&.session-table-title.clickable:hover {
+				cursor: pointer;
+				background-color: @white-hover;
+			}
+		}
+		.panel-footer {
+			background-color: white;
 		}
 	}
 }
@@ -206,9 +217,6 @@ table tbody tr.expandable-table-row-collapsed {
 	}
 	td {
 		cursor: pointer;
-		&.td-min-centered {
-			.td-min-centered
-		}
 	}
 	td:last-child {
 		padding-top: 8px;
@@ -234,7 +242,7 @@ table.table-directive {
 
 #conformance-statement-details {
 	th.tb-result {
-		width: 110px;
+		width: 90px;
 		text-align: center;
 		white-space: nowrap;
 	}
@@ -256,6 +264,15 @@ table.table-directive {
 	text-align: center;
 	white-space: nowrap;
 }
+.td-min {
+	padding-top: 8px;
+	padding-bottom: 8px;
+	white-space: nowrap;
+}
+.th-min {
+	width: 1px;
+	white-space: nowrap;
+}
 #system-tests-table, #dashboard-table, #conformanceDashboardPageTable {
 	th.tb-result {
 		.th-min-centered
@@ -275,7 +292,7 @@ table.table-directive {
 }
 
 table tbody tr.expandable-table-row-expanded {
-	td {
+	& > td {
 		padding-top: 0px;
 		padding-bottom: 0px;
 		&.expandable-table-expandable-cell {
@@ -287,10 +304,10 @@ table tbody tr.expandable-table-row-expanded {
 			}
 		}
 	}
-	td.expandable-table-expandable-cell-no-spacings {
+	& >td.expandable-table-expandable-cell-no-spacings {
 		padding:0px;
 	}
-	td {
+	& >td {
 		border-top: 0px solid #ddd;
 	}
 }
@@ -511,4 +528,11 @@ ng-multiselect-dropdown {
 
 div.non-padded-alert div.alert { 
 	margin-bottom: 5px; 
+}
+
+.tooltipContainer {
+	left: 7px !important;
+}
+.tooltipContainerBig {
+	left: 9px !important;
 }

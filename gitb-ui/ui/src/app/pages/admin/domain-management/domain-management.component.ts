@@ -1,8 +1,8 @@
 import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { Domain } from 'src/app/types/domain';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 
@@ -26,7 +26,7 @@ export class DomainManagementComponent implements OnInit {
   constructor(
     public dataService: DataService,
     private conformanceService: ConformanceService,
-    private router: Router
+    private routingService: RoutingService
   ) { }
 
   ngOnInit(): void {
@@ -55,7 +55,11 @@ export class DomainManagementComponent implements OnInit {
   }
 
 	onDomainSelect(domain: Domain) {
-    this.router.navigate(['admin', 'domains', domain.id])
+    this.routingService.toDomain(domain.id)
+  }
+
+  create() {
+    this.routingService.toCreateDomain()
   }
 
 }

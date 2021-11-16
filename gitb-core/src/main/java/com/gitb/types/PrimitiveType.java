@@ -4,8 +4,6 @@ import com.gitb.core.ErrorCode;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -15,8 +13,7 @@ import java.io.OutputStream;
 /**
  * Created by tuncay on 9/25/14.
  */
-public abstract class PrimitiveType extends DataType{
-    private static Logger logger = LoggerFactory.getLogger(PrimitiveType.class);
+public abstract class PrimitiveType extends DataType {
     public static final String DEFAULT_ENCODING = "utf-8";
 
     @Override

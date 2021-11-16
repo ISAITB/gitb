@@ -23,25 +23,26 @@
 		<table class="table table-directive expandable-table">
 			<thead>
                 <tr>
-                    <th *ngIf="!dataService.isCommunityAdmin">Community</th>
-                    <th>{{dataService.labelOrganisation()}}</th>
-                    <th>{{dataService.labelSystem()}}</th>
-                    <th *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community!.domain == undefined)">{{dataService.labelDomain()}}</th>
-                    <th>{{dataService.labelSpecification()}}</th>
-                    <th>{{dataService.labelActor()}}</th>
-                    <th width="20%">Test results</th>
+                    <th class="sortableHeader" *ngIf="!dataService.isCommunityAdmin" (click)="sort(Constants.FILTER_TYPE.COMMUNITY)">Community <i *ngIf="sortColumn == Constants.FILTER_TYPE.COMMUNITY" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
+                    <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ORGANISATION)">{{dataService.labelOrganisation()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.ORGANISATION" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
+                    <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SYSTEM)">{{dataService.labelSystem()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.SYSTEM" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
+                    <th class="sortableHeader" *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community!.domain == undefined)" (click)="sort(Constants.FILTER_TYPE.DOMAIN)">{{dataService.labelDomain()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.DOMAIN" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
+                    <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SPECIFICATION)">{{dataService.labelSpecification()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.SPECIFICATION" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
+                    <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ACTOR)">{{dataService.labelActor()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.ACTOR" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
+                    <th class="th-min">Updated</th>
+                    <th width="17%">Test results</th>
                     <th class="th-min-centered">Status</th>
                     <th class="operations">Export</th>
                 </tr>
 			</thead>
-			<tbody *ngIf="dataStatus.status == Constants.STATUS.PENDING">
+			<tbody *ngIf="dataStatus.status != Constants.STATUS.FINISHED">
 				<tr><td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td></tr>
 			</tbody>
 			<tbody *ngIf="dataStatus.status == Constants.STATUS.FINISHED && conformanceStatements.length == 0">
 				<tr><td [attr.colspan]="columnCount" class="td-no-data"><span>No conformance data found</span></td></tr>
 			</tbody>
 			<tbody *ngIf="conformanceStatements.length > 0">
-                <ng-container *ngFor="let statement of conformanceStatements">
+                <ng-container *ngFor="let statement of conformanceStatementsPage">
                     <tr (click)="onExpand(statement)"
                         class="table-row-directive expandable-table-row-collapsed">
                         <td *ngIf="!dataService.isCommunityAdmin">{{statement.communityName}}</td>
@@ -50,6 +51,7 @@
                         <td *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community!.domain == undefined)">{{statement.domainName}}</td>
                         <td>{{statement.specName}}</td>
                         <td>{{statement.actorName}}</td>
+                        <td class="td-min">{{statement.updateTime}}</td>
                         <td>{{statement.status}}</td>
                         <td class="td-min-centered"><span><i [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
                         <td class="operations">
@@ -57,40 +59,76 @@
                         </td>
                     </tr>
                     <tr class="expandable-table-row-expanded">
-                        <td colspan="9" class="expandable-table-expandable-cell">
+                        <td colspan="10" class="expandable-table-expandable-cell">
                             <div [collapse]="!isExpanded(statement)" [isAnimated]="true">
                                 <div class="collapsing-div">
-                                    <table class="table table-directive expandable-table conformance-dashboard-tests-table">
-                                        <thead>
-                                            <tr>
-                                                <th width="45%">Test suite</th>
-                                                <th width="45%">Test case</th>
-                                                <th class="tb-result">Result</th>
-                                                <th class="operations">Export</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            <tr *ngIf="statement.testCasesLoaded == undefined || !statement.testCasesLoaded">
-                                                <td colspan="4" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
-                                            </tr>
-                                            <tr *ngFor="let testCase of statement.testCases">
-                                                <td>{{testCase.testSuiteName}}</td>
-                                                <td>{{testCase.testCaseName}}</td>
-                                                <td class="tb-result">
-                                                    <app-test-result-status-display [message]="testCase.outputMessage" [result]="testCase.result"></app-test-result-status-display>
-                                                </td>
-                                                <td class="operations">
-                                                    <button *ngIf="showExportTestCase(testCase)" [pending]="testCase.exportPending != undefined && testCase.exportPending" [icon]="true" class="btn btn-default" (click)="onExportTestCase(statement, testCase)"><i class="fa fa-file-pdf-o"></i></button>
-                                                </td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
+                                    <div *ngIf="statement.testCasesLoaded == undefined || !statement.testCasesLoaded">
+                                        <span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span>
+                                    </div>
+                                    <div class="testSuitePanel" *ngFor="let testSuite of statement.testSuites">
+                                        <div class="panel panel-default">
+                                            <div class="panel-heading" (click)="testSuite.expanded = !testSuite.expanded">
+                                                <div class="testSuiteHeaderLabel">Test suite</div>
+                                                <div class="testSuiteHeaderValue">{{testSuite.testSuiteName}}</div>
+                                                <div class="testSuiteResult"><app-test-result-status-display [result]="testSuite.result"></app-test-result-status-display></div>
+                                            </div>
+                                            <div class="collapsibleTestCaseDiv" [collapse]="!testSuite.expanded" [isAnimated]="true">
+                                                <div class="panel-body">
+                                                    <div class="testCaseContainer">
+                                                        <table class="table table-directive">
+                                                            <thead>
+                                                                <tr>
+                                                                    <th width="90%">Test case</th>
+                                                                    <th class="sessionTime">Updated</th>
+                                                                    <th class="operations">Session</th>
+                                                                    <th class="operations">Export</th>
+                                                                    <th class="tb-result">Result</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                <tr *ngFor="let testCase of testSuite.testCases">
+                                                                    <td>{{testCase.testCaseName}}</td>
+                                                                    <td class="sessionTime">{{testCase.sessionTime}}</td>
+                                                                    <td class="operations">
+                                                                        <button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="toTestSession(testCase.sessionId)"><i class="fa fa-search"></i></button>
+                                                                    </td>
+                                                                    <td class="operations">
+                                                                        <button *ngIf="showExportTestCase(testCase)" [pending]="testCase.exportPending != undefined && testCase.exportPending" [icon]="true" class="btn btn-default" (click)="onExportTestCase(statement, testCase)"><i class="fa fa-file-pdf-o"></i></button>
+                                                                    </td>
+                                                                    <td class="tb-result">
+                                                                        <app-test-result-status-display [message]="testCase.outputMessage" [result]="testCase.result"></app-test-result-status-display>
+                                                                    </td>
+                                                                </tr>
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="statementControls">
+                                        <div class="btn-toolbar">
+                                            <button type="button" class="btn btn-default" (click)="toOrganisation(statement)">View {{dataService.labelOrganisationLower()}}</button>
+                                            <button type="button" class="btn btn-default" (click)="toSystem(statement)">View {{dataService.labelSystemLower()}}</button>
+                                            <button type="button" class="btn btn-default" (click)="toStatement(statement)">View conformance statement</button>
+                                            <button type="button" class="btn btn-default" (click)="toSpecification(statement)">View {{dataService.labelSpecificationLower()}}</button>
+                                            <button type="button" class="btn btn-default" (click)="toActor(statement)">View {{dataService.labelActorLower()}}</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </td>
                     </tr>
                 </ng-container>
 			</tbody>
-		</table>		
+		</table>
+        <div *ngIf="(!prevDisabled || !nextDisabled) && conformanceStatements && conformanceStatements.length > 0" class="text-center table-paging-controls-expandable">
+            <ul class="pagination pagination-sm">
+                <li [ngClass]="prevDisabled ? 'disabled' : ''"><a href (click)="doFirstPage(); $event.preventDefault()">First</a></li>
+                <li [ngClass]="prevDisabled ? 'disabled' : ''"><a href (click)="doPrevPage(); $event.preventDefault()">Previous</a></li>
+                <li [ngClass]="nextDisabled ? 'disabled' : ''"><a href (click)="doNextPage(); $event.preventDefault()">Next</a></li>
+                <li [ngClass]="nextDisabled ? 'disabled' : ''"><a href (click)="doLastPage(); $event.preventDefault()">Last</a></li>
+            </ul>
+        </div>
 	</div>
 </div>

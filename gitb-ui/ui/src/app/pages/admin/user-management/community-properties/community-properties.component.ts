@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
 import { CreateParameterModalComponent } from 'src/app/components/parameters/create-parameter-modal/create-parameter-modal.component';
@@ -16,6 +16,7 @@ import { find } from 'lodash'
 import { ParameterDetailsModalComponent } from 'src/app/components/parameters/parameter-details-modal/parameter-details-modal.component';
 import { ActionMethods } from './action-methods';
 import { PreviewParametersModalComponent } from 'src/app/modals/preview-parameters-modal/preview-parameters-modal.component';
+import { RoutingService } from 'src/app/services/routing.service';
 
 @Component({
   selector: 'app-community-properties',
@@ -55,7 +56,7 @@ export class CommunityPropertiesComponent implements OnInit {
 
   constructor(
     public dataService: DataService,
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private communityService: CommunityService,
     private modalService: BsModalService,
@@ -118,23 +119,24 @@ export class CommunityPropertiesComponent implements OnInit {
     return references
   }
 
-  previewParameters<T extends CustomProperty>(title: string, parameters: T[], hasRegistrationCase: boolean) {
+  previewParameters<T extends CustomProperty>(title: string, parameters: T[], hasRegistrationCase: boolean, parameterType: 'organisation'|'system') {
     this.modalService.show(PreviewParametersModalComponent, {
       class: 'modal-lg',
       initialState: {
         modalTitle: title,
         parameters: parameters,
-        hasRegistrationCase: hasRegistrationCase
+        hasRegistrationCase: hasRegistrationCase,
+        parameterType: parameterType
       }
     })
   }
 
   previewOrganisationParameters() {
-    this.previewParameters(this.dataService.labelOrganisation()+" property form preview", this.organisationParameters, true)
+    this.previewParameters(this.dataService.labelOrganisation()+" property form preview", this.organisationParameters, true, 'organisation')
   }
 
   previewSystemParameters() {
-    this.previewParameters(this.dataService.labelSystem()+" property form preview", this.systemParameters, false)  
+    this.previewParameters(this.dataService.labelSystem()+" property form preview", this.systemParameters, false, 'system')
   }
 
   orderOrganisationParameters() {
@@ -269,6 +271,6 @@ export class CommunityPropertiesComponent implements OnInit {
   }
 
   cancel() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId])
+    this.routingService.toCommunity(this.communityId)
   }
 }

@@ -3,6 +3,9 @@ import { DataService } from 'src/app/services/data.service';
 import { CustomProperty } from 'src/app/types/custom-property.type';
 import { FileData } from 'src/app/types/file-data.type';
 import { saveAs } from 'file-saver'
+import { OrganisationService } from 'src/app/services/organisation.service';
+import { SystemService } from 'src/app/services/system.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-custom-property-form',
@@ -16,10 +19,13 @@ export class CustomPropertyFormComponent implements OnInit {
   @Input() tbColOffset = 1
   @Input() tbColInputLess = 0
   @Input() tbReadonly = false
+  @Input() tbForceEditable = false
   @Input() tbFormPadded = true
   @Input() tbShowFormHeader = true
   @Input() tbShowRequiredAsterisks = true
   @Input() tbAdmin?: boolean
+  @Input() tbPropertyType!: 'organisation'|'system'
+  @Input() tbOwner?: number
 
   isAdmin = false
   isReadonly = true
@@ -30,7 +36,9 @@ export class CustomPropertyFormComponent implements OnInit {
   private propertiesInvolvedInPrerequisitesMap: Record<string, boolean> = {}
 
   constructor(
-    private dataService: DataService
+    private dataService: DataService,
+    private organisationService: OrganisationService,
+    private systemService: SystemService
   ) { }
 
   ngOnInit(): void {
@@ -39,10 +47,14 @@ export class CustomPropertyFormComponent implements OnInit {
     } else {
       this.isAdmin = this.tbAdmin
     }
-    if (this.isAdmin) {
+    if (this.tbForceEditable) {
       this.isReadonly = false
     } else {
-      this.isReadonly = this.dataService.isVendorUser || this.tbReadonly
+      if (this.isAdmin) {
+        this.isReadonly = this.tbReadonly
+      } else {
+        this.isReadonly = this.tbReadonly || this.dataService.isVendorUser
+      }
     }
     if (this.tbFormPadded) {
       this.innerDivStyle = 'col-xs-'+(11-this.tbColOffset)+' col-xs-offset-'+this.tbColOffset
@@ -124,12 +136,13 @@ export class CustomPropertyFormComponent implements OnInit {
   removeFile(property: CustomProperty)  {
     delete property.value
     delete property.file
+    property.configured = false
     this.checkPrerequisites(property)
   }
 
   onFileSelect(property: CustomProperty, file: FileData): void {
     property.file = file
-    property.value = file.data
+    property.value = "PATH"
     this.checkPrerequisites(property)
   }
 
@@ -139,8 +152,7 @@ export class CustomPropertyFormComponent implements OnInit {
       name = property.file.name
     } else {
       if (property.value !== undefined) {
-        const mimeType = this.dataService.mimeTypeFromDataURL(property.value)
-        const extension = this.dataService.extensionFromMimeType(mimeType)
+        const extension = this.dataService.extensionFromMimeType(property.mimeType)
         name = property.testKey + extension
       }
     }
@@ -148,13 +160,20 @@ export class CustomPropertyFormComponent implements OnInit {
   }
 
   downloadProperty(property: CustomProperty): void {
-    const mimeType = this.dataService.mimeTypeFromDataURL(property.value!)
-    const extension = this.dataService.extensionFromMimeType(mimeType)
-    const blob = this.dataService.b64toBlob(this.dataService.base64FromDataURL(property.value!), mimeType)
     if (property.file !== undefined) {
-      saveAs(blob, property.file.name)
+      saveAs(property.file.file!, property.file.name)
     } else {
-      saveAs(blob, property.testKey+extension)
+      let fn: Observable<ArrayBuffer>
+      if (this.tbPropertyType == 'organisation') {
+        fn = this.organisationService.downloadOrganisationParameterFile(this.tbOwner!, property.id)
+      } else {
+        fn = this.systemService.downloadSystemParameterFile(this.tbOwner!, property.id)
+      }
+      fn.subscribe((data) => {
+        const blobData = new Blob([data], {type: property.mimeType})
+        const extension = this.dataService.extensionFromMimeType(property.mimeType)
+        saveAs(blobData, property.testKey+extension)
+      })
     }
   }
 

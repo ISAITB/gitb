@@ -134,6 +134,9 @@ import { EndpointDisplayComponent } from './components/endpoint-display/endpoint
 import { ParameterDisplayComponent } from './components/parameter-display/parameter-display.component';
 import { ProvideInputModalComponent } from './modals/provide-input-modal/provide-input-modal.component';
 import { SecretInputComponent } from './components/secret-input/secret-input.component';
+import { TabsModule } from 'ngx-bootstrap/tabs';
+import { TextFilterComponent } from './components/text-filter/text-filter.component';
+import { CopyEnabledTextComponent } from './components/copy-enabled-text/copy-enabled-text.component';
 
 @NgModule({
   providers: [ 
@@ -257,8 +260,9 @@ import { SecretInputComponent } from './components/secret-input/secret-input.com
     EndpointDisplayComponent,
     ParameterDisplayComponent,
     ProvideInputModalComponent,
-    SecretInputComponent
-  ],
+    SecretInputComponent,
+    TextFilterComponent,
+    CopyEnabledTextComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
@@ -275,7 +279,8 @@ import { SecretInputComponent } from './components/secret-input/secret-input.com
     NgMultiSelectDropDownModule.forRoot(),
     CodemirrorModule,
     BsDropdownModule.forRoot(),
-    PopoverModule.forRoot()
+    PopoverModule.forRoot(),
+    TabsModule.forRoot()
   ],
   bootstrap: [AppComponent]
 })

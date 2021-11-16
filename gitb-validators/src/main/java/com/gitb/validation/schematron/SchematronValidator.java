@@ -3,7 +3,6 @@ package com.gitb.validation.schematron;
 import com.gitb.core.Configuration;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tr.TestStepReportType;
-import com.gitb.types.BinaryType;
 import com.gitb.types.DataType;
 import com.gitb.types.ObjectType;
 import com.gitb.types.SchemaType;
@@ -44,26 +43,19 @@ public class SchematronValidator extends AbstractValidator {
     @Override
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
         // Process inputs.
-        ObjectType xml;
-        DataType content = inputs.get(CONTENT_ARGUMENT_NAME);
-        if (content instanceof BinaryType) {
-            xml = new ObjectType();
-            xml.deserialize((byte[])content.getValue());
-        } else {
-            xml = (ObjectType) inputs.get(CONTENT_ARGUMENT_NAME);
-        }
-        SchemaType sch = (SchemaType) inputs.get(SCHEMATRON_ARGUMENT_NAME);
+        ObjectType xml = (ObjectType) inputs.get(CONTENT_ARGUMENT_NAME).convertTo(DataType.OBJECT_DATA_TYPE);
+        SchemaType sch = (SchemaType) inputs.get(SCHEMATRON_ARGUMENT_NAME).convertTo(DataType.SCHEMA_DATA_TYPE);
         // Process schematron resource.
         SchematronType validationType = determineSchematronType(inputs, sch);
         ISchematronResource schematron;
         boolean convertXPathExpressions = false;
         if (validationType == SchematronType.SCH) {
             // Use the pure implementation as SCH can be very resource and time consuming
-            schematron = new SchematronResourcePure(new StringResource(sch.toString(), sch.getSchemaLocation()));
+            schematron = new SchematronResourcePure(new StringResource(sch.toString(), sch.getImportPath()));
             convertXPathExpressions = true;
         } else {
-            schematron = new SchematronResourceXSLT(new StringResource(sch.toString(), sch.getSchemaLocation()));
-            ((SchematronResourceXSLT) schematron).setURIResolver(new SchematronResolver(sch.getTestSuiteId(), getTestCaseId(), sch.getSchemaLocation()));
+            schematron = new SchematronResourceXSLT(new StringResource(sch.toString(), sch.getImportPath()));
+            ((SchematronResourceXSLT) schematron).setURIResolver(new SchematronResolver(sch.getImportTestSuite(), getTestCaseId(), sch.getImportPath()));
         }
         schematron.setUseCache(false);
         // Carry out validation.
@@ -98,10 +90,10 @@ public class SchematronValidator extends AbstractValidator {
         }
         if (extensionToCheck.isEmpty()) {
             // Determine from file extension.
-            if (schematron.getSchemaLocation() != null) {
-                int dotIndex = schematron.getSchemaLocation().lastIndexOf('.');
-                if (dotIndex != -1 && dotIndex < schematron.getSchemaLocation().length() - 1) {
-                    extensionToCheck = Optional.of(schematron.getSchemaLocation().toLowerCase(Locale.ROOT).substring(dotIndex+1));
+            if (schematron.getImportPath() != null) {
+                int dotIndex = schematron.getImportPath().lastIndexOf('.');
+                if (dotIndex != -1 && dotIndex < schematron.getImportPath().length() - 1) {
+                    extensionToCheck = Optional.of(schematron.getImportPath().toLowerCase(Locale.ROOT).substring(dotIndex+1));
                 }
             }
         }

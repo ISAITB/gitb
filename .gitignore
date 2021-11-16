@@ -33,3 +33,4 @@ RUNNING_PID
 test/resources/repository
 */repository/status-updates/
 /gitb-ui/app/assets/build
+/temp/

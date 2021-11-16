@@ -58,12 +58,12 @@ public class BooleanType extends PrimitiveType {
     }
 
     @Override
-    public StringType toStringType() {
+    protected StringType toStringType() {
         return new StringType(Boolean.valueOf(value).toString());
     }
 
     @Override
-    public NumberType toNumberType() {
+    protected NumberType toNumberType() {
         NumberType type = new NumberType();
         type.setValue(value?1.0:0.0);
         return type;

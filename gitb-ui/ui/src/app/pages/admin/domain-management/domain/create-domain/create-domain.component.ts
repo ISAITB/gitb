@@ -1,9 +1,9 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { Domain } from 'src/app/types/domain';
 
 @Component({
@@ -21,7 +21,7 @@ export class CreateDomainComponent extends BaseComponent implements OnInit, Afte
     public dataService: DataService,
     private conformanceService: ConformanceService,
     private popupService: PopupService,
-    private router: Router
+    private routingService: RoutingService
   ) { super() }
 
   ngAfterViewInit(): void {
@@ -41,7 +41,7 @@ export class CreateDomainComponent extends BaseComponent implements OnInit, Afte
 			this.conformanceService.createDomain(this.domain.sname!, this.domain.fname!, this.domain.description)
       .subscribe(() => {
         this.popupService.success(this.dataService.labelDomain()+' created.')
-        this.router.navigate(['admin', 'domains'])
+        this.routingService.toDomains()
       }).add(() => {
         this.pending = false
       })
@@ -49,7 +49,7 @@ export class CreateDomainComponent extends BaseComponent implements OnInit, Afte
   }
 
 	cancel() {
-    this.router.navigate(['admin', 'domains'])
+    this.routingService.toDomains()
   }
 
 }

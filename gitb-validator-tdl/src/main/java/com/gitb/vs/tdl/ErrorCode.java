@@ -23,7 +23,7 @@ public enum ErrorCode {
     TEST_SUITE_DEFINES_ACTOR_MULTIPLE_TIMES(            "TDL-014", "The test suite defines actor [%s] multiple times.", ERROR),
     ACTOR_NOT_REFERENCED_IN_TEST_CASES(                 "TDL-015", "Actor [%s] is not referenced in any test cases.", WARNING),
     INVALID_EXTERNAL_ACTOR_REFERENCE(                   "TDL-016", "Test suite references an external actor [%s] that is not defined.", ERROR),
-    INVALID_EXTERNAL_PARAMETER_REFERENCE(               "TDL-017", "%s [%s] references a domain parameter [%s] in step [%s] that is not defined.", WARNING, true),
+    INVALID_EXTERNAL_PARAMETER_REFERENCE(               "TDL-017", "References are made to non-existent domain parameters %s. Ensure these are valid and will be defined at runtime.", WARNING),
     TEST_CASE_NOT_REFERENCED(                           "TDL-018", "Test case [%s] is not referenced in the test suite.", WARNING),
     DEFAULT_ACTOR_NOT_REFERENCED_IN_TEST_CASES_AS_SUT(  "TDL-019", "The default actor for the specification [%s] is not referenced as a SUT in any test cases.", WARNING),
     INVALID_TEST_CASE_IMPORT(                           "TDL-020", "%s [%s] defines an import [%s] that doesn't exist within the test suite.", ERROR, true),
@@ -51,10 +51,10 @@ public enum ErrorCode {
     VARIABLE_NOT_IN_SCOPE(                              "TDL-040", "%s [%s] in step %s refers to an undefined variable [%s].", ERROR, true),
     SIMPLE_VARIABLE_REFERENCED_AS_CONTAINER(            "TDL-041", "%s [%s] in step %s refers to a simple variable [%s] as if it was a container type.", ERROR, true),
     INVALID_EXPRESSION(                                 "TDL-042", "%s [%s] in step %s defines an invalid expression [%s].", ERROR, true),
-    UNEXPECTED_HANDLER_INPUT(                           "TDL-043", "%s [%s] in step %s defines an unexpected input [%s].", WARNING, true),
-    MISSING_HANDLER_INPUT(                              "TDL-044", "%s [%s] in step %s does not provide a required input [%s].", ERROR, true),
-    UNEXPECTED_HANDLER_CONFIG(                          "TDL-045", "%s [%s] in step %s defines an unexpected configuration parameter [%s].", WARNING, true),
-    MISSING_HANDLER_CONFIG(                             "TDL-046", "%s [%s] in step %s does not provide a required configuration parameter [%s].", ERROR, true),
+    UNEXPECTED_HANDLER_INPUT(                           "TDL-043", "%s [%s] in step %s for handler %s defines an unexpected input [%s].", WARNING, true),
+    MISSING_HANDLER_INPUT(                              "TDL-044", "%s [%s] in step %s for handler %s does not provide a required input [%s].", ERROR, true),
+    UNEXPECTED_HANDLER_CONFIG(                          "TDL-045", "%s [%s] in step %s for handler %s defines an unexpected configuration parameter [%s].", WARNING, true),
+    MISSING_HANDLER_CONFIG(                             "TDL-046", "%s [%s] in step %s for handler %s does not provide a required configuration parameter [%s].", ERROR, true),
     INVALID_PROCESSING_HANDLER_OPERATION(               "TDL-047", "%s [%s] in step %s refers to invalid processing operation [%s].", ERROR, true),
 
     DUPLICATE_SCRIPTLET_ID(                             "TDL-048", "Test case [%s] defines multiple scriptlets for ID [%s].", ERROR),
@@ -114,8 +114,14 @@ public enum ErrorCode {
     EXTERNAL_SCRIPTLET_OUTPUT_NOT_FOUND_AS_VARIABLE(    "TDL-097", "Scriptlet [%s] includes an output [%s] that is not defined through an expression, and for which no variable with the same name exists in scope.", ERROR),
     DUPLICATE_INTERNAL_SCRIPTLET_DEFINITION_NAME(       "TDL-098", "Test case [%s] includes a scriptlet [%s] that defines [%s] as a %s.", ERROR),
     DUPLICATE__DEFINITION_NAME(                         "TDL-099", "%s [%s] defines [%s] as a %s.", ERROR, true),
-    NO_RESOURCE_FOUND(                                  "TDL-100", "The provided archive does not contain test cases nor resources that could be used by other test suites.", ERROR)
+    NO_RESOURCE_FOUND(                                  "TDL-100", "The provided archive does not contain test cases nor resources that could be used by other test suites.", ERROR),
 
+    DOUBLE_PROCESSING_OPERATION(                        "TDL-101", "%s [%s] defines a process step that specifies its operation both as an attribute [%s] and as a child element [%s]. The attribute definition will be ignored.", WARNING, true),
+    NAMED_AND_UNNAMED_HANDLER_INPUT(                    "TDL-102", "%s [%s] in step %s for handler %s provides both named and unnamed inputs.", ERROR, true),
+    UNEXPECTED_HANDLER_UNNAMED_INPUTS(                  "TDL-103", "%s [%s] in step %s for handler %s provides more inputs than expected.", ERROR, true),
+    MISSING_HANDLER_UNNAMED_INPUTS(                     "TDL-104", "%s [%s] in step %s for handler %s does not provide enough inputs to cover the required parameters.", ERROR, true),
+    DOUBLE_PROCESSING_INPUTS(                           "TDL-105", "%s [%s] in step %s for handler %s provides inputs both as an attribute and as child elements. The attribute definition will be ignored.", WARNING, true),
+    DOUBLE_CALL_INPUTS(                                 "TDL-106", "%s [%s] defines a call step for scriptlet [%s] that provides inputs both as an attribute and as child elements. The attribute definition will be ignored.", WARNING, true)
     ;
 
     private String code;

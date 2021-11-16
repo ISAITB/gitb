@@ -1,9 +1,11 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
+import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { Actor } from 'src/app/types/actor';
 
 @Component({
@@ -23,7 +25,7 @@ export class CreateActorComponent extends BaseComponent implements OnInit, After
     public dataService: DataService,
     private popupService: PopupService,
     private conformanceService: ConformanceService,
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute
   ) { super() }
 
@@ -45,7 +47,7 @@ export class CreateActorComponent extends BaseComponent implements OnInit, After
       this.savePending = true
       this.conformanceService.createActor(this.actor.actorId!, this.actor.name!, this.actor.description, this.actor.default, this.actor.hidden, this.actor.displayOrder, this.domainId, this.specificationId)
       .subscribe(() => {
-        this.router.navigate(['admin', 'domains', this.domainId, 'specifications', this.specificationId])
+        this.cancel()
         this.popupService.success(this.dataService.labelActor()+' created.')
       }).add(() => {
         this.savePending = false
@@ -54,7 +56,7 @@ export class CreateActorComponent extends BaseComponent implements OnInit, After
   }
 
 	cancel() {
-    this.router.navigate(['admin', 'domains', this.domainId, 'specifications', this.specificationId])
+    this.routingService.toSpecification(this.domainId, this.specificationId, Constants.TAB.SPECIFICATION.ACTORS)
   }
 
 }

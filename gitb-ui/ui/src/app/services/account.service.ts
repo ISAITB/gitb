@@ -9,6 +9,7 @@ import { AppConfigurationProperties } from '../types/app-configuration-propertie
 import { ErrorDescription } from '../types/error-description';
 import { FileData } from '../types/file-data.type';
 import { CustomProperty } from '../types/custom-property.type';
+import { FileParam } from '../types/file-param.type';
 
 @Injectable({
   providedIn: 'root'
@@ -28,12 +29,16 @@ export class AccountService {
     if (vendorSname != undefined) {
       data.vendor_sname = vendorSname
     }
+    let files: FileParam[]|undefined
     if (processProperties) {
-      data.properties = this.dataService.customPropertiesForPost(properties)
+      const props = this.dataService.customPropertiesForPost(properties)
+      data.properties = props.parameterJson
+      files = props.files
     }
     return this.restService.post<void>({
       path: ROUTES.controllers.AccountService.updateVendorProfile().url,
       data: data,
+      files: files,
       authenticate: true
     })
   }
@@ -118,12 +123,17 @@ export class AccountService {
       msg_type_description: messageTypeDescription,
       msg_content: messageContent
     }
+    let files: FileParam[]|undefined
     if (messageAttachments.length > 0) {
-      data['msg_attachments'] = JSON.stringify(messageAttachments)
+      files = []
+      for (let i=0; i < messageAttachments.length; i++) {
+        files.push({param: 'file'+i, data: messageAttachments[i].file!})
+      }
     }
     return this.restService.post<ErrorDescription|undefined>({
       path: ROUTES.controllers.AccountService.submitFeedback().url,
       data: data,
+      files: files,
       authenticate: this.dataService.user !== undefined
     })
   }

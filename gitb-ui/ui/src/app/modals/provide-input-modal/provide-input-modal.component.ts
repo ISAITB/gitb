@@ -17,13 +17,14 @@ import { UserInteractionInput } from 'src/app/types/user-interaction-input';
       'box-shadow: 0 0px 0px rgb(82 168 236 / 80%) inset, 0 0 5px rgb(82 168 236 / 80%);'+
       'outline: 0 none; '+
     '}' ,
-    'textarea { resize: vertical; } }'
+    'textarea { resize: vertical; }'
   ]
 })
 export class ProvideInputModalComponent implements OnInit, AfterViewInit {
 
   @Input() interactions!: UserInteraction[]
   @Input() inputTitle = 'Server interaction'
+  @Input() sessionId!: string
   @Output() result = new EventEmitter<UserInteractionInput[]>()
   @ViewChildren(CodemirrorComponent) codeMirrors?: QueryList<CodemirrorComponent>
   needsInput = false
@@ -161,8 +162,12 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
           } else {
             inputData.value = interaction.selectedOption!.value
           }
-        } else if (interaction.optionData == undefined && interaction.data != undefined) {
-          inputData.value = interaction.data
+        } else if (interaction.optionData == undefined) {
+          if (interaction.data != undefined) {
+            inputData.value = interaction.data
+          } else if (interaction.file?.file) {
+            inputData.file = interaction.file.file
+          }
         }
         inputs.push(inputData as UserInteractionInput)
       }
@@ -173,18 +178,6 @@ export class ProvideInputModalComponent implements OnInit, AfterViewInit {
 
   onFileSelect(request: UserInteraction, file: FileData) {
     request.file = file
-    request.data = file.data
-  }
-
-  download(interaction: UserInteraction) {
-    const blob = this.dataService.b64toBlob(interaction.value!)
-    if (interaction.name != undefined) {
-      saveAs(blob, interaction.name)
-    } else {
-      this.dataService.getFileInfo(blob).subscribe((data) => {
-        saveAs(blob, data.filename)
-      })
-    }
   }
 
   private interactionNeedsInput() {

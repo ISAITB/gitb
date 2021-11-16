@@ -1,25 +1,25 @@
 package utils
 
-import java.util
 import com.gitb.core.ValueEmbeddingEnumeration
-import com.gitb.tbs.{TestStepStatus, UserInput}
+import com.gitb.tbs.UserInput
 import com.gitb.tr._
 import config.Configurations
-
-import javax.xml.bind.JAXBElement
-import managers.AttachmentType
 import managers.export.{ExportSettings, ImportItem, ImportSettings}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoiceHistory.TestSuiteReplacementChoiceHistory
 import models.Enums.TestSuiteReplacementChoiceMetadata.TestSuiteReplacementChoiceMetadata
 import models.Enums._
-import models.{TestStepResultInfo, _}
+import models._
 import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsObject, _}
 
-import scala.collection.JavaConverters._
+import java.sql.Timestamp
+import java.util
+import javax.xml.bind.JAXBElement
+import scala.collection.mutable.ListBuffer
 import scala.collection.{immutable, mutable}
-import scala.collection.mutable.{ListBuffer, Map}
+import scala.jdk.CollectionConverters.CollectionHasAsScala
+
 object JsonUtil {
 
   def jsTextArray(texts: List[String]): JsObject = {
@@ -115,11 +115,8 @@ object JsonUtil {
       if (parameter.parameter.kind != "SECRET") {
         json = json.+("value" -> JsString(parameter.config.get.value))
         if (parameter.parameter.kind == "BINARY") {
-          if (parameter.mimeType.isDefined) {
-            json = json.+("mimeType" -> JsString(parameter.mimeType.get))
-          }
-          if (parameter.extension.isDefined) {
-            json = json.+("extension" -> JsString(parameter.extension.get))
+          if (parameter.config.get.contentType.isDefined) {
+            json = json.+("mimeType" -> JsString(parameter.config.get.contentType.get))
           }
         }
       }
@@ -404,6 +401,18 @@ object JsonUtil {
     json
   }
 
+  def jsOrganizationSearchResults(list: Iterable[Organizations], resultCount: Int): JsObject = {
+    var json = Json.arr()
+    list.foreach { organisation =>
+      json = json.append(jsOrganization(organisation))
+    }
+    val jsonResult = Json.obj(
+      "data" -> json,
+      "count" -> resultCount
+    )
+    jsonResult
+  }
+
   /**
    * Converts a System object into Play!'s JSON notation.
    * Does not support cross object conversion
@@ -524,27 +533,20 @@ object JsonUtil {
   }
 
   def jsDomainParameter(domainParameter:DomainParameter):JsObject = {
-    if (domainParameter.kind == "HIDDEN") {
-      val json = Json.obj(
-        "id" -> domainParameter.id,
-        "name" -> domainParameter.name,
-        "description" -> domainParameter.desc,
-        "kind" -> domainParameter.kind,
-        "inTests" -> domainParameter.inTests,
-        "value" -> ""
-      )
-      json
-    } else {
-      val json = Json.obj(
-        "id" -> domainParameter.id,
-        "name" -> domainParameter.name,
-        "description" -> domainParameter.desc,
-        "kind" -> domainParameter.kind,
-        "inTests" -> domainParameter.inTests,
-        "value" -> domainParameter.value
-      )
-      json
+    var valueToUse = ""
+    if (domainParameter.kind == "SIMPLE" && domainParameter.value.isDefined) {
+      valueToUse = domainParameter.value.get
     }
+    val json = Json.obj(
+      "id" -> domainParameter.id,
+      "name" -> domainParameter.name,
+      "description" -> domainParameter.desc,
+      "kind" -> domainParameter.kind,
+      "inTests" -> domainParameter.inTests,
+      "contentType" -> (if(domainParameter.contentType.isDefined) JsString(domainParameter.contentType.get) else JsNull),
+      "value" -> valueToUse
+    )
+    json
   }
 
   /**
@@ -656,6 +658,7 @@ object JsonUtil {
       "specificationId" -> conformanceStatement.specificationId,
       "specification" -> conformanceStatement.specificationName,
       "specificationFull" -> conformanceStatement.specificationNameFull,
+      "updateTime" -> (if(conformanceStatement.updateTime.isDefined) TimeUtil.serializeTimestamp(conformanceStatement.updateTime.get) else JsNull),
 			"results" -> Json.obj(
 				"undefined" -> conformanceStatement.undefinedTests,
         "failed" -> conformanceStatement.failedTests,
@@ -712,24 +715,22 @@ object JsonUtil {
   }
 
   def parseJsOrganisationParameterValues(json:String):List[OrganisationParameterValues] = {
-    val jsArray = Json.parse(json).as[List[JsObject]]
+    val jsArray = Json.parse(json).as[JsArray].value
     var list:List[OrganisationParameterValues] = List()
     jsArray.foreach { jsonConfig =>
-      var value = (jsonConfig \ "value").asOpt[String]
-      if (value.isEmpty) {
-        value = Some((jsonConfig \ "valueBinary").as[String])
-      }
+      val value = (jsonConfig \ "value").asOpt[String]
       list ::= OrganisationParameterValues(
         -1, // Will be forced later
         (jsonConfig \ "parameter").as[Long],
-        value.get
+        value.get,
+        None
       )
     }
     list
   }
 
   def parseJsPendingTestSuiteActions(json: String): List[PendingTestSuiteAction] = {
-    val jsArray = Json.parse(json).as[List[JsObject]]
+    val jsArray = Json.parse(json).as[JsArray].value
     val values = new ListBuffer[PendingTestSuiteAction]()
     jsArray.foreach { jsonConfig =>
       val pendingActionStr = (jsonConfig \ "action").as[String]
@@ -769,23 +770,21 @@ object JsonUtil {
   }
 
   def parseJsSystemParameterValues(json:String):List[SystemParameterValues] = {
-    val jsArray = Json.parse(json).as[List[JsObject]]
+    val jsArray = Json.parse(json).as[JsArray].value
     var list:List[SystemParameterValues] = List()
     jsArray.foreach { jsonConfig =>
-      var value = (jsonConfig \ "value").asOpt[String]
-      if (value.isEmpty) {
-        value = Some((jsonConfig \ "valueBinary").as[String])
-      }
+      val value = (jsonConfig \ "value").asOpt[String]
       list ::= SystemParameterValues(
         -1, // Will be forced later
         (jsonConfig \ "parameter").as[Long],
-        value.get
+        value.get,
+        None
       )
     }
     list
   }
 
-  private def parseJsImportItem(jsonConfig: JsObject, parentItem: Option[ImportItem]): ImportItem = {
+  private def parseJsImportItem(jsonConfig: JsValue, parentItem: Option[ImportItem]): ImportItem = {
     val item = new ImportItem(
       (jsonConfig \ "name").asOpt[String],
       ImportItemType.apply((jsonConfig \ "type").as[Short]),
@@ -795,9 +794,9 @@ object JsonUtil {
       ImportItemChoice.apply((jsonConfig \ "process").as[Short])
     )
     item.parentItem = parentItem
-    val children = (jsonConfig \ "children").asOpt[List[JsObject]]
+    val children = (jsonConfig \ "children").asOpt[JsArray]
     if (children.isDefined) {
-      children.get.foreach { childObj =>
+      children.get.value.foreach { childObj =>
         item.childrenItems += parseJsImportItem(childObj, Some(item))
       }
     }
@@ -805,15 +804,15 @@ object JsonUtil {
   }
 
   def parseJsTriggerDataItems(json:String, triggerId: Option[Long]): List[TriggerData] = {
-    val jsArray = Json.parse(json).as[List[JsObject]]
-    var list = ListBuffer[TriggerData]()
+    val jsArray = Json.parse(json).as[JsArray].value
+    val list = ListBuffer[TriggerData]()
     jsArray.foreach { jsonConfig =>
       list += parseJsTriggerDataItem(jsonConfig, triggerId)
     }
     list.toList
   }
 
-  private def parseJsTriggerDataItem(jsonConfig: JsObject, triggerId: Option[Long]): TriggerData = {
+  private def parseJsTriggerDataItem(jsonConfig: JsValue, triggerId: Option[Long]): TriggerData = {
     val dataType = (jsonConfig \ "dataType").as[Short]
     val dataTypeEnum = TriggerDataType.apply(dataType)
     var dataIdToUse: Long = -1
@@ -831,8 +830,8 @@ object JsonUtil {
   }
 
   def parseJsImportItems(json:String): List[ImportItem] = {
-    val jsArray = Json.parse(json).as[List[JsObject]]
-    var list = ListBuffer[ImportItem]()
+    val jsArray = Json.parse(json).as[JsArray].value
+    val list = ListBuffer[ImportItem]()
     jsArray.foreach { jsonConfig =>
       list += parseJsImportItem(jsonConfig, None)
     }
@@ -840,7 +839,9 @@ object JsonUtil {
   }
 
   def parseStringArray(json: String): List[String] = {
-    Json.parse(json).as[List[String]]
+    Json.parse(json).as[JsArray].value.iterator.map { value =>
+      value.as[JsString].value
+    }.toList
   }
 
   def parseJsImportSettings(json:String):ImportSettings = {
@@ -853,7 +854,7 @@ object JsonUtil {
   def parseJsIdToValuesMap(json: Option[String]): Option[immutable.Map[Long, Set[String]]] = {
     var result: Option[immutable.Map[Long, Set[String]]] = None
     if (json.isDefined) {
-      val jsArray = Json.parse(json.get).as[List[JsObject]]
+      val jsArray = Json.parse(json.get).as[JsArray].value
       val tempMap = new mutable.HashMap[Long, mutable.HashSet[String]]()
       jsArray.foreach { jsonObj =>
         val id = (jsonObj \ "id").as[Long]
@@ -861,16 +862,9 @@ object JsonUtil {
         val idValues = tempMap.getOrElseUpdate(id, new mutable.HashSet[String]())
         idValues += value
       }
-      result = Some(tempMap.map(x => x._1 -> x._2.toSet).toMap)
+      result = Some(tempMap.map(x => x._1 -> x._2.toSet).iterator.toMap)
     }
     result
-  }
-
-  def parseJsIdsToValues(json: String): List[(Long, String)] = {
-    val jsArray = Json.parse(json).as[List[JsObject]]
-    jsArray.map(jsonConfig =>
-      ((jsonConfig \ "id").as[Long], (jsonConfig \ "value").as[String])
-    )
   }
 
   def parseJsExportSettings(json:String):ExportSettings = {
@@ -902,7 +896,7 @@ object JsonUtil {
   }
 
   def parseJsCommunityLabels(communityId: Long, json:String):List[CommunityLabels] = {
-    val jsArray = Json.parse(json).as[List[JsObject]]
+    val jsArray = Json.parse(json).as[JsArray].value
     var list:List[CommunityLabels] = List()
     jsArray.foreach { jsonConfig =>
       list ::= CommunityLabels(
@@ -912,17 +906,6 @@ object JsonUtil {
         (jsonConfig \ "pluralForm").as[String],
         (jsonConfig \ "fixedCase").as[Boolean]
       )
-    }
-    list
-  }
-
-  def parseJsAttachments(json: String):List[AttachmentType] = {
-    val jsArray = Json.parse(json).as[List[JsObject]]
-    var list:List[AttachmentType] = List()
-    jsArray.foreach { jsonAttachment =>
-      val attachmentName = (jsonAttachment \ "name").as[String]
-      val attachmentData = stringContentToByteArray((jsonAttachment \ "data").as[String])
-      list ::= new AttachmentType(attachmentName, attachmentData)
     }
     list
   }
@@ -938,20 +921,18 @@ object JsonUtil {
 
   def parseJsConfig(json:String):Configs = {
     val jsonConfig = Json.parse(json).as[JsObject]
-    var value: Option[String] = (jsonConfig \ "value").asOpt[String]
-    if (value.isEmpty) {
-      value = Some((jsonConfig \ "valueBinary").as[String])
-    }
+    val value = (jsonConfig \ "value").asOpt[String]
     Configs(
       (jsonConfig \ "system").as[Long],
 	    (jsonConfig \ "parameter").as[Long],
 	    (jsonConfig \ "endpoint").as[Long],
-      value.get
+      value.get,
+      None
     )
   }
 
   def parseJsUserInputs(json:String): List[UserInput] = {
-    val jsArray = Json.parse(json).as[List[JsObject]]
+    val jsArray = Json.parse(json).as[JsArray].value
     var list:List[UserInput] = List()
     jsArray.foreach { jsonInput =>
       val input = new UserInput()
@@ -959,12 +940,7 @@ object JsonUtil {
       input.setName((jsonInput \ "name").as[String])
       input.setType((jsonInput \ "type").as[String])
       input.setEmbeddingMethod(ValueEmbeddingEnumeration.fromValue((jsonInput \ "embeddingMethod").as[String]))
-      var inputValue: Option[String] = None
-      if (input.getEmbeddingMethod == ValueEmbeddingEnumeration.BASE_64) {
-        inputValue = (jsonInput \ "valueBinary").asOpt[String]
-      } else {
-        inputValue = (jsonInput \ "value").asOpt[String]
-      }
+      val inputValue = (jsonInput \ "value").asOpt[String]
       input.setValue(inputValue.orNull)
       list ::= input
     }
@@ -979,15 +955,17 @@ object JsonUtil {
     }
     val kind = (jsonConfig \ "kind").as[String]
     var value: Option[String] = None
-    if (kind.equals("BINARY")) {
-      value = (jsonConfig \ "valueBinary").asOpt[String]
-    } else if (kind.equals("HIDDEN")) {
+    var contentType: Option[String] = None
+    if (kind.equals("HIDDEN")) {
       value = (jsonConfig \ "value").asOpt[String]
       if (value.isDefined) {
         value = Some(MimeUtil.encryptString(value.get))
       }
-    } else {
+    } else if (kind.equals("SIMPLE")) {
       value = (jsonConfig \ "value").asOpt[String]
+    } else {
+      value = Some("")
+      contentType = (jsonConfig \ "contentType").asOpt[String]
     }
     DomainParameter(
       idToUse,
@@ -996,11 +974,12 @@ object JsonUtil {
       kind,
       value,
       (jsonConfig \ "inTests").as[Boolean],
+      contentType,
       domainId
     )
   }
 
-  def parseJsConformanceCertificateSettings(json:String, communityId: Long): ConformanceCertificates = {
+  def parseJsConformanceCertificateSettings(json:String, communityId: Long, keystoreData: Option[String]): ConformanceCertificates = {
     val jsonConfig = Json.parse(json).as[JsObject]
     // Ensure the message content (if provided) is correctly sanitized.
     var certificateMessage = (jsonConfig \ "message").asOpt[String]
@@ -1016,7 +995,7 @@ object JsonUtil {
       (jsonConfig \ "includeTestCases").as[Boolean],
       (jsonConfig \ "includeDetails").as[Boolean],
       (jsonConfig \ "includeSignature").as[Boolean],
-      (jsonConfig \ "keystoreFile").asOpt[String],
+      keystoreData,
       (jsonConfig \ "keystoreType").asOpt[String],
       (jsonConfig \ "keystorePassword").asOpt[String],
       (jsonConfig \ "keyPassword").asOpt[String],
@@ -1035,7 +1014,7 @@ object JsonUtil {
       includeTestCases = false,
       includeDetails = false,
       includeSignature = false,
-      (jsonConfig \ "keystoreFile").asOpt[String],
+      None,
       (jsonConfig \ "keystoreType").asOpt[String],
       (jsonConfig \ "keystorePassword").asOpt[String],
       (jsonConfig \ "keyPassword").asOpt[String],
@@ -1147,6 +1126,7 @@ object JsonUtil {
       "systemId"  -> (if (testResult.systemId.isDefined) testResult.systemId else JsNull),
       "actorId"   -> (if (testResult.actorId.isDefined) testResult.actorId else JsNull),
       "testId"    -> (if (testResult.testCaseId.isDefined) testResult.testCaseId else JsNull),
+      "specificationId"    -> (if (testResult.specificationId.isDefined) testResult.specificationId else JsNull),
       "result"    -> testResult.result,
       "startTime" -> TimeUtil.serializeTimestamp(testResult.startTime),
       "endTime"   -> (if(testResult.endTime.isDefined) TimeUtil.serializeTimestamp(testResult.endTime.get) else JsNull),
@@ -1770,8 +1750,7 @@ object JsonUtil {
   def jsTARReports(reports: TestAssertionGroupReportsType): JsArray = {
     var json = Json.arr()
     if (reports != null && reports.getInfoOrWarningOrError != null) {
-      import scala.collection.JavaConverters._
-      collectionAsScalaIterable(reports.getInfoOrWarningOrError).toList.foreach(item => {
+      reports.getInfoOrWarningOrError.asScala.toList.foreach(item => {
         val jsItem = jsTestAssertionReportType(item)
         if (jsItem != null) {
           json = json.append(jsItem)
@@ -1804,11 +1783,41 @@ object JsonUtil {
     json
   }
 
-  def jsConformanceResultList(list: List[ConformanceStatusItem]): JsArray = {
-    var json = Json.arr()
+  def jsConformanceResultList(list: List[ConformanceStatusItem]): JsObject = {
+    var updateTime: Option[Timestamp] = None
+    var undefinedTests = 0L
+    var completedTests = 0L
+    var failedTests = 0L
+    var itemArray = Json.arr()
     list.foreach{ info =>
-      json = json.append(jsConformanceResult(info))
+      if (info.sessionTime.isDefined && (updateTime.isEmpty || updateTime.get.before(info.sessionTime.get))) {
+        updateTime = info.sessionTime
+      }
+      if (TestResultStatus.withName(info.result) == TestResultStatus.SUCCESS) {
+        completedTests += 1
+      } else if (TestResultStatus.withName(info.result) == TestResultStatus.FAILURE) {
+        failedTests += 1
+      } else {
+        undefinedTests += 1
+      }
+      itemArray = itemArray.append(jsConformanceResult(info))
     }
+    var result = TestResultStatus.SUCCESS.toString
+    if (failedTests > 0) {
+      result = TestResultStatus.FAILURE.toString
+    } else if (undefinedTests > 0) {
+      result = TestResultStatus.UNDEFINED.toString
+    }
+    val json = Json.obj(
+      "summary" -> Json.obj(
+        "failed"    -> failedTests,
+        "completed"    -> completedTests,
+        "undefined"    -> undefinedTests,
+        "result" -> result,
+        "updateTime" -> (if (updateTime.isDefined) TimeUtil.serializeTimestamp(updateTime.get) else JsNull)
+      ),
+      "items" -> itemArray
+    )
     json
   }
 
@@ -1824,7 +1833,8 @@ object JsonUtil {
       "testCaseHasDocumentation"    -> listItem.testCaseHasDocumentation,
       "result"    -> listItem.result,
       "outputMessage" -> listItem.outputMessage,
-      "sessionId"    -> listItem.sessionId
+      "sessionId"    -> listItem.sessionId,
+      "sessionTime"    -> (if (listItem.sessionTime.isDefined) TimeUtil.serializeTimestamp(listItem.sessionTime.get) else JsNull)
     )
     json
   }
@@ -1879,6 +1889,7 @@ object JsonUtil {
       "completed"    -> item.completedTests,
       "undefined"    -> item.undefinedTests,
       "result" -> item.result,
+      "updateTime" -> (if(item.updateTime.isDefined) TimeUtil.serializeTimestamp(item.updateTime.get) else JsNull),
       "outputMessage" -> item.outputMessage
     )
     if (orgParameterDefinitions.isDefined && orgParameterValues.isDefined) {
@@ -1915,7 +1926,6 @@ object JsonUtil {
         "includeTestCases" -> settings.get.includeTestCases,
         "includeDetails" -> settings.get.includeDetails,
         "includeSignature" -> settings.get.includeSignature,
-        "keystoreFile" -> (if(includeKeystoreData && settings.get.keystoreFile.isDefined) settings.get.keystoreFile.get else JsNull),
         "keystoreType" -> (if(includeKeystoreData && settings.get.keystoreType.isDefined) settings.get.keystoreType.get else JsNull),
         "passwordsSet" -> (if(includeKeystoreData && settings.get.keystorePassword.isDefined && settings.get.keyPassword.isDefined) true else false),
         "keystoreDefined" -> (if(settings.get.keystoreFile.isDefined && settings.get.keystoreType.isDefined && settings.get.keystorePassword.isDefined && settings.get.keyPassword.isDefined) true else false),
@@ -1946,8 +1956,13 @@ object JsonUtil {
   def jsOrganisationParametersWithValue(param: OrganisationParametersWithValue, includeValues: Boolean): JsObject = {
     var json = jsOrganisationParameter(param.parameter)
     json = json.+("configured" -> JsBoolean(param.value.isDefined))
-    if (includeValues && param.value.isDefined && param.parameter.kind != "SECRET") {
-      json = json.+("value" -> JsString(param.value.get.value))
+    if (includeValues) {
+      if (param.value.isDefined && param.parameter.kind != "SECRET") {
+        json = json.+("value" -> JsString(param.value.get.value))
+        if (param.value.get.contentType.isDefined && param.parameter.kind == "BINARY") {
+          json = json.+("mimeType" -> JsString(param.value.get.contentType.get))
+        }
+      }
     }
     json
   }
@@ -1963,8 +1978,13 @@ object JsonUtil {
   def jsSystemParametersWithValue(param: SystemParametersWithValue, includeValues: Boolean): JsObject = {
     var json = jsSystemParameter(param.parameter)
     json = json.+("configured" -> JsBoolean(param.value.isDefined))
-    if (includeValues && param.value.isDefined && param.parameter.kind != "SECRET") {
-      json = json.+("value" -> JsString(param.value.get.value))
+    if (includeValues) {
+      if (param.value.isDefined && param.parameter.kind != "SECRET") {
+        json = json.+("value" -> JsString(param.value.get.value))
+        if (param.value.get.contentType.isDefined && param.parameter.kind == "BINARY") {
+          json = json.+("mimeType" -> JsString(param.value.get.contentType.get))
+        }
+      }
     }
     json
   }

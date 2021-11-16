@@ -11,10 +11,10 @@
         </thead>
         <tbody>
             <tr *ngFor="let parameter of parameters">
-                <td style="text-align: center;padding-right:30px;" *ngIf="!onlyMissing"><i class="glyphicon" [ngClass]="{'glyphicon-ok': parameter.configured, 'glyphicon-remove': !parameter.configured}"></i></td>
+                <td style="text-align: center;padding-right:30px;" *ngIf="!onlyMissing"><i class="fa" [ngClass]="{'fa-check': parameter.configured, 'fa-times': !parameter.configured}"></i></td>
                 <td style="font-weight: bold;" *ngIf="isRequired(parameter)">*&nbsp;{{parameter.name}}</td>
                 <td *ngIf="!isRequired(parameter)">{{parameter.name}}</td>
-                <td *ngIf="showValues && parameter.kind == 'BINARY'"><a *ngIf="parameter.value" href (click)="downloadBinaryParameter(parameter);$event.preventDefault()">{{parameter.fileName}}</a></td>
+                <td *ngIf="showValues && parameter.kind == 'BINARY'"><a *ngIf="parameter.value != undefined" href (click)="downloadBinaryParameter(parameter);$event.preventDefault()">{{parameter.fileName}}</a></td>
                 <td *ngIf="showValues && parameter.kind != 'BINARY'"><span *ngIf="parameter.valueToShow != undefined">{{parameter.valueToShow}}</span><span *ngIf="parameter.valueToShow == undefined">{{parameter.value}}</span></td>
                 <td>{{parameter.desc}}</td>
                 <td class="operations" style="text-align: center;" *ngIf="showActions"><button type="button" class="btn btn-default" *ngIf="canEdit!(parameter)" (click)="onEdit(parameter)"><i class="fa fa-pencil"></i></button></td>

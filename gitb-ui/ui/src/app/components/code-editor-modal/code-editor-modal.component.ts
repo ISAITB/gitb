@@ -3,6 +3,8 @@ import { BsModalRef } from 'ngx-bootstrap/modal';
 import { EditorOptions } from './code-editor-options';
 import { CodemirrorComponent } from '@ctrl/ngx-codemirror';
 import { Indicator } from './indicator';
+import { DataService } from 'src/app/services/data.service';
+import { PopupService } from 'src/app/services/popup.service';
 
 @Component({
   selector: 'app-code-editor-modal',
@@ -25,7 +27,9 @@ export class CodeEditorModalComponent implements OnInit, AfterViewInit {
   styleClass = 'editor-normal'
 
   constructor(
-    private modalRef: BsModalRef
+    private modalRef: BsModalRef,
+    private dataService: DataService,
+    private popupService: PopupService
   ) { }
 
   ngOnInit(): void {
@@ -88,14 +92,10 @@ export class CodeEditorModalComponent implements OnInit, AfterViewInit {
   }
 
   copyToClipboard() {
-    let cm = this.codeEditor.codeMirror!
-    cm.focus()
-    cm.execCommand('selectAll')
-    try {
-      document.execCommand('copy')
-    } catch (e) { 
-      // Ignore 
-    }
+    let cm = 
+    this.dataService.copyToClipboard(this.codeEditor.codeMirror?.getValue()).subscribe(() => {
+      this.popupService.success('Content copied to clipboard.')
+    })
   }
 
   download() {

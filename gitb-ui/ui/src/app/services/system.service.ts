@@ -4,6 +4,7 @@ import { ConformanceConfiguration } from '../pages/organisation/conformance-stat
 import { BinaryMetadata } from '../types/binary-metadata';
 import { ConformanceStatement } from '../types/conformance-statement';
 import { ErrorDescription } from '../types/error-description';
+import { FileParam } from '../types/file-param.type';
 import { System } from '../types/system';
 import { SystemParameter } from '../types/system-parameter';
 import { SystemParameterWithValue } from '../types/system-parameter-with-value';
@@ -67,6 +68,14 @@ export class SystemService {
     })
   }
 
+  downloadSystemParameterFile(systemId: number, parameterId: number) {
+		return this.restService.get<ArrayBuffer>({
+			path: ROUTES.controllers.SystemService.downloadSystemParameterFile(systemId, parameterId).url,
+			authenticate: true,
+			arrayBuffer: true
+		})
+  }
+
   updateSystem(systemId: number, sname: string, fname: string, description: string|undefined, version: string, organisationId: number, otherSystem: number|undefined, processProperties: boolean, properties: SystemParameter[], copySystemParameters: boolean, copyStatementParameters: boolean) {
     const data: any = {
       system_sname: sname,
@@ -81,13 +90,17 @@ export class SystemService {
       data.sys_params = copySystemParameters
       data.stm_params = copyStatementParameters
     }
+    let files: FileParam[]|undefined
     if (processProperties) {
-      data.properties = this.dataService.customPropertiesForPost(properties)
+      const props = this.dataService.customPropertiesForPost(properties)
+      data.properties = props.parameterJson
+      files = props.files
     }
     data.organization_id = organisationId
     return this.restService.post<void>({
       path: ROUTES.controllers.SystemService.updateSystemProfile(systemId).url,
       data: data,
+      files: files,
       authenticate: true
     })
   }
@@ -107,12 +120,16 @@ export class SystemService {
     if (description != undefined) {
       data.system_description = description
     }
+    let files: FileParam[]|undefined
     if (processProperties) {
-      data.properties = this.dataService.customPropertiesForPost(properties)
+      const props = this.dataService.customPropertiesForPost(properties)
+      data.properties = props.parameterJson
+      files = props.files
     }
     return this.restService.post<void>({
       path: ROUTES.controllers.SystemService.registerSystemWithOrganization().url,
       data: data,
+      files: files,
       authenticate: true
     })
   }
@@ -184,20 +201,33 @@ export class SystemService {
     })
   }
 
-  saveEndpointConfiguration(endpoint: number, config: ConformanceConfiguration, isBinary?: boolean) {
+  downloadEndpointConfigurationFile(systemId: number, parameterId: number, endpointId: number) {
+		return this.restService.get<ArrayBuffer>({
+			path: ROUTES.controllers.SystemService.downloadEndpointConfigurationFile(endpointId).url,
+			authenticate: true,
+      params: {
+        system_id: systemId,
+        parameter_id: parameterId
+      },      
+			arrayBuffer: true
+		})
+  }
+
+  saveEndpointConfiguration(endpoint: number, config: ConformanceConfiguration, file?: File) {
     const configToSend: any = {
       system: config.system,
       parameter: config.parameter,
-      endpoint: config.endpoint
+      endpoint: config.endpoint,
+      value: config.value
     }
-    if (isBinary != undefined && isBinary) {
-      configToSend.valueBinary = config.value
-    } else {
-      configToSend.value = config.value
+    let files: FileParam[]|undefined
+    if (file != undefined) {
+      files = [{param: 'file', data: file}]
     }
     return this.restService.post<BinaryMetadata|undefined>({
       path: ROUTES.controllers.SystemService.saveEndpointConfiguration(endpoint).url,
       authenticate: true,
+      files: files,
       data: {
         config: JSON.stringify(configToSend)
       }

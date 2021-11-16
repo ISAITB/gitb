@@ -44,7 +44,7 @@ export class BaseRestService {
     return this.call<T>(config, () => {
       // Prepare body
       let body:any
-      if (config.file == undefined) {
+      if (config.files == undefined || config.files.length == 0) {
         if (config.asJSON) {
           body = config.data
         } else {
@@ -52,10 +52,14 @@ export class BaseRestService {
         }
       } else {
         body = new FormData()
-        body.append('file', config.file)
+        for (let fileConfig of config.files) {
+          body.append(fileConfig.param, fileConfig.data)
+        }
         if (config.data != undefined) {
           for (let key in config.data) {
-            body.append(key, config.data[key])
+            if (config.data[key] != undefined) {
+              body.append(key, config.data[key])
+            }
           }
         }
       }
@@ -70,10 +74,6 @@ export class BaseRestService {
   private prepareRequestOptions(config?: HttpRequestConfig): {headers: HttpHeaders} {
     const configToUse: any = {}
     // Headers
-    let contentType: string|undefined
-    if (config && config.file) {
-      contentType = 'multipart/form-data'
-    }
     if (this.authProviderService.isAuthenticated()) {
       configToUse.headers = Utils.createHttpHeaders(this.authProviderService.accessToken, config)
     } else {
@@ -84,7 +84,9 @@ export class BaseRestService {
       if (config.params) {
         let params = new HttpParams()
         for (let key in config.params) {
-          params = params.set(key, config.params[key])
+          if (config.params[key] != undefined) {
+            params = params.set(key, config.params[key])
+          }
         }
         configToUse.params = params
       }
@@ -92,6 +94,9 @@ export class BaseRestService {
         configToUse.responseType = 'text'
       } else if (config.arrayBuffer !== undefined && config.arrayBuffer) {
         configToUse.responseType = 'arraybuffer'
+      }
+      if (config.httpResponse) {
+        configToUse.observe = 'response'
       }
     }
     return configToUse

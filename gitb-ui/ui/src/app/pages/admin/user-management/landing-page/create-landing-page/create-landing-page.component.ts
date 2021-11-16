@@ -1,11 +1,13 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
 import { LandingPageService } from 'src/app/services/landing-page.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { LandingPage } from 'src/app/types/landing-page';
+import { CommunityTab } from '../../community/community-details/community-tab.enum';
 
 @Component({
   selector: 'app-create-landing-page',
@@ -22,7 +24,7 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
   savePending = false
 
   constructor(
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private landingPageService: LandingPageService,
     private confirmationDialogService: ConfirmationDialogService,
@@ -60,6 +62,14 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
     }
   }
 
+  private clearCachedLandingPageIfNeeded() {
+    if ((this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin) 
+      && this.dataService.vendor!.community == this.communityId && this.page.default) {
+        // Update if we are Test Bed or community admins and we are editing the default landing page.
+        this.dataService.currentLandingPageContent = undefined
+    }
+  }
+
   doCreate() {
     this.savePending = true
     this.landingPageService.createLandingPage(this.page.name!, this.page.description, this.page.content, this.page.default!, this.communityId)
@@ -67,6 +77,7 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
       if (this.isErrorDescription(data)) {
         this.addAlertError(data.error_description)
       } else {
+        this.clearCachedLandingPageIfNeeded()
         this.cancelCreateLandingPage()
         this.popupService.success('Landing page created.')
       }
@@ -76,7 +87,7 @@ export class CreateLandingPageComponent extends BaseComponent implements OnInit,
   }
 
   cancelCreateLandingPage() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId])
+    this.routingService.toCommunity(this.communityId, CommunityTab.landingPages)
   }
 
 }

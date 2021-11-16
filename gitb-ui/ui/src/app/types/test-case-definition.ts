@@ -1,3 +1,4 @@
+import { ActorInfo } from "../components/diagram/actor-info";
 import { StepData } from "../components/diagram/step-data";
 import { UserInteraction } from "./user-interaction";
 
@@ -18,7 +19,7 @@ export interface TestCaseDefinition {
         type: number
     }
     actors: {
-        actor: {id: string, name?: string, displayOrder?: number}[]
+        actor: ActorInfo[]
     }
     preliminary?: UserInteraction[]
     steps: StepData[]

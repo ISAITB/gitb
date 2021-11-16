@@ -5,6 +5,7 @@ import com.gitb.core.TypedParameter;
 import com.gitb.core.TypedParameters;
 import com.gitb.core.UsageEnumeration;
 import com.gitb.engine.expr.ExpressionHandler;
+import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.processing.IProcessingHandler;
@@ -15,6 +16,7 @@ import com.gitb.tdl.Process;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
+import com.gitb.types.StringType;
 import com.gitb.utils.BindingUtils;
 import com.gitb.utils.ErrorUtils;
 
@@ -34,18 +36,59 @@ public abstract class AbstractProcessingStepProcessorActor<T extends Process> ex
 
     protected ProcessingData getData(IProcessingHandler handler, String operation) {
         ProcessingData data = new ProcessingData();
+        List<TypedParameter> params = getParams(handler, operation);
         List<Binding> bindings = step.getInput();
-        boolean isNameBinding = BindingUtils.isNameBinding(bindings);
-        if (isNameBinding) {
-            setInputWithNameBinding(data, bindings, operation, handler);
+        if (bindings.isEmpty()) {
+            if (step.getInputAttribute() != null) {
+                setInputWithInputValue(data, step.getInputAttribute(), params);
+            }
         } else {
-            setInputWithModuleDefinition(data, bindings, operation, handler);
+            boolean isNameBinding = BindingUtils.isNameBinding(bindings);
+            if (isNameBinding) {
+                setInputWithNameBinding(data, bindings, params);
+            } else {
+                setInputWithModuleDefinition(data, bindings, params);
+            }
         }
+        checkRequiredParameters(data, params);
         return data;
     }
 
-    private void setInputWithNameBinding(ProcessingData processingData, List<Binding> input, String operation, IProcessingHandler handler) {
-        List<TypedParameter> params = getParams(handler, operation);
+    private void setInputWithInputValue(ProcessingData processingData, String inputValue, List<TypedParameter> params) {
+        // Find the first required parameter or, if no required parameter exists, the first optional parameter.
+        TypedParameter requiredParameter = null;
+        TypedParameter optionalParameter = null;
+        for (var param: params) {
+            if (param.getUse() == UsageEnumeration.R && requiredParameter == null) {
+                requiredParameter = param;
+                if (optionalParameter != null) {
+                    break;
+                }
+            } else if (param.getUse() == UsageEnumeration.O && optionalParameter == null) {
+                optionalParameter = param;
+                if (requiredParameter != null) {
+                    break;
+                }
+            }
+        }
+        // Resolve the variable.
+        var variableResolver = new VariableResolver(scope);
+        DataType inputType;
+        if (variableResolver.isVariableReference(inputValue)) {
+            inputType = variableResolver.resolveVariable(inputValue);
+        } else {
+            inputType = new StringType(inputValue);
+        }
+        var parameterToUse = (requiredParameter == null)?optionalParameter:requiredParameter;
+        if (parameterToUse != null) {
+            inputType = inputType.convertTo(parameterToUse.getType());
+            processingData.addInput(parameterToUse.getName(), inputType);
+        } else {
+            processingData.addInput("", inputType);
+        }
+    }
+
+    private void setInputWithNameBinding(ProcessingData processingData, List<Binding> input, List<TypedParameter> params) {
         for (Binding binding : input) {
             TypedParameter parameter = getParam(params, binding.getName());
             DataType data;
@@ -56,11 +99,9 @@ public abstract class AbstractProcessingStepProcessorActor<T extends Process> ex
             }
             processingData.addInput(binding.getName(), data);
         }
-        checkRequiredParameters(processingData, params);
     }
 
-    private void setInputWithModuleDefinition(ProcessingData processingData, List<Binding> input, String operation, IProcessingHandler handler) {
-        List<TypedParameter> params = getParams(handler, operation);
+    private void setInputWithModuleDefinition(ProcessingData processingData, List<Binding> input, List<TypedParameter> params) {
         Iterator<TypedParameter> expectedParamsIterator = params.iterator();
         Iterator<Binding> inputsIterator = input.iterator();
         while (expectedParamsIterator.hasNext() && inputsIterator.hasNext()) {
@@ -69,7 +110,6 @@ public abstract class AbstractProcessingStepProcessorActor<T extends Process> ex
             DataType result = expressionHandler.processExpression(inputExpression, expectedParam.getType());
             processingData.addInput(expectedParam.getName(), result);
         }
-        checkRequiredParameters(processingData, params);
     }
 
     private void checkRequiredParameters(ProcessingData processingData, List<TypedParameter> expectedParameters) {

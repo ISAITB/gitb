@@ -13,14 +13,14 @@
 			<div class="col-md-2">
 				<aside class="sidebar">
 					<ul class="nav nav-list primary push-bottom">
-						<li><a routerLink="sessions">Session Dashboard</a></li>
-						<li><a routerLink="conformance">Conformance Dashboard</a></li>
-						<li class="menu-section-start" *ngIf="dataService.isSystemAdmin"><a routerLink="domains">{{dataService.labelDomain()}} Management</a></li>
-						<li class="menu-section-start" *ngIf="dataService.isCommunityAdmin && dataService.community!.domainId != undefined"><a [routerLink]="['domains', dataService.community!.domainId]">{{dataService.labelDomain()}} Management</a></li>
-						<li *ngIf="dataService.isSystemAdmin"><a routerLink="users">User Management</a></li>
-						<li *ngIf="dataService.isCommunityAdmin"><a [routerLink]="['users', 'community', communityId]">Community Management</a></li>
-						<li class="menu-section-start"><a routerLink="export">Data Export</a></li>
-						<li><a routerLink="import">Data Import</a></li>
+						<li><a (click)="routingService.toSessionDashboard()">Session Dashboard</a></li>
+						<li><a (click)="routingService.toConformanceDashboard()">Conformance Dashboard</a></li>
+						<li class="menu-section-start" *ngIf="dataService.isSystemAdmin"><a (click)="routingService.toDomains()">{{dataService.labelDomain()}} Management</a></li>
+						<li class="menu-section-start" *ngIf="dataService.isCommunityAdmin && dataService.community!.domainId != undefined"><a (click)="routingService.toDomain(dataService.community!.domainId)">{{dataService.labelDomain()}} Management</a></li>
+						<li *ngIf="dataService.isSystemAdmin"><a (click)="routingService.toUserManagement()">User Management</a></li>
+						<li *ngIf="dataService.isCommunityAdmin"><a (click)="routingService.toCommunity(communityId!)">Community Management</a></li>
+						<li class="menu-section-start"><a (click)="routingService.toDataExport()">Data Export</a></li>
+						<li><a (click)="routingService.toDataImport()">Data Import</a></li>
 					</ul>
 				</aside>
 			</div>

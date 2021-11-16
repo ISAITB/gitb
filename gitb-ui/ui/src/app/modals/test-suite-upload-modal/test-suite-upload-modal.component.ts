@@ -6,6 +6,7 @@ import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { ErrorService } from 'src/app/services/error.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { FileData } from 'src/app/types/file-data.type';
 import { Specification } from 'src/app/types/specification';
 import { PendingTestSuiteUploadChoice } from './pending-test-suite-upload-choice';
 import { SpecificationChoice } from './specification-choice';
@@ -36,7 +37,7 @@ export class TestSuiteUploadModalComponent implements OnInit {
   hasChoicesToComplete = true
   specificationNames: {[key: number]: string} = {}
   skipCount = 0
-  file?: File
+  file?: FileData
   uploadResult?: TestSuiteUploadResult
   report?: ValidationReport
   results?: SpecificationResult[]
@@ -217,7 +218,7 @@ export class TestSuiteUploadModalComponent implements OnInit {
   uploadTestSuite() {
     this.actionPending = true
     this.actionProceedPending = true
-    this.conformanceService.deployTestSuite(this.specificationIds(), this.file!)
+    this.conformanceService.deployTestSuite(this.specificationIds(), this.file!.file!)
     .subscribe((result) => {
       this.uploadResult = result
       if (this.uploadResult.validationReport) {
@@ -354,7 +355,7 @@ export class TestSuiteUploadModalComponent implements OnInit {
     this.modalInstance.hide()
   }
 
-  selectArchive(file: File) {
+  selectArchive(file: FileData) {
     this.file = file
   }
 

@@ -174,7 +174,7 @@ public class ReportGenerator {
         }
         if (reportType instanceof TAR) {
             TAR tarReport = (TAR)reportType;
-            if (addContext) {
+            if (addContext && tarReport.getContext() != null) {
                 for (AnyContent context : tarReport.getContext().getItem()) {
                     addContextItem(context, report.getContextItems(), "");
                 }

@@ -1,8 +1,10 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { forkJoin } from 'rxjs';
-import { map, share } from 'rxjs/operators';
+import { map, mergeMap, share } from 'rxjs/operators';
 import { Constants } from 'src/app/common/constants';
 import { ReportService } from 'src/app/services/report.service';
+import { TestService } from 'src/app/services/test.service';
+import { TestCaseDefinition } from 'src/app/types/test-case-definition';
 import { TestStepResult } from 'src/app/types/test-step-result';
 import { ActorInfo } from '../actor-info';
 import { DiagramEvents } from '../diagram-events';
@@ -30,7 +32,8 @@ export class TestSessionPresentationComponent implements OnInit {
   testResultFlat:{[key: string]: TestStepResult} = {}
 
   constructor(
-    private reportService: ReportService
+    private reportService: ReportService,
+    private testService: TestService
   ) { }
 
   ngOnInit(): void {
@@ -51,30 +54,26 @@ export class TestSessionPresentationComponent implements OnInit {
     // Load test result details
     const obs2 = this.reportService.getTestResultOfSession(this.sessionId)
     .pipe(
-      map((result) => {
-        let testcase = JSON.parse(result.tpl!)
-        let actorInfoOfTests: {[key: string]: ActorInfo[]} = {}
-        let stepsOfTests: {[key: string]: StepData[]} = {}
-        let actors: ActorInfo[] = []
-        for (let actor of testcase.actors.actor) {
-          actors.push({
-            id: actor.id,
-            name: actor.name,
-            role: actor.role
+      mergeMap((result) => {
+        let testcase = JSON.parse(result.tpl!) as TestCaseDefinition
+        return this.testService.prepareTestCaseDisplayActors(testcase, result.specificationId).pipe(
+          map((actorDataToUse) => {
+            let actorInfoOfTests: {[key: string]: ActorInfo[]} = {}
+            let stepsOfTests: {[key: string]: StepData[]} = {}
+            actorInfoOfTests[this.sessionId] = actorDataToUse
+            stepsOfTests[this.sessionId] = testcase.steps
+            this.outputMessage = result.outputMessage
+            if (result.result == Constants.TEST_CASE_RESULT.SUCCESS) {
+              this.outputMessageType = 'success'
+            } else if (result.result == Constants.TEST_CASE_RESULT.FAILURE) {
+              this.outputMessageType = 'danger'
+            } else {
+              this.outputMessageType = 'info'
+            }
+            this.actorInfoOfTests = actorInfoOfTests
+            this.stepsOfTests = stepsOfTests
           })
-        }
-        actorInfoOfTests[this.sessionId] = actors
-        stepsOfTests[this.sessionId] = testcase.steps
-        this.outputMessage = result.outputMessage
-        if (result.result == Constants.TEST_CASE_RESULT.SUCCESS) {
-          this.outputMessageType = 'success'
-        } else if (result.result == Constants.TEST_CASE_RESULT.FAILURE) {
-          this.outputMessageType = 'danger'
-        } else {
-          this.outputMessageType = 'info'
-        }
-        this.actorInfoOfTests = actorInfoOfTests
-        this.stepsOfTests = stepsOfTests
+        )
       }),
       share() // We return a shared observable here otherwise the requests are repeated
     )

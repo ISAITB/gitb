@@ -1,0 +1,40 @@
+@import "../../../styles/less/_common.less";
+
+.filterRow {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    .filterCell {
+        display: flex;
+        flex-direction: column;
+        min-width: 120px;
+        flex-grow: 1;
+        flex-basis: 0;
+        .filterName {
+            font-weight: bold;
+            padding-left: 8px;
+            padding-right: 8px;
+            min-height: 40px;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            border-bottom: 2px solid @gray-dark-1;
+            overflow-x: hidden;
+        }
+        .filterValue {
+            padding: 8px;
+        }
+        &.timeFilter {
+            min-width: 200px;
+        }
+        &.sessionFilter {
+            min-width: 200px;
+        }
+        &.filler {
+            flex-grow: 1;
+            & .filterName, .filterValue {
+                padding: 0px;
+            }
+        }
+    }
+}

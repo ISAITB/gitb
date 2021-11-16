@@ -7,6 +7,7 @@ import com.gitb.tdl.NamedTypedString;
 import com.gitb.tdl.Variable;
 
 import java.util.Base64;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -143,63 +144,100 @@ public class DataTypeFactory {
         return data;
     }
 
-    public DataType create(AnyContent content) {
-        DataType type;
-        String declaredType = content.getType();
-        if (declaredType == null) {
-            if (content.getItem().size() > 0) {
-                boolean namedChildren = false;
-                for (AnyContent child: content.getItem()) {
-                    if (child.getName() != null) {
-                        namedChildren = true;
-                    } else {
-                        namedChildren = false;
-                        break;
-                    }
-                }
-                if (namedChildren) {
-                    // Named child items - this can only be a map.
-                    declaredType = DataType.MAP_DATA_TYPE;
-                }
+    public AnyContent applyFilter(AnyContent content, Function<AnyContent, Boolean> filter) {
+        AnyContent result = null;
+        if (content != null && filter.apply(content)) {
+            var childrenRemoved = content.getItem().removeIf((x) -> x == null || applyFilter(x, filter) == null);
+            if (!childrenRemoved || !content.getItem().isEmpty()) {
+                result = content;
             }
         }
-        if (DataType.MAP_DATA_TYPE.equals(declaredType)) {
-            type = new MapType();
-            for (AnyContent child : content.getItem()) {
-                ((MapType) type).addItem(child.getName(), create(child));
+        return result;
+    }
+
+    public DataType create(AnyContent content) {
+        return create(content, (x) -> true);
+    }
+
+    public DataType create(AnyContent content, Function<AnyContent, Boolean> filter) {
+        DataType type = null;
+        if (content != null && filter.apply(content)) {
+            String declaredType = content.getType();
+            if (declaredType == null) {
+                if (content.getItem().size() > 0) {
+                    boolean namedChildren = false;
+                    for (AnyContent child: content.getItem()) {
+                        if (child.getName() != null) {
+                            namedChildren = true;
+                        } else {
+                            namedChildren = false;
+                            break;
+                        }
+                    }
+                    if (namedChildren) {
+                        // Named child items - this can only be a map.
+                        declaredType = DataType.MAP_DATA_TYPE;
+                    } else {
+                        declaredType = DataType.LIST_DATA_TYPE;
+                    }
+                } else {
+                    if (content.getEmbeddingMethod() == ValueEmbeddingEnumeration.BASE_64) {
+                        declaredType = DataType.BINARY_DATA_TYPE;
+                    } else {
+                        declaredType = DataType.STRING_DATA_TYPE;
+                    }
+                }
             }
-        } else if (DataType.STRING_DATA_TYPE.equals(declaredType)) {
-            type = new StringType();
-            type.setValue(content.getValue());
-        } else if (DataType.BINARY_DATA_TYPE.equals(declaredType)) {
-            type = new BinaryType();
-            if (ValueEmbeddingEnumeration.BASE_64.equals(content.getEmbeddingMethod())) {
-                type.setValue(Base64.getDecoder().decode(content.getValue()));
+            if (DataType.MAP_DATA_TYPE.equals(declaredType)) {
+                type = new MapType();
+                for (AnyContent child : content.getItem()) {
+                    var childData = create(child, filter);
+                    if (childData != null) {
+                        ((MapType)type).addItem(child.getName(), childData);
+                    }
+                }
+                if (((MapType) type).isEmpty()) {
+                    type = null;
+                }
+            } else if (DataType.STRING_DATA_TYPE.equals(declaredType)) {
+                type = new StringType();
+                type.setValue(content.getValue());
+            } else if (DataType.BINARY_DATA_TYPE.equals(declaredType)) {
+                type = new BinaryType();
+                if (ValueEmbeddingEnumeration.BASE_64.equals(content.getEmbeddingMethod())) {
+                    type.setValue(Base64.getDecoder().decode(content.getValue()));
+                } else {
+                    throw new IllegalStateException("Only base64 embedding supported for binary types");
+                }
+            } else if (DataType.BOOLEAN_DATA_TYPE.equals(declaredType)) {
+                type = new BooleanType();
+                type.setValue(Boolean.valueOf(content.getValue()));
+            } else if (DataType.NUMBER_DATA_TYPE.equals(declaredType)) {
+                type = new NumberType();
+                type.setValue(content.getValue());
+            } else if (DataType.LIST_DATA_TYPE.equals(declaredType)) {
+                type = new ListType();
+                for (AnyContent child : content.getItem()) {
+                    var childData = create(child, filter);
+                    if (childData != null) {
+                        ((ListType)type).append(childData);
+                    }
+                }
+                if (((ListType) type).isEmpty()) {
+                    type = null;
+                }
+            } else if (DataType.OBJECT_DATA_TYPE.equals(declaredType)) {
+                type = new ObjectType();
+                if (ValueEmbeddingEnumeration.BASE_64.equals(content.getEmbeddingMethod())) {
+                    type.deserialize(Base64.getDecoder().decode(content.getValue()));
+                } else if (ValueEmbeddingEnumeration.STRING.equals(content.getEmbeddingMethod())) {
+                    type.deserialize(content.getValue().getBytes());
+                } else {
+                    throw new IllegalStateException("Only base64 and string embedding supported for object types");
+                }
             } else {
-                throw new IllegalStateException("Only base64 embedding supported for binary types");
+                throw new IllegalStateException("Unsupported data type [" + declaredType + "]");
             }
-        } else if (DataType.BOOLEAN_DATA_TYPE.equals(declaredType)) {
-            type = new BooleanType();
-            type.setValue(Boolean.valueOf(content.getValue()));
-        } else if (DataType.NUMBER_DATA_TYPE.equals(declaredType)) {
-            type = new NumberType();
-            type.setValue(content.getValue());
-        } else if (DataType.LIST_DATA_TYPE.equals(declaredType)) {
-            type = new ListType();
-            for (AnyContent child : content.getItem()) {
-                ((ListType) type).append(create(child));
-            }
-        } else if (DataType.OBJECT_DATA_TYPE.equals(declaredType)) {
-            type = new ObjectType();
-            if (ValueEmbeddingEnumeration.BASE_64.equals(content.getEmbeddingMethod())) {
-                type.deserialize(Base64.getDecoder().decode(content.getValue()));
-            } else if (ValueEmbeddingEnumeration.STRING.equals(content.getEmbeddingMethod())) {
-                type.deserialize(content.getValue().getBytes());
-            } else {
-                throw new IllegalStateException("Only base64 and string embedding supported for object types");
-            }
-        } else {
-            throw new IllegalStateException("Unsupported data type [" + declaredType + "]");
         }
         return type;
     }

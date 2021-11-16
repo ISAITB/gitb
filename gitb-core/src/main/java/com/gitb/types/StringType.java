@@ -4,19 +4,27 @@ import com.gitb.exceptions.GITBEngineInternalError;
 
 import javax.xml.xpath.XPathExpression;
 import java.io.UnsupportedEncodingException;
+import java.util.Objects;
 
 /**
  * Created by senan on 9/8/14.
  */
 public class StringType extends PrimitiveType {
-    private String data = "";
+    private String data;
+    private String encoding;
 
 	public StringType() {
+        this("");
 	}
 
 	public StringType(String data) {
-		this.data = data;
+        this(data, DEFAULT_ENCODING);
 	}
+
+    public StringType(String data, String encoding) {
+        this.data = Objects.requireNonNullElse(data, "");
+        this.encoding = encoding;
+    }
 
 	@Override
     public String getType() {
@@ -32,7 +40,8 @@ public class StringType extends PrimitiveType {
     public void deserialize(byte[] content, String encoding) {
         try {
             setValue(new String(content, encoding));
-        }catch(UnsupportedEncodingException uee){
+            this.encoding = encoding;
+        } catch(UnsupportedEncodingException uee) {
             throw new IllegalStateException("Invalid Test Case!", uee);
         }
     }
@@ -41,7 +50,7 @@ public class StringType extends PrimitiveType {
     @Override
     public byte[] serialize(String encoding) {
         try {
-            return data.getBytes(encoding);
+            return ((String) getValue()).getBytes(encoding);
         } catch (UnsupportedEncodingException e) {
             throw new GITBEngineInternalError(e);
         }
@@ -63,42 +72,46 @@ public class StringType extends PrimitiveType {
     }
 
     @Override
-    public BinaryType toBinaryType() {
+    protected BinaryType toBinaryType() {
         BinaryType type = new BinaryType();
-        type.deserialize(serializeByDefaultEncoding());
+        type.deserialize(serialize(encoding));
         return type;
     }
 
     @Override
-    public NumberType toNumberType() {
+    protected NumberType toNumberType() {
         NumberType type = new NumberType();
-        type.setValue(data);
+        type.setValue(getValue());
         return type;
     }
 
     @Override
-    public BooleanType toBooleanType() {
+    protected BooleanType toBooleanType() {
         BooleanType type = new BooleanType();
-        type.setValue(Boolean.valueOf(data));
+        type.setValue(Boolean.valueOf((String) getValue()));
         return type;
     }
 
     @Override
     public ObjectType toObjectType() {
         ObjectType type = new ObjectType();
-        type.deserialize(serializeByDefaultEncoding());
+        type.deserialize(serialize(encoding));
         return type;
     }
 
     @Override
-    public SchemaType toSchemaType() {
+    protected SchemaType toSchemaType() {
         SchemaType type = new SchemaType();
-        type.deserialize(serializeByDefaultEncoding());
+        type.deserialize(serialize(encoding));
         return type;
     }
 
     @Override
-    public StringType toStringType() {
-	    return this;
+    protected StringType toStringType() {
+	    return new StringType((String) this.getValue(), this.encoding);
+    }
+
+    public String getEncoding() {
+        return encoding;
     }
 }

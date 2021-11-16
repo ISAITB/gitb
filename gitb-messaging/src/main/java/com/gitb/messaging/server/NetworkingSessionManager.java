@@ -32,7 +32,7 @@ public class NetworkingSessionManager {
 		if(sessions.containsKey(address)) {
 			throw new ExistingSessionException(address, messagingSessionId);
 		} else {
-		    logger.debug(MarkerFactory.getDetachedMarker(testSessionId), "Test session ["+testSessionId+"] listening on port ["+port+"] for connections from ["+address+"]");
+		    logger.info(MarkerFactory.getDetachedMarker(testSessionId), "Test session ["+testSessionId+"] listening on port ["+port+"] for connections from ["+address+"]");
 			sessions.put(address, new SessionInfo(messagingSessionId, testSessionId));
 			return messagingSessionId;
 		}

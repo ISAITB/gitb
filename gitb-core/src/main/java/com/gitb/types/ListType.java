@@ -44,6 +44,12 @@ public class ListType extends ContainerType {
         return elements.get(index);
     }
 
+    public void replaceItem(int index, DataType value) {
+        if (this.elements != null) {
+            this.elements.set(index, value);
+        }
+    }
+
     /**
      * Get the type of all contained elements
      * @return
@@ -90,19 +96,43 @@ public class ListType extends ContainerType {
         if (value instanceof ListType) {
             String leftContainedType = getContainedType();
             String resultContainedType = ((ListType) value).getContainedType();
-            if (leftContainedType == null || resultContainedType == null) {
-                throw new IllegalStateException("Unable to determine the contained types for the list variables in the assign expression.");
-            } else if (!leftContainedType.equals(resultContainedType)) {
-                throw new IllegalStateException("The assigned variable is of type list["+leftContainedType+"] whereas the variable toassign is of type list["+resultContainedType+"]");
-            } else {
+            if (containedTypesOk(leftContainedType, resultContainedType)) {
                 elements.clear();
-                List<DataType> items = (List<DataType>)((ListType) value).getValue();
-                for (DataType item: items) {
+                List<DataType> items = (List<DataType>) ((ListType) value).getValue();
+                for (DataType item : items) {
                     append(item);
+                }
+            }
+        } else if (value instanceof List) {
+            var values = (List<?>) value;
+            if (values.isEmpty()) {
+                elements.clear();
+            } else {
+                if (values.get(0) instanceof DataType) {
+                    String leftContainedType = getContainedType();
+                    String resultContainedType = ((DataType) values.get(0)).getType();
+                    if (containedTypesOk(leftContainedType, resultContainedType)) {
+                        elements.clear();
+                        for (var item : values) {
+                            append((DataType) item);
+                        }
+                    }
+                } else {
+                    throw new IllegalStateException("List value assignment was attempted with an invalid list.");
                 }
             }
         } else {
             throw new IllegalStateException("Only list types can be directly assigned to other list types.");
+        }
+    }
+
+    private boolean containedTypesOk(String leftContainedType, String resultContainedType) {
+        if (leftContainedType == null || resultContainedType == null) {
+            throw new IllegalStateException("Unable to determine the contained types for the list variables in the assign expression.");
+        } else if (!leftContainedType.equals(resultContainedType)) {
+            throw new IllegalStateException("The assigned variable is of type list[" + leftContainedType + "] whereas the variable toassign is of type list[" + resultContainedType + "]");
+        } else {
+            return true;
         }
     }
 
@@ -117,7 +147,7 @@ public class ListType extends ContainerType {
     }
 
     @Override
-    public ListType toListType() {
+    protected ListType toListType() {
         ListType list = new ListType(getContainedType());
         for (DataType obj: elements) {
             list.append(obj);
@@ -126,7 +156,7 @@ public class ListType extends ContainerType {
     }
 
     @Override
-    public MapType toMapType() {
+    protected MapType toMapType() {
         MapType map = new MapType();
         int counter = 0;
         for (DataType obj: elements) {
@@ -141,4 +171,18 @@ public class ListType extends ContainerType {
         }
     }
 
+    @Override
+    protected StringType toStringType() {
+        StringType type = new StringType();
+        StringBuilder str = new StringBuilder();
+        var iterator = elements.iterator();
+        while (iterator.hasNext()) {
+            str.append((String) iterator.next().convertTo(STRING_DATA_TYPE).getValue());
+            if (iterator.hasNext()) {
+                str.append(",");
+            }
+        }
+        type.setValue(str.toString());
+        return type;
+    }
 }

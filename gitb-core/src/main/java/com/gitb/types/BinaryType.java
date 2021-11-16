@@ -24,12 +24,12 @@ public class BinaryType extends PrimitiveType {
 
     @Override
     public void deserialize(byte[] content, String encoding) {
-        this.content = content;
+        setValue(content);
     }
 
     @Override
     public byte[] serialize(String encoding) {
-        return content;
+        return (byte[]) getValue();
     }
 
     @Override
@@ -43,21 +43,21 @@ public class BinaryType extends PrimitiveType {
     }
 
     @Override
-    public StringType toStringType() {
-        return new StringType(new String(content));
+    protected StringType toStringType() {
+        return new StringType(new String((byte[]) getValue()));
     }
 
     @Override
     public ObjectType toObjectType() {
         ObjectType type = new ObjectType();
-        type.deserialize(content);
+        type.deserialize((byte[]) getValue());
         return type;
     }
 
     @Override
-    public SchemaType toSchemaType() {
+    protected SchemaType toSchemaType() {
         SchemaType type = new SchemaType();
-        type.deserialize(content);
+        type.deserialize((byte[]) getValue());
         return type;
     }
 

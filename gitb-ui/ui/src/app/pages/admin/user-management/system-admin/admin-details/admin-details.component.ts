@@ -1,9 +1,10 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { UserService } from 'src/app/services/user.service';
 import { User } from 'src/app/types/user.type';
 
@@ -24,7 +25,7 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
 
   constructor(
     public dataService: DataService,
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private userService: UserService,
     private confirmationDialogService: ConfirmationDialogService,
@@ -85,7 +86,7 @@ export class AdminDetailsComponent extends BaseComponent implements OnInit, Afte
   }
 
   cancelDetailAdmin() {
-    this.router.navigate(['admin', 'users'])
+    this.routingService.toUserManagement()
   }
 
 }

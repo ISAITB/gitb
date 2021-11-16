@@ -1,5 +1,5 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, NavigationExtras, Router } from '@angular/router';
+import { AfterViewInit, Component, OnInit, ViewChild } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { CommunityService } from 'src/app/services/community.service';
@@ -11,6 +11,7 @@ import { LandingPageService } from 'src/app/services/landing-page.service';
 import { LegalNoticeService } from 'src/app/services/legal-notice.service';
 import { OrganisationService } from 'src/app/services/organisation.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { TriggerService } from 'src/app/services/trigger.service';
 import { UserService } from 'src/app/services/user.service';
 import { Community } from 'src/app/types/community';
@@ -22,6 +23,8 @@ import { Organisation } from 'src/app/types/organisation.type';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { Trigger } from 'src/app/types/trigger';
 import { User } from 'src/app/types/user.type';
+import { TabsetComponent } from 'ngx-bootstrap/tabs';
+import { CommunityTab } from './community-tab.enum';
 
 @Component({
   selector: 'app-community-details',
@@ -32,20 +35,20 @@ import { User } from 'src/app/types/user.type';
 export class CommunityDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
 
   community!: Community
-  adminStatus = {status: Constants.STATUS.PENDING}
-  organisationStatus = {status: Constants.STATUS.PENDING}
-  landingPageStatus = {status: Constants.STATUS.PENDING}
-  errorTemplateStatus = {status: Constants.STATUS.PENDING}
-  legalNoticeStatus = {status: Constants.STATUS.PENDING}
-  triggerStatus = {status: Constants.STATUS.PENDING}
+  adminStatus = {status: Constants.STATUS.NONE}
+  organisationStatus = {status: Constants.STATUS.NONE}
+  landingPageStatus = {status: Constants.STATUS.NONE}
+  errorTemplateStatus = {status: Constants.STATUS.NONE}
+  legalNoticeStatus = {status: Constants.STATUS.NONE}
+  triggerStatus = {status: Constants.STATUS.NONE}
   savePending = false
   deletePending = false
   communityId!: number
   originalDomainId?: number
   adminColumns: TableColumnDefinition[] = []
   organizationColumns: TableColumnDefinition[] = [
-    { field: 'sname', title: 'Short name' },
-    { field: 'fname', title: 'Full name' }
+    { field: 'sname', title: 'Short name', sortable: true, order: 'asc' },
+    { field: 'fname', title: 'Full name', sortable: true }
   ]
   landingPagesColumns: TableColumnDefinition[] = [
     { field: 'name', title: 'Name' },
@@ -80,11 +83,23 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   testBedLegalNotice?: LegalNotice
   testBedLandingPage?: LandingPage
   testBedErrorTemplate?: ErrorTemplate
+  tabToShow = CommunityTab.organisations
+  tabTriggers!: Record<CommunityTab, {index: number, loader: () => any}>
+  @ViewChild('tabs', { static: false }) tabs?: TabsetComponent;
+
+  organisationFilter?: string
+  currentOrganisationsPage = 1
+  organisationCount = 0
+  organisationSortOrder = 'asc'
+  organisationSortColumn = 'shortname'
+  isNextPageOrganisationsDisabled = false
+  isPreviousPageOrganisationsDisabled = false
 
   constructor(
     public dataService: DataService,
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
+    router: Router,
     private userService: UserService,
     private landingPageService: LandingPageService,
     private legalNoticeService: LegalNoticeService,
@@ -95,10 +110,20 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     private communityService: CommunityService,
     private conformanceService: ConformanceService,
     private popupService: PopupService
-  ) { super() }
+  ) {
+    super()
+    // Access the tab to show via router state to have it cleared upon refresh.
+    const tabParam = router.getCurrentNavigation()?.extras?.state?.tab
+    if (tabParam != undefined) {
+      this.tabToShow = CommunityTab[tabParam as keyof typeof CommunityTab]
+    }
+  }
 
   ngAfterViewInit(): void {
     this.dataService.focus('sname')
+    setTimeout(() => {
+      this.triggerTab(this.tabToShow)
+    })
   }
 
   ngOnInit(): void {
@@ -114,86 +139,153 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     }
     this.adminColumns.push({ field: 'ssoStatusText', title: 'Status' })
     if (this.dataService.configuration.registrationEnabled) {
-      this.organizationColumns.push({ field: 'templateName', title: 'Set as template' })
+      this.organizationColumns.push({ field: 'templateName', title: 'Set as template', sortable: true })
     }
     this.triggerEventTypeMap = this.dataService.idToLabelMap(this.dataService.triggerEventTypes())
-    this.legalNoticeService.getTestBedDefaultLegalNotice()
-    .subscribe((data) => {
-      if (data.exists) this.testBedLegalNotice = data
-    })
-    this.landingPageService.getCommunityDefaultLandingPage(Constants.DEFAULT_COMMUNITY_ID)
-    .subscribe((data) => {
-      if (data.exists) this.testBedLandingPage = data
-    })
-    this.errorTemplateService.getCommunityDefaultErrorTemplate(Constants.DEFAULT_COMMUNITY_ID)
-    .subscribe((data) => {
-      if (data.exists) this.testBedErrorTemplate = data
-    })
-    this.userService.getCommunityAdministrators(this.communityId)
-    .subscribe((data) => {
-      for (let admin of data) {
-        admin.ssoStatusText = this.dataService.userStatus(admin.ssoStatus)
-      }
-      this.admins = data
-    }).add(() => {
-      this.adminStatus.status = Constants.STATUS.FINISHED
-    })
     if (this.dataService.isSystemAdmin) {
       this.conformanceService.getDomains()
       .subscribe((data) => {
         this.domains = data
       })
     }
-    this.landingPageService.getLandingPagesByCommunity(this.communityId)
-    .subscribe((data) => {
-      this.landingPages = data
-    }).add(() => {
-      this.landingPageStatus.status = Constants.STATUS.FINISHED
-    })
-    this.legalNoticeService.getLegalNoticesByCommunity(this.communityId)
-    .subscribe((data) => {
-      this.legalNotices = data
-    }).add(() => {
-      this.legalNoticeStatus.status = Constants.STATUS.FINISHED
-    })
-    this.errorTemplateService.getErrorTemplatesByCommunity(this.communityId)
-    .subscribe((data) => {
-      this.errorTemplates = data
-    }).add(() => {
-      this.errorTemplateStatus.status = Constants.STATUS.FINISHED
-    })
-    this.triggerService.getTriggersByCommunity(this.communityId)
-    .subscribe((data) => {
-      for (let trigger of data) {
-        trigger.eventTypeLabel = this.triggerEventTypeMap[trigger.eventType]
-        if (trigger.latestResultOk != undefined) {
-          if (trigger.latestResultOk) {
-            trigger.statusText = 'Success'
-          } else {
-            trigger.statusText = 'Error'
-          }
-        } else {
-          trigger.statusText = '-'
-        }
-      }
-      this.triggers = data
-    }).add(() => {
-      this.triggerStatus.status = Constants.STATUS.FINISHED    
-    })
-    this.organisationService.getOrganisationsByCommunity(this.communityId)
-    .subscribe((data) => {
-      this.organizations = data
-    }).add(() => {
-      this.organisationStatus.status = Constants.STATUS.FINISHED    
-    })
+    // Setup tab triggers
+    this.setupTabs()
   }
-  
+
+  private setupTabs() {
+    const temp: Partial<Record<CommunityTab, {index: number, loader: () => any}>> = {}
+    temp[CommunityTab.organisations] = {index: 0, loader: () => {this.showOrganisations()}}
+    let tabIndexOffset = 1
+    if (this.communityId != Constants.DEFAULT_COMMUNITY_ID) {
+      tabIndexOffset = 0
+      temp[CommunityTab.administrators] = {index: 1, loader: () => {this.showAdministrators()}}
+    }
+    temp[CommunityTab.landingPages] = {index: 2-tabIndexOffset, loader: () => {this.showLandingPages()}}
+    temp[CommunityTab.legalNotices] = {index: 3-tabIndexOffset, loader: () => {this.showLegalNotices()}}
+    temp[CommunityTab.errorTemplates] = {index: 4-tabIndexOffset, loader: () => {this.showErrorTemplates()}}
+    temp[CommunityTab.triggers] = {index: 5-tabIndexOffset, loader: () => {this.showTriggers()}}
+    this.tabTriggers = temp as Record<CommunityTab, {index: number, loader: () => any}>
+  }
+
+  triggerTab(tab: CommunityTab) {
+    this.tabTriggers[tab].loader()
+    if (this.tabs) {
+      this.tabs.tabs[this.tabTriggers[tab].index].active = true
+    }
+  }
+
+  showOrganisations() {
+    if (this.organisationStatus.status == Constants.STATUS.NONE) {
+      this.organisationStatus.status = Constants.STATUS.PENDING
+      this.goFirstPageOrganisations()
+    }
+  }
+
+  private queryOrganisations() {
+    this.organisationService.searchOrganisationsByCommunity(this.communityId, this.organisationFilter, this.organisationSortOrder, this.organisationSortColumn, this.currentOrganisationsPage, Constants.TABLE_PAGE_SIZE)
+    .subscribe((data) => {
+        this.organizations = data.data
+        this.organisationCount = data.count!
+        this.updatePagination()
+    })
+    .add(() => {
+      this.organisationStatus.status = Constants.STATUS.FINISHED
+    })
+}
+
+  showAdministrators() {
+    if (this.adminStatus.status == Constants.STATUS.NONE) {
+      this.adminStatus.status = Constants.STATUS.PENDING
+      this.userService.getCommunityAdministrators(this.communityId)
+      .subscribe((data) => {
+        for (let admin of data) {
+          admin.ssoStatusText = this.dataService.userStatus(admin.ssoStatus)
+        }
+        this.admins = data
+      }).add(() => {
+        this.adminStatus.status = Constants.STATUS.FINISHED
+      })
+    }
+  }
+
+  showLandingPages() {
+    if (this.landingPageStatus.status == Constants.STATUS.NONE) {
+      this.landingPageStatus.status = Constants.STATUS.PENDING
+      this.landingPageService.getCommunityDefaultLandingPage(Constants.DEFAULT_COMMUNITY_ID)
+      .subscribe((data) => {
+        if (data.exists) this.testBedLandingPage = data
+      })
+      this.landingPageService.getLandingPagesByCommunity(this.communityId)
+      .subscribe((data) => {
+        this.landingPages = data
+      }).add(() => {
+        this.landingPageStatus.status = Constants.STATUS.FINISHED
+      })
+    }
+  }
+
+  showLegalNotices() {
+    if (this.legalNoticeStatus.status == Constants.STATUS.NONE) {
+      this.legalNoticeStatus.status = Constants.STATUS.PENDING
+      this.legalNoticeService.getTestBedDefaultLegalNotice()
+      .subscribe((data) => {
+        if (data.exists) this.testBedLegalNotice = data
+      })
+      this.legalNoticeService.getLegalNoticesByCommunity(this.communityId)
+      .subscribe((data) => {
+        this.legalNotices = data
+      }).add(() => {
+        this.legalNoticeStatus.status = Constants.STATUS.FINISHED
+      })
+    }
+  }
+
+  showErrorTemplates() {
+    if (this.errorTemplateStatus.status == Constants.STATUS.NONE) {
+      this.errorTemplateStatus.status = Constants.STATUS.PENDING
+      this.errorTemplateService.getCommunityDefaultErrorTemplate(Constants.DEFAULT_COMMUNITY_ID)
+      .subscribe((data) => {
+        if (data.exists) this.testBedErrorTemplate = data
+      })
+      this.errorTemplateService.getErrorTemplatesByCommunity(this.communityId)
+      .subscribe((data) => {
+        this.errorTemplates = data
+      }).add(() => {
+        this.errorTemplateStatus.status = Constants.STATUS.FINISHED
+      })
+    }
+  }
+
+  showTriggers() {
+    if (this.triggerStatus.status == Constants.STATUS.NONE) {
+      this.triggerStatus.status = Constants.STATUS.PENDING
+      this.triggerService.getTriggersByCommunity(this.communityId)
+      .subscribe((data) => {
+        for (let trigger of data) {
+          trigger.eventTypeLabel = this.triggerEventTypeMap[trigger.eventType]
+          if (trigger.latestResultOk != undefined) {
+            if (trigger.latestResultOk) {
+              trigger.statusText = 'Success'
+            } else {
+              trigger.statusText = 'Error'
+            }
+          } else {
+            trigger.statusText = '-'
+          }
+        }
+        this.triggers = data
+      }).add(() => {
+        this.triggerStatus.status = Constants.STATUS.FINISHED
+      })
+    }
+  }
+
   saveDisabled() {
     return !(this.textProvided(this.community.sname) && this.textProvided(this.community.fname) &&
-      (!this.dataService.configuration.registrationEnabled || 
-        (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED || 
+      (!this.dataService.configuration.registrationEnabled ||
+        (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.NOT_SUPPORTED ||
           (
-            (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || this.textProvided(this.community.selfRegToken)) && 
+            (this.community.selfRegType == Constants.SELF_REGISTRATION_TYPE.PUBLIC_LISTING || this.textProvided(this.community.selfRegToken)) &&
             (!this.dataService.configuration.emailEnabled || (!this.community.selfRegNotification || this.textProvided(this.community.email)))
           )
         )
@@ -252,75 +344,121 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     })
   }
 
-  organizationSelect(organization: Organisation) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'organisation', organization.id])
+  organisationSelect(organization: Organisation) {
+    this.routingService.toOrganisationDetails(this.communityId, organization.id)
   }
 
   isDefaultCommunity() {
     return this.communityId == Number(Constants.DEFAULT_COMMUNITY_ID)
   }
 
-  private addCopyTestBedDefaultIfNeeded(copyTestBedDefault: boolean) {
-    let extras: NavigationExtras|undefined = undefined
-    if (copyTestBedDefault) {
-      extras = {
-        queryParams: {
-          copyDefault: true
-        }
-      }
-    }
-    return extras
-  }
-
   createLandingPage(copyTestBedDefault: boolean) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'pages', 'create'], this.addCopyTestBedDefaultIfNeeded(copyTestBedDefault))
+    this.routingService.toCreateLandingPage(this.communityId, copyTestBedDefault)
   }
 
   landingPageSelect(landingPage: LandingPage) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'pages', landingPage.id])
+    this.routingService.toLandingPage(this.communityId, landingPage.id)
   }
 
   createLegalNotice(copyTestBedDefault: boolean) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'notices', 'create'], this.addCopyTestBedDefaultIfNeeded(copyTestBedDefault))
+    this.routingService.toCreateLegalNotice(this.communityId, copyTestBedDefault)
   }
 
   legalNoticeSelect(legalNotice: LegalNotice) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'notices', legalNotice.id])
+    this.routingService.toLegalNotice(this.communityId, legalNotice.id)
   }
 
   createErrorTemplate(copyTestBedDefault: boolean) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'errortemplates', 'create'], this.addCopyTestBedDefaultIfNeeded(copyTestBedDefault))
+    this.routingService.toCreateErrorTemplate(this.communityId, copyTestBedDefault)
   }
 
   errorTemplateSelect(errorTemplate: ErrorTemplate) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'errortemplates', errorTemplate.id])
+    this.routingService.toErrorTemplate(this.communityId, errorTemplate.id)
   }
 
   createTrigger() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'triggers', 'create'])
+    this.routingService.toCreateTrigger(this.communityId)
   }
 
   triggerSelect(trigger: Trigger) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'triggers', trigger.id])
+    this.routingService.toTrigger(this.communityId, trigger.id)
   }
 
   adminSelect(admin: User) {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'admin', admin.id])
+    this.routingService.toCommunityAdmin(this.communityId, admin.id!)
   }
 
   cancelCommunityDetail() {
-    this.router.navigate(['admin', 'users'])
+    this.routingService.toUserManagement()
   }
 
   updateConformanceCertificateSettings() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'certificate'])
+    this.routingService.toCommunityCertificateSettings(this.communityId)
   }
 
   updateParameters() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'parameters'])
+    this.routingService.toCommunityParameters(this.communityId)
   }
 
   editLabels() {
-    this.router.navigate(['admin', 'users', 'community', this.communityId, 'labels'])
+    this.routingService.toCommunityLabels(this.communityId)
   }
+
+  createAdmin() {
+    this.routingService.toCreateCommunityAdmin(this.communityId)
+  }
+
+  createOrganisation() {
+    this.routingService.toCreateOrganisation(this.communityId)
+  }
+
+  goPreviousPageOrganisations() {
+    this.currentOrganisationsPage -= 1
+    this.queryOrganisations()
+  }
+
+  goNextPageOrganisations() {
+    this.currentOrganisationsPage += 1
+    this.queryOrganisations()
+  }
+
+  goFirstPageOrganisations() {
+    this.currentOrganisationsPage = 1
+    this.queryOrganisations()
+  }
+
+  goLastPageOrganisations() {
+    this.currentOrganisationsPage = Math.ceil(this.organisationCount / Constants.TABLE_PAGE_SIZE)
+    this.queryOrganisations()
+  }
+
+  private updatePagination() {
+    if (this.currentOrganisationsPage == 1) {
+      this.isNextPageOrganisationsDisabled = this.organisationCount <= Constants.TABLE_PAGE_SIZE
+      this.isPreviousPageOrganisationsDisabled = true
+    } else if (this.currentOrganisationsPage == Math.ceil(this.organisationCount / Constants.TABLE_PAGE_SIZE)) {
+      this.isNextPageOrganisationsDisabled = true
+      this.isPreviousPageOrganisationsDisabled = false
+    } else {
+      this.isNextPageOrganisationsDisabled = false
+      this.isPreviousPageOrganisationsDisabled = false
+    }
+  }
+
+  sortOrganisations(column: TableColumnDefinition) {
+    if (column.field == 'sname') {
+      this.organisationSortColumn = 'shortname'
+    } else if (column.field == 'fname') {
+      this.organisationSortColumn = 'fullname'
+    } else {
+      this.organisationSortColumn = 'template'
+    }
+    this.organisationSortOrder = column.order!
+    this.goFirstPageOrganisations()
+  }
+
+  applyOrganisationFilter() {
+    this.goFirstPageOrganisations()
+  }
+
 }

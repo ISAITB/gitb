@@ -12,6 +12,7 @@
 @error-color: #d32f2f;
 @warning-color: #f0ad4e;
 @completed-color: #4caf50;
+@extra-width-for-report-icons: 20;
 
 .icon-documentation {
   font-size: 18px;
@@ -20,8 +21,7 @@
 
 .generate-padding-offsets(@width, @n, @i: 0) when (@i =< @n) {
   &.offset-@{i} {
-    padding-left: (@i * @width) - @i;
-    //margin-left: (-1 * @i) * 1px;
+    padding-left: ((@i * @width) - @i);
   }
   .generate-padding-offsets(@width, @n, (@i + 1));
 }
@@ -36,7 +36,7 @@
     margin-left: (@i * @width * -1);
     &.child-steps.else::before,
     &.child-steps.thread::before {
-      left: @i * @width;
+      left: (@i * @width);
       margin-top: 15px;
     }
   }
@@ -57,7 +57,7 @@
 
 .generate-level-reverse-margins(@depth, @n, @i: 0) when (@i =< @n) {
   &.level-@{i} {
-    margin-left: -1px * (@container-padding * @depth) !important;
+    margin-left: (-1px * (@container-padding * @depth)) !important;
   }
 
   .generate-level-reverse-margins(@depth, @n, (@i+1));
@@ -70,8 +70,8 @@
     .generate-level-reverse-margins(@i, @n);
     & > .message-body > .child-steps.else::before,
     & > .message-body > .child-steps.thread::before {
-      margin-left: -1 * (@container-padding * @i) !important;
-      margin-right: -1 * (@container-padding * @i) !important;
+      margin-left: (-1 * (@container-padding * @i)) !important;
+      margin-right: (-1 * (@container-padding * @i)) !important;
     }
   }
 
@@ -80,11 +80,11 @@
 
 .generate-depth-spans(@width, @span, @n, @i: 0) when (@i =< @n) {
   &.depth-@{i} {
-    width: (@width * @span) + (2 * @i * @container-padding) + 10;
+    width: ((@width * @span) + (2 * @i * @container-padding) + 10 + @extra-width-for-report-icons);
 
     & > .message-body > .child-steps.else::before,
     & > .message-body > .child-steps.thread::before {
-      width: (@width * @span) + (2 * @i * @container-padding) - 1;
+      width: ((@width * @span) + (2 * @i * @container-padding) - 1 + @extra-width-for-report-icons);
     }
   }
   .generate-depth-spans(@width, @span, @n, (@i+1));
@@ -122,14 +122,14 @@
 
   .lifeline-container {
     position: absolute;
-    top: @line-height * 2;
-    left: @actor-width / 2;
+    top: (@line-height * 2);
+    left: (@actor-width / 2);
     height: 100%;
     min-height: 100px;
     z-index: 200;
     .lifeline {
       display: inline-block;
-      width: @actor-width - 1;
+      width: (@actor-width - 1);
       height: calc(100% - 15px);
       border-left: 1px dashed @line-color;
       content: " ";
@@ -141,7 +141,7 @@
     @arrow-size: 12px;
 
     display: inline-block;
-    padding-left: @actor-width / 2;
+    padding-left: (@actor-width / 2);
 
     .message-wrapper {
       position: relative;
@@ -257,7 +257,7 @@
           left: 100%;
           top: 12px;
           font-size: 16px;
-		  z-index: 300;
+		      z-index: 300;
           i {
             display: none;
 
@@ -292,10 +292,16 @@
           }
         }
 
+        .title-container {
+          display: flex;
+          justify-content: center;
+        }
+
         .title {
-          display: block;
+          display: inline-flex;
+          background: @white;
           text-align: center;
-          padding: 0 8px;
+          margin: 0 13px;
 
           &.skipped {
             text-decoration: line-through;
@@ -310,10 +316,9 @@
 
         .step-icon {
           @icon-size: 32px;
-
           width: @icon-size;
           height: @icon-size;
-          left: -1 * (@icon-size / 2);
+          left: (-1 * (@icon-size / 2));
           margin-top: -4px;
           text-align: center;
           display: block;
@@ -326,19 +331,24 @@
 
         .arrow {
           width: 100%;
-          border-bottom: 3px solid @line-color;
+          &.reply {
+            border-bottom: 3px dashed @line-color;
+          }
+          &.normal {
+            border-bottom: 3px solid @line-color;
+          }
           position: relative;
 
           &::after {
             position: absolute;
-            bottom: -1 * (@arrow-size / 2+1);
+            bottom: (-1 * (@arrow-size / 2+1));
             right: 0;
             content: " ";
             width: 0;
             height: 0;
-            border-top: @arrow-size / 2 solid transparent;
+            border-top: (@arrow-size / 2) solid transparent;
             border-left: @arrow-size solid @line-color;
-            border-bottom: @arrow-size / 2 solid transparent;
+            border-bottom: (@arrow-size / 2) solid transparent;
           }
         }
 
@@ -357,9 +367,9 @@
               right: auto;
               left: 0;
               border-left: none;
-              border-top: @arrow-size / 2 solid transparent;
+              border-top: (@arrow-size / 2) solid transparent;
               border-right: @arrow-size solid @line-color;
-              border-bottom: @arrow-size / 2 solid transparent;
+              border-bottom: (@arrow-size / 2) solid transparent;
             }
           }
         }
@@ -574,26 +584,32 @@
 
       @container-type-padding: 40px;
 
-      &.loop-type,
-      &.decision-type,
-      &.flow-type,
-      &.interact-type,
-      &.group-type {
+      &.loop-type, &.decision-type, &.flow-type, &.interact-type, &.group-type {
         & > .message {
           border: 1px solid @line-color;
-		  background: white;
-          padding: @container-type-padding / 2 0;
+		      background: white;
+          padding: (@container-type-padding / 2) 0;
           margin: @container-type-padding 0 0 0;
 
-		  &.hovering {
-			background: @hover-color;
-		  }
+        &.hovering {
+  			  background: @hover-color;
+          .loop-type, .decision-type, .flow-type, .interact-type, .group-type {
+            & > .message.notHovering {
+              .title {
+                background: @white;
+              }
+            }
+          }
+          .title {
+            background: @hover-color;
+          }
+		    }
 
           .generate-depth-paddings(@macro-limit);
           .generate-spans(@actor-width, true, @macro-limit);
 
           & > .message-body > .message-info {
-            margin-left: @container-type-padding / 2;
+            margin-left: (@container-type-padding / 2);
           }
 
           & > .message-type {
@@ -630,7 +646,7 @@
 
             &.else,
             &.thread {
-              padding-top: @container-type-padding / 2;
+              padding-top: (@container-type-padding / 2);
               &::before {
                 content: " ";
                 display: block;

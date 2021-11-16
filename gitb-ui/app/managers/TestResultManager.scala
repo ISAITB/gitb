@@ -25,18 +25,33 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
    * Concurrent map used to hold the sessions' step status updates. Status updates are held in a linked hash map
    * for direct access but also retrieval using insertion order.
    */
-  private val sessionMap = new TrieMap[String, mutable.LinkedHashMap[String, TestStepResultInfo]]()
+  private val sessionMap = new TrieMap[String, (mutable.LinkedHashMap[String, TestStepResultInfo], mutable.Queue[String])]()
+
+  private def getOrCreateSession(sessionId: String) = {
+    var sessionData = sessionMap.get(sessionId)
+    if (sessionData.isEmpty) {
+      sessionData = Some(new mutable.LinkedHashMap[String, TestStepResultInfo], new mutable.Queue[String])
+      sessionMap.put(sessionId, sessionData.get)
+    }
+    sessionData.get
+  }
+
+  def sessionUpdate(sessionId: String, logMessage: String): Unit = {
+    val sessionLogMessages = getOrCreateSession(sessionId)._2
+    sessionLogMessages += logMessage.trim
+  }
+
+  def consumeSessionLogs(sessionId: String) = {
+    val sessionData = getOrCreateSession(sessionId)
+    sessionData._2.dequeueAll(_ => true).toList
+  }
 
   def sessionUpdate(sessionId: String, stepId: String, status: TestStepResultInfo): List[(String, TestStepResultInfo)] = {
-    var sessionSteps = sessionMap.get(sessionId)
-    if (sessionSteps.isEmpty) {
-      sessionSteps = Some(new mutable.LinkedHashMap[String, TestStepResultInfo])
-      sessionMap.put(sessionId, sessionSteps.get)
-    }
-    var stepInfo = sessionSteps.get.get(stepId)
+    val sessionSteps = getOrCreateSession(sessionId)._1
+    var stepInfo = sessionSteps.get(stepId)
     if (stepInfo.isEmpty) {
       stepInfo = Some(status)
-      sessionSteps.get.put(stepId, stepInfo.get)
+      sessionSteps.put(stepId, stepInfo.get)
     } else {
       val existingStatus = stepInfo.get.result
       if (status.result == StepStatus.COMPLETED.ordinal().toShort
@@ -52,7 +67,7 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
       }
     }
     // Return the history of step updates
-    sessionMap(sessionId).map { entry =>
+    sessionSteps.map { entry =>
       (entry._1, entry._2)
     }.toList
   }
@@ -62,7 +77,7 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
     if (sessionSteps.isEmpty) {
       List()
     } else {
-      sessionSteps.get.map { entry =>
+      sessionSteps.get._1.map { entry =>
         (entry._1, entry._2)
       }.toList
     }
@@ -92,6 +107,38 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
   def getRunningTestResults: List[TestResult] = {
     val results = exec(
       PersistenceSchema.testResults.filter(_.endTime.isEmpty).result.map(_.toList)
+    )
+    results
+  }
+
+  def getAllRunningSessions(): List[String] = {
+    val results = exec(
+      PersistenceSchema.testResults
+        .filter(_.endTime.isEmpty)
+        .map(x => x.testSessionId)
+        .result.map(_.toList)
+    )
+    results
+  }
+
+  def getRunningSessionsForCommunity(community: Long): List[String] = {
+    val results = exec(
+      PersistenceSchema.testResults
+        .filter(_.communityId === community)
+        .filter(_.endTime.isEmpty)
+        .map(x => x.testSessionId)
+        .result.map(_.toList)
+    )
+    results
+  }
+
+  def getRunningSessionsForOrganisation(organisation: Long): List[String] = {
+    val results = exec(
+      PersistenceSchema.testResults
+        .filter(_.organizationId === organisation)
+        .filter(_.endTime.isEmpty)
+        .map(x => x.testSessionId)
+        .result.map(_.toList)
     )
     results
   }
@@ -233,13 +280,17 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
               .headOption
             // Update the result.
             _ <- {
-              val updateQuery = for { c <- queryConformanceResult } yield (c.testsession, c.result, c.outputMessage)
+              val updateQuery = for { c <- queryConformanceResult } yield (c.testsession, c.result, c.outputMessage, c.updateTime)
               if (latestTestSession.isDefined) {
                 // Replace status
-                updateQuery.update(Some(latestTestSession.get.sessionId), latestTestSession.get.result, latestTestSession.get.outputMessage)
+                var updateTimeToSet = latestTestSession.get.endTime
+                if (updateTimeToSet.isEmpty) {
+                  updateTimeToSet = Some(latestTestSession.get.startTime)
+                }
+                updateQuery.update(Some(latestTestSession.get.sessionId), latestTestSession.get.result, latestTestSession.get.outputMessage, updateTimeToSet)
               } else {
                 // Set as empty status
-                updateQuery.update(None, TestResultStatus.UNDEFINED.toString, None)
+                updateQuery.update(None, TestResultStatus.UNDEFINED.toString, None, None)
               }
             }
           } yield ()

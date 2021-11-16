@@ -87,5 +87,7 @@
     </div>
     <app-optional-custom-property-form *ngIf="!organisation.copyOrganisationParameters"
         [tbPropertyData]="propertyData"
+        [tbPropertyType]="'organisation'"
+        [tbOwner]="organisation.id"
         [tbColInputLess]="1"></app-optional-custom-property-form>
 </ng-container>

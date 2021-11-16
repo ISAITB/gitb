@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, OnInit } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
 import { CreateEditDomainParameterModalComponent } from 'src/app/modals/create-edit-domain-parameter-modal/create-edit-domain-parameter-modal.component';
@@ -9,6 +9,7 @@ import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { Domain } from 'src/app/types/domain';
 import { DomainParameter } from 'src/app/types/domain-parameter';
 import { Specification } from 'src/app/types/specification';
@@ -26,8 +27,8 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
   specifications: Specification[] = []
   domainParameters: DomainParameter[] = []
   domainId!: number
-  specificationStatus = {status: Constants.STATUS.PENDING}
-  parameterStatus = {status: Constants.STATUS.PENDING}
+  specificationStatus = {status: Constants.STATUS.NONE}
+  parameterStatus = {status: Constants.STATUS.NONE}
   tableColumns: TableColumnDefinition[] = [
     { field: 'sname', title: 'Short name' },
     { field: 'fname', title: 'Full name' },
@@ -43,7 +44,7 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
     private confirmationDialogService: ConfirmationDialogService,
     private modalService: BsModalService,
     private popupService: PopupService,
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute
   ) { super() }
 
@@ -57,42 +58,51 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
     .subscribe((data) => {
       this.domain = data[0]
     })
-    this.conformanceService.getSpecifications(this.domainId)
-    .subscribe((data) => {
-      this.specifications = data
-    }).add(() => {
-      this.specificationStatus.status = Constants.STATUS.FINISHED
-    })
-    this.loadDomainParameters()
+    this.loadSpecifications()
   }
 
-  private loadDomainParameters() {
-    this.parameterStatus.status = Constants.STATUS.PENDING
-    this.conformanceService.getDomainParameters(this.domainId)
-    .subscribe((data) => {
-      this.domainParameters = []
-      for (let parameter of data) {
-        if (parameter.kind == 'HIDDEN') {
-          parameter.valueToShow = "*****"
-        } else if (parameter.kind == 'BINARY') {
-          const mimeType = this.dataService.mimeTypeFromDataURL(parameter.value!)
-          const extension = this.dataService.extensionFromMimeType(mimeType)
-          parameter.valueToShow =  parameter.name+extension
-        } else {
-          parameter.valueToShow = parameter.value
+  loadSpecifications() {
+    if (this.specificationStatus.status == Constants.STATUS.NONE) {
+      this.specificationStatus.status = Constants.STATUS.PENDING
+      this.conformanceService.getSpecifications(this.domainId)
+      .subscribe((data) => {
+        this.specifications = data
+      }).add(() => {
+        this.specificationStatus.status = Constants.STATUS.FINISHED
+      })
+    }
+  }
+
+  loadDomainParameters(forceLoad?: boolean) {
+    if (this.parameterStatus.status == Constants.STATUS.NONE || forceLoad) {
+      this.parameterStatus.status = Constants.STATUS.PENDING
+      this.conformanceService.getDomainParameters(this.domainId)
+      .subscribe((data) => {
+        this.domainParameters = []
+        for (let parameter of data) {
+          if (parameter.kind == 'HIDDEN') {
+            parameter.valueToShow = "*****"
+          } else if (parameter.kind == 'BINARY') {
+            const extension = this.dataService.extensionFromMimeType(parameter.contentType)
+            parameter.valueToShow =  parameter.name+extension
+          } else {
+            parameter.valueToShow = parameter.value
+          }
+          this.domainParameters.push(parameter)
         }
-        this.domainParameters.push(parameter)
-      }
-    }).add(() => {
-      this.parameterStatus.status = Constants.STATUS.FINISHED			
-    })
+      }).add(() => {
+        this.parameterStatus.status = Constants.STATUS.FINISHED			
+      })
+    }
   }
 
 	downloadParameter(parameter: DomainParameter) {
-		const mimeType = this.dataService.mimeTypeFromDataURL(parameter.value!)
-		const blob = this.dataService.b64toBlob(this.dataService.base64FromDataURL(parameter.value!), mimeType)
-		const extension = this.dataService.extensionFromMimeType(mimeType)
-		saveAs(blob, parameter.name+extension)
+    this.conformanceService.downloadDomainParameterFile(this.domainId, parameter.id)
+    .subscribe((data) => {
+      const blobData = new Blob([data], {type: parameter.contentType})
+      const extension = this.dataService.extensionFromMimeType(parameter.contentType)
+      saveAs(blobData, parameter.name+extension)
+    })
   }
 
 	deleteDomain() {
@@ -102,7 +112,7 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
       this.conformanceService.deleteDomain(this.domainId)
       .subscribe(() => {
         this.popupService.success(this.dataService.labelDomain()+' deleted.')
-        this.router.navigate(['admin', 'domains'])
+        this.routingService.toDomains()
       }).add(() => {
         this.deletePending = false
       })
@@ -124,11 +134,11 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
   }
 
 	back() {
-    this.router.navigate(['admin', 'domains'])
+    this.routingService.toDomains()
   }
 
 	onSpecificationSelect(specification: Specification) {
-    this.router.navigate(['admin', 'domains', this.domainId, 'specifications', specification.id ])
+    this.routingService.toSpecification(this.domainId, specification.id)
   }
 
 	openParameterModal(domainParameter: Partial<DomainParameter>) {
@@ -141,7 +151,7 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
     })
     modalRef.content!.parametersUpdated.subscribe((updated: boolean) => {
       if (updated) {
-        this.loadDomainParameters()
+        this.loadDomainParameters(true)
       }
     })
   }
@@ -167,7 +177,7 @@ export class DomainDetailsComponent extends BaseComponent implements OnInit, Aft
   }
 
 	createSpecification() {
-    this.router.navigate(['admin', 'domains', this.domainId, 'specifications', 'create'])
+    this.routingService.toCreateSpecification(this.domainId)
   }
   
 }

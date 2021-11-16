@@ -3,7 +3,7 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Administrators</h4>
-            <a [routerLink]="['admin', 'create']" class="btn btn-default pull-right">Create administrator</a>
+            <button type="button" class="btn btn-default pull-right" (click)="createAdmin()">Create administrator</button>
         </div>
         <div table-directive
             [columns]="adminColumns"
@@ -18,7 +18,7 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Communities</h4>
-            <a [routerLink]="['community', 'create']" class="btn btn-default pull-right">Create community</a>
+            <button type="button" class="btn btn-default pull-right" (click)="createCommunity()">Create community</button>
         </div>
         <div table-directive 
             [columns]="communityColumns"

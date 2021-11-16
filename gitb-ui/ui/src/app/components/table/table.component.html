@@ -6,7 +6,7 @@
                 <th *ngIf="checkboxEnabled"></th>
                 <th [ngClass]="classForColumn(column)" *ngFor="let column of columns" (click)="!column.sortable || headerColumnClicked(column)">
                     {{column.title}} 
-                    <i [ngClass]="{'fa-caret-down': column.order == 'desc', 'fa-caret-up': column.order == 'asc'}" class="fa"></i>
+                    <i *ngIf="column.order != undefined" [ngClass]="{'fa-caret-down': column.order == 'desc', 'fa-caret-up': column.order == 'asc'}" class="fa"></i>
                 </th>
                 <th *ngIf="actionVisible" class="operations">Action</th>
                 <th *ngIf="operationsVisible" class="operations">Operation</th>
@@ -14,7 +14,7 @@
             </tr>
         </thead>
         <tbody>
-            <tr *ngIf="loadingStatus && loadingStatus.status == Constants.STATUS.PENDING">
+            <tr *ngIf="loadingStatus && loadingStatus.status != Constants.STATUS.FINISHED">
                 <td [attr.colspan]="columnCount" class="td-data-loading"><app-pending-block></app-pending-block></td>
             </tr>
             <tr *ngIf="loadingStatus && loadingStatus.status == Constants.STATUS.FINISHED && (!data || data.length == 0)">
@@ -45,7 +45,7 @@
                 [exportPendingProperty]="exportPendingProperty"></tr>
         </tbody>
     </table>
-    <div *ngIf="paginationVisible && data && data.length > 0" class="text-center">
+    <div *ngIf="(!prevDisabled || !nextDisabled) && data && data.length > 0" class="text-center table-paging-controls">
         <ul class="pagination pagination-sm">
             <li [class.disabled]="prevDisabled"><a href (click)="doFirstPage();$event.preventDefault()">First</a></li>
             <li [class.disabled]="prevDisabled"><a href (click)="doPrevPage();$event.preventDefault()">Previous</a></li>

@@ -61,6 +61,7 @@ public class Context {
     private ExternalConfiguration externalConfiguration;
     private final Set<String> customOrganisationPropertiesUsed = new TreeSet<>();
     private final Set<String> customSystemPropertiesUsed = new TreeSet<>();
+    private final Set<String> customDomainParametersUsed = new TreeSet<>();
 
     public Set<Path> getReferencedResourcePaths() {
         if (referencedResourcePaths == null) {
@@ -411,5 +412,13 @@ public class Context {
 
     public Set<String> getCustomSystemPropertiesUsed() {
         return customSystemPropertiesUsed;
+    }
+
+    public void recordCustomDomainParameter(String name) {
+        customDomainParametersUsed.add(name);
+    }
+
+    public Set<String> getCustomDomainParametersUsed() {
+        return customDomainParametersUsed;
     }
 }

@@ -129,13 +129,13 @@ public class AssignProcessor implements IProcessor {
 					} else {
 						if (result != null) {
 							// The result should be a list - this is a direct assignment,
-							lValue.setValue(result.toListType());
+							lValue.copyFrom(result, DataType.LIST_DATA_TYPE);
 						}
 					}
 				} else {
 					// Normal assignment - convert to make sure the types match and then set the value (lValue is updated via reference).
 					if (result != null) {
-						lValue.setValue(result.convertTo(lValue.getType()).getValue());
+						lValue.copyFrom(result);
 					}
 				}
 			}

@@ -1,5 +1,5 @@
 import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { EMPTY, Observable } from 'rxjs';
 import { map, mergeMap, share } from 'rxjs/operators';
 import { BaseComponent } from 'src/app/pages/base-component.component';
@@ -7,6 +7,7 @@ import { AuthService } from 'src/app/services/auth.service';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
+import { RoutingService } from 'src/app/services/routing.service';
 import { UserService } from 'src/app/services/user.service';
 import { IdLabel } from 'src/app/types/id-label';
 import { User } from 'src/app/types/user.type';
@@ -32,7 +33,7 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
   @ViewChild("role") roleField?: ElementRef;
 
   constructor(
-    private router: Router,
+    private routingService: RoutingService,
     private route: ActivatedRoute,
     private confirmationDialogService: ConfirmationDialogService,
     private userService: UserService,
@@ -145,7 +146,7 @@ export class UserDetailsComponent extends BaseComponent implements OnInit, After
   }
 
   cancelDetailUser() {
-    return this.router.navigate(['admin', 'users', 'community', this.communityId, 'organisation', this.orgId])
+    this.routingService.toOrganisationDetails(this.communityId, this.orgId)
   }
 
 }

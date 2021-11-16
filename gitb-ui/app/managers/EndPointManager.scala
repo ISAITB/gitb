@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 
+import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 
 @Singleton
@@ -33,10 +34,10 @@ class EndPointManager @Inject() (parameterManager: ParameterManager, dbConfigPro
     exec(endpoint).isDefined
   }
 
-  def deleteEndPointByActor(actorId: Long) = {
+  def deleteEndPointByActor(actorId: Long, onSuccessCalls: mutable.ListBuffer[() => _]) = {
     val action = (for {
       ids <- PersistenceSchema.endpoints.filter(_.actor === actorId).map(_.id).result
-      _ <- DBIO.seq(ids.map(id => delete(id)): _*)
+      _ <- DBIO.seq(ids.map(id => delete(id, onSuccessCalls)): _*)
     } yield()).transactionally
     action
   }
@@ -47,16 +48,17 @@ class EndPointManager @Inject() (parameterManager: ParameterManager, dbConfigPro
   }
 
   def deleteEndPoint(endPointId: Long) = {
-    exec(delete(endPointId).transactionally)
+    val onSuccessCalls = mutable.ListBuffer[() => _]()
+    val dbAction = delete(endPointId, onSuccessCalls)
+    exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
   }
 
-  def delete(endPointId: Long): DBIO[_] = {
+  def delete(endPointId: Long, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[_] = {
     (for {
       endPoint <- PersistenceSchema.endpoints.filter(_.id === endPointId).result.head
       _ <- PersistenceSchema.endpointSupportsTransactions.filter(_.endpoint === endPoint.name).delete
     } yield()) andThen
-    parameterManager.deleteParameterByEndPoint(endPointId) andThen
-    PersistenceSchema.configs.filter(_.endpoint === endPointId).delete andThen
+    parameterManager.deleteParameterByEndPoint(endPointId, onSuccessCalls) andThen
     PersistenceSchema.endpoints.filter(_.id === endPointId).delete
   }
 
