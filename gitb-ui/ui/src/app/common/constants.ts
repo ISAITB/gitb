@@ -17,7 +17,7 @@ export class Constants {
 	public static LOCAL_DATA = {
 		ORGANISATION: 'organisation'
 	}
-	
+
 	public static EMBEDDING_METHOD = {
 		BASE64: 'BASE64',
 		STRING: 'STRING',
@@ -63,7 +63,7 @@ export class Constants {
 	}
 
 	public static VENDOR_USER_ROLES: IdLabel[] = [
-		{ 	
+		{
 			id: Constants.USER_ROLE.VENDOR_ADMIN,
 			label: Constants.USER_ROLE_LABEL[Constants.USER_ROLE.VENDOR_ADMIN]
 		},
@@ -266,11 +266,11 @@ export class Constants {
 
 	public static PASSWORD_REGEX = /^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[!@#&()_–\[{}\]:;'",?/\\*~$^+=<>]).{8,}$/
 	public static END_OF_TEST_STEP = "-1"
-	public static LOG_EVENT_TEST_STEP = "-999"	
+	public static LOG_EVENT_TEST_STEP = "-999"
 	public static EMAIL_REGEX = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
 	public static DATA_URL_REGEX = /^data:.+\/(.+);base64,(.*)$/
 	public static VARIABLE_NAME_REGEX = /^[a-zA-Z][a-zA-Z\-_\.0-9]*$/
 
-	public static VERSION = "v1.15.0"
+	public static VERSION = "v1.15.0b1"
 
 }
