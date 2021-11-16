@@ -46,5 +46,5 @@ object Constants {
   val FilterDateFormat = "dd-MM-yyyy HH:mm:ss"
 
   val VersionNumber = "1.15.0"
-  val ResourceVersionNumber = "1.15.0"
+  val ResourceVersionNumber = "1.15.0b1"
 }
