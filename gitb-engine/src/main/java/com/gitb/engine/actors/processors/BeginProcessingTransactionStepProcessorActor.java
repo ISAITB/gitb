@@ -46,6 +46,9 @@ public class BeginProcessingTransactionStepProcessorActor extends AbstractTestSt
 
         ProcessingContext context = new ProcessingContext(handlerIdentifier, TestCaseUtils.getStepProperties(step.getProperty(), resolver));
         String session = context.getHandler().beginTransaction(step.getConfig());
+        if (session == null || session.isBlank()) {
+            session = scope.getContext().getSessionId();
+        }
         context.setSession(session);
         this.scope.getContext().addProcessingContext(step.getTxnId(), context);
 
