@@ -2,8 +2,11 @@ package com.gitb.engine.actors.processors;
 
 import akka.actor.ActorRef;
 import com.gitb.engine.expr.ExpressionHandler;
+import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.tdl.Log;
+import com.gitb.tdl.LogLevel;
+import com.gitb.types.DataType;
 import com.gitb.types.StringType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,7 +34,18 @@ public class LogStepProcessorActor extends AbstractTestStepActor<Log> {
         if (result != null) {
             var marker = MarkerFactory.getDetachedMarker(scope.getContext().getSessionId());
             var message = (String)result.getValue();
-            switch (step.getLevel()) {
+            var variableResolver = new VariableResolver(scope);
+            var level = LogLevel.INFO;
+            try {
+                if (variableResolver.isVariableReference(step.getLevel())) {
+                    level = LogLevel.fromValue((String) variableResolver.resolveVariable(step.getLevel()).convertTo(DataType.STRING_DATA_TYPE).getValue());
+                } else {
+                    level = LogLevel.fromValue(step.getLevel());
+                }
+            } catch (Exception e) {
+                LOG.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Invalid log level [%s]. Considering %s as default.", step.getLevel(), LogLevel.INFO));
+            }
+            switch (level) {
                 case ERROR: LOG.error(marker, message); break;
                 case WARNING: LOG.warn(marker, message); break;
                 case INFO: LOG.info(marker, message); break;

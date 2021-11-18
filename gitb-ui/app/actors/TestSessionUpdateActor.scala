@@ -48,7 +48,7 @@ class TestSessionUpdateActor @Inject() (reportManager: ReportManager, testResult
       if (step == END_STEP_ID) {
         var outputMessage: String = null
         testStepStatus.getReport match {
-          case tar: TAR if !tar.getContext.getValue.isBlank && tar.getContext.getValue != null && tar.getContext != null =>
+          case tar: TAR if tar.getContext != null && tar.getContext.getValue != null && !tar.getContext.getValue.isBlank =>
             outputMessage = tar.getContext.getValue.trim
           case _ =>
         }
@@ -60,7 +60,7 @@ class TestSessionUpdateActor @Inject() (reportManager: ReportManager, testResult
       } else {
         if (step == LOG_EVENT_STEP_ID) { //send log event
           testStepStatus.getReport match {
-            case tar: TAR =>
+            case tar: TAR if tar.getContext != null =>
               val logMessage: String = tar.getContext.getValue
               testResultManager.sessionUpdate(session, logMessage)
             case _ =>

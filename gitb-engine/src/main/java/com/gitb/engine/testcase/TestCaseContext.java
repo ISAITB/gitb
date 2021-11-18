@@ -24,7 +24,9 @@ import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.map.Tuple;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
-import org.jboss.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -43,7 +45,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class TestCaseContext {
 
-	private static final Logger logger = Logger.getLogger(TestCaseContext.class);
+	private static final Logger logger = LoggerFactory.getLogger(TestCaseContext.class);
 
 	/**
 	 * The map containing the status values for each executed step.
@@ -101,6 +103,7 @@ public class TestCaseContext {
     private final Map<Tuple<String>, List<ActorConfiguration>> sutHandlerConfigurations;
 
     private final ScriptletCache scriptletCache = new ScriptletCache();
+	private final VariableResolver variableResolver;
 
     /**
      * Current state of the test case execution
@@ -146,6 +149,8 @@ public class TestCaseContext {
     }
 
 	private LogLevel logLevelToSignal = LogLevel.DEBUG;
+	private boolean logLevelIsExpression = false;
+	private boolean reportedInvalidLogLevel = false;
 	private Path dataFolder;
 
     public TestCaseContext(TestCase testCase, String sessionId) {
@@ -157,8 +162,12 @@ public class TestCaseContext {
         this.messagingContexts = new ConcurrentHashMap<>();
 		this.processingContexts = new ConcurrentHashMap<>();
         this.scope = new TestCaseScope(this, testCase.getImports());
+		this.variableResolver = new VariableResolver(scope);
 		if (testCase.getSteps() != null) {
-			this.logLevelToSignal = testCase.getSteps().getLogLevel();
+			this.logLevelIsExpression = this.variableResolver.isVariableReference(testCase.getSteps().getLogLevel());
+			if (!this.logLevelIsExpression) {
+				this.logLevelToSignal = LogLevel.fromValue(testCase.getSteps().getLogLevel());
+			}
 		}
 		if (TestEngineConfiguration.TEMP_STORAGE_ENABLED) {
 			// Initialise storage folder
@@ -529,7 +538,32 @@ public class TestCaseContext {
     }
 
 	public LogLevel getLogLevelToSignal() {
-		return logLevelToSignal;
+		if (logLevelIsExpression) {
+			LogLevel resolvedLevel;
+			String resolvedValue = (String) variableResolver.resolveVariable(testCase.getSteps().getLogLevel()).convertTo(DataType.STRING_DATA_TYPE).getValue();
+			String warningMessage = null;
+			if (resolvedValue == null || resolvedValue.isBlank()) {
+				resolvedLevel = LogLevel.DEBUG;
+				warningMessage = String.format("Unable to resolve test case log level using expression [%s]. Considering %s as default.", testCase.getSteps().getLogLevel(), resolvedLevel);
+			} else {
+				try {
+					resolvedLevel = LogLevel.fromValue(resolvedValue);
+					if (reportedInvalidLogLevel) {
+						reportedInvalidLogLevel = false;
+					}
+				} catch (Exception e) {
+					resolvedLevel = LogLevel.DEBUG;
+					warningMessage = String.format("Invalid test case log level [%s]. Considering %s as default.", resolvedValue, resolvedLevel);
+				}
+			}
+			if (warningMessage != null && !reportedInvalidLogLevel) {
+				reportedInvalidLogLevel = true;
+				logger.warn(MarkerFactory.getDetachedMarker(getSessionId()), warningMessage);
+			}
+			return resolvedLevel;
+		} else {
+			return logLevelToSignal;
+		}
 	}
 
 	public MessagingContext getMessagingContext(String handler) {
