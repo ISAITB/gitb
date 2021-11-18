@@ -61,7 +61,11 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
     @Override
     public void sectionChanged(TestCaseSection section) {
         super.sectionChanged(section);
-        if (section == TestCaseSection.OUTPUT || section == TestCaseSection.SCRIPTLET_OUTPUT) {
+        if (section == TestCaseSection.STEPS) {
+            if (currentTestCase.getSteps() != null) {
+                checkToken(currentTestCase.getSteps().getLogLevel(), TokenType.LOG_LEVEL_OR_VARIABLE_REFERENCE);
+            }
+        } else if (section == TestCaseSection.OUTPUT || section == TestCaseSection.SCRIPTLET_OUTPUT) {
             // In this section we have processed variables, parameters, actors and imports. We can now check imports for variable references.
             var currentStepCopy = currentStep;
             // Ensure the step is reported correctly.
@@ -210,6 +214,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         } else if (step instanceof Log) {
             checkToken(((Log) step).getSource(), TokenType.VARIABLE_REFERENCE);
             checkToken(((Log) step).getValue(), TokenType.EXPRESSION);
+            checkToken(((Log)step).getLevel(), TokenType.LOG_LEVEL_OR_VARIABLE_REFERENCE);
         } else if (step instanceof Verify) {
             checkToken(((Verify)step).getHandler(), TokenType.STRING_OR_VARIABLE_REFERENCE);
             checkToken(((Verify)step).getLevel(), TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE);
@@ -282,6 +287,10 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
                         variableResolver.checkVariablesInToken(token);
                     }
                 } else if (expectedType == TokenType.ERROR_LEVEL_OR_VARIABLE_REFERENCE) {
+                    if (isVariableExpression) {
+                        variableResolver.checkVariablesInToken(token);
+                    }
+                } else if (expectedType == TokenType.LOG_LEVEL_OR_VARIABLE_REFERENCE) {
                     if (isVariableExpression) {
                         variableResolver.checkVariablesInToken(token);
                     }
@@ -365,6 +374,7 @@ public class CheckExpressions extends AbstractTestCaseObserver implements Variab
         STRING,
         STRING_OR_VARIABLE_REFERENCE,
         ERROR_LEVEL_OR_VARIABLE_REFERENCE,
+        LOG_LEVEL_OR_VARIABLE_REFERENCE,
         VARIABLE_REFERENCE,
         EXPRESSION
     }

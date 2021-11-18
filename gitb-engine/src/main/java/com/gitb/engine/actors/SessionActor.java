@@ -198,10 +198,11 @@ public class SessionActor extends Actor {
     }
 
     private boolean shouldSignalLogEvent(LogCommand message, TestCaseContext context) {
-        return (context.getLogLevelToSignal() == LogLevel.DEBUG) ||
-                (context.getLogLevelToSignal() == LogLevel.INFO && message.getLogLevel() != LogLevel.DEBUG) ||
-                (context.getLogLevelToSignal() == LogLevel.WARNING && (message.getLogLevel() == LogLevel.ERROR || message.getLogLevel() == LogLevel.WARNING)) ||
-                (context.getLogLevelToSignal() == LogLevel.ERROR && message.getLogLevel() == LogLevel.ERROR);
+        var logLevel = context.getLogLevelToSignal();
+        return (logLevel == LogLevel.DEBUG) ||
+                (logLevel == LogLevel.INFO && message.getLogLevel() != LogLevel.DEBUG) ||
+                (logLevel == LogLevel.WARNING && (message.getLogLevel() == LogLevel.ERROR || message.getLogLevel() == LogLevel.WARNING)) ||
+                (logLevel == LogLevel.ERROR && message.getLogLevel() == LogLevel.ERROR);
     }
 
     private void stopTestSession(TestCaseContext context) {
