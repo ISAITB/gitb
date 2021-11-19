@@ -15,13 +15,13 @@ class TriggerActor @Inject() (triggerManager: TriggerManager) extends Actor {
   private def logger = LoggerFactory.getLogger(classOf[TriggerActor])
 
   override def preStart():Unit = {
-    logger.info("Starting trigger actor")
+    logger.info(s"Starting trigger actor [${self.path.name}]")
     super.preStart()
     context.system.eventStream.subscribe(context.self, classOf[TriggerEvent])
   }
 
   override def postStop(): Unit = {
-    logger.info("Stopping trigger actor")
+    logger.info(s"Stopping trigger actor [${self.path.name}]")
     super.postStop()
     context.system.eventStream.unsubscribe(context.self)
   }

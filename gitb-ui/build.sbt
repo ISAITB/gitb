@@ -19,6 +19,7 @@ libraryDependencies ++= Seq(
   ehcache,
   cacheApi,
   "com.google.inject" % "guice" % "5.0.1",
+  "com.google.inject.extensions" % "guice-assistedinject" % "5.0.1",
   "eu.europa.ec.itb" % "gitb-types" % "1.15.0",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
