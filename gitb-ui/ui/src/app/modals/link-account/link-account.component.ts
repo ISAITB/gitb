@@ -6,6 +6,7 @@ import { AuthService } from 'src/app/services/auth.service';
 import { CommunityService } from 'src/app/services/community.service';
 import { DataService } from 'src/app/services/data.service';
 import { ErrorService } from 'src/app/services/error.service';
+import { PopupService } from 'src/app/services/popup.service';
 import { ActualUserInfo } from 'src/app/types/actual-user-info';
 import { SelfRegistrationModel } from 'src/app/types/self-registration-model.type';
 import { SelfRegistrationOption } from 'src/app/types/self-registration-option.type';
@@ -34,7 +35,8 @@ export class LinkAccountComponent extends BaseComponent implements OnInit {
     private errorService: ErrorService,
     private authService: AuthService,
     private communityService: CommunityService,
-    public modalRef: BsModalRef
+    public modalRef: BsModalRef,
+    private popupService: PopupService
   ) { super() }
 
   ngOnInit(): void {
@@ -91,6 +93,7 @@ export class LinkAccountComponent extends BaseComponent implements OnInit {
       this.authService.linkFunctionalAccount(this.selectedAccountId).subscribe((data) => {
         this.dataService.setActualUser(data as ActualUserInfo)
         this.modalRef.hide()
+        this.popupService.success('Role successfully linked.')
       }).add(() => {
         this.createPending = false
       })
@@ -101,6 +104,7 @@ export class LinkAccountComponent extends BaseComponent implements OnInit {
         } else {
           this.dataService.setActualUser(data as ActualUserInfo)
           this.modalRef.hide()
+          this.popupService.success('Account successfully migrated.')
         }
       }).add(() => {
         this.createPending = false
@@ -121,6 +125,7 @@ export class LinkAccountComponent extends BaseComponent implements OnInit {
         } else {
           this.dataService.setActualUser(data as ActualUserInfo)
           this.modalRef.hide()
+          this.popupService.success('Registration successful.')
         }
       }).add(() => {
         this.createPending = false

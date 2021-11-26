@@ -1,20 +1,26 @@
 package modules
 
+import actors.{SessionManagerActor, SessionUpdateActor, TriggerActor}
+import com.google.inject.AbstractModule
 import hooks.{BeforeStartHook, OnStopHook, PostStartHook}
+import play.api.libs.concurrent.AkkaGuiceSupport
 
-class Module extends play.api.inject.Module {
+class Module extends AbstractModule with AkkaGuiceSupport {
 
-  def bindings(environment: play.api.Environment, configuration: play.api.Configuration) = {
-    Seq(
-      bind[BeforeStartHook].toSelf.eagerly(),
-      /*
-       Calling here the initialisation of FlyWayDB (and not via its own module). The reason for this is to ensure a DB
-       is correctly created/migrated before we do other changes that may require DB interactions at start-up.
-       */
-      bind[MigrationInitializer].toSelf.eagerly(),
-      bind[PostStartHook].toSelf.eagerly(),
-      bind[OnStopHook].toSelf.eagerly()
-    )
+  override def configure() = {
+    bind(classOf[BeforeStartHook]).asEagerSingleton()
+    /*
+     Calling here the initialisation of FlyWayDB (and not via its own module). The reason for this is to ensure a DB
+     is correctly created/migrated before we do other changes that may require DB interactions at start-up.
+     */
+    bind(classOf[MigrationInitializer]).asEagerSingleton()
+    // Bind top level actors - START
+    bindActor[TriggerActor](TriggerActor.actorName)
+    bindActor[SessionManagerActor](SessionManagerActor.actorName)
+    bindActorFactory[SessionUpdateActor, SessionUpdateActor.Factory]
+    // Bind top level actors - END
+    bind(classOf[PostStartHook]).asEagerSingleton()
+    bind(classOf[OnStopHook]).asEagerSingleton()
   }
 
 }

@@ -107,7 +107,11 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
   }
 
   goToSystem(row: TestResultForDisplay) {
-    this.routingService.toSystems(row.organizationId!, row.systemId!)
+    if (this.dataService.isVendorUser) {
+      this.routingService.toSystemInfo(row.organizationId!, row.systemId!)
+    } else {
+      this.routingService.toSystems(row.organizationId!, row.systemId!)
+    }
   }
 
   goToStatement(row: TestResultForDisplay) {

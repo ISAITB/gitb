@@ -73,6 +73,7 @@
           </div>
         </div>
         <app-custom-property-form *ngIf="model.selfRegOption"
+            [refresh]="refreshSignal"
             [tbProperties]="model.selfRegOption!.organisationProperties"
             [tbShowFormHeader]="false"
             [tbFormPadded]="false"

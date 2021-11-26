@@ -1,6 +1,6 @@
 package actors
 
-import akka.actor.Actor
+import akka.actor.{Actor, PoisonPill}
 import com.gitb.core.ValueEmbeddingEnumeration
 import com.gitb.tbs.{Instruction, InteractWithUsersRequest, ProvideInputRequest, TestStepStatus}
 import com.gitb.tr.TAR
@@ -13,50 +13,57 @@ import utils.{JacksonUtil, JsonUtil, MimeUtil}
 import javax.inject.Inject
 import scala.jdk.CollectionConverters.CollectionHasAsScala
 
-object TestSessionUpdateActor {
-  val actorName = "session-update-actor"
+object SessionUpdateActor {
+  trait Factory {
+    def apply(): Actor
+  }
 }
 
-class TestSessionUpdateActor @Inject() (reportManager: ReportManager, testResultManager: TestResultManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient) extends Actor {
+class SessionUpdateActor @Inject() (reportManager: ReportManager, testResultManager: TestResultManager, webSocketActor: WebSocketActor, testbedBackendClient: TestbedBackendClient) extends Actor {
 
-  private val LOGGER = LoggerFactory.getLogger(classOf[TestSessionUpdateActor])
+  private val LOGGER = LoggerFactory.getLogger(classOf[SessionUpdateActor])
   private val END_STEP_ID = "-1"
   private val LOG_EVENT_STEP_ID = "-999"
 
   override def preStart():Unit = {
-    LOGGER.info("Starting test session update actor")
+    LOGGER.info(s"Starting session update actor [${self.path.name}]")
     super.preStart()
   }
 
   override def postStop(): Unit = {
-    LOGGER.info("Stopping test session update actor")
+    LOGGER.info(s"Stopping session update actor [${self.path.name}]")
     super.postStop()
   }
 
   override def receive: Receive = {
     case msg: TestStepStatus => updateStatus(msg)
     case msg: InteractWithUsersRequest => interactWithUsers(msg)
-    case _ =>
-      LOGGER.warn("Received unexpected message")
+    case msg: Object =>
+      LOGGER.warn(s"Session update actor received unexpected message [${msg.getClass.getName}]")
   }
 
   private def updateStatus(testStepStatus: TestStepStatus): Unit = {
     try {
       val session: String = testStepStatus.getTcInstanceId
       val step: String = testStepStatus.getStepId
-      //save report
+      // Save report
       if (step == END_STEP_ID) {
-        var outputMessage: String = null
-        testStepStatus.getReport match {
-          case tar: TAR if tar.getContext != null && tar.getContext.getValue != null && !tar.getContext.getValue.isBlank =>
-            outputMessage = tar.getContext.getValue.trim
-          case _ =>
+        try {
+          var outputMessage: String = null
+          testStepStatus.getReport match {
+            case tar: TAR if tar.getContext != null && tar.getContext.getValue != null && !tar.getContext.getValue.isBlank =>
+              outputMessage = tar.getContext.getValue.trim
+            case _ => // Do nothing
+          }
+          reportManager.finishTestReport(session, testStepStatus.getReport.getResult, Option.apply(outputMessage))
+          val statusUpdates: List[(String, TestStepResultInfo)] = testResultManager.sessionRemove(session)
+          val resultInfo: TestStepResultInfo = new TestStepResultInfo(testStepStatus.getStatus.ordinal.toShort, Option.empty)
+          val message: String = JsonUtil.jsTestStepResultInfo(session, step, resultInfo, Option.apply(outputMessage), statusUpdates).toString
+          webSocketActor.testSessionEnded(session, message)
+        } finally {
+          // Stop the current actor
+          self ! PoisonPill.getInstance
         }
-        reportManager.finishTestReport(session, testStepStatus.getReport.getResult, Option.apply(outputMessage))
-        val statusUpdates: List[(String, TestStepResultInfo)] = testResultManager.sessionRemove(session)
-        val resultInfo: TestStepResultInfo = new TestStepResultInfo(testStepStatus.getStatus.ordinal.toShort, Option.empty)
-        val message: String = JsonUtil.jsTestStepResultInfo(session, step, resultInfo, Option.apply(outputMessage), statusUpdates).toString
-        webSocketActor.testSessionEnded(session, message)
       } else {
         if (step == LOG_EVENT_STEP_ID) { //send log event
           testStepStatus.getReport match {
@@ -112,4 +119,5 @@ class TestSessionUpdateActor @Inject() (reportManager: ReportManager, testResult
         LOGGER.error(s"Error during user interaction for session [$session]", e)
     }
   }
+
 }

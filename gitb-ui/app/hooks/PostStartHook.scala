@@ -1,13 +1,9 @@
 package hooks
 
-import java.nio.file.{Files, Path}
-import actors.{TestSessionUpdateActor, TriggerActor, WebSocketActor}
-import akka.actor.{ActorSystem, Props}
+import actors.WebSocketActor
+import akka.actor.ActorSystem
 import config.Configurations
 import controllers.TestService
-
-import javax.inject.{Inject, Singleton}
-import javax.xml.ws.Endpoint
 import jaxws.TestbedService
 import managers._
 import managers.export.ImportCompleteManager
@@ -20,7 +16,10 @@ import play.api.inject.ApplicationLifecycle
 import utils.{RepositoryUtils, TimeUtil, ZipArchiver}
 
 import java.io.{File, FileFilter}
+import java.nio.file.{Files, Path}
 import java.time.LocalDate
+import javax.inject.{Inject, Singleton}
+import javax.xml.ws.Endpoint
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration.DurationInt
 
@@ -34,7 +33,6 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
   def onStart(): Unit = {
     logger.info("Starting Application")
     System.setProperty("java.io.tmpdir", System.getProperty("user.dir"))
-    initialiseActors()
     initialiseTestbedClient()
     checkMasterPassword()
     destroyIdleSessions()
@@ -108,11 +106,6 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
         }
       }
     }
-  }
-
-  private def initialiseActors(): Unit = {
-    actorSystem.actorOf(Props(new TriggerActor(triggerManager)), TriggerActor.actorName)
-    actorSystem.actorOf(Props(new TestSessionUpdateActor(reportManager, testResultManager, webSocketActor, testbedBackendClient)), TestSessionUpdateActor.actorName)
   }
 
   private def initialiseTestbedClient(): Unit = {
