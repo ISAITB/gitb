@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { DataService } from 'src/app/services/data.service';
 import { CustomProperty } from 'src/app/types/custom-property.type';
 import { FileData } from 'src/app/types/file-data.type';
@@ -26,6 +26,10 @@ export class CustomPropertyFormComponent implements OnInit {
   @Input() tbAdmin?: boolean
   @Input() tbPropertyType!: 'organisation'|'system'
   @Input() tbOwner?: number
+  @Input() tbExpandable = false
+  @Input() tbCollapsed: boolean|undefined
+  @Input() refresh?: EventEmitter<{props?: CustomProperty[], asterisks: boolean}>
+  @Output() collapseChange = new EventEmitter<boolean>()
 
   isAdmin = false
   isReadonly = true
@@ -42,6 +46,13 @@ export class CustomPropertyFormComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    if (this.tbExpandable) {
+      if (this.tbCollapsed == undefined) {
+        this.tbCollapsed = true
+      }
+    } else {
+      this.tbCollapsed = false
+    }
     if (this.tbAdmin === undefined) {
       this.isAdmin = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin
     } else {
@@ -58,6 +69,13 @@ export class CustomPropertyFormComponent implements OnInit {
     }
     if (this.tbFormPadded) {
       this.innerDivStyle = 'col-xs-'+(11-this.tbColOffset)+' col-xs-offset-'+this.tbColOffset
+    }
+    if (this.refresh) {
+      this.refresh.subscribe((newValues) => {
+        this.tbProperties = newValues.props
+        this.tbShowRequiredAsterisks = newValues.asterisks
+        this.init()
+      })
     }
     this.init()
   }
@@ -211,6 +229,13 @@ export class CustomPropertyFormComponent implements OnInit {
         }
       }
       this.hasPrerequisites = this.propertiesInvolvedInPrerequisites.length > 0
+    }
+  }
+
+  checkToExpand() {
+    if (this.tbExpandable) {
+      this.tbCollapsed = !this.tbCollapsed
+      this.collapseChange.emit(this.tbCollapsed)
     }
   }
 }

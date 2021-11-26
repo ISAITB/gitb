@@ -1,17 +1,7 @@
 <div *ngIf="hasVisibleProperties()">
-    <div class="row">
-      <div [ngClass]="'col-xs-'+(11-tbColOffset)+' col-xs-offset-'+tbColOffset">
-        <form class="form-horizontal">
-          <div class="form-group">
-            <label [ngClass]="'col-xs-'+tbColLabel" class="control-label" for="editProperties">Show properties:</label>
-            <div [ngClass]="'col-xs-'+(11-tbColLabel)"><input id="editProperties" name="editProperties" [(ngModel)]="tbPropertyData.edit" type="checkbox" class="form-check"></div>
-          </div>
-        </form>
-      </div>
-    </div>
     <app-custom-property-form 
-        [collapse]="!tbPropertyData.edit" 
-        [isAnimated]="true" 
+        [tbExpandable]="true"
+        [tbCollapsed]="!tbPropertyData.edit" 
         [tbProperties]="tbPropertyData.properties" 
         [tbPopup]="tbPopup"
         [tbColOffset]="tbColOffset" 
@@ -19,6 +9,7 @@
         [tbColInputLess]="tbColInputLess"
         [tbReadonly]="tbReadonly"
         [tbPropertyType]="tbPropertyType"
-        [tbOwner]="tbOwner">
+        [tbOwner]="tbOwner"
+        (collapseChange)="collapseChanged($event)">
     </app-custom-property-form>
 </div>

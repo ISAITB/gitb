@@ -43,4 +43,7 @@ export class OptionalCustomPropertyFormComponent implements OnInit {
     return result
   }
 
+  collapseChanged(collapsed: boolean) {
+    this.tbPropertyData.edit = !collapsed
+  }
 }

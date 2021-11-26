@@ -1,9 +1,10 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, OnInit } from '@angular/core';
 import { DomSanitizer } from '@angular/platform-browser';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
 import { CommunityService } from 'src/app/services/community.service';
 import { DataService } from 'src/app/services/data.service';
+import { CustomProperty } from 'src/app/types/custom-property.type';
 import { SelfRegistrationModel } from 'src/app/types/self-registration-model.type';
 import { SelfRegistrationOption } from 'src/app/types/self-registration-option.type';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
@@ -30,6 +31,7 @@ export class SelfRegistrationComponent extends BaseComponent implements OnInit {
       title: 'Description'
     }
   ]
+  refreshSignal = new EventEmitter<{props?: CustomProperty[], asterisks: boolean}>()
 
   constructor(
     public dataService: DataService,
@@ -59,6 +61,7 @@ export class SelfRegistrationComponent extends BaseComponent implements OnInit {
       this.model.template = this.model.selfRegOption.templates[0]
       this.templateReadonly = true
     } else {
+      this.model.template = undefined
       this.templateReadonly = false
     }
   }
@@ -83,6 +86,7 @@ export class SelfRegistrationComponent extends BaseComponent implements OnInit {
       this.dataService.setupLabels(this.model.selfRegOption.labels)
       this.adaptTemplateStatus()
       this.setFormFocus()
+      this.refreshSignal.emit({props: this.model.selfRegOption.organisationProperties, asterisks: this.model.selfRegOption.forceRequiredProperties})
     }
   }
 
