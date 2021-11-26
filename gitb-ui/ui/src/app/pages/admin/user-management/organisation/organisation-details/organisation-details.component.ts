@@ -65,6 +65,9 @@ export class OrganisationDetailsComponent extends BaseComponent implements OnIni
     this.organisationService.getOrganisationById(this.orgId)
     .subscribe((data) => {
       this.organisation = data
+      if (data.landingPage == null) this.organisation.landingPage = undefined
+      if (data.errorTemplate == null) this.organisation.errorTemplate = undefined
+      if (data.legalNotice == null) this.organisation.legalNotice = undefined
     })
     this.userService.getUsersByOrganisation(this.orgId)
     .subscribe((data) => {

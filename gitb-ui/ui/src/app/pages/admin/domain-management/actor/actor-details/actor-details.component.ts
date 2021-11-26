@@ -114,7 +114,7 @@ export class ActorDetailsComponent extends BaseComponent implements OnInit, Afte
   }
 
   createEndpoint() {
-    
+    this.routingService.toCreateEndpoint(this.domainId, this.specificationId, this.actorId)
   }
 
 }
