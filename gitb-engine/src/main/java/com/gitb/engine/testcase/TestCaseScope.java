@@ -82,7 +82,7 @@ public class TestCaseScope {
 	}
 
 	private DataType valueToStore(DataType value) {
-		if (TestEngineConfiguration.TEMP_STORAGE_ENABLED) {
+		if (TestEngineConfiguration.TEMP_STORAGE_ENABLED && value != null && value.getValue() != null) {
 			if (value instanceof BinaryType && TestEngineConfiguration.TEMP_STORAGE_BINARY_ENABLED && ((TestEngineConfiguration.TEMP_STORAGE_BINARY_THRESHOLD_BYTES <= 0) || (((byte[]) value.getValue()).length > TestEngineConfiguration.TEMP_STORAGE_BINARY_THRESHOLD_BYTES))) {
 				return new StoredBinaryType(context.getDataFolder(), (BinaryType) value);
 			} else if (value instanceof StringType && TestEngineConfiguration.TEMP_STORAGE_STRING_ENABLED && ((TestEngineConfiguration.TEMP_STORAGE_STRING_THRESHOLD_CHARS <= 0) || (((String) value.getValue()).length() > TestEngineConfiguration.TEMP_STORAGE_STRING_THRESHOLD_CHARS))) {
