@@ -248,7 +248,7 @@
 
         .message-info {
           position: relative;
-		  z-index: 200;
+		      z-index: 200;
         }
 
         .message-report {
@@ -353,6 +353,9 @@
         }
 
         &.self-message {
+          & > .message-info > .title-container {
+            justify-content: left;
+          }
           .title {
             text-align: left;
             min-height: 22px;
@@ -590,20 +593,23 @@
 		      background: white;
           padding: (@container-type-padding / 2) 0;
           margin: @container-type-padding 0 0 0;
-
-        &.hovering {
-  			  background: @hover-color;
-          .loop-type, .decision-type, .flow-type, .interact-type, .group-type {
-            & > .message.notHovering {
-              .title {
-                background: @white;
+          &.self-message > .message-info > .title-container,
+          & > .message-info > .title-container {
+            justify-content: center;
+          }
+          &.hovering {
+            background: @hover-color;
+            .loop-type, .decision-type, .flow-type, .interact-type, .group-type {
+              & > .message.notHovering {
+                .title {
+                  background: @white;
+                }
               }
             }
+            .title {
+              background: @hover-color;
+            }
           }
-          .title {
-            background: @hover-color;
-          }
-		    }
 
           .generate-depth-paddings(@macro-limit);
           .generate-spans(@actor-width, true, @macro-limit);
@@ -624,7 +630,7 @@
               overflow: hidden;
               text-overflow: ellipsis;
               display: inline-flex;
-			  user-select: none;
+			        user-select: none;
             }
           }
 
