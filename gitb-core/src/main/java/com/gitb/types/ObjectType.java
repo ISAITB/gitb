@@ -36,15 +36,19 @@ public class ObjectType extends DataType {
     private Long size = null;
 
     public ObjectType() {
-        try {
-            value =  XMLUtils.getSecureDocumentBuilderFactory().newDocumentBuilder().newDocument();
-        } catch (ParserConfigurationException e) {
-	        throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.DATATYPE_ERROR, "Document could not be constructed."), e);
-        }
+        value = emptyNode();
     }
 
     public ObjectType(Node node) {
         value = node;
+    }
+
+    protected Node emptyNode() {
+        try {
+            return XMLUtils.getSecureDocumentBuilderFactory().newDocumentBuilder().newDocument();
+        } catch (ParserConfigurationException e) {
+            throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.DATATYPE_ERROR, "Document could not be constructed."), e);
+        }
     }
 
     @Override

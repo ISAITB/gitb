@@ -47,8 +47,7 @@ public class AssignProcessor implements IProcessor {
 				// New variable
 				String variableName = stripExpressionStart(containerVariableExpression);
 				if (VariableResolver.VARIABLE_PATTERN.matcher(variableName).matches()) {
-					lValue = new MapType();
-					scope.createVariable(variableName).setValue(lValue);
+					lValue = scope.createVariable(variableName).setValue(new MapType());
 				} else {
 					throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Cannot create a new variable based on the provided name ["+variableName+"]"));
 				}
@@ -102,7 +101,7 @@ public class AssignProcessor implements IProcessor {
 				if (lValue != null) {
 					String variableName = stripExpressionStart(toExpression);
 					if (VariableResolver.VARIABLE_PATTERN.matcher(variableName).matches()) {
-						scope.createVariable(variableName).setValue(lValue);
+						lValue = scope.createVariable(variableName).setValue(lValue);
 					} else {
 						throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Cannot create a new variable based on the provided name ["+variableName+"]"));
 					}
