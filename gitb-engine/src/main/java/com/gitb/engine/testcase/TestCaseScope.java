@@ -104,8 +104,10 @@ public class TestCaseScope {
 		return value;
 	}
 
-	private void setValue(String name, DataType value) {
-		symbols.put(name, valueToStore(value));
+	private DataType setValue(String name, DataType value) {
+		var valueToStore = valueToStore(value);
+		symbols.put(name, valueToStore);
+		return valueToStore;
 	}
 
 	public ScopedVariable getVariable(String name) {
@@ -196,11 +198,11 @@ public class TestCaseScope {
 		 * @throws com.gitb.exceptions.GITBEngineInternalError if the variable is not defined, meaning that
 		 * it is not created yet.
 		 */
-		public void setValue(DataType value) {
+		public DataType setValue(DataType value) {
 			if(this.scope == null) {
 				throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Undefined variable ["+name+"]!"));
 			}
-			this.scope.setValue(this.name, value);
+			return this.scope.setValue(this.name, value);
 		}
 
 		@Override
@@ -223,8 +225,9 @@ public class TestCaseScope {
 		}
 
 		@Override
-		public void setValue(DataType value) {
+		public DataType setValue(DataType value) {
 			this.artifact = value;
+			return this.artifact;
 		}
 
 	}
