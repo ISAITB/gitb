@@ -30,10 +30,6 @@ public class SequenceProcessorActor<T extends Sequence> extends AbstractTestStep
     private Map<Integer, StepStatus> childStepStatuses;
     private Map<Integer, Object> childSteps;
 
-    public SequenceProcessorActor(T sequence, TestCaseScope scope) {
-        super(sequence, scope);
-    }
-
     public SequenceProcessorActor(T sequence, TestCaseScope scope, String stepId) {
         super(sequence, scope, stepId);
     }

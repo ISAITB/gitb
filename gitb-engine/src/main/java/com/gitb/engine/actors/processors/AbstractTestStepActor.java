@@ -56,12 +56,6 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	protected final TestCaseScope scope;
 	protected final String stepId;
 
-	public AbstractTestStepActor(T step, TestCaseScope scope) {
-		this.step = step;
-		this.scope = scope;
-		this.stepId = null;
-	}
-
 	public AbstractTestStepActor(T step, TestCaseScope scope, String stepId) {
 		this.scope = scope;
 		this.stepId = stepId;
@@ -273,37 +267,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		}
 
 		StepStatus status = statusEvent.getStatus();
-		context.parent().tell(statusEvent, self());
-
-		if (status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.SKIPPED || status == StepStatus.WARNING) {
-			self().tell(PoisonPill.getInstance(), self());
-
-			if (report == null) {
-				switch (status) {
-					case COMPLETED:
-						report = constructDefaultReport(TestResultType.SUCCESS);
-						break;
-					case SKIPPED:
-						report = constructDefaultReport(TestResultType.UNDEFINED);
-						break;
-					case WARNING:
-						report = constructDefaultReport(TestResultType.WARNING);
-						break;
-					case ERROR:
-						if (statusEvent instanceof ErrorStatusEvent
-							&& ((ErrorStatusEvent) statusEvent).getException() != null) {
-							report = constructDefaultErrorReport((ErrorStatusEvent) statusEvent);
-						} else {
-							report = constructDefaultReport(TestResultType.FAILURE);
-						}
-						break;
-				}
-			}
-		}
-
-		if (stepId == null || stepId.isEmpty()) {
-			return;
-		}
+		boolean isEndStatus = status == StepStatus.COMPLETED || status == StepStatus.ERROR || status == StepStatus.SKIPPED || status == StepStatus.WARNING;
 
 		boolean stopTestSession = false;
 		if (step instanceof TestConstruct) {
@@ -323,12 +287,40 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 				}
 			}
 		}
-		if (reportTestStepStatus) {
+
+		// Notify the parent step.
+		context.parent().tell(statusEvent, self());
+		// Complete the current step's report for feedback (if needed).
+		if (reportTestStepStatus && stepId != null && !stepId.isEmpty()) {
+			if (isEndStatus && report == null) {
+				switch (status) {
+					case COMPLETED:
+						report = constructDefaultReport(TestResultType.SUCCESS);
+						break;
+					case SKIPPED:
+						report = constructDefaultReport(TestResultType.UNDEFINED);
+						break;
+					case WARNING:
+						report = constructDefaultReport(TestResultType.WARNING);
+						break;
+					case ERROR:
+						if (statusEvent instanceof ErrorStatusEvent
+								&& ((ErrorStatusEvent) statusEvent).getException() != null) {
+							report = constructDefaultErrorReport((ErrorStatusEvent) statusEvent);
+						} else {
+							report = constructDefaultReport(TestResultType.FAILURE);
+						}
+						break;
+				}
+			}
 			final TestStepStatusEvent event = new TestStepStatusEvent(scope.getContext().getSessionId(), stepId, status, report, self(), step);
-			TestStepStatusEventBus
-					.getInstance()
-					.publish(event);
+			TestStepStatusEventBus.getInstance().publish(event);
 		}
+		// If this is the final status for the step stop the actor.
+		if (isEndStatus) {
+			self().tell(PoisonPill.getInstance(), self());
+		}
+		// If we must kill the test session signal the global session stop command.
 		if (stopTestSession) {
 			try {
 				getContext().system().actorSelection(SessionActor.getPath(scope.getContext().getSessionId())).tell(new PrepareForStopCommand(scope.getContext().getSessionId(), self()), self());

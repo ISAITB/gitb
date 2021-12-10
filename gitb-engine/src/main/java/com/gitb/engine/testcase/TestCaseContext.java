@@ -228,7 +228,7 @@ public class TestCaseContext {
 	}
 
 	private void addStepStatus() {
-		TestCaseScope.ScopedVariable variable = scope.createVariable("STEP_SUCCESS");
+		TestCaseScope.ScopedVariable variable = scope.createVariable(STEP_SUCCESS_MAP);
 		MapType map = (MapType) DataTypeFactory.getInstance().create(DataType.MAP_DATA_TYPE);
 		addStepStatusForStep(map, testCase.getSteps());
 		variable.setValue(map);
