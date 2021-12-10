@@ -34,11 +34,6 @@ public abstract class AbstractIterationStepActor<T> extends AbstractTestStepActo
 		initialize();
 	}
 
-	public AbstractIterationStepActor(T step, TestCaseScope scope) {
-		super(step, scope);
-		initialize();
-	}
-
 	private void initialize() {
 		boolean iterableStep = false;
 		if(step instanceof WhileStep

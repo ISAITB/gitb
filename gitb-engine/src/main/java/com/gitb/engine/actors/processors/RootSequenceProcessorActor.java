@@ -10,10 +10,6 @@ import com.gitb.types.BooleanType;
 
 public class RootSequenceProcessorActor<T extends Sequence> extends SequenceProcessorActor<T> {
 
-    public RootSequenceProcessorActor(T sequence, TestCaseScope scope) {
-        super(sequence, scope);
-    }
-
     public RootSequenceProcessorActor(T sequence, TestCaseScope scope, String stepId) {
         super(sequence, scope, stepId);
         // Set overall test status to success to begin with.

@@ -26,10 +26,6 @@ public abstract class AbstractProcessorActor<T> extends AbstractTestStepActor<T>
 
 	private Promise<TestStepReportType> promise;
 
-	public AbstractProcessorActor(T step, TestCaseScope scope) {
-		super(step, scope);
-	}
-
 	public AbstractProcessorActor(T step, TestCaseScope scope, String stepId) {
 		super(step, scope, stepId);
 	}
