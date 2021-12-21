@@ -35,4 +35,32 @@
         <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/log4j\-to\-slf4j@.*$</packageUrl>
         <cve>CVE-2021-45046</cve>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: log4j-api-2.14.1.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/log4j\-api@.*$</packageUrl>
+        <cve>CVE-2021-45105</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: log4j-to-slf4j-2.14.1.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.logging\.log4j/log4j\-to\-slf4j@.*$</packageUrl>
+        <cve>CVE-2021-45105</cve>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: itext-2.1.7.js8.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.lowagie/itext@.*$</packageUrl>
+        <vulnerabilityName>CVE-2017-9096</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: itext-2.1.7.js8.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.lowagie/itext@.*$</packageUrl>
+        <vulnerabilityName>CVE-2021-43113</vulnerabilityName>
+    </suppress>
 </suppressions>
