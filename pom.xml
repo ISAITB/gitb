@@ -22,7 +22,7 @@
         <version.springBoot>2.6.2</version.springBoot>
         <version.jasperReports>6.16.0</version.jasperReports>
         <version.bouncycastle>1.69</version.bouncycastle>
-        <version.helgerSchematron>6.2.4</version.helgerSchematron>
+        <version.helgerSchematron>6.2.8</version.helgerSchematron>
     </properties>
 
     <repositories>
