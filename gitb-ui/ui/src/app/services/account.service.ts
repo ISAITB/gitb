@@ -134,7 +134,7 @@ export class AccountService {
       path: ROUTES.controllers.AccountService.submitFeedback().url,
       data: data,
       files: files,
-      authenticate: this.dataService.user !== undefined
+      authenticate: false
     })
   }
 
