@@ -7,4 +7,18 @@
         <packageUrl regex="true">^pkg:maven/com\.gitb/gitb\-processing@.*$</packageUrl>
         <cpe>cpe:/a:processing:processing</cpe>
     </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: itext-2.1.7.js8.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.lowagie/itext@.*$</packageUrl>
+        <vulnerabilityName>CVE-2017-9096</vulnerabilityName>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+   file name: itext-2.1.7.js8.jar
+   ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.lowagie/itext@.*$</packageUrl>
+        <vulnerabilityName>CVE-2021-43113</vulnerabilityName>
+    </suppress>
 </suppressions>

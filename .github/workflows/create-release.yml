@@ -1,0 +1,22 @@
+name: "create-release"
+
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  create-release:
+    name: "Create release for pushed tag"
+    runs-on: "ubuntu-latest"
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v2
+      - uses: "ncipollo/release-action@v1.9.0"
+        with:
+          allowUpdates: true
+          omitBodyDuringUpdate: true
+          omitNameDuringUpdate: true
+          bodyFile: .github/workflows/resources/releaseBody.md
+          token: "${{ secrets.GITHUB_TOKEN }}"

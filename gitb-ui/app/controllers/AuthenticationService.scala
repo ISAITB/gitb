@@ -5,7 +5,7 @@ import controllers.util._
 import exceptions._
 import managers.{AccountManager, AuthenticationManager, AuthorizationManager, UserManager}
 import models.Enums
-import org.pac4j.play.store.PlaySessionStore
+import org.pac4j.core.context.session.SessionStore
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.cache.TokenCache
 import play.api.mvc._
@@ -13,7 +13,7 @@ import utils.{CryptoUtil, JsonUtil, RepositoryUtils}
 
 import javax.inject.Inject
 
-class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, accountManager: AccountManager, authManager: AuthenticationManager, authorizationManager: AuthorizationManager, playSessionStore: PlaySessionStore, userManager: UserManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
+class AuthenticationService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerComponents, accountManager: AccountManager, authManager: AuthenticationManager, authorizationManager: AuthorizationManager, sessionStore: SessionStore, userManager: UserManager, repositoryUtils: RepositoryUtils) extends AbstractController(cc) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthenticationService])
   private final val BEARER = "Bearer"

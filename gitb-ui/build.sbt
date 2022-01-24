@@ -7,8 +7,8 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
   .settings(dependencyCheckSuppressionFile := Some(file("project/owasp-suppressions.xml")))
 
 scalaVersion := "2.13.6"
-val akkaVersion = "2.6.16"
-val jacksonVersion = "2.12.5"
+val akkaVersion = "2.6.18"
+val jacksonVersion = "2.13.1"
 val cxfVersion = "3.4.5"
 val jettyVersion = "9.4.43.v20210629"
 
@@ -20,13 +20,13 @@ libraryDependencies ++= Seq(
   cacheApi,
   "com.google.inject" % "guice" % "5.0.1",
   "com.google.inject.extensions" % "guice-assistedinject" % "5.0.1",
-  "eu.europa.ec.itb" % "gitb-types" % "1.15.0",
+  "eu.europa.ec.itb" % "gitb-types" % "1.15.1",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-reports" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-validator-tdl" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-xml-resources" % "1.0-SNAPSHOT",
-  "mysql" % "mysql-connector-java" % "8.0.27",
+  "mysql" % "mysql-connector-java" % "8.0.28",
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
   "com.typesafe.akka" %% "akka-remote" % akkaVersion,
@@ -35,9 +35,9 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-serialization-jackson" % akkaVersion,
   "com.typesafe.play" %% "play-slick" % "5.0.0",
   "com.typesafe.play" %% "play-json" % "2.9.2",
-  "org.pac4j" %% "play-pac4j" % "10.0.2",
-  "org.pac4j" % "pac4j-cas" % "4.3.1",
-  "ch.qos.logback" % "logback-classic" % "1.2.6",
+  "org.pac4j" %% "play-pac4j" % "11.1.0-PLAY2.8",
+  "org.pac4j" % "pac4j-cas" % "5.3.0",
+  "ch.qos.logback" % "logback-classic" % "1.2.10",
   "org.apache.commons" % "commons-lang3" % "3.12.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
@@ -45,7 +45,7 @@ libraryDependencies ++= Seq(
   "com.fasterxml.jackson.core" % "jackson-annotations" % jacksonVersion,
   "com.fasterxml.jackson.module" % "jackson-module-jaxb-annotations" % jacksonVersion,
   "org.mindrot"  % "jbcrypt" % "0.4",  // For password encryption
-  "net.debasishg" %% "redisclient" % "3.40",
+  "net.debasishg" %% "redisclient" % "3.42",
   // For calling and exporting JAX-WS services.
   "org.apache.cxf" % "cxf-rt-frontend-jaxws" % cxfVersion,
   "org.apache.cxf" % "cxf-rt-transports-http" % cxfVersion,
@@ -81,7 +81,7 @@ libraryDependencies ++= Seq(
   "org.apache.httpcomponents" % "httpclient" % "4.5.13",
   "org.flywaydb" %% "flyway-play" % "7.14.0",
   "com.googlecode.owasp-java-html-sanitizer" % "owasp-java-html-sanitizer" % "20211018.2",
-  "net.lingala.zip4j" % "zip4j" % "2.9.0"
+  "net.lingala.zip4j" % "zip4j" % "2.9.1"
 )
 
 // Add assets build folder to clean task

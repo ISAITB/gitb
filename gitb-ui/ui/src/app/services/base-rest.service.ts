@@ -18,6 +18,7 @@ export class BaseRestService {
   private call<T>(config: HttpRequestConfig, callFn: () => Observable<T>): Observable<T> {
     if (config.authenticate && !this.authProviderService.isAuthenticated()) {
       this.authProviderService.signalLogout({full: true})
+      throw 'Signalling logout due to unauthorised call'
     }
     return callFn()
   }
