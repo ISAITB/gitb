@@ -4,12 +4,13 @@ import com.gitb.utils.HmacUtils
 import config.Configurations
 import controllers.util.{ParameterExtractor, RequestWithAttributes}
 import exceptions.UnauthorizedAccessException
+
 import javax.inject.{Inject, Singleton}
 import models.Enums.{SelfRegistrationType, UserRole}
 import models._
+import org.pac4j.core.context.session.SessionStore
 import org.pac4j.core.profile.{CommonProfile, ProfileManager}
 import org.pac4j.play.PlayWebContext
-import org.pac4j.play.store.PlaySessionStore
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.Files
@@ -42,7 +43,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
                                      testResultManager: TestResultManager,
                                      actorManager: ActorManager,
                                      repositoryUtils: RepositoryUtils,
-                                     playSessionStore: PlaySessionStore
+                                     playSessionStore: SessionStore
                                     ) extends BaseManager(dbConfigProvider) {
 
   private final val logger: Logger = LoggerFactory.getLogger(classOf[AuthorizationManager])
@@ -56,9 +57,9 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
 
   def getPrincipal(request: RequestWithAttributes[_]): ActualUserInfo = {
     var userInfo: ActualUserInfo = null
-    val webContext = new PlayWebContext(request, playSessionStore)
-    val profileManager = new ProfileManager[CommonProfile](webContext)
-    val profile = profileManager.get(true)
+    val webContext = new PlayWebContext(request)
+    val profileManager = new ProfileManager(webContext, playSessionStore)
+    val profile = profileManager.getProfile()
     if (profile.isEmpty) {
       logger.error("Lookup for a real user's data failed due to a missing profile.")
     } else {

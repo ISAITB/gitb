@@ -10,13 +10,12 @@ import org.pac4j.core.authorization.authorizer.IsAuthenticatedAuthorizer
 import org.pac4j.core.client.Clients
 import org.pac4j.core.client.direct.AnonymousClient
 import org.pac4j.core.config.Config
+import org.pac4j.core.context.session.SessionStore
 import org.pac4j.core.http.ajax.DefaultAjaxRequestResolver
 import org.pac4j.core.http.callback.QueryParameterCallbackUrlResolver
 import org.pac4j.core.matching.matcher.PathMatcher
-import org.pac4j.core.profile.UserProfile
 import org.pac4j.core.util.Pac4jConstants
 import org.pac4j.play.http.PlayHttpActionAdapter
-import org.pac4j.play.store.PlaySessionStore
 import org.pac4j.play.{CallbackController, LogoutController}
 import play.cache.SyncCacheApi
 
@@ -42,12 +41,11 @@ class SecurityModule extends AbstractModule {
     } else {
       playCacheSessionStore.setMaxTimeout(Configurations.AUTHENTICATION_SESSION_MAX_TOTAL_TIME)
     }
-    bind(classOf[PlaySessionStore]).toInstance(playCacheSessionStore)
+    bind(classOf[SessionStore]).toInstance(playCacheSessionStore)
 
     // callback
     val callbackController = new CallbackController()
     callbackController.setDefaultUrl("/app")
-    callbackController.setMultiProfile(true)
     bind(classOf[CallbackController]).toInstance(callbackController)
 
     // logout
@@ -74,6 +72,7 @@ class SecurityModule extends AbstractModule {
     }
     val casClient = new CasClient(casConfiguration)
     casClient.setName(CLIENT_NAME)
+    casClient.setMultiProfile(true)
     casClient.setAjaxRequestResolver(new DefaultAjaxRequestResolver)
     casClient
   }
@@ -99,9 +98,9 @@ class SecurityModule extends AbstractModule {
     }
     val config = new Config(clients)
     if (Configurations.AUTHENTICATION_SSO_ENABLED) {
-      config.addAuthorizer("_authenticated_", new IsAuthenticatedAuthorizer[UserProfile])
+      config.addAuthorizer("_authenticated_", new IsAuthenticatedAuthorizer)
     } else {
-      config.addAuthorizer("_authenticated_", new BasicAuthorizer[Nothing])
+      config.addAuthorizer("_authenticated_", new BasicAuthorizer)
     }
     config.setHttpActionAdapter(new PlayHttpActionAdapter())
     config.addMatcher("excludedPath", new PathMatcher()
