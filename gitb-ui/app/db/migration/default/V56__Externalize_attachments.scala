@@ -9,7 +9,7 @@ import java.util.Base64
 class V56__Externalize_attachments extends BaseJavaMigration {
 
   private def LOG = LoggerFactory.getLogger(classOf[V56__Externalize_attachments])
-  private def ROOT_FOLDER = "/gitb-repository/files"
+  private def DEFAULT_ROOT_FOLDER = "/gitb-repository"
 
   private def contentTypeFromDataURL(value: String): String = {
     value.substring(5, value.indexOf(";base64,"))
@@ -19,14 +19,17 @@ class V56__Externalize_attachments extends BaseJavaMigration {
     dataURL.substring(dataURL.indexOf(",") + 1)
   }
 
-  private def createAttachment(dataURL: String, path: String): (String, String) = {
-    val filePath = Path.of(ROOT_FOLDER, path)
+  private def createAttachment(dataURL: String, path: String, rootFolder: String): (String, String) = {
+    val filePath = Path.of(rootFolder, path)
     filePath.getParent.toFile.mkdirs()
     Files.write(filePath, Base64.getDecoder.decode(base64FromDataURL(dataURL)))
     (path, contentTypeFromDataURL(dataURL))
   }
 
   override def migrate(context: Context): Unit = {
+    val repositoryFolder: String = sys.env.get("TESTBED_REPOSITORY_PATH").orElse(Some(DEFAULT_ROOT_FOLDER)).get
+    val rootFolderToUse = Path.of(repositoryFolder, "files").toString
+
     // Domain parameters.
     {
       var counter = 0
@@ -38,7 +41,7 @@ class V56__Externalize_attachments extends BaseJavaMigration {
             val id = rs.getLong(1)
             val value = rs.getString(2)
             val domain = rs.getLong(3)
-            val attachmentData = createAttachment(value, "/dp/"+domain+"/"+id)
+            val attachmentData = createAttachment(value, "/dp/"+domain+"/"+id, rootFolderToUse)
             val update = context.getConnection.prepareStatement("UPDATE `domainparameters` SET `content_type` = ?, `value` = ? WHERE `id` = ?")
             try {
               update.setString(1, attachmentData._2)
@@ -63,7 +66,7 @@ class V56__Externalize_attachments extends BaseJavaMigration {
             val organisationId = rs.getLong(1)
             val parameterId = rs.getLong(2)
             val value = rs.getString(3)
-            val attachmentData = createAttachment(value, "/op/"+parameterId+"/"+organisationId+"_"+parameterId)
+            val attachmentData = createAttachment(value, "/op/"+parameterId+"/"+organisationId+"_"+parameterId, rootFolderToUse)
             val update = context.getConnection.prepareStatement("UPDATE `organisationparametervalues` SET `content_type` = ?, `value` = ? WHERE `organisation` = ? AND `parameter` = ?")
             try {
               update.setString(1, attachmentData._2)
@@ -89,7 +92,7 @@ class V56__Externalize_attachments extends BaseJavaMigration {
             val systemId = rs.getLong(1)
             val parameterId = rs.getLong(2)
             val value = rs.getString(3)
-            val attachmentData = createAttachment(value, "/sp/"+parameterId+"/"+systemId+"_"+parameterId)
+            val attachmentData = createAttachment(value, "/sp/"+parameterId+"/"+systemId+"_"+parameterId, rootFolderToUse)
             val update = context.getConnection.prepareStatement("UPDATE `systemparametervalues` SET `content_type` = ?, `value` = ? WHERE `system` = ? AND `parameter` = ?")
             try {
               update.setString(1, attachmentData._2)
@@ -115,7 +118,7 @@ class V56__Externalize_attachments extends BaseJavaMigration {
             val systemId = rs.getLong(1)
             val parameterId = rs.getLong(2)
             val value = rs.getString(3)
-            val attachmentData = createAttachment(value, "/ep/"+parameterId+"/"+systemId+"_"+parameterId)
+            val attachmentData = createAttachment(value, "/ep/"+parameterId+"/"+systemId+"_"+parameterId, rootFolderToUse)
             val update = context.getConnection.prepareStatement("UPDATE `configurations` SET `content_type` = ?, `value` = ? WHERE `system` = ? AND `parameter` = ?")
             try {
               update.setString(1, attachmentData._2)
