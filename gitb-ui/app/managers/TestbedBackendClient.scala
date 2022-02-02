@@ -1,10 +1,12 @@
 package managers
 
-import com.gitb.tbs.{TestbedService, TestbedService_Service}
+import com.gitb.core.ActorConfiguration
+import com.gitb.tbs._
 import config.Configurations
-import javax.inject.Singleton
 import jaxws.HeaderHandlerResolver
 import org.slf4j.{Logger, LoggerFactory}
+
+import javax.inject.Singleton
 
 @Singleton
 class TestbedBackendClient {
@@ -13,7 +15,7 @@ class TestbedBackendClient {
 
   private var portInternal: TestbedService = null
 
-  def service():TestbedService = {
+  private def service():TestbedService = {
     if (portInternal == null) {
       logger.info("Creating TestbedService client")
       val backendURL: java.net.URL = new java.net.URL(Configurations.TESTBED_SERVICE_URL+"?wsdl")
@@ -25,6 +27,72 @@ class TestbedBackendClient {
       portInternal = port
     }
     portInternal
+  }
+
+  def initiate(test_id: Long): String = {
+    val requestData: BasicRequest = new BasicRequest
+    requestData.setTcId(test_id.toString)
+    val response = service().initiate(requestData)
+    response.getTcInstanceId
+  }
+
+  def configure(sessionId: String, statementParameters: List[ActorConfiguration], domainParameters: Option[ActorConfiguration], organisationParameters: ActorConfiguration, systemParameters: ActorConfiguration): ConfigureResponse = {
+    val cRequest: ConfigureRequest = new ConfigureRequest
+    cRequest.setTcInstanceId(sessionId)
+    import scala.jdk.CollectionConverters._
+    cRequest.getConfigs.addAll(statementParameters.asJava)
+    if (domainParameters.nonEmpty) {
+      cRequest.getConfigs.add(domainParameters.get)
+    }
+    cRequest.getConfigs.add(organisationParameters)
+    cRequest.getConfigs.add(systemParameters)
+    val response = service().configure(cRequest)
+    response
+  }
+
+  def restart(sessionId: String): Unit = {
+    val bRequest: BasicCommand = new BasicCommand
+    bRequest.setTcInstanceId(sessionId)
+    service().restart(bRequest)
+  }
+
+  def stop(sessionId: String): Unit = {
+    val request: BasicCommand = new BasicCommand
+    request.setTcInstanceId(sessionId)
+    service().stop(request)
+  }
+
+  def start(sessionId: String): Unit = {
+    val bRequest: BasicCommand = new BasicCommand
+    bRequest.setTcInstanceId(sessionId)
+    service().start(bRequest)
+  }
+
+  def provideInput(sessionId: String, stepId: String, userInputs: Option[List[UserInput]]): Unit = {
+    val pRequest: ProvideInputRequest = new ProvideInputRequest
+    pRequest.setTcInstanceId(sessionId)
+    pRequest.setStepId(stepId)
+    if (userInputs.nonEmpty) {
+      // User inputs are empty when this is a headless session
+      import scala.jdk.CollectionConverters._
+      pRequest.getInput.addAll(userInputs.get.asJava)
+    }
+    service().provideInput(pRequest)
+  }
+
+  def getTestCaseDefinition(testId:String, sessionId: Option[String]): GetTestCaseDefinitionResponse = {
+    val request = new GetTestCaseDefinitionRequest
+    request.setTcId(testId)
+    if (sessionId.isDefined) {
+      request.setTcInstanceId(sessionId.get)
+    }
+    service().getTestCaseDefinition(request)
+  }
+
+  def initiatePreliminary(sessionId: String): Unit = {
+    val bRequest:BasicCommand = new BasicCommand
+    bRequest.setTcInstanceId(sessionId)
+    service().initiatePreliminary(bRequest)
   }
 
 }

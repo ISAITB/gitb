@@ -597,10 +597,6 @@ public class TestCaseContext {
 		messagingContexts.clear();
 	}
 
-    public MessagingContext endMessagingContext(String handler) {
-        return messagingContexts.remove(handler);
-    }
-
     public Collection<MessagingContext> getMessagingContexts() {
         return messagingContexts.values();
     }

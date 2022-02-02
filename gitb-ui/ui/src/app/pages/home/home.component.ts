@@ -1,5 +1,4 @@
 import { Component, OnInit } from '@angular/core';
-import { DomSanitizer } from '@angular/platform-browser';
 import { AccountService } from 'src/app/services/account.service';
 import { DataService } from 'src/app/services/data.service';
 import { LandingPageService } from 'src/app/services/landing-page.service';
@@ -15,8 +14,7 @@ export class HomeComponent implements OnInit {
   constructor(
     private accountService: AccountService,
     private landingPageService: LandingPageService,
-    public dataService: DataService,
-    public sanitizer: DomSanitizer
+    public dataService: DataService
   ) { }
 
   ngOnInit(): void {

@@ -13,7 +13,7 @@
             <div class="col-md-12">
                 <ng-container [ngSwitch]="dataService.currentLandingPageContent == undefined">
                     <div class="container" *ngSwitchCase="true"><span class="tab" style="font-size: xx-large;"><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></div>
-                    <div id="content" *ngSwitchCase="false" [innerHtml]="sanitizer.bypassSecurityTrustHtml(dataService.currentLandingPageContent!)"></div>
+                    <div id="content" *ngSwitchCase="false" [innerHtml]="dataService.currentLandingPageContent! | sanitizeHtml"></div>
                 </ng-container>
             </div>
         </div>

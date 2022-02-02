@@ -1,6 +1,6 @@
 package modules
 
-import actors.{SessionManagerActor, SessionUpdateActor, TriggerActor}
+import actors.{SessionLaunchActor, SessionManagerActor, SessionUpdateActor, TriggerActor}
 import com.google.inject.AbstractModule
 import hooks.{BeforeStartHook, OnStopHook, PostStartHook}
 import play.api.libs.concurrent.AkkaGuiceSupport
@@ -18,6 +18,7 @@ class Module extends AbstractModule with AkkaGuiceSupport {
     bindActor[TriggerActor](TriggerActor.actorName)
     bindActor[SessionManagerActor](SessionManagerActor.actorName)
     bindActorFactory[SessionUpdateActor, SessionUpdateActor.Factory]
+    bindActorFactory[SessionLaunchActor, SessionLaunchActor.Factory]
     // Bind top level actors - END
     bind(classOf[PostStartHook]).asEagerSingleton()
     bind(classOf[OnStopHook]).asEagerSingleton()

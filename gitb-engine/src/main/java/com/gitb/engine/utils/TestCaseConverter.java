@@ -54,6 +54,7 @@ public class TestCaseConverter {
         presentation.setId(testCase.getId());
         presentation.setMetadata(testCase.getMetadata());
         presentation.setActors(testCase.getActors());
+        presentation.setSupportsParallelExecution(testCase.isSupportsParallelExecution());
         if (testCase.getPreliminary() != null) {
             presentation.setPreliminary(convertPreliminary(testCase.getPreliminary()));
         }
