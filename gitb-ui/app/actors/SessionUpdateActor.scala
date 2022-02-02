@@ -1,8 +1,9 @@
 package actors
 
+import actors.events.sessions.TestSessionCompletedEvent
 import akka.actor.{Actor, PoisonPill}
 import com.gitb.core.ValueEmbeddingEnumeration
-import com.gitb.tbs.{Instruction, InteractWithUsersRequest, ProvideInputRequest, TestStepStatus}
+import com.gitb.tbs.{Instruction, InteractWithUsersRequest, TestStepStatus}
 import com.gitb.tr.TAR
 import managers.{ReportManager, TestResultManager, TestbedBackendClient}
 import models.TestStepResultInfo
@@ -26,12 +27,12 @@ class SessionUpdateActor @Inject() (reportManager: ReportManager, testResultMana
   private val LOG_EVENT_STEP_ID = "-999"
 
   override def preStart():Unit = {
-    LOGGER.info(s"Starting session update actor [${self.path.name}]")
+    LOGGER.debug(s"Starting session update actor [${self.path.name}]")
     super.preStart()
   }
 
   override def postStop(): Unit = {
-    LOGGER.info(s"Stopping session update actor [${self.path.name}]")
+    LOGGER.debug(s"Stopping session update actor [${self.path.name}]")
     super.postStop()
   }
 
@@ -61,6 +62,8 @@ class SessionUpdateActor @Inject() (reportManager: ReportManager, testResultMana
           val message: String = JsonUtil.jsTestStepResultInfo(session, step, resultInfo, Option.apply(outputMessage), statusUpdates).toString
           webSocketActor.testSessionEnded(session, message)
         } finally {
+          // Notify that a test session has completed.
+          context.system.eventStream.publish(TestSessionCompletedEvent(session))
           // Stop the current actor
           self ! PoisonPill.getInstance
         }
@@ -109,10 +112,7 @@ class SessionUpdateActor @Inject() (reportManager: ReportManager, testResultMana
         }
       } else { // This is a headless session - automatically dismiss or complete with an empty request.
         LOGGER.warn(s"Headless session [$session] expected interaction for step [${interactWithUsersRequest.getStepId}]. Completed automatically with empty result.")
-        val interactionResult = new ProvideInputRequest
-        interactionResult.setTcInstanceId(session)
-        interactionResult.setStepId(interactWithUsersRequest.getStepId)
-        testbedBackendClient.service().provideInput(interactionResult)
+        testbedBackendClient.provideInput(session, interactWithUsersRequest.getStepId, None)
       }
     } catch {
       case e: Exception =>

@@ -1,7 +1,6 @@
 package actors
 
 import akka.actor.{Actor, ActorRef, ActorSystem, Props}
-import com.gitb.tbs.BasicCommand
 import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json._
 
@@ -27,9 +26,7 @@ class WebSocketActor @Inject() (actorSystem: ActorSystem, testbedClient: manager
   private final val logger = LoggerFactory.getLogger("WebSocketActor")
 
   def pingTestEngineForClosedConnection(sessionId: String): Unit = {
-    val command = new BasicCommand()
-    command.setTcInstanceId("CONNECTION_CLOSED|"+sessionId)
-    testbedClient.service().stop(command)
+    testbedClient.stop("CONNECTION_CLOSED|"+sessionId)
   }
 
   private def broadcastAttempt(sessionId:String, msg:String, attempt: Int): Unit = {

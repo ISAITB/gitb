@@ -1,10 +1,12 @@
 package actors
 
+import actors.events.sessions.PrepareTestSessionsEvent
 import akka.actor.{Actor, ActorContext, ActorRef}
 import com.gitb.tbs.{InteractWithUsersRequest, TestStepStatus}
 import org.slf4j.LoggerFactory
 import play.api.libs.concurrent.InjectedActorSupport
 
+import java.util.UUID
 import javax.inject.Inject
 
 object SessionManagerActor {
@@ -13,7 +15,7 @@ object SessionManagerActor {
 
 }
 
-class SessionManagerActor @Inject() (childFactory: SessionUpdateActor.Factory) extends Actor with InjectedActorSupport {
+class SessionManagerActor @Inject() (sessionUpdateActorFactory: SessionUpdateActor.Factory, sessionLaunchActorFactory: SessionLaunchActor.Factory) extends Actor with InjectedActorSupport {
 
   private val LOGGER = LoggerFactory.getLogger(classOf[SessionManagerActor])
 
@@ -32,17 +34,25 @@ class SessionManagerActor @Inject() (childFactory: SessionUpdateActor.Factory) e
       getSessionUpdateActor(msg.getTcInstanceId, context) ! msg
     case msg: InteractWithUsersRequest =>
       getSessionUpdateActor(msg.getTcInstanceid, context) ! msg
+    case msg: PrepareTestSessionsEvent =>
+      prepareTestSessions(msg)
     case msg: Object =>
       LOGGER.warn(s"Session manager received unexpected message [${msg.getClass.getName}]")
   }
 
   private def getSessionUpdateActor(sessionId: String, context: ActorContext): ActorRef = {
-    context.child(sessionId) match {
+    context.child("session-"+sessionId) match {
       case Some(actorRef) => actorRef
       case None =>
         implicit val context: ActorContext = this.context
-        injectedChild(childFactory(), sessionId, props => props.withDispatcher("session-actor-dispatcher"))
+        injectedChild(sessionUpdateActorFactory(), "session-"+sessionId, props => props.withDispatcher("session-actor-dispatcher"))
     }
+  }
+
+  private def prepareTestSessions(event: PrepareTestSessionsEvent): Unit = {
+    implicit val context: ActorContext = this.context
+    val actor = injectedChild(sessionLaunchActorFactory(), "launch-"+UUID.randomUUID().toString, props => props.withDispatcher("session-actor-dispatcher"))
+    actor ! event
   }
 
 }
