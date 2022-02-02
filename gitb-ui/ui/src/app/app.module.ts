@@ -137,6 +137,7 @@ import { SecretInputComponent } from './components/secret-input/secret-input.com
 import { TabsModule } from 'ngx-bootstrap/tabs';
 import { TextFilterComponent } from './components/text-filter/text-filter.component';
 import { CopyEnabledTextComponent } from './components/copy-enabled-text/copy-enabled-text.component';
+import { SanitizeHtmlPipe } from './pipes/sanitize-html.pipe';
 
 @NgModule({
   providers: [ 
@@ -262,7 +263,8 @@ import { CopyEnabledTextComponent } from './components/copy-enabled-text/copy-en
     ProvideInputModalComponent,
     SecretInputComponent,
     TextFilterComponent,
-    CopyEnabledTextComponent],
+    CopyEnabledTextComponent,
+    SanitizeHtmlPipe],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
