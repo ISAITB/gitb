@@ -162,7 +162,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
     for {
       communityId <- PersistenceSchema.insertCommunity += community
       adminOrganisationId <- {
-        val adminOrganization = Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, adminOrganization = true, None, None, None, template = false, None, communityId)
+        val adminOrganization = Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, adminOrganization = true, None, None, None, template = false, None, None, communityId)
         PersistenceSchema.insertOrganization += adminOrganization
       }
     } yield (communityId, adminOrganisationId)
@@ -233,7 +233,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
                                                 selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean,
                                                 description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                                                 allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
-                                                allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean,
+                                                allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Boolean,
                                                 domainId: Option[Long], onSuccess: mutable.ListBuffer[() => _]) = {
     val actions = new ListBuffer[DBIO[_]]()
     if (shortName.nonEmpty && community.shortname != shortName) {
@@ -251,13 +251,13 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
       c.supportEmail, c.domain, c.selfRegType, c.selfRegToken, c.selfRegTokenHelpText, c.selfregNotification,
       c.description, c.selfRegRestriction, c.selfRegForceTemplateSelection, c.selfRegForceRequiredProperties,
       c.allowCertificateDownload, c.allowStatementManagement, c.allowSystemManagement,
-      c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates,
+      c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates, c.allowAutomationApi
     )
     actions += qs.update(
       supportEmail, domainId, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
       description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
       allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-      allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates
+      allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi
     )
     toDBIO(actions)
   }
@@ -270,7 +270,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
                       selfRegNotification: Boolean, description: Option[String], selfRegRestriction: Short,
                       selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                       allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
-                      allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean,
+                      allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean,
+                      allowPostTestStatementUpdates: Boolean, allowAutomationApi: Boolean,
                       domainId: Option[Long]) = {
 
     val onSuccess = ListBuffer[() => _]()
@@ -282,7 +283,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
             community.get, shortName, fullName, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText,
             selfRegNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
             allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-            allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates,
+            allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi,
             domainId, onSuccess
           )
         } else {

@@ -22,11 +22,24 @@ public class DataTypeUtils {
 	};
 
 	public static DataType convertAnyContentToDataType(AnyContent anyContent) {
+		if (anyContent.getType() == null) {
+			anyContent.setType(guessDataType(anyContent));
+		}
 		DataType data = DataTypeFactory.getInstance().create(anyContent.getType());
-
 		setDataTypeValueWithAnyContent(data, anyContent);
-
 		return data;
+	}
+
+	private static String guessDataType(AnyContent anyContent) {
+		if (anyContent.getType() != null) {
+			return anyContent.getType();
+		} else if (anyContent.getItem().isEmpty()) {
+			return DataType.STRING_DATA_TYPE;
+		} else if (anyContent.getItem().get(0).getName() != null) {
+			return DataType.MAP_DATA_TYPE;
+		} else {
+			return DataType.LIST_DATA_TYPE;
+		}
 	}
 
 	public static AnyContent convertDataTypeToAnyContent(String name, DataType fragment) {

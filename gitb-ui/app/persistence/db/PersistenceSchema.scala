@@ -30,8 +30,9 @@ object PersistenceSchema {
     def allowPostTestOrganisationUpdates = column[Boolean]("allow_post_test_org_updates")
     def allowPostTestSystemUpdates = column[Boolean]("allow_post_test_sys_updates")
     def allowPostTestStatementUpdates = column[Boolean]("allow_post_test_stm_updates")
+    def allowAutomationApi = column[Boolean]("allow_automation_api")
     def domain = column[Option[Long]] ("domain")
-    def * = (id, shortname, fullname, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText, selfregNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, domain) <> (Communities.tupled, Communities.unapply)
+    def * = (id, shortname, fullname, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText, selfregNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties, allowCertificateDownload, allowStatementManagement, allowSystemManagement, allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi, domain) <> (Communities.tupled, Communities.unapply)
   }
   val communities = TableQuery[CommunitiesTable]
   val insertCommunity = communities returning communities.map(_.id)
@@ -47,8 +48,9 @@ object PersistenceSchema {
     def errorTemplate = column[Option[Long]] ("error_template")
     def template = column[Boolean]("template")
     def templateName = column[Option[String]]("template_name")
+    def apiKey = column[Option[String]]("api_key")
     def community = column[Long] ("community")
-    def * = (id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, errorTemplate, template, templateName, community) <> (Organizations.tupled, Organizations.unapply)
+    def * = (id, shortname, fullname, organizationType, adminOrganization, landingPage, legalNotice, errorTemplate, template, templateName, apiKey, community) <> (Organizations.tupled, Organizations.unapply)
   }
   //get table name etc from organizations.baseTableRow
   val organizations = TableQuery[OrganizationsTable]
@@ -77,8 +79,9 @@ object PersistenceSchema {
     def fullname = column[String]("fname")
     def description = column[Option[String]]("description", O.SqlType("TEXT"))
     def version = column[String]("version")
+    def apiKey = column[Option[String]]("api_key")
     def owner = column[Long]("owner")
-    def * = (id, shortname, fullname, description, version, owner) <> (Systems.tupled, Systems.unapply)
+    def * = (id, shortname, fullname, description, version, apiKey, owner) <> (Systems.tupled, Systems.unapply)
   }
   val systems = TableQuery[SystemsTable]
   val insertSystem = systems returning systems.map(_.id)

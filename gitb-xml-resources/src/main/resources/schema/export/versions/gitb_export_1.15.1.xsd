@@ -40,7 +40,6 @@
                 <xsd:attribute name="allowPostTestOrganisationUpdates" type="xsd:boolean" default="true"/>
                 <xsd:attribute name="allowPostTestSystemUpdates" type="xsd:boolean" default="true"/>
                 <xsd:attribute name="allowPostTestStatementUpdates" type="xsd:boolean" default="true"/>
-                <xsd:attribute name="allowAutomationApi" type="xsd:boolean" default="false"/>
             </xsd:extension>
         </xsd:complexContent>
     </xsd:complexType>
@@ -269,7 +268,6 @@
                     <xsd:element name="shortName" type="xsd:string"/>
                     <xsd:element name="fullName" type="xsd:string"/>
                     <xsd:element name="templateName" type="xsd:string" minOccurs="0"/>
-                    <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="propertyValues" type="OrganisationPropertyValues" minOccurs="0"/>
                     <xsd:element name="systems" type="Systems" minOccurs="0"/>
                     <xsd:element name="users" type="Users" minOccurs="0"/>
@@ -325,7 +323,6 @@
                     <xsd:element name="fullName" type="xsd:string"/>
                     <xsd:element name="description" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="version" type="xsd:string"/>
-                    <xsd:element name="apiKey" type="xsd:string" minOccurs="0"/>
                     <xsd:element name="propertyValues" type="SystemPropertyValues" minOccurs="0"/>
                     <xsd:element name="statements" type="ConformanceStatements" minOccurs="0"/>
                 </xsd:sequence>

@@ -2,6 +2,7 @@ package actors.events.sessions
 
 import com.gitb.core.AnyContent
 import com.gitb.tpl.TestCase
+import models.TestSessionLaunchData
 
 case class SessionLaunchState (
   data: Option[TestSessionLaunchData],
@@ -27,7 +28,7 @@ case class SessionLaunchState (
       val newData = TestSessionLaunchData(
         data.get.communityId, data.get.organisationId, data.get.systemId, data.get.actorId,
         idsToUse, data.get.statementParameters, data.get.domainParameters, data.get.organisationParameters,
-        data.get.systemParameters, inputMapToUse, data.get.forceSequentialExecution
+        data.get.systemParameters, inputMapToUse, data.get.sessionIdsToAssign, data.get.forceSequentialExecution
       )
       SessionLaunchState(Some(newData), startedTestSessions + assignedSessionId, completedTestSessions, definitionCacheToUse)
     }

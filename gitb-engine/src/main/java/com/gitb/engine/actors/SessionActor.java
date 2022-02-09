@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
 import akka.dispatch.Futures;
+import com.gitb.core.AnyContent;
 import com.gitb.core.StepStatus;
 import com.gitb.engine.SessionManager;
 import com.gitb.engine.TestbedService;
@@ -19,6 +20,7 @@ import com.gitb.tdl.LogLevel;
 import com.gitb.tr.SR;
 import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
+import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.slf4j.Logger;
@@ -107,6 +109,8 @@ public class SessionActor extends Actor {
                                         ((ConfigureCommand) message).getOrganisationConfiguration(),
                                         ((ConfigureCommand) message).getSystemConfiguration()
                                 );
+                                setInputsToSessionContext(context, ((ConfigureCommand) message).getInputs());
+
                                 getSender().tell(sutConfigurations, self());
 
                                 if (context.getTestCase().getPreliminary() != null) {
@@ -192,6 +196,24 @@ public class SessionActor extends Actor {
                             unexpectedCommand(message, context);
                         }
                         break;
+                }
+            }
+        }
+    }
+
+    private void setInputsToSessionContext(TestCaseContext context, List<AnyContent> inputs) {
+        if (inputs != null) {
+            for (var input: inputs) {
+                if (input != null) {
+                    if (input.getName() == null) {
+                        logger.warn("Session ["+getSessionId()+"] received input with no name");
+                    } else if (input.getName().equals("DOMAIN") || input.getName().equals("ORGANISATION") || input.getName().equals("SYSTEM")) {
+                        logger.warn("Session ["+getSessionId()+"] received input with reserved name ["+input.getName()+"]");
+                    } else {
+                        // Add the input to the scope. Note that this may override existing (a) actor configs, (b) imports, or (c) variables
+                        var variable = context.getScope().createVariable(input.getName());
+                        variable.setValue(DataTypeUtils.convertAnyContentToDataType(input));
+                    }
                 }
             }
         }

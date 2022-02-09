@@ -99,9 +99,15 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     setAuthResult(request, ok, "User is not authenticated")
   }
 
+  def canManageSessionsThroughAutomationApi(request: RequestWithAttributes[_]): Boolean = {
+    val ok = Configurations.AUTOMATION_API_ENABLED && request.headers.get(Constants.AutomationHeader).isDefined
+    setAuthResult(request, ok, "You are not allowed to manage test sessions through the automation API")
+    ok
+  }
+
   def canSelfRegister(request: RequestWithAttributes[_], organisation: Organizations, organisationAdmin: Users, selfRegToken: Option[String], templateId: Option[Long]): Boolean = {
     var ok = false
-    if (Configurations.REGISTRATION_ENABLED && checkHasPrincipal(request, true)) {
+    if (Configurations.REGISTRATION_ENABLED && checkHasPrincipal(request, skipForNonSSO = true)) {
       val targetCommunity = communityManager.getById(organisation.community)
       if (targetCommunity.isDefined) {
         var communityOk = false

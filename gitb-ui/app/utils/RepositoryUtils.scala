@@ -17,6 +17,7 @@ import java.io.{File, FileOutputStream, StringWriter}
 import java.nio.charset.Charset
 import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file._
+import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.zip.{ZipEntry, ZipFile}
 import javax.inject.{Inject, Singleton}
@@ -687,13 +688,17 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 
 	def getPathForTestSession(sessionId: String, isExpected: Boolean): SessionFolderInfo = {
 		val testResult = exec(PersistenceSchema.testResults.filter(_.testSessionId === sessionId).result.headOption)
-		getPathForTestSessionObj(sessionId, testResult, isExpected)
+		var startTime: Option[Timestamp] = None
+		if (testResult.isDefined) {
+			startTime = Some(testResult.get.startTime)
+		}
+		getPathForTestSessionObj(sessionId, startTime, isExpected)
 	}
 
-	def getPathForTestSessionObj(sessionId: String, testResult: Option[TestResultsTable#TableElementType], isExpected: Boolean): SessionFolderInfo = {
+	def getPathForTestSessionObj(sessionId: String, sessionStartTime: Option[Timestamp], isExpected: Boolean): SessionFolderInfo = {
 		var startTime: LocalDateTime = null
-		if (testResult.isDefined) {
-			startTime = testResult.get.startTime.toLocalDateTime
+		if (sessionStartTime.isDefined) {
+			startTime = sessionStartTime.get.toLocalDateTime
 		} else {
 			// We have no DB entry only in the case of preliminary steps.
 			startTime = LocalDateTime.now()

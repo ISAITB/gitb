@@ -191,42 +191,30 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
       DBIO.successful(())
   }
 
-  def updateSystemProfile(userId: Long, systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean) = {
+  def updateSystemProfile(userId: Long, systemId: Long, sname: String, fname: String, description: Option[String], version: String, otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean): Unit = {
     val onSuccessCalls = mutable.ListBuffer[() => _]()
     val dbAction = for {
       communityId <- getCommunityIdForSystemId(systemId)
-      linkedActorIds <- updateSystemProfileInternal(Some(userId), None, systemId, sname, fname, description, version, otherSystem, propertyValues, propertyFiles, copySystemParameters, copyStatementParameters, onSuccessCalls)
+      linkedActorIds <- updateSystemProfileInternal(Some(userId), None, systemId, sname, fname, description, version, None, otherSystem, propertyValues, propertyFiles, copySystemParameters, copyStatementParameters, onSuccessCalls)
     } yield (communityId, linkedActorIds)
     val result = exec(dbActionFinalisation(Some(onSuccessCalls), None, dbAction).transactionally)
     triggerHelper.publishTriggerEvent(new SystemUpdatedEvent(result._1, systemId))
     triggerHelper.triggersFor(result._1, systemId, Some(result._2))
   }
 
-  def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: Option[String], fname: Option[String], description: Option[String], version: Option[String], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[List[Long]] = {
+  def updateSystemProfileInternal(userId: Option[Long], communityId: Option[Long], systemId: Long, sname: String, fname: String, description: Option[String], version: String, apiKey: Option[Option[String]], otherSystem: Option[Long], propertyValues: Option[List[SystemParameterValues]], propertyFiles: Option[Map[Long, FileInfo]], copySystemParameters: Boolean, copyStatementParameters: Boolean, onSuccessCalls: mutable.ListBuffer[() => _]): DBIO[List[Long]] = {
     for {
       _ <- {
         val actions = new ListBuffer[DBIO[_]]()
-        // Update short name of the system
-        if (sname.isDefined) {
-          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield s.shortname
-          actions += q.update(sname.get)
-          actions += testResultManager.updateForUpdatedSystem(systemId, sname.get)
+        if (apiKey.isDefined) {
+          // Update the API key conditionally.
+          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield (s.shortname, s.fullname, s.version, s.description, s.apiKey)
+          actions += q.update(sname, fname, version, description, apiKey.get)
+        } else {
+          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield (s.shortname, s.fullname, s.version, s.description)
+          actions += q.update(sname, fname, version, description)
         }
-        // Update full name of the system
-        if (fname.isDefined) {
-          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield s.fullname
-          actions += q.update(fname.get)
-        }
-        // Update version of the system
-        if (version.isDefined) {
-          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield s.version
-          actions += q.update(version.get)
-        }
-        // Update description of the system
-        if (description.isDefined) {
-          val q = for {s <- PersistenceSchema.systems if s.id === systemId} yield s.description
-          actions += q.update(description)
-        }
+        actions += testResultManager.updateForUpdatedSystem(systemId, sname)
         toDBIO(actions)
       }
       // Update test configuration

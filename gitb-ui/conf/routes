@@ -285,7 +285,10 @@ POST    /api/domains/import/confirm/:id                         @controllers.Rep
 POST    /api/domains/import/confirm/admin/:id                   @controllers.RepositoryService.confirmDomainImportTestBedAdmin(id: Long)
 POST    /api/initdata                                           @controllers.RepositoryService.applySandboxData()
 
+POST    /api/rest/tests/start                                    @controllers.TestAutomationService.start()
+POST    /api/rest/tests/stop                                     @controllers.TestAutomationService.stop()
+GET     /api/rest/tests/status                                   @controllers.TestAutomationService.status()
+
 # Map static resources from the /public folder to the /assets URL path
-# TODO CHECK
 GET     /assets/*file               controllers.Assets.at(path="/public", file)
 GET     /webjars/*file              @org.webjars.play.WebJarAssets.at(file)

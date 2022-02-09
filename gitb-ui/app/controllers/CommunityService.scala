@@ -1,7 +1,7 @@
 package controllers
 
 import config.Configurations
-import controllers.util.ParameterExtractor.requiredBodyParameter
+import controllers.util.ParameterExtractor.{optionalBodyParameter, requiredBodyParameter}
 import controllers.util.{AuthorizedAction, ParameterExtractor, Parameters, ResponseConstructor}
 import exceptions.ErrorCodes
 
@@ -67,6 +67,10 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: Contro
     val allowPostTestOrganisationUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_ORG_UPDATE).toBoolean
     val allowPostTestSystemUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_SYS_UPDATE).toBoolean
     val allowPostTestStatementUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_STM_UPDATE).toBoolean
+    var allowAutomationApi = false
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      allowAutomationApi = requiredBodyParameter(request, Parameters.ALLOW_AUTOMATION_API).toBoolean
+    }
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
     var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
     var selfRegToken: Option[String] = None
@@ -108,7 +112,7 @@ class CommunityService @Inject() (authorizedAction: AuthorizedAction, cc: Contro
       communityId, shortName, fullName, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
       description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
       allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-      allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate,
+      allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi,
       domainId
     )
     ResponseConstructor.constructEmptyResponse

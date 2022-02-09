@@ -2,6 +2,7 @@ package actors
 
 import actors.events.sessions.{PrepareTestSessionsEvent, SessionLaunchState, StartNextTestSessionEvent, TerminateAllSessionsEvent, TestSessionCompletedEvent}
 import akka.actor.{Actor, PoisonPill}
+import com.gitb.core.AnyContent
 import managers.{ReportManager, TestbedBackendClient}
 import org.slf4j.LoggerFactory
 
@@ -68,6 +69,10 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackend
       var state = initialState
       val testCaseId = state.data.get.testCases.head
       var testCaseDefinition = state.testCaseDefinitionCache.get(testCaseId)
+      var sessionIdToAssign: Option[String] = None
+      if (state.data.get.sessionIdsToAssign.isDefined) {
+        sessionIdToAssign = state.data.get.sessionIdsToAssign.get.get(testCaseId)
+      }
       if (testCaseDefinition.isEmpty) {
         testCaseDefinition = Some(testbedBackendClient.getTestCaseDefinition(testCaseId.toString, None).getTestcase)
         state = state.newWithLoadedTestCaseDefinition(testCaseId, testCaseDefinition.get)
@@ -98,10 +103,14 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackend
         }
       }
       if (proceedToLaunch) {
-        val testSessionId = testbedBackendClient.initiate(testCaseId)
+        val testSessionId = testbedBackendClient.initiate(testCaseId, sessionIdToAssign)
         webSocketActor.testSessionStarted(testSessionId)
         try {
-          testbedBackendClient.configure(testSessionId, state.data.get.statementParameters, state.data.get.domainParameters, state.data.get.organisationParameters, state.data.get.systemParameters)
+          var testCaseInputs: Option[List[AnyContent]] = None
+          if (state.data.get.testCaseToInputMap.isDefined) {
+            testCaseInputs = state.data.get.testCaseToInputMap.get.get(testCaseId)
+          }
+          testbedBackendClient.configure(testSessionId, state.data.get.statementParameters, state.data.get.domainParameters, state.data.get.organisationParameters, state.data.get.systemParameters, testCaseInputs)
           // Preliminary step is skipped as this is a headless session. If input was expected during this step the test session will fail.
           reportManager.createTestReport(testSessionId, state.data.get.systemId, testCaseId.toString, state.data.get.actorId, testCaseDefinition.get)
           testbedBackendClient.start(testSessionId)
@@ -110,6 +119,7 @@ class SessionLaunchActor @Inject() (reportManager: ReportManager, testbedBackend
         } catch {
           case e: Exception =>
             LOGGER.error("A headless session raised an uncaught error while being started", e)
+            scheduleNextSessionLaunch = false
             webSocketActor.testSessionEnded(testSessionId)
         } finally {
           if (scheduleNextSessionLaunch) {

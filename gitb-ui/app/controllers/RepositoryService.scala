@@ -89,19 +89,11 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
 
   def getTestSessionLog(sessionId: String): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewTestResultForSession(request, sessionId)
-    val sessionFolderInfo = reportManager.getPathForTestSessionWrapper(sessionId, isExpected = true)
-    try {
-      val file = new File(sessionFolderInfo.path.toFile, "log.txt")
-      if (file.exists()) {
-        // Return file contents
-        ResponseConstructor.constructStringResponse(Files.readString(Paths.get(file.getAbsolutePath)))
-      } else {
-        ResponseConstructor.constructEmptyResponse
-      }
-    } finally {
-      if (sessionFolderInfo.archived) {
-        FileUtils.deleteQuietly(sessionFolderInfo.path.toFile)
-      }
+    val logContents = reportManager.getTestSessionLog(sessionId, isExpected = true)
+    if (logContents.isDefined) {
+      ResponseConstructor.constructStringResponse(logContents.get.mkString("\n"))
+    } else {
+      ResponseConstructor.constructEmptyResponse
     }
   }
 

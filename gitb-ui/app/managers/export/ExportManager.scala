@@ -598,6 +598,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager:
     communityData.setAllowPostTestOrganisationUpdates(community.get.allowPostTestOrganisationUpdates)
     communityData.setAllowPostTestSystemUpdates(community.get.allowPostTestSystemUpdates)
     communityData.setAllowPostTestStatementUpdates(community.get.allowPostTestStatementUpdates)
+    communityData.setAllowAutomationApi(community.get.allowAutomationApi)
     // Self registration information.
     communityData.setSelfRegistrationSettings(new SelfRegistrationSettings)
     SelfRegistrationType.apply(community.get.selfRegType) match {
@@ -906,6 +907,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager:
           exportedOrganisation.setFullName(organisation.fullname)
           exportedOrganisation.setTemplate(organisation.template)
           exportedOrganisation.setTemplateName(organisation.templateName.orNull)
+          exportedOrganisation.setApiKey(organisation.apiKey.orNull)
           if (exportSettings.organisationUsers && !organisation.adminOrganization && organisationUserMap.contains(organisation.id)) {
             exportedOrganisation.setUsers(new com.gitb.xml.export.Users)
             organisationUserMap(organisation.id).foreach { user =>
@@ -961,6 +963,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager:
               exportedSystem.setFullName(system.fullname)
               exportedSystem.setDescription(system.description.orNull)
               exportedSystem.setVersion(system.version)
+              exportedSystem.setApiKey(system.apiKey.orNull)
               // System property values.
               if (exportSettings.customProperties && exportSettings.systemPropertyValues && systemParameterValueMap.contains(system.id)) {
                 exportedSystem.setPropertyValues(new SystemPropertyValues)

@@ -241,7 +241,7 @@ class TestResultManager @Inject() (repositoryUtils: RepositoryUtils, dbConfigPro
   }
 
   def deleteSessionDataFromFileSystem(testResult: TestResult): Unit = {
-    val pathInfo = repositoryUtils.getPathForTestSessionObj(testResult.sessionId, Some(testResult), isExpected = true)
+    val pathInfo = repositoryUtils.getPathForTestSessionObj(testResult.sessionId, Some(testResult.startTime), isExpected = true)
     try {
         FileUtils.deleteDirectory(pathInfo.path.toFile)
     } catch {

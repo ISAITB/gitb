@@ -61,10 +61,10 @@ class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: R
       val systemExists = systemManager.checkSystemExists(sut_id)
       if (systemExists) {
         val paramMap = ParameterExtractor.paramMap(request)
-        val sname:Option[String]   = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_SNAME)
-        val fname:Option[String]   = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_FNAME)
-        val descr:Option[String]   = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_DESC)
-        val version:Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_VERSION)
+        val sname = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_SNAME)
+        val fname = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_FNAME)
+        val descr = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_DESC)
+        val version = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_VERSION)
         val otherSystem = ParameterExtractor.optionalLongBodyParameter(paramMap, Parameters.OTHER_SYSTEM)
         val copySystemParameters = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_PARAMETERS).getOrElse("false").toBoolean
         val copyStatementParameters = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.STATEMENT_PARAMETERS).getOrElse("false").toBoolean

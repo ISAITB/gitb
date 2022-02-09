@@ -57,9 +57,15 @@ public class SessionManager {
      * @param testCaseId
      * @return
      */
-	public String newSession(String testCaseId) {
-        //Create a random UUID as the session id
-		String sessionId = UUID.randomUUID().toString();
+	public String newSession(String testCaseId, String sessionIdToAssign) {
+		String sessionId = sessionIdToAssign;
+		if (sessionId == null || sessionId.isBlank()) {
+			// Create a random UUID as the session id
+			sessionId = UUID.randomUUID().toString();
+		} else if (exists(sessionId)) {
+			sessionId = UUID.randomUUID().toString();
+			logger.warn("Ignoring requested session ID ["+sessionIdToAssign+"] as it already exists. Using ["+sessionId+"] instead.");
+		}
 		//Load the tdl:TestCase definition
         TestCase testCase = TestCaseManager.getTestCaseDescription(testCaseId);
         // Ensure we replace the text ID with the internal fully unique ID
