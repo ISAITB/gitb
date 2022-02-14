@@ -58,11 +58,12 @@ export class TestService {
     })
   }
 
-  startHeadlessTestSessions(testCaseIds: number[], specId: number, systemId: number, actorId: number) {
+  startHeadlessTestSessions(testCaseIds: number[], specId: number, systemId: number, actorId: number, sequential: boolean) {
     const data: any = {
       spec_id: specId,
       system_id: systemId,
-      actor_id: actorId
+      actor_id: actorId,
+      sequential: sequential
     }
     if (testCaseIds != undefined && testCaseIds.length > 0) {
         data.test_case_ids = testCaseIds.join(',')

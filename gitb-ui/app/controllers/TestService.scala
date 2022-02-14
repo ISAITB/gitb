@@ -177,9 +177,10 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
     val specId = ParameterExtractor.requiredBodyParameter(request, Parameters.SPECIFICATION_ID).toLong
     val systemId = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_ID).toLong
     val actorId = ParameterExtractor.requiredBodyParameter(request, Parameters.ACTOR_ID).toLong
+    val forceSequentialExecution = ParameterExtractor.optionalBodyParameter(request, Parameters.SEQUENTIAL).getOrElse("false").toBoolean
     if (testCaseIds.isDefined && testCaseIds.get.nonEmpty) {
       authorizationManager.canExecuteTestCases(request, testCaseIds.get, specId, systemId, actorId)
-      testExecutionManager.startHeadlessTestSessions(testCaseIds.get, systemId, actorId, None, None, forceSequentialExecution = false)
+      testExecutionManager.startHeadlessTestSessions(testCaseIds.get, systemId, actorId, None, None, forceSequentialExecution)
     }
     ResponseConstructor.constructEmptyResponse
   }

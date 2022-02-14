@@ -62,6 +62,7 @@ export class ConformanceStatementComponent implements OnInit {
   deletePending = false
   exportPending = false
   exportCertificatePending = false
+  sequentialExecution = false
 
   constructor(
     public dataService: DataService,
@@ -347,7 +348,7 @@ export class ConformanceStatementComponent implements OnInit {
       } else {
         // Proceed with execution.
         const testCaseIds = map(testCases, (test) => { return test.id } )
-        this.testService.startHeadlessTestSessions(testCaseIds, this.specId, this.systemId, this.actorId)
+        this.testService.startHeadlessTestSessions(testCaseIds, this.specId, this.systemId, this.actorId, this.sequentialExecution)
         .subscribe(() => {
           if (testCaseIds.length == 1) {
             this.popupService.success('Started test session.<br/>Check <b>Test Sessions</b> for progress.')

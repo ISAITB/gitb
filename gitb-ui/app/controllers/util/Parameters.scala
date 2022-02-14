@@ -176,4 +176,6 @@ object Parameters {
   val FILTERING = "filtering"
   val FILTER = "filter"
 
+  val SEQUENTIAL = "sequential"
+
 }
