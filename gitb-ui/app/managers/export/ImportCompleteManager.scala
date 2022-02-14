@@ -16,7 +16,7 @@ import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{ClamAVClient, MimeUtil, RepositoryUtils}
+import utils.{ClamAVClient, CryptoUtil, MimeUtil, RepositoryUtils}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -805,7 +805,8 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                       }
                       val specificationId = item.parentItem.get.targetKey.get.toLong // Specification
                       val domainId = item.parentItem.get.parentItem.get.targetKey.get.toLong // Specification and then Domain
-                      conformanceManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, domainId), specificationId)
+                      val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
+                      conformanceManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId)
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: String, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
@@ -819,7 +820,8 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                       if (data.getOrder != null) {
                         order = Some(data.getOrder.shortValue())
                       }
-                      actorManager.updateActor(targetKey.toLong, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, item.parentItem.get.targetKey.get.toLong)
+                      val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
+                      actorManager.updateActor(targetKey.toLong, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, item.parentItem.get.targetKey.get.toLong, Some(apiKey))
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: Any, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
@@ -1131,7 +1133,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                 data.getSelfRegistrationSettings.isNotifications, Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
                 data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
                 data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
-                data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates,
+                data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi,
                 domainId
               ))
             },
@@ -1142,7 +1144,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                 Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
                 data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
                 data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
-                data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates,
+                data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi),
                 domainId, ctx.onSuccessCalls
               )
             },
@@ -1461,7 +1463,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                           getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
                           getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
                           getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
-                          template = data.isTemplate, Option(data.getTemplateName), item.parentItem.get.targetKey.get.toLong
+                          template = data.isTemplate, Option(data.getTemplateName), Option(data.getApiKey), item.parentItem.get.targetKey.get.toLong
                         ), None, None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false, ctx.onSuccessCalls
                       )
                     }
@@ -1476,7 +1478,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                       getProcessedDbId(data.getLandingPage, ImportItemType.LandingPage, ctx),
                       getProcessedDbId(data.getLegalNotice, ImportItemType.LegalNotice, ctx),
                       getProcessedDbId(data.getErrorTemplate, ImportItemType.ErrorTemplate, ctx),
-                      None, data.isTemplate, Option(data.getTemplateName), None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false, ctx.onSuccessCalls
+                      None, data.isTemplate, Option(data.getTemplateName), Some(Option(data.getApiKey)), None, None, copyOrganisationParameters = false, copySystemParameters = false, copyStatementParameters = false, ctx.onSuccessCalls
                     )
                   }
                 }
@@ -1616,14 +1618,10 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                 dbActions += processFromArchive(ImportItemType.System, exportedSystem, exportedSystem.getId, ctx,
                   ImportCallbacks.set(
                     (data: com.gitb.xml.export.System, item: ImportItem) => {
-                      PersistenceSchema.insertSystem += models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.getVersion, item.parentItem.get.targetKey.get.toLong)
+                      PersistenceSchema.insertSystem += models.Systems(0L, data.getShortName, data.getFullName, Option(data.getDescription), data.getVersion, Option(data.getApiKey), item.parentItem.get.targetKey.get.toLong)
                     },
                     (data: com.gitb.xml.export.System, targetKey: String, item: ImportItem) => {
-                      var descriptionToSet = ""
-                      if (data.getDescription != null) {
-                        descriptionToSet = data.getDescription
-                      }
-                      systemManager.updateSystemProfileInternal(None, targetCommunityId, item.targetKey.get.toLong, Some(data.getShortName), Some(data.getFullName), Some(descriptionToSet), Some(data.getVersion),
+                      systemManager.updateSystemProfileInternal(None, targetCommunityId, item.targetKey.get.toLong, data.getShortName, data.getFullName, Option(data.getDescription), data.getVersion, Some(Option(data.getApiKey)),
                         None, None, None, copySystemParameters = false, copyStatementParameters = false, ctx.onSuccessCalls
                       )
                     }

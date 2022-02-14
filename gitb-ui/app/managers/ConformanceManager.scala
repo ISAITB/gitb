@@ -1,9 +1,7 @@
 package managers
 
-import com.gitb.core.{ActorConfiguration, Configuration}
 import models.Enums.TriggerDataType
 import models._
-import models.prerequisites.PrerequisiteUtil
 import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
@@ -12,7 +10,6 @@ import utils.{MimeUtil, RepositoryUtils}
 
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util
 import java.util.Date
 import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
@@ -800,52 +797,6 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
   def deleteConformanceCertificateSettings(communityId: Long) = {
     PersistenceSchema.conformanceCertificates.filter(_.community === communityId).delete
   }
-
-	def getSystemConfigurationParameters(systemId: Long, actorId: Long): List[ActorConfiguration] = {
-		val actor = actorManager.getById(actorId).get
-		var parameterData = exec(PersistenceSchema.configs
-  		.join(PersistenceSchema.parameters).on(_.parameter === _.id)
-			.join(PersistenceSchema.endpoints).on(_._2.endpoint === _.id)
-  		.filter(_._1._1.system === systemId)
-  		.filter(_._2.actor === actorId)
-  		.filter(_._1._2.notForTests === false)
-  		.map(x => (
-				x._2.name, // Endpoint name
-				x._1._2.name, // Parameter name
-				x._1._1.value, // Parameter value
-				x._1._2.dependsOn, // DependsOn
-				x._1._2.dependsOnValue, // DependsOnValue
-				x._1._2.kind, // Kind
-				x._1._2.id, // Parameter ID
-				x._1._1.contentType // Content type
-			)).result).map(x => new SystemConfigurationParameterMinimal(x._7, x._1, x._2, Some(x._3), x._4, x._5, x._6, x._8))
-
-		// Keep only the values that have valid prerequisites defined.
-		parameterData = PrerequisiteUtil.withValidPrerequisites(parameterData)
-
-		val actorMap = new util.HashMap[String, ActorConfiguration]()
-		parameterData.foreach{ p =>
-			var actorConfig = actorMap.get(p.endpointName)
-			if (actorConfig == null) {
-				actorConfig = new ActorConfiguration()
-				actorConfig.setActor(actor.actorId)
-				actorConfig.setEndpoint(p.endpointName)
-				actorMap.put(p.endpointName, actorConfig)
-			}
-			val config = new Configuration()
-			config.setName(p.parameterName)
-			if (p.parameterKind == "SECRET") {
-				config.setValue(MimeUtil.decryptString(p.parameterValue.get))
-			} else if (p.parameterKind == "BINARY") {
-				config.setValue(MimeUtil.getFileAsDataURL(repositoryUtils.getStatementParameterFile(p.parameterId, systemId), p.valueContentType.orNull))
-			} else {
-				config.setValue(p.parameterValue.get)
-			}
-			actorConfig.getConfig.add(config)
-		}
-		import scala.jdk.CollectionConverters._
-		actorMap.values().asScala.toList
-	}
 
 	def getSystemConfigurationStatus(systemId: Long, actorId: Long): List[SystemConfigurationEndpoint] = {
 		val configuredParameters = exec(PersistenceSchema.configs

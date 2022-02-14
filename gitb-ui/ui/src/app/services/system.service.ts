@@ -234,4 +234,19 @@ export class SystemService {
     })
   }
 
+  updateSystemApiKey(systemId: number) {
+    return this.restService.post<string>({
+      path: ROUTES.controllers.SystemService.updateSystemApiKey(systemId).url,
+      authenticate: true,
+      text: true
+    })
+  }
+
+  deleteSystemApiKey(systemId: number) {
+    return this.restService.delete<void>({
+      path: ROUTES.controllers.SystemService.deleteSystemApiKey(systemId).url,
+      authenticate: true
+    })
+  }
+
 }

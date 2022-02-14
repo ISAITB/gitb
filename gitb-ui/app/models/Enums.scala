@@ -107,4 +107,9 @@ object Enums {
     val Community, Organisation, System, Specification, Actor, OrganisationParameter, SystemParameter, DomainParameter = Value
   }
 
+  object InputMappingMatchType extends Enumeration(1) {
+    type InputMappingMatchType = Value
+    val DEFAULT, TEST_SUITE, TEST_CASE, TEST_SUITE_AND_TEST_CASE = Value
+  }
+
 }

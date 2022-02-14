@@ -8,5 +8,6 @@ export interface Actor {
     default: boolean
     displayOrder?:number
     specification: number
+    apiKey?: string
 
 }

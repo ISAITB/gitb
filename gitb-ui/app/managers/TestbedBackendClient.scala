@@ -1,6 +1,6 @@
 package managers
 
-import com.gitb.core.ActorConfiguration
+import com.gitb.core.{ActorConfiguration, AnyContent}
 import com.gitb.tbs._
 import config.Configurations
 import jaxws.HeaderHandlerResolver
@@ -29,14 +29,17 @@ class TestbedBackendClient {
     portInternal
   }
 
-  def initiate(test_id: Long): String = {
-    val requestData: BasicRequest = new BasicRequest
-    requestData.setTcId(test_id.toString)
+  def initiate(testCaseId: Long, sessionId: Option[String]): String = {
+    val requestData: InitiateRequest = new InitiateRequest
+    requestData.setTcId(testCaseId.toString)
+    if (sessionId.isDefined) {
+      requestData.setTcInstanceId(sessionId.get)
+    }
     val response = service().initiate(requestData)
     response.getTcInstanceId
   }
 
-  def configure(sessionId: String, statementParameters: List[ActorConfiguration], domainParameters: Option[ActorConfiguration], organisationParameters: ActorConfiguration, systemParameters: ActorConfiguration): ConfigureResponse = {
+  def configure(sessionId: String, statementParameters: List[ActorConfiguration], domainParameters: Option[ActorConfiguration], organisationParameters: ActorConfiguration, systemParameters: ActorConfiguration, inputs: Option[List[AnyContent]]): ConfigureResponse = {
     val cRequest: ConfigureRequest = new ConfigureRequest
     cRequest.setTcInstanceId(sessionId)
     import scala.jdk.CollectionConverters._
@@ -46,6 +49,9 @@ class TestbedBackendClient {
     }
     cRequest.getConfigs.add(organisationParameters)
     cRequest.getConfigs.add(systemParameters)
+    if (inputs.isDefined) {
+      cRequest.getInputs.addAll(inputs.get.asJava)
+    }
     val response = service().configure(cRequest)
     response
   }

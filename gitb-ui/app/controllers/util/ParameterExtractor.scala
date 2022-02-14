@@ -4,7 +4,7 @@ import config.Configurations
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
-import models.{Actors, Communities, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
+import models.{Actor, Actors, Communities, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
@@ -243,7 +243,7 @@ object ParameterExtractor {
         templateName = optionalBodyParameter(paramMap, Parameters.TEMPLATE_NAME)
       }
     }
-    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, adminOrganization = false, landingPageId, legalNoticeId, errorTemplateId, template = template, templateName, communityId)
+    Organizations(0L, vendorSname, vendorFname, OrganizationType.Vendor.id.toShort, adminOrganization = false, landingPageId, legalNoticeId, errorTemplateId, template = template, templateName, None, communityId)
   }
 
   def validCommunitySelfRegType(selfRegType: Short): Boolean = {
@@ -261,6 +261,10 @@ object ParameterExtractor {
     val allowPostTestOrganisationUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_ORG_UPDATE).toBoolean
     val allowPostTestSystemUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_SYS_UPDATE).toBoolean
     val allowPostTestStatementUpdate = requiredBodyParameter(request, Parameters.ALLOW_POST_TEST_STM_UPDATE).toBoolean
+    var allowAutomationApi = false
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      allowAutomationApi = requiredBodyParameter(request, Parameters.ALLOW_AUTOMATION_API).toBoolean
+    }
     var selfRegType: Short = SelfRegistrationType.NotSupported.id.toShort
     var selfRegRestriction: Short = SelfRegistrationRestriction.NoRestriction.id.toShort
     var selfRegToken: Option[String] = None
@@ -305,7 +309,7 @@ object ParameterExtractor {
       0L, sname, fname, email, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification, description,
       selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
       allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-      allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate,
+      allowPostTestOrganisationUpdate, allowPostTestSystemUpdate, allowPostTestStatementUpdate, allowAutomationApi,
       domainId
     )
   }
@@ -380,7 +384,7 @@ object ParameterExtractor {
     val fname:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_FNAME)
     val descr:Option[String] = ParameterExtractor.optionalBodyParameter(request, Parameters.SYSTEM_DESC)
     val version:String = ParameterExtractor.requiredBodyParameter(request, Parameters.SYSTEM_VERSION)
-    Systems(0L, sname, fname, descr, version, 0L)
+    Systems(0L, sname, fname, descr, version, None, 0L)
   }
 
   def extractSystemWithOrganizationInfo(paramMap:Option[Map[String, Seq[String]]]):Systems = {
@@ -389,7 +393,7 @@ object ParameterExtractor {
     val descr:Option[String] = ParameterExtractor.optionalBodyParameter(paramMap, Parameters.SYSTEM_DESC)
     val version:String = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.SYSTEM_VERSION)
     val owner:Long = ParameterExtractor.requiredBodyParameter(paramMap, Parameters.ORGANIZATION_ID).toLong
-    Systems(0L, sname, fname, descr, version, owner)
+    Systems(0L, sname, fname, descr, version, None, owner)
   }
 
 	def extractDomain(request:Request[AnyContent]):Domain = {
@@ -420,7 +424,7 @@ object ParameterExtractor {
 		Specifications(0L, sname, fname, descr, hidden, domain.getOrElse(0L))
 	}
 
-	def extractActor(request:Request[AnyContent]):Actors = {
+	def extractActor(request:Request[AnyContent]):Actor = {
     val id:Long = ParameterExtractor. optionalBodyParameter(request, Parameters.ID) match {
       case Some(i) => i.toLong
       case _ => 0L
@@ -441,8 +445,7 @@ object ParameterExtractor {
     if (displayOrderStr.isDefined) {
       displayOrder = Some(displayOrderStr.get.toShort)
     }
-		val domainId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
-		Actors(id, actorId, name, description, default, hidden, displayOrder, domainId)
+    new Actor(id, actorId, name, description, default, hidden, displayOrder, None, None, None, None)
 	}
 
   def extractEndpoint(request:Request[AnyContent]):Endpoints = {

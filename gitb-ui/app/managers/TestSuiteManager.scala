@@ -18,7 +18,7 @@ import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.lifted.Rep
 import utils.tdlvalidator.tdl.{FileSource, TestSuiteValidationAdapter}
-import utils.{RepositoryUtils, ZipArchiver}
+import utils.{CryptoUtil, RepositoryUtils, ZipArchiver}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -585,8 +585,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 			val result = new ListBuffer[TestSuiteUploadItemResult]()
 			var updateAction: Option[DBIO[_]] = None
 			var savedActorId: DBIO[Long] = null
-			val testSuiteActorCase = testSuiteActor.toCaseObject
-			val actorToSave = testSuiteActorCase.withDomainId(domainId)
+			val actorToSave = testSuiteActor.toCaseObject(CryptoUtil.generateApiKey(), domainId)
 			val savedActor = lookupActor(actorToSave, specificationActors)
 			var savedActorStringId: String = null
 
@@ -594,7 +593,7 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 				if (!updateMetadata || isActorReference(actorToSave) || theSameActor(savedActor.get, actorToSave)) {
 					result += new TestSuiteUploadItemResult(savedActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UNCHANGED, suite.specification)
 				} else {
-					updateAction = Some(actorManager.updateActor(savedActor.get.id, actorToSave.actorId, actorToSave.name, actorToSave.description, actorToSave.default, actorToSave.hidden, actorToSave.displayOrder, suite.specification))
+					updateAction = Some(actorManager.updateActor(savedActor.get.id, actorToSave.actorId, actorToSave.name, actorToSave.description, actorToSave.default, actorToSave.hidden, actorToSave.displayOrder, suite.specification, None))
 					result += new TestSuiteUploadItemResult(savedActor.get.name, TestSuiteUploadItemResult.ITEM_TYPE_ACTOR, TestSuiteUploadItemResult.ACTION_TYPE_UPDATE, suite.specification)
 				}
 				savedActorId = DBIO.successful(savedActor.get.id)

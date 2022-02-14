@@ -2,6 +2,8 @@ package utils
 
 import java.sql.Timestamp
 import java.text.SimpleDateFormat
+import java.time.format.DateTimeFormatter
+import java.time.{ZoneId, ZoneOffset, ZonedDateTime}
 import java.util.{Calendar, Date, TimeZone}
 
 object TimeUtil {
@@ -9,6 +11,8 @@ object TimeUtil {
   val MS_IN_A_DAY = 24 * 60 * 60 * 1000
   val MS_IN_AN_HOUR = 60 * 60 * 1000
   val MS_IN_A_SECOND = 1000
+  private val DATE_FORMATTER_UTC = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'")
+  private val UTC_ZONE = ZoneId.of("UTC")
 
   val formatUTC = {
     val format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
@@ -23,6 +27,12 @@ object TimeUtil {
 
   def serializeTimestamp(t:Timestamp): String = {
     new SimpleDateFormat("dd-MM-yyyy HH:mm:ss").format(new Date(t.getTime))
+  }
+
+  def serializeTimestampUTC(t:Timestamp): String = {
+    ZonedDateTime.of(t.toLocalDateTime, ZoneId.systemDefault())
+      .withZoneSameInstant(UTC_ZONE)
+      .format(DATE_FORMATTER_UTC)
   }
 
   def parseTimestamp(timestamp:String): Timestamp = {

@@ -56,10 +56,10 @@ class SessionUpdateActor @Inject() (reportManager: ReportManager, testResultMana
               outputMessage = tar.getContext.getValue.trim
             case _ => // Do nothing
           }
-          reportManager.finishTestReport(session, testStepStatus.getReport.getResult, Option.apply(outputMessage))
+          reportManager.finishTestReport(session, testStepStatus.getReport.getResult, Option(outputMessage))
           val statusUpdates: List[(String, TestStepResultInfo)] = testResultManager.sessionRemove(session)
-          val resultInfo: TestStepResultInfo = new TestStepResultInfo(testStepStatus.getStatus.ordinal.toShort, Option.empty)
-          val message: String = JsonUtil.jsTestStepResultInfo(session, step, resultInfo, Option.apply(outputMessage), statusUpdates).toString
+          val resultInfo: TestStepResultInfo = new TestStepResultInfo(testStepStatus.getStatus.ordinal.toShort, None)
+          val message: String = JsonUtil.jsTestStepResultInfo(session, step, resultInfo, Option(outputMessage), statusUpdates).toString
           webSocketActor.testSessionEnded(session, message)
         } finally {
           // Notify that a test session has completed.

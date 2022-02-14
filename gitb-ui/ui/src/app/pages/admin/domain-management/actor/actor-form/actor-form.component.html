@@ -34,3 +34,10 @@
         <app-tooltip [inline]="true" [tbTooltip]="'Check this to remove this '+dataService.labelActorLower()+' as an available option when defining new conformance statements. This can be used to hide simulated '+dataService.labelActorsLower()+' when there is no clear default '+dataService.labelActorLower()+' or to deprecate an '+dataService.labelActorLower()+' that should not be used anymore. In any case checking this has no effect on the existing testing history.'"></app-tooltip>
     </div>
 </div>
+<div class="form-group" *ngIf="dataService.configuration.automationApiEnabled && actor.id != undefined">
+    <label class="col-xs-3 control-label" for="hidden">API key:</label>
+    <div class="col-xs-7">
+        <app-api-key-text id="apiKey" name="apiKey" [key]="actor.apiKey!"></app-api-key-text>
+    </div>    
+    <app-tooltip [tbTooltip]="'The key to use when calling the Test Bed\'s REST API to identify the '+dataService.labelActorLower()+'.'"></app-tooltip>
+</div>

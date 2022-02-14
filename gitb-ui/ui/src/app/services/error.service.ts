@@ -58,7 +58,7 @@ export class ErrorService {
         if (!error) {
           errorObj = {}
         } else {
-          if (error instanceof String) {
+          if (typeof error == 'string' || error instanceof String) {
             errorObj = {
               error: {
                 error_description: <string>error
@@ -73,6 +73,8 @@ export class ErrorService {
                 if (decoded?.error_description != undefined) {
                   errorInfoToUse = decoded
                 }
+              } else if (typeof error.error == 'string' || error.error instanceof String) {
+                errorInfoToUse = JSON.parse(error.error as string)
               } else {
                 errorInfoToUse = error.error
               }

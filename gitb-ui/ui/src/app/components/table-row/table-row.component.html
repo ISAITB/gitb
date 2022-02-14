@@ -23,7 +23,7 @@
 </td>
 <td class="operations" *ngIf="operationsVisible">
     <button type="button" *ngIf="(!deleteVisibleForRow || deleteVisibleForRow(data))" [ngClass]="{'pending': data[deletePendingProperty]}" [pending]="data[deletePendingProperty]" [icon]="true" class="btn btn-default" (click)="delete(); $event.stopPropagation();">
-        <i class="fa fa-times"></i>
+        <i class="fa fa-trash"></i>
     </button>
 </td>
 <td class="operations" *ngIf="exportVisible">

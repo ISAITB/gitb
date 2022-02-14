@@ -44,12 +44,14 @@ class SessionManagerActor @Inject() (sessionUpdateActorFactory: SessionUpdateAct
     context.child("session-"+sessionId) match {
       case Some(actorRef) => actorRef
       case None =>
+        LOGGER.info("Starting test session ["+sessionId+"]")
         implicit val context: ActorContext = this.context
         injectedChild(sessionUpdateActorFactory(), "session-"+sessionId, props => props.withDispatcher("session-actor-dispatcher"))
     }
   }
 
   private def prepareTestSessions(event: PrepareTestSessionsEvent): Unit = {
+    LOGGER.info("Starting batch of "+event.launchData.testCases.size+" test session(s)")
     implicit val context: ActorContext = this.context
     val actor = injectedChild(sessionLaunchActorFactory(), "launch-"+UUID.randomUUID().toString, props => props.withDispatcher("session-actor-dispatcher"))
     actor ! event

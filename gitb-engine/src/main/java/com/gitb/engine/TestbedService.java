@@ -3,6 +3,7 @@ package com.gitb.engine;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
 import com.gitb.core.ActorConfiguration;
+import com.gitb.core.AnyContent;
 import com.gitb.core.ErrorCode;
 import com.gitb.engine.actors.SessionActor;
 import com.gitb.engine.actors.util.ActorUtils;
@@ -34,11 +35,11 @@ public class TestbedService {
 	 * @param testCaseId
 	 * @return
 	 */
-	public static String initiate(String testCaseId) {
+	public static String initiate(String testCaseId, String sessionIdToAssign) {
 		//Create a Session in TestEngine and return session id
 		String sessionId = SessionManager
 			.getInstance()
-			.newSession(testCaseId);
+			.newSession(testCaseId, sessionIdToAssign);
 		TestEngine
 			.getInstance()
 			.getEngineActorSystem()
@@ -53,7 +54,7 @@ public class TestbedService {
 	 * @param sessionId
 	 * @param allConfigurations
 	 */
-	public static List<SUTConfiguration> configure(String sessionId, List<ActorConfiguration> allConfigurations) {
+	public static List<SUTConfiguration> configure(String sessionId, List<ActorConfiguration> allConfigurations, List<AnyContent> inputs) {
 		logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("Configuring session [%s]", sessionId));
 
 		//Find the Processor for the session
@@ -64,7 +65,7 @@ public class TestbedService {
 
 		SessionManager sessionManager = SessionManager.getInstance();
 
-		if(sessionManager.getContext(sessionId) == null) {
+		if (sessionManager.getContext(sessionId) == null) {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_SESSION, "Could not find session [" + sessionId + "]..."));
 		}
 
@@ -89,7 +90,7 @@ public class TestbedService {
 		try {
 			ActorRef sessionActor = ActorUtils.getIdentity(actorSystem, SessionActor.getPath(sessionId));
 			//Call the configure command
-			Object response = ActorUtils.askBlocking(sessionActor, new ConfigureCommand(sessionId, actorConfigurations, domainConfiguration, organisationConfiguration, systemConfiguration));
+			Object response = ActorUtils.askBlocking(sessionActor, new ConfigureCommand(sessionId, actorConfigurations, domainConfiguration, organisationConfiguration, systemConfiguration, inputs));
 			return (List<SUTConfiguration>) response;
 		} catch (GITBEngineInternalError e) {
 			throw e;

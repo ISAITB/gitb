@@ -162,7 +162,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
     for {
       communityId <- PersistenceSchema.insertCommunity += community
       adminOrganisationId <- {
-        val adminOrganization = Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, adminOrganization = true, None, None, None, template = false, None, communityId)
+        val adminOrganization = Organizations(0L, Constants.AdminOrganizationName, Constants.AdminOrganizationName, OrganizationType.Vendor.id.toShort, adminOrganization = true, None, None, None, template = false, None, None, communityId)
         PersistenceSchema.insertOrganization += adminOrganization
       }
     } yield (communityId, adminOrganisationId)
@@ -176,6 +176,10 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
     val d = exec(PersistenceSchema.domains.filter(_.id === c.domain).result.headOption)
     val community = new Community(c, d)
     community
+  }
+
+  def checkCommunityAllowsAutomationApi(communityId: Long): Boolean = {
+    exec(PersistenceSchema.communities.filter(_.id === communityId).map(_.allowAutomationApi).result.headOption).getOrElse(false)
   }
 
   private def updateCommunityDomainDependencies(community: Communities, domainId: Option[Long], onSuccess: mutable.ListBuffer[() => _]): DBIO[_] = {
@@ -233,32 +237,33 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
                                                 selfRegType: Short, selfRegToken: Option[String], selfRegTokenHelpText: Option[String], selfRegNotification: Boolean,
                                                 description: Option[String], selfRegRestriction: Short, selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                                                 allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
-                                                allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean,
+                                                allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean],
                                                 domainId: Option[Long], onSuccess: mutable.ListBuffer[() => _]) = {
     val actions = new ListBuffer[DBIO[_]]()
     if (shortName.nonEmpty && community.shortname != shortName) {
-      val q = for {c <- PersistenceSchema.communities if c.id === community.id} yield (c.shortname)
+      val q = for {c <- PersistenceSchema.communities if c.id === community.id} yield c.shortname
       actions += q.update(shortName)
       actions += testResultManager.updateForUpdatedCommunity(community.id, shortName)
     }
     // Handle domain update (if any)
     actions += updateCommunityDomainDependencies(community, domainId, onSuccess)
     if (fullName.nonEmpty && community.fullname != fullName) {
-      val q = for {c <- PersistenceSchema.communities if c.id === community.id} yield (c.fullname)
+      val q = for {c <- PersistenceSchema.communities if c.id === community.id} yield c.fullname
       actions += q.update(fullName)
     }
-    val qs = for {c <- PersistenceSchema.communities if c.id === community.id} yield (
-      c.supportEmail, c.domain, c.selfRegType, c.selfRegToken, c.selfRegTokenHelpText, c.selfregNotification,
-      c.description, c.selfRegRestriction, c.selfRegForceTemplateSelection, c.selfRegForceRequiredProperties,
-      c.allowCertificateDownload, c.allowStatementManagement, c.allowSystemManagement,
-      c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates,
-    )
-    actions += qs.update(
-      supportEmail, domainId, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
-      description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
-      allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-      allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates
-    )
+    actions += PersistenceSchema.communities
+      .filter(_.id === community.id)
+      .map(c => (
+        c.supportEmail, c.domain, c.selfRegType, c.selfRegToken, c.selfRegTokenHelpText, c.selfregNotification,
+        c.description, c.selfRegRestriction, c.selfRegForceTemplateSelection, c.selfRegForceRequiredProperties,
+        c.allowCertificateDownload, c.allowStatementManagement, c.allowSystemManagement,
+        c.allowPostTestOrganisationUpdates, c.allowPostTestSystemUpdates, c.allowPostTestStatementUpdates, c.allowAutomationApi
+      ))
+      .update(supportEmail, domainId, selfRegType, selfRegToken, selfRegTokenHelpText, selfRegNotification,
+        description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
+        allowCertificateDownload, allowStatementManagement, allowSystemManagement,
+        allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi.getOrElse(community.allowAutomationApi)
+      )
     toDBIO(actions)
   }
 
@@ -270,7 +275,8 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
                       selfRegNotification: Boolean, description: Option[String], selfRegRestriction: Short,
                       selfRegForceTemplateSelection: Boolean, selfRegForceRequiredProperties: Boolean,
                       allowCertificateDownload: Boolean, allowStatementManagement: Boolean, allowSystemManagement: Boolean,
-                      allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean, allowPostTestStatementUpdates: Boolean,
+                      allowPostTestOrganisationUpdates: Boolean, allowPostTestSystemUpdates: Boolean,
+                      allowPostTestStatementUpdates: Boolean, allowAutomationApi: Option[Boolean],
                       domainId: Option[Long]) = {
 
     val onSuccess = ListBuffer[() => _]()
@@ -282,7 +288,7 @@ class CommunityManager @Inject() (repositoryUtils: RepositoryUtils, triggerHelpe
             community.get, shortName, fullName, supportEmail, selfRegType, selfRegToken, selfRegTokenHelpText,
             selfRegNotification, description, selfRegRestriction, selfRegForceTemplateSelection, selfRegForceRequiredProperties,
             allowCertificateDownload, allowStatementManagement, allowSystemManagement,
-            allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates,
+            allowPostTestOrganisationUpdates, allowPostTestSystemUpdates, allowPostTestStatementUpdates, allowAutomationApi,
             domainId, onSuccess
           )
         } else {

@@ -3,7 +3,13 @@ package utils
 import config.Configurations
 import org.mindrot.jbcrypt.BCrypt
 
+import java.util.UUID
+
 object CryptoUtil {
+
+  def generateApiKey(): String = {
+    UUID.randomUUID().toString.toUpperCase.replace('-', 'X')
+  }
 
   /**
    * Encrypts a string (i.e. a password) using a version of Blowfish block cipher

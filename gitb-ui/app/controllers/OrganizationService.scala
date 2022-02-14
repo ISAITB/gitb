@@ -227,4 +227,22 @@ class OrganizationService @Inject() (implicit ec: ExecutionContext, repositoryUt
     ResponseConstructor.constructJsonResponse(Json.obj("hasTests" -> hasTests).toString())
   }
 
+  def updateOrganisationApiKey(organisationId: Long) = authorizedAction { request =>
+    authorizationManager.canUpdateOrganisationApiKey(request, organisationId)
+    val newApiKey = organizationManager.updateOrganisationApiKey(organisationId)
+    ResponseConstructor.constructStringResponse(newApiKey)
+  }
+
+  def deleteOrganisationApiKey(organisationId: Long) = authorizedAction { request =>
+    authorizationManager.canUpdateOrganisationApiKey(request, organisationId)
+    organizationManager.deleteOrganisationApiKey(organisationId)
+    ResponseConstructor.constructEmptyResponse
+  }
+
+  def getAutomationKeysForOrganisation(organisationId: Long) = authorizedAction { request =>
+    authorizationManager.canViewOrganisationAutomationKeys(request, organisationId)
+    val result = organizationManager.getAutomationKeysForOrganisation(organisationId)
+    ResponseConstructor.constructJsonResponse(JsonUtil.jsApiKeyInfo(result).toString)
+  }
+
 }

@@ -171,7 +171,8 @@ class ConformanceService @Inject() (implicit ec: ExecutionContext, authorizedAct
       val labels = communityLabelManager.getLabels(request)
       ResponseConstructor.constructBadRequestResponse(500, communityLabelManager.getLabel(labels, LabelType.Actor)+" already exists for this ID in the " + communityLabelManager.getLabel(labels, LabelType.Specification, true, true)+".")
     } else {
-      conformanceManager.createActorWrapper(actor, specificationId)
+      val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
+      conformanceManager.createActorWrapper(actor.toCaseObject(CryptoUtil.generateApiKey(), domainId), specificationId)
       ResponseConstructor.constructEmptyResponse
     }
   }
