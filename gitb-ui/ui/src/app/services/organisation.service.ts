@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { ROUTES } from '../common/global';
+import { ApiKeyInfo } from '../types/api-key-info';
 import { CustomProperty } from '../types/custom-property.type';
 import { ErrorDescription } from '../types/error-description';
 import { FileParam } from '../types/file-param.type';
@@ -186,5 +187,29 @@ export class OrganisationService {
 			arrayBuffer: true
 		})
   }
+
+  getAutomationKeysForOrganisation(organisationId: number) {
+    return this.restService.get<ApiKeyInfo>({
+      path: ROUTES.controllers.OrganizationService.getAutomationKeysForOrganisation(organisationId).url,
+      authenticate: true
+    })
+  }
+
+  updateOrganisationApiKey(organisationId: number) {
+    return this.restService.post<string>({
+      path: ROUTES.controllers.OrganizationService.updateOrganisationApiKey(organisationId).url,
+      authenticate: true,
+      text: true
+    })
+  }
+
+  deleteOrganisationApiKey(organisationId: number) {
+    return this.restService.delete<void>({
+      path: ROUTES.controllers.OrganizationService.deleteOrganisationApiKey(organisationId).url,
+      authenticate: true
+    })
+  }
+
+  
 
 }

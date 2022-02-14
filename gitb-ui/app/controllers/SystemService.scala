@@ -322,4 +322,16 @@ class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: R
     }
   }
 
+  def updateSystemApiKey(systemId: Long) = authorizedAction { request =>
+    authorizationManager.canUpdateSystemApiKey(request, systemId)
+    val newApiKey = systemManager.updateSystemApiKey(systemId)
+    ResponseConstructor.constructStringResponse(newApiKey)
+  }
+
+  def deleteSystemApiKey(systemId: Long) = authorizedAction { request =>
+    authorizationManager.canUpdateSystemApiKey(request, systemId)
+    systemManager.deleteSystemApiKey(systemId)
+    ResponseConstructor.constructEmptyResponse
+  }
+
 }

@@ -114,8 +114,9 @@ object PersistenceSchema {
     def default = column[Option[Boolean]]("is_default")
     def hidden = column[Boolean]("is_hidden")
     def displayOrder = column[Option[Short]]("display_order")
+    def apiKey = column[String]("api_key")
     def domain  = column[Long]("domain")
-    def * = (id, actorId, name, desc, default, hidden, displayOrder, domain) <> (Actors.tupled, Actors.unapply)
+    def * = (id, actorId, name, desc, default, hidden, displayOrder, apiKey, domain) <> (Actors.tupled, Actors.unapply)
   }
   val actors = TableQuery[ActorsTable]
 

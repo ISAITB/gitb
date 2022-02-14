@@ -1,0 +1,14 @@
+<div class="input-group">
+    <input [name]="name" [attr.id]="id" [(ngModel)]="key" class="form-control" readonly="true">
+    <div class="input-group-btn">
+        <button *ngIf="supportUpdate" class="btn btn-default" type="button" (click)="doUpdate()" [disabled]="updatePending || deletePending">
+            <i class="fa fa-refresh" aria-hidden="true"></i>
+        </button>
+        <button *ngIf="supportDelete" class="btn btn-default" type="button" (click)="doDelete()" [disabled]="updatePending || deletePending">
+            <i class="fa fa-trash" aria-hidden="true"></i>
+        </button>
+        <button class="btn btn-default" type="button" (click)="copy()" [disabled]="updatePending || deletePending">
+            <i class="fa fa-clipboard" aria-hidden="true"></i>
+        </button>
+    </div>
+</div>

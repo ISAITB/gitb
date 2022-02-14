@@ -6,7 +6,7 @@ import models._
 import org.slf4j.LoggerFactory
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{MimeUtil, RepositoryUtils}
+import utils.{CryptoUtil, MimeUtil, RepositoryUtils}
 
 import java.io.File
 import java.sql.Timestamp
@@ -652,6 +652,20 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
       .map(x => (x._1, x._2))
       .result
     ).toList.map(r => new SystemParametersWithValue(r._1, r._2))
+  }
+
+  def updateSystemApiKey(systemId: Long): String = {
+    val newApiKey = CryptoUtil.generateApiKey()
+    updateSystemApiKeyInternal(systemId, Some(newApiKey))
+    newApiKey
+  }
+
+  def deleteSystemApiKey(systemId: Long): Unit = {
+    updateSystemApiKeyInternal(systemId, None)
+  }
+
+  private def updateSystemApiKeyInternal(systemId: Long, apiKey: Option[String]): Unit = {
+    exec(PersistenceSchema.systems.filter(_.id === systemId).map(_.apiKey).update(apiKey).transactionally)
   }
 
 }

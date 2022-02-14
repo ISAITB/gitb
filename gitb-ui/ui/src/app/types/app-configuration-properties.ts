@@ -21,5 +21,6 @@ export interface AppConfigurationProperties {
     registrationEnabled: boolean
     savedFileMaxSize: number
     mode: string
+    automationApiEnabled: boolean
     
 }

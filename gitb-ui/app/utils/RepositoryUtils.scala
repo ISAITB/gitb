@@ -10,13 +10,12 @@ import org.apache.commons.io.{FileUtils, IOUtils}
 import org.apache.commons.lang3.{RandomStringUtils, StringUtils}
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
-import persistence.db.PersistenceSchema.TestResultsTable
 import play.api.db.slick.DatabaseConfigProvider
 
 import java.io.{File, FileOutputStream, StringWriter}
 import java.nio.charset.Charset
-import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file._
+import java.nio.file.attribute.BasicFileAttributes
 import java.sql.Timestamp
 import java.time.LocalDateTime
 import java.util.zip.{ZipEntry, ZipFile}
@@ -29,6 +28,7 @@ import scala.xml.XML
 class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
 
 	import dbConfig.profile.api._
+
 	import scala.jdk.CollectionConverters._
 
 	private final val logger = LoggerFactory.getLogger("RepositoryUtils")
@@ -490,7 +490,7 @@ class RepositoryUtils @Inject() (dbConfigProvider: DatabaseConfigProvider) exten
 							if (tdlActor.getDisplayOrder != null) {
 								displayOrder = Some(tdlActor.getDisplayOrder)
 							}
-							new Actor(Actors(0L, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), Option(tdlActor.isDefault), tdlActor.isHidden, displayOrder, 0L), endpoints)
+							new Actor(0L, tdlActor.getId, tdlActor.getName, Option(tdlActor.getDesc), Option(tdlActor.isDefault), tdlActor.isHidden, displayOrder, None, Some(endpoints), None, None)
 						}
 
 						var testCases: Option[List[TestCases]] = None

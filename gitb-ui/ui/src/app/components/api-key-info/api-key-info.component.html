@@ -1,0 +1,104 @@
+<div class="panel panel-default">
+    <table class="table table-directive">
+        <thead>
+            <tr>
+                <th>API key type</th>
+                <th>Name</th>
+                <th>API key</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngIf="dataStatus && dataStatus.status != Constants.STATUS.FINISHED">
+                <td [attr.colspan]="3" class="td-data-loading"><app-pending-block></app-pending-block></td>
+            </tr>
+            <ng-container *ngIf="apiInfo">
+                <tr>
+                    <td class="typeLabel">{{dataService.labelOrganisation()}}</td>
+                    <td class="typeName">
+                        <input type="text" name="organisationName" [(ngModel)]="organisationName" readonly="readonly" class="form-control"/>
+                    </td>
+                    <td class="typeKey">
+                        <app-api-key-text *ngIf="apiInfo.organisation != undefined" id="organisation" name="organisation"
+                            [key]="apiInfo.organisation" 
+                            [supportUpdate]="canUpdate"
+                            [supportDelete]="canUpdate"
+                            [updatePending]="organisationUpdatePending"
+                            [deletePending]="organisationDeletePending"
+                            (delete)="deleteOrganisationKey()"
+                            (update)="updateOrganisationKey()"></app-api-key-text>
+                        <button *ngIf="apiInfo.organisation == undefined" class="btn btn-default" (click)="newOrganisationKey()" [pending]="organisationUpdatePending">Generate API key</button>
+                    </td>
+                </tr>
+                <tr *ngIf="selectedSystem">
+                    <td class="typeLabel">{{dataService.labelSystem()}}</td>
+                    <td class="typeName" [ngSwitch]="apiInfo.systems.length">
+                        <input *ngSwitchCase="1" type="text" name="selectedSystem" [(ngModel)]="selectedSystem.name" readonly="readonly" class="form-control"/>
+                        <select *ngSwitchDefault name="selectedSystem" [(ngModel)]="selectedSystem" (change)="systemChanged()" class="form-control">
+                            <option *ngFor="let system of apiInfo.systems" [ngValue]="system">{{system.name}}</option>
+                        </select>                        
+                    </td>
+                    <td class="typeKey">
+                        <app-api-key-text *ngIf="selectedSystem.key != undefined" id="system" name="system"
+                        [key]="selectedSystem.key"
+                        [supportUpdate]="canUpdate"
+                        [supportDelete]="canUpdate"
+                        [updatePending]="systemUpdatePending[selectedSystem.id]"
+                        [deletePending]="systemDeletePending[selectedSystem.id]"
+                        (delete)="deleteSystemKey(selectedSystem.id)"
+                        (update)="updateSystemKey(selectedSystem.id)"></app-api-key-text>
+                        <button *ngIf="selectedSystem.key == undefined" class="btn btn-default" (click)="newSystemKey(selectedSystem.id)" [pending]="systemUpdatePending[selectedSystem.id]">Generate API key</button>
+                    </td>
+                </tr>
+                <tr *ngIf="apiInfo.specifications.length > 0">
+                    <td class="typeLabel">{{dataService.labelSpecification()}}</td>
+                    <td class="typeName" [ngSwitch]="apiInfo.specifications.length">
+                        <input *ngSwitchCase="1" type="text" name="selectedSpecification" [(ngModel)]="selectedSpecification!.name" readonly="readonly" class="form-control"/>
+                        <select *ngSwitchDefault name="selectedSpecification" [(ngModel)]="selectedSpecification" (change)="specificationChanged()" class="form-control">
+                            <option *ngFor="let specification of apiInfo.specifications" [ngValue]="specification">{{specification.name}}</option>
+                        </select>
+                    </td>
+                    <td [ngSwitch]="apiInfo.specifications.length">
+                        <app-tooltip *ngSwitchCase="1" [tbTooltip]="'The following '+dataService.labelActorLower()+', test suite and test case API keys are relevant to this '+dataService.labelSpecificationLower()+'.'"></app-tooltip>
+                        <app-tooltip *ngSwitchDefault [tbTooltip]="'Select the '+dataService.labelSpecificationLower()+' to view the API keys for its '+dataService.labelActorsLower()+', test suites and test cases.'"></app-tooltip>
+                    </td>
+                </tr>
+                <tr *ngIf="selectedSpecification && selectedActor">
+                    <td class="typeLabel">{{dataService.labelActor()}}</td>
+                    <td class="typeName" [ngSwitch]="selectedSpecification.actors.length">
+                        <input *ngSwitchCase="1" type="text" name="selectedActor" [(ngModel)]="selectedActor.name" readonly="readonly" class="form-control"/>
+                        <select *ngSwitchDefault name="selectedActor" [(ngModel)]="selectedActor" (change)="actorChanged()" class="form-control">
+                            <option *ngFor="let actor of selectedSpecification.actors" [ngValue]="actor">{{actor.name}}</option>
+                        </select>                        
+                    </td>
+                    <td class="typeKey">
+                        <app-api-key-text [key]="selectedActor.key" id="actor" name="actor"></app-api-key-text>
+                    </td>
+                </tr>
+                <tr *ngIf="selectedSpecification && selectedTestSuite">
+                    <td class="typeLabel">Test suite</td>
+                    <td class="typeName" [ngSwitch]="selectedSpecification.testSuites.length">
+                        <input *ngSwitchCase="1" type="text" name="selectedTestSuite" [(ngModel)]="selectedTestSuite.name" readonly="readonly" class="form-control"/>
+                        <select *ngSwitchDefault name="selectedTestSuite" [(ngModel)]="selectedTestSuite" (change)="testSuiteChanged()" class="form-control">
+                            <option *ngFor="let testSuite of selectedSpecification.testSuites" [ngValue]="testSuite">{{testSuite.name}}</option>
+                        </select>
+                    </td>
+                    <td class="typeKey">
+                        <app-api-key-text [key]="selectedTestSuite.key" id="testSuite" name="testSuite"></app-api-key-text>
+                    </td>
+                </tr>
+                <tr *ngIf="selectedTestSuite && selectedTestCase">
+                    <td class="typeLabel">Test case</td>
+                    <td class="typeName" [ngSwitch]="selectedTestSuite.testCases.length">
+                        <input *ngSwitchCase="1" type="text" name="selectedTestCase" [(ngModel)]="selectedTestCase.name" readonly="readonly" class="form-control"/>
+                        <select *ngSwitchDefault name="selectedTestCase" [(ngModel)]="selectedTestCase" (change)="testCaseChanged()" class="form-control">
+                            <option *ngFor="let testCase of selectedTestSuite.testCases" [ngValue]="testCase">{{testCase.name}}</option>
+                        </select>
+                    </td>
+                    <td class="typeKey">
+                        <app-api-key-text [key]="selectedTestCase.key" id="testCase" name="testCase"></app-api-key-text>
+                    </td>
+                </tr>
+            </ng-container>
+        </tbody>
+    </table>    
+</div>

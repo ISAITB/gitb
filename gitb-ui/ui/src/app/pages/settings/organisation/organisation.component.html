@@ -64,6 +64,15 @@
                     </div>
                 </div>
             </tab>
+            <tab heading="REST API keys" (selectTab)="apiInfoSelected()" *ngIf="apiTabVisible">
+                <div class="tabPanel">
+                    <app-api-key-info 
+                        [organisationId]="this.dataService.vendor!.id!" 
+                        [organisationName]="vdata.fname!"
+                        [loadData]="loadApiInfo">
+                    </app-api-key-info>
+                </div>
+            </tab>
         </tabset>
     </div>
 </div>

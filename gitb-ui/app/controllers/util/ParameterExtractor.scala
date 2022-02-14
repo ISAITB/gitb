@@ -4,7 +4,7 @@ import config.Configurations
 import exceptions.{ErrorCodes, InvalidRequestException}
 import models.Enums._
 import controllers.util.Parameters
-import models.{Actors, Communities, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
+import models.{Actor, Actors, Communities, Domain, Endpoints, ErrorTemplates, FileInfo, LandingPages, LegalNotices, Options, OrganisationParameterValues, Organizations, Specifications, SystemParameterValues, Systems, Trigger, TriggerData, Triggers, Users}
 import org.apache.commons.lang3.StringUtils
 import org.mindrot.jbcrypt.BCrypt
 import play.api.mvc._
@@ -424,7 +424,7 @@ object ParameterExtractor {
 		Specifications(0L, sname, fname, descr, hidden, domain.getOrElse(0L))
 	}
 
-	def extractActor(request:Request[AnyContent]):Actors = {
+	def extractActor(request:Request[AnyContent]):Actor = {
     val id:Long = ParameterExtractor. optionalBodyParameter(request, Parameters.ID) match {
       case Some(i) => i.toLong
       case _ => 0L
@@ -445,8 +445,7 @@ object ParameterExtractor {
     if (displayOrderStr.isDefined) {
       displayOrder = Some(displayOrderStr.get.toShort)
     }
-		val domainId:Long = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
-		Actors(id, actorId, name, description, default, hidden, displayOrder, domainId)
+    new Actor(id, actorId, name, description, default, hidden, displayOrder, None, None, None, None)
 	}
 
   def extractEndpoint(request:Request[AnyContent]):Endpoints = {

@@ -399,6 +399,7 @@ class ExportManager @Inject() (repositoryUtils: RepositoryUtils, triggerManager:
               exportedActor.setSpecification(exportedSpecification)
               exportedActor.setActorId(actor.actorId)
               exportedActor.setName(actor.name)
+              exportedActor.setApiKey(actor.apiKey)
               exportedActor.setDescription(actor.description.orNull)
               if (actor.default.isDefined) {
                 exportedActor.setDefault(actor.default.get)

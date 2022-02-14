@@ -10,7 +10,7 @@ import models.Enums.TestSuiteReplacementChoiceHistory.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoiceMetadata.TestSuiteReplacementChoiceMetadata
 import models.Enums._
 import models._
-import models.automation.{InputMapping, TestSessionLaunchInfo, TestSessionLaunchRequest, TestSessionStatus}
+import models.automation.{ApiKeyActorInfo, ApiKeyInfo, ApiKeySpecificationInfo, ApiKeySystemInfo, ApiKeyTestCaseInfo, ApiKeyTestSuiteInfo, InputMapping, TestSessionLaunchInfo, TestSessionLaunchRequest, TestSessionStatus}
 import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{JsObject, _}
 
@@ -31,6 +31,73 @@ object JsonUtil {
     val json = Json.obj(
       "texts" -> textArray
     )
+    json
+  }
+
+  def jsApiKeyInfo(apiKeyInfo: ApiKeyInfo): JsObject = {
+    val json = Json.obj(
+      "organisation" -> (if (apiKeyInfo.organisation.isDefined) apiKeyInfo.organisation.get else JsNull),
+      "systems" -> jsApiKeySystemInfo(apiKeyInfo.systems),
+      "specifications" -> jsApiKeySpecificationsInfo(apiKeyInfo.specifications)
+    )
+    json
+  }
+
+  private def jsApiKeySystemInfo(systems: List[ApiKeySystemInfo]) = {
+    var json = Json.arr()
+    systems.foreach { system =>
+      json = json.append(Json.obj(
+        "id" -> system.id,
+        "name" -> system.name,
+        "key" -> (if (system.key.isDefined) system.key.get else JsNull)
+      ))
+    }
+    json
+  }
+
+  private def jsApiKeySpecificationsInfo(specifications: List[ApiKeySpecificationInfo]) = {
+    var json = Json.arr()
+    specifications.foreach { specification =>
+      json = json.append(Json.obj(
+        "name" -> specification.name,
+        "actors" -> jsApiKeyActorsInfo(specification.actors),
+        "testSuites" -> jsApiKeyTestSuiteInfo(specification.testSuites)
+      ))
+    }
+    json
+  }
+
+  private def jsApiKeyActorsInfo(actors: List[ApiKeyActorInfo]) = {
+    var json = Json.arr()
+    actors.foreach { actor =>
+      json = json.append(Json.obj(
+        "name" -> actor.name,
+        "key" -> actor.key
+      ))
+    }
+    json
+  }
+
+  private def jsApiKeyTestSuiteInfo(testSuites: List[ApiKeyTestSuiteInfo]) = {
+    var json = Json.arr()
+    testSuites.foreach { testSuite =>
+      json = json.append(Json.obj(
+        "name" -> testSuite.name,
+        "key" -> testSuite.key,
+        "testCases" -> jsApiKeyTestCaseInfo(testSuite.testcases)
+      ))
+    }
+    json
+  }
+
+  private def jsApiKeyTestCaseInfo(testCases: List[ApiKeyTestCaseInfo]) = {
+    var json = Json.arr()
+    testCases.foreach { testCase =>
+      json = json.append(Json.obj(
+        "name" -> testCase.name,
+        "key" -> testCase.key
+      ))
+    }
     json
   }
 
@@ -521,6 +588,7 @@ object JsonUtil {
       "allowPostTestOrganisationUpdates" -> community.allowPostTestOrganisationUpdates,
       "allowPostTestSystemUpdates" -> community.allowPostTestSystemUpdates,
       "allowPostTestStatementUpdates" -> community.allowPostTestStatementUpdates,
+      "allowAutomationApi" -> community.allowAutomationApi,
       "domainId" -> community.domain
     )
     if (includeAdminInfo) {
@@ -653,7 +721,7 @@ object JsonUtil {
   }
 
   def jsActor(actor:Actor) : JsObject = {
-    val json = Json.obj(
+    var json = Json.obj(
       "id" -> actor.id,
       "actorId" -> actor.actorId,
       "name"   -> actor.name,
@@ -664,18 +732,8 @@ object JsonUtil {
       "domain"  -> (if(actor.domain.isDefined) actor.domain.get.id else JsNull),
       "specification"  -> (if(actor.specificationId.isDefined) actor.specificationId.get else JsNull)
     )
-    json
-  }
-
-  /**
-   * Converts a List of Actors into Play!'s JSON notation
-   * @param list List of Actors to be converted
-   * @return JsArray
-   */
-  def jsActors(list:List[Actors]):JsArray = {
-    var json = Json.arr()
-    list.foreach{ actor =>
-      json = json.append(jsActor(actor))
+    if (Configurations.AUTOMATION_API_ENABLED) {
+      json = json.+("apiKey"  -> (if(actor.apiKey.isDefined) JsString(actor.apiKey.get) else JsNull))
     }
     json
   }
@@ -1508,7 +1566,8 @@ object JsonUtil {
       "demosAccount" -> config.get("demos.account").toLong,
       "registrationEnabled" -> config.get("registration.enabled").toBoolean,
       "savedFileMaxSize" -> config.get("savedFile.maxSize").toLong,
-      "mode" -> config.get("mode")
+      "mode" -> config.get("mode"),
+      "automationApiEnabled" -> config.get("automationApi.enabled").toBoolean
     )
     json
   }

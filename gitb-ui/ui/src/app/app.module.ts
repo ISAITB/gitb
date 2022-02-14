@@ -138,6 +138,8 @@ import { TabsModule } from 'ngx-bootstrap/tabs';
 import { TextFilterComponent } from './components/text-filter/text-filter.component';
 import { CopyEnabledTextComponent } from './components/copy-enabled-text/copy-enabled-text.component';
 import { SanitizeHtmlPipe } from './pipes/sanitize-html.pipe';
+import { ApiKeyTextComponent } from './components/api-key-text/api-key-text.component';
+import { ApiKeyInfoComponent } from './components/api-key-info/api-key-info.component';
 
 @NgModule({
   providers: [ 
@@ -264,7 +266,9 @@ import { SanitizeHtmlPipe } from './pipes/sanitize-html.pipe';
     SecretInputComponent,
     TextFilterComponent,
     CopyEnabledTextComponent,
-    SanitizeHtmlPipe],
+    SanitizeHtmlPipe,
+    ApiKeyTextComponent,
+    ApiKeyInfoComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,

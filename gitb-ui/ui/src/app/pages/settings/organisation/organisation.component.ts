@@ -1,4 +1,4 @@
-import { AfterViewInit, Component, OnInit } from '@angular/core';
+import { AfterViewInit, Component, EventEmitter, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { Constants } from 'src/app/common/constants';
@@ -35,6 +35,8 @@ export class OrganisationComponent extends BaseComponent implements OnInit, Afte
   tableColumns: TableColumnDefinition[] = []
   canEditOwnOrganisation = false
   vendorUpdatePending = false
+  apiTabVisible = false
+  loadApiInfo = new EventEmitter<void>()
 
   constructor(
     public dataService: DataService,
@@ -81,6 +83,9 @@ export class OrganisationComponent extends BaseComponent implements OnInit, Afte
     }
     this.getVendorUsers()
     this.canEditOwnOrganisation = this.route.snapshot.data.canEditOwnOrganisation
+    if (this.dataService.configuration.automationApiEnabled && this.dataService.community?.allowAutomationApi) {
+      this.apiTabVisible = true
+    }
   }
 
   userStatus(ssoStatus: number) {
@@ -172,6 +177,10 @@ export class OrganisationComponent extends BaseComponent implements OnInit, Afte
         this.getVendorUsers() // Refresh user list
       }
     })
+  }
+
+  apiInfoSelected() {
+    this.loadApiInfo.emit()
   }
 
 }

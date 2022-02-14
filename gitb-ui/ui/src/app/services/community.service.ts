@@ -111,7 +111,12 @@ export class CommunityService {
     })
   }
 
-  createCommunity(shortName: string, fullName: string, email: string|undefined, selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined, description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined, allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean, allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, domainId: number|undefined) {
+  createCommunity(shortName: string, fullName: string, email: string|undefined, 
+    selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined, 
+    description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined, 
+    allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean, 
+    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined,
+    domainId: number|undefined) {
     const data: any = {
       community_sname: shortName,
       community_fname: fullName,
@@ -137,6 +142,10 @@ export class CommunityService {
       if (this.dataService.configuration.ssoEnabled) {
         data.community_selfreg_restriction = selfRegRestriction
       }
+    }
+    if (this.dataService.configuration.automationApiEnabled) {
+      if (allowAutomationApi == undefined) allowAutomationApi = false
+      data.allow_automation_api = allowAutomationApi
     }
     if (domainId != undefined) data.domain_id = domainId
     return this.restService.post<void>({
@@ -146,7 +155,12 @@ export class CommunityService {
     })
   }
 
-  updateCommunity(communityId: number, shortName: string, fullName: string, email: string|undefined, selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined, description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined, allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean, allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, domainId: number|undefined) {
+  updateCommunity(communityId: number, shortName: string, fullName: string, email: string|undefined, 
+    selfRegType: number, selfRegRestriction: number, selfRegToken: string|undefined, selfRegTokenHelpText: string|undefined, selfRegNotification: boolean|undefined, 
+    description: string|undefined, selfRegForceTemplate: boolean|undefined, selfRegForceProperties: boolean|undefined, 
+    allowCertificateDownload: boolean, allowStatementManagement: boolean, allowSystemManagement: boolean, allowPostTestOrganisationUpdate: boolean, 
+    allowPostTestSystemUpdate: boolean, allowPostTestStatementUpdate: boolean, allowAutomationApi: boolean|undefined,
+    domainId: number|undefined) {
     const data: any = {
       community_sname: shortName,
       community_fname: fullName,
@@ -172,6 +186,10 @@ export class CommunityService {
       if (this.dataService.configuration.ssoEnabled) {
         data.community_selfreg_restriction = selfRegRestriction
       }
+    }
+    if (this.dataService.configuration.automationApiEnabled) {
+      if (allowAutomationApi == undefined) allowAutomationApi = false
+      data.allow_automation_api = allowAutomationApi
     }
     if (domainId != undefined) data.domain_id = domainId
     return this.restService.post<void>({

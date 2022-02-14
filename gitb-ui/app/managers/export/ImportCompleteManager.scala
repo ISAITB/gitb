@@ -16,7 +16,7 @@ import org.apache.commons.lang3.StringUtils
 import org.slf4j.LoggerFactory
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{ClamAVClient, MimeUtil, RepositoryUtils}
+import utils.{ClamAVClient, CryptoUtil, MimeUtil, RepositoryUtils}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -805,7 +805,8 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                       }
                       val specificationId = item.parentItem.get.targetKey.get.toLong // Specification
                       val domainId = item.parentItem.get.parentItem.get.targetKey.get.toLong // Specification and then Domain
-                      conformanceManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, domainId), specificationId)
+                      val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
+                      conformanceManager.createActor(models.Actors(0L, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, apiKey, domainId), specificationId)
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: String, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
@@ -819,7 +820,8 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                       if (data.getOrder != null) {
                         order = Some(data.getOrder.shortValue())
                       }
-                      actorManager.updateActor(targetKey.toLong, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, item.parentItem.get.targetKey.get.toLong)
+                      val apiKey = Option(data.getApiKey).getOrElse(CryptoUtil.generateApiKey())
+                      actorManager.updateActor(targetKey.toLong, data.getActorId, data.getName, Option(data.getDescription), Some(data.isDefault), data.isHidden, order, item.parentItem.get.targetKey.get.toLong, Some(apiKey))
                     },
                     (data: com.gitb.xml.export.Actor, targetKey: Any, item: ImportItem) => {
                       // Record actor info (needed for test suite processing).
@@ -1142,7 +1144,7 @@ class ImportCompleteManager @Inject()(triggerManager: TriggerManager, exportMana
                 Option(data.getDescription), selfRegistrationRestrictionToModel(data.getSelfRegistrationSettings.getRestriction),
                 data.getSelfRegistrationSettings.isForceTemplateSelection, data.getSelfRegistrationSettings.isForceRequiredProperties,
                 data.isAllowCertificateDownload, data.isAllowStatementManagement, data.isAllowSystemManagement,
-                data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, data.isAllowAutomationApi,
+                data.isAllowPostTestOrganisationUpdates, data.isAllowSystemManagement, data.isAllowPostTestStatementUpdates, Some(data.isAllowAutomationApi),
                 domainId, ctx.onSuccessCalls
               )
             },

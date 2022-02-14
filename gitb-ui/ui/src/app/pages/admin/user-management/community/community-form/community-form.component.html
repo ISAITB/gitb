@@ -121,43 +121,49 @@
     <div class="row">
         <div class="col-xs-10 col-xs-offset-1">
             <div class="form-group">
-            <label class="col-xs-3 control-label">{{dataService.labelOrganisation()}} users may:</label>
-            <div class="col-xs-7">
-                <label class="checkbox-inline">
-                <input type="checkbox" name="allowCertificateDownload" [(ngModel)]="community.allowCertificateDownload">Download conformance certificates
-                <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to download a conformance certificate if they have successfully passed their tests. Otherwise only community administrators may create and share such certificates.'"></app-tooltip>
-                </label>
-            </div>
-            <div class="col-xs-offset-3 col-xs-7">
-                <label class="checkbox-inline">
-                <input type="checkbox" name="allowSystemManagement" [(ngModel)]="community.allowSystemManagement">Create or delete {{dataService.labelSystemsLower()}}
-                <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to create and delete '+dataService.labelSystemsLower()+' (editing an existing '+dataService.labelSystemLower()+' is always possible). You may want to restrict this if you predefine fully the setup for your users, either through community administrator actions or via self-registration templates.'"></app-tooltip>
-                </label>
-            </div>
-            <div class="col-xs-offset-3 col-xs-7">
-                <label class="checkbox-inline">
-                <input type="checkbox" name="allowStatementManagement" [(ngModel)]="community.allowStatementManagement">Create or delete conformance statements
-                <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to create and delete conformance statements. You may want to restrict this if you predefine fully the setup for your users, either through community administrator actions or via self-registration templates.'"></app-tooltip>
-                </label>
-            </div>
-            <div class="col-xs-offset-3 col-xs-7">
-                <label class="checkbox-inline">
-                <input type="checkbox" name="allowPostTestOrganisationUpdates" [(ngModel)]="community.allowPostTestOrganisationUpdates">Update {{dataService.labelOrganisationLower()}} data after testing
-                <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to update '+dataService.labelOrganisationLower()+' data and custom properties once tests have been recorded.'"></app-tooltip>
-                </label>
-            </div>
-            <div class="col-xs-offset-3 col-xs-7">
-                <label class="checkbox-inline">
-                <input type="checkbox" name="allowPostTestSystemUpdates" [(ngModel)]="community.allowPostTestSystemUpdates">Update {{dataService.labelSystemLower()}} data after testing
-                <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to update '+dataService.labelSystemLower()+' data and custom properties once tests have been recorded.'"></app-tooltip>
-                </label>
-            </div>
-            <div class="col-xs-offset-3 col-xs-7">
-                <label class="checkbox-inline">
-                <input type="checkbox" name="allowPostTestStatementUpdates" [(ngModel)]="community.allowPostTestStatementUpdates">Update conformance statement after testing
-                    <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to update the configuration parameters for a conformance statement once tests have been recorded.'"></app-tooltip>
-                </label>
-            </div>
+                <label class="col-xs-3 control-label">{{dataService.labelOrganisation()}} users may:</label>
+                <div class="col-xs-7">
+                    <label class="checkbox-inline">
+                    <input type="checkbox" name="allowCertificateDownload" [(ngModel)]="community.allowCertificateDownload">Download conformance certificates
+                    <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to download a conformance certificate if they have successfully passed their tests. Otherwise only community administrators may create and share such certificates.'"></app-tooltip>
+                    </label>
+                </div>
+                <div class="col-xs-offset-3 col-xs-7">
+                    <label class="checkbox-inline">
+                    <input type="checkbox" name="allowSystemManagement" [(ngModel)]="community.allowSystemManagement">Create or delete {{dataService.labelSystemsLower()}}
+                    <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to create and delete '+dataService.labelSystemsLower()+' (editing an existing '+dataService.labelSystemLower()+' is always possible). You may want to restrict this if you predefine fully the setup for your users, either through community administrator actions or via self-registration templates.'"></app-tooltip>
+                    </label>
+                </div>
+                <div class="col-xs-offset-3 col-xs-7">
+                    <label class="checkbox-inline">
+                    <input type="checkbox" name="allowStatementManagement" [(ngModel)]="community.allowStatementManagement">Create or delete conformance statements
+                    <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' administrators to create and delete conformance statements. You may want to restrict this if you predefine fully the setup for your users, either through community administrator actions or via self-registration templates.'"></app-tooltip>
+                    </label>
+                </div>
+                <div class="col-xs-offset-3 col-xs-7">
+                    <label class="checkbox-inline">
+                    <input type="checkbox" name="allowPostTestOrganisationUpdates" [(ngModel)]="community.allowPostTestOrganisationUpdates">Update {{dataService.labelOrganisationLower()}} data after testing
+                    <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to update '+dataService.labelOrganisationLower()+' data and custom properties once tests have been recorded.'"></app-tooltip>
+                    </label>
+                </div>
+                <div class="col-xs-offset-3 col-xs-7">
+                    <label class="checkbox-inline">
+                    <input type="checkbox" name="allowPostTestSystemUpdates" [(ngModel)]="community.allowPostTestSystemUpdates">Update {{dataService.labelSystemLower()}} data after testing
+                    <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to update '+dataService.labelSystemLower()+' data and custom properties once tests have been recorded.'"></app-tooltip>
+                    </label>
+                </div>
+                <div class="col-xs-offset-3 col-xs-7">
+                    <label class="checkbox-inline">
+                    <input type="checkbox" name="allowPostTestStatementUpdates" [(ngModel)]="community.allowPostTestStatementUpdates">Update conformance statement after testing
+                        <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to update the configuration parameters for a conformance statement once tests have been recorded.'"></app-tooltip>
+                    </label>
+                </div>
+                <div class="col-xs-offset-3 col-xs-7" *ngIf="dataService.configuration.automationApiEnabled">
+                    <label class="checkbox-inline">
+                    <input type="checkbox" name="allowAutomationApi" [(ngModel)]="community.allowAutomationApi">Manage test sessions via REST API
+                        <app-tooltip [inline]="true" inlineType="checkLabelText" [tbTooltip]="'Check this to allow '+dataService.labelOrganisationLower()+' users to use the Test Bed\'s REST API to start test sessions, stop them, and view their status.'"></app-tooltip>
+                    </label>
+                </div>
             </div>
         </div>
     </div>

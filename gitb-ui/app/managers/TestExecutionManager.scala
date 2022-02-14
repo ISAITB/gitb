@@ -244,20 +244,19 @@ class TestExecutionManager @Inject() (testbedClient: managers.TestbedBackendClie
           DBIO.successful(())
         }
       }
-      matchedActors <- {
+      matchedActor <- {
         PersistenceSchema.actors
-          .filter(_.actorId === request.actor)
+          .filter(_.apiKey === request.actor)
           .filterOpt(organisationData.get._3)((q, domain) => q.domain === domain)
           .map(x => x.id)
           .result
+          .headOption
       }
       actorId <- {
-        if (matchedActors.isEmpty) {
+        if (matchedActor.isEmpty) {
           throw AutomationApiException(ErrorCodes.API_ACTOR_NOT_FOUND, "Unable to find actor based on provided key")
-        } else if (matchedActors.size == 1) {
-          DBIO.successful(matchedActors.head)
         } else {
-          throw AutomationApiException(ErrorCodes.API_ACTOR_NOT_FOUND, "Multiple actors were found based on provided key")
+          DBIO.successful(matchedActor.get)
         }
       }
       testCaseData <- {
