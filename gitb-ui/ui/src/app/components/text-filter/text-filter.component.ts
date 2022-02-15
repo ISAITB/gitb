@@ -1,4 +1,4 @@
-import { Component, EventEmitter, forwardRef, Input, OnInit, Output } from '@angular/core';
+import { Component, ElementRef, EventEmitter, forwardRef, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
@@ -19,6 +19,9 @@ export class TextFilterComponent implements OnInit, ControlValueAccessor {
   @Input() placeholder = ''
   @Input() width?: number
   @Output() apply = new EventEmitter<string|undefined>()
+  @ViewChild('filterText') filterTextElement?: ElementRef
+  @ViewChild('filterButtonSearch') filterButtonSearchElement?: ElementRef
+  @ViewChild('filterButtonClear') filterButtonClearElement?: ElementRef
   _filterValue?: string
   readonly = true
   onChange = (_: any) => {}
@@ -64,13 +67,13 @@ export class TextFilterComponent implements OnInit, ControlValueAccessor {
     }
   }
 
-  applyFilter() {
+  filterBlurred() {
+    this.applyFilter(true)
+  }
+
+  applyFilter(isSearch: boolean) {
     if (this.value != undefined) {
-      if (this.readonly) {
-        // Clear
-        this.value = undefined
-        this.apply.emit(this.value)
-      } else {
+      if (isSearch) {
         // Apply
         this.value = this.value.trim()
         if (this.value.length == 0) {
@@ -78,6 +81,15 @@ export class TextFilterComponent implements OnInit, ControlValueAccessor {
         }
         this.readonly = true
         this.apply.emit(this.value)
+      } else {
+        // Clear
+        this.value = undefined
+        this.apply.emit(this.value)
+      }
+      if (this.readonly) {
+        this.filterTextElement?.nativeElement.blur()
+        this.filterButtonSearchElement?.nativeElement.blur()
+        this.filterButtonClearElement?.nativeElement.blur()
       }
     }
   }
