@@ -13,6 +13,7 @@ import { IdLabel } from '../types/id-label';
 import { Organisation } from '../types/organisation.type';
 import { Parameter } from '../types/parameter';
 import { SystemConfigurationEndpoint } from '../types/system-configuration-endpoint';
+import { SystemConfigurationParameter } from '../types/system-configuration-parameter';
 import { TypedLabelConfig } from '../types/typed-label-config.type'
 import { UserAccount } from '../types/user-account';
 import { User } from '../types/user.type';
@@ -792,17 +793,37 @@ export class DataService {
   }
 
 	isConfigurationValid(endpointRepresentations: SystemConfigurationEndpoint[]) {
-		let valid = true
 		if (endpointRepresentations != undefined) {
 			for (let endpoint of endpointRepresentations) {
-				for (let parameter of endpoint.parameters) {
-					if (!parameter.configured && parameter.use == "R") {
-						return false
-          }
+        let endpointValid = this.isConfigurationOfEndpointValid(endpoint)
+        if (!endpointValid) {
+          return false
         }
       }
     }
-		return valid
+		return true
+  }
+
+  getEndpointParametersToDisplay(endpoints: SystemConfigurationEndpoint[]|undefined): SystemConfigurationParameter[] {
+    if (endpoints != undefined && endpoints.length > 0) {
+			for (let endpoint of endpoints) {
+        let endpointValid = this.isConfigurationOfEndpointValid(endpoint)
+        if (!endpointValid) {
+          return endpoint.parameters
+        }
+      }
+      return endpoints[0].parameters
+    }
+    return []
+  }
+
+	isConfigurationOfEndpointValid(endpoint: SystemConfigurationEndpoint) {
+    for (let parameter of endpoint.parameters) {
+      if (!parameter.configured && parameter.use == "R") {
+        return false
+      }
+    }
+		return true
   }
 
 	setTestsToExecute(tests: ConformanceTestCase[]) {

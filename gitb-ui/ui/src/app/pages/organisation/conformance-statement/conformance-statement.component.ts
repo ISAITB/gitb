@@ -394,10 +394,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
       let configurationValid = this.dataService.isConfigurationValid(endpoints)
       if (!configurationValid || !systemConfigurationValid || !organisationConfigurationValid) {
         // Missing configuration.
-        let statementProperties: SystemConfigurationParameter[] = []
-        if (endpoints != undefined && endpoints.length > 0) {
-          statementProperties = endpoints[0].parameters
-        }
+        const statementProperties = this.dataService.getEndpointParametersToDisplay(endpoints)
         const organisationPropertyVisibility = this.dataService.checkPropertyVisibility(organisationProperties)
         const systemPropertyVisibility = this.dataService.checkPropertyVisibility(systemProperties)
         const statementPropertyVisibility = this.dataService.checkPropertyVisibility(statementProperties)
@@ -408,7 +405,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
             organisationConfigurationValid: organisationConfigurationValid,
             systemProperties: systemProperties,
             systemConfigurationValid: systemConfigurationValid,
-            endpointRepresentations: endpoints,
+            statementProperties: statementProperties,
             configurationValid: configurationValid,
             organisationPropertyVisibility: organisationPropertyVisibility,
             systemPropertyVisibility: systemPropertyVisibility,

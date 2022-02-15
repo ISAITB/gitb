@@ -71,6 +71,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   organisationProperties?: OrganisationParameterWithValue[]
   systemProperties?: SystemParameterWithValue[]
   endpointRepresentations?: SystemConfigurationEndpoint[]
+  statementProperties?: SystemConfigurationParameter[]
   actor?: string
   session?: string
   configurationValid = false
@@ -199,6 +200,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     this.organisationProperties = undefined
     this.systemProperties = undefined
     this.endpointRepresentations = undefined
+    this.statementProperties = undefined
     this.actor = undefined
     this.session = undefined
     this.configurationValid = false
@@ -242,6 +244,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         this.organisationProperties = data[0]
         this.systemProperties = data[1]
         this.endpointRepresentations = data[2]
+        this.statementProperties = undefined
       }, share())
     )    
   }
@@ -310,13 +313,10 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         this.organisationConfigurationValid = this.dataService.isMemberConfigurationValid(this.organisationProperties!)
         if (!this.configurationValid || !this.systemConfigurationValid || !this.organisationConfigurationValid) {
           // Missing configuration.
-          let statementProperties: SystemConfigurationParameter[] = []
-          if (this.endpointRepresentations != undefined && this.endpointRepresentations.length > 0) {
-            statementProperties = this.endpointRepresentations[0].parameters
-          }
+          this.statementProperties = this.dataService.getEndpointParametersToDisplay(this.endpointRepresentations)
           const organisationPropertyVisibility = this.dataService.checkPropertyVisibility(this.organisationProperties!)
           const systemPropertyVisibility = this.dataService.checkPropertyVisibility(this.systemProperties!)
-          const statementPropertyVisibility = this.dataService.checkPropertyVisibility(statementProperties)
+          const statementPropertyVisibility = this.dataService.checkPropertyVisibility(this.statementProperties)
           this.showOrganisationProperties = organisationPropertyVisibility.hasVisibleMissingRequiredProperties || organisationPropertyVisibility.hasVisibleMissingOptionalProperties
           this.showSystemProperties = systemPropertyVisibility.hasVisibleMissingRequiredProperties || systemPropertyVisibility.hasVisibleMissingOptionalProperties
           this.showStatementProperties = statementPropertyVisibility.hasVisibleMissingRequiredProperties || statementPropertyVisibility.hasVisibleMissingOptionalProperties
