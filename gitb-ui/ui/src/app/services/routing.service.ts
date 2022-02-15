@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { NavigationExtras, Params, Router } from '@angular/router';
 import { CommunityTab } from '../pages/admin/user-management/community/community-details/community-tab.enum';
+import { ConformanceStatementTab } from '../pages/organisation/conformance-statement/conformance-statement-tab';
 
 @Injectable({
   providedIn: 'root'
@@ -58,9 +59,9 @@ export class RoutingService {
     return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'conformance', 'create'])
   }
 
-  toConformanceStatement(organisationId: number, systemId: number, actorId: number, specificationId: number, viewProperties?: boolean) {
-    if (viewProperties == true) {
-      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'conformance', 'detail', actorId, specificationId], { queryParams: { 'viewProperties': true } })
+  toConformanceStatement(organisationId: number, systemId: number, actorId: number, specificationId: number, tab?: ConformanceStatementTab) {
+    if (tab != undefined) {
+      return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'conformance', 'detail', actorId, specificationId], { state: { tab: ConformanceStatementTab[tab] } })
     } else {
       return this.router.navigate(['organisation', organisationId, 'systems', systemId, 'conformance', 'detail', actorId, specificationId])
     }

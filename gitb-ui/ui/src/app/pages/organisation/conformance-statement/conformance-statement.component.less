@@ -1,0 +1,138 @@
+@import '../../../../styles/less/_common.less';
+
+th.th-nowrap {
+    white-space: nowrap;
+}
+
+.conformanceStatusDiv {
+    display:flex;
+    margin-bottom:-2px;
+    & > div {
+        display:inline-flex;
+    }
+    div:last-of-type {
+        align-items: center;
+        line-height:0px;
+    }
+}
+
+.tabPanel {
+    & > div:last-child {
+        margin-bottom: 0px;
+    }
+    .endpointPanelContainer {
+        .endpointPanel:last-child {
+            margin-bottom: 0px;
+        }  
+    }
+}
+
+.endpointPanel {
+    &.panel.panel-default {
+        margin-bottom: 5px;
+    }
+}
+
+.testSuitePanel {
+    background-color: @white;
+    &.panel.panel-default {
+        margin-bottom: 5px;
+    }
+    .testSuiteDisplay {
+        display:flex;
+        align-items: center;
+        border-radius: 4px;
+        padding: 10px 15px 10px 15px;
+        cursor: pointer;
+        & > div {
+            display: inline-flex;
+        }
+        .testSuiteName {
+            font-weight: bold;
+            min-height: 40px;
+            align-items: center;
+        }
+        .testSuiteDescription {
+            min-height: 40px;
+            border-left: 1px solid @gray-dark-1;
+            padding-left: 10px;
+            margin-left: 10px;
+            align-items: center;
+        }
+        .testSuiteControls {
+            flex-grow: 1;
+            justify-content: right;  
+            padding-right: 8px;
+            padding-left: 30px;
+            & > div.btn-toolbar {
+                display: flex;
+                flex-wrap: nowrap;            
+            }
+        }
+        .testSuiteResult {
+            padding-left:30px;
+            padding-right:11px;
+        }
+        &:hover {
+            background-color: @white-shaded;
+            &.expanded {
+                border-bottom-left-radius: 0px;
+                border-bottom-right-radius: 0px;
+            }
+            +.collapsibleTestCaseDiv {
+                background-color: @white-shaded;
+                border-bottom-left-radius: 4px;
+                border-bottom-right-radius: 4px;
+            }
+        }
+    }
+    .testCaseContainer {
+        padding: 5px 15px 15px 15px;
+    }
+    .testCaseDisplay {
+        border: 1px solid @gray-dark-1;
+    }
+    .testcase-controls {
+        width:1px;
+        padding-left: 30px;
+        & > div.btn-toolbar {
+            display: flex;
+            flex-wrap: nowrap;            
+        }
+    }
+    .testcase-result {
+        width: 1px;
+        text-align: center;
+        white-space: nowrap;
+        padding-left: 30px;
+        padding-right: 10px;        
+    }
+}
+.tabControls {
+    display: flex;
+    .testFilters {
+        display: flex;
+        justify-content: left;
+    }
+    .testSettings {
+        display: flex;
+        justify-content: right;
+        flex-grow: 1;
+    }
+}
+
+.resultFilterDiv {
+    margin-left: 4px;
+    i.resultIcon {
+        font-size: 14px;
+        margin-right: 8px;
+    }
+}
+.caret {
+    margin-left: 10px;
+}
+.noTestCasesDiv, .noConfigurationDiv {
+    span {
+        opacity: 0.5;
+    }
+}

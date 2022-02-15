@@ -26,7 +26,7 @@
                             <tr *ngFor="let testCase of testsToExecute" (click)="viewTestCase(testCase)" [ngClass]="tableRowClass(testCase)">
                                 <td>{{testCase.sname}}</td>
                                 <td>{{testCase.description}}</td>
-                                <td class="td-doc" *ngIf="documentationExists"><button *ngIf="testCase.hasDocumentation" type="button" class="btn btn-primary" (click)="showTestCaseDocumentation(testCase.id)"><i class="fa fa-info-circle"></i></button></td>
+                                <td class="td-doc" *ngIf="documentationExists"><button *ngIf="testCase.hasDocumentation" type="button" class="btn btn-default" (click)="showTestCaseDocumentation(testCase.id)"><i class="fa fa-info-circle"></i></button></td>
                                 <td class="td-centered"><i class="fa testsuite-progress-icon" style="vertical-align:middle" [ngClass]="progressIcon(testCase.id)"></i></td>
                             </tr>
                         </tbody>

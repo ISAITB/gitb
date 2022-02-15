@@ -34,6 +34,7 @@ import { DiagramEvents } from 'src/app/components/diagram/diagram-events';
 import { UserInteraction } from 'src/app/types/user-interaction';
 import { UserInteractionInput } from 'src/app/types/user-interaction-input';
 import { RoutingService } from 'src/app/services/routing.service';
+import { ConformanceStatementTab } from '../organisation/conformance-statement/conformance-statement-tab';
 
 @Component({
   selector: 'app-test-execution',
@@ -905,7 +906,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   toConfigurationProperties() {
-    this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.specificationId, true)
+    this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.specificationId, ConformanceStatementTab.configuration)
   }
 
   getActorName(actorId: string) {

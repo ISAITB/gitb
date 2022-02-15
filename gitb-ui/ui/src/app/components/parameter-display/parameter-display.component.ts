@@ -18,6 +18,7 @@ export class ParameterDisplayComponent<T extends Parameter> implements OnInit {
   @Input() editable = false
   @Input() canEdit?: (p: T) => boolean
   @Input() parameterLabel = 'Parameter'
+  @Input() styleAsNestedTable = false
   @Output() edit = new EventEmitter<T>()
   @Output() download = new EventEmitter<T>()
 

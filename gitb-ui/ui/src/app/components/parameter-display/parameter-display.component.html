@@ -1,5 +1,5 @@
 <div>
-    <table class="table table-directive" [ngClass]="{'with-actions': showActions}" *ngIf="parameters && parameters.length > 0">
+    <table class="table table-directive" [ngClass]="{'with-actions': showActions, 'expandable-table': styleAsNestedTable}" *ngIf="parameters && parameters.length > 0">
         <thead>
             <tr>
                 <th width="1%" style="padding-right:30px;" *ngIf="!onlyMissing">Set?</th>
