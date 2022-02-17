@@ -3,7 +3,9 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Administrators</h4>
-            <button type="button" class="btn btn-default pull-right" (click)="createAdmin()">Create administrator</button>
+            <div class="btn-toolbar">
+                <button type="button" class="btn btn-default" (click)="createAdmin()">Create administrator</button>
+            </div>
         </div>
         <div table-directive
             [columns]="adminColumns"
@@ -18,7 +20,9 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Communities</h4>
-            <button type="button" class="btn btn-default pull-right" (click)="createCommunity()">Create community</button>
+            <div class="btn-toolbar">
+                <button type="button" class="btn btn-default" (click)="createCommunity()">Create community</button>
+            </div>
         </div>
         <div table-directive 
             [columns]="communityColumns"

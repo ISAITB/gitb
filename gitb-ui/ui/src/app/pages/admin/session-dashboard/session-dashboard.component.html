@@ -17,7 +17,7 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Active test sessions</h4>
-            <div class="btn-toolbar pull-right">
+            <div class="btn-toolbar">
                 <button type="button" class="btn btn-default" (click)="stopAll()" [pending]="stopAllPending" [disable]="activeTests.length == 0 || exportActivePending">Terminate all</button>
                 <button type="button" class="btn btn-default" (click)="exportActiveSessionsToCsv()" [pending]="exportActivePending" [disable]="activeTests.length == 0 || stopAllPending">Export CSV</button>
                 <button type="button" class="btn btn-default" *ngIf="showCollapseAllActive()" (click)="onCollapseAllActive()">Collapse all</button>
@@ -40,7 +40,7 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Completed test sessions</h4>
-            <div class="btn-toolbar pull-right">
+            <div class="btn-toolbar">
                 <button type="button" class="btn btn-default" (click)="selectDeleteSessions()" *ngIf="!selectingForDelete" [disable]="completedTests.length == 0 || deletePending" [pending]="deleteSessionsPending">Delete sessions...</button>
                 <button type="button" class="btn btn-default" (click)="confirmDeleteSessions()" *ngIf="selectingForDelete" [disable]="!testsChecked()" [pending]="deleteSessionsPending">Confirm</button>
                 <button type="button" class="btn btn-default" (click)="cancelDeleteSessions()" *ngIf="selectingForDelete" [disabled]="deleteSessionsPending">Cancel</button>
@@ -74,7 +74,7 @@
     <div class="panel panel-default" *ngIf="dataService.isSystemAdmin">
         <div class="panel-heading">
             <h4 class="title">Automatically terminate idle sessions</h4>
-            <div class="btn-group pull-right">
+            <div class="btn-toolbar">
                 <app-toggle id="dashboard-toggle-ttl" class="btn-group" name="ttlToggle" [(ngModel)]="ttlEnabled" on="Enabled" off="Disabled" (toggle)="ttlToggled()"></app-toggle>
             </div>
         </div>

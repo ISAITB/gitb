@@ -15,7 +15,7 @@
 	<div id="conformanceDashboardPageTable" class="panel panel-default">
 		<div class="panel-heading">
 			<h4 id="conformance-statements-title" class="title">Conformance statements</h4>
-			<div class="btn-toolbar pull-right padded">
+			<div class="btn-toolbar">
 				<button type="button" class="btn btn-default" *ngIf="conformanceStatements.length > 0" (click)="onExportConformanceStatementsAsCsv()" [disable]="conformanceStatements.length == 0" [pending]="exportPending">Export CSV</button>
 				<button type="button" class="btn btn-default" *ngIf="showCollapseAll()" (click)="onCollapseAll()">Collapse all</button>
 			</div>

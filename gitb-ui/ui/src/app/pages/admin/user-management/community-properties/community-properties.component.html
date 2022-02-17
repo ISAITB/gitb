@@ -10,7 +10,7 @@
             <div class="panel panel-default">
                 <div class="panel-heading">
                     <h5 class="title">{{dataService.labelOrganisation()}} level properties</h5>
-                    <div class="btn-toolbar pull-right">
+                    <div class="btn-toolbar">
                         <button type="button" class="btn btn-default" (click)="previewOrganisationParameters()">Preview</button>
                         <button type="button" class="btn btn-default" [disabled]="orderOrganisationParametersDisabled.value" (click)="orderOrganisationParameters()">Save property order</button>
                         <button type="button" class="btn btn-default" (click)="addOrganisationParameter()">Create property</button>
@@ -63,7 +63,7 @@
             <div class="panel panel-default" style="margin-bottom: 0px;">
                 <div class="panel-heading">
                     <h5 class="title">{{dataService.labelSystem()}} level properties</h5>
-                    <div class="btn-toolbar pull-right">
+                    <div class="btn-toolbar">
                         <button type="button" class="btn btn-default" (click)="previewSystemParameters()">Preview</button>
                         <button type="button" class="btn btn-default" [disable]="orderSystemParametersDisabled.value" [pending]="orderPending" (click)="orderSystemParameters()">Save property order</button>
                         <button type="button" class="btn btn-default" (click)="addSystemParameter()">Create property</button>

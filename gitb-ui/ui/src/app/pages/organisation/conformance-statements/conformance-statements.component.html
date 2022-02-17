@@ -2,7 +2,9 @@
 	<div class="panel panel-default">
 		<div class="panel-heading">
 			<h4 class="title">Conformance statements</h4>
-            <a (click)="routingService.toCreateConformanceStatement(organisationId, systemId)" class="btn btn-default pull-right" *ngIf="showCreate">Create conformance statement</a>
+			<div class="btn-toolbar" *ngIf="showCreate">
+				<button (click)="routingService.toCreateConformanceStatement(organisationId, systemId)" class="btn btn-default">Create conformance statement</button>
+			</div>
 		</div>
 		<div id="conformance-statements-table" table-directive 
 			[columns]="tableColumns" 
