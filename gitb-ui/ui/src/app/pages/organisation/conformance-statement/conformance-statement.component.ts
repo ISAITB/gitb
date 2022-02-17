@@ -30,6 +30,7 @@ import { RoutingService } from 'src/app/services/routing.service';
 import { TabsetComponent } from 'ngx-bootstrap/tabs';
 import { ConformanceStatementTab } from './conformance-statement-tab';
 import { LoadingStatus } from 'src/app/types/loading-status.type';
+import { MissingConfigurationAction } from 'src/app/components/missing-configuration-display/missing-configuration-action';
 
 @Component({
   selector: 'app-conformance-statement',
@@ -69,10 +70,10 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   collapsedDetails = false
   
   resultFilterAll = "any"
-  resultFilterLabelAll = "Any test result"
-  resultFilterLabelSucceeded = "Succeeded tests"
-  resultFilterLabelFailed = "Failed tests"
-  resultFilterLabelUndefined = "Undefined results"
+  resultFilterLabelAll = "Show all tests"
+  resultFilterLabelSucceeded = "Show succeeded tests"
+  resultFilterLabelFailed = "Show failed tests"
+  resultFilterLabelUndefined = "Show incomplete tests"
   resultFilter = this.resultFilterAll
   resultFilterButton = this.resultFilterLabelAll
 
@@ -389,15 +390,12 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
       const organisationProperties = data[0]
       const systemProperties = data[1]
       const endpoints = data[2]
+      const statementProperties = this.dataService.getEndpointParametersToDisplay(endpoints)
       let organisationConfigurationValid = this.dataService.isMemberConfigurationValid(organisationProperties)
       let systemConfigurationValid = this.dataService.isMemberConfigurationValid(systemProperties)
       let configurationValid = this.dataService.isConfigurationValid(endpoints)
       if (!configurationValid || !systemConfigurationValid || !organisationConfigurationValid) {
         // Missing configuration.
-        const statementProperties = this.dataService.getEndpointParametersToDisplay(endpoints)
-        const organisationPropertyVisibility = this.dataService.checkPropertyVisibility(organisationProperties)
-        const systemPropertyVisibility = this.dataService.checkPropertyVisibility(systemProperties)
-        const statementPropertyVisibility = this.dataService.checkPropertyVisibility(statementProperties)
         const modalRef = this.modalService.show(MissingConfigurationModalComponent, {
           class: 'modal-lg',
           initialState: {
@@ -406,16 +404,13 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
             systemProperties: systemProperties,
             systemConfigurationValid: systemConfigurationValid,
             statementProperties: statementProperties,
-            configurationValid: configurationValid,
-            organisationPropertyVisibility: organisationPropertyVisibility,
-            systemPropertyVisibility: systemPropertyVisibility,
-            statementPropertyVisibility: statementPropertyVisibility
+            configurationValid: configurationValid
           }
         })
-        modalRef.content?.action.subscribe((actionType: string) => {
-          if (actionType == 'statement') {
+        modalRef.content?.action.subscribe((actionType: MissingConfigurationAction) => {
+          if (actionType == MissingConfigurationAction.viewStatement) {
             this.showConfigurationTab()
-          } else if (actionType == 'organisation') {
+          } else if (actionType == MissingConfigurationAction.viewOrganisation) {
             if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
               this.routingService.toOwnOrganisationDetails(true)
             } else {
@@ -429,7 +424,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
                 })
               }
             }
-          } else if (actionType == 'system') {
+          } else if (actionType == MissingConfigurationAction.viewSystem) {
             if (this.dataService.isVendorUser) {
               this.routingService.toSystemInfo(this.organisationId, this.systemId, true)
             } else {

@@ -1,0 +1,11 @@
+<div class="modal-header">
+	<h4 class="modal-title">Simulated configurations</h4>
+</div>
+<div class="modal-body">
+    <div class="itemContainer" *ngFor="let item of items">
+        <app-any-content-view [context]="item"></app-any-content-view>
+    </div>
+</div>
+<div class="modal-footer">
+    <button type="button" (click)="close()" class="btn btn-default">Close</button>
+</div>

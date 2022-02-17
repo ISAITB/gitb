@@ -84,7 +84,7 @@
 									<div class="testSuiteName">{{testSuite.sname}}</div>
 									<div *ngIf="testSuite.description != undefined && testSuite.description.trim() != ''" class="testSuiteDescription">{{testSuite.description}}</div>
 									<div class="testSuiteControls">
-										<div class="btn-toolbar pull-right">
+										<div class="btn-toolbar">
 											<button type="button" class="btn btn-default" *ngIf="testSuite.hasDocumentation" (click)="showTestSuiteDocumentation(testSuite.id); $event.stopPropagation();"><i class="fa fa-info-circle"></i></button>
 											<button class="btn btn-primary" (click)="onTestSuiteSelect(testSuite); $event.stopPropagation();"><i class="fa fa-play"></i></button>
 										</div>
@@ -110,7 +110,7 @@
 														<td>{{testCase.description}}</td>
 														<td class="td-min">{{testCase.updateTime}}</td>
 														<td class="testcase-controls">
-															<div class="btn-toolbar pull-right">
+															<div class="btn-toolbar">
 																<button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="toTestSession(testCase.sessionId)"><i class="fa fa-search"></i></button>
 																<button type="button" class="btn btn-default" *ngIf="testCase.hasDocumentation" (click)="showTestCaseDocumentation(testCase.id)"><i class="fa fa-info-circle"></i></button>
 																<button class="btn btn-primary" (click)="onTestSelect(testCase)"><i class="fa fa-play"></i></button>

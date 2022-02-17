@@ -19,7 +19,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   @Input() context!: AnyContent
   @Input() fileNameDownload?: string
   @Input() report?: StepReport
-  @Input() sessionId!: string
+  @Input() sessionId?: string
 
   value?: string
   showValueInline = true
@@ -44,7 +44,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
 
   open(lineNumber?: number) {
     try {
-      if (this.isFileReference(this.context)) {
+      if (this.isFileReference(this.context) && this.sessionId) {
         this.openPending = true
         this.downloadFileReference(this.sessionId, this.context)
         .subscribe((data) => {
@@ -93,7 +93,7 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   }
 
   download() {
-    if (this.isFileReference(this.context)) {
+    if (this.isFileReference(this.context) && this.sessionId) {
       this.downloadPending = true
       this.downloadFileReference(this.sessionId, this.context)
       .subscribe((data) => {

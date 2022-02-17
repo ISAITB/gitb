@@ -804,8 +804,8 @@ export class DataService {
 		return true
   }
 
-  getEndpointParametersToDisplay(endpoints: SystemConfigurationEndpoint[]|undefined): SystemConfigurationParameter[] {
-    if (endpoints != undefined && endpoints.length > 0) {
+  getEndpointParametersToDisplay(endpoints: SystemConfigurationEndpoint[]): SystemConfigurationParameter[] {
+    if (endpoints.length > 0) {
 			for (let endpoint of endpoints) {
         let endpointValid = this.isConfigurationOfEndpointValid(endpoint)
         if (!endpointValid) {

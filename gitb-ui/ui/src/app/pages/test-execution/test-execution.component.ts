@@ -28,19 +28,20 @@ import { SystemParameterWithValue } from 'src/app/types/system-parameter-with-va
 import { WebSocketMessage } from 'src/app/types/web-socket-message';
 import { ConformanceTestCase } from '../organisation/conformance-statement/conformance-test-case';
 import { cloneDeep, filter, map as lmap } from 'lodash'
-import { Configuration } from 'src/app/types/configuration';
 import { CodeEditorModalComponent } from 'src/app/components/code-editor-modal/code-editor-modal.component';
 import { DiagramEvents } from 'src/app/components/diagram/diagram-events';
 import { UserInteraction } from 'src/app/types/user-interaction';
 import { UserInteractionInput } from 'src/app/types/user-interaction-input';
 import { RoutingService } from 'src/app/services/routing.service';
 import { ConformanceStatementTab } from '../organisation/conformance-statement/conformance-statement-tab';
+import { MissingConfigurationAction } from 'src/app/components/missing-configuration-display/missing-configuration-action';
+import { LoadingStatus } from 'src/app/types/loading-status.type';
+import { SimulatedConfigurationDisplayModalComponent } from 'src/app/components/simulated-configuration-display-modal/simulated-configuration-display-modal.component';
 
 @Component({
   selector: 'app-test-execution',
   templateUrl: './test-execution.component.html',
-  styles: [
-  ]
+  styleUrls: ['./test-execution.component.less']
 })
 export class TestExecutionComponent implements OnInit, OnDestroy {
 
@@ -52,44 +53,58 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   isAdmin = false
   documentationExists = false
 
+  showCompleted = false
+  showCompletedLabelOn = "Show completed tests"
+  showCompletedLabelOff = "Hide completed tests"
+  showCompletedLabel = this.showCompletedLabelOff
+  showPending = true
+  showPendingLabelOn = "Show pending tests"
+  showPendingLabelOff = "Hide pending tests"
+  showPendingLabel = this.showPendingLabelOn
+  startAutomatically = true
+  startAutomaticallyLabelOn = "Continue automatically"
+  startAutomaticallyLabelOff = "Continue manually"
+  startAutomaticallyLabel = this.startAutomaticallyLabelOn
+
   started = false
+  nextWaitingToStart = false
   stopped = false
+  allStopped = false
   firstTestStarted = false
   reload = false
-  startAutomatically = false
-  wizardStep = 0
-  currentTestIndex = 0
+  currentTestIndex = -1
   currentTest?: ConformanceTestCase
-  visibleTest?: ConformanceTestCase
-  intervalSet = false
   progressIcons: {[key: number]: string} = {}
   testCaseStatus: {[key: number]: number} = {}
   testCaseOutput: {[key: number]: string} = {}
-  stepsOfTests: {[key: string]: StepData[]} = {}
+  testCaseExpanded: {[key: number]: boolean} = {}
+  testCaseVisible: {[key: number]: boolean} = {}
+  testCaseCounter: {[key: number]: number} = {}
+
+  stepsOfTests: {[key: number]: StepData[]} = {}
   actorInfoOfTests: {[key: string]: ActorInfo[]} = {}
   logMessages: {[key: string]: string[]} = {}
-  organisationProperties?: OrganisationParameterWithValue[]
-  systemProperties?: SystemParameterWithValue[]
-  endpointRepresentations?: SystemConfigurationEndpoint[]
-  statementProperties?: SystemConfigurationParameter[]
+  organisationProperties: OrganisationParameterWithValue[] = []
+  systemProperties: SystemParameterWithValue[] = []
+  endpointRepresentations: SystemConfigurationEndpoint[] = []
+  statementProperties: SystemConfigurationParameter[] = []
   actor?: string
   session?: string
-  configurationValid = false
+  configCheckStatus: LoadingStatus = {status: Constants.STATUS.NONE}
+  testCaseLoadStatus: LoadingStatus = {status: Constants.STATUS.NONE}
+  statementConfigurationValid = false
   systemConfigurationValid = false
   organisationConfigurationValid = false
-  showOrganisationProperties = false
-  showSystemProperties = false
-  showStatementProperties = false
-  somethingIsVisible = false
-  requiredPropertiesAreHidden = false
   simulatedConfigs?: SUTConfiguration[]
   currentSimulatedConfigs?: SUTConfiguration[]
   messagesToProcess?: WebSocketMessage[]
   testEvents: {[key: number]: DiagramEvents} = {}
+  columnCount = 3
 
   private ws?: WebSocketSubject<any>
   private heartbeat?: Subscription
   private messageProcessing?: Subscription
+  Constants = Constants
 
   constructor(
     private route: ActivatedRoute,
@@ -116,60 +131,40 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     }
   }
 
+  private setupTests(tests: ConformanceTestCase[]) {
+    this.testsToExecute = tests
+    this.documentationExists = this.testCasesHaveDocumentation()
+    if (this.documentationExists) {
+      this.columnCount = 4
+    } else {
+      this.columnCount = 3
+    }
+    let counter = 1
+    for (let test of tests) {
+      test.sessionId = undefined
+      this.testCaseCounter[test.id] = counter
+      counter += 1
+    }
+    this.initialiseEvents()
+    // Start initialisation
+    for (let test of this.testsToExecute) {
+      this.updateTestCaseStatus(test.id, Constants.TEST_CASE_STATUS.PENDING)
+      this.actorInfoOfTests[test.id] = []
+    }
+    this.updateTestCaseVisibility()
+  }
+
   ngOnInit(): void {
     this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
     this.actorId = Number(this.route.snapshot.paramMap.get('actor_id'))
     this.systemId = Number(this.route.snapshot.paramMap.get('system_id'))
     this.specificationId = Number(this.route.snapshot.paramMap.get('spec_id'))
     this.isAdmin = this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin
-    if (this.dataService.tests != undefined) {
-      this.testsToExecute = this.dataService.tests
-      this.documentationExists = this.testCasesHaveDocumentation()
-      this.initialiseEvents()
-      this.initialiseState()
-    } else {
-      // We lost our state following a refresh - recreate state.
-      const  testSuiteId = this.queryParamToNumber('ts')
-      if (testSuiteId != undefined) {
-        this.conformanceService.getConformanceStatusForTestSuite(this.actorId, this.systemId, testSuiteId)
-        .subscribe((data) => {
-          // There will always be one test suite returned.
-          const tests: ConformanceTestCase[] = []
-          for (let result of data.items) {
-            tests.push({
-              id: result.testCaseId!,
-              sname: result.testCaseName,
-              description: result.testCaseDescription,
-              hasDocumentation: result.testCaseHasDocumentation,
-              result: Constants.TEST_CASE_RESULT.UNDEFINED
-            })
-          }
-          this.testsToExecute = tests
-          this.documentationExists = this.testCasesHaveDocumentation()
-          this.initialiseEvents()
-          this.initialiseState()
-        })
-      } else {
-        const testCaseId = this.queryParamToNumber('tc')
-        this.conformanceService.getTestSuiteTestCase(testCaseId!)
-        .subscribe((data) => {
-          // There will always be one test case returned.
-          this.testsToExecute = [{
-            id: data.id,
-            sname: data.sname,
-            description: data.description,
-            hasDocumentation: data.hasDocumentation!,
-            result: Constants.TEST_CASE_RESULT.UNDEFINED
-          }]
-          this.documentationExists = this.testCasesHaveDocumentation()
-          this.initialiseEvents()
-          this.initialiseState()
-        })
-      }
-    }
+    this.initialiseState()    
+    this.checkConfigurations()
   }
 
-  initialiseEvents() {
+  private initialiseEvents() {
     for (let test of this.testsToExecute) {
       this.testEvents[test.id] = new DiagramEvents()
     }
@@ -179,52 +174,29 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     this.leavingTestExecutionPage()
   }
 
-  initialiseState() {
-    this.currentTestIndex = 0
-    this.currentTest = this.testsToExecute[this.currentTestIndex]
-    this.visibleTest = this.currentTest
-    // Set all flags, indexes, counters to their original state.
+  private initialiseState() {
     this.started = false
+    this.nextWaitingToStart = false
     this.stopped = false
+    this.allStopped = false
     this.firstTestStarted = false
     this.reload = false
-    this.startAutomatically = false
-    this.wizardStep = 0
-    this.intervalSet = false
     this.progressIcons = {}
     this.testCaseStatus = {}
     this.testCaseOutput = {}
+    this.testCaseExpanded = {}
+    this.testCaseVisible = {}
+    this.testCaseCounter = {}
     this.stepsOfTests = {}
     this.actorInfoOfTests = {}
     this.logMessages = {}
-    this.organisationProperties = undefined
-    this.systemProperties = undefined
-    this.endpointRepresentations = undefined
-    this.statementProperties = undefined
     this.actor = undefined
     this.session = undefined
-    this.configurationValid = false
-    this.systemConfigurationValid = false
-    this.organisationConfigurationValid = false
-    this.showOrganisationProperties = false
-    this.showSystemProperties = false
-    this.showStatementProperties = false
-    this.somethingIsVisible = false
-    this.requiredPropertiesAreHidden = false
     this.simulatedConfigs = undefined
     this.currentSimulatedConfigs = undefined
     this.messagesToProcess = undefined
-    // Start initialisation
-    for (let test of this.testsToExecute) {
-      this.updateTestCaseStatus(test.id, Constants.TEST_CASE_STATUS.PENDING)
-      this.stepsOfTests[test.id] = []
-      this.actorInfoOfTests[test.id] = []
-    }
-    const checkConfigurations = this.checkConfigurations()
-    const testCaseLoaded = this.getTestCaseDefinition(this.currentTest.id)
-    forkJoin([checkConfigurations, testCaseLoaded]).subscribe(() => {
-      this.nextStep()
-    })
+    this.currentTest = undefined
+    this.currentTestIndex = -1
   }
 
   getOrganisation(): Organisation {
@@ -236,17 +208,80 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   checkConfigurations() {
+    this.configCheckStatus.status = Constants.STATUS.PENDING
     const organisationParameterCheck = this.organisationService.checkOrganisationParameterValues(this.getOrganisation().id)
     const systemParameterCheck = this.systemService.checkSystemParameterValues(this.systemId)
     const statementParameterCheck = this.conformanceService.checkConfigurations(this.actorId, this.systemId)
-    return forkJoin([organisationParameterCheck, systemParameterCheck, statementParameterCheck]).pipe(
-      map((data) => {
-        this.organisationProperties = data[0]
-        this.systemProperties = data[1]
-        this.endpointRepresentations = data[2]
-        this.statementProperties = undefined
-      }, share())
-    )    
+    forkJoin([organisationParameterCheck, systemParameterCheck, statementParameterCheck])
+    .subscribe((data) => {
+      this.organisationProperties = data[0]
+      this.systemProperties = data[1]
+      this.endpointRepresentations = data[2]
+      this.statementProperties = this.dataService.getEndpointParametersToDisplay(this.endpointRepresentations)
+      this.statementConfigurationValid = this.dataService.isConfigurationValid(this.endpointRepresentations!)
+      this.systemConfigurationValid = this.dataService.isMemberConfigurationValid(this.systemProperties!)
+      this.organisationConfigurationValid = this.dataService.isMemberConfigurationValid(this.organisationProperties!)
+      if (this.statementConfigurationValid && this.systemConfigurationValid && this.organisationConfigurationValid) {
+        this.initialiseTestCases()
+      }
+    }).add(() => {
+      this.configCheckStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+  private initialiseTestCases() {
+    // Get and prepare test cases
+    this.testCaseLoadStatus.status = Constants.STATUS.PENDING
+    this.loadTestCases()
+    .subscribe((data) => {
+      this.setupTests(data)
+      this.prepareNextTest(false)
+    }).add(() => {
+      this.testCaseLoadStatus.status = Constants.STATUS.FINISHED
+    })
+  }
+
+  private loadTestCases(): Observable<ConformanceTestCase[]> {
+    if (this.dataService.tests != undefined) {
+      return of(this.dataService.tests)
+    } else {
+      // We lost our state following a refresh - recreate state.
+      const testSuiteId = this.queryParamToNumber('ts')
+      if (testSuiteId != undefined) {
+        return this.conformanceService.getConformanceStatusForTestSuite(this.actorId, this.systemId, testSuiteId)
+        .pipe(
+          map((data) => {
+            // There will always be one test suite returned.
+            const tests: ConformanceTestCase[] = []
+            for (let result of data.items) {
+              tests.push({
+                id: result.testCaseId!,
+                sname: result.testCaseName,
+                description: result.testCaseDescription,
+                hasDocumentation: result.testCaseHasDocumentation,
+                result: Constants.TEST_CASE_RESULT.UNDEFINED
+              })
+            }
+            return tests
+          })
+        )
+      } else {
+        const testCaseId = this.queryParamToNumber('tc')
+        return this.conformanceService.getTestSuiteTestCase(testCaseId!)
+        .pipe(
+          map((data) => {
+            // There will always be one test case returned.
+            return [{
+              id: data.id,
+              sname: data.sname,
+              description: data.description,
+              hasDocumentation: data.hasDocumentation!,
+              result: Constants.TEST_CASE_RESULT.UNDEFINED
+            }]
+          })
+        )
+      }
+    }
   }
 
   getTestCaseDefinition(testCaseToLookup: number): Observable<void> {
@@ -278,121 +313,92 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   stopAll() {
+    this.allStopped = true
+    this.nextWaitingToStart = false
     this.stopped = true
+    this.started = false 
+    this.reload = true  
     if (this.session != undefined) {
       this.stop(this.session)
     }
-    this.started = false 
-    this.startAutomatically = false
-    this.reload = true  
   }
 
   updateTestCaseStatus(testId: number, status: number) {
     this.testCaseStatus[testId] = status
     if (status == Constants.TEST_CASE_STATUS.PROCESSING) this.progressIcons[testId] = "fa-gear fa-spin test-case-running"
     else if (status == Constants.TEST_CASE_STATUS.READY) this.progressIcons[testId] = "fa-gear test-case-ready"
-    else if (status == Constants.TEST_CASE_STATUS.PENDING) this.progressIcons[testId] = "fa-gear test-case-pending"
+    else if (status == Constants.TEST_CASE_STATUS.PENDING) this.progressIcons[testId] = "fa-clock-o test-case-pending"
     else if (status == Constants.TEST_CASE_STATUS.ERROR) this.progressIcons[testId] = "fa-times-circle test-case-error"
     else if (status == Constants.TEST_CASE_STATUS.COMPLETED) this.progressIcons[testId] = "fa-check-circle test-case-success"
-    else if (status == Constants.TEST_CASE_STATUS.STOPPED) this.progressIcons[testId] = "fa-gear test-case-stopped"
+    else if (status == Constants.TEST_CASE_STATUS.STOPPED) this.progressIcons[testId] = "fa-ban test-case-stopped"
     else this.progressIcons[testId] = "fa-gear test-case-pending"  
   }
 
   progressIcon(testCaseId: number) {
     return this.progressIcons[testCaseId]
   }
-
-  nextStep(stepToConsider?: number) {
-    if (!this.stopped) {
-      if (stepToConsider == undefined)
-        stepToConsider = this.wizardStep
-      if (stepToConsider == 0) {
-        // Before starting
-        this.configurationValid = this.dataService.isConfigurationValid(this.endpointRepresentations!)
-        this.systemConfigurationValid = this.dataService.isMemberConfigurationValid(this.systemProperties!)
-        this.organisationConfigurationValid = this.dataService.isMemberConfigurationValid(this.organisationProperties!)
-        if (!this.configurationValid || !this.systemConfigurationValid || !this.organisationConfigurationValid) {
-          // Missing configuration.
-          this.statementProperties = this.dataService.getEndpointParametersToDisplay(this.endpointRepresentations)
-          const organisationPropertyVisibility = this.dataService.checkPropertyVisibility(this.organisationProperties!)
-          const systemPropertyVisibility = this.dataService.checkPropertyVisibility(this.systemProperties!)
-          const statementPropertyVisibility = this.dataService.checkPropertyVisibility(this.statementProperties)
-          this.showOrganisationProperties = organisationPropertyVisibility.hasVisibleMissingRequiredProperties || organisationPropertyVisibility.hasVisibleMissingOptionalProperties
-          this.showSystemProperties = systemPropertyVisibility.hasVisibleMissingRequiredProperties || systemPropertyVisibility.hasVisibleMissingOptionalProperties
-          this.showStatementProperties = statementPropertyVisibility.hasVisibleMissingRequiredProperties || statementPropertyVisibility.hasVisibleMissingOptionalProperties
-          this.somethingIsVisible = this.showOrganisationProperties || this.showSystemProperties || this.showStatementProperties
-          this.requiredPropertiesAreHidden = organisationPropertyVisibility.hasNonVisibleMissingRequiredProperties || systemPropertyVisibility.hasNonVisibleMissingRequiredProperties || statementPropertyVisibility.hasNonVisibleMissingRequiredProperties
-          this.wizardStep = 1
-        } else {
-          this.runInitiateStep()
-        }
-      } else if (stepToConsider == 1) {
-        this.runInitiateStep()
-      } else if (stepToConsider == 2) {
-        this.wizardStep = 3
-        if (this.startAutomatically) {
-          this.start(this.session!)
-        }
-      } else if (this.wizardStep == 3) {
-        // We are running the next test case
-        this.startNextTest()
-      }
-    }
-  }
  
-  startNextTest() {
+  private prepareNextTest(start: boolean) {
+    let previousTestId: number|undefined
+    if (this.currentTest == undefined) {
+      this.currentTestIndex = -1
+    } else {
+      previousTestId = this.currentTest.id
+    }
     if (this.currentTestIndex + 1 < this.testsToExecute.length) {
       this.currentTestIndex += 1
       this.currentTest = this.testsToExecute[this.currentTestIndex]
-      this.visibleTest = this.currentTest
-      this.startAutomatically = true
+      this.testCaseExpanded[this.currentTest.id] = true
+      this.testCaseVisible[this.currentTest.id] = true
+      this.stopped = false
+      if (previousTestId != undefined) {
+        this.testCaseExpanded[previousTestId] = false
+        this.testCaseVisible[previousTestId] = this.showCompleted
+      }
       this.getTestCaseDefinition(this.currentTest.id)
       .subscribe(() => {
-        this.nextStep(1)
+        this.runInitiateStep(start)
       })
     } else {
-      this.startAutomatically = false
       this.started = false 
       this.reload = true
     }
   }
   
-  runInitiateStep() {
+  private runInitiateStep(start: boolean) {
     this.updateTestCaseStatus(this.currentTest!.id, Constants.TEST_CASE_STATUS.READY)
     this.initiate(this.currentTest!.id).subscribe(() => {
       let configsDiffer = true
       if (this.currentSimulatedConfigs != undefined) {
-        configsDiffer = this.configsDifferent(this.currentSimulatedConfigs, this.simulatedConfigs)        
+        configsDiffer = this.simulatedConfigs == undefined || this.configsDifferent(this.currentSimulatedConfigs, this.simulatedConfigs)
       } else {
         this.currentSimulatedConfigs = this.simulatedConfigs
       }
       if (this.simulatedConfigs && this.simulatedConfigs.length > 0 && configsDiffer) {
-        this.wizardStep = 2
+        this.nextWaitingToStart = true
+        this.modalService.show(SimulatedConfigurationDisplayModalComponent, {
+          initialState: {
+            configurations: this.simulatedConfigs,
+            actorInfo: this.actorInfoOfTests[this.currentTest!.id]
+          }
+        })
       } else {
-        this.wizardStep = 3
-        if (this.startAutomatically) {
+        if (start) {
           this.start(this.session!)
+        } else {
+          this.nextWaitingToStart = !this.startAutomatically || !this.firstTestStarted
         }
       }
     })
   }
 
-  configsDifferent(previous: any, current: any) {
-    for (let c1 of previous) {
-      delete c1["$$hashKey"]
-      for (let c2 of c1.configs) {
-        delete c2["$$hashKey"]
-        for (let c3 of c2.config) {
-          delete c3["$$hashKey"]
-        }
-      }
-    }
+  configsDifferent(previous: SUTConfiguration[], current: SUTConfiguration[]) {
     const configStr1 = JSON.stringify(previous)
     const configStr2 = JSON.stringify(current)
     return !(configStr1 == configStr2)
   }
 
-  initiate(testCase: number): Observable<void> {
+  private initiate(testCase: number): Observable<void> {
     return this.testService.initiate(testCase).pipe(
       mergeMap((data) => {
         this.session = data
@@ -402,11 +408,11 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
           { next: () => { this.onOpen() } },
           { next: () => { this.onClose() } }
         )
-        this.ws.subscribe(
-          msg => this.onMessage(msg),
-          err => this.onError(err),
-          () => this.onClose()
-        )
+        this.ws.subscribe({
+          next: (msg) => this.onMessage(msg),
+          error: (error) => this.onError(error),
+          complete: () => this.onClose()
+        })
         return this.configure(this.session)
       })
     )
@@ -728,7 +734,6 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       mergeMap((data) => {
         this.simulatedConfigs = data.configs
         if (this.currentTest?.preliminary != undefined) {
-          this.startAutomatically = false
           return this.initiatePreliminary(this.session!)
         } else {
           return of(void 0)
@@ -773,12 +778,12 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     // Make sure steps still marked as pending or in progress are set as skipped.
     this.setPendingStepsToSkipped()
     this.closeWebSocket()
-    if (this.currentTestIndex + 1 < this.testsToExecute.length) {
+    if (!this.allStopped && this.currentTestIndex + 1 < this.testsToExecute.length) {
       timer(1000).subscribe(() => {
-        this.nextStep()
+        this.prepareNextTest(this.startAutomatically)
       })
     } else {
-      this.nextStep()
+      this.reload = true
     }
   }
 
@@ -824,8 +829,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   start(session: string) {
     this.updateTestCaseStatus(this.currentTest!.id, Constants.TEST_CASE_STATUS.PROCESSING)
     this.started = true
+    this.nextWaitingToStart = false
     this.firstTestStarted = true
-    this.startAutomatically = true
     this.reportService.createTestReport(session, this.systemId, this.actorId, this.currentTest!.id)
     .subscribe(() => {
       this.testService.start(session).subscribe(() => {})
@@ -833,6 +838,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   stop(session: string) {
+    this.stopped = true
     this.started = false
     this.testService.stop(session).subscribe(() => {
       this.closeWebSocket()      
@@ -856,22 +862,20 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     }
     this.closeWebSocket()
     this.initialiseState()
+    this.initialiseTestCases()
   }
 
   viewTestCase(testCase: ConformanceTestCase) {
     if (this.isTestCaseClickable(testCase)) {
-      this.visibleTest = testCase
+      this.testCaseExpanded[testCase.id] = !this.testCaseExpanded[testCase.id]
     }
   }
 
   isTestCaseClickable(testCase: ConformanceTestCase) {
-    return testCase.id != this.visibleTest?.id && this.testCaseStatus[testCase.id] != Constants.TEST_CASE_STATUS.PENDING
-  }
-
-  tableRowClass(testCase: ConformanceTestCase) {
-    if (this.isTestCaseClickable(testCase)) return "clickable-row"
-    else if (testCase.id == this.visibleTest?.id && this.testsToExecute.length > 1) return "selected-row"
-    else return ""
+    return this.testsToExecute.length > 1 && 
+      (this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.COMPLETED || 
+       this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.ERROR ||
+       this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.STOPPED)
   }
 
   showTestCaseDocumentation(testCaseId: number) {
@@ -881,64 +885,36 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     })
   }
 
-  toOrganisationProperties() {
-    if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
-      this.routingService.toOwnOrganisationDetails(true)
-    } else {
-      const organisation = this.getOrganisation()
-      if (this.dataService.vendor!.id == organisation.id) {
+  handleMissingConfigurationAction(action: MissingConfigurationAction) {
+    if (action == MissingConfigurationAction.viewOrganisation) {
+      if (this.dataService.isVendorUser || this.dataService.isVendorAdmin) {
         this.routingService.toOwnOrganisationDetails(true)
       } else {
-        this.organisationService.getOrganisationBySystemId(this.systemId)
-        .subscribe((data) => {
-          this.routingService.toOrganisationDetails(data.community, data.id, true)
-        })
-      }
-    }
-  }
-
-  toSystemProperties() {
-    if (this.dataService.isVendorUser) {
-      this.routingService.toSystemInfo(this.organisationId, this.systemId, true)
-    } else {
-      this.routingService.toSystems(this.organisationId, this.systemId, true)
-    }
-  }
-
-  toConfigurationProperties() {
-    this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.specificationId, ConformanceStatementTab.configuration)
-  }
-
-  getActorName(actorId: string) {
-    let actorName = actorId
-    for (let info of this.actorInfoOfTests[this.currentTest!.id]) {
-      if (actorId == info.id) {
-        if (info.name != undefined) {
-          actorName = info.name
+        const organisation = this.getOrganisation()
+        if (this.dataService.vendor!.id == organisation.id) {
+          this.routingService.toOwnOrganisationDetails(true)
         } else {
-          actorName = info.id
+          this.organisationService.getOrganisationBySystemId(this.systemId)
+          .subscribe((data) => {
+            this.routingService.toOrganisationDetails(data.community, data.id, true)
+          })
         }
-        break
       }
+    } else if (action == MissingConfigurationAction.viewSystem) {
+      if (this.dataService.isVendorUser) {
+        this.routingService.toSystemInfo(this.organisationId, this.systemId, true)
+      } else {
+        this.routingService.toSystems(this.organisationId, this.systemId, true)
+      }      
+    } else { // viewStatement
+      this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.specificationId, ConformanceStatementTab.configuration)
     }
-    return actorName
   }
 
-  download(binaryParameter: Configuration) {
-    const mimeType = this.dataService.mimeTypeFromDataURL(binaryParameter.value!)
-    const extension = this.dataService.extensionFromMimeType(mimeType)
-    let name = binaryParameter.name
-    if (extension) {
-      name += '.' + extension
-    }
-    const blob = this.dataService.b64toBlob(this.dataService.base64FromDataURL(binaryParameter.value!))
-    saveAs(blob, name)
-  }
-
-  viewLog() {
+  viewLog(test: ConformanceTestCase) {
     let value: string
-    if (this.logMessages[this.visibleTest!.id] != undefined) {
-      value = this.logMessages[this.visibleTest!.id].join('')
+    if (this.logMessages[test.id] != undefined) {
+      value = this.logMessages[test.id].join('')
     } else {
       value = ''
     }
@@ -968,18 +944,18 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   leavingTestExecutionPage() {
-    if (this.firstTestStarted && !this.stopped) {
+    if (this.firstTestStarted && !this.allStopped) {
       this.closeWebSocket()
       const pendingTests = filter(this.testsToExecute, (test) => {
         return this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.READY || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.PENDING
       })
       const pendingTestIds = lmap(pendingTests, (test) => { return test.id } )
       if (pendingTestIds.length > 0) {
-        this.testService.startHeadlessTestSessions(pendingTestIds, this.specificationId, this.systemId, this.actorId, true).subscribe(() => {})
-        this.popupService.success('Continuing test sessions in background. Check <b>Test Sessions</b> for progress.')
+        this.testService.startHeadlessTestSessions(pendingTestIds, this.specificationId, this.systemId, this.actorId, false).subscribe(() => {})
+        this.popupService.success('Continuing execution in background. Check <b>Test Sessions</b> for progress.')
       } else {
         if (this.testCaseStatus[this.currentTest!.id] == Constants.TEST_CASE_STATUS.PROCESSING) {
-          this.popupService.success('Continuing test session in background. Check <b>Test Sessions</b> for progress.')
+          this.popupService.success('Continuing execution in background. Check <b>Test Sessions</b> for progress.')
         }
       }
     } else {
@@ -999,6 +975,25 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     if (this.ws) {
       this.ws.complete()
       this.ws = undefined
+    }
+  }
+
+  private isVisible(testCase: ConformanceTestCase) {
+    return (this.currentTest?.id == testCase.id) ||
+      (this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.PROCESSING) ||
+      (this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.READY) ||
+      (this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.PENDING && this.showPending) ||
+      (this.testCaseStatus[testCase.id] != Constants.TEST_CASE_STATUS.PENDING && this.showCompleted)
+  }
+
+  updateTestCaseVisibility() {
+    for (let test of this.testsToExecute) {
+      if (this.isVisible(test)) {
+        this.testCaseVisible[test.id] = true
+      } else {
+        this.testCaseVisible[test.id] = false
+        this.testCaseExpanded[test.id] = false
+      }
     }
   }
 

@@ -140,6 +140,8 @@ import { CopyEnabledTextComponent } from './components/copy-enabled-text/copy-en
 import { SanitizeHtmlPipe } from './pipes/sanitize-html.pipe';
 import { ApiKeyTextComponent } from './components/api-key-text/api-key-text.component';
 import { ApiKeyInfoComponent } from './components/api-key-info/api-key-info.component';
+import { MissingConfigurationDisplayComponent } from './components/missing-configuration-display/missing-configuration-display.component';
+import { SimulatedConfigurationDisplayModalComponent } from './components/simulated-configuration-display-modal/simulated-configuration-display-modal.component';
 
 @NgModule({
   providers: [ 
@@ -268,7 +270,9 @@ import { ApiKeyInfoComponent } from './components/api-key-info/api-key-info.comp
     CopyEnabledTextComponent,
     SanitizeHtmlPipe,
     ApiKeyTextComponent,
-    ApiKeyInfoComponent],
+    ApiKeyInfoComponent,
+    MissingConfigurationDisplayComponent,
+    SimulatedConfigurationDisplayModalComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
