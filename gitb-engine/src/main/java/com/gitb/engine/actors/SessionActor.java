@@ -110,17 +110,20 @@ public class SessionActor extends Actor {
                                         ((ConfigureCommand) message).getSystemConfiguration()
                                 );
                                 setInputsToSessionContext(context, ((ConfigureCommand) message).getInputs());
-
-                                getSender().tell(sutConfigurations, self());
-
+                                sendConfigurationResult(sutConfigurations);
                                 if (context.getTestCase().getPreliminary() != null) {
                                     context.setCurrentState(TestCaseContext.TestCaseStateEnum.CONFIGURATION);
                                 } else {
                                     context.setCurrentState(TestCaseContext.TestCaseStateEnum.READY);
                                 }
                             } catch (Exception e) {
-                                getSender().tell(e, self());
+                                logger.warn("Error while preparing configuration for test session ["+getSessionId()+"]", e);
+                                logger.error(MarkerFactory.getDetachedMarker(getSessionId()), "Error while preparing test session configuration", e);
+                                sendConfigurationFailure(e);
                             }
+                        } else if (message instanceof StopCommand) {
+                            stopTestSession(context);
+                            logger.debug("Session ["+getSessionId()+"] stopped before having started.");
                         } else {
                             unexpectedCommand(message, context);
                         }
@@ -262,6 +265,28 @@ public class SessionActor extends Actor {
     private void sendUpdateAsync(final UpdateMessage msg) {
         Futures.future(() -> {
             sendUpdateSync(msg, true);
+            return null;
+        }, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER));
+    }
+
+    private void sendConfigurationFailure(final Throwable error) {
+        Futures.future(() -> {
+            try {
+                TestbedService.sendConfigurationFailure(getSessionId(), error);
+            } catch (Exception e) {
+                logger.error(MarkerFactory.getDetachedMarker(getSessionId()), "Error while sending configuration failure update", e);
+            }
+            return null;
+        }, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER));
+    }
+
+    private void sendConfigurationResult(final List<SUTConfiguration> sutConfigurations) {
+        Futures.future(() -> {
+            try {
+                TestbedService.sendConfigurationResult(getSessionId(), sutConfigurations);
+            } catch (Exception e) {
+                logger.error(MarkerFactory.getDetachedMarker(getSessionId()), "Error while sending configuration completion update", e);
+            }
             return null;
         }, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER));
     }

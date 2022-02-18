@@ -9,7 +9,7 @@ import com.fasterxml.jackson.module.jaxb.JaxbAnnotationModule;
 import com.gitb.core.Actor;
 import com.gitb.core.StepStatus;
 import com.gitb.core.TestCaseType;
-import com.gitb.tbs.ConfigureResponse;
+import com.gitb.tbs.ConfigurationCompleteRequest;
 import com.gitb.tbs.InputRequest;
 import com.gitb.tbs.InteractWithUsersRequest;
 import com.gitb.tbs.TestStepStatus;
@@ -66,8 +66,10 @@ public class JacksonUtil {
         return mapper.writeValueAsString(actor);
     }
 
-    public static String serializeConfigureResponse(ConfigureResponse response) throws JsonProcessingException {
-        return mapper.writeValueAsString(response);
+    public static String serializeConfigurationCompleteRequest(ConfigurationCompleteRequest request) throws JsonProcessingException {
+        // We are calling getConfigs() to ensure that the configurations' array is not null. The goal is to include an empty array in the JSON to detect the type of payload.
+        request.getConfigs();
+        return mapper.writeValueAsString(request);
     }
 
     public static String serializeTestStepStatus(TestStepStatus testStepStatus) throws JsonProcessingException {

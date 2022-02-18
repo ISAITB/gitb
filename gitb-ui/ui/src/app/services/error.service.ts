@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, Subscriber } from 'rxjs';
+import { Observable, Subscriber, throwError } from 'rxjs';
 import { ErrorDataArrayBuffer } from '../types/error-data-array-buffer.type';
 import { ErrorData } from '../types/error-data.type';
 import { ConfirmationDialogService } from './confirmation-dialog.service';
@@ -23,6 +23,11 @@ export class ErrorService {
     private modalService: BsModalService,
     private baseRestService: BaseRestService
   ) { }
+
+  customErrorHandler(title: string|undefined, message: string, error: string|ErrorData|ErrorDataArrayBuffer): Observable<any> {
+    this.showSimpleErrorMessage(title, message)
+    return throwError(() => error)
+  }
 
   showSimpleErrorMessage(title: string|undefined, message: string) {
     let error: ErrorData = {

@@ -39,7 +39,7 @@ class TestbedBackendClient {
     response.getTcInstanceId
   }
 
-  def configure(sessionId: String, statementParameters: List[ActorConfiguration], domainParameters: Option[ActorConfiguration], organisationParameters: ActorConfiguration, systemParameters: ActorConfiguration, inputs: Option[List[AnyContent]]): ConfigureResponse = {
+  def configure(sessionId: String, statementParameters: List[ActorConfiguration], domainParameters: Option[ActorConfiguration], organisationParameters: ActorConfiguration, systemParameters: ActorConfiguration, inputs: Option[List[AnyContent]]): Unit = {
     val cRequest: ConfigureRequest = new ConfigureRequest
     cRequest.setTcInstanceId(sessionId)
     import scala.jdk.CollectionConverters._
@@ -52,8 +52,7 @@ class TestbedBackendClient {
     if (inputs.isDefined) {
       cRequest.getInputs.addAll(inputs.get.asJava)
     }
-    val response = service().configure(cRequest)
-    response
+    service().configure(cRequest)
   }
 
   def restart(sessionId: String): Unit = {

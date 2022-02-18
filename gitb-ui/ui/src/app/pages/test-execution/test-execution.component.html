@@ -39,7 +39,7 @@
                             </div>
                         </ng-container>
                         <button type="button" class="btn btn-primary" *ngIf="testsToExecute.length == 1 && started && !stopped && !reload" (click)="stop(session!)">Stop</button>
-                        <button type="button" class="btn btn-primary" *ngIf="nextWaitingToStart" (click)="start(session!)">Start</button>
+                        <button *ngIf="nextWaitingToStart" type="button" class="btn btn-primary" (click)="start(session!)">Start</button>
                         <button type="button" class="btn btn-primary" *ngIf="reload" (click)="reinitialise()">Reset</button>
                     </ng-container>
                 </div>
@@ -94,7 +94,12 @@
                                                                                 </div>
                                                                                 <div class="session-table-title-part">
                                                                                     <div class="session-table-title-label">Session</div>
-                                                                                    <div class="session-table-title-value"><app-copy-enabled-text [value]="testCase.sessionId"></app-copy-enabled-text></div>
+                                                                                    <div class="session-table-title-value">
+                                                                                        <ng-container [ngSwitch]="testCase.sessionId != undefined">
+                                                                                            <app-copy-enabled-text *ngSwitchCase="true" [value]="testCase.sessionId"></app-copy-enabled-text>
+                                                                                            <app-pending-block *ngSwitchDefault></app-pending-block>
+                                                                                        </ng-container>
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
                                                                             <div class="session-table-operations btn-toolbar" *ngIf="stepsOfTests[testCase.id] != undefined">

@@ -4,7 +4,6 @@ import { map, mergeMap, Observable, of, share } from 'rxjs';
 import { ROUTES } from '../common/global';
 import { ActorInfo } from '../components/diagram/actor-info';
 import { Actor } from '../types/actor';
-import { ConfigureResponse } from '../types/configure-response';
 import { FileParam } from '../types/file-param.type';
 import { TestCaseDefinition } from '../types/test-case-definition';
 import { UserInteractionInput } from '../types/user-interaction-input';
@@ -101,7 +100,7 @@ export class TestService {
   }
 
   configure(specId: number, session: string, systemId: number, actorId: number) {
-    return this.restService.post<ConfigureResponse>({
+    return this.restService.post<void>({
         path: ROUTES.controllers.TestService.configure(session).url,
         params: {
             spec_id: specId,

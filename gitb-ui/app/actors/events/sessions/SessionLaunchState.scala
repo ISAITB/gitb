@@ -6,7 +6,7 @@ import models.TestSessionLaunchData
 
 case class SessionLaunchState (
   data: Option[TestSessionLaunchData],
-  startedTestSessions: Set[String],
+  startedTestSessions: Map[String, Long],
   completedTestSessions: Set[String],
   testCaseDefinitionCache: Map[Long, TestCase]
 ) {
@@ -14,7 +14,7 @@ case class SessionLaunchState (
   def newForStartedTestSession(startedTestCaseId: Long, assignedSessionId: String): SessionLaunchState = {
     // Remove the test case ID and record the session ID
     if (data.isEmpty) {
-      SessionLaunchState(None, startedTestSessions + assignedSessionId, completedTestSessions, testCaseDefinitionCache)
+      SessionLaunchState(None, startedTestSessions + (assignedSessionId -> startedTestCaseId), completedTestSessions, testCaseDefinitionCache)
     } else {
       // Test case IDs
       val idsToUse = data.get.testCases.filter(_ != startedTestCaseId)
@@ -30,7 +30,7 @@ case class SessionLaunchState (
         idsToUse, data.get.statementParameters, data.get.domainParameters, data.get.organisationParameters,
         data.get.systemParameters, inputMapToUse, data.get.sessionIdsToAssign, data.get.forceSequentialExecution
       )
-      SessionLaunchState(Some(newData), startedTestSessions + assignedSessionId, completedTestSessions, definitionCacheToUse)
+      SessionLaunchState(Some(newData), startedTestSessions + (assignedSessionId -> startedTestCaseId), completedTestSessions, definitionCacheToUse)
     }
   }
 
@@ -43,7 +43,7 @@ case class SessionLaunchState (
   }
 
   def hasActiveTestSessions(): Boolean = {
-    completedTestSessions.size != startedTestSessions.size || !completedTestSessions.subsetOf(startedTestSessions)
+    completedTestSessions.size != startedTestSessions.size || !completedTestSessions.subsetOf(startedTestSessions.keySet)
   }
 
 }

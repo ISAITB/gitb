@@ -264,7 +264,7 @@ public class TestCaseContext {
 		for(ActorConfiguration actorConfiguration : configurations) {
 		    Tuple<String> actorIdEndpointTupleKey = new Tuple<>(new String[] {actorConfiguration.getActor(), actorConfiguration.getEndpoint()});
 		    sutConfigurations.put(actorIdEndpointTupleKey, actorConfiguration);
-		    sutHandlerConfigurations.put(actorIdEndpointTupleKey, new CopyOnWriteArrayList<ActorConfiguration>());
+		    sutHandlerConfigurations.put(actorIdEndpointTupleKey, new CopyOnWriteArrayList<>());
 	    }
 
 	    List<SUTConfiguration> sutConfigurations = configureSimulatedActorsForSUTs(configurations);

@@ -72,6 +72,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   allStopped = false
   firstTestStarted = false
   reload = false
+  startAfterConfigurationComplete = false
   currentTestIndex = -1
   currentTest?: ConformanceTestCase
   progressIcons: {[key: number]: string} = {}
@@ -92,6 +93,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   session?: string
   configCheckStatus: LoadingStatus = {status: Constants.STATUS.NONE}
   testCaseLoadStatus: LoadingStatus = {status: Constants.STATUS.NONE}
+  testPreparationStatus: LoadingStatus = {status: Constants.STATUS.NONE}
   statementConfigurationValid = false
   systemConfigurationValid = false
   organisationConfigurationValid = false
@@ -181,6 +183,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     this.allStopped = false
     this.firstTestStarted = false
     this.reload = false
+    this.startAfterConfigurationComplete = false
     this.progressIcons = {}
     this.testCaseStatus = {}
     this.testCaseOutput = {}
@@ -197,6 +200,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     this.messagesToProcess = undefined
     this.currentTest = undefined
     this.currentTestIndex = -1
+    this.testCaseLoadStatus.status = Constants.STATUS.NONE
+    this.testPreparationStatus.status = Constants.STATUS.NONE
   }
 
   getOrganisation(): Organisation {
@@ -331,6 +336,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     else if (status == Constants.TEST_CASE_STATUS.ERROR) this.progressIcons[testId] = "fa-times-circle test-case-error"
     else if (status == Constants.TEST_CASE_STATUS.COMPLETED) this.progressIcons[testId] = "fa-check-circle test-case-success"
     else if (status == Constants.TEST_CASE_STATUS.STOPPED) this.progressIcons[testId] = "fa-ban test-case-stopped"
+    else if (status == Constants.TEST_CASE_STATUS.CONFIGURING) this.progressIcons[testId] = "fa-gear fa-spin test-case-configuring"
     else this.progressIcons[testId] = "fa-gear test-case-pending"  
   }
 
@@ -348,6 +354,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     if (this.currentTestIndex + 1 < this.testsToExecute.length) {
       this.currentTestIndex += 1
       this.currentTest = this.testsToExecute[this.currentTestIndex]
+      this.updateTestCaseStatus(this.currentTest!.id, Constants.TEST_CASE_STATUS.CONFIGURING)
       this.testCaseExpanded[this.currentTest.id] = true
       this.testCaseVisible[this.currentTest.id] = true
       this.stopped = false
@@ -357,39 +364,13 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       }
       this.getTestCaseDefinition(this.currentTest.id)
       .subscribe(() => {
-        this.runInitiateStep(start)
+        this.startAfterConfigurationComplete = start
+        this.initiate(this.currentTest!.id)
       })
     } else {
-      this.started = false 
+      this.started = false
       this.reload = true
     }
-  }
-  
-  private runInitiateStep(start: boolean) {
-    this.updateTestCaseStatus(this.currentTest!.id, Constants.TEST_CASE_STATUS.READY)
-    this.initiate(this.currentTest!.id).subscribe(() => {
-      let configsDiffer = true
-      if (this.currentSimulatedConfigs != undefined) {
-        configsDiffer = this.simulatedConfigs == undefined || this.configsDifferent(this.currentSimulatedConfigs, this.simulatedConfigs)
-      } else {
-        this.currentSimulatedConfigs = this.simulatedConfigs
-      }
-      if (this.simulatedConfigs && this.simulatedConfigs.length > 0 && configsDiffer) {
-        this.nextWaitingToStart = true
-        this.modalService.show(SimulatedConfigurationDisplayModalComponent, {
-          initialState: {
-            configurations: this.simulatedConfigs,
-            actorInfo: this.actorInfoOfTests[this.currentTest!.id]
-          }
-        })
-      } else {
-        if (start) {
-          this.start(this.session!)
-        } else {
-          this.nextWaitingToStart = !this.startAutomatically || !this.firstTestStarted
-        }
-      }
-    })
   }
 
   configsDifferent(previous: SUTConfiguration[], current: SUTConfiguration[]) {
@@ -398,24 +379,83 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     return !(configStr1 == configStr2)
   }
 
-  private initiate(testCase: number): Observable<void> {
-    return this.testService.initiate(testCase).pipe(
-      mergeMap((data) => {
-        this.session = data
-        this.currentTest!.sessionId = this.session
-        // Create WebSocket
-        this.ws = this.webSocketService.connect(
-          { next: () => { this.onOpen() } },
-          { next: () => { this.onClose() } }
-        )
-        this.ws.subscribe({
-          next: (msg) => this.onMessage(msg),
-          error: (error) => this.onError(error),
-          complete: () => this.onClose()
-        })
-        return this.configure(this.session)
+  private initiate(testCase: number): void {
+    this.testPreparationStatus.status = Constants.STATUS.PENDING
+    this.testService.initiate(testCase)
+    .subscribe((data) => {
+      this.session = data
+      this.currentTest!.sessionId = this.session
+      // Create WebSocket
+      this.ws = this.webSocketService.connect(
+        { next: () => { this.onOpen() } },
+        { next: () => { this.onClose() } }
+      )
+      this.ws.subscribe({
+        next: (msg) => this.onMessage(msg),
+        error: (error) => this.onError(error),
+        complete: () => this.onClose()
       })
-    )
+      // Send the configuration request. We will be notified via WS when ready.
+      this.testService.configure(this.specificationId, this.session, this.systemId, this.actorId).subscribe(() => {})
+    })
+  }
+
+  private configurationFailed() {
+    this.updateTestCaseStatus(this.currentTest!.id, Constants.TEST_CASE_STATUS.READY)
+    let message: string
+    if (this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin) {
+      message = "An error occurred during the test session's configuration. Details on the cause are included in the test session log."
+    } else {
+      message = "An error occurred during the test session's configuration. Please contact your community administrator to resolve this."
+    }
+    this.errorService.showSimpleErrorMessage("Configuration error", message)
+  }
+
+  private configurationReady(configs: SUTConfiguration[]) {
+    // We're ready to start the test session
+    this.updateTestCaseStatus(this.currentTest!.id, Constants.TEST_CASE_STATUS.READY)
+    this.simulatedConfigs = configs
+    let configsDiffer = true
+    if (this.currentSimulatedConfigs != undefined) {
+      configsDiffer = this.simulatedConfigs == undefined || this.configsDifferent(this.currentSimulatedConfigs, this.simulatedConfigs)
+    } else {
+      this.currentSimulatedConfigs = this.simulatedConfigs
+    }
+    if (this.simulatedConfigs && this.simulatedConfigs.length > 0 && configsDiffer) {
+      const modalRef = this.modalService.show(SimulatedConfigurationDisplayModalComponent, {
+        initialState: {
+          configurations: this.simulatedConfigs,
+          actorInfo: this.actorInfoOfTests[this.currentTest!.id]
+        }
+      })
+      if (modalRef.onHidden) {
+        modalRef.onHidden.subscribe(() => {
+          this.nextWaitingToStart = true
+          this.runPreliminaryStep(false)
+        })
+      }
+    } else {
+      this.runPreliminaryStep(true)
+    }
+  }
+
+  private runPreliminaryStep(doStartCheck: boolean) {
+    let preliminaryCall: Observable<void>
+    if (this.currentTest?.preliminary != undefined) {
+      preliminaryCall = this.initiatePreliminary(this.session!)
+    } else {
+      preliminaryCall = of(void 0)
+    }
+    preliminaryCall.subscribe(() => {
+      this.testPreparationStatus.status = Constants.STATUS.FINISHED
+      if (doStartCheck) {
+        if (this.startAfterConfigurationComplete) {
+          this.start(this.session!)
+        } else {
+          this.nextWaitingToStart = !this.startAutomatically || !this.firstTestStarted
+        }
+      }
+    })
   }
 
   onOpen() {
@@ -459,6 +499,12 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       }
       if (response.report?.context?.value != undefined) {
         this.logMessages[this.currentTest!.id].push(response.report.context.value)
+      }
+    } else if (response.configs != undefined) {
+      if (response.errorCode != undefined) {
+        this.configurationFailed()
+      } else {
+        this.configurationReady(response.configs)
       }
     } else {
       if (this.messagesToProcess == undefined) {
@@ -729,19 +775,6 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     })
   }
 
-  configure(session: string): Observable<void> {
-    return this.testService.configure(this.specificationId, session, this.systemId, this.actorId).pipe(
-      mergeMap((data) => {
-        this.simulatedConfigs = data.configs
-        if (this.currentTest?.preliminary != undefined) {
-          return this.initiatePreliminary(this.session!)
-        } else {
-          return of(void 0)
-        }
-      })
-    )
-  }
-
   initiatePreliminary(session: string): Observable<void> {
     return this.testService.initiatePreliminary(session)
   }
@@ -947,7 +980,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     if (this.firstTestStarted && !this.allStopped) {
       this.closeWebSocket()
       const pendingTests = filter(this.testsToExecute, (test) => {
-        return this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.READY || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.PENDING
+        return this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.READY || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.PENDING || this.testCaseStatus[test.id] == Constants.TEST_CASE_STATUS.CONFIGURING
       })
       const pendingTestIds = lmap(pendingTests, (test) => { return test.id } )
       if (pendingTestIds.length > 0) {
@@ -980,8 +1013,9 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
 
   private isVisible(testCase: ConformanceTestCase) {
     return (this.currentTest?.id == testCase.id) ||
-      (this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.PROCESSING) ||
+      (this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.CONFIGURING) ||
       (this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.READY) ||
+      (this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.PROCESSING) ||
       (this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.PENDING && this.showPending) ||
       (this.testCaseStatus[testCase.id] != Constants.TEST_CASE_STATUS.PENDING && this.showCompleted)
   }

@@ -3,9 +3,7 @@ package jaxws;
 import actors.SessionManagerActor$;
 import akka.actor.ActorRef;
 import akka.actor.ActorSystem;
-import com.gitb.tbs.InteractWithUsersRequest;
-import com.gitb.tbs.TestStepStatus;
-import com.gitb.tbs.TestbedClient;
+import com.gitb.tbs.*;
 import com.gitb.tbs.Void;
 
 import javax.jws.WebParam;
@@ -52,6 +50,11 @@ public class TestbedService implements TestbedClient {
             sessionManagerRef.tell(message, ActorRef.noSender());
         }
     }
+
+    @Override
+    public Void configurationComplete(ConfigurationCompleteRequest configurationComplete) {
+        sendMessage(configurationComplete);
+        return new Void();    }
 
     @Override
     public com.gitb.tbs.Void updateStatus(@WebParam(name = "UpdateStatusRequest", targetNamespace = "http://www.gitb.com/tbs/v1/", partName = "parameters") TestStepStatus testStepStatus) {

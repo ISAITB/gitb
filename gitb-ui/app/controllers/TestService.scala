@@ -56,7 +56,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
     val systemId = ParameterExtractor.requiredQueryParameter(request, Parameters.SYSTEM_ID).toLong
     val actorId = ParameterExtractor.requiredQueryParameter(request, Parameters.ACTOR_ID).toLong
     val organisationData = testExecutionManager.loadOrganisationParameters(systemId)
-    val response = testbedClient.configure(
+    testbedClient.configure(
       sessionId,
       testExecutionManager.loadConformanceStatementParameters(systemId, actorId),
       testExecutionManager.loadDomainParameters(actorId),
@@ -64,8 +64,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
       testExecutionManager.loadSystemParameters(systemId),
       None
     )
-    val json = JacksonUtil.serializeConfigureResponse(response)
-    ResponseConstructor.constructJsonResponse(json)
+    ResponseConstructor.constructEmptyResponse
   }
 
   /**

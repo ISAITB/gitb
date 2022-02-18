@@ -146,7 +146,8 @@ export class Constants {
 		PENDING : 2,
 		ERROR : 3,
 		COMPLETED: 4,
-		STOPPED: 5
+		STOPPED: 5,
+		CONFIGURING: 6
 	}
 
 	public static TEST_CASE_RESULT = {
