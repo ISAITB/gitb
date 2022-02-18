@@ -77,6 +77,7 @@ export class TestFilterComponent implements OnInit {
   applicableCommunityId?: number
   filterDataLoaded = false
   names: {[key: string]: string} = {}
+  testCaseOpenLeft = false
 
   constructor(
     public dataService: DataService
@@ -156,6 +157,9 @@ export class TestFilterComponent implements OnInit {
       filter: this.getAllTestResults(),
       selection: []
     }
+    this.testCaseOpenLeft = !this.filterDefined(Constants.FILTER_TYPE.COMMUNITY) && 
+      !this.filterDefined(Constants.FILTER_TYPE.ORGANISATION) && 
+      !this.filterDefined(Constants.FILTER_TYPE.SYSTEM)
     forkJoin(this.loadPromises).subscribe(() => {
       this.filterDataLoaded = true
       this.resetFilters()

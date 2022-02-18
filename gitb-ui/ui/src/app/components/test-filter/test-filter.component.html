@@ -78,6 +78,7 @@
               <div class="filterName"><span>{{names[Constants.FILTER_TYPE.TEST_CASE]}}</span></div>
               <div class="filterValue">
                 <ng-multiselect-dropdown 
+                  [class.left-side]="testCaseOpenLeft"
                   [placeholder]="'All'" 
                   [settings]="filterDropdownSettings[Constants.FILTER_TYPE.TEST_CASE]"
                   [data]="filtering[Constants.FILTER_TYPE.TEST_CASE].filter" 
