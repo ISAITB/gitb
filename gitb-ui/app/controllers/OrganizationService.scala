@@ -76,8 +76,12 @@ class OrganizationService @Inject() (implicit ec: ExecutionContext, repositoryUt
       case Some(v) => v.toLong
       case None => 10L
     }
-
-    val result = organizationManager.searchOrganizationsByCommunity(communityId, page, limit, filter, sortOrder, sortColumn)
+    var creationOrderSort: Option[String] = None
+    val creationOrderSortParam = ParameterExtractor.optionalQueryParameter(request, Parameters.CREATION_ORDER_SORT).getOrElse("none")
+    if (!creationOrderSortParam.equals("none")) {
+      creationOrderSort = Some(creationOrderSortParam)
+    }
+    val result = organizationManager.searchOrganizationsByCommunity(communityId, page, limit, filter, sortOrder, sortColumn, creationOrderSort)
     val json: String = JsonUtil.jsOrganizationSearchResults(result._1, result._2).toString
     ResponseConstructor.constructJsonResponse(json)
   }

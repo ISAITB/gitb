@@ -67,7 +67,7 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
     organizations
   }
 
-  def searchOrganizationsByCommunity(communityId: Long, page: Long, limit: Long, filter: Option[String], sortOrder: Option[String], sortColumn: Option[String]): (Iterable[Organizations], Int) = {
+  def searchOrganizationsByCommunity(communityId: Long, page: Long, limit: Long, filter: Option[String], sortOrder: Option[String], sortColumn: Option[String], creationOrderSort: Option[String]): (Iterable[Organizations], Int) = {
     var query = PersistenceSchema.organizations
       .filter(_.adminOrganization === false)
       .filter(_.community === communityId)
@@ -75,17 +75,25 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
         val filterValueToUse = s"%${filterValue.toLowerCase}%"
         table.shortname.toLowerCase.like(filterValueToUse) || table.fullname.toLowerCase.like(filterValueToUse)
       })
-    if (sortOrder.getOrElse("asc") == "asc") {
-      query = sortColumn.getOrElse("shortname") match {
-        case "fullname" => query.sortBy(_.fullname)
-        case "template" => query.sortBy(_.templateName)
-        case _ => query.sortBy(_.shortname)
+    if (creationOrderSort.nonEmpty) {
+      if (creationOrderSort.getOrElse("asc") == "asc") {
+        query = query.sortBy(_.id)
+      } else {
+        query = query.sortBy(_.id.desc)
       }
     } else {
-      query = sortColumn.getOrElse("shortname") match {
-        case "fullname" => query.sortBy(_.fullname.desc)
-        case "template" => query.sortBy(_.templateName.desc)
-        case _ => query.sortBy(_.shortname.desc)
+      if (sortOrder.getOrElse("asc") == "asc") {
+        query = sortColumn.getOrElse("shortname") match {
+          case "fullname" => query.sortBy(_.fullname)
+          case "template" => query.sortBy(_.templateName)
+          case _ => query.sortBy(_.shortname)
+        }
+      } else {
+        query = sortColumn.getOrElse("shortname") match {
+          case "fullname" => query.sortBy(_.fullname.desc)
+          case "template" => query.sortBy(_.templateName.desc)
+          case _ => query.sortBy(_.shortname.desc)
+        }
       }
     }
     exec(

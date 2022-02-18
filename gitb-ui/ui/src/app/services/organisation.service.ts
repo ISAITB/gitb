@@ -48,7 +48,7 @@ export class OrganisationService {
     })
   }
 
-  searchOrganisationsByCommunity(communityId: number, filter: string|undefined, sortOrder: string|undefined, sortColumn: string|undefined, page: number|undefined, limit: number|undefined) {
+  searchOrganisationsByCommunity(communityId: number, filter: string|undefined, sortOrder: string|undefined, sortColumn: string|undefined, page: number|undefined, limit: number|undefined, creationOrderSort: string) {
     return this.restService.get<OrganisationSearchResult>({
       path: ROUTES.controllers.OrganizationService.searchOrganizationsByCommunity(communityId).url,
       authenticate: true,
@@ -57,7 +57,8 @@ export class OrganisationService {
         sort_order: sortOrder,
         sort_column: sortColumn,
         page: page,
-        limit: limit
+        limit: limit,
+        creationOrderSort: creationOrderSort
       }
     })
   }

@@ -29,8 +29,7 @@ import { CommunityTab } from './community-tab.enum';
 @Component({
   selector: 'app-community-details',
   templateUrl: './community-details.component.html',
-  styles: [
-  ]
+  styleUrls: ['./community-details.component.less']
 })
 export class CommunityDetailsComponent extends BaseComponent implements OnInit, AfterViewInit {
 
@@ -94,6 +93,15 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   organisationSortColumn = 'shortname'
   isNextPageOrganisationsDisabled = false
   isPreviousPageOrganisationsDisabled = false
+
+  sortByCreationOrderNone = "none"
+  sortByCreationOrderAsc = "asc"
+  sortByCreationOrderDesc = "desc"
+  sortByCreationOrderLabelNone = "Sort by creation order"
+  sortByCreationOrderLabelAsc = "Earliest created first"
+  sortByCreationOrderLabelDesc = "Latest created first"
+  sortByCreationOrderLabel = this.sortByCreationOrderLabelNone
+  sortByCreationOrder = this.sortByCreationOrderNone
 
   constructor(
     public dataService: DataService,
@@ -176,13 +184,15 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
 
   showOrganisations() {
     if (this.organisationStatus.status == Constants.STATUS.NONE) {
-      this.organisationStatus.status = Constants.STATUS.PENDING
       this.goFirstPageOrganisations()
     }
   }
 
   private queryOrganisations() {
-    this.organisationService.searchOrganisationsByCommunity(this.communityId, this.organisationFilter, this.organisationSortOrder, this.organisationSortColumn, this.currentOrganisationsPage, Constants.TABLE_PAGE_SIZE)
+    this.organizations = []
+    this.organisationCount = 0
+    this.organisationStatus.status = Constants.STATUS.PENDING
+    this.organisationService.searchOrganisationsByCommunity(this.communityId, this.organisationFilter, this.organisationSortOrder, this.organisationSortColumn, this.currentOrganisationsPage, Constants.TABLE_PAGE_SIZE, this.sortByCreationOrder)
     .subscribe((data) => {
         this.organizations = data.data
         this.organisationCount = data.count!
@@ -459,6 +469,22 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
 
   applyOrganisationFilter() {
     this.goFirstPageOrganisations()
+  }
+
+  applyCreationOrderSort(type: string, label: string) {
+    this.sortByCreationOrderLabel = label
+    this.sortByCreationOrder = type
+    if (type == "none") {
+      for (let column of this.organizationColumns) {
+        if (column.field == "sname") column.order = "asc"
+        break
+      }
+    } else {
+      for (let column of this.organizationColumns) {
+        column.order = undefined
+      }
+    }
+    this.applyOrganisationFilter()
   }
 
 }

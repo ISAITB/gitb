@@ -25,7 +25,7 @@ object Parameters {
   //Dashboard sorting
   val SORT_COLUMN = "sort_column"
   val SORT_ORDER = "sort_order"
-
+  val CREATION_ORDER_SORT = "creationOrderSort"
   //Some common parameters
   val USERNAME = "username"
   val PASSWORD = "password"
