@@ -2,8 +2,8 @@
     <div class="input-group">
         <input #filterText type="text" [style.width]="width?(width+'px'):null" name="filterValue" [placeholder]="placeholder" class="form-control" (click)="filterClicked()" (blur)="filterBlurred()" [(ngModel)]="value" [readonly]="readonly" [ngClass]="{'clickable': readonly}"/>
         <div class="input-group-btn" [ngSwitch]="readonly">
-            <button *ngSwitchCase="true" #filterButtonClear class="btn btn-default" type="submit" (click)="applyFilter(false)" [disabled]="value == undefined"><i class="fa fa-times" [class.faded]="value == undefined"></i></button>
-            <button *ngSwitchCase="false" #filterButtonSearch class="btn btn-default" type="submit" (click)="applyFilter(true)" [disabled]="value == undefined"><i class="fa fa-search" [class.faded]="value == undefined"></i></button>
+            <button *ngSwitchCase="true" #filterButtonClear class="btn btn-default" type="submit" (click)="applyFilter(false)" [disabled]="value == undefined" containerClass="shortTooltip" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-times" [class.faded]="value == undefined"></i></button>
+            <button *ngSwitchCase="false" #filterButtonSearch class="btn btn-default" type="submit" (click)="applyFilter(true)" [disabled]="value == undefined" containerClass="shortTooltip" tooltip="Search" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-search" [class.faded]="value == undefined"></i></button>
         </div>
     </div>
 </form>

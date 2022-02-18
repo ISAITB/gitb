@@ -159,7 +159,7 @@
                 <div class="input-group">
                   <input class="form-control pointer" bsDaterangepicker [(ngModel)]="startDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
                   <div class="input-group-btn">
-                    <button class="btn btn-default" type="button" (click)="clearStartRange()" [disabled]="startDateModel == undefined"><i class="fa fa-times" [ngClass]="{'faded': startDateModel == undefined}"></i></button>
+                    <button class="btn btn-default" type="button" (click)="clearStartRange()" [disabled]="startDateModel == undefined" containerClass="shortTooltip" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-times" [ngClass]="{'faded': startDateModel == undefined}"></i></button>
                   </div>
                 </div>
               </div>
@@ -170,7 +170,7 @@
                 <div class="input-group">
                   <input class="form-control pointer" bsDaterangepicker [(ngModel)]="endDateModel" [bsConfig]="datePickerSettings" (bsValueChange)="applyTimeFiltering()" readonly="readonly">
                   <div class="input-group-btn">
-                    <button class="btn btn-default" type="button" (click)="clearEndRange()" [disabled]="endDateModel == undefined"><i class="fa fa-times" [ngClass]="{'faded': endDateModel == undefined}"></i></button>
+                    <button class="btn btn-default" type="button" (click)="clearEndRange()" [disabled]="endDateModel == undefined" containerClass="shortTooltip" tooltip="Clear" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-times" [ngClass]="{'faded': endDateModel == undefined}"></i></button>
                   </div>
                 </div>
               </div>

@@ -4,7 +4,7 @@
   </div>
   <div *ngSwitchCase="false" class="input-group">
     <div class="input-group-btn">
-      <button class="btn btn-default" type="button" (click)="onButtonClick()"><i class="fa fa-folder-open-o"></i></button>
+      <button class="btn btn-default" type="button" (click)="onButtonClick()" containerClass="shortTooltip" tooltip="Open" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-folder-open-o"></i></button>
     </div>
     <input type="text" autocomplete="off" class="form-control clickable" [value]="(fileName != undefined)?fileName:''" [attr.placeholder]="placeholder" (click)="onButtonClick()" readonly="readonly"/>
   </div>

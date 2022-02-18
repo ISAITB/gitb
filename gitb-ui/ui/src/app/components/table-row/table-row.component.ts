@@ -2,6 +2,7 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { isBoolean, map } from 'lodash'
 import { TableColumnData } from 'src/app/types/table-column-data.type';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: '[table-row-directive]',
@@ -25,11 +26,16 @@ export class TableRowComponent implements OnInit {
   @Input() deleteVisibleForRow?: (row: any) => boolean
   @Input() deletePendingProperty = 'deletePending'
   @Input() actionIcon = ''
+  @Input() actionTooltip = ''
+  @Input() deleteTooltip = 'Delete'
+  @Input() exportTooltip = 'Export'
 
   @Output() onAction: EventEmitter<any> = new EventEmitter()
   @Output() onExport: EventEmitter<any> = new EventEmitter()
   @Output() onCheck: EventEmitter<any> = new EventEmitter()
   @Output() onDelete: EventEmitter<any> = new EventEmitter()
+
+  Constants = Constants
 
   columnDataItems: TableColumnData[] = []
 

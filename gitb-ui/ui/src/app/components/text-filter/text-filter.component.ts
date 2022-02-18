@@ -1,5 +1,6 @@
 import { Component, ElementRef, EventEmitter, forwardRef, Input, OnInit, Output, ViewChild } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import { Constants } from 'src/app/common/constants';
 
 @Component({
   selector: 'app-text-filter',
@@ -22,6 +23,7 @@ export class TextFilterComponent implements OnInit, ControlValueAccessor {
   @ViewChild('filterText') filterTextElement?: ElementRef
   @ViewChild('filterButtonSearch') filterButtonSearchElement?: ElementRef
   @ViewChild('filterButtonClear') filterButtonClearElement?: ElementRef
+  Constants = Constants
   _filterValue?: string
   readonly = true
   onChange = (_: any) => {}

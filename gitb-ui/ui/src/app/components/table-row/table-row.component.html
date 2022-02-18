@@ -17,17 +17,17 @@
     </div>
 </td>
 <td class="operations" *ngIf="actionVisible">
-    <button type="button" *ngIf="(!actionVisibleForRow || actionVisibleForRow(data))" [ngClass]="{'pending': data[actionPendingProperty]}" [pending]="data[actionPendingProperty]" [icon]="true" class="btn btn-default" (click)="action(); $event.stopPropagation();">
+    <button type="button" *ngIf="(!actionVisibleForRow || actionVisibleForRow(data))" [ngClass]="{'pending': data[actionPendingProperty]}" [pending]="data[actionPendingProperty]" [icon]="true" class="btn btn-default" (click)="action(); $event.stopPropagation();" containerClass="shortTooltip" [tooltip]="actionTooltip" [delay]="Constants.TOOLTIP_DELAY">
         <i [ngClass]="actionIcon"></i>
     </button>
 </td>
 <td class="operations" *ngIf="operationsVisible">
-    <button type="button" *ngIf="(!deleteVisibleForRow || deleteVisibleForRow(data))" [ngClass]="{'pending': data[deletePendingProperty]}" [pending]="data[deletePendingProperty]" [icon]="true" class="btn btn-default" (click)="delete(); $event.stopPropagation();">
+    <button type="button" *ngIf="(!deleteVisibleForRow || deleteVisibleForRow(data))" [ngClass]="{'pending': data[deletePendingProperty]}" [pending]="data[deletePendingProperty]" [icon]="true" class="btn btn-default" (click)="delete(); $event.stopPropagation();" containerClass="shortTooltip" [tooltip]="deleteTooltip" [delay]="Constants.TOOLTIP_DELAY">
         <i class="fa fa-trash"></i>
     </button>
 </td>
 <td class="operations" *ngIf="exportVisible">
-    <button type="button" *ngIf="(!exportVisibleForRow || exportVisibleForRow(data))" [ngClass]="{'pending': data[exportPendingProperty]}" [pending]="data[exportPendingProperty]" [icon]="true" class="btn btn-default" (click)="export(); $event.stopPropagation();">
+    <button type="button" *ngIf="(!exportVisibleForRow || exportVisibleForRow(data))" [ngClass]="{'pending': data[exportPendingProperty]}" [pending]="data[exportPendingProperty]" [icon]="true" class="btn btn-default" (click)="export(); $event.stopPropagation();" containerClass="shortTooltip" [tooltip]="exportTooltip" [delay]="Constants.TOOLTIP_DELAY">
         <i class="fa fa-file-pdf-o"></i>
     </button>
 </td>

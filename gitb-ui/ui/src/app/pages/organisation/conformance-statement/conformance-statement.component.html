@@ -85,8 +85,8 @@
 									<div *ngIf="testSuite.description != undefined && testSuite.description.trim() != ''" class="testSuiteDescription">{{testSuite.description}}</div>
 									<div class="testSuiteControls">
 										<div class="btn-toolbar">
-											<button type="button" class="btn btn-default" *ngIf="testSuite.hasDocumentation" (click)="showTestSuiteDocumentation(testSuite.id); $event.stopPropagation();"><i class="fa fa-info-circle"></i></button>
-											<button class="btn btn-primary" (click)="onTestSuiteSelect(testSuite); $event.stopPropagation();"><i class="fa fa-play"></i></button>
+											<button type="button" class="btn btn-default" *ngIf="testSuite.hasDocumentation" (click)="showTestSuiteDocumentation(testSuite.id); $event.stopPropagation();" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-info-circle"></i></button>
+											<button class="btn btn-primary" (click)="onTestSuiteSelect(testSuite); $event.stopPropagation();" containerClass="shortTooltip" tooltip="Run all" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-play"></i></button>
 										</div>
 									</div>
 									<div class="testSuiteResult"><i [ngClass]="dataService.iconForTestResult(testSuite.result)"></i></div>
@@ -111,9 +111,9 @@
 														<td class="td-min">{{testCase.updateTime}}</td>
 														<td class="testcase-controls">
 															<div class="btn-toolbar">
-																<button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="toTestSession(testCase.sessionId)"><i class="fa fa-search"></i></button>
-																<button type="button" class="btn btn-default" *ngIf="testCase.hasDocumentation" (click)="showTestCaseDocumentation(testCase.id)"><i class="fa fa-info-circle"></i></button>
-																<button class="btn btn-primary" (click)="onTestSelect(testCase)"><i class="fa fa-play"></i></button>
+																<button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="toTestSession(testCase.sessionId)" containerClass="shortTooltip" tooltip="View session" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-search"></i></button>
+																<button type="button" class="btn btn-default" *ngIf="testCase.hasDocumentation" (click)="showTestCaseDocumentation(testCase.id)" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-info-circle"></i></button>
+																<button class="btn btn-primary" (click)="onTestSelect(testCase)" containerClass="shortTooltip" tooltip="Run" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-play"></i></button>
 															</div>
 														</td>
 														<td class="testcase-result">

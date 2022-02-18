@@ -74,7 +74,7 @@
                                         [class.no-display]="!testCaseVisible[testCase.id]">
                                         <td><div class="testCaseName" [class.padded]="documentationExists">{{testCase.sname}}</div></td>
                                         <td>{{testCase.description}}</td>
-                                        <td class="td-doc" *ngIf="documentationExists"><button *ngIf="testCase.hasDocumentation" type="button" class="btn btn-default" (click)="showTestCaseDocumentation(testCase.id); $event.stopPropagation()"><i class="fa fa-info-circle"></i></button></td>
+                                        <td class="td-doc" *ngIf="documentationExists"><button *ngIf="testCase.hasDocumentation" type="button" class="btn btn-default" (click)="showTestCaseDocumentation(testCase.id); $event.stopPropagation()" containerClass="shortTooltip" tooltip="Documentation" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-info-circle"></i></button></td>
                                         <td class="td-centered"><i class="fa testsuite-progress-icon" style="vertical-align:middle" [ngClass]="progressIcon(testCase.id)"></i></td>
                                     </tr>
                                     <tr class="expandable-table-row-expanded" [class.no-display]="!testCaseVisible[testCase.id]">

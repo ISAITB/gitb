@@ -42,7 +42,10 @@
                 [actionVisibleForRow]="actionVisibleForRow"
                 [actionPendingProperty]="actionPendingProperty"
                 [deletePendingProperty]="deletePendingProperty"
-                [exportPendingProperty]="exportPendingProperty"></tr>
+                [exportPendingProperty]="exportPendingProperty"
+                [actionTooltip]="actionTooltip"
+                [deleteTooltip]="deleteTooltip"
+                [exportTooltip]="exportTooltip"></tr>
         </tbody>
     </table>
     <div *ngIf="(!prevDisabled || !nextDisabled) && data && data.length > 0" class="text-center table-paging-controls">

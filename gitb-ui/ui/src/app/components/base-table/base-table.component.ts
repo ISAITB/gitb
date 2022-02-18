@@ -28,6 +28,9 @@ export abstract class BaseTableComponent extends BaseComponent {
   @Input() prevDisabled = true
   @Input() allowSelect = false
   @Input() allowMultiSelect = false
+  @Input() actionTooltip = ''
+  @Input() deleteTooltip = 'Delete'
+  @Input() exportTooltip = 'Export'
 
   @Output() onSelect: EventEmitter<any> = new EventEmitter()
   @Output() onDeselect: EventEmitter<any> = new EventEmitter()

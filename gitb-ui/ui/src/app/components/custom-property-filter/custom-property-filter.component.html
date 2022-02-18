@@ -3,7 +3,7 @@
       <div class="property-id">{{appliedName}}</div>
       <div class="property-value">{{appliedValueLabel}}</div>
       <div class="property-controls">
-        <button class="btn btn-default" (click)="clear()"><i class="fa fa-times"></i></button>
+        <button class="btn btn-default" (click)="clear()" containerClass="shortTooltip" tooltip="Remove" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-times"></i></button>
       </div>
     </div>
     <div *ngIf="!applied" class="custom-property-filter-container non-applied">
@@ -21,8 +21,8 @@
         </select>
       </div>
       <div class="property-controls">
-        <button class="btn btn-default" (click)="apply()"><i class="fa fa-check"></i></button>
-        <button class="btn btn-default" (click)="cancel()"><i class="fa fa-times"></i></button>
+        <button class="btn btn-default" (click)="apply()" containerClass="shortTooltip" tooltip="Apply" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-check"></i></button>
+        <button class="btn btn-default" (click)="cancel()" containerClass="shortTooltip" tooltip="Cancel" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-times"></i></button>
       </div>
     </div>
   </div>

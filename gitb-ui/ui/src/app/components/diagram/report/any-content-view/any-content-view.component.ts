@@ -1,5 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { BsModalService } from 'ngx-bootstrap/modal';
+import { Constants } from 'src/app/common/constants';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
@@ -20,6 +21,8 @@ export class AnyContentViewComponent extends ReportSupport implements OnInit {
   @Input() fileNameDownload?: string
   @Input() report?: StepReport
   @Input() sessionId?: string
+
+  Constants = Constants
 
   value?: string
   showValueInline = true

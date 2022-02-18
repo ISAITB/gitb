@@ -1,4 +1,5 @@
 import { AfterViewInit, Component, Input, OnInit } from '@angular/core';
+import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
 import { Parameter } from 'src/app/types/parameter';
 import { ParameterReference } from 'src/app/types/parameter-reference';
@@ -17,6 +18,8 @@ export class ParameterFormComponent implements OnInit, AfterViewInit {
   @Input() hideInExport!: boolean
   @Input() hideInRegistration!: boolean
   @Input() existingValues!: ParameterReference[]
+
+  Constants = Constants
 
   dependsOnTargets: ParameterReference[] = []
   dependsOnTargetsMap: {[key: string]: ParameterReference} = {}

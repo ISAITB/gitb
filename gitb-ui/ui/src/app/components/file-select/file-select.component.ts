@@ -1,4 +1,5 @@
 import { Component, ElementRef, EventEmitter, Input, OnInit, Output, ViewChild } from '@angular/core';
+import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
 import { ErrorService } from 'src/app/services/error.service';
 import { FileData } from 'src/app/types/file-data.type';
@@ -17,6 +18,8 @@ export class FileSelectComponent implements OnInit {
   @Output() onUpload: EventEmitter<FileData> = new EventEmitter()
   @ViewChild('fileInput') fileInput?: ElementRef
 
+  Constants = Constants
+  
   isButton = false
   maxSizeKbs?: number
   acceptString?: string

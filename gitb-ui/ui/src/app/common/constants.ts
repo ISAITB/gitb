@@ -6,6 +6,7 @@ export class Constants {
     public static TABLE_PAGE_SIZE = 10
     public static DEFAULT_LOGO = '/assets/images/gitb.png'
 	public static DEFAULT_COMMUNITY_ID = 0
+	public static TOOLTIP_DELAY = 500
 
 	public static TOKEN_COOKIE_EXPIRE = 2592000000 // 1 month in millis
 	public static ACCESS_TOKEN_COOKIE_KEY = 'tat'

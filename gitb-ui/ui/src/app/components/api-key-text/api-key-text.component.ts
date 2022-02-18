@@ -1,4 +1,5 @@
 import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
+import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 
@@ -18,6 +19,8 @@ export class ApiKeyTextComponent implements OnInit {
 
   @Output() update = new EventEmitter<void>()
   @Output() delete = new EventEmitter<void>()
+
+  Constants = Constants
 
   constructor(
     private dataService: DataService,
