@@ -51,6 +51,14 @@
                                 <td>
                                     <div [collapse]="!row.expanded" [isAnimated]="true">
                                         <div class="collapsing-div">
+                                            <div class="sessionControls">
+                                                <div class="btn-toolbar">
+                                                    <button type="button" class="btn btn-default" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
+                                                    <button *ngIf="row.organizationId != undefined" type="button" class="btn btn-default" (click)="goToOrganisation(row)">View {{dataService.labelOrganisationLower()}}</button>
+                                                    <button *ngIf="row.organizationId != undefined && row.systemId != undefined" type="button" class="btn btn-default" (click)="goToSystem(row)">View {{dataService.labelSystemLower()}}</button>
+                                                    <button *ngIf="row.organizationId != undefined && row.systemId != undefined && row.actorId != undefined && row.specificationId != undefined" type="button" class="btn btn-default" (click)="goToStatement(row)">View conformance statement</button>
+                                                </div>
+                                            </div>
                                             <div class="panel panel-default">
                                                 <div class="panel-heading session-table-title clickable" (click)="diagramCollapsed[row.session] = !diagramCollapsed[row.session]">
                                                     <div class="session-table-title-part">
@@ -82,14 +90,6 @@
                                                         </div>
                                                     </div>
                                                 </div>                                                
-                                            </div>
-                                            <div class="sessionControls">
-                                                <div class="btn-toolbar">
-                                                    <button type="button" class="btn btn-default" (click)="showTestSessionLog(row)" [pending]="viewLogPending[row.session]">View log</button>
-                                                    <button *ngIf="row.organizationId != undefined" type="button" class="btn btn-default" (click)="goToOrganisation(row)">View {{dataService.labelOrganisationLower()}}</button>
-                                                    <button *ngIf="row.organizationId != undefined && row.systemId != undefined" type="button" class="btn btn-default" (click)="goToSystem(row)">View {{dataService.labelSystemLower()}}</button>
-                                                    <button *ngIf="row.organizationId != undefined && row.systemId != undefined && row.actorId != undefined && row.specificationId != undefined" type="button" class="btn btn-default" (click)="goToStatement(row)">View conformance statement</button>
-                                                </div>
                                             </div>
                                         </div>
                                     </div>
