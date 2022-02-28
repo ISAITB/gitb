@@ -1,8 +1,12 @@
-package com.gitb.engine.messaging;
+package com.gitb.engine;
 
 import akka.actor.ActorRef;
+import com.gitb.core.LogLevel;
 import com.gitb.engine.commands.messaging.NotificationReceived;
 import com.gitb.messaging.MessagingReport;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -14,6 +18,7 @@ import java.util.concurrent.ConcurrentMap;
 public class CallbackManager {
 
     private static final CallbackManager INSTANCE = new CallbackManager();
+    private static final Logger LOG = LoggerFactory.getLogger(CallbackManager.class);
 
     private final ConcurrentMap<String, Set<String>> sessionToCallMap = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, ActorRef> callToActorMap = new ConcurrentHashMap<>();
@@ -97,6 +102,30 @@ public class CallbackManager {
                     callToActorMap.remove(callId);
                 }
                 sessionToCallMap.remove(sessionId);
+            }
+        }
+    }
+
+    public void logMessageReceived(String testSessionId, String message, LogLevel level) {
+        if (testSessionId == null) {
+            LOG.warn("Received log message but no session ID was provided");
+        } else {
+            if (SessionManager.getInstance().exists(testSessionId)) {
+                if (message != null && !message.isBlank()) {
+                    if (level == LogLevel.ERROR) {
+                        LOG.error(MarkerFactory.getDetachedMarker(testSessionId), message);
+                    } else if (level == LogLevel.WARNING) {
+                        LOG.warn(MarkerFactory.getDetachedMarker(testSessionId), message);
+                    } else if (level == LogLevel.INFO) {
+                        LOG.info(MarkerFactory.getDetachedMarker(testSessionId), message);
+                    } else {
+                        LOG.debug(MarkerFactory.getDetachedMarker(testSessionId), message);
+                    }
+                } else {
+                    LOG.warn(String.format("Received blank log message for test session [%s]", testSessionId));
+                }
+            } else {
+                LOG.warn(String.format("Received log message for unknown session ID [%s]", testSessionId));
             }
         }
     }

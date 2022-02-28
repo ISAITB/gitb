@@ -1,7 +1,7 @@
 package com.gitb.engine.remote.messaging;
 
 import com.gitb.core.*;
-import com.gitb.engine.messaging.CallbackManager;
+import com.gitb.engine.CallbackManager;
 import com.gitb.engine.remote.RemoteCallContext;
 import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;

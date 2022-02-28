@@ -16,6 +16,7 @@ import com.gitb.types.DataTypeFactory;
 import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
 
+import javax.xml.ws.soap.AddressingFeature;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -31,10 +32,12 @@ public class RemoteProcessingModuleClient implements IProcessingHandler {
     private URL serviceURL;
     private ProcessingModule processingModule;
     private final Properties transactionProperties;
+    private final String testSessionId;
 
-    public RemoteProcessingModuleClient(URL serviceURL, Properties transactionProperties) {
+    public RemoteProcessingModuleClient(URL serviceURL, Properties transactionProperties, String sessionId) {
         this.serviceURL = serviceURL;
         this.transactionProperties = transactionProperties;
+        testSessionId = sessionId;
     }
 
     @Override
@@ -66,10 +69,18 @@ public class RemoteProcessingModuleClient implements IProcessingHandler {
         return call(() -> getServiceClient().beginTransaction(transactionRequest).getSessionId());
     }
 
+    private String sessionIdToUse(String processingSessionId) {
+        if (processingSessionId == null) {
+            return testSessionId;
+        } else {
+            return processingSessionId;
+        }
+    }
+
     @Override
-    public ProcessingReport process(String session, String operation, ProcessingData data) {
+    public ProcessingReport process(String processingSessionId, String operation, ProcessingData data) {
         ProcessRequest processRequest = new ProcessRequest();
-        processRequest.setSessionId(session);
+        processRequest.setSessionId(sessionIdToUse(processingSessionId));
         processRequest.setOperation(operation);
         processRequest.getInput().addAll(getInput(data));
         ProcessResponse processResponse = call(() -> getServiceClient().process(processRequest));
@@ -94,15 +105,15 @@ public class RemoteProcessingModuleClient implements IProcessingHandler {
     }
 
     @Override
-    public void endTransaction(String session) {
+    public void endTransaction(String processingSessionId) {
         BasicRequest basicRequest = new BasicRequest();
-        basicRequest.setSessionId(session);
+        basicRequest.setSessionId(sessionIdToUse(processingSessionId));
         call(() -> getServiceClient().endTransaction(basicRequest));
     }
 
     private ProcessingService getServiceClient() {
         TestCaseUtils.prepareRemoteServiceLookup(transactionProperties);
-        return new ProcessingServiceClient(getServiceURL()).getProcessingServicePort();
+        return new ProcessingServiceClient(getServiceURL()).getProcessingServicePort(new AddressingFeature(true));
     }
 
     private URL getServiceURL() {

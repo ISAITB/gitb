@@ -23,9 +23,13 @@ public class SessionManager {
 
 	// All executing TestCase Contexts; sessionId -> testcase context map
 	private final Map<String, TestCaseContext> contexts;
+	private final Map<String, String> messagingSessionToTestSessionMap;
+	private final Map<String, String> processingSessionToTestSessionMap;
 
 	private SessionManager() {
 		contexts = new ConcurrentHashMap<>();
+		messagingSessionToTestSessionMap = new ConcurrentHashMap<>();
+		processingSessionToTestSessionMap = new ConcurrentHashMap<>();
         logger.info("SessionManager has been initialized...");
 		try {
 			var sessionDataRoot = Path.of(TestEngineConfiguration.TEMP_STORAGE_LOCATION);
@@ -115,4 +119,35 @@ public class SessionManager {
 	public TestCaseContext getContext(String sessionId) {
 		return contexts.get(sessionId);
 	}
+
+	public String getTestSessionForMessagingSession(String messagingSessionId) {
+		return messagingSessionToTestSessionMap.get(messagingSessionId);
+	}
+
+	public String getTestSessionForProcessingSession(String processingSessionId) {
+		if (processingSessionToTestSessionMap.containsKey(processingSessionId)) {
+			return processingSessionToTestSessionMap.get(processingSessionId);
+		} else if (exists(processingSessionId)) {
+			// The processing session ID for a non-transactional process step is the test session ID itself.
+			return processingSessionId;
+		}
+		return null;
+	}
+
+	public void removeMessagingSession(String messagingSessionId) {
+		messagingSessionToTestSessionMap.remove(messagingSessionId);
+	}
+
+	public void removeProcessingSession(String processingSessionId) {
+		processingSessionToTestSessionMap.remove(processingSessionId);
+	}
+
+	public void mapMessagingSessionToTestSession(String messagingSessionId, String testSessionId) {
+		messagingSessionToTestSessionMap.put(messagingSessionId, testSessionId);
+	}
+
+	public void mapProcessingSessionToTestSession(String processingSessionId, String testSessionId) {
+		processingSessionToTestSessionMap.put(processingSessionId, testSessionId);
+	}
+
 }

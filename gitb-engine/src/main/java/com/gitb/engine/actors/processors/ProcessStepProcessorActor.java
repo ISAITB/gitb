@@ -84,7 +84,7 @@ public class ProcessStepProcessorActor extends AbstractProcessingStepProcessorAc
             if (resolver.isVariableReference(handlerIdentifier)) {
                 handlerIdentifier = resolver.resolveVariableAsString(handlerIdentifier).toString();
             }
-            context = new ProcessingContext(handlerIdentifier, null);
+            context = new ProcessingContext(handlerIdentifier, null, scope.getContext().getSessionId());
         } else {
             // A processing transaction is referenced.
             context = this.scope.getContext().getProcessingContext(step.getTxnId());

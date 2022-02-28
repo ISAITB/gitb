@@ -56,7 +56,7 @@ public class TestbedService {
 	public static void configure(String sessionId, List<ActorConfiguration> allConfigurations, List<AnyContent> inputs) {
 		logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("Configuring session [%s]", sessionId));
 		SessionManager sessionManager = SessionManager.getInstance();
-		if (sessionManager.getContext(sessionId) == null) {
+		if (sessionManager.notExists(sessionId)) {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_SESSION, "Could not find session [" + sessionId + "]..."));
 		}
 		List<ActorConfiguration> actorConfigurations = new ArrayList<>();

@@ -1,8 +1,8 @@
 package com.gitb.engine.commands.interaction;
 
+import com.gitb.core.LogLevel;
 import com.gitb.engine.commands.common.SessionCommand;
 import com.gitb.tbs.TestStepStatus;
-import com.gitb.tdl.LogLevel;
 
 public class LogCommand extends SessionCommand {
 

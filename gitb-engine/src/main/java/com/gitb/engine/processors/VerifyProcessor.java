@@ -65,7 +65,7 @@ public class VerifyProcessor implements IProcessor {
 		}
 
 		if (isURL(handlerIdentifier)) {
-			validator = getRemoteValidator(handlerIdentifier, TestCaseUtils.getStepProperties(verify.getProperty(), resolver));
+			validator = getRemoteValidator(handlerIdentifier, TestCaseUtils.getStepProperties(verify.getProperty(), resolver), scope.getContext().getSessionId());
 		} else {
 			validator = ModuleManager.getInstance().getValidationHandler(handlerIdentifier);
 			// This is a local validator.
@@ -243,9 +243,9 @@ public class VerifyProcessor implements IProcessor {
 		return true;
 	}
 
-	private IValidationHandler getRemoteValidator(String handler, Properties connectionProperties) {
+	private IValidationHandler getRemoteValidator(String handler, Properties connectionProperties, String sessionId) {
 		try {
-			return new RemoteValidationModuleClient(new URI(handler).toURL(), connectionProperties);
+			return new RemoteValidationModuleClient(new URI(handler).toURL(), connectionProperties, sessionId);
 		} catch (MalformedURLException e) {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote validation module found with an malformed URL ["+handler+"]"), e);
 		} catch (URISyntaxException e) {

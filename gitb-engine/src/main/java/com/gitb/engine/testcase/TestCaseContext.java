@@ -2,6 +2,7 @@ package com.gitb.engine.testcase;
 
 import com.gitb.ModuleManager;
 import com.gitb.core.*;
+import com.gitb.engine.SessionManager;
 import com.gitb.engine.TestEngineConfiguration;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.messaging.MessagingContext;
@@ -426,16 +427,16 @@ public class TestCaseContext {
 
 		List<SUTConfiguration> handlerConfigurations = new ArrayList<>();
 
-		for(MessagingContextBuilder builder : messagingContextBuilders.values()) {
+		for (MessagingContextBuilder builder : messagingContextBuilders.values()) {
 			MessagingContext messagingContext = builder.build(sessionId);
 			handlerConfigurations.addAll(messagingContext.getSutHandlerConfigurations());
-
 			messagingContexts.put(builder.getHandler(), messagingContext);
+			SessionManager.getInstance().mapMessagingSessionToTestSession(messagingContext.getSessionId(), sessionId);
 		}
 
         List<SUTConfiguration> configurationsBySUTActor = groupGeneratedSUTConfigurationsBySUTActor(handlerConfigurations);
 
-        for(SUTConfiguration sutConfiguration : configurationsBySUTActor) {
+        for (SUTConfiguration sutConfiguration : configurationsBySUTActor) {
             List<ActorConfiguration> actorConfigurations = sutHandlerConfigurations.get(new Tuple<>(new String[] {sutConfiguration.getActor(), sutConfiguration.getEndpoint()}));
 
             actorConfigurations.addAll(sutConfiguration.getConfigs());
@@ -593,6 +594,7 @@ public class TestCaseContext {
 		for(MessagingContext messagingContext:messagingContexts.values()){
 			messagingContext.getHandler().endSession(messagingContext.getSessionId());
             messagingContext.cleanup();
+			SessionManager.getInstance().removeMessagingSession(messagingContext.getSessionId());
 		}
 		messagingContexts.clear();
 	}
@@ -603,6 +605,7 @@ public class TestCaseContext {
 
 	public void addProcessingContext(String txId, ProcessingContext ctx) {
 		processingContexts.put(txId, ctx);
+		SessionManager.getInstance().mapProcessingSessionToTestSession(ctx.getSession(), sessionId);
 	}
 
 	public ProcessingContext getProcessingContext(String txId) {
@@ -610,7 +613,10 @@ public class TestCaseContext {
 	}
 
 	public void removeProcessingContext(String txId) {
-		processingContexts.remove(txId);
+		if (processingContexts.containsKey(txId)) {
+			processingContexts.remove(txId);
+			SessionManager.getInstance().removeProcessingSession(processingContexts.get(txId).getSession());
+		}
 	}
 
 	private static class MessagingContextBuilder {

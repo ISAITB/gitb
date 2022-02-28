@@ -17,8 +17,8 @@ public final class ProcessingContext {
     private IProcessingHandler handler;
     private String session;
 
-    public ProcessingContext(String handler, Properties transactionProperties) {
-        this.handler = resolveHandler(handler, transactionProperties);
+    public ProcessingContext(String handler, Properties transactionProperties, String testSessionId) {
+        this.handler = resolveHandler(handler, transactionProperties, testSessionId);
     }
 
     public void setSession(String session) {
@@ -42,17 +42,17 @@ public final class ProcessingContext {
         return true;
     }
 
-    private IProcessingHandler resolveHandler(String handler, Properties transactionProperties) {
+    private IProcessingHandler resolveHandler(String handler, Properties transactionProperties, String testSessionId) {
         if (isURL(handler)) {
-            return getRemoteProcessor(handler, transactionProperties);
+            return getRemoteProcessor(handler, transactionProperties, testSessionId);
         } else {
             return ModuleManager.getInstance().getProcessingHandler(handler);
         }
     }
 
-    private IProcessingHandler getRemoteProcessor(String handler, Properties transactionProperties) {
+    private IProcessingHandler getRemoteProcessor(String handler, Properties transactionProperties, String testSessionId) {
         try {
-            return new RemoteProcessingModuleClient(new URI(handler).toURL(), transactionProperties);
+            return new RemoteProcessingModuleClient(new URI(handler).toURL(), transactionProperties, testSessionId);
         } catch (MalformedURLException e) {
             throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INTERNAL_ERROR, "Remote processing module found with an malformed URL [" + handler + "]"), e);
         } catch (URISyntaxException e) {

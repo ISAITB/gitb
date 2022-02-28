@@ -16,6 +16,7 @@ import com.gitb.vs.ValidationResponse;
 import com.gitb.vs.ValidationService;
 import com.gitb.vs.Void;
 
+import javax.xml.ws.soap.AddressingFeature;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -33,10 +34,12 @@ public class RemoteValidationModuleClient implements IValidationHandler {
 	private URL serviceURL;
 	private ValidationModule validationModule;
 	private final Properties connectionProperties;
+	private final String testSessionId;
 
-	public RemoteValidationModuleClient(URL serviceURL, Properties connectionProperties) {
+	public RemoteValidationModuleClient(URL serviceURL, Properties connectionProperties, String sessionId) {
 		this.serviceURL = serviceURL;
 		this.connectionProperties = connectionProperties;
+		this.testSessionId = sessionId;
 	}
 
 	@Override
@@ -64,6 +67,7 @@ public class RemoteValidationModuleClient implements IValidationHandler {
 	@Override
 	public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
 		ValidateRequest validateRequest = new ValidateRequest();
+		validateRequest.setSessionId(testSessionId);
 		validateRequest.getConfig().addAll(configurations);
 		for(Map.Entry<String, DataType> input: inputs.entrySet()) {
 			validateRequest.getInput().add(DataTypeUtils.convertDataTypeToAnyContent(input.getKey(), input.getValue()));
@@ -91,7 +95,7 @@ public class RemoteValidationModuleClient implements IValidationHandler {
 
 	private ValidationService getServiceClient() {
 		TestCaseUtils.prepareRemoteServiceLookup(connectionProperties);
-		return new ValidationServiceClient(getServiceURL()).getValidationServicePort();
+		return new ValidationServiceClient(getServiceURL()).getValidationServicePort(new AddressingFeature(true));
 	}
 
 }

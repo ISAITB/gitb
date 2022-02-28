@@ -2,6 +2,9 @@
 <javaee:handler-chains xmlns:javaee="http://java.sun.com/xml/ns/javaee">
     <javaee:handler-chain>
         <javaee:handler>
+            <javaee:handler-class>com.gitb.engine.remote.validation.ValidationClientHandler</javaee:handler-class>
+        </javaee:handler>
+        <javaee:handler>
             <javaee:handler-class>com.gitb.engine.remote.HttpHeaderHandler</javaee:handler-class>
         </javaee:handler>
     </javaee:handler-chain>

@@ -1,7 +1,9 @@
 package com.gitb.tbs.config;
 
 import com.gitb.tbs.impl.MessagingClientImpl;
+import com.gitb.tbs.impl.ProcessingClientImpl;
 import com.gitb.tbs.impl.TestbedServiceImpl;
+import com.gitb.tbs.impl.ValidationClientImpl;
 import org.apache.cxf.Bus;
 import org.apache.cxf.jaxws.EndpointImpl;
 import org.apache.cxf.transport.servlet.CXFServlet;
@@ -19,17 +21,18 @@ public class WebServiceConfig {
 
     @Autowired
     Bus cxfBus;
-
     @Autowired
     TestbedServiceImpl testBedServiceImpl;
-
     @Autowired
     MessagingClientImpl messagingClientImpl;
+    @Autowired
+    ValidationClientImpl validationClientImpl;
+    @Autowired
+    ProcessingClientImpl processingClientImpl;
 
     @Bean
     public ServletRegistrationBean servletRegistrationBean(ApplicationContext context) {
-        ServletRegistrationBean<CXFServlet> srb = new ServletRegistrationBean<>(new CXFServlet(), "/*");
-        return srb;
+        return new ServletRegistrationBean<>(new CXFServlet(), "/*");
     }
 
     @Bean
@@ -47,6 +50,24 @@ public class WebServiceConfig {
         endpoint.setServiceName(new QName("http://www.gitb.com/ms/v1/", "MessagingClientService"));
         endpoint.setEndpointName(new QName("http://www.gitb.com/ms/v1/", "MessagingClientPort"));
         endpoint.publish("/MessagingClient");
+        return endpoint;
+    }
+
+    @Bean
+    public Endpoint validationClientService() {
+        EndpointImpl endpoint = new EndpointImpl(cxfBus, validationClientImpl);
+        endpoint.setServiceName(new QName("http://www.gitb.com/vs/v1/", "ValidationClientService"));
+        endpoint.setEndpointName(new QName("http://www.gitb.com/vs/v1/", "ValidationClientPort"));
+        endpoint.publish("/ValidationClient");
+        return endpoint;
+    }
+
+    @Bean
+    public Endpoint processingClientService() {
+        EndpointImpl endpoint = new EndpointImpl(cxfBus, processingClientImpl);
+        endpoint.setServiceName(new QName("http://www.gitb.com/ps/v1/", "ProcessingClientService"));
+        endpoint.setEndpointName(new QName("http://www.gitb.com/ps/v1/", "ProcessingClientPort"));
+        endpoint.publish("/ProcessingClient");
         return endpoint;
     }
 
