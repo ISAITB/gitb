@@ -15,12 +15,8 @@
           </div>
           <div [collapse]="collapsed" [isAnimated]="true">
             <div class="detailItems">
-              <div class="test-assertion-group-report">
-                <div class="assertion-reports" *ngIf="report.reports.assertionReports != null && report.reports.assertionReports.length > 0">
-                  <div>
-                    <app-test-assertion-report *ngFor="let assertionReport of report.reports.assertionReports" (click)="openAssertionReport(assertionReport)" [assertionReport]="assertionReport"></app-test-assertion-report>
-                  </div>
-                </div>
+              <div *ngIf="report.reports.assertionReports != null && report.reports.assertionReports.length > 0">
+                <app-test-assertion-report *ngFor="let assertionReport of report.reports.assertionReports" (click)="openAssertionReport(assertionReport)" [assertionReport]="assertionReport"></app-test-assertion-report>
               </div>
             </div>            
           </div>

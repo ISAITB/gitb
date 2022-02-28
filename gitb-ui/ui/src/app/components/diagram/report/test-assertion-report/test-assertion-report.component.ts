@@ -4,8 +4,7 @@ import { AssertionReport } from '../../assertion-report';
 @Component({
   selector: 'app-test-assertion-report',
   templateUrl: './test-assertion-report.component.html',
-  styles: [
-  ]
+  styleUrls: ['./test-assertion-report.component.less']
 })
 export class TestAssertionReportComponent implements OnInit {
 

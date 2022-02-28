@@ -1,0 +1,31 @@
+@import "../../../../../styles/less/_common.less";
+
+.assertion-report-nolink {
+    display: block;
+    margin-bottom: 10px;
+    &.warning-assertion-report {
+        background-color: @orange-light;
+    }
+    &.error-assertion-report {
+        background-color: @red-light;
+    }
+    &.info-assertion-report {
+        background-color: @gray-light-2;
+    }
+}
+.assertion-report {
+    display: block;
+    margin-bottom: 10px;
+    &:hover {
+        cursor: pointer;
+    }
+    &.warning-assertion-report {
+        background-color: @orange-light;
+    }
+    &.error-assertion-report {
+        background-color: @red-light;
+    }
+    &.info-assertion-report {
+        background-color: @gray-light-2;
+    }
+}
