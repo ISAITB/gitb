@@ -59,7 +59,7 @@ libraryDependencies ++= Seq(
   "org.eclipse.jetty" % "jetty-server" % jettyVersion,
   "org.eclipse.jetty" % "jetty-util" % jettyVersion,
   // ---
-  "org.apache.tika" % "tika-core" % "2.1.0",
+  "org.apache.tika" % "tika-core" % "2.3.0",
   "org.webjars" %% "webjars-play" % "2.8.8",
   "org.webjars" % "jquery" % "3.5.1",
   "org.webjars" % "bootstrap" % "3.4.1" exclude("org.webjars", "jquery"),
