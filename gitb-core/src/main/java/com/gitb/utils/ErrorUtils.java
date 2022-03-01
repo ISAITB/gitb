@@ -2,6 +2,7 @@ package com.gitb.utils;
 
 import com.gitb.core.ErrorCode;
 import com.gitb.core.ErrorInfo;
+import com.gitb.tdl.TestStep;
 
 /**
  * Created by root on 2/25/15.
@@ -31,4 +32,16 @@ public class ErrorUtils {
             return name;
         }
     }
+
+    public static String extractStepDescription(Object step) {
+        String description = null;
+        if (step instanceof TestStep) {
+            description = ((TestStep) step).getDesc();
+            if (description != null && description.isBlank()) {
+                description = null;
+            }
+        }
+        return description;
+    }
+
 }
