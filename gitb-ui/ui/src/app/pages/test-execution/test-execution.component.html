@@ -103,7 +103,10 @@
                                                                                 </div>
                                                                             </div>
                                                                             <div class="session-table-operations btn-toolbar" *ngIf="stepsOfTests[testCase.id] != undefined">
-                                                                                <button type="button" class="btn btn-default" (click)="viewLog(testCase)">View log</button>
+                                                                                <div class="viewLogButton">
+                                                                                    <button type="button" class="btn btn-default" (click)="viewLog(testCase)">View log</button>
+                                                                                    <div class="unreadBadge" [class.hidden]="!unreadLogMessages[testCase.id]" (click)="viewLog(testCase)"></div>
+                                                                                </div>
                                                                             </div>
                                                                         </div>
                                                                     </div>

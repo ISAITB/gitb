@@ -1,3 +1,5 @@
+@import '../../../styles/less/_common.less';
+
 .test-case-list-table{
     margin-bottom: 0px;
     .testCaseName {
@@ -24,4 +26,20 @@
 }
 .no-display {
     display: none;
+}
+.viewLogButton {
+    position: relative;
+    .unreadBadge {
+        background-color: @gray-button;
+        position: absolute;
+        height: 7px;
+        width: 7px;
+        border-radius: 50%;
+        right: 3px;
+        top: 3px;
+        cursor: pointer;
+        &.hidden {
+            display: none;
+        }
+    }
 }

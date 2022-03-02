@@ -75,17 +75,20 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   startAfterConfigurationComplete = false
   currentTestIndex = -1
   currentTest?: ConformanceTestCase
+
   progressIcons: {[key: number]: string} = {}
   testCaseStatus: {[key: number]: number} = {}
   testCaseOutput: {[key: number]: string} = {}
   testCaseExpanded: {[key: number]: boolean} = {}
   testCaseVisible: {[key: number]: boolean} = {}
   testCaseCounter: {[key: number]: number} = {}
-
   stepsOfTests: {[key: number]: StepData[]} = {}
   actorInfoOfTests: {[key: string]: ActorInfo[]} = {}
   logMessages: {[key: number]: string[]} = {}
   logMessageEventEmitters: {[key: number]: EventEmitter<string>} = {}
+  unreadLogMessages: {[key: number]: boolean} = {}
+  testCaseWithOpenLogView?: number
+
   organisationProperties: OrganisationParameterWithValue[] = []
   systemProperties: SystemParameterWithValue[] = []
   endpointRepresentations: SystemConfigurationEndpoint[] = []
@@ -172,6 +175,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       this.testEvents[test.id] = new DiagramEvents()
       this.logMessages[test.id] = []
       this.logMessageEventEmitters[test.id] = new EventEmitter<string>()
+      this.unreadLogMessages[test.id] = false
     }
   }
 
@@ -498,6 +502,9 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         const logMessage = response.report.context.value
         this.logMessages[this.currentTest!.id].push(logMessage)
         this.logMessageEventEmitters[this.currentTest!.id].emit(logMessage)
+        if (this.currentTest!.id != this.testCaseWithOpenLogView) {
+          this.unreadLogMessages[this.currentTest!.id] = true
+        }
       }
     } else if (response.configs != undefined) {
       if (response.errorCode != undefined) {
@@ -944,12 +951,17 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   viewLog(test: ConformanceTestCase) {
-    this.modalService.show(SessionLogModalComponent, {
+    this.testCaseWithOpenLogView = test.id
+    this.unreadLogMessages[test.id] = false
+    const modalRef = this.modalService.show(SessionLogModalComponent, {
       class: 'modal-lg',
       initialState: {
         messages: this.logMessages[test.id].slice(), // Use slice to make a copy of the log messages.
         messageEmitter: this.logMessageEventEmitters[test.id]
       }
+    })
+    modalRef.onHide?.subscribe(() => {
+      this.testCaseWithOpenLogView = undefined
     })
   }
 
