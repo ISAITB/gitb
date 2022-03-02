@@ -166,7 +166,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     this.systemId = Number(this.route.snapshot.paramMap.get('system_id'))
     this.specificationId = Number(this.route.snapshot.paramMap.get('spec_id'))
     this.isAdmin = this.dataService.isCommunityAdmin || this.dataService.isSystemAdmin
-    this.initialiseState()    
+    this.initialiseState()
     this.checkConfigurations()
   }
 
@@ -327,8 +327,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     this.allStopped = true
     this.nextWaitingToStart = false
     this.stopped = true
-    this.started = false 
-    this.reload = true  
+    this.started = false
+    this.reload = true
     if (this.session != undefined) {
       this.stop(this.session)
     }
@@ -343,13 +343,13 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     else if (status == Constants.TEST_CASE_STATUS.COMPLETED) this.progressIcons[testId] = "fa-check-circle test-case-success"
     else if (status == Constants.TEST_CASE_STATUS.STOPPED) this.progressIcons[testId] = "fa-ban test-case-stopped"
     else if (status == Constants.TEST_CASE_STATUS.CONFIGURING) this.progressIcons[testId] = "fa-spinner fa-spin fa-lg fa-fw"
-    else this.progressIcons[testId] = "fa-gear test-case-pending"  
+    else this.progressIcons[testId] = "fa-gear test-case-pending"
   }
 
   progressIcon(testCaseId: number) {
     return this.progressIcons[testCaseId]
   }
- 
+
   private prepareNextTest(start: boolean) {
     let previousTestId: number|undefined
     if (this.currentTest == undefined) {
@@ -629,7 +629,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     }
     return undefined
   }
-  
+
   setIds(steps: StepData[]|undefined, str: string, replacement: string) {
     if (steps != undefined) {
       for (let step of steps) {
@@ -796,7 +796,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
               tcInstanceId: testSessionId,
               path: stepReport.path
             }
-          }            
+          }
           this.updateStatus(step, stepReport.stepId, stepReport.status, reportToSet as StepReport)
         }
       }
@@ -880,7 +880,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     this.stopped = true
     this.started = false
     this.testService.stop(session).subscribe(() => {
-      this.closeWebSocket()      
+      this.closeWebSocket()
       this.session = undefined
       this.testCaseFinished()
     })
@@ -911,8 +911,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   isTestCaseClickable(testCase: ConformanceTestCase) {
-    return this.testsToExecute.length > 1 && 
-      (this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.COMPLETED || 
+    return this.testsToExecute.length > 1 &&
+      (this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.COMPLETED ||
        this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.ERROR ||
        this.testCaseStatus[testCase.id] == Constants.TEST_CASE_STATUS.STOPPED)
   }
@@ -944,7 +944,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         this.routingService.toSystemInfo(this.organisationId, this.systemId, true)
       } else {
         this.routingService.toSystems(this.organisationId, this.systemId, true)
-      }      
+      }
     } else { // viewStatement
       this.routingService.toConformanceStatement(this.organisationId, this.systemId, this.actorId, this.specificationId, ConformanceStatementTab.configuration)
     }

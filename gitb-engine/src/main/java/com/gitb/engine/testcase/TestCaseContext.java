@@ -677,7 +677,7 @@ public class TestCaseContext {
 				messagingHandler = ModuleManager.getInstance().getMessagingHandler(transactionInfo.handler);
 			}
 			if (messagingHandler == null) {
-				throw new IllegalStateException("Validation handler for ["+transactionInfo.handler+"] could not be resolved");
+				throw new IllegalStateException("Messaging handler for ["+transactionInfo.handler+"] could not be resolved");
 			}
 
 			List<ActorConfiguration> configurations = new ArrayList<>(sutConfigurations.values());

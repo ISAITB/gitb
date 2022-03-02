@@ -565,29 +565,25 @@
         }
       }
 
-      &.verify-type,
-	  &.process-type,
-      &.exit-type {
+      &.verify-type, &.process-type, &.exit-type {
         .message {
           .title {
             padding-left: 20px;
           }
         }
       }
-
-      &.msg-type,
-      &.process-type,
-	  &.verify-type {
+      &.msg-type, &.process-type, &.verify-type, &.interact-type {
         & > .message > .message-body {
           & > .message-report {
             display: block;
+            margin-left: 3px;
           }
         }
       }
 
       @container-type-padding: 40px;
 
-      &.loop-type, &.decision-type, &.flow-type, &.interact-type, &.group-type {
+      &.loop-type, &.decision-type, &.flow-type, &.group-type {
         & > .message {
           border: 1px solid @line-color;
 		      background: white;
@@ -599,7 +595,7 @@
           }
           &.hovering {
             background: @hover-color;
-            .loop-type, .decision-type, .flow-type, .interact-type, .group-type {
+            .loop-type, .decision-type, .flow-type, .group-type {
               & > .message.notHovering {
                 .title {
                   background: @white;

@@ -1,7 +1,7 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { ActorInfo } from '../actor-info';
 import { StepData } from '../step-data';
-import { filter, find, map, flatten, uniq, forEach, indexOf, minBy, maxBy } from 'lodash'
+import { filter, find, map, flatten, uniq, forEach, indexOf, minBy, maxBy, sortBy } from 'lodash'
 import { Constants } from 'src/app/common/constants';
 import { DiagramEvents } from '../diagram-events';
 
@@ -88,17 +88,26 @@ export class SequenceDiagramComponent implements OnInit {
         this.extractSteps(thread, actorInfo)
       }
     } else if (step.type == 'interact') {
-      for (let interaction of step.interactions!) {
-        if (interaction.type == 'request') {
-          interaction.from = Constants.TESTER_ACTOR_ID
-          interaction.to = Constants.TEST_ENGINE_ACTOR_ID
-        } else {
-          interaction.from = Constants.TEST_ENGINE_ACTOR_ID
-          interaction.to = Constants.TESTER_ACTOR_ID
-        }
+      if (this.hasRequests(step.interactions)) {
+        step.from = Constants.TESTER_ACTOR_ID
+        step.to = Constants.TEST_ENGINE_ACTOR_ID
+      } else {
+        step.from = Constants.TEST_ENGINE_ACTOR_ID
+        step.to = Constants.TESTER_ACTOR_ID
       }
     }
     return step
+  }
+
+  private hasRequests(interactions?: StepData[]) {
+    if (interactions) {
+      for (let interaction of interactions) {
+        if (interaction.type == 'request') {
+          return true
+        }
+      }
+    }
+    return false
   }
 
   extractSteps(s: StepData[]|undefined, actorInfo: ActorInfo[]) {
@@ -191,31 +200,26 @@ export class SequenceDiagramComponent implements OnInit {
   }
 
   sortActors(actors: string[], actorInfo: ActorInfo[]) {
-    let sortedArray: (string|undefined)[] = []
-    for (let actor of actors) {
-      let actorDef = find(actorInfo, (actorDef) => { return actor == actorDef.id })
-      if (actorDef != undefined) {
-        sortedArray.push(undefined)
+    let actorsWithOrder = map(actors, (actorId) => {
+      const match = find(actorInfo, (info) => {
+        return info.id == actorId
+      })
+      if (match == undefined || match.displayOrder == undefined) {
+        return { id: actorId }
       } else {
-        sortedArray.push(actor)
+        return { id: actorId, order: match.displayOrder }
       }
-    }
-    for (let actor of actorInfo) {
-      for (let sortedIndex = 0; sortedIndex < sortedArray.length; sortedIndex++) {
-        let sortedActor = sortedArray[sortedIndex]
-        if (sortedActor == undefined) {
-          sortedArray[sortedIndex] = actor.id
-          break
-        }
-      }
-    }
-    return sortedArray as string[]
+    })
+    const sortedArray = sortBy(actorsWithOrder, ['order'])
+    return map(sortedArray, (item) => {
+      return item.id
+    })
   }
 
   setStepIndexes(this: SequenceDiagramComponent, messages: StepData[]) {
     forEach(messages, (message, i) => {
       message.order = i
-      if (message.type == 'verify' || message.type == 'process' || message.type == 'msg' || message.type == 'exit') {
+      if (message.type == 'verify' || message.type == 'process' || message.type == 'msg' || message.type == 'exit' || message.type == 'interact') {
         this.setIndexes(message)
       } else if (message.type == 'group') {
         this.setGroupStepChildIndexes(message)
@@ -225,8 +229,6 @@ export class SequenceDiagramComponent implements OnInit {
         this.setDecisionStepChildIndexes(message)
       } else if (message.type == 'flow') {
         this.setFlowStepChildIndexes(message)
-      } else if (message.type == 'interact') {
-        this.setInteractionStepChildIndexes(message)
       }
     })
   }
@@ -323,13 +325,6 @@ export class SequenceDiagramComponent implements OnInit {
     let firstChild = minBy(flatten(message.threads), this.leftMostStepActorIndex.bind(this))
     let lastChild = maxBy(flatten(message.threads), this.rightMostStepActorIndex.bind(this))
     this.setMessageSpan(message, firstChild!, lastChild!, true)
-  }
-
-  setInteractionStepChildIndexes(message: StepData) {
-    forEach(message.interactions, this.setIndexes.bind(this))
-    let firstChild = minBy(message.interactions, (interaction) => {return Math.min(interaction.fromIndex!, interaction.toIndex!)})
-    let lastChild = maxBy(message.interactions, (interaction) => {return Math.max(interaction.fromIndex!, interaction.toIndex!)})
-    this.setMessageSpan(message, firstChild!, lastChild!, false)
   }
 
 }

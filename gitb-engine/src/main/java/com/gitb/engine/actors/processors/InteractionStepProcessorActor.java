@@ -4,6 +4,7 @@ import akka.actor.ActorRef;
 import akka.dispatch.Futures;
 import akka.dispatch.OnFailure;
 import akka.dispatch.OnSuccess;
+import com.gitb.core.AnyContent;
 import com.gitb.core.ErrorCode;
 import com.gitb.core.InputRequestInputType;
 import com.gitb.core.ValueEmbeddingEnumeration;
@@ -24,12 +25,15 @@ import com.gitb.tbs.UserInteractionRequest;
 import com.gitb.tdl.InstructionOrRequest;
 import com.gitb.tdl.UserInteraction;
 import com.gitb.tdl.UserRequest;
+import com.gitb.tr.TAR;
+import com.gitb.tr.TestResultType;
 import com.gitb.tr.TestStepReportType;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
 import com.gitb.utils.DataTypeUtils;
 import com.gitb.utils.ErrorUtils;
+import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +41,7 @@ import org.slf4j.MarkerFactory;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
+import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.List;
 
 /**
@@ -310,42 +315,71 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
             scopedVariable = scope.createVariable(step.getId());
             scopedVariable.setValue(interactionResult);
         }
-        //Assign the content for each input to either given variable or to the Interaction Map (with the given name as key)
-        for (UserInput userInput : userInputs) {
-            int stepIndex = Integer.parseInt(userInput.getId());
-            InstructionOrRequest targetRequest = step.getInstructOrRequest().get(stepIndex - 1);
-            if (StringUtils.isNotBlank(targetRequest.getValue())) {
-                //Find the variable that the given input content is assigned(bound) to
-                String assignedVariableExpression = targetRequest.getValue();
-                VariableResolver variableResolver = new VariableResolver(scope);
-                DataType assignedVariable = variableResolver.resolveVariable(assignedVariableExpression);
-                if (targetRequest.isAsTemplate()) {
-                    DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput, (dataType) -> {
-                        DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
-                        dataType.copyFrom(dataTypeAfterAppliedTemplate);
-                    });
-                } else {
-                    DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput);
+        TAR report = new TAR();
+        report.setResult(TestResultType.SUCCESS);
+        try {
+            report.setDate(XMLDateTimeUtils.getXMLGregorianCalendarDateTime());
+        } catch (DatatypeConfigurationException e) {
+            throw new IllegalStateException(e);
+        }
+        if (!userInputs.isEmpty()) {
+            report.setContext(new AnyContent());
+            report.getContext().setType("list");
+            //Assign the content for each input to either given variable or to the Interaction Map (with the given name as key)
+            for (UserInput userInput : userInputs) {
+                int stepIndex = Integer.parseInt(userInput.getId());
+                InstructionOrRequest targetRequest = step.getInstructOrRequest().get(stepIndex - 1);
+                if (targetRequest instanceof UserRequest && userInput.getValue() != null && !userInput.getValue().isEmpty()) {
+                    // Construct the value to return for the step's report.
+                    var requestInfo = (UserRequest) targetRequest;
+                    var reportItem = new AnyContent();
+                    if (requestInfo.getInputType() == InputRequestInputType.SECRET) {
+                        reportItem.setValue("**********");
+                    } else {
+                        reportItem.setValue(userInput.getValue());
+                    }
+                    reportItem.setName(requestInfo.getDesc());
+                    if (reportItem.getName() == null) {
+                        reportItem.setName(requestInfo.getName());
+                    }
+                    reportItem.setEmbeddingMethod(userInput.getEmbeddingMethod());
+                    reportItem.setMimeType(requestInfo.getMimeType());
+                    report.getContext().getItem().add(reportItem);
                 }
-            } else {
-                //Create an empty value
-                DataType assignedValue = dataTypeFactory.create(targetRequest.getType());
-                if (targetRequest.isAsTemplate()) {
-                    DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput, (dataType) -> {
-                        DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
-                        dataType.copyFrom(dataTypeAfterAppliedTemplate);
-                    });
+                if (StringUtils.isNotBlank(targetRequest.getValue())) {
+                    //Find the variable that the given input content is assigned(bound) to
+                    String assignedVariableExpression = targetRequest.getValue();
+                    VariableResolver variableResolver = new VariableResolver(scope);
+                    DataType assignedVariable = variableResolver.resolveVariable(assignedVariableExpression);
+                    if (targetRequest.isAsTemplate()) {
+                        DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput, (dataType) -> {
+                            DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
+                            dataType.copyFrom(dataTypeAfterAppliedTemplate);
+                        });
+                    } else {
+                        DataTypeUtils.setDataTypeValueWithAnyContent(assignedVariable, userInput);
+                    }
                 } else {
-                    DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput);
-                }
-                //Put it to the Interaction Result map
-                if (targetRequest.getName() != null) {
-                    interactionResult.addItem(targetRequest.getName(), assignedValue);
+                    //Create an empty value
+                    DataType assignedValue = dataTypeFactory.create(targetRequest.getType());
+                    if (targetRequest.isAsTemplate()) {
+                        DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput, (dataType) -> {
+                            DataType dataTypeAfterAppliedTemplate = TemplateUtils.generateDataTypeFromTemplate(scope, dataType, dataType.getType());
+                            dataType.copyFrom(dataTypeAfterAppliedTemplate);
+                        });
+                    } else {
+                        DataTypeUtils.setDataTypeValueWithAnyContent(assignedValue, userInput);
+                    }
+                    //Put it to the Interaction Result map
+                    if (targetRequest.getName() != null) {
+                        interactionResult.addItem(targetRequest.getName(), assignedValue);
+                    }
                 }
             }
         }
-        completed();
+        completed(report);
     }
+
 
     public static ActorRef create(ActorContext context, UserInteraction step, TestCaseScope scope, String stepId) throws Exception {
         return context.actorOf(props(InteractionStepProcessorActor.class, step, scope, stepId), getName(NAME));

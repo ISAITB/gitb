@@ -1096,7 +1096,7 @@ object JsonUtil {
 
   def parseJsUserInputs(json:String): List[UserInput] = {
     val jsArray = Json.parse(json).as[JsArray].value
-    var list:List[UserInput] = List()
+    val list = ListBuffer[UserInput]()
     jsArray.foreach { jsonInput =>
       val input = new UserInput()
       input.setId((jsonInput \ "id").as[String])
@@ -1105,9 +1105,9 @@ object JsonUtil {
       input.setEmbeddingMethod(ValueEmbeddingEnumeration.fromValue((jsonInput \ "embeddingMethod").as[String]))
       val inputValue = (jsonInput \ "value").asOpt[String]
       input.setValue(inputValue.orNull)
-      list ::= input
+      list += input
     }
-    list
+    list.toList
   }
 
   def parseJsDomainParameter(json:String, domainParameterId: Option[Long], domainId: Long): DomainParameter = {
