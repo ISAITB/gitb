@@ -24,6 +24,7 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent {
   minimumLogLevel = LogLevel.DEBUG
   content = ''
   contentLines: LineInfo[] = []
+  tail = false
 
   LogLevel = LogLevel
   levelFilterLabelDebug = 'Show all messages'
@@ -31,6 +32,10 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent {
   levelFilterLabelWarn = 'Show at least warning messages'
   levelFilterLabelError = 'Show error messages'
   levelFilterLabel = this.levelFilterLabelDebug
+
+  tailLabelYes = 'Scroll to latest'
+  tailLabelNo = 'Do not scroll to latest'
+  tailLabel = this.tailLabelNo
 
   constructor(
     modalRef: BsModalRef,
@@ -62,6 +67,9 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent {
             this.contentLines.push(line)
             // Do not update the content directly because this causes a full editor refresh
             this.codeEditor!.codeMirror!.replaceRange(line.text+'\n', CodeMirror.Pos(this.codeEditor!.codeMirror!.lastLine()))
+            if (this.tail) {
+              this.jumpToPosition(this.codeEditor!.codeMirror!.lastLine(), 0)
+            }
           }
         }
         setTimeout(() => {

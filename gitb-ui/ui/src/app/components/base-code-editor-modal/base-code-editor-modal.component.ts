@@ -54,4 +54,19 @@ export class BaseCodeEditorModalComponent implements AfterViewInit {
     }
   }
 
+  jumpToPosition(line: number, ch: number) {
+    setTimeout(() => {
+      let pos = {
+        line: line,
+        ch: ch
+      }
+      if (this.codeEditor?.codeMirror) {
+        let coordinates = this.codeEditor.codeMirror.charCoords(pos, 'local')
+        let top = coordinates?.top
+        let middleHeight = this.codeEditor.codeMirror.getScrollerElement().offsetHeight / 2
+        this.codeEditor.codeMirror.scrollTo(null, top - middleHeight - 5)
+      }
+    }, 100)
+  }
+
 }
