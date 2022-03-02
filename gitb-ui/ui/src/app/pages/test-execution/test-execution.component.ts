@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnDestroy, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { BsModalService } from 'ngx-bootstrap/modal';
 import { forkJoin, Observable, timer, of, Subscription } from 'rxjs';
@@ -84,7 +84,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
 
   stepsOfTests: {[key: number]: StepData[]} = {}
   actorInfoOfTests: {[key: string]: ActorInfo[]} = {}
-  logMessages: {[key: string]: string[]} = {}
+  logMessages: {[key: number]: string[]} = {}
+  logMessageEventEmitters: {[key: number]: EventEmitter<string>} = {}
   organisationProperties: OrganisationParameterWithValue[] = []
   systemProperties: SystemParameterWithValue[] = []
   endpointRepresentations: SystemConfigurationEndpoint[] = []
@@ -147,7 +148,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
       this.testCaseCounter[test.id] = counter
       counter += 1
     }
-    this.initialiseEvents()
+    this.initialiseTestMaps()
     // Start initialisation
     for (let test of this.testsToExecute) {
       this.updateTestCaseStatus(test.id, Constants.TEST_CASE_STATUS.PENDING)
@@ -166,9 +167,11 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     this.checkConfigurations()
   }
 
-  private initialiseEvents() {
+  private initialiseTestMaps() {
     for (let test of this.testsToExecute) {
       this.testEvents[test.id] = new DiagramEvents()
+      this.logMessages[test.id] = []
+      this.logMessageEventEmitters[test.id] = new EventEmitter<string>()
     }
   }
 
@@ -192,7 +195,6 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     this.testCaseCounter = {}
     this.stepsOfTests = {}
     this.actorInfoOfTests = {}
-    this.logMessages = {}
     this.actor = undefined
     this.session = undefined
     this.simulatedConfigs = undefined
@@ -492,13 +494,10 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     const stepId = response.stepId
     if (stepId == Constants.LOG_EVENT_TEST_STEP) {
       // Process log messages immediately
-      if (this.currentTest?.id != undefined) {
-        if (this.logMessages[this.currentTest.id] == undefined) {
-          this.logMessages[this.currentTest.id] = []
-        }
-      }
       if (response.report?.context?.value != undefined) {
-        this.logMessages[this.currentTest!.id].push(response.report.context.value)
+        const logMessage = response.report.context.value
+        this.logMessages[this.currentTest!.id].push(logMessage)
+        this.logMessageEventEmitters[this.currentTest!.id].emit(logMessage)
       }
     } else if (response.configs != undefined) {
       if (response.errorCode != undefined) {
@@ -948,7 +947,8 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     this.modalService.show(SessionLogModalComponent, {
       class: 'modal-lg',
       initialState: {
-        messages: this.logMessages[test.id]
+        messages: this.logMessages[test.id].slice(), // Use slice to make a copy of the log messages.
+        messageEmitter: this.logMessageEventEmitters[test.id]
       }
     })
   }

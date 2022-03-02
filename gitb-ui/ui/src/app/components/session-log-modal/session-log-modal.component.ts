@@ -1,4 +1,5 @@
-import { Component, Input } from '@angular/core';
+import { Component, EventEmitter, Input } from '@angular/core';
+import * as CodeMirror from 'codemirror';
 import { BsModalRef } from 'ngx-bootstrap/modal';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
@@ -16,7 +17,9 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent {
   static LOG_MESSAGE_REGEX = /^\[\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\] (DEBUG|ERROR|WARN|INFO) /
   static LINE_PARTS_REGEX = /^(.+)/gm
 
-  @Input() messages?: string[]
+  @Input() messages!: string[]
+  @Input() messageEmitter?: EventEmitter<string>
+
   lines: LineInfo[] = []
   minimumLogLevel = LogLevel.DEBUG
   content = ''
@@ -47,42 +50,58 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent {
         mimeType: 'text/plain'
       }
     }
-    this.initialiseLines()
+    this.initialiseLines(this.messages)
     this.updateContent()
+    if (this.messageEmitter) {
+      // Subscribe to live log updates
+      this.messageEmitter.subscribe((newMessage) => {
+        this.messages.push(newMessage)
+        const createdLines = this.initialiseLines([newMessage])
+        for (let line of createdLines) {
+          if (line.level >= this.minimumLogLevel) {
+            this.contentLines.push(line)
+            // Do not update the content directly because this causes a full editor refresh
+            this.codeEditor!.codeMirror!.replaceRange(line.text+'\n', CodeMirror.Pos(this.codeEditor!.codeMirror!.lastLine()))
+          }
+        }
+        setTimeout(() => {
+          this.applyLineStyles()
+        })
+      })
+    }
   }
 
-  private initialiseLines() {
-    if (this.messages != undefined) {
-      let previousLevel = LogLevel.INFO
-      for (let message of this.messages) {
-        const messageParts = message.replace('\r', '\n').match(SessionLogModalComponent.LINE_PARTS_REGEX)
-        if (messageParts) {
-          for (let part of messageParts) {
-            if (part.length > 0) {
-              const partLevel = this.messageLevel(part, previousLevel)
-              previousLevel = partLevel
-              this.lines.push({
-                text: part,
-                level: partLevel
-              })
-            }
+  private initialiseLines(newMessages: string[]) {
+    let previousLevel = LogLevel.INFO
+    const createdLines: LineInfo[] = []
+    for (let message of newMessages) {
+      const messageParts = message.replace('\r', '\n').match(SessionLogModalComponent.LINE_PARTS_REGEX)
+      if (messageParts) {
+        for (let part of messageParts) {
+          if (part.length > 0) {
+            const partLevel = this.messageLevel(part, previousLevel)
+            previousLevel = partLevel
+            createdLines.push({
+              text: part,
+              level: partLevel
+            })
           }
         }
       }
     }
+    this.lines.push(...createdLines)
+    return createdLines
   }
 
   private updateContent() {
-    const tempLines: LineInfo[] = []
-    let tempContent: string = ''
+    this.content = ''
+    this.contentLines = []
     for (let line of this.lines) {
       if (line.level >= this.minimumLogLevel) {
-        tempLines.push(line)
-        tempContent += line.text + '\n'
+        this.contentLines.push(line)
+        this.content += line.text + '\n'
       }
     }
-    this.contentLines = tempLines
-    this.content = tempContent
   }
 
   private messageLevel(message: string, defaultLevel: LogLevel): LogLevel {
@@ -104,12 +123,16 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent {
   }
 
   applyLineStyles(): boolean {
-    if (this.codeEditor?.codeMirror) {
-      for (let i=0; i < this.contentLines.length; i++) {
-        this.codeEditor.codeMirror.addLineClass(i, 'text', 'log-level '+this.logLevelToString(this.contentLines[i].level) + (' line-'+i))
-      }
+    for (let i=0; i < this.contentLines.length; i++) {
+      this.applyLineStyle(i, this.contentLines[i])
     }
     return true
+  }
+
+  applyLineStyle(lineNumber: number, lineData: LineInfo) {
+    if (this.codeEditor?.codeMirror) {
+      this.codeEditor.codeMirror.addLineClass(lineNumber, 'text', 'log-level '+this.logLevelToString(lineData.level))
+    }
   }
 
   private logLevelToString(level: LogLevel) {
