@@ -185,7 +185,7 @@ public class SessionActor extends Actor {
                             stopTestSession(context);
                             logger.debug("Session ["+getSessionId()+"] stopped.");
                         } else if (message instanceof UnexpectedErrorCommand) {
-                            self().tell(prepareStatusUpdate(getSessionId(), null, StepStatus.ERROR, null, true, null, null), self());
+                            self().tell(prepareStatusUpdate(getSessionId(), null, StepStatus.ERROR, null, true, null), self());
                         } else {
                             unexpectedCommand(message, context);
                         }
@@ -237,7 +237,7 @@ public class SessionActor extends Actor {
     }
 
     private UpdateMessage createSessionEndMessage(StepStatus result, TestStepReportType report) {
-        return prepareStatusUpdate(getSessionId(), TEST_CASE_STEP_ID, result, report, false, null, null);
+        return prepareStatusUpdate(getSessionId(), TEST_CASE_STEP_ID, result, report, false, null);
     }
 
     @Override
@@ -313,17 +313,13 @@ public class SessionActor extends Actor {
     }
 
     private UpdateMessage prepareStatusUpdate(TestStepStatusEvent event) {
-        return prepareStatusUpdate(event.getSessionId(), event.getStepId(), event.getStatus(), event.getReport(), true, ErrorUtils.extractStepName(event.getStep()), ErrorUtils.extractStepDescription(event.getStep()));
+        return prepareStatusUpdate(event.getSessionId(), event.getStepId(), event.getStatus(), event.getReport(), true, ErrorUtils.extractStepDescription(event.getStep()));
     }
 
-    private UpdateMessage prepareStatusUpdate(String sessionId, String stepId, StepStatus status, TestStepReportType report, boolean sendLogMessage, String stepType, String stepDescription) {
+    private UpdateMessage prepareStatusUpdate(String sessionId, String stepId, StepStatus status, TestStepReportType report, boolean sendLogMessage, String stepDescription) {
         if (sendLogMessage) {
-            String descriptionToUse = stepDescription;
-            if (descriptionToUse == null) {
-                descriptionToUse = stepType;
-            }
-            if (stepId != null && descriptionToUse != null) {
-                logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("Status update - step [%s] - ID [%s]: %s", descriptionToUse, stepId, status));
+            if (stepId != null && stepDescription != null) {
+                logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("Status update - step [%s] - ID [%s]: %s", stepDescription, stepId, status));
             } else {
                 logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("Status update: %s", status));
             }
@@ -357,7 +353,7 @@ public class SessionActor extends Actor {
 
     private void ignoredStatusUpdate(TestStepStatusEvent message) {
         if (message.getStep() != null && message.getStepId() != null) {
-            logger.debug(MarkerFactory.getDetachedMarker(message.getSessionId()), String.format("Ignoring status update - step [%s]- ID [%s]", ErrorUtils.extractStepName(message.getStep()), message.getStepId()));
+            logger.debug(MarkerFactory.getDetachedMarker(message.getSessionId()), String.format("Ignoring status update - step [%s]- ID [%s]", ErrorUtils.extractStepDescription(message.getStep()), message.getStepId()));
         } else {
             logger.debug(MarkerFactory.getDetachedMarker(message.getSessionId()), String.format("Ignoring status update [%s]", message));
         }

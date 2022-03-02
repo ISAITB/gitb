@@ -24,7 +24,7 @@ public class ErrorUtils {
         return info;
     }
 
-    public static String extractStepName(Object step) {
+    private static String extractStepName(Object step) {
         String name = step.getClass().getSimpleName();
         if (name.endsWith("Step")) {
             return name.substring(0, name.indexOf("Step"));
@@ -40,6 +40,9 @@ public class ErrorUtils {
             if (description != null && description.isBlank()) {
                 description = null;
             }
+        }
+        if (description == null) {
+            description = extractStepName(step);
         }
         return description;
     }

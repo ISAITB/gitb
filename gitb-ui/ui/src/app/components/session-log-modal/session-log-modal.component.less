@@ -1,0 +1,20 @@
+@import '../../../styles/less/_common.less';
+
+::ng-deep {
+    .log-level {
+        &.error {
+            font-weight: bold;
+            color: @error-red !important;
+        }
+        &.warn {
+            font-weight: bold;
+            color: @warning-yellow !important;
+        }
+        &.debug {
+            color: @gray-medium !important;
+        }
+    }
+}
+.caret {
+    margin-left: 10px;
+}

@@ -142,6 +142,8 @@ import { ApiKeyTextComponent } from './components/api-key-text/api-key-text.comp
 import { ApiKeyInfoComponent } from './components/api-key-info/api-key-info.component';
 import { MissingConfigurationDisplayComponent } from './components/missing-configuration-display/missing-configuration-display.component';
 import { SimulatedConfigurationDisplayModalComponent } from './components/simulated-configuration-display-modal/simulated-configuration-display-modal.component';
+import { SessionLogModalComponent } from './components/session-log-modal/session-log-modal.component';
+import { BaseCodeEditorModalComponent } from './components/base-code-editor-modal/base-code-editor-modal.component';
 
 @NgModule({
   providers: [ 
@@ -272,7 +274,9 @@ import { SimulatedConfigurationDisplayModalComponent } from './components/simula
     ApiKeyTextComponent,
     ApiKeyInfoComponent,
     MissingConfigurationDisplayComponent,
-    SimulatedConfigurationDisplayModalComponent],
+    SimulatedConfigurationDisplayModalComponent,
+    SessionLogModalComponent,
+    BaseCodeEditorModalComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,

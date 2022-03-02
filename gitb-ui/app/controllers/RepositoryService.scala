@@ -91,7 +91,7 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     authorizationManager.canViewTestResultForSession(request, sessionId)
     val logContents = reportManager.getTestSessionLog(sessionId, isExpected = true)
     if (logContents.isDefined) {
-      ResponseConstructor.constructStringResponse(logContents.get.mkString("\n"))
+      ResponseConstructor.constructStringResponse(JsonUtil.jsStringArray(logContents.get).toString())
     } else {
       ResponseConstructor.constructEmptyResponse
     }

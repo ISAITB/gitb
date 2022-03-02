@@ -33,6 +33,7 @@ import com.gitb.utils.ErrorUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.slf4j.MarkerFactory;
 import scala.concurrent.Future;
 import scala.concurrent.Promise;
 
@@ -153,6 +154,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
                     }
                     childStepId++;
                 }
+                logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Triggering user interaction - step [%s] - ID [%s]", ErrorUtils.extractStepDescription(step), stepId));
                 TestbedService.interactWithUsers(scope.getContext().getSessionId(), stepId, userInteractionRequest);
                 return null;
             } catch (Exception e) {
@@ -298,6 +300,7 @@ public class InteractionStepProcessorActor extends AbstractTestStepActor<UserInt
     @Override
     protected void handleInputEvent(InputEvent event) {
         processing();
+        logger.debug(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Handling user-provided inputs - step [%s] - ID [%s]", ErrorUtils.extractStepDescription(step), stepId));
         List<UserInput> userInputs = event.getUserInputs();
         TestCaseScope.ScopedVariable scopedVariable;
         DataTypeFactory dataTypeFactory = DataTypeFactory.getInstance();

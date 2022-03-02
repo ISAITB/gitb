@@ -108,10 +108,7 @@ public class TestbedService {
 	 * @param userInputs
 	 */
 	public static void provideInput(String sessionId, String stepId, List<UserInput> userInputs) {
-		logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("Handling user-provided inputs - step [UserInteraction] - ID [%s]", stepId));
-		//Fire TestStepInputEvent
-		TestStepInputEventBus
-			.getInstance().publish(new InputEvent(sessionId, stepId, userInputs));
+		TestStepInputEventBus.getInstance().publish(new InputEvent(sessionId, stepId, userInputs));
 	}
 
 	public static void initiatePreliminary(String sessionId) {
@@ -243,7 +240,6 @@ public class TestbedService {
 	 * @param interaction
 	 */
 	public static void interactWithUsers(String sessionId, String stepId, UserInteractionRequest interaction) {
-		logger.debug(MarkerFactory.getDetachedMarker(sessionId), String.format("Triggering user interaction - step [UserInteraction] - ID [%s]", stepId));
 		//Construct the Callback
 		var request = new InteractWithUsersRequest();
 		request.setTcInstanceid(sessionId);

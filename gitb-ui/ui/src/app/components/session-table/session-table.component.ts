@@ -6,8 +6,8 @@ import { ReportService } from 'src/app/services/report.service';
 import { RoutingService } from 'src/app/services/routing.service';
 import { TestResultForDisplay } from 'src/app/types/test-result-for-display';
 import { BaseTableComponent } from '../base-table/base-table.component';
-import { CodeEditorModalComponent } from '../code-editor-modal/code-editor-modal.component';
 import { SessionData } from '../diagram/test-session-presentation/session-data';
+import { SessionLogModalComponent } from '../session-log-modal/session-log-modal.component';
 
 @Component({
   selector: '[app-session-table]',
@@ -82,23 +82,11 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
     const sessionId = row.session
     this.viewLogPending[sessionId] = true
     this.reportService.getTestSessionLog(sessionId)
-    .subscribe((logs: string) => {
-      this.modalService.show(CodeEditorModalComponent, {
+    .subscribe((logs: string[]) => {
+      this.modalService.show(SessionLogModalComponent, {
         class: 'modal-lg',
         initialState: {
-          documentName: 'Test session log',
-          editorOptions: {
-            value: logs,
-            readOnly: true,
-            lineNumbers: true,
-            smartIndent: false,
-            electricChars: false,
-            mode: 'text/plain',
-            download: {
-              fileName: 'log.txt',
-              mimeType: 'text/plain'
-            }
-          }
+          messages: logs
         }
       })
     }).add(() => {

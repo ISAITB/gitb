@@ -263,7 +263,7 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 	protected void updateTestStepStatus(ActorContext context, StatusEvent statusEvent, TestStepReportType report, boolean reportTestStepStatus, boolean logError) {
 
 		if (logError && statusEvent instanceof ErrorStatusEvent) {
-			logger.error(addMarker(), String.format("Unexpected error - step [%s] - ID [%s]", ErrorUtils.extractStepName(step), stepId), ((ErrorStatusEvent) statusEvent).getException());
+			logger.error(addMarker(), String.format("Unexpected error - step [%s] - ID [%s]", ErrorUtils.extractStepDescription(step), stepId), ((ErrorStatusEvent) statusEvent).getException());
 		}
 
 		StepStatus status = statusEvent.getStatus();

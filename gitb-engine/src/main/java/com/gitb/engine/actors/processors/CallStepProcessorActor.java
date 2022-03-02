@@ -24,7 +24,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.MarkerFactory;
 
-import java.io.IOException;
 import java.util.*;
 
 /**
@@ -83,7 +82,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 		for (var output: step.getOutput()) {
 			if (StringUtils.isNotBlank(output.getName())) {
 				if (specificOutputsToReturn.contains(output.getName())) {
-					LOG.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Ignoring duplicate output [%s] - step [%s] - ID [%s]", output.getName(), ErrorUtils.extractStepName(step), stepId));
+					LOG.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Ignoring duplicate output [%s] - step [%s] - ID [%s]", output.getName(), ErrorUtils.extractStepDescription(step), stepId));
 				} else {
 					specificOutputsToReturn.add(output.getName());
 				}
@@ -97,11 +96,11 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 				DataType result;
 				if (StringUtils.isBlank(output.getValue())) {
 					if (output.getName() == null) {
-						throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, String.format("Scriptlet outputs must either define an expression or be provided with a name to match a variable in the scriptlet's scope - step [%s] - ID [%s]", ErrorUtils.extractStepName(step), stepId)));
+						throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, String.format("Scriptlet outputs must either define an expression or be provided with a name to match a variable in the scriptlet's scope - step [%s] - ID [%s]", ErrorUtils.extractStepDescription(step), stepId)));
 					} else {
 						TestCaseScope.ScopedVariable variable = childScope.getVariable(output.getName());
 						if (variable == null) {
-							throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, String.format("Scriptlet output [%s] must either define an expression or match a variable in the scriptlet's scope - step [%s] - ID [%s]", output.getName(), ErrorUtils.extractStepName(step), stepId)));
+							throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, String.format("Scriptlet output [%s] must either define an expression or match a variable in the scriptlet's scope - step [%s] - ID [%s]", output.getName(), ErrorUtils.extractStepDescription(step), stepId)));
 						}
 						result = variable.getValue();
 					}
@@ -115,7 +114,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 		// Log a warning for any expected outputs that were not returned.
 		specificOutputsToReturn.removeAll(elements.keySet());
 		for (var unhandledOutput: specificOutputsToReturn) {
-			LOG.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Requested output [%s] not found in the scriptlet's outputs - step [%s] - ID [%s]", unhandledOutput, ErrorUtils.extractStepName(step), stepId));
+			LOG.warn(MarkerFactory.getDetachedMarker(scope.getContext().getSessionId()), String.format("Requested output [%s] not found in the scriptlet's outputs - step [%s] - ID [%s]", unhandledOutput, ErrorUtils.extractStepDescription(step), stepId));
 		}
 		if (step.getId() != null) {
 			setOutputMap(elements, step.getId());

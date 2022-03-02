@@ -1,0 +1,23 @@
+<div class="modal-header">
+	<h5>Test session log</h5>
+	<div class="btn-toolbar">
+		<div class="btn-group" dropdown>
+			<button id="button-level" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-level">{{levelFilterLabel}}<span class="caret"></span></button>
+			<ul id="dropdown-level" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-level">
+			  <li role="menuitem"><a class="dropdown-item" href (click)="applyMinimumLogLevel(LogLevel.DEBUG); $event.preventDefault()">{{levelFilterLabelDebug}}</a></li>
+			  <li class="divider dropdown-divider"></li>
+			  <li role="menuitem"><a class="dropdown-item" href (click)="applyMinimumLogLevel(LogLevel.INFO); $event.preventDefault()">{{levelFilterLabelInfo}}</a></li>
+			  <li role="menuitem"><a class="dropdown-item" href (click)="applyMinimumLogLevel(LogLevel.WARN); $event.preventDefault()">{{levelFilterLabelWarn}}</a></li>
+			  <li role="menuitem"><a class="dropdown-item" href (click)="applyMinimumLogLevel(LogLevel.ERROR); $event.preventDefault()">{{levelFilterLabelError}}</a></li>
+			</ul>
+		</div>
+		<button type="button" class="btn btn-default" (click)="copyToClipboard()">Copy to clipboard</button>
+		<button type="button" class="btn btn-default" (click)="download()">Download</button>
+		<button type="button" class="btn btn-default" (click)="close()">Close</button>
+	</div>
+</div>
+<div class="modal-body">
+	<div class="editor editor-normal">
+		<ngx-codemirror #codeEditor *ngIf="editorOptions" [(ngModel)]="content" [options]="editorOptions"></ngx-codemirror>
+	</div>
+</div>

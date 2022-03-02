@@ -34,6 +34,14 @@ object JsonUtil {
     json
   }
 
+  def jsStringArray(texts: List[String]): JsValue = {
+    var textArray = Json.arr()
+    texts.foreach { text =>
+      textArray = textArray.append(JsString(text))
+    }
+    textArray
+  }
+
   def jsApiKeyInfo(apiKeyInfo: ApiKeyInfo): JsObject = {
     val json = Json.obj(
       "organisation" -> (if (apiKeyInfo.organisation.isDefined) apiKeyInfo.organisation.get else JsNull),

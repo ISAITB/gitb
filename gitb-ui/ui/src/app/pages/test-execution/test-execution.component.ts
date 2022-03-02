@@ -28,7 +28,6 @@ import { SystemParameterWithValue } from 'src/app/types/system-parameter-with-va
 import { WebSocketMessage } from 'src/app/types/web-socket-message';
 import { ConformanceTestCase } from '../organisation/conformance-statement/conformance-test-case';
 import { cloneDeep, filter, map as lmap } from 'lodash'
-import { CodeEditorModalComponent } from 'src/app/components/code-editor-modal/code-editor-modal.component';
 import { DiagramEvents } from 'src/app/components/diagram/diagram-events';
 import { UserInteraction } from 'src/app/types/user-interaction';
 import { UserInteractionInput } from 'src/app/types/user-interaction-input';
@@ -37,6 +36,7 @@ import { ConformanceStatementTab } from '../organisation/conformance-statement/c
 import { MissingConfigurationAction } from 'src/app/components/missing-configuration-display/missing-configuration-action';
 import { LoadingStatus } from 'src/app/types/loading-status.type';
 import { SimulatedConfigurationDisplayModalComponent } from 'src/app/components/simulated-configuration-display-modal/simulated-configuration-display-modal.component';
+import { SessionLogModalComponent } from 'src/app/components/session-log-modal/session-log-modal.component';
 
 @Component({
   selector: 'app-test-execution',
@@ -336,7 +336,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
     else if (status == Constants.TEST_CASE_STATUS.ERROR) this.progressIcons[testId] = "fa-times-circle test-case-error"
     else if (status == Constants.TEST_CASE_STATUS.COMPLETED) this.progressIcons[testId] = "fa-check-circle test-case-success"
     else if (status == Constants.TEST_CASE_STATUS.STOPPED) this.progressIcons[testId] = "fa-ban test-case-stopped"
-    else if (status == Constants.TEST_CASE_STATUS.CONFIGURING) this.progressIcons[testId] = "fa-gear fa-spin test-case-configuring"
+    else if (status == Constants.TEST_CASE_STATUS.CONFIGURING) this.progressIcons[testId] = "fa-spinner fa-spin fa-lg fa-fw"
     else this.progressIcons[testId] = "fa-gear test-case-pending"  
   }
 
@@ -945,28 +945,10 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   viewLog(test: ConformanceTestCase) {
-    let value: string
-    if (this.logMessages[test.id] != undefined) {
-      value = this.logMessages[test.id].join('')
-    } else {
-      value = ''
-    }
-    this.modalService.show(CodeEditorModalComponent, {
+    this.modalService.show(SessionLogModalComponent, {
       class: 'modal-lg',
       initialState: {
-        documentName: 'Test session log',
-        editorOptions: {
-          value: value,
-          readOnly: true,
-          lineNumbers: true,
-          smartIndent: false,
-          electricChars: false,
-          mode: 'text/plain',
-          download: {
-            fileName: 'log.txt',
-            mimeType: 'text/plain'
-          }
-        }
+        messages: this.logMessages[test.id]
       }
     })
   }
