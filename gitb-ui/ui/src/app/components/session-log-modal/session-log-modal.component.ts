@@ -68,7 +68,7 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent {
             // Do not update the content directly because this causes a full editor refresh
             this.codeEditor!.codeMirror!.replaceRange(line.text+'\n', CodeMirror.Pos(this.codeEditor!.codeMirror!.lastLine()))
             if (this.tail) {
-              this.jumpToPosition(this.codeEditor!.codeMirror!.lastLine(), 0)
+              this.scrollToLast()
             }
           }
         }
@@ -77,6 +77,10 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent {
         })
       })
     }
+  }
+
+  scrollToLast() {
+    this.jumpToPosition(this.codeEditor!.codeMirror!.lastLine(), 0)
   }
 
   private initialiseLines(newMessages: string[]) {

@@ -5,7 +5,7 @@
 			<button id="button-tail" dropdownToggle type="button" class="btn btn-default dropdown-toggle" aria-controls="dropdown-tail">{{tailLabel}}<span class="caret"></span></button>
 			<ul id="dropdown-tail" *dropdownMenu class="dropdown-menu" role="menu" aria-labelledby="button-tail">
 				<li role="menuitem"><a class="dropdown-item" href (click)="tail = false; tailLabel = tailLabelNo; $event.preventDefault()">{{tailLabelNo}}</a></li>
-				<li role="menuitem"><a class="dropdown-item" href (click)="tail = true; tailLabel = tailLabelYes;  $event.preventDefault()">{{tailLabelYes}}</a></li>
+				<li role="menuitem"><a class="dropdown-item" href (click)="tail = true; tailLabel = tailLabelYes; scrollToLast(); $event.preventDefault()">{{tailLabelYes}}</a></li>
 			</ul>
 		</div>
 		<div class="btn-group" dropdown>
