@@ -12,8 +12,10 @@ export class Constants {
 	public static ACCESS_TOKEN_COOKIE_KEY = 'tat'
 	public static LOGIN_OPTION_COOKIE_KEY = 'LOGIN_OPTION'
 
-	public static TEST_ENGINE_ACTOR = 'Test Engine'
-	public static TESTER_ACTOR = 'Operator'
+	public static TEST_ENGINE_ACTOR_ID = 'com.gitb.TestEngine'
+	public static TESTER_ACTOR_ID = 'com.gitb.Operator'
+	public static TEST_ENGINE_ACTOR_NAME = 'Test Engine'
+	public static TESTER_ACTOR_NAME = 'Operator'
 
 	public static LOCAL_DATA = {
 		ORGANISATION: 'organisation'

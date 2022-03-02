@@ -19,6 +19,7 @@ export class SequenceDiagramComponent implements OnInit {
   @Input() events!: DiagramEvents
 
   actorInfo?: ActorInfo[]
+  sutActor?: ActorInfo
   actors: string[] = []
   messages: StepData[] = []
 
@@ -38,8 +39,12 @@ export class SequenceDiagramComponent implements OnInit {
   }
 
   updateState() {
+    this.sutActor = this.getSutActor(this.actorInfoOfTests[this.test])
     let steps = this.stepsOfTests[this.test]
-    this.actorInfo = this.actorInfoOfTests[this.test]
+    this.actorInfo = this.actorInfoOfTests[this.test].concat([
+      {id: Constants.TEST_ENGINE_ACTOR_ID, name: Constants.TEST_ENGINE_ACTOR_NAME},
+      {id: Constants.TESTER_ACTOR_ID, name: this.getTesterActorName()}
+    ])
     if (steps != undefined) {
       this.messages = this.extractSteps(steps, this.actorInfo)
       this.actors = this.extractActors(this.messages, this.actorInfo)
@@ -62,8 +67,8 @@ export class SequenceDiagramComponent implements OnInit {
   processStep(step: StepData, actorInfo: ActorInfo[]) {
     step.level = (step.id.split('.')).length
     if (step.type == 'verify' || step.type == 'process' || step.type == 'exit') {
-      step.from = Constants.TEST_ENGINE_ACTOR
-      step.to = Constants.TEST_ENGINE_ACTOR
+      step.from = Constants.TEST_ENGINE_ACTOR_ID
+      step.to = Constants.TEST_ENGINE_ACTOR_ID
     } else if (step.type == 'group') {
       step.steps = this.extractSteps(step.steps, actorInfo)
     } else if (step.type == 'loop') {
@@ -85,11 +90,11 @@ export class SequenceDiagramComponent implements OnInit {
     } else if (step.type == 'interact') {
       for (let interaction of step.interactions!) {
         if (interaction.type == 'request') {
-          interaction.from = this.getTesterNameForActor(interaction.with, actorInfo)
-          interaction.to = Constants.TEST_ENGINE_ACTOR
+          interaction.from = Constants.TESTER_ACTOR_ID
+          interaction.to = Constants.TEST_ENGINE_ACTOR_ID
         } else {
-          interaction.from = this.getTesterNameForActor(interaction.with, actorInfo)
-          interaction.to = this.getSutActorIfMissing(interaction.with, actorInfo)
+          interaction.from = Constants.TEST_ENGINE_ACTOR_ID
+          interaction.to = Constants.TESTER_ACTOR_ID
         }
       }
     }
@@ -107,31 +112,21 @@ export class SequenceDiagramComponent implements OnInit {
     return results
   }
 
-  getSutActorIfMissing(actor: string|undefined, actorInfo: ActorInfo[]) {
-    let result = actor
-    if (result == undefined) {
-      let sutActor = find(actorInfo, (a) =>
-        a.role == 'SUT'
-      )
-      result = sutActor!.id
-    }
-    return result
-  }
-
-  getTesterNameForActor(actor: string|undefined, actorInfo: ActorInfo[]) {
-    let actorId = this.getSutActorIfMissing(actor, actorInfo)
-    let actorName = actorId + ' - ' + Constants.TESTER_ACTOR
-    for (let info of actorInfo) {
-      if (actor == info.id) {
-        if (info.name != undefined) {
-          actorName = info.name + ' - ' + Constants.TESTER_ACTOR
-        } else {
-          actorName = info.id + ' - ' + Constants.TESTER_ACTOR
-        }
-        break
+  getSutActor(actorInfo: ActorInfo[]) {
+    for (let actor of actorInfo) {
+      if (actor.role == 'SUT') {
+        return actor
       }
     }
-    return actorName
+    throw Error("Test case without SUT actor")
+  }
+
+  getTesterActorName() {
+    if (this.sutActor?.name != undefined) {
+      return this.sutActor?.name + ' - ' + Constants.TESTER_ACTOR_NAME
+    } else {
+      return this.sutActor?.id + ' - ' + Constants.TESTER_ACTOR_NAME
+    }
   }
 
   extractActors(messages: StepData[]|undefined, actorInfo: ActorInfo[]) {
@@ -145,7 +140,9 @@ export class SequenceDiagramComponent implements OnInit {
     } else {
       actorsToReturn = actors
     }
-    return this.moveTestEngineToTheEnd(actorsToReturn)
+    actorsToReturn = this.moveActorToTheEnd(actorsToReturn, Constants.TESTER_ACTOR_ID)
+    actorsToReturn = this.moveActorToTheEnd(actorsToReturn, Constants.TEST_ENGINE_ACTOR_ID)
+    return actorsToReturn
   }
 
   extractActorsInternal(messages: StepData[]|undefined, actorInfo: ActorInfo[]): string[] {
@@ -170,12 +167,10 @@ export class SequenceDiagramComponent implements OnInit {
           }
           return threadData
         } else if (message.type == 'exit') {
-          return [Constants.TEST_ENGINE_ACTOR, Constants.TEST_ENGINE_ACTOR]
+          return [Constants.TEST_ENGINE_ACTOR_ID, Constants.TEST_ENGINE_ACTOR_ID]
         } else if (message.type == 'interact') {
-          let instructions = filter(message.interactions, (interaction) => interaction.type == 'instruction')
-          let requests = filter(message.interactions, (interaction) => interaction.type == 'request')
-          let instructionActors = map(instructions, (instruction) => { return [this.getTesterNameForActor(instruction.with, actorInfo), this.getSutActorIfMissing(instruction.with, actorInfo)] })
-          let requestActors = map(requests, (request) => { return [this.getTesterNameForActor(request.with, actorInfo), Constants.TEST_ENGINE_ACTOR] })
+          let instructionActors = [Constants.TEST_ENGINE_ACTOR_ID, Constants.TESTER_ACTOR_ID]
+          let requestActors = [Constants.TESTER_ACTOR_ID, Constants.TEST_ENGINE_ACTOR_ID]
           return flatten(instructionActors.concat(requestActors))
         } else {
           return []
@@ -186,11 +181,11 @@ export class SequenceDiagramComponent implements OnInit {
     }
   }
 
-  moveTestEngineToTheEnd(actors: string[]) {
-    let testEngineIndex = actors.indexOf(Constants.TEST_ENGINE_ACTOR)
+  moveActorToTheEnd(actors: string[], actorId: string) {
+    let testEngineIndex = actors.indexOf(actorId)
     if (testEngineIndex != -1) {
       actors.splice(testEngineIndex, 1)
-      actors.push(Constants.TEST_ENGINE_ACTOR)
+      actors.push(actorId)
     }
     return actors
   }
@@ -263,7 +258,7 @@ export class SequenceDiagramComponent implements OnInit {
     }
     let span = Math.abs(message.fromIndex! - message.toIndex!)
     if (extend) {
-      if (message.from == Constants.TEST_ENGINE_ACTOR || message.to == Constants.TEST_ENGINE_ACTOR) {
+      if (message.from == Constants.TEST_ENGINE_ACTOR_ID || message.to == Constants.TEST_ENGINE_ACTOR_ID) {
         // Extend the span because we may have here validation or processing with a message and a report.
         span += 1
       }
