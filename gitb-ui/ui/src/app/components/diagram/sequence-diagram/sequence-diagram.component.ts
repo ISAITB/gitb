@@ -242,11 +242,25 @@ export class SequenceDiagramComponent implements OnInit {
     message.span = Math.abs(message.fromIndex - message.toIndex)
   }
 
+  private isRightToLeft(step: StepData) {
+    return step.fromIndex! > step.toIndex!
+  }
+
   private setMessageSpan(message: StepData, firstChild: StepData, lastChild: StepData, extend: boolean) {
-    message.from = firstChild.from
-    message.to = lastChild.to
-    message.fromIndex = firstChild.fromIndex
-    message.toIndex = lastChild.toIndex
+    if (this.isRightToLeft(firstChild)) {
+      message.from = firstChild.to
+      message.fromIndex = firstChild.toIndex
+    } else {
+      message.from = firstChild.from
+      message.fromIndex = firstChild.fromIndex
+    }
+    if (this.isRightToLeft(lastChild)) {
+      message.to = lastChild.from
+      message.toIndex = lastChild.fromIndex
+    } else {
+      message.to = lastChild.to
+      message.toIndex = lastChild.toIndex
+    }
     let span = Math.abs(message.fromIndex! - message.toIndex!)
     if (extend) {
       if (message.from == Constants.TEST_ENGINE_ACTOR || message.to == Constants.TEST_ENGINE_ACTOR) {
@@ -260,10 +274,28 @@ export class SequenceDiagramComponent implements OnInit {
     message.span = span
   }
 
+  private leftMostStepActorIndex(step: StepData) {
+    if (this.isRightToLeft(step)) {
+      // Right-to-left message
+      return step.toIndex!
+    } else {
+      return step.fromIndex!
+    }
+  }
+
+  private rightMostStepActorIndex(step: StepData) {
+    if (this.isRightToLeft(step)) {
+      // Right-to-left message
+      return step.fromIndex!
+    } else {
+      return step.toIndex!
+    }
+  }
+
   setLoopStepChildIndexes(message: StepData) {
     this.setStepIndexes(message.steps)
-    let firstChild = minBy(message.steps, (childStep) => { return childStep.fromIndex })
-    let lastChild = maxBy(message.steps, (childStep) => { return childStep.toIndex })
+    let firstChild = minBy(message.steps, this.leftMostStepActorIndex.bind(this))
+    let lastChild = maxBy(message.steps, this.rightMostStepActorIndex.bind(this))
     this.setMessageSpan(message, firstChild!, lastChild!, true)
     if (message.sequences != undefined) {
       for (let sequence of message.sequences) {
@@ -275,8 +307,8 @@ export class SequenceDiagramComponent implements OnInit {
   setGroupStepChildIndexes(message: StepData) {
     let childSteps = message.steps
     this.setStepIndexes(childSteps)
-    let firstChild = minBy(childSteps, (childStep) => {return childStep.fromIndex})
-    let lastChild = maxBy(childSteps, (childStep) => {return childStep.toIndex})
+    let firstChild = minBy(childSteps, this.leftMostStepActorIndex.bind(this))
+    let lastChild = maxBy(childSteps, this.rightMostStepActorIndex.bind(this))
     this.setMessageSpan(message, firstChild!, lastChild!, true)
   }
 
@@ -286,15 +318,15 @@ export class SequenceDiagramComponent implements OnInit {
       childSteps = childSteps.concat(message.else)
     }
     this.setStepIndexes(childSteps)
-    let firstChild = minBy(childSteps, (childStep) => {return childStep.fromIndex})
-    let lastChild = maxBy(childSteps, (childStep) => {return childStep.toIndex})
+    let firstChild = minBy(childSteps, this.leftMostStepActorIndex.bind(this))
+    let lastChild = maxBy(childSteps, this.rightMostStepActorIndex.bind(this))
     this.setMessageSpan(message, firstChild!, lastChild!, true)
   }
 
   setFlowStepChildIndexes(message: StepData) {
     forEach(message.threads, this.setStepIndexes.bind(this))
-    let firstChild = minBy(flatten(message.threads), (childStep) => {return childStep.fromIndex})
-    let lastChild = maxBy(flatten(message.threads), (childStep) => { return childStep.toIndex})
+    let firstChild = minBy(flatten(message.threads), this.leftMostStepActorIndex.bind(this))
+    let lastChild = maxBy(flatten(message.threads), this.rightMostStepActorIndex.bind(this))
     this.setMessageSpan(message, firstChild!, lastChild!, true)
   }
 
