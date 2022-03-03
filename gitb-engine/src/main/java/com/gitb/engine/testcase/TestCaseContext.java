@@ -149,7 +149,7 @@ public class TestCaseContext {
 		STOPPING
     }
 
-	private LogLevel logLevelToSignal = LogLevel.DEBUG;
+	private com.gitb.core.LogLevel logLevelToSignal = com.gitb.core.LogLevel.DEBUG;
 	private boolean logLevelIsExpression = false;
 	private boolean reportedInvalidLogLevel = false;
 	private Path dataFolder;
@@ -167,7 +167,7 @@ public class TestCaseContext {
 		if (testCase.getSteps() != null) {
 			this.logLevelIsExpression = this.variableResolver.isVariableReference(testCase.getSteps().getLogLevel());
 			if (!this.logLevelIsExpression) {
-				this.logLevelToSignal = LogLevel.fromValue(testCase.getSteps().getLogLevel());
+				this.logLevelToSignal = com.gitb.core.LogLevel.fromValue(testCase.getSteps().getLogLevel());
 			}
 		}
 		if (TestEngineConfiguration.TEMP_STORAGE_ENABLED) {
@@ -538,22 +538,22 @@ public class TestCaseContext {
         return sessionId;
     }
 
-	public LogLevel getLogLevelToSignal() {
+	public com.gitb.core.LogLevel getLogLevelToSignal() {
 		if (logLevelIsExpression) {
-			LogLevel resolvedLevel;
+			com.gitb.core.LogLevel resolvedLevel;
 			String resolvedValue = (String) variableResolver.resolveVariable(testCase.getSteps().getLogLevel()).convertTo(DataType.STRING_DATA_TYPE).getValue();
 			String warningMessage = null;
 			if (resolvedValue == null || resolvedValue.isBlank()) {
-				resolvedLevel = LogLevel.DEBUG;
+				resolvedLevel = com.gitb.core.LogLevel.DEBUG;
 				warningMessage = String.format("Unable to resolve test case log level using expression [%s]. Considering %s as default.", testCase.getSteps().getLogLevel(), resolvedLevel);
 			} else {
 				try {
-					resolvedLevel = LogLevel.fromValue(resolvedValue);
+					resolvedLevel = com.gitb.core.LogLevel.fromValue(resolvedValue);
 					if (reportedInvalidLogLevel) {
 						reportedInvalidLogLevel = false;
 					}
 				} catch (Exception e) {
-					resolvedLevel = LogLevel.DEBUG;
+					resolvedLevel = com.gitb.core.LogLevel.DEBUG;
 					warningMessage = String.format("Invalid test case log level [%s]. Considering %s as default.", resolvedValue, resolvedLevel);
 				}
 			}
