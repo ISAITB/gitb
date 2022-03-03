@@ -1,3 +1,5 @@
+@import './_common.less';
+
 .page {
 	position: relative;
 }
@@ -426,38 +428,64 @@ tr.expandable-table-row-expanded table.expandable-table {
 		right: 10px !important;
 		z-index: 5000;
 		min-width: 350px;
-		.notification-item {
-			display: flex;
-			border: 1px solid transparent;
-			border-radius: 4px;
-			box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.50);
-			-webkit-box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.50);
-			-moz-box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.50);			
-			div:first-of-type {
-				display: inline-flex;
-				align-items: center;
-			}
-			div.sn-content {
-				font-size: inherit;
-				line-height: inherit;
-				display: block;
-				min-width: 300px;
-				text-align: left;
-			}
-			&.success {
-				color: #3c763d;
-    			background-color: #dff0d8;
-				border-color: #d6e9c6;
-				svg {
-					fill: #3c763d;
+		.simple-notification {
+			&.notification-item {
+				display: flex;
+				border: 1px solid transparent;
+				border-radius: 4px;
+				box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.50);
+				-webkit-box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.50);
+				-moz-box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.50);			
+				div:first-of-type {
+					display: inline-flex;
+					align-items: center;
 				}
-			}
-			&.error {
-				color :#a94442;
-    			background-color: #f2dede;
-				border-color: #ebccd1;
-				svg {
-					fill: #a94442;
+				div.sn-content {
+					font-size: inherit;
+					line-height: inherit;
+					display: block;
+					min-width: 300px;
+					text-align: left;
+					padding-right: 30px;
+				}
+				div.icon {
+					display: flex;
+					justify-content: right;
+					align-items: center;
+					svg {
+						width: 70%;
+						height: 70%;
+					}
+				}
+				&.success {
+					div.sn-content {
+						color: #3c763d;
+					}
+					background-color: #dff0d8;
+					border-color: #d6e9c6;
+					svg {
+						fill: #3c763d;
+					}
+				}
+				&.error {
+					div.sn-content {
+						color :#a94442;
+					}
+					background-color: #f2dede;
+					border-color: #ebccd1;
+					svg {
+						fill: #a94442;
+					}
+				}
+				&.warn {
+					div.sn-content {
+						color : @orange-dark;
+					}
+					background-color: @orange-light;
+					border-color: @orange-light;
+					svg {
+						fill: @orange-dark;
+					}
 				}
 			}
 		}

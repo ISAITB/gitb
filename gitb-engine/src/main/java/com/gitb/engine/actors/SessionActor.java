@@ -1,5 +1,6 @@
 package com.gitb.engine.actors;
 
+import akka.actor.AbstractActor;
 import akka.actor.ActorRef;
 import akka.actor.PoisonPill;
 import akka.actor.Props;
@@ -11,6 +12,7 @@ import com.gitb.engine.SessionManager;
 import com.gitb.engine.TestbedService;
 import com.gitb.engine.actors.processors.TestCaseProcessorActor;
 import com.gitb.engine.actors.supervisors.SessionSupervisor;
+import com.gitb.engine.commands.interaction.SessionCleanupCommand;
 import com.gitb.engine.commands.interaction.*;
 import com.gitb.engine.events.model.TestStepStatusEvent;
 import com.gitb.engine.testcase.TestCaseContext;
@@ -33,175 +35,241 @@ import javax.xml.datatype.DatatypeConfigurationException;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 
-import static com.gitb.engine.actors.processors.TestCaseProcessorActor.TEST_CASE_STEP_ID;
+import static com.gitb.engine.actors.processors.TestCaseProcessorActor.TEST_SESSION_END_STEP_ID;
+import static com.gitb.engine.actors.processors.TestCaseProcessorActor.TEST_SESSION_END_EXTERNAL_STEP_ID;
+import static com.gitb.engine.testcase.TestCaseContext.TestCaseStateEnum.*;
 
 /**
  * Actor that controls the test execution session.
  */
-public class SessionActor extends Actor {
+public class SessionActor extends AbstractActor {
+
     private static final Logger logger = LoggerFactory.getLogger(SessionActor.class);
 
-    private String getSessionId() {
-        return self().path().name();
+    @Override
+    public Receive createReceive() {
+        return active(new State(TestCaseProcessorActor.create(getContext(), getSessionId())));
     }
 
-    private ActorRef testCaseProcessorActor;
-
-    private final LinkedHashMap<String, UpdateMessage> eventOutbox = new LinkedHashMap<>();
-    private boolean eventProcessingInProgress = false;
-    private UpdateMessage sessionEndEvent = null;
-
-    @Override
-    public void preStart() throws Exception {
-        testCaseProcessorActor = TestCaseProcessorActor.create(getContext(), getSessionId());
+    private Receive active(State state) {
+        return receiveBuilder()
+                .match(LogCommand.class, (msg) -> withContext(msg, state, this::handleLogCommand))
+                .match(SendUpdateCommand.class, (msg) -> withContext(msg, state, this::handleSendUpdateCommand))
+                .match(UpdateSentEvent.class, (msg) -> withContext(msg, state, this::handleUpdateSentEvent))
+                .match(ConnectionClosedEvent.class, (msg) -> withContext(msg, state, this::handleConnectionClosedEvent))
+                .match(ConfigureCommand.class, (msg) -> withContext(msg, state, this::handleConfigureCommand))
+                .match(StopCommand.class, (msg) -> withContext(msg, state, this::handleStopCommand))
+                .match(InitiatePreliminaryCommand.class, (msg) -> withContext(msg, state, this::handleInitiatePreliminaryCommand))
+                .match(TestStepStatusEvent.class, (msg) -> withContext(msg, state, this::handleTestStepStatusEvent))
+                .match(StartCommand.class, (msg) -> withContext(msg, state, this::handleStartCommand))
+                .match(PrepareForStopCommand.class, (msg) -> withContext(msg, state, this::handlePrepareForStopCommand))
+                .match(TestSessionFinishedCommand.class, (msg) -> withContext(msg, state, this::handleTestSessionFinishedCommand))
+                .match(UnexpectedErrorCommand.class, (msg) -> withContext(msg, state, this::handleUnexpectedErrorCommand))
+                .match(RestartCommand.class, (msg) -> withContext(msg, state, this::handleRestartCommand))
+                .match(SessionCleanupCommand.class, this::handleSessionCleanupCommand)
+                .matchAny((msg) -> withContext(msg, state, this::handleUnexpected))
+                .build();
     }
 
-    @Override
-    public void onReceive(Object message) throws Exception {
-        super.onReceive(message);
-        TestCaseContext context = SessionManager
-                .getInstance()
-                .getContext(getSessionId());
-        if (context != null) {
-            if (message instanceof LogCommand) {
-                if (shouldSignalLogEvent((LogCommand)message, context)) {
-                    var msg = new UpdateMessage(((LogCommand) message).getTestStepStatus());
-                    eventOutbox.put(msg.getUuid(), msg);
-                    if (context.getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
-                        // After stopping, any such updates will be handled in the final cleanup.
-                        self().tell(new SendUpdateCommand(), self());
-                    }
+    private <T> void withContext(T message, State state, Consumer<Context<T>> handler) {
+        if (!state.isCleanupPhase()) {
+            TestCaseContext testCaseContext = SessionManager.getInstance().getContext(getSessionId());
+            if (testCaseContext != null) {
+                handler.accept(new Context<>(message, testCaseContext, state));
+            }
+        }
+    }
+
+    private <T> void allowForStates(Action handler, Context<T> ctx, TestCaseContext.TestCaseStateEnum... acceptedStates) {
+        var currentState = ctx.getTestCaseContext().getCurrentState();
+        if (acceptedStates != null) {
+            boolean accepted = false;
+            for (var acceptedState: acceptedStates) {
+                if (currentState == acceptedState) {
+                    handler.execute();
+                    accepted = true;
+                    break;
                 }
-            } else if (message instanceof SendUpdateCommand) {
-                if (context.getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
-                    if (!eventProcessingInProgress) {
-                        eventProcessingInProgress = true;
-                        sendUpdateSync(eventOutbox.values().iterator().next(), true);
-                    }
-                }
-            } else if (message instanceof UpdateSentEvent) {
-                eventOutbox.remove(((UpdateSentEvent) message).getEventUuid());
-                if (context.getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
-                    if (eventOutbox.isEmpty()) {
-                        eventProcessingInProgress = false;
-                        if (sessionEndEvent != null) {
-                            self().tell(new StopCommand(getSessionId()), self());
-                        }
-                    } else {
-                        sendUpdateSync(eventOutbox.values().iterator().next(), true);
-                    }
-                }
-            } else if (message instanceof ConnectionClosedEvent) {
-                if (context.getCurrentState() == TestCaseContext.TestCaseStateEnum.READY) {
-                    // In all other statuses we ignore a closed connection. In this case however we need to cleanup the test session.
-                    stopTestSession(context);
-                    logger.debug("Session ["+getSessionId()+"] stopped due to closed connection.");
-                }
-            } else {
-                switch (context.getCurrentState()) {
-                    case IDLE:
-                        if (message instanceof ConfigureCommand) {
-                            try {
-                                List<SUTConfiguration> sutConfigurations = context.configure(
-                                        ((ConfigureCommand) message).getActorConfigurations(),
-                                        ((ConfigureCommand) message).getDomainConfiguration(),
-                                        ((ConfigureCommand) message).getOrganisationConfiguration(),
-                                        ((ConfigureCommand) message).getSystemConfiguration()
-                                );
-                                setInputsToSessionContext(context, ((ConfigureCommand) message).getInputs());
-                                sendConfigurationResult(sutConfigurations);
-                                if (context.getTestCase().getPreliminary() != null) {
-                                    context.setCurrentState(TestCaseContext.TestCaseStateEnum.CONFIGURATION);
-                                } else {
-                                    context.setCurrentState(TestCaseContext.TestCaseStateEnum.READY);
-                                }
-                            } catch (Exception e) {
-                                logger.warn("Error while preparing configuration for test session ["+getSessionId()+"]", e);
-                                logger.error(MarkerFactory.getDetachedMarker(getSessionId()), "Error while preparing test session configuration", e);
-                                sendConfigurationFailure(e);
-                            }
-                        } else if (message instanceof StopCommand) {
-                            stopTestSession(context);
-                            logger.debug("Session ["+getSessionId()+"] stopped before having started.");
-                        } else {
-                            unexpectedCommand(message, context);
-                        }
-                        break;
-                    case CONFIGURATION:
-                        if (message instanceof InitiatePreliminaryCommand) {
-                            for (ActorRef actorRef : getContext().getChildren()) {
-                                actorRef.tell(message, self());
-                            }
-                            context.setCurrentState(TestCaseContext.TestCaseStateEnum.PRELIMINARY);
-                        } else {
-                            unexpectedCommand(message, context);
-                        }
-                        break;
-                    case PRELIMINARY:
-                        if (message instanceof TestStepStatusEvent) {
-                            TestStepStatusEvent event = (TestStepStatusEvent) message;
-                            if (event.getStepId().equals(TestCaseProcessorActor.PRELIMINARY_STEP_ID) && event.getStatus() == StepStatus.COMPLETED) {
-                                context.setCurrentState(TestCaseContext.TestCaseStateEnum.READY);
-                            }
-                            var msg = prepareStatusUpdate(event);
-                            eventOutbox.put(msg.getUuid(), msg);
-                            self().tell(new SendUpdateCommand(), self());
-                        } else {
-                            unexpectedCommand(message, context);
-                        }
-                        break;
-                    case READY:
-                        if (message instanceof StartCommand) {
-                            testCaseProcessorActor.tell(message, self());
-                            context.setCurrentState(TestCaseContext.TestCaseStateEnum.EXECUTION);
-                        } else if (message instanceof StopCommand) {
-                            stopTestSession(context);
-                            logger.debug("Session ["+getSessionId()+"] stopped before having started.");
-                        } else {
-                            unexpectedCommand(message, context);
-                        }
-                        break;
-                    case STOPPING:
-                    case EXECUTION:
-                    case OUTPUT:
-                        if (message instanceof TestStepStatusEvent) {
-                            var msg = prepareStatusUpdate((TestStepStatusEvent)message);
-                            eventOutbox.put(msg.getUuid(), msg);
-                            if (context.getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
-                                // After stopping, any such updates will be handled in the final cleanup.
-                                self().tell(new SendUpdateCommand(), self());
-                            }
-                        } else if (message instanceof PrepareForStopCommand) {
-                            context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPING);
-                            testCaseProcessorActor.tell(message, self());
-                        } else if (message instanceof TestSessionFinishedCommand) {
-                            logger.info(MarkerFactory.getDetachedMarker(getSessionId()), String.format("Session finished with result [%s]", ((TestSessionFinishedCommand) message).getStatus()));
-                            sessionEndEvent = createSessionEndMessage(((TestSessionFinishedCommand) message).getStatus(), ((TestSessionFinishedCommand) message).getResultReport());
-                            if (!eventProcessingInProgress) {
-                                self().tell(new StopCommand(getSessionId()), self());
-                            }
-                        } else if (message instanceof StopCommand) {
-                            stopTestSession(context);
-                            logger.debug("Session ["+getSessionId()+"] stopped.");
-                        } else if (message instanceof UnexpectedErrorCommand) {
-                            self().tell(prepareStatusUpdate(getSessionId(), null, StepStatus.ERROR, null, true, null), self());
-                        } else {
-                            unexpectedCommand(message, context);
-                        }
-                        break;
-                    case STOPPED:
-                        if (message instanceof RestartCommand) {
-                            testCaseProcessorActor.tell(message, self());
-                        } else if (message instanceof TestStepStatusEvent) {
-                            ignoredStatusUpdate((TestStepStatusEvent)message);
-                        } else {
-                            unexpectedCommand(message, context);
-                        }
-                        break;
+            }
+            if (!accepted) {
+                unexpectedCommand(ctx.getMessage(), ctx.getTestCaseContext());
+            }
+        }
+    }
+
+    private State updateState(State newState) {
+        getContext().become(active(newState), true);
+        return newState;
+    }
+
+    private void handleLogCommand(Context<LogCommand> ctx) {
+        if (shouldSignalLogEvent(ctx.getMessage(), ctx.getTestCaseContext())) {
+            scheduleNextMessage(new UpdateMessage(ctx.getMessage().getTestStepStatus()), ctx);
+        }
+    }
+
+    private void handleSendUpdateCommand(Context<SendUpdateCommand> ctx) {
+        if (ctx.getTestCaseContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
+            if (ctx.getState().noEventBeingProcessed()) {
+                if (!ctx.getState().getEventOutbox().isEmpty()) {
+                    updateState(ctx.getState().newWithSetEventProcessingFlag(true));
+                    sendUpdateSync(ctx.getState().getEventOutbox().values().iterator().next(), true);
                 }
             }
         }
+    }
+
+    private void handleUpdateSentEvent(Context<UpdateSentEvent> ctx) {
+        var activeState = updateState(ctx.getState().newWithRemovedEvent(ctx.getMessage().getEventUuid()));
+        if (ctx.getTestCaseContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
+            activeState = updateState(activeState.newWithSetEventProcessingFlag(false));
+            if (activeState.getSessionEndEvent() != null) {
+                self().tell(new StopCommand(getSessionId()), self());
+            } else {
+                // Send the next update (if existing).
+                self().tell(new SendUpdateCommand(), self());
+            }
+        }
+    }
+
+    private void handleConnectionClosedEvent(Context<ConnectionClosedEvent> ctx) {
+        if (ctx.getTestCaseContext().getCurrentState() == TestCaseContext.TestCaseStateEnum.READY) {
+            // In all other statuses we ignore a closed connection. In this case however we need to cleanup the test session.
+            stopTestSession(ctx.getTestCaseContext(), ctx.getState(), null);
+            logger.debug("Session ["+getSessionId()+"] stopped due to closed connection.");
+        }
+    }
+
+    private void handleConfigureCommand(Context<ConfigureCommand> ctx) {
+        allowForStates(() -> {
+            var context = ctx.getTestCaseContext();
+            try {
+                List<SUTConfiguration> sutConfigurations = context.configure(
+                        ctx.getMessage().getActorConfigurations(),
+                        ctx.getMessage().getDomainConfiguration(),
+                        ctx.getMessage().getOrganisationConfiguration(),
+                        ctx.getMessage().getSystemConfiguration()
+                );
+                setInputsToSessionContext(context, ctx.getMessage().getInputs());
+                sendConfigurationResult(sutConfigurations);
+                if (context.getTestCase().getPreliminary() != null) {
+                    context.setCurrentState(TestCaseContext.TestCaseStateEnum.CONFIGURATION);
+                } else {
+                    context.setCurrentState(TestCaseContext.TestCaseStateEnum.READY);
+                }
+            } catch (Exception e) {
+                logger.warn("Error while preparing configuration for test session ["+getSessionId()+"]", e);
+                logger.error(MarkerFactory.getDetachedMarker(getSessionId()), "Error while preparing test session configuration", e);
+                sendConfigurationFailure(e);
+            }
+        }, ctx, IDLE);
+    }
+
+    private void handleStopCommand(Context<StopCommand> ctx) {
+        allowForStates(() -> {
+            UpdateMessage endMessage = ctx.getState().getSessionEndEvent();
+            if (endMessage == null && ctx.getMessage().isExternalStop()) {
+                endMessage = createSessionEndMessage(StepStatus.SKIPPED, null, true);
+            }
+            stopTestSession(ctx.getTestCaseContext(), ctx.getState(), endMessage);
+            logger.debug("Session ["+getSessionId()+"] stopped in state ["+ctx.getTestCaseContext().getCurrentState()+"].");
+        }, ctx, IDLE, READY, STOPPING, EXECUTION, OUTPUT);
+    }
+
+    private void handleInitiatePreliminaryCommand(Context<InitiatePreliminaryCommand> ctx) {
+        allowForStates(() -> {
+            for (ActorRef actorRef : getContext().getChildren()) {
+                actorRef.tell(ctx.getMessage(), self());
+            }
+            ctx.getTestCaseContext().setCurrentState(TestCaseContext.TestCaseStateEnum.PRELIMINARY);
+        }, ctx, CONFIGURATION);
+    }
+
+    private void handleTestStepStatusEvent(Context<TestStepStatusEvent> ctx) {
+        allowForStates(() -> {
+            var tcContext = ctx.getTestCaseContext();
+            if (tcContext.getCurrentState() == PRELIMINARY) {
+                var event = ctx.getMessage();
+                if (event.getStepId().equals(TestCaseProcessorActor.PRELIMINARY_STEP_ID) && event.getStatus() == StepStatus.COMPLETED) {
+                    tcContext.setCurrentState(TestCaseContext.TestCaseStateEnum.READY);
+                }
+                scheduleNextMessage(prepareStatusUpdate(event), ctx);
+            } else if (tcContext.getCurrentState() == STOPPED) {
+                ignoredStatusUpdate(ctx.getMessage());
+            } else {
+                scheduleNextMessage(prepareStatusUpdate(ctx.getMessage()), ctx);
+            }
+        }, ctx, PRELIMINARY, STOPPING, EXECUTION, OUTPUT, STOPPED);
+    }
+
+    private void handleStartCommand(Context<StartCommand> ctx) {
+        allowForStates(() -> {
+            ctx.getState().getTestCaseProcessorActor().tell(ctx.getMessage(), self());
+            ctx.getTestCaseContext().setCurrentState(TestCaseContext.TestCaseStateEnum.EXECUTION);
+        }, ctx, READY);
+    }
+
+    private void handlePrepareForStopCommand(Context<PrepareForStopCommand> ctx) {
+        allowForStates(() -> {
+            ctx.getTestCaseContext().setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPING);
+            ctx.getState().getTestCaseProcessorActor().tell(ctx.getMessage(), self());
+        }, ctx, STOPPING, EXECUTION, OUTPUT);
+    }
+
+    private void handleTestSessionFinishedCommand(Context<TestSessionFinishedCommand> ctx) {
+        allowForStates(() -> {
+            logger.info(MarkerFactory.getDetachedMarker(getSessionId()), String.format("Session finished with result [%s]", ctx.getMessage().getStatus()));
+            var endEvent = createSessionEndMessage(ctx.getMessage().getStatus(), ctx.getMessage().getResultReport(), false);
+            var activeState = updateState(ctx.getState().newWithSessionEndEvent(endEvent));
+            if (activeState.noEventBeingProcessed()) {
+                self().tell(new StopCommand(getSessionId()), self());
+            }
+        }, ctx, STOPPING, EXECUTION, OUTPUT);
+    }
+
+    private void handleUnexpectedErrorCommand(Context<UnexpectedErrorCommand> ctx) {
+        allowForStates(() -> self().tell(prepareStatusUpdate(getSessionId(), null, StepStatus.ERROR, null, true, null), self()), ctx, STOPPING, EXECUTION, OUTPUT);
+    }
+
+    private void handleRestartCommand(Context<RestartCommand> ctx) {
+        allowForStates(() -> ctx.getState().getTestCaseProcessorActor().tell(ctx.getMessage(), self()), ctx, STOPPED);
+    }
+
+    private void handleSessionCleanupCommand(SessionCleanupCommand message) {
+        var sessionEndEvent = (message.getSessionEndMessage() == null)?createSessionEndMessage(StepStatus.SKIPPED, null, false):message.getSessionEndMessage();
+        logger.debug("Signalling end of session ["+getSessionId()+"]");
+        Futures.future(() -> {
+            try {
+                for (UpdateMessage msg: message.getPendingUpdates()) {
+                    sendUpdateSync(msg, false);
+                }
+            } finally {
+                Await.result(Futures.future(() -> {
+                    sendUpdateSync(sessionEndEvent, false);
+                    return null;
+                }, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER)), Duration.apply(100, TimeUnit.MILLISECONDS));
+            }
+            return null;
+        }, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER));
+        self().tell(PoisonPill.getInstance(), self());
+    }
+
+    private void handleUnexpected(Context<?> ctx) {
+        unexpectedCommand(ctx.getMessage(), ctx.getTestCaseContext());
+    }
+
+    private void scheduleNextMessage(UpdateMessage message, Context<?> ctx) {
+        updateState(ctx.getState().newWithNewEvent(message));
+        if (ctx.getTestCaseContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
+            // After stopping, any such updates will be handled in the final cleanup.
+            self().tell(new SendUpdateCommand(), self());
+        }
+    }
+
+    private String getSessionId() {
+        return self().path().name();
     }
 
     private void setInputsToSessionContext(TestCaseContext context, List<AnyContent> inputs) {
@@ -230,43 +298,16 @@ public class SessionActor extends Actor {
                 (logLevel == LogLevel.ERROR && message.getLogLevel() == LogLevel.ERROR);
     }
 
-    private void stopTestSession(TestCaseContext context) {
+    private void stopTestSession(TestCaseContext context, State state, UpdateMessage sessionEndMessage) {
         context.setCurrentState(TestCaseContext.TestCaseStateEnum.STOPPED);
         SessionManager.getInstance().endSession(getSessionId());
-        self().tell(PoisonPill.getInstance(), self());
+        updateState(state.newForCleanupPhase());
+        self().tell(new SessionCleanupCommand(sessionEndMessage, state.getEventOutbox().values()), self());
     }
 
-    private UpdateMessage createSessionEndMessage(StepStatus result, TestStepReportType report) {
-        return prepareStatusUpdate(getSessionId(), TEST_CASE_STEP_ID, result, report, false, null);
-    }
-
-    @Override
-    public void postStop() throws Exception {
-        super.postStop();
-        if (sessionEndEvent == null) {
-            sessionEndEvent = createSessionEndMessage(StepStatus.SKIPPED, null);
-        }
-        logger.debug("Signalling end of session ["+getSessionId()+"]");
-        Futures.future(() -> {
-            try {
-                for (UpdateMessage msg: eventOutbox.values()) {
-                    sendUpdateSync(msg, false);
-                }
-            } finally {
-                Await.result(Futures.future(() -> {
-                    sendUpdateSync(sessionEndEvent, false);
-                    return null;
-                }, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER)), Duration.apply(100, TimeUnit.MILLISECONDS));
-            }
-            return null;
-        }, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER));
-    }
-
-    private void sendUpdateAsync(final UpdateMessage msg) {
-        Futures.future(() -> {
-            sendUpdateSync(msg, true);
-            return null;
-        }, getContext().system().dispatchers().lookup(ActorSystem.BLOCKING_DISPATCHER));
+    private UpdateMessage createSessionEndMessage(StepStatus result, TestStepReportType report, boolean isExternallyTriggered) {
+        var stepIdToUse = isExternallyTriggered?TEST_SESSION_END_EXTERNAL_STEP_ID:TEST_SESSION_END_STEP_ID;
+        return prepareStatusUpdate(getSessionId(), stepIdToUse, result, report, false, null);
     }
 
     private void sendConfigurationFailure(final Throwable error) {
@@ -383,5 +424,102 @@ public class SessionActor extends Actor {
      */
     public static String getPath(String sessionId) {
         return "/user/" + SessionSupervisor.NAME + "/" + sessionId;
+    }
+
+    static class State {
+
+        private final ActorRef testCaseProcessorActor;
+        private final LinkedHashMap<String, UpdateMessage> eventOutbox;
+        private final boolean eventProcessingInProgress;
+        private final UpdateMessage sessionEndEvent;
+        private final boolean cleanupPhase;
+
+        State(ActorRef testCaseProcessorActor) {
+            // Empty initializer for default state.
+            this(testCaseProcessorActor, new LinkedHashMap<>(), false, null, false);
+        }
+
+        private State(ActorRef testCaseProcessorActor, LinkedHashMap<String, UpdateMessage> eventOutbox, boolean eventProcessingInProgress, UpdateMessage sessionEndEvent, boolean cleanupPhase) {
+            this.testCaseProcessorActor = testCaseProcessorActor;
+            this.eventOutbox = eventOutbox;
+            this.eventProcessingInProgress = eventProcessingInProgress;
+            this.sessionEndEvent = sessionEndEvent;
+            this.cleanupPhase = cleanupPhase;
+        }
+
+        ActorRef getTestCaseProcessorActor() {
+            return testCaseProcessorActor;
+        }
+
+        LinkedHashMap<String, UpdateMessage> getEventOutbox() {
+            return eventOutbox;
+        }
+
+        boolean noEventBeingProcessed() {
+            return !eventProcessingInProgress;
+        }
+
+        UpdateMessage getSessionEndEvent() {
+            return sessionEndEvent;
+        }
+
+        boolean isCleanupPhase() {
+            return cleanupPhase;
+        }
+
+        State newWithNewEvent(UpdateMessage message) {
+            var newOutbox = new LinkedHashMap<>(eventOutbox);
+            newOutbox.put(message.getUuid(), message);
+            return new State(testCaseProcessorActor, newOutbox, eventProcessingInProgress, sessionEndEvent, cleanupPhase);
+        }
+
+        State newWithSetEventProcessingFlag(boolean eventProcessingInProgress) {
+            return new State(testCaseProcessorActor, eventOutbox, eventProcessingInProgress, sessionEndEvent, cleanupPhase);
+        }
+
+        State newWithRemovedEvent(String uuidToRemove) {
+            var newOutbox = new LinkedHashMap<>(eventOutbox);
+            newOutbox.remove(uuidToRemove);
+            return new State(testCaseProcessorActor, newOutbox, eventProcessingInProgress, sessionEndEvent, cleanupPhase);
+        }
+
+        State newWithSessionEndEvent(UpdateMessage sessionEndEvent) {
+            return new State(testCaseProcessorActor, eventOutbox, eventProcessingInProgress, sessionEndEvent, cleanupPhase);
+        }
+
+        State newForCleanupPhase() {
+            return new State(testCaseProcessorActor, eventOutbox, eventProcessingInProgress, sessionEndEvent, true);
+        }
+
+    }
+
+    static class Context <T> {
+
+        private final T message;
+        private final TestCaseContext testCaseContext;
+        private final State state;
+
+        Context(T message, TestCaseContext testCaseContext, State state) {
+            this.message = message;
+            this.testCaseContext = testCaseContext;
+            this.state = state;
+        }
+
+        T getMessage() {
+            return message;
+        }
+
+        TestCaseContext getTestCaseContext() {
+            return testCaseContext;
+        }
+
+        State getState() {
+            return state;
+        }
+    }
+
+    @FunctionalInterface
+    interface Action {
+        void execute();
     }
 }

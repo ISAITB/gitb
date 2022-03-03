@@ -536,9 +536,18 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
         this.simulatedConfigs = response.notify.simulatedConfigs
       }
     } else { // updateStatus
-      if (stepId == Constants.END_OF_TEST_STEP) {
+      if (stepId == Constants.END_OF_TEST_STEP || stepId == Constants.END_OF_TEST_STEP_EXTERNAL) {
         this.started = false
         this.testCaseFinished(response.status, response?.outputMessage)
+        if (stepId == Constants.END_OF_TEST_STEP_EXTERNAL && !this.stopped && !this.allStopped) {
+          // Stopped by other user or API call.
+          this.popupService.closeAll()
+          if (this.dataService.configuration.automationApiEnabled) {
+            this.popupService.warning('The test session was terminated by another user or an external process.', true)
+          } else {
+            this.popupService.warning('The test session was terminated by another user.', true)
+          }
+        }
       } else {
         if (response.stepHistory != undefined) {
           this.updateStepHistory(response.tcInstanceId, stepId, response.stepHistory)
@@ -971,6 +980,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   leavingTestExecutionPage() {
+    this.popupService.closeAll()
     if (this.firstTestStarted && !this.allStopped) {
       this.closeWebSocket()
       const pendingTests = filter(this.testsToExecute, (test) => {

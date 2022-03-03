@@ -24,6 +24,7 @@ class SessionUpdateActor @Inject() (reportManager: ReportManager, testResultMana
 
   private val LOGGER = LoggerFactory.getLogger(classOf[SessionUpdateActor])
   private val END_STEP_ID = "-1"
+  private val END_STOP_STEP_ID = "-2"
   private val LOG_EVENT_STEP_ID = "-999"
 
   override def preStart():Unit = {
@@ -48,7 +49,7 @@ class SessionUpdateActor @Inject() (reportManager: ReportManager, testResultMana
       val session: String = testStepStatus.getTcInstanceId
       val step: String = testStepStatus.getStepId
       // Save report
-      if (step == END_STEP_ID) {
+      if (step == END_STEP_ID || step == END_STOP_STEP_ID) {
         try {
           var outputMessage: String = null
           testStepStatus.getReport match {

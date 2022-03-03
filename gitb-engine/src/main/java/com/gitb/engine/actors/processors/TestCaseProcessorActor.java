@@ -30,7 +30,8 @@ import java.util.concurrent.TimeUnit;
  */
 public class TestCaseProcessorActor extends com.gitb.engine.actors.Actor {
     public static final String PRELIMINARY_STEP_ID = "0";
-	public static final String TEST_CASE_STEP_ID = "-1";
+	public static final String TEST_SESSION_END_STEP_ID = "-1";
+    public static final String TEST_SESSION_END_EXTERNAL_STEP_ID = "-2";
     Logger logger = LoggerFactory.getLogger(TestCaseProcessorActor.class);
     public static final String NAME = "tc-p";
     //Test Case Execution identifier

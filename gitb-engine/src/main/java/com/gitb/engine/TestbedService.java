@@ -156,7 +156,7 @@ public class TestbedService {
 				// Regular stop
 				logger.debug("Stopping session {}", sessionId);
 				sessionLogger.info(MarkerFactory.getDetachedMarker(sessionId), "Stopping session");
-				msg = new StopCommand(sessionId);
+				msg = new StopCommand(sessionId, true);
 			}
 			TestEngine
 					.getInstance()
