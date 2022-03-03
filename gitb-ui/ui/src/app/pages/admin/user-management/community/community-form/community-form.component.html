@@ -28,7 +28,7 @@
         <div *ngIf="selfRegEnabled" class="form-group">
             <label class="col-xs-3 control-label" for="selfRegType">* Self-registration method:</label>
             <div class="col-xs-7">
-                <select id="selfRegType" name="selfRegType" class="form-control" [(ngModel)]="community.selfRegType" (change)="selfRegTypeChanged()">
+                <select id="selfRegType" name="selfRegType" class="form-control" (ngModelChange)="selfRegTypeChanged($event)" [(ngModel)]="community.selfRegType">
                     <option *ngFor="let type of selfRegTypes" [ngValue]="type.id">{{type.label}}</option>
                 </select>
             </div>
