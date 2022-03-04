@@ -32,8 +32,11 @@
 			[loadingStatus]="activeStatus"
             [operationsVisible]="true"
             [rowStyle]="rowStyle"
+            [supportRefresh]="true"
             (onSort)="sortActiveSessions($event)"
-            (onDelete)="stopSession($event)">
+            (onDelete)="stopSession($event)"
+            (onRefresh)="refreshForSession($event)"
+            [refreshComplete]="sessionRefreshCompleteEmitter">
         </div>
     </div>
     <!-- completed sessions -->

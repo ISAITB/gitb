@@ -1,3 +1,5 @@
+import { SessionPresentationData } from "./session-presentation-data";
+
 export interface SessionData {
 
     session: string
@@ -9,5 +11,6 @@ export interface SessionData {
     expanded?: boolean
     testSuite: string
     testCase: string
+    diagramState?: SessionPresentationData
 
 }

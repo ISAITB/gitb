@@ -900,6 +900,7 @@ export class TestExecutionComponent implements OnInit, OnDestroy {
   }
 
   reinitialise() {
+    this.popupService.closeAll()
     if (this.heartbeat) {
       this.heartbeat.unsubscribe()
       this.heartbeat = undefined

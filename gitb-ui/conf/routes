@@ -219,6 +219,7 @@ POST    /api/communities/labels/:id             @controllers.CommunityService.se
 
 # Test Result management API
 POST    /api/tests/binaryMetadata               @controllers.TestResultService.getBinaryMetadata()
+GET     /api/tests/result/:sessionId            @controllers.ReportService.getTestResult(sessionId: String)
 
 # Test management API
 GET	    /api/tests/:test_id/definition          @controllers.TestService.getTestCaseDefinition(test_id : String)

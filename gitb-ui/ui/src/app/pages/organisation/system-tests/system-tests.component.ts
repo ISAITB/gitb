@@ -1,8 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { map } from 'lodash';
 import { Observable } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
+import { DiagramLoaderService } from 'src/app/components/diagram/test-session-presentation/diagram-loader.service';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
@@ -60,6 +61,7 @@ export class SystemTestsComponent implements OnInit {
   deletePending = false
   stopAllPending = false
   sessionIdToShow?: string
+  sessionRefreshCompleteEmitter = new EventEmitter<void>()
 
   domainLoader?: () => Observable<Domain[]>
   specificationLoader?: () => Observable<Specification[]>
@@ -75,7 +77,8 @@ export class SystemTestsComponent implements OnInit {
     private dataService: DataService,
     private confirmationDialogService: ConfirmationDialogService,
     private testService: TestService,
-    private popupService: PopupService
+    private popupService: PopupService,
+    private diagramLoaderService: DiagramLoaderService
   ) { }
 
   ngOnInit(): void {
@@ -241,6 +244,12 @@ export class SystemTestsComponent implements OnInit {
     return searchCriteria
   }
 
+  private applyCompletedDataToTestSession(displayedResult: TestResultForDisplay, loadedResult: TestResultReport) {
+    displayedResult.endTime = loadedResult.result.endTime
+    displayedResult.result = loadedResult.result.result
+    displayedResult.obsolete = loadedResult.result.obsolete
+  }
+
   private newTestResult(testResult: TestResultReport, completed: boolean): TestResultForDisplay {
     const result: Partial<TestResultForDisplay> = {
       session: testResult.result.sessionId,
@@ -257,9 +266,7 @@ export class SystemTestsComponent implements OnInit {
       communityId: testResult.organization?.community
     }
     if (completed) {
-      result.endTime = testResult.result.endTime
-      result.result = testResult.result.result
-      result.obsolete = testResult.result.obsolete
+      this.applyCompletedDataToTestSession(result as TestResultForDisplay, testResult)
     }
     return result as TestResultForDisplay
   }
@@ -410,6 +417,30 @@ export class SystemTestsComponent implements OnInit {
       }).add(() => {
         this.deletePending = false
       })
+    })
+  }
+
+  refreshForSession(session: TestResultForDisplay) {
+    this.reportService.getTestResult(session.session).subscribe((result) => {
+      if (result == undefined) {
+        // Session was deleted
+        this.popupService.warning("The test session has been deleted by an administrator.")
+        this.goFirstPage()
+        this.sessionRefreshCompleteEmitter.emit()
+      } else {
+        this.diagramLoaderService.loadTestStepResults(session.session)
+        .subscribe((data) => {
+          const currentState = session.diagramState!
+          if (result.result.endTime) {
+            // Session completed
+            this.popupService.info("The test session has completed.")
+            this.applyCompletedDataToTestSession(session, result)
+          }
+          this.diagramLoaderService.updateStatusOfSteps(session, currentState.stepsOfTests[session.session], data)
+        }).add(() => {
+          this.sessionRefreshCompleteEmitter.emit()
+        })
+      }
     })
   }
 

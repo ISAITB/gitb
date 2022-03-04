@@ -1,9 +1,9 @@
 <div class="panel panel-default">
     <div class="panel-heading" (click)="clickedHeader()" [ngClass]="{'clickable': enableFiltering}">
         <h4 class="title">Filters</h4>
-        <div class="btn-toolbar" (click)="$event.stopPropagation()">
-            <button type="button" class="btn btn-default" (click)="applyFilters()" [pending]="filterState.updatePending || (enableFiltering && !filterDataLoaded)">Refresh</button>
-            <app-toggle id="sessions-toggle-filter" class="btn-group" name="filterToggle" [(ngModel)]="enableFiltering" on="Enabled" off="Disabled" (toggle)="toggleFiltering()"></app-toggle>
+        <div class="btn-toolbar">
+            <button type="button" class="btn btn-default" (click)="applyFilters(); $event.stopPropagation()" [pending]="filterState.updatePending || (enableFiltering && !filterDataLoaded)">Refresh</button>
+            <app-toggle id="sessions-toggle-filter" class="btn-group" name="filterToggle" (click)="$event.stopPropagation()" [(ngModel)]="enableFiltering" on="Enabled" off="Disabled" (toggle)="toggleFiltering()"></app-toggle>
         </div>
     </div>
     <div [collapse]="!showFiltering" [isAnimated]="true">

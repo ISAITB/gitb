@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, EventEmitter, OnInit } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { CommunityService } from 'src/app/services/community.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
@@ -30,6 +30,7 @@ import { OrganisationParameter } from 'src/app/types/organisation-parameter';
 import { SystemParameter } from 'src/app/types/system-parameter';
 import { TestSuiteWithTestCases } from 'src/app/types/test-suite-with-test-cases';
 import { ActivatedRoute } from '@angular/router';
+import { DiagramLoaderService } from 'src/app/components/diagram/test-session-presentation/diagram-loader.service';
 
 @Component({
   selector: 'app-session-dashboard',
@@ -75,6 +76,7 @@ export class SessionDashboardComponent implements OnInit {
   deleteSessionsPending = false
   stopAllPending = false
   sessionIdToShow?: string
+  sessionRefreshCompleteEmitter = new EventEmitter<void>()
 
   domainLoader?: () => Observable<Domain[]>
   specificationLoader?: () => Observable<Specification[]>
@@ -99,7 +101,8 @@ export class SessionDashboardComponent implements OnInit {
     private confirmationDialogService: ConfirmationDialogService,
     private testService: TestService,
     private popupService: PopupService,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private diagramLoaderService: DiagramLoaderService
   ) { }
 
   ngOnInit(): void {
@@ -309,6 +312,12 @@ export class SessionDashboardComponent implements OnInit {
     })
   }
 
+  private applyCompletedDataToTestSession(displayedResult: TestResultForDisplay, loadedResult: TestResultReport) {
+    displayedResult.endTime = loadedResult.result.endTime
+    displayedResult.result = loadedResult.result.result
+    displayedResult.obsolete = loadedResult.result.obsolete
+  }
+
   private newTestResult(testResult: TestResultReport, completed: boolean): TestResultForDisplay {
     const result: Partial<TestResultForDisplay> = {
       session: testResult.result.sessionId,
@@ -327,9 +336,7 @@ export class SessionDashboardComponent implements OnInit {
       communityId: testResult.organization?.community
     }
     if (completed) {
-      result.endTime = testResult.result.endTime
-      result.result = testResult.result.result
-      result.obsolete = testResult.result.obsolete
+      this.applyCompletedDataToTestSession(result as TestResultForDisplay, testResult)
     }
     return result as TestResultForDisplay
   }
@@ -639,6 +646,30 @@ export class SessionDashboardComponent implements OnInit {
       }
     }
     return false
+  }
+
+  refreshForSession(session: TestResultForDisplay) {
+    this.reportService.getTestResult(session.session).subscribe((result) => {
+      if (result == undefined) {
+        // Session was deleted
+        this.popupService.warning("The test session has been deleted by an administrator.")
+        this.applyFilters()
+        this.sessionRefreshCompleteEmitter.emit()
+      } else {
+        this.diagramLoaderService.loadTestStepResults(session.session)
+        .subscribe((data) => {
+          const currentState = session.diagramState!
+          if (result.result.endTime) {
+            // Session completed
+            this.popupService.info("The test session has completed.")
+            this.applyCompletedDataToTestSession(session, result)
+          }
+          this.diagramLoaderService.updateStatusOfSteps(session, currentState.stepsOfTests[session.session], data)
+        }).add(() => {
+          this.sessionRefreshCompleteEmitter.emit()
+        })
+      }
+    })
   }
 
 }

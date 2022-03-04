@@ -141,6 +141,11 @@ class ReportManager @Inject() (triggerHelper: TriggerHelper, actorManager: Actor
     output
   }
 
+  def getTestResult(sessionId: String): Option[TestResult] = {
+    val query = getTestResultsQuery(None, None, None, None, None, None, None, None, None, None, None, None, None, Some(sessionId), None, None, None)
+    exec(query.result.headOption)
+  }
+
   private def getTestResultsQuery(communityIds: Option[List[Long]],
                                   domainIds: Option[List[Long]],
                                   specIds: Option[List[Long]],

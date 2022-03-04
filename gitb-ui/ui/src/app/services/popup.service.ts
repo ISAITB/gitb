@@ -43,6 +43,16 @@ export class PopupService {
     }
   }
 
+  info(message: string, persistent?: boolean) {
+    if (message !== undefined) {
+      if (persistent) {
+        this.notificationService.html(message, NotificationType.Info, { timeOut: 0, clickToClose: true }, 'info')
+      } else {
+        this.notificationService.html(message, NotificationType.Info, undefined, 'info')
+      }
+    }
+  }
+
   closeAll() {
     this.notificationService.remove()
   }

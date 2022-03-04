@@ -5,6 +5,7 @@ import { StepReport } from '../components/diagram/report/step-report';
 import { TestCase } from '../types/test-case';
 import { TestResult } from '../types/test-result';
 import { TestResultData } from '../types/test-result-data';
+import { TestResultReport } from '../types/test-result-report';
 import { TestResultSearchCriteria } from '../types/test-result-search-criteria';
 import { TestStepResult } from '../types/test-step-result';
 import { DataService } from './data.service';
@@ -115,6 +116,13 @@ export class ReportService {
       }
     }
     return params
+  }
+
+  getTestResult(sessionId: string) {
+    return this.restService.get<TestResultReport|undefined>({
+      path: ROUTES.controllers.ReportService.getTestResult(sessionId).url,
+      authenticate: true
+    })
   }
 
   getActiveTestResults(criteria: TestResultSearchCriteria, forExport?: boolean) {
