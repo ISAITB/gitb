@@ -121,7 +121,8 @@ public enum ErrorCode {
     UNEXPECTED_HANDLER_UNNAMED_INPUTS(                  "TDL-103", "%s [%s] in step %s for handler %s provides more inputs than expected.", ERROR, true),
     MISSING_HANDLER_UNNAMED_INPUTS(                     "TDL-104", "%s [%s] in step %s for handler %s does not provide enough inputs to cover the required parameters.", ERROR, true),
     DOUBLE_PROCESSING_INPUTS(                           "TDL-105", "%s [%s] in step %s for handler %s provides inputs both as an attribute and as child elements. The attribute definition will be ignored.", WARNING, true),
-    DOUBLE_CALL_INPUTS(                                 "TDL-106", "%s [%s] defines a call step for scriptlet [%s] that provides inputs both as an attribute and as child elements. The attribute definition will be ignored.", WARNING, true)
+    DOUBLE_CALL_INPUTS(                                 "TDL-106", "%s [%s] defines a call step for scriptlet [%s] that provides inputs both as an attribute and as child elements. The attribute definition will be ignored.", WARNING, true),
+    MULTIPLE_SUT_ACTORS_DEFINED_IN_TEST_CASE(           "TDL-107", "%s [%s] defines multiple actors with role 'SUT'. A test case can only have one actor define as the 'SUT'.", ERROR, true),
     ;
 
     private String code;
