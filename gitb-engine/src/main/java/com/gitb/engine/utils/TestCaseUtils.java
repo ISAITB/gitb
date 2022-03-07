@@ -120,5 +120,39 @@ public class TestCaseUtils {
         return foundScriptlet;
     }
 
+    public static void applyStopOnErrorSemantics(TestConstruct step, Boolean parentStopOnErrorSetting) {
+        if (step != null) {
+            boolean parentStopOnErrorSettingToUse = parentStopOnErrorSetting != null && parentStopOnErrorSetting;
+            if (step.isStopOnError() == null) {
+                // Inherit parent setting.
+                step.setStopOnError(parentStopOnErrorSettingToUse);
+            }
+            if (step instanceof Sequence) {
+                for (Object childStep: ((Sequence)step).getSteps()) {
+                    if (childStep instanceof TestConstruct) {
+                        applyStopOnErrorSemantics((TestConstruct)childStep, step.isStopOnError());
+                    }
+                }
+            } else {
+                // Cover also the steps that have internal sequences.
+                if (step instanceof IfStep) {
+                    applyStopOnErrorSemantics(((IfStep) step).getThen(), step.isStopOnError());
+                    applyStopOnErrorSemantics(((IfStep) step).getElse(), step.isStopOnError());
+                } else if (step instanceof WhileStep) {
+                    applyStopOnErrorSemantics(((WhileStep) step).getDo(), step.isStopOnError());
+                } else if (step instanceof ForEachStep) {
+                    applyStopOnErrorSemantics(((ForEachStep) step).getDo(), step.isStopOnError());
+                } else if (step instanceof RepeatUntilStep) {
+                    applyStopOnErrorSemantics(((RepeatUntilStep) step).getDo(), step.isStopOnError());
+                } else if (step instanceof FlowStep) {
+                    if (((FlowStep) step).getThread() != null) {
+                        for (Sequence thread: ((FlowStep) step).getThread()) {
+                            applyStopOnErrorSemantics(thread, step.isStopOnError());
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 

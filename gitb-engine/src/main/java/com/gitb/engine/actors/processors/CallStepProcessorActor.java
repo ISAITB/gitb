@@ -8,6 +8,7 @@ import com.gitb.engine.events.model.StatusEvent;
 import com.gitb.engine.expr.ExpressionHandler;
 import com.gitb.engine.expr.resolvers.VariableResolver;
 import com.gitb.engine.testcase.TestCaseScope;
+import com.gitb.engine.utils.TestCaseUtils;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.Binding;
 import com.gitb.tdl.CallStep;
@@ -50,6 +51,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 	@Override
 	protected void start() throws Exception {
 		childScope = createChildScope();
+		TestCaseUtils.applyStopOnErrorSemantics(scriptlet.getSteps(), step.isStopOnError());
 		ActorRef child = SequenceProcessorActor.create(getContext(), scriptlet.getSteps(), childScope, stepId);
 
 		StartCommand command = new StartCommand(scope.getContext().getSessionId());

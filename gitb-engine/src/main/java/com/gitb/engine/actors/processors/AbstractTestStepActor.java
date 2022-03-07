@@ -271,14 +271,10 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 
 		boolean stopTestSession = false;
 		if (step instanceof TestConstruct) {
-			boolean stopOnError;
-			stopOnError = ((TestConstruct)step).isStopOnError();
 			if (((TestConstruct)step).getId() != null) {
 				((MapType)(scope.getVariable(TestCaseContext.STEP_SUCCESS_MAP, true).getValue())).addItem(((TestConstruct)step).getId(), new BooleanType(status == StepStatus.COMPLETED || status == StepStatus.WARNING));
 			}
-			if (step instanceof Sequence) {
-				stopOnError = ((Sequence)step).isStopOnError();
-			}
+			boolean stopOnError = ((TestConstruct)step).isStopOnError() != null && ((TestConstruct)step).isStopOnError();
 			if (status == StepStatus.ERROR && stopOnError) {
 				// We need to stop the complete test session. We only do this if not already signalled.
 				if (scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPING && scope.getContext().getCurrentState() != TestCaseContext.TestCaseStateEnum.STOPPED) {
