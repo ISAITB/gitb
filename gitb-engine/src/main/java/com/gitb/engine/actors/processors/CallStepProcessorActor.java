@@ -168,7 +168,7 @@ public class CallStepProcessorActor extends AbstractTestStepActor<CallStep> {
 		if (parameterCount != inputCount) {
 			throw new GITBEngineInternalError(ErrorUtils.errorInfo(ErrorCode.INVALID_TEST_CASE, "Wrong number of parameters for scriptlet ["+scriptlet.getId()+"]. Expected ["+parameterCount+"] but encountered ["+step.getInput().size()+"]."));
 		}
-		TestCaseScope childScope = scope.createChildScope(scriptlet.getImports(), step.getFrom());
+		TestCaseScope childScope = scope.createChildScope(scriptlet.getImports(), scriptlet.getNamespaces(), step.getFrom());
 		createScriptletVariables(childScope);
 		return childScope;
 	}

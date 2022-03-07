@@ -166,7 +166,7 @@ public class TestCaseContext {
         this.sutHandlerConfigurations = new ConcurrentHashMap<>();
         this.messagingContexts = new ConcurrentHashMap<>();
 		this.processingContexts = new ConcurrentHashMap<>();
-        this.scope = new TestCaseScope(this, testCase.getImports());
+        this.scope = new TestCaseScope(this, testCase.getImports(), testCase.getNamespaces());
 		this.variableResolver = new VariableResolver(scope);
 		if (testCase.getSteps() != null) {
 			this.logLevelIsExpression = this.variableResolver.isVariableReference(testCase.getSteps().getLogLevel());

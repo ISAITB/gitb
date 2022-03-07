@@ -3,19 +3,16 @@ package com.gitb.validation.xpath;
 import com.gitb.core.Configuration;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tr.TestStepReportType;
-import com.gitb.types.BooleanType;
-import com.gitb.types.DataType;
-import com.gitb.types.ObjectType;
-import com.gitb.types.StringType;
+import com.gitb.types.*;
+import com.gitb.utils.NamespaceContext;
 import com.gitb.validation.IValidationHandler;
 import com.gitb.validation.common.AbstractValidator;
 import org.kohsuke.MetaInfServices;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -25,12 +22,10 @@ import java.util.Map;
 @MetaInfServices(IValidationHandler.class)
 public class XPathValidator extends AbstractValidator {
 
-    private static final Logger logger = LoggerFactory.getLogger(XPathValidator.class);
-
-    private final String CONTENT_ARGUMENT_NAME = "xmldocument";
-    private final String XPATH_ARGUMENT_NAME   = "xpathexpression";
-
-    private final String MODULE_DEFINITION_XML = "/xpath-validator-definition.xml";
+    public static final String NAMESPACE_MAP_INPUT = "com.gitb.Namespaces";
+    private final static String CONTENT_ARGUMENT_NAME = "xmldocument";
+    private final static String XPATH_ARGUMENT_NAME = "xpathexpression";
+    private final static String MODULE_DEFINITION_XML = "/xpath-validator-definition.xml";
 
     public XPathValidator() {
         this.validatorDefinition = readModuleDefinition(MODULE_DEFINITION_XML);
@@ -40,9 +35,17 @@ public class XPathValidator extends AbstractValidator {
     public TestStepReportType validate(List<Configuration> configurations, Map<String, DataType> inputs) {
         ObjectType contentToProcess = (ObjectType)inputs.get(CONTENT_ARGUMENT_NAME).convertTo(DataType.OBJECT_DATA_TYPE);
         StringType expression = (StringType) inputs.get(XPATH_ARGUMENT_NAME).convertTo(DataType.STRING_DATA_TYPE);
+        MapType namespaces = (MapType) inputs.get(NAMESPACE_MAP_INPUT);
 
         //compile xpath expression
         XPath xPath = new net.sf.saxon.xpath.XPathFactoryImpl().newXPath();
+        if (namespaces != null) {
+            var nsMap = new HashMap<String, String>();
+            for (var entry: ((Map<String, DataType>)namespaces.getValue()).entrySet()) {
+                nsMap.put(entry.getKey(), (String) entry.getValue().getValue());
+            }
+            xPath.setNamespaceContext(new NamespaceContext(nsMap));
+        }
         XPathExpression xPathExpr;
         try {
             xPathExpr = xPath.compile((String)expression.getValue());
