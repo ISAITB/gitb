@@ -16,7 +16,6 @@ import com.gitb.messaging.layer.AbstractMessagingHandler;
 import com.gitb.ms.InitiateResponse;
 import com.gitb.tbs.SUTConfiguration;
 import com.gitb.tdl.*;
-import com.gitb.types.BooleanType;
 import com.gitb.types.DataType;
 import com.gitb.types.DataTypeFactory;
 import com.gitb.types.MapType;
@@ -49,9 +48,14 @@ public class TestCaseContext {
 	private static final Logger logger = LoggerFactory.getLogger(TestCaseContext.class);
 
 	/**
-	 * The map containing the status values for each executed step.
+	 * The map containing the success flags for each executed step.
 	 */
 	public static final String STEP_SUCCESS_MAP = "STEP_SUCCESS";
+
+	/**
+	 * The map containing the status values for all steps.
+	 */
+	public static final String STEP_STATUS_MAP = "STEP_STATUS";
 
 	/**
 	 * The scope variable holding the overall result of the test session.
@@ -198,41 +202,12 @@ public class TestCaseContext {
     	return this.scriptletCache;
 	}
 
-    private void addStepStatusForStep(MapType map, Object step) {
-    	if (step != null) {
-			if (step instanceof TestConstruct) {
-				if (((TestConstruct)step).getId() != null) {
-					map.addItem(((TestConstruct)step).getId(), new BooleanType(false));
-				}
-			}
-			if (step instanceof IfStep) {
-				addStepStatusForStep(map, ((IfStep)step).getThen());
-				addStepStatusForStep(map, ((IfStep)step).getElse());
-			} else if (step instanceof WhileStep) {
-				addStepStatusForStep(map, ((WhileStep)step).getDo());
-			} else if (step instanceof RepeatUntilStep) {
-				addStepStatusForStep(map, ((RepeatUntilStep)step).getDo());
-			} else if (step instanceof ForEachStep) {
-				addStepStatusForStep(map, ((ForEachStep)step).getDo());
-			} else if (step instanceof FlowStep) {
-				if (((FlowStep)step).getThread() != null) {
-					for (Sequence flowSequence: ((FlowStep)step).getThread()) {
-						addStepStatusForStep(map, flowSequence);
-					}
-				}
-			} else if (step instanceof Sequence) {
-				for (Object sequenceStep: ((Sequence) step).getSteps()) {
-					addStepStatusForStep(map, sequenceStep);
-				}
-			}
-		}
-	}
-
 	private void addStepStatus() {
-		TestCaseScope.ScopedVariable variable = scope.createVariable(STEP_SUCCESS_MAP);
-		MapType map = (MapType) DataTypeFactory.getInstance().create(DataType.MAP_DATA_TYPE);
-		addStepStatusForStep(map, testCase.getSteps());
-		variable.setValue(map);
+		MapType successMap = (MapType) DataTypeFactory.getInstance().create(DataType.MAP_DATA_TYPE);
+		MapType statusMap = (MapType) DataTypeFactory.getInstance().create(DataType.MAP_DATA_TYPE);
+		scope.createVariable(STEP_SUCCESS_MAP).setValue(successMap);
+		scope.createVariable(STEP_STATUS_MAP).setValue(statusMap);
+		TestCaseUtils.initialiseStepStatusMaps(successMap, statusMap, testCase.getSteps());
 	}
 
 	private void processVariables() {

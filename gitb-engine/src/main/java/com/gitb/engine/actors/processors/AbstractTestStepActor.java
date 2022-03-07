@@ -23,11 +23,11 @@ import com.gitb.engine.testcase.TestCaseContext;
 import com.gitb.engine.testcase.TestCaseScope;
 import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.tdl.IfStep;
-import com.gitb.tdl.Sequence;
 import com.gitb.tdl.TestConstruct;
 import com.gitb.tr.*;
 import com.gitb.types.BooleanType;
 import com.gitb.types.MapType;
+import com.gitb.types.StringType;
 import com.gitb.utils.ErrorUtils;
 import com.gitb.utils.XMLDateTimeUtils;
 import org.apache.commons.lang3.RandomStringUtils;
@@ -260,6 +260,14 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		updateTestStepStatus(context, statusEvent, report, reportTestStepStatus, true);
 	}
 
+	protected MapType getStepSuccessMap() {
+		return ((MapType)(scope.getVariable(TestCaseContext.STEP_SUCCESS_MAP, true).getValue()));
+	}
+
+	protected MapType getStepStatusMap() {
+		return ((MapType)(scope.getVariable(TestCaseContext.STEP_STATUS_MAP, true).getValue()));
+	}
+
 	protected void updateTestStepStatus(ActorContext context, StatusEvent statusEvent, TestStepReportType report, boolean reportTestStepStatus, boolean logError) {
 
 		if (logError && statusEvent instanceof ErrorStatusEvent) {
@@ -272,7 +280,8 @@ public abstract class AbstractTestStepActor<T> extends Actor {
 		boolean stopTestSession = false;
 		if (step instanceof TestConstruct) {
 			if (((TestConstruct)step).getId() != null) {
-				((MapType)(scope.getVariable(TestCaseContext.STEP_SUCCESS_MAP, true).getValue())).addItem(((TestConstruct)step).getId(), new BooleanType(status == StepStatus.COMPLETED || status == StepStatus.WARNING));
+				getStepSuccessMap().addItem(((TestConstruct)step).getId(), new BooleanType(status == StepStatus.COMPLETED || status == StepStatus.WARNING));
+				getStepStatusMap().addItem(((TestConstruct)step).getId(), new StringType(status.toString()));
 			}
 			boolean stopOnError = ((TestConstruct)step).isStopOnError() != null && ((TestConstruct)step).isStopOnError();
 			if (status == StepStatus.ERROR && stopOnError) {

@@ -10,6 +10,9 @@ import com.gitb.exceptions.GITBEngineInternalError;
 import com.gitb.repository.ITestCaseRepository;
 import com.gitb.tdl.*;
 import com.gitb.tdl.Process;
+import com.gitb.types.BooleanType;
+import com.gitb.types.MapType;
+import com.gitb.types.StringType;
 import com.gitb.utils.ErrorUtils;
 import org.apache.commons.lang3.StringUtils;
 
@@ -148,6 +151,42 @@ public class TestCaseUtils {
                     if (((FlowStep) step).getThread() != null) {
                         for (Sequence thread: ((FlowStep) step).getThread()) {
                             applyStopOnErrorSemantics(thread, step.isStopOnError());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public static void initialiseStepStatusMaps(MapType stepSuccessMap, MapType stepStatusMap, TestConstruct step) {
+        if (step != null) {
+            // Initialise for the step itself.
+            if (step.getId() != null) {
+                stepSuccessMap.addItem(step.getId(), new BooleanType(false));
+                stepStatusMap.addItem(step.getId(), new StringType(""));
+            }
+            if (step instanceof Sequence) {
+                // Initialise for children.
+                for (Object childStep: ((Sequence)step).getSteps()) {
+                    if (childStep instanceof TestConstruct) {
+                        initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, (TestConstruct)childStep);
+                    }
+                }
+            } else {
+                // Initialise for other steps with internal sequences.
+                if (step instanceof IfStep) {
+                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((IfStep) step).getThen());
+                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((IfStep) step).getElse());
+                } else if (step instanceof WhileStep) {
+                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((WhileStep) step).getDo());
+                } else if (step instanceof ForEachStep) {
+                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((ForEachStep) step).getDo());
+                } else if (step instanceof RepeatUntilStep) {
+                    initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, ((RepeatUntilStep) step).getDo());
+                } else if (step instanceof FlowStep) {
+                    if (((FlowStep) step).getThread() != null) {
+                        for (Sequence thread: ((FlowStep) step).getThread()) {
+                            initialiseStepStatusMaps(stepSuccessMap, stepStatusMap, thread);
                         }
                     }
                 }
