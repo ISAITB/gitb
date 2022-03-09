@@ -2,10 +2,9 @@ import { Component, EventEmitter, Input, OnInit, Output } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
 import { FilterState } from 'src/app/types/filter-state';
-import { Observable, forkJoin, of, EMPTY } from 'rxjs';
-import { catchError, map as oMap, mergeMap, share } from 'rxjs/operators'
-import { map, find, remove, clone, filter, includes } from 'lodash';
-import { IDropdownSettings } from 'ng-multiselect-dropdown';
+import { Observable, of } from 'rxjs';
+import { mergeMap } from 'rxjs/operators'
+import { map, remove, filter } from 'lodash';
 import { BsDatepickerConfig } from 'ngx-bootstrap/datepicker';
 import { formatDate } from '@angular/common';
 import { Domain } from 'src/app/types/domain';
@@ -18,8 +17,17 @@ import { Organisation } from 'src/app/types/organisation.type';
 import { System } from 'src/app/types/system';
 import { OrganisationParameter } from 'src/app/types/organisation-parameter';
 import { SystemParameter } from 'src/app/types/system-parameter';
-import { ObjectWithId } from './object-with-id';
 import { CustomProperty } from '../custom-property-filter/custom-property';
+import { MultiSelectConfig } from '../multi-select-filter/multi-select-config';
+import { IdLabel } from 'src/app/types/id-label';
+import { MultiSelectItem } from '../multi-select-filter/multi-select-item';
+import { NumberSet } from 'src/app/types/number-set';
+import { ConformanceService } from 'src/app/services/conformance.service';
+import { TestSuiteService } from 'src/app/services/test-suite.service';
+import { ReportService } from 'src/app/services/report.service';
+import { CommunityService } from 'src/app/services/community.service';
+import { OrganisationService } from 'src/app/services/organisation.service';
+import { SystemService } from 'src/app/services/system.service';
 
 @Component({
   selector: 'app-test-filter',
@@ -45,14 +53,10 @@ export class TestFilterComponent implements OnInit {
   @Output() onApply = new EventEmitter<any>()
 
   Constants = Constants
-  filtering: { [key: string]: {all: any[], filter: any[], selection: ObjectWithId[] } } = {}
-  loadPromises: Observable<any>[] = []
+  filterValues: { [key: string]: MultiSelectItem[] } = {}
   organisationProperties: Array<CustomProperty> = []
   systemProperties: Array<{id?: number, value?: string, uuid?: number}> = []
   definedFilters: { [key: string]: boolean } = {}
-  topColumnCount = 0
-  colWidth!: string
-  colStyle!: { width: string }
   enableFiltering = false
   showFiltering = false
   sessionId?: string
@@ -61,7 +65,7 @@ export class TestFilterComponent implements OnInit {
   cachedSystemProperties: { [key: string]: SystemParameter[] } = {}
   availableOrganisationProperties: OrganisationParameter[] = []
   availableSystemProperties: SystemParameter[] = []
-  filterDropdownSettings: {[key: string]: IDropdownSettings} = {}
+  filterDropdownSettings: {[key: string]: MultiSelectConfig} = {}
   datePickerSettings: Partial<BsDatepickerConfig> = {
     adaptivePosition: true,
     rangeInputFormat: 'DD-MM-YYYY',
@@ -75,12 +79,16 @@ export class TestFilterComponent implements OnInit {
   loadingOrganisationProperties = false
   loadingSystemProperties = false
   applicableCommunityId?: number
-  filterDataLoaded = false
   names: {[key: string]: string} = {}
-  testCaseOpenLeft = false
-
+  
   constructor(
-    public dataService: DataService
+    public dataService: DataService,
+    private conformanceService: ConformanceService,
+    private testSuiteService: TestSuiteService,
+    private reportService: ReportService,
+    private communityService: CommunityService,
+    private organisationService: OrganisationService,
+    private systemService: SystemService
   ) { }
 
   ngOnInit(): void {
@@ -106,6 +114,209 @@ export class TestFilterComponent implements OnInit {
         }
       }
     }
+    this.resetApplicableCommunityId()
+    this.filterState.filterData = this.currentFilters.bind(this)
+    for (let filterType of this.filterState.filters) {
+      this.definedFilters[filterType] = true
+    }
+    this.setupDefaultLoadFunctions()
+    this.initialiseIfDefined(Constants.FILTER_TYPE.DOMAIN, { textField: 'sname', loader: this.loadDomainsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.SPECIFICATION, { textField: 'sname', loader: this.loadSpecificationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.ACTOR, { textField: 'actorId', loader: this.loadActorsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.TEST_SUITE, { textField: 'sname', loader: this.loadTestSuitesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.TEST_CASE, { textField: 'sname', loader: this.loadTestCasesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.COMMUNITY, { textField: 'sname', loader: this.loadCommunitiesFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.ORGANISATION, { textField: 'sname', loader: this.loadOrganisationsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.SYSTEM, { textField: 'sname', loader: this.loadSystemsFn, clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() })
+    this.initialiseIfDefined(Constants.FILTER_TYPE.RESULT, { textField: 'label', loader: this.loadTestResults.bind(this), clearItems: new EventEmitter(), replaceSelectedItems: new EventEmitter() } )
+  }
+
+  private setupDefaultLoadFunctions() {
+    if (this.filterDefined(Constants.FILTER_TYPE.DOMAIN) && this.loadDomainsFn == undefined) {
+      this.loadDomainsFn = (() => {
+        return this.conformanceService.getDomains()
+      }).bind(this)
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION) && this.loadSpecificationsFn == undefined) {
+      this.loadSpecificationsFn = (() => {
+        if (this.dataService.isSystemAdmin || this.dataService.community!.domainId == undefined) {
+          return this.conformanceService.getSpecificationsWithIds(undefined, this.filterValue(Constants.FILTER_TYPE.DOMAIN))
+        } else {
+          return this.conformanceService.getSpecifications(this.dataService.community!.domainId)
+        }
+      }).bind(this)
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.ACTOR) && this.loadActorsFn == undefined) {
+      this.loadActorsFn = (() => {
+        if (this.dataService.isSystemAdmin || this.dataService.community!.domainId == undefined) {
+          return this.conformanceService.searchActors(this.filterValue(Constants.FILTER_TYPE.DOMAIN), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION))
+        } else {
+          return this.conformanceService.searchActorsInDomain(this.dataService.community!.domainId, this.filterValue(Constants.FILTER_TYPE.SPECIFICATION))
+        }
+      }).bind(this)
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.TEST_SUITE) && this.loadTestSuitesFn == undefined) {
+      this.loadTestSuitesFn = (() => {
+        if (this.dataService.isSystemAdmin || this.dataService.community!.domainId == undefined) {
+          return this.testSuiteService.searchTestSuites(this.filterValue(Constants.FILTER_TYPE.DOMAIN), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.ACTOR))
+        } else {
+          return this.testSuiteService.searchTestSuitesInDomain(this.dataService.community!.domainId, this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.ACTOR))
+        }
+  
+      }).bind(this)
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.TEST_CASE) && this.loadTestCasesFn == undefined) {
+      this.loadTestCasesFn = (() => {
+        if (this.dataService.isSystemAdmin || this.dataService.community!.domainId == undefined) {
+          return this.reportService.searchTestCases(this.filterValue(Constants.FILTER_TYPE.DOMAIN), this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.ACTOR), this.filterValue(Constants.FILTER_TYPE.TEST_SUITE))
+        } else {
+          return this.reportService.searchTestCasesInDomain(this.dataService.community!.domainId, this.filterValue(Constants.FILTER_TYPE.SPECIFICATION), this.filterValue(Constants.FILTER_TYPE.ACTOR), this.filterValue(Constants.FILTER_TYPE.TEST_SUITE))
+        }
+      }).bind(this)
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.COMMUNITY) && this.loadCommunitiesFn == undefined) {
+      this.loadCommunitiesFn = (() => {
+        return this.communityService.getCommunities()
+      }).bind(this)
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.ORGANISATION) && this.loadOrganisationsFn == undefined) {
+      this.loadOrganisationsFn = (() => {
+        if (this.dataService.isCommunityAdmin) {
+          return this.organisationService.getOrganisationsByCommunity(this.dataService.community!.id)
+        } else {
+          return this.organisationService.searchOrganizations(this.filterValue(Constants.FILTER_TYPE.COMMUNITY))
+        }
+      }).bind(this)
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.SYSTEM) && this.loadSystemsFn == undefined) {
+      this.loadSystemsFn = (() => {
+        if (this.dataService.isSystemAdmin) {
+          return this.systemService.searchSystems(this.filterValue(Constants.FILTER_TYPE.COMMUNITY), this.filterValue(Constants.FILTER_TYPE.ORGANISATION))
+        } else {
+          return this.systemService.searchSystemsInCommunity(this.dataService.community!.id, this.filterValue(Constants.FILTER_TYPE.ORGANISATION))
+        }
+      }).bind(this)
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.ORGANISATION_PROPERTY) && this.loadOrganisationPropertiesFn == undefined) {
+      this.loadOrganisationPropertiesFn = (() => {
+        return this.communityService.getOrganisationParameters(this.applicableCommunityId!, true)
+      }).bind(this)
+    }
+    if (this.filterDefined(Constants.FILTER_TYPE.SYSTEM_PROPERTY) && this.loadSystemPropertiesFn == undefined) {
+      this.loadSystemPropertiesFn = (() => {
+        return this.communityService.getSystemParameters(this.applicableCommunityId!, true)
+      }).bind(this)
+    }
+  }
+
+  domainsChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean) {
+    this.filterValues[Constants.FILTER_TYPE.DOMAIN] = selected
+    if (selected.length > 0 && this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION)) {
+      const ids = this.dataService.asIdSet(selected)
+      const remaining = filter(<Specification[]>this.filterValues[Constants.FILTER_TYPE.SPECIFICATION], (s) => { return ids[s.domain] })
+      this.filterDropdownSettings[Constants.FILTER_TYPE.SPECIFICATION].replaceSelectedItems!.emit(remaining)
+      this.specificationsChanged(remaining, true)
+    }
+    if (!skipApplyFilters) {
+      this.applyFilters()
+    }
+  }
+  specificationsChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean) {
+    this.filterValues[Constants.FILTER_TYPE.SPECIFICATION] = selected
+    if (selected.length > 0 && (this.filterDefined(Constants.FILTER_TYPE.ACTOR) || this.filterDefined(Constants.FILTER_TYPE.TEST_SUITE))) {
+      const ids = this.dataService.asIdSet(selected)
+      if (this.filterDefined(Constants.FILTER_TYPE.ACTOR)) {
+        const remaining = filter(<Actor[]>this.filterValues[Constants.FILTER_TYPE.ACTOR], (a) => { return ids[a.specification] })
+        this.filterDropdownSettings[Constants.FILTER_TYPE.ACTOR].replaceSelectedItems!.emit(remaining)
+        this.actorsChanged(remaining, true)
+      }
+      if (this.filterDefined(Constants.FILTER_TYPE.TEST_SUITE)) {
+        const remaining = filter(<TestSuiteWithTestCases[]>this.filterValues[Constants.FILTER_TYPE.TEST_SUITE], (ts) => { return ids[ts.specification] })
+        this.filterDropdownSettings[Constants.FILTER_TYPE.TEST_SUITE].replaceSelectedItems!.emit(remaining)
+        this.actorsChanged(remaining, true)
+      }
+    }
+    if (!skipApplyFilters) {
+      this.applyFilters()
+    }
+  }
+
+  actorsChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean) {
+    this.filterValues[Constants.FILTER_TYPE.ACTOR] = selected
+    if (!skipApplyFilters) {
+      this.applyFilters()
+    }
+  }
+
+  testSuitesChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean) {
+    this.filterValues[Constants.FILTER_TYPE.TEST_SUITE] = selected
+    if (selected.length > 0 && this.filterDefined(Constants.FILTER_TYPE.TEST_CASE)) {
+      const validTestCaseIds: NumberSet = {}
+      for (let testSuite of <TestSuiteWithTestCases[]>selected) {
+        for (let testCase of testSuite.testCases) {
+          validTestCaseIds[testCase.id] = true
+        }
+      }
+      const remaining = filter(<TestCase[]>this.filterValues[Constants.FILTER_TYPE.TEST_CASE], (tc) => { return validTestCaseIds[tc.id] })
+      this.filterDropdownSettings[Constants.FILTER_TYPE.TEST_CASE].replaceSelectedItems!.emit(remaining)
+      this.testCasesChanged(remaining, true)
+    }
+    if (!skipApplyFilters) {
+      this.applyFilters()
+    }
+  }
+
+  testCasesChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean) {
+    this.filterValues[Constants.FILTER_TYPE.TEST_CASE] = selected
+    if (!skipApplyFilters) {
+      this.applyFilters()
+    }
+  }
+
+  communitiesChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean) {
+    this.filterValues[Constants.FILTER_TYPE.COMMUNITY] = selected
+    if (selected.length > 0 && this.filterDefined(Constants.FILTER_TYPE.ORGANISATION)) {
+      const ids = this.dataService.asIdSet(selected)
+      const remaining = filter(<Organisation[]>this.filterValues[Constants.FILTER_TYPE.ORGANISATION], (o) => { return ids[o.community] })
+      this.filterDropdownSettings[Constants.FILTER_TYPE.ORGANISATION].replaceSelectedItems!.emit(remaining)
+      this.organisationsChanged(remaining, true)      
+    }
+    // Custom properties
+    this.organisationProperties = []
+    this.systemProperties = []
+    if (selected.length == 1) {
+      this.applicableCommunityId = selected[0].id
+    } else {
+      this.applicableCommunityId = undefined
+    }
+    if (!skipApplyFilters) {
+      this.applyFilters()
+    }
+  }
+
+  organisationsChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean) {
+    this.filterValues[Constants.FILTER_TYPE.ORGANISATION] = selected
+    if (selected.length > 0 && this.filterDefined(Constants.FILTER_TYPE.SYSTEM)) {
+      const ids = this.dataService.asIdSet(selected)
+      const remaining = filter(<System[]>this.filterValues[Constants.FILTER_TYPE.SYSTEM], (s) => { return ids[s.owner] })
+      this.filterDropdownSettings[Constants.FILTER_TYPE.SYSTEM].replaceSelectedItems!.emit(remaining)
+      this.systemsChanged(remaining, true)
+    }
+    if (!skipApplyFilters) {
+      this.applyFilters()
+    }
+  }
+
+  systemsChanged(selected: MultiSelectItem[], skipApplyFilters?: boolean) {
+    this.filterValues[Constants.FILTER_TYPE.SYSTEM] = selected
+    if (!skipApplyFilters) {
+      this.applyFilters()
+    }    
+  }
+
+  resultsChanged(selected: MultiSelectItem[]) {
+    this.filterValues[Constants.FILTER_TYPE.RESULT] = selected
+    this.applyFilters()
   }
 
   private resetApplicableCommunityId() {
@@ -116,119 +327,22 @@ export class TestFilterComponent implements OnInit {
     }
   }
 
-  private loadFilterData() {
-    this.resetApplicableCommunityId()
-    this.filterDropdownSettings[Constants.FILTER_TYPE.DOMAIN] = this.createDropdownSettings('id', 'sname')
-    this.filterDropdownSettings[Constants.FILTER_TYPE.SPECIFICATION] = this.createDropdownSettings('id', 'sname')
-    this.filterDropdownSettings[Constants.FILTER_TYPE.ACTOR] = this.createDropdownSettings('id', 'actorId')
-    this.filterDropdownSettings[Constants.FILTER_TYPE.TEST_SUITE] = this.createDropdownSettings('id', 'sname')
-    this.filterDropdownSettings[Constants.FILTER_TYPE.TEST_CASE] = this.createDropdownSettings('id', 'sname')
-    this.filterDropdownSettings[Constants.FILTER_TYPE.COMMUNITY] = this.createDropdownSettings('id', 'sname')
-    this.filterDropdownSettings[Constants.FILTER_TYPE.ORGANISATION] = this.createDropdownSettings('id', 'sname')
-    this.filterDropdownSettings[Constants.FILTER_TYPE.SYSTEM] = this.createDropdownSettings('id', 'sname')
-    this.filterDropdownSettings[Constants.FILTER_TYPE.RESULT] = this.createDropdownSettings('id', 'id')
-
-    this.filterState.filterData = this.currentFilters.bind(this)
-    for (let filterType of this.filterState.filters) {
-      this.definedFilters[filterType] = true
+  private initialiseIfDefined(filterType: string, config: MultiSelectConfig) {
+    if (this.filterDefined(filterType)) {
+      this.filterDropdownSettings[filterType] = config
     }
-    if (this.filterDefined(Constants.FILTER_TYPE.DOMAIN)) this.topColumnCount += 1 
-    if (this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION)) this.topColumnCount += 1
-    if (this.filterDefined(Constants.FILTER_TYPE.ACTOR)) this.topColumnCount += 1
-    if (this.filterDefined(Constants.FILTER_TYPE.TEST_SUITE)) this.topColumnCount += 1
-    if (this.filterDefined(Constants.FILTER_TYPE.TEST_CASE)) this.topColumnCount += 1
-    if (this.filterDefined(Constants.FILTER_TYPE.COMMUNITY)) this.topColumnCount += 1
-    if (this.filterDefined(Constants.FILTER_TYPE.ORGANISATION)) this.topColumnCount += 1
-    if (this.filterDefined(Constants.FILTER_TYPE.SYSTEM)) this.topColumnCount += 1
-    this.colWidth = (100 / this.topColumnCount) + '%'
-    this.colStyle = {
-      'width': this.colWidth
-    }
-    this.setupFilter<Domain>(Constants.FILTER_TYPE.DOMAIN, this.loadDomainsFn)
-    this.setupFilter<Specification>(Constants.FILTER_TYPE.SPECIFICATION, this.loadSpecificationsFn)
-    this.setupFilter<Actor>(Constants.FILTER_TYPE.ACTOR, this.loadActorsFn)
-    this.setupFilter<TestSuiteWithTestCases>(Constants.FILTER_TYPE.TEST_SUITE, this.loadTestSuitesFn)
-    this.setupFilter<TestCase>(Constants.FILTER_TYPE.TEST_CASE, this.loadTestCasesFn)
-    this.setupFilter<Community>(Constants.FILTER_TYPE.COMMUNITY, this.loadCommunitiesFn)
-    this.setupFilter<Organisation>(Constants.FILTER_TYPE.ORGANISATION, this.loadOrganisationsFn)
-    this.setupFilter<System>(Constants.FILTER_TYPE.SYSTEM, this.loadSystemsFn)
-    this.filtering[Constants.FILTER_TYPE.RESULT] = {
-      all: this.getAllTestResults(),
-      filter: this.getAllTestResults(),
-      selection: []
-    }
-    this.testCaseOpenLeft = !this.filterDefined(Constants.FILTER_TYPE.COMMUNITY) && 
-      !this.filterDefined(Constants.FILTER_TYPE.ORGANISATION) && 
-      !this.filterDefined(Constants.FILTER_TYPE.SYSTEM)
-    forkJoin(this.loadPromises).subscribe(() => {
-      this.filterDataLoaded = true
-      this.resetFilters()
-      this.applyFilters()
-    })
   }
 
   filterDefined(filterType: string) {
     return this.definedFilters[filterType] !== undefined
   }
 
-  setupFilter<T>(filterType: string, loadFn?: () => Observable<T[]>) {
-    this.filtering[filterType] = {
-      all: [],
-      filter: [],
-      selection: []
-    }
-    if (this.filterDefined(filterType)) {
-      const sharedObservable = loadFn!().pipe(
-        oMap((data:T[]) => {
-          this.filtering[filterType].all = data
-        }),
-        catchError(() => {
-          this.enableFiltering = false
-          this.showFiltering = false
-          return EMPTY
-        }),
-        share() // We return a shared observable here otherwise the requests are repeated
-      )
-      this.loadPromises.push(sharedObservable)
-    }
-  }
-
   filterValue(filterType: string) {
     let values: number[]|undefined
     if (this.filterDefined(filterType)) {
-      values = map(this.filtering[filterType].selection, (s) => {return s.id})
+      values = map(this.filterValues[filterType], (item) => {return item.id})
     }
     return values
-  }
-
-  filterItemTicked(filterType: string) {
-    setTimeout(() => {
-      if (filterType == Constants.FILTER_TYPE.DOMAIN) {
-        this.setSpecificationFilter(<Domain[]>this.filtering[Constants.FILTER_TYPE.DOMAIN].selection, <Domain[]>this.filtering[Constants.FILTER_TYPE.DOMAIN].filter, true)
-      }
-      if (filterType == Constants.FILTER_TYPE.DOMAIN || filterType == Constants.FILTER_TYPE.SPECIFICATION) {
-        this.setActorFilter(<Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].selection, <Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, true)
-        this.setTestSuiteFilter(<Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].selection, <Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, true)
-      }
-      if (filterType == Constants.FILTER_TYPE.DOMAIN || filterType == Constants.FILTER_TYPE.SPECIFICATION || filterType == Constants.FILTER_TYPE.ACTOR || filterType == Constants.FILTER_TYPE.TEST_SUITE) {
-        this.setTestCaseFilter(<TestSuiteWithTestCases[]>this.filtering[Constants.FILTER_TYPE.TEST_SUITE].selection, <TestSuiteWithTestCases[]>this.filtering[Constants.FILTER_TYPE.TEST_SUITE].filter, true)
-      }
-      if (filterType == Constants.FILTER_TYPE.COMMUNITY) {
-        this.setOrganizationFilter(<Community[]>this.filtering[Constants.FILTER_TYPE.COMMUNITY].selection, <Community[]>this.filtering[Constants.FILTER_TYPE.COMMUNITY].filter, true)
-        // Custom properties
-        this.organisationProperties = []
-        this.systemProperties = []
-        if (this.filtering[Constants.FILTER_TYPE.COMMUNITY].selection.length == 1) {
-          this.applicableCommunityId = this.filtering[Constants.FILTER_TYPE.COMMUNITY].selection[0].id      
-        } else {
-          this.applicableCommunityId = undefined
-        }
-      }
-      if (filterType == Constants.FILTER_TYPE.COMMUNITY || filterType == Constants.FILTER_TYPE.ORGANISATION) {
-        this.setSystemFilter(this.filtering[Constants.FILTER_TYPE.ORGANISATION].selection, this.filtering[Constants.FILTER_TYPE.ORGANISATION].filter, true)
-      }
-      this.applyFilters()
-    })
   }
 
   private toDateStart(date: Date): Date {
@@ -253,7 +367,14 @@ export class TestFilterComponent implements OnInit {
     filters[Constants.FILTER_TYPE.COMMUNITY] = this.filterValue(Constants.FILTER_TYPE.COMMUNITY)
     filters[Constants.FILTER_TYPE.ORGANISATION] = this.filterValue(Constants.FILTER_TYPE.ORGANISATION)
     filters[Constants.FILTER_TYPE.SYSTEM] = this.filterValue(Constants.FILTER_TYPE.SYSTEM)
-    filters[Constants.FILTER_TYPE.RESULT] = this.filterValue(Constants.FILTER_TYPE.RESULT)
+    const resultValues = this.filterValue(Constants.FILTER_TYPE.RESULT)
+    if (resultValues) {
+      filters[Constants.FILTER_TYPE.RESULT] = map(resultValues, (value: number) => {
+        if (value == 0) return Constants.TEST_CASE_RESULT.SUCCESS
+        else if (value == 1) return Constants.TEST_CASE_RESULT.FAILURE
+        else return Constants.TEST_CASE_RESULT.UNDEFINED
+      })
+    }
     if (this.filterDefined(Constants.FILTER_TYPE.START_TIME)) {
       if (this.startDateModel !== undefined) {
         filters.startTimeBegin = this.toDateStart(this.startDateModel[0])
@@ -303,7 +424,8 @@ export class TestFilterComponent implements OnInit {
 
   clearFilter(filterType: string) {
     if (this.filterDefined(filterType)) {
-      this.filtering[filterType].selection = []
+      this.filterValues[filterType] = []
+      this.filterDropdownSettings[filterType].clearItems!.emit()
     }
   }
 
@@ -350,158 +472,27 @@ export class TestFilterComponent implements OnInit {
       this.dataService.async(this.clearFilters.bind(this))
     } else {
       this.showFiltering = true
-      if (!this.filterDataLoaded) {
-        this.loadFilterData()
-      }
+      this.resetApplicableCommunityId()
+      this.resetFilters()
+      this.applyFilters()
     }
   }
 
   applyTimeFiltering() {
-    if (this.enableFiltering && this.filterDataLoaded) {
+    if (this.enableFiltering) {
       setTimeout(() => {
         this.applyFilters()
       })
     }
   }
 
-  keepApplicableSelections(filterType: string, selectedValues?: ObjectWithId[]) {
-    const valuesToKeep:ObjectWithId[] = []
-    if (selectedValues) {
-      for (let selectedItem of selectedValues) {
-        let found = find(this.filtering[filterType].filter, (availableItem: any) => { return availableItem.id == selectedItem.id})
-        if (found !== undefined) {
-          valuesToKeep.push(selectedItem)
-        }
-      }
-    }
-    this.filtering[filterType].selection = valuesToKeep
-  }
-
-  private copySelectedValues(filterType: string, keepTick: boolean) {
-    if (keepTick) {
-      return map(this.filtering[filterType].selection, clone)
-    } else {
-      return undefined
-    }
-  }
-
-  private getSelection1Or2<T>(selection1: T[], selection2: T[]) {
-    let selection = selection2
-    if (selection1 !== undefined && selection1.length > 0) {
-      selection = selection1
-    }
-    return selection
-  }
-
-  setDomainFilter() {
-    this.filtering[Constants.FILTER_TYPE.DOMAIN].filter = map(this.filtering[Constants.FILTER_TYPE.DOMAIN].all, clone)
-  }
-
-  setSpecificationFilter(selection1: Domain[], selection2: Domain[], keepTick: boolean) {
-    if (this.filterDefined(Constants.FILTER_TYPE.DOMAIN)) {
-      const previousSelectedValues = this.copySelectedValues(Constants.FILTER_TYPE.SPECIFICATION, keepTick)
-      let selection = this.getSelection1Or2(selection1, selection2)
-      this.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter = map(filter(<Specification[]>this.filtering[Constants.FILTER_TYPE.SPECIFICATION].all, (s) => { return includes(map(selection, (d) => { return d.id }), s.domain) }), clone)
-      if (keepTick) {
-        this.keepApplicableSelections(Constants.FILTER_TYPE.SPECIFICATION, previousSelectedValues)
-      }
-    } else {
-      this.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter = map(this.filtering[Constants.FILTER_TYPE.SPECIFICATION].all, clone)
-    }
-  }
-
-  setActorFilter(selection1: Specification[], selection2: Specification[], keepTick: boolean) {
-    if (this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION)) {
-      const previousSelectedValues = this.copySelectedValues(Constants.FILTER_TYPE.ACTOR, keepTick)
-      let selection = this.getSelection1Or2(selection1, selection2)
-      this.filtering[Constants.FILTER_TYPE.ACTOR].filter = map(filter(<Actor[]>this.filtering[Constants.FILTER_TYPE.ACTOR].all, (a) => { return includes(map(selection, (s) => { return s.id }), a.specification) }), clone)
-      if (keepTick) {
-        this.keepApplicableSelections(Constants.FILTER_TYPE.ACTOR, previousSelectedValues)
-      }
-    } else {
-      this.filtering[Constants.FILTER_TYPE.ACTOR].filter = map(this.filtering[Constants.FILTER_TYPE.ACTOR].all, clone)
-    }
-  }
-
-  setTestSuiteFilter(selection1: Specification[], selection2: Specification[], keepTick: boolean) {
-    if (this.filterDefined(Constants.FILTER_TYPE.SPECIFICATION)) {
-      const previousSelectedValues = this.copySelectedValues(Constants.FILTER_TYPE.TEST_SUITE, keepTick)
-      let selection = this.getSelection1Or2(selection1, selection2)
-      this.filtering[Constants.FILTER_TYPE.TEST_SUITE].filter = map(filter(<TestSuiteWithTestCases[]>this.filtering[Constants.FILTER_TYPE.TEST_SUITE].all, (t) => { return includes(map(selection, (s) => { return s.id }), t.specification) }), clone)
-      if (keepTick) {
-        this.keepApplicableSelections(Constants.FILTER_TYPE.TEST_SUITE, previousSelectedValues)
-      }
-    } else {
-      this.filtering[Constants.FILTER_TYPE.TEST_SUITE].filter = map(this.filtering[Constants.FILTER_TYPE.TEST_SUITE].all, clone)
-    }
-  }
-
-  setTestCaseFilter(selection1: TestSuiteWithTestCases[], selection2: TestSuiteWithTestCases[], keepTick: boolean) {
-    if (this.filterDefined(Constants.FILTER_TYPE.TEST_SUITE)) {
-      let selection = this.getSelection1Or2(selection1, selection2)
-      // Use the 'all' set of test suites to access their test case IDs.
-      const selectionToUse = filter(this.filtering[Constants.FILTER_TYPE.TEST_SUITE].all, (ts) => { return find(selection, (selected) => { return ts.id == selected.id }) })
-      const previousSelectedValues = this.copySelectedValues(Constants.FILTER_TYPE.TEST_CASE, keepTick)
-      let testCasesForFilter = []
-      for (let testSuite of selectionToUse) {
-        if (testSuite.testCases) {
-          for (let testCase of testSuite.testCases) {
-            let found = find(<TestCase[]>this.filtering[Constants.FILTER_TYPE.TEST_CASE].all, (tc) => { return tc.id == testCase.id })
-            if (found !== undefined) {
-              testCasesForFilter.push(found)
-            }
-          }
-        }
-      }
-      this.filtering[Constants.FILTER_TYPE.TEST_CASE].filter = testCasesForFilter
-      if (keepTick) {
-        this.keepApplicableSelections(Constants.FILTER_TYPE.TEST_CASE, previousSelectedValues)
-      }
-    } else {
-      this.filtering[Constants.FILTER_TYPE.TEST_CASE].filter = map(this.filtering[Constants.FILTER_TYPE.TEST_CASE].all, clone)
-    }
-  }
-
-  setCommunityFilter() {
-    this.filtering[Constants.FILTER_TYPE.COMMUNITY].filter = map(this.filtering[Constants.FILTER_TYPE.COMMUNITY].all, clone)
-  }
-
-  setOrganizationFilter(selection1: Community[], selection2: Community[], keepTick: boolean) {
-    if (this.filterDefined(Constants.FILTER_TYPE.COMMUNITY)) {
-      const previousSelectedValues = this.copySelectedValues(Constants.FILTER_TYPE.ORGANISATION, keepTick)
-      let selection = this.getSelection1Or2(selection1, selection2)
-      this.filtering[Constants.FILTER_TYPE.ORGANISATION].filter = map(filter(<Organisation[]>this.filtering[Constants.FILTER_TYPE.ORGANISATION].all, (o) => { return includes(map(selection, (c) => { return c.id }), o.community) }), clone)
-      if (keepTick) {
-        this.keepApplicableSelections(Constants.FILTER_TYPE.ORGANISATION, previousSelectedValues)
-      }
-    } else {
-      this.filtering[Constants.FILTER_TYPE.ORGANISATION].filter = map(this.filtering[Constants.FILTER_TYPE.ORGANISATION].all, clone)
-    }
-  }
-
-  setSystemFilter(selection1: any[], selection2: any[], keepTick: boolean) {
-    if (this.filterDefined(Constants.FILTER_TYPE.ORGANISATION)) {
-      const previousSelectedValues = this.copySelectedValues(Constants.FILTER_TYPE.SYSTEM, keepTick)
-      let selection = this.getSelection1Or2(selection1, selection2)
-      this.filtering[Constants.FILTER_TYPE.SYSTEM].filter = map(filter(this.filtering[Constants.FILTER_TYPE.SYSTEM].all, (s) => { return includes(map(selection, (o) => { return o.id }), s.owner) }), clone)
-      if (keepTick) {
-        this.keepApplicableSelections(Constants.FILTER_TYPE.SYSTEM, previousSelectedValues)
-      }
-    } else {
-      this.filtering[Constants.FILTER_TYPE.SYSTEM].filter = map(this.filtering[Constants.FILTER_TYPE.SYSTEM].all, clone)
-    }
-  }
-
   resetFilters() {
-    this.setDomainFilter()
-    this.setCommunityFilter()
-    this.setSpecificationFilter(this.filtering[Constants.FILTER_TYPE.DOMAIN].filter, [], false)
-    this.setActorFilter(this.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, [], false)
-    this.setTestSuiteFilter(this.filtering[Constants.FILTER_TYPE.SPECIFICATION].filter, [], false)
-    this.setTestCaseFilter(this.filtering[Constants.FILTER_TYPE.TEST_SUITE].filter, [], false)
-    this.setOrganizationFilter(this.filtering[Constants.FILTER_TYPE.COMMUNITY].filter, [], false)
-    this.setSystemFilter(this.filtering[Constants.FILTER_TYPE.ORGANISATION].filter, [], false)
-    this.filtering[Constants.FILTER_TYPE.RESULT].selection = []
+    for (let filterType of this.filterState.filters) {
+      const filterConfig = this.filterDropdownSettings[filterType]
+      if (filterConfig && filterConfig.clearItems) {
+        filterConfig.clearItems.emit()
+      }
+    }
     if (this.filterDefined(Constants.FILTER_TYPE.SESSION)) {
       this.sessionId = undefined
     }
@@ -511,12 +502,12 @@ export class TestFilterComponent implements OnInit {
     this.endDateModel = undefined
   }
 
-  getAllTestResults() {
-    const results = []
-    for (let [key, value] of Object.entries(Constants.TEST_CASE_RESULT)) {
-      results.push({id: value})
-    }
-    return results
+  private loadTestResults(): Observable<IdLabel[]> {
+    return of([
+      { id: 0, label: "Success" },
+      { id: 1, label: "Failure" },
+      { id: 2, label: "Undefined" }
+    ])
   }
 
   addOrganisationProperty() {

@@ -258,7 +258,7 @@ object JsonUtil {
     jTestSuite
   }
 
-  def jsTestSuiteList(testSuites: List[TestSuite]): JsArray = {
+  def jsTestSuiteList(testSuites: Seq[TestSuite]): JsArray = {
     var json = Json.arr()
     testSuites.foreach { testSuite =>
       json = json.append(jsTestSuite(testSuite, withDocumentation = false))

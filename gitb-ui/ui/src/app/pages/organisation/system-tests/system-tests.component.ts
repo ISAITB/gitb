@@ -11,16 +11,11 @@ import { PopupService } from 'src/app/services/popup.service';
 import { ReportService } from 'src/app/services/report.service';
 import { TestSuiteService } from 'src/app/services/test-suite.service';
 import { TestService } from 'src/app/services/test.service';
-import { Actor } from 'src/app/types/actor';
-import { Domain } from 'src/app/types/domain';
 import { FilterState } from 'src/app/types/filter-state';
 import { Organisation } from 'src/app/types/organisation.type';
-import { Specification } from 'src/app/types/specification';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
-import { TestCase } from 'src/app/types/test-case';
 import { TestResultReport } from 'src/app/types/test-result-report';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
-import { TestSuiteWithTestCases } from 'src/app/types/test-suite-with-test-cases';
 import { TestResultForDisplay } from '../../../types/test-result-for-display';
 
 @Component({
@@ -63,16 +58,9 @@ export class SystemTestsComponent implements OnInit {
   sessionIdToShow?: string
   sessionRefreshCompleteEmitter = new EventEmitter<void>()
 
-  domainLoader?: () => Observable<Domain[]>
-  specificationLoader?: () => Observable<Specification[]>
-  actorLoader?: () => Observable<Actor[]>
-  testSuiteLoader?: () => Observable<TestSuiteWithTestCases[]>
-  testCaseLoader?: () => Observable<TestCase[]>
-
   constructor(
     private route: ActivatedRoute,
     private reportService: ReportService,
-    private testSuiteService: TestSuiteService,
     private conformanceService: ConformanceService,
     private dataService: DataService,
     private confirmationDialogService: ConfirmationDialogService,
@@ -91,7 +79,6 @@ export class SystemTestsComponent implements OnInit {
     if (!this.dataService.isSystemAdmin && this.dataService.community?.domainId != undefined) {
       this.domainId = this.dataService.community.domainId
     }
-    this.initFilterDataLoaders()
     if (this.domainId == undefined) {
       this.filterState.filters.push(Constants.FILTER_TYPE.DOMAIN)
     }
@@ -110,29 +97,6 @@ export class SystemTestsComponent implements OnInit {
       { field: 'result', title: 'Result', sortable: true, iconFn: this.dataService.iconForTestResult }
     ]
     this.goFirstPage()
-  }
-
-  private initFilterDataLoaders() {
-    // Domains
-    this.domainLoader = (() => {
-      return this.conformanceService.getDomainsForSystem(this.systemId)
-    }).bind(this)
-    // Specifications
-    this.specificationLoader = (() => {
-      return this.conformanceService.getSpecificationsForSystem(this.systemId)
-    }).bind(this)
-    // Actors
-    this.actorLoader = (() => {
-      return this.conformanceService.getActorsForSystem(this.systemId)
-      }).bind(this)
-    // Test cases
-    this.testCaseLoader = (() => {
-      return this.reportService.getTestCasesForSystem(this.systemId)
-    }).bind(this)
-    // Test suites
-    this.testSuiteLoader = (() => {
-      return this.testSuiteService.getTestSuitesWithTestCasesForSystem(this.systemId)
-    }).bind(this)
   }
 
   queryDatabase() {

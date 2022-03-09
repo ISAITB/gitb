@@ -1,19 +1,5 @@
 <div class="page dashboard">
-    <app-test-filter
-        [filterState]="filterState"
-        [communityId]="communityId"
-        [loadDomainsFn]="domainLoader"
-        [loadSpecificationsFn]="specificationLoader"
-        [loadActorsFn]="actorLoader"
-        [loadTestSuitesFn]="testSuiteLoader"
-        [loadTestCasesFn]="testCaseLoader"
-        [loadCommunitiesFn]="communityLoader"
-        [loadOrganisationsFn]="organisationLoader"
-        [loadSystemsFn]="systemLoader"
-        [loadOrganisationPropertiesFn]="organisationPropertyLoader"
-        [loadSystemPropertiesFn]="systemPropertyLoader"
-        (onApply)="applyFilters()">
-    </app-test-filter>
+    <app-test-filter [filterState]="filterState" [communityId]="communityId" (onApply)="applyFilters()"></app-test-filter>
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Active test sessions</h4>

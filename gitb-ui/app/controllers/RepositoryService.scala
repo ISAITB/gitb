@@ -431,23 +431,24 @@ class RepositoryService @Inject() (implicit ec: ExecutionContext, authorizedActi
     }
 	}
 
-  def getAllTestCases: Action[AnyContent] = authorizedAction { request =>
+  def searchTestCases(): Action[AnyContent] = authorizedAction { request =>
     authorizationManager.canViewAllTestCases(request)
-    val testCases = testCaseManager.getAllTestCases()
+    val domainIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.DOMAIN_IDS)
+    val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
+    val actorIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.ACTOR_IDS)
+    val testSuiteIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.TEST_SUITE_IDS)
+    val testCases = testCaseManager.searchTestCases(domainIds, specificationIds, actorIds, testSuiteIds)
     val json = JsonUtil.jsTestCasesList(testCases).toString()
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def getTestCasesForSystem(systemId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canViewTestCasesBySystemId(request, systemId)
-    val testCases = testCaseManager.getTestCasesForSystem(systemId)
-    val json = JsonUtil.jsTestCasesList(testCases).toString()
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
-  def getTestCasesForCommunity(communityId: Long): Action[AnyContent] = authorizedAction { request =>
-    authorizationManager.canViewTestCasesByCommunityId(request, communityId)
-    val testCases = testCaseManager.getTestCasesForCommunity(communityId)
+  def searchTestCasesInDomain(): Action[AnyContent] = authorizedAction { request =>
+    val domainId = ParameterExtractor.requiredBodyParameter(request, Parameters.DOMAIN_ID).toLong
+    authorizationManager.canViewDomains(request, Some(List(domainId)))
+    val specificationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.SPEC_IDS)
+    val actorIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.ACTOR_IDS)
+    val testSuiteIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.TEST_SUITE_IDS)
+    val testCases = testCaseManager.searchTestCases(Some(List(domainId)), specificationIds, actorIds, testSuiteIds)
     val json = JsonUtil.jsTestCasesList(testCases).toString()
     ResponseConstructor.constructJsonResponse(json)
   }

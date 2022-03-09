@@ -1,17 +1,5 @@
 <div id="conformanceDashboardPage" class="page conformancedashboard">
-    <app-test-filter
-        [filterState]="filterState"
-        [communityId]="communityId"
-        [loadDomainsFn]="domainLoader"
-        [loadSpecificationsFn]="specificationLoader"
-        [loadActorsFn]="actorLoader"
-        [loadCommunitiesFn]="communityLoader"
-        [loadOrganisationsFn]="organisationLoader"
-        [loadSystemsFn]="systemLoader"
-        [loadOrganisationPropertiesFn]="organisationPropertyLoader"
-        [loadSystemPropertiesFn]="systemPropertyLoader"
-        (onApply)="getConformanceStatements()">
-    </app-test-filter>
+    <app-test-filter [filterState]="filterState" [communityId]="communityId" (onApply)="getConformanceStatements()"></app-test-filter>
 	<div id="conformanceDashboardPageTable" class="panel panel-default">
 		<div class="panel-heading">
 			<h4 id="conformance-statements-title" class="title">Conformance statements</h4>

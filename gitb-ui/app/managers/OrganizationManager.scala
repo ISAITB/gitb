@@ -44,6 +44,16 @@ class OrganizationManager @Inject() (repositoryUtils: RepositoryUtils, systemMan
     organizations
   }
 
+  def searchOrganizations(communityIds: Option[List[Long]]): List[Organizations] = {
+    exec(
+      PersistenceSchema.organizations
+        .filterOpt(communityIds)((q, ids) => q.community inSet ids)
+        .sortBy(_.shortname.asc)
+        .result
+        .map(_.toList)
+    )
+  }
+
   def getOrganisationTemplates(communityId: Long): Option[List[SelfRegTemplate]] = {
     val result = exec(PersistenceSchema.organizations
       .filter(_.community === communityId)

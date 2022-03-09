@@ -6,7 +6,7 @@ import org.apache.commons.io.FileUtils
 import org.slf4j.LoggerFactory
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{MimeUtil, RepositoryUtils}
+import utils.RepositoryUtils
 
 import java.io.File
 import java.text.SimpleDateFormat
@@ -15,6 +15,8 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
+import utils.MimeUtil
+import utils.signature.SigUtils
 
 @Singleton
 class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager: TriggerManager, actorManager: ActorManager, testResultManager: TestResultManager, testCaseManager: TestCaseManager, repositoryUtils: RepositoryUtils, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
@@ -30,63 +32,25 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 		exec(PersistenceSchema.domains.filter(_.id === domainId).result.headOption).isDefined
 	}
 
-  def getSpecificationsBySystem(systemId: Long): List[Specifications] = {
-    exec(PersistenceSchema.conformanceResults
-      .join(PersistenceSchema.specifications).on(_.spec === _.id)
-      .filter(_._1.sut === systemId)
-      .map(r => r._2)
-			.distinctOn(_.id)
-      .sortBy(_.shortname.asc)
-      .result.map(_.toList)
-    )
-  }
-
-	def getActorsWithSpecificationIdBySystem(systemId: Long): List[Actor] = {
-		exec(PersistenceSchema.conformanceResults
-			.join(PersistenceSchema.actors).on(_.actor === _.id)
-			.join(PersistenceSchema.specificationHasActors).on(_._2.id === _.actorId)
-			.filter(_._1._1.sut === systemId)
-			.map(r => (r._1._2, r._2.specId))
-			.distinctOn(_._1.id)
-			.sortBy(_._1.actorId.asc)
-			.result.map(_.toList)
-		).map(x => new Actor(x._1, null, null, x._2))
-	}
-
-  def getDomainsBySystem(systemId: Long): List[Domain] = {
-    exec(PersistenceSchema.conformanceResults
-      .join(PersistenceSchema.specifications).on(_.spec === _.id)
-      .join(PersistenceSchema.domains).on(_._2.domain === _.id)
-      .filter(_._1._1.sut === systemId)
-      .map(r => r._2)
-			.distinctOn(_.id)
-      .sortBy(_.shortname.asc)
-      .result.map(_.toList)
-    )
-  }
-
   def getDomainOfSpecification(specificationId: Long ): Domain = {
-		val query = PersistenceSchema.domains
-  			.join(PersistenceSchema.specifications).on(_.id === _.domain)
-		val result = query
-			.filter(_._2.id === specificationId)
-			.result
-			.headOption
-		exec(result).get._1
+		exec(
+			PersistenceSchema.domains
+				.join(PersistenceSchema.specifications).on(_.id === _.domain)
+				.filter(_._2.id === specificationId)
+				.map(x => x._1)
+				.result
+				.head
+		)
 	}
 
   def getDomains(ids: Option[List[Long]] = None):List[Domain] = {
-		val domains = {
-			val q = PersistenceSchema.domains
-			val q2 = ids match {
-				case Some(list) => q.filter(_.id inSet list)
-				case None => q
-			}
-			q2.sortBy(_.shortname.asc)
+		exec(
+			PersistenceSchema.domains
+				.filterOpt(ids)((q, ids) => q.id inSet ids)
+				.sortBy(_.shortname.asc)
 				.result
-  			.map(_.toList)
-		}
-		exec(domains)
+				.map(_.toList)
+		)
   }
 
 	def getCommunityDomain(communityId: Long): Domain = {
@@ -345,20 +309,15 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 		)
 	}
 
-	def getSpecifications(ids: Option[List[Long]] = None): List[Specifications] = {
-		val specs = {
-			val q = PersistenceSchema.specifications
-
-			val q2 = ids match {
-				case Some(list) => q.filter(_.id inSet list)
-				case None => q
-			}
-
-			q2.sortBy(_.shortname.asc)
+	def getSpecifications(ids: Option[List[Long]] = None, domainIds: Option[List[Long]] = None): List[Specifications] = {
+		exec(
+			PersistenceSchema.specifications
+				.filterOpt(ids)((q, ids) => q.id inSet ids)
+				.filterOpt(domainIds)((q, domainIds) => q.domain inSet domainIds)
+				.sortBy(_.shortname.asc)
 				.result
-  			.map(_.toList)
-		}
-		exec(specs)
+				.map(_.toList)
+		)
 	}
 
   def getSpecifications(domain:Long): List[Specifications] = {
@@ -396,18 +355,16 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 		} yield savedActorId
 	}
 
-	def getActorsByDomainIdWithSpecificationId(domainId: Long): List[Actor] = {
-		var actors: List[Actor] = List()
+	def searchActors(domainIds: Option[List[Long]], specificationIds: Option[List[Long]]): List[Actor] = {
 		exec(
 			PersistenceSchema.actors
 				.join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
-				.filter(_._1.domain === domainId)
-			  .sortBy(_._1.actorId.desc)
+				.filterOpt(domainIds)((q, ids) => q._1.domain inSet ids)
+				.filterOpt(specificationIds)((q, ids) => q._2.specId inSet ids)
+				.sortBy(_._1.actorId.asc)
+				.map(x => (x._1, x._2.specId))
 				.result
-		).foreach{ result =>
-			actors ::= new Actor(result._1, null, null, result._2._1)
-		}
-		actors
+		).map(x => new Actor(x._1, null, null, x._2)).toList
 	}
 
 	def getActorIdsOfSpecifications(specIds:List[Long]): Map[Long, Set[String]] = {
@@ -437,26 +394,16 @@ class ConformanceManager @Inject() (systemManager: SystemManager, triggerManager
 		specMap.iterator.toMap.map(x => (x._1, x._2.toSet))
 	}
 
-  def getActorsWithSpecificationId(actorIds:Option[List[Long]], spec:Option[Long]): List[Actor] = {
-		var actors: List[Actor] = List()
-
-		var query = PersistenceSchema.actors
-  			.join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
-		if (actorIds.isDefined) {
-			query = actorIds match {
-				case Some(list) => query.filter(_._1.id inSet list)
-				case None => query
-			}
-		}
-		if (spec.isDefined) {
-			query = query.filter(_._2.specId === spec.get)
-		}
-
-		exec(query.sortBy(_._1.actorId.desc).result).foreach { result =>
-			actors ::= new Actor(result._1, null, null, result._2._1)
-		}
-
-		actors
+  def getActorsWithSpecificationId(actorIds:Option[List[Long]], specIds:Option[List[Long]]): List[Actor] = {
+		exec(
+			PersistenceSchema.actors
+				.join(PersistenceSchema.specificationHasActors).on(_.id === _.actorId)
+				.filterOpt(actorIds)((q, ids) => q._1.id inSet ids)
+				.filterOpt(specIds)((q, ids) => q._2.specId inSet ids)
+				.sortBy(_._1.actorId.asc)
+				.map(x => (x._1, x._2.specId))
+				.result
+		).map(x => new Actor(x._1, null, null, x._2)).toList
   }
 
 	def relateActorWithSpecification(actorId: Long, specificationId: Long) = {

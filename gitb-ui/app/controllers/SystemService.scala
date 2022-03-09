@@ -3,20 +3,21 @@ package controllers
 import config.Configurations
 import controllers.util._
 import exceptions._
-
-import javax.inject.Inject
 import managers._
 import models.Enums.UserRole
-import models.{Configs, Systems}
 import models.prerequisites.PrerequisiteUtil
+import models.{Configs, Systems}
 import org.apache.commons.io.FileUtils
 import org.slf4j._
 import play.api.mvc._
-import utils.{ClamAVClient, JsonUtil, MimeUtil, RepositoryUtils}
+import utils.{JsonUtil, RepositoryUtils}
 
 import java.io.File
+import javax.inject.Inject
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext
+import utils.ClamAVClient
+import utils.MimeUtil
 
 class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: RepositoryUtils, accountManager: AccountManager, authorizedAction: AuthorizedAction, cc: ControllerComponents, systemManager: SystemManager, parameterManager: ParameterManager, testCaseManager: TestCaseManager, authorizationManager: AuthorizationManager, communityLabelManager: CommunityLabelManager) extends AbstractController(cc) {
   private final val logger: Logger = LoggerFactory.getLogger(classOf[SystemService])
@@ -279,18 +280,28 @@ class SystemService @Inject() (implicit ec: ExecutionContext, repositoryUtils: R
     ResponseConstructor.constructJsonResponse(json)
   }
 
-  def getSystemsByCommunity(communityId: Long) = authorizedAction { request =>
-    authorizationManager.canViewSystemsByCommunityId(request, communityId)
-    val list = systemManager.getSystemsByCommunity(communityId)
-    val json:String = JsonUtil.jsSystems(list).toString
-    ResponseConstructor.constructJsonResponse(json)
-  }
-
   def getSystems() = authorizedAction { request =>
     val systemIds = ParameterExtractor.extractLongIdsQueryParameter(request)
     authorizationManager.canViewSystemsById(request, systemIds)
-
     val systems = systemManager.getSystems(systemIds)
+    val json = JsonUtil.jsSystems(systems).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def searchSystems() = authorizedAction { request =>
+    authorizationManager.canViewSystemsById(request, None)
+    val communityIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.COMMUNITY_IDS)
+    val organisationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.ORG_IDS)
+    val systems = systemManager.searchSystems(communityIds, organisationIds)
+    val json = JsonUtil.jsSystems(systems).toString()
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
+  def searchSystemsInCommunity() = authorizedAction { request =>
+    val communityId = ParameterExtractor.requiredBodyParameter(request, Parameters.COMMUNITY_ID).toLong
+    authorizationManager.canViewSystemsByCommunityId(request, communityId)
+    val organisationIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.ORG_IDS)
+    val systems = systemManager.searchSystems(Some(List(communityId)), organisationIds)
     val json = JsonUtil.jsSystems(systems).toString()
     ResponseConstructor.constructJsonResponse(json)
   }

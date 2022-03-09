@@ -1,29 +1,30 @@
 package managers
 
-import java.io.File
-import java.nio.file.{Path, Paths}
-import java.util
-import java.util.Objects
 import com.gitb.tr.{TAR, TestResultType}
-
-import javax.inject.{Inject, Singleton}
 import models.Enums.TestSuiteReplacementChoice.TestSuiteReplacementChoice
 import models.Enums.TestSuiteReplacementChoiceHistory.TestSuiteReplacementChoiceHistory
 import models.Enums.TestSuiteReplacementChoiceMetadata.TestSuiteReplacementChoiceMetadata
 import models.Enums.{TestResultStatus, TestSuiteReplacementChoice, TestSuiteReplacementChoiceHistory, TestSuiteReplacementChoiceMetadata}
-import models.{TestArtifactMetadata, TestSuiteUploadResult, _}
+import models._
 import org.apache.commons.io.FileUtils
 import org.slf4j.{Logger, LoggerFactory}
 import persistence.db.PersistenceSchema
 import play.api.db.slick.DatabaseConfigProvider
 import slick.lifted.Rep
-import utils.tdlvalidator.tdl.{FileSource, TestSuiteValidationAdapter}
-import utils.{CryptoUtil, RepositoryUtils, ZipArchiver}
+import utils.{CryptoUtil, RepositoryUtils}
 
+import java.io.File
+import java.nio.file.{Path, Paths}
+import java.util
+import java.util.Objects
+import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.jdk.CollectionConverters.SetHasAsScala
+import utils.tdlvalidator.tdl.TestSuiteValidationAdapter
+import utils.tdlvalidator.tdl.FileSource
+import utils.ZipArchiver
 
 object TestSuiteManager {
 
@@ -98,17 +99,6 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		TestSuiteManager.tupleToTestSuite(result)
 	}
 
-	def getTestSuitesWithTestCases(): List[TestSuite] = {
-		val testSuites = exec(PersistenceSchema.testSuites.filter(_.hidden === false).sortBy(_.shortname.asc).map(TestSuiteManager.withoutDocumentation).result.map(_.toList)).map(TestSuiteManager.tupleToTestSuite)
-		testSuites map {
-			ts:TestSuites =>
-				val testCaseIds = exec(PersistenceSchema.testSuiteHasTestCases.filter(_.testsuite === ts.id).map(_.testcase).result.map(_.toList))
-				val testCases = exec(PersistenceSchema.testCases.filter(_.id inSet testCaseIds).map(TestCaseManager.withoutDocumentation).result.map(_.toList)).map(TestCaseManager.tupleToTestCase)
-
-				new TestSuite(ts, testCases)
-		}
-	}
-
 	def getTestSuiteWithTestCases(testSuiteId: Long): TestSuite = {
 		val testSuite = exec(
 			PersistenceSchema.testSuites
@@ -123,46 +113,6 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 			.result.map(_.toList)
 		).map(TestCaseManager.tupleToTestCase)
 		new TestSuite(testSuite, testCases)
-	}
-
-	def getTestSuitesWithTestCasesForCommunity(communityId: Long): List[TestSuite] = {
-		val testSuites = exec(
-			PersistenceSchema.testSuites
-				.join(PersistenceSchema.specifications).on(_.specification === _.id)
-  			.join(PersistenceSchema.communities).on(_._2.domain === _.domain)
-				.filter(_._1._1.hidden === false)
-  			.filter(_._2.id === communityId)
-				.sortBy(_._1._1.shortname.asc)
-  			.map(r => TestSuiteManager.withoutDocumentation(r._1._1))
-				.result.map(_.toList)
-		).map(TestSuiteManager.tupleToTestSuite)
-		testSuites map {
-			ts:TestSuites =>
-				val testCaseIds = exec(PersistenceSchema.testSuiteHasTestCases.filter(_.testsuite === ts.id).map(_.testcase).result.map(_.toList))
-				val testCases = exec(PersistenceSchema.testCases.filter(_.id inSet testCaseIds).map(TestCaseManager.withoutDocumentation).result.map(_.toList)).map(TestCaseManager.tupleToTestCase)
-
-				new TestSuite(ts, testCases)
-		}
-	}
-
-	def getTestSuitesWithTestCasesForSystem(systemId: Long): List[TestSuite] = {
-		val testSuites = exec(
-			PersistenceSchema.testSuites
-				.join(PersistenceSchema.conformanceResults).on(_.id === _.testsuite)
-				.filter(_._1.hidden === false)
-				.filter(_._2.sut === systemId)
-				.map(r => TestSuiteManager.withoutDocumentation(r._1))
-				.distinctOn(_._1) // Test suite ID
-				.sortBy(_._2.asc) // Test suite short name
-				.result.map(_.toList)
-		).map(TestSuiteManager.tupleToTestSuite)
-		testSuites map {
-			ts:TestSuites =>
-				val testCaseIds = exec(PersistenceSchema.testSuiteHasTestCases.filter(_.testsuite === ts.id).map(_.testcase).result.map(_.toList))
-				val testCases = exec(PersistenceSchema.testCases.filter(_.id inSet testCaseIds).map(TestCaseManager.withoutDocumentation).result.map(_.toList)).map(TestCaseManager.tupleToTestCase)
-
-				new TestSuite(ts, testCases)
-		}
 	}
 
 	def removeActorLinksForTestSuite(testSuiteId: Long): DBIO[_] = {
@@ -1041,4 +991,66 @@ class TestSuiteManager @Inject() (testResultManager: TestResultManager, actorMan
 		outputPathToUse.get
 	}
 
+	def searchTestSuites(domainIds: Option[List[Long]], specificationIds: Option[List[Long]], actorIds: Option[List[Long]]): Seq[TestSuite] = {
+		val results = exec(
+			for {
+				// See if due to provided actor IDs we need to consider specific specification IDs
+				actorSpecIds <- {
+					if (actorIds.isEmpty) {
+						DBIO.successful(None)
+					} else {
+						PersistenceSchema.specificationHasActors.filter(_.actorId inSet actorIds.get).map(x => x.specId).result.map(x => Some(x))
+					}
+				}
+				// Combine the specs from actors with the provided spec IDs to get the final set of specs to apply
+				specIdsToUse <- {
+					if (actorSpecIds.isEmpty) {
+						DBIO.successful(specificationIds)
+					} else if (specificationIds.isDefined) {
+						DBIO.successful(Some((actorSpecIds.get ++ specificationIds.get).toSet))
+					} else {
+						DBIO.successful(None)
+					}
+				}
+				// Query to retrieve the test suites (without their documentation)
+				testSuitesTuples <- PersistenceSchema.testSuites
+					.join(PersistenceSchema.specifications).on(_.specification === _.id)
+					.filter(_._1.hidden === false)
+					.filterOpt(domainIds)((q, ids) => q._2.domain inSet ids)
+					.filterOpt(specIdsToUse)((q, ids) => q._1.specification inSet ids)
+					.sortBy(_._1.shortname.asc)
+					.map(x => TestSuiteManager.withoutDocumentation(x._1))
+					.result
+				// Use the already returned test suite IDs to load their corresponding test cases
+				testCaseTuplesWithTestSuiteId <- {
+					val testSuiteIds = testSuitesTuples.map(_._1)
+					PersistenceSchema.testCases
+						.join(PersistenceSchema.testSuiteHasTestCases).on(_.id === _.testcase)
+						.filter(_._2.testsuite inSet testSuiteIds)
+						.map(x => (TestCaseManager.withoutDocumentation(x._1), x._2.testsuite))
+						.result
+				}
+				// Transform the test case tuples to case objects
+				testCaseCaseObjectsWithTestSuiteId <- DBIO.successful(testCaseTuplesWithTestSuiteId.map(x => (TestCaseManager.tupleToTestCase(x._1), x._2)))
+				// Map the retrieved test suites to their retrieved test cases to return the final result
+				testSuites <- {
+					val testSuiteToTestCaseMap = new mutable.HashMap[Long, ListBuffer[TestCases]]()
+					testCaseCaseObjectsWithTestSuiteId.foreach { x =>
+						var list = testSuiteToTestCaseMap.get(x._2)
+						if (list.isEmpty) {
+							list = Some(new ListBuffer[TestCases])
+							testSuiteToTestCaseMap += (x._2 -> list.get)
+						}
+						list.get += x._1
+					}
+					val results = testSuitesTuples.map(x => {
+						val testSuiteCaseObject = TestSuiteManager.tupleToTestSuite(x)
+						new TestSuite(testSuiteCaseObject, testSuiteToTestCaseMap.getOrElse(testSuiteCaseObject.id, new ListBuffer[TestCases]).toList)
+					})
+					DBIO.successful(results)
+				}
+			} yield testSuites
+		)
+		results
+	}
 }

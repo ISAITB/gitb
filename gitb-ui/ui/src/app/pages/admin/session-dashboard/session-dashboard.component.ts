@@ -1,13 +1,9 @@
 import { Component, EventEmitter, OnInit } from '@angular/core';
 import { Constants } from 'src/app/common/constants';
-import { CommunityService } from 'src/app/services/community.service';
 import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
-import { OrganisationService } from 'src/app/services/organisation.service';
 import { ReportService } from 'src/app/services/report.service';
 import { SystemConfigurationService } from 'src/app/services/system-configuration.service';
-import { SystemService } from 'src/app/services/system.service';
-import { TestSuiteService } from 'src/app/services/test-suite.service';
 import { FilterState } from 'src/app/types/filter-state';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
@@ -19,16 +15,6 @@ import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.
 import { TestService } from 'src/app/services/test.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { Observable } from 'rxjs';
-import { Domain } from 'src/app/types/domain';
-import { Specification } from 'src/app/types/specification';
-import { Actor } from 'src/app/types/actor';
-import { TestCase } from 'src/app/types/test-case';
-import { Community } from 'src/app/types/community';
-import { Organisation } from 'src/app/types/organisation.type';
-import { System } from 'src/app/types/system';
-import { OrganisationParameter } from 'src/app/types/organisation-parameter';
-import { SystemParameter } from 'src/app/types/system-parameter';
-import { TestSuiteWithTestCases } from 'src/app/types/test-suite-with-test-cases';
 import { ActivatedRoute } from '@angular/router';
 import { DiagramLoaderService } from 'src/app/components/diagram/test-session-presentation/diagram-loader.service';
 
@@ -77,27 +63,12 @@ export class SessionDashboardComponent implements OnInit {
   stopAllPending = false
   sessionIdToShow?: string
   sessionRefreshCompleteEmitter = new EventEmitter<void>()
-
-  domainLoader?: () => Observable<Domain[]>
-  specificationLoader?: () => Observable<Specification[]>
-  actorLoader?: () => Observable<Actor[]>
-  testSuiteLoader?: () => Observable<TestSuiteWithTestCases[]>
-  testCaseLoader?: () => Observable<TestCase[]>
-  communityLoader?: () => Observable<Community[]>
-  organisationLoader?: () => Observable<Organisation[]>
-  systemLoader?: () => Observable<System[]>
-  organisationPropertyLoader?: (_:number) => Observable<OrganisationParameter[]>
-  systemPropertyLoader?: (_:number) => Observable<SystemParameter[]>
   
   constructor(
     public dataService: DataService,
     private systemConfigurationService: SystemConfigurationService,
-    private communityService: CommunityService,
     private conformanceService: ConformanceService,
     private reportService: ReportService,
-    private testSuiteService: TestSuiteService,
-    private organisationService: OrganisationService,
-    private systemService: SystemService,
     private confirmationDialogService: ConfirmationDialogService,
     private testService: TestService,
     private popupService: PopupService,
@@ -110,7 +81,6 @@ export class SessionDashboardComponent implements OnInit {
     if (sessionIdValue != undefined) {
       this.sessionIdToShow = sessionIdValue
     }
-    this.initFilterDataLoaders()
     if (this.dataService.isCommunityAdmin) {
       this.communityId = this.dataService.community!.id
     }
@@ -147,73 +117,6 @@ export class SessionDashboardComponent implements OnInit {
       })
     }
     this.applyFilters()
-  }
-
-  private initFilterDataLoaders() {
-    // Domains
-    this.domainLoader = (() => {
-      return this.conformanceService.getDomains()
-    }).bind(this)
-    // Specifications
-    this.specificationLoader = (() => {
-      if (this.dataService.isCommunityAdmin && this.dataService.community!.domainId !== undefined) {
-        return this.conformanceService.getSpecifications(this.dataService.community!.domainId)
-      } else {
-        return this.conformanceService.getSpecificationsWithIds()
-      }
-    }).bind(this)
-    // Actors
-    this.actorLoader = (() => {
-        if (this.dataService.isCommunityAdmin && this.dataService.community!.domainId !== undefined) {
-          return this.conformanceService.getActorsForDomain(this.dataService.community!.domainId)
-        } else {
-          return this.conformanceService.getActorsWithIds()
-        }
-      }).bind(this)
-    // Communities
-    this.communityLoader = (() => {
-      return this.communityService.getCommunities()
-    }).bind(this)
-    // Test cases
-    this.testCaseLoader = (() => {
-      if (this.dataService.isCommunityAdmin && this.dataService.community!.domainId !== undefined) {
-        return this.reportService.getTestCasesForCommunity()
-      } else {
-        return this.reportService.getAllTestCases()
-      }
-    }).bind(this)
-    // Test suites
-    this.testSuiteLoader = (() => {
-      if (this.dataService.isCommunityAdmin && this.dataService.community!.domainId !== undefined) {
-        return this.testSuiteService.getTestSuitesWithTestCasesForCommunity()
-      } else {
-        return this.testSuiteService.getAllTestSuitesWithTestCases()
-      }
-    }).bind(this)
-    // Organisations
-    this.organisationLoader = (() => {
-      if (this.dataService.isCommunityAdmin) {
-        return this.organisationService.getOrganisationsByCommunity(this.dataService.community!.id)
-      } else {
-        return this.organisationService.getOrganisations()
-      }
-    }).bind(this)
-    // Systems
-    this.systemLoader = (() => {
-      if (this.dataService.isSystemAdmin) {
-        return this.systemService.getSystems()
-      } else {
-        return this.systemService.getSystemsByCommunity()
-      }
-    }).bind(this)
-    // Organisation properties
-    this.organisationPropertyLoader = ((communityId: number) => {
-      return this.communityService.getOrganisationParameters(communityId, true)
-    }).bind(this)
-    // System properties
-    this.systemPropertyLoader = ((communityId: number) => {
-      return this.communityService.getSystemParameters(communityId, true)
-    }).bind(this)
   }
 
   ttlToggled() {

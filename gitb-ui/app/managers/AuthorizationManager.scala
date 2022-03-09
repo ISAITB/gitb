@@ -672,7 +672,7 @@ class AuthorizationManager @Inject()(dbConfigProvider: DatabaseConfigProvider,
     val userInfo = getUser(getRequestUserId(request))
     if (isTestBedAdmin(userInfo)) {
       ok = true
-    } else if (isCommunityAdmin(userInfo) && userInfo.organization.isDefined) {
+    } else if (userInfo.organization.isDefined) {
       val communityInfo = communityManager.getById(userInfo.organization.get.community)
       ok = communityInfo.isDefined && communityInfo.get.domain.isEmpty
     }

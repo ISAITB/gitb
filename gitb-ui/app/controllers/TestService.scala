@@ -35,7 +35,7 @@ class TestService @Inject() (authorizedAction: AuthorizedAction, cc: ControllerC
   def getActorDefinitions: Action[AnyContent] = authorizedAction { request =>
     val specId = ParameterExtractor.requiredQueryParameter(request, Parameters.SPECIFICATION_ID).toLong
     authorizationManager.canViewActorsBySpecificationId(request, specId)
-    val actors = conformanceManager.getActorsWithSpecificationId(None, Some(specId))
+    val actors = conformanceManager.getActorsWithSpecificationId(None, Some(List(specId)))
     val json = JsonUtil.jsActorsNonCase(actors).toString()
     ResponseConstructor.constructJsonResponse(json)
   }

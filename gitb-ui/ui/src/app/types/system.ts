@@ -5,6 +5,7 @@ export interface System {
     fname: string,
     version: string,
     description?: string,
-    hasTests?: boolean
+    hasTests?: boolean,
+    owner: number
 
 }

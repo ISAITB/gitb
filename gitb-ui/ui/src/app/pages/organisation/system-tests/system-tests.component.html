@@ -1,13 +1,5 @@
 <div class="page tests">
-    <app-test-filter
-        [filterState]="filterState"
-        [loadDomainsFn]="domainLoader"
-        [loadSpecificationsFn]="specificationLoader"
-        [loadActorsFn]="actorLoader"
-        [loadTestSuitesFn]="testSuiteLoader"
-        [loadTestCasesFn]="testCaseLoader"
-        (onApply)="goFirstPage()">
-    </app-test-filter>
+    <app-test-filter [filterState]="filterState" (onApply)="goFirstPage()"></app-test-filter>
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="title">Active test sessions</h4>

@@ -629,7 +629,11 @@ object ParameterExtractor {
 	}
 
   def extractLongIdsBodyParameter(request:Request[AnyContent]): Option[List[Long]] = {
-    val idsStr = ParameterExtractor.optionalBodyParameter(request, Parameters.IDS)
+    extractLongIdsBodyParameter(request, Parameters.IDS)
+  }
+
+  def extractLongIdsBodyParameter(request:Request[AnyContent], parameterName: String): Option[List[Long]] = {
+    val idsStr = ParameterExtractor.optionalBodyParameter(request, parameterName)
     val ids = idsStr match {
       case Some(str) => Some(str.split(",").map(_.toLong).toList)
       case None => None

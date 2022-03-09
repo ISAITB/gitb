@@ -6,7 +6,7 @@ import models._
 import org.slf4j.LoggerFactory
 import persistence.db._
 import play.api.db.slick.DatabaseConfigProvider
-import utils.{CryptoUtil, MimeUtil, RepositoryUtils}
+import utils.{CryptoUtil, RepositoryUtils}
 
 import java.io.File
 import java.sql.Timestamp
@@ -15,6 +15,7 @@ import javax.inject.{Inject, Singleton}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
+import utils.MimeUtil
 
 @Singleton
 class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManager: TestResultManager, triggerHelper: TriggerHelper, dbConfigProvider: DatabaseConfigProvider) extends BaseManager(dbConfigProvider) {
@@ -298,17 +299,6 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     PersistenceSchema.systems.filter(_.owner === orgId)
       .sortBy(_.shortname.asc)
       .result.map(_.toList)
-  }
-
-  def getSystemsByCommunity(communityId: Long): List[Systems] = {
-    val systems = exec(
-      PersistenceSchema.systems
-        .join(PersistenceSchema.organizations).on(_.owner === _.id)
-        .filter(_._2.community === communityId)
-        .map(r => r._1)
-      .sortBy(_.shortname.asc)
-      .result.map(_.toList))
-    systems
   }
 
   def getVendorSystems(userId: Long): List[Systems] = {
@@ -668,4 +658,15 @@ class SystemManager @Inject() (repositoryUtils: RepositoryUtils, testResultManag
     exec(PersistenceSchema.systems.filter(_.id === systemId).map(_.apiKey).update(apiKey).transactionally)
   }
 
+  def searchSystems(communityIds: Option[List[Long]], organisationIds: Option[List[Long]]): List[Systems] = {
+    exec(
+      PersistenceSchema.systems
+        .join(PersistenceSchema.organizations).on(_.owner === _.id)
+        .filterOpt(organisationIds)((q, ids) => q._1.owner inSet ids)
+        .filterOpt(communityIds)((q, ids) => q._2.community inSet ids)
+        .map(_._1)
+        .result
+        .map(_.toList)
+    )
+  }
 }

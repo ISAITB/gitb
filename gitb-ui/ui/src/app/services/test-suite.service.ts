@@ -2,7 +2,6 @@ import { Injectable } from '@angular/core';
 import { ROUTES } from '../common/global';
 import { TestCase } from '../types/test-case';
 import { TestSuiteWithTestCases } from '../types/test-suite-with-test-cases';
-import { DataService } from './data.service';
 import { RestService } from './rest.service';
 
 @Injectable({
@@ -11,28 +10,41 @@ import { RestService } from './rest.service';
 export class TestSuiteService {
 
   constructor(
-    private restService: RestService,
-    private dataService: DataService
+    private restService: RestService
   ) { }
 
-	getAllTestSuitesWithTestCases() {
-		return this.restService.get<TestSuiteWithTestCases[]>({
-			path: ROUTES.controllers.TestSuiteService.getAllTestSuitesWithTestCases().url,
-			authenticate: true
+	searchTestSuites(domainIds: number[]|undefined, specificationIds: number[]|undefined, actorIds: number[]|undefined) {
+		const data: any = {}
+		if (domainIds && domainIds.length > 0) {
+		  data["domain_ids"] = domainIds.join(',')
+		}
+		if (specificationIds && specificationIds.length > 0) {
+		  data["specification_ids"] = specificationIds.join(',')
+		}
+		if (actorIds && actorIds.length > 0) {
+			data["actor_ids"] = actorIds.join(',')
+		}
+		return this.restService.post<TestSuiteWithTestCases[]>({
+			path: ROUTES.controllers.TestSuiteService.searchTestSuites().url,
+			authenticate: true,
+			data: data
 		})
 	}
 
-	getTestSuitesWithTestCasesForCommunity() {
-		return this.restService.get<TestSuiteWithTestCases[]>({
-			path: ROUTES.controllers.TestSuiteService.getTestSuitesWithTestCasesForCommunity(this.dataService.community!.id).url,
-			authenticate: true
-		})
-	}
-
-	getTestSuitesWithTestCasesForSystem(systemId: number) {
-		return this.restService.get<TestSuiteWithTestCases[]>({
-			path: ROUTES.controllers.TestSuiteService.getTestSuitesWithTestCasesForSystem(systemId).url,
-			authenticate: true
+	searchTestSuitesInDomain(domainId: number, specificationIds: number[]|undefined, actorIds: number[]|undefined) {
+		const data: any = {
+			domain_id: domainId
+		}
+		if (specificationIds && specificationIds.length > 0) {
+		  data["specification_ids"] = specificationIds.join(',')
+		}
+		if (actorIds && actorIds.length > 0) {
+			data["actor_ids"] = actorIds.join(',')
+		}
+		return this.restService.post<TestSuiteWithTestCases[]>({
+			path: ROUTES.controllers.TestSuiteService.searchTestSuitesInDomain().url,
+			authenticate: true,
+			data: data
 		})
 	}
 

@@ -47,13 +47,6 @@ export class ConformanceService {
     })
   }
 
-  getDomainsForSystem(systemId: number) {
-    return this.restService.get<Domain[]>({
-      path: ROUTES.controllers.ConformanceService.getDomainsForSystem(systemId).url,
-      authenticate: true
-    })
-  }
-
   getDomainForSpecification(specId: number) {
     return this.restService.get<Domain>({
       path: ROUTES.controllers.ConformanceService.getDomainOfSpecification(specId).url,
@@ -78,49 +71,62 @@ export class ConformanceService {
     })
   }
 
-  getSpecificationsWithIds(ids?: number[]) {
+  getSpecificationsWithIds(ids?: number[], domainIds?: number[]) {
     let params: any = {}
-    if (ids !== undefined) {
+    if (ids != undefined && ids.length > 0) {
       params['ids'] = ids.join(',')
     }
-    return this.restService.get<Specification[]>({
+    if (domainIds != undefined && domainIds.length > 0) {
+      params['domain_ids'] = domainIds.join(',')
+    }
+    return this.restService.post<Specification[]>({
       path: ROUTES.controllers.ConformanceService.getSpecs().url,
       authenticate: true,
-      params: params
+      data: params
     })
   }
 
-  getSpecificationsForSystem(systemId: number) {
-    return this.restService.get<Specification[]>({
-      path: ROUTES.controllers.ConformanceService.getSpecsForSystem(systemId).url,
-      authenticate: true
+  searchActors(domainIds: number[]|undefined, specificationIds: number[]|undefined) {
+    const data: any = {}
+    if (domainIds && domainIds.length > 0) {
+      data["domain_ids"] = domainIds.join(',')
+    }
+    if (specificationIds && specificationIds.length > 0) {
+      data["specification_ids"] = specificationIds.join(',')
+    }
+    return this.restService.post<Actor[]>({
+      path: ROUTES.controllers.ConformanceService.searchActors().url,
+      authenticate: true,
+      data: data
     })
   }
 
-  getActorsForSystem(systemId: number) {
-    return this.restService.get<Actor[]>({
-      path: ROUTES.controllers.ConformanceService.getActorsForSystem(systemId).url,
-      authenticate: true
+  searchActorsInDomain(domainId: number, specificationIds: number[]|undefined) {
+    const data: any = {
+      domain_id: domainId
+    }
+    if (specificationIds && specificationIds.length > 0) {
+      data["specification_ids"] = specificationIds.join(',')
+    }
+    return this.restService.post<Actor[]>({
+      path: ROUTES.controllers.ConformanceService.searchActorsInDomain().url,
+      authenticate: true,
+      data: data
     })
   }
 
-  getActorsForDomain(domainId: number) {
-    return this.restService.get<Actor[]>({
-      path: ROUTES.controllers.ConformanceService.getActorsForDomain(domainId).url,
-      authenticate: true
-    })
-  }
-
-  getActorsWithIds(ids?: number[]) {
+  getActorsWithIds(ids?: number[], specificationIds?: number[]) {
     let params: any = {}
-
-    if (ids !== undefined) {
+    if (ids != undefined && ids.length > 0) {
       params['ids'] = ids.join(',')
     }
-    return this.restService.get<Actor[]>({
-      path: ROUTES.controllers.ConformanceService.getActors().url,
+    if (specificationIds != undefined && specificationIds.length > 0) {
+      params['specification_ids'] = specificationIds.join(',')
+    }
+    return this.restService.post<Actor[]>({
+      path: ROUTES.controllers.ConformanceService.getActorsWithIds().url,
       authenticate: true,
-      params: params
+      data: params
     })
   }
 

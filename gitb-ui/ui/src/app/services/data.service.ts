@@ -1,6 +1,7 @@
 import { Injectable, Renderer2, RendererFactory2 } from '@angular/core';
 import { Observable } from 'rxjs';
 import { Constants } from '../common/constants'
+import { ObjectWithId } from '../components/test-filter/object-with-id';
 import { ConformanceTestCase } from '../pages/organisation/conformance-statement/conformance-test-case';
 import { ActualUserInfo } from '../types/actual-user-info';
 import { AppConfigurationProperties } from '../types/app-configuration-properties';
@@ -10,6 +11,7 @@ import { CustomPropertySubmissionInfo } from '../types/custom-property-submissio
 import { CustomProperty } from '../types/custom-property.type';
 import { FileParam } from '../types/file-param.type';
 import { IdLabel } from '../types/id-label';
+import { NumberSet } from '../types/number-set';
 import { Organisation } from '../types/organisation.type';
 import { Parameter } from '../types/parameter';
 import { SystemConfigurationEndpoint } from '../types/system-configuration-endpoint';
@@ -932,6 +934,14 @@ export class DataService {
         observer.complete()
       }
     })
+  }
+
+  asIdSet(items: ObjectWithId[]): NumberSet {
+    const idSet: NumberSet = {}
+    for (let item of items) {
+      idSet[item.id] = true
+    }
+    return idSet
   }
 
 }

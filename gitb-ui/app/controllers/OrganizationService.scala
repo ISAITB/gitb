@@ -59,6 +59,14 @@ class OrganizationService @Inject() (implicit ec: ExecutionContext, repositoryUt
     ResponseConstructor.constructJsonResponse(json)
   }
 
+  def searchOrganizations() = authorizedAction { request =>
+    authorizationManager.canViewAllOrganisations(request)
+    val communityIds = ParameterExtractor.extractLongIdsBodyParameter(request, Parameters.COMMUNITY_IDS)
+    val list = organizationManager.searchOrganizations(communityIds)
+    val json: String = JsonUtil.jsOrganizations(list).toString
+    ResponseConstructor.constructJsonResponse(json)
+  }
+
   /**
    * Gets the organizations with specified community
    */

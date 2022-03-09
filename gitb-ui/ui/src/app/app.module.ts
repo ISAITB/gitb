@@ -44,7 +44,6 @@ import { AdminComponent } from './pages/admin/admin.component';
 import { SessionDashboardComponent } from './pages/admin/session-dashboard/session-dashboard.component';
 import { SessionTableComponent } from './components/session-table/session-table.component';
 import { TestFilterComponent } from './components/test-filter/test-filter.component';
-import { NgMultiSelectDropDownModule } from 'ng-multiselect-dropdown';
 import { CustomPropertyFilterComponent } from './components/custom-property-filter/custom-property-filter.component';
 import { ToggleComponent } from './components/toggle/toggle.component';
 import { TestSessionPresentationComponent } from './components/diagram/test-session-presentation/test-session-presentation.component';
@@ -144,6 +143,7 @@ import { MissingConfigurationDisplayComponent } from './components/missing-confi
 import { SimulatedConfigurationDisplayModalComponent } from './components/simulated-configuration-display-modal/simulated-configuration-display-modal.component';
 import { SessionLogModalComponent } from './components/session-log-modal/session-log-modal.component';
 import { BaseCodeEditorModalComponent } from './components/base-code-editor-modal/base-code-editor-modal.component';
+import { MultiSelectFilterComponent } from './components/multi-select-filter/multi-select-filter.component';
 
 @NgModule({
   providers: [ 
@@ -276,7 +276,8 @@ import { BaseCodeEditorModalComponent } from './components/base-code-editor-moda
     MissingConfigurationDisplayComponent,
     SimulatedConfigurationDisplayModalComponent,
     SessionLogModalComponent,
-    BaseCodeEditorModalComponent],
+    BaseCodeEditorModalComponent,
+    MultiSelectFilterComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
@@ -290,7 +291,6 @@ import { BaseCodeEditorModalComponent } from './components/base-code-editor-moda
     AlertModule.forRoot(),
     CollapseModule.forRoot(),
     BsDatepickerModule.forRoot(),
-    NgMultiSelectDropDownModule.forRoot(),
     CodemirrorModule,
     BsDropdownModule.forRoot(),
     PopoverModule.forRoot(),

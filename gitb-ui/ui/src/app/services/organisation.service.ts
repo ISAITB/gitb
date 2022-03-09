@@ -27,6 +27,18 @@ export class OrganisationService {
     })
   }
 
+  searchOrganizations(communityIds: number[]|undefined) {
+		const data: any = {}
+		if (communityIds && communityIds.length > 0) {
+		  data["community_ids"] = communityIds.join(',')
+		}
+    return this.restService.post<Organisation[]>({
+      path: ROUTES.controllers.OrganizationService.searchOrganizations().url,
+      authenticate: true,
+      data: data
+    })
+  }
+
   getOrganisationById(orgId: number) {
     return this.restService.get<Organisation>({
       path: ROUTES.controllers.OrganizationService.getOrganizationById(orgId).url,
