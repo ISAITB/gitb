@@ -1,7 +1,6 @@
 import { Component, EventEmitter, OnInit } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { map } from 'lodash';
-import { Observable } from 'rxjs';
 import { Constants } from 'src/app/common/constants';
 import { DiagramLoaderService } from 'src/app/components/diagram/test-session-presentation/diagram-loader.service';
 import { ConfirmationDialogService } from 'src/app/services/confirmation-dialog.service';
@@ -9,7 +8,6 @@ import { ConformanceService } from 'src/app/services/conformance.service';
 import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { ReportService } from 'src/app/services/report.service';
-import { TestSuiteService } from 'src/app/services/test-suite.service';
 import { TestService } from 'src/app/services/test.service';
 import { FilterState } from 'src/app/types/filter-state';
 import { Organisation } from 'src/app/types/organisation.type';
@@ -57,6 +55,8 @@ export class SystemTestsComponent implements OnInit {
   stopAllPending = false
   sessionIdToShow?: string
   sessionRefreshCompleteEmitter = new EventEmitter<void>()
+  activeSessionsCollapsed = false
+  completedSessionsCollapsed = false  
 
   constructor(
     private route: ActivatedRoute,

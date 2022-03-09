@@ -1,7 +1,7 @@
 <div class="page tests">
     <app-test-filter [filterState]="filterState" (onApply)="goFirstPage()"></app-test-filter>
     <div class="panel panel-default">
-        <div class="panel-heading">
+        <div class="panel-heading clickable" (click)="activeSessionsCollapsed = !activeSessionsCollapsed">
             <h4 class="title">Active test sessions</h4>
             <div class="btn-toolbar">
                 <button type="button" class="btn btn-default" (click)="stopAll()" [pending]="stopAllPending" [disable]="activeTests.length == 0 || exportActivePending">Terminate all</button>
@@ -9,24 +9,26 @@
 				<button type="button" class="btn btn-default" *ngIf="showCollapseAllActive()" (click)="onCollapseAllActive()">Collapse all</button>
             </div>
         </div>
-        <div app-session-table
-            [sessionTableId]="'system-tests-table-active'"
-            [expandedCounter]="activeExpandedCounter"
-            [columns]="activeTestsColumns"
-            [data]="activeTests"
-            [noDataMessage]="'No sessions found'"
-			[loadingStatus]="activeStatus"
-            [operationsVisible]="true"
-            [rowStyle]="rowStyle"
-            [supportRefresh]="true"
-            (onSort)="sortActiveSessions($event)"
-            (onDelete)="stopSession($event)"
-            (onRefresh)="refreshForSession($event)"
-            [refreshComplete]="sessionRefreshCompleteEmitter">            
+        <div [collapse]="activeSessionsCollapsed" [isAnimated]="true">
+            <div app-session-table
+                [sessionTableId]="'system-tests-table-active'"
+                [expandedCounter]="activeExpandedCounter"
+                [columns]="activeTestsColumns"
+                [data]="activeTests"
+                [noDataMessage]="'No sessions found'"
+                [loadingStatus]="activeStatus"
+                [operationsVisible]="true"
+                [rowStyle]="rowStyle"
+                [supportRefresh]="true"
+                (onSort)="sortActiveSessions($event)"
+                (onDelete)="stopSession($event)"
+                (onRefresh)="refreshForSession($event)"
+                [refreshComplete]="sessionRefreshCompleteEmitter">            
+            </div>
         </div>
     </div>
     <div class="panel panel-default">
-        <div class="panel-heading">
+        <div class="panel-heading clickable" (click)="completedSessionsCollapsed = !completedSessionsCollapsed">
             <h4 class="title">Completed test sessions</h4>
             <div class="btn-toolbar">
                 <button type="button" class="btn btn-default" *ngIf="canDelete()" [pending]="deletePending" [disable]="completedTests.length == 0" (click)="deleteObsolete()">Delete obsolete sessions</button>
@@ -34,25 +36,27 @@
 				<button type="button" class="btn btn-default" *ngIf="showCollapseAll()" (click)="onCollapseAll()">Collapse all</button>
             </div>
         </div>
-        <div app-session-table
-            [sessionTableId]="'system-tests-table'"
-            [expandedCounter]="completedExpandedCounter"
-            [columns]="completedTestsColumns"
-            [data]="completedTests"
-            [noDataMessage]="'No sessions found'"
-			[loadingStatus]="completedStatus"
-            [exportVisible]="true"
-            (onExport)="onReportExport($event)"
-            [exportVisibleForRow]="exportVisible"
-            (firstPage)="goFirstPage()"
-            (prevPage)="goPreviousPage()"
-            (onSort)="sortCompletedSessions($event)"
-            (nextPage)="goNextPage()"
-            (lastPage)="goLastPage()"
-            [nextDisabled]="isNextPageDisabled"
-            [prevDisabled]="isPreviousPageDisabled"
-            [rowStyle]="rowStyle"
-            [checkboxEnabled]="false">
+        <div [collapse]="completedSessionsCollapsed" [isAnimated]="true">
+            <div app-session-table
+                [sessionTableId]="'system-tests-table'"
+                [expandedCounter]="completedExpandedCounter"
+                [columns]="completedTestsColumns"
+                [data]="completedTests"
+                [noDataMessage]="'No sessions found'"
+                [loadingStatus]="completedStatus"
+                [exportVisible]="true"
+                (onExport)="onReportExport($event)"
+                [exportVisibleForRow]="exportVisible"
+                (firstPage)="goFirstPage()"
+                (prevPage)="goPreviousPage()"
+                (onSort)="sortCompletedSessions($event)"
+                (nextPage)="goNextPage()"
+                (lastPage)="goLastPage()"
+                [nextDisabled]="isNextPageDisabled"
+                [prevDisabled]="isPreviousPageDisabled"
+                [rowStyle]="rowStyle"
+                [checkboxEnabled]="false">
+            </div>
         </div>
     </div>
 </div>

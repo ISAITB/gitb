@@ -63,6 +63,8 @@ export class SessionDashboardComponent implements OnInit {
   stopAllPending = false
   sessionIdToShow?: string
   sessionRefreshCompleteEmitter = new EventEmitter<void>()
+  activeSessionsCollapsed = false
+  completedSessionsCollapsed = false
   
   constructor(
     public dataService: DataService,
