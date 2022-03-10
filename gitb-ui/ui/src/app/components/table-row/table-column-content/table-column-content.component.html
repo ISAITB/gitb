@@ -1,0 +1,13 @@
+<div *ngIf="column.iconFn">
+    <i [ngClass]="column.iconFn!(item.data)"></i>
+</div>
+<div *ngIf="!column.iconFn">
+    <ng-container [ngSwitch]="item.boolean">
+        <div *ngSwitchCase="true">
+            <i class="fa" [ngClass]="{'fa-check': item.data, 'fa-times': !item.data}"></i>
+        </div>
+        <div *ngSwitchCase="false">
+            {{item.data}}
+        </div>
+    </ng-container>
+</div>

@@ -4,14 +4,17 @@
         <thead>
             <tr>
                 <th *ngIf="checkboxEnabled"></th>
-                <th [ngClass]="column.headerClass!" *ngFor="let column of columns" (click)="!column.sortable || headerColumnClicked(column)">
+                <th [ngClass]="column.headerClass!" *ngFor="let column of columnsLeft" (click)="!column.sortable || headerColumnClicked(column)">
                     {{column.title}} 
                     <i *ngIf="column.order == 'desc'" class="fa fa-caret-down"></i>
                     <i *ngIf="column.order == 'asc'" class="fa fa-caret-up"></i>
                 </th>
-                <th *ngIf="actionVisible" class="operations">Action</th>
-                <th *ngIf="operationsVisible" class="operations">Operation</th>
-                <th *ngIf="exportVisible" class="operations">Export</th>
+                <th *ngIf="actionVisible || exportVisible || operationsVisible" class="th-min-centered"></th>
+                <th [ngClass]="column.headerClass!" *ngFor="let column of columnsRight" (click)="!column.sortable || headerColumnClicked(column)">
+                    {{column.title}} 
+                    <i *ngIf="column.order == 'desc'" class="fa fa-caret-down"></i>
+                    <i *ngIf="column.order == 'asc'" class="fa fa-caret-up"></i>
+                </th>
             </tr>
         </thead>
         <tbody [class.disable-events]="contentRefreshing">

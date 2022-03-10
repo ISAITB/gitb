@@ -19,13 +19,7 @@ export class TableComponent extends BaseTableComponent implements OnInit {
     if (this.checkboxEnabled) {
       this.columnCount += 1
     }
-    if (this.actionVisible) {
-      this.columnCount += 1
-    }
-    if (this.operationsVisible) {
-      this.columnCount += 1
-    }
-    if (this.exportVisible) {
+    if (this.actionVisible || this.operationsVisible || this.exportVisible) {
       this.columnCount += 1
     }
     for (let column of this.columns!) {
@@ -34,6 +28,7 @@ export class TableComponent extends BaseTableComponent implements OnInit {
         column.headerClass = column.headerClass + ' sortable'
       }
     }
+    this.splitColumns()
     this.tableCaptionVisible = this.tableCaption !== undefined
   }
 

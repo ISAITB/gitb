@@ -20,7 +20,7 @@
                     <th class="th-min">Last update</th>
                     <th class="th-min-centered">Test results</th>
                     <th class="th-min-centered">Status</th>
-                    <th class="operations">Export</th>
+                    <th class="th-min-centered"></th>
                 </tr>
 			</thead>
 			<tbody *ngIf="dataStatus.status != Constants.STATUS.FINISHED">
@@ -42,7 +42,7 @@
                         <td class="td-min">{{statement.updateTime}}</td>
                         <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!"></app-test-status-icons></td>
                         <td class="td-min-centered"><span><i [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
-                        <td class="operations">
+                        <td class="td-min-centered">
                             <button class="btn btn-default" (click)="onExportConformanceStatement(statement); $event.stopPropagation();" [pending]="statement.exportPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-file-pdf-o"></i></button>
                         </td>
                     </tr>
@@ -76,23 +76,22 @@
                                                             <thead>
                                                                 <tr>
                                                                     <th width="90%">Test case</th>
-                                                                    <th class="sessionTime">Updated</th>
-                                                                    <th class="operations">Session</th>
-                                                                    <th class="operations">Export</th>
-                                                                    <th class="tb-result">Result</th>
+                                                                    <th class="sessionTime">Last run</th>
+                                                                    <th class="th-min-centered"></th>
+                                                                    <th class="th-min-centered"></th>
                                                                 </tr>
                                                             </thead>
                                                             <tbody>
                                                                 <tr *ngFor="let testCase of testSuite.testCases">
                                                                     <td>{{testCase.testCaseName}}</td>
                                                                     <td class="sessionTime">{{testCase.sessionTime}}</td>
-                                                                    <td class="operations">
-                                                                        <button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="toTestSession(testCase.sessionId)" containerClass="shortTooltip" tooltip="View session" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-search"></i></button>
+                                                                    <td class="td-min-centered test-case-controls">
+                                                                        <div class="btn-toolbar testcase-toolbar">
+                                                                            <button *ngIf="testCase.sessionId != undefined" class="btn btn-default" (click)="toTestSession(testCase.sessionId)" containerClass="shortTooltip" tooltip="View session" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-search"></i></button>
+                                                                            <button *ngIf="showExportTestCase(testCase)" [pending]="testCase.exportPending != undefined && testCase.exportPending" [icon]="true" class="btn btn-default" (click)="onExportTestCase(statement, testCase)" containerClass="shortTooltip" tooltip="Export" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-file-pdf-o"></i></button>
+                                                                        </div>
                                                                     </td>
-                                                                    <td class="operations">
-                                                                        <button *ngIf="showExportTestCase(testCase)" [pending]="testCase.exportPending != undefined && testCase.exportPending" [icon]="true" class="btn btn-default" (click)="onExportTestCase(statement, testCase)" containerClass="shortTooltip" tooltip="Export" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-file-pdf-o"></i></button>
-                                                                    </td>
-                                                                    <td class="tb-result">
+                                                                    <td class="td-min-centered test-case-result">
                                                                         <app-test-result-status-display [message]="testCase.outputMessage" [result]="testCase.result"></app-test-result-status-display>
                                                                     </td>
                                                                 </tr>

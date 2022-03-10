@@ -45,18 +45,17 @@ export class SessionTableComponent extends BaseTableComponent implements OnInit 
         column.headerClass = column.headerClass + ' sortable'
       }
     }
+    this.splitColumns()
     this.columnCount = this.columns.length
     if (this.checkboxEnabled) this.columnCount += 1
-    if (this.actionVisible) this.columnCount += 1
+    if (this.actionVisible || this.operationsVisible || this.exportVisible) this.columnCount += 1
     if (this.operationsVisible) {
       // Session termination
-      this.columnCount += 1
       this.deleteVisibleForRow = (row: TestResultForDisplay) => {
         // This is needed because we may have refreshed a session in a table displaying active sessions that has completed.
         return row.endTime == undefined
       }
     }
-    if (this.exportVisible) this.columnCount += 1
     if (this.refreshComplete) {
       this.refreshComplete.subscribe(() => {
         this.sessionBeingRefreshed = undefined

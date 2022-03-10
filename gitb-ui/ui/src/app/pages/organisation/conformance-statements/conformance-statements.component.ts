@@ -11,8 +11,7 @@ import { RoutingService } from 'src/app/services/routing.service';
 @Component({
   selector: 'app-conformance-statements',
   templateUrl: './conformance-statements.component.html',
-  styles: [
-  ]
+  styleUrls: [ './conformance-statements.component.less' ]
 })
 export class ConformanceStatementsComponent implements OnInit {
 

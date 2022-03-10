@@ -46,8 +46,20 @@ export abstract class BaseTableComponent extends BaseComponent {
   @Output() onSort: EventEmitter<TableColumnDefinition> = new EventEmitter()
 
   tableCaptionVisible = false
+  columnsLeft: TableColumnDefinition[] = []
+  columnsRight: TableColumnDefinition[] = []
 
   constructor() { super() }
+
+  splitColumns() {
+    for (let column of this.columns) {
+      if (column.atEnd) {
+        this.columnsRight.push(column)
+      } else {
+        this.columnsLeft.push(column)
+      }
+    }
+  }
 
   headerColumnClicked(column: TableColumnDefinition) {
     for (let col of this.columns!) {

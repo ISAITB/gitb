@@ -13,7 +13,7 @@
 						<th>{{dataService.labelDomain()}}</th>
 						<th>{{dataService.labelSpecification()}}</th>
 						<th>{{dataService.labelActor()}}</th>
-						<th>Last update</th>
+						<th class="th-update">Last update</th>
 						<th class="th-min-centered">Test results</th>
 						<th class="th-min-centered">Status</th>
 					</tr>
@@ -26,7 +26,7 @@
 						<td>{{statement.domainFull}}</td>
 						<td>{{statement.specificationFull}}</td>
 						<td>{{statement.actorFull}}</td>
-						<td>{{statement.updateTime}}</td>
+						<td class="td-update">{{statement.updateTime}}</td>
 						<td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!"></app-test-status-icons></td>
 						<td class="td-min-centered"><span><i [ngClass]="dataService.iconForTestResult(statement.status)"></i></span></td>
 					</tr>

@@ -145,6 +145,7 @@ import { SessionLogModalComponent } from './components/session-log-modal/session
 import { BaseCodeEditorModalComponent } from './components/base-code-editor-modal/base-code-editor-modal.component';
 import { MultiSelectFilterComponent } from './components/multi-select-filter/multi-select-filter.component';
 import { TestStatusIconsComponent } from './components/test-status-icons/test-status-icons.component';
+import { TableColumnContentComponent } from './components/table-row/table-column-content/table-column-content.component';
 
 @NgModule({
   providers: [ 
@@ -279,7 +280,8 @@ import { TestStatusIconsComponent } from './components/test-status-icons/test-st
     SessionLogModalComponent,
     BaseCodeEditorModalComponent,
     MultiSelectFilterComponent,
-    TestStatusIconsComponent],
+    TestStatusIconsComponent,
+    TableColumnContentComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
