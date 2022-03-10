@@ -28,9 +28,9 @@ export class SessionLogModalComponent extends BaseCodeEditorModalComponent {
 
   LogLevel = LogLevel
   levelFilterLabelDebug = 'Show all messages'
-  levelFilterLabelInfo = 'Show at least information messages'
-  levelFilterLabelWarn = 'Show at least warning messages'
-  levelFilterLabelError = 'Show error messages'
+  levelFilterLabelInfo = 'Show at least info messages'
+  levelFilterLabelWarn = 'Show at least warnings'
+  levelFilterLabelError = 'Show errors'
   levelFilterLabel = this.levelFilterLabelDebug
 
   tailLabelYes = 'Scroll to latest'
