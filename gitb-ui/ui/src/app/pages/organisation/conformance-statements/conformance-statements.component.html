@@ -22,6 +22,9 @@
 					<tr *ngIf="dataStatus && dataStatus.status != Constants.STATUS.FINISHED">
 						<td colspan="6" class="td-data-loading"><app-pending-block></app-pending-block></td>
 					</tr>
+					<tr *ngIf="dataStatus && dataStatus.status == Constants.STATUS.FINISHED && (!conformanceStatementRepresentations || conformanceStatementRepresentations.length == 0)">
+						<td [attr.colspan]="6" class="td-no-data"><span>No statements found</span></td>
+					</tr>
 					<tr *ngFor="let statement of conformanceStatementRepresentations" class="selectable" (click)="onConformanceStatementSelect(statement)">
 						<td>{{statement.domainFull}}</td>
 						<td>{{statement.specificationFull}}</td>
