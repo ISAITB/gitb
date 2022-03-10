@@ -583,25 +583,6 @@ export class DataService {
     }
   }
 
-  testStatusText(completedCount: number, failedCount: number, undefinedCount: number) {
-    let totalCount = completedCount + failedCount + undefinedCount
-    let resultText = completedCount + ' of ' + totalCount + ' passed'
-    if (totalCount > completedCount) {
-      resultText += ' ('
-      if (failedCount > 0) {
-        resultText += failedCount + ' failed'
-        if (undefinedCount > 0) {
-          resultText += ', '
-        }
-      }
-      if (undefinedCount > 0) {
-        resultText += undefinedCount + ' undefined'
-      }
-      resultText += ')'
-    }
-    return resultText
-  }
-
   conformanceStatusForTests(completedCount: number, failedCount: number, undefinedCount: number) {
     let totalCount = completedCount + failedCount + undefinedCount
     if (completedCount == totalCount) {

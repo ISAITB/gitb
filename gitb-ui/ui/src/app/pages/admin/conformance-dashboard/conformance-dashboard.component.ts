@@ -118,7 +118,7 @@ export class ConformanceDashboardComponent implements OnInit {
           const completedCount = Number(conformanceStatement.completed)
           const failedCount = Number(conformanceStatement.failed)
           const undefinedCount = Number(conformanceStatement.undefined)
-          conformanceStatement.status = this.dataService.testStatusText(completedCount, failedCount, undefinedCount)
+          conformanceStatement.counters = { completed: completedCount, failed: failedCount, other: undefinedCount}
           conformanceStatement.overallStatus = this.dataService.conformanceStatusForTests(completedCount, failedCount, undefinedCount)
         }
         subscriber.next(data)

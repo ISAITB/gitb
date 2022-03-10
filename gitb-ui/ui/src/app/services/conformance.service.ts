@@ -6,7 +6,6 @@ import { ExportSettings } from '../types/export-settings';
 import { Actor } from '../types/actor';
 import { ConformanceCertificateSettings } from '../types/conformance-certificate-settings';
 import { ConformanceResultFullList } from '../types/conformance-result-full-list';
-import { ConformanceStatusItem } from '../types/conformance-status-item';
 import { Domain } from '../types/domain';
 import { DomainParameter } from '../types/domain-parameter';
 import { Endpoint } from '../types/endpoint';
@@ -124,7 +123,7 @@ export class ConformanceService {
       params['specification_ids'] = specificationIds.join(',')
     }
     return this.restService.post<Actor[]>({
-      path: ROUTES.controllers.ConformanceService.getActorsWithIds().url,
+      path: ROUTES.controllers.ConformanceService.getActors().url,
       authenticate: true,
       data: params
     })

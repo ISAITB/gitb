@@ -144,6 +144,7 @@ import { SimulatedConfigurationDisplayModalComponent } from './components/simula
 import { SessionLogModalComponent } from './components/session-log-modal/session-log-modal.component';
 import { BaseCodeEditorModalComponent } from './components/base-code-editor-modal/base-code-editor-modal.component';
 import { MultiSelectFilterComponent } from './components/multi-select-filter/multi-select-filter.component';
+import { TestStatusIconsComponent } from './components/test-status-icons/test-status-icons.component';
 
 @NgModule({
   providers: [ 
@@ -277,7 +278,8 @@ import { MultiSelectFilterComponent } from './components/multi-select-filter/mul
     SimulatedConfigurationDisplayModalComponent,
     SessionLogModalComponent,
     BaseCodeEditorModalComponent,
-    MultiSelectFilterComponent],
+    MultiSelectFilterComponent,
+    TestStatusIconsComponent],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,

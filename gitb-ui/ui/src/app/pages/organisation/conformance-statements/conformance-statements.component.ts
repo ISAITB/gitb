@@ -3,7 +3,6 @@ import { ActivatedRoute } from '@angular/router';
 import { Constants } from 'src/app/common/constants';
 import { DataService } from 'src/app/services/data.service';
 import { SystemService } from 'src/app/services/system.service';
-import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
 import { map } from 'lodash'
 import { ConformanceStatementRepresentation } from './conformance-statement-representation';
 import { ConformanceStatement } from 'src/app/types/conformance-statement';
@@ -21,12 +20,12 @@ export class ConformanceStatementsComponent implements OnInit {
   organisationId!: number
   conformanceStatementRepresentations: ConformanceStatementRepresentation[] = []
   dataStatus = {status: Constants.STATUS.FINISHED}
-  tableColumns!: TableColumnDefinition[]
   showCreate = false
+  Constants = Constants
 
   constructor(
     private systemService: SystemService,
-    private dataService: DataService,
+    public dataService: DataService,
     private route: ActivatedRoute,
     public routingService: RoutingService
   ) { }
@@ -35,14 +34,6 @@ export class ConformanceStatementsComponent implements OnInit {
     this.systemId = Number(this.route.snapshot.paramMap.get('id'))
     this.organisationId = Number(this.route.snapshot.paramMap.get('org_id'))
     this.showCreate = this.dataService.isSystemAdmin || this.dataService.isCommunityAdmin || (this.dataService.isVendorAdmin && this.dataService.community!.allowStatementManagement)
-    this.tableColumns = [
-      { field: 'domainFull', title: this.dataService.labelDomain() },
-      { field: 'specificationFull', title: this.dataService.labelSpecification() },
-      { field: 'actorFull', title: this.dataService.labelActor() },
-      { field: 'updateTime', title: 'Updated' },
-      { field: 'results', title: 'Test results' },
-      { field: 'status', title: 'Status', iconFn: this.dataService.iconForTestResult }
-    ]
     this.getConformanceStatements()
   }
 
@@ -59,7 +50,7 @@ export class ConformanceStatementsComponent implements OnInit {
         domain: conformanceStatement.domain,
         domainFull: conformanceStatement.domainFull,
         updateTime: conformanceStatement.updateTime,
-        results: this.dataService.testStatusText(Number(conformanceStatement.results.completed), Number(conformanceStatement.results.failed), Number(conformanceStatement.results.undefined)),
+        counters: { completed: Number(conformanceStatement.results.completed), failed: Number(conformanceStatement.results.failed), other: Number(conformanceStatement.results.undefined)},
         status: this.dataService.conformanceStatusForTests(Number(conformanceStatement.results.completed), Number(conformanceStatement.results.failed), Number(conformanceStatement.results.undefined))
       }
     })

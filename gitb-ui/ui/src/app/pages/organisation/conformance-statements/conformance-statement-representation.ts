@@ -1,3 +1,5 @@
+import { Counters } from "src/app/components/test-status-icons/counters";
+
 export interface ConformanceStatementRepresentation {
 
     domainId: number
@@ -9,8 +11,8 @@ export interface ConformanceStatementRepresentation {
     specificationId: number
     specification: string
     specificationFull: string
-    results: string
     status: string
     updateTime?: string
+    counters?: Counters
     
 }

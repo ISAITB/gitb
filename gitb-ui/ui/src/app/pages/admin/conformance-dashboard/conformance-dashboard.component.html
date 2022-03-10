@@ -17,8 +17,8 @@
                     <th class="sortableHeader" *ngIf="dataService.isSystemAdmin || (dataService.isCommunityAdmin && dataService.community!.domain == undefined)" (click)="sort(Constants.FILTER_TYPE.DOMAIN)">{{dataService.labelDomain()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.DOMAIN" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
                     <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.SPECIFICATION)">{{dataService.labelSpecification()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.SPECIFICATION" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
                     <th class="sortableHeader" (click)="sort(Constants.FILTER_TYPE.ACTOR)">{{dataService.labelActor()}} <i *ngIf="sortColumn == Constants.FILTER_TYPE.ACTOR" [ngClass]="{'fa-caret-down': sortOrder == Constants.ORDER.DESC, 'fa-caret-up': sortOrder == Constants.ORDER.ASC}" class="fa"></i></th>
-                    <th class="th-min">Updated</th>
-                    <th width="17%">Test results</th>
+                    <th class="th-min">Last update</th>
+                    <th class="th-min-centered">Test results</th>
                     <th class="th-min-centered">Status</th>
                     <th class="operations">Export</th>
                 </tr>
@@ -40,7 +40,7 @@
                         <td>{{statement.specName}}</td>
                         <td>{{statement.actorName}}</td>
                         <td class="td-min">{{statement.updateTime}}</td>
-                        <td>{{statement.status}}</td>
+                        <td class="td-min-centered"><app-test-status-icons [counters]="statement.counters!"></app-test-status-icons></td>
                         <td class="td-min-centered"><span><i [ngClass]="dataService.iconForTestResult(statement.overallStatus)"></i></span></td>
                         <td class="operations">
                             <button class="btn btn-default" (click)="onExportConformanceStatement(statement); $event.stopPropagation();" [pending]="statement.exportPending" [icon]="true"  containerClass="shortTooltip" tooltip="Export" [delay]="Constants.TOOLTIP_DELAY"><i class="fa fa-file-pdf-o"></i></button>

@@ -21,12 +21,12 @@
 					<div class="col-md-10 col-md-offset-2 row-display-inner" *ngIf="actor?.description">{{actor?.description}}</div>
 				</div>
 				<div class="row row-display" *ngIf="lastUpdate">
-					<div class="col-md-2"><strong>Updated</strong></div>
+					<div class="col-md-2"><strong>Last update</strong></div>
 					<div class="col-md-10"><span>{{lastUpdate}}</span></div>
 				</div>
 				<div class="row row-display">
 					<div class="col-md-2"><strong>Test results</strong></div>
-					<div class="col-md-10"><span>{{testStatus}}</span></div>
+					<div class="col-md-10"><app-test-status-icons *ngIf="statusCounters" [counters]="statusCounters"></app-test-status-icons></div>
 				</div>
 				<div class="row row-display-last conformanceStatusDiv">
 					<div class="col-md-2"><strong>Status</strong></div>
@@ -99,7 +99,7 @@
 													<tr>
 														<th class="th-nowrap">Test case</th>
 														<th>Description</th>
-														<th class="th-min">Updated</th>
+														<th class="th-min">Last run</th>
 														<th class="testcase-controls"></th>
 														<th class="testcase-result"></th>
 													</tr>								

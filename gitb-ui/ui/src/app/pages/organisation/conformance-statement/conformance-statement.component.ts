@@ -31,6 +31,7 @@ import { TabsetComponent } from 'ngx-bootstrap/tabs';
 import { ConformanceStatementTab } from './conformance-statement-tab';
 import { LoadingStatus } from 'src/app/types/loading-status.type';
 import { MissingConfigurationAction } from 'src/app/components/missing-configuration-display/missing-configuration-action';
+import { Counters } from 'src/app/components/test-status-icons/counters';
 
 @Component({
   selector: 'app-conformance-statement',
@@ -49,7 +50,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
   hasTests = false
   displayedTestSuites: ConformanceTestSuite[] = []
   testSuites: ConformanceTestSuite[] = []
-  testStatus = ''
+  statusCounters?: Counters  
   lastUpdate?: string
   conformanceStatus = ''
   allTestsSuccessful = false
@@ -181,7 +182,7 @@ export class ConformanceStatementComponent implements OnInit, AfterViewInit {
       }
       this.testSuites = testSuiteResults
       this.displayedTestSuites = this.testSuites
-      this.testStatus = this.dataService.testStatusText(data.summary.completed, data.summary.failed, data.summary.undefined)
+      this.statusCounters = { completed: data.summary.completed, failed: data.summary.failed, other: data.summary.undefined}
       this.lastUpdate = data.summary.updateTime
       this.conformanceStatus = data.summary.result
       this.allTestsSuccessful = data.summary.failed == 0 && data.summary.undefined == 0

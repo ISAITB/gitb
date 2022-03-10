@@ -506,7 +506,7 @@ export class TestFilterComponent implements OnInit {
     return of([
       { id: 0, label: "Success" },
       { id: 1, label: "Failure" },
-      { id: 2, label: "Undefined" }
+      { id: 2, label: "Incomplete" }
     ])
   }
 
