@@ -1,7 +1,10 @@
 package utils;
 
+import org.owasp.html.CssSchema;
 import org.owasp.html.HtmlPolicyBuilder;
 import org.owasp.html.PolicyFactory;
+
+import java.util.Set;
 
 import static org.owasp.html.Sanitizers.*;
 
@@ -32,8 +35,11 @@ public class HtmlUtil {
             .allowAttributes("href", "target").onElements("a").requireRelsOnLinks("noopener", "noreferrer", "nofollow")
             .toFactory();
 
+    private final static PolicyFactory STYLES_EXTENDED = new HtmlPolicyBuilder()
+            .allowStyling(CssSchema.union(CssSchema.DEFAULT, CssSchema.withProperties(Set.of("display", "float")))).toFactory();
+
     static {
-        FULL_EDITOR_POLICY = BLOCKS.and(FORMATTING).and(IMAGES).and(TABLES).and(TABLES_EXTENDED).and(LINKS_WITH_TARGET).and(STYLES);
+        FULL_EDITOR_POLICY = BLOCKS.and(FORMATTING).and(IMAGES).and(TABLES).and(TABLES_EXTENDED).and(LINKS_WITH_TARGET).and(STYLES_EXTENDED);
         MINIMAL_EDITOR_POLICY = BLOCKS.and(FORMATTING).and(LINKS_WITH_TARGET).and(STYLES);
         PDF_POLICY = BLOCKS.and(FORMATTING).and(LINKS);
     }
