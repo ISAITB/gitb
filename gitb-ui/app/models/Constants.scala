@@ -50,6 +50,6 @@ object Constants {
   val FilterDateFormat = "dd-MM-yyyy HH:mm:ss"
   val AutomationHeader = "ITB_API_KEY"
 
-  val VersionNumber = "1.15.1"
-  val ResourceVersionNumber = "1.15.1"
+  val VersionNumber = "1.16.0"
+  val ResourceVersionNumber = "1.16.0"
 }
