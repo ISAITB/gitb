@@ -57,7 +57,7 @@
                             (action)="handleMissingConfigurationAction($event)"
                         ></app-missing-configuration-display>
                     </div>
-                    <div *ngSwitchDefault [ngSwitch]="testCaseLoadStatus.status == Constants.STATUS.FINISHED">
+                    <div *ngSwitchDefault [ngSwitch]="testCaseLoadStatus.status == Constants.STATUS.FINISHED" class="table-container">
                         <table *ngSwitchCase="true" class="table table-directive expandable-table test-case-table">
                             <thead>
                                 <tr>
