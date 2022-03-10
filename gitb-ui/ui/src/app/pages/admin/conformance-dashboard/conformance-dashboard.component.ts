@@ -173,6 +173,11 @@ export class ConformanceDashboardComponent implements OnInit {
       if (testSuite != undefined) {
         testSuites.push(testSuite)
       }
+      if (testSuites.length > 1) {
+        for (let testSuite of testSuites) {
+          testSuite.expanded = false
+        }
+      }
       statement.testSuites = testSuites
     }
   }
