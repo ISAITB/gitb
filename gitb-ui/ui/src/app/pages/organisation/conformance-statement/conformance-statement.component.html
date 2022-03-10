@@ -20,15 +20,15 @@
 					<div class="col-md-10">{{actor?.name}}</div>
 					<div class="col-md-10 col-md-offset-2 row-display-inner" *ngIf="actor?.description">{{actor?.description}}</div>
 				</div>
-				<div class="row row-display" *ngIf="lastUpdate">
+				<div class="row row-display oneLineDiv" *ngIf="lastUpdate">
 					<div class="col-md-2"><strong>Last update</strong></div>
 					<div class="col-md-10"><span>{{lastUpdate}}</span></div>
 				</div>
-				<div class="row row-display">
+				<div class="row row-display oneLineDiv">
 					<div class="col-md-2"><strong>Test results</strong></div>
 					<div class="col-md-10"><app-test-status-icons *ngIf="statusCounters" [counters]="statusCounters"></app-test-status-icons></div>
 				</div>
-				<div class="row row-display-last conformanceStatusDiv">
+				<div class="row row-display-last oneLineDiv conformanceStatusDiv">
 					<div class="col-md-2"><strong>Status</strong></div>
 					<div class="col-md-10"><span><i [ngClass]="dataService.iconForTestResult(conformanceStatus)"></i></span></div>
 				</div>
