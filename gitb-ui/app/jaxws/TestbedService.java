@@ -38,7 +38,7 @@ public class TestbedService implements TestbedClient {
             synchronized (lock) {
                 try {
                     sessionManagerRef = actorSystem
-                            .actorSelection("/user/"+SessionManagerActor$.MODULE$.actorName())
+                            .actorSelection("/user/" + SessionManagerActor$.MODULE$.actorName())
                             .resolveOne(Duration.of(5, ChronoUnit.SECONDS))
                             .toCompletableFuture()
                             .get();
@@ -46,9 +46,8 @@ public class TestbedService implements TestbedClient {
                     throw new IllegalStateException("Unable to lookup session manager actor", e);
                 }
             }
-        } else {
-            sessionManagerRef.tell(message, ActorRef.noSender());
         }
+        sessionManagerRef.tell(message, ActorRef.noSender());
     }
 
     @Override
