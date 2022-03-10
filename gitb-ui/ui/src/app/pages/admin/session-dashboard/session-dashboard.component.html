@@ -3,7 +3,7 @@
     <div class="panel panel-default">
         <div class="panel-heading clickable" (click)="activeSessionsCollapsed = !activeSessionsCollapsed">
             <h4 class="title">Active test sessions</h4>
-            <div class="btn-toolbar">
+            <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
                 <button type="button" class="btn btn-default" (click)="stopAll()" [pending]="stopAllPending" [disable]="activeTests.length == 0 || exportActivePending">Terminate all</button>
                 <button type="button" class="btn btn-default" (click)="exportActiveSessionsToCsv()" [pending]="exportActivePending" [disable]="activeTests.length == 0 || stopAllPending">Export CSV</button>
                 <button type="button" class="btn btn-default" *ngIf="showCollapseAllActive()" (click)="onCollapseAllActive()">Collapse all</button>
@@ -23,7 +23,8 @@
                 (onSort)="sortActiveSessions($event)"
                 (onDelete)="stopSession($event)"
                 (onRefresh)="refreshForSession($event)"
-                [refreshComplete]="sessionRefreshCompleteEmitter">
+                [refreshComplete]="sessionRefreshCompleteEmitter"
+                [contentRefreshing]="filterState.updatePending">
             </div>
         </div>
     </div>
@@ -31,7 +32,7 @@
     <div class="panel panel-default">
         <div class="panel-heading clickable" (click)="completedSessionsCollapsed = !completedSessionsCollapsed">
             <h4 class="title">Completed test sessions</h4>
-            <div class="btn-toolbar">
+            <div class="btn-toolbar" [class.disable-events]="filterState.updatePending">
                 <button type="button" class="btn btn-default" (click)="selectDeleteSessions()" *ngIf="!selectingForDelete" [disable]="completedTests.length == 0 || deletePending" [pending]="deleteSessionsPending">Delete sessions...</button>
                 <button type="button" class="btn btn-default" (click)="confirmDeleteSessions()" *ngIf="selectingForDelete" [disable]="!testsChecked()" [pending]="deleteSessionsPending">Confirm</button>
                 <button type="button" class="btn btn-default" (click)="cancelDeleteSessions()" *ngIf="selectingForDelete" [disabled]="deleteSessionsPending">Cancel</button>
@@ -59,7 +60,8 @@
                 [nextDisabled]="isNextPageDisabled"
                 [prevDisabled]="isPreviousPageDisabled"
                 [rowStyle]="rowStyle"
-                [checkboxEnabled]="viewCheckbox">
+                [checkboxEnabled]="viewCheckbox"
+                [contentRefreshing]="filterState.updatePending">
             </div>
         </div>
     </div>

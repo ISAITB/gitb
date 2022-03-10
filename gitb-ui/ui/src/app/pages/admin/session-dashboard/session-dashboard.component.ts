@@ -192,7 +192,7 @@ export class SessionDashboardComponent implements OnInit {
     }).add(() => {
       this.refreshActivePending = false
       this.setFilterRefreshState()
-      this.activeStatus.status = Constants.STATUS.FINISHED      
+      this.activeStatus.status = Constants.STATUS.FINISHED
     })
   }
 

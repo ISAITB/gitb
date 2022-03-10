@@ -14,7 +14,7 @@
                 <th *ngIf="exportVisible" class="operations">Export</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody [class.disable-events]="contentRefreshing">
             <tr *ngIf="loadingStatus && loadingStatus.status != Constants.STATUS.FINISHED">
                 <td [attr.colspan]="columnCount" class="td-data-loading"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></td>
             </tr>
@@ -79,7 +79,7 @@
                                                     </div>
                                                 </div>
                                                 <div [collapse]="diagramCollapsed[row.session]" [isAnimated]="true">
-                                                    <div class="panel-body" [class.diagramReloading]="sessionBeingRefreshed?.session == row.session" style="overflow-x: auto; overflow-y: hidden;">
+                                                    <div class="panel-body" [class.disable-events]="sessionBeingRefreshed?.session == row.session" style="overflow-x: auto; overflow-y: hidden;">
                                                         <div *ngIf="!row.hideLoadingIcon"><span><i class="fa fa-spinner fa-spin fa-lg fa-fw"></i></span></div>
                                                         <div [collapse]="!row.diagramExpanded" [isAnimated]="true">
                                                             <div class="no-margin">
@@ -105,7 +105,7 @@
         </tbody>
     </table>
     <div *ngIf="(!prevDisabled || !nextDisabled) && data && data.length > 0" class="text-center table-paging-controls-expandable">
-        <ul class="pagination pagination-sm">
+        <ul class="pagination pagination-sm" [class.disable-events]="contentRefreshing">
             <li [ngClass]="prevDisabled ? 'disabled' : ''"><a href (click)="doFirstPage(); $event.preventDefault()">First</a></li>
             <li [ngClass]="prevDisabled ? 'disabled' : ''"><a href (click)="doPrevPage(); $event.preventDefault()">Previous</a></li>
             <li [ngClass]="nextDisabled ? 'disabled' : ''"><a href (click)="doNextPage(); $event.preventDefault()">Next</a></li>

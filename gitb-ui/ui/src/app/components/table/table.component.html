@@ -13,7 +13,7 @@
                 <th *ngIf="exportVisible" class="operations">Export</th>
             </tr>
         </thead>
-        <tbody>
+        <tbody [class.disable-events]="contentRefreshing">
             <tr *ngIf="loadingStatus && loadingStatus.status != Constants.STATUS.FINISHED">
                 <td [attr.colspan]="columnCount" class="td-data-loading"><app-pending-block></app-pending-block></td>
             </tr>
