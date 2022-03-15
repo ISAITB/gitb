@@ -13,6 +13,7 @@ import { ParameterPresetValue } from 'src/app/types/parameter-preset-value';
 import { ErrorService } from 'src/app/services/error.service';
 import { Constants } from 'src/app/common/constants';
 import { BaseComponent } from 'src/app/pages/base-component.component';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-edit-endpoint-configuration-modal',

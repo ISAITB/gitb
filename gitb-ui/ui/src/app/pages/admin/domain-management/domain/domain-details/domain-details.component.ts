@@ -14,6 +14,7 @@ import { Domain } from 'src/app/types/domain';
 import { DomainParameter } from 'src/app/types/domain-parameter';
 import { Specification } from 'src/app/types/specification';
 import { TableColumnDefinition } from 'src/app/types/table-column-definition.type';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-domain-details',

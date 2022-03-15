@@ -32,6 +32,7 @@ import { ConformanceStatementTab } from './conformance-statement-tab';
 import { LoadingStatus } from 'src/app/types/loading-status.type';
 import { MissingConfigurationAction } from 'src/app/components/missing-configuration-display/missing-configuration-action';
 import { Counters } from 'src/app/components/test-status-icons/counters';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-conformance-statement',

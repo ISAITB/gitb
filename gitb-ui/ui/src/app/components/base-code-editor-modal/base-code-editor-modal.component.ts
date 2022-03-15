@@ -5,6 +5,7 @@ import { DataService } from 'src/app/services/data.service';
 import { PopupService } from 'src/app/services/popup.service';
 import { EditorOptions } from '../code-editor-modal/code-editor-options';
 import { Indicator } from '../code-editor-modal/indicator';
+import { saveAs } from 'file-saver'
 
 @Component({ template: '' })
 export class BaseCodeEditorModalComponent implements AfterViewInit {

@@ -15,6 +15,7 @@ import { TableColumnDefinition } from 'src/app/types/table-column-definition.typ
 import { TestResultReport } from 'src/app/types/test-result-report';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
 import { TestResultForDisplay } from '../../../types/test-result-for-display';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-system-tests',

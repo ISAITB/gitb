@@ -8,9 +8,10 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, SbtWeb)
 
 scalaVersion := "2.13.6"
 val akkaVersion = "2.6.18"
-val jacksonVersion = "2.13.1"
-val cxfVersion = "3.4.5"
+val jacksonVersion = "2.13.2"
+val cxfVersion = "3.5.1"
 val jettyVersion = "9.4.43.v20210629"
+val guiceVersion = "5.1.0"
 
 useCoursier := false
 
@@ -18,8 +19,8 @@ libraryDependencies ++= Seq(
   guice,
   ehcache,
   cacheApi,
-  "com.google.inject" % "guice" % "5.0.1",
-  "com.google.inject.extensions" % "guice-assistedinject" % "5.0.1",
+  "com.google.inject" % "guice" % guiceVersion,
+  "com.google.inject.extensions" % "guice-assistedinject" % guiceVersion,
   "eu.europa.ec.itb" % "gitb-types" % "1.16.0",
   "com.gitb" % "gitb-core" % "1.0-SNAPSHOT",
   "com.gitb" % "gitb-lib" % "1.0-SNAPSHOT",
@@ -37,7 +38,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-json" % "2.9.2",
   "org.pac4j" %% "play-pac4j" % "11.1.0-PLAY2.8",
   "org.pac4j" % "pac4j-cas" % "5.3.0",
-  "ch.qos.logback" % "logback-classic" % "1.2.10",
+  "ch.qos.logback" % "logback-classic" % "1.2.11",
   "org.apache.commons" % "commons-lang3" % "3.12.0",
   "com.fasterxml.jackson.module" %% "jackson-module-scala" % jacksonVersion,
   "com.fasterxml.jackson.core" % "jackson-databind" % jacksonVersion,
@@ -60,7 +61,7 @@ libraryDependencies ++= Seq(
   "org.eclipse.jetty" % "jetty-util" % jettyVersion,
   // ---
   "org.apache.tika" % "tika-core" % "2.3.0",
-  "org.webjars" %% "webjars-play" % "2.8.8",
+  "org.webjars" %% "webjars-play" % "2.8.13",
   "org.webjars" % "jquery" % "3.5.1",
   "org.webjars" % "bootstrap" % "3.4.1" exclude("org.webjars", "jquery"),
   "javax.mail" % "mail" % "1.4.7",

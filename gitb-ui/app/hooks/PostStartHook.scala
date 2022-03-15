@@ -39,7 +39,7 @@ class PostStartHook @Inject() (implicit ec: ExecutionContext, appLifecycle: Appl
     cleanupTempFiles()
     loadDataExports()
     archiveOldTestSessions()
-    logger.info("Application has started in "+Configurations.TESTBED_MODE+" mode")
+    logger.info("Application has started in "+Configurations.TESTBED_MODE+" mode - release "+Constants.VersionNumber)
   }
 
   private def checkMasterPassword(): Unit = {

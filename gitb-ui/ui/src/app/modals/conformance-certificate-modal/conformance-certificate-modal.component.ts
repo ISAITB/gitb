@@ -6,6 +6,7 @@ import { DataService } from 'src/app/services/data.service';
 import { ReportService } from 'src/app/services/report.service';
 import { ConformanceCertificateSettings } from 'src/app/types/conformance-certificate-settings';
 import { ConformanceResultFull } from 'src/app/types/conformance-result-full';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-conformance-certificate-modal',

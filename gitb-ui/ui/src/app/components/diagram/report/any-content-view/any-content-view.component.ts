@@ -9,6 +9,7 @@ import { TestService } from 'src/app/services/test.service';
 import { AnyContent } from '../../any-content';
 import { ReportSupport } from '../report-support';
 import { StepReport } from '../step-report';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-any-content-view',

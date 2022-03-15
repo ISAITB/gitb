@@ -19,6 +19,7 @@ import { SystemConfigurationParameter } from '../types/system-configuration-para
 import { TypedLabelConfig } from '../types/typed-label-config.type'
 import { UserAccount } from '../types/user-account';
 import { User } from '../types/user.type';
+import { saveAs } from 'file-saver'
 
 @Injectable({
   providedIn: 'root'

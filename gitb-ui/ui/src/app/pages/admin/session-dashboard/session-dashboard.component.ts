@@ -17,6 +17,7 @@ import { PopupService } from 'src/app/services/popup.service';
 import { Observable } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { DiagramLoaderService } from 'src/app/components/diagram/test-session-presentation/diagram-loader.service';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-session-dashboard',

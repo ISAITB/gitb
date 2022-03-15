@@ -15,6 +15,7 @@ import { ConformanceResultTestSuite } from 'src/app/types/conformance-result-tes
 import { ConformanceStatusItem } from 'src/app/types/conformance-status-item';
 import { FilterState } from 'src/app/types/filter-state';
 import { TestResultSearchCriteria } from 'src/app/types/test-result-search-criteria';
+import { saveAs } from 'file-saver'
 
 @Component({
   selector: 'app-conformance-dashboard',
