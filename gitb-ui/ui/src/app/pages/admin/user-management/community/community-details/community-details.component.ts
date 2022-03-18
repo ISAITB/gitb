@@ -103,6 +103,8 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   sortByCreationOrderLabel = this.sortByCreationOrderLabelNone
   sortByCreationOrder = this.sortByCreationOrderNone
 
+  organisationsRefreshing = false
+
   constructor(
     public dataService: DataService,
     private routingService: RoutingService,
@@ -189,9 +191,11 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
   }
 
   private queryOrganisations() {
-    this.organizations = []
-    this.organisationCount = 0
-    this.organisationStatus.status = Constants.STATUS.PENDING
+    if (this.organisationStatus.status == Constants.STATUS.FINISHED) {
+      this.organisationsRefreshing = true
+    } else {
+      this.organisationStatus.status = Constants.STATUS.PENDING
+    }
     this.organisationService.searchOrganisationsByCommunity(this.communityId, this.organisationFilter, this.organisationSortOrder, this.organisationSortColumn, this.currentOrganisationsPage, Constants.TABLE_PAGE_SIZE, this.sortByCreationOrder)
     .subscribe((data) => {
         this.organizations = data.data
@@ -199,6 +203,7 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
         this.updatePagination()
     })
     .add(() => {
+      this.organisationsRefreshing = false
       this.organisationStatus.status = Constants.STATUS.FINISHED
     })
 }

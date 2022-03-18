@@ -247,6 +247,10 @@ export class MultiSelectFilterComponent implements OnInit, OnDestroy {
   close() {
     this.formVisible = false
     this.textValue = ''
+    // Make sure that previously selected items that have been unchecked but not applied are undone.
+    for (let itemId in this.selectedSelectedItems) {
+      this.selectedSelectedItems[itemId].selected = true
+    }
   }
 
 }

@@ -26,6 +26,7 @@ export class TextFilterComponent implements OnInit, ControlValueAccessor {
   Constants = Constants
   _filterValue?: string
   readonly = true
+  submitOngoing = false
   onChange = (_: any) => {}
   onTouched = () => {}
 
@@ -70,7 +71,21 @@ export class TextFilterComponent implements OnInit, ControlValueAccessor {
   }
 
   filterBlurred() {
+    if (!this.submitOngoing) {
+      this.applyFilter(true)
+    }
+  }
+
+  clear() {
+    this.submitOngoing = true
+    this.applyFilter(false)
+    this.submitOngoing = false
+  }
+
+  search() {
+    this.submitOngoing = true
     this.applyFilter(true)
+    this.submitOngoing = false
   }
 
   applyFilter(isSearch: boolean) {
@@ -94,6 +109,7 @@ export class TextFilterComponent implements OnInit, ControlValueAccessor {
         this.filterButtonClearElement?.nativeElement.blur()
       }
     }
+    this.submitOngoing = false
   }
 
 }

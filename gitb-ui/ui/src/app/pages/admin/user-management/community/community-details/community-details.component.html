@@ -51,6 +51,7 @@
                             [data]="organizations"
                             [noDataMessage]="'No '+dataService.labelOrganisationsLower()+' found'"
                             [loadingStatus]="organisationStatus" 
+                            [contentRefreshing]="organisationsRefreshing"
                             [allowSelect]="true"
                             [nextDisabled]="isNextPageOrganisationsDisabled"
                             [prevDisabled]="isPreviousPageOrganisationsDisabled"

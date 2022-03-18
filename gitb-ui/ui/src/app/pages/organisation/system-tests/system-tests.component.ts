@@ -57,7 +57,8 @@ export class SystemTestsComponent implements OnInit {
   sessionIdToShow?: string
   sessionRefreshCompleteEmitter = new EventEmitter<void>()
   activeSessionsCollapsed = false
-  completedSessionsCollapsed = false  
+  completedSessionsCollapsed = false
+  showTerminateAll = false
 
   constructor(
     private route: ActivatedRoute,
@@ -73,6 +74,7 @@ export class SystemTestsComponent implements OnInit {
   ngOnInit(): void {
     this.systemId = Number(this.route.snapshot.paramMap.get('id'))
     this.organisation = JSON.parse(localStorage.getItem(Constants.LOCAL_DATA.ORGANISATION)!)
+    this.showTerminateAll = this.dataService.isCommunityAdmin || this.dataService.isVendorAdmin || this.dataService.isSystemAdmin
     const sessionIdValue = this.route.snapshot.queryParamMap.get('sessionId')
     if (sessionIdValue != undefined) {
       this.sessionIdToShow = sessionIdValue
@@ -213,6 +215,10 @@ export class SystemTestsComponent implements OnInit {
     displayedResult.endTime = loadedResult.result.endTime
     displayedResult.result = loadedResult.result.result
     displayedResult.obsolete = loadedResult.result.obsolete
+    if (displayedResult.diagramState && loadedResult.result.outputMessage) {
+      displayedResult.diagramState.outputMessage = loadedResult.result.outputMessage
+      displayedResult.diagramState.outputMessageType = this.diagramLoaderService.determineOutputMessageType(loadedResult.result.result)
+    }
   }
 
   private newTestResult(testResult: TestResultReport, completed: boolean): TestResultForDisplay {
