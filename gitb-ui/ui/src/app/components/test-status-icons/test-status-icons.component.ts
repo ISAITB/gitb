@@ -11,6 +11,7 @@ import { Counters } from './counters';
 export class TestStatusIconsComponent implements OnInit {
 
   @Input() counters!: Counters
+  @Input() centerAligned = true
 
   successIcon!: string
   failedIcon!: string

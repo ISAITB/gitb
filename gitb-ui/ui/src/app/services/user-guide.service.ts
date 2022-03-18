@@ -45,7 +45,7 @@ export class UserGuideService {
     this.paths['/settings/profile'] = this.setPath('profile/index.html')
     this.paths['/settings/password'] = this.setPath('profile/index.html#change-your-password')
     this.paths['/settings/organisation'] = this.setPath('profile/index.html#view-your-organisation-s-details', 'profile/index.html#manage-your-organisation-s-details')
-    this.paths['/organisation/:org_id/test/:system_id/:actor_id/:spec_id/execute'] = this.setPath('executeTests/index.html#step-3-test-execution', '', 'validateTestSetup/index.html#step-3-test-execution')
+    this.paths['/organisation/:org_id/test/:system_id/:actor_id/:spec_id/execute'] = this.setPath('executeTests/index.html#execute_tests_interactive', '', 'validateTestSetup/index.html#execute_tests_interactive')
     this.paths['/organisation/:org_id/systems/:id/info'] = this.setPath('manageConformanceStatements/index.html#view-selected-system-s-information', '', 'validateTestSetup/index.html#view-selected-system-s-information')
     this.paths['/organisation/:org_id/systems/:id/conformance'] = this.setPath('manageConformanceStatements/index.html#view-your-conformance-statements', '', 'validateTestSetup/index.html#view-your-conformance-statements')
     this.paths['/organisation/:org_id/systems/:id/conformance/detail/:actor_id/:spec_id'] = this.setPath('manageConformanceStatements/index.html#view-a-conformance-statement-s-details', '', 'validateTestSetup/index.html#view-a-conformance-statement-s-details')
