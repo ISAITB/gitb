@@ -222,6 +222,10 @@ export class SessionDashboardComponent implements OnInit {
     displayedResult.endTime = loadedResult.result.endTime
     displayedResult.result = loadedResult.result.result
     displayedResult.obsolete = loadedResult.result.obsolete
+    if (displayedResult.diagramState && loadedResult.result.outputMessage) {
+      displayedResult.diagramState.outputMessage = loadedResult.result.outputMessage
+      displayedResult.diagramState.outputMessageType = this.diagramLoaderService.determineOutputMessageType(loadedResult.result.result)
+    }
   }
 
   private newTestResult(testResult: TestResultReport, completed: boolean): TestResultForDisplay {
