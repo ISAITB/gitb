@@ -62,20 +62,22 @@ export abstract class BaseTableComponent extends BaseComponent {
   }
 
   headerColumnClicked(column: TableColumnDefinition) {
-    for (let col of this.columns!) {
-      if (col.field == column.field) {
-        if (!col.order) {
-          col.order = 'asc'
-        } else if (col.order == 'asc') {
-          col.order = 'desc'
+    if (column.sortable) {
+      for (let col of this.columns!) {
+        if (col.field == column.field) {
+          if (!col.order) {
+            col.order = 'asc'
+          } else if (col.order == 'asc') {
+            col.order = 'desc'
+          } else {
+            col.order = 'asc'
+          }
         } else {
-          col.order = 'asc'
+          col.order = null
         }
-      } else {
-        col.order = null
       }
+      this.onSort.emit(column)
     }
-    this.onSort.emit(column)
   }
 
   handleAction(row: any) {

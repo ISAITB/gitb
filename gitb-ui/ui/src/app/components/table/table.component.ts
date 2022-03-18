@@ -24,9 +24,6 @@ export class TableComponent extends BaseTableComponent implements OnInit {
     }
     for (let column of this.columns!) {
       column.headerClass = 'tb-'+column.title.toLowerCase().replace(' ', '-')
-      if (column.sortable) {
-        column.headerClass = column.headerClass + ' sortable'
-      }
     }
     this.splitColumns()
     this.tableCaptionVisible = this.tableCaption !== undefined

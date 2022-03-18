@@ -482,10 +482,11 @@ export class CommunityDetailsComponent extends BaseComponent implements OnInit, 
     if (type == "none") {
       for (let column of this.organizationColumns) {
         if (column.field == "sname") column.order = "asc"
-        break
+        column.sortable = true
       }
     } else {
       for (let column of this.organizationColumns) {
+        column.sortable = false
         column.order = undefined
       }
     }
